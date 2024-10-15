@@ -132,6 +132,7 @@ class DBUpgradeProgressHandler(ProgressUpdater):
                     'to_version': self.current_version,
                     'total_steps': self.current_round_total_steps,
                     'current_step': self.current_round_current_step,
+                    'description': step_name,
                 },
             },
         )

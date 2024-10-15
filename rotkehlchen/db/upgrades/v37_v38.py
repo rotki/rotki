@@ -7,6 +7,7 @@ from rotkehlchen.db.constants import (
 )
 from rotkehlchen.db.utils import update_table_schema
 from rotkehlchen.logging import enter_exit_debug_log
+from rotkehlchen.utils.progress import progress_manager, progress_step
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -24,12 +25,12 @@ DEFAULT_POLYGON_NODES_AT_V38 = [
 ]
 
 
-@enter_exit_debug_log()
+@progress_step(description='Adding Polygon PoS location.')
 def _add_polygon_pos_location(write_cursor: 'DBCursor') -> None:
     write_cursor.execute('INSERT OR IGNORE INTO location(location, seq) VALUES ("h", 40);')
 
 
-@enter_exit_debug_log()
+@progress_step(description='Adding Polygon PoS nodes.')
 def _add_polygon_pos_nodes(write_cursor: 'DBCursor') -> None:
     write_cursor.executemany(
         'INSERT INTO rpc_nodes(name, endpoint, owned, active, weight, blockchain) '
@@ -38,7 +39,7 @@ def _add_polygon_pos_nodes(write_cursor: 'DBCursor') -> None:
     )
 
 
-@enter_exit_debug_log()
+@progress_step(description='Reducing internal transactions.')
 def _reduce_internal_txs(write_cursor: 'DBCursor') -> None:
     """Reduce the size of the evm internal transactions table by removing unused columns"""
     update_table_schema(
@@ -56,7 +57,7 @@ def _reduce_internal_txs(write_cursor: 'DBCursor') -> None:
     )
 
 
-@enter_exit_debug_log()
+@progress_step(description='Dropping Aave events.')
 def _drop_aave_events(write_cursor: 'DBCursor') -> None:
     """
     Delete aave events from the database since we don't need them anymore
@@ -65,7 +66,7 @@ def _drop_aave_events(write_cursor: 'DBCursor') -> None:
     write_cursor.execute('DELETE FROM used_query_ranges WHERE name LIKE "aave_events%";')
 
 
-@enter_exit_debug_log()
+@progress_step(description='Deleting Uniswap/Sushiswap events.')
 def _delete_uniswap_sushiswap_events(write_cursor: 'DBCursor') -> None:
     """
     Delete query ranges and events for uniswap/sushiswap
@@ -81,7 +82,7 @@ def _delete_uniswap_sushiswap_events(write_cursor: 'DBCursor') -> None:
     )
 
 
-@enter_exit_debug_log()
+@progress_step(description='Resetting decoded events.')
 def _reset_decoded_events(write_cursor: 'DBCursor') -> None:
     """
     Reset all decoded evm events except the customized ones for ethereum mainnet and optimism.
@@ -111,7 +112,7 @@ def _reset_decoded_events(write_cursor: 'DBCursor') -> None:
     )
 
 
-@enter_exit_debug_log()
+@progress_step(description='Removing duplicate block mev rewards.')
 def _remove_duplicate_block_mev_rewards(write_cursor: 'DBCursor') -> None:
     """If mev reward is exact same as block production reward then it's a duplicate event.
     In that case it needs to be deleted.
@@ -133,19 +134,15 @@ def upgrade_v37_to_v38(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         - Drop the unused aave events
         - Remove potential duplicate block mev reward events
     """
-    progress_handler.set_total_steps(7)
-    with db.user_write() as write_cursor:
-        _reset_decoded_events(write_cursor)
-        progress_handler.new_step()
-        _remove_duplicate_block_mev_rewards(write_cursor)
-        progress_handler.new_step()
-        _reduce_internal_txs(write_cursor)
-        progress_handler.new_step()
-        _add_polygon_pos_location(write_cursor)
-        progress_handler.new_step()
-        _add_polygon_pos_nodes(write_cursor)
-        progress_handler.new_step()
-        _drop_aave_events(write_cursor)
-        progress_handler.new_step()
-        _delete_uniswap_sushiswap_events(write_cursor)
-        progress_handler.new_step()
+    steps = [
+        _reset_decoded_events,
+        _remove_duplicate_block_mev_rewards,
+        _reduce_internal_txs,
+        _add_polygon_pos_location,
+        _add_polygon_pos_nodes,
+        _drop_aave_events,
+        _delete_uniswap_sushiswap_events,
+    ]
+    with progress_manager(handler=progress_handler, total_steps=len(steps)), db.user_write() as write_cursor:  # noqa: E501
+        for step_fn in steps:
+            step_fn(write_cursor)

@@ -13,6 +13,7 @@ from rotkehlchen.db.utils import table_exists, update_table_schema
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
 from rotkehlchen.types import ChainID
+from rotkehlchen.utils.progress import progress_manager, progress_step
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -23,7 +24,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-@enter_exit_debug_log()
+@progress_step(description='Removing adex.')
 def _remove_adex(write_cursor: 'DBCursor') -> None:
     """Remove all adex related tables, events, data in other tables"""
     write_cursor.execute('DROP TABLE IF EXISTS adex_events')
@@ -54,14 +55,14 @@ def _remove_adex(write_cursor: 'DBCursor') -> None:
         )
 
 
-@enter_exit_debug_log()
+@progress_step(description='Upgrading ignored actionids.')
 def _upgrade_ignored_actionids(write_cursor: 'DBCursor') -> None:
     """ignored_action_ids of ActionType ETHEREUM_TRANSACTION need chainid prepended"""
     if table_exists(write_cursor, 'used_query_ranges'):
         write_cursor.execute('UPDATE ignored_actions SET identifier = "1" || identifier WHERE type="C"')  # noqa: E501
 
 
-@enter_exit_debug_log()
+@progress_step(description='Upgrading account details.')
 def _upgrade_account_details(write_cursor: 'DBCursor') -> None:
     """Upgrade to account_defails table to evm_accounts_details"""
     new_data = []
@@ -108,7 +109,7 @@ def _upgrade_account_details(write_cursor: 'DBCursor') -> None:
     )
 
 
-@enter_exit_debug_log()
+@progress_step(description='Renaming eth to evm.')
 def _rename_eth_to_evm_add_chainid(write_cursor: 'DBCursor') -> None:
     """Rename all eth to evm tables, add chain id and adjust tx mappings"""
     # Get all data in memory and upgrade it
@@ -374,7 +375,7 @@ def _rename_eth_to_evm_add_chainid(write_cursor: 'DBCursor') -> None:
     )
 
 
-@enter_exit_debug_log()
+@progress_step(description='Upgrading events mappings.')
 def _upgrade_events_mappings(write_cursor: 'DBCursor') -> None:
     """Upgrade history_events_mappings"""
     new_data = []
@@ -415,7 +416,7 @@ def _upgrade_events_mappings(write_cursor: 'DBCursor') -> None:
     )
 
 
-@enter_exit_debug_log()
+@progress_step(description='Updating nfts table schema.')
 def _upgrade_nfts_table(write_cursor: 'DBCursor') -> None:
     """Upgrade nfts table to add image url, collection name and whether it's a uniswap LP NFT"""
     write_cursor.execute('DROP TABLE IF EXISTS nfts')
@@ -439,7 +440,7 @@ def _upgrade_nfts_table(write_cursor: 'DBCursor') -> None:
     )
 
 
-@enter_exit_debug_log()
+@progress_step(description='Upgrading rpc node.')
 def _upgrade_rpc_nodes(write_cursor: 'DBCursor') -> None:
     """
     Change name of web3_nodes to rpc_nodes and fix the schema. Weight should be
@@ -480,7 +481,7 @@ def _upgrade_rpc_nodes(write_cursor: 'DBCursor') -> None:
     )
 
 
-@enter_exit_debug_log()
+@progress_step(description='Upgrading tags.')
 def _upgrade_tags(write_cursor: 'DBCursor') -> None:
     """All tags tied to addresses should now be tied to chain + address"""
     write_cursor.execute(
@@ -500,7 +501,7 @@ def _upgrade_tags(write_cursor: 'DBCursor') -> None:
     )
 
 
-@enter_exit_debug_log()
+@progress_step(description='Upgrading address book table.')
 def _upgrade_address_book_table(write_cursor: 'DBCursor') -> None:
     """Upgrades the address book table by making the blockchain column optional"""
     update_table_schema(
@@ -514,12 +515,12 @@ def _upgrade_address_book_table(write_cursor: 'DBCursor') -> None:
     )
 
 
-@enter_exit_debug_log()
+@progress_step(description='Adding OKX.')
 def _add_okx(write_cursor: 'DBCursor') -> None:
     write_cursor.execute('INSERT OR IGNORE INTO location(location, seq) VALUES ("e", 37);')
 
 
-@enter_exit_debug_log()
+@progress_step(description='Removing old tables.')
 def _remove_old_tables(write_cursor: 'DBCursor') -> None:
     """In 1.27.0 we added a check for old tables in the DB.
 
@@ -528,7 +529,7 @@ def _remove_old_tables(write_cursor: 'DBCursor') -> None:
     write_cursor.execute('DROP TABLE IF EXISTS eth_tokens')
 
 
-@enter_exit_debug_log()
+@progress_step(description='Fixing eth2 pnl genesis.')
 def _fix_eth2_pnl_genesis(write_cursor: 'DBCursor') -> None:
     """
     To avoid querying beaconchain for all the stats since genesis manually update
@@ -554,7 +555,7 @@ def _fix_eth2_pnl_genesis(write_cursor: 'DBCursor') -> None:
         )
 
 
-@enter_exit_debug_log()
+@progress_step(description='Resetting decoded events.')
 def _reset_decoded_events(write_cursor: 'DBCursor') -> None:
     """
     The code is taken from `delete_events_by_tx_hash` right before 1.27 release.
@@ -594,31 +595,21 @@ def upgrade_v35_to_v36(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
           it's a uniswap LP NFT
         - rename web3_nodes to rpc_nodes
     """
-    progress_handler.set_total_steps(13)
-    with db.user_write() as write_cursor:
-        _remove_adex(write_cursor)
-        progress_handler.new_step()
-        _upgrade_ignored_actionids(write_cursor)
-        progress_handler.new_step()
-        _upgrade_account_details(write_cursor)
-        progress_handler.new_step()
-        _rename_eth_to_evm_add_chainid(write_cursor)
-        progress_handler.new_step()
-        _upgrade_events_mappings(write_cursor)
-        progress_handler.new_step()
-        _upgrade_nfts_table(write_cursor)
-        progress_handler.new_step()
-        _upgrade_rpc_nodes(write_cursor)
-        progress_handler.new_step()
-        _upgrade_tags(write_cursor)
-        progress_handler.new_step()
-        _upgrade_address_book_table(write_cursor)
-        progress_handler.new_step()
-        _add_okx(write_cursor)
-        progress_handler.new_step()
-        _remove_old_tables(write_cursor)
-        progress_handler.new_step()
-        _fix_eth2_pnl_genesis(write_cursor)
-        progress_handler.new_step()
-        _reset_decoded_events(write_cursor)
-        progress_handler.new_step()
+    steps = [
+        _remove_adex,
+        _upgrade_ignored_actionids,
+        _upgrade_account_details,
+        _rename_eth_to_evm_add_chainid,
+        _upgrade_events_mappings,
+        _upgrade_nfts_table,
+        _upgrade_rpc_nodes,
+        _upgrade_tags,
+        _upgrade_address_book_table,
+        _add_okx,
+        _remove_old_tables,
+        _fix_eth2_pnl_genesis,
+        _reset_decoded_events,
+    ]
+    with progress_manager(handler=progress_handler, total_steps=len(steps)), db.user_write() as write_cursor:  # noqa: E501
+        for step_fn in steps:
+            step_fn(write_cursor)

@@ -17,6 +17,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
 from rotkehlchen.oracles.structures import DEFAULT_CURRENT_PRICE_ORACLES_ORDER, CurrentPriceOracle
 from rotkehlchen.types import EvmTokenKind, OracleSource, SupportedBlockchain
 from rotkehlchen.utils.misc import ts_now
+from rotkehlchen.utils.progress import progress_manager, progress_step
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -29,7 +30,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-@enter_exit_debug_log()
+@progress_step(description='Refactoring time columns.')
 def _refactor_time_columns(write_cursor: 'DBCursor') -> None:
     """
     The tables that contained time instead of timestamp as column names and need
@@ -45,7 +46,7 @@ def _refactor_time_columns(write_cursor: 'DBCursor') -> None:
     write_cursor.execute('ALTER TABLE asset_movements RENAME COLUMN time TO timestamp')
 
 
-@enter_exit_debug_log()
+@progress_step(description='Creating new tables.')
 def _create_new_tables(write_cursor: 'DBCursor') -> None:
     write_cursor.execute("""
     CREATE TABLE IF NOT EXISTS user_notes(
@@ -59,7 +60,7 @@ def _create_new_tables(write_cursor: 'DBCursor') -> None:
     """)
 
 
-@enter_exit_debug_log()
+@progress_step(description='Removing unused assets.')
 def _remove_unused_assets(write_cursor: 'DBCursor') -> None:
     """Remove any entries in the assets table that are not used at all. By not used
     we mean to look at all foreign key relations and find assets that have None.
@@ -97,7 +98,7 @@ def _remove_unused_assets(write_cursor: 'DBCursor') -> None:
     """)
 
 
-@enter_exit_debug_log()
+@progress_step(description='Renaming asset identifiers.')
 def _rename_assets_identifiers(write_cursor: 'DBCursor') -> None:
     """Version 1.26 includes the migration for the global db and the references to assets
     need to be updated also in this database.
@@ -123,7 +124,7 @@ def _rename_assets_identifiers(write_cursor: 'DBCursor') -> None:
     write_cursor.executemany('UPDATE assets SET identifier=? WHERE identifier=?', sqlite_tuples)
 
 
-@enter_exit_debug_log()
+@progress_step(description='Changing xpub mappings primary key.')
 def _change_xpub_mappings_primary_key(write_cursor: 'DBCursor', conn: 'DBConnection') -> None:
     """This upgrade includes xpub_mappings' `blockchain` column in primary key.
     After this upgrade it will become possible to create mapping for the same bitcoin address
@@ -156,7 +157,7 @@ def _change_xpub_mappings_primary_key(write_cursor: 'DBCursor', conn: 'DBConnect
     write_cursor.execute('ALTER TABLE xpub_mappings_copy RENAME TO xpub_mappings')
 
 
-@enter_exit_debug_log()
+@progress_step(description='Cleaning amm swaps.')
 def _clean_amm_swaps(cursor: 'DBCursor') -> None:
     """Since we remove the amm swaps, clean all related DB tables and entries"""
     cursor.execute('DELETE FROM used_query_ranges WHERE name LIKE "uniswap_trades%";')
@@ -166,7 +167,7 @@ def _clean_amm_swaps(cursor: 'DBCursor') -> None:
     cursor.execute('DROP TABLE IF EXISTS amm_swaps;')
 
 
-@enter_exit_debug_log()
+@progress_step(description='Adding blockchain column to web3_nodes table.')
 def _add_blockchain_column_web3_nodes(cursor: 'DBCursor') -> None:
     update_table_schema(
         write_cursor=cursor,
@@ -182,7 +183,7 @@ def _add_blockchain_column_web3_nodes(cursor: 'DBCursor') -> None:
     )
 
 
-@enter_exit_debug_log()
+@progress_step(description='Updating ignored asset identifiers to caip format.')
 def _update_ignored_assets_identifiers_to_caip_format(cursor: 'DBCursor') -> None:
     cursor.execute('SELECT value FROM multisettings WHERE name="ignored_asset";')
     old_ids_to_caip_ids_mappings: list[tuple[str, str]] = []
@@ -205,7 +206,7 @@ def _update_ignored_assets_identifiers_to_caip_format(cursor: 'DBCursor') -> Non
     )
 
 
-@enter_exit_debug_log()
+@progress_step(description='Updating history event asset identifiers to caip format.')
 def _update_history_event_assets_identifiers_to_caip_format(cursor: 'DBCursor') -> None:
     """Make sure assets in history events table are upgraded to CAIP format"""
     cursor.execute('SELECT * FROM history_events;')
@@ -276,7 +277,7 @@ def _update_history_event_assets_identifiers_to_caip_format(cursor: 'DBCursor') 
                 cursor.execute(insertion_query, entry)
 
 
-@enter_exit_debug_log()
+@progress_step(description='Updating assets in user queried tokens.')
 def _update_assets_in_user_queried_tokens(cursor: 'DBCursor') -> None:
     """ethereum_accounts_details has the column tokens_list as a json list with identifiers
     using the _ceth_ format. Those need to be upgraded to the CAIPS format.
@@ -326,7 +327,7 @@ def _update_assets_in_user_queried_tokens(cursor: 'DBCursor') -> None:
     cursor.execute('DROP TABLE ethereum_accounts_details')
 
 
-@enter_exit_debug_log()
+@progress_step(description='Adding manual current price oracle.')
 def _add_manual_current_price_oracle(cursor: 'DBCursor') -> None:
     """
     If user had current price oracles order specified, adds manual current price as the most
@@ -380,14 +381,14 @@ def _add_defillama_to_oracles(cursor: 'DBCursor', setting_name: Literal['current
     )
 
 
-@enter_exit_debug_log()
+@progress_step(description='Adding defillama to all oracles.')
 def _add_defillama_to_all_oracles(write_cursor: 'DBCursor') -> None:
     """Wrapper around _add_defillama_to_oracles to add it in the two possible oracle lists"""
     _add_defillama_to_oracles(write_cursor, 'current_price_oracles')
     _add_defillama_to_oracles(write_cursor, 'historical_price_oracles')
 
 
-@enter_exit_debug_log()
+@progress_step(description='Resetting decoded events.')
 def _reset_decoded_events(db: 'DBHandler', write_cursor: 'DBCursor') -> None:
     """Reset all non-user customized decoded events"""
     with db.conn.read_ctx() as cursor:
@@ -421,31 +422,17 @@ def upgrade_v34_to_v35(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
     - Add user_notes table
     - Renames the asset identifiers to use CAIPS
     """
-    progress_handler.set_total_steps(13)
-    with db.user_write() as write_cursor:
+    with progress_manager(handler=progress_handler, total_steps=13), db.user_write() as write_cursor:  # noqa: E501
         _clean_amm_swaps(write_cursor)
-        progress_handler.new_step()
         _remove_unused_assets(write_cursor)
-        progress_handler.new_step()
         _rename_assets_identifiers(write_cursor)
-        progress_handler.new_step()
         _update_ignored_assets_identifiers_to_caip_format(write_cursor)
-        progress_handler.new_step()
         _refactor_time_columns(write_cursor)
-        progress_handler.new_step()
         _create_new_tables(write_cursor)
-        progress_handler.new_step()
         _change_xpub_mappings_primary_key(write_cursor=write_cursor, conn=db.conn)
-        progress_handler.new_step()
         _add_blockchain_column_web3_nodes(write_cursor)
-        progress_handler.new_step()
         _update_assets_in_user_queried_tokens(write_cursor)
-        progress_handler.new_step()
         _update_history_event_assets_identifiers_to_caip_format(write_cursor)
-        progress_handler.new_step()
         _add_manual_current_price_oracle(write_cursor)
-        progress_handler.new_step()
         _add_defillama_to_all_oracles(write_cursor=write_cursor)
-        progress_handler.new_step()
         _reset_decoded_events(db=db, write_cursor=write_cursor)
-        progress_handler.new_step()

@@ -8,6 +8,7 @@ from rotkehlchen.db.constants import (
 )
 from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
 from rotkehlchen.types import ChainID, Location
+from rotkehlchen.utils.progress import progress_manager, progress_step
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -18,7 +19,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-@enter_exit_debug_log()
+@progress_step(description='Adding zkSync Lite.')
 def _add_zksynclite(write_cursor: 'DBCursor') -> None:
     """Add zksynclite related table"""
     write_cursor.execute("""
@@ -77,7 +78,7 @@ CREATE TABLE IF NOT EXISTS zksynclite_swaps (
     );""")  # noqa: E501
 
 
-@enter_exit_debug_log()
+@progress_step(description='Adding new supported locations.')
 def _add_new_supported_locations(write_cursor: 'DBCursor') -> None:
     write_cursor.executemany(
         'INSERT OR IGNORE INTO location(location, seq) VALUES (?, ?)',
@@ -85,7 +86,7 @@ def _add_new_supported_locations(write_cursor: 'DBCursor') -> None:
     )
 
 
-@enter_exit_debug_log()
+@progress_step(description='Upgrading evmchains to skip detection.')
 def _upgrade_evmchains_to_skip_detection(write_cursor: 'DBCursor') -> None:
     """We used to have it only in EVM Chain IDs serialized as names.
     Now turning it into all supported chains due to evmlike introduction"""
@@ -106,7 +107,7 @@ def _upgrade_evmchains_to_skip_detection(write_cursor: 'DBCursor') -> None:
     )
 
 
-@enter_exit_debug_log()
+@progress_step(description='Removing yearn events table.')
 def _remove_yearn_events_table(write_cursor: 'DBCursor') -> None:
     """Delete the table with balancer events"""
     write_cursor.execute('DROP TABLE yearn_vaults_events')
@@ -115,7 +116,7 @@ def _remove_yearn_events_table(write_cursor: 'DBCursor') -> None:
     )
 
 
-@enter_exit_debug_log()
+@progress_step(description='Adding calendar tables.')
 def _add_calendar_tables(write_cursor: 'DBCursor') -> None:
     write_cursor.execute("""CREATE TABLE IF NOT EXISTS calendar (
     identifier INTEGER PRIMARY KEY NOT NULL,
@@ -139,7 +140,7 @@ def _add_calendar_tables(write_cursor: 'DBCursor') -> None:
     );""")
 
 
-@enter_exit_debug_log()
+@progress_step(description='Removing manual current price oracle.')
 def _remove_manualcurrent_oracle(write_cursor: 'DBCursor') -> None:
     """Removes the manualcurrent oracle from the current_price_oracles setting"""
     write_cursor.execute('SELECT value FROM settings WHERE name="current_price_oracles"')
@@ -161,7 +162,7 @@ def _remove_manualcurrent_oracle(write_cursor: 'DBCursor') -> None:
     )
 
 
-@enter_exit_debug_log()
+@progress_step(description='Resetting decoded events.')
 def _reset_decoded_events(write_cursor: 'DBCursor') -> None:
     """Reset all decoded evm events except the customized ones."""
     if write_cursor.execute('SELECT COUNT(*) FROM evm_transactions').fetchone()[0] > 0:
@@ -187,7 +188,7 @@ def _reset_decoded_events(write_cursor: 'DBCursor') -> None:
         )
 
 
-@enter_exit_debug_log()
+@progress_step(description='Removing balancer events table.')
 def _remove_balancer_events_table(write_cursor: 'DBCursor') -> None:
     """Delete the table with balancer events"""
     write_cursor.execute('DROP TABLE balancer_events')
@@ -197,6 +198,7 @@ def _remove_balancer_events_table(write_cursor: 'DBCursor') -> None:
     )
 
 
+@progress_step(description='Deleting orphan events.')
 def _delete_orphan_events(write_cursor: 'DBCursor') -> None:
     """
     Delete all the evm events that have a tx_hash that is not present in the db.
@@ -225,23 +227,17 @@ def upgrade_v41_to_v42(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         - Remove yearn v1 and v2 old events
         - remove evm events that link to a transaction not in the database
     """
-    progress_handler.set_total_steps(9)
-    with db.user_write() as write_cursor:
-        _add_zksynclite(write_cursor)
-        progress_handler.new_step()
-        _add_new_supported_locations(write_cursor)
-        progress_handler.new_step()
-        _upgrade_evmchains_to_skip_detection(write_cursor)
-        progress_handler.new_step()
-        _add_calendar_tables(write_cursor)
-        progress_handler.new_step()
-        _remove_manualcurrent_oracle(write_cursor)
-        progress_handler.new_step()
-        _reset_decoded_events(write_cursor)
-        progress_handler.new_step()
-        _remove_balancer_events_table(write_cursor)
-        progress_handler.new_step()
-        _remove_yearn_events_table(write_cursor)
-        progress_handler.new_step()
-        _delete_orphan_events(write_cursor)
-        progress_handler.new_step()
+    steps = [
+        _add_zksynclite,
+        _add_new_supported_locations,
+        _upgrade_evmchains_to_skip_detection,
+        _add_calendar_tables,
+        _remove_manualcurrent_oracle,
+        _reset_decoded_events,
+        _remove_balancer_events_table,
+        _remove_yearn_events_table,
+        _delete_orphan_events,
+    ]
+    with progress_manager(handler=progress_handler, total_steps=len(steps)), db.user_write() as write_cursor:  # noqa: E501
+        for step_fn in steps:
+            step_fn(write_cursor)

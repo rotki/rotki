@@ -8,6 +8,7 @@ from rotkehlchen.db.constants import (
 )
 from rotkehlchen.db.utils import update_table_schema
 from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
+from rotkehlchen.utils.progress import progress_manager, progress_step
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -19,7 +20,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-@enter_exit_debug_log()
+@progress_step(description='Updating nfts table.')
 def _update_nfts_table(write_cursor: 'DBCursor') -> None:
     """
     Update the nft table to remove double quotes due to https://github.com/rotki/rotki/issues/6368
@@ -44,7 +45,7 @@ def _update_nfts_table(write_cursor: 'DBCursor') -> None:
     )
 
 
-@enter_exit_debug_log()
+@progress_step(description='Creating new tables.')
 def _create_new_tables(write_cursor: 'DBCursor') -> None:
     write_cursor.execute("""
     CREATE TABLE IF NOT EXISTS optimism_transactions (
@@ -54,7 +55,7 @@ def _create_new_tables(write_cursor: 'DBCursor') -> None:
     );""")
 
 
-@enter_exit_debug_log()
+@progress_step(description='Reducing history event id size.')
 def _reduce_eventid_size(write_cursor: 'DBCursor') -> None:
     """Reduce the size of history event ids"""
     staking_events = write_cursor.execute(
@@ -82,7 +83,7 @@ def _reduce_eventid_size(write_cursor: 'DBCursor') -> None:
     )
 
 
-@enter_exit_debug_log()
+@progress_step(description='Updating evm transaction data.')
 def _update_evm_transaction_data(write_cursor: 'DBCursor') -> None:
     """Turn the primary key of evm transactions to be a unique integer ID instead
     of composite primary with hash + chain id. Saves lots of DB space.
@@ -226,12 +227,12 @@ def _update_evm_transaction_data(write_cursor: 'DBCursor') -> None:
     )
 
 
-@enter_exit_debug_log()
+@progress_step(description='Adding Arbitrum One location')
 def _add_arbitrum_one_location(write_cursor: 'DBCursor') -> None:
     write_cursor.execute('INSERT OR IGNORE INTO location(location, seq) VALUES ("i", 41);')
 
 
-@enter_exit_debug_log()
+@progress_step(description='Updating rpc nodes table.')
 def _update_rpc_nodes_table(write_cursor: 'DBCursor') -> None:
     table_exists = write_cursor.execute(
         "SELECT COUNT(*) FROM sqlite_master "
@@ -260,7 +261,7 @@ def _update_rpc_nodes_table(write_cursor: 'DBCursor') -> None:
     )
 
 
-@enter_exit_debug_log()
+@progress_step(description='Removing saddle oracle.')
 def _remove_saddle_oracle(write_cursor: 'DBCursor') -> None:
     write_cursor.execute('SELECT value FROM settings WHERE name="current_price_oracles"')
     if (data := write_cursor.fetchone()) is None:
@@ -278,7 +279,7 @@ def _remove_saddle_oracle(write_cursor: 'DBCursor') -> None:
     )
 
 
-@enter_exit_debug_log()
+@progress_step(description='Resetting decoded events.')
 def _reset_decoded_events(write_cursor: 'DBCursor') -> None:
     """
     Reset all decoded evm events except the customized ones for ethereum mainnet,
@@ -318,24 +319,20 @@ def upgrade_v38_to_v39(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         - Reset all decoded events, except the customized ones
         - Add Arbitrum One location and nodes
     """
+    steps = [
+        _update_nfts_table,
+        _reduce_eventid_size,
+        _create_new_tables,
+        _update_evm_transaction_data,
+        _reset_decoded_events,
+        _add_arbitrum_one_location,
+        _remove_saddle_oracle,
+        _update_rpc_nodes_table,
+    ]
     progress_handler.set_total_steps(9)
-    with db.user_write() as write_cursor:
-        _update_nfts_table(write_cursor)
-        progress_handler.new_step()
-        _reduce_eventid_size(write_cursor)
-        progress_handler.new_step()
-        _create_new_tables(write_cursor)
-        progress_handler.new_step()
-        _update_evm_transaction_data(write_cursor)
-        progress_handler.new_step()
-        _reset_decoded_events(write_cursor)
-        progress_handler.new_step()
-        _add_arbitrum_one_location(write_cursor)
-        progress_handler.new_step()
-        _remove_saddle_oracle(write_cursor)
-        progress_handler.new_step()
-        _update_rpc_nodes_table(write_cursor)
-        progress_handler.new_step()
+    with progress_manager(handler=progress_handler, total_steps=len(steps) + 1), db.user_write() as write_cursor:  # noqa: E501
+        for step_fn in steps:
+            step_fn(write_cursor)
 
+    progress_handler.new_step(name='Vacuuming database.')
     db.conn.execute('VACUUM;')
-    progress_handler.new_step()

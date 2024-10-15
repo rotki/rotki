@@ -9,6 +9,7 @@ from rotkehlchen.db.constants import (
 from rotkehlchen.db.utils import update_table_schema
 from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
 from rotkehlchen.types import DEFAULT_ADDRESS_NAME_PRIORITY, Location
+from rotkehlchen.utils.progress import progress_manager, progress_step
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -19,7 +20,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-@enter_exit_debug_log()
+@progress_step(description='Adding cache table.')
 def _add_cache_table(write_cursor: 'DBCursor') -> None:
     """Add a new key-value cache table for this upgrade"""
     write_cursor.execute("""CREATE TABLE IF NOT EXISTS key_value_cache (
@@ -28,7 +29,7 @@ def _add_cache_table(write_cursor: 'DBCursor') -> None:
     );""")
 
 
-@enter_exit_debug_log()
+@progress_step(description='Moving non settings mappings to cache.')
 def _move_non_settings_mappings_to_cache(write_cursor: 'DBCursor') -> None:
     """Move the non-settings value from `settings` to a seperate `key_value_cache` table"""
     settings_moved = (
@@ -70,7 +71,7 @@ def maybe_move_value(write_cursor: 'DBCursor', pattern: str) -> None:
         )
 
 
-@enter_exit_debug_log()
+@progress_step(description='Upgrading external service credentials.')
 def _upgrade_external_service_credentials(write_cursor: 'DBCursor') -> None:
     """Upgrade the external service credentials schema table to add a secret"""
     update_table_schema(
@@ -83,7 +84,7 @@ def _upgrade_external_service_credentials(write_cursor: 'DBCursor') -> None:
     )
 
 
-@enter_exit_debug_log()
+@progress_step(description='Moving non intervals from used query ranges to cache.')
 def _move_non_intervals_from_used_query_ranges_to_cache(write_cursor: 'DBCursor') -> None:
     """Move timestamps that are not ranges from `used_query_ranges` to the `key_value_cache` table"""  # noqa: E501
     value_patterns = {
@@ -107,7 +108,7 @@ def _move_non_intervals_from_used_query_ranges_to_cache(write_cursor: 'DBCursor'
             maybe_move_value(write_cursor, key.format(pattern=pattern))
 
 
-@enter_exit_debug_log()
+@progress_step(description='Adding new supported locations.')
 def _add_new_supported_locations(write_cursor: 'DBCursor') -> None:
     write_cursor.execute(
         'INSERT OR IGNORE INTO location(location, seq) VALUES (?, ?)',
@@ -115,7 +116,7 @@ def _add_new_supported_locations(write_cursor: 'DBCursor') -> None:
     )
 
 
-@enter_exit_debug_log()
+@progress_step(description='Removing covalent api key.')
 def _remove_covalent_api_key(write_cursor: 'DBCursor') -> None:
     write_cursor.execute(
         'DELETE FROM external_service_credentials WHERE name=?',
@@ -123,7 +124,7 @@ def _remove_covalent_api_key(write_cursor: 'DBCursor') -> None:
     )
 
 
-@enter_exit_debug_log()
+@progress_step(description='Removing bad Kraken events.')
 def _remove_bad_kraken_events(write_cursor: 'DBCursor') -> None:
     """Remove events that were created by error in the kraken logic"""
     write_cursor.execute(
@@ -132,7 +133,7 @@ def _remove_bad_kraken_events(write_cursor: 'DBCursor') -> None:
     )
 
 
-@enter_exit_debug_log()
+@progress_step(description='Moving labels to address book.')
 def _move_labels_to_addressbook(write_cursor: 'DBCursor') -> None:
     """Move all the `label` column values from `blockchain_accounts` table to the `name` column
     of the 'address_book` table. If a `name` already exists in the `address_book` table, then
@@ -178,7 +179,7 @@ def _move_labels_to_addressbook(write_cursor: 'DBCursor') -> None:
     write_cursor.execute('ALTER TABLE blockchain_accounts DROP COLUMN label')
 
 
-@enter_exit_debug_log()
+@progress_step(description='Resetting decoded events.')
 def _reset_decoded_events(write_cursor: 'DBCursor') -> None:
     """Reset all decoded evm events except the customized ones."""
     if write_cursor.execute('SELECT COUNT(*) FROM evm_transactions').fetchone()[0] > 0:
@@ -204,7 +205,7 @@ def _reset_decoded_events(write_cursor: 'DBCursor') -> None:
         )
 
 
-@enter_exit_debug_log()
+@progress_step(description='Removing Bittrex data.')
 def _remove_bittrex_data(write_cursor: 'DBCursor') -> None:
     """
     Removes bittrex settings and credentials from the DB.
@@ -237,7 +238,7 @@ def _remove_bittrex_data(write_cursor: 'DBCursor') -> None:
             )
 
 
-@enter_exit_debug_log()
+@progress_step(description='Upgrading eth2 validators.')
 def _upgrade_eth2_validators(write_cursor: 'DBCursor') -> None:
     """
     Upgrade the eth2 validators DB table while preserving eth2 daily stats table.
@@ -269,27 +270,19 @@ def upgrade_v40_to_v41(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         - remove any covalent api key added by the user
         - Move labels to `address_book` and drop its column from `blockchain_accounts`
     """
-    progress_handler.set_total_steps(11)
-    with db.user_write() as write_cursor:
-        _add_cache_table(write_cursor)
-        progress_handler.new_step()
-        _remove_covalent_api_key(write_cursor)
-        progress_handler.new_step()
-        _remove_bittrex_data(write_cursor)
-        progress_handler.new_step()
-        _upgrade_external_service_credentials(write_cursor)
-        progress_handler.new_step()
-        _move_non_settings_mappings_to_cache(write_cursor)
-        progress_handler.new_step()
-        _move_non_intervals_from_used_query_ranges_to_cache(write_cursor)
-        progress_handler.new_step()
-        _add_new_supported_locations(write_cursor)
-        progress_handler.new_step()
-        _move_labels_to_addressbook(write_cursor)
-        progress_handler.new_step()
-        _reset_decoded_events(write_cursor)
-        progress_handler.new_step()
-        _upgrade_eth2_validators(write_cursor)
-        progress_handler.new_step()
-        _remove_bad_kraken_events(write_cursor)
-        progress_handler.new_step()
+    steps = [
+        _add_cache_table,
+        _remove_covalent_api_key,
+        _remove_bittrex_data,
+        _upgrade_external_service_credentials,
+        _move_non_settings_mappings_to_cache,
+        _move_non_intervals_from_used_query_ranges_to_cache,
+        _add_new_supported_locations,
+        _move_labels_to_addressbook,
+        _reset_decoded_events,
+        _upgrade_eth2_validators,
+        _remove_bad_kraken_events,
+    ]
+    with progress_manager(handler=progress_handler, total_steps=len(steps)), db.user_write() as write_cursor:  # noqa: E501
+        for step_fn in steps:
+            step_fn(write_cursor)

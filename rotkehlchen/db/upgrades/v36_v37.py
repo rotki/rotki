@@ -15,6 +15,7 @@ from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
 from rotkehlchen.types import EVM_LOCATIONS, Location, deserialize_evm_tx_hash
+from rotkehlchen.utils.progress import progress_manager, progress_step
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -50,7 +51,7 @@ def _reset_decoded_events(write_cursor: 'DBCursor') -> None:
     )
 
 
-@enter_exit_debug_log()
+@progress_step(description='Moving event locations.')
 def _move_event_locations(write_cursor: 'DBCursor') -> None:
     """
     Create location ethereum and optimism and move the blockchain events to those locations
@@ -85,7 +86,7 @@ def _move_event_locations(write_cursor: 'DBCursor') -> None:
     write_cursor.execute('DELETE FROM history_events_mappings WHERE name="chain_id"')
 
 
-@enter_exit_debug_log()
+@progress_step(description='Updating history events schema.')
 def _update_history_events_schema(write_cursor: 'DBCursor', conn: 'DBConnection') -> None:
     """
     1. Reset all decoded events
@@ -159,7 +160,7 @@ def _update_history_events_schema(write_cursor: 'DBCursor', conn: 'DBConnection'
     write_cursor.switch_foreign_keys('ON')
 
 
-@enter_exit_debug_log()
+@progress_step(description='Creating new tables.')
 def _create_new_tables(write_cursor: 'DBCursor') -> None:
     """Create new tables
 
@@ -188,7 +189,7 @@ def _create_new_tables(write_cursor: 'DBCursor') -> None:
     """)  # noqa: E501
 
 
-@enter_exit_debug_log()
+@progress_step(description='Deleting old tables.')
 def _delete_old_tables(write_cursor: 'DBCursor') -> None:
     """Deletes old tables that are now unused along with related data
     """
@@ -199,7 +200,7 @@ def _delete_old_tables(write_cursor: 'DBCursor') -> None:
     )
 
 
-@enter_exit_debug_log()
+@progress_step(description='Updating ens mappings schema.')
 def _update_ens_mappings_schema(write_cursor: 'DBCursor') -> None:
     update_table_schema(
         write_cursor=write_cursor,
@@ -213,7 +214,7 @@ def _update_ens_mappings_schema(write_cursor: 'DBCursor') -> None:
     )
 
 
-@enter_exit_debug_log()
+@progress_step(description='Fixing Kraken events.')
 def _fix_kraken_events(write_cursor: 'DBCursor') -> None:
     """
     Fix kraken events with negative amounts related to:
@@ -335,7 +336,7 @@ def _fix_kraken_events(write_cursor: 'DBCursor') -> None:
         )
 
 
-@enter_exit_debug_log()
+@progress_step(description='Trimming daily stats.')
 def _trim_daily_stats(write_cursor: 'DBCursor') -> None:
     """Decreases the amount of data in the daily stats table"""
     update_table_schema(
@@ -351,7 +352,7 @@ def _trim_daily_stats(write_cursor: 'DBCursor') -> None:
     )
 
 
-@enter_exit_debug_log()
+@progress_step(description='Removing FTX data.')
 def _remove_ftx_data(write_cursor: 'DBCursor') -> None:
     """Removes FTX-related settings from the DB"""
     write_cursor.execute(
@@ -382,7 +383,7 @@ def _remove_ftx_data(write_cursor: 'DBCursor') -> None:
         )
 
 
-@enter_exit_debug_log()
+@progress_step(description='Adjusting user settings.')
 def _adjust_user_settings(write_cursor: 'DBCursor') -> None:
     """Adjust user settings, renaming a key that misbehaves in frontend transformation"""
     write_cursor.execute(
@@ -396,22 +397,13 @@ def upgrade_v36_to_v37(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         - Replace null history event subtype
     """
     progress_handler.set_total_steps(9)
-    with db.user_write() as write_cursor:
+    with progress_manager(handler=progress_handler, total_steps=9), db.user_write() as write_cursor:  # noqa: E501
         _move_event_locations(write_cursor)
-        progress_handler.new_step()
         _create_new_tables(write_cursor)
-        progress_handler.new_step()
         _update_history_events_schema(write_cursor, db.conn)
-        progress_handler.new_step()
         _update_ens_mappings_schema(write_cursor)
-        progress_handler.new_step()
         _delete_old_tables(write_cursor)
-        progress_handler.new_step()
         _fix_kraken_events(write_cursor)
-        progress_handler.new_step()
         _trim_daily_stats(write_cursor)
-        progress_handler.new_step()
         _remove_ftx_data(write_cursor)
-        progress_handler.new_step()
         _adjust_user_settings(write_cursor)
-        progress_handler.new_step()

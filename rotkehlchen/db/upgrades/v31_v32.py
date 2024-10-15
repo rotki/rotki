@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING
 
 from rotkehlchen.db.constants import BINANCE_MARKETS_KEY
 from rotkehlchen.db.utils import update_table_schema
+from rotkehlchen.utils.progress import progress_manager, progress_step
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -10,6 +11,7 @@ if TYPE_CHECKING:
     from rotkehlchen.db.upgrade_manager import DBUpgradeProgressHandler
 
 
+@progress_step(description='Updating history_events table.')
 def _upgrade_history_events(cursor: 'DBCursor') -> None:
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS history_events_copy (
@@ -49,6 +51,7 @@ def _upgrade_history_events(cursor: 'DBCursor') -> None:
     )
 
 
+@progress_step(description='Removing gitcoin.')
 def _remove_gitcoin(cursor: 'DBCursor') -> None:
     cursor.execute('DELETE from ledger_actions WHERE identifier IN (SELECT parent_id FROM ledger_actions_gitcoin_data)')  # noqa: E501
     cursor.execute('DELETE from used_query_ranges WHERE name LIKE "gitcoingrants_%"')
@@ -57,6 +60,7 @@ def _remove_gitcoin(cursor: 'DBCursor') -> None:
     cursor.execute('DROP TABLE IF exists gitcoin_tx_type')
 
 
+@progress_step(description='Adding new tables.')
 def _add_new_tables(cursor: 'DBCursor') -> None:
     cursor.execute('INSERT OR IGNORE INTO location(location, seq) VALUES ("d", 36)')
     cursor.execute("""
@@ -104,6 +108,7 @@ def _add_new_tables(cursor: 'DBCursor') -> None:
 """)
 
 
+@progress_step(description='Refactoring manual balance id.')
 def _refactor_manual_balance_id(cursor: 'DBCursor') -> None:
     update_table_schema(
         write_cursor=cursor,
@@ -120,11 +125,13 @@ def _refactor_manual_balance_id(cursor: 'DBCursor') -> None:
     )
 
 
+@progress_step(description='Updating fee for existing trades.')
 def _update_fee_for_existing_trades(cursor: 'DBCursor') -> None:
     cursor.execute('UPDATE trades SET fee = NULL WHERE fee_currency IS NULL')
     cursor.execute('UPDATE trades SET fee_currency = NULL WHERE fee IS NULL')
 
 
+@progress_step(description='Updating Kraken history events.')
 def _update_history_entries_from_kraken(cursor: 'DBCursor') -> None:
     """The logic for kraken was adding additional entries for trades when fee + kfee was
     being used. This function makes the state of the database consistent with the upgraded
@@ -163,12 +170,14 @@ def _update_history_entries_from_kraken(cursor: 'DBCursor') -> None:
         )
 
 
+@progress_step(description='Updating settings name for selected Binance markets.')
 def _update_settings_name_for_selected_binance_markets(cursor: 'DBCursor') -> None:
     cursor.execute("""
     UPDATE user_credentials_mappings SET setting_name = ? WHERE setting_name = "PAIRS"
     """, (BINANCE_MARKETS_KEY,))
 
 
+@progress_step(description='Updating manual balances tags.')
 def _update_manual_balances_tags(cursor_fetch: 'DBCursor', cursor_update: 'DBCursor') -> None:
     manual_balances = cursor_fetch.execute('SELECT id, label FROM manually_tracked_balances')
     for balance_id, label in manual_balances:
@@ -188,21 +197,16 @@ def upgrade_v31_to_v32(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
 
     -Sets fee to null for existing trades if fee_currency is missing.
     """
-    progress_handler.set_total_steps(8)
-    with db.user_write() as write_cursor, db.conn.read_ctx() as read_cursor:
+    with (
+        progress_manager(handler=progress_handler, total_steps=8),
+        db.user_write() as write_cursor,
+        db.conn.read_ctx() as read_cursor,
+    ):
         _update_history_entries_from_kraken(write_cursor)
-        progress_handler.new_step()
         _upgrade_history_events(write_cursor)
-        progress_handler.new_step()
         _remove_gitcoin(write_cursor)
-        progress_handler.new_step()
         _add_new_tables(write_cursor)
-        progress_handler.new_step()
         _refactor_manual_balance_id(write_cursor)
-        progress_handler.new_step()
         _update_fee_for_existing_trades(write_cursor)
-        progress_handler.new_step()
         _update_settings_name_for_selected_binance_markets(write_cursor)
-        progress_handler.new_step()
         _update_manual_balances_tags(cursor_fetch=read_cursor, cursor_update=write_cursor)
-        progress_handler.new_step()

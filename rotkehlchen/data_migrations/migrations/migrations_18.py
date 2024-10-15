@@ -18,9 +18,10 @@ from rotkehlchen.globaldb.cache import globaldb_set_general_cache_values
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.globaldb.utils import set_token_spam_protocol
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import SPAM_PROTOCOL, CacheType, Location
 from rotkehlchen.utils.misc import address_to_bytes32
+from rotkehlchen.utils.progress import progress_manager, progress_step
 
 if TYPE_CHECKING:
     from rotkehlchen.data_migrations.progress import MigrationProgressHandler
@@ -30,7 +31,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-@enter_exit_debug_log()
+@progress_step(description='Cleaning up extra The Graph transactions.')
 def cleanup_extra_thegraph_txs(rotki: 'Rotkehlchen') -> None:
     dbevents = DBHistoryEvents(rotki.data.db)
     with rotki.data.db.conn.read_ctx() as cursor:
@@ -129,7 +130,7 @@ AND ((
     rotki.data.db.conn.execute('VACUUM;')  # also since this cleans up a lot of space vacuum
 
 
-@enter_exit_debug_log()
+@progress_step(description='Whitelisting monerium assets.')
 def whitelist_monerium_assets(rotki: 'Rotkehlchen') -> None:
     """Remove from the spam assets all the monerium tokens in
     gnosis and polygon
@@ -170,7 +171,7 @@ def whitelist_monerium_assets(rotki: 'Rotkehlchen') -> None:
             )
 
 
-@enter_exit_debug_log()
+@progress_step(description='Removing spam transactions.')
 def remove_spam_detection_on_transactions(rotki: 'Rotkehlchen') -> None:
     """We will remove any marked transaction as spam from the database so they can be decoded
     in case something went wrong with the autodetection of spam.
@@ -183,7 +184,7 @@ def remove_spam_detection_on_transactions(rotki: 'Rotkehlchen') -> None:
         )
 
 
-@enter_exit_debug_log()
+@progress_step(description='Removing manual current price oracle.')
 def _remove_manualcurrent_oracle(rotki: 'Rotkehlchen') -> None:
     """Removes the manualcurrent oracle from the current_price_oracles setting
 
@@ -224,12 +225,12 @@ def data_migration_18(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgress
     for delegation to arbitrum
     - Removes monerium tokens from spam
     """
-    progress_handler.set_total_steps(4)
-    cleanup_extra_thegraph_txs(rotki)
-    progress_handler.new_step()
-    whitelist_monerium_assets(rotki)
-    progress_handler.new_step()
-    remove_spam_detection_on_transactions(rotki)
-    progress_handler.new_step()
-    _remove_manualcurrent_oracle(rotki)
-    progress_handler.new_step()
+    steps = [
+        cleanup_extra_thegraph_txs,
+        whitelist_monerium_assets,
+        remove_spam_detection_on_transactions,
+        _remove_manualcurrent_oracle,
+    ]
+    with progress_manager(handler=progress_handler, total_steps=len(steps)):
+        for step_fn in steps:
+            step_fn(rotki)

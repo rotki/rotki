@@ -5,6 +5,7 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.types import deserialize_evm_tx_hash
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 from rotkehlchen.utils.misc import is_valid_ethereum_tx_hash
+from rotkehlchen.utils.progress import progress_manager, progress_step
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -21,6 +22,7 @@ def _deserialize_event_identifier(val: str) -> bytes:
     return val.encode()
 
 
+@progress_step(description='Refactoring xpubs and xpub mappings.')
 def _refactor_xpubs_and_xpub_mappings(cursor: 'DBCursor') -> None:
     # Keep a copy of the xpub_mappings because it will get deleted once
     # xpubs table is dropped.
@@ -72,6 +74,7 @@ def _refactor_xpubs_and_xpub_mappings(cursor: 'DBCursor') -> None:
     cursor.execute('ALTER TABLE xpub_mappings_copy RENAME TO xpub_mappings;')
 
 
+@progress_step(description='Creating new tables.')
 def _create_new_tables(cursor: 'DBCursor') -> None:
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS address_book (
@@ -83,6 +86,7 @@ def _create_new_tables(cursor: 'DBCursor') -> None:
 """)
 
 
+@progress_step(description='Creating web3_nodes table.')
 def _create_nodes(cursor: 'DBCursor') -> None:
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS web3_nodes(
@@ -96,6 +100,7 @@ def _create_nodes(cursor: 'DBCursor') -> None:
 """)
 
 
+@progress_step(description='Updating schemas to store tx hashes and event ids as bytes.')
 def _force_bytes_for_tx_hashes(cursor: 'DBCursor') -> None:
     """This DB upgrade function:
     - Updates the `tx_hash` column schema in aave_events, adex_events, balancer_events, amm_swaps,
@@ -480,6 +485,7 @@ def _force_bytes_for_tx_hashes(cursor: 'DBCursor') -> None:
     )
 
 
+@progress_step(description='Refactoring blockchain account labels.')
 def _refactor_blockchain_account_labels(cursor: 'DBCursor') -> None:
     cursor.execute('UPDATE blockchain_accounts SET label = NULL WHERE label = ""')
 
@@ -490,15 +496,13 @@ def upgrade_v32_to_v33(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
     - Add blockchain column to `xpubs` table.
     - Change tx_hash for tables to BLOB type & history events event_identifier column to BLOB type.
     """
-    progress_handler.set_total_steps(5)
-    with db.user_write() as cursor:
-        _refactor_xpubs_and_xpub_mappings(cursor)
-        progress_handler.new_step()
-        _create_new_tables(cursor)
-        progress_handler.new_step()
-        _refactor_blockchain_account_labels(cursor)
-        progress_handler.new_step()
-        _create_nodes(cursor)
-        progress_handler.new_step()
-        _force_bytes_for_tx_hashes(cursor)
-        progress_handler.new_step()
+    steps = [
+        _refactor_xpubs_and_xpub_mappings,
+        _create_new_tables,
+        _refactor_blockchain_account_labels,
+        _create_nodes,
+        _force_bytes_for_tx_hashes,
+    ]
+    with progress_manager(handler=progress_handler, total_steps=len(steps)), db.user_write() as cursor:  # noqa: E501
+        for step_fn in steps:
+            step_fn(cursor)

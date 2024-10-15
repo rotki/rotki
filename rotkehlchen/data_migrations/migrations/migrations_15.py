@@ -26,6 +26,7 @@ def data_migration_15(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgress
 
     Redecodes the distinct Add liquidity events for each Hop LP token."""
     progress_handler.set_total_steps(1)
+    progress_handler.new_step(name='Redecoding add liquidity events for Hop LP tokens.')
     # find one Add liquidity event for each Hop LP token
     with rotki.data.db.conn.read_ctx() as cursor:
         event_data = [
@@ -71,5 +72,3 @@ def data_migration_15(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgress
                 f'while doing data migration 15',
             )
             continue
-
-    progress_handler.new_step()

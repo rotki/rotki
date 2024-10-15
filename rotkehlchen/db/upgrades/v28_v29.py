@@ -66,7 +66,7 @@ def _upgrade_existing_tables(
     cursor.execute('DROP TABLE IF EXISTS blockchain_accounts;')
     cursor.execute('DROP TABLE IF EXISTS xpub_mappings;')
     cursor.execute('DROP TABLE IF EXISTS ethereum_transactions;')
-    progress_handler.new_step()
+    progress_handler.new_step(name='Creating blockchain_accounts table.')
     # create the new tables and insert all values into it
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS blockchain_accounts (
@@ -80,7 +80,7 @@ def _upgrade_existing_tables(
         'INSERT INTO blockchain_accounts(blockchain, account, label) VALUES(?, ?, ?);',
         accounts_data,
     )
-    progress_handler.new_step()
+    progress_handler.new_step(name='Creating xpub_mappings table.')
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS xpub_mappings (
     address TEXT NOT NULL,
@@ -99,7 +99,7 @@ def _upgrade_existing_tables(
         'VALUES(?, ?, ?, ?, ?);',
         xpub_mappings_data,
     )
-    progress_handler.new_step()
+    progress_handler.new_step(name='Creating ethereum_transactions table.')
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS ethereum_transactions (
     tx_hash BLOB NOT NULL PRIMARY KEY,
@@ -131,13 +131,13 @@ def upgrade_v28_to_v29(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
     """
     progress_handler.set_total_steps(6)
     with db.user_write() as cursor:
+        progress_handler.new_step(name='Updating existing tables.')
         _upgrade_existing_tables(cursor=cursor, progress_handler=progress_handler)
-        progress_handler.new_step()
+        progress_handler.new_step(name='Creating new tables.')
         _create_new_tables(cursor)
-        progress_handler.new_step()
 
+        progress_handler.new_step(name='Renaming uniswap_events to amm_events.')
         # Rename uniswap_events table. Drop amm_events first if it was created at initialization
         # of the db handler
         cursor.execute('DROP TABLE IF EXISTS amm_events;')
         cursor.execute('ALTER TABLE uniswap_events RENAME TO amm_events;')
-        progress_handler.new_step()

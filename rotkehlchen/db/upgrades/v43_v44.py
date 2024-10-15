@@ -12,6 +12,7 @@ from rotkehlchen.db.constants import (
 from rotkehlchen.db.upgrades.utils import fix_address_book_duplications
 from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
+from rotkehlchen.utils.progress import progress_manager, progress_step
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -24,7 +25,7 @@ log = RotkehlchenLogsAdapter(logger)
 NFT_DIRECTIVE: Final = '_nft_'
 
 
-@enter_exit_debug_log()
+@progress_step(description='Updating NFT table schema.')
 def _update_nft_table(write_cursor: 'DBCursor') -> None:
     write_cursor.execute("""
     CREATE TABLE IF NOT EXISTS nfts_new (
@@ -82,14 +83,14 @@ def _update_nft_table(write_cursor: 'DBCursor') -> None:
     write_cursor.execute('ALTER TABLE nfts_new RENAME TO nfts')
 
 
-@enter_exit_debug_log()
+@progress_step(description='Removing log column "removed".')
 def _remove_log_removed_column(write_cursor: 'DBCursor') -> None:
     write_cursor.execute(
         'ALTER TABLE evmtx_receipt_logs DROP COLUMN removed;',
     )
 
 
-@enter_exit_debug_log()
+@progress_step(description='Upgrading account tags.')
 def _upgrade_account_tags(write_cursor: 'DBCursor') -> None:
     """Upgrade the object_reference references in tag_mappings to not
     depend on the supported blockchain since the format has changed in 1.35
@@ -115,13 +116,13 @@ def _upgrade_account_tags(write_cursor: 'DBCursor') -> None:
     )
 
 
-@enter_exit_debug_log()
+@progress_step(description='Updating addressbook schema.')
 def _addressbook_schema_update(write_cursor: 'DBCursor') -> None:
     """Make the blockchain column to a non nullable column for address_book"""
     fix_address_book_duplications(write_cursor=write_cursor)
 
 
-@enter_exit_debug_log()
+@progress_step(description='Adding Uniswap to historical oracles.')
 def _add_uniswap_to_historical_oracles(cursor: 'DBCursor') -> None:
     """Add uniswapv2 and uniswapv3 to the list of historical price oracles."""
     cursor.execute('SELECT value FROM settings WHERE name=?', ('historical_price_oracles',))
@@ -145,13 +146,13 @@ def _add_uniswap_to_historical_oracles(cursor: 'DBCursor') -> None:
     )
 
 
-@enter_exit_debug_log()
+@progress_step(description='Adding exited_timestamp column to the eth2_validators table.')
 def _add_exited_timestamp(cursor: 'DBCursor') -> None:
     """Add exited_timestamp column to the eth2_validators table"""
     cursor.execute('ALTER TABLE eth2_validators ADD COLUMN exited_timestamp INTEGER')
 
 
-@enter_exit_debug_log()
+@progress_step(description='Adding new cowswap_orders and gnosispay_data tables.')
 def _add_new_tables(write_cursor: 'DBCursor') -> None:
     write_cursor.execute("""
     CREATE TABLE IF NOT EXISTS cowswap_orders (
@@ -178,12 +179,12 @@ def _add_new_tables(write_cursor: 'DBCursor') -> None:
     );""")
 
 
-@enter_exit_debug_log()
+@progress_step(description='Removing zksynclite used query ranges.')
 def _remove_zksynclite_used_query_ranges(write_cursor: 'DBCursor') -> None:
     write_cursor.execute('DELETE FROM used_query_ranges WHERE name LIKE "zksynclitetxs_%"')
 
 
-@enter_exit_debug_log()
+@progress_step(description='Reseting decoded events.')
 def _reset_decoded_events(write_cursor: 'DBCursor') -> None:
     """Reset all decoded evm events except for the customized ones and those in zksync lite."""
     if write_cursor.execute('SELECT COUNT(*) FROM evm_transactions').fetchone()[0] > 0:
@@ -222,26 +223,20 @@ def upgrade_v43_to_v44(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
     - add new tables: cowswap orders and gnosis pay data
     - reset decoded evm events except for zksync lite and custom ones
     """
-    progress_handler.set_total_steps(10)
-    with db.user_write() as write_cursor:
-        _update_nft_table(write_cursor)
-        progress_handler.new_step()
-        _remove_log_removed_column(write_cursor)
-        progress_handler.new_step()
-        _upgrade_account_tags(write_cursor)
-        progress_handler.new_step()
-        _addressbook_schema_update(write_cursor)
-        progress_handler.new_step()
-        _add_uniswap_to_historical_oracles(write_cursor)
-        progress_handler.new_step()
-        _add_exited_timestamp(write_cursor)
-        progress_handler.new_step()
-        _add_new_tables(write_cursor)
-        progress_handler.new_step()
-        _remove_zksynclite_used_query_ranges(write_cursor)
-        progress_handler.new_step()
-        _reset_decoded_events(write_cursor)
-        progress_handler.new_step()
+    steps = [
+        _update_nft_table,
+        _remove_log_removed_column,
+        _upgrade_account_tags,
+        _addressbook_schema_update,
+        _add_uniswap_to_historical_oracles,
+        _add_exited_timestamp,
+        _add_new_tables,
+        _remove_zksynclite_used_query_ranges,
+        _reset_decoded_events,
+    ]
+    with progress_manager(handler=progress_handler, total_steps=len(steps) + 1), db.user_write() as write_cursor:  # noqa: E501
+        for step_fn in steps:
+            step_fn(write_cursor)
 
+    progress_handler.new_step(name='Vacuuming database.')
     db.conn.execute('VACUUM;')
-    progress_handler.new_step()

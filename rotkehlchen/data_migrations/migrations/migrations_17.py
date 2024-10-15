@@ -19,6 +19,7 @@ def data_migration_17(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgress
     Add 4 new locations to the DB
     """
     progress_handler.set_total_steps(1)
+    progress_handler.new_step(name='Adding new locations.')
     with rotki.data.db.conn.write_ctx() as write_cursor:
         write_cursor.executescript("""
         /* Bitcoin */
@@ -30,5 +31,3 @@ def data_migration_17(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgress
         /* Kusama */
         INSERT OR IGNORE INTO location(location, seq) VALUES ('t', 52);
         """)
-
-    progress_handler.new_step()

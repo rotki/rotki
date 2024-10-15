@@ -19,9 +19,8 @@ def data_migration_16(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgress
     Removes the underlying token entries from the database that have themselves
     as the underlying token."""
     progress_handler.set_total_steps(1)
+    progress_handler.new_step(name='Removing underlying tokens with themselves as the underlying token.')  # noqa: E501
     with GlobalDBHandler().conn.write_ctx() as write_cursor:
         write_cursor.execute(
             'DELETE FROM underlying_tokens_list WHERE identifier=parent_token_entry;',
         )
-
-    progress_handler.new_step()
