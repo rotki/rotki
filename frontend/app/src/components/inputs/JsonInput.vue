@@ -1,39 +1,40 @@
 <script setup lang="ts">
-import { type Content, type JSONContent, JSONEditor, type TextContent } from 'vanilla-jsoneditor';
 import { debounce } from 'lodash-es';
+import { type Content, type JSONContent, type JsonEditor, type TextContent, createJSONEditor } from 'vanilla-jsoneditor';
 
-const props = withDefaults(
-  defineProps<{
-    label?: string;
-    modelValue: Record<string, any>;
-  }>(),
-  {
-    label: '',
-  },
-);
+const modelValue = defineModel<Record<string, any>>({ required: true });
 
-const emit = defineEmits<{
-  (e: 'update:model-value', newValue: any): void;
-}>();
+withDefaults(defineProps<{
+  label?: string;
+}>(), {
+  label: '',
+});
 
-const jsonEditorContainer = ref();
-const jsonEditor = ref<JSONEditor | null>(null);
+const jsonEditor = ref<JsonEditor>();
+const jsonEditorContainer = useTemplateRef<HTMLDivElement>('jsonEditorContainer');
+
+watch(modelValue, (newValue: any) => {
+  const jsonEditorVal = get(jsonEditor);
+  if (jsonEditorVal)
+    jsonEditorVal.set([undefined, ''].includes(newValue) ? { text: '' } : { json: newValue });
+}, {
+  deep: true,
+});
 
 onMounted(() => {
   const onChange = debounce((updatedContent: Content) => {
-    emit(
-      'update:model-value',
-      (updatedContent as TextContent).text === undefined
-        ? (updatedContent as JSONContent).json
-        : (updatedContent as TextContent).text,
-    );
+    set(modelValue, (updatedContent as TextContent).text === undefined
+      ? (updatedContent as JSONContent).json
+      : (updatedContent as TextContent).text);
   }, 100);
 
-  const newJsonEditor = new JSONEditor({
+  assert(isDefined(jsonEditorContainer));
+
+  const newJsonEditor = createJSONEditor({
     target: get(jsonEditorContainer),
     props: {
       content: {
-        json: props.modelValue,
+        json: get(modelValue),
       },
       navigationBar: false,
       onChange,
@@ -43,23 +44,8 @@ onMounted(() => {
   set(jsonEditor, newJsonEditor);
 });
 
-watch(
-  props.modelValue,
-  (newValue: any) => {
-    const jsonEditorVal = get(jsonEditor);
-    if (jsonEditorVal)
-      jsonEditorVal.set([undefined, ''].includes(newValue) ? { text: '' } : { json: newValue });
-  },
-  {
-    deep: true,
-  },
-);
-
 onBeforeUnmount(() => {
-  const jsonEditorVal = get(jsonEditor);
-
-  if (jsonEditorVal)
-    jsonEditorVal.destroy();
+  get(jsonEditor)?.destroy();
 });
 </script>
 

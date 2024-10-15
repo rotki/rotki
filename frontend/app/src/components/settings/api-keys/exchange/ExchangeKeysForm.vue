@@ -18,7 +18,7 @@ const editKeys = ref(false);
 
 const name = computed({
   get() {
-    return props.modelValue.name ?? undefined;
+    return props.modelValue.name ?? '';
   },
   set(value?: string) {
     updateModelValue({ ...props.modelValue, newName: value ?? null });
@@ -27,7 +27,7 @@ const name = computed({
 
 const apiKey = computed({
   get() {
-    return props.modelValue.apiKey ?? undefined;
+    return props.modelValue.apiKey ?? '';
   },
   set(value?: string) {
     updateModelValue({ ...props.modelValue, apiKey: value ?? null });
@@ -36,7 +36,7 @@ const apiKey = computed({
 
 const apiSecret = computed({
   get() {
-    return props.modelValue.apiSecret ?? undefined;
+    return props.modelValue.apiSecret ?? '';
   },
   set(value?: string) {
     updateModelValue({ ...props.modelValue, apiSecret: value ?? null });
@@ -45,7 +45,7 @@ const apiSecret = computed({
 
 const passphrase = computed({
   get() {
-    return props.modelValue.passphrase ?? undefined;
+    return props.modelValue.passphrase ?? '';
   },
   set(value?: string) {
     updateModelValue({ ...props.modelValue, passphrase: value ?? null });
