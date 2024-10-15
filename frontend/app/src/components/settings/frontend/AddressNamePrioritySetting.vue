@@ -51,7 +51,7 @@ const { t } = useI18n();
     <PrioritizedList
       :model-value="currentAddressNamePriorities"
       :all-items="availableCurrentAddressNamePriorities()"
-      :item-data-name="t('address_name_priority_setting.data_name')"
+      :item-data-name="t('frontend_settings.alias_names.address_name_priority_setting.data_name')"
       :disable-add="true"
       :disable-delete="true"
       :status="{ error, success }"
