@@ -22,3 +22,11 @@ DEFAULT_CURRENT_PRICE_ORACLES_ORDER = (
     CurrentPriceOracle.UNISWAPV2,
     CurrentPriceOracle.UNISWAPV3,
 )
+
+SETTABLE_CURRENT_PRICE_ORACLES = {  # only these oracles should be configurable and settable via the api  # noqa: E501
+    CurrentPriceOracle.COINGECKO,
+    CurrentPriceOracle.DEFILLAMA,
+    CurrentPriceOracle.CRYPTOCOMPARE,
+    CurrentPriceOracle.UNISWAPV2,
+    CurrentPriceOracle.UNISWAPV3,
+}
