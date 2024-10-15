@@ -1,21 +1,24 @@
 <script setup lang="ts">
 import type { CurrentDbUpgradeProgress } from '@/types/login';
 
-const props = withDefaults(
-  defineProps<{
-    progress: CurrentDbUpgradeProgress | null;
-    dataMigration?: boolean;
-  }>(),
-  {
-    dataMigration: false,
-  },
-);
+const props = withDefaults(defineProps<{
+  progress: CurrentDbUpgradeProgress | null;
+  dataMigration?: boolean;
+}>(), {
+  dataMigration: false,
+});
 
 const { t } = useI18n();
 
 const { progress } = toRefs(props);
 
-const multipleUpgrades = computed(() => {
+const [DefineProgress, ReuseProgress] = createReusableTemplate<{
+  updateProgress: CurrentDbUpgradeProgress;
+  warning: string;
+  current: string;
+}>();
+
+const multipleUpgrades = computed<boolean>(() => {
   if (isDefined(progress)) {
     const { toVersion, fromVersion } = get(progress);
     return toVersion - fromVersion > 1;
@@ -54,32 +57,34 @@ const multipleUpgrades = computed(() => {
         </div>
       </div>
       <div class="text-body-1">
-        <template v-if="!dataMigration">
+        <DefineProgress #default="{ updateProgress, warning, current }">
           <div>
-            {{ t('login.upgrading_db.warning', { ...progress }) }}
+            {{ warning }}
           </div>
           <RuiDivider class="my-2" />
           <!-- hide the progress message when the reset signal is received from the backend -->
-          <div v-if="progress.totalSteps > 0">
-            {{ t('login.upgrading_db.current', { ...progress }) }}
-          </div>
-        </template>
-        <template v-else>
-          <div>
-            {{ t('login.migrating_data.warning', { ...progress }) }}
-          </div>
-          <RuiDivider class="my-2" />
-          <!-- hide the progress message when the reset signal is received from the backend -->
-          <div v-if="progress.totalSteps > 0">
-            {{ t('login.migrating_data.current', { ...progress }) }}
+          <div v-if="updateProgress.totalSteps > 0">
+            {{ current }}
           </div>
           <ul
-            v-if="progress.description"
-            class="-ml-2"
+            v-if="updateProgress.description"
+            class="-ml-2 mt-2 list-disc"
           >
-            <li>{{ progress.description }}</li>
+            <li>{{ updateProgress.description }}</li>
           </ul>
-        </template>
+        </DefineProgress>
+        <ReuseProgress
+          v-if="!dataMigration"
+          :update-progress="progress"
+          :current="t('login.upgrading_db.current', { ...progress })"
+          :warning="t('login.upgrading_db.warning', { ...progress })"
+        />
+        <ReuseProgress
+          v-else
+          :update-progress="progress"
+          :current="t('login.migrating_data.current', { ...progress })"
+          :warning="t('login.migrating_data.warning', { ...progress })"
+        />
       </div>
     </div>
   </RuiCard>
