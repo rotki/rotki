@@ -525,6 +525,11 @@ def test_migration_18(rotkehlchen_api_server: 'APIServer') -> None:
             ('current_price_oracles', '["coingecko", "cryptocompare", "manualcurrent", "defillama"]'),  # noqa: E501
         )
 
+    with GlobalDBHandler().conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT value FROM unique_cache WHERE key=?', ('YEARN_VAULTS',),
+        ).fetchone()[0] == '179'
+
     approval_1 = deserialize_evm_tx_hash('0xbb8280cc9ca9de1d33e573a4381d88525a214fc45f84415129face03125ba22f')  # noqa: E501
     approval_2 = deserialize_evm_tx_hash('0x5dbe2be40c2ee60b33c9b9b183fc3f1290352787540cbb2e87e131e6fb1a8865')  # noqa: E501
     vested_delegation_tol2 = deserialize_evm_tx_hash('0x48321bb00e5c5b67f080991864606dbc493051d20712735a579d7ae31eca3d78')  # noqa: E501
@@ -637,6 +642,11 @@ def test_migration_18(rotkehlchen_api_server: 'APIServer') -> None:
         assert GlobalDBHandler.get_protocol_for_asset(token.identifier) != SPAM_PROTOCOL
 
     assert result_kept_txs == set(kept_txs + [spam_hash])  # after the migration see all irrelevant transactions are deleted  # noqa: E501
+
+    with GlobalDBHandler().conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT value FROM unique_cache WHERE key=?', ('YEARN_VAULTS',),
+        ).fetchall() == []
 
 
 @pytest.mark.parametrize('perform_upgrades_at_unlock', [False])

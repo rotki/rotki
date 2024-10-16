@@ -221,4 +221,9 @@ def data_migration_18(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgress
                 ),
             )
 
+    @progress_step(description='Cleaning up Yearn cache.')
+    def _remove_yearn_cache(rotki: 'Rotkehlchen') -> None:
+        with GlobalDBHandler().conn.write_ctx() as write_cursor:
+            write_cursor.execute('DELETE FROM unique_cache WHERE key=?', ('YEARN_VAULTS',))
+
     perform_userdb_migration_steps(rotki, progress_handler)
