@@ -7,17 +7,12 @@ from unittest.mock import patch
 
 import pytest
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.assets.resolver import AssetResolver
-from rotkehlchen.assets.utils import get_or_create_evm_token
-from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
-from rotkehlchen.chain.evm.decoding.hop.constants import CPT_HOP
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.scroll.constants import SCROLL_ETHERSCAN_NODE
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_PAX, A_USDT
-from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.data_migrations.constants import LAST_DATA_MIGRATION
 from rotkehlchen.data_migrations.manager import (
     MIGRATION_LIST,
@@ -26,13 +21,10 @@ from rotkehlchen.data_migrations.manager import (
 )
 from rotkehlchen.db.constants import UpdateType
 from rotkehlchen.db.dbhandler import DBHandler
-from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.cache import globaldb_delete_general_cache_values
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.globaldb.utils import set_token_spam_protocol
-from rotkehlchen.history.events.structures.evm_event import EvmEvent
-from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.icons import IconManager
 from rotkehlchen.tests.utils.blockchain import setup_evm_addresses_activity_mock
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
@@ -42,19 +34,15 @@ from rotkehlchen.types import (
     SPAM_PROTOCOL,
     SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE,
     CacheType,
-    ChainID,
     ChecksumEvmAddress,
-    EvmTokenKind,
     Location,
     SupportedBlockchain,
-    TimestampMS,
     TradeType,
     deserialize_evm_tx_hash,
 )
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
-    from rotkehlchen.inquirer import Inquirer
     from rotkehlchen.tests.fixtures.websockets import WebsocketReader
 
 
@@ -515,85 +503,6 @@ def test_migration_14(
     )
 
 
-@pytest.mark.vcr(filter_query_parameters=['apikey'])
-@pytest.mark.parametrize('have_decoders', [True])
-@pytest.mark.parametrize('data_migration_version', [14])
-@pytest.mark.parametrize('perform_upgrades_at_unlock', [True])
-@pytest.mark.parametrize('should_mock_current_price_queries', [False])
-@pytest.mark.parametrize('base_accounts', [[
-    '0xAE70bC0Cbe03ceF2a14eCA507a2863441C6Df7A1',
-    '0xC960338B529e0353F570f62093Fd362B8FB55f0B',
-]])
-def test_migration_15(rotkehlchen_api_server: 'APIServer', inquirer: 'Inquirer') -> None:
-    """Test migration 15
-
-    - Test that Hop LP tokens' protocol is set after the migration."""
-    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    base_manager = rotki.chains_aggregator.get_chain_manager(SupportedBlockchain.BASE)
-    inquirer.inject_evm_managers([(ChainID.BASE, base_manager)])
-
-    # check Hop LP token price before migration
-    test_hop_lp_1 = get_or_create_evm_token(
-        userdb=rotki.data.db,
-        evm_address=string_to_evm_address('0xbBA837dFFB3eCf4638D200F11B8c691eA641AdCb'),
-        chain_id=ChainID.ARBITRUM_ONE,
-        token_kind=EvmTokenKind.ERC20,
-    )
-    test_hop_lp_2 = get_or_create_evm_token(
-        userdb=rotki.data.db,
-        evm_address=string_to_evm_address('0xe9605BEc1c5C3E81F974F80b8dA9fBEFF4845d4D'),
-        chain_id=ChainID.BASE,
-        token_kind=EvmTokenKind.ERC20,
-    )
-    assert test_hop_lp_2.protocol is None
-    assert inquirer.find_usd_price(test_hop_lp_2) == ZERO_PRICE
-
-    with rotki.data.db.conn.write_ctx() as write_cursor:
-        DBHistoryEvents(rotki.data.db).add_history_events(
-            write_cursor=write_cursor,
-            history=[
-                EvmEvent(
-                    sequence_index=2,
-                    timestamp=TimestampMS(1714582939000),
-                    location=Location.ARBITRUM_ONE,
-                    event_type=HistoryEventType.RECEIVE,
-                    event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
-                    asset=test_hop_lp_1,
-                    balance=Balance(amount=FVal('0.023220146656543904')),
-                    location_label='0xC960338B529e0353F570f62093Fd362B8FB55f0B',
-                    notes='Receive 0.023220146656543904 HOP-LP-rETH after providing liquidity in Hop',  # noqa: E501
-                    tx_hash=deserialize_evm_tx_hash('0x2ab0135c1c200cf5095bd107c9e8c0d712b2a14374cc328848256d896d6e4685'),
-                    counterparty=CPT_HOP,
-                    address=ZERO_ADDRESS,
-                ),
-                EvmEvent(
-                    sequence_index=2,
-                    timestamp=TimestampMS(1714582939000),
-                    location=Location.BASE,
-                    event_type=HistoryEventType.RECEIVE,
-                    event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
-                    asset=test_hop_lp_2,
-                    balance=Balance(amount=FVal('0.023220146656543904')),
-                    location_label='0xAE70bC0Cbe03ceF2a14eCA507a2863441C6Df7A1',
-                    notes='Receive 0.023220146656543904 HOP-LP-ETH after providing liquidity in Hop',  # noqa: E501
-                    tx_hash=deserialize_evm_tx_hash('0xa50286f6288ca13452a490d766aaf969d20cce7035b514423a7b1432fd329cc5'),
-                    counterparty=CPT_HOP,
-                    address=ZERO_ADDRESS,
-                ),
-            ],
-        )
-    with patch(
-        'rotkehlchen.data_migrations.manager.MIGRATION_LIST',
-        new=[MIGRATION_LIST[8]],
-    ):
-        migration_manager = DataMigrationManager(rotkehlchen_api_server.rest_api.rotkehlchen)
-        migration_manager.maybe_migrate_data()
-        assert migration_manager.progress_handler.current_round_total_steps == migration_manager.progress_handler.current_round_current_step  # noqa: E501
-
-    # Hop LP token price before migration
-    assert inquirer.find_usd_price(test_hop_lp_2).is_close(3803.566408)
-
-
 @pytest.mark.parametrize('data_migration_version', [15])
 @pytest.mark.parametrize('perform_upgrades_at_unlock', [True])
 def test_migration_16(rotkehlchen_api_server: 'APIServer', globaldb: 'GlobalDBHandler') -> None:
@@ -621,7 +530,7 @@ def test_migration_16(rotkehlchen_api_server: 'APIServer', globaldb: 'GlobalDBHa
 
     with patch(
         'rotkehlchen.data_migrations.manager.MIGRATION_LIST',
-        new=[MIGRATION_LIST[9]],
+        new=[MIGRATION_LIST[8]],
     ):
         migration_manager = DataMigrationManager(rotkehlchen_api_server.rest_api.rotkehlchen)
         migration_manager.maybe_migrate_data()
@@ -746,7 +655,7 @@ def test_migration_18(rotkehlchen_api_server: 'APIServer') -> None:
 
     with patch(
         'rotkehlchen.data_migrations.manager.MIGRATION_LIST',
-        new=[MIGRATION_LIST[10]],
+        new=[MIGRATION_LIST[9]],
     ):
         migration_manager = DataMigrationManager(rotkehlchen_api_server.rest_api.rotkehlchen)
         migration_manager.maybe_migrate_data()
