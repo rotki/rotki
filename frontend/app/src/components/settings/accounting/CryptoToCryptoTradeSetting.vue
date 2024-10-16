@@ -11,18 +11,22 @@ const { t } = useI18n();
 
 <template>
   <SettingsOption
-    #default="{ error, success, update }"
     setting="includeCrypto2crypto"
     :error-message="t('account_settings.messages.crypto_to_crypto')"
   >
-    <RuiSwitch
-      v-model="crypto2CryptoTrades"
-      class="accounting-settings__crypto2crypto"
-      :label="t('accounting_settings.trade.labels.include_crypto2crypto')"
-      color="primary"
-      :success-messages="success"
-      :error-messages="error"
-      @update:model-value="update($event)"
-    />
+    <template #title>
+      {{ t('accounting_settings.trade.titles.crypto2crypto') }}
+    </template>
+    <template #default="{ error, success, update }">
+      <RuiSwitch
+        v-model="crypto2CryptoTrades"
+        class="accounting-settings__crypto2crypto"
+        :label="t('accounting_settings.trade.labels.include_crypto2crypto')"
+        color="primary"
+        :success-messages="success"
+        :error-messages="error"
+        @update:model-value="update($event)"
+      />
+    </template>
   </SettingsOption>
 </template>

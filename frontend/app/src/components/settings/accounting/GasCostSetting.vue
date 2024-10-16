@@ -11,18 +11,22 @@ const { t } = useI18n();
 
 <template>
   <SettingsOption
-    #default="{ error, success, update }"
     setting="includeGasCosts"
     :error-message="t('account_settings.messages.gas_costs')"
   >
-    <RuiSwitch
-      v-model="gasCosts"
-      class="accounting-settings__include-gas-costs"
-      :label="t('accounting_settings.trade.labels.include_gas_costs')"
-      :success-messages="success"
-      :error-messages="error"
-      color="primary"
-      @update:model-value="update($event)"
-    />
+    <template #title>
+      {{ t('accounting_settings.trade.titles.gas_costs') }}
+    </template>
+    <template #default="{ error, success, update }">
+      <RuiSwitch
+        v-model="gasCosts"
+        class="accounting-settings__include-gas-costs"
+        :label="t('accounting_settings.trade.labels.include_gas_costs')"
+        :success-messages="success"
+        :error-messages="error"
+        color="primary"
+        @update:model-value="update($event)"
+      />
+    </template>
   </SettingsOption>
 </template>

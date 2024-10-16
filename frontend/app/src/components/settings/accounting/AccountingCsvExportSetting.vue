@@ -7,8 +7,12 @@ const { t } = useI18n();
     <template #title>
       {{ t('account_settings.csv_export_settings.title') }}
     </template>
-
-    <PnlCsvWithFormulasSetting />
-    <PnlCsvSummarySetting />
+    <SettingsItem>
+      <template #title>
+        {{ t('account_settings.csv_export_settings.export_options') }}
+      </template>
+      <PnlCsvWithFormulasSetting />
+      <PnlCsvSummarySetting />
+    </SettingsItem>
   </SettingCategory>
 </template>

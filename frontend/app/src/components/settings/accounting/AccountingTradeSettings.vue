@@ -10,11 +10,25 @@ const { t } = useI18n();
 
     <CryptoToCryptoTradeSetting />
     <GasCostSetting />
-    <TaxFreeSetting />
+
+    <SettingsItem>
+      <template #title>
+        {{ t('accounting_settings.trade.titles.tax_free') }}
+      </template>
+      <TaxFreeSetting />
+    </SettingsItem>
+
     <AccountAssetMovementsSetting />
-    <CalculatePastCostBasisSetting />
+
+    <SettingsItem>
+      <template #title>
+        {{ t('accounting_settings.trade.titles.cost_basis') }}
+      </template>
+      <CalculatePastCostBasisSetting />
+      <CostBasisFeesSetting />
+      <CostBasisMethodSetting />
+    </SettingsItem>
+
     <EthStakingTaxableAfterWithdrawalSetting />
-    <CostBasisFeesSetting />
-    <CostBasisMethodSetting />
   </SettingCategory>
 </template>

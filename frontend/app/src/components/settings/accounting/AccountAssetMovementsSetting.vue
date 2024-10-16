@@ -11,18 +11,22 @@ const { t } = useI18n();
 
 <template>
   <SettingsOption
-    #default="{ error, success, update }"
     setting="accountForAssetsMovements"
     :error-message="t('account_settings.messages.account_for_assets_movements')"
   >
-    <RuiSwitch
-      v-model="accountForAssetsMovements"
-      class="accounting-settings__account-for-assets-movements"
-      :success-messages="success"
-      :error-messages="error"
-      :label="t('accounting_settings.trade.labels.account_for_assets_movements')"
-      color="primary"
-      @update:model-value="update($event)"
-    />
+    <template #title>
+      {{ t('accounting_settings.trade.titles.assets_movements') }}
+    </template>
+    <template #default="{ error, success, update }">
+      <RuiSwitch
+        v-model="accountForAssetsMovements"
+        class="accounting-settings__account-for-assets-movements"
+        :success-messages="success"
+        :error-messages="error"
+        :label="t('accounting_settings.trade.labels.account_for_assets_movements')"
+        color="primary"
+        @update:model-value="update($event)"
+      />
+    </template>
   </SettingsOption>
 </template>
