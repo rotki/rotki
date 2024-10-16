@@ -15,6 +15,7 @@ from rotkehlchen.logging import enter_exit_debug_log
 
 if TYPE_CHECKING:
     from rotkehlchen.db.drivers.gevent import DBConnection, DBCursor
+    from rotkehlchen.db.upgrade_manager import DBUpgradeProgressHandler
 
 log = logging.getLogger(__name__)
 
@@ -372,8 +373,12 @@ def translate_assets_in_price_table(cursor: 'DBCursor') -> list[tuple[str, str, 
 
 
 @enter_exit_debug_log(name='GlobalDB v2->v3 upgrade')
-def migrate_to_v3(connection: 'DBConnection') -> None:
-    """Upgrade assets information and migrate globaldb to version 3"""
+def migrate_to_v3(connection: 'DBConnection', progress_handler: 'DBUpgradeProgressHandler') -> None:  # noqa: E501
+    """Upgrade assets information and migrate globaldb to version 3
+
+    At the adding steps to the global DB upgrades, skipped this one. Too old
+    and not organized in functions. Will go away soon anyway.
+    """
     with connection.read_ctx() as cursor:
         log.debug('Obtain ethereum assets information')
         evm_tuples, assets_tuple, common_asset_details = upgrade_ethereum_asset_ids_v3(cursor)

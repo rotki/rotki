@@ -168,6 +168,7 @@ class Rotkehlchen:
         globaldb = GlobalDBHandler(
             data_dir=self.data_dir,
             sql_vm_instructions_cb=self.args.sqlite_instructions,
+            msg_aggregator=self.msg_aggregator,
         )
         if globaldb.used_backup is True:
             self.msg_aggregator.add_warning(

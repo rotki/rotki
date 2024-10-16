@@ -13,6 +13,7 @@ from rotkehlchen.logging import enter_exit_debug_log
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.db.drivers.gevent import DBConnection
     from rotkehlchen.db.upgrade_manager import DBUpgradeProgressHandler
 
 
@@ -104,6 +105,28 @@ def perform_userdb_upgrade_steps(
     if should_vacuum:  # TODO: Probably can generalize this to a given post-transaction step
         progress_handler.new_step('Vacuuming database.')
         db.conn.execute('VACUUM;')
+
+
+def perform_globaldb_upgrade_steps(
+        connection: 'DBConnection',
+        progress_handler: 'DBUpgradeProgressHandler',
+        should_vacuum: bool = False,
+) -> None:
+    """Performs caller introspection and gathers the globalDB upgrade steps.
+
+    TODO: Very similar to userdb upgrade. Only difference is we use connection alone
+    here while in userb we use db.user_write(). Perhaps figure out a way to better abstract it?
+    """
+    step_functions = gather_caller_functions(depth=2)
+    progress_handler.set_total_steps(len(step_functions) + (1 if should_vacuum else 0))
+    with connection.write_ctx() as write_cursor:
+        for function, original_function in step_functions:
+            progress_handler.new_step(original_function._description)  # type: ignore  # we do confirm all gathered functions have the attribute
+            function(write_cursor)
+
+    if should_vacuum:  # TODO: Probably can generalize this to a given post-transaction step
+        progress_handler.new_step('Vacuuming database.')
+        connection.execute('VACUUM;')
 
 
 def perform_userdb_migration_steps(

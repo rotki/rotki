@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING
 
 from pysqlcipher3 import dbapi2 as sqlcipher
 
-from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.constants.misc import USERDB_NAME
 from rotkehlchen.db.settings import ROTKEHLCHEN_DB_VERSION
 from rotkehlchen.db.upgrades.v26_v27 import upgrade_v26_to_v27
@@ -29,9 +28,8 @@ from rotkehlchen.db.upgrades.v42_v43 import upgrade_v42_to_v43
 from rotkehlchen.db.upgrades.v43_v44 import upgrade_v43_to_v44
 from rotkehlchen.errors.misc import DBUpgradeError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.utils.interfaces import ProgressUpdater
 from rotkehlchen.utils.misc import ts_now
-from rotkehlchen.utils.upgrades import UpgradeRecord
+from rotkehlchen.utils.upgrades import DBUpgradeProgressHandler, UpgradeRecord
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -116,26 +114,6 @@ UPGRADES_LIST = [
         function=upgrade_v43_to_v44,
     ),
 ]
-
-
-class DBUpgradeProgressHandler(ProgressUpdater):
-    """Class to notify users through websockets about progress of upgrading the database."""
-
-    def _notify_frontend(self, step_name: str | None = None) -> None:
-        """Sends to the user through websockets all information about db upgrading progress."""
-        self.messages_aggregator.add_message(
-            message_type=WSMessageType.DB_UPGRADE_STATUS,
-            data={
-                'start_version': self.start_version,
-                'target_version': self.target_version,
-                'current_upgrade': {
-                    'to_version': self.current_version,
-                    'total_steps': self.current_round_total_steps,
-                    'current_step': self.current_round_current_step,
-                    'description': step_name,
-                },
-            },
-        )
 
 
 class DBUpgradeManager:
