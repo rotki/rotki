@@ -18,6 +18,7 @@ const { t } = useI18n();
       </template>
       <div class="flex flex-col gap-2">
         <DisplayDateInLocaltimeSetting />
+        <CsvExportDelimiterSetting />
       </div>
     </SettingsItem>
     <AskUserUponSizeDiscrepancySetting />

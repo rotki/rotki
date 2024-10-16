@@ -108,7 +108,8 @@
         "export_csv_formulas": "Should formulas be exported as part of the PnL CSV?",
         "have_csv_summary": "Should a summary of all events be included in the all events CSV export?"
       },
-      "title": "CSV Export Settings"
+      "title": "CSV Export Settings",
+      "export_options": "Export Options"
     },
     "messages": {
       "account_for_assets_movements": "Error setting account for assets movements: {message}",
@@ -219,6 +220,14 @@
         "include_gas_costs": "Take into account Ethereum gas costs",
         "tax_free": "Is there a tax free period?",
         "taxfree_after_period": "Tax free after how many days"
+      },
+      "titles": {
+        "crypto2crypto": "Crypto Trades",
+        "gas_costs": "Gas",
+        "tax_free": "Tax Free",
+        "assets_movements": "Movements",
+        "cost_basis": "Cost Basis",
+        "eth_staking": "ETH Staking"
       },
       "title": "Trade Settings"
     }

@@ -220,7 +220,6 @@ const importFileDialog = ref<boolean>(false);
 <template>
   <TablePageLayout
     child
-    :title="[t('accounting_settings.rule.title')]"
   >
     <template #buttons>
       <div class="flex flex-row items-center justify-end gap-2">
