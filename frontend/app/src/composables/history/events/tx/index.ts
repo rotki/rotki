@@ -87,6 +87,7 @@ export const useHistoryTransactions = createSharedComposable(() => {
       accounts,
       item => item.evmChain + item.address,
       item => syncTransactionTask(item, type),
+      2,
     );
     queue.queue(evmChain, () => decodeTransactionsTask(evmChain, type));
   };
@@ -172,6 +173,7 @@ export const useHistoryTransactions = createSharedComposable(() => {
       groupedByChains,
       item => item.evmChain,
       item => syncAndReDecodeEvents(item.evmChain, item.data, type),
+      2,
     );
 
     const isEvm = type === TransactionChainType.EVM;
