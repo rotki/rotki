@@ -29,7 +29,6 @@ from rotkehlchen.types import (
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
 
-YEARN_OLD_API = 'https://api.yexporter.io/v1/chains/1/vaults/all'  # contains v1 and some of the v2 vaults  # noqa: E501
 YDEMON_API = 'https://ydaemon.yearn.fi/1/vaults/all'  # contains v2 and v3 vaults
 
 
@@ -70,51 +69,31 @@ def _maybe_reset_yearn_cache_timestamp(data: list[dict[str, Any]] | None) -> boo
     return False  # will continue
 
 
-def _merge_data_yearn_vaults() -> tuple[list[dict[str, Any]] | None, str | None]:
+def _query_yearn_vaults() -> tuple[list[dict[str, Any]] | None, str | None]:
     """At the moment of writing the logic of ydemon doesn't support yearn v1 so we
     need to aggregate the information from two different apis and remove duplicates.
     """
-    data: list[dict[str, Any]] = []
     timeout_tuple = CachedSettings().get_timeout_tuple()
-    for api_url in (YEARN_OLD_API, YDEMON_API):
-        try:
-            response = requests.get(api_url, timeout=timeout_tuple)
-        except requests.exceptions.RequestException as e:
-            log.error(f'Request to {api_url} failed due to {e!s}')
-            return None, 'Failed to obtain yearn vault information'
+    try:
+        response = requests.get(YDEMON_API, timeout=timeout_tuple)
+    except requests.exceptions.RequestException as e:
+        log.error(f'Request to {YDEMON_API} failed due to {e!s}')
+        return None, 'Failed to obtain yearn vault information'
 
-        if response.status_code in (HTTPStatus.NOT_FOUND, HTTPStatus.SERVICE_UNAVAILABLE):
-            return None, 'Failed to obtain a proper response from the yearn API'
+    if response.status_code in (HTTPStatus.NOT_FOUND, HTTPStatus.SERVICE_UNAVAILABLE):
+        return None, 'Failed to obtain a proper response from the yearn API'
 
-        try:
-            new_data = response.json()
-        except (DeserializationError, JSONDecodeError) as e:
-            log.error(f'Failed to deserialize yearn api response {response.text} as JSON due to {e!s}')  # noqa: E501
-            return None, "Failed to deserialize data from yearn's old api"
+    try:
+        data = response.json()
+    except (DeserializationError, JSONDecodeError) as e:
+        log.error(f'Failed to deserialize yearn api response {response.text} as JSON due to {e!s}')
+        return None, "Failed to deserialize data from yearn's old api"
 
-        if not isinstance(new_data, list):
-            log.error(f'Unexpected format from yearn vaults response. Expected a list, got {new_data}')  # noqa: E501
-            return None, 'Unexpected format from yearn vaults response'
+    if not isinstance(data, list):
+        log.error(f'Unexpected format from yearn vaults response. Expected a list, got {data}')
+        return None, 'Unexpected format from yearn vaults response'
 
-        data.extend(new_data)
-
-    deduplicated_data, vaults_seen = [], set()
-    for vault in data:
-        if (vault_address := vault.get('address')) is None:
-            log.error(f'Unexpected vault schema in yearn api for {vault}. Skipping')
-            continue
-
-        if (version := vault.get('version')) is not None and version.startswith('3.'):
-            log.debug(f'Skipping yearn v3 vault {vault.get("address")}')
-            continue  # skip v3 vaults until we add them #7540
-
-        if vault_address in vaults_seen:
-            continue
-
-        vaults_seen.add(vault_address)
-        deduplicated_data.append(vault)
-
-    return deduplicated_data, None
+    return data, None
 
 
 def query_yearn_vaults(db: 'DBHandler') -> None:
@@ -124,7 +103,7 @@ def query_yearn_vaults(db: 'DBHandler') -> None:
     May raise:
     - RemoteError
     """
-    data, msg = _merge_data_yearn_vaults()
+    data, msg = _query_yearn_vaults()
     should_stop = _maybe_reset_yearn_cache_timestamp(data=data)
     if should_stop:
         if msg is not None:  # we raise a remote error but thanks to timestamp reset won't get in here again  # noqa: E501
@@ -137,6 +116,10 @@ def query_yearn_vaults(db: 'DBHandler') -> None:
         if 'type' not in vault:
             log.error(f'Could not identify the yearn vault type for {vault}. Skipping...')
             continue
+
+        if (version := vault.get('version')) is not None and version.startswith('3.'):
+            log.debug(f'Skipping yearn v3 vault {vault.get("address")}')
+            continue  # skip v3 vaults until we add them #7540
 
         if vault['type'] == 'v1':
             vault_type = YEARN_VAULTS_V1_PROTOCOL
