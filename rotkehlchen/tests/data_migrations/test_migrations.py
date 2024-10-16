@@ -637,33 +637,6 @@ def test_migration_16(rotkehlchen_api_server: 'APIServer', globaldb: 'GlobalDBHa
         ).fetchone()[0] == 0
 
 
-@pytest.mark.parametrize('data_migration_version', [16])
-@pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
-@pytest.mark.parametrize('custom_globaldb', ['v7_global.db'])
-@pytest.mark.parametrize('use_custom_database', ['v43_rotkehlchen.db'])
-@pytest.mark.parametrize('target_globaldb_version', [8])
-def test_migration_17(rotkehlchen_api_server: 'APIServer') -> None:
-    with patch(
-        'rotkehlchen.data_migrations.manager.MIGRATION_LIST',
-        new=[MIGRATION_LIST[10]],
-    ):
-        migration_manager = DataMigrationManager(rotkehlchen_api_server.rest_api.rotkehlchen)
-        migration_manager.maybe_migrate_data()
-        assert migration_manager.progress_handler.current_round_total_steps == migration_manager.progress_handler.current_round_current_step  # noqa: E501
-
-    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    with rotki.data.db.conn.read_ctx() as cursor:
-        assert cursor.execute(
-            'SELECT COUNT(*) FROM location WHERE location IN (?, ?, ?, ?)',
-            (
-                Location.BITCOIN.serialize_for_db(),
-                Location.BITCOIN_CASH.serialize_for_db(),
-                Location.POLKADOT.serialize_for_db(),
-                Location.KUSAMA.serialize_for_db(),
-            ),
-        ).fetchone()[0] == 4
-
-
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('data_migration_version', [17])
 @pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
@@ -773,7 +746,7 @@ def test_migration_18(rotkehlchen_api_server: 'APIServer') -> None:
 
     with patch(
         'rotkehlchen.data_migrations.manager.MIGRATION_LIST',
-        new=[MIGRATION_LIST[11]],
+        new=[MIGRATION_LIST[10]],
     ):
         migration_manager = DataMigrationManager(rotkehlchen_api_server.rest_api.rotkehlchen)
         migration_manager.maybe_migrate_data()

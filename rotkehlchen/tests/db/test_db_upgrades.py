@@ -2493,6 +2493,15 @@ def test_upgrade_db_43_to_44(user_data_dir, messages_aggregator):
             (bad_address, None, 'yabirgb.eth'),
             (bad_address, None, 'yabir.eth'),
         }
+        assert cursor.execute(  # check that the new locations we add are not in the DB before
+            'SELECT COUNT(*) FROM location WHERE location IN (?, ?, ?, ?)',
+            (
+                Location.BITCOIN.serialize_for_db(),
+                Location.BITCOIN_CASH.serialize_for_db(),
+                Location.POLKADOT.serialize_for_db(),
+                Location.KUSAMA.serialize_for_db(),
+            ),
+        ).fetchone()[0] == 0
 
     with db_v43.conn.write_ctx() as write_cursor:
         write_cursor.execute(
@@ -2546,6 +2555,15 @@ def test_upgrade_db_43_to_44(user_data_dir, messages_aggregator):
         assert cursor.execute(
             'SELECT * FROM used_query_ranges WHERE name LIKE "zksynclitetxs_%"',
         ).fetchone() is None
+        assert cursor.execute(  # check that the new locations we add are now in the DB
+            'SELECT COUNT(*) FROM location WHERE location IN (?, ?, ?, ?)',
+            (
+                Location.BITCOIN.serialize_for_db(),
+                Location.BITCOIN_CASH.serialize_for_db(),
+                Location.POLKADOT.serialize_for_db(),
+                Location.KUSAMA.serialize_for_db(),
+            ),
+        ).fetchone()[0] == 4
 
     db.logout()
 

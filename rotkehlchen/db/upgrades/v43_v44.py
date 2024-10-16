@@ -37,7 +37,20 @@ def upgrade_v43_to_v44(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
     - add exited_timestamp to the eth2_validators table
     - add new tables: cowswap orders and gnosis pay data
     - reset decoded evm events except for zksync lite and custom ones
+    - Add 4 new locations to the DB (moved from migration 17 which was in 1.34.3)
     """
+    @progress_step(description='Adding new locations to the DB.')
+    def _add_new_locations(write_cursor: 'DBCursor') -> None:
+        write_cursor.executescript("""
+        /* Bitcoin */
+        INSERT OR IGNORE INTO location(location, seq) VALUES ('q', 49);
+        /* Bitcoin Cash */
+        INSERT OR IGNORE INTO location(location, seq) VALUES ('r', 50);
+        /* Polkadot */
+        INSERT OR IGNORE INTO location(location, seq) VALUES ('s', 51);
+        /* Kusama */
+        INSERT OR IGNORE INTO location(location, seq) VALUES ('t', 52);
+        """)
 
     @progress_step(description='Updating NFT table schema.')
     def _update_nft_table(write_cursor: 'DBCursor') -> None:
