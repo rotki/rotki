@@ -1281,20 +1281,20 @@ def test_upgrade_db_35_to_36(user_data_dir):  # pylint: disable=unused-argument
     result = cursor.execute('SELECT sql from sqlite_master WHERE type="table" AND name="nfts"')
     assert result.fetchone()[0] == (
         'CREATE TABLE nfts (\n'
-        '            identifier TEXT NOT NULL PRIMARY KEY,\n'
-        '            name TEXT,\n'
-        '            last_price TEXT,\n'
-        '            last_price_asset TEXT,\n'
-        '            manual_price INTEGER NOT NULL CHECK (manual_price IN (0, 1)),\n'
-        '            owner_address TEXT,\n'
-        '            blockchain TEXT GENERATED ALWAYS AS ("ETH") VIRTUAL,\n'
-        '            is_lp INTEGER NOT NULL CHECK (is_lp IN (0, 1)),\n'
-        '            image_url TEXT,\n'
-        '            collection_name TEXT,\n'
-        '            FOREIGN KEY(blockchain, owner_address) REFERENCES blockchain_accounts(blockchain, account) ON DELETE CASCADE,\n'  # noqa: E501
-        '            FOREIGN KEY (identifier) REFERENCES assets(identifier) ON UPDATE CASCADE,\n'
-        '            FOREIGN KEY (last_price_asset) REFERENCES assets(identifier) ON UPDATE CASCADE\n'  # noqa: E501
-        '        )'
+        '                identifier TEXT NOT NULL PRIMARY KEY,\n'
+        '                name TEXT,\n'
+        '                last_price TEXT,\n'
+        '                last_price_asset TEXT,\n'
+        '                manual_price INTEGER NOT NULL CHECK (manual_price IN (0, 1)),\n'
+        '                owner_address TEXT,\n'
+        '                blockchain TEXT GENERATED ALWAYS AS ("ETH") VIRTUAL,\n'
+        '                is_lp INTEGER NOT NULL CHECK (is_lp IN (0, 1)),\n'
+        '                image_url TEXT,\n'
+        '                collection_name TEXT,\n'
+        '                FOREIGN KEY(blockchain, owner_address) REFERENCES blockchain_accounts(blockchain, account) ON DELETE CASCADE,\n'  # noqa: E501
+        '                FOREIGN KEY (identifier) REFERENCES assets(identifier) ON UPDATE CASCADE,\n'  # noqa: E501
+        '                FOREIGN KEY (last_price_asset) REFERENCES assets(identifier) ON UPDATE CASCADE\n'  # noqa: E501
+        '            )'
     )
 
     # Test that tags and related tables got upgraded correctly
