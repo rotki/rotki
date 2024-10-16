@@ -5,7 +5,6 @@ import type {
   AddressBookPayload,
   AddressBookRequestPayload,
 } from '@/types/eth-names';
-import type { Collection } from '@/types/collection';
 import type { Filters, Matcher } from '@/composables/filters/address-book';
 
 const selectedChain = ref<string>();
@@ -29,11 +28,17 @@ const formPayload = ref<Partial<AddressBookPayload>>(emptyForm());
 
 const { getAddressBook } = useAddressesNamesStore();
 
-const { filters, matchers, state, isLoading, fetchData, sort, pagination } = usePaginationFilters<
+const {
+  filters,
+  matchers,
+  state,
+  isLoading,
+  fetchData,
+  sort,
+  pagination,
+} = usePaginationFilters<
   AddressBookEntry,
   AddressBookRequestPayload,
-  AddressBookEntry,
-  Collection<AddressBookEntry>,
   Filters,
   Matcher
 >(filter => getAddressBook(get(location), filter), {
@@ -42,10 +47,10 @@ const { filters, matchers, state, isLoading, fetchData, sort, pagination } = use
   extraParams: computed(() => ({
     blockchain: get(selectedChain),
   })),
-  defaultSortBy: {
-    key: ['name'],
-    ascending: [true],
-  },
+  defaultSortBy: [{
+    column: 'name',
+    direction: 'asc',
+  }],
 });
 
 function openForm(item: AddressBookEntry | null = null) {

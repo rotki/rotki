@@ -39,10 +39,13 @@ const {
   fetchData,
   pagination,
 } = usePaginationFilters<UserNote, UserNotesRequestPayload>(fetchUserNotes, {
-  defaultSortBy: {
-    key: ['isPinned', 'lastUpdateTimestamp'],
-    ascending: [false, false],
-  },
+  defaultSortBy: [{
+    column: 'isPinned',
+    direction: 'desc',
+  }, {
+    column: 'lastUpdateTimestamp',
+    direction: 'desc',
+  }],
   extraParams,
 });
 

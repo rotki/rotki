@@ -2,7 +2,7 @@ import z from 'zod';
 import { type MatchedKeyword, type SearchMatcher, assetDeserializer, assetSuggestions } from '@/types/filtering';
 import { CommaSeparatedStringSchema } from '@/types/route';
 import type { MaybeRef } from '@vueuse/core';
-import type { FilterSchema } from '@/composables/filter-paginate';
+import type { FilterSchema } from '@/composables/use-pagination-filter/types';
 
 enum ManualBalanceFilterKeys {
   LOCATION = 'location',

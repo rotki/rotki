@@ -11,7 +11,7 @@ import {
   dateValidator,
 } from '@/types/filtering';
 import type { MaybeRef } from '@vueuse/core';
-import type { FilterSchema } from '@/composables/filter-paginate';
+import type { FilterSchema } from '@/composables/use-pagination-filter/types';
 
 enum HistoryEventFilterKeys {
   START = 'start',

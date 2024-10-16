@@ -2,8 +2,7 @@
 import { Section } from '@/types/status';
 import { IgnoreActionType } from '@/types/history/ignored';
 import { SavedFilterLocation } from '@/types/filtering';
-import type { AssetMovement, AssetMovementEntry, AssetMovementRequestPayload } from '@/types/history/asset-movements';
-import type { Collection } from '@/types/collection';
+import type { AssetMovementEntry, AssetMovementRequestPayload } from '@/types/history/asset-movements';
 import type { Filters, Matcher } from '@/composables/filters/asset-movement';
 import type { Writeable } from '@rotki/common';
 import type { DataTableColumn } from '@rotki/ui-library';
@@ -85,10 +84,9 @@ const extraParams = computed(() => ({
 }));
 
 const { fetchAssetMovements, refreshAssetMovements } = useAssetMovements();
+const { selected, expanded } = useCommonTableProps<AssetMovementEntry>();
 
 const {
-  selected,
-  expanded,
   isLoading,
   state: assetMovements,
   filters,
@@ -98,10 +96,8 @@ const {
   pagination,
   fetchData,
 } = usePaginationFilters<
-  AssetMovement,
-  AssetMovementRequestPayload,
   AssetMovementEntry,
-  Collection<AssetMovementEntry>,
+  AssetMovementRequestPayload,
   Filters,
   Matcher
 >(fetchAssetMovements, {
@@ -111,7 +107,7 @@ const {
   onUpdateFilters(query) {
     set(showIgnoredAssets, query.excludeIgnoredAssets === 'false');
   },
-  customPageParams: computed<Partial<AssetMovementRequestPayload>>(() => {
+  requestParams: computed<Partial<AssetMovementRequestPayload>>(() => {
     const params: Writeable<Partial<AssetMovementRequestPayload>> = {};
     const location = get(locationOverview);
 

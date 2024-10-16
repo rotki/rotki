@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { TaskType } from '@/types/task-type';
 import type { DataTableColumn } from '@rotki/ui-library';
-import type { Collection } from '@/types/collection';
 import type { Filters, Matcher } from '@/composables/filters/accounting-rule';
 import type { AccountingRuleEntry, AccountingRuleRequestPayload } from '@/types/settings/accounting';
 
@@ -10,6 +9,7 @@ const router = useRouter();
 const route = useRoute();
 
 const { getAccountingRule, getAccountingRules, getAccountingRulesConflicts, exportJSON } = useAccountingSettings();
+const { editableItem } = useCommonTableProps<AccountingRuleEntry>();
 
 const {
   state,
@@ -20,12 +20,9 @@ const {
   pagination,
   matchers,
   updateFilter,
-  editableItem,
 } = usePaginationFilters<
   AccountingRuleEntry,
   AccountingRuleRequestPayload,
-  AccountingRuleEntry,
-  Collection<AccountingRuleEntry>,
   Filters,
   Matcher
 >(getAccountingRules, {

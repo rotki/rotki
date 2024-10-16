@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { isEqual, keyBy } from 'lodash-es';
 import type { Nullable, SupportedAsset } from '@rotki/common';
-import type { Collection } from '@/types/collection';
 import type { AssetRequestPayload, IgnoredAssetsHandlingType } from '@/types/asset';
 import type { Filters, Matcher } from '@/composables/filters/assets';
 
@@ -27,6 +26,8 @@ const ignoredFilter = ref<{
   onlyShowWhitelisted: false,
   ignoredAssetsHandling: 'exclude',
 });
+
+const { expanded, selected, editableItem } = useCommonTableProps<SupportedAsset>();
 
 const extraParams = computed(() => {
   const { ignoredAssetsHandling, onlyShowOwned, onlyShowWhitelisted } = get(ignoredFilter);
@@ -55,11 +56,8 @@ async function confirmDelete(toDeleteAsset: SupportedAsset) {
 const {
   filters,
   matchers,
-  expanded,
-  selected,
   state: assets,
   isLoading: loading,
-  editableItem,
   fetchData,
   setPage,
   sort,
@@ -67,8 +65,6 @@ const {
 } = usePaginationFilters<
   SupportedAsset,
   AssetRequestPayload,
-  SupportedAsset,
-  Collection<SupportedAsset>,
   Filters,
   Matcher
 >(queryAllAssets, {
@@ -83,8 +79,8 @@ const {
   },
   extraParams,
   defaultSortBy: {
-    key: 'symbol',
-    ascending: [true],
+    column: 'symbol',
+    direction: 'asc',
   },
 });
 

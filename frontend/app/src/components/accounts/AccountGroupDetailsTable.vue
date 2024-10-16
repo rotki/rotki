@@ -37,13 +37,14 @@ const {
     const { expanded: expandedIds } = RouterExpandedIdsSchema.parse(query);
     set(expanded, expandedIds);
   },
-  customPageParams: computed(() => ({
+  requestParams: computed(() => ({
     groupId: props.groupId,
     chain: props.chains,
     tags: props.tags,
   })),
   defaultSortBy: {
-    key: 'usdValue',
+    column: 'usdValue',
+    direction: 'desc',
   },
   query,
 });

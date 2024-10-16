@@ -4,8 +4,7 @@ import { Section } from '@/types/status';
 import { IgnoreActionType } from '@/types/history/ignored';
 import { SavedFilterLocation } from '@/types/filtering';
 import type { Writeable } from '@rotki/common';
-import type { Trade, TradeEntry, TradeRequestPayload } from '@/types/history/trade';
-import type { Collection } from '@/types/collection';
+import type { TradeEntry, TradeRequestPayload } from '@/types/history/trade';
 import type { Filters, Matcher } from '@/composables/filters/trades';
 import type { DataTableColumn } from '@rotki/ui-library';
 
@@ -109,15 +108,10 @@ const extraParams = computed(() => ({
 
 const assetInfoRetrievalStore = useAssetInfoRetrieval();
 const { assetSymbol } = assetInfoRetrievalStore;
-
 const { deleteExternalTrade, fetchTrades, refreshTrades } = useTrades();
+const { selected, editableItem, itemsToDelete: tradesToDelete, confirmationMessage, expanded } = useCommonTableProps<TradeEntry>();
 
 const {
-  selected,
-  editableItem,
-  itemsToDelete: tradesToDelete,
-  confirmationMessage,
-  expanded,
   isLoading,
   state: trades,
   filters,
@@ -127,10 +121,8 @@ const {
   sort,
   fetchData,
 } = usePaginationFilters<
-  Trade,
-  TradeRequestPayload,
   TradeEntry,
-  Collection<TradeEntry>,
+  TradeRequestPayload,
   Filters,
   Matcher
 >(fetchTrades, {
@@ -141,7 +133,7 @@ const {
     set(hideIgnoredTrades, query.includeIgnoredTrades === 'false');
     set(showIgnoredAssets, query.excludeIgnoredAssets === 'false');
   },
-  customPageParams: computed<Partial<TradeRequestPayload>>(() => {
+  requestParams: computed<Partial<TradeRequestPayload>>(() => {
     const params: Writeable<Partial<TradeRequestPayload>> = {};
     const location = get(locationOverview);
 

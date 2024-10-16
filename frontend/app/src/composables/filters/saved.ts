@@ -1,6 +1,7 @@
 import type { MaybeRef } from '@vueuse/core';
 import type { BaseSuggestion, SavedFilterLocation, Suggestion } from '@/types/filtering';
 import type { ActionStatus } from '@/types/action';
+import type { ComputedRef } from 'vue';
 
 const LIMIT_PER_LOCATION = 10;
 

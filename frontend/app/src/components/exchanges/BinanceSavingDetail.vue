@@ -3,7 +3,7 @@ import { CURRENCY_USD } from '@/types/currencies';
 import { Section } from '@/types/status';
 import type { AssetBalance } from '@rotki/common';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
-import type { ExchangeSavingsCollection, ExchangeSavingsEvent, ExchangeSavingsRequestPayload } from '@/types/exchanges';
+import type { ExchangeSavingsEvent, ExchangeSavingsRequestPayload } from '@/types/exchanges';
 
 const props = defineProps<{
   exchange: 'binance' | 'binanceus';
@@ -13,26 +13,18 @@ const { t } = useI18n();
 
 const { exchange } = toRefs(props);
 
-const { isLoading: isSectionLoading } = useStatusStore();
-const loading = isSectionLoading(Section.EXCHANGE_SAVINGS);
+const savingsAssets = ref<string[]>([]);
+const savingsReceived = ref<AssetBalance[]>([]);
 
+const { isLoading: isSectionLoading } = useStatusStore();
 const { fetchExchangeSavings } = useExchangeBalancesStore();
+
+const loading = isSectionLoading(Section.EXCHANGE_SAVINGS);
+const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
 const defaultParams = computed(() => ({
   location: get(exchange).toString(),
 }));
-
-function defaultCollectionState(): ExchangeSavingsCollection {
-  return {
-    found: 0,
-    limit: 0,
-    data: [],
-    total: 0,
-    totalUsdValue: Zero,
-    assets: [],
-    received: [],
-  };
-}
 
 const {
   isLoading,
@@ -42,29 +34,20 @@ const {
   fetchData,
 } = usePaginationFilters<
   ExchangeSavingsEvent,
-  ExchangeSavingsRequestPayload,
-  ExchangeSavingsEvent,
-  ExchangeSavingsCollection
->(fetchExchangeSavings, {
+  ExchangeSavingsRequestPayload
+>(async (payload) => {
+  const { received = [], assets = [], ...collection } = await fetchExchangeSavings(payload);
+  set(savingsAssets, assets);
+  set(savingsReceived, received);
+  return collection;
+}, {
   history: 'router',
   locationOverview: exchange,
-  defaultCollection: defaultCollectionState,
   defaultSortBy: {
-    ascending: [true],
+    direction: 'asc',
   },
   defaultParams,
 });
-
-watch(loading, async (isLoading, wasLoading) => {
-  if (!isLoading && wasLoading)
-    await fetchData();
-});
-
-onMounted(async () => {
-  await fetchData();
-});
-
-const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
 const receivedTableSort = ref<DataTableSortData<AssetBalance>>({
   column: 'usdValue',
@@ -119,6 +102,15 @@ const tableHeaders = computed<DataTableColumn<ExchangeSavingsEvent>[]>(() => [
     sortable: true,
   },
 ]);
+
+watch(loading, async (isLoading, wasLoading) => {
+  if (!isLoading && wasLoading)
+    await fetchData();
+});
+
+onMounted(async () => {
+  await fetchData();
+});
 </script>
 
 <template>
@@ -133,7 +125,7 @@ const tableHeaders = computed<DataTableColumn<ExchangeSavingsEvent>[]>(() => [
         outlined
         dense
         :cols="receivedTableHeaders"
-        :rows="collection.received"
+        :rows="savingsReceived"
         :loading="isLoading"
         row-attr="asset"
       >
@@ -151,7 +143,7 @@ const tableHeaders = computed<DataTableColumn<ExchangeSavingsEvent>[]>(() => [
           <AmountDisplay :value="row.usdValue" />
         </template>
         <template
-          v-if="collection.received.length > 0"
+          v-if="savingsReceived.length > 0"
           #body.append
         >
           <RowAppend

@@ -2,7 +2,7 @@ import flushPromises from 'flush-promises';
 import { afterEach, assertType, beforeAll, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
 import type { Filters, Matcher } from '@/composables/filters/asset-movement';
 import type { Collection } from '@/types/collection';
-import type { AssetMovement, AssetMovementEntry, AssetMovementRequestPayload } from '@/types/history/asset-movements';
+import type { AssetMovementEntry, AssetMovementRequestPayload } from '@/types/history/asset-movements';
 import type { MaybeRef } from '@vueuse/core';
 import type Vue from 'vue';
 
@@ -54,11 +54,9 @@ describe('composables::history/filter-paginate', () => {
     });
 
     it('initialize composable correctly', async () => {
-      const { userAction, filters, sort, state, fetchData, applyRouteFilter, isLoading } = usePaginationFilters<
-        AssetMovement,
-        AssetMovementRequestPayload,
+      const { userAction, filters, sort, state, fetchData, isLoading } = usePaginationFilters<
         AssetMovementEntry,
-        Collection<AssetMovementEntry>,
+        AssetMovementRequestPayload,
         Filters,
         Matcher
       >(fetchAssetMovements, {
@@ -67,16 +65,18 @@ describe('composables::history/filter-paginate', () => {
         locationOverview,
       });
 
-      expect(get(userAction)).toBe(true);
+      expect(get(userAction)).toBe(false);
       expect(get(isLoading)).toBe(false);
-      expect(get(filters)).to.toStrictEqual({});
-      expect(Array.isArray(get(sort))).toBe(true);
-      expect(get(sort)).toHaveLength(1);
+      expect(get(filters)).toStrictEqual({});
+      expect(get(sort)).toStrictEqual({
+        column: 'timestamp',
+        direction: 'desc',
+      });
       expect(get(state).data).toHaveLength(0);
       expect(get(state).total).toEqual(0);
 
       set(userAction, true);
-      applyRouteFilter();
+      await nextTick();
       fetchData().catch(() => {});
       expect(get(isLoading)).toBe(true);
       await flushPromises();
@@ -85,10 +85,8 @@ describe('composables::history/filter-paginate', () => {
 
     it('check the return types', () => {
       const { isLoading, state, filters, matchers } = usePaginationFilters<
-        AssetMovement,
-        AssetMovementRequestPayload,
         AssetMovementEntry,
-        Collection<AssetMovementEntry>,
+        AssetMovementRequestPayload,
         Filters,
         Matcher
       >(fetchAssetMovements, {
@@ -108,19 +106,22 @@ describe('composables::history/filter-paginate', () => {
 
     it('modify filters and fetch data correctly', async () => {
       const pushSpy = vi.spyOn(router, 'push');
-      const query = { sortBy: ['category'], sortDesc: ['true'] };
+      const query = { sort: ['category'], sortOrder: ['desc'] };
 
-      const { isLoading, state } = usePaginationFilters<
-        AssetMovement,
-        AssetMovementRequestPayload,
+      const { isLoading, state, sort } = usePaginationFilters<
         AssetMovementEntry,
-        Collection<AssetMovementEntry>,
+        AssetMovementRequestPayload,
         Filters,
         Matcher
       >(fetchAssetMovements, {
         history: get(mainPage) ? 'router' : false,
         filterSchema: useAssetMovementFilters,
         locationOverview,
+      });
+
+      expect(get(sort)).toStrictEqual({
+        column: 'timestamp',
+        direction: 'desc',
       });
 
       await router.push({
@@ -142,6 +143,10 @@ describe('composables::history/filter-paginate', () => {
       expect(get(state).found).toEqual(45);
       expect(get(state).limit).toEqual(-1);
       expect(get(state).total).toEqual(45);
+      expect(get(sort)).toStrictEqual({
+        column: 'category',
+        direction: 'desc',
+      });
     });
   });
 });

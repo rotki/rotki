@@ -4,7 +4,6 @@ import { isEqual } from 'lodash-es';
 import { Section } from '@/types/status';
 import type { Filters, Matcher } from '@/composables/filters/manual-balances';
 import type { ManualBalance, ManualBalanceRequestPayload, ManualBalanceWithPrice } from '@/types/manual-balances';
-import type { Collection } from '@/types/collection';
 import type { DataTableColumn } from '@rotki/ui-library';
 
 const props = defineProps<{
@@ -47,8 +46,6 @@ const {
 } = usePaginationFilters<
   ManualBalanceWithPrice,
   ManualBalanceRequestPayload,
-  ManualBalanceWithPrice,
-  Collection<ManualBalanceWithPrice>,
   Filters,
   Matcher
 >(
@@ -59,9 +56,12 @@ const {
     extraParams: computed(() => ({
       tags: get(tags),
     })),
-    defaultSortBy: {
-      key: ['usdValue'],
-    },
+    defaultSortBy: [
+      {
+        column: 'usdValue',
+        direction: 'desc',
+      },
+    ],
     onUpdateFilters(query) {
       const schema = ManualBalancesFilterSchema.parse(query);
       if (schema.tags)

@@ -14,33 +14,33 @@ export const RouterExpandedIdsSchema = z.object({
   expanded: CommaSeparatedStringSchema,
 });
 
-export const RouterPaginationOptionsSchema = z.object({
-  itemsPerPage: z
-    .string()
-    .transform(val => parseInt(val))
-    .optional(),
-  page: z
-    .string()
-    .transform(val => parseInt(val))
-    .optional(),
-  sortBy: z
-    .array(z.string())
+const SortOrderSchema = z.enum(['asc', 'desc']);
+
+export const HistorySortOrderSchema = z.object({
+  sort: z.array(z.string())
     .or(z.string())
     .transform(arrayify)
     .optional(),
-  sortDesc: z
-    .array(z.string())
-    .or(z.string())
-    .transform((val) => {
-      const arr = arrayify(val);
-      return arr.map(entry => entry === 'true');
-    })
+  sortOrder: z.array(SortOrderSchema)
+    .or(SortOrderSchema)
+    .transform(arrayify)
     .optional(),
 });
 
+export const HistoryPaginationSchema = z.object({
+  limit: z.coerce
+    .number()
+    .min(1)
+    .optional(),
+  page: z.coerce
+    .number()
+    .min(1)
+    .optional()
+    .default(1),
+});
+
 export const RouterAccountsSchema = z.object({
-  accounts: z
-    .array(z.string())
+  accounts: z.array(z.string())
     .or(z.string())
     .transform((val) => {
       const arr = arrayify(val);
