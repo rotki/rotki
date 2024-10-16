@@ -11,17 +11,21 @@ export async function setupPremium(): Promise<void> {
   /**
    * If setup has run already no need to do it again
    */
-  if (window.Vue)
-    return;
+  if (!window.Vue) {
+    window.Vue = Vue;
+    window.VueUse = VueUse;
+    window.VueUseShared = VueUseShared;
+    window.Chart = Chart;
+    window['chartjs-plugin-zoom'] = ChartJsPluginZoom;
+    window.Chart = Chart;
+    window.zod = zod;
+    window.bn = BigNumber;
+  }
 
-  window.Vue = Vue;
-  window.VueUse = VueUse;
-  window.VueUseShared = VueUseShared;
-  window.Chart = Chart;
-  window['chartjs-plugin-zoom'] = ChartJsPluginZoom;
-  window.Chart = Chart;
-  window.zod = zod;
-  window.bn = BigNumber;
+  /**
+   * Sometimes, window.Vue still exists, but the component registrations here are always gone during HMR.
+   * So, they need to be registered again.
+   */
   const { registerComponents } = await import('@/premium/register-components');
   registerComponents(app);
 }

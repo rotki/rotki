@@ -6,6 +6,7 @@ const { t } = useI18n();
   <RuiAlert
     type="error"
     variant="outlined"
+    class="!m-4"
     :title="t('premium_loading_failed.title')"
   >
     <p class="mt-1">

@@ -40,7 +40,7 @@ function findComponents(): string[] {
 
 if (checkIfDevelopment()) {
   // @ts-expect-error component is dynamic and does not exist in the window type
-  findComponents().forEach(component => (window[component] = undefined));
+  findComponents().forEach(component => (delete window[component]));
 }
 
 const lock = new AsyncLock();
