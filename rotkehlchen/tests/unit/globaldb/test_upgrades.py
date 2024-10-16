@@ -11,6 +11,7 @@ from freezegun import freeze_time
 
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.chain.ethereum.utils import should_update_protocol_cache
+from rotkehlchen.constants.assets import A_PAX, A_USDT
 from rotkehlchen.constants.misc import GLOBALDB_NAME, GLOBALDIR_NAME
 from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType
 from rotkehlchen.db.utils import table_exists
@@ -787,6 +788,22 @@ def test_upgrade_v8_v9(globaldb: GlobalDBHandler):
             'VALUES (?, ?, ?);',
             ('CURVE_LP_TOKENS1', '0xEd4064f376cB8d68F770FB1Ff088a3d0F3FF5c4d', 0),
         )  # entry to ensure that cache with wrong entries gets cleared correctly
+        write_cursor.execute(
+            'INSERT INTO underlying_tokens_list (identifier, parent_token_entry, weight) VALUES (?, ?, ?)',  # noqa: E501
+            (A_USDT.identifier, A_USDT.identifier, 1),
+        )
+        write_cursor.execute(
+            'INSERT INTO underlying_tokens_list (identifier, parent_token_entry, weight) VALUES (?, ?, ?)',  # noqa: E501
+            (A_PAX.identifier, A_PAX.identifier, 1),
+        )
+
+    with globaldb.conn.read_ctx() as cursor:  # check we have the wrong case of an underlying token with itself as underlying in the Global DB before the upgrade  # noqa: E501
+        underlying_count_before = cursor.execute(
+            'SELECT COUNT(*) FROM underlying_tokens_list',
+        ).fetchone()[0]
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM underlying_tokens_list WHERE identifier=parent_token_entry',
+        ).fetchone()[0] == 2
 
     with ExitStack() as stack:
         patch_for_globaldb_upgrade_to(stack, 9)
@@ -824,6 +841,12 @@ def test_upgrade_v8_v9(globaldb: GlobalDBHandler):
             'SELECT last_queried_ts FROM general_cache WHERE key LIKE "CURVE_LP_TOKENS%" '
             'ORDER BY last_queried_ts ASC LIMIT 2',
         ).fetchall() == [(1718795451,), (1718795451,)]
+        assert cursor.execute(  # Check that the two underlying tokens that havethemselves as underlying have been removed  # noqa: E501
+            'SELECT COUNT(*) FROM underlying_tokens_list',
+        ).fetchone()[0] == underlying_count_before - 2
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM underlying_tokens_list WHERE identifier=parent_token_entry',
+        ).fetchone()[0] == 0
 
 
 @pytest.mark.parametrize('custom_globaldb', ['v2_global.db'])

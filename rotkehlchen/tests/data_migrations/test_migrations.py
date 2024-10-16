@@ -12,7 +12,7 @@ from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.scroll.constants import SCROLL_ETHERSCAN_NODE
 from rotkehlchen.constants import ONE
-from rotkehlchen.constants.assets import A_BTC, A_ETH, A_PAX, A_USDT
+from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.data_migrations.constants import LAST_DATA_MIGRATION
 from rotkehlchen.data_migrations.manager import (
     MIGRATION_LIST,
@@ -503,49 +503,6 @@ def test_migration_14(
     )
 
 
-@pytest.mark.parametrize('data_migration_version', [15])
-@pytest.mark.parametrize('perform_upgrades_at_unlock', [True])
-def test_migration_16(rotkehlchen_api_server: 'APIServer', globaldb: 'GlobalDBHandler') -> None:
-    """Test migration 16
-
-    - Test that all underlying tokens that are their own parent are removed."""
-    # add some underlying tokens with their own parent as themselves
-    with globaldb.conn.write_ctx() as write_cursor:
-        write_cursor.execute(
-            'INSERT INTO underlying_tokens_list (identifier, parent_token_entry, weight) VALUES (?, ?, ?)',  # noqa: E501
-            (A_USDT.identifier, A_USDT.identifier, 1),
-        )
-        write_cursor.execute(
-            'INSERT INTO underlying_tokens_list (identifier, parent_token_entry, weight) VALUES (?, ?, ?)',  # noqa: E501
-            (A_PAX.identifier, A_PAX.identifier, 1),
-        )
-
-    with globaldb.conn.read_ctx() as cursor:
-        underlying_count_before = cursor.execute(
-            'SELECT COUNT(*) FROM underlying_tokens_list',
-        ).fetchone()[0]
-        assert cursor.execute(
-            'SELECT COUNT(*) FROM underlying_tokens_list WHERE identifier=parent_token_entry',
-        ).fetchone()[0] == 2
-
-    with patch(
-        'rotkehlchen.data_migrations.manager.MIGRATION_LIST',
-        new=[MIGRATION_LIST[8]],
-    ):
-        migration_manager = DataMigrationManager(rotkehlchen_api_server.rest_api.rotkehlchen)
-        migration_manager.maybe_migrate_data()
-        assert migration_manager.progress_handler.current_round_total_steps == migration_manager.progress_handler.current_round_current_step  # noqa: E501
-
-    # Check that the two underlying tokens have been removed
-    with globaldb.conn.read_ctx() as cursor:
-        assert cursor.execute(
-            'SELECT COUNT(*) FROM underlying_tokens_list',
-        ).fetchone()[0] == underlying_count_before - 2
-        assert cursor.execute(
-            'SELECT COUNT(*) FROM underlying_tokens_list WHERE identifier=parent_token_entry',
-        ).fetchone()[0] == 0
-
-
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('data_migration_version', [17])
 @pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
@@ -655,7 +612,7 @@ def test_migration_18(rotkehlchen_api_server: 'APIServer') -> None:
 
     with patch(
         'rotkehlchen.data_migrations.manager.MIGRATION_LIST',
-        new=[MIGRATION_LIST[9]],
+        new=[MIGRATION_LIST[8]],
     ):
         migration_manager = DataMigrationManager(rotkehlchen_api_server.rest_api.rotkehlchen)
         migration_manager.maybe_migrate_data()

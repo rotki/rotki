@@ -32,6 +32,18 @@ def _remove_bad_cache_entries(write_cursor: 'DBCursor') -> None:
     )
 
 
+@enter_exit_debug_log()
+def _remove_own_underlying_tokens(write_cursor: 'DBCursor') -> None:
+    """Moved here from userdb (lol) migration 16 (v1.34.2)
+
+    Removes the underlying token entries from the global DB that have themselves
+    as the underlying token.
+    """
+    write_cursor.execute(
+        'DELETE FROM underlying_tokens_list WHERE identifier=parent_token_entry;',
+    )
+
+
 @enter_exit_debug_log(name='globaldb v8->v9 upgrade')
 def migrate_to_v9(connection: 'DBConnection') -> None:
     """This globalDB upgrade does the following:
@@ -42,3 +54,4 @@ def migrate_to_v9(connection: 'DBConnection') -> None:
         _addressbook_schema_update(write_cursor)
         _add_uniswap_to_price_history_source_types(write_cursor)
         _remove_bad_cache_entries(write_cursor)
+        _remove_own_underlying_tokens(write_cursor)
