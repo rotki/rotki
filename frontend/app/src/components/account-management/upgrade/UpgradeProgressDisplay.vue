@@ -9,7 +9,7 @@ const dbUpgradeProgressData = computed<CurrentDbUpgradeProgress | null>(() => {
   if (!status)
     return null;
 
-  const { currentStep, toVersion, totalSteps } = status.currentUpgrade;
+  const { currentStep, toVersion, totalSteps, description } = status.currentUpgrade;
   const current = toVersion - status.startVersion;
   const total = status.targetVersion - status.startVersion;
   return {
@@ -20,6 +20,7 @@ const dbUpgradeProgressData = computed<CurrentDbUpgradeProgress | null>(() => {
     toVersion: status.targetVersion,
     currentStep,
     totalSteps,
+    description: description || '',
   };
 });
 
