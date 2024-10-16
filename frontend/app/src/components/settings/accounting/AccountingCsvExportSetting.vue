@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import SettingsItem from '../controls/SettingsItem.vue';
-
 const { t } = useI18n();
 </script>
 

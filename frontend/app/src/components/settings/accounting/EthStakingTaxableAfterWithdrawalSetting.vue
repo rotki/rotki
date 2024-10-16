@@ -17,19 +17,23 @@ function getSuccessMessage(enabled: boolean) {
 
 <template>
   <SettingsOption
-    #default="{ error, success, update }"
     setting="ethStakingTaxableAfterWithdrawalEnabled"
     :error-message="t('account_settings.messages.eth_staking_taxable_after_withdrawal.error')"
     :success-message="getSuccessMessage"
   >
-    <RuiSwitch
-      v-model="ethStakingTaxableAfterWithdrawalEnabled"
-      class="accounting-settings__eth-staking-taxable-after-withdrawal"
-      :success-messages="success"
-      :error-messages="error"
-      :label="t('accounting_settings.trade.labels.eth_staking_taxable_after_withdrawal_enabled')"
-      color="primary"
-      @update:model-value="update($event)"
-    />
+    <template #title>
+      {{ t('accounting_settings.trade.titles.eth_staking') }}
+    </template>
+    <template #default="{ error, success, update }">
+      <RuiSwitch
+        v-model="ethStakingTaxableAfterWithdrawalEnabled"
+        class="accounting-settings__eth-staking-taxable-after-withdrawal"
+        :success-messages="success"
+        :error-messages="error"
+        :label="t('accounting_settings.trade.labels.eth_staking_taxable_after_withdrawal_enabled')"
+        color="primary"
+        @update:model-value="update($event)"
+      />
+    </template>
   </SettingsOption>
 </template>

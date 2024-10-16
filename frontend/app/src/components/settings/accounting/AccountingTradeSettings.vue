@@ -8,19 +8,8 @@ const { t } = useI18n();
       {{ t('accounting_settings.trade.title') }}
     </template>
 
-    <SettingsItem>
-      <template #title>
-        {{ t('accounting_settings.trade.titles.crypto2crypto') }}
-      </template>
-      <CryptoToCryptoTradeSetting />
-    </SettingsItem>
-
-    <SettingsItem>
-      <template #title>
-        {{ t('accounting_settings.trade.titles.gas_costs') }}
-      </template>
-      <GasCostSetting />
-    </SettingsItem>
+    <CryptoToCryptoTradeSetting />
+    <GasCostSetting />
 
     <SettingsItem>
       <template #title>
@@ -29,12 +18,7 @@ const { t } = useI18n();
       <TaxFreeSetting />
     </SettingsItem>
 
-    <SettingsItem>
-      <template #title>
-        {{ t('accounting_settings.trade.titles.assets_movements') }}
-      </template>
-      <AccountAssetMovementsSetting />
-    </SettingsItem>
+    <AccountAssetMovementsSetting />
 
     <SettingsItem>
       <template #title>
@@ -45,11 +29,6 @@ const { t } = useI18n();
       <CostBasisMethodSetting />
     </SettingsItem>
 
-    <SettingsItem>
-      <template #title>
-        {{ t('accounting_settings.trade.titles.eth_staking') }}
-      </template>
-      <EthStakingTaxableAfterWithdrawalSetting />
-    </SettingsItem>
+    <EthStakingTaxableAfterWithdrawalSetting />
   </SettingCategory>
 </template>
