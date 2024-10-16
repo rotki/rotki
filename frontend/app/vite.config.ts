@@ -47,6 +47,8 @@ if (envPath)
 if (!hmrEnabled)
   console.info('HMR is disabled');
 
+const enableChecker = !(process.env.CI || process.env.VITE_TEST || process.env.VITEST);
+
 export default defineConfig({
   resolve: {
     alias: {
@@ -69,9 +71,13 @@ export default defineConfig({
       importMode: 'async',
     }),
     vue(),
-    checker({
-      vueTsc: !(process.env.CI || process.env.VITE_TEST || process.env.VITEST),
-    }),
+    checker(enableChecker
+      ? {
+          vueTsc: {
+            tsconfigPath: 'tsconfig.app.json',
+          },
+        }
+      : {}),
     AutoImport({
       packagePresets: ['@rotki/common'],
       include: [
