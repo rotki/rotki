@@ -85,10 +85,9 @@ const extraParams = computed(() => ({
 }));
 
 const { fetchAssetMovements, refreshAssetMovements } = useAssetMovements();
+const { selected, expanded } = useCommonTableProps<AssetMovementEntry>();
 
 const {
-  selected,
-  expanded,
   isLoading,
   state: assetMovements,
   filters,

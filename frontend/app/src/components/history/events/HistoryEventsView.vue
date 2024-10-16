@@ -125,6 +125,8 @@ const includes = computed<{ evmEvents: boolean; onlineEvents: boolean }>(() => {
   };
 });
 
+const { editableItem } = useCommonTableProps<HistoryEventEntry>();
+
 const {
   isLoading: groupLoading,
   userAction,
@@ -135,7 +137,6 @@ const {
   updateFilter,
   fetchData,
   pageParams,
-  editableItem,
   pagination,
   sort,
 } = usePaginationFilters<

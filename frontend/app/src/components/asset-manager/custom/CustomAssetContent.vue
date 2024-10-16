@@ -21,12 +21,11 @@ const types = ref<string[]>([]);
 const router = useRouter();
 const route = useRoute();
 
-const { deleteCustomAsset, queryAllCustomAssets, getCustomAssetTypes } = useAssetManagementApi();
 const { setMessage } = useMessageStore();
-
 const { show } = useConfirmStore();
-
+const { deleteCustomAsset, queryAllCustomAssets, getCustomAssetTypes } = useAssetManagementApi();
 const { setOpenDialog, setPostSubmitFunc } = useCustomAssetForm();
+const { expanded, editableItem } = useCommonTableProps<CustomAsset>();
 
 async function deleteAsset(assetId: string) {
   try {
@@ -47,11 +46,9 @@ async function deleteAsset(assetId: string) {
 const {
   state,
   filters,
-  expanded,
   matchers,
   fetchData,
   isLoading: loading,
-  editableItem,
   pagination,
   sort,
 } = usePaginationFilters<
@@ -64,10 +61,10 @@ const {
 >(queryAllCustomAssets, {
   history: get(mainPage) ? 'router' : false,
   filterSchema: () => useCustomAssetFilter(types),
-  defaultSortBy: {
-    key: ['name'],
-    ascending: [false],
-  },
+  defaultSortBy: [{
+    column: 'name',
+    direction: 'desc',
+  }],
 });
 
 const dialogTitle = computed<string>(() =>

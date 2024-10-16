@@ -1,5 +1,5 @@
 import { type MatchedKeyword, type SearchMatcher, assetSuggestions } from '@/types/filtering';
-import type { FilterSchema } from '@/composables/filter-paginate';
+import type { FilterSchema } from '@/composables/use-pagination-filter/types';
 
 enum KrakenStakingKeys {
   TYPE = 'type',

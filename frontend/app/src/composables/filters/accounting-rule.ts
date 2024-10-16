@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { FilterSchema } from '@/composables/filter-paginate';
+import type { FilterSchema } from '@/composables/use-pagination-filter/types';
 import type { MatchedKeywordWithBehaviour, SearchMatcher } from '@/types/filtering';
 
 enum AccountingRuleFilterKeys {

@@ -1,6 +1,6 @@
 import type { BigNumber } from '@rotki/common';
 import type { Collection, CollectionResponse } from '@/types/collection';
-import type { TablePagination } from '@/types/pagination';
+import type { ComputedRef, Ref } from 'vue';
 
 type Entries = 'entries' | 'entriesFound' | 'entriesLimit' | 'entriesTotal';
 
@@ -86,20 +86,5 @@ export function setupEntryLimit(
   return {
     itemLength,
     showUpgradeRow,
-  };
-}
-
-export function defaultOptions<T extends NonNullable<unknown>>(defaultSortBy?: {
-  key?: keyof T | (keyof T)[];
-  ascending?: boolean[];
-}): TablePagination<T> {
-  const { itemsPerPage } = useFrontendSettingsStore();
-  const sortByKey = defaultSortBy?.key;
-  return {
-    page: 1,
-    itemsPerPage,
-    sortBy: arrayify(sortByKey || 'timestamp' as keyof T),
-    sortDesc: defaultSortBy?.ascending ? defaultSortBy?.ascending.map(bool => !bool) : [true],
-    singleSort: sortByKey ? !Array.isArray(sortByKey) : false,
   };
 }

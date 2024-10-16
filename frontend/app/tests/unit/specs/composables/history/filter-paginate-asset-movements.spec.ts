@@ -67,11 +67,13 @@ describe('composables::history/filter-paginate', () => {
         locationOverview,
       });
 
-      expect(get(userAction)).toBe(true);
+      expect(get(userAction)).toBe(false);
       expect(get(isLoading)).toBe(false);
-      expect(get(filters)).to.toStrictEqual({});
-      expect(Array.isArray(get(sort))).toBe(true);
-      expect(get(sort)).toHaveLength(1);
+      expect(get(filters)).toStrictEqual({});
+      expect(get(sort)).toStrictEqual({
+        column: 'timestamp',
+        direction: 'desc',
+      });
       expect(get(state).data).toHaveLength(0);
       expect(get(state).total).toEqual(0);
 
@@ -108,9 +110,9 @@ describe('composables::history/filter-paginate', () => {
 
     it('modify filters and fetch data correctly', async () => {
       const pushSpy = vi.spyOn(router, 'push');
-      const query = { sortBy: ['category'], sortDesc: ['true'] };
+      const query = { sort: ['category'], sortOrder: ['desc'] };
 
-      const { isLoading, state } = usePaginationFilters<
+      const { isLoading, state, sort } = usePaginationFilters<
         AssetMovement,
         AssetMovementRequestPayload,
         AssetMovementEntry,
@@ -121,6 +123,11 @@ describe('composables::history/filter-paginate', () => {
         history: get(mainPage) ? 'router' : false,
         filterSchema: useAssetMovementFilters,
         locationOverview,
+      });
+
+      expect(get(sort)).toStrictEqual({
+        column: 'timestamp',
+        direction: 'desc',
       });
 
       await router.push({
@@ -142,6 +149,10 @@ describe('composables::history/filter-paginate', () => {
       expect(get(state).found).toEqual(45);
       expect(get(state).limit).toEqual(-1);
       expect(get(state).total).toEqual(45);
+      expect(get(sort)).toStrictEqual({
+        column: 'category',
+        direction: 'desc',
+      });
     });
   });
 });

@@ -42,10 +42,10 @@ const { filters, matchers, state, isLoading, fetchData, sort, pagination } = use
   extraParams: computed(() => ({
     blockchain: get(selectedChain),
   })),
-  defaultSortBy: {
-    key: ['name'],
-    ascending: [true],
-  },
+  defaultSortBy: [{
+    column: 'name',
+    direction: 'asc',
+  }],
 });
 
 function openForm(item: AddressBookEntry | null = null) {

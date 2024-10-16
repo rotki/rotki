@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import type { MatchedKeyword, SearchMatcher } from '@/types/filtering';
-import type { FilterSchema } from '@/composables/filter-paginate';
+import type { FilterSchema } from '@/composables/use-pagination-filter/types';
 
 enum AddressBookFilterKeys {
   NAME = 'name',

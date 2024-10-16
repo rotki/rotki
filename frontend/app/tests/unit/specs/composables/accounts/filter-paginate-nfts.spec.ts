@@ -77,22 +77,20 @@ describe('composables::history/filter-paginate', () => {
         locationOverview,
         onUpdateFilters,
         extraParams,
-        defaultSortBy: {
-          key: ['name'],
-          ascending: [true],
-        },
+        defaultSortBy: [{
+          column: 'name',
+          direction: 'asc',
+        }],
       });
 
-      expect(get(userAction)).toBe(true);
+      expect(get(userAction)).toBe(false);
       expect(get(isLoading)).toBe(false);
       expect(get(filters)).to.toStrictEqual(undefined);
       expect(get(sort)).toHaveLength(1);
-      expect(get(sort)).toMatchObject([
-        {
-          column: 'name',
-          direction: 'asc',
-        },
-      ]);
+      expect(get(sort)).toMatchObject([{
+        column: 'name',
+        direction: 'asc',
+      }]);
       expect(get(state).data).toHaveLength(0);
       expect(get(state).total).toEqual(0);
 
@@ -115,10 +113,12 @@ describe('composables::history/filter-paginate', () => {
         locationOverview,
         onUpdateFilters,
         extraParams,
-        defaultSortBy: {
-          key: ['name'],
-          ascending: [true],
-        },
+        defaultSortBy: [
+          {
+            column: 'name',
+            direction: 'asc',
+          },
+        ],
       });
 
       expect(get(isLoading)).toBe(false);
@@ -132,21 +132,27 @@ describe('composables::history/filter-paginate', () => {
 
     it('modify filters and fetch data correctly', async () => {
       const pushSpy = vi.spyOn(router, 'push');
-      const query = { sortDesc: ['false'] };
+      const query = { sortOrder: ['asc'] };
 
       const {
         isLoading,
         state,
+        sort,
       } = usePaginationFilters<NonFungibleBalance>(fetchNonFungibleBalances, {
         history: get(mainPage) ? 'router' : false,
         locationOverview,
         onUpdateFilters,
         extraParams,
-        defaultSortBy: {
-          key: ['name'],
-          ascending: [false],
-        },
+        defaultSortBy: [{
+          column: 'name',
+          direction: 'desc',
+        }],
       });
+
+      expect(get(sort)).toStrictEqual([{
+        column: 'name',
+        direction: 'desc',
+      }]);
 
       await router.push({
         query,
@@ -166,6 +172,10 @@ describe('composables::history/filter-paginate', () => {
       expect(get(state).data).toHaveLength(9);
       expect(get(state).found).toEqual(29);
       expect(get(state).total).toEqual(30);
+      expect(get(sort)).toStrictEqual([{
+        column: 'timestamp',
+        direction: 'asc',
+      }]);
     });
   });
 });

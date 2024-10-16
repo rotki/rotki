@@ -28,12 +28,12 @@ const extraParams = computed(() => {
 });
 
 const { getAccountByAddress } = useBlockchainStore();
+const { editableItem } = useCommonTableProps<CalendarEvent>();
 
 const {
   state: events,
   isLoading,
   fetchData,
-  editableItem,
 } = usePaginationFilters<
   CalendarEvent,
   CalendarEventRequestPayload
@@ -52,8 +52,7 @@ const {
     }
   },
   defaultSortBy: {
-    key: ['timestamp'],
-    ascending: [true],
+    direction: 'asc',
   },
   extraParams,
   customPageParams: computed<Partial<CalendarEventRequestPayload>>(() => {

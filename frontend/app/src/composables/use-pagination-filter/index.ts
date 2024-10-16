@@ -1,24 +1,14 @@
-/* eslint-disable max-lines */
 import { Severity } from '@rotki/common';
 import { isEmpty, isEqual } from 'lodash-es';
-import { type LocationQuery, type RawLocationQuery, RouterPaginationOptionsSchema } from '@/types/route';
 import { FilterBehaviour, type MatchedKeywordWithBehaviour, type SearchMatcher } from '@/types/filtering';
-import type { DataTableSortColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
+import type { LocationQuery, RawLocationQuery } from '@/types/route';
+import type { DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import type { MaybeRef } from '@vueuse/core';
 import type { AxiosError } from 'axios';
-import type { ZodSchema } from 'zod';
 import type { PaginationRequestPayload } from '@/types/common';
 import type { Collection } from '@/types/collection';
-import type { TablePagination } from '@/types/pagination';
 import type { ComputedRef, Ref, WritableComputedRef } from 'vue';
-
-export interface FilterSchema<F, M> {
-  filters: Ref<F>;
-  matchers: ComputedRef<M[]>;
-  RouteFilterSchema?: ZodSchema;
-}
-
-export type TableRowKey<T> = keyof T extends string ? keyof T : never;
+import type { FilterSchema, Sorting } from '@/composables/use-pagination-filter/types';
 
 interface UsePaginationFiltersOptions<
   T extends NonNullable<unknown>,
@@ -36,11 +26,7 @@ interface UsePaginationFiltersOptions<
   customPageParams?: ComputedRef<Partial<U>>;
   defaultParams?: ComputedRef<Partial<U> | undefined>;
   defaultCollection?: () => S;
-  defaultSortBy?: {
-    // If it's an array, then multiple sorts are applied; otherwise, it is a single sort.
-    key?: keyof V | (keyof V)[];
-    ascending?: boolean[];
-  };
+  defaultSortBy?: DataTableSortData<V>;
   query?: Ref<LocationQuery>;
 }
 
@@ -53,12 +39,6 @@ interface UsePaginationFilterReturn<
   X extends SearchMatcher<string, string> | void = undefined,
 > {
   pageParams: ComputedRef<U>;
-  selected: Ref<V[]>;
-  openDialog: Ref<boolean>;
-  editableItem: Ref<V | undefined>;
-  itemsToDelete: Ref<V[]>;
-  confirmationMessage: Ref<string>;
-  expanded: Ref<V[]>;
   isLoading: Ref<boolean>;
   userAction: Ref<boolean>;
   state: Ref<S>;
@@ -93,20 +73,16 @@ export function usePaginationFilters<
 ): UsePaginationFilterReturn<T, U, V, S, W, X> {
   const { t } = useI18n();
   const { notify } = useNotificationsStore();
+  const itemsPerPage = useItemsPerPage();
   const router = useRouter();
   const route = useRoute();
-  const paginationOptions = ref(markRaw(defaultOptions<V>(options.defaultSortBy)));
-  const selected = ref<V[]>([]) as Ref<V[]>;
-  const openDialog = ref<boolean>(false);
-  const editableItem = ref<V>();
-  const itemsToDelete = ref<V[]>([]) as Ref<V[]>;
-  const confirmationMessage = ref<string>('');
-  const expanded = ref<V[]>([]) as Ref<V[]>;
   const userAction = ref<boolean>(false);
+  const internalSorting = ref<Sorting<V>>(markRaw(applySortingDefaults(options.defaultSortBy))) as Ref<Sorting<V>>;
+  const internalPagination = ref<TablePaginationData>(applyPaginationDefaults(get(itemsPerPage)));
 
   const {
     onUpdateFilters,
-    defaultCollection,
+    defaultCollection = defaultCollectionState<V> as () => S,
     // giving it a default value since it is watched, for cases where there are no extra params
     extraParams = computed<LocationQuery>(() => ({})),
     customPageParams,
@@ -122,45 +98,17 @@ export function usePaginationFilters<
     query = ref<LocationQuery>({}),
   } = options;
 
+  const defaultSorting = (): Sorting<V> => applySortingDefaults(defaultSortBy);
+
   const { filters, matchers, RouteFilterSchema } = filterSchema();
 
   const sort = computed<DataTableSortData<V>>({
     get() {
-      const opts = get(paginationOptions);
-      if (opts.singleSort) {
-        if (opts.sortBy.length === 0)
-          return [];
-
-        return {
-          column: opts.sortBy[0] as TableRowKey<V>,
-          direction: opts.sortDesc?.[0] ? 'desc' : 'asc',
-        } satisfies DataTableSortColumn<V>;
-      }
-
-      return opts.sortBy.map(
-        (sort, index) =>
-          ({
-            column: sort as TableRowKey<V>,
-            direction: opts.sortDesc?.[index] ? 'desc' : 'asc',
-          }) satisfies DataTableSortColumn<V>,
-      );
+      return get(internalSorting) as DataTableSortData<V>;
     },
     set(sort) {
       set(userAction, true);
-      if (Array.isArray(sort)) {
-        set(paginationOptions, {
-          ...get(paginationOptions),
-          sortBy: sort.map(col => col.column as keyof V).filter(key => !!key),
-          sortDesc: sort.map(col => col.direction === 'desc'),
-        });
-      }
-      else {
-        set(paginationOptions, {
-          ...get(paginationOptions),
-          sortBy: sort?.column ? [sort.column as keyof V] : [],
-          sortDesc: sort?.column ? [sort.direction === 'desc'] : [],
-        });
-      }
+      set(internalSorting, applySortingDefaults(sort));
     },
   });
 
@@ -221,8 +169,8 @@ export function usePaginationFilters<
   };
 
   const pageParams = computed<U>(() => {
-    const { itemsPerPage, page, sortBy, sortDesc } = get(paginationOptions);
-    const offset = (page - 1) * itemsPerPage;
+    const { page, limit } = get(internalPagination);
+    const offset = (page - 1) * limit;
 
     const selectedFilters = get(filters);
     const location = get(locationOverview);
@@ -236,26 +184,16 @@ export function usePaginationFilters<
       ...nonEmptyProperties(get(customPageParams) ?? {}),
     };
 
-    const orderByAttributes = sortBy?.length > 0 ? sortBy : arrayify(defaultSortBy?.key ?? 'timestamp');
-
     // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
     return {
       ...transformFilters(transformedFilters),
-      limit: itemsPerPage,
+      limit,
       offset,
-      orderByAttributes: orderByAttributes.map(item => (typeof item === 'string' ? transformCase(item) : item)),
-      ascending: sortBy?.length > 0 ? sortDesc.map(bool => !bool) : defaultSortBy?.ascending ?? [false],
+      ...getApiSortingParams(get(internalSorting)),
     } as U; // todo: figure out a way to not typecast
   });
 
-  const getCollectionDefault = (): S => {
-    if (defaultCollection)
-      return defaultCollection();
-
-    return defaultCollectionState<V>() as S;
-  };
-
-  const { isLoading, state, execute } = useAsyncState<S, MaybeRef<U>[]>(fetchAssetData, getCollectionDefault(), {
+  const { isLoading, state, execute } = useAsyncState<S, MaybeRef<U>[]>(fetchAssetData, defaultCollection(), {
     immediate: false,
     resetOnExecute: false,
     delay: 0,
@@ -283,20 +221,21 @@ export function usePaginationFilters<
 
   const pagination = computed<TablePaginationData>({
     get() {
-      const opts = get(paginationOptions);
+      const { page, limit } = get(internalPagination);
+      const { found: total } = get(state);
       return {
-        total: get(state).found,
-        page: opts.page,
-        limit: opts.itemsPerPage,
+        total,
+        page,
+        limit,
       };
     },
     set(pagination) {
       set(userAction, true);
-      const opts = get(paginationOptions);
-      set(paginationOptions, {
-        ...opts,
-        page: pagination?.page ?? opts.page,
-        itemsPerPage: pagination?.limit ?? opts.itemsPerPage,
+      const currentPagination = get(internalPagination);
+      set(internalPagination, {
+        ...currentPagination,
+        page: pagination?.page ?? currentPagination.page,
+        limit: pagination?.limit ?? currentPagination.limit,
       });
     },
   });
@@ -310,16 +249,6 @@ export function usePaginationFilters<
       set(filters, value);
     },
   });
-
-  /**
-   * Updates pagination options
-   * @template T
-   * @param {TablePagination<T>} newOptions
-   */
-  const setOptions = (newOptions: TablePagination<V>): void => {
-    set(userAction, true);
-    set(paginationOptions, newOptions);
-  };
 
   /**
    * Triggered on route change and on component mount
@@ -336,19 +265,15 @@ export function usePaginationFilters<
       // for empty query, we reset the filters, and pagination to defaults
       onUpdateFilters?.(routeQuery);
       set(filters, RouteFilterSchema?.parse({}));
-      return setOptions(defaultOptions<V>(options.defaultSortBy));
+      set(internalPagination, applyPaginationDefaults(get(itemsPerPage)));
+      set(internalSorting, defaultSorting());
+      return;
     }
 
-    const parsedOptions = RouterPaginationOptionsSchema.parse(routeQuery);
-    const parsedFilters = RouteFilterSchema?.parse(routeQuery);
-
     onUpdateFilters?.(routeQuery);
-
-    set(filters, parsedFilters);
-    set(paginationOptions, {
-      ...get(paginationOptions),
-      ...parsedOptions,
-    });
+    set(filters, RouteFilterSchema?.parse(routeQuery));
+    set(internalPagination, parseQueryPagination(routeQuery, get(internalPagination)));
+    set(internalSorting, parseQueryHistory(routeQuery, defaultSorting()));
   };
 
   /**
@@ -356,10 +281,8 @@ export function usePaginationFilters<
    * @returns {LocationQuery}
    */
   const getQuery = (): LocationQuery => {
-    const opts = get(paginationOptions);
-    assert(opts);
-    const { itemsPerPage, page, sortBy, sortDesc } = opts;
-
+    const { page, limit } = get(internalPagination);
+    const sorting = get(internalSorting);
     const selectedFilters = get(filters);
 
     const location = get(locationOverview);
@@ -370,11 +293,17 @@ export function usePaginationFilters<
       Object.entries(get(extraParams)).map(([key, value]) => [key, value?.toString()]),
     );
 
+    const sortParams = isEqual(sorting, defaultSorting())
+      ? undefined
+      : {
+          sort: Array.isArray(sorting) ? sorting.map(item => item.column) : [sorting.column],
+          sortOrder: Array.isArray(sorting) ? sorting.map(item => item.direction) : [sorting.direction],
+        };
+
     return {
-      itemsPerPage: itemsPerPage.toString(),
-      page: page.toString(),
-      sortBy: sortBy.map(s => s.toString()),
-      sortDesc: sortDesc.map(x => x.toString()),
+      limit: limit.toString(),
+      ...(page > 1 ? { page: page.toString() } : {}),
+      ...sortParams,
       ...selectedFilters,
       ...nonEmptyProperties(extraParamsConverted, true),
     };
@@ -393,11 +322,10 @@ export function usePaginationFilters<
    * @param {number} page
    * @param {boolean} action
    */
-  const setPage = (page: number, action = true): void => {
+  const setPage = (page: number, action: boolean = true): void => {
     if (action)
       set(userAction, true);
-
-    set(paginationOptions, { ...get(paginationOptions), page });
+    set(internalPagination, { ...get(internalPagination), page });
   };
 
   /**
@@ -453,12 +381,6 @@ export function usePaginationFilters<
 
   return {
     pageParams,
-    selected,
-    openDialog,
-    editableItem,
-    itemsToDelete,
-    confirmationMessage,
-    expanded,
     isLoading,
     userAction,
     state,
