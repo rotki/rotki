@@ -10,7 +10,7 @@ from rotkehlchen.globaldb.upgrades.v7_v8 import migrate_to_v8
 from rotkehlchen.globaldb.upgrades.v8_v9 import migrate_to_v9
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.utils.misc import ts_now
-from rotkehlchen.utils.upgrades import UpgradeRecord
+from rotkehlchen.utils.upgrades import DBUpgradeProgressHandler, UpgradeRecord
 
 from ..utils import GLOBAL_DB_VERSION, MIN_SUPPORTED_GLOBAL_DB_VERSION, globaldb_get_setting_value
 from .v2_v3 import migrate_to_v3
@@ -23,6 +23,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 if TYPE_CHECKING:
     from rotkehlchen.db.drivers.gevent import DBConnection
+    from rotkehlchen.user_messages import MessagesAggregator
 
 
 UPGRADES_LIST = [
@@ -61,6 +62,7 @@ def maybe_upgrade_globaldb(
         connection: 'DBConnection',
         global_dir: Path,
         db_filename: str,
+        msg_aggregator: 'MessagesAggregator',
 ) -> bool:
     """Maybe upgrade the global DB.
 
@@ -90,47 +92,77 @@ def maybe_upgrade_globaldb(
             f'but the GlobalDB found in the system is v{db_version}. Bailing ...',
         )
 
+    progress_handler = DBUpgradeProgressHandler(
+        messages_aggregator=msg_aggregator,
+        target_version=GLOBAL_DB_VERSION,
+    )
     for upgrade in UPGRADES_LIST:
-        if db_version != upgrade.from_version:
-            continue
+        _perform_single_upgrade(
+            upgrade=upgrade,
+            connection=connection,
+            global_dir=global_dir,
+            db_filename=db_filename,
+            progress_handler=progress_handler,
+        )
 
-        # WAL checkpoint at start to make sure everything is in the file we copy for backup. For more info check comment in the user DB upgrade.  # noqa: E501
-        connection.execute('PRAGMA wal_checkpoint(FULL);')
-        to_version = upgrade.from_version + 1
-        # Create a backup
-        tmp_db_filename = f'{ts_now()}_global_db_v{db_version}.backup'
-        tmp_db_path = global_dir / tmp_db_filename
-        shutil.copyfile(global_dir / db_filename, tmp_db_path)
-
-        with connection.write_ctx() as cursor:
-            cursor.execute(
-                'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
-                ('ongoing_upgrade_from_version', str(upgrade.from_version)),
-            )
-
-        try:
-            upgrade.function(connection)
-        except BaseException as e:
-            # Problem .. restore DB backup, log all info and bail out
-            error_message = (
-                f'Failed at global DB upgrade from version {upgrade.from_version} to '
-                f'{to_version}: {e!s}'
-            )
-            stacktrace = traceback.format_exc()
-            log.error(f'{error_message}\n{stacktrace}')
-            shutil.copyfile(tmp_db_path, global_dir / db_filename)
-            raise ValueError(error_message) from e
-
-        # single upgrade succesfull
-        with connection.write_ctx() as write_cursor:
-            write_cursor.execute(
-                'DELETE FROM settings WHERE name=?',
-                ('ongoing_upgrade_from_version',),
-            )
-            write_cursor.execute(
-                'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
-                ('version', str(to_version)),
-            )
-            db_version = to_version
+    # Finally make sure to always have latest version in the DB
+    with connection.write_ctx() as write_cursor:
+        write_cursor.execute(
+            'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
+            ('version', GLOBAL_DB_VERSION),
+        )
 
     return False  # not fresh DB
+
+
+def _perform_single_upgrade(
+        upgrade: UpgradeRecord,
+        connection: 'DBConnection',
+        global_dir: Path,
+        db_filename: str,
+        progress_handler: DBUpgradeProgressHandler,
+) -> None:
+    with connection.read_ctx() as cursor:
+        current_version = globaldb_get_setting_value(cursor, 'version', GLOBAL_DB_VERSION)
+
+    if current_version != upgrade.from_version:
+        return
+    to_version = upgrade.from_version + 1
+    progress_handler.new_round(version=to_version)
+
+    # WAL checkpoint at start to make sure everything is in the file we copy for backup. For more info check comment in the user DB upgrade.  # noqa: E501
+    connection.execute('PRAGMA wal_checkpoint(FULL);')
+    # Create a backup
+    tmp_db_filename = f'{ts_now()}_global_db_v{upgrade.from_version}.backup'
+    tmp_db_path = global_dir / tmp_db_filename
+    shutil.copyfile(global_dir / db_filename, tmp_db_path)
+
+    with connection.write_ctx() as cursor:
+        cursor.execute(
+            'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
+            ('ongoing_upgrade_from_version', str(upgrade.from_version)),
+        )
+
+    try:
+        upgrade.function(connection=connection, progress_handler=progress_handler)
+    except BaseException as e:
+        # Problem .. restore DB backup, log all info and bail out
+        error_message = (
+            f'Failed at global DB upgrade from version {upgrade.from_version} to '
+            f'{to_version}: {e!s}'
+        )
+        stacktrace = traceback.format_exc()
+        log.error(f'{error_message}\n{stacktrace}')
+        shutil.copyfile(tmp_db_path, global_dir / db_filename)
+        raise ValueError(error_message) from e
+
+    # single upgrade succesfull
+    with connection.write_ctx() as write_cursor:
+        write_cursor.execute(
+            'DELETE FROM settings WHERE name=?',
+            ('ongoing_upgrade_from_version',),
+        )
+        write_cursor.execute(
+            'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
+            ('version', str(to_version)),
+        )

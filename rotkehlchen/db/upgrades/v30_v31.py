@@ -7,6 +7,7 @@ if TYPE_CHECKING:
 
 
 def _do_upgrade(cursor: 'DBCursor', progress_handler: 'DBUpgradeProgressHandler') -> None:
+    progress_handler.new_step(name='Deleting all ignored ethereum transaction ids.')
     # Should exist -- but we are being extremely pedantic here
     ignored_actions_exists = cursor.execute(  # always returns value
         'SELECT count(*) FROM sqlite_master WHERE type="table" AND name="ignored_actions";',
@@ -23,11 +24,12 @@ def _do_upgrade(cursor: 'DBCursor', progress_handler: 'DBUpgradeProgressHandler'
         );
         """)
 
-    progress_handler.new_step()
+    progress_handler.new_step(name='Deleting all kraken trades and their used query ranges.')
     # Delete kraken trades so they can be requeried
     cursor.execute('DELETE FROM trades WHERE location="B";')
     cursor.execute('DELETE FROM used_query_ranges WHERE name LIKE "kraken_trades_%";')
 
+    progress_handler.new_step(name='Updating eth2 tables.')
     # Add all new tables
     cursor.execute('DROP TABLE IF EXISTS eth2_deposits;')
     cursor.execute('DROP TABLE IF EXISTS eth2_daily_staking_details;')
@@ -70,7 +72,6 @@ def _do_upgrade(cursor: 'DBCursor', progress_handler: 'DBUpgradeProgressHandler'
     amount_deposited TEXT,
     FOREIGN KEY(validator_index) REFERENCES eth2_validators(validator_index) ON UPDATE CASCADE ON DELETE CASCADE,
     PRIMARY KEY (validator_index, timestamp));""")  # noqa: E501
-    progress_handler.new_step()
     cursor.execute("""
 CREATE VIEW IF NOT EXISTS combined_trades_view AS
     WITH amounts_query AS (
@@ -183,7 +184,6 @@ SELECT * from trades
     type TEXT NOT NULL,
     subtype TEXT
     );""")
-    progress_handler.new_step()
 
 
 def upgrade_v30_to_v31(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:

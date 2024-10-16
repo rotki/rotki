@@ -12,6 +12,7 @@ def upgrade_v29_to_v30(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
     """
     progress_handler.set_total_steps(1)
     with db.user_write() as cursor:
+        progress_handler.new_step(name='Adding category table to manually_tracked_balances.')
         # We need to disable foreign_keys to add the table due the following constraint
         # Cannot add a REFERENCES column with non-NULL default value
         cursor.switch_foreign_keys('OFF')
@@ -22,4 +23,3 @@ def upgrade_v29_to_v30(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         cursor.switch_foreign_keys('ON')
         # Insert the new bitpanda location
         cursor.execute('INSERT OR IGNORE INTO location(location, seq) VALUES ("b", 34);')
-        progress_handler.new_step()

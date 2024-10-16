@@ -12,8 +12,9 @@ def upgrade_v27_to_v28(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
     - Deletes aave information due to the addition of aave 2
     - Adds the Gitcoin tables
     """
-    progress_handler.set_total_steps(1)
+    progress_handler.set_total_steps(3)
     with db.user_write() as cursor:
+        progress_handler.new_step(name='Adding version column to yearn vaults table.')
         cursor.execute(
             'SELECT COUNT(*) FROM sqlite_master WHERE type="yearn_vaults_events" AND name="version"',  # noqa: E501
         )
@@ -21,8 +22,12 @@ def upgrade_v27_to_v28(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
             cursor.execute(
                 'ALTER TABLE yearn_vaults_events ADD COLUMN version INTEGER NOT NULL DEFAULT 1;',
             )
+
+        progress_handler.new_step(name='Removing Aave data due to addition of Aave 2.')
         cursor.execute('DELETE FROM aave_events;')
         cursor.execute('DELETE FROM used_query_ranges WHERE name LIKE "aave_events%";')
+
+        progress_handler.new_step(name='Creating Gitcoin tables.')
         # Create the gitcoin tables that are added in this DB version
         cursor.execute("""
         CREATE TABLE IF NOT EXISTS gitcoin_tx_type (
@@ -49,4 +54,3 @@ def upgrade_v27_to_v28(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         grant_name TEXT NOT NULL,
         created_on INTEGER NOT NULL
         )""")
-        progress_handler.new_step()

@@ -653,6 +653,7 @@ class AssetsUpdater:
                 global_dir=tmpdir,
                 db_filename=temp_db_name,
                 sql_vm_instructions_cb=GlobalDBHandler().conn.sql_vm_instructions_cb,
+                msg_aggregator=self.msg_aggregator,
             )
 
             # use a critical section to avoid modifications in the globaldb during the update
