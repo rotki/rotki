@@ -54,36 +54,33 @@ describe('composables::assets/filter-paginate', () => {
     });
 
     it('initialize composable correctly', async () => {
-      const { userAction, filters, sort, state, fetchData, applyRouteFilter, isLoading } = usePaginationFilters<
+      const { userAction, filters, sort, state, fetchData, isLoading } = usePaginationFilters<
         SupportedAsset,
         AssetRequestPayload,
-        SupportedAsset,
-        Collection<SupportedAsset>,
         Filters,
         Matcher
       >(fetchAssets, {
         history: get(mainPage) ? 'router' : false,
         filterSchema: useAssetFilter,
         locationOverview,
-        defaultSortBy: {
-          key: 'symbol',
-          ascending: [true],
-        },
+        defaultSortBy: [{
+          column: 'symbol',
+          direction: 'asc',
+        }],
       });
 
-      expect(get(userAction)).toBe(true);
+      expect(get(userAction)).toBe(false);
       expect(get(isLoading)).toBe(false);
-      expect(get(filters)).to.toStrictEqual({});
-      expect(Array.isArray(get(sort))).toBe(false);
-      expect(get(sort)).toMatchObject({
+      expect(get(filters)).toStrictEqual({});
+      expect(get(sort)).toStrictEqual([{
         column: 'symbol',
         direction: 'asc',
-      });
+      }]);
       expect(get(state).data).toHaveLength(0);
       expect(get(state).total).toEqual(0);
 
       set(userAction, true);
-      applyRouteFilter();
+      await nextTick();
       fetchData().catch(() => {});
       expect(get(isLoading)).toBe(true);
       await flushPromises();
@@ -96,8 +93,6 @@ describe('composables::assets/filter-paginate', () => {
       const { isLoading, state, filters, matchers } = usePaginationFilters<
         SupportedAsset,
         AssetRequestPayload,
-        SupportedAsset,
-        Collection<SupportedAsset>,
         Filters,
         Matcher
       >(fetchAssets, {
@@ -117,20 +112,27 @@ describe('composables::assets/filter-paginate', () => {
 
     it('modify filters and fetch data correctly', async () => {
       const pushSpy = vi.spyOn(router, 'push');
-      const query = { sortBy: ['category'], sortDesc: ['true'] };
+      const query = { sort: ['category'], sortOrder: ['desc'] };
 
-      const { isLoading, state } = usePaginationFilters<
+      const { isLoading, state, sort } = usePaginationFilters<
         SupportedAsset,
         AssetRequestPayload,
-        SupportedAsset,
-        Collection<SupportedAsset>,
         Filters,
         Matcher
       >(fetchAssets, {
         history: get(mainPage) ? 'router' : false,
         filterSchema: useAssetFilter,
         locationOverview,
+        defaultSortBy: [{
+          column: 'symbol',
+          direction: 'asc',
+        }],
       });
+
+      expect(get(sort)).toStrictEqual([{
+        column: 'symbol',
+        direction: 'asc',
+      }]);
 
       await router.push({
         query,
@@ -151,6 +153,11 @@ describe('composables::assets/filter-paginate', () => {
       expect(get(state).found).toEqual(210);
       expect(get(state).limit).toEqual(-1);
       expect(get(state).total).toEqual(210);
+
+      expect(get(sort)).toStrictEqual([{
+        column: 'category',
+        direction: 'desc',
+      }]);
     });
   });
 });

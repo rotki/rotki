@@ -142,4 +142,8 @@ export class TradeHistoryPage {
       range,
     );
   }
+
+  sortByColumn(number: number) {
+    cy.get('[data-cy=closed-trades] thead th').eq(number).click();
+  }
 }

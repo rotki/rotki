@@ -3,6 +3,8 @@ import { afterEach, assertType, beforeAll, beforeEach, describe, expect, expectT
 import type { MaybeRef } from '@vueuse/core';
 import type { ExchangeSavingsCollection, ExchangeSavingsEvent, ExchangeSavingsRequestPayload } from '@/types/exchanges';
 import type Vue from 'vue';
+import type { Collection } from '@/types/collection';
+import type { AssetBalance } from '@rotki/common';
 
 vi.mock('vue-router', () => {
   const route = ref({
@@ -45,41 +47,39 @@ describe('composables::history/filter-paginate', () => {
   });
 
   describe('components::exchanges/BinanceSavingDetail.vue', () => {
+    const exchangeReceived = ref<AssetBalance[]>([]);
+    const exchangeAssets = ref<string[]>([]);
     const defaultParams = computed(() => ({
       location: get(exchange).toString(),
     }));
 
-    const defaultCollectionState = (): ExchangeSavingsCollection => ({
-      found: 0,
-      limit: 0,
-      data: [],
-      total: 0,
-      totalUsdValue: Zero,
-      assets: [],
-      received: [],
-    });
+    async function fetchSavings(payload: MaybeRef<ExchangeSavingsRequestPayload>) {
+      const { received = [], assets = [], ...collection } = await fetchExchangeSavings(payload);
+      set(exchangeAssets, assets);
+      set(exchangeReceived, received);
+      return collection;
+    }
 
     beforeEach(() => {
       set(mainPage, true);
+      set(exchangeAssets, []);
+      set(exchangeReceived, []);
     });
 
     it('initialize composable correctly', async () => {
-      const { userAction, filters, sort, state, fetchData, applyRouteFilter, isLoading } = usePaginationFilters<
+      const { userAction, filters, sort, state, fetchData, isLoading } = usePaginationFilters<
         ExchangeSavingsEvent,
-        ExchangeSavingsRequestPayload,
-        ExchangeSavingsEvent,
-        ExchangeSavingsCollection
-      >(fetchExchangeSavings, {
+        ExchangeSavingsRequestPayload
+      >(fetchSavings, {
         history: get(mainPage) ? 'router' : false,
         locationOverview: exchange,
-        defaultCollection: defaultCollectionState,
         defaultParams,
-        defaultSortBy: {
-          ascending: [true],
-        },
+        defaultSortBy: [{
+          direction: 'asc',
+        }],
       });
 
-      expect(get(userAction)).toBe(true);
+      expect(get(userAction)).toBe(false);
       expect(get(isLoading)).toBe(false);
       expect(get(filters)).to.toStrictEqual(undefined);
       expect(get(sort)).toHaveLength(1);
@@ -90,12 +90,12 @@ describe('composables::history/filter-paginate', () => {
         },
       ]);
       expect(get(state).data).toHaveLength(0);
-      expect(get(state).assets).toHaveLength(0);
-      expect(get(state).received).toHaveLength(0);
+      expect(get(exchangeAssets)).toHaveLength(0);
+      expect(get(exchangeReceived)).toHaveLength(0);
       expect(get(state).total).toEqual(0);
 
       set(userAction, true);
-      applyRouteFilter();
+      await nextTick();
       fetchData().catch(() => {});
       expect(get(isLoading)).toBe(true);
       await flushPromises();
@@ -107,22 +107,19 @@ describe('composables::history/filter-paginate', () => {
     it('check the return types', () => {
       const { isLoading, state, filters, matchers } = usePaginationFilters<
         ExchangeSavingsEvent,
-        ExchangeSavingsRequestPayload,
-        ExchangeSavingsEvent,
-        ExchangeSavingsCollection
+        ExchangeSavingsRequestPayload
       >(fetchExchangeSavings, {
         history: get(mainPage) ? 'router' : false,
         locationOverview: exchange,
-        defaultCollection: defaultCollectionState,
         defaultParams,
-        defaultSortBy: {
-          ascending: [true],
-        },
+        defaultSortBy: [{
+          direction: 'asc',
+        }],
       });
 
       expect(get(isLoading)).toBe(false);
 
-      expectTypeOf(get(state)).toEqualTypeOf<ExchangeSavingsCollection>();
+      expectTypeOf(get(state)).toEqualTypeOf<Collection<ExchangeSavingsEvent>>();
       expectTypeOf(get(state).data).toEqualTypeOf<ExchangeSavingsEvent[]>();
       expectTypeOf(get(state).found).toEqualTypeOf<number>();
       expectTypeOf(get(filters)).toEqualTypeOf<undefined>();
@@ -131,22 +128,24 @@ describe('composables::history/filter-paginate', () => {
 
     it('modify filters and fetch data correctly', async () => {
       const pushSpy = vi.spyOn(router, 'push');
-      const query = { sortDesc: ['false'] };
+      const query = { sortOrder: ['desc'] };
 
-      const { isLoading, state } = usePaginationFilters<
+      const { isLoading, state, sort } = usePaginationFilters<
         ExchangeSavingsEvent,
-        ExchangeSavingsRequestPayload,
-        ExchangeSavingsEvent,
-        ExchangeSavingsCollection
-      >(fetchExchangeSavings, {
+        ExchangeSavingsRequestPayload
+      >(fetchSavings, {
         history: get(mainPage) ? 'router' : false,
         locationOverview: exchange,
-        defaultCollection: defaultCollectionState,
         defaultParams,
-        defaultSortBy: {
-          ascending: [false],
-        },
+        defaultSortBy: [{
+          direction: 'asc',
+        }],
       });
+
+      expect(get(sort)).toStrictEqual([{
+        column: 'timestamp',
+        direction: 'asc',
+      }]);
 
       await router.push({
         query,
@@ -159,15 +158,19 @@ describe('composables::history/filter-paginate', () => {
       await flushPromises();
       expect(get(isLoading)).toBe(false);
 
-      assertType<ExchangeSavingsCollection>(get(state));
+      assertType<Collection<ExchangeSavingsEvent>>(get(state));
       assertType<ExchangeSavingsEvent[]>(get(state).data);
       assertType<number>(get(state).found);
 
       expect(get(state).data).toHaveLength(10);
-      expect(get(state).assets).toHaveLength(2);
-      expect(get(state).received).toHaveLength(2);
+      expect(get(exchangeAssets)).toHaveLength(2);
+      expect(get(exchangeReceived)).toHaveLength(2);
       expect(get(state).found).toEqual(260);
       expect(get(state).total).toEqual(260);
+      expect(get(sort)).toStrictEqual([{
+        column: 'timestamp',
+        direction: 'desc',
+      }]);
     });
   });
 });

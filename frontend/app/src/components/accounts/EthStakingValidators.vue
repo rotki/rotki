@@ -5,7 +5,6 @@ import { Section } from '@/types/status';
 import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
 import HashLink from '@/components/helper/HashLink.vue';
 import { SavedFilterLocation } from '@/types/filtering';
-import type { Collection } from '@/types/collection';
 import type { Filters, Matcher } from '@/composables/filters/eth-validator';
 import type { StakingValidatorManage } from '@/composables/accounts/blockchain/use-account-manage';
 import type { ContextColorsType, DataTableColumn } from '@rotki/ui-library';
@@ -36,15 +35,14 @@ const {
 } = usePaginationFilters<
   EthereumValidator,
   EthereumValidatorRequestPayload,
-  EthereumValidator,
-  Collection<EthereumValidator>,
   Filters,
   Matcher
 >(fetchValidators, {
   history: 'router',
   filterSchema: () => useEthValidatorAccountFilter(t),
   defaultSortBy: {
-    key: 'index',
+    column: 'index',
+    direction: 'desc',
   },
 });
 

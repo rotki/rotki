@@ -10,8 +10,9 @@ const { fetchAllCexMapping, deleteCexMapping } = useAssetCexMappingApi();
 
 const selectedLocation = ref<string>('');
 const selectedSymbol = ref<string>('');
-
 const editMode = ref<boolean>(false);
+
+const { editableItem } = useCommonTableProps<CexMapping>();
 
 const extraParams = computed(() => {
   const location = get(selectedLocation);
@@ -27,7 +28,6 @@ const extraParams = computed(() => {
 const {
   state,
   isLoading: loading,
-  editableItem,
   fetchData,
   pagination,
 } = usePaginationFilters<

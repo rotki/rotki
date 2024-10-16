@@ -9,7 +9,7 @@ import {
   dateValidator,
 } from '@/types/filtering';
 import { MovementCategory } from '@/types/history/asset-movements';
-import type { FilterSchema } from '@/composables/filter-paginate';
+import type { FilterSchema } from '@/composables/use-pagination-filter/types';
 
 enum AssetMovementFilterKeys {
   LOCATION = 'location',

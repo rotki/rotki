@@ -5,7 +5,6 @@ import AccountBalancesTable from '@/components/accounts/AccountBalancesTable.vue
 import AccountGroupDetailsTable from '@/components/accounts/AccountGroupDetailsTable.vue';
 import DetectTokenChainsSelection from '@/components/accounts/balances/DetectTokenChainsSelection.vue';
 import type { AccountManageState } from '@/composables/accounts/blockchain/use-account-manage';
-import type { Collection } from '@/types/collection';
 import type {
   BlockchainAccountGroupWithBalance,
   BlockchainAccountRequestPayload,
@@ -48,8 +47,6 @@ const {
 } = usePaginationFilters<
   BlockchainAccountGroupWithBalance,
   BlockchainAccountRequestPayload,
-  BlockchainAccountGroupWithBalance,
-  Collection<BlockchainAccountGroupWithBalance>,
   Filters,
   Matcher
 >(fetchAccountsPage, {
@@ -81,11 +78,12 @@ const {
 
     set(query, q ? fromUriEncoded(q) : {});
   },
-  customPageParams: computed(() => ({
+  requestParams: computed(() => ({
     excluded: get(chainExclusionFilter),
   })),
   defaultSortBy: {
-    key: 'usdValue',
+    column: 'usdValue',
+    direction: 'desc',
   },
 });
 

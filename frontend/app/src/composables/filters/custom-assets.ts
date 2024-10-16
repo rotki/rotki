@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import type { MaybeRef } from '@vueuse/core';
 import type { MatchedKeyword, SearchMatcher } from '@/types/filtering';
-import type { FilterSchema } from '@/composables/filter-paginate';
+import type { FilterSchema } from '@/composables/use-pagination-filter/types';
 
 enum CustomAssetFilterKeys {
   NAME = 'name',

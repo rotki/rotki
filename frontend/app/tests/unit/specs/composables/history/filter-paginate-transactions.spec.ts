@@ -72,7 +72,7 @@ describe('composables::history/filter-paginate', () => {
       accounts: get(accounts).map(account => `${account.address}#${account.chain}`),
     }));
 
-    const customPageParams = computed<Partial<HistoryEventRequestPayload>>(() => ({
+    const requestParams = computed<Partial<HistoryEventRequestPayload>>(() => ({
       protocols: get(protocols),
       eventTypes: get(eventTypes),
       eventSubtypes: get(eventSubTypes),
@@ -85,11 +85,9 @@ describe('composables::history/filter-paginate', () => {
     });
 
     it('initialize composable correctly', async () => {
-      const { userAction, filters, sort, state, fetchData, applyRouteFilter, isLoading } = usePaginationFilters<
+      const { userAction, filters, sort, state, fetchData, isLoading } = usePaginationFilters<
         HistoryEvent,
         HistoryEventRequestPayload,
-        HistoryEvent,
-        Collection<HistoryEvent>,
         Filters,
         Matcher
       >(fetchHistoryEvents, {
@@ -97,19 +95,21 @@ describe('composables::history/filter-paginate', () => {
         filterSchema: () => useHistoryEventFilter({ protocols: get(protocols).length > 0 }),
         onUpdateFilters,
         extraParams,
-        customPageParams,
+        requestParams,
       });
 
-      expect(get(userAction)).toBe(true);
+      expect(get(userAction)).toBe(false);
       expect(get(isLoading)).toBe(false);
       expect(get(filters)).to.toStrictEqual({});
-      expect(Array.isArray(get(sort))).toBe(true);
-      expect(get(sort)).toHaveLength(1);
+      expect(get(sort)).toStrictEqual({
+        column: 'timestamp',
+        direction: 'desc',
+      });
       expect(get(state).data).toHaveLength(0);
       expect(get(state).total).toEqual(0);
 
       set(userAction, true);
-      applyRouteFilter();
+      await nextTick();
       fetchData().catch(() => {});
       expect(get(isLoading)).toBe(true);
       await flushPromises();
@@ -122,8 +122,6 @@ describe('composables::history/filter-paginate', () => {
       const { isLoading, state, filters, matchers } = usePaginationFilters<
         HistoryEvent,
         HistoryEventRequestPayload,
-        HistoryEvent,
-        Collection<HistoryEvent>,
         Filters,
         Matcher
       >(fetchHistoryEvents, {
@@ -131,7 +129,7 @@ describe('composables::history/filter-paginate', () => {
         filterSchema: () => useHistoryEventFilter({ protocols: get(protocols).length > 0 }),
         onUpdateFilters,
         extraParams,
-        customPageParams,
+        requestParams,
       });
 
       expect(get(isLoading)).toBe(false);
@@ -145,13 +143,11 @@ describe('composables::history/filter-paginate', () => {
 
     it('modify filters and fetch data correctly', async () => {
       const pushSpy = vi.spyOn(router, 'push');
-      const query = { sortBy: ['timestamp'], sortDesc: ['false'] };
+      const query = { sort: ['timestamp'], sortOrder: ['asc'] };
 
-      const { isLoading, state, pageParams } = usePaginationFilters<
+      const { isLoading, state, pageParams, sort } = usePaginationFilters<
         HistoryEvent,
         HistoryEventRequestPayload,
-        HistoryEvent,
-        Collection<HistoryEvent>,
         Filters,
         Matcher
       >(fetchHistoryEvents, {
@@ -159,7 +155,12 @@ describe('composables::history/filter-paginate', () => {
         filterSchema: () => useHistoryEventFilter({ protocols: get(protocols).length > 0 }),
         onUpdateFilters,
         extraParams,
-        customPageParams,
+        requestParams,
+      });
+
+      expect(get(sort)).toStrictEqual({
+        column: 'timestamp',
+        direction: 'desc',
       });
 
       await router.push({
@@ -184,6 +185,11 @@ describe('composables::history/filter-paginate', () => {
       expect(get(state).found).toEqual(6);
       expect(get(state).limit).toEqual(-1);
       expect(get(state).total).toEqual(6);
+
+      expect(get(sort)).toStrictEqual({
+        column: 'timestamp',
+        direction: 'asc',
+      });
     });
 
     it('add protocols to filters and expect the value to be set', async () => {
@@ -198,8 +204,6 @@ describe('composables::history/filter-paginate', () => {
       const { isLoading, filters } = usePaginationFilters<
         HistoryEvent,
         HistoryEventRequestPayload,
-        HistoryEvent,
-        Collection<HistoryEvent>,
         Filters,
         Matcher
       >(fetchHistoryEvents, {
@@ -207,7 +211,7 @@ describe('composables::history/filter-paginate', () => {
         filterSchema: () => useHistoryEventFilter({ protocols: get(protocols).length > 0 }),
         onUpdateFilters,
         extraParams,
-        customPageParams,
+        requestParams,
       });
 
       await router.push({
@@ -227,8 +231,6 @@ describe('composables::history/filter-paginate', () => {
       const { userAction, fetchData, isLoading, updateFilter } = usePaginationFilters<
         HistoryEvent,
         HistoryEventRequestPayload,
-        HistoryEvent,
-        Collection<HistoryEvent>,
         Filters,
         Matcher
       >(fetchHistoryEvents, {
@@ -236,7 +238,7 @@ describe('composables::history/filter-paginate', () => {
         filterSchema: () => useHistoryEventFilter({ protocols: get(protocols).length > 0 }),
         onUpdateFilters,
         extraParams,
-        customPageParams,
+        requestParams,
       });
 
       updateFilter({

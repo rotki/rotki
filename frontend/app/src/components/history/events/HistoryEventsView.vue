@@ -13,7 +13,6 @@ import type {
   ShowEventHistoryForm,
 } from '@/types/history/events';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
-import type { Collection } from '@/types/collection';
 import type { AccountingRuleEntry } from '@/types/settings/accounting';
 import type { Filters, Matcher } from '@/composables/filters/events';
 
@@ -125,6 +124,8 @@ const includes = computed<{ evmEvents: boolean; onlineEvents: boolean }>(() => {
   };
 });
 
+const { editableItem } = useCommonTableProps<HistoryEventEntry>();
+
 const {
   isLoading: groupLoading,
   userAction,
@@ -135,14 +136,11 @@ const {
   updateFilter,
   fetchData,
   pageParams,
-  editableItem,
   pagination,
   sort,
 } = usePaginationFilters<
-  HistoryEvent,
-  HistoryEventRequestPayload,
   HistoryEventEntry,
-  Collection<HistoryEventEntry>,
+  HistoryEventRequestPayload,
   Filters,
   Matcher
 >(fetchHistoryEvents, {
@@ -178,7 +176,7 @@ const {
     }
     return undefined;
   }),
-  customPageParams: computed<Partial<HistoryEventRequestPayload>>(() => {
+  requestParams: computed<Partial<HistoryEventRequestPayload>>(() => {
     const params: Writeable<Partial<HistoryEventRequestPayload>> = {
       counterparties: get(protocols),
       eventTypes: get(eventTypes),

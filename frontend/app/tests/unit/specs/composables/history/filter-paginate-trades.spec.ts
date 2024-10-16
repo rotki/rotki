@@ -5,7 +5,7 @@ import type { MaybeRef } from '@vueuse/core';
 import type { Collection } from '@/types/collection';
 import type { LocationQuery } from '@/types/route';
 import type { Filters, Matcher } from '@/composables/filters/trades';
-import type { Trade, TradeEntry, TradeRequestPayload } from '@/types/history/trade';
+import type { TradeEntry, TradeRequestPayload } from '@/types/history/trade';
 
 vi.mock('vue-router', () => {
   const route = ref({
@@ -63,11 +63,9 @@ describe('composables::history/filter-paginate', () => {
     });
 
     it('initialize composable correctly', async () => {
-      const { userAction, filters, sort, state, fetchData, applyRouteFilter, isLoading } = usePaginationFilters<
-        Trade,
-        TradeRequestPayload,
+      const { userAction, filters, sort, state, fetchData, isLoading } = usePaginationFilters<
         TradeEntry,
-        Collection<TradeEntry>,
+        TradeRequestPayload,
         Filters,
         Matcher
       >(fetchTrades, {
@@ -78,16 +76,18 @@ describe('composables::history/filter-paginate', () => {
         extraParams,
       });
 
-      expect(get(userAction)).toBe(true);
+      expect(get(userAction)).toBe(false);
       expect(get(isLoading)).toBe(false);
       expect(get(filters)).to.toStrictEqual({});
-      expect(Array.isArray(get(sort))).toBe(true);
-      expect(get(sort)).toHaveLength(1);
+      expect(get(sort)).toStrictEqual({
+        column: 'timestamp',
+        direction: 'desc',
+      });
       expect(get(state).data).toHaveLength(0);
       expect(get(state).total).toEqual(0);
 
       set(userAction, true);
-      applyRouteFilter();
+      await nextTick();
       fetchData().catch(() => {});
       expect(get(isLoading)).toBe(true);
       await flushPromises();
@@ -96,10 +96,8 @@ describe('composables::history/filter-paginate', () => {
 
     it('check the return types', () => {
       const { isLoading, state, filters, matchers } = usePaginationFilters<
-        Trade,
-        TradeRequestPayload,
         TradeEntry,
-        Collection<TradeEntry>,
+        TradeRequestPayload,
         Filters,
         Matcher
       >(fetchTrades, {
@@ -121,13 +119,11 @@ describe('composables::history/filter-paginate', () => {
 
     it('modify filters and fetch data correctly', async () => {
       const pushSpy = vi.spyOn(router, 'push');
-      const query = { sortBy: ['type'], sortDesc: ['true'] };
+      const query = { sort: ['type'], sortOrder: ['asc'] };
 
-      const { isLoading, state } = usePaginationFilters<
-        Trade,
-        TradeRequestPayload,
+      const { isLoading, state, sort } = usePaginationFilters<
         TradeEntry,
-        Collection<TradeEntry>,
+        TradeRequestPayload,
         Filters,
         Matcher
       >(fetchTrades, {
@@ -136,6 +132,11 @@ describe('composables::history/filter-paginate', () => {
         locationOverview,
         onUpdateFilters,
         extraParams,
+      });
+
+      expect(get(sort)).toStrictEqual({
+        column: 'timestamp',
+        direction: 'desc',
       });
 
       await router.push({
@@ -157,6 +158,10 @@ describe('composables::history/filter-paginate', () => {
       expect(get(state).found).toEqual(210);
       expect(get(state).limit).toEqual(-1);
       expect(get(state).total).toEqual(210);
+      expect(get(sort)).toStrictEqual({
+        column: 'type',
+        direction: 'asc',
+      });
     });
   });
 });

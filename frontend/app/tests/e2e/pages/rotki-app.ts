@@ -157,19 +157,21 @@ export class RotkiApp {
   shouldHaveQueryParam(key: string, value: string) {
     cy.location().should((loc) => {
       const query = new URLSearchParams(loc.href);
-      expect(query.get(key)).to.equal(value);
+      expect(query.get(key), `query key ${key}`).to.equal(value);
     });
   }
 
   /**
-   * to get array query param values from route
-   * @param {string} key
-   * @param {string[]} values
+   * Asserts that the current URL does not have the specified query parameter.
+   *
+   * @param {string} key - The query parameter key to check.
+   * @return {void}
    */
-  shouldHaveQueryParams(key: string, values: string[]) {
+  shouldNotHaveQueryParam(key: string): void {
     cy.location().should((loc) => {
       const query = new URLSearchParams(loc.href);
-      expect(query.getAll(key)).to.deep.equal(values);
+      // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+      expect(query.get(key), `query key ${key}`).to.be.null;
     });
   }
 

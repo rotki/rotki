@@ -9,7 +9,7 @@ import {
   dateValidator,
 } from '@/types/filtering';
 import { TradeType } from '@/types/history/trade';
-import type { FilterSchema } from '@/composables/filter-paginate';
+import type { FilterSchema } from '@/composables/use-pagination-filter/types';
 
 enum TradeFilterKeys {
   BASE = 'base',
