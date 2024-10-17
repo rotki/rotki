@@ -41,16 +41,14 @@ describe('blockchain balances', () => {
   });
 
   it('add an ETH account and view the account balance', () => {
-    cy.get('[data-cy="add-blockchain-balance"]').should('be.visible');
-    cy.get('[data-cy="add-blockchain-balance"]').click();
+    blockchainBalancesPage.openAddDialog();
     tagManager.addTag('[data-cy="account-tag-field"]', 'public', 'Public Accounts', 'EF703C', 'FFFFF8');
     blockchainBalancesPage.addBalance(blockchainBalances[0]);
     blockchainBalancesPage.isEntryVisible(0, blockchainBalances[0]);
   });
 
   it('add a BTC account and view the account balance', () => {
-    cy.get('[data-cy="add-blockchain-balance"]').should('be.visible');
-    cy.get('[data-cy="add-blockchain-balance"]').click();
+    blockchainBalancesPage.openAddDialog();
     blockchainBalancesPage.addBalance(blockchainBalances[1]);
     blockchainBalancesPage.openTab('bitcoin');
     blockchainBalancesPage.isEntryVisible(0, blockchainBalances[1]);

@@ -24,6 +24,24 @@ export class BlockchainBalancesPage {
     cy.get(`[data-category=${tab}`).should('be.visible');
   }
 
+  openAddDialog() {
+    cy.get('body').then(($body) => {
+      if ($body.find('[data-cy="notification"]').length > 0) {
+        return '[data-cy="notification_dismiss-all"]';
+      }
+
+      return '';
+    }).then((selector) => {
+      if (selector) {
+        cy.get(selector).click();
+      }
+    });
+
+    cy.get('[data-cy="notification"]').should('not.exist');
+    cy.get('[data-cy="add-blockchain-balance"]').should('be.visible');
+    cy.get('[data-cy="add-blockchain-balance"]').click();
+  }
+
   addBalance(balance: FixtureBlockchainBalance) {
     cy.get('[data-cy=bottom-dialog]').should('be.visible');
     cy.get('[data-cy="blockchain-balance-form"]').should('be.visible');
