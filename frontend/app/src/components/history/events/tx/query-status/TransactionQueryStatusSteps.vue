@@ -11,7 +11,13 @@ const { isSmAndDown } = useBreakpoint();
 
 const { item } = toRefs(props);
 
-const transactionsLoading = isTaskRunning(TaskType.TX);
+const transactionsLoading = computed(() => {
+  const data = get(item);
+  return get(isTaskRunning(TaskType.TX, {
+    address: data.address,
+    chain: data.evmChain,
+  }));
+});
 
 const stepList = computed(() => [
   t('transactions.query_status.statuses.querying_transactions'),
