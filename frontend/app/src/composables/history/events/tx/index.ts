@@ -54,6 +54,8 @@ export const useHistoryTransactions = createSharedComposable(() => {
         chain: get(getChainName(account.evmChain)),
       }),
       isEvm,
+      chain: account.evmChain,
+      address: account.address,
     };
 
     try {
