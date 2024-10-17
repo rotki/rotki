@@ -1,7 +1,7 @@
 import os
 import random
 from http import HTTPStatus
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING
 from unittest.mock import patch
 from urllib.parse import urlencode
 
@@ -23,7 +23,7 @@ from rotkehlchen.exchanges.bitstamp import (
 )
 from rotkehlchen.exchanges.constants import EXCHANGES_WITH_PASSPHRASE, SUPPORTED_EXCHANGES
 from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
-from rotkehlchen.exchanges.kraken import DEFAULT_KRAKEN_ACCOUNT_TYPE, Kraken, KrakenAccountType
+from rotkehlchen.exchanges.kraken import DEFAULT_KRAKEN_ACCOUNT_TYPE, KrakenAccountType
 from rotkehlchen.exchanges.kucoin import API_KEY_ERROR_CODE_ACTION as KUCOIN_API_KEY_ERROR_CODE
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.binance import GlobalDBBinance
@@ -1057,7 +1057,6 @@ def test_edit_exchange_account(rotkehlchen_api_server_with_exchanges: 'APIServer
     poloniex = try_get_first_exchange(rotki.exchange_manager, Location.POLONIEX)
     assert kraken is not None
     assert poloniex is not None
-    kraken = cast(Kraken, kraken)
     assert kraken.name == 'mockkraken'
     assert kraken.account_type == DEFAULT_KRAKEN_ACCOUNT_TYPE
     assert poloniex.name == 'poloniex'

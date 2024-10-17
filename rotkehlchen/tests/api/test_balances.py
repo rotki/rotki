@@ -47,12 +47,15 @@ from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
+    from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.tests.fixtures.websockets import WebsocketReader
+    from rotkehlchen.types import BTCAddress, ChecksumEvmAddress
 
 
 def assert_all_balances(
-        result,
-        db,
-        expected_data_in_db,
+        result: dict[str, Any],
+        db: 'DBHandler',
+        expected_data_in_db: bool,
         setup: BalancesTestSetup,
 ) -> None:
     total_eth = get_asset_balance_total(A_ETH, setup)
@@ -149,10 +152,10 @@ def assert_all_balances(
 @pytest.mark.parametrize('btc_accounts', [[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]])
 @pytest.mark.parametrize('added_exchanges', [(Location.BINANCE, Location.POLONIEX)])
 def test_query_all_balances(
-        rotkehlchen_api_server_with_exchanges,
-        ethereum_accounts,
-        btc_accounts,
-):
+        rotkehlchen_api_server_with_exchanges: 'APIServer',
+        ethereum_accounts: list['ChecksumEvmAddress'],
+        btc_accounts: list['BTCAddress'],
+) -> None:
     """Test that using the query all balances endpoint works
 
     Test that balances from various sources are returned. Such as exchanges,
@@ -237,15 +240,17 @@ def test_query_all_balances(
 @pytest.mark.parametrize('btc_accounts', [[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]])
 @pytest.mark.parametrize('added_exchanges', [(Location.BINANCE, Location.POLONIEX)])
 def test_query_all_balances_ignore_cache(
-        rotkehlchen_api_server_with_exchanges,
-        ethereum_accounts,
-        btc_accounts,
-):
+        rotkehlchen_api_server_with_exchanges: 'APIServer',
+        ethereum_accounts: list['ChecksumEvmAddress'],
+        btc_accounts: list['BTCAddress'],
+) -> None:
     """Test that using the query all balances endpoint can ignore the cache"""
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
     setup = setup_balances(rotki, ethereum_accounts, btc_accounts)
     binance = try_get_first_exchange(rotki.exchange_manager, Location.BINANCE)
+    assert binance is not None
     poloniex = try_get_first_exchange(rotki.exchange_manager, Location.POLONIEX)
+    assert poloniex is not None
     eth_query_patch = patch.object(
         rotki.chains_aggregator,
         'query_eth_balances',
@@ -270,7 +275,9 @@ def test_query_all_balances_ignore_cache(
     )
 
     with ExitStack() as stack:
+        assert setup.poloniex_patch is not None
         stack.enter_context(setup.poloniex_patch)
+        assert setup.binance_patch is not None
         stack.enter_context(setup.binance_patch)
         etherscan_mock = stack.enter_context(setup.etherscan_patch)
         stack.enter_context(setup.bitcoin_patch)
@@ -374,11 +381,11 @@ def test_query_all_balances_ignore_cache(
 @pytest.mark.parametrize('btc_accounts', [[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]])
 @pytest.mark.parametrize('added_exchanges', [(Location.BINANCE, Location.POLONIEX)])
 def test_query_all_balances_with_manually_tracked_balances(
-        rotkehlchen_api_server_with_exchanges,
-        ethereum_accounts,
-        btc_accounts,
-        manually_tracked_balances,
-):
+        rotkehlchen_api_server_with_exchanges: 'APIServer',
+        ethereum_accounts: list['ChecksumEvmAddress'],
+        btc_accounts: list['BTCAddress'],
+        manually_tracked_balances: list[ManuallyTrackedBalance],
+) -> None:
     """Test that using the query all balances endpoint also includes manually tracked balances
 
     This test allows caching of results as is default in production and makes sure
@@ -467,7 +474,7 @@ def test_query_all_balances_with_manually_tracked_balances(
     )
 
 
-def test_query_all_balances_errors(rotkehlchen_api_server):
+def test_query_all_balances_errors(rotkehlchen_api_server: 'APIServer') -> None:
     """Test that errors are handled correctly by the all balances endpoint"""
     # invoke the endpoint with non boolean save_data
     response = requests.get(
@@ -499,16 +506,16 @@ def test_query_all_balances_errors(rotkehlchen_api_server):
 @pytest.mark.parametrize('added_exchanges', [(Location.BINANCE,)])
 @pytest.mark.parametrize('legacy_messages_via_websockets', [True])
 def test_balance_snapshot_error_message(
-        rotkehlchen_api_server_with_exchanges,
-        websocket_connection,
-):
+        rotkehlchen_api_server_with_exchanges: 'APIServer',
+        websocket_connection: 'WebsocketReader',
+) -> None:
     """
     Test that an error in the general balance snapshot is caught and a websocket message is sent
     """
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
     binance = try_get_first_exchange(rotki.exchange_manager, Location.BINANCE)
 
-    def mock_binance_method():
+    def mock_binance_method() -> None:
         raise RemoteError('Made a booboo')
 
     binance_patch = patch.object(binance, 'first_connection', side_effect=mock_binance_method)
@@ -549,11 +556,11 @@ def test_balance_snapshot_error_message(
 @pytest.mark.parametrize('separate_blockchain_calls', [True, False])
 @pytest.mark.parametrize('added_exchanges', [(Location.BINANCE, Location.POLONIEX)])
 def test_multiple_balance_queries_not_concurrent(
-        rotkehlchen_api_server_with_exchanges,
-        ethereum_accounts,
-        btc_accounts,
-        separate_blockchain_calls,
-):
+        rotkehlchen_api_server_with_exchanges: 'APIServer',
+        ethereum_accounts: list['ChecksumEvmAddress'],
+        btc_accounts: list['BTCAddress'],
+        separate_blockchain_calls: bool,
+) -> None:
     """Test multiple different balance query requests happening concurrently
 
     This tests that if multiple balance query requests happen concurrently we
@@ -574,6 +581,7 @@ def test_multiple_balance_queries_not_concurrent(
         wraps=get_bitcoin_addresses_balances,
     )
     binance = try_get_first_exchange(rotki.exchange_manager, Location.BINANCE)
+    assert binance is not None
     binance_querydict_patch = patch.object(binance, 'api_query_dict', wraps=binance.api_query_dict)
 
     # Test all balances request by requesting to not save the data
@@ -673,9 +681,9 @@ def test_multiple_balance_queries_not_concurrent(
 
 @pytest.mark.parametrize('number_of_eth_accounts', [1])
 def test_balances_caching_mixup(
-        rotkehlchen_api_server,
-        ethereum_accounts,
-):
+        rotkehlchen_api_server: 'APIServer',
+        ethereum_accounts: list['ChecksumEvmAddress'],
+) -> None:
     """Test that querying the balances in a specific order does not mix up the caches.
 
     This tests for the problem seen where the bitcoin balances being empty and
@@ -688,7 +696,7 @@ def test_balances_caching_mixup(
         ethereum_accounts=ethereum_accounts,
         btc_accounts=None,
         eth_balances=['1000000000000000000'],
-        token_balances={A_RDN: ['2000000000000000000']},
+        token_balances={A_RDN.resolve_to_evm_token(): ['2000000000000000000']},
         original_queries=['zerion'],
     )
 
@@ -731,7 +739,7 @@ def test_balances_caching_mixup(
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('kusama_manager_connect_at_start', [[KUSAMA_TEST_NODES[0]]])
 @pytest.mark.parametrize('ksm_accounts', [[SUBSTRATE_ACC1_KSM_ADDR, 'Hyn23aznM9sRZEkMXDQXePi81iYTZLQRveLU5JNA5oxkuyD']])  # noqa: E501
-def test_query_ksm_balances(rotkehlchen_api_server: 'APIServer', ksm_accounts) -> None:
+def test_query_ksm_balances(rotkehlchen_api_server: 'APIServer', ksm_accounts: list[str]) -> None:
     """Test query the KSM balances when multiple accounts are set up works as
     expected.
     """
@@ -823,9 +831,9 @@ def test_query_avax_balances(rotkehlchen_api_server: 'APIServer') -> None:
 @pytest.mark.freeze_time('2024-03-29 13:00:00 GMT')
 @pytest.mark.parametrize('ethereum_accounts', [['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']])
 def test_ethereum_tokens_detection(
-        rotkehlchen_api_server,
-        ethereum_accounts,
-):
+        rotkehlchen_api_server: 'APIServer',
+        ethereum_accounts: list['ChecksumEvmAddress'],
+) -> None:
     account = ethereum_accounts[0]
 
     def query_detect_eth_tokens() -> dict[str, Any]:
@@ -867,14 +875,17 @@ def test_ethereum_tokens_detection(
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
 @pytest.mark.parametrize('ignore_mocked_prices_for', [['ETH', 'eip155:1/erc20:0x255Aa6DF07540Cb5d3d297f0D0D4D84cb52bc8e6']])  # noqa: E501
 @pytest.mark.parametrize('default_mock_price_value', [FVal(1.5)])
-def test_balances_behaviour_with_manual_current_prices(rotkehlchen_api_server, ethereum_accounts):
+def test_balances_behaviour_with_manual_current_prices(
+        rotkehlchen_api_server: 'APIServer',
+        ethereum_accounts: list['ChecksumEvmAddress'],
+) -> None:
     """Checks that manual current price is used in balances querying endpoints"""
     setup = setup_balances(
         rotki=rotkehlchen_api_server.rest_api.rotkehlchen,
         ethereum_accounts=ethereum_accounts,
         btc_accounts=None,
         eth_balances=[str(int(1e18)), str(2 * int(1e18))],
-        token_balances={A_RDN: [str(int(1e18)), str(int(4e18))]},
+        token_balances={A_RDN.resolve_to_evm_token(): [str(int(1e18)), str(int(4e18))]},
         manual_current_prices=[(A_ETH, A_BTC, Price(FVal(10))), (A_RDN, A_ETH, Price(FVal(2)))],
     )
     with ExitStack() as stack:
@@ -898,7 +909,10 @@ def test_balances_behaviour_with_manual_current_prices(rotkehlchen_api_server, e
 
 @pytest.mark.parametrize('ethereum_modules', [['makerdao_vaults']])
 @pytest.mark.parametrize('ethereum_accounts', [['0x7e574e063903b1D6DFf54A9C8B1260e6E068d35e']])
-def test_blockchain_balances_refresh(rotkehlchen_api_server: 'APIServer', ethereum_accounts):
+def test_blockchain_balances_refresh(
+        rotkehlchen_api_server: 'APIServer',
+        ethereum_accounts: list['ChecksumEvmAddress'],
+) -> None:
     """Checks that blockchain balances are refreshed properly when the endpoint is called"""
     chains_aggregator = rotkehlchen_api_server.rest_api.rotkehlchen.chains_aggregator
     makerdao_vault = [MakerdaoVault(
@@ -926,7 +940,7 @@ def test_blockchain_balances_refresh(rotkehlchen_api_server: 'APIServer', ethere
     )}
     account_balance_patch = patch.object(chains_aggregator.balances, 'eth', account_balance)
 
-    def mock_query_tokens(addresses):
+    def mock_query_tokens(addresses: list['ChecksumEvmAddress']) -> tuple[dict, dict]:
         mock_balances = {ethereum_accounts[0]: {a_usdc: FVal(23), a_dai: FVal(3)}}
         mock_prices = {a_usdc: Price(FVal(10)), a_dai: Price(FVal(11))}
         return (mock_balances, mock_prices) if len(addresses) != 0 else ({}, {})
