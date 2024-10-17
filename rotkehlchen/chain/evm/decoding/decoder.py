@@ -16,7 +16,7 @@ from gevent.lock import Semaphore
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.types import ActionType
 from rotkehlchen.api.websockets.typedefs import WSMessageType
-from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token
+from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token, get_token
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.chain.evm.decoding.interfaces import ReloadableDecoderMixin
 from rotkehlchen.chain.evm.decoding.oneinch.v5.decoder import Oneinchv5Decoder
@@ -85,7 +85,7 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
-MIN_LOGS_PROCESSED_TO_SLEEP = 500
+MIN_LOGS_PROCESSED_TO_SLEEP = 1000
 
 
 class EventDecoderFunction(Protocol):
@@ -526,14 +526,8 @@ class EVMTransactionDecoder(ABC):
                 events.append(decoding_output.event)
                 continue
 
-            try:
-                token = self.base.get_or_create_evm_token(tx_log.address)
-            except NotERC20Conformant:
-                log.error(f'Encountered non-ERC20 token {tx_log.address} during decoding {transaction}. Skipping its log event')  # noqa: E501
-                continue
-
             rules_decoding_output = self.try_all_rules(
-                token=token,
+                token=get_token(evm_address=tx_log.address, chain_id=self.evm_inquirer.chain_id),
                 tx_log=tx_log,
                 transaction=transaction,
                 decoded_events=events,
