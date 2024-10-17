@@ -205,9 +205,9 @@ def setup_balances(
         btc_map[btc_acc] = btc_balances[idx]
 
     binance = try_get_first_exchange(rotki.exchange_manager, Location.BINANCE)
-    binance_patch = patch_binance_balances_query(binance) if binance else None  # type: ignore
+    binance_patch = patch_binance_balances_query(binance) if binance else None
     poloniex = try_get_first_exchange(rotki.exchange_manager, Location.POLONIEX)
-    poloniex_patch = patch_poloniex_balances_query(poloniex) if poloniex else None  # type: ignore
+    poloniex_patch = patch_poloniex_balances_query(poloniex) if poloniex else None
     etherscan_patch = mock_etherscan_query(
         eth_map=eth_map,
         etherscan=rotki.chains_aggregator.ethereum.node_inquirer.etherscan,

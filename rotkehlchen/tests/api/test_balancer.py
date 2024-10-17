@@ -2,6 +2,7 @@ import random
 import warnings as test_warnings
 from contextlib import ExitStack
 from http import HTTPStatus
+from typing import TYPE_CHECKING
 
 import pytest
 import requests
@@ -18,6 +19,10 @@ from rotkehlchen.tests.utils.api import (
 )
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
 
+if TYPE_CHECKING:
+    from rotkehlchen.api.server import APIServer
+    from rotkehlchen.types import ChecksumEvmAddress
+
 # Top holder of WBTC-WETH pool (0x1eff8af5d577060ba4ac8a29a13525bb0ee2a3d5)
 BALANCER_TEST_ADDR1 = string_to_evm_address('0x49a2DcC237a65Cc1F412ed47E0594602f6141936')
 
@@ -25,7 +30,7 @@ BALANCER_TEST_ADDR1 = string_to_evm_address('0x49a2DcC237a65Cc1F412ed47E0594602f
 @pytest.mark.parametrize('ethereum_accounts', [[BALANCER_TEST_ADDR1]])
 @pytest.mark.parametrize('ethereum_modules', [['uniswap']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
-def test_get_balancer_module_not_activated(rotkehlchen_api_server):
+def test_get_balancer_module_not_activated(rotkehlchen_api_server: 'APIServer') -> None:
     response = requests.get(
         api_url_for(rotkehlchen_api_server, 'evmmodulebalancesresource', module='balancer'),
     )
@@ -39,7 +44,10 @@ def test_get_balancer_module_not_activated(rotkehlchen_api_server):
 @pytest.mark.parametrize('ethereum_accounts', [[BALANCER_TEST_ADDR1]])
 @pytest.mark.parametrize('ethereum_modules', [['balancer']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
-def test_get_balances(rotkehlchen_api_server, ethereum_accounts):
+def test_get_balances(
+        rotkehlchen_api_server: 'APIServer',
+        ethereum_accounts: list['ChecksumEvmAddress'],
+) -> None:
     """Test get the balances for premium users works as expected"""
     async_query = random.choice([False, True])
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen

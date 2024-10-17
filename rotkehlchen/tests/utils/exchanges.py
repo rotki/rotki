@@ -1,7 +1,7 @@
 import json
 import os
 from pathlib import Path
-from typing import Any, Final
+from typing import TYPE_CHECKING, Any, Final, Literal, overload
 from unittest.mock import _patch, patch
 
 from rotkehlchen.assets.asset import Asset, AssetWithOracles
@@ -52,6 +52,9 @@ from rotkehlchen.types import (
     TradeType,
 )
 from rotkehlchen.user_messages import MessagesAggregator
+
+if TYPE_CHECKING:
+    from rotkehlchen.exchanges.kraken import Kraken
 
 POLONIEX_MOCK_DEPOSIT_WITHDRAWALS_RESPONSE: Final = """{
   "adjustments": [],
@@ -879,6 +882,30 @@ def create_test_woo(
         database=database,
         msg_aggregator=msg_aggregator,
     )
+
+
+@overload
+def try_get_first_exchange(
+        exchange_manager: ExchangeManager,
+        location: Literal[Location.BINANCE],
+) -> Binance | None:
+    ...
+
+
+@overload
+def try_get_first_exchange(
+        exchange_manager: ExchangeManager,
+        location: Literal[Location.POLONIEX],
+) -> Poloniex | None:
+    ...
+
+
+@overload
+def try_get_first_exchange(
+        exchange_manager: ExchangeManager,
+        location: Literal[Location.KRAKEN],
+) -> 'Kraken | None':
+    ...
 
 
 def try_get_first_exchange(

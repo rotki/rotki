@@ -3202,7 +3202,7 @@ class DBHandler:
             self,
             cursor: 'DBCursor',
             blockchain: Literal[SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH],
-            addresses: list[BTCAddress],
+            addresses: Sequence[BTCAddress],
     ) -> dict[BTCAddress, XpubData]:
         data = {}
         for address in addresses:
