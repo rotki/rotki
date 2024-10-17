@@ -211,7 +211,7 @@ def get_token(
 ) -> EvmToken | None:
     """
     Query a token from the cache of the AssetResolver or the GlobalDB if
-    it is not in the cache. If the token doesn't exists this function returns
+    it is not in the cache. If the token doesn't exist this function returns
     None.
     """
     identifier = evm_address_to_identifier(
