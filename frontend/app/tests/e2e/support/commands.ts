@@ -27,6 +27,12 @@ import type { ExternalTrade, FieldMessage } from './types';
 
 const backendUrl = Cypress.env('BACKEND_URL');
 
+const WAIT_TIME_MS = 5000;
+const TIMEOUT_MS = 120000;
+const MAX_RETRIES = TIMEOUT_MS / WAIT_TIME_MS;
+
+let currentRetry = 1;
+
 function logout() {
   cy.request({
     url: `${backendUrl}/api/1/users`,
@@ -68,13 +74,11 @@ function updateAssets() {
       reset: 'soft',
     },
     failOnStatusCode: false,
-  })
-    .its('body')
-    .then((body) => {
-      const result = body.result;
-      if (result)
-        cy.log(`asset reset completed: ${JSON.stringify(result)}`);
-    });
+  }).its('body').then((body) => {
+    const result = body.result;
+    if (result)
+      cy.log(`asset reset completed: ${JSON.stringify(result)}`);
+  });
 }
 
 function disableModules() {
@@ -87,68 +91,104 @@ function disableModules() {
       },
     },
     failOnStatusCode: false,
-  })
-    .its('body')
-    .then((body) => {
-      const result = body.result;
-      if (result)
-        cy.log(`settings updated: ${JSON.stringify(result.active_modules)}`);
-    });
+  }).its('body').then((body) => {
+    const result = body.result;
+    if (result)
+      cy.log(`settings updated: ${JSON.stringify(result.active_modules)}`);
+  });
+}
+
+/**
+ * Checks for the completion of a task by querying the backend API.
+ * If the task is not yet completed, it retries the request after a delay.
+ *
+ * @param {Object} result - The result object containing the task ID.
+ * @param {Object} [result.result] - The result property of the result object.
+ * @param {number} [result.result.task_id] - The ID of the task to check for completion.
+ * @return {void} - This function doesn’t return a value.
+ */
+function checkForTaskCompletion(result: { result?: { task_id?: number } }): void {
+  cy.request({
+    url: `${backendUrl}/api/1/tasks`,
+    method: 'GET',
+  }).then((resp) => {
+    const taskId = result.result?.task_id;
+    if (
+      resp.status === 200
+      && resp.body.result
+      && resp.body.result.completed
+      && Array.isArray(resp.body.result.completed)
+      && resp.body.result.completed.includes(taskId)
+    ) {
+      cy.request({
+        url: `${backendUrl}/api/1/tasks/${taskId}`,
+        method: 'GET',
+      });
+      return;
+    }
+
+    // introduce some delay between tries since we don't want to stress the backend
+    // eslint-disable-next-line cypress/no-unnecessary-waiting
+    cy.wait(WAIT_TIME_MS);
+
+    currentRetry++;
+    if (currentRetry > MAX_RETRIES)
+      throw new Error('Exceeded maximum retries for task completion check');
+
+    checkForTaskCompletion(result);
+  });
 }
 
 function createAccount(username: string, password = '1234') {
-  return cy
-    .request({
-      url: `${backendUrl}/api/1/users`,
-      method: 'PUT',
-      body: {
-        name: username,
-        password,
-        initial_settings: {
-          submit_usage_analytics: true,
-        },
+  currentRetry = 1;
+  return cy.request({
+    url: `${backendUrl}/api/1/users`,
+    method: 'PUT',
+    timeout: 120000,
+    body: {
+      name: username,
+      password,
+      initial_settings: {
+        submit_usage_analytics: true,
       },
-      failOnStatusCode: false,
-    })
-    .its('body');
+      async_query: true,
+    },
+    failOnStatusCode: false,
+  }).its('body').then(checkForTaskCompletion);
 }
 
 function addExternalTrade(trade: ExternalTrade) {
-  return cy
-    .request({
-      url: `${backendUrl}/api/1/trades`,
-      method: 'PUT',
-      body: {
-        timestamp: new Date(trade.time).getTime() / 1000,
-        location: trade.location || 'external',
-        base_asset: trade.base_id,
-        quote_asset: trade.quote_id,
-        trade_type: trade.trade_type,
-        amount: trade.amount,
-        rate: trade.rate,
-        fee: trade.fee,
-        fee_currency: trade.fee_id,
-        link: trade.link,
-        notes: trade.notes,
-      },
-    })
-    .its('body');
+  return cy.request({
+    url: `${backendUrl}/api/1/trades`,
+    method: 'PUT',
+    body: {
+      timestamp: new Date(trade.time).getTime() / 1000,
+      location: trade.location || 'external',
+      base_asset: trade.base_id,
+      quote_asset: trade.quote_id,
+      trade_type: trade.trade_type,
+      amount: trade.amount,
+      rate: trade.rate,
+      fee: trade.fee,
+      fee_currency: trade.fee_id,
+      link: trade.link,
+      notes: trade.notes,
+    },
+  }).its('body');
 }
 
 function addEtherscanKey(key: string) {
-  return cy
-    .request({
-      url: `${backendUrl}/api/1/external_services`,
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json; charset=utf-8',
-      },
-      body: {
-        services: [{ name: 'etherscan', api_key: key }],
-      },
-      failOnStatusCode: false,
-    })
-    .its('status');
+  return cy.request({
+    url: `${backendUrl}/api/1/external_services`,
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json; charset=utf-8',
+    },
+    body: {
+      services: [{ name: 'etherscan', api_key: key }],
+    },
+    failOnStatusCode: false,
+  }).its('status');
 }
 
 /**
