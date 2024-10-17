@@ -45,7 +45,6 @@ from rotkehlchen.errors.misc import (
 )
 from rotkehlchen.errors.serialization import ConversionError, DeserializationError
 from rotkehlchen.fval import FVal
-from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.evm_event import EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -478,10 +477,6 @@ class EVMTransactionDecoder(ABC):
         fourbytes = transaction.input_data[:4]
         input_data_rules = self.rules.input_data_rules.get(fourbytes)
         monerium_special_handling_event = False
-
-        # cache tokens in the events locally. This is used for when we have a lot of spam
-        # events since it avoids many hits to the database
-        tokens_cache: dict[ChecksumEvmAddress, EvmToken | None] = {}
         # decode transaction logs from the receipt
         for idx, tx_log in enumerate(tx_receipt.logs):
             if (
@@ -497,7 +492,7 @@ class EVMTransactionDecoder(ABC):
                 monerium_special_handling_event = True
 
             if (idx + 1) % MIN_LOGS_PROCESSED_TO_SLEEP == 0:
-                log.debug(f'Context switching out of the {idx + 1} log event of {transaction}')
+                log.debug(f'Context switching out of the log event nr. {idx + 1} of {self.evm_inquirer.chain_name} {transaction}')  # noqa: E501
                 gevent.sleep(0)
 
             context = DecoderContext(
@@ -531,12 +526,11 @@ class EVMTransactionDecoder(ABC):
                 events.append(decoding_output.event)
                 continue
 
-            if (token := tokens_cache.get(tx_log.address)) is None:
-                token = GlobalDBHandler.get_evm_token(
-                    address=tx_log.address,
-                    chain_id=self.evm_inquirer.chain_id,
-                )
-                tokens_cache[tx_log.address] = token
+            try:
+                token = self.base.get_or_create_evm_token(tx_log.address)
+            except NotERC20Conformant:
+                log.error(f'Encountered non-ERC20 token {tx_log.address} during decoding {transaction}. Skipping its log event')  # noqa: E501
+                continue
 
             rules_decoding_output = self.try_all_rules(
                 token=token,
@@ -704,11 +698,11 @@ class EVMTransactionDecoder(ABC):
 
         refresh_balances = False
         total_transactions = len(tx_hashes)
-        log.debug(f'Started logic to decode {total_transactions} from {self.evm_inquirer.chain_id}')  # noqa: E501
+        log.debug(f'Started logic to decode {total_transactions} transactions from {self.evm_inquirer.chain_id}')  # noqa: E501
         for tx_index, tx_hash in enumerate(tx_hashes):
-            log.debug(f'Decoding logic started for {tx_hash.hex()}({self.evm_inquirer.chain_name})')  # noqa: E501
+            log.debug(f'Decoding logic started for {tx_hash.hex()} ({self.evm_inquirer.chain_name})')  # noqa: E501
             if send_ws_notifications and tx_index % 10 == 0:
-                log.debug(f'Processed {tx_index} out of {total_transactions} from {self.evm_inquirer.chain_id}')  # noqa: E501
+                log.debug(f'Processed {tx_index} out of {total_transactions} transactions from {self.evm_inquirer.chain_id}')  # noqa: E501
                 self.msg_aggregator.add_message(
                     message_type=WSMessageType.EVM_UNDECODED_TRANSACTIONS,
                     data={
