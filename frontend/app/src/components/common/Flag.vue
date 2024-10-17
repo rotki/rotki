@@ -12,7 +12,7 @@ const props = withDefaults(
 );
 
 const flagIconClass = computed(() =>
-`fi-${props.iso.toLowerCase()} ${props.squared ? 'fis ' : ''}`,
+  `fi-${props.iso.toLowerCase()} ${props.squared ? 'fis ' : ''}`,
 );
 </script>
 
