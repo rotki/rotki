@@ -7,12 +7,12 @@ const props = withDefaults(
   }>(),
   {
     title: '',
-    squared: true,
+    squared: false,
   },
 );
 
 const flagIconClass = computed(() =>
-  `fi-${props.iso.toLowerCase()} ${props.squared ? 'fis ' : ''}`,
+`fi-${props.iso.toLowerCase()} ${props.squared ? 'fis ' : ''}`,
 );
 </script>
 
