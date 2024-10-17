@@ -4,7 +4,14 @@ from typing import TYPE_CHECKING, Any, Final, NamedTuple, Optional
 import regex
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
-from rotkehlchen.assets.asset import Asset, AssetWithOracles, EvmToken, UnderlyingToken
+from rotkehlchen.assets.asset import (
+    Asset,
+    AssetWithOracles,
+    EvmToken,
+    UnderlyingToken,
+    WrongAssetType,
+)
+from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.constants.assets import (
     A_ETH,
@@ -195,6 +202,30 @@ class TokenEncounterInfo(NamedTuple):
     tx_hash: EVMTxHash | None = None
     description: str | None = None
     should_notify: bool = True
+
+
+def get_token(
+        evm_address: ChecksumEvmAddress,
+        chain_id: ChainID,
+        token_kind: EvmTokenKind = EvmTokenKind.ERC20,
+) -> EvmToken | None:
+    """
+    Query a token from the cache of the AssetResolver or the GlobalDB if
+    it is not in the cache. If the token doesn't exist this function returns
+    None.
+    """
+    identifier = evm_address_to_identifier(
+        address=evm_address,
+        chain_id=chain_id,
+        token_type=token_kind,
+    )
+    try:
+        return AssetResolver.resolve_asset_to_class(
+            identifier=identifier,
+            expected_type=EvmToken,
+        )
+    except (UnknownAsset, WrongAssetType):
+        return None
 
 
 def get_or_create_evm_token(
