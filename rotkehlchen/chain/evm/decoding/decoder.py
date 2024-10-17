@@ -86,7 +86,7 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
-MIN_LOGS_PROCESSED_TO_SLEEP = 100
+MIN_LOGS_PROCESSED_TO_SLEEP = 500
 
 
 class EventDecoderFunction(Protocol):
@@ -479,6 +479,9 @@ class EVMTransactionDecoder(ABC):
         input_data_rules = self.rules.input_data_rules.get(fourbytes)
         monerium_special_handling_event = False
 
+        # cache tokens in the events locally. This is used for when we have a lot of spam
+        # events since it avoids many hits to the database
+        tokens_cache: dict[ChecksumEvmAddress, EvmToken | None] = {}
         # decode transaction logs from the receipt
         for idx, tx_log in enumerate(tx_receipt.logs):
             if (
@@ -528,10 +531,13 @@ class EVMTransactionDecoder(ABC):
                 events.append(decoding_output.event)
                 continue
 
-            token = GlobalDBHandler.get_evm_token(
-                address=tx_log.address,
-                chain_id=self.evm_inquirer.chain_id,
-            )
+            if (token := tokens_cache.get(tx_log.address)) is None:
+                token = GlobalDBHandler.get_evm_token(
+                    address=tx_log.address,
+                    chain_id=self.evm_inquirer.chain_id,
+                )
+                tokens_cache[tx_log.address] = token
+
             rules_decoding_output = self.try_all_rules(
                 token=token,
                 tx_log=tx_log,
