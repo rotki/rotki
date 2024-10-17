@@ -17,7 +17,6 @@ import type { Blockchain } from '@rotki/common';
 export const useHistoryTransactions = createSharedComposable(() => {
   const { t } = useI18n();
   const { notify } = useNotificationsStore();
-  const queue = new LimitedParallelizationQueue(2);
 
   const {
     fetchTransactionsTask,
@@ -30,7 +29,11 @@ export const useHistoryTransactions = createSharedComposable(() => {
   const { removeQueryStatus, resetQueryStatus } = useTxQueryStatusStore();
   const { getEvmChainName, supportsTransactions, isEvmLikeChains, getChainName } = useSupportedChains();
   const { setStatus, resetStatus, fetchDisabled } = useStatusUpdater(Section.HISTORY_EVENT);
-  const { decodeTransactionsTask, fetchUndecodedTransactionsStatus } = useHistoryTransactionDecoding();
+  const {
+    decodeTransactionsTask,
+    fetchUndecodedTransactionsStatus,
+    fetchUndecodedTransactionsBreakdown,
+  } = useHistoryTransactionDecoding();
   const { resetUndecodedTransactionsStatus } = useHistoryStore();
 
   const syncTransactionTask = async (
@@ -78,8 +81,7 @@ export const useHistoryTransactions = createSharedComposable(() => {
     }
   };
 
-  const syncAndReDecodeEvents = async (
-    evmChain: string,
+  const syncAccountTransactions = async (
     accounts: EvmChainAddress[],
     type: TransactionChainType = TransactionChainType.EVM,
   ): Promise<void> => {
@@ -89,7 +91,6 @@ export const useHistoryTransactions = createSharedComposable(() => {
       item => syncTransactionTask(item, type),
       2,
     );
-    queue.queue(evmChain, () => decodeTransactionsTask(evmChain, type));
   };
 
   const getEvmAccounts = (chains: string[] = []): { address: string; evmChain: string }[] =>
@@ -172,8 +173,17 @@ export const useHistoryTransactions = createSharedComposable(() => {
     await awaitParallelExecution(
       groupedByChains,
       item => item.evmChain,
-      item => syncAndReDecodeEvents(item.evmChain, item.data, type),
+      item => syncAccountTransactions(item.data, type),
       2,
+    );
+
+    await fetchUndecodedTransactionsBreakdown(type);
+
+    await awaitParallelExecution(
+      groupedByChains.map(group => group.evmChain),
+      chain => chain,
+      chain => decodeTransactionsTask(chain, type),
+      1,
     );
 
     const isEvm = type === TransactionChainType.EVM;
