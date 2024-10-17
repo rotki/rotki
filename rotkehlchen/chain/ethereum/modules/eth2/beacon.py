@@ -6,6 +6,7 @@ from collections.abc import Sequence
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Literal, overload
 
+import grequests
 import requests
 
 from rotkehlchen.accounting.structures.balance import Balance
@@ -44,7 +45,7 @@ class BeaconNode:
         May raise:
         - RemoteError if we can't connect to the given rpc endpoint
         """
-        self.session = requests.session()
+        self.session = grequests.Session()
         self.set_rpc_endpoint(rpc_endpoint)
 
     def set_rpc_endpoint(self, rpc_endpoint: str) -> None:

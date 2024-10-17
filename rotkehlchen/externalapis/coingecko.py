@@ -3,6 +3,7 @@ import logging
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Any, Literal, NamedTuple, overload
 
+import grequests
 import requests
 
 from rotkehlchen.assets.asset import Asset, AssetWithOracles
@@ -526,7 +527,7 @@ class Coingecko(
         ExternalServiceWithApiKeyOptionalDB.__init__(self, database=database, service_name=ExternalService.COINGECKO)  # noqa: E501
         HistoricalPriceOracleWithCoinListInterface.__init__(self, oracle_name='coingecko')
         PenalizablePriceOracleMixin.__init__(self)
-        self.session = requests.session()
+        self.session = grequests.Session()
         set_user_agent(self.session)
         self.last_rate_limit = 0
         self.db: DBHandler | None  # type: ignore  # "solve" the self.db discrepancy

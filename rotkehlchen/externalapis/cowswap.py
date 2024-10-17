@@ -2,6 +2,7 @@ import json
 import logging
 from typing import TYPE_CHECKING, Any, Final, Literal, TypeAlias
 
+import grequests
 import requests
 
 from rotkehlchen.db.settings import CachedSettings
@@ -38,7 +39,7 @@ class CowswapAPI:
 
     def __init__(self, database: 'DBHandler', chain: SUPPORTED_COWSWAP_BLOCKCHAIN) -> None:
         self.database = database
-        self.session = requests.session()
+        self.session = grequests.Session()
         self.api_url = f'https://api.cow.fi/{CHAIN_MAPPING[chain]}/api/v1'
 
     def _query(self, endpoint: str) -> dict[str, Any]:

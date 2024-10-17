@@ -4,6 +4,7 @@ from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Literal, overload
 
 import gevent
+import grequests
 import requests
 
 from rotkehlchen.accounting.structures.balance import Balance
@@ -51,7 +52,7 @@ class Blockscout(ExternalServiceWithApiKey):
             service_name={v: k for k, v in BLOCKSCOUT_TO_CHAINID.items()}[self.chain_id],
         )
         self.msg_aggregator = msg_aggregator
-        self.session = requests.session()
+        self.session = grequests.Session()
         set_user_agent(self.session)
         match blockchain:
             case SupportedBlockchain.ETHEREUM:

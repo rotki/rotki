@@ -1,8 +1,14 @@
-from gevent import monkey  # isort:skip
+from gevent import monkey
+
 monkey.patch_all()  # isort:skip
+
 import logging
 import sys
 import traceback
+
+# import grequests to ensure that it doesn't get imported after requests
+import grequests  # noqa: F401
+import requests  # noqa: F401
 
 from rotkehlchen.errors.misc import DBSchemaError, SystemPermissionError
 from rotkehlchen.logging import RotkehlchenLogsAdapter

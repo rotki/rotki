@@ -4,6 +4,7 @@ from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Literal, Optional
 
 import gevent
+import grequests
 import requests
 
 from rotkehlchen.assets.asset import Asset, AssetWithOracles
@@ -203,7 +204,7 @@ class Cryptocompare(
             service_name=ExternalService.CRYPTOCOMPARE,
         )
         PenalizablePriceOracleMixin.__init__(self)
-        self.session = requests.session()
+        self.session = grequests.Session()
         set_user_agent(self.session)
         self.last_histohour_query_ts = 0
         self.last_rate_limit = 0
