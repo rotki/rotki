@@ -2,6 +2,7 @@ import logging
 from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Literal
 
+import grequests
 import requests
 
 from rotkehlchen.chain.evm.decoding.monerium.constants import CPT_MONERIUM
@@ -32,7 +33,7 @@ class Monerium:
 
     def __init__(self, database: 'DBHandler', user: str, password: str) -> None:
         self.database = database
-        self.session = requests.session()
+        self.session = grequests.Session()
         self.user = user
         self.password = password
         set_user_agent(self.session)

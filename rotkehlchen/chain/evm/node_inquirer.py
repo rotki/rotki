@@ -8,6 +8,7 @@ from itertools import zip_longest
 from typing import TYPE_CHECKING, Any, Literal
 from urllib.parse import urlparse
 
+import grequests
 import requests
 from ens import ENS
 from eth_abi.exceptions import DecodingError
@@ -372,6 +373,7 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
         provider = HTTPProvider(
             endpoint_uri=node.endpoint,
             request_kwargs={'timeout': self.rpc_timeout},
+            session=grequests.Session(),
         )
         ens = ENS(provider) if self.chain_id == ChainID.ETHEREUM else None
         web3 = Web3(provider, ens=ens)

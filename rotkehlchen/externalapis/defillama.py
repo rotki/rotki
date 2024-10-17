@@ -3,6 +3,7 @@ import logging
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Any
 
+import grequests
 import requests
 
 from rotkehlchen.assets.asset import Asset, AssetWithOracles
@@ -50,7 +51,7 @@ class Defillama(
         )
         HistoricalPriceOracleInterface.__init__(self, oracle_name='defillama')
         PenalizablePriceOracleMixin.__init__(self)
-        self.session = requests.session()
+        self.session = grequests.Session()
         self.session.headers.update({'User-Agent': 'rotkehlchen'})
         self.last_rate_limit = 0
         self.db: DBHandler | None  # type: ignore  # "solve" the self.db discrepancy

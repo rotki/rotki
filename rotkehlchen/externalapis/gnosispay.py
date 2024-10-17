@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from json import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Literal
 
+import grequests
 import requests
 
 from rotkehlchen.assets.asset import AssetWithSymbol
@@ -78,7 +79,7 @@ class GnosisPay:
 
     def __init__(self, database: 'DBHandler', session_token: str) -> None:
         self.database = database
-        self.session = requests.session()
+        self.session = grequests.Session()
         self.session_token = session_token
         set_user_agent(self.session)
 

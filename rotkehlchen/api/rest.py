@@ -282,6 +282,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 OK_RESULT = {'result': True, 'message': ''}
+MAX_TASKS_TO_QUERY_PRICES = 4  # the frontend has a limit on the multitasking when querying prices. Above this threshold don't query prices while returning the events to improve the speed of response  # noqa: E501
 
 
 def _wrap_in_ok_result(result: Any, status_code: HTTPStatus | None = None) -> dict[str, Any]:
@@ -2922,11 +2923,12 @@ class RestAPI:
             )
             history_events_db = DBHistoryEvents(task_manager.database)
             entries = history_events_db.get_base_entries_missing_prices(events_filter)
-            query_missing_prices_of_base_entries(
-                database=task_manager.database,
-                entries_missing_prices=entries,
-                base_entries_ignore_set=task_manager.base_entries_ignore_set,
-            )
+            if len(self.rotkehlchen.api_task_greenlets) < MAX_TASKS_TO_QUERY_PRICES:
+                query_missing_prices_of_base_entries(
+                    database=task_manager.database,
+                    entries_missing_prices=entries,
+                    base_entries_ignore_set=task_manager.base_entries_ignore_set,
+                )
         except (RemoteError, DeserializationError) as e:
             status_code = HTTPStatus.BAD_GATEWAY
             message = f'Failed to request evm transaction decoding due to {e!s}'

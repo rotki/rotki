@@ -5,6 +5,7 @@ from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple
 
 import gevent
+import grequests
 import requests
 from eth_utils import to_checksum_address
 
@@ -139,7 +140,7 @@ class Opensea(ExternalServiceWithApiKey):
     ) -> None:
         super().__init__(database=database, service_name=ExternalService.OPENSEA)
         self.msg_aggregator = msg_aggregator
-        self.session = requests.session()
+        self.session = grequests.Session()
         self.session.headers.update({
             'Content-Type': 'application/json',
         })

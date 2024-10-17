@@ -9,6 +9,7 @@ from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Final, Literal, overload
 
 import gevent
+import grequests
 import requests
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
@@ -118,7 +119,7 @@ class Etherscan(ExternalServiceWithApiKey, ABC):
             SupportedBlockchain.SCROLL,
         ) else 'api-'
         self.base_url = base_url
-        self.session = requests.session()
+        self.session = grequests.Session()
         self.warning_given = False
         set_user_agent(self.session)
         self.timestamp_to_block_cache: LRUCacheWithRemove[Timestamp, int] = LRUCacheWithRemove(maxsize=32)  # noqa: E501

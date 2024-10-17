@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any, Literal, cast
 from urllib.parse import urlencode
 
 import gevent
+import grequests
 import requests
 from gevent.lock import Semaphore
 
@@ -52,7 +53,7 @@ class BeaconChain(ExternalServiceWithApiKey):
     def __init__(self, database: 'DBHandler', msg_aggregator: MessagesAggregator) -> None:
         super().__init__(database=database, service_name=ExternalService.BEACONCHAIN)
         self.msg_aggregator = msg_aggregator
-        self.session = requests.session()
+        self.session = grequests.Session()
         self.warning_given = False
         set_user_agent(self.session)
         self.url = f'{BEACONCHAIN_ROOT_URL}/api/v1/'
