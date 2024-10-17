@@ -462,6 +462,7 @@ class EVMTransactionDecoder(ABC):
         - a flag which is True if balances refresh is needed
         - A list of decoders to reload or None if no need
         """
+        log.debug(f'Starting decoding of transaction {transaction.tx_hash.hex()} logs at {self.evm_inquirer.chain_name}')  # noqa: E501
         with self.database.conn.read_ctx() as read_cursor:
             tx_id = transaction.get_or_query_db_id(read_cursor)
 
@@ -492,7 +493,7 @@ class EVMTransactionDecoder(ABC):
                 # for legacy transfers.
                 monerium_special_handling_event = True
 
-            if idx + 1 % MIN_LOGS_PROCESSED_TO_SLEEP == 0:
+            if (idx + 1) % MIN_LOGS_PROCESSED_TO_SLEEP == 0:
                 log.debug(f'Context switching out of the {idx + 1} log event of {transaction}')
                 gevent.sleep(0)
 
@@ -697,8 +698,11 @@ class EVMTransactionDecoder(ABC):
 
         refresh_balances = False
         total_transactions = len(tx_hashes)
+        log.debug(f'Started logic to decode {total_transactions} from {self.evm_inquirer.chain_id}')  # noqa: E501
         for tx_index, tx_hash in enumerate(tx_hashes):
+            log.debug(f'Decoding logic started for {tx_hash.hex()}({self.evm_inquirer.chain_name})')  # noqa: E501
             if send_ws_notifications and tx_index % 10 == 0:
+                log.debug(f'Processed {tx_index} out of {total_transactions} from {self.evm_inquirer.chain_id}')  # noqa: E501
                 self.msg_aggregator.add_message(
                     message_type=WSMessageType.EVM_UNDECODED_TRANSACTIONS,
                     data={
@@ -1135,6 +1139,7 @@ class EVMTransactionDecoder(ABC):
         has been decoded.
         """
         if refresh_balances is True:
+            log.debug(f'Sending ws to refresh balances for {self.evm_inquirer.chain_name}')
             self.msg_aggregator.add_message(
                 message_type=WSMessageType.REFRESH_BALANCES,
                 data={

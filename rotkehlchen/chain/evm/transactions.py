@@ -557,6 +557,7 @@ class EvmTransactions(ABC):  # noqa: B024
         if tx_receipt is not None:
             return tx_data, tx_receipt  # all good, tx receipt is in the database
 
+        log.debug(f'Querying transaction data for {tx_hash=}({self.evm_inquirer.chain_name})')
         transaction, raw_receipt_data = self.evm_inquirer.get_transaction_by_hash(tx_hash)
         with self.database.conn.write_ctx() as write_cursor:
             self.dbevmtx.add_evm_transactions(
