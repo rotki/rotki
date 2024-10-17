@@ -109,15 +109,10 @@ const extraParams = computed(() => ({
 
 const assetInfoRetrievalStore = useAssetInfoRetrieval();
 const { assetSymbol } = assetInfoRetrievalStore;
-
 const { deleteExternalTrade, fetchTrades, refreshTrades } = useTrades();
+const { selected, editableItem, itemsToDelete: tradesToDelete, confirmationMessage, expanded } = useCommonTableProps<TradeEntry>();
 
 const {
-  selected,
-  editableItem,
-  itemsToDelete: tradesToDelete,
-  confirmationMessage,
-  expanded,
   isLoading,
   state: trades,
   filters,

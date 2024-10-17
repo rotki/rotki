@@ -85,7 +85,8 @@ const {
     excluded: get(chainExclusionFilter),
   })),
   defaultSortBy: {
-    key: 'usdValue',
+    column: 'usdValue',
+    direction: 'desc',
   },
 });
 

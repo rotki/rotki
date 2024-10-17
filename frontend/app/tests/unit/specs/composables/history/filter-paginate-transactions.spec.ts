@@ -100,11 +100,13 @@ describe('composables::history/filter-paginate', () => {
         customPageParams,
       });
 
-      expect(get(userAction)).toBe(true);
+      expect(get(userAction)).toBe(false);
       expect(get(isLoading)).toBe(false);
       expect(get(filters)).to.toStrictEqual({});
-      expect(Array.isArray(get(sort))).toBe(true);
-      expect(get(sort)).toHaveLength(1);
+      expect(get(sort)).toStrictEqual({
+        column: 'timestamp',
+        direction: 'desc',
+      });
       expect(get(state).data).toHaveLength(0);
       expect(get(state).total).toEqual(0);
 
@@ -145,9 +147,9 @@ describe('composables::history/filter-paginate', () => {
 
     it('modify filters and fetch data correctly', async () => {
       const pushSpy = vi.spyOn(router, 'push');
-      const query = { sortBy: ['timestamp'], sortDesc: ['false'] };
+      const query = { sort: ['timestamp'], sortOrder: ['asc'] };
 
-      const { isLoading, state, pageParams } = usePaginationFilters<
+      const { isLoading, state, pageParams, sort } = usePaginationFilters<
         HistoryEvent,
         HistoryEventRequestPayload,
         HistoryEvent,
@@ -160,6 +162,11 @@ describe('composables::history/filter-paginate', () => {
         onUpdateFilters,
         extraParams,
         customPageParams,
+      });
+
+      expect(get(sort)).toStrictEqual({
+        column: 'timestamp',
+        direction: 'desc',
       });
 
       await router.push({
@@ -184,6 +191,11 @@ describe('composables::history/filter-paginate', () => {
       expect(get(state).found).toEqual(6);
       expect(get(state).limit).toEqual(-1);
       expect(get(state).total).toEqual(6);
+
+      expect(get(sort)).toStrictEqual({
+        column: 'timestamp',
+        direction: 'asc',
+      });
     });
 
     it('add protocols to filters and expect the value to be set', async () => {

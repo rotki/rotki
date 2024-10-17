@@ -86,19 +86,20 @@ describe('trade history', () => {
     tradeHistoryPage.visibleEntries(10);
     tradeHistoryPage.totalEntries(24);
     tradeHistoryPage.shouldBeOnPage('1 - 10');
+    app.shouldNotHaveQueryParam('page');
 
     // go to page 2
     tradeHistoryPage.nextPage();
     tradeHistoryPage.shouldBeOnPage('11 - 20');
     app.shouldHaveQueryParam('page', '2');
-    app.shouldHaveQueryParams('sortBy', ['timestamp']);
+    app.shouldNotHaveQueryParam('sort');
 
     // apply filter location
     tradeHistoryPage.filterTrades('location: equities');
     tradeHistoryPage.visibleEntries(10);
     tradeHistoryPage.totalEntries(12);
     tradeHistoryPage.shouldBeOnPage('1 - 10');
-    app.shouldHaveQueryParam('page', '1');
+    app.shouldNotHaveQueryParam('page');
 
     // go to page 2
     tradeHistoryPage.nextPage();
@@ -110,7 +111,7 @@ describe('trade history', () => {
     cy.go(-1);
     tradeHistoryPage.shouldBeOnPage('1 - 10');
     tradeHistoryPage.visibleEntries(10);
-    app.shouldHaveQueryParam('page', '1');
+    app.shouldNotHaveQueryParam('page');
 
     // history back, should remove filter
     cy.go(-1);
@@ -120,7 +121,11 @@ describe('trade history', () => {
     // history forward, should reapply location filter
     cy.go(1);
     tradeHistoryPage.totalEntries(12);
-    app.shouldHaveQueryParam('page', '1');
+    app.shouldNotHaveQueryParam('page');
+
+    tradeHistoryPage.sortByColumn(4);
+    app.shouldHaveQueryParam('sort', 'amount');
+    app.shouldHaveQueryParam('sortOrder', 'asc');
 
     app.logout();
   });

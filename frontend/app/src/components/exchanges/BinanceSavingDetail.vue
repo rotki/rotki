@@ -50,7 +50,7 @@ const {
   locationOverview: exchange,
   defaultCollection: defaultCollectionState,
   defaultSortBy: {
-    ascending: [true],
+    direction: 'asc',
   },
   defaultParams,
 });

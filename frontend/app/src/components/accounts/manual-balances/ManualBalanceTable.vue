@@ -59,9 +59,12 @@ const {
     extraParams: computed(() => ({
       tags: get(tags),
     })),
-    defaultSortBy: {
-      key: ['usdValue'],
-    },
+    defaultSortBy: [
+      {
+        column: 'usdValue',
+        direction: 'desc',
+      },
+    ],
     onUpdateFilters(query) {
       const schema = ManualBalancesFilterSchema.parse(query);
       if (schema.tags)

@@ -93,6 +93,8 @@ declare global {
   const aggregateTotal: typeof import('./src/utils/calculation')['aggregateTotal']
   const aggregateTotals: typeof import('./src/utils/blockchain/accounts/index')['aggregateTotals']
   const appendAssetBalance: typeof import('./src/utils/balances')['appendAssetBalance']
+  const applyPaginationDefaults: typeof import('./src/composables/use-pagination-filter/utils')['applyPaginationDefaults']
+  const applySortingDefaults: typeof import('./src/composables/use-pagination-filter/utils')['applySortingDefaults']
   const arrayify: typeof import('./src/utils/array')['arrayify']
   const assert: typeof import('@rotki/common')['assert']
   const assetSum: typeof import('./src/utils/calculation')['assetSum']
@@ -184,6 +186,7 @@ declare global {
   const getAddressFromEvmIdentifier: typeof import('@rotki/common')['getAddressFromEvmIdentifier']
   const getAddressesFromWallet: typeof import('./src/utils/metamask')['getAddressesFromWallet']
   const getAllBrowserWalletProviders: typeof import('./src/utils/metamask')['getAllBrowserWalletProviders']
+  const getApiSortingParams: typeof import('./src/composables/use-pagination-filter/utils')['getApiSortingParams']
   const getBackendUrl: typeof import('./src/utils/account-management')['getBackendUrl']
   const getBalances: typeof import('./src/utils/defi/xswap')['getBalances']
   const getChain: typeof import('./src/utils/blockchain/accounts/utils')['getChain']
@@ -314,6 +317,9 @@ declare global {
   const onUpdated: typeof import('vue')['onUpdated']
   const onWatcherCleanup: typeof import('vue')['onWatcherCleanup']
   const onlyIfTruthy: typeof import('@rotki/common')['onlyIfTruthy']
+  const paginationQueryParsers: typeof import('@/composables/use-pagination-filter/utils')['paginationQueryParsers']
+  const parseQueryHistory: typeof import('./src/composables/use-pagination-filter/utils')['parseQueryHistory']
+  const parseQueryPagination: typeof import('./src/composables/use-pagination-filter/utils')['parseQueryPagination']
   const pausableWatch: typeof import('@vueuse/core')['pausableWatch']
   const pluralize: typeof import('@rotki/common')['pluralize']
   const pluralizeLastWord: typeof import('@rotki/common')['pluralizeLastWord']
@@ -517,6 +523,7 @@ declare global {
   const useClipboardItems: typeof import('@vueuse/core')['useClipboardItems']
   const useCloned: typeof import('@vueuse/core')['useCloned']
   const useColorMode: typeof import('@vueuse/core')['useColorMode']
+  const useCommonTableProps: typeof import('./src/composables/use-common-table-props/index')['useCommonTableProps']
   const useCompoundApi: typeof import('./src/composables/api/defi/compound')['useCompoundApi']
   const useCompoundStore: typeof import('./src/store/defi/compound/index')['useCompoundStore']
   const useComputedRef: typeof import('./src/composables/utils/useComputedRef/index')['useComputedRef']
@@ -563,7 +570,6 @@ declare global {
   const useElementHover: typeof import('@vueuse/core')['useElementHover']
   const useElementSize: typeof import('@vueuse/core')['useElementSize']
   const useElementVisibility: typeof import('@vueuse/core')['useElementVisibility']
-  const useEmptyFilter: typeof import('./src/composables/filters/index')['useEmptyFilter']
   const useEmptyOrSome: typeof import('./src/composables/utils/useEmptyOrSome/index')['useEmptyOrSome']
   const useEth2Api: typeof import('./src/composables/api/staking/eth2')['useEth2Api']
   const useEth2DailyStats: typeof import('./src/composables/staking/eth2/daily-stats')['useEth2DailyStats']
@@ -692,7 +698,7 @@ declare global {
   const useOffsetPagination: typeof import('@vueuse/core')['useOffsetPagination']
   const useOnline: typeof import('@vueuse/core')['useOnline']
   const usePageLeave: typeof import('@vueuse/core')['usePageLeave']
-  const usePaginationFilters: typeof import('./src/composables/filter-paginate')['usePaginationFilters']
+  const usePaginationFilters: typeof import('./src/composables/use-pagination-filter/index')['usePaginationFilters']
   const useParallax: typeof import('@vueuse/core')['useParallax']
   const useParentElement: typeof import('@vueuse/core')['useParentElement']
   const usePerformanceObserver: typeof import('@vueuse/core')['usePerformanceObserver']
@@ -968,6 +974,8 @@ declare module 'vue' {
     readonly aggregateTotal: UnwrapRef<typeof import('./src/utils/calculation')['aggregateTotal']>
     readonly aggregateTotals: UnwrapRef<typeof import('./src/utils/blockchain/accounts/index')['aggregateTotals']>
     readonly appendAssetBalance: UnwrapRef<typeof import('./src/utils/balances')['appendAssetBalance']>
+    readonly applyPaginationDefaults: UnwrapRef<typeof import('./src/composables/use-pagination-filter/utils')['applyPaginationDefaults']>
+    readonly applySortingDefaults: UnwrapRef<typeof import('./src/composables/use-pagination-filter/utils')['applySortingDefaults']>
     readonly arrayify: UnwrapRef<typeof import('./src/utils/array')['arrayify']>
     readonly assert: UnwrapRef<typeof import('@rotki/common')['assert']>
     readonly assetSum: UnwrapRef<typeof import('./src/utils/calculation')['assetSum']>
@@ -1030,7 +1038,6 @@ declare module 'vue' {
     readonly debouncedWatch: UnwrapRef<typeof import('@vueuse/core')['debouncedWatch']>
     readonly decodeHtmlEntities: UnwrapRef<typeof import('@rotki/common')['decodeHtmlEntities']>
     readonly defaultCollectionState: UnwrapRef<typeof import('./src/utils/collection')['defaultCollectionState']>
-    readonly defaultOptions: UnwrapRef<typeof import('./src/utils/collection')['defaultOptions']>
     readonly defineAsyncComponent: UnwrapRef<typeof import('vue')['defineAsyncComponent']>
     readonly defineComponent: UnwrapRef<typeof import('vue')['defineComponent']>
     readonly defineStore: UnwrapRef<typeof import('pinia')['defineStore']>
@@ -1059,6 +1066,7 @@ declare module 'vue' {
     readonly getAddressFromEvmIdentifier: UnwrapRef<typeof import('@rotki/common')['getAddressFromEvmIdentifier']>
     readonly getAddressesFromWallet: UnwrapRef<typeof import('./src/utils/metamask')['getAddressesFromWallet']>
     readonly getAllBrowserWalletProviders: UnwrapRef<typeof import('./src/utils/metamask')['getAllBrowserWalletProviders']>
+    readonly getApiSortingParams: UnwrapRef<typeof import('./src/composables/use-pagination-filter/utils')['getApiSortingParams']>
     readonly getBackendUrl: UnwrapRef<typeof import('./src/utils/account-management')['getBackendUrl']>
     readonly getBalances: UnwrapRef<typeof import('./src/utils/defi/xswap')['getBalances']>
     readonly getChain: UnwrapRef<typeof import('./src/utils/blockchain/accounts/utils')['getChain']>
@@ -1189,6 +1197,8 @@ declare module 'vue' {
     readonly onUpdated: UnwrapRef<typeof import('vue')['onUpdated']>
     readonly onWatcherCleanup: UnwrapRef<typeof import('vue')['onWatcherCleanup']>
     readonly onlyIfTruthy: UnwrapRef<typeof import('@rotki/common')['onlyIfTruthy']>
+    readonly parseQueryHistory: UnwrapRef<typeof import('./src/composables/use-pagination-filter/utils')['parseQueryHistory']>
+    readonly parseQueryPagination: UnwrapRef<typeof import('./src/composables/use-pagination-filter/utils')['parseQueryPagination']>
     readonly pausableWatch: UnwrapRef<typeof import('@vueuse/core')['pausableWatch']>
     readonly pluralize: UnwrapRef<typeof import('@rotki/common')['pluralize']>
     readonly pluralizeLastWord: UnwrapRef<typeof import('@rotki/common')['pluralizeLastWord']>
@@ -1392,6 +1402,7 @@ declare module 'vue' {
     readonly useClipboardItems: UnwrapRef<typeof import('@vueuse/core')['useClipboardItems']>
     readonly useCloned: UnwrapRef<typeof import('@vueuse/core')['useCloned']>
     readonly useColorMode: UnwrapRef<typeof import('@vueuse/core')['useColorMode']>
+    readonly useCommonTableProps: UnwrapRef<typeof import('./src/composables/use-common-table-props/index')['useCommonTableProps']>
     readonly useCompoundApi: UnwrapRef<typeof import('./src/composables/api/defi/compound')['useCompoundApi']>
     readonly useCompoundStore: UnwrapRef<typeof import('./src/store/defi/compound/index')['useCompoundStore']>
     readonly useComputedRef: UnwrapRef<typeof import('./src/composables/utils/useComputedRef/index')['useComputedRef']>
@@ -1438,7 +1449,6 @@ declare module 'vue' {
     readonly useElementHover: UnwrapRef<typeof import('@vueuse/core')['useElementHover']>
     readonly useElementSize: UnwrapRef<typeof import('@vueuse/core')['useElementSize']>
     readonly useElementVisibility: UnwrapRef<typeof import('@vueuse/core')['useElementVisibility']>
-    readonly useEmptyFilter: UnwrapRef<typeof import('./src/composables/filters/index')['useEmptyFilter']>
     readonly useEmptyOrSome: UnwrapRef<typeof import('./src/composables/utils/useEmptyOrSome/index')['useEmptyOrSome']>
     readonly useEth2Api: UnwrapRef<typeof import('./src/composables/api/staking/eth2')['useEth2Api']>
     readonly useEth2DailyStats: UnwrapRef<typeof import('./src/composables/staking/eth2/daily-stats')['useEth2DailyStats']>
@@ -1567,7 +1577,7 @@ declare module 'vue' {
     readonly useOffsetPagination: UnwrapRef<typeof import('@vueuse/core')['useOffsetPagination']>
     readonly useOnline: UnwrapRef<typeof import('@vueuse/core')['useOnline']>
     readonly usePageLeave: UnwrapRef<typeof import('@vueuse/core')['usePageLeave']>
-    readonly usePaginationFilters: UnwrapRef<typeof import('./src/composables/filter-paginate')['usePaginationFilters']>
+    readonly usePaginationFilters: UnwrapRef<typeof import('./src/composables/use-pagination-filter/index')['usePaginationFilters']>
     readonly useParallax: UnwrapRef<typeof import('@vueuse/core')['useParallax']>
     readonly useParentElement: UnwrapRef<typeof import('@vueuse/core')['useParentElement']>
     readonly usePerformanceObserver: UnwrapRef<typeof import('@vueuse/core')['usePerformanceObserver']>

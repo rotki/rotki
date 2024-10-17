@@ -2,7 +2,7 @@
 import { isEmpty, some } from 'lodash-es';
 import { TaskType } from '@/types/task-type';
 import { Section } from '@/types/status';
-import type { TableRowKey } from '@/composables/filter-paginate';
+import type { TableRowKey } from '@/composables/use-pagination-filter/types';
 import type { AccountManageState } from '@/composables/accounts/blockchain/use-account-manage';
 import type { Collection } from '@/types/collection';
 import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';

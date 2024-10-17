@@ -44,7 +44,8 @@ const {
   history: 'router',
   filterSchema: () => useEthValidatorAccountFilter(t),
   defaultSortBy: {
-    key: 'index',
+    column: 'index',
+    direction: 'desc',
   },
 });
 

@@ -90,10 +90,10 @@ const {
     set(ignoredAssetsHandling, query.ignoredAssetsHandling || 'exclude');
   },
   extraParams,
-  defaultSortBy: {
-    key: ['usdPrice'],
-    ascending: [false],
-  },
+  defaultSortBy: [{
+    column: 'usdPrice',
+    direction: 'desc',
+  }],
 });
 
 const { setPostSubmitFunc, setOpenDialog } = useLatestPriceForm();

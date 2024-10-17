@@ -74,12 +74,12 @@ describe('composables::history/filter-paginate', () => {
         locationOverview: exchange,
         defaultCollection: defaultCollectionState,
         defaultParams,
-        defaultSortBy: {
-          ascending: [true],
-        },
+        defaultSortBy: [{
+          direction: 'asc',
+        }],
       });
 
-      expect(get(userAction)).toBe(true);
+      expect(get(userAction)).toBe(false);
       expect(get(isLoading)).toBe(false);
       expect(get(filters)).to.toStrictEqual(undefined);
       expect(get(sort)).toHaveLength(1);
@@ -115,9 +115,9 @@ describe('composables::history/filter-paginate', () => {
         locationOverview: exchange,
         defaultCollection: defaultCollectionState,
         defaultParams,
-        defaultSortBy: {
-          ascending: [true],
-        },
+        defaultSortBy: [{
+          direction: 'asc',
+        }],
       });
 
       expect(get(isLoading)).toBe(false);
@@ -131,9 +131,9 @@ describe('composables::history/filter-paginate', () => {
 
     it('modify filters and fetch data correctly', async () => {
       const pushSpy = vi.spyOn(router, 'push');
-      const query = { sortDesc: ['false'] };
+      const query = { sortOrder: ['desc'] };
 
-      const { isLoading, state } = usePaginationFilters<
+      const { isLoading, state, sort } = usePaginationFilters<
         ExchangeSavingsEvent,
         ExchangeSavingsRequestPayload,
         ExchangeSavingsEvent,
@@ -143,10 +143,15 @@ describe('composables::history/filter-paginate', () => {
         locationOverview: exchange,
         defaultCollection: defaultCollectionState,
         defaultParams,
-        defaultSortBy: {
-          ascending: [false],
-        },
+        defaultSortBy: [{
+          direction: 'asc',
+        }],
       });
+
+      expect(get(sort)).toStrictEqual([{
+        column: 'timestamp',
+        direction: 'asc',
+      }]);
 
       await router.push({
         query,
@@ -168,6 +173,10 @@ describe('composables::history/filter-paginate', () => {
       expect(get(state).received).toHaveLength(2);
       expect(get(state).found).toEqual(260);
       expect(get(state).total).toEqual(260);
+      expect(get(sort)).toStrictEqual([{
+        column: 'timestamp',
+        direction: 'desc',
+      }]);
     });
   });
 });

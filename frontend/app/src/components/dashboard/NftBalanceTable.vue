@@ -35,10 +35,10 @@ const {
   NonFungibleBalancesRequestPayload
 >(fetchNonFungibleBalances, {
   extraParams,
-  defaultSortBy: {
-    key: ['usdPrice'],
-    ascending: [false],
-  },
+  defaultSortBy: [{
+    column: 'usdPrice',
+    direction: 'desc',
+  }],
 });
 
 const { isLoading: isSectionLoading } = useStatusStore();

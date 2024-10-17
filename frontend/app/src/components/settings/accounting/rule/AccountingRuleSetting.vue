@@ -10,6 +10,7 @@ const router = useRouter();
 const route = useRoute();
 
 const { getAccountingRule, getAccountingRules, getAccountingRulesConflicts, exportJSON } = useAccountingSettings();
+const { editableItem } = useCommonTableProps<AccountingRuleEntry>();
 
 const {
   state,
@@ -20,7 +21,6 @@ const {
   pagination,
   matchers,
   updateFilter,
-  editableItem,
 } = usePaginationFilters<
   AccountingRuleEntry,
   AccountingRuleRequestPayload,

@@ -28,6 +28,8 @@ const ignoredFilter = ref<{
   ignoredAssetsHandling: 'exclude',
 });
 
+const { expanded, selected, editableItem } = useCommonTableProps<SupportedAsset>();
+
 const extraParams = computed(() => {
   const { ignoredAssetsHandling, onlyShowOwned, onlyShowWhitelisted } = get(ignoredFilter);
   return {
@@ -55,11 +57,8 @@ async function confirmDelete(toDeleteAsset: SupportedAsset) {
 const {
   filters,
   matchers,
-  expanded,
-  selected,
   state: assets,
   isLoading: loading,
-  editableItem,
   fetchData,
   setPage,
   sort,
@@ -83,8 +82,8 @@ const {
   },
   extraParams,
   defaultSortBy: {
-    key: 'symbol',
-    ascending: [true],
+    column: 'symbol',
+    direction: 'asc',
   },
 });
 
