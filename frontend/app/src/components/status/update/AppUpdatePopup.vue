@@ -135,7 +135,7 @@ onMounted(async () => {
         v-if="downloading"
         class="mt-4"
         color="primary"
-        :model-value="percentage"
+        :value="percentage"
         show-label
       />
 
