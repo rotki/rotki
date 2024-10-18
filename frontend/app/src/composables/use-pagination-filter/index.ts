@@ -10,40 +10,45 @@ import type { Collection } from '@/types/collection';
 import type { ComputedRef, Ref, WritableComputedRef } from 'vue';
 import type { FilterSchema, Sorting } from '@/composables/use-pagination-filter/types';
 
+type Params<
+  TItem extends NonNullable<unknown>,
+  TPayload extends PaginationRequestPayload<TItem>,
+> = Partial<Omit<TPayload, keyof PaginationRequestPayload<TItem>>>;
+
 interface UsePaginationFiltersOptions<
-  T extends NonNullable<unknown>,
-  U = PaginationRequestPayload<T>,
-  W extends MatchedKeywordWithBehaviour<string> | void = undefined,
-  X extends SearchMatcher<string, string> | void = undefined,
+  TItem extends NonNullable<unknown>,
+  TPayload extends PaginationRequestPayload<TItem> = PaginationRequestPayload<TItem>,
+  TFilter extends MatchedKeywordWithBehaviour<string> | void = undefined,
+  TSuggestionMatcher extends SearchMatcher<string, string> | void = undefined,
 > {
   history?: false | 'router' | 'external';
   locationOverview?: Ref<string>;
-  filterSchema?: () => FilterSchema<W, X>;
+  filterSchema?: () => FilterSchema<TFilter, TSuggestionMatcher>;
   onUpdateFilters?: (query: LocationQuery) => void;
   extraParams?: ComputedRef<RawLocationQuery>;
-  requestParams?: ComputedRef<Partial<U>>;
-  defaultParams?: ComputedRef<Partial<U> | undefined>;
-  defaultSortBy?: DataTableSortData<T>;
+  requestParams?: ComputedRef<Params<TItem, TPayload>>;
+  defaultParams?: ComputedRef<Params<TItem, TPayload>>;
+  defaultSortBy?: DataTableSortData<TItem>;
   query?: Ref<LocationQuery>;
 }
 
 interface UsePaginationFilterReturn<
-  T extends NonNullable<unknown>,
-  U = PaginationRequestPayload<T>,
-  W extends MatchedKeywordWithBehaviour<string> | void = undefined,
-  X extends SearchMatcher<string, string> | void = undefined,
+  TItem extends NonNullable<unknown>,
+  TPayload extends PaginationRequestPayload<TItem> = PaginationRequestPayload<TItem>,
+  TFilter extends MatchedKeywordWithBehaviour<string> | void = undefined,
+  TSuggestionMatcher extends SearchMatcher<string, string> | void = undefined,
 > {
-  pageParams: ComputedRef<U>;
+  pageParams: ComputedRef<TPayload>;
   isLoading: Ref<boolean>;
   userAction: Ref<boolean>;
-  state: Ref<Collection<T>>;
-  filters: WritableComputedRef<W>;
-  matchers: ComputedRef<X[]>;
-  sort: WritableComputedRef<DataTableSortData<T>>;
+  state: Ref<Collection<TItem>>;
+  filters: WritableComputedRef<TFilter>;
+  matchers: ComputedRef<TSuggestionMatcher[]>;
+  sort: WritableComputedRef<DataTableSortData<TItem>>;
   pagination: WritableComputedRef<TablePaginationData>;
   setPage: (page: number, action?: boolean) => void;
   fetchData: () => Promise<void>;
-  updateFilter: (newFilter: W) => void;
+  updateFilter: (newFilter: TFilter) => void;
 }
 
 /**
@@ -55,21 +60,21 @@ interface UsePaginationFilterReturn<
  * @param {{onUpdateFilters?: (query: LocationQuery) => void, extraParams?: ComputedRef<LocationQuery>, customPageParams?: ComputedRef<Partial<U>>, defaultSortBy?: {pagination?: keyof T, pageParams?: (keyof T)[], pageParamsAsc?: boolean[]}}} options
  */
 export function usePaginationFilters<
-  T extends NonNullable<unknown>,
-  U = PaginationRequestPayload<T>,
-  W extends MatchedKeywordWithBehaviour<string> | void = undefined,
-  X extends SearchMatcher<string, string> | void = undefined,
+  TItem extends NonNullable<unknown>,
+  TPayload extends PaginationRequestPayload<TItem> = PaginationRequestPayload<TItem>,
+  TFilter extends MatchedKeywordWithBehaviour<string> | void = undefined,
+  TSuggestionMatcher extends SearchMatcher<string, string> | void = undefined,
 >(
-  requestData: (payload: MaybeRef<U>) => Promise<Collection<T>>,
-  options: UsePaginationFiltersOptions<T, U, W, X> = {},
-): UsePaginationFilterReturn<T, U, W, X> {
+  requestData: (payload: MaybeRef<TPayload>) => Promise<Collection<TItem>>,
+  options: UsePaginationFiltersOptions<TItem, TPayload, TFilter, TSuggestionMatcher> = {},
+): UsePaginationFilterReturn<TItem, TPayload, TFilter, TSuggestionMatcher> {
   const { t } = useI18n();
   const { notify } = useNotificationsStore();
   const itemsPerPage = useItemsPerPage();
   const router = useRouter();
   const route = useRoute();
   const userAction = ref<boolean>(false);
-  const internalSorting = ref<Sorting<T>>(markRaw(applySortingDefaults(options.defaultSortBy))) as Ref<Sorting<T>>;
+  const internalSorting = ref<Sorting<TItem>>(markRaw(applySortingDefaults(options.defaultSortBy))) as Ref<Sorting<TItem>>;
   const internalPagination = ref<TablePaginationData>(applyPaginationDefaults(get(itemsPerPage)));
 
   const {
@@ -81,21 +86,21 @@ export function usePaginationFilters<
     defaultSortBy,
     locationOverview,
     history = false,
-    filterSchema = (): FilterSchema<W, X> => ({
-      filters: ref({}) as Ref<W>,
-      matchers: computed<X[]>(() => []),
+    filterSchema = (): FilterSchema<TFilter, TSuggestionMatcher> => ({
+      filters: ref({}) as Ref<TFilter>,
+      matchers: computed<TSuggestionMatcher[]>(() => []),
       RouteFilterSchema: undefined,
     }),
     query = ref<LocationQuery>({}),
   } = options;
 
-  const defaultSorting = (): Sorting<T> => applySortingDefaults(defaultSortBy);
+  const defaultSorting = (): Sorting<TItem> => applySortingDefaults(defaultSortBy);
 
   const { filters, matchers, RouteFilterSchema } = filterSchema();
 
-  const sort = computed<DataTableSortData<T>>({
+  const sort = computed<DataTableSortData<TItem>>({
     get() {
-      return get(internalSorting) as DataTableSortData<T>;
+      return get(internalSorting) as DataTableSortData<TItem>;
     },
     set(sort) {
       set(userAction, true);
@@ -103,7 +108,7 @@ export function usePaginationFilters<
     },
   });
 
-  const transformFilters = (filters: W): W => {
+  const transformFilters = (filters: TFilter): TFilter => {
     const matchersVal = get(matchers);
 
     if (typeof filters !== 'object' || matchersVal.length === 0)
@@ -159,7 +164,7 @@ export function usePaginationFilters<
     return newFilters;
   };
 
-  const pageParams = computed<U>(() => {
+  const pageParams = computed<TPayload>(() => {
     const { page, limit } = get(internalPagination);
     const offset = (page - 1) * limit;
 
@@ -177,16 +182,16 @@ export function usePaginationFilters<
 
     // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
     return {
-      ...transformFilters(transformedFilters),
+      ...transformFilters(transformedFilters) as Params<TItem, any>,
       limit,
       offset,
       ...getApiSortingParams(get(internalSorting)),
-    } as U; // todo: figure out a way to not typecast
+    } as TPayload; // todo: figure out a way to not typecast
   });
 
-  const { isLoading, state, execute } = useAsyncState<Collection<T>, MaybeRef<U>[]>(
+  const { isLoading, state, execute } = useAsyncState<Collection<TItem>, MaybeRef<TPayload>[]>(
     requestData,
-    defaultCollectionState<T>(),
+    defaultCollectionState<TItem>(),
     {
       immediate: false,
       resetOnExecute: false,
@@ -235,11 +240,11 @@ export function usePaginationFilters<
     },
   });
 
-  const filter = computed<W>({
+  const filter = computed<TFilter>({
     get() {
       return get(filters);
     },
-    set(value: W) {
+    set(value: TFilter) {
       set(userAction, true);
       set(filters, value);
     },
@@ -328,7 +333,7 @@ export function usePaginationFilters<
    * @template W
    * @param {W} newFilter
    */
-  const updateFilter = (newFilter: W): void => {
+  const updateFilter = (newFilter: TFilter): void => {
     set(filters, newFilter);
   };
 
