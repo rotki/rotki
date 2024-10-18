@@ -10,6 +10,7 @@ from rotkehlchen.constants.misc import GLOBALDB_NAME, GLOBALDIR_NAME
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import TRACE, add_logging_level
+from rotkehlchen.user_messages import MessagesAggregator
 
 add_logging_level('TRACE', TRACE)
 
@@ -123,7 +124,11 @@ def prepare_globaldb(args: argparse.Namespace) -> tuple[GlobalDBHandler, Path]:
         path=args.start_db_path,
         branch=args.assets_branch,
     )
-    return GlobalDBHandler(data_dir=target_directory, sql_vm_instructions_cb=0), target_directory
+    return GlobalDBHandler(
+        data_dir=target_directory,
+        sql_vm_instructions_cb=0,
+        msg_aggregator=MessagesAggregator(),
+    ), target_directory
 
 
 def clean_folder(globaldb: GlobalDBHandler, target_directory: Path):
