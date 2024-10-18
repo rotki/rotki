@@ -9,9 +9,11 @@ from rotkehlchen.db.utils import update_table_schema
 from rotkehlchen.errors.misc import DBUpgradeError
 from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
 from rotkehlchen.types import YEARN_VAULTS_V1_PROTOCOL
+from rotkehlchen.utils.progress import perform_globaldb_upgrade_steps, progress_step
 
 if TYPE_CHECKING:
     from rotkehlchen.db.drivers.gevent import DBConnection, DBCursor
+    from rotkehlchen.db.upgrade_manager import DBUpgradeProgressHandler
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -105,39 +107,6 @@ def _get_or_create_common_abi(
     )
 
 
-@enter_exit_debug_log()
-def _create_new_tables(cursor: 'DBCursor') -> None:
-    cursor.execute(
-        """
-        CREATE TABLE IF NOT EXISTS contract_abi (
-            id INTEGER NOT NULL PRIMARY KEY,
-            value TEXT NOT NULL,
-            name TEXT
-        );""")
-    cursor.execute(
-        """
-        CREATE TABLE IF NOT EXISTS contract_data (
-            address VARCHAR[42] NOT NULL,
-            chain_id INTEGER NOT NULL,
-            name TEXT,
-            abi INTEGER NOT NULL,
-            deployed_block INTEGER,
-            FOREIGN KEY(abi) REFERENCES contract_abi(id) ON UPDATE CASCADE ON DELETE SET NULL,
-            PRIMARY KEY(address, chain_id)
-        );""")
-
-
-@enter_exit_debug_log()
-def _add_eth_abis_json(cursor: 'DBCursor') -> None:
-    root_dir = Path(__file__).resolve().parent.parent.parent
-    abi_entries = json.loads((root_dir / 'data' / 'eth_abi.json').read_text(encoding='utf8'))
-    abi_entries_tuples = []
-    for name, value in abi_entries.items():
-        abi_entries_tuples.append((name, json.dumps(value, separators=(',', ':'))))
-    cursor.executemany('INSERT INTO contract_abi(name, value) VALUES(?, ?)', abi_entries_tuples)
-
-
-@enter_exit_debug_log()
 def _add_eth_contracts_json(cursor: 'DBCursor') -> tuple[int, int, int]:
     eth_scan_abi_id, multicall_abi_id, ds_registry_abi_id = None, None, None
     root_dir = Path(__file__).resolve().parent.parent.parent
@@ -226,7 +195,6 @@ def _add_eth_contracts_json(cursor: 'DBCursor') -> tuple[int, int, int]:
     return eth_scan_abi_id, multicall_abi_id, ds_registry_abi_id
 
 
-@enter_exit_debug_log()
 def _add_optimism_contracts(
         cursor: 'DBCursor',
         eth_scan_abi_id: int,
@@ -285,68 +253,8 @@ def _copy_assets_from_packaged_db(
     cursor.execute('DETACH DATABASE packaged_db;')
 
 
-@enter_exit_debug_log()
-def _populate_asset_collections(cursor: 'DBCursor', root_dir: Path) -> None:
-    """Insert into the collections table the information about known collections"""
-    cursor.execute((root_dir / 'data' / 'populate_asset_collections.sql').read_text(encoding='utf8'))  # noqa: E501
-
-
-@enter_exit_debug_log()
-def _populate_multiasset_mappings(cursor: 'DBCursor', root_dir: Path) -> None:
-    """
-    Insert into the assets_mappings table the information about each asset's collection
-    If any of the assets that needs to go in the collections is missing we copy it from the
-    packaged globaldb.
-    """
-    asset_regex = re.compile(r'eip155[a-zA-F0-9:\/]+')
-    sql_sentences = (root_dir / 'data' / 'populate_multiasset_mappings.sql').read_text(encoding='utf8')  # noqa: E501
-    # check if we are adding the assets
-    # in this case we need to ensure that the assets exist locally and
-    # if not copy them from the packaged db
-    mapping_assets_identifiers = asset_regex.findall(sql_sentences)
-    cursor.execute(
-        f'SELECT identifier FROM assets WHERE identifier IN ({",".join("?" * len(mapping_assets_identifiers))})',  # noqa: E501
-        mapping_assets_identifiers,
-    )
-    all_evm_assets = {entry[0] for entry in cursor}
-    assets_to_add = set(mapping_assets_identifiers) - all_evm_assets
-
-    if len(assets_to_add) != 0:
-        try:
-            _copy_assets_from_packaged_db(
-                cursor=cursor,
-                assets_ids=list(assets_to_add),
-                root_dir=root_dir,
-            )
-        except sqlite3.OperationalError as e:
-            log.error(f'Failed to add missing assets for collections. Missing assets were {assets_to_add}. {e!s}')  # noqa: E501
-            return
-
-    cursor.execute(sql_sentences)
-
-
-@enter_exit_debug_log()
-def _upgrade_address_book_table(cursor: 'DBCursor') -> None:
-    """Upgrades the address book table if it exists by making the blockchain column optional"""
-    update_table_schema(
-        write_cursor=cursor,
-        table_name='address_book',
-        schema="""address TEXT NOT NULL,
-        blockchain TEXT,
-        name TEXT NOT NULL,
-        PRIMARY KEY(address, blockchain)""",
-        insert_columns='address, blockchain, name',
-    )
-
-
-@enter_exit_debug_log()
-def _update_yearn_v1_protocol(cursor: 'DBCursor') -> None:
-    """Update the protocol name for yearn assets"""
-    cursor.execute('UPDATE evm_tokens SET protocol=? WHERE protocol="yearn-v1"', (YEARN_VAULTS_V1_PROTOCOL,))  # noqa: E501
-
-
 @enter_exit_debug_log(name='GlobalDB v3->v4 upgrade')
-def migrate_to_v4(connection: 'DBConnection') -> None:
+def migrate_to_v4(connection: 'DBConnection', progress_handler: 'DBUpgradeProgressHandler') -> None:  # noqa: E501
     """Upgrades globalDB to v4 by creating and populating the contract data + abi tables.
 
     Also making sure to not repeat existing abis. Ran a script to determine which
@@ -357,12 +265,95 @@ def migrate_to_v4(connection: 'DBConnection') -> None:
     """
     root_dir = Path(__file__).resolve().parent.parent.parent
 
-    with connection.write_ctx() as cursor:
-        _create_new_tables(cursor)
-        _add_eth_abis_json(cursor)
+    @progress_step('Adding new tables.')
+    def _create_new_tables(cursor: 'DBCursor') -> None:
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS contract_abi (
+                id INTEGER NOT NULL PRIMARY KEY,
+                value TEXT NOT NULL,
+                name TEXT
+            );""")
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS contract_data (
+                address VARCHAR[42] NOT NULL,
+                chain_id INTEGER NOT NULL,
+                name TEXT,
+                abi INTEGER NOT NULL,
+                deployed_block INTEGER,
+                FOREIGN KEY(abi) REFERENCES contract_abi(id) ON UPDATE CASCADE ON DELETE SET NULL,
+                PRIMARY KEY(address, chain_id)
+            );""")
+
+    @progress_step('Adding new ABIs.')
+    def _add_eth_abis_json(cursor: 'DBCursor') -> None:
+        root_dir = Path(__file__).resolve().parent.parent.parent
+        abi_entries = json.loads((root_dir / 'data' / 'eth_abi.json').read_text(encoding='utf8'))
+        abi_entries_tuples = []
+        for name, value in abi_entries.items():
+            abi_entries_tuples.append((name, json.dumps(value, separators=(',', ':'))))
+        cursor.executemany('INSERT INTO contract_abi(name, value) VALUES(?, ?)', abi_entries_tuples)  # noqa: E501
+
+    @progress_step('Adding new contracts.')
+    def _add_new_contracts(cursor: 'DBCursor') -> None:
         eth_scan_abi_id, multicall_abi_id, ds_registry_abi_id = _add_eth_contracts_json(cursor)
         _add_optimism_contracts(cursor, eth_scan_abi_id, multicall_abi_id, ds_registry_abi_id)
-        _populate_asset_collections(cursor, root_dir)
-        _populate_multiasset_mappings(cursor, root_dir)
-        _upgrade_address_book_table(cursor)
-        _update_yearn_v1_protocol(cursor)
+
+    @progress_step('Populating asset collections.')
+    def _populate_asset_collections(cursor: 'DBCursor') -> None:
+        """Insert into the collections table the information about known collections"""
+        cursor.execute((root_dir / 'data' / 'populate_asset_collections.sql').read_text(encoding='utf8'))  # noqa: E501
+
+    @progress_step('Populating multiasset mappings.')
+    def _populate_multiasset_mappings(cursor: 'DBCursor') -> None:
+        """
+        Insert into the assets_mappings table the information about each asset's collection
+        If any of the assets that needs to go in the collections is missing we copy it from the
+        packaged globaldb.
+        """
+        asset_regex = re.compile(r'eip155[a-zA-F0-9:\/]+')
+        sql_sentences = (root_dir / 'data' / 'populate_multiasset_mappings.sql').read_text(encoding='utf8')  # noqa: E501
+        # check if we are adding the assets
+        # in this case we need to ensure that the assets exist locally and
+        # if not copy them from the packaged db
+        mapping_assets_identifiers = asset_regex.findall(sql_sentences)
+        cursor.execute(
+            f'SELECT identifier FROM assets WHERE identifier IN ({",".join("?" * len(mapping_assets_identifiers))})',  # noqa: E501
+            mapping_assets_identifiers,
+        )
+        all_evm_assets = {entry[0] for entry in cursor}
+        assets_to_add = set(mapping_assets_identifiers) - all_evm_assets
+
+        if len(assets_to_add) != 0:
+            try:
+                _copy_assets_from_packaged_db(
+                    cursor=cursor,
+                    assets_ids=list(assets_to_add),
+                    root_dir=root_dir,
+                )
+            except sqlite3.OperationalError as e:
+                log.error(f'Failed to add missing assets for collections. Missing assets were {assets_to_add}. {e!s}')  # noqa: E501
+                return
+
+        cursor.execute(sql_sentences)
+
+    @progress_step('Upgrading address book table.')
+    def _upgrade_address_book_table(cursor: 'DBCursor') -> None:
+        """Upgrades the address book table if it exists by making the blockchain column optional"""
+        update_table_schema(
+            write_cursor=cursor,
+            table_name='address_book',
+            schema="""address TEXT NOT NULL,
+            blockchain TEXT,
+            name TEXT NOT NULL,
+            PRIMARY KEY(address, blockchain)""",
+            insert_columns='address, blockchain, name',
+        )
+
+    @progress_step('Updating protocol name for yearn assets.')
+    def _update_yearn_v1_protocol(cursor: 'DBCursor') -> None:
+        """Update the protocol name for yearn assets"""
+        cursor.execute('UPDATE evm_tokens SET protocol=? WHERE protocol="yearn-v1"', (YEARN_VAULTS_V1_PROTOCOL,))  # noqa: E501
+
+    perform_globaldb_upgrade_steps(connection, progress_handler)

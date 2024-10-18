@@ -159,7 +159,7 @@ def test_get_ethereum_token_identifier(globaldb):
     assert token_0_id == user_tokens[0].identifier
 
 
-def test_open_new_globaldb_with_old_rotki(tmpdir_factory, sql_vm_instructions_cb):
+def test_open_new_globaldb_with_old_rotki(tmpdir_factory, sql_vm_instructions_cb, messages_aggregator):  # noqa: E501
     """Test for https://github.com/rotki/rotki/issues/2781"""
     # clean the previous resolver memory cache, as it
     # may have cached results from a discarded database
@@ -172,7 +172,7 @@ def test_open_new_globaldb_with_old_rotki(tmpdir_factory, sql_vm_instructions_cb
     new_global_dir.mkdir(parents=True, exist_ok=True)
     copyfile(source_db_path, new_global_dir / GLOBALDB_NAME)
     with pytest.raises(ValueError) as excinfo:
-        create_globaldb(new_data_dir, sql_vm_instructions_cb)
+        create_globaldb(new_data_dir, sql_vm_instructions_cb, messages_aggregator)
 
     msg = (
         f'Tried to open a rotki version intended to work with GlobalDB v{GLOBAL_DB_VERSION} '

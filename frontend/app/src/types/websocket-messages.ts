@@ -89,6 +89,7 @@ export const DbUpgradeStatusData = z.object({
     currentStep: z.number().nonnegative(),
     toVersion: z.number().nonnegative(),
     totalSteps: z.number().nonnegative(),
+    description: z.string().nullable(),
   }),
 });
 

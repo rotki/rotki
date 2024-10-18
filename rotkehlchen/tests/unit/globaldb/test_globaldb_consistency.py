@@ -101,7 +101,11 @@ def test_asset_updates_consistency_with_packaged_db(
         filename=old_db_dir / 'global.db',
     )
 
-    globaldb = create_globaldb(data_directory=temp_data_dir, sql_vm_instructions_cb=0)
+    globaldb = create_globaldb(
+        data_directory=temp_data_dir,
+        sql_vm_instructions_cb=0,
+        messages_aggregator=messages_aggregator,
+    )
 
     with (
         globaldb.conn.read_ctx() as old_db_cursor,
@@ -446,7 +450,11 @@ def test_remote_updates_consistency_with_packaged_db(
         filename=old_db_dir / 'global.db',
     )
 
-    globaldb = create_globaldb(data_directory=temp_data_dir, sql_vm_instructions_cb=0)
+    globaldb = create_globaldb(
+        data_directory=temp_data_dir,
+        sql_vm_instructions_cb=0,
+        messages_aggregator=messages_aggregator,
+    )
     rotki_updater = RotkiDataUpdater(msg_aggregator=messages_aggregator, user_db=database)
     rotki_updater.check_for_updates(updates=[
         UpdateType.LOCATION_ASSET_MAPPINGS,

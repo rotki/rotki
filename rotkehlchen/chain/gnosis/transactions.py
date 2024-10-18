@@ -1,9 +1,14 @@
 from collections.abc import Sequence
 from contextlib import suppress
-from typing import TYPE_CHECKING, Final
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Any, Final
+
 
 from eth_typing.abi import ABI
 
+
+from rotkehlchen.accounting.accountant import RemoteError
+from rotkehlchen.assets.asset import DeserializationError
 from rotkehlchen.chain.evm.transactions import EvmTransactions
 from rotkehlchen.errors.misc import AlreadyExists
 from rotkehlchen.types import ChecksumEvmAddress, Timestamp, deserialize_evm_tx_hash
@@ -14,12 +19,42 @@ from .modules.xdai_bridge.constants import BLOCKREWARDS_ADDRESS
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
-
     from .node_inquirer import GnosisInquirer
 
 ADDED_RECEIVER_ABI: Final[ABI] = [{'anonymous': False, 'inputs': [{'indexed': False, 'name': 'amount', 'type': 'uint256'}, {'indexed': True, 'name': 'receiver', 'type': 'address'}, {'indexed': True, 'name': 'bridge', 'type': 'address'}], 'name': 'AddedReceiver', 'type': 'event'}]  # noqa: E501
 DEPLOYED_BLOCK: Final = 9053325
 DEPLOYED_TS: Final = 1539027985
+NO_BLOCK_PROCESSED_VALUE = -1
+
+
+@dataclass
+class GnosisWithdrawalsQueryParameters:
+    last_block_processed: int
+    expected_topics: set[str]
+    gnosis_transactions: 'GnosisTransactions'
+
+
+def _process_withdrawals_events_cb(
+        last_block_queried: int,
+        filters: dict[str, Any],  # pylint: disable=unused-argument
+        new_events: list[dict[str, Any]],
+        cb_arguments: 'GnosisWithdrawalsQueryParameters',
+) -> None:
+    """Callback that processes new events.
+    This function also keeps track of the last block number processed using
+    the attribute last_block_processed of cb_arguments. It is later used
+    in case of error to save the queried range.
+    """
+    for event in new_events:
+        if event['topics'][1] in cb_arguments.expected_topics:
+            with suppress(AlreadyExists):
+                cb_arguments.gnosis_transactions.add_transaction_by_hash(
+                    tx_hash=deserialize_evm_tx_hash(event['transactionHash']),
+                    associated_address=bytes32hexstr_to_address((event['topics'][1]),
+                    must_exist=True,
+                )
+
+    cb_arguments.last_block_processed = last_block_queried
 
 
 class GnosisTransactions(EvmTransactions):
@@ -61,32 +96,42 @@ class GnosisTransactions(EvmTransactions):
         else:
             from_block = self.evm_inquirer.get_blocknumber_by_time(from_ts)
 
-        events = self.evm_inquirer.get_logs(
-            contract_address=BLOCKREWARDS_ADDRESS,
-            abi=ADDED_RECEIVER_ABI,
-            event_name='AddedReceiver',
-            # For multiple addresses unfortunately have to query all and filter later
-            argument_filters={'receiver': addresses[0]} if len(addresses) == 1 else {},
-            from_block=from_block,
-            to_block='latest',
-            call_order=self.evm_inquirer.default_call_order(),
+        callback_modifiable_params = GnosisWithdrawalsQueryParameters(
+            last_block_processed=NO_BLOCK_PROCESSED_VALUE,
+            expected_topics={'0x000000000000000000000000' + x.lower()[2:] for x in addresses},
+            gnosis_transactions=self,
         )
 
-        expected_topics = ['0x000000000000000000000000' + x.lower()[2:] for x in addresses]
-        for event in events:
-            if event['topics'][1] in expected_topics:
-                with suppress(AlreadyExists):
-                    self.add_transaction_by_hash(
-                        tx_hash=deserialize_evm_tx_hash(event['transactionHash']),
-                        associated_address=bytes32hexstr_to_address(event['topics'][1]),
-                        must_exist=True,
+        last_queried_ts = None
+        try:
+            self.evm_inquirer.get_logs(
+                contract_address=BLOCKREWARDS_ADDRESS,
+                abi=ADDED_RECEIVER_ABI,
+                event_name='AddedReceiver',
+                # For multiple addresses unfortunately have to query all and filter later
+                argument_filters={'receiver': addresses[0]} if len(addresses) == 1 else {},
+                from_block=from_block,
+                to_block='latest',
+                call_order=self.evm_inquirer.default_call_order(),
+                log_iteration_cb=_process_withdrawals_events_cb,
+                log_iteration_cb_arguments=callback_modifiable_params,
+            )
+        except (RemoteError, DeserializationError):
+            if callback_modifiable_params.last_block_processed != NO_BLOCK_PROCESSED_VALUE:
+                with suppress(RemoteError):
+                    block = self.evm_inquirer.get_block_by_number(
+                        num=callback_modifiable_params.last_block_processed,
                     )
-
-        with self.database.user_write() as write_cursor:
-            for address in addresses:  # updated DB cache
-                self.database.update_used_query_range(
-                    write_cursor=write_cursor,
-                    name=f'{BRIDGE_QUERIED_ADDRESS_PREFIX}{address}',
-                    start_ts=from_ts,
-                    end_ts=to_ts,
-                )
+                    last_queried_ts = block['timestamp']
+        else:
+            last_queried_ts = to_ts
+        finally:
+            if last_queried_ts is not None:
+                with self.database.user_write() as write_cursor:
+                    for address in addresses:
+                        self.database.update_used_query_range(
+                            write_cursor=write_cursor,
+                            name=f'{BRIDGE_QUERIED_ADDRESS_PREFIX}{address}',
+                            start_ts=from_ts,
+                            end_ts=last_queried_ts,
+                        )

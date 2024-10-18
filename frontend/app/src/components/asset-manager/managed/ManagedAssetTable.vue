@@ -121,10 +121,6 @@ const { isAssetWhitelisted, whitelistAsset, unWhitelistAsset } = useWhitelistedA
 
 const { markAssetsAsSpam, removeAssetFromSpamList } = useSpamAsset();
 
-function isAssetWhitelistedValue(asset: string) {
-  return get(isAssetWhitelisted(asset));
-}
-
 const { getChain } = useSupportedChains();
 
 async function toggleIgnoreAsset(identifier: string) {
@@ -306,18 +302,18 @@ const disabledRows = computed(() => {
                 :popper="{ placement: 'top' }"
                 :open-delay="400"
                 tooltip-class="max-w-[10rem]"
-                :disabled="!isAssetWhitelistedValue(row.identifier) && !isSpamAsset(row)"
+                :disabled="!isSpamAsset(row)"
               >
                 <template #activator>
                   <RuiSwitch
                     color="primary"
                     hide-details
-                    :disabled="isAssetWhitelistedValue(row.identifier) || isSpamAsset(row)"
+                    :disabled="isSpamAsset(row)"
                     :model-value="isAssetIgnored(row.identifier).value"
                     @update:model-value="toggleIgnoreAsset(row.identifier)"
                   />
                 </template>
-                {{ isSpamAsset(row) ? t('ignore.spam.hint') : t('ignore.whitelist.hint') }}
+                {{ t('ignore.spam.hint') }}
               </RuiTooltip>
 
               <ManagedAssetIgnoringMore

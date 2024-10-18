@@ -483,7 +483,7 @@ def test_get_logs_graph_delegation(ethereum_inquirer, ethereum_manager_connect_a
 
     original_query_web3_get_logs = _query_web3_get_logs
 
-    def mock_query_web3_get_logs(web3, filter_args, from_block, to_block, contract_address, event_name, argument_filters, initial_block_range, log_iteration_cb):  # noqa: E501
+    def mock_query_web3_get_logs(web3, filter_args, from_block, to_block, contract_address, event_name, argument_filters, initial_block_range, log_iteration_cb, log_iteration_cb_arguments):  # noqa: E501
         """Similarly to etherscan let's check the right arguments make it here"""
         assert filter_args == {
             'address': CONTRACT_STAKING,
@@ -494,7 +494,7 @@ def test_get_logs_graph_delegation(ethereum_inquirer, ethereum_manager_connect_a
         }
         assert argument_filters == {'l2Delegator': '0x9bA6D627fB731F447a68326E61280494C9A5ad02'}
         assert contract_address == CONTRACT_STAKING
-        return original_query_web3_get_logs(web3, filter_args, from_block, to_block, contract_address, event_name, argument_filters, initial_block_range, log_iteration_cb)  # noqa: E501
+        return original_query_web3_get_logs(web3, filter_args, from_block, to_block, contract_address, event_name, argument_filters, initial_block_range, log_iteration_cb, log_iteration_cb_arguments)  # noqa: E501
 
     etherscan_query_patch = patch.object(ethereum_inquirer.etherscan, '_query', side_effect=mock_etherscan_query, autospec=True)  # noqa: E501
     query_web3_logs_patch = patch('rotkehlchen.chain.evm.node_inquirer._query_web3_get_logs', side_effect=mock_query_web3_get_logs)  # noqa: E501
@@ -567,7 +567,7 @@ def test_get_logs_anonymous(ethereum_inquirer, ethereum_manager_connect_at_start
         }
         return []  # empty list to make it succeed
 
-    def mock_query_web3_get_logs(web3, filter_args, from_block, to_block, contract_address, event_name, argument_filters, initial_block_range, log_iteration_cb):  # noqa: E501
+    def mock_query_web3_get_logs(web3, filter_args, from_block, to_block, contract_address, event_name, argument_filters, initial_block_range, log_iteration_cb, log_iteration_cb_arguments):  # noqa: E501
         """Similarly to etherscan let's check the right arguments make it here"""
         assert from_block == deployment_block
         assert to_block == 'latest'

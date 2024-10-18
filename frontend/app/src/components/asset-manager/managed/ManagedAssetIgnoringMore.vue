@@ -37,17 +37,28 @@ function toggleSpam() {
       close-on-content-click
     >
       <template #activator="{ attrs }">
-        <RuiButton
-          class="!p-1"
-          icon
-          variant="text"
-          v-bind="attrs"
+        <RuiBadge
+          :model-value="isWhitelisted || isSpam"
+          color="primary"
+          dot
+          placement="top"
+          offset-y="12"
+          offset-x="-10"
+          size="md"
+          class="flex items-center"
         >
-          <RuiIcon
-            name="arrow-down-s-line"
-            size="20"
-          />
-        </RuiButton>
+          <RuiButton
+            icon
+            v-bind="attrs"
+            size="sm"
+            class="dark:!bg-rui-grey-800 dark:!text-white"
+          >
+            <RuiIcon
+              name="arrow-down-s-line"
+              size="20"
+            />
+          </RuiButton>
+        </RuiBadge>
       </template>
       <div class="py-2 text-rui-text-secondary">
         <RuiButton

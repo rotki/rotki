@@ -61,6 +61,7 @@ from .utils import GLOBAL_DB_VERSION, globaldb_get_setting_value
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.filtering import AssetsFilterQuery, LocationAssetMappingsFilterQuery
+    from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -143,6 +144,7 @@ def initialize_globaldb(
         global_dir: Path,
         db_filename: str,
         sql_vm_instructions_cb: int,
+        msg_aggregator: 'MessagesAggregator',
 ) -> tuple[DBConnection, bool]:
     """Initialize globaldb.
 
@@ -161,6 +163,7 @@ def initialize_globaldb(
         connection=connection,
         global_dir=global_dir,
         db_filename=db_filename,
+        msg_aggregator=msg_aggregator,
     )
     connection.executescript('PRAGMA foreign_keys=on;')
     # switch to WAL mode: https://www.sqlite.org/wal.html
@@ -181,6 +184,7 @@ def initialize_globaldb(
 def _initialize_global_db_directory(
         data_dir: Path,
         sql_vm_instructions_cb: int,
+        msg_aggregator: 'MessagesAggregator',
 ) -> tuple[DBConnection, bool]:
     """Initialize globaldb directory. May raise DBSchemaError if GlobalDB's schema is malformed.
 
@@ -198,6 +202,7 @@ def _initialize_global_db_directory(
         global_dir=global_dir,
         db_filename=GLOBALDB_NAME,
         sql_vm_instructions_cb=sql_vm_instructions_cb,
+        msg_aggregator=msg_aggregator,
     )
 
 
@@ -209,11 +214,13 @@ class GlobalDBHandler:
     conn: DBConnection
     used_backup: bool  # specifies if the global DB was restored from a backup
     packaged_db_lock: Semaphore
+    msg_aggregator: 'MessagesAggregator | None' = None
 
     def __new__(
             cls,
             data_dir: Path | None = None,
             sql_vm_instructions_cb: int | None = None,
+            msg_aggregator: 'MessagesAggregator | None' = None,
     ) -> 'GlobalDBHandler':
         """
         Initializes the GlobalDB.
@@ -227,9 +234,15 @@ class GlobalDBHandler:
             return GlobalDBHandler.__instance
         assert data_dir is not None, 'First instantiation of GlobalDBHandler should have a data_dir'  # noqa: E501
         assert sql_vm_instructions_cb is not None, 'First instantiation of GlobalDBHandler should have a sql_vm_instructions_cb'  # noqa: E501
+        assert msg_aggregator is not None, 'First instantiation of GlobalDBHandler should have a messages_aggregator'  # noqa: E501
         GlobalDBHandler.__instance = object.__new__(cls)
         GlobalDBHandler.__instance._data_directory = data_dir
-        GlobalDBHandler.__instance.conn, GlobalDBHandler.__instance.used_backup = _initialize_global_db_directory(data_dir, sql_vm_instructions_cb)  # noqa: E501
+        GlobalDBHandler.__instance.msg_aggregator = msg_aggregator
+        GlobalDBHandler.__instance.conn, GlobalDBHandler.__instance.used_backup = _initialize_global_db_directory(  # noqa: E501
+            data_dir=data_dir,
+            sql_vm_instructions_cb=sql_vm_instructions_cb,
+            msg_aggregator=msg_aggregator,
+        )
         GlobalDBHandler.__instance.packaged_db_lock = Semaphore()
         return GlobalDBHandler.__instance
 
@@ -1972,6 +1985,15 @@ class GlobalDBHandler:
             result = cursor.fetchone()
 
         return result[0] if result is not None else None
+
+    @staticmethod
+    def asset_in_collection(collection_id: int, asset_id: str) -> bool:
+        with GlobalDBHandler().conn.read_ctx() as cursor:
+            cursor.execute(
+                'SELECT COUNT(*) FROM multiasset_mappings WHERE collection_id=? AND asset=?',
+                (collection_id, asset_id),
+            )
+            return cursor.fetchone()[0] == 1
 
     @staticmethod
     def get_or_write_abi(serialized_abi: str, abi_name: str | None = None) -> int:

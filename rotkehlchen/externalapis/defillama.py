@@ -1,7 +1,7 @@
 import json
 import logging
 from http import HTTPStatus
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import requests
 
@@ -15,6 +15,7 @@ from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset
 from rotkehlchen.errors.serialization import DeserializationError
+from rotkehlchen.externalapis.interface import ExternalServiceWithApiKeyOptionalDB
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.deserialization import deserialize_price
@@ -23,23 +24,36 @@ from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.interfaces import HistoricalPriceOracleInterface
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChainID, Price, Timestamp
+from rotkehlchen.types import ChainID, ExternalService, Price, Timestamp
 from rotkehlchen.utils.misc import create_timestamp, timestamp_to_date, ts_now
 from rotkehlchen.utils.mixins.penalizable_oracle import PenalizablePriceOracleMixin
+
+if TYPE_CHECKING:
+    from rotkehlchen.db.dbhandler import DBHandler
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 MIN_DEFILLAMA_CONFIDENCE = FVal('0.20')
 
 
-class Defillama(HistoricalPriceOracleInterface, PenalizablePriceOracleMixin):
+class Defillama(
+        ExternalServiceWithApiKeyOptionalDB,
+        HistoricalPriceOracleInterface,
+        PenalizablePriceOracleMixin,
+):
 
-    def __init__(self) -> None:
+    def __init__(self, database: 'DBHandler | None') -> None:
+        ExternalServiceWithApiKeyOptionalDB.__init__(
+            self,
+            database=database,
+            service_name=ExternalService.DEFILLAMA,
+        )
         HistoricalPriceOracleInterface.__init__(self, oracle_name='defillama')
         PenalizablePriceOracleMixin.__init__(self)
         self.session = requests.session()
         self.session.headers.update({'User-Agent': 'rotkehlchen'})
         self.last_rate_limit = 0
+        self.db: DBHandler | None  # type: ignore  # "solve" the self.db discrepancy
 
     def _query(
             self,
@@ -52,12 +66,14 @@ class Defillama(HistoricalPriceOracleInterface, PenalizablePriceOracleMixin):
         May raise:
         - RemoteError if there is a problem querying defillama
         """
+        if (api_key := self._get_api_key()) is not None:
+            base_url = f'https://pro-api.llama.fi/{api_key}/coins/'
+        else:
+            base_url = 'https://coins.llama.fi/'
+
         if options is None:
             options = {}
-        url = f'https://coins.llama.fi/{module}/'
-        if subpath:
-            url += subpath
-
+        url = base_url + f'{module}/{subpath or ""}'
         log.debug(f'Querying defillama: {url=} with {options=}')
         try:
             response = self.session.get(

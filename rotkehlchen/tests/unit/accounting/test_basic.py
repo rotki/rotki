@@ -378,6 +378,9 @@ def test_asset_and_price_not_found_in_history_processing(accountant):
     Make sure that in history processing if no price is found for a trade it's added to a
     `missing_prices` list and no error is logged.
 
+    Not VCRed since it randomly goes through any oracles we have
+    to exhaust them and make sure there is no price found.
+
     Regression for https://github.com/rotki/rotki/issues/432
     Updated with https://github.com/rotki/rotki/pull/4196
     """

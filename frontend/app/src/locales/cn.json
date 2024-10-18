@@ -3169,7 +3169,6 @@
     "to_asset": "到资产"
   },
   "oracles": {
-    "manual_latest": "最新手册",
     "uniswap_v2": "Uniswap V2",
     "uniswap_v3": "Uniswap V3"
   },

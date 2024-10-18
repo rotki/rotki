@@ -211,18 +211,6 @@ class UniswapOracle(HistoricalPriceOracleInterface, CacheableMixIn):
         - DefiPoolError
         - RemoteError
         """
-        log.debug(
-            f'Searching price for {from_asset} to {to_asset} at '
-            f'{block_identifier!r} with {self.name}',
-        )
-
-        if timestamp is not None and self.is_before_contract_creation(block_identifier):
-            raise NoPriceForGivenTimestamp(
-                from_asset=from_asset,
-                to_asset=to_asset,
-                time=timestamp,
-            )
-
         # Uniswap V2 and V3 use in their contracts WETH instead of ETH
         if from_asset == A_ETH:
             from_asset = self.weth
@@ -244,7 +232,19 @@ class UniswapOracle(HistoricalPriceOracleInterface, CacheableMixIn):
                 from_token.chain_id != ChainID.ETHEREUM or
                 to_token.chain_id != ChainID.ETHEREUM
         ):
-            raise PriceQueryUnsupportedAsset(f'Either {from_token} or {to_token} is not an ERC20 token in Ethereum mainnet')  # noqa: E501
+            raise PriceQueryUnsupportedAsset(f'{self.name} oracle: Either {from_token} or {to_token} is not an ERC20 token in Ethereum mainnet')  # noqa: E501
+
+        log.debug(
+            f'Searching price for {from_asset} to {to_asset} at '
+            f'{block_identifier!r} with {self.name}',
+        )
+
+        if timestamp is not None and self.is_before_contract_creation(block_identifier):
+            raise NoPriceForGivenTimestamp(
+                from_asset=from_asset,
+                to_asset=to_asset,
+                time=timestamp,
+            )
 
         route = self.find_route(from_token, to_token)
 

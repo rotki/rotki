@@ -3,9 +3,11 @@ from typing import TYPE_CHECKING, Final
 from rotkehlchen.db.utils import update_table_schema
 from rotkehlchen.logging import enter_exit_debug_log
 from rotkehlchen.utils.misc import ts_now
+from rotkehlchen.utils.progress import perform_globaldb_upgrade_steps, progress_step
 
 if TYPE_CHECKING:
     from rotkehlchen.db.drivers.gevent import DBConnection, DBCursor
+    from rotkehlchen.utils.upgrades import DBUpgradeProgressHandler
 
 
 ASSETS_TO_WHITELIST: Final = (
@@ -53,103 +55,8 @@ ASSETS_TO_WHITELIST: Final = (
 )
 
 
-@enter_exit_debug_log()
-def fix_detected_spam_tokens(write_cursor: 'DBCursor') -> None:
-    """Remove assets marked as spam by error and whitelist them"""
-    write_cursor.executemany(
-        'UPDATE evm_tokens SET protocol=NULL WHERE identifier=?',
-        [(asset_id,) for asset_id in ASSETS_TO_WHITELIST],
-    )
-    current_ts = ts_now()
-    write_cursor.executemany(
-        'INSERT OR IGNORE INTO general_cache(key, value, last_queried_ts) VALUES (?, ?, ?)',
-        [('SPAM_ASSET_FALSE_POSITIVE', asset_id, current_ts) for asset_id in ASSETS_TO_WHITELIST],
-    )
-
-
-@enter_exit_debug_log()
-def set_unique_asset_collections(write_cursor: 'DBCursor') -> None:
-    """It does the following:
-    - Fixes the asset_collections table, to remove duplicated entries.
-    - Adds UNIQUE constraint in asset_collections table.
-    """
-    v7_multiasset_mappings = write_cursor.execute(
-        'SELECT rowid, collection_id, asset FROM multiasset_mappings;',
-    ).fetchall()
-
-    all_entries = write_cursor.execute('SELECT id, name, symbol FROM asset_collections;').fetchall()  # noqa: E501
-    unique_entries = set()
-    duplicated_entries = 0  # to count how many duplicated entries are found until some iteration
-    for collection_id, name, symbol in all_entries:
-        if (name, symbol) not in unique_entries:  # if it's not found yet
-            write_cursor.execute(
-                'INSERT OR REPLACE INTO asset_collections(id, name, symbol) VALUES (?, ?, ?);',
-                # if we find any duplicate entries till now then we subtract their count from the id  # noqa: E501
-                # so that these next entries will be shifted back to their right position (at the position of the duplicated entry).  # noqa: E501
-                (collection_id - duplicated_entries, name, symbol),
-            )
-            unique_entries.add((name, symbol))
-        else:  # if it's found again, don't insert it and increment the counter
-            write_cursor.execute('DELETE FROM asset_collections WHERE id=?;', (collection_id,))
-            duplicated_entries += 1
-
-    update_table_schema(
-        write_cursor=write_cursor,
-        table_name='asset_collections',
-        schema="""id INTEGER PRIMARY KEY,
-            name TEXT NOT NULL,
-            symbol TEXT NOT NULL,
-            UNIQUE (name, symbol)""",
-    )
-    write_cursor.executemany(
-        'INSERT OR IGNORE INTO multiasset_mappings(rowid, collection_id, asset) VALUES (?, ?, ?);',
-        v7_multiasset_mappings,
-    )
-
-
-@enter_exit_debug_log()
-def _update_scrollscan_contract(cursor: 'DBCursor') -> None:
-    """Update the balance scanner contract in scroll to use the
-    same version as we use in other chains"""
-    cursor.execute(
-        'UPDATE contract_data SET address=? WHERE address=? AND chain_id=534352',
-        (
-            '0xc97EE9490F4e3A3136A513DB38E3C7b47e69303B',
-            '0xAB392016859663Ce1267f8f243f9F2C02d93bad8',
-        ),
-    )
-
-
-@enter_exit_debug_log()
-def _rename_curve_tokens_cache_keys(write_cursor: 'DBCursor') -> None:
-    """Rename curve cache keys to include chain id and set their last_queried_ts to 0,
-    so that other chains are queried again at the time of decoding the events. Adding only 1
-    as chain_id because at the time of this upgrade only ethereum tokens are present in the cache.
-    """
-    write_cursor.execute('UPDATE general_cache SET key=replace(key, "CURVE_LP_TOKENS", "CURVE_LP_TOKENS1"), last_queried_ts=0')  # noqa: E501
-    write_cursor.execute('UPDATE general_cache SET key=replace(key, "CURVE_POOL_TOKENS", "CURVE_POOL_TOKENS1"), last_queried_ts=0')  # noqa: E501
-    write_cursor.execute('UPDATE unique_cache SET key=replace(key, "CURVE_GAUGE_ADDRESS", "CURVE_GAUGE_ADDRESS1"), last_queried_ts=0')  # noqa: E501
-    write_cursor.execute('UPDATE unique_cache SET key=replace(key, "CURVE_POOL_ADDRESS", "CURVE_POOL_ADDRESS1"), last_queried_ts=0')  # noqa: E501
-    # remove CURVE_POOL_UNDERLYING_TOKENS because they are no longer needed
-    write_cursor.execute('DELETE FROM general_cache WHERE key LIKE "CURVE_POOL_UNDERLYING_TOKENS%"')  # noqa: E501
-
-
-@enter_exit_debug_log()
-def _update_contracts_abis(write_cursor: 'DBCursor') -> None:
-    """Make the abi of contracts unique in the globaldb"""
-    write_cursor.executescript('PRAGMA foreign_keys = OFF;')
-    update_table_schema(
-        write_cursor=write_cursor,
-        table_name='contract_abi',
-        schema="""id INTEGER NOT NULL PRIMARY KEY,
-            value TEXT NOT NULL UNIQUE,
-            name TEXT""",
-    )
-    write_cursor.executescript('PRAGMA foreign_keys = ON;')
-
-
 @enter_exit_debug_log(name='globaldb v7->v8 upgrade')
-def migrate_to_v8(connection: 'DBConnection') -> None:
+def migrate_to_v8(connection: 'DBConnection', progress_handler: 'DBUpgradeProgressHandler') -> None:  # noqa: E501
     """This globalDB upgrade does the following:
     - Fix autodetected spam assets by mistake
     - Adds UNIQUE constraint in asset_collections table.
@@ -157,9 +64,95 @@ def migrate_to_v8(connection: 'DBConnection') -> None:
     - Rename the keys of curve cache to include chain_id
 
     This upgrade takes place in v1.34.0"""
-    with connection.write_ctx() as write_cursor:
-        fix_detected_spam_tokens(write_cursor)
-        set_unique_asset_collections(write_cursor)
-        _update_scrollscan_contract(write_cursor)
-        _rename_curve_tokens_cache_keys(write_cursor)
-        _update_contracts_abis(write_cursor)
+    @progress_step('Fixing erroneously detected spam tokens.')
+    def fix_detected_spam_tokens(write_cursor: 'DBCursor') -> None:
+        """Remove assets marked as spam by error and whitelist them"""
+        write_cursor.executemany(
+            'UPDATE evm_tokens SET protocol=NULL WHERE identifier=?',
+            [(asset_id,) for asset_id in ASSETS_TO_WHITELIST],
+        )
+        current_ts = ts_now()
+        write_cursor.executemany(
+            'INSERT OR IGNORE INTO general_cache(key, value, last_queried_ts) VALUES (?, ?, ?)',
+            [('SPAM_ASSET_FALSE_POSITIVE', asset_id, current_ts) for asset_id in ASSETS_TO_WHITELIST],  # noqa: E501
+        )
+
+    @progress_step('Fixing asset collections table.')
+    def set_unique_asset_collections(write_cursor: 'DBCursor') -> None:
+        """It does the following:
+        - Fixes the asset_collections table, to remove duplicated entries.
+        - Adds UNIQUE constraint in asset_collections table.
+        """
+        v7_multiasset_mappings = write_cursor.execute(
+            'SELECT rowid, collection_id, asset FROM multiasset_mappings;',
+        ).fetchall()
+
+        all_entries = write_cursor.execute('SELECT id, name, symbol FROM asset_collections;').fetchall()  # noqa: E501
+        unique_entries = set()
+        duplicated_entries = 0  # to count how many duplicated entries are found until some iteration  # noqa: E501
+        for collection_id, name, symbol in all_entries:
+            if (name, symbol) not in unique_entries:  # if it's not found yet
+                write_cursor.execute(
+                    'INSERT OR REPLACE INTO asset_collections(id, name, symbol) VALUES (?, ?, ?);',
+                    # if we find any duplicate entries till now then we subtract their count from the id  # noqa: E501
+                    # so that these next entries will be shifted back to their right position (at the position of the duplicated entry).  # noqa: E501
+                    (collection_id - duplicated_entries, name, symbol),
+                )
+                unique_entries.add((name, symbol))
+            else:  # if it's found again, don't insert it and increment the counter
+                write_cursor.execute('DELETE FROM asset_collections WHERE id=?;', (collection_id,))
+                duplicated_entries += 1
+
+        update_table_schema(
+            write_cursor=write_cursor,
+            table_name='asset_collections',
+            schema="""id INTEGER PRIMARY KEY,
+                name TEXT NOT NULL,
+                symbol TEXT NOT NULL,
+                UNIQUE (name, symbol)""",
+        )
+        write_cursor.executemany(
+            'INSERT OR IGNORE INTO multiasset_mappings(rowid, collection_id, asset) VALUES (?, ?, ?);',  # noqa: E501
+            v7_multiasset_mappings,
+        )
+
+    @progress_step('Updating scroll balance scanner contract.')
+    def _update_scrollscan_contract(cursor: 'DBCursor') -> None:
+        """Update the balance scanner contract in scroll to use the
+        same version as we use in other chains"""
+        cursor.execute(
+            'UPDATE contract_data SET address=? WHERE address=? AND chain_id=534352',
+            (
+                '0xc97EE9490F4e3A3136A513DB38E3C7b47e69303B',
+                '0xAB392016859663Ce1267f8f243f9F2C02d93bad8',
+            ),
+        )
+
+    @progress_step('Renaming cure tokens cache keys.')
+    def _rename_curve_tokens_cache_keys(write_cursor: 'DBCursor') -> None:
+        """Rename curve cache keys to include chain id and set their last_queried_ts to 0,
+        so that other chains are queried again at the time of decoding the events. Adding only 1
+        as chain_id because at the time of this upgrade only ethereum
+        tokens are present in the cache.
+        """
+        write_cursor.execute('UPDATE general_cache SET key=replace(key, "CURVE_LP_TOKENS", "CURVE_LP_TOKENS1"), last_queried_ts=0')  # noqa: E501
+        write_cursor.execute('UPDATE general_cache SET key=replace(key, "CURVE_POOL_TOKENS", "CURVE_POOL_TOKENS1"), last_queried_ts=0')  # noqa: E501
+        write_cursor.execute('UPDATE unique_cache SET key=replace(key, "CURVE_GAUGE_ADDRESS", "CURVE_GAUGE_ADDRESS1"), last_queried_ts=0')  # noqa: E501
+        write_cursor.execute('UPDATE unique_cache SET key=replace(key, "CURVE_POOL_ADDRESS", "CURVE_POOL_ADDRESS1"), last_queried_ts=0')  # noqa: E501
+        # remove CURVE_POOL_UNDERLYING_TOKENS because they are no longer needed
+        write_cursor.execute('DELETE FROM general_cache WHERE key LIKE "CURVE_POOL_UNDERLYING_TOKENS%"')  # noqa: E501
+
+    @progress_step('Updating contracts ABI schema.')
+    def _update_contracts_abis(write_cursor: 'DBCursor') -> None:
+        """Make the abi of contracts unique in the globaldb"""
+        write_cursor.executescript('PRAGMA foreign_keys = OFF;')
+        update_table_schema(
+            write_cursor=write_cursor,
+            table_name='contract_abi',
+            schema="""id INTEGER NOT NULL PRIMARY KEY,
+                value TEXT NOT NULL UNIQUE,
+                name TEXT""",
+        )
+        write_cursor.executescript('PRAGMA foreign_keys = ON;')
+
+    perform_globaldb_upgrade_steps(connection, progress_handler)

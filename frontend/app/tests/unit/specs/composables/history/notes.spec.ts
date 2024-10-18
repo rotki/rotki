@@ -56,6 +56,29 @@ describe('composables::history/notes', () => {
     expect(formatted).toMatchObject(expected);
   });
 
+  it('with amount and asset (but different asset symbol)', () => {
+    const notes = 'Pay 100 EUR';
+
+    const formatted = get(formatNotes({ notes, amount: bigNumberify(100), assetId: 'EURe' }));
+
+    const expected: NoteFormat[] = [
+      {
+        type: NoteType.WORD,
+        word: 'Pay',
+      },
+      {
+        type: NoteType.AMOUNT,
+        amount: bigNumberify(100),
+      },
+      {
+        type: NoteType.WORD,
+        word: 'EUR',
+      },
+    ];
+
+    expect(formatted).toMatchObject(expected);
+  });
+
   it('with amount and asset (multi-word)', () => {
     const notes = 'Receive 100 Spectral Token';
 

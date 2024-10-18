@@ -92,6 +92,7 @@ from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.icons import ALLOWED_ICON_EXTENSIONS
 from rotkehlchen.inquirer import CurrentPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.oracles.structures import SETTABLE_CURRENT_PRICE_ORACLES
 from rotkehlchen.types import (
     AVAILABLE_MODULES_MAP,
     DEFAULT_ADDRESS_NAME_PRIORITY,
@@ -1177,17 +1178,18 @@ class NameDeleteSchema(Schema):
 def _validate_current_price_oracles(
         current_price_oracles: list[CurrentPriceOracle],
 ) -> None:
-    """Prevents repeated oracle names and empty list"""
+    """Prevents repeated oracle names, empty list and illegal values"""
     if (
         len(current_price_oracles) == 0 or
-        len(current_price_oracles) != len(set(current_price_oracles))
-    ):
-        oracle_names = [str(oracle) for oracle in current_price_oracles]
-        supported_oracle_names = [str(oracle) for oracle in CurrentPriceOracle]
+        len(current_price_oracles) != len(given_set := set(current_price_oracles))):
         raise ValidationError(
-            f'Invalid current price oracles in: {", ".join(oracle_names)}. '
-            f'Supported oracles are: {", ".join(supported_oracle_names)}. '
-            f'Check there are no repeated ones.',
+            'Current price oracles list should not be empty and should have no repeated entries',
+        )
+
+    if (invalid_oracles := given_set - SETTABLE_CURRENT_PRICE_ORACLES) != set():
+        raise ValidationError(
+            f'Invalid current price oracles given: {", ".join([str(x) for x in invalid_oracles])}. ',  # noqa: E501
+
         )
 
 

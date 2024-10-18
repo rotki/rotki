@@ -1,4 +1,7 @@
-from typing import TYPE_CHECKING, Any, Literal, Protocol
+from typing import TYPE_CHECKING, Any, Literal, Protocol, TypeVar
+
+if TYPE_CHECKING:
+    from rotkehlchen.chain.gnosis.transactions import GnosisWithdrawalsQueryParameters
 
 if TYPE_CHECKING:
     # This is a list of all ethereum abi that are guaranteed to be returned
@@ -34,9 +37,27 @@ if TYPE_CHECKING:
     ]
 
 
-class LogIterationCallback(Protocol):
+T_contra = TypeVar('T_contra', bound='GnosisWithdrawalsQueryParameters | None', contravariant=True)
+
+
+class LogIterationCallback(Protocol[T_contra]):
     """Callback executed when querying onchain log events after finishing a range
     of blocks
     """
-    def __call__(self, last_block_queried: int, filters: dict[str, Any]) -> None:
-        ...
+    def __call__(
+            self,
+            last_block_queried: int,
+            filters: dict[str, Any],
+            new_events: list[dict[str, Any]],
+            cb_arguments: T_contra,
+    ) -> None:
+        """
+        - last_block_queried: number of the last block queried
+        - filters: filters used when querying log events
+        - new_events: New events found in the current iteration of the log search
+        - cb_arguments: An instance of a dataclass containing additional context and mutable state
+        for the callback. This object facilitates bidirectional communication, allowing the
+        callback to both receive and update query-related information. For example, in
+        GnosisWithdrawalsQueryParameters, it can be used to track and update the last queried block
+        across multiple callback invocations.
+        """

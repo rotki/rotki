@@ -1,3 +1,4 @@
+import json
 import operator
 from contextlib import ExitStack
 from pathlib import Path
@@ -6,17 +7,12 @@ from unittest.mock import patch
 
 import pytest
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.assets.resolver import AssetResolver
-from rotkehlchen.assets.utils import get_or_create_evm_token
-from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
-from rotkehlchen.chain.evm.decoding.hop.constants import CPT_HOP
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.scroll.constants import SCROLL_ETHERSCAN_NODE
 from rotkehlchen.constants import ONE
-from rotkehlchen.constants.assets import A_BTC, A_ETH, A_PAX, A_USDT
-from rotkehlchen.constants.prices import ZERO_PRICE
+from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.data_migrations.constants import LAST_DATA_MIGRATION
 from rotkehlchen.data_migrations.manager import (
     MIGRATION_LIST,
@@ -25,13 +21,10 @@ from rotkehlchen.data_migrations.manager import (
 )
 from rotkehlchen.db.constants import UpdateType
 from rotkehlchen.db.dbhandler import DBHandler
-from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.cache import globaldb_delete_general_cache_values
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.globaldb.utils import set_token_spam_protocol
-from rotkehlchen.history.events.structures.evm_event import EvmEvent
-from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.icons import IconManager
 from rotkehlchen.tests.utils.blockchain import setup_evm_addresses_activity_mock
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
@@ -41,19 +34,15 @@ from rotkehlchen.types import (
     SPAM_PROTOCOL,
     SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE,
     CacheType,
-    ChainID,
     ChecksumEvmAddress,
-    EvmTokenKind,
     Location,
     SupportedBlockchain,
-    TimestampMS,
     TradeType,
     deserialize_evm_tx_hash,
 )
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
-    from rotkehlchen.inquirer import Inquirer
     from rotkehlchen.tests.fixtures.websockets import WebsocketReader
 
 
@@ -159,7 +148,9 @@ def detect_accounts_migration_check(
     )
 
     with migration_patch:
-        DataMigrationManager(rotki).maybe_migrate_data()
+        migration_manager = DataMigrationManager(rotki)
+        migration_manager.maybe_migrate_data()
+        assert migration_manager.progress_handler.current_round_total_steps == migration_manager.progress_handler.current_round_current_step + 1  # noqa: E501
 
     # check that detecting chain accounts works properly
     with rotki.data.db.conn.read_ctx() as cursor:  # make sure DB is also written
@@ -513,158 +504,31 @@ def test_migration_14(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
-@pytest.mark.parametrize('have_decoders', [True])
-@pytest.mark.parametrize('data_migration_version', [14])
-@pytest.mark.parametrize('perform_upgrades_at_unlock', [True])
-@pytest.mark.parametrize('should_mock_current_price_queries', [False])
-@pytest.mark.parametrize('base_accounts', [[
-    '0xAE70bC0Cbe03ceF2a14eCA507a2863441C6Df7A1',
-    '0xC960338B529e0353F570f62093Fd362B8FB55f0B',
-]])
-def test_migration_15(rotkehlchen_api_server: 'APIServer', inquirer: 'Inquirer') -> None:
-    """Test migration 15
-
-    - Test that Hop LP tokens' protocol is set after the migration."""
-    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    base_manager = rotki.chains_aggregator.get_chain_manager(SupportedBlockchain.BASE)
-    inquirer.inject_evm_managers([(ChainID.BASE, base_manager)])
-
-    # check Hop LP token price before migration
-    test_hop_lp_1 = get_or_create_evm_token(
-        userdb=rotki.data.db,
-        evm_address=string_to_evm_address('0xbBA837dFFB3eCf4638D200F11B8c691eA641AdCb'),
-        chain_id=ChainID.ARBITRUM_ONE,
-        token_kind=EvmTokenKind.ERC20,
-    )
-    test_hop_lp_2 = get_or_create_evm_token(
-        userdb=rotki.data.db,
-        evm_address=string_to_evm_address('0xe9605BEc1c5C3E81F974F80b8dA9fBEFF4845d4D'),
-        chain_id=ChainID.BASE,
-        token_kind=EvmTokenKind.ERC20,
-    )
-    assert test_hop_lp_2.protocol is None
-    assert inquirer.find_usd_price(test_hop_lp_2) == ZERO_PRICE
-
-    with rotki.data.db.conn.write_ctx() as write_cursor:
-        DBHistoryEvents(rotki.data.db).add_history_events(
-            write_cursor=write_cursor,
-            history=[
-                EvmEvent(
-                    sequence_index=2,
-                    timestamp=TimestampMS(1714582939000),
-                    location=Location.ARBITRUM_ONE,
-                    event_type=HistoryEventType.RECEIVE,
-                    event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
-                    asset=test_hop_lp_1,
-                    balance=Balance(amount=FVal('0.023220146656543904')),
-                    location_label='0xC960338B529e0353F570f62093Fd362B8FB55f0B',
-                    notes='Receive 0.023220146656543904 HOP-LP-rETH after providing liquidity in Hop',  # noqa: E501
-                    tx_hash=deserialize_evm_tx_hash('0x2ab0135c1c200cf5095bd107c9e8c0d712b2a14374cc328848256d896d6e4685'),
-                    counterparty=CPT_HOP,
-                    address=ZERO_ADDRESS,
-                ),
-                EvmEvent(
-                    sequence_index=2,
-                    timestamp=TimestampMS(1714582939000),
-                    location=Location.BASE,
-                    event_type=HistoryEventType.RECEIVE,
-                    event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
-                    asset=test_hop_lp_2,
-                    balance=Balance(amount=FVal('0.023220146656543904')),
-                    location_label='0xAE70bC0Cbe03ceF2a14eCA507a2863441C6Df7A1',
-                    notes='Receive 0.023220146656543904 HOP-LP-ETH after providing liquidity in Hop',  # noqa: E501
-                    tx_hash=deserialize_evm_tx_hash('0xa50286f6288ca13452a490d766aaf969d20cce7035b514423a7b1432fd329cc5'),
-                    counterparty=CPT_HOP,
-                    address=ZERO_ADDRESS,
-                ),
-            ],
-        )
-    with patch(
-        'rotkehlchen.data_migrations.manager.MIGRATION_LIST',
-        new=[MIGRATION_LIST[8]],
-    ):
-        DataMigrationManager(rotki).maybe_migrate_data()
-
-    # Hop LP token price before migration
-    assert inquirer.find_usd_price(test_hop_lp_2).is_close(3803.566408)
-
-
-@pytest.mark.parametrize('data_migration_version', [15])
-@pytest.mark.parametrize('perform_upgrades_at_unlock', [True])
-def test_migration_16(rotkehlchen_api_server: 'APIServer', globaldb: 'GlobalDBHandler') -> None:
-    """Test migration 16
-
-    - Test that all underlying tokens that are their own parent are removed."""
-    # add some underlying tokens with their own parent as themselves
-    with globaldb.conn.write_ctx() as write_cursor:
-        write_cursor.execute(
-            'INSERT INTO underlying_tokens_list (identifier, parent_token_entry, weight) VALUES (?, ?, ?)',  # noqa: E501
-            (A_USDT.identifier, A_USDT.identifier, 1),
-        )
-        write_cursor.execute(
-            'INSERT INTO underlying_tokens_list (identifier, parent_token_entry, weight) VALUES (?, ?, ?)',  # noqa: E501
-            (A_PAX.identifier, A_PAX.identifier, 1),
-        )
-
-    with globaldb.conn.read_ctx() as cursor:
-        underlying_count_before = cursor.execute(
-            'SELECT COUNT(*) FROM underlying_tokens_list',
-        ).fetchone()[0]
-        assert cursor.execute(
-            'SELECT COUNT(*) FROM underlying_tokens_list WHERE identifier=parent_token_entry',
-        ).fetchone()[0] == 2
-
-    with patch(
-        'rotkehlchen.data_migrations.manager.MIGRATION_LIST',
-        new=[MIGRATION_LIST[9]],
-    ):
-        DataMigrationManager(rotkehlchen_api_server.rest_api.rotkehlchen).maybe_migrate_data()
-
-    # Check that the two underlying tokens have been removed
-    with globaldb.conn.read_ctx() as cursor:
-        assert cursor.execute(
-            'SELECT COUNT(*) FROM underlying_tokens_list',
-        ).fetchone()[0] == underlying_count_before - 2
-        assert cursor.execute(
-            'SELECT COUNT(*) FROM underlying_tokens_list WHERE identifier=parent_token_entry',
-        ).fetchone()[0] == 0
-
-
-@pytest.mark.parametrize('data_migration_version', [16])
-@pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
-@pytest.mark.parametrize('custom_globaldb', ['v7_global.db'])
-@pytest.mark.parametrize('use_custom_database', ['v43_rotkehlchen.db'])
-@pytest.mark.parametrize('target_globaldb_version', [8])
-def test_migration_17(rotkehlchen_api_server: 'APIServer') -> None:
-    with patch(
-        'rotkehlchen.data_migrations.manager.MIGRATION_LIST',
-        new=[MIGRATION_LIST[10]],
-    ):
-        DataMigrationManager(rotkehlchen_api_server.rest_api.rotkehlchen).maybe_migrate_data()
-    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    with rotki.data.db.conn.read_ctx() as cursor:
-        assert cursor.execute(
-            'SELECT COUNT(*) FROM location WHERE location IN (?, ?, ?, ?)',
-            (
-                Location.BITCOIN.serialize_for_db(),
-                Location.BITCOIN_CASH.serialize_for_db(),
-                Location.POLKADOT.serialize_for_db(),
-                Location.KUSAMA.serialize_for_db(),
-            ),
-        ).fetchone()[0] == 4
-
-
-@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('data_migration_version', [17])
 @pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
 def test_migration_18(rotkehlchen_api_server: 'APIServer') -> None:
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    related_address1, related_address2, other_address = '0x9531C059098e3d194fF87FebB587aB07B30B1306', '0x8Fe178db26ebA2eEdb22575265bf10A63c395a3d', '0x3c89cd398aCcFCf0e046d325c4805A98723F8630'  # noqa: E501
+    ethereum_manager = rotki.chains_aggregator.ethereum
+    related_address1, related_address2, other_address, yabireth = '0x9531C059098e3d194fF87FebB587aB07B30B1306', '0x8Fe178db26ebA2eEdb22575265bf10A63c395a3d', '0x3c89cd398aCcFCf0e046d325c4805A98723F8630', '0xc37b40ABdB939635068d3c5f13E7faF686F03B65'  # noqa: E501
     with rotki.data.db.user_write() as write_cursor:  # let's add 2 tracked accounts
         write_cursor.executemany(
             'INSERT INTO blockchain_accounts(blockchain, account) VALUES(?, ?)',
-            [('ETH', related_address1), ('ETH', related_address2), ('ETH', other_address)],
+            [
+                ('ETH', related_address1),
+                ('ETH', related_address2),
+                ('ETH', other_address),
+                ('ETH', yabireth),
+            ],
         )
+        write_cursor.execute(  # put manualcurrent oracle in the DB to test its removal
+            'INSERT INTO settings(name, value) VALUES(?, ?)',
+            ('current_price_oracles', '["coingecko", "cryptocompare", "manualcurrent", "defillama"]'),  # noqa: E501
+        )
+
+    with GlobalDBHandler().conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT value FROM unique_cache WHERE key=?', ('YEARN_VAULTS',),
+        ).fetchone()[0] == '179'
 
     approval_1 = deserialize_evm_tx_hash('0xbb8280cc9ca9de1d33e573a4381d88525a214fc45f84415129face03125ba22f')  # noqa: E501
     approval_2 = deserialize_evm_tx_hash('0x5dbe2be40c2ee60b33c9b9b183fc3f1290352787540cbb2e87e131e6fb1a8865')  # noqa: E501
@@ -677,8 +541,27 @@ def test_migration_18(rotkehlchen_api_server: 'APIServer') -> None:
     kept_txs = [approval_1, approval_2, vested_delegation_tol2, normal_delegation_tol2, stake_withdrawn, stake_delegated, stake_delegate_locked, stake_delegate_vested]  # noqa: E501
     for tx_hash in kept_txs:  # transactions related to our addresses and thegraph
         get_decoded_events_of_transaction(
-            evm_inquirer=rotki.chains_aggregator.ethereum.node_inquirer,
+            evm_inquirer=ethereum_manager.node_inquirer,
             tx_hash=tx_hash,
+        )
+
+    # transaction that will be marked as spam
+    spam_hash = deserialize_evm_tx_hash('0xfc8b1ea372fc7d82e6516dff022ea874c9323c8d5f2afe517aa588e1a4b1aab6')  # noqa: E501
+    with rotki.data.db.conn.read_ctx() as cursor:
+        spam_transaction, _ = ethereum_manager.transactions.get_or_create_transaction(
+            cursor=cursor,
+            tx_hash=spam_hash,
+            relevant_address=string_to_evm_address(yabireth),
+        )
+        spam_transaction_id = spam_transaction.get_or_query_db_id(cursor)
+        assert json.loads(cursor.execute(  # make sure manual oracle is there before the migration
+            'SELECT value from settings where name="current_price_oracles"',
+        ).fetchone()[0]) == ['coingecko', 'cryptocompare', 'manualcurrent', 'defillama']
+
+    with rotki.data.db.conn.write_ctx() as write_cursor:
+        write_cursor.executemany(  # mark as spam but also count as decoded. Same as we were doing in 1.35.0  # noqa: E501
+            'INSERT INTO evm_tx_mappings(tx_id, value) VALUES(?, ?)',
+            [(spam_transaction_id, 0), (spam_transaction_id, 1)],  # decoded and spam
         )
 
     # mark a few assets as spam
@@ -718,11 +601,11 @@ def test_migration_18(rotkehlchen_api_server: 'APIServer') -> None:
     ]
     with rotki.data.db.conn.read_ctx() as cursor:
         for tx_hash in bad_txs:
-            rotki.chains_aggregator.ethereum.transactions.get_or_create_transaction(cursor=cursor, tx_hash=tx_hash, relevant_address=None)  # noqa:E501
-            rotki.chains_aggregator.ethereum.transactions.get_or_query_transaction_receipt(tx_hash=tx_hash)
+            ethereum_manager.transactions.get_or_create_transaction(cursor=cursor, tx_hash=tx_hash, relevant_address=None)  # noqa:E501
+            ethereum_manager.transactions.get_or_query_transaction_receipt(tx_hash=tx_hash)
 
     with rotki.data.db.conn.read_ctx() as cursor:
-        assert {x[0] for x in cursor.execute('SELECT tx_hash FROM evm_transactions').fetchall()} == set(kept_txs + bad_txs)  # make sure they are all written in the DB  # noqa: E501
+        assert {x[0] for x in cursor.execute('SELECT tx_hash FROM evm_transactions').fetchall()} == set(kept_txs + bad_txs + [spam_hash])  # make sure they are all written in the DB  # noqa: E501
 
         assert cursor.execute(  # make sure the given tokens were marked as ignored
             'SELECT COUNT(*) FROM multisettings WHERE name="ignored_asset" AND value IN (?, ?, ?, ?)',  # noqa: E501
@@ -734,9 +617,11 @@ def test_migration_18(rotkehlchen_api_server: 'APIServer') -> None:
 
     with patch(
         'rotkehlchen.data_migrations.manager.MIGRATION_LIST',
-        new=[MIGRATION_LIST[11]],
+        new=[MIGRATION_LIST[8]],
     ):
-        DataMigrationManager(rotkehlchen_api_server.rest_api.rotkehlchen).maybe_migrate_data()
+        migration_manager = DataMigrationManager(rotkehlchen_api_server.rest_api.rotkehlchen)
+        migration_manager.maybe_migrate_data()
+        assert migration_manager.progress_handler.current_round_total_steps == migration_manager.progress_handler.current_round_current_step  # noqa: E501
 
     with rotki.data.db.conn.read_ctx() as cursor:
         result_kept_txs = {x[0] for x in cursor.execute('SELECT tx_hash FROM evm_transactions').fetchall()}  # noqa: E501
@@ -745,10 +630,23 @@ def test_migration_18(rotkehlchen_api_server: 'APIServer') -> None:
             [token.identifier for token in tokens],
         ).fetchone()[0] == 0
 
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM evm_tx_mappings WHERE tx_id=?',
+            (spam_transaction_id,),
+        ).fetchone()[0] == 0
+        assert json.loads(cursor.execute(  # make sure manual oracle is gone after the migration
+            'SELECT value from settings where name="current_price_oracles"',
+        ).fetchone()[0]) == ['coingecko', 'cryptocompare', 'defillama']
+
     for token in tokens:
         assert GlobalDBHandler.get_protocol_for_asset(token.identifier) != SPAM_PROTOCOL
 
-    assert result_kept_txs == set(kept_txs)  # after the migration see all irrelevant transactions are deleted  # noqa: E501
+    assert result_kept_txs == set(kept_txs + [spam_hash])  # after the migration see all irrelevant transactions are deleted  # noqa: E501
+
+    with GlobalDBHandler().conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT value FROM unique_cache WHERE key=?', ('YEARN_VAULTS',),
+        ).fetchall() == []
 
 
 @pytest.mark.parametrize('perform_upgrades_at_unlock', [False])

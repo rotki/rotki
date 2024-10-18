@@ -12,12 +12,22 @@ from rotkehlchen.externalapis.coingecko import Coingecko, CoingeckoAssetData
 from rotkehlchen.fval import FVal
 from rotkehlchen.icons import IconManager
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import Price
+from rotkehlchen.types import (
+    ApiKey,
+    ExternalService,
+    ExternalServiceApiCredentials,
+    Price,
+    Timestamp,
+)
 
 
 @pytest.fixture(name='icon_manager')
 def fixture_icon_manager(data_dir, greenlet_manager):
-    return IconManager(data_dir=data_dir, coingecko=Coingecko(), greenlet_manager=greenlet_manager)
+    return IconManager(
+        data_dir=data_dir,
+        coingecko=Coingecko(database=None),
+        greenlet_manager=greenlet_manager,
+    )
 
 
 def assert_coin_data_same(given, expected, compare_description=False):
@@ -131,3 +141,39 @@ def test_asset_icons_for_collections(icon_manager: IconManager) -> None:
 
     assert icon_manager.iconfile_path(eth).exists()
     assert times_api_was_queried == 4
+
+
+@pytest.mark.vcr
+@pytest.mark.freeze_time('2024-10-11 12:00:00 GMT')
+def test_coingecko_with_api_key(database):
+    with database.user_write() as write_cursor:  # add the api key to the DB
+        database.add_external_service_credentials(
+            write_cursor=write_cursor,
+            credentials=[ExternalServiceApiCredentials(
+                service=ExternalService.COINGECKO,
+                api_key=ApiKey('123totallyrealapikey123'),
+            )],
+        )
+
+    # assure initialization with the database argument work
+    coingecko = Coingecko(database=database)
+    data = coingecko.asset_data('zksync')
+    assert data == CoingeckoAssetData(
+        identifier='zksync',
+        symbol='zk', name='ZKsync',
+        image_url='https://coin-images.coingecko.com/coins/images/38043/small/ZKTokenBlack.png?1718614502',
+    )
+    result = coingecko.query_current_price(
+        from_asset=A_ETH.resolve(),
+        to_asset=A_BTC.resolve(),
+        match_main_currency=False,
+    )
+    assert result == (FVal('0.03950436'), False)
+
+    result = coingecko.query_historical_price(
+        from_asset=A_ETH.resolve(),
+        to_asset=A_EUR.resolve(),
+        timestamp=Timestamp(1712829246),
+
+    )
+    assert result == FVal('3295.1477375227337')

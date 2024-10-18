@@ -107,7 +107,6 @@ class Etherscan(ExternalServiceWithApiKey, ABC):
             ],
     ) -> None:
         super().__init__(database=database, service_name=service)
-        self.db: DBHandler  # signify for type checker that db is set for ExternalServiceWithApiKey
         self.msg_aggregator = msg_aggregator
         self.chain = chain
         self.prefix_url = 'api.' if chain in (

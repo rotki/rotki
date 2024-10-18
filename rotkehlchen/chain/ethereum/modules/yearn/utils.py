@@ -12,7 +12,6 @@ from rotkehlchen.constants import ONE
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.externalapis.utils import read_integer
 from rotkehlchen.globaldb.cache import (
     globaldb_get_unique_cache_value,
     globaldb_set_unique_cache_value,
@@ -26,14 +25,11 @@ from rotkehlchen.types import (
     CacheType,
     ChainID,
     EvmTokenKind,
-    Timestamp,
 )
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
 
-YEARN_OLD_API = 'https://api.yexporter.io/v1/chains/1/vaults/all'  # contains v1 and some of the v2 vaults  # noqa: E501
 YDEMON_API = 'https://ydaemon.yearn.fi/1/vaults/all'  # contains v2 and v3 vaults
 
 
@@ -74,58 +70,41 @@ def _maybe_reset_yearn_cache_timestamp(data: list[dict[str, Any]] | None) -> boo
     return False  # will continue
 
 
-def _merge_data_yearn_vaults() -> tuple[list[dict[str, Any]] | None, str | None]:
+def _query_yearn_vaults() -> tuple[list[dict[str, Any]] | None, str | None]:
     """At the moment of writing the logic of ydemon doesn't support yearn v1 so we
     need to aggregate the information from two different apis and remove duplicates.
     """
-    msg = None
-    data: list[dict[str, Any]] = []
     timeout_tuple = CachedSettings().get_timeout_tuple()
-    for api_url in (YEARN_OLD_API, YDEMON_API):
-        try:
-            response = requests.get(api_url, timeout=timeout_tuple)
-        except requests.exceptions.RequestException as e:
-            msg = f'Failed to obtain yearn vault information. {e!s}'
+    try:
+        response = requests.get(YDEMON_API, timeout=timeout_tuple)
+    except requests.exceptions.RequestException as e:
+        log.error(f'Request to {YDEMON_API} failed due to {e!s}')
+        return None, 'Failed to obtain yearn vault information'
 
-        if response.status_code in (HTTPStatus.NOT_FOUND, HTTPStatus.SERVICE_UNAVAILABLE):
-            msg = 'Failed to obtain a response from the yearn API'
-        else:
-            try:
-                new_data = response.json()
-            except (DeserializationError, JSONDecodeError) as e:
-                msg = f"Failed to deserialize data from yearn's old api. {e!s}"
-            else:
-                if not isinstance(new_data, list):
-                    msg = f'Unexpected format from yearn vaults response. Expected a list, got {data}'  # noqa: E501
-                else:
-                    data.extend(response.json())
+    if response.status_code in (HTTPStatus.NOT_FOUND, HTTPStatus.SERVICE_UNAVAILABLE):
+        return None, 'Failed to obtain a proper response from the yearn API'
 
-        if msg is not None:
-            return None, msg
+    try:
+        data = response.json()
+    except (DeserializationError, JSONDecodeError) as e:
+        log.error(f'Failed to deserialize yearn api response {response.text} as JSON due to {e!s}')
+        return None, "Failed to deserialize data from yearn's old api"
 
-    deduplicated_data, vaults_seen = [], set()
-    for vault in data:
-        if (vault_address := vault.get('address')) is None:
-            log.error(f'Unexpected vault schema in yearn api for {vault}. Skipping')
-            continue
+    if not isinstance(data, list):
+        log.error(f'Unexpected format from yearn vaults response. Expected a list, got {data}')
+        return None, 'Unexpected format from yearn vaults response'
 
-        if vault_address in vaults_seen:
-            continue
-
-        vaults_seen.add(vault_address)
-        deduplicated_data.append(vault)
-
-    return deduplicated_data, None
+    return data, None
 
 
-def query_yearn_vaults(db: 'DBHandler', ethereum_inquirer: 'EthereumInquirer') -> None:
+def query_yearn_vaults(db: 'DBHandler') -> None:
     """Query yearn API and ensure that all the tokens exist locally. If they exist but the protocol
     is not the correct one, then the asset will be edited.
 
     May raise:
     - RemoteError
     """
-    data, msg = _merge_data_yearn_vaults()
+    data, msg = _query_yearn_vaults()
     should_stop = _maybe_reset_yearn_cache_timestamp(data=data)
     if should_stop:
         if msg is not None:  # we raise a remote error but thanks to timestamp reset won't get in here again  # noqa: E501
@@ -139,6 +118,10 @@ def query_yearn_vaults(db: 'DBHandler', ethereum_inquirer: 'EthereumInquirer') -
             log.error(f'Could not identify the yearn vault type for {vault}. Skipping...')
             continue
 
+        if (version := vault.get('version')) is not None and version.startswith('3.'):
+            log.debug(f'Skipping yearn v3 vault {vault.get("address")}')
+            continue  # skip v3 vaults until we add them #7540
+
         if vault['type'] == 'v1':
             vault_type = YEARN_VAULTS_V1_PROTOCOL
         elif vault['type'] == 'v2' or vault['version'].startswith('0.'):  # version '0.x.x' happens in ydemon and is always a v2 vault  # noqa: E501
@@ -148,20 +131,6 @@ def query_yearn_vaults(db: 'DBHandler', ethereum_inquirer: 'EthereumInquirer') -
         else:
             log.error(f'Found yearn token with unknown version {vault}. Skipping...')
             continue
-
-        try:
-            block_data = ethereum_inquirer.get_block_by_number(vault['inception'])
-            block_timestamp = Timestamp(read_integer(block_data, 'timestamp', 'yearn vault query'))
-        except (KeyError, DeserializationError, RemoteError) as e:
-            msg = str(e)
-            if isinstance(e, KeyError):
-                msg = f'missing key {msg}'
-
-            log.error(
-                f'Failed to store token information for yearn {vault_type} vault due to '
-                f'{msg}. Vault: {vault}. Continuing without vault start timestamp.',
-            )
-            block_timestamp = None  # ydemon api doesn't provide this information
 
         try:
             underlying_token = get_or_create_evm_token(
@@ -186,7 +155,6 @@ def query_yearn_vaults(db: 'DBHandler', ethereum_inquirer: 'EthereumInquirer') -
                     token_kind=EvmTokenKind.ERC20,
                     weight=ONE,
                 )],
-                started=block_timestamp,
                 encounter=TokenEncounterInfo(description=f'Querying {vault_type} balances', should_notify=False),  # noqa: E501
             )
         except KeyError as e:

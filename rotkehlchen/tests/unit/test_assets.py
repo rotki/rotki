@@ -406,7 +406,7 @@ def test_coingecko_identifiers_are_reachable(socket_enabled):  # pylint: disable
     """
     Test that all assets have a coingecko entry and that all the identifiers exist in coingecko
     """
-    coingecko = Coingecko()
+    coingecko = Coingecko(database=None)
     all_coins = coingecko.all_coins()
     # If coingecko identifier is missing test is trying to suggest possible assets.
     symbol_checked_exceptions = (  # This is the list of already checked assets

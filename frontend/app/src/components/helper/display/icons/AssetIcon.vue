@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { getIdentifierFromSymbolMap } from '@rotki/common';
+import { getAddressFromEvmIdentifier, getIdentifierFromSymbolMap, isEvmIdentifier } from '@rotki/common';
 import { useCurrencies } from '@/types/currencies';
 import { isBlockchain } from '@/types/blockchain/chains';
 import type { StyleValue } from 'vue';
@@ -106,6 +106,8 @@ const placeholderStyle = computed(() => {
 watch([symbol, identifier], () => {
   set(error, false);
 });
+
+const { copy } = useCopy(identifier);
 </script>
 
 <template>
@@ -113,6 +115,7 @@ watch([symbol, identifier], () => {
     :popper="{ placement: 'top' }"
     :open-delay="400"
     :disabled="noTooltip"
+    persist-on-tooltip-hover
   >
     <template #activator>
       <div
@@ -171,7 +174,26 @@ watch([symbol, identifier], () => {
       </div>
     </template>
 
-    {{ t('asset_icon.tooltip', tooltip) }}
+    <div>
+      {{ t('asset_icon.tooltip', tooltip) }}
+    </div>
+    <div class="font-mono flex items-center gap-2 -my-1">
+      {{ (isEvmIdentifier(identifier) ? getAddressFromEvmIdentifier(identifier) : identifier) }}
+      <RuiButton
+        size="sm"
+        variant="text"
+        icon
+        @click="copy()"
+      >
+        <template #prepend>
+          <RuiIcon
+            name="file-copy-line"
+            size="16"
+            class="!text-rui-grey-400"
+          />
+        </template>
+      </RuiButton>
+    </div>
   </RuiTooltip>
 </template>
 

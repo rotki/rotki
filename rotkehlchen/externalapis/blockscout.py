@@ -50,7 +50,6 @@ class Blockscout(ExternalServiceWithApiKey):
             database=database,
             service_name={v: k for k, v in BLOCKSCOUT_TO_CHAINID.items()}[self.chain_id],
         )
-        self.db: DBHandler  # specifying DB is not optional
         self.msg_aggregator = msg_aggregator
         self.session = requests.session()
         set_user_agent(self.session)

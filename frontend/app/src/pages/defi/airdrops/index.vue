@@ -3,7 +3,6 @@ import { type BigNumber, Blockchain } from '@rotki/common';
 import {
   AIRDROP_POAP,
   type Airdrop,
-  type AirdropDetail,
   Airdrops,
   type PoapDelivery,
   type PoapDeliveryDetails,
@@ -114,26 +113,16 @@ function filterByAddress(data: Airdrops, addresses: string[]): Airdrop[] {
         result.push({
           address,
           source,
-          details: details.map(({ link, name, event }) => ({
-            amount: bigNumberify('1'),
-            link,
-            name,
-            event,
-            claimed: false,
+          details: details.map(detail => ({
+            ...detail,
           })),
         });
       }
       else {
-        const { amount, asset, link, claimed, cutoffTime, hasDecoder } = element as AirdropDetail;
         result.push({
           address,
-          amount,
-          link,
           source,
-          asset,
-          claimed,
-          cutoffTime,
-          hasDecoder,
+          ...element,
         });
       }
     }
@@ -294,6 +283,7 @@ watch([status, selectedAccounts], () => {
           <AirdropDisplay
             :source="row.source"
             :icon-url="row.iconUrl"
+            :icon="row.icon"
           />
         </template>
         <template #item.expand="{ row }">

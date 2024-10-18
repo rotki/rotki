@@ -2451,6 +2451,12 @@
       "hint": "Enter your {chain} Blockscout API key",
       "title": "Blockscout"
     },
+    "coingecko": {
+      "delete_tooltip": "Delete your CoinGecko API key",
+      "description": "Used for cryptocurrency data. An API key increases rate limits.",
+      "hint": "Enter your CoinGecko API key",
+      "title": "CoinGecko"
+    },
     "confirmation": {
       "message": "Are you sure you want to delete this API Key?",
       "title": "Delete API Key"
@@ -2470,6 +2476,12 @@
       "description": "rotki uses cryptocompare to obtain price information about assets in your portfolio. An API key is only needed if you have a lot of assets and are being rate-limited.",
       "hint": "Enter your CryptoCompare API key",
       "title": "CryptoCompare"
+    },
+    "defillama": {
+      "delete_tooltip": "Delete your DefiLlama Pro API key",
+      "description": "Used to query higher rate limits for DeFi prices and data. An API key increases rate limits.",
+      "hint": "Enter your DefiLlama Pro API key",
+      "title": "DefiLlama Pro"
     },
     "delete_error": {
       "description": "Error while removing the external service api keys: {message}"
@@ -2981,8 +2993,7 @@
         "unwhitelist_title": "Failed to remove token from whitelist",
         "whitelist_message": "Token could not be added to whitelisted assets: {message}",
         "whitelist_title": "Failed to add token to whitelist"
-      },
-      "hint": "The asset is whitelisted, meaning that the rotki algorithm will not mark it as a spam asset. To be able to ignore this asset, you need to remove it from the whitelist."
+      }
     }
   },
   "ignore_buttons": {
@@ -3743,7 +3754,6 @@
     "to_asset": "To Asset"
   },
   "oracles": {
-    "manual_latest": "Manual latest",
     "uniswap_v2": "Uniswap V2",
     "uniswap_v3": "Uniswap V3"
   },

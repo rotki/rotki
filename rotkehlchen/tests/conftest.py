@@ -11,7 +11,7 @@ from enum import auto
 from http import HTTPStatus
 from json import JSONDecodeError
 from pathlib import Path
-from subprocess import PIPE, Popen  # noqa: S404
+from subprocess import PIPE, Popen, check_output  # noqa: S404
 from typing import TYPE_CHECKING, Any
 
 import py
@@ -243,6 +243,31 @@ def vcr_config() -> dict[str, Any]:
     }
 
 
+def get_branch_distance(branch1: str, branch2: str) -> int:
+    """Get the distance between branch1 and branch2 in number of commits"""
+    merge_base = check_output(
+        args=f'git merge-base {branch1} {branch2}',
+        shell=True,
+    ).decode('utf-8').strip()
+    distance_to_branch1 = int(check_output(
+        args=f'git rev-list --count {merge_base}..{branch1}',
+        shell=True,
+    ).decode('utf-8').strip())
+    distance_to_branch2 = int(check_output(
+        args=f'git rev-list --count {merge_base}..{branch2}',
+        shell=True,
+    ).decode('utf-8').strip())
+    return distance_to_branch1 + distance_to_branch2
+
+
+def find_closest_branch(target_branch: str) -> str:
+    """Find the branch among develop and bugfixes that is closer to target_branch"""
+    all_branches = ('develop', 'bugfixes', 'master')
+    distances = {branch: get_branch_distance(branch, target_branch) for branch in all_branches}
+    closest_branch = min(distances, key=distances.get)  # type: ignore
+    return closest_branch
+
+
 @pytest.fixture(scope='session', name='vcr_base_dir')
 def fixture_vcr_base_dir() -> Path:
     """Determine the base dir for vcr cassettes
@@ -280,7 +305,8 @@ def fixture_vcr_base_dir() -> Path:
         b'Already on' not in stderr and
         b'Switched to' not in stderr
     ):
-        default_branch = os.environ.get('GITHUB_BASE_REF', os.environ.get('DEFAULT_VCR_BRANCH', 'develop'))  # noqa: E501
+        fallback_branch = find_closest_branch(current_branch)  # either master, develop or bugfixes but always the closest  # noqa: E501
+        default_branch = os.environ.get('GITHUB_BASE_REF', os.environ.get('DEFAULT_VCR_BRANCH', fallback_branch))  # noqa: E501
         if default_branch == '' and 'CI' in os.environ:
             # In the case of the CI when the job is executed and not due to a PR then
             # GITHUB_BASE_REF is set to ''

@@ -28,5 +28,7 @@ onMounted(async () => {
     <MoneriumAuth />
     <TheGraphApiKey />
     <GnosisPayAuth />
+    <DefiLlamaApiKey />
+    <CoinGeckoApiKey />
   </TablePageLayout>
 </template>

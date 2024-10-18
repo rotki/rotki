@@ -64,7 +64,6 @@ class Graph(ExternalServiceWithApiKey):
         - May raise requests.RequestException if there is a problem connecting to the subgraph
         """
         super().__init__(database=database, service_name=ExternalService.THEGRAPH)
-        self.db = database
         self.subgraph_id = subgraph_id
         self.warning_given = False
         self.graph_label = label
@@ -81,7 +80,7 @@ class Graph(ExternalServiceWithApiKey):
         if (api_key := self._get_api_key()) is None and self.graph_label == CPT_ENS:
             api_key = ApiKey('d943ea1af415001154223fdf46b6f193')  # key created by yabir enabled for ens  # noqa: E501
             if self.warning_given is False:
-                self.db.msg_aggregator.add_message(  # type: ignore[union-attr]  # self.db is not None here
+                self.db.msg_aggregator.add_message(
                     message_type=WSMessageType.MISSING_API_KEY,
                     data={
                         'service': ExternalService.THEGRAPH.serialize(),

@@ -6,6 +6,13 @@ Changelog
 * :feature:`7540` Rotki will now support Yearn V3 vaults.
 * :feature:`-` Gitcoin donations for more rounds will now be properly seen by rotki.
 * :feature:`7920` Rotki will now create calendar reminders for airdrop claim deadlines
+
+* :release:`1.35.1 <2024-10-18>`
+* :bug:`-` Decoding speed has considerably improved for transactions that are mass sending tokens.
+* :bug:`-` yearn vaults data will be properly queried only once and error handling is improved.
+* :bug:`8715` Fix the issue where the historical price doesn't refresh after being updated on the history events page.
+* :bug:`-` EURe price will always be considered equal to EUR.
+* :feature:`8696` It's now possible to input Defillama pro API keys in rotki and have higher rate limits. Buy a defillama pro key here: https://defillama.com/pro-api. Similar for coingecko pro API keys. You can get one here: https://www.coingecko.com/en/premium/pricing
 * :bug:`-` During user DB upgrade if there is an irregular shutdown the previous DB backup will be properly located in the rotki data user directory and not the system temp directory.
 * :feature:`-` Gnosis pay referral rewards will now be properly seen as referrals and not generic receive.
 * :feature:`-` The price of vTHOR will now be properly queried.
@@ -13,6 +20,7 @@ Changelog
 * :bug:`-` Graph delegation log queries will now query a smaller amount of events. For users who had moved graph staking to Arbitrum and ended up having over 180k transactions in their DB, this should now be fixed and the DB size should be normal again.
 * :bug:`-` Fix an error querying the exit timestamp for the ethereum validators.
 * :bug:`8669` Fixes double conversion for displayed price in manual balances when not using USD as the selected currency.
+* :bug:`-` Better handling of failure to fetch data from yearn API.
 
 * :release:`1.35.0 <2024-10-02>`
 * :feature:`8428` Rotki will now properly decode cowswap fees and order types after 2024-03-19 by querying the cowswap API for offchain data.

@@ -94,3 +94,27 @@ class ProgressUpdater(ABC):
     @abstractmethod
     def _notify_frontend(self, step_name: str | None = None) -> None:
         """Sends to the user through websockets all information about progress."""
+
+
+class DBSetterMixin:
+    """A simple mixin to set/unset the DB for any module.
+
+    At the moment of writing, used for Oracles and External services"""
+
+    db: 'DBHandler|None'
+
+    @abstractmethod
+    def _get_name(self) -> str:
+        """Return the name of the module/instance"""
+
+    def set_database(self, database: 'DBHandler') -> None:
+        """If the instance was initialized without a DB this sets its DB"""
+        assert self.db is None, f'set_database was called on a {self._get_name()} instance that already has a DB'  # noqa: E501
+        self.db = database
+
+    def unset_database(self) -> None:
+        """Remove the database connection from this instance
+
+        This should happen when a user logs out"""
+        assert self.db is not None, f'unset_database was called on a {self._get_name()} instance that has no DB'  # noqa: E501
+        self.db = None

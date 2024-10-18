@@ -46,10 +46,13 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
         Object.fromEntries(
           Object.entries(breakdown).map(([chain, entry]) => [
             chain,
+            // The ws message assumes that total is the number of undecoded txs,
+            // For this reason we initialize the status similarly and ignore the total,
+            // which in this case is the total of all transactions.
             {
               chain,
-              total: entry.total,
-              processed: entry.total - entry.undecoded,
+              total: entry.undecoded,
+              processed: 0,
             },
           ]),
         ),

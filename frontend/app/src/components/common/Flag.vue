@@ -7,7 +7,7 @@ const props = withDefaults(
   }>(),
   {
     title: '',
-    squared: true,
+    squared: false,
   },
 );
 

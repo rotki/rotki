@@ -10,12 +10,13 @@ from dataclasses import dataclass
 from types import ModuleType
 from typing import TYPE_CHECKING, Any, Optional, Protocol
 
+import gevent
 from gevent.lock import Semaphore
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.types import ActionType
 from rotkehlchen.api.websockets.typedefs import WSMessageType
-from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token
+from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token, get_token
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.chain.evm.decoding.interfaces import ReloadableDecoderMixin
 from rotkehlchen.chain.evm.decoding.oneinch.v5.decoder import Oneinchv5Decoder
@@ -44,13 +45,11 @@ from rotkehlchen.errors.misc import (
 )
 from rotkehlchen.errors.serialization import ConversionError, DeserializationError
 from rotkehlchen.fval import FVal
-from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.evm_event import EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.tasks.assets import maybe_detect_new_tokens
 from rotkehlchen.types import (
-    SPAM_PROTOCOL,
     ChainID,
     ChecksumEvmAddress,
     EvmTokenKind,
@@ -86,6 +85,7 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+MIN_LOGS_PROCESSED_TO_SLEEP = 1000
 
 
 class EventDecoderFunction(Protocol):
@@ -448,64 +448,6 @@ class EVMTransactionDecoder(ABC):
 
         return decoded_events
 
-    def _is_spam_airdrop(
-            self,
-            transaction: EvmTransaction,
-            tx_receipt: EvmTxReceipt,
-    ) -> bool:
-        """
-        Detect spam transactions that can be heavy to process by the decoding logic.
-
-        We focus on airdrops that have a huge number of log events, all of them transfers.
-        First check if we are above the SPAM threshold, then we check if all the events are
-        transfers (we do it in sqlite for better performance) and lastly we check if the
-        transferred token is marked as spam. For example the OP airdrops have such transactions
-        and we do check the protocol to avoid false positives.
-        """
-        if len(tx_receipt.logs) < 50:  # don't go into the logic for smaller amount of logs
-            return False
-
-        with self.database.conn.read_ctx() as cursor:
-            tx_id = transaction.get_or_query_db_id(cursor)
-            cursor.execute(  # if there is only transfer events for this transaction get the transferred token. Else return NULL  # noqa: E501
-                """
-                WITH transfer_data AS (  -- unique pairs (address, topics[0]) from the logs of the transaction
-                    SELECT DISTINCT l.address, t.topic
-                    FROM evmtx_receipt_logs l
-                    JOIN evmtx_receipt_log_topics t ON l.identifier = t.log
-                    WHERE l.tx_id = ?
-                    AND t.topic_index = 0
-                ),
-                topic_count AS (SELECT COUNT(*) as count FROM transfer_data),  -- count how many unique pairs we have
-                erc_transfer_check AS (
-                    SELECT
-                        CASE
-                            WHEN topic_count.count = 1 AND EXISTS (  -- If we have a single pair it means we have all the events with the same address
-                                SELECT 1  -- emitting the log event and it's the same topic for all the log events.
-                                FROM transfer_data
-                                WHERE topic = ?  -- check that the only topic is an ERC20 transfer
-                            )
-                            THEN (SELECT address FROM transfer_data LIMIT 1)  -- return the address of the emitting token contract
-                            ELSE NULL  -- Otherwise return NULL
-                        END as contract_address
-                    FROM topic_count
-                )
-                SELECT contract_address
-                FROM erc_transfer_check
-                """,  # noqa: E501
-                (tx_id, ERC20_OR_ERC721_TRANSFER),
-            )
-
-            if (result := cursor.fetchone()) is not None:
-                token = GlobalDBHandler.get_evm_token(
-                    address=result[0],
-                    chain_id=self.evm_inquirer.chain_id,
-                )
-                if token is not None and token.protocol == SPAM_PROTOCOL:
-                    return True
-
-        return False
-
     def _decode_transaction(
             self,
             transaction: EvmTransaction,
@@ -519,18 +461,9 @@ class EVMTransactionDecoder(ABC):
         - a flag which is True if balances refresh is needed
         - A list of decoders to reload or None if no need
         """
+        log.debug(f'Starting decoding of transaction {transaction.tx_hash.hex()} logs at {self.evm_inquirer.chain_name}')  # noqa: E501
         with self.database.conn.read_ctx() as read_cursor:
             tx_id = transaction.get_or_query_db_id(read_cursor)
-
-        if self._is_spam_airdrop(transaction, tx_receipt):
-            log.info(f'Not decoding {transaction} because it was detected as a spam airdrop')
-            with self.database.user_write() as write_cursor:
-                write_cursor.executemany(  # both spam marker but also count as decoded
-                    'INSERT OR IGNORE INTO evm_tx_mappings(tx_id, value) VALUES(?, ?)',
-                    [(tx_id, EVMTX_DECODED), (tx_id, EVMTX_SPAM)],
-                )
-
-            return [], False, None
 
         self.base.reset_sequence_counter()
         # check if any eth transfer happened in the transaction, including in internal transactions
@@ -544,9 +477,8 @@ class EVMTransactionDecoder(ABC):
         fourbytes = transaction.input_data[:4]
         input_data_rules = self.rules.input_data_rules.get(fourbytes)
         monerium_special_handling_event = False
-
         # decode transaction logs from the receipt
-        for tx_log in tx_receipt.logs:
+        for idx, tx_log in enumerate(tx_receipt.logs):
             if (
                 monerium_special_handling_event is False and
                 self.evm_inquirer.chain_id in {ChainID.GNOSIS, ChainID.POLYGON_POS} and
@@ -558,6 +490,10 @@ class EVMTransactionDecoder(ABC):
                 # We use this flag to avoid iterating twice over the events searching
                 # for legacy transfers.
                 monerium_special_handling_event = True
+
+            if (idx + 1) % MIN_LOGS_PROCESSED_TO_SLEEP == 0:
+                log.debug(f'Context switching out of the log event nr. {idx + 1} of {self.evm_inquirer.chain_name} {transaction}')  # noqa: E501
+                gevent.sleep(0)
 
             context = DecoderContext(
                 tx_log=tx_log,
@@ -590,12 +526,8 @@ class EVMTransactionDecoder(ABC):
                 events.append(decoding_output.event)
                 continue
 
-            token = GlobalDBHandler.get_evm_token(
-                address=tx_log.address,
-                chain_id=self.evm_inquirer.chain_id,
-            )
             rules_decoding_output = self.try_all_rules(
-                token=token,
+                token=get_token(evm_address=tx_log.address, chain_id=self.evm_inquirer.chain_id),
                 tx_log=tx_log,
                 transaction=transaction,
                 decoded_events=events,
@@ -760,8 +692,11 @@ class EVMTransactionDecoder(ABC):
 
         refresh_balances = False
         total_transactions = len(tx_hashes)
+        log.debug(f'Started logic to decode {total_transactions} transactions from {self.evm_inquirer.chain_id}')  # noqa: E501
         for tx_index, tx_hash in enumerate(tx_hashes):
+            log.debug(f'Decoding logic started for {tx_hash.hex()} ({self.evm_inquirer.chain_name})')  # noqa: E501
             if send_ws_notifications and tx_index % 10 == 0:
+                log.debug(f'Processed {tx_index} out of {total_transactions} transactions from {self.evm_inquirer.chain_id}')  # noqa: E501
                 self.msg_aggregator.add_message(
                     message_type=WSMessageType.EVM_UNDECODED_TRANSACTIONS,
                     data={
@@ -1198,6 +1133,7 @@ class EVMTransactionDecoder(ABC):
         has been decoded.
         """
         if refresh_balances is True:
+            log.debug(f'Sending ws to refresh balances for {self.evm_inquirer.chain_name}')
             self.msg_aggregator.add_message(
                 message_type=WSMessageType.REFRESH_BALANCES,
                 data={

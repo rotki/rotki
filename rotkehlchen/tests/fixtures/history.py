@@ -17,12 +17,12 @@ def fixture_cryptocompare(database):
 
 @pytest.fixture(scope='session', name='session_coingecko')
 def fixture_session_coingecko():
-    return Coingecko()
+    return Coingecko(database=None)
 
 
 @pytest.fixture(scope='session', name='session_defillama')
 def fixture_defillama():
-    return Defillama()
+    return Defillama(database=None)
 
 
 @pytest.fixture(name='uniswapv2_inquirer')

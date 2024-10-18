@@ -72,6 +72,7 @@ from rotkehlchen.utils.misc import from_wei, get_chunks
 from rotkehlchen.utils.mixins.lockable import LockableQueryMixIn, protect_with_lock
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.gnosis.transactions import GnosisWithdrawalsQueryParameters
     from rotkehlchen.db.dbhandler import DBHandler
 
 logger = logging.getLogger(__name__)
@@ -96,6 +97,7 @@ def _query_web3_get_logs(
         argument_filters: dict[str, Any],
         initial_block_range: int,
         log_iteration_cb: LogIterationCallback | None = None,
+        log_iteration_cb_arguments: 'GnosisWithdrawalsQueryParameters | None' = None,
 ) -> list[dict[str, Any]]:
     until_block = web3.eth.block_number if to_block == 'latest' else to_block
     events: list[dict[str, Any]] = []
@@ -149,7 +151,12 @@ def _query_web3_get_logs(
             new_events_web3[e_idx]['transactionHash'] = event['transactionHash'].to_0x_hex()
 
         if log_iteration_cb is not None:
-            log_iteration_cb(last_block_queried=end_block, filters=argument_filters)
+            log_iteration_cb(
+                last_block_queried=end_block,
+                filters=argument_filters,
+                new_events=new_events_web3,
+                cb_arguments=log_iteration_cb_arguments,
+            )
 
         start_block = end_block + 1
         events.extend(new_events_web3)
@@ -869,6 +876,7 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
             to_block: int | Literal['latest'] = 'latest',
             call_order: Sequence[WeightedNode] | None = None,
             log_iteration_cb: LogIterationCallback | None = None,
+            log_iteration_cb_arguments: 'GnosisWithdrawalsQueryParameters | None' = None,
     ) -> list[dict[str, Any]]:
         if call_order is None:  # Default call order for logs
             call_order = [self.etherscan_node]
@@ -890,6 +898,7 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
             from_block=from_block,
             to_block=to_block,
             log_iteration_cb=log_iteration_cb,
+            log_iteration_cb_arguments=log_iteration_cb_arguments,
         )
 
     def _get_logs(
@@ -902,6 +911,7 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
             from_block: int,
             to_block: int | Literal['latest'] = 'latest',
             log_iteration_cb: LogIterationCallback | None = None,
+            log_iteration_cb_arguments: 'GnosisWithdrawalsQueryParameters | None' = None,
     ) -> list[dict[str, Any]]:
         """Queries logs of an evm contract
         May raise:
@@ -942,6 +952,7 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
                 argument_filters=argument_filters,
                 initial_block_range=self.logquery_block_range(web3=web3, contract_address=contract_address),  # noqa: E501
                 log_iteration_cb=log_iteration_cb,
+                log_iteration_cb_arguments=log_iteration_cb_arguments,
             )
         else:  # etherscan
             until_block = (
@@ -1023,7 +1034,12 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
                         ) from e
 
                 if log_iteration_cb is not None:
-                    log_iteration_cb(last_block_queried=end_block, filters=argument_filters)
+                    log_iteration_cb(
+                        last_block_queried=end_block,
+                        filters=argument_filters,
+                        new_events=new_events,
+                        cb_arguments=log_iteration_cb_arguments,
+                    )
 
                 # etherscan will only return 1000 events in one go. If more than 1000
                 # are returned such as when no filter args are provided then continue

@@ -15,6 +15,7 @@ from rotkehlchen.db.settings import (
     DBSettings,
     ModifiableDBSettings,
 )
+from rotkehlchen.oracles.structures import CurrentPriceOracle
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
@@ -516,6 +517,18 @@ def test_set_settings_errors(rotkehlchen_api_server):
         contained_in_msg='"active_modules": ["foo is not a valid module"]',
         status_code=HTTPStatus.BAD_REQUEST,
     )
+
+    # setting illegal oracle in the current price oracles is an error
+    for oracle in (CurrentPriceOracle.MANUALCURRENT, CurrentPriceOracle.FIAT, CurrentPriceOracle.BLOCKCHAIN):  # noqa: E501
+        data = {
+            'settings': {'current_price_oracles': ['coingecko', str(oracle)]},
+        }
+        response = requests.put(api_url_for(rotkehlchen_api_server, 'settingsresource'), json=data)
+        assert_error_response(
+            response=response,
+            contained_in_msg=f'"current_price_oracles": ["Invalid current price oracles given: {oracle!s}. ',  # noqa: E501
+            status_code=HTTPStatus.BAD_REQUEST,
+        )
 
 
 def assert_queried_addresses_match(
