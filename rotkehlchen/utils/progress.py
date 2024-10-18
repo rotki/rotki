@@ -132,13 +132,18 @@ def perform_globaldb_upgrade_steps(
 def perform_userdb_migration_steps(
         rotki: 'Rotkehlchen',
         progress_handler: 'MigrationProgressHandler',
+        should_vacuum: bool = False,
 ) -> None:
     """Performs caller introspection and gathers the userDB migration steps. Sets the total,
     calls each step along with its description.
 
     NB: The function definition order is the function calling order"""
     step_functions = gather_caller_functions(depth=2)
-    progress_handler.set_total_steps(len(step_functions))
+    progress_handler.set_total_steps(len(step_functions) + (1 if should_vacuum else 0))
     for function, original_function in step_functions:
         progress_handler.new_step(original_function._description)  # type: ignore  # we do confirm all gathered functions have the attribute
         function(rotki)
+
+    if should_vacuum:  # TODO: Probably can generalize this to a given post-transaction step
+        progress_handler.new_step('Vacuuming database.')
+        rotki.data.db.conn.execute('VACUUM;')
