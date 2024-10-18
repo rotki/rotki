@@ -166,7 +166,7 @@ const {
     customizedEventsOnly: get(toggles, 'customizedEventsOnly'),
     excludeIgnoredAssets: !get(toggles, 'showIgnoredAssets'),
   })),
-  defaultParams: computed<Partial<HistoryEventRequestPayload> | undefined>(() => {
+  defaultParams: computed(() => {
     if (isDefined(entryTypes)) {
       return {
         entryTypes: {
@@ -174,7 +174,7 @@ const {
         },
       };
     }
-    return undefined;
+    return {};
   }),
   requestParams: computed<Partial<HistoryEventRequestPayload>>(() => {
     const params: Writeable<Partial<HistoryEventRequestPayload>> = {
