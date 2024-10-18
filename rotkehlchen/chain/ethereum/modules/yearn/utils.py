@@ -118,10 +118,6 @@ def query_yearn_vaults(db: 'DBHandler') -> None:
             log.error(f'Could not identify the yearn vault type for {vault}. Skipping...')
             continue
 
-        if (version := vault.get('version')) is not None and version.startswith('3.'):
-            log.debug(f'Skipping yearn v3 vault {vault.get("address")}')
-            continue  # skip v3 vaults until we add them #7540
-
         if vault['type'] == 'v1':
             vault_type = YEARN_VAULTS_V1_PROTOCOL
         elif vault['type'] == 'v2' or vault['version'].startswith('0.'):  # version '0.x.x' happens in ydemon and is always a v2 vault  # noqa: E501

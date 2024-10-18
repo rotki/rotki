@@ -73,6 +73,7 @@ class YearnDecoder(DecoderInterface, ReloadableDecoderMixin):
         self.vaults: dict[str, set[ChecksumEvmAddress]] = {
             YEARN_VAULTS_V1_PROTOCOL: set(),
             YEARN_VAULTS_V2_PROTOCOL: set(),
+            YEARN_VAULTS_V3_PROTOCOL: set(),
         }
 
     def reload_data(self) -> None:

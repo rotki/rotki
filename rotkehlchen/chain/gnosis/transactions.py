@@ -3,9 +3,7 @@ from contextlib import suppress
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Final
 
-
 from eth_typing.abi import ABI
-
 
 from rotkehlchen.accounting.accountant import RemoteError
 from rotkehlchen.assets.asset import DeserializationError
@@ -19,6 +17,7 @@ from .modules.xdai_bridge.constants import BLOCKREWARDS_ADDRESS
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
+
     from .node_inquirer import GnosisInquirer
 
 ADDED_RECEIVER_ABI: Final[ABI] = [{'anonymous': False, 'inputs': [{'indexed': False, 'name': 'amount', 'type': 'uint256'}, {'indexed': True, 'name': 'receiver', 'type': 'address'}, {'indexed': True, 'name': 'bridge', 'type': 'address'}], 'name': 'AddedReceiver', 'type': 'event'}]  # noqa: E501
@@ -50,7 +49,7 @@ def _process_withdrawals_events_cb(
             with suppress(AlreadyExists):
                 cb_arguments.gnosis_transactions.add_transaction_by_hash(
                     tx_hash=deserialize_evm_tx_hash(event['transactionHash']),
-                    associated_address=bytes32hexstr_to_address((event['topics'][1]),
+                    associated_address=bytes32hexstr_to_address(event['topics'][1]),
                     must_exist=True,
                 )
 
