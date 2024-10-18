@@ -84,7 +84,7 @@ export type BlockchainAccountBalance<
   T extends BlockchainAccountData = BlockchainAccountData,
 > = BlockchainAccountWithBalance<T> | BlockchainAccountGroupWithBalance<T>;
 
-export interface BlockchainAccountRequestPayload extends PaginationRequestPayload<BlockchainAccount> {
+export interface BlockchainAccountRequestPayload extends PaginationRequestPayload<BlockchainAccountBalance> {
   readonly address?: string;
   readonly chain?: string[];
   readonly label?: string;
@@ -93,7 +93,7 @@ export interface BlockchainAccountRequestPayload extends PaginationRequestPayloa
   readonly excluded?: Record<string, string[]>;
 }
 
-export interface BlockchainAccountGroupRequestPayload extends PaginationRequestPayload<BlockchainAccount> {
+export interface BlockchainAccountGroupRequestPayload extends PaginationRequestPayload<BlockchainAccountBalance> {
   readonly groupId: string;
 }
 
