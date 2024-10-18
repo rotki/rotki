@@ -623,7 +623,7 @@ class Rotkehlchen:
     def main_loop(self) -> None:
         """rotki main loop that fires often and runs the task manager's scheduler"""
         while self.shutdown_event.wait(timeout=MAIN_LOOP_SECS_DELAY) is not True:
-            if self.task_manager is not None:
+            if self.task_manager is not None and self.args.disable_task_manager is False:
                 self.task_manager.schedule()
 
     def get_blockchain_account_data(

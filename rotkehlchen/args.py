@@ -136,5 +136,10 @@ def app_args(prog: str, description: str) -> argparse.ArgumentParser:
         help='Shows the rotki version',
         action=CommandAction,
     )
+    p.add_argument(
+        '--disable-task-manager',
+        help="If given then task manager won't schedule new tasks",
+        action='store_true',
+    )
 
     return p
