@@ -112,7 +112,7 @@ def test_asset_updates_consistency_with_packaged_db(
         globaldb.packaged_db_conn().read_ctx() as packaged_db_cursor,
     ):
         assert old_db_cursor.execute('SELECT value FROM settings WHERE name="assets_version"').fetchone()[0] == '15'  # noqa: E501
-        assert packaged_db_cursor.execute('SELECT value FROM settings WHERE name="assets_version"').fetchone()[0] == '28'  # noqa: E501
+        assert packaged_db_cursor.execute('SELECT value FROM settings WHERE name="assets_version"').fetchone()[0] == '30'  # noqa: E501
 
     assets_updater = AssetsUpdater(msg_aggregator=messages_aggregator)
     if (conflicts := assets_updater.perform_update(
