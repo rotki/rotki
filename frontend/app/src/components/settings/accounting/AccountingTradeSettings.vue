@@ -3,32 +3,19 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <SettingCategory>
+  <SettingsItem>
     <template #title>
       {{ t('accounting_settings.trade.title') }}
     </template>
-
-    <CryptoToCryptoTradeSetting />
-    <GasCostSetting />
-
-    <SettingsItem>
-      <template #title>
-        {{ t('accounting_settings.trade.titles.tax_free') }}
-      </template>
+    <div class="pl-4 md:pl-8 lg:pl-12">
+      <CryptoToCryptoTradeSetting />
+      <GasCostSetting />
       <TaxFreeSetting />
-    </SettingsItem>
-
-    <AccountAssetMovementsSetting />
-
-    <SettingsItem>
-      <template #title>
-        {{ t('accounting_settings.trade.titles.cost_basis') }}
-      </template>
+      <AccountAssetMovementsSetting />
       <CalculatePastCostBasisSetting />
       <CostBasisFeesSetting />
       <CostBasisMethodSetting />
-    </SettingsItem>
-
-    <EthStakingTaxableAfterWithdrawalSetting />
-  </SettingCategory>
+      <EthStakingTaxableAfterWithdrawalSetting />
+    </div>
+  </SettingsItem>
 </template>
