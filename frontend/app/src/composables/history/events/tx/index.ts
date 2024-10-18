@@ -17,6 +17,7 @@ import type { Blockchain } from '@rotki/common';
 export const useHistoryTransactions = createSharedComposable(() => {
   const { t } = useI18n();
   const { notify } = useNotificationsStore();
+  const queue = new LimitedParallelizationQueue(1);
 
   const {
     fetchTransactionsTask,
@@ -83,7 +84,8 @@ export const useHistoryTransactions = createSharedComposable(() => {
     }
   };
 
-  const syncAccountTransactions = async (
+  const syncAndReDecodeEvents = async (
+    evmChain: string,
     accounts: EvmChainAddress[],
     type: TransactionChainType = TransactionChainType.EVM,
   ): Promise<void> => {
@@ -93,6 +95,7 @@ export const useHistoryTransactions = createSharedComposable(() => {
       item => syncTransactionTask(item, type),
       2,
     );
+    queue.queue(evmChain, () => decodeTransactionsTask(evmChain, type));
   };
 
   const getEvmAccounts = (chains: string[] = []): { address: string; evmChain: string }[] =>
@@ -175,18 +178,11 @@ export const useHistoryTransactions = createSharedComposable(() => {
     await awaitParallelExecution(
       groupedByChains,
       item => item.evmChain,
-      item => syncAccountTransactions(item.data, type),
+      item => syncAndReDecodeEvents(item.evmChain, item.data, type),
       2,
     );
 
     await fetchUndecodedTransactionsBreakdown(type);
-
-    await awaitParallelExecution(
-      groupedByChains.map(group => group.evmChain),
-      chain => chain,
-      chain => decodeTransactionsTask(chain, type),
-      1,
-    );
 
     const isEvm = type === TransactionChainType.EVM;
     if (addresses.length > 0)
