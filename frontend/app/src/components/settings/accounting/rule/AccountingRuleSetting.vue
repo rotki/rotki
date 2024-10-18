@@ -215,85 +215,89 @@ const importFileDialog = ref<boolean>(false);
 </script>
 
 <template>
-  <SettingCategory>
-    <template #title>
-      {{ t('accounting_settings.rule.title') }}
-    </template>
-    <TablePageLayout child>
-      <template #buttons>
-        <div class="flex flex-row items-center pt-4 justify-end gap-2">
-          <RuiTooltip :open-delay="400">
-            <template #activator>
-              <RuiButton
-                variant="outlined"
-                color="primary"
-                :loading="isLoading"
-                @click="refresh()"
-              >
-                <template #prepend>
-                  <RuiIcon name="refresh-line" />
-                </template>
-                {{ t('common.refresh') }}
-              </RuiButton>
-            </template>
-            {{ t('accounting_settings.rule.refresh_tooltip') }}
-          </RuiTooltip>
-          <RuiButton
-            color="primary"
-            @click="add()"
-          >
-            <template #prepend>
-              <RuiIcon name="add-line" />
-            </template>
-            {{ t('accounting_settings.rule.add') }}
-          </RuiButton>
-          <RuiMenu
-            :popper="{ placement: 'bottom-end' }"
-            close-on-content-click
-          >
-            <template #activator="{ attrs }">
-              <RuiButton
-                variant="text"
-                icon
-                size="sm"
-                class="!p-2"
-                v-bind="attrs"
-              >
-                <RuiIcon
-                  name="more-2-fill"
-                  size="20"
-                />
-              </RuiButton>
-            </template>
-            <div class="py-2">
-              <RuiButton
-                variant="list"
-                :loading="exportFileLoading"
-                @click="exportJSON()"
-              >
-                <template #prepend>
-                  <RuiIcon name="file-download-line" />
-                </template>
-                {{ t('accounting_settings.rule.export') }}
-              </RuiButton>
-              <RuiButton
-                variant="list"
-                :loading="importFileLoading"
-                @click="importFileDialog = true"
-              >
-                <template #prepend>
-                  <RuiIcon name="file-upload-line" />
-                </template>
-                {{ t('accounting_settings.rule.import') }}
-              </RuiButton>
-            </div>
-          </RuiMenu>
-        </div>
-      </template>
-
-      <RuiCard>
+  <div>
+    <div class="pt-6 pb-4 border-b border-default flex flex-wrap items-center justify-between">
+      <SettingCategoryHeader>
+        <template #title>
+          {{ t('accounting_settings.rule.title') }}
+        </template>
+        <template #subtitle>
+          {{ t('accounting_settings.rule.subtitle') }}
+        </template>
+      </SettingCategoryHeader>
+      <div class="flex flex-row items-center justify-end gap-2">
+        <RuiTooltip :open-delay="400">
+          <template #activator>
+            <RuiButton
+              variant="outlined"
+              color="primary"
+              :loading="isLoading"
+              @click="refresh()"
+            >
+              <template #prepend>
+                <RuiIcon name="refresh-line" />
+              </template>
+              {{ t('common.refresh') }}
+            </RuiButton>
+          </template>
+          {{ t('accounting_settings.rule.refresh_tooltip') }}
+        </RuiTooltip>
+        <RuiButton
+          color="primary"
+          @click="add()"
+        >
+          <template #prepend>
+            <RuiIcon name="add-line" />
+          </template>
+          {{ t('accounting_settings.rule.add') }}
+        </RuiButton>
+        <RuiMenu
+          :popper="{ placement: 'bottom-end' }"
+          close-on-content-click
+        >
+          <template #activator="{ attrs }">
+            <RuiButton
+              variant="text"
+              icon
+              size="sm"
+              class="!p-2"
+              v-bind="attrs"
+            >
+              <RuiIcon
+                name="more-2-fill"
+                size="20"
+              />
+            </RuiButton>
+          </template>
+          <div class="py-2">
+            <RuiButton
+              variant="list"
+              :loading="exportFileLoading"
+              @click="exportJSON()"
+            >
+              <template #prepend>
+                <RuiIcon name="file-download-line" />
+              </template>
+              {{ t('accounting_settings.rule.export') }}
+            </RuiButton>
+            <RuiButton
+              variant="list"
+              :loading="importFileLoading"
+              @click="importFileDialog = true"
+            >
+              <template #prepend>
+                <RuiIcon name="file-upload-line" />
+              </template>
+              {{ t('accounting_settings.rule.import') }}
+            </RuiButton>
+          </div>
+        </RuiMenu>
+      </div>
+    </div>
+    <TablePageLayout child >
+      <RuiCard class="-mt-8">
         <template #custom-header>
-          <div class="flex items-center justify-between p-4 pb-0 gap-4">
+          <div class="flex items-center justify-between">
             <template v-if="conflictsNumber > 0">
               <RuiButton
                 color="warning"
@@ -474,5 +478,5 @@ const importFileDialog = ref<boolean>(false);
         />
       </RuiCard>
     </TablePageLayout>
-  </SettingCategory>
+  </div>
 </template>
