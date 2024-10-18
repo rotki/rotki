@@ -17,6 +17,7 @@ class ConfigurationArgs(NamedTuple):
     max_size_in_mb_all_logs: int = DEFAULT_MAX_LOG_SIZE_IN_MB
     max_logfiles_num: int = DEFAULT_MAX_LOG_BACKUP_FILES
     sqlite_instructions: int = DEFAULT_SQL_VM_INSTRUCTIONS_CB
+    disable_task_manager: bool = False
 
 
 def default_args(
@@ -35,4 +36,5 @@ def default_args(
         sqlite_instructions=DEFAULT_SQL_VM_INSTRUCTIONS_CB,
         logfile=None,
         logtarget=None,
+        disable_task_manager=False,
     )

@@ -49,6 +49,7 @@ const args = [
   dataDir,
   '--logfile',
   `${path.join(logDir, 'e2e.log')}`,
+  '--disable-task-manager',
 ];
 
 let backend;
