@@ -117,6 +117,11 @@ def lp_price_from_uniswaplike_pool_contract(
             )
             return None
 
+    # TODO: Perhaps think of a better way for type checking of expected function return than this?
+    assert isinstance(decoded[0], str), 'token0 should return a string'
+    assert isinstance(decoded[1], str), 'token1 should return a string'
+    assert isinstance(decoded[2], int), 'totalSupply should return an int'
+    assert isinstance(decoded[4], int), 'decimals should return an int'
     if len(decoded) < 4:
         log.debug(
             f'Unexpected number of decoded values ({len(decoded)}) while querying price from '

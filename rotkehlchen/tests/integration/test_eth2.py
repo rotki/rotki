@@ -38,7 +38,7 @@ def test_withdrawals(eth2: 'Eth2', database, ethereum_accounts, query_method):
     to_ts = ts_now()
     patch_ctx = patch.object(eth2.ethereum.etherscan, 'get_withdrawals', side_effect=RemoteError) if query_method == 'blockscout' else nullcontext()  # noqa: E501
 
-    with patch_ctx:  # type: ignore[attr-defined]
+    with patch_ctx:
         eth2.query_services_for_validator_withdrawals(addresses=ethereum_accounts, to_ts=to_ts)
     dbevents = DBHistoryEvents(database)
     with database.conn.read_ctx() as cursor:

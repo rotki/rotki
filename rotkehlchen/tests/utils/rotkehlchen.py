@@ -41,8 +41,8 @@ class BalancesTestSetup(NamedTuple):
     binance_balances: dict[AssetWithOracles, FVal]
     poloniex_balances: dict[AssetWithOracles, FVal]
     manually_tracked_balances: list[ManuallyTrackedBalance]
-    poloniex_patch: _patch
-    binance_patch: _patch
+    poloniex_patch: _patch | None
+    binance_patch: _patch | None
     etherscan_patch: _patch
     beaconchain_patch: _patch
     evmtokens_max_chunks_patch: _patch
@@ -51,8 +51,10 @@ class BalancesTestSetup(NamedTuple):
     defichad_query_balances_patch: _patch | None
 
     def enter_all_patches(self, stack: ExitStack):
-        stack.enter_context(self.poloniex_patch)
-        stack.enter_context(self.binance_patch)
+        if self.poloniex_patch:
+            stack.enter_context(self.poloniex_patch)
+        if self.binance_patch:
+            stack.enter_context(self.binance_patch)
         self.enter_blockchain_patches(stack)
         return stack
 

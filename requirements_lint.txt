@@ -1,4 +1,4 @@
-mypy==1.11.2
+mypy==1.12.0
 mypy-extensions==1.0.0
 pylint==3.3.1
 astroid==3.3.4  # engine of pylint, upgrade them together
@@ -11,8 +11,8 @@ types-chardet==5.0.4.6
 types-cryptography==3.3.23.2
 types-enum34==1.1.8
 types-ipaddress==1.0.8
-types-setuptools==75.1.0.20241014
-types-requests==2.32.0.20240914
+types-setuptools==75.2.0.20241019
+types-requests==2.32.0.20241016
 types-urllib3==1.26.25.14
 types-toml==0.10.8.20240310
 types-python-dateutil==2.9.0.20241003

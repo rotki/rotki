@@ -1718,7 +1718,7 @@ class NFTFilterQuery(DBFilterQuery):
             order_by_rules: list[tuple[str, bool]] | None = None,
             limit: int | None = None,
             offset: int | None = None,
-            owner_addresses: list[str] | None = None,
+            owner_addresses: Sequence[ChecksumEvmAddress] | None = None,
             name: str | None = None,
             collection_name: str | None = None,
             ignored_assets_handling: IgnoredAssetsHandling = IgnoredAssetsHandling.NONE,
