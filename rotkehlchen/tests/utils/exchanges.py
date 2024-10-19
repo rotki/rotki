@@ -2,7 +2,7 @@ import json
 import os
 from pathlib import Path
 from typing import Any, Final
-from unittest.mock import patch
+from unittest.mock import _patch, patch
 
 from rotkehlchen.assets.asset import Asset, AssetWithOracles
 from rotkehlchen.assets.converters import asset_from_kraken
@@ -566,7 +566,7 @@ def mock_binance_balance_response(url, **kwargs):  # pylint: disable=unused-argu
     return MockResponse(200, BINANCE_BALANCES_RESPONSE)
 
 
-def patch_binance_balances_query(binance: 'Binance'):
+def patch_binance_balances_query(binance: 'Binance') -> _patch:
     def mock_binance_asset_return(url, *args, **kwargs):  # pylint: disable=unused-argument
         if 'futures' in url:
             response = '{"crossCollaterals":[]}'
@@ -586,7 +586,7 @@ def patch_binance_balances_query(binance: 'Binance'):
     return binance_patch
 
 
-def patch_poloniex_balances_query(poloniex: 'Poloniex'):
+def patch_poloniex_balances_query(poloniex: 'Poloniex') -> _patch:
     def mock_poloniex_asset_return(url, *args, **kwargs):  # pylint: disable=unused-argument
         return MockResponse(200, POLONIEX_BALANCES_RESPONSE)
 

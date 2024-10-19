@@ -490,7 +490,7 @@ class ReloadableCacheDecoderMixin(ReloadableDecoderMixin, ABC):
             (data.keys() if isinstance(data, dict) else data)
             for data, new_data in zip(self.cache_data, new_cache_data, strict=True)  # strict=True guaranteed due to number of caches always the same  # noqa: E501
         ] if len(self.cache_data) > 0 else [  # if self.cache_data is empty, the diff is only from new_cache_data  # noqa: E501
-            (new_data.keys() if isinstance(new_data, dict) else new_data)
+            (set(new_data.keys()) if isinstance(new_data, dict) else new_data)
             for new_data in new_cache_data
         ]
 

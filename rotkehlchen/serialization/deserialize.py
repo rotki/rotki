@@ -500,21 +500,21 @@ def deserialize_evm_transaction(
 def deserialize_evm_transaction(
         data: dict[str, Any],
         internal: Literal[False],
-        chain_id: ChainID,
-        evm_inquirer: 'EvmNodeInquirer',
-        parent_tx_hash: Optional['EVMTxHash'] = None,
-) -> tuple[EvmTransaction, dict[str, Any]]:
-    ...
-
-
-@overload
-def deserialize_evm_transaction(  # type: ignore[misc]
-        data: dict[str, Any],
-        internal: Literal[False],
         chain_id: L2ChainIdsWithL1FeesType,
         evm_inquirer: 'L2WithL1FeesInquirer',
         parent_tx_hash: Optional['EVMTxHash'] = None,
 ) -> tuple[L2WithL1FeesTransaction, dict[str, Any]]:
+    ...
+
+
+@overload
+def deserialize_evm_transaction(
+        data: dict[str, Any],
+        internal: Literal[False],
+        chain_id: ChainID,
+        evm_inquirer: 'EvmNodeInquirer',
+        parent_tx_hash: Optional['EVMTxHash'] = None,
+) -> tuple[EvmTransaction, dict[str, Any]]:
     ...
 
 
