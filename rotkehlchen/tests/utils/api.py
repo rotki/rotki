@@ -1,5 +1,6 @@
 import os
 import platform
+from collections.abc import Sequence
 from http import HTTPStatus
 from typing import Any
 
@@ -177,7 +178,6 @@ def wait_for_async_task(
     """Waits until an async task is ready and when it is returns the response's outcome
 
     If the task's outcome is not ready within timeout seconds then the test fails"""
-
     with gevent.Timeout(timeout):
         while True:
             response = requests.get(
@@ -206,6 +206,26 @@ def wait_for_async_task(
                 raise AssertionError(
                     f'Waiting for task id {task_id} returned unexpected status {status}',
                 )
+
+
+def wait_for_async_tasks(
+        server: APIServer,
+        task_ids: Sequence[int],
+        timeout=ASYNC_TASK_WAIT_TIMEOUT,
+) -> None:
+    """Waits until a number of async tasks are ready"""
+    searching_set = set(task_ids)
+    with gevent.Timeout(timeout):
+        while True:
+            response = requests.get(
+                api_url_for(server, 'asynctasksresource', task_id=None),
+            )
+            json_data = response.json()
+            data = json_data['result']
+            if searching_set - set(data['completed']) == set():
+                break
+            else:
+                gevent.sleep(1)
 
 
 def wait_for_async_task_with_result(
