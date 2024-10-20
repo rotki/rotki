@@ -1,4 +1,4 @@
-gevent==24.10.2
+gevent==24.10.3
 greenlet==3.1.1
 gevent-websocket==0.10.1  # like the below is abandoned
 wsaccel==0.6.6  # recommended for acceleration of gevent-websocket. But abandoned.
@@ -32,7 +32,7 @@ polars-lts-cpu==1.9.0
 # For the rest api
 flask-cors==5.0.0
 flask==3.0.3
-marshmallow==3.22.0
+marshmallow==3.23.0
 webargs==8.6.0
 werkzeug==3.0.4
 
