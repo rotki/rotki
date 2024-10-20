@@ -147,8 +147,8 @@ def _fixture_profiler(request):
             profiler_instance = TraceSampler(flame)
             yield
 
-    if profiler_instance is not None:
-        profiler_instance.stop()
+            if profiler_instance is not None:
+                profiler_instance.stop()
 
 
 def requires_env(allowed_envs: list[TestEnvironment]):
