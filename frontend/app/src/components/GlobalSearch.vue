@@ -268,7 +268,7 @@ async function getAssets(keyword: string): Promise<SearchItemWithoutValue[]> {
   return assetBalances
     .filter(balance => ids.includes(balance.asset))
     .map((balance) => {
-      const price = balance.usdPrice.gt(0) ? balance.usdPrice : undefined;
+      const price = balance.price.gt(0) ? balance.price : undefined;
       const asset = balance.asset;
 
       return {

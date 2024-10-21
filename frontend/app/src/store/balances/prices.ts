@@ -1,4 +1,4 @@
-import { CURRENCY_USD, useCurrencies } from '@/types/currencies';
+import { useCurrencies } from '@/types/currencies';
 import {
   AssetPriceResponse,
   type AssetPrices,
@@ -22,7 +22,6 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
 
   const { awaitTask, isTaskRunning } = useTaskStore();
   const { notify } = useNotificationsStore();
-  const { assetInfo } = useAssetInfoRetrieval();
   const { t } = useI18n();
   const {
     getPriceCache,
@@ -39,7 +38,7 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
     const taskType = TaskType.UPDATE_PRICES;
 
     const fetch = async (assets: string[]): Promise<void> => {
-      const { taskId } = await queryPrices(assets, CURRENCY_USD, payload.ignoreCache);
+      const { taskId } = await queryPrices(assets, get(currencySymbol), payload.ignoreCache);
 
       const { result } = await awaitTask<AssetPriceResponse, TaskMeta>(
         taskId,
@@ -220,35 +219,11 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
       return currentExchangeRate ? val.multipliedBy(currentExchangeRate) : val;
     });
 
-  /**
-   * @deprecated
-   * TODO: Remove this immediately.
-   * This is a hacky way to set EUR => EUR price and EURe => EUR price to 1.
-   * @param {MaybeRef<string>} asset
-   *
-   */
-  const isAssetPriceEqualToCurrentCurrency = (asset: MaybeRef<string>): ComputedRef<boolean> => computed(() => {
-    const currency = get(currencySymbol);
-    return get(asset) === currency || (currency === 'EUR' && get(assetInfo(asset))?.collectionId === '240');
-  });
-
   const assetPrice = (asset: MaybeRef<string>): ComputedRef<BigNumber | undefined> =>
-    computed(() => {
-      if (get(isAssetPriceEqualToCurrentCurrency(asset)))
-        return One;
-
-      return get(prices)[get(asset)]?.value;
-    });
+    computed(() => get(prices)[get(asset)]?.value);
 
   const isManualAssetPrice = (asset: MaybeRef<string>): ComputedRef<boolean> =>
     computed(() => get(prices)[get(asset)]?.isManualPrice || false);
-
-  const isAssetPriceInCurrentCurrency = (asset: MaybeRef<string>): ComputedRef<boolean> =>
-    computed(() => {
-      if (get(isAssetPriceEqualToCurrentCurrency(asset)))
-        return true;
-      return get(prices)[get(asset)]?.isCurrentCurrency || false;
-    });
 
   watch([exchangeRates, currencySymbol], ([rates, symbol]) => {
     if (Object.keys(rates).length > 0) {
@@ -277,7 +252,6 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
     deletePriceCache,
     toSelectedCurrency,
     isManualAssetPrice,
-    isAssetPriceInCurrentCurrency,
   };
 });
 

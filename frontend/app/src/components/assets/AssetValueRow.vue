@@ -37,7 +37,7 @@ function setPriceForm() {
     fromAsset: get(identifier),
     toAsset,
     price: get(info)
-      .usdPrice
+      .price
       .multipliedBy(get(exchangeRate(toAsset)) ?? One)
       .toFixed(),
   });
@@ -75,12 +75,12 @@ onMounted(() => {
       <div class="px-4 pb-3 flex flex-wrap items-center gap-1 md:gap-3">
         <AmountDisplay
           class="flex-1 text-h5 font-medium text-rui-text-secondary"
-          :loading="refreshing || !info.usdPrice || info.usdPrice.lt(0)"
+          :loading="refreshing || !info.price || info.price.lt(0)"
           show-currency="symbol"
           :price-asset="identifier"
-          :price-of-asset="info.usdPrice"
-          fiat-currency="USD"
-          :value="info.usdPrice"
+          :price-of-asset="info.price"
+          :fiat-currency="currencySymbol"
+          :value="info.price"
           no-scramble
         />
 
@@ -114,8 +114,8 @@ onMounted(() => {
         show-currency="symbol"
         :amount="info.amount"
         :price-asset="identifier"
-        :price-of-asset="info.usdPrice"
-        fiat-currency="USD"
+        :price-of-asset="info.price"
+        :fiat-currency="currencySymbol"
         :value="info.usdValue"
       />
     </RuiCard>

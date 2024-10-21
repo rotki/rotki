@@ -1,11 +1,12 @@
 import { NotificationCategory, type NotificationPayload, Severity } from '@rotki/common';
 import { Section } from '@/types/status';
 import { CURRENCY_USD } from '@/types/currencies';
-import type { ManualPrice, ManualPriceFormPayload, ManualPriceWithUsd } from '@/types/prices';
+import type BigNumber from 'bignumber.js';
+import type { ManualPrice, ManualPriceEntry, ManualPriceFormPayload } from '@/types/prices';
 import type { ComputedRef, Ref } from 'vue';
 
 interface UseLatestPricesReturn {
-  items: ComputedRef<ManualPriceWithUsd[]>;
+  items: ComputedRef<ManualPriceEntry[]>;
   loading: Ref<boolean>;
   refreshing: Ref<boolean>;
   getLatestPrices: () => Promise<void>;
@@ -28,6 +29,7 @@ export function useLatestPrices(
   const { resetStatus } = useStatusUpdater(Section.NON_FUNGIBLE_BALANCES);
   const { notify } = useNotificationsStore();
   const { setMessage } = useMessageStore();
+  const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
   const latestAssets = computed<string[]>(() =>
     get(latestPrices)
@@ -35,7 +37,7 @@ export function useLatestPrices(
       .filter(asset => asset !== CURRENCY_USD),
   );
 
-  const items = computed<ManualPriceWithUsd[]>(() => {
+  const items = computed<ManualPriceEntry[]>(() => {
     const filterVal = get(filter);
     const latestPricesVal = get(latestPrices);
 
@@ -43,18 +45,24 @@ export function useLatestPrices(
       ? latestPricesVal.filter(({ fromAsset }) => fromAsset === filterVal)
       : latestPricesVal;
 
-    return filteredItems.map(
-      (item, index) =>
-        ({
-          id: index + 1,
-          ...item,
-          usdPrice:
-            (!isNft(item.fromAsset)
-              ? get(assetPrice(item.fromAsset))
-              : (get(assetPrice(item.toAsset)) ?? One).multipliedBy(item.price)) || Zero,
-        }) satisfies ManualPriceWithUsd,
-    );
+    return filteredItems.map((item, index) => ({
+      id: index + 1,
+      ...item,
+      localizedPrice: getLocalizedPrice(item),
+    }) satisfies ManualPriceEntry);
   });
+
+  function getLocalizedPrice(manualPrice: ManualPrice): BigNumber {
+    if (!isNft(manualPrice.fromAsset)) {
+      if (manualPrice.toAsset === get(currencySymbol)) {
+        return manualPrice.price;
+      }
+      return get(assetPrice(manualPrice.fromAsset)) || Zero;
+    }
+    else {
+      return (get(assetPrice(manualPrice.toAsset)) ?? One).multipliedBy(manualPrice.price) || Zero;
+    }
+  }
 
   const getLatestPrices = async (): Promise<void> => {
     set(loading, true);

@@ -21,7 +21,7 @@ const fiatPriceHint = ref<BigNumber | null>();
 const { asset } = toRefs(props);
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-const { fetchPrices, toSelectedCurrency, assetPrice, isAssetPriceInCurrentCurrency } = useBalancePricesStore();
+const { fetchPrices, assetPrice } = useBalancePricesStore();
 const { addLatestPrice } = useAssetPricesApi();
 
 const { fetchLatestPrices } = useAssetPricesApi();
@@ -37,10 +37,7 @@ async function getAssetPriceInFiat(asset: string): Promise<BigNumber | null> {
   const priceInFiat = get(assetPrice(asset));
 
   if (priceInFiat && !priceInFiat.eq(0)) {
-    const priceInCurrentRate = get(toSelectedCurrency(priceInFiat));
-    const isCurrentCurrency = get(isAssetPriceInCurrentCurrency(asset));
-
-    return isCurrentCurrency ? priceInFiat : priceInCurrentRate;
+    return priceInFiat;
   }
 
   return null;

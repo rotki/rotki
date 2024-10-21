@@ -1,5 +1,4 @@
 import { AssetEntry, type Balance, type BigNumber, NumericString } from '@rotki/common';
-import { forEach } from 'lodash-es';
 import { z } from 'zod';
 import { type PriceOracle, PriceOracleEnum } from '@/types/settings/price-oracle';
 
@@ -7,35 +6,25 @@ export const AssetPriceInput = z.tuple([NumericString, z.number(), z.boolean()])
 
 export const AssetPrice = z.object({
   value: NumericString,
-  usdPrice: NumericString.nullish(),
   isManualPrice: z.boolean(),
-  isCurrentCurrency: z.boolean(),
 });
 
 export const AssetPrices = z.record(AssetPrice);
 
 export type AssetPrices = z.infer<typeof AssetPrices>;
 
-export const AssetPriceResponse = z
-  .object({
-    assets: z.record(AssetPriceInput),
-    targetAsset: z.string(),
-    oracles: z.record(PriceOracleEnum, z.number()),
-  })
-  .transform((response) => {
-    const mappedAssets: AssetPrices = {};
-    const assets = response.assets;
-    forEach(assets, (val, asset) => {
-      const [value, oracle, isCurrentCurrency] = val;
-      mappedAssets[asset] = {
-        value,
-        isManualPrice: oracle === response.oracles.manualcurrent,
-        isCurrentCurrency,
-      };
-    });
-
-    return mappedAssets;
-  });
+export const AssetPriceResponse = z.object({
+  assets: z.record(AssetPriceInput),
+  targetAsset: z.string(),
+  oracles: z.record(PriceOracleEnum, z.number()),
+}).transform(({ assets, oracles: { manualcurrent } }) => Object.entries(assets)
+  .reduce((acc, [asset, [value, oracle]]) => {
+    acc[asset] = {
+      value,
+      isManualPrice: oracle === manualcurrent,
+    };
+    return acc;
+  }, {} as AssetPrices));
 
 export type AssetPriceResponse = z.infer<typeof AssetPriceResponse>;
 
@@ -76,7 +65,7 @@ export interface HistoricPricesPayload {
 }
 
 export interface AssetPriceInfo extends Balance {
-  readonly usdPrice: BigNumber;
+  readonly price: BigNumber;
 }
 
 export const ManualPrice = AssetPair.extend({
@@ -85,9 +74,9 @@ export const ManualPrice = AssetPair.extend({
 
 export type ManualPrice = z.infer<typeof ManualPrice>;
 
-export type ManualPriceWithUsd = ManualPrice & {
+export type ManualPriceEntry = ManualPrice & {
   id: number;
-  usdPrice: BigNumber;
+  localizedPrice: BigNumber;
 };
 
 export const ManualPrices = z.array(ManualPrice);
