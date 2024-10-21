@@ -58,6 +58,10 @@ function exchangeBalance(exchange: string): BigNumber {
   return balances.reduce((sum, asset: AssetBalanceWithPrice) => sum.plus(asset.usdValue), Zero);
 }
 
+const sortedExchanges = computed(() =>
+  get(usedExchanges).sort((a, b) => exchangeBalance(b).minus(exchangeBalance(a)).toNumber()),
+);
+
 function openExchangeDetails() {
   router.push({
     name: 'accounts-balances-exchange',
@@ -185,7 +189,7 @@ function isBinance(exchange?: string): exchange is 'binance' | 'binanceus' {
             color="primary"
           >
             <RuiTab
-              v-for="(usedExchange, i) in usedExchanges"
+              v-for="(usedExchange, i) in sortedExchanges"
               :key="i"
               link
               class="h-[8rem]"
