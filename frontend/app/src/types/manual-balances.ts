@@ -32,7 +32,7 @@ export const ManualBalances = z.object({
 
 export type ManualBalances = z.infer<typeof ManualBalances>;
 
-const ManualBalanceWithPrice = ManualBalanceWithValue.merge(z.object({ usdPrice: NumericString.optional() }));
+const ManualBalanceWithPrice = ManualBalanceWithValue.merge(z.object({ price: NumericString.optional() }));
 
 export type ManualBalanceWithPrice = z.infer<typeof ManualBalanceWithPrice>;
 

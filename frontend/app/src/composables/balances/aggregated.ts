@@ -2,6 +2,7 @@ import { samePriceAssets } from '@/types/blockchain';
 import type { AssetBalanceWithPrice } from '@rotki/common';
 import type { MaybeRef } from '@vueuse/core';
 import type { AssetPriceInfo } from '@/types/prices';
+import type { ComputedRef } from 'vue';
 
 interface UseAggregatedBalancesReturn {
   balances: (hideIgnored?: boolean, groupMultiChain?: boolean) => ComputedRef<AssetBalanceWithPrice[]>;
@@ -84,7 +85,7 @@ export function useAggregatedBalances(): UseAggregatedBalancesReturn {
     );
 
     return {
-      usdPrice: assetValue?.usdPrice ?? Zero,
+      price: assetValue?.price ?? Zero,
       amount: assetValue?.amount ?? Zero,
       usdValue: assetValue?.usdValue ?? Zero,
     };

@@ -270,12 +270,10 @@ describe('store::balances/manual', () => {
     it('default', () => {
       const prices: AssetPrices = {
         DAI: {
-          isCurrentCurrency: true,
           isManualPrice: false,
           value: bigNumberify(2),
         },
         BTC: {
-          isCurrentCurrency: true,
           isManualPrice: false,
           value: bigNumberify(3),
         },

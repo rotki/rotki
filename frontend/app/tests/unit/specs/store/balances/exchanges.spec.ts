@@ -150,13 +150,13 @@ describe('store::balances/manual', () => {
           asset: 'ETH',
           amount: bigNumberify(1000),
           usdValue: bigNumberify(1000),
-          usdPrice: bigNumberify(-1),
+          price: bigNumberify(-1),
         },
         ETH2: {
           asset: 'ETH2',
           amount: bigNumberify(1000),
           usdValue: bigNumberify(1000),
-          usdPrice: bigNumberify(-1),
+          price: bigNumberify(-1),
         },
       });
 
@@ -169,7 +169,7 @@ describe('store::balances/manual', () => {
           asset: 'ETH',
           amount: bigNumberify(2000),
           usdValue: bigNumberify(2000),
-          usdPrice: bigNumberify(-1),
+          price: bigNumberify(-1),
         },
       });
     });
