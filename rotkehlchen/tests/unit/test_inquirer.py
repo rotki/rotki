@@ -873,3 +873,19 @@ def test_find_vthor_price(inquirer_defi: 'Inquirer', database: 'DBHandler'):
         asset=Asset('eip155:1/erc20:0x815C23eCA83261b6Ec689b60Cc4a58b54BC24D8D'),
     )
     assert price.is_close(FVal(0.97656), max_diff=1e-5)
+
+
+@pytest.mark.vcr
+@pytest.mark.freeze_time('2024-10-21 18:00:00 GMT')
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+def test_fiat_to_fiat(inquirer):
+    """Test that fiat to fiat works for current prices and goes through the fiat oracle path"""
+    inquirer.set_oracles_order([CurrentPriceOracle.COINGECKO, CurrentPriceOracle.DEFILLAMA])
+    with patch.object(Inquirer, '_query_fiat_pair', wraps=Inquirer._query_fiat_pair) as _query_fiat_pair:  # noqa: E501
+        price = inquirer.find_price(A_USD, A_EUR)
+        assert price == FVal('0.924303')
+        _query_fiat_pair.assert_called_once_with(
+            base=A_USD.resolve_to_fiat_asset(),
+            quote=A_EUR.resolve_to_fiat_asset(),
+        )

@@ -654,6 +654,14 @@ class Inquirer:
             price, used_main_currency, _ = price_result
             return price, CurrentPriceOracle.MANUALCURRENT, used_main_currency
 
+        if from_asset.is_fiat() and to_asset.is_fiat():
+            with suppress(RemoteError):
+                price, oracle = Inquirer._query_fiat_pair(
+                    base=from_asset.resolve_to_fiat_asset(),
+                    quote=to_asset.resolve_to_fiat_asset(),
+                )
+                return price, oracle, False
+
         oracle_price, oracle_queried, used_main_currency = Inquirer._query_oracle_instances(
             from_asset=from_asset,
             to_asset=to_asset,
