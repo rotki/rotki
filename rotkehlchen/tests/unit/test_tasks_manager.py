@@ -872,6 +872,12 @@ def test_calendar_entries_get_deleted(
             'SELECT description FROM calendar',
         ).fetchall() == [('renew hania.eth',)]
 
+    assert should_run_periodic_task(
+        database=database,
+        key_name=DBCacheStatic.LAST_DELETE_PAST_CALENDAR_EVENTS,
+        refresh_period=DAY_IN_SECONDS,
+    ) is False
+
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('max_tasks_num', [5])

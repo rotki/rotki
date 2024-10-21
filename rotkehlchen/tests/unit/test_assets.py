@@ -21,6 +21,8 @@ from rotkehlchen.assets.utils import (
 from rotkehlchen.constants.assets import A_DAI, A_USDT
 from rotkehlchen.constants.misc import GLOBALDB_NAME
 from rotkehlchen.constants.resolver import evm_address_to_identifier, strethaddress_to_identifier
+from rotkehlchen.constants.timing import SPAM_ASSETS_DETECTION_REFRESH
+from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.custom_assets import DBCustomAssets
 from rotkehlchen.db.filtering import AssetsFilterQuery
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
@@ -29,6 +31,7 @@ from rotkehlchen.externalapis.coingecko import DELISTED_ASSETS, Coingecko
 from rotkehlchen.globaldb.cache import globaldb_set_general_cache_values
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.tasks.assets import autodetect_spam_assets_in_db
+from rotkehlchen.tasks.manager import should_run_periodic_task
 from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.types import SPAM_PROTOCOL, CacheType, ChainID, EvmTokenKind
 
@@ -871,6 +874,11 @@ def test_spam_detection_respects_whitelist(globaldb: 'GlobalDBHandler', database
     autodetect_spam_assets_in_db(database)
     assert token.resolve_to_evm_token().protocol != SPAM_PROTOCOL
     assert Asset(new_token_whitelisted.identifier).resolve_to_evm_token().protocol != SPAM_PROTOCOL
+    assert should_run_periodic_task(
+        database=database,
+        key_name=DBCacheStatic.LAST_SPAM_ASSETS_DETECT_KEY,
+        refresh_period=SPAM_ASSETS_DETECTION_REFRESH,
+    ) is False
 
 
 def test_all_assets_pagination(globaldb: 'GlobalDBHandler', database: 'DBHandler'):

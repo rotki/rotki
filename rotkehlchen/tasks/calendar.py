@@ -77,10 +77,12 @@ def notify_reminders(
 
 def delete_past_calendar_entries(database: DBHandler) -> None:
     """delete old calendar entries that the user has allowed to delete"""
+    now = ts_now()
     with database.conn.write_ctx() as write_cursor:
-        write_cursor.execute(
-            'DELETE FROM calendar WHERE timestamp < ? AND auto_delete=1',
-            (ts_now(),),
+        write_cursor.execute('DELETE FROM calendar WHERE timestamp < ? AND auto_delete=1', (now,))
+        write_cursor.execute(  # remember last time this task ran
+            'INSERT OR REPLACE INTO key_value_cache (name, value) VALUES (?, ?)',
+            (DBCacheStatic.LAST_DELETE_PAST_CALENDAR_EVENTS.value, str(now)),
         )
 
 
