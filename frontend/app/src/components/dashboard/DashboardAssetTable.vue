@@ -6,15 +6,12 @@ import { DashboardTableType } from '@/types/settings/frontend-settings';
 import type { AssetBalance, AssetBalanceWithPrice, BigNumber, Nullable } from '@rotki/common';
 import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 
-const props = withDefaults(
-  defineProps<{
-    title: string;
-    balances: AssetBalanceWithPrice[];
-    tableType: DashboardTableType;
-    loading?: boolean;
-  }>(),
-  { loading: false },
-);
+const props = withDefaults(defineProps<{
+  title: string;
+  balances: AssetBalanceWithPrice[];
+  tableType: DashboardTableType;
+  loading?: boolean;
+}>(), { loading: false });
 
 const { t } = useI18n();
 
@@ -90,7 +87,7 @@ const tableHeaders = computed<DataTableColumn<AssetBalanceWithPrice>[]>(() => {
       label: t('common.price_in_symbol', {
         symbol: get(currencySymbol),
       }),
-      key: 'usdPrice',
+      key: 'price',
       align: 'end',
       class: 'text-no-wrap',
       cellClass: 'py-0',
@@ -246,15 +243,14 @@ watch(search, () => setPage(1));
           :is-collection-parent="!!row.breakdown"
         />
       </template>
-      <template #item.usdPrice="{ row }">
+      <template #item.price="{ row }">
         <AmountDisplay
-          :loading="!row.usdPrice || row.usdPrice.lt(0)"
+          :loading="!row.price || row.price.lt(0)"
           no-scramble
           show-currency="symbol"
           :price-asset="row.asset"
-          :price-of-asset="row.usdPrice"
-          fiat-currency="USD"
-          :value="row.usdPrice"
+          :price-of-asset="row.price"
+          :value="row.price"
         />
       </template>
       <template #item.amount="{ row }">
@@ -265,8 +261,8 @@ watch(search, () => setPage(1));
           show-currency="symbol"
           :amount="row.amount"
           :price-asset="row.asset"
-          :price-of-asset="row.usdPrice"
-          fiat-currency="USD"
+          :price-of-asset="row.price"
+          :fiat-currency="currencySymbol"
           :value="row.usdValue"
         />
       </template>
