@@ -30,7 +30,7 @@ const services = [
   },
 ];
 
-const testCmd = 'cross-env TZ=UTC VITE_TEST=true vitest run --dir tests/contract --coverage';
+const testCmd = 'vitest run --dir tests/contract --coverage';
 
 let test = testCmd;
 if (spec)

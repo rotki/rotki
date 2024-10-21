@@ -10,7 +10,7 @@
   "main": "dist/main.js",
   "scripts": {
     "build": "run-p typecheck \"build:app {@}\" --",
-    "build:app": "cross-env NODE_ENV=production node scripts/build.js",
+    "build:app": "node scripts/build.js",
     "build:preview": "pnpm run build:app && vite preview",
     "preview": "vite preview",
     "cypress:open": "cypress open",
@@ -28,8 +28,8 @@
     "test:contract": "node scripts/contract.js",
     "test:integration": "node scripts/e2e.js",
     "test:integration-ci": "node scripts/e2e.js --ci",
-    "test:unit": "cross-env TZ=UTC VITE_TEST=true vitest --dir tests/unit --coverage",
-    "test:unit:run": "cross-env TZ=UTC VITE_TEST=true vitest run --dir tests/unit --coverage",
+    "test:unit": "vitest --dir tests/unit --coverage",
+    "test:unit:run": "vitest run --dir tests/unit --coverage",
     "typecheck": "vue-tsc --build --force"
   },
   "optionalDependencies": {
@@ -86,7 +86,6 @@
     "@vue/tsconfig": "0.5.1",
     "ajv": "8.17.1",
     "autoprefixer": "10.4.20",
-    "cross-env": "7.0.3",
     "cypress": "13.15.0",
     "dmg-license": "1.0.11",
     "dotenv": "16.4.5",

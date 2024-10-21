@@ -8,6 +8,10 @@ export default mergeConfig(
     test: {
       globals: true,
       environment: 'jsdom',
+      env: {
+        TZ: 'UTC',
+        VITE_TEST: 'true',
+      },
       exclude: [...configDefaults.exclude, 'tests/e2e/**'],
       root: fileURLToPath(new URL('./', import.meta.url)),
       server: {

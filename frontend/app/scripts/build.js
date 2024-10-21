@@ -8,6 +8,8 @@ import { build } from 'vite';
 import { config } from 'dotenv';
 import { sharedConfig } from './setup.js';
 
+process.env.NODE_ENV = 'production';
+
 const OUTPUT_DIR = 'dist';
 const __dirname = import.meta.dirname;
 
