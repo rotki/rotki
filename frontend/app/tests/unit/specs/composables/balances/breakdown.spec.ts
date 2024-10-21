@@ -170,25 +170,25 @@ describe('composables::balances/breakdown', () => {
         asset: 'aUSDC',
         amount: bigNumberify(6000),
         usdValue: bigNumberify(6000),
-        usdPrice: bigNumberify(-1),
+        price: bigNumberify(-1),
         breakdown: [
           {
             asset: 'aUSDC',
             amount: bigNumberify(4000),
             usdValue: bigNumberify(4000),
-            usdPrice: bigNumberify(-1),
+            price: bigNumberify(-1),
           },
           {
             asset: 'bUSDC',
             amount: bigNumberify(1000),
             usdValue: bigNumberify(1000),
-            usdPrice: bigNumberify(-1),
+            price: bigNumberify(-1),
           },
           {
             asset: 'cUSDC',
             amount: bigNumberify(1000),
             usdValue: bigNumberify(1000),
-            usdPrice: bigNumberify(-1),
+            price: bigNumberify(-1),
           },
         ],
       },
@@ -196,7 +196,7 @@ describe('composables::balances/breakdown', () => {
         asset: 'ETH',
         amount: bigNumberify(2000),
         usdValue: bigNumberify(2000),
-        usdPrice: bigNumberify(-1),
+        price: bigNumberify(-1),
       },
     ];
     expect(get(locationBreakdown)).toMatchObject(expectedResult);

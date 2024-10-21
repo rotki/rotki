@@ -85,7 +85,7 @@ export function useAggregatedBalances(): UseAggregatedBalancesReturn {
     );
 
     return {
-      usdPrice: assetValue?.usdPrice ?? Zero,
+      price: assetValue?.price ?? Zero,
       amount: assetValue?.amount ?? Zero,
       usdValue: assetValue?.usdValue ?? Zero,
     };

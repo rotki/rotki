@@ -21,7 +21,7 @@ export function updateTotalsPrices(
       const amount = balances[asset].amount;
       balances[asset] = {
         amount,
-        usdValue: amount.times(assetPrice.usdPrice ?? assetPrice.value),
+        usdValue: amount.times(assetPrice.value),
       };
     }
   }
@@ -37,7 +37,7 @@ export function updateBalancesPrices(balances: Balances, prices: MaybeRef<AssetP
     const assetInfo = balances[asset];
     balances[asset] = {
       amount: assetInfo.amount,
-      usdValue: assetInfo.amount.times(assetPrice.usdPrice ?? assetPrice.value),
+      usdValue: assetInfo.amount.times(assetPrice.value),
     };
   }
   return balances;
@@ -76,7 +76,7 @@ export function updateAssetBalances(
       const amount = addressAssets[asset].amount;
       addressAssets[asset] = {
         amount,
-        usdValue: amount.times(assetPrice.usdPrice ?? assetPrice.value),
+        usdValue: amount.times(assetPrice.value),
       };
     }
   }
@@ -99,7 +99,7 @@ export function updateBtcPrices(
       const amount = addressBalance.amount;
       balance.standalone[address] = {
         amount,
-        usdValue: amount.times(assetPrice.usdPrice ?? assetPrice.value),
+        usdValue: amount.times(assetPrice.value),
       };
     }
     const xpubs = balance.xpubs;
@@ -110,7 +110,7 @@ export function updateBtcPrices(
           const amount = balance.amount;
           xpub.addresses[address] = {
             amount,
-            usdValue: amount.times(assetPrice.usdPrice ?? assetPrice.value),
+            usdValue: amount.times(assetPrice.value),
           };
         }
       }
