@@ -495,6 +495,14 @@ class ZksyncLiteManager:
         transactions = []
         with self.database.conn.read_ctx() as cursor:
             cursor.execute(
+                f'SELECT tx_id, from_asset, from_amount, to_asset, to_amount '
+                f'FROM zksynclite_swaps WHERE tx_id IN '
+                f'(SELECT identifier FROM zksynclite_transactions{queryfilter})',
+                bindings,
+            )
+            swap_data = {row[0]: row[1:] for row in cursor}
+
+            cursor.execute(
                 f'SELECT identifier, tx_hash, type, timestamp, block_number, from_address, '
                 f'to_address, asset, amount, fee FROM zksynclite_transactions{queryfilter}',
                 bindings,
@@ -504,17 +512,11 @@ class ZksyncLiteManager:
                 try:
                     tx = ZKSyncLiteTransaction.deserialize_from_db(entry[1:])
                     if tx.tx_type == ZKSyncLiteTXType.SWAP:
-                        cursor.execute(
-                            'SELECT from_asset, from_amount, to_asset, to_amount '
-                            'FROM zksynclite_swaps WHERE tx_id=?', (entry[0],),
-                        )
-                        if (swap_result := cursor.fetchone()) is None:
-                            log.error(
-                                f'Could not deserialize zksync lite transaction from the DB due to not finding swap data for tx_id: {entry[0]}',  # noqa: E501
-                            )
+                        if (tx_data := swap_data.get(entry[0])) is None:
+                            log.error(f'Could not deserialize zksync lite transaction from the DB due to not finding swap data for tx_id: {entry[0]}')  # noqa: E501
                             continue
 
-                        tx.swap_data = ZKSyncLiteSwapData.deserialize_from_db(swap_result)
+                        tx.swap_data = ZKSyncLiteSwapData.deserialize_from_db(tx_data)
 
                     transactions.append(tx)
                 except (DeserializationError, UnknownAsset) as e:

@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :bug:`8777` ZKSync lite transactions should no longer be skipped under special circumstances.
+
 * :release:`1.35.1 <2024-10-18>`
 * :bug:`-` yearn vaults data will be properly queried only once and error handling is improved.
 * :bug:`8715` Fix the issue where the historical price doesn't refresh after being updated on the history events page.
