@@ -151,6 +151,11 @@ def autodetect_spam_assets_in_db(user_db: DBHandler) -> None:
             log.debug(f'Detected spam token {identifier} at chain {deserialized_chain_id}')
 
     if len(detected_spam_assets) == 0:
+        with user_db.conn.write_ctx() as write_cursor:
+            write_cursor.execute(  # remember last time spam detection ran
+                'INSERT OR REPLACE INTO key_value_cache (name, value) VALUES (?, ?)',
+                (DBCacheStatic.LAST_SPAM_ASSETS_DETECT_KEY.value, str(ts_now())),
+            )
         return
 
     # update the user list of ignored assets
