@@ -1,3 +1,5 @@
+import type { ComputedRef } from 'vue';
+
 interface UseScrollReturn {
   scrollToTop: () => void;
   shouldShowScrollToTopButton: ComputedRef<boolean>;

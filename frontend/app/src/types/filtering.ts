@@ -3,6 +3,7 @@ import { AssetInfoWithId, type AssetsWithId } from '@/types/asset';
 import type { AssetInfo } from '@rotki/common';
 import type { DateFormat } from '@/types/date-format';
 import type { AssetSearchParams } from '@/composables/api/assets/info';
+import type { ComputedRef, Ref } from 'vue';
 
 export enum FilterBehaviour {
   INCLUDE = 'include',

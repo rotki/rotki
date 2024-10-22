@@ -20,6 +20,7 @@ import type {
 import type { Collection } from '@/types/collection';
 import type { Balance } from '@rotki/common';
 import type { AssetBalances } from '@/types/balances';
+import type { Ref } from 'vue';
 
 interface AccountBalance {
   balance: Balance;

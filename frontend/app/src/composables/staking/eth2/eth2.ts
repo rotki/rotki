@@ -6,6 +6,7 @@ EthStakingPerformanceResponse } from '@rotki/common';
 import { Section, Status } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import type { TaskMeta } from '@/types/task';
+import type { ComputedRef, Ref } from 'vue';
 
 interface UseEthStakingReturn {
   performance: ComputedRef<EthStakingPerformance>;

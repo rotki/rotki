@@ -1,13 +1,11 @@
-import {
-  type App as DevtoolsApp,
-  setupDevtoolsPlugin,
-} from '@vue/devtools-api';
+import { setupDevtoolsPlugin } from '@vue/devtools-api';
 import { BigNumber } from '@rotki/common';
+import type { App } from 'vue';
 
 const stateType = 'BigNumber';
 const componentStateTypes: string[] = [stateType];
 
-export function registerDevtools(app: DevtoolsApp): void {
+export function registerDevtools(app: App): void {
   setupDevtoolsPlugin(
     {
       id: 'com.rotki',

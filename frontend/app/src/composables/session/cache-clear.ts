@@ -1,4 +1,5 @@
 import type { BaseMessage } from '@/types/messages';
+import type { Ref } from 'vue';
 
 interface UseCacheClearReturn<T> {
   status: Ref<BaseMessage | null>;

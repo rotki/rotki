@@ -9,6 +9,7 @@ import type { AaveLoan, BaseDefiBalance, DefiBalance, LoanSummary } from '@/type
 import type { CompoundBalances, CompoundLoan } from '@/types/defi/compound';
 import type { MakerDAOVaultModel } from '@/types/defi/maker';
 import type { LiquityLoan } from '@/types/defi/liquity';
+import type { ComputedRef } from 'vue';
 
 type NullableLoan = MakerDAOVaultModel | AaveLoan | CompoundLoan | LiquityLoan | null;
 

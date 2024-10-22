@@ -1,4 +1,5 @@
 import type { MaybeRef } from '@vueuse/core';
+import type { ComputedRef } from 'vue';
 
 export function useArrayInclude<T>(array: MaybeRef<T[]>, t: MaybeRef<T>): ComputedRef<boolean> {
   return computed(() => {

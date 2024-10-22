@@ -1,4 +1,5 @@
 import { type BigNumber, LpType, type XSwapLiquidityBalance } from '@rotki/common';
+import type { ComputedRef } from 'vue';
 
 interface UseLiquidityPositionReturn {
   lpAggregatedBalances: (includeNft?: boolean) => ComputedRef<XSwapLiquidityBalance[]>;

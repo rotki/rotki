@@ -7,6 +7,7 @@ import type { ERC20Token } from '@/types/blockchain/accounts';
 import type { TaskMeta } from '@/types/task';
 import type { EvmChainAddress } from '@/types/history/events';
 import type { AssetSearchParams } from '@/composables/api/assets/info';
+import type { ComputedRef } from 'vue';
 
 export interface AssetResolutionOptions {
   associate?: boolean;

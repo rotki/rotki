@@ -1,4 +1,5 @@
 import type { MaybeRef } from '@vueuse/core';
+import type { ComputedRef, Ref } from 'vue';
 
 const CACHE_EXPIRY = 1000 * 60 * 10;
 const CACHE_SIZE = 500;
@@ -72,6 +73,7 @@ export function useItemCache<T>(
     if (recent.size === options.size) {
       logger.debug(`Hit cache size of ${options.size} going to evict items`);
       const removeKey = recent.keys().next().value;
+      assert(removeKey, 'removeKey is null or undefined');
       recent.delete(removeKey);
       deleteCacheKey(removeKey);
     }

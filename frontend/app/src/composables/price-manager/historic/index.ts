@@ -1,5 +1,6 @@
 import { NotificationCategory, type NotificationPayload, Severity } from '@rotki/common';
 import type { HistoricalPrice, HistoricalPriceFormPayload, ManualPricePayload } from '@/types/prices';
+import type { Ref } from 'vue';
 
 interface UseHistoricPricesReturn {
   items: Ref<HistoricalPrice[]>;

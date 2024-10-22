@@ -1,6 +1,7 @@
 import { TaskType } from '@/types/task-type';
 import type { MaybeRef } from '@vueuse/core';
 import type { EthDetectedTokensInfo } from '@/types/balances';
+import type { ComputedRef } from 'vue';
 
 interface UseTokenDetectionReturn {
   detectingTokens: ComputedRef<boolean>;

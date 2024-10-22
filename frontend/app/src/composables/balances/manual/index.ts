@@ -1,6 +1,7 @@
 import type { Balance } from '@rotki/common';
 import type { AssetBalances } from '@/types/balances';
 import type { ManualBalanceWithValue } from '@/types/manual-balances';
+import type { ComputedRef } from 'vue';
 
 function toAssetBalances(balances: ManualBalanceWithValue[]): AssetBalances {
   const ownedAssets: AssetBalances = {};

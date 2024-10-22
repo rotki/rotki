@@ -4,6 +4,7 @@ import type { BaseMessage } from '@/types/messages';
 import type { SettingsUpdate } from '@/types/user';
 import type { SessionSettings } from '@/types/session';
 import type { ActionStatus } from '@/types/action';
+import type { Ref } from 'vue';
 
 export enum SettingLocation {
   FRONTEND,

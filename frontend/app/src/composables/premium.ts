@@ -1,3 +1,5 @@
+import type { Ref } from 'vue';
+
 export function usePremium(): Ref<boolean> {
   const { premium } = storeToRefs(usePremiumStore());
   return premium;

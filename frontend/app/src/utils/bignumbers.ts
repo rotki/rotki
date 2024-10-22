@@ -1,4 +1,5 @@
 import type { Balance, BigNumber } from '@rotki/common';
+import type { ComputedRef, Ref } from 'vue';
 
 export function bigNumberifyFromRef(value: Ref<string | number>): ComputedRef<BigNumber> {
   return computed(() => {

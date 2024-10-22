@@ -1,4 +1,5 @@
 import type { Module } from '@/types/modules';
+import type { ComputedRef } from 'vue';
 
 interface UseModulesReturn {
   isAnyModuleEnabled: (modules: Module[]) => ComputedRef<boolean>;

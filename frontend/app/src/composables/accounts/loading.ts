@@ -1,4 +1,5 @@
 import { TaskType } from '@/types/task-type';
+import type { ComputedRef, Ref } from 'vue';
 
 interface UseAccountLoadingReturn {
   pending: Ref<boolean>;

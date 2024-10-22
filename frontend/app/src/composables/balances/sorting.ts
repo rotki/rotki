@@ -2,10 +2,20 @@ import { groupBy } from 'lodash-es';
 import { EvmNativeToken } from '@/types/asset';
 import type { AssetBalance, AssetBalanceWithPrice, Balance, BigNumber } from '@rotki/common';
 import type { AssetBalances } from '@/types/balances';
+import type { ComputedRef } from 'vue';
 
 interface UseBalanceSortingReturn {
-  toSortedAssetBalanceArray: (ownedAssets: AssetBalances, isIgnored: (asset: string) => boolean, groupMultiChain?: boolean) => AssetBalance[];
-  toSortedAssetBalanceWithPrice: (ownedAssets: AssetBalances, isIgnored: (asset: string) => boolean, getPrice: (asset: string) => ComputedRef<BigNumber | null | undefined>, groupMultiChain?: boolean) => AssetBalanceWithPrice[];
+  toSortedAssetBalanceArray: (
+    ownedAssets: AssetBalances,
+    isIgnored: (asset: string) => boolean,
+    groupMultiChain?: boolean
+  ) => AssetBalance[];
+  toSortedAssetBalanceWithPrice: (
+    ownedAssets: AssetBalances,
+    isIgnored: (asset: string) => boolean,
+    getPrice: (asset: string) => ComputedRef<BigNumber | null | undefined>,
+    groupMultiChain?: boolean
+  ) => AssetBalanceWithPrice[];
 }
 
 export function useBalanceSorting(): UseBalanceSortingReturn {

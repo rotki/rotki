@@ -1,3 +1,5 @@
+import type { ComputedRef } from 'vue';
+
 interface UseScrambleReturn {
   scrambleData: ComputedRef<boolean>;
   shouldShowAmount: ComputedRef<boolean>;

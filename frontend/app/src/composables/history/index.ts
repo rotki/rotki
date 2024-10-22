@@ -7,6 +7,7 @@ import {
 } from '@/types/history/ignored';
 import type { EntryMeta } from '@/types/history/meta';
 import type { ActionStatus } from '@/types/action';
+import type { Ref } from 'vue';
 
 interface EvmTxIgnoreAction<T extends EntryMeta> {
   actionType: IgnoreActionType.EVM_TRANSACTIONS;

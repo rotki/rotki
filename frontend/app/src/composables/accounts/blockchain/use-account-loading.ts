@@ -1,5 +1,6 @@
 import { TaskType } from '@/types/task-type';
 import { Section } from '@/types/status';
+import type { ComputedRef } from 'vue';
 
 interface UseBlockchainAccountLoadingReturn {
   isDetectingTokens: ComputedRef<boolean>;

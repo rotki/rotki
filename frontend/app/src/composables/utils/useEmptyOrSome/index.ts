@@ -1,3 +1,5 @@
+import type { ComputedRef, Ref } from 'vue';
+
 /**
  * Returns a ComputedRef that is true if the items are undefined
  * or some item matches the condition

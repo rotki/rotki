@@ -10,6 +10,7 @@ import {
   type OnlineHistoryEvent,
 } from '@/types/history/events';
 import type { MaybeRef } from '@vueuse/core';
+import type { ComputedRef } from 'vue';
 
 export function isOfEventType<T extends HistoryEvent>(e: HistoryEvent, type: HistoryEventEntryType): e is T {
   return type === e?.entryType;
