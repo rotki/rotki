@@ -7,6 +7,7 @@ import type {
 import type { MaybeRef } from '@vueuse/core';
 import type { AssetBalances } from '@/types/balances';
 import type { AssetBreakdown } from '@/types/blockchain/accounts';
+import type { ComputedRef } from 'vue';
 
 export function removeZeroAssets(entries: AssetBalances): AssetBalances {
   const balances = { ...entries };

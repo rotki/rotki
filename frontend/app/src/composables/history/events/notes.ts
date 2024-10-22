@@ -1,5 +1,6 @@
 import { type BigNumber, Blockchain } from '@rotki/common';
 import type { MaybeRef } from '@vueuse/core';
+import type { ComputedRef } from 'vue';
 
 export const NoteType = {
   ADDRESS: 'address',

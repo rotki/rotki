@@ -7,6 +7,7 @@ import type { BlockchainAccount, ValidatorData } from '@/types/blockchain/accoun
 import type { Eth2Validator } from '@/types/balances';
 import type { ActionStatus } from '@/types/action';
 import type { TaskMeta } from '@/types/task';
+import type { ComputedRef } from 'vue';
 
 interface UseEthStakingReturn {
   validatorsLimitInfo: ComputedRef<{ showWarning: boolean; limit: number; total: number }>;

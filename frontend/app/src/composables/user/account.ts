@@ -1,4 +1,5 @@
 import type { CreateAccountPayload, LoginCredentials } from '@/types/login';
+import type { Ref } from 'vue';
 
 export const useLoggedUserIdentifier = createSharedComposable(() => useSessionStorage<string | undefined>('rotki.logged_user_id', undefined));
 

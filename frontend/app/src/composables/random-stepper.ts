@@ -1,3 +1,5 @@
+import type { Ref } from 'vue';
+
 interface UseRandomStepperReturn {
   onNavigate: (newStep: number) => Promise<void>;
   onPause: () => void;

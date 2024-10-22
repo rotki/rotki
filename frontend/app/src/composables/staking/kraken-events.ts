@@ -1,5 +1,6 @@
 import { KrakenStakingEventType } from '@/types/staking';
 import type { ActionDataEntry } from '@/types/action';
+import type { ComputedRef } from 'vue';
 
 export function useKrakenStakingEventTypes(): {
   krakenStakingEventTypeData: ComputedRef<ActionDataEntry[]>;

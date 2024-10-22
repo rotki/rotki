@@ -1,4 +1,9 @@
-interface UseCopyReturn { copy: () => Promise<void>; copied: Ref<boolean> }
+import type { Ref } from 'vue';
+
+interface UseCopyReturn {
+  copy: () => Promise<void>;
+  copied: Ref<boolean>;
+}
 
 export function useCopy(source: Ref<string>): UseCopyReturn {
   const copied = ref<boolean>(false);

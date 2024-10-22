@@ -1,5 +1,6 @@
 import type { MaybeRef } from '@vueuse/core';
 import type { HistoryEventsQueryData } from '@/types/websocket-messages';
+import type { ComputedRef, Ref } from 'vue';
 
 type QueryTranslationKey = 'transactions.query_status_events.done_date_range'
   | 'transactions.query_status_events.done_end_date'

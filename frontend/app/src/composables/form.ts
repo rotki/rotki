@@ -1,7 +1,8 @@
 import useVuelidate, { type GlobalConfig, type Validation, type ValidationArgs } from '@vuelidate/core';
 import type { MaybeRef } from '@vueuse/core';
+import type { Ref } from 'vue';
 
-interface UseFormReturn<T = void> {
+export interface UseFormReturn<T = void> {
   submitting: Ref<boolean>;
   openDialog: Ref<boolean>;
   valid: Ref<boolean>;

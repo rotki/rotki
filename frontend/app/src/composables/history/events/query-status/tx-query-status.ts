@@ -1,6 +1,7 @@
 import { type EvmTransactionQueryData, EvmTransactionsQueryStatus } from '@/types/websocket-messages';
 import type { Blockchain } from '@rotki/common';
 import type { MaybeRef } from '@vueuse/core';
+import type { ComputedRef, Ref } from 'vue';
 
 type TranslationKey = 'transactions.query_status.done_date_range'
   | 'transactions.query_status.done_end_date'

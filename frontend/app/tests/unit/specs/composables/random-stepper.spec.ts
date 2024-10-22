@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, it, vi } from 'vitest';
-import type Vue from 'vue';
+import type * as Vue from 'vue';
 
 describe('composables::random-stepper', () => {
   beforeAll(() => {

@@ -1,6 +1,7 @@
 import { Chart, type TooltipModel, registerables } from 'chart.js';
 import zoomPlugin from 'chartjs-plugin-zoom';
 import type { BigNumber, TooltipDisplayOption } from '@rotki/common';
+import type { ComputedRef, Ref } from 'vue';
 
 export function initGraph(): void {
   Chart.defaults.font.family = 'Roboto';

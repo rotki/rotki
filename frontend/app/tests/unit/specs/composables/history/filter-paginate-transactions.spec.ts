@@ -4,12 +4,12 @@ import { afterEach, assertType, beforeAll, beforeEach, describe, expect, expectT
 import { type LocationQuery, RouterAccountsSchema } from '@/types/route';
 import { useMainStore } from '@/store/main';
 import { FilterBehaviour } from '@/types/filtering';
+import type * as Vue from 'vue';
 import type { Filters, Matcher } from '@/composables/filters/events';
 import type { Collection } from '@/types/collection';
 import type { HistoryEvent, HistoryEventRequestPayload } from '@/types/history/events';
 import type { Account } from '@rotki/common/src/account';
 import type { MaybeRef } from '@vueuse/core';
-import type Vue from 'vue';
 
 vi.mock('vue-router', () => {
   const route = ref({

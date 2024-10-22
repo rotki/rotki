@@ -3,6 +3,7 @@ import { TaskType } from '@/types/task-type';
 import { Section, Status } from '@/types/status';
 import type { Eth2DailyStats, Eth2DailyStatsPayload, EthStakingDailyStatData } from '@rotki/common';
 import type { TaskMeta } from '@/types/task';
+import type { ComputedRef, Ref } from 'vue';
 
 interface UseEthStakingDailyStatsReturn {
   pagination: Ref<Eth2DailyStatsPayload>;

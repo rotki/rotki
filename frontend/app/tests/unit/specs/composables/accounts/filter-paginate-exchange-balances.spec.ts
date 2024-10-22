@@ -1,8 +1,8 @@
 import flushPromises from 'flush-promises';
 import { afterEach, assertType, beforeAll, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
+import type * as Vue from 'vue';
 import type { MaybeRef } from '@vueuse/core';
 import type { ExchangeSavingsCollection, ExchangeSavingsEvent, ExchangeSavingsRequestPayload } from '@/types/exchanges';
-import type Vue from 'vue';
 import type { Collection } from '@/types/collection';
 import type { AssetBalance } from '@rotki/common';
 

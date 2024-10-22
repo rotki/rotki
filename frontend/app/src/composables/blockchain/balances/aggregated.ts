@@ -1,5 +1,6 @@
 import type { AssetBalance, AssetBalanceWithPrice, BigNumber } from '@rotki/common';
 import type { AssetBalances } from '@/types/balances';
+import type { ComputedRef } from 'vue';
 
 interface UseBlockchainAggregatedBalancesReturn {
   blockchainTotal: ComputedRef<BigNumber>;

@@ -1,3 +1,5 @@
+import type { Ref } from 'vue';
+
 interface UseAssetPageNavigationReturn { navigateToDetails: () => Promise<void> }
 
 export function useAssetPageNavigation(asset: Ref<string>): UseAssetPageNavigationReturn {

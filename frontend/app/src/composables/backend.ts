@@ -1,6 +1,7 @@
 import { BackendOptions } from '@shared/ipc';
 import type { Writeable } from '@rotki/common';
 import type { LogLevel } from '@shared/log-level';
+import type { ComputedRef, Ref } from 'vue';
 
 const BACKEND_OPTIONS = 'BACKEND_OPTIONS';
 

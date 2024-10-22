@@ -16,6 +16,7 @@ export const useBlockie = createSharedComposable((): UseBlockieReturn => {
     if (cache.size === cacheSize) {
       logger.debug(`Hit cache size of ${cacheSize} going to evict items`);
       const removeKey = cache.keys().next().value;
+      assert(removeKey, 'removeKey is null');
       cache.delete(removeKey);
     }
     cache.set(address, image);

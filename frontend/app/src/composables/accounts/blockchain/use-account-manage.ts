@@ -9,6 +9,7 @@ import type {
   XpubAccountPayload,
 } from '@/types/blockchain/accounts';
 import type { Eth2Validator } from '@/types/balances';
+import type { Ref } from 'vue';
 
 interface AccountManageMode {
   readonly mode: 'edit' | 'add';

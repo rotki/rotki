@@ -2,6 +2,7 @@ import { NotificationCategory, type NotificationPayload, Severity } from '@rotki
 import { Section } from '@/types/status';
 import { CURRENCY_USD } from '@/types/currencies';
 import type { ManualPrice, ManualPriceFormPayload, ManualPriceWithUsd } from '@/types/prices';
+import type { ComputedRef, Ref } from 'vue';
 
 interface UseLatestPricesReturn {
   items: ComputedRef<ManualPriceWithUsd[]>;

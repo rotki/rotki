@@ -1,10 +1,10 @@
 import flushPromises from 'flush-promises';
 import { afterEach, assertType, beforeAll, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
+import type * as Vue from 'vue';
 import type { Filters, Matcher } from '@/composables/filters/asset-movement';
 import type { Collection } from '@/types/collection';
 import type { AssetMovementEntry, AssetMovementRequestPayload } from '@/types/history/asset-movements';
 import type { MaybeRef } from '@vueuse/core';
-import type Vue from 'vue';
 
 vi.mock('vue-router', () => {
   const route = ref({

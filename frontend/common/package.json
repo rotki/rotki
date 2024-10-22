@@ -28,7 +28,7 @@
     "@vueuse/core": "11.1.0",
     "bignumber.js": "9.1.2",
     "tsup": "8.3.0",
-    "typescript": "5.5.4",
+    "typescript": "5.6.3",
     "vue": "3.5.12",
     "zod": "3.23.8"
   }

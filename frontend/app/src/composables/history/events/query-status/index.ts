@@ -1,3 +1,5 @@
+import type { ComputedRef, Ref } from 'vue';
+
 interface UseQueryStatusReturn<T extends { period?: [number, number] }> {
   sortedQueryStatus: Ref<T[]>;
   queryingLength: ComputedRef<number>;

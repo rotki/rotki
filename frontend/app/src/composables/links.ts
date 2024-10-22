@@ -1,4 +1,5 @@
 import type { MaybeRef } from '@vueuse/core';
+import type { ComputedRef } from 'vue';
 
 interface UseLinksReturn {
   href: ComputedRef<string | undefined>;

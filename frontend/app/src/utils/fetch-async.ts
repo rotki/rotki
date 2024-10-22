@@ -3,6 +3,7 @@ import { Section, Status } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import type { TaskMeta } from '@/types/task';
 import type { FetchData } from '@/types/fetch';
+import type { Ref } from 'vue';
 
 export async function fetchDataAsync<T extends TaskMeta, R>(data: FetchData<T, R>, state: Ref<R>): Promise<void> {
   if (

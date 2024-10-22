@@ -1,3 +1,5 @@
+import type { ComputedRef, Ref } from 'vue';
+
 interface UseQueryStatusStoreReturn<T> {
   queryStatus: Ref<Record<string, T>>;
   isAllFinished: ComputedRef<boolean>;

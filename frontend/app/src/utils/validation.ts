@@ -1,5 +1,6 @@
 import type { BaseValidation, Validation } from '@vuelidate/core';
 import type { MaybeRef } from '@vueuse/core';
+import type { Ref } from 'vue';
 
 /**
  * Converts an object of vuelidate's BaseValidation to an array of

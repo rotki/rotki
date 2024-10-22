@@ -2,6 +2,7 @@ import { TRADE_LOCATION_BLOCKCHAIN } from '@/data/defaults';
 import type { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
 import type { MaybeRef } from '@vueuse/core';
 import type { AssetBreakdown } from '@/types/blockchain/accounts';
+import type { ComputedRef } from 'vue';
 
 interface UseBalancesBreakdownReturn {
   assetBreakdown: (asset: string) => ComputedRef<AssetBreakdown[]>;

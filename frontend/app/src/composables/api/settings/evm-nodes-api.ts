@@ -3,6 +3,7 @@ import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
 import { handleResponse, validStatus } from '@/services/utils';
 import { type EvmRpcNode, EvmRpcNodeList } from '@/types/settings/rpc';
+import type { Ref } from 'vue';
 
 interface UseEvmNodesApiReturn {
   fetchEvmNodes: () => Promise<EvmRpcNodeList>;
