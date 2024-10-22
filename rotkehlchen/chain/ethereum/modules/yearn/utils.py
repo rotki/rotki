@@ -19,7 +19,6 @@ from rotkehlchen.globaldb.cache import (
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
-    YEARN_VAULTS_V1_PROTOCOL,
     YEARN_VAULTS_V2_PROTOCOL,
     YEARN_VAULTS_V3_PROTOCOL,
     CacheType,
@@ -30,7 +29,7 @@ from rotkehlchen.types import (
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
 
-YDEMON_API = 'https://ydaemon.yearn.fi/1/vaults/all'  # contains v2 and v3 vaults
+YDAEMON_API = 'https://ydaemon.yearn.fi/1/vaults/all'  # contains v2 and v3 vaults
 
 
 logger = logging.getLogger(__name__)
@@ -71,14 +70,12 @@ def _maybe_reset_yearn_cache_timestamp(data: list[dict[str, Any]] | None) -> boo
 
 
 def _query_yearn_vaults() -> tuple[list[dict[str, Any]] | None, str | None]:
-    """At the moment of writing the logic of ydemon doesn't support yearn v1 so we
-    need to aggregate the information from two different apis and remove duplicates.
-    """
+    """Query yearn v2 and v3 vaults from the ydaemon api."""
     timeout_tuple = CachedSettings().get_timeout_tuple()
     try:
-        response = requests.get(YDEMON_API, timeout=timeout_tuple)
+        response = requests.get(YDAEMON_API, timeout=timeout_tuple)
     except requests.exceptions.RequestException as e:
-        log.error(f'Request to {YDEMON_API} failed due to {e!s}')
+        log.error(f'Request to {YDAEMON_API} failed due to {e!s}')
         return None, 'Failed to obtain yearn vault information'
 
     if response.status_code in (HTTPStatus.NOT_FOUND, HTTPStatus.SERVICE_UNAVAILABLE):
@@ -88,7 +85,7 @@ def _query_yearn_vaults() -> tuple[list[dict[str, Any]] | None, str | None]:
         data = response.json()
     except (DeserializationError, JSONDecodeError) as e:
         log.error(f'Failed to deserialize yearn api response {response.text} as JSON due to {e!s}')
-        return None, "Failed to deserialize data from yearn's old api"
+        return None, 'Failed to deserialize data from the yearn api'
 
     if not isinstance(data, list):
         log.error(f'Unexpected format from yearn vaults response. Expected a list, got {data}')
@@ -114,15 +111,13 @@ def query_yearn_vaults(db: 'DBHandler') -> None:
 
     assert data is not None, 'data exists. Checked by _maybe_reset_yearn_cache_timestamp'
     for vault in data:
-        if 'type' not in vault or (vault['type'] == '' and 'version' not in vault):
+        if (version := vault.get('version')) is None:
             log.error(f'Could not identify the yearn vault type for {vault}. Skipping...')
             continue
 
-        if vault['type'] == 'v1':
-            vault_type = YEARN_VAULTS_V1_PROTOCOL
-        elif vault['type'] == 'v2' or vault['version'].startswith('0.'):  # version '0.x.x' happens in ydemon and is always a v2 vault  # noqa: E501
+        if version.startswith('0.'):  # version '0.x.x' happens in ydaemon and is always a v2 vault
             vault_type = YEARN_VAULTS_V2_PROTOCOL
-        elif vault['version'].startswith('3.'):
+        elif version.startswith('3.'):
             vault_type = YEARN_VAULTS_V3_PROTOCOL
         else:
             log.error(f'Found yearn token with unknown version {vault}. Skipping...')
