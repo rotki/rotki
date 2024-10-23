@@ -22,7 +22,6 @@ onMounted(async () => {
     <BlockscoutApiKeys />
     <CryptoCompareApiKey />
     <BeaconchainApiKey />
-    <CovalentApiKey />
     <LoopringApiKey />
     <OpenSeaApiKey />
     <MoneriumAuth />

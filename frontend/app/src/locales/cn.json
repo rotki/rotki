@@ -2080,12 +2080,6 @@
       "message": "您确定要删除此 API 密钥吗？",
       "title": "删除 API Key"
     },
-    "covalent": {
-      "delete_tooltip": "删除 the Covalent API key",
-      "description": "rotki可以使用Covalent获取各种链的历史数据",
-      "hint": "输入您的 Covalent API 密钥",
-      "title": "Covalent"
-    },
     "cryptocompare": {
       "delete_tooltip": "删除 CryptoCompare API 密钥",
       "description": "rotki 使用 cryptocompare 来获取您投资组合中资产的价格信息。只有当您拥有大量资产并且受到速率限制时才需要 API 密钥。",
