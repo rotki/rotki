@@ -1,6 +1,13 @@
+<script setup lang="ts">
+defineOptions({
+  inheritAttrs: false,
+});
+</script>
+
 <template>
   <div
     v-if="$slots.title || $slots.subtitle"
+    v-bind="$attrs"
     class="flex py-6 gap-4 md:gap-8 lg:gap-12 border-b border-default"
   >
     <div class="w-[150px] lg:w-[200px] xl:w-[288px] shrink-0">
