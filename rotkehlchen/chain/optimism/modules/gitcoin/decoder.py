@@ -28,9 +28,11 @@ class GitcoinDecoder(GitcoinV2CommonDecoder):
             project_registry=string_to_evm_address('0x8e1bD5Da87C14dd8e08F7ecc2aBf9D1d558ea174'),
             round_impl_addresses=[
                 string_to_evm_address('0x8de918F0163b2021839A8D84954dD7E8e151326D'),
+                string_to_evm_address('0x984e29dCB4286c2D9cbAA2c238AfDd8A191Eefbc'),
             ],
             payout_strategy_addresses=[  # they match to the above round_impl addresses. Can be found by roundimpl.payoutStrategy()  # noqa: E501
                 string_to_evm_address('0xEb33BB3705135e99F7975cDC931648942cB2A96f'),
+                string_to_evm_address('0x64Da2d706F190a90886EdAe42F619428AcbCeb7F'),
             ],
             voting_impl_addresses=[
                 string_to_evm_address('0x99906Ea77C139000681254966b397a98E4bFdE21'),
@@ -42,5 +44,6 @@ class GitcoinDecoder(GitcoinV2CommonDecoder):
                 string_to_evm_address('0x390664d7951AD78B1dE1E733016B9A9b2F0007e9'),
                 string_to_evm_address('0xCf065AA4a2870f9D762FaF2f9d760fbB174C6449'),
                 string_to_evm_address('0x1444D2837BDFfc409B66bD6BEeb38784e82F57ff'),
+                string_to_evm_address('0x0e5E1F6A82D1EC6ce5c6D5568096FCa96ecDe651'),
             ],
         )
