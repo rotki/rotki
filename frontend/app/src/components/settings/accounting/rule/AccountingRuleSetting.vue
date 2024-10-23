@@ -216,7 +216,7 @@ const importFileDialog = ref<boolean>(false);
 
 <template>
   <div>
-    <div class="pt-6 pb-4 border-b border-default flex flex-wrap items-center justify-between">
+    <div class="pt-6 pb-5 border-b border-default flex flex-wrap items-center justify-between">
       <SettingCategoryHeader>
         <template #title>
           {{ t('accounting_settings.rule.title') }}
@@ -294,189 +294,188 @@ const importFileDialog = ref<boolean>(false);
         </RuiMenu>
       </div>
     </div>
-    <TablePageLayout child >
-      <RuiCard class="-mt-8">
-        <template #custom-header>
-          <div class="flex items-center justify-between">
-            <template v-if="conflictsNumber > 0">
-              <RuiButton
-                color="warning"
-                @click="conflictsDialogOpen = true"
+
+    <RuiCard class="mt-5">
+      <template #custom-header>
+        <div class="flex items-center justify-between p-4 pb-0">
+          <template v-if="conflictsNumber > 0">
+            <RuiButton
+              color="warning"
+              @click="conflictsDialogOpen = true"
+            >
+              <template #prepend>
+                <RuiIcon name="error-warning-line" />
+              </template>
+              {{ t('accounting_settings.rule.conflicts.title') }}
+              <template #append>
+                <RuiChip
+                  size="sm"
+                  class="!p-0 !bg-rui-warning-darker"
+                  color="warning"
+                >
+                  {{ conflictsNumber }}
+                </RuiChip>
+              </template>
+            </RuiButton>
+            <AccountingRuleConflictsDialog
+              v-if="conflictsDialogOpen"
+              :table-headers="cols"
+              @close="conflictsDialogOpen = false"
+              @refresh="refresh()"
+            />
+          </template>
+
+          <div class="w-full md:w-[25rem] ml-auto">
+            <TableFilter
+              :matches="filters"
+              :matchers="matchers"
+              @update:matches="updateFilter($event)"
+            />
+          </div>
+        </div>
+      </template>
+
+      <CollectionHandler
+        :collection="state"
+        @set-page="setPage($event)"
+      >
+        <template #default="{ data }">
+          <RuiDataTable
+            v-model:pagination.external="pagination"
+            outlined
+            :rows="data"
+            :cols="cols"
+            :loading="isLoading"
+            row-attr="identifier"
+          >
+            <template #header.taxable>
+              <RuiTooltip
+                :popper="{ placement: 'top' }"
+                :open-delay="400"
+                class="flex items-center h-full"
+                tooltip-class="max-w-[10rem]"
               >
-                <template #prepend>
-                  <RuiIcon name="error-warning-line" />
+                <template #activator>
+                  <div class="flex items-center text-left gap-2">
+                    <RuiIcon
+                      class="shrink-0"
+                      size="18"
+                      name="information-line"
+                    />
+                    {{ t('accounting_settings.rule.labels.taxable') }}
+                  </div>
                 </template>
-                {{ t('accounting_settings.rule.conflicts.title') }}
-                <template #append>
-                  <RuiChip
-                    size="sm"
-                    class="!p-0 !bg-rui-warning-darker"
-                    color="warning"
-                  >
-                    {{ conflictsNumber }}
-                  </RuiChip>
+                {{ t('accounting_settings.rule.labels.taxable_subtitle') }}
+              </RuiTooltip>
+            </template>
+            <template #header.countEntireAmountSpend>
+              <RuiTooltip
+                :popper="{ placement: 'top' }"
+                :open-delay="400"
+                class="flex items-center"
+                tooltip-class="max-w-[10rem]"
+              >
+                <template #activator>
+                  <div class="flex items-center text-left gap-2">
+                    <RuiIcon
+                      class="shrink-0"
+                      size="18"
+                      name="information-line"
+                    />
+                    {{ t('accounting_settings.rule.labels.count_entire_amount_spend') }}
+                  </div>
                 </template>
-              </RuiButton>
-              <AccountingRuleConflictsDialog
-                v-if="conflictsDialogOpen"
-                :table-headers="cols"
-                @close="conflictsDialogOpen = false"
-                @refresh="refresh()"
+                {{ t('accounting_settings.rule.labels.count_entire_amount_spend_subtitle') }}
+              </RuiTooltip>
+            </template>
+            <template #header.countCostBasisPnl>
+              <RuiTooltip
+                :popper="{ placement: 'top' }"
+                :open-delay="400"
+                class="flex items-center"
+                tooltip-class="max-w-[10rem]"
+              >
+                <template #activator>
+                  <div class="flex items-center text-left gap-2">
+                    <RuiIcon
+                      class="shrink-0"
+                      size="18"
+                      name="information-line"
+                    />
+                    {{ t('accounting_settings.rule.labels.count_cost_basis_pnl') }}
+                  </div>
+                </template>
+                {{ t('accounting_settings.rule.labels.count_cost_basis_pnl_subtitle') }}
+              </RuiTooltip>
+            </template>
+            <template #header.accountingTreatment>
+              <div class="max-w-[5rem] text-sm whitespace-normal font-medium">
+                {{ t('accounting_settings.rule.labels.accounting_treatment') }}
+              </div>
+            </template>
+            <template #item.eventTypeAndSubtype="{ row }">
+              <div>{{ getHistoryEventTypeName(row.eventType) }} -</div>
+              <div>{{ getHistoryEventSubTypeName(row.eventSubtype) }}</div>
+            </template>
+            <template #item.resultingCombination="{ row }">
+              <HistoryEventTypeCombination
+                :type="getType(row.eventType, row.eventSubtype)"
+                show-label
               />
             </template>
-
-            <div class="w-full md:w-[25rem] ml-auto">
-              <TableFilter
-                :matches="filters"
-                :matchers="matchers"
-                @update:matches="updateFilter($event)"
+            <template #item.counterparty="{ row }">
+              <CounterpartyDisplay
+                v-if="row.counterparty"
+                :counterparty="row.counterparty"
               />
-            </div>
-          </div>
+              <span v-else>-</span>
+            </template>
+            <template #item.taxable="{ row }">
+              <AccountingRuleWithLinkedSettingDisplay
+                identifier="taxable"
+                :item="row.taxable"
+              />
+            </template>
+            <template #item.countEntireAmountSpend="{ row }">
+              <AccountingRuleWithLinkedSettingDisplay
+                identifier="countEntireAmountSpend"
+                :item="row.countEntireAmountSpend"
+              />
+            </template>
+            <template #item.countCostBasisPnl="{ row }">
+              <AccountingRuleWithLinkedSettingDisplay
+                identifier="countCostBasisPnl"
+                :item="row.countCostBasisPnl"
+              />
+            </template>
+            <template #item.accountingTreatment="{ row }">
+              <BadgeDisplay v-if="row.accountingTreatment">
+                {{ row.accountingTreatment }}
+              </BadgeDisplay>
+              <span v-else>-</span>
+            </template>
+            <template #item.actions="{ row }">
+              <RowActions
+                :delete-tooltip="t('accounting_settings.rule.delete')"
+                :edit-tooltip="t('accounting_settings.rule.edit')"
+                @delete-click="showDeleteConfirmation(row)"
+                @edit-click="edit(row)"
+              />
+            </template>
+          </RuiDataTable>
         </template>
+      </CollectionHandler>
 
-        <CollectionHandler
-          :collection="state"
-          @set-page="setPage($event)"
-        >
-          <template #default="{ data }">
-            <RuiDataTable
-              v-model:pagination.external="pagination"
-              outlined
-              :rows="data"
-              :cols="cols"
-              :loading="isLoading"
-              row-attr="identifier"
-            >
-              <template #header.taxable>
-                <RuiTooltip
-                  :popper="{ placement: 'top' }"
-                  :open-delay="400"
-                  class="flex items-center h-full"
-                  tooltip-class="max-w-[10rem]"
-                >
-                  <template #activator>
-                    <div class="flex items-center text-left gap-2">
-                      <RuiIcon
-                        class="shrink-0"
-                        size="18"
-                        name="information-line"
-                      />
-                      {{ t('accounting_settings.rule.labels.taxable') }}
-                    </div>
-                  </template>
-                  {{ t('accounting_settings.rule.labels.taxable_subtitle') }}
-                </RuiTooltip>
-              </template>
-              <template #header.countEntireAmountSpend>
-                <RuiTooltip
-                  :popper="{ placement: 'top' }"
-                  :open-delay="400"
-                  class="flex items-center"
-                  tooltip-class="max-w-[10rem]"
-                >
-                  <template #activator>
-                    <div class="flex items-center text-left gap-2">
-                      <RuiIcon
-                        class="shrink-0"
-                        size="18"
-                        name="information-line"
-                      />
-                      {{ t('accounting_settings.rule.labels.count_entire_amount_spend') }}
-                    </div>
-                  </template>
-                  {{ t('accounting_settings.rule.labels.count_entire_amount_spend_subtitle') }}
-                </RuiTooltip>
-              </template>
-              <template #header.countCostBasisPnl>
-                <RuiTooltip
-                  :popper="{ placement: 'top' }"
-                  :open-delay="400"
-                  class="flex items-center"
-                  tooltip-class="max-w-[10rem]"
-                >
-                  <template #activator>
-                    <div class="flex items-center text-left gap-2">
-                      <RuiIcon
-                        class="shrink-0"
-                        size="18"
-                        name="information-line"
-                      />
-                      {{ t('accounting_settings.rule.labels.count_cost_basis_pnl') }}
-                    </div>
-                  </template>
-                  {{ t('accounting_settings.rule.labels.count_cost_basis_pnl_subtitle') }}
-                </RuiTooltip>
-              </template>
-              <template #header.accountingTreatment>
-                <div class="max-w-[5rem] text-sm whitespace-normal font-medium">
-                  {{ t('accounting_settings.rule.labels.accounting_treatment') }}
-                </div>
-              </template>
-              <template #item.eventTypeAndSubtype="{ row }">
-                <div>{{ getHistoryEventTypeName(row.eventType) }} -</div>
-                <div>{{ getHistoryEventSubTypeName(row.eventSubtype) }}</div>
-              </template>
-              <template #item.resultingCombination="{ row }">
-                <HistoryEventTypeCombination
-                  :type="getType(row.eventType, row.eventSubtype)"
-                  show-label
-                />
-              </template>
-              <template #item.counterparty="{ row }">
-                <CounterpartyDisplay
-                  v-if="row.counterparty"
-                  :counterparty="row.counterparty"
-                />
-                <span v-else>-</span>
-              </template>
-              <template #item.taxable="{ row }">
-                <AccountingRuleWithLinkedSettingDisplay
-                  identifier="taxable"
-                  :item="row.taxable"
-                />
-              </template>
-              <template #item.countEntireAmountSpend="{ row }">
-                <AccountingRuleWithLinkedSettingDisplay
-                  identifier="countEntireAmountSpend"
-                  :item="row.countEntireAmountSpend"
-                />
-              </template>
-              <template #item.countCostBasisPnl="{ row }">
-                <AccountingRuleWithLinkedSettingDisplay
-                  identifier="countCostBasisPnl"
-                  :item="row.countCostBasisPnl"
-                />
-              </template>
-              <template #item.accountingTreatment="{ row }">
-                <BadgeDisplay v-if="row.accountingTreatment">
-                  {{ row.accountingTreatment }}
-                </BadgeDisplay>
-                <span v-else>-</span>
-              </template>
-              <template #item.actions="{ row }">
-                <RowActions
-                  :delete-tooltip="t('accounting_settings.rule.delete')"
-                  :edit-tooltip="t('accounting_settings.rule.edit')"
-                  @delete-click="showDeleteConfirmation(row)"
-                  @edit-click="edit(row)"
-                />
-              </template>
-            </RuiDataTable>
-          </template>
-        </CollectionHandler>
+      <AccountingRuleFormDialog
+        :loading="isLoading"
+        :editable-item="editableItem"
+      />
 
-        <AccountingRuleFormDialog
-          :loading="isLoading"
-          :editable-item="editableItem"
-        />
-
-        <AccountingRuleImportDialog
-          v-model="importFileDialog"
-          :loading="importFileLoading"
-          @refresh="refresh()"
-        />
-      </RuiCard>
-    </TablePageLayout>
+      <AccountingRuleImportDialog
+        v-model="importFileDialog"
+        :loading="importFileLoading"
+        @refresh="refresh()"
+      />
+    </RuiCard>
   </div>
 </template>
