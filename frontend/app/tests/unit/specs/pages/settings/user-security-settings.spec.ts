@@ -4,7 +4,7 @@ import AccountSettings from '@/pages/settings/account/index.vue';
 import { libraryDefaults } from '../../../utils/provide-defaults';
 
 vi.mock('vue-router', () => ({
-  useRoute: vi.fn(),
+  useRoute: vi.fn().mockImplementation(() => ref({})),
   useRouter: vi.fn().mockReturnValue({
     push: vi.fn(),
   }),
@@ -23,7 +23,7 @@ describe('userSecuritySettings.vue', () => {
     return mount(AccountSettings, {
       global: {
         plugins: [pinia],
-        stubs: ['card-title', 'asset-select', 'asset-update', 'confirm-dialog', 'data-table'],
+        stubs: ['card-title', 'asset-select', 'asset-update', 'confirm-dialog', 'data-table', 'RouterLink'],
         provide: libraryDefaults,
       },
     });
