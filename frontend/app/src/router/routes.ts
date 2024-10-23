@@ -278,12 +278,12 @@ export const useAppRoutes = createSharedComposable(() => {
     SETTINGS_ORACLE: {
       route: Routes.SETTINGS_ORACLE,
       icon: 'exchange-dollar-line' as const,
-      text: t('navigation_menu.settings_sub.oracle'),
+      text: t('navigation_menu.settings_sub.oracles'),
     },
     SETTINGS_RPC: {
       route: Routes.SETTINGS_RPC,
       icon: 'wifi-line' as const,
-      text: t('navigation_menu.settings_sub.rpc_node'),
+      text: t('navigation_menu.settings_sub.rpc_nodes'),
     },
     SETTINGS_MODULES: {
       route: Routes.SETTINGS_MODULES,

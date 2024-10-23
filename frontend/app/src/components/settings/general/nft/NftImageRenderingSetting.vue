@@ -72,6 +72,7 @@ onMounted(() => {
     <RuiRadioGroup
       v-model="renderAllNftImages"
       color="primary"
+      class="mb-2"
       :success-messages="success"
       :error-messages="error"
       @update:model-value="updateRenderingSetting($event, updateImmediate)"
@@ -90,7 +91,6 @@ onMounted(() => {
     :error-message="t('general_settings.nft_setting.messages.error')"
     :success-message="t('general_settings.nft_setting.messages.success')"
     setting="whitelistedDomainsForNftImages"
-    class="mt-4 flex flex-col gap-4"
     frontend-setting
     @updated="whitelistedDomains = ''"
   >

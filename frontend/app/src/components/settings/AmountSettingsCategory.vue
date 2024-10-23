@@ -17,7 +17,7 @@ const amountExample = bigNumberify(123456.789);
       <template #title>
         {{ t('general_settings.version_update_check.title') }}
       </template>
-      <MainCurrencySetting class="mb-4" />
+      <MainCurrencySetting />
       <div class="grid sm:grid-cols-3 gap-4">
         <FloatingPrecisionSetting />
         <NumericSeparatorsSettings />

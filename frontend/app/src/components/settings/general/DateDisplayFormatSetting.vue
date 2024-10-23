@@ -54,7 +54,6 @@ onMounted(() => {
       setting="dateDisplayFormat"
       :error-message="t('general_settings.validation.date_display_format.error')"
       :success-message="successMessage"
-      class="flex items-center"
       @finished="resetDateDisplayFormat()"
     >
       <div class="flex items-start w-full">

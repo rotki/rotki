@@ -3609,8 +3609,8 @@
       "general": "General",
       "interface": "Interface-only",
       "modules": "Modules",
-      "oracle": "Oracle",
-      "rpc_node": "RPC Node"
+      "oracles": "Oracles",
+      "rpc_nodes": "RPC Nodes"
     },
     "staking": "Staking",
     "statistics": "Statistics"

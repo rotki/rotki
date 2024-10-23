@@ -31,7 +31,7 @@ function calculateFontSize(symbol: string) {
   >
     <RuiMenuSelect
       v-model="selectedCurrency"
-      class="general-settings__fields__currency-selector"
+      class="general-settings__fields__currency-selector mb-4"
       :label="t('general_settings.amount.labels.main_currency')"
       :options="currencies"
       text-attr="tickerSymbol"

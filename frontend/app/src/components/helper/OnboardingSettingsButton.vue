@@ -9,6 +9,7 @@ const { connected } = toRefs(useMainStore());
     <RuiTooltip
       :text="t('backend_settings_button.tooltip')"
       :popper="{ placement: 'top', offsetDistance: 0 }"
+      tooltip-class="max-w-[12rem]"
     >
       <template #activator>
         <RuiButton

@@ -44,7 +44,6 @@ const items = computed(() => {
     <SettingsOption
       #default="{ error, success, update }"
       setting="abbreviateNumber"
-      class="w-[26rem]"
       frontend-setting
     >
       <RuiSwitch
@@ -61,7 +60,6 @@ const items = computed(() => {
     <SettingsOption
       #default="{ error, success, updateImmediate }"
       :transform="transform"
-      class="md:min-w-[18rem]"
       setting="minimumDigitToBeAbbreviated"
       frontend-setting
       @finished="resetMinimumDigitToBeAbbreviated()"

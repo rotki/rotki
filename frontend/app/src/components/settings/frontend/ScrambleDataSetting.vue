@@ -44,7 +44,6 @@ watch([enabled, multiplier], setData);
     </SettingsOption>
     <SettingsOption
       #default="{ error, success, update }"
-      class="pt-4"
       setting="scrambleMultiplier"
       session-setting
     >
