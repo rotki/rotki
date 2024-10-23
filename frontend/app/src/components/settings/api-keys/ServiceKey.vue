@@ -33,14 +33,13 @@ const cancellable = ref<boolean>(false);
 const errorMessages = useRefMap(status, (status) => {
   if (!status || status.success)
     return [];
-
+  set(editMode, true);
   return [status.message];
 });
 
 const successMessages = useRefMap(status, (status) => {
   if (!status || !status.success)
     return [];
-
   return [status.message];
 });
 
@@ -62,8 +61,11 @@ function saveHandler() {
       name: props.name,
       apiKey: get(currentValue),
     });
-    set(editMode, false);
-    set(cancellable, true);
+
+    if (!get(status) || get(status)?.success) {
+      set(editMode, false);
+      set(cancellable, true);
+    }
   }
   else {
     set(editMode, true);
@@ -96,7 +98,7 @@ watch(apiKey, () => {
         color="primary"
         class="grow"
         data-cy="service-key__api-key"
-        :text-color="!editMode ? 'success' : undefined"
+        :text-color="!editMode && errorMessages.length === 0 ? 'success' : undefined"
         :error-messages="errorMessages"
         :success-messages="successMessages"
         :hint="currentValue ? '' : hint"
