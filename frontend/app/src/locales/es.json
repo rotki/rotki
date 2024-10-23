@@ -2022,12 +2022,6 @@
       "message": "Are you sure you want to delete this API Key?",
       "title": "Delete API Key"
     },
-    "covalent": {
-      "delete_tooltip": "Deletes the Covalent API key",
-      "description": "rotki can use Covalent to get historical data for various chains",
-      "hint": "Enter your Covalent API key",
-      "title": "Covalent"
-    },
     "cryptocompare": {
       "delete_tooltip": "Deletes the CryptoCompare API key",
       "description": "rotki uses cryptocompare to obtain price information about assets in your portfolio. An API key is only needed if you have a lot of assets and are being rate-limited.",
