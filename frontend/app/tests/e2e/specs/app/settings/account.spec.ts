@@ -1,5 +1,5 @@
 import { RotkiApp } from '../../../pages/rotki-app';
-import { UserSecuritySettingsPage } from '../../../pages/user-security-settings-page';
+import { AccountSettingsPage } from '../../../pages/account-settings-page';
 import { createUser } from '../../../utils/user';
 
 describe('settings::data & security', () => {
@@ -7,14 +7,14 @@ describe('settings::data & security', () => {
   let password: string;
   let newPassword: string;
   let app: RotkiApp;
-  let pageUserSecurity: UserSecuritySettingsPage;
+  let pageUserSecurity: AccountSettingsPage;
 
   before(() => {
     username = createUser();
     password = '1234';
     newPassword = '5678';
     app = new RotkiApp();
-    pageUserSecurity = new UserSecuritySettingsPage();
+    pageUserSecurity = new AccountSettingsPage();
     app.fasterLogin(username);
   });
 

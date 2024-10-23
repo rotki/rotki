@@ -23,16 +23,8 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <div class="rounding-settings mt-8">
-    <RuiCardHeader class="p-0 mb-4">
-      <template #header>
-        {{ t('rounding_settings.title') }}
-      </template>
-      <template #subheader>
-        {{ t('rounding_settings.subtitle') }}
-      </template>
-    </RuiCardHeader>
-    <div class="grid md:grid-cols-2 gap-6 mt-4">
+  <div class="rounding-settings">
+    <div class="flex flex-col space-y-6">
       <RoundingSelector
         :model-value="amountRoundingMode"
         :label="t('rounding_settings.amount_rounding')"

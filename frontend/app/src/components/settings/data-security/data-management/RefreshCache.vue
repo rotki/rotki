@@ -68,20 +68,17 @@ const loading = logicOr(pending, taskRunning, eventTaskLoading);
 </script>
 
 <template>
-  <div>
-    <RuiCardHeader class="p-0 mb-4">
-      <template #header>
-        {{ t('data_management.refresh_cache.title') }}
-      </template>
-      <template #subheader>
-        {{ t('data_management.refresh_cache.subtitle') }}
-      </template>
-    </RuiCardHeader>
-
+  <SettingsItem>
+    <template #title>
+      {{ t('data_management.refresh_cache.title') }}
+    </template>
+    <template #subtitle>
+      {{ t('data_management.refresh_cache.subtitle') }}
+    </template>
     <div class="flex items-center gap-4">
       <RuiAutoComplete
         v-model="source"
-        class="flex-1"
+        class="flex-1 min-w-0"
         variant="outlined"
         :label="t('data_management.refresh_cache.select_cache')"
         :options="refreshable"
@@ -89,6 +86,7 @@ const loading = logicOr(pending, taskRunning, eventTaskLoading);
         key-attr="id"
         :disabled="loading"
         :hint="hint"
+        hide-details
       >
         <template #selection="{ item }">
           <div>{{ item.shortText || item.text }}</div>
@@ -98,7 +96,6 @@ const loading = logicOr(pending, taskRunning, eventTaskLoading);
       <RuiTooltip
         :popper="{ placement: 'top' }"
         :open-delay="400"
-        class="-mt-6"
       >
         <template #activator>
           <RuiButton
@@ -117,8 +114,8 @@ const loading = logicOr(pending, taskRunning, eventTaskLoading);
 
     <ActionStatusIndicator
       v-if="status"
-      class="mt-4"
+      class="mt-2"
       :status="status"
     />
-  </div>
+  </SettingsItem>
 </template>

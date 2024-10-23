@@ -89,7 +89,6 @@ const tableHeaders = computed<DataTableColumn<TradeEntry>[]>(() => {
       label: t('common.actions_text'),
       key: 'actions',
       align: 'center',
-      class: '!w-px',
     },
   ];
 

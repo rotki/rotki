@@ -30,22 +30,6 @@ const directory = computed(() => {
   return filepath.slice(0, index + 1);
 });
 
-const userDb = computed(() => {
-  const info = get(backupInfo);
-  return {
-    size: info ? size(info.userdb.info.size) : '0',
-    version: info ? info.userdb.info.version.toString() : '0',
-  };
-});
-
-const globalDb = computed(() => {
-  const info = get(backupInfo);
-  return {
-    schema: info ? info.globaldb.globaldbSchemaVersion.toString() : '0',
-    assets: info ? info.globaldb.globaldbAssetsVersion.toString() : '0',
-  };
-});
-
 const { info, createBackup, deleteBackup } = useBackupApi();
 
 async function loadInfo() {
@@ -181,22 +165,48 @@ onMounted(loadInfo);
 </script>
 
 <template>
-  <DatabaseInfoDisplay
-    :directory="directory"
-    :global-db="globalDb"
-    :user-db="userDb"
-  />
-  <RuiCard>
-    <template #header>
-      <CardTitle>
-        <RefreshButton
+  <div>
+    <div class="pb-5 flex flex-wrap gap-4 items-center justify-between">
+      <SettingCategoryHeader>
+        <template #title>
+          {{ t('database_settings.user_backups.title') }}
+        </template>
+        <template #subtitle>
+          {{ t('database_settings.user_backups.subtitle') }}
+        </template>
+      </SettingCategoryHeader>
+      <div class="flex flex-wrap gap-2">
+        <RuiButton
+          v-if="selected.length > 0"
+          color="error"
+          @click="showMassDeleteConfirmation()"
+        >
+          {{ t('database_settings.user_backups.delete_selected') }}
+        </RuiButton>
+        <RuiButton
+          variant="outlined"
+          color="primary"
           :loading="loading"
-          :tooltip="t('database_manager.refresh_tooltip')"
-          @refresh="loadInfo()"
-        />
-        {{ t('backup_manager.title') }}
-      </CardTitle>
-    </template>
+          @click="loadInfo()"
+        >
+          <template #prepend>
+            <RuiIcon
+              name="refresh-line"
+              size="16"
+            />
+          </template>
+          {{ t('common.refresh') }}
+        </RuiButton>
+        <RuiButton
+          color="primary"
+          :disabled="saving"
+          :loading="saving"
+          @click="backup()"
+        >
+          {{ t('database_settings.user_backups.backup_button') }}
+        </RuiButton>
+      </div>
+    </div>
     <DatabaseBackups
       v-model:selected="selected"
       :loading="loading"
@@ -204,24 +214,5 @@ onMounted(loadInfo);
       :directory="directory"
       @remove="remove($event)"
     />
-    <template #footer>
-      <div class="flex gap-3">
-        <RuiButton
-          color="primary"
-          :disabled="saving"
-          :loading="saving"
-          @click="backup()"
-        >
-          {{ t('backup_manager.backup_button') }}
-        </RuiButton>
-        <RuiButton
-          v-if="selected.length > 0"
-          color="error"
-          @click="showMassDeleteConfirmation()"
-        >
-          {{ t('backup_manager.delete_selected') }}
-        </RuiButton>
-      </div>
-    </template>
-  </RuiCard>
+  </div>
 </template>

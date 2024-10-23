@@ -58,15 +58,27 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <SettingCategory>
-    <template #title>
-      {{ t('price_oracle_settings.title') }}
-    </template>
-    <template #subtitle>
-      {{ t('price_oracle_settings.subtitle') }}
-    </template>
-
-    <div class="grid md:grid-cols-2 gap-4">
+  <div class="flex flex-col gap-5">
+    <div class="pb-5 flex flex-wrap gap-4 items-center justify-between border-b border-default">
+      <SettingCategoryHeader>
+        <template #title>
+          {{ t('price_oracle_settings.title') }}
+        </template>
+        <template #subtitle>
+          {{ t('price_oracle_settings.subtitle') }}
+        </template>
+      </SettingCategoryHeader>
+      <PriceRefresh
+        @click="resetCachedHistoricalPrices()"
+      />
+    </div>
+    <RuiAlert
+      v-if="currentOracles.length === 0 || historicOracles.length === 0"
+      type="warning"
+    >
+      {{ t('price_oracle_selection.hint') }}
+    </RuiAlert>
+    <div class="grid lg:grid-cols-2 gap-4">
       <SettingsOption
         #default="{ error, success, updateImmediate }"
         setting="currentPriceOracles"
@@ -104,14 +116,5 @@ const { t } = useI18n();
         </PrioritizedList>
       </SettingsOption>
     </div>
-    <div class="text-caption mt-2">
-      {{ t('price_oracle_selection.hint') }}
-    </div>
-    <div class="mt-4">
-      <PriceRefresh
-        class="mt-6"
-        @click="resetCachedHistoricalPrices()"
-      />
-    </div>
-  </SettingCategory>
+  </div>
 </template>

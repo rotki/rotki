@@ -14,12 +14,12 @@ const { t } = useI18n();
     #default="{ error, success, update }"
     setting="enableAliasNames"
     frontend-setting
-    :error-message="t('frontend_settings.validation.enable_alias_names.error')"
+    :error-message="t('frontend_settings.alias_names.validation.error')"
   >
     <RuiSwitch
       v-model="enableAliasNames"
-      class="general-settings__fields__enable_alias_names mb-4 mt-2"
-      :label="t('frontend_settings.label.enable_alias_names')"
+      class="general-settings__fields__enable_alias_names mt-4"
+      :label="t('frontend_settings.alias_names.label')"
       :messages="success"
       :error-messages="error"
       color="primary"

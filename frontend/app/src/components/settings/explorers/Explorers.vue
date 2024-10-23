@@ -82,17 +82,14 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <div class="explorers mt-8">
-    <RuiCardHeader class="p-0">
-      <template #header>
-        {{ t('explorers.title') }}
-      </template>
-      <template #subheader>
-        {{ t('explorers.subtitle') }}
-      </template>
-    </RuiCardHeader>
-
-    <div class="flex flex-col gap-4 mt-6">
+  <SettingsItem>
+    <template #title>
+      {{ t('explorers.title') }}
+    </template>
+    <template #subtitle>
+      {{ t('explorers.subtitle') }}
+    </template>
+    <div class="flex flex-col gap-4">
       <RuiMenuSelect
         v-model="selection"
         :options="supportedExplorers"
@@ -153,5 +150,5 @@ const { t } = useI18n();
         @save-data="saveBlock($event)"
       />
     </div>
-  </div>
+  </SettingsItem>
 </template>

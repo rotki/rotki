@@ -86,21 +86,13 @@ async function removeVisibleTimeframe(timeframe: TimeFrameSetting) {
 </script>
 
 <template>
-  <RuiCardHeader class="p-0 mb-4">
-    <template #header>
-      {{ t('timeframe_settings.default_timeframe') }}
-    </template>
-    <template #subheader>
-      {{ t('timeframe_settings.default_timeframe_description') }}
-    </template>
-  </RuiCardHeader>
-  <RuiCard>
-    <div class="text-subtitle-1">
+  <RuiCard class="h-auto">
+    <div class="font-medium">
       {{ t('timeframe_settings.visible_timeframes') }}
     </div>
 
     <div
-      class="flex items-center gap-3"
+      class="flex flex-wrap items-center gap-3"
       :class="{ 'mt-2': premium }"
     >
       <PremiumLock
@@ -127,10 +119,10 @@ async function removeVisibleTimeframe(timeframe: TimeFrameSetting) {
     <template v-if="invisibleTimeframes.length > 0">
       <RuiDivider class="my-4" />
 
-      <div class="text-subtitle-1">
+      <div class="font-medium">
         {{ t('timeframe_settings.inactive_timeframes') }}
       </div>
-      <div class="flex items-center gap-3 mt-2">
+      <div class="flex flex-wrap items-center gap-3 mt-2">
         <RuiChip
           v-for="(timeframe, i) in invisibleTimeframes"
           :key="i"

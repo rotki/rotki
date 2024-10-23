@@ -108,7 +108,7 @@
         "export_csv_formulas": "Should formulas be exported as part of the PnL CSV?",
         "have_csv_summary": "Should a summary of all events be included in the all events CSV export?"
       },
-      "title": "CSV Export Settings"
+      "title": "CSV export settings"
     },
     "messages": {
       "account_for_assets_movements": "Error setting account for assets movements: {message}",
@@ -205,7 +205,8 @@
       },
       "overwrite_by_setting": "Overwrite by value from other accounting setting",
       "refresh_tooltip": "Refresh accounting rules",
-      "title": "Event Accounting Rules",
+      "title": "Accounting Rules",
+      "subtitle": "Manage and view your event accounting rules",
       "value_overwritten": "The value is overwritten by this setting:"
     },
     "trade": {
@@ -1068,15 +1069,11 @@
           "global_address_book": "Global address book",
           "hardcoded_mappings": "Hardcoded mappings",
           "private_address_book": "Private address book"
-        },
-        "title": "The priority of the returned names adheres to the following order. From top to bottom, the first name found will be shown."
+        }
       },
       "private": "Private",
       "private_description": "address book is saved only for this account."
     }
-  },
-  "address_name_priority_setting": {
-    "data_name": "priority"
   },
   "airdrops": {
     "headers": {
@@ -1085,12 +1082,6 @@
     "title": "Airdrops",
     "unknown_info": "Airdrops are available for these addresses, but we can't yet analyze if it has been claimed or not.",
     "unknown_tooltip": "Address is eligible for this airdrop, but we can't yet analyze if it has been claimed or not."
-  },
-  "alias_names": {
-    "error": {
-      "message": "Failed to retrieve the alias names: {message}",
-      "title": "Querying alias names"
-    }
   },
   "amount_display": {
     "abbreviation": {
@@ -1258,14 +1249,15 @@
         "title": "Reset assets database"
       },
       "hard_reset": "Hard Reset",
-      "hard_reset_hint": "This option will also reset assets that were added by the user.",
+      "hard_reset_hint": "A hard reset will remove assets that were added by you.",
       "hard_restore_confirmation": {
         "message": "There are assets that will be deleted and might cause an inconsistent state in this account or other accounts in the system. Confirm this action only if you know what you are doing.",
         "title": "Dangerous operation"
       },
       "soft_reset": "Soft Reset",
-      "soft_reset_hint": "This option will not reset assets that were added by the user.",
-      "subtitle": "Delete custom assets and reset assets database to its initial state. Caution: This operation might affect other users in the same system using the database for assets.",
+      "soft_reset_hint": "A soft reset will not remove assets that were added by you.",
+      "subtitle": "Delete custom assets and reset assets database to its initial state.",
+      "warning": "This operation might affect other users in the same system using the database for assets.",
       "success": {
         "description": "The asset database has been successfully restored. You will now need to re-login to apply the changes.",
         "title": "Asset database restore"
@@ -1484,11 +1476,6 @@
   "backend_settings_button": {
     "tooltip": "Change the backend settings. Changing the settings will restart the rotki backend"
   },
-  "backup_manager": {
-    "backup_button": "Create new Backup",
-    "delete_selected": "Delete selected Backups",
-    "title": "User Database Backups"
-  },
   "balancer": {
     "loading": "Please wait while your liquidity pools are getting loaded...",
     "premium": "Balancer feature "
@@ -1623,7 +1610,8 @@
       "password": "Current Password"
     },
     "sync_warning": "Changing the password with premium sync enabled will affect other synced instances of the application. Upon login with other synced instances, you will be asked to overwrite the local DB with the synced version on the server. After that, you must log in with the newly set password.",
-    "title": "User Account & Security",
+    "subtitle": "Confirm your current password before setting a new one.",
+    "title": "Password",
     "validation": {
       "empty_confirmation": "Please provide a password confirmation",
       "empty_password": "Please provide a password",
@@ -2077,8 +2065,7 @@
       "select_image_source": "Select image cache source to clear",
       "subtitle": "Allows you to purge image cached by rotki",
       "success": "Cache was successfully cleared",
-      "title": "Purge Images Cache",
-      "tooltip": "Purge the cached images for the selected source"
+      "title": "Purge Images Cache"
     },
     "refresh_cache": {
       "confirm": {
@@ -2134,19 +2121,6 @@
       "message": "There was a problem loading the list of available backups: {message}",
       "title": "Database Backup load"
     }
-  },
-  "database_info_display": {
-    "directory": "Database Directory:",
-    "globaldb": "Global Database",
-    "globaldb_assets": "Assets version:",
-    "globaldb_schema": "Schema version:",
-    "title": "Database Info",
-    "userdb": "User Database",
-    "userdb_size": "Size on disk:",
-    "userdb_version": "Database Version:"
-  },
-  "database_manager": {
-    "refresh_tooltip": "Refresh the database backup list"
   },
   "date_format_help": {
     "directive": {
@@ -2324,6 +2298,7 @@
       "false": "Not connected",
       "true": "Connected"
     },
+    "connectivity": "Connectivity",
     "delete_error": {
       "title": "Deleting {chain} RPC Node"
     },
@@ -2339,10 +2314,11 @@
     "loading_error": {
       "title": "Loading {chain} RPC Nodes"
     },
-    "private_node": "This is a private node added by the user",
-    "private_node_hint": "Private nodes take priority over public nodes",
+    "node": "Node",
+    "node_weight": "Node Weight",
+    "private_node": "This is a private node added by the user. It takes priority over public nodes",
     "public_node": "This is a public node",
-    "weight": "Node weight {weight}%"
+    "weight": "{weight}%"
   },
   "exchange_balances": {
     "add_exchange": "Add exchange",
@@ -2629,54 +2605,76 @@
     }
   },
   "frontend_settings": {
-    "hint": {
-      "refresh": "How often (in minutes) your balances will be automatically refreshed"
+    "abbreviate_number": {
+      "label": "Use abbreviations for large numbers.",
+      "hint": "For example, 1.234.567 will appear as 1.23 M when this setting is enabled",
+      "minimum_digit": {
+        "label": "Minimum value to be abbreviated"
+      }
     },
-    "label": {
-      "abbreviate_number": "Use abbreviations for large numbers.",
-      "animations": "Reduce animations effect. This setting will improve app performance. NOTE: You will see animations that are not smooth, which aims to reduce the use of system resources.",
-      "enable_alias_names": "Show alias name for blockchain addresses.",
-      "minimum_digit_to_be_abbreviated": "Minimum value to be abbreviated",
-      "query_period": "Query period in seconds",
-      "query_period_hint": "How often (in seconds) the backend will be checked for messages,",
-      "refresh": "Set the automatic refresh period",
-      "refresh_enabled": "Enabled",
-      "scramble": "Scramble data. Use this when sharing screenshots with others, e.g. when filing bug reports. NOTE: This setting does not persist between sessions.",
-      "scramble_multiplier": "Scramble multiplier",
-      "show_graph_range_selector": "Show graph range selector for line chart",
-      "zero_based": "Use zero as the lowest y-axis value for the graphs",
-      "zero_based_hint": "By default the lowest value is the minimum in the selected period"
-    },
-    "subtitle": {
-      "abbreviate_number": "For example, 1.234.567 will appear as 1.23 M when this setting is enabled",
-      "alias_names": "Alias name for addresses",
-      "graph_basis": "Graph basis",
-      "query": "Periodic status query",
-      "refresh": "Automatic balance refresh",
-      "scramble_multiplier": "Multiplier number used when scrambling balances. This will affects amount and fiat value.",
-      "show_graph_range_selector": "Show graph range selector"
-    },
-    "title": "Frontend-only Settings",
-    "validation": {
-      "animations": {
+    "animations": {
+      "animations_note": "Enabling this setting will enhance the app performance. However, note, that some animations may appear less smooth, as the goal is to reduce system resources usage.",
+      "title": "Reduce animations effect",
+      "validation": {
         "error": "Error setting animations state: {message}"
+      }
+    },
+    "graph_basis": {
+      "title": "Graph basis",
+      "range_selector": {
+        "label": "Show graph range selector for line chart"
       },
-      "enable_alias_names": {
-        "error": "Failed to change alias names visibility"
-      },
-      "periodic_query": {
-        "error": "Error setting query period",
-        "invalid_period": "Period must be between {start} and {end}",
-        "non_empty": "Please enter the number of seconds"
-      },
-      "refresh_period": {
+      "zero_based": {
+        "hint": "By default the lowest value is the minimum in the selected period",
+        "label": "Use zero as the lowest y-axis value for the graphs"
+      }
+    },
+    "refresh_balance": {
+      "label": "Set the automatic refresh period",
+      "period_label": "How often (in minutes) your balances will be automatically refreshed",
+      "title": "Automatic balance refresh",
+      "validation": {
         "error": "Failed to set the refresh period",
         "invalid_period": "Period must be between {start} and {end} min",
         "non_empty": "Please enter the number of minutes"
+      }
+    },
+    "alias_names": {
+      "label": "Show alias name for blockchain addresses.",
+      "title": "The priority of the returned names adheres to the following order. From top to bottom, the first name found will be shown.",
+      "validation": {
+        "error": "Failed to change alias names visibility"
+      }
+    },
+    "periodic_query": {
+      "label": "Query period in seconds",
+      "hint": "How often (in seconds) the backend will be checked for messages,",
+      "title": "Periodic status query",
+      "validation": {
+        "error": "Error setting query period",
+        "invalid_period": "Period must be between {start} and {end}",
+        "non_empty": "Please enter the number of seconds"
+      }
+    },
+    "subtitle": {
+      "alias_names": "Alias name for addresses",
+      "blockchain_address_aliases": "Blockchain address aliases",
+      "graph_settings": "Graph settings",
+      "graph_settings_hint": "Manage your graph settings."
+    },
+    "scramble": {
+      "label": "Use this option when sharing screenshots with others, such as for bug reports. Note: This setting will not be saved between sessions.",
+      "multiplier": {
+        "hint": "Multiplier number used when scrambling balances. This will affects amount and fiat value.",
+        "label": "Scramble multiplier"
       },
-      "scramble": {
+      "title": "Scramble data",
+      "validation": {
         "error": "Error setting scramble mode: {message}"
-      },
+      }
+    },
+    "title": "Interface-only Settings",
+    "validation": {
       "timeframe": {
         "error": "Failed to set the default timeframe for the user",
         "success": "Default timeframe set to {timeframe}"
@@ -2684,6 +2682,13 @@
     }
   },
   "general_settings": {
+    "auto_detect_tokens": {
+      "label": "Automatically detect tokens and refresh balances by periodically checking history events.",
+      "title": "Auto detect tokens",
+      "validation": {
+        "error": "Error setting tokens auto detection"
+      }
+    },
     "amount": {
       "label": {
         "currency_location": "Currency location",
@@ -2691,14 +2696,30 @@
         "location_after": "After",
         "location_before": "Before",
         "resulting_format": "Resulting format:",
-        "thousand_separator": "Thousands separator"
+        "thousand_separator": "Thousands separator",
+        "abbreviation": "Abbreviation"
       },
       "labels": {
         "floating_precision": "Floating Precision",
-        "main_currency": "Select Main Currency",
+        "main_currency": "Main Currency",
         "main_currency_subtitle": "Select as the main currency"
       },
-      "title": "Amounts Settings"
+      "subtitle": "Manage your amount settings.",
+      "title": "Amounts Settings",
+      "example": {
+        "before": "For example: $10,000.00",
+        "after": "For example: 10,000.00$"
+      }
+    },
+    "balance_frequency": {
+      "label": "Balance data saving frequency in hours",
+      "title": "Balance saving",
+      "validation": {
+        "error": "Error setting balance save frequency to {frequency}",
+        "invalid_frequency": "Frequency must be between {start} and {end} hours",
+        "non_empty": "Please enter the number of hours",
+        "success": "Data save frequency set to {frequency} hours"
+      }
     },
     "date_display": {
       "validation": {
@@ -2716,6 +2737,13 @@
         "empty": "The decimal separator cannot be empty"
       }
     },
+    "display_date_in_localtime": {
+      "title": "CSV Export",
+      "label": "Display date in localtime and not in UTC for CSV export.",
+      "validation": {
+        "error": "Error setting the display date in local time setting"
+      }
+    },
     "external_service_setting": {
       "label": {
         "connect_timeout": "Connect timeout",
@@ -2725,6 +2753,7 @@
         "read_timeout": "Read timeout",
         "read_timeout_hint": "The number of seconds to wait for the first byte after a connection to an external service has been established."
       },
+      "subtitle": "Manage your external service settings.",
       "title": "External service settings",
       "validation": {
         "connect_timeout": {
@@ -2742,45 +2771,48 @@
       }
     },
     "labels": {
-      "anonymous_analytics": "Should anonymous usage analytics be submitted?",
-      "auto_detect_tokens": "Auto detect tokens",
-      "auto_detect_tokens_hint": "Automatically detect tokens and refresh balances by periodically checking history events.",
-      "balance_saving_frequency": "Balance data saving frequency in hours",
       "beacon_rpc_endpoint": "RPC Endpoint for the ETH consensus layer beacon node",
       "btc_derivation_gap": "BTC derivation gap limit",
       "date_display_format": "Date display format",
       "date_input_format": "Date input format",
-      "display_date_in_localtime": "Display date in localtime and not in UTC for CSV export.",
       "dot_rpc_endpoint": "Polkadot Node RPC Endpoint",
-      "force_saved_language_setting_in_machine_hint": "This setting is saved on your user settings. Activate this to keep this setting when you logged out.",
       "ksm_rpc_endpoint": "Kusama Node RPC Endpoint",
-      "language": "Selected language",
       "csv_delimiter": "CSV export delimiter",
       "treat_eth2_as_eth": "Should treat ETH2 (Staked ETH) as ETH",
-      "version_update_check": "Set the version update check period while in app",
-      "version_update_check_enabled": "Enabled",
-      "chains_to_skip_detection": "EVM Chains for which to skip automatic detection"
+      "chains_to_skip_detection": "EVM Chains for which to skip automatic detection",
+      "evm_chains": "EVM Chains"
     },
-    "language_contribution_tooltip": "This feature is experimental and may not work as expected for some languages. This is because all static sentences in the app have to be manually translated and that is a long and ongoing process. Therefore, we need your contribution to speed it up. Click here for more information.",
+    "language": {
+      "contribution": "This feature is experimental and may not work as expected for some languages. This is because all static sentences in the app have to be manually translated and that is a long and ongoing process. Therefore, we need your contribution to speed it up.",
+      "click_here": "Click here for more information",
+      "force_saved_language_setting_in_machine_hint": "This setting is saved on your user settings. Activate this to keep this setting when you logged out.",
+      "label": "Selected language",
+      "subtitle": "Select your preferred language",
+      "title": "Language",
+      "validation": {
+        "error": "Error change language setting"
+      }
+    },
     "nft_setting": {
       "allow_all_confirmation": {
         "message": "Are you sure you want to allow images from all domains.",
         "title": "Allow images from all domains"
       },
       "label": {
-        "include_nfts": "Include NFTs in the graphs and total net worth",
+        "include_nfts": "Include NFTs in graphs and total net worth",
+        "include_nfts_subtitle": "Graphs and total net worths",
         "include_nfts_hint": "By default graphs and dashboard include the value of all the NFTs",
         "render_setting": {
           "allow_all": "Allow all images",
           "only_allow_whitelisted": "Only allow images from whitelisted domains"
         },
-        "whitelist_domains": "Whitelist domains",
+        "whitelist_domains": "rarible.com, opensea.com",
         "whitelisted_domains": "Whitelisted domains",
         "whitelisted_domains_hint": "Enter single or multiple comma separated domains. Press the save button on the right to save the changes",
         "whitelisted_domain_entries": "no entries | {count} unique entry | {count} unique entries"
       },
       "subtitle": {
-        "include_nfts": "Include NFTs in graphs and total amounts",
+        "include_nfts": "Manage your NFT settings",
         "nft_images_rendering_setting": "NFT images rendering setting",
         "nft_images_rendering_setting_hint": "Fetching NFT images from malicious server may result in leakage of your privacy, read more {link}"
       },
@@ -2795,8 +2827,10 @@
       }
     },
     "rpc_node_setting": {
-      "title": "RPC node setting"
+      "title": "RPC node setting",
+      "subtitle": "Manage and view your RPC node."
     },
+    "subtitle": "Manage your general settings.",
     "thousand_separator": {
       "validation": {
         "cannot_be_numeric_character": "The thousand separator cannot be numeric character",
@@ -2805,19 +2839,14 @@
       }
     },
     "title": "General Settings",
-    "validation": {
-      "analytics": {
+    "usage_analytics": {
+      "label": "Submit anonymous usage analytics data to help improve rotki, your privacy remains protected.",
+      "title": "Usage analytics",
+      "validation": {
         "error": "Error setting anonymous usage analytics"
-      },
-      "auto_detect_tokens": {
-        "error": "Error setting tokens auto detection"
-      },
-      "balance_frequency": {
-        "error": "Error setting balance save frequency to {frequency}",
-        "invalid_frequency": "Frequency must be between {start} and {end} hours",
-        "non_empty": "Please enter the number of hours",
-        "success": "Data save frequency set to {frequency} hours"
-      },
+      }
+    },
+    "validation": {
       "beacon_rpc": {
         "error": "There was an error setting the RPC endpoint for the ETH consensus layer",
         "success_set": "The RPC endpoint for the ETH consensus layer was set to {endpoint}",
@@ -2853,9 +2882,6 @@
         "error": "Error setting decimal separator",
         "success": "Decimal separator set to {decimalSeparator}"
       },
-      "display_date_in_localtime": {
-        "error": "Error setting the display date in local time setting"
-      },
       "dot_rpc": {
         "error": "There was an error setting the Polkadot node RPC endpoint",
         "success_set": "The Polkadot node RPC endpoint was set to {endpoint}",
@@ -2871,9 +2897,6 @@
         "success_set": "The Kusama node RPC endpoint was set to {endpoint}",
         "success_unset": "The Kusama node RPC endpoint was successfully unset"
       },
-      "language": {
-        "error": "Error change language setting"
-      },
       "thousand_separator": {
         "error": "Error setting thousand separator",
         "success": "Thousand separator set to {thousandSeparator}"
@@ -2881,17 +2904,59 @@
       "treat_eth2_as_eth": {
         "error": "Error change setting for treat ETH2 (Staked ETH) as ETH"
       },
-      "version_update_check_frequency": {
-        "error": "Error setting version update check frequency",
-        "invalid_frequency": "Period must be between {start} and {end} hours",
-        "non_empty": "Please enter the number of hours"
-      },
       "chains_to_skip_detection": {
         "error": "Error setting EVM chains for which to skip automatic token detection",
         "success": "EVM Chains for which to skip automatic token detection saved successfully"
       }
     },
-    "version_update_check_hint": "How often (in hours) your app version will be checked for update"
+    "version_update_check": {
+      "label": "Set the version update check while in app",
+      "hint": "This is how often (in hours) your app version will be checked for update",
+      "switch": "Enable a periodic version update check",
+      "title": "Version update",
+      "validation": {
+        "error": "Error setting version update check frequency",
+        "invalid_frequency": "Period must be between {start} and {end} hours",
+        "non_empty": "Please enter the number of hours"
+      }
+    }
+  },
+  "database_settings": {
+    "database_info": {
+      "title": "Database Information",
+      "subtitle": "View your database information",
+      "labels": {
+        "directory": "Database Directory:",
+        "globaldb": "Global Database",
+        "globaldb_assets": "Assets version:",
+        "globaldb_schema": "Schema version:",
+        "userdb": "User Database",
+        "userdb_size": "Size on disk:",
+        "userdb_version": "Database Version:"
+      }
+    },
+    "manage_data": {
+      "title": "Manage Data",
+      "subtitle": "Manage your data"
+    },
+    "user_backups": {
+      "title": "User Database Backups",
+      "subtitle": "View your database backups",
+      "backup_button": "Create new Backup",
+      "delete_selected": "Delete selected Backups"
+    },
+    "skipped_events": {
+      "subtitle": "View and manage skipped external events",
+      "title": "Skipped External Events"
+    },
+    "import_export": {
+      "title": "Export/Import User Assets",
+      "subtitle": "Export or import your user assets"
+    },
+    "asset_database": {
+      "title": "Asset Database",
+      "subtitle": "Manage the asset database"
+    }
   },
   "generate": {
     "custom_selection": "Custom",
@@ -3372,7 +3437,6 @@
     "import": {
       "subtitle": "Restore user assets from a zip archive"
     },
-    "title": "Export/Import User Assets",
     "warning": "This functionality is designed to allow you to easily move your assets from one instance of rotki to another. It requires both instances to be of the same version. Using this functionality across different versions might result in errors."
   },
   "managed_asset_content": {
@@ -3467,17 +3531,18 @@
       "disable_all": "Disable All",
       "enable_all": "Enable All"
     },
-    "all_accounts": "All",
+    "all_accounts": "All addresses",
     "filter": "Search module(s)",
     "select_accounts_hint": "Select accounts for which data will be retrieved for each submodule. If no addresses are selected data will be retrieved for all available addresses",
+    "some_accounts": "{number} address",
     "table": {
       "enabled": "Enabled",
       "select_accounts": "Select accounts"
     }
   },
   "module_settings": {
-    "active_modules_description": "Only data for the selected modules will be queried. If no modules are selected, querying for all the supported modules will be disabled.",
-    "hint": "* Please remember that after activating a module, you need to logout and login again for the activation to take effect",
+    "hint": "Only data for the selected modules will be queried. If no modules are selected, querying for all the supported modules will be disabled. Also, please remember that after activating a module, you need to logout and login again for the activation to take effect",
+    "subtitle": "Manage and view your module settings.",
     "title": "Module Settings"
   },
   "navigation_menu": {
@@ -3538,10 +3603,14 @@
     "profit_loss_report": "Profit and Loss Report",
     "settings": "Settings",
     "settings_sub": {
+      "account": "Account",
       "accounting": "Accounting",
-      "data_security": "Data & Security",
+      "database": "Database",
       "general": "General",
-      "modules": "Modules"
+      "interface": "Interface-only",
+      "modules": "Modules",
+      "oracles": "Oracles",
+      "rpc_nodes": "RPC Nodes"
     },
     "staking": "Staking",
     "statistics": "Statistics"
@@ -3925,7 +3994,9 @@
       },
       "select_color": "Select Color",
       "subtitle": "Manage colors for the app theme",
-      "title": "Theme"
+      "title": "Theme",
+      "text": "App theme",
+      "text_hint": "Manage colors for the app theme"
     },
     "theme_switch": {
       "auto": "Auto (Detect Device Theme)",
@@ -4078,7 +4149,6 @@
     "was_worth": "was worth"
   },
   "prioritized_list": {
-    "add_tooltip": "Add the {name} to the list",
     "all_added": "No disabled {namePluralized}",
     "disabled_items": "{num} disabled {namePluralized}",
     "item": {
@@ -4218,7 +4288,7 @@
       "hint": "Empty this field to remove the data for all defi modules"
     },
     "label": "Select a data source",
-    "tooltip": "Purge the cached data for the selected source",
+    "tooltip": "Purge data",
     "transactions": "Transactions"
   },
   "queried_address_dialog": {
@@ -4259,6 +4329,10 @@
     "weight_per_hundred": "/100"
   },
   "settings": {
+    "security_settings": {
+      "subtitle": "Manage your account security",
+      "title": "Security"
+    },
     "not_saved": "Setting not saved",
     "saved": "Setting saved"
   },
@@ -4351,6 +4425,7 @@
     "setting": {
       "title": "Sync setting",
       "ask_user_upon_size_discrepancy": {
+        "title": "Automatic database sync.",
         "label": "Force-push when a size discrepancy occurs during automatic database sync.",
         "confirm_label": "Force-push whenever a size discrepancy occurs."
       }
@@ -4642,8 +4717,7 @@
             "some": "{successful} of {total} skipped external events have been processed",
             "title": "Skipped events processed"
           }
-        },
-        "title": "Skipped external events"
+        }
       },
       "view": {
         "hide": "Hide events",
@@ -4818,7 +4892,7 @@
         "label": "Private"
       },
       "scramble": {
-        "label": "Scramble"
+        "label": "Scramble the amount"
       },
       "semi_private_mode": {
         "description": "Hide amount and show percentage",

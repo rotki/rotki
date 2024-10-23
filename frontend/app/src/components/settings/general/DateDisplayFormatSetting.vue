@@ -28,9 +28,7 @@ const rules = {
 
 const v$ = useVuelidate(rules, { dateDisplayFormat }, { $autoDirty: true });
 const { callIfValid } = useValidation(v$);
-
 const { dateDisplayFormat: format } = storeToRefs(useGeneralSettingsStore());
-
 const dateDisplayFormatExample = computed<string>(() => displayDateFormatter.format(now, get(dateDisplayFormat)));
 
 function resetDateDisplayFormat() {
@@ -49,59 +47,61 @@ onMounted(() => {
 </script>
 
 <template>
-  <div>
+  <div class="mb-6">
     <DateFormatHelp v-model="formatHelp" />
     <SettingsOption
       #default="{ error, success, update, updateImmediate }"
       setting="dateDisplayFormat"
       :error-message="t('general_settings.validation.date_display_format.error')"
       :success-message="successMessage"
-      class="flex items-start gap-4"
       @finished="resetDateDisplayFormat()"
     >
-      <RuiTextField
-        v-model="dateDisplayFormat"
-        variant="outlined"
-        color="primary"
-        class="general-settings__fields__date-display-format flex-1"
-        :label="t('general_settings.labels.date_display_format')"
-        type="text"
-        :success-messages="success"
-        :error-messages="error || toMessages(v$.dateDisplayFormat)"
-        :hint="
-          t('general_settings.date_display_format_hint', {
-            format: dateDisplayFormatExample,
-          })
-        "
-        @update:model-value="callIfValid($event, update)"
-      >
-        <template #append>
-          <RuiButton
-            size="sm"
-            variant="text"
-            icon
-            @click="formatHelp = true"
-          >
-            <RuiIcon name="information-line" />
-          </RuiButton>
-        </template>
-      </RuiTextField>
-      <RuiTooltip
-        :popper="{ placement: 'top' }"
-        :open-delay="400"
-      >
-        <template #activator>
-          <RuiButton
-            class="general-settings__date-restore mt-1"
-            variant="text"
-            icon
-            @click="updateImmediate(defaultDateDisplayFormat)"
-          >
-            <RuiIcon name="history-line" />
-          </RuiButton>
-        </template>
-        {{ t('general_settings.date_display_tooltip') }}
-      </RuiTooltip>
+      <div class="flex items-start w-full">
+        <RuiTextField
+          v-model="dateDisplayFormat"
+          variant="outlined"
+          color="primary"
+          class="general-settings__fields__date-display-format flex-grow"
+          :label="t('general_settings.labels.date_display_format')"
+          type="text"
+          :success-messages="success"
+          :error-messages="error || toMessages(v$.dateDisplayFormat)"
+          :hint="
+            t('general_settings.date_display_format_hint', {
+              format: dateDisplayFormatExample,
+            })
+          "
+          @update:model-value="callIfValid($event, update)"
+        >
+          <template #append>
+            <RuiButton
+              size="sm"
+              variant="text"
+              icon
+              @click="formatHelp = true"
+            >
+              <RuiIcon name="information-line" />
+            </RuiButton>
+          </template>
+        </RuiTextField>
+        <RuiTooltip
+          :popper="{ placement: 'top' }"
+          :open-delay="400"
+          class="ml-2"
+        >
+          <template #activator>
+            <RuiButton
+              class="general-settings__date-restore  mt-1"
+              variant="text"
+              icon
+              @click="updateImmediate(defaultDateDisplayFormat)"
+            >
+              <RuiIcon name="history-line" />
+            </RuiButton>
+          </template>
+          {{ t('general_settings.date_display_tooltip') }}
+        </RuiTooltip>
+      </div>
     </SettingsOption>
   </div>
 </template>

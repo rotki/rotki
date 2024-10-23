@@ -46,20 +46,24 @@ async function change() {
 </script>
 
 <template>
-  <RuiCard>
-    <template #header>
+  <RuiAlert
+    v-if="premiumSync"
+    class="mt-6"
+    data-cy="premium-warning"
+    type="warning"
+  >
+    {{ t('change_password.sync_warning') }}
+  </RuiAlert>
+  <SettingsItem>
+    <template #title>
       {{ t('change_password.title') }}
     </template>
 
+    <template #subtitle>
+      {{ t('change_password.subtitle') }}
+    </template>
+
     <form>
-      <RuiAlert
-        v-if="premiumSync"
-        class="mb-4"
-        data-cy="premium-warning"
-        type="warning"
-      >
-        {{ t('change_password.sync_warning') }}
-      </RuiAlert>
       <RuiRevealableTextField
         v-model="currentPassword"
         color="primary"
@@ -88,7 +92,7 @@ async function change() {
       />
     </form>
 
-    <template #footer>
+    <div class="flex justify-end">
       <RuiButton
         class="user-security-settings__buttons__change-password"
         color="primary"
@@ -98,6 +102,6 @@ async function change() {
       >
         {{ t('change_password.button') }}
       </RuiButton>
-    </template>
-  </RuiCard>
+    </div>
+  </SettingsItem>
 </template>

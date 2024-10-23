@@ -11,22 +11,25 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <RuiCard>
-    <template #header>
-      {{ t('module_settings.title') }}
-    </template>
-    <template #subheader>
-      {{ t('module_settings.active_modules_description') }}
-    </template>
-    <RuiAlert
-      type="warning"
-      class="mb-4"
-    >
-      {{ t('decentralized_overview.deprecated_warning') }}
-    </RuiAlert>
-    <ModuleSelector />
-    <span class="text-caption text-rui-text-secondary">
-      {{ t('module_settings.hint') }}
-    </span>
-  </RuiCard>
+  <SettingsPage>
+    <SettingCategory>
+      <template #title>
+        {{ t('module_settings.title') }}
+      </template>
+      <template #subtitle>
+        {{ t('module_settings.subtitle') }}
+      </template>
+      <div class="flex flex-col gap-4 pt-4">
+        <RuiAlert
+          type="warning"
+        >
+          {{ t('decentralized_overview.deprecated_warning') }}
+        </RuiAlert>
+        <RuiAlert type="info">
+          {{ t('module_settings.hint') }}
+        </RuiAlert>
+        <ModuleSelector />
+      </div>
+    </SettingCategory>
+  </SettingsPage>
 </template>

@@ -177,30 +177,56 @@ function showDeleteConfirmation(entry: OracleCacheMeta) {
 </script>
 
 <template>
-  <RuiCard>
-    <template #header>
-      {{ t('oracle_cache_management.title') }}
-    </template>
-    <template #subheader>
-      {{ t('oracle_cache_management.subtitle') }}
-    </template>
-    <RuiAutoComplete
-      v-model="selection"
-      :label="t('oracle_cache_management.select_oracle')"
-      variant="outlined"
-      :options="oracles"
-      :item-height="60"
-      key-attr="identifier"
-    >
-      <template #selection="{ item }">
-        <PrioritizedListEntry :data="item" />
-      </template>
-      <template #item="{ item }">
-        <PrioritizedListEntry :data="item" />
-      </template>
-    </RuiAutoComplete>
-    <div class="pb-8">
-      <div class="flex items-start gap-4">
+  <div>
+    <div class="pt-5 pb-8 border-t border-default flex flex-wrap gap-4 items-center justify-between">
+      <SettingCategoryHeader>
+        <template #title>
+          {{ t('oracle_cache_management.title') }}
+        </template>
+        <template #subtitle>
+          {{ t('oracle_cache_management.subtitle') }}
+        </template>
+      </SettingCategoryHeader>
+      <RuiTooltip
+        :popper="{ placement: 'top' }"
+        :open-delay="400"
+      >
+        <template #activator>
+          <RuiButton
+            :loading="pending"
+            color="primary"
+            :disabled="!fromAsset || !toAsset || pending"
+            @click="fetchPrices()"
+          >
+            <template #prepend>
+              <RuiIcon
+                name="add-line"
+                size="16"
+              />
+            </template>
+            {{ t('oracle_cache_management.create_cache') }}
+          </RuiButton>
+        </template>
+        <span>{{ t('oracle_cache_management.create_tooltip') }}</span>
+      </RuiTooltip>
+    </div>
+    <div>
+      <RuiAutoComplete
+        v-model="selection"
+        :label="t('oracle_cache_management.select_oracle')"
+        variant="outlined"
+        :options="oracles"
+        :item-height="60"
+        key-attr="identifier"
+      >
+        <template #selection="{ item }">
+          <PrioritizedListEntry :data="item" />
+        </template>
+        <template #item="{ item }">
+          <PrioritizedListEntry :data="item" />
+        </template>
+      </RuiAutoComplete>
+      <div class="flex items-start gap-4 pb-4">
         <AssetSelect
           v-model="fromAsset"
           clearable
@@ -225,77 +251,56 @@ function showDeleteConfirmation(entry: OracleCacheMeta) {
           <RuiIcon name="close-line" />
         </RuiButton>
       </div>
-      <RuiTooltip
-        :popper="{ placement: 'top' }"
-        :open-delay="400"
+      <RuiDataTable
+        v-model:sort="sort"
+        outlined
+        dense
+        :cols="columns"
+        :loading="loading"
+        :rows="rows"
+        row-attr="id"
+        class="bg-white dark:bg-transparent"
       >
-        <template #activator>
-          <RuiButton
-            :loading="pending"
-            color="primary"
-            :disabled="!fromAsset || !toAsset || pending"
-            size="lg"
-            @click="fetchPrices()"
-          >
-            <template #prepend>
-              <RuiIcon name="add-line" />
-            </template>
-            {{ t('oracle_cache_management.create_cache') }}
-          </RuiButton>
+        <template #item.fromAsset="{ row }">
+          <AssetDetails
+            opens-details
+            :asset="row.fromAsset"
+          />
         </template>
-        <span>{{ t('oracle_cache_management.create_tooltip') }}</span>
-      </RuiTooltip>
+        <template #item.toAsset="{ row }">
+          <AssetDetails
+            opens-details
+            :asset="row.toAsset"
+          />
+        </template>
+        <template #item.toTimestamp="{ row }">
+          <DateDisplay :timestamp="row.toTimestamp" />
+        </template>
+        <template #item.fromTimestamp="{ row }">
+          <DateDisplay :timestamp="row.fromTimestamp" />
+        </template>
+        <template #item.actions="{ row }">
+          <RuiTooltip
+            :popper="{ placement: 'top' }"
+            :open-delay="400"
+          >
+            <template #activator>
+              <RuiButton
+                color="primary"
+                variant="text"
+                icon
+                @click="showDeleteConfirmation(row)"
+              >
+                <RuiIcon
+                  size="16"
+                  name="delete-bin-line"
+                />
+              </RuiButton>
+            </template>
+            <span>{{ t('oracle_cache_management.delete_tooltip') }}</span>
+          </RuiTooltip>
+        </template>
+      </RuiDataTable>
     </div>
-    <RuiDataTable
-      v-model:sort="sort"
-      outlined
-      dense
-      :cols="columns"
-      :loading="loading"
-      :rows="rows"
-      row-attr="id"
-    >
-      <template #item.fromAsset="{ row }">
-        <AssetDetails
-          opens-details
-          :asset="row.fromAsset"
-        />
-      </template>
-      <template #item.toAsset="{ row }">
-        <AssetDetails
-          opens-details
-          :asset="row.toAsset"
-        />
-      </template>
-      <template #item.toTimestamp="{ row }">
-        <DateDisplay :timestamp="row.toTimestamp" />
-      </template>
-      <template #item.fromTimestamp="{ row }">
-        <DateDisplay :timestamp="row.fromTimestamp" />
-      </template>
-      <template #item.actions="{ row }">
-        <RuiTooltip
-          :popper="{ placement: 'top' }"
-          :open-delay="400"
-        >
-          <template #activator>
-            <RuiButton
-              color="primary"
-              variant="text"
-              icon
-              @click="showDeleteConfirmation(row)"
-            >
-              <RuiIcon
-                size="16"
-                name="delete-bin-line"
-              />
-            </RuiButton>
-          </template>
-          <span>{{ t('oracle_cache_management.delete_tooltip') }}</span>
-        </RuiTooltip>
-      </template>
-    </RuiDataTable>
-
-    <OraclePenaltySettings />
-  </RuiCard>
+  </div>
 </template>

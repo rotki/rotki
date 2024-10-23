@@ -997,15 +997,11 @@
           "global_address_book": "Annuaire d'adresses global",
           "hardcoded_mappings": "Mappages codés en dur",
           "private_address_book": "Annuaire d'adresses privé"
-        },
-        "title": "L'ordre de priorité des noms retournés est le suivant. De haut en bas, le premier nom trouvé sera affiché."
+        }
       },
       "private": "Privé",
       "private_description": "L'annuaire d'adresses est enregistré uniquement pour ce compte."
     }
-  },
-  "address_name_priority_setting": {
-    "data_name": "priorité"
   },
   "airdrops": {
     "headers": {
@@ -1172,13 +1168,11 @@
         "title": "Réinitialiser la base de données d'actifs"
       },
       "hard_reset": "Réinitialisation complète",
-      "hard_reset_hint": "Cette option réinitialisera également les actifs que vous avez ajoutés manuellement.",
       "hard_restore_confirmation": {
         "message": "Il existe des actifs qui seront supprimés et qui pourraient entraîner un état incohérent dans ce compte ou d'autres comptes dans le système. Confirmez cette action uniquement si vous savez ce que vous faites.",
         "title": "Opération dangereuse"
       },
       "soft_reset": "Restauration partielle",
-      "soft_reset_hint": "Cette option ne réinitialisera pas les actifs que vous avez ajoutés manuellement.",
       "subtitle": "Supprimer les actifs personnalisés et réinitialiser la base de données d'actifs à son état initial. Attention : Cette opération peut affecter d'autres utilisateurs dans le même système utilisant la base de données pour les actifs.",
       "success": {
         "description": "La base de données d'actifs a été restaurée avec succès. Vous devrez maintenant vous reconnecter pour appliquer les changements.",
@@ -1397,11 +1391,6 @@
   },
   "backend_settings_button": {
     "tooltip": "Modifier les paramètres du backend. Le changement des paramètres entraînera le redémarrage du backend rotki."
-  },
-  "backup_manager": {
-    "backup_button": "Créer une nouvelle sauvegarde",
-    "delete_selected": "Supprimer les sauvegardes sélectionnées",
-    "title": "Sauvegardes de la base de données utilisateur"
   },
   "balancer": {
     "loading": "Veuillez patienter pendant le chargement de vos pools de liquidités...",
@@ -1898,8 +1887,7 @@
       "select_image_source": "Sélectionner la source de mise en cache d'images à effacer",
       "subtitle": "Vous permet de purger la mise en cache d'images par rotki",
       "success": "Le cache a été effacé avec succès",
-      "title": "Effacer la mise en cache d'images",
-      "tooltip": "Effacer le cache d'images pour la source sélectionnée"
+      "title": "Effacer la mise en cache d'images"
     },
     "refresh_cache": {
       "confirm": {
@@ -1955,19 +1943,6 @@
       "message": "Il y a eu un problème lors du chargement de la liste des sauvegardes disponibles : {message}",
       "title": "Chargement de la sauvegarde de la base de données"
     }
-  },
-  "database_info_display": {
-    "directory": "Répertoire de la base de données :",
-    "globaldb": "Base de données globale",
-    "globaldb_assets": "Version des actifs :",
-    "globaldb_schema": "Version du schéma :",
-    "title": "Informations sur la base de données",
-    "userdb": "Base de données utilisateur",
-    "userdb_size": "Taille sur disque :",
-    "userdb_version": "Version de la base de données :"
-  },
-  "database_manager": {
-    "refresh_tooltip": "Actualiser la liste des sauvegardes de la base de données"
   },
   "date_format_help": {
     "directive": {
@@ -2147,10 +2122,8 @@
     "loading_error": {
       "title": "Chargement des nœuds RPC {chain}"
     },
-    "private_node": "Ce nœud est privé et a été ajouté par l'utilisateur",
-    "private_node_hint": "Les nœuds privés ont la priorité sur les nœuds publics",
     "public_node": "Ce nœud est public",
-    "weight": "Poids du nœud {weight}%"
+    "weight": "{weight}%"
   },
   "exchange_balances": {
     "add_exchange": "Ajouter une plateforme d'échange",
@@ -2395,53 +2368,11 @@
     }
   },
   "frontend_settings": {
-    "hint": {
-      "refresh": "À quelle fréquence (en minutes) vos soldes seront automatiquement mis à jour"
-    },
-    "label": {
-      "abbreviate_number": "Utiliser des abréviations pour les grands nombres.",
-      "animations": "Réduire les animations. Ce paramètre améliorera les performances de l'application. NOTE : Vous verrez des animations qui ne sont pas fluides, dans le but de réduire l'utilisation des ressources système.",
-      "enable_alias_names": "Afficher le nom d'alias pour les adresses de blockchain.",
-      "query_period": "Période de requête en secondes",
-      "query_period_hint": "À quelle fréquence (en secondes) le backend sera vérifié pour les messages,",
-      "refresh": "Définir la période de mise à jour automatique",
-      "refresh_enabled": "Activé",
-      "scramble": "Embrouiller les données. Utilisez ceci lors de la partage d'écrans avec d'autres personnes, par exemple lors du dépôt de rapports de bogues. NOTE : Ce paramètre ne persiste pas entre les sessions.",
-      "scramble_multiplier": "Multiplicateur de brouillage",
-      "show_graph_range_selector": "Afficher le sélecteur de plage pour le graphique en ligne",
-      "zero_based": "Utiliser zéro comme valeur la plus faible pour les graphiques",
-      "zero_based_hint": "Par défaut, la valeur la plus faible est la valeur minimale dans la période sélectionnée"
-    },
     "subtitle": {
-      "abbreviate_number": "Par exemple, 1.234.567 deviendra 1,23 M lorsque ce paramètre est activé",
-      "alias_names": "Nom d'alias pour les adresses",
-      "graph_basis": "Base du graphique",
-      "query": "Requête de statut périodique",
-      "refresh": " Rafraîchissement automatique des soldes",
-      "scramble_multiplier": "Multiplicateur utilisé lors de l'embrouillement des soldes. Cela affectera le montant et la valeur en devise.",
-      "show_graph_range_selector": "Afficher le sélecteur de plage"
+      "alias_names": "Nom d'alias pour les adresses"
     },
     "title": "Paramètres spécifiques à l'interface utilisateur",
     "validation": {
-      "animations": {
-        "error": "Erreur lors de la configuration de l'état des animations : {message}"
-      },
-      "enable_alias_names": {
-        "error": "Échec de la modification de la visibilité des noms d'alias"
-      },
-      "periodic_query": {
-        "error": "Erreur lors de la configuration de la période de requête",
-        "invalid_period": "La période doit être comprise entre {start} et {end}",
-        "non_empty": "Veuillez entrer le nombre de secondes"
-      },
-      "refresh_period": {
-        "error": "Échec lors de la configuration de la période de rafraîchissement",
-        "invalid_period": "La période doit être comprise entre {start} et {end} min",
-        "non_empty": "Veuillez entrer le nombre de minutes"
-      },
-      "scramble": {
-        "error": "Erreur lors de la configuration du mode embrouillement : {message}"
-      },
       "timeframe": {
         "error": "Échec lors de la configuration du délai par défaut pour l'utilisateur",
         "success": "Le délai par défaut est défini sur {timeframe}"
@@ -2460,7 +2391,7 @@
       },
       "labels": {
         "floating_precision": "Précision flottante",
-        "main_currency": "Sélectionner la devise principale",
+        "main_currency": "Devise principale",
         "main_currency_subtitle": "Sélectionnez comme devise principale"
       },
       "title": "Paramètres des montants"
@@ -2507,29 +2438,20 @@
       }
     },
     "labels": {
-      "anonymous_analytics": "Est-ce que des analyses d'utilisation anonymes doivent être envoyées ?",
-      "balance_saving_frequency": "Fréquence de sauvegarde des données de solde en heures",
       "btc_derivation_gap": "Limite d'écart de dérivation BTC",
       "date_display_format": "Format d'affichage de la date",
       "date_input_format": "Format d'entrée de la date",
-      "display_date_in_localtime": "Afficher la date dans le fuseau horaire local et non dans l'UTC pour l'exportation CSV.",
       "dot_rpc_endpoint": "Point de terminaison RPC du nœud Polkadot",
-      "force_saved_language_setting_in_machine_hint": "Ce paramètre est enregistré dans vos paramètres d'utilisateur. Activez ce paramètre pour le conserver lorsque vous êtes déconnecté.",
       "ksm_rpc_endpoint": "Point de terminaison RPC du nœud Kusama",
-      "language": "Langue sélectionnée",
       "treat_eth2_as_eth": "Faut-il traiter ETH2 (ETH en jeu) comme ETH",
-      "version_update_check": "Période de vérification de la mise à jour de la version dans l'application",
-      "version_update_check_enabled": "Activé",
       "chains_to_skip_detection": "Réseaux EVM pour lesquels la détection automatique des jetons doit être ignorée"
     },
-    "language_contribution_tooltip": "Cette fonctionnalité est expérimentale et peut ne pas fonctionner correctement pour certaines langues. C'est parce que toutes les phrases statiques dans l'application doivent être traduites manuellement et que c'est un processus long et en cours. Par conséquent, nous avons besoin de votre contribution pour l'accélérer. Cliquez ici pour plus d'informations.",
     "nft_setting": {
       "allow_all_confirmation": {
         "message": "Êtes-vous sûr de vouloir autoriser les images de tous les domaines.",
         "title": "Autoriser les images de tous les domaines"
       },
       "label": {
-        "include_nfts": "Inclure les NFT dans les graphiques et la valeur nette totale",
         "include_nfts_hint": "Par défaut, les graphiques et le tableau de bord incluent la valeur de tous les NFT.",
         "render_setting": {
           "allow_all": "Autoriser toutes les images",
@@ -2541,7 +2463,6 @@
         "whitelisted_domain_entries": "aucune entrée | {count} entrée unique | {count} entrées uniques"
       },
       "subtitle": {
-        "include_nfts": "Inclure les NFT dans les graphiques et les montants totaux",
         "nft_images_rendering_setting": "Paramètres d'affichage des images NFT",
         "nft_images_rendering_setting_hint": "L'affichage des images NFT à partir de serveurs malveillants peut entraîner une fuite de votre vie privée, lisez plus {link}"
       },
@@ -2567,15 +2488,6 @@
     },
     "title": "Paramètres généraux",
     "validation": {
-      "analytics": {
-        "error": "Erreur lors de la configuration de l'analyse d'utilisation anonyme"
-      },
-      "balance_frequency": {
-        "error": "Erreur lors de la configuration de la fréquence de sauvegarde des données de solde sur {frequency}",
-        "invalid_frequency": "La fréquence doit être comprise entre {start} et {end} heures",
-        "non_empty": "Veuillez entrer le nombre d'heures",
-        "success": "La fréquence de sauvegarde des données est définie sur {frequency} heures"
-      },
       "btc_derivation_gap": {
         "error": "Erreur lors de la configuration de la limite d'écart de dérivation BTC",
         "success": "La limite d'écart de dérivation BTC a été modifiée avec succès en {limit}"
@@ -2600,9 +2512,6 @@
         "error": "Erreur lors de la configuration du séparateur décimal",
         "success": "Le séparateur décimal est défini sur {decimalSeparator}"
       },
-      "display_date_in_localtime": {
-        "error": "Erreur lors de la configuration de l'affichage de la date dans le fuseau horaire local"
-      },
       "dot_rpc": {
         "error": "Erreur lors de la configuration du point de terminaison RPC du nœud Polkadot",
         "success_set": "Le point de terminaison RPC du nœud Polkadot est défini sur {endpoint}",
@@ -2618,9 +2527,6 @@
         "success_set": "Le point de terminaison RPC du nœud Kusama est défini sur {endpoint}",
         "success_unset": "Le point de terminaison RPC du nœud Kusama a été supprimé avec succès"
       },
-      "language": {
-        "error": "Erreur lors de la modification de la langue"
-      },
       "thousand_separator": {
         "error": "Erreur lors de la configuration du séparateur de milliers",
         "success": "Le séparateur de milliers est défini sur {thousandSeparator}"
@@ -2628,17 +2534,11 @@
       "treat_eth2_as_eth": {
         "error": "Erreur lors de la modification du paramètre pour traiter ETH2 (Staked ETH) comme ETH"
       },
-      "version_update_check_frequency": {
-        "error": "Erreur lors de la configuration de la fréquence de vérification de la mise à jour de la version",
-        "invalid_frequency": "La fréquence doit être comprise entre {start} et {end} heures",
-        "non_empty": "Veuillez entrer la fréquence"
-      },
       "chains_to_skip_detection": {
         "error": "Erreur lors de la configuration des réseaux EVM à ignorer pour la détection automatique des jetons",
         "success": "Les réseaux EVM pour lesquels ignorer la détection automatique des jetons ont été enregistrés avec succès"
       }
-    },
-    "version_update_check_hint": "À quelle fréquence (en heures) la version de l'application sera vérifiée pour les mises à jour"
+    }
   },
   "generate": {
     "custom_selection": "Personnalisé",
@@ -3112,7 +3012,6 @@
     "import": {
       "subtitle": "Restaurer les actifs de l'utilisateur à partir d'une archive zip"
     },
-    "title": "Exporter/Importer les actifs de l'utilisateur",
     "warning": "Cette fonctionnalité est conçue pour vous permettre de déplacer facilement vos actifs d'une instance de rotki à une autre. Elle nécessite que les deux instances soient de la même version. L'utilisation de cette fonctionnalité entre différentes versions peut entraîner des erreurs."
   },
   "managed_asset_content": {
@@ -3207,7 +3106,6 @@
       "disable_all": "Désactiver tout",
       "enable_all": "Activer tout"
     },
-    "all_accounts": "Tous",
     "filter": "Rechercher un module",
     "select_accounts_hint": "Sélectionnez les comptes pour lesquels les données seront récupérées pour chaque sous-module. Si aucune adresse n'est sélectionnée, les données seront récupérées pour toutes les adresses disponibles",
     "table": {
@@ -3216,8 +3114,6 @@
     }
   },
   "module_settings": {
-    "active_modules_description": "Seules les données des modules sélectionnés seront interrogées. Si aucun module n'est sélectionné, la consultation pour tous les modules supportés sera désactivée.",
-    "hint": "* Veuillez noter que après l'activation d'un module, vous devez vous déconnecter et vous reconnecter pour que l'activation prenne effet",
     "title": "Paramètres du module"
   },
   "navigation_menu": {
@@ -3276,7 +3172,7 @@
     "settings": "Paramètres",
     "settings_sub": {
       "accounting": "Comptabilité",
-      "data_security": "Données & Sécurité",
+      "database": "Base de données",
       "general": "Général",
       "modules": "Modules"
     },
@@ -3746,7 +3642,6 @@
     "was_worth": "valait"
   },
   "prioritized_list": {
-    "add_tooltip": "Ajouter le {name} à la liste",
     "all_added": "Aucun {namePluralized} désactivé",
     "disabled_items": "{num} {namePluralized} désactivés",
     "item": {
@@ -3887,7 +3782,6 @@
       "hint": "Laissez ce champ vide pour supprimer les données de tous les modules DeFi"
     },
     "label": "Sélectionner une source de données",
-    "tooltip": "Supprimer les données en cache de la source sélectionnée",
     "transactions": "Transactions"
   },
   "queried_address_dialog": {
@@ -4298,8 +4192,7 @@
             "some": "{successful} de {total} événements externes ignorés ont été traités",
             "title": "Événements ignorés traités"
           }
-        },
-        "title": "Événements ignorés"
+        }
       },
       "view": {
         "hide": "Masquer les événements",
@@ -4460,9 +4353,6 @@
       "private_mode": {
         "description": "Masquer le montant et le pourcentage",
         "label": "Privé"
-      },
-      "scramble": {
-        "label": "Brouiller"
       },
       "semi_private_mode": {
         "description": "Masquer le montant et afficher le pourcentage",

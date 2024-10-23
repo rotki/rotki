@@ -13,13 +13,13 @@ const { t } = useI18n();
   <SettingsOption
     #default="{ error, success, updateImmediate }"
     setting="displayDateInLocaltime"
-    :error-message="t('general_settings.validation.display_date_in_localtime.error')"
+    :error-message="t('general_settings.display_date_in_localtime.validation.error')"
   >
     <RuiSwitch
       v-model="displayDateInLocaltime"
       class="general-settings__fields__display-date-in-localtime"
       color="primary"
-      :label="t('general_settings.labels.display_date_in_localtime')"
+      :label="t('general_settings.display_date_in_localtime.label')"
       :success-messages="success"
       :error-messages="error"
       @update:model-value="updateImmediate($event)"

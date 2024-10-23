@@ -40,18 +40,17 @@ const items = computed(() => {
 </script>
 
 <template>
-  <div class="flex flex-col md:flex-row gap-8 mt-4">
+  <div class="flex flex-col md:flex-col gap-8">
     <SettingsOption
       #default="{ error, success, update }"
       setting="abbreviateNumber"
-      class="w-[26rem]"
       frontend-setting
     >
       <RuiSwitch
         v-model="abbreviate"
         data-cy="frontend-settings__fields__abbreviate_number"
-        :label="t('frontend_settings.label.abbreviate_number')"
-        :hint="t('frontend_settings.subtitle.abbreviate_number')"
+        :label="t('frontend_settings.abbreviate_number.label')"
+        :hint="t('frontend_settings.abbreviate_number.hint')"
         color="primary"
         :success-messages="success"
         :error-messages="error"
@@ -61,7 +60,6 @@ const items = computed(() => {
     <SettingsOption
       #default="{ error, success, updateImmediate }"
       :transform="transform"
-      class="md:min-w-[18rem]"
       setting="minimumDigitToBeAbbreviated"
       frontend-setting
       @finished="resetMinimumDigitToBeAbbreviated()"
@@ -71,7 +69,7 @@ const items = computed(() => {
         :disabled="!abbreviate"
         :options="items"
         data-cy="frontend-settings__fields__minimum_digit_to_be_abbreviated"
-        :label="t('frontend_settings.label.minimum_digit_to_be_abbreviated')"
+        :label="t('frontend_settings.abbreviate_number.minimum_digit.label')"
         key-attr="value"
         text-attr="label"
         variant="outlined"

@@ -20,9 +20,8 @@ const { t } = useI18n();
     <RuiSwitch
       v-model="includeNfts"
       color="primary"
-      class="general-settings__fields__zero-base mb-4 mt-2"
+      class="general-settings__fields__nfts-in-net-value"
       :label="t('general_settings.nft_setting.label.include_nfts')"
-      :hint="t('general_settings.nft_setting.label.include_nfts_hint')"
       :success-messages="success"
       :error-messages="error"
       @update:model-value="update($event)"

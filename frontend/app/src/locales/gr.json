@@ -872,8 +872,7 @@
           "global_address_book": "Global address book",
           "hardcoded_mappings": "Hardcoded mappings",
           "private_address_book": "Private address book"
-        },
-        "title": "The priority of the returned names adheres to the following order. From top to bottom, the first name found will be shown."
+        }
       },
       "private": "Private",
       "private_description": "address book is saved only for this account."
@@ -1031,13 +1030,11 @@
         "title": "Reset assets database"
       },
       "hard_reset": "Ολική Επαναφορά",
-      "hard_reset_hint": "Αυτή η επιλογή εκτος άλλων θα αφαιρέσει όλα τα assets που εισαχθήκανε απο τον χρήστη",
       "hard_restore_confirmation": {
         "message": "There are assets that will be deleted and might cause an inconsistent state in this account or other accounts in the system. Confirm this action only if you know what you are doing.",
         "title": "Dangerous operation"
       },
       "soft_reset": "Μερική Επαναφορά",
-      "soft_reset_hint": "Αυτή η επιλογή δεν θα επηρεάσει assets που εισαχθήκανε απο τον χρήστη.",
       "subtitle": "Delete custom assets and reset assets database to its initial state. Caution: This operation might affect other users in the same system using the database for assets.",
       "success": {
         "description": "The asset database has been successfully restored. You will now need to re-login to apply the changes.",
@@ -1226,11 +1223,6 @@
   },
   "backend_settings_button": {
     "tooltip": "Change the backend settings. Changing the settings will restart the rotki backend"
-  },
-  "backup_manager": {
-    "backup_button": "Create new Backup",
-    "delete_selected": "Delete selected Backups",
-    "title": "User Database Backups"
   },
   "balancer": {
     "loading": "Please wait while your liquidity pools are getting loaded...",
@@ -1699,8 +1691,7 @@
       "select_image_source": "Select image cache source to clear",
       "subtitle": "Allows you to purge image cached by rotki",
       "success": "Cache was successfully cleared",
-      "title": "Purge Images Cache",
-      "tooltip": "Purge the cached images for the selected source"
+      "title": "Purge Images Cache"
     },
     "refresh_cache": {
       "confirm": {
@@ -1756,19 +1747,6 @@
       "message": "There was a problem loading the list of available backups: {message}",
       "title": "Database Backup load"
     }
-  },
-  "database_info_display": {
-    "directory": "Database Directory:",
-    "globaldb": "Global Database",
-    "globaldb_assets": "Assets version:",
-    "globaldb_schema": "Schema version:",
-    "title": "Database Info",
-    "userdb": "User Database",
-    "userdb_size": "Size on disk:",
-    "userdb_version": "Database Version:"
-  },
-  "database_manager": {
-    "refresh_tooltip": "Refresh the database backup list"
   },
   "date_format_help": {
     "directive": {
@@ -1928,10 +1906,8 @@
     "loading_error": {
       "title": "Loading {chain} RPC Nodes"
     },
-    "private_node": "This is a private node added by the user",
-    "private_node_hint": "Private nodes take priority over public nodes",
     "public_node": "This is a public node",
-    "weight": "Node weight {weight}%"
+    "weight": "{weight}%"
   },
   "exchange_balances": {
     "add_exchange": "Πρόσθεση ανταλακτηρίουe",
@@ -2150,53 +2126,11 @@
     }
   },
   "frontend_settings": {
-    "hint": {
-      "refresh": "How often (in minutes) your balances will be automatically refreshed"
-    },
-    "label": {
-      "abbreviate_number": "Use abbreviations for large numbers.",
-      "animations": "Reduce animations effect. This setting will improve app performance. NOTE: You will see animations that are not smooth, which aims to reduce the use of system resources.",
-      "enable_alias_names": "Show alias name for blockchain addresses.",
-      "query_period": "Query period in seconds",
-      "query_period_hint": "How often (in seconds) the backend will be checked for messages,",
-      "refresh": "Set the automatic refresh period",
-      "refresh_enabled": "Enabled",
-      "scramble": "Scramble data. Use this when sharing screenshots with others, e.g. when filing bug reports. NOTE: This setting does not persist between sessions.",
-      "scramble_multiplier": "Scramble multiplier",
-      "show_graph_range_selector": "Show graph range selector for line chart",
-      "zero_based": "Use zero as the lowest y-axis value for the graphs",
-      "zero_based_hint": "By default the lowest value is the minimum in the selected period"
-    },
     "subtitle": {
-      "abbreviate_number": "For example, 1.234.567 will appear as 1.23 M when this setting is enabled",
-      "alias_names": "Alias name for addresses",
-      "graph_basis": "Graph basis",
-      "query": "Periodic status query",
-      "refresh": "Automatic balance refresh",
-      "scramble_multiplier": "Multiplier number used when scrambling balances. This will affects amount and fiat value.",
-      "show_graph_range_selector": "Show graph range selector"
+      "alias_names": "Alias name for addresses"
     },
-    "title": "Frontend-only Settings",
+    "title": "Interface-only Settings",
     "validation": {
-      "animations": {
-        "error": "Error setting animations state: {message}"
-      },
-      "enable_alias_names": {
-        "error": "Failed to change alias names visibility"
-      },
-      "periodic_query": {
-        "error": "Error setting query period",
-        "invalid_period": "Period must be between {start} and {end}",
-        "non_empty": "Please enter the number of seconds"
-      },
-      "refresh_period": {
-        "error": "Failed to set the refresh period",
-        "invalid_period": "Period must be between {start} and {end} min",
-        "non_empty": "Please enter the number of minutes"
-      },
-      "scramble": {
-        "error": "Error setting scramble mode: {message}"
-      },
       "timeframe": {
         "error": "Failed to set the default timeframe for the user",
         "success": "Default timeframe set to {timeframe}"
@@ -2215,7 +2149,7 @@
       },
       "labels": {
         "floating_precision": "Floating Precision",
-        "main_currency": "Select Main Currency",
+        "main_currency": "Main Currency",
         "main_currency_subtitle": "Select as the main currency"
       },
       "title": "Amounts Settings"
@@ -2262,25 +2196,16 @@
       }
     },
     "labels": {
-      "anonymous_analytics": "Should anonymous usage analytics be submitted?",
-      "balance_saving_frequency": "Balance data saving frequency in hours",
       "btc_derivation_gap": "BTC derivation gap limit",
       "date_display_format": "Date display format",
       "date_input_format": "Date input format",
-      "display_date_in_localtime": "Display date in localtime and not in UTC for CSV export.",
       "dot_rpc_endpoint": "Polkadot Node RPC Endpoint",
-      "force_saved_language_setting_in_machine_hint": "Αυτή η ρύθμιση είναι αποθηκευμένη στις ρυθμίσεις χρήστη. Ενεργοποιήστε τη για να τη διατηρήσετε κατά την αποσύνδεση",
       "ksm_rpc_endpoint": "Kusama Node RPC Endpoint",
-      "language": "Selected language",
       "treat_eth2_as_eth": "Should treat ETH2 (Staked ETH) as ETH",
-      "version_update_check": "Set the version update check period while in app",
-      "version_update_check_enabled": "Enabled",
       "chains_to_skip_detection": "Αλυσίδες EVM για τις οποίες πρέπει να παραλειφθεί η αυτόματη ανίχνευση"
     },
-    "language_contribution_tooltip": "This feature is experimental and may not work as expected for some languages. This is because all static sentences in the app have to be manually translated and that is a long and ongoing process. Therefore, we need your contribution to speed it up. Click here for more information.",
     "nft_setting": {
       "label": {
-        "include_nfts": "Συμπεριλάβετε τα NFTs στα γραφήματα και τη συνολική καθαρή αξία",
         "include_nfts_hint": "Από προεπιλογή τα γραφήματα και ο πίνακας οργάνων περιλαμβάνουν την αξία όλων των NFTs",
         "render_setting": {
           "allow_all": "Επιτρέψτε όλες τις εικόνες",
@@ -2290,9 +2215,6 @@
         "whitelisted_domains": "Επιλεγμένοι τομείς",
         "whitelisted_domains_hint": "Εισάγετε έναν ή περισσότερους τομείς που χωρίζονται με κόμμα. Πατήστε το κουμπί αποθήκευσης στα δεξιά για να αποθηκεύσετε τις αλλαγές",
         "whitelisted_domain_entries": "Δεν υπάρχουν καταχωρήσεις | {count} μοναδική καταχώρηση | {count} μοναδικές καταχωρήσεις"
-      },
-      "subtitle": {
-        "include_nfts": "Include NFTs in graphs and total amounts"
       },
       "title": "NFT setting",
       "messages": {
@@ -2312,15 +2234,6 @@
     },
     "title": "General Settings",
     "validation": {
-      "analytics": {
-        "error": "Error setting anonymous usage analytics"
-      },
-      "balance_frequency": {
-        "error": "Error setting balance save frequency to {frequency}",
-        "invalid_frequency": "Frequency must be between {start} and {end} hours",
-        "non_empty": "Please enter the number of hours",
-        "success": "Data save frequency set to {frequency} hours"
-      },
       "btc_derivation_gap": {
         "error": "Error setting the BTC derivation gap limit",
         "success": "The BTC derivation gap limit was successfully changed to {limit}"
@@ -2345,9 +2258,6 @@
         "error": "Error setting decimal separator",
         "success": "Decimal separator set to {decimalSeparator}"
       },
-      "display_date_in_localtime": {
-        "error": "Error setting the display date in local time setting"
-      },
       "dot_rpc": {
         "error": "There was an error setting the Polkadot node RPC endpoint",
         "success_set": "The Polkadot node RPC endpoint was set to {endpoint}",
@@ -2363,9 +2273,6 @@
         "success_set": "The Kusama node RPC endpoint was set to {endpoint}",
         "success_unset": "The Kusama node RPC endpoint was successfully unset"
       },
-      "language": {
-        "error": "Error change language setting"
-      },
       "thousand_separator": {
         "error": "Error setting thousand separator",
         "success": "Thousand separator set to {thousandSeparator}"
@@ -2373,17 +2280,11 @@
       "treat_eth2_as_eth": {
         "error": "Error change setting for treat ETH2 (Staked ETH) as ETH"
       },
-      "version_update_check_frequency": {
-        "error": "Error setting version update check frequency",
-        "invalid_frequency": "Period must be between {start} and {end} hours",
-        "non_empty": "Please enter the number of hours"
-      },
       "chains_to_skip_detection": {
         "error": "Σφάλμα ρύθμισης των αλυσίδων EVM για τις οποίες θα παραλειφθεί η αυτόματη ανίχνευση μαρκών",
         "success": "Αλυσίδες EVM για τις οποίες πρέπει να παραλείψετε την αυτόματη ανίχνευση token αποθηκεύτηκαν με επιτυχία"
       }
-    },
-    "version_update_check_hint": "How often (in hours) your app version will be checked for update"
+    }
   },
   "generate": {
     "custom_selection": "Custom",
@@ -2793,7 +2694,6 @@
     "import": {
       "subtitle": "Restore user assets from a zip archive"
     },
-    "title": "Export/Import User Assets",
     "warning": "This functionality is designed to allow you to easily move your assets from one instance of rotki to another. It requires both instances to be of the same version. Using this functionality across different versions might result in errors."
   },
   "managed_asset_content": {
@@ -2890,8 +2790,6 @@
     }
   },
   "module_settings": {
-    "active_modules_description": "Only data for the selected modules will be queried. If no modules are selected, querying for all the supported modules will be disabled.",
-    "hint": "* Please remember that after activating a module, you need to logout and login again for the activation to take effect",
     "title": "Module Settings"
   },
   "navigation_menu": {
@@ -2950,7 +2848,7 @@
     "settings": "Ρυθμίσεις",
     "settings_sub": {
       "accounting": "Accounting",
-      "data_security": "Data & Security",
+      "database": "Database",
       "general": "General",
       "modules": "Modules"
     },
@@ -3499,7 +3397,6 @@
       "hint": "Αδειάστε αυτό το πεδίο για να αφαιρέσετε τα δεδομένα για όλες τις μονάδες defi"
     },
     "label": "Επιλέξτε μια πηγή δεδομένων",
-    "tooltip": "Εκκαθάριση των αποθηκευμένων δεδομένων για την επιλεγμένη πηγή",
     "transactions": "Συναλλαγές"
   },
   "queried_address_dialog": {
@@ -3819,8 +3716,7 @@
             "some": "{successful} από {total} αγνοημένα εξωτερικά συμβάντα έχουν επεξεργαστεί",
             "title": "Επεξεργασία αγνοημένων συμβάντων"
           }
-        },
-        "title": "Αγνοημένα εξωτερικά συμβάντα"
+        }
       },
       "view": {
         "hide": "Hide events",
@@ -3938,9 +3834,6 @@
       "private_mode": {
         "description": "Hide amount and percentage",
         "label": "Private"
-      },
-      "scramble": {
-        "label": "Scramble"
       },
       "semi_private_mode": {
         "description": "Hide amount and show percentage",

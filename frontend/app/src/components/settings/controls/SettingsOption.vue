@@ -81,7 +81,19 @@ function update(newValue: any) {
 </script>
 
 <template>
-  <div>
+  <SettingsItem>
+    <template
+      v-if="$slots.title"
+      #title
+    >
+      <slot name="title" />
+    </template>
+    <template
+      v-if="$slots.subtitle"
+      #subtitle
+    >
+      <slot name="subtitle" />
+    </template>
     <slot
       :error="error"
       :success="success"
@@ -89,5 +101,5 @@ function update(newValue: any) {
       :update-immediate="updateImmediate"
       :loading="loading"
     />
-  </div>
+  </SettingsItem>
 </template>

@@ -110,14 +110,14 @@ watch([enabled, multiplier], setData);
             </div>
           </div>
         </label>
-        <div class="flex items-center border-t border-default p-4">
+        <div class="border-t border-default p-4 flex flex-col gap-4">
           <SettingsOption
             #default="{ updateImmediate: updateScramble }"
             :class="$style.scrambler__toggle"
             setting="scrambleData"
             session-setting
           >
-            <RuiCheckbox
+            <RuiSwitch
               v-model="scrambleData"
               color="secondary"
               size="sm"
@@ -125,22 +125,22 @@ watch([enabled, multiplier], setData);
               hide-details
               @update:model-value="updateScramble($event)"
             >
-              <span class="text-white">
+              <span class="text-sm">
                 {{ t('user_dropdown.change_privacy_mode.scramble.label') }}
               </span>
-            </RuiCheckbox>
+            </RuiSwitch>
           </SettingsOption>
 
           <SettingsOption
             #default="{ updateImmediate: updateMultiplier }"
             setting="scrambleMultiplier"
             :class="$style.scrambler__input"
-            :error-message="t('frontend_settings.validation.scramble.error')"
+            :error-message="t('frontend_settings.scramble.validation.error')"
             session-setting
           >
             <RuiTextField
               v-model="scrambleMultiplier"
-              :label="t('frontend_settings.label.scramble_multiplier')"
+              :label="t('frontend_settings.scramble.multiplier.label')"
               :disabled="!scrambleData"
               variant="outlined"
               color="secondary"

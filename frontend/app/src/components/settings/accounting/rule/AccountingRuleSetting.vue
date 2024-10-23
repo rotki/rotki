@@ -215,11 +215,16 @@ const importFileDialog = ref<boolean>(false);
 </script>
 
 <template>
-  <TablePageLayout
-    child
-    :title="[t('accounting_settings.rule.title')]"
-  >
-    <template #buttons>
+  <div>
+    <div class="pt-6 pb-5 border-b border-default flex flex-wrap items-center justify-between">
+      <SettingCategoryHeader>
+        <template #title>
+          {{ t('accounting_settings.rule.title') }}
+        </template>
+        <template #subtitle>
+          {{ t('accounting_settings.rule.subtitle') }}
+        </template>
+      </SettingCategoryHeader>
       <div class="flex flex-row items-center justify-end gap-2">
         <RuiTooltip :open-delay="400">
           <template #activator>
@@ -288,11 +293,11 @@ const importFileDialog = ref<boolean>(false);
           </div>
         </RuiMenu>
       </div>
-    </template>
+    </div>
 
-    <RuiCard>
+    <RuiCard class="mt-5">
       <template #custom-header>
-        <div class="flex items-center justify-between p-4 pb-0 gap-4">
+        <div class="flex items-center justify-between p-4 pb-0">
           <template v-if="conflictsNumber > 0">
             <RuiButton
               color="warning"
@@ -472,5 +477,5 @@ const importFileDialog = ref<boolean>(false);
         @refresh="refresh()"
       />
     </RuiCard>
-  </TablePageLayout>
+  </div>
 </template>

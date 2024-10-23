@@ -873,15 +873,11 @@
           "global_address_book": "全球地址簿",
           "hardcoded_mappings": "硬编码映射",
           "private_address_book": "私人地址簿"
-        },
-        "title": "返回名称的优先级遵循以下顺序。从上到下，将显示找到的第一个名称。"
+        }
       },
       "private": "私人",
       "private_description": "地址簿仅为该账户保存。"
     }
-  },
-  "address_name_priority_setting": {
-    "data_name": "优先级"
   },
   "airdrops": {
     "headers": {
@@ -1046,13 +1042,11 @@
         "title": "重置资产数据库"
       },
       "hard_reset": "硬重置",
-      "hard_reset_hint": "此选项还将重置用户添加的资产。",
       "hard_restore_confirmation": {
         "message": "有些资产将被删除，可能会导致本账户或系统中其他账户的状态不一致。只有在你知道自己在做什么的情况下才能确认此操作。",
         "title": "危险操作"
       },
       "soft_reset": "软复位",
-      "soft_reset_hint": "此选项不会重置用户添加的资产。",
       "subtitle": "删除自定义资产并将资产数据库重置为初始状态。注意：此操作可能会影响同一系统中使用资产数据库的其他用户。",
       "success": {
         "description": "资产数据库已成功恢复。您现在需要重新登录才能应用更改。",
@@ -1249,11 +1243,6 @@
   },
   "backend_settings_button": {
     "tooltip": "更改后端设置。更改设置将重启 rotki 后端"
-  },
-  "backup_manager": {
-    "backup_button": "创建新备份",
-    "delete_selected": "删除选定的备份",
-    "title": "用户数据库备份"
   },
   "balancer": {
     "loading": "请稍候，您的流动资金池正在加载...",
@@ -1734,8 +1723,7 @@
       "select_image_source": "选择要清除的图像缓存源",
       "subtitle": "允许您清除 rotki 缓存的图像",
       "success": "缓存已成功清除",
-      "title": "清除图像缓存",
-      "tooltip": "清除所选来源的缓存图像"
+      "title": "清除图像缓存"
     },
     "refresh_cache": {
       "confirm": {
@@ -1791,19 +1779,6 @@
       "message": "加载可用备份列表时出现问题：{message}",
       "title": "数据库备份负载"
     }
-  },
-  "database_info_display": {
-    "directory": "数据库目录:",
-    "globaldb": "全球数据库",
-    "globaldb_assets": "资产版本:",
-    "globaldb_schema": "模式版本:",
-    "title": "数据库信息",
-    "userdb": "用户数据库",
-    "userdb_size": "磁盘大小:",
-    "userdb_version": "数据库版本:"
-  },
-  "database_manager": {
-    "refresh_tooltip": "刷新数据库备份列表"
   },
   "date_format_help": {
     "directive": {
@@ -1979,10 +1954,8 @@
     "loading_error": {
       "title": "加载 {chain} RPC 节点"
     },
-    "private_node": "这是用户添加的私有节点",
-    "private_node_hint": "私有节点优先于公共节点",
     "public_node": "这是一个公共节点",
-    "weight": "节点权重{weight}%"
+    "weight": "{weight}%"
   },
   "exchange_balances": {
     "add_exchange": "添加交易所",
@@ -2201,51 +2174,11 @@
     }
   },
   "frontend_settings": {
-    "hint": {
-      "refresh": "您的余额多久（以分钟为单位）自动刷新一次"
-    },
-    "label": {
-      "abbreviate_number": "对大数字使用缩写。",
-      "animations": "减少动画效果。此设置将提高应用程序性能。注意：您会看到动画不流畅，旨在减少系统资源的使用。",
-      "enable_alias_names": "显示区块链地址的别名。",
-      "query_period": "以秒为单位的查询周期",
-      "query_period_hint": "多长时间（以秒为单位）检查后端消息，",
-      "refresh": "设置自动刷新周期",
-      "refresh_enabled": "启用",
-      "scramble": "加扰数据。在与他人分享屏幕截图时使用此选项，例如提交错误报告时。注意：此设置不会在会话之间持续存在。",
-      "show_graph_range_selector": "显示折线图的图形范围选择器",
-      "zero_based": "使用零作为图表的最低 y 轴值",
-      "zero_based_hint": "默认情况下，最低值是所选时间段内的最小值"
-    },
     "subtitle": {
-      "abbreviate_number": "例如,启用此设置时,1.234.567 将显示为 1.23 M",
-      "alias_names": "地址的别名",
-      "graph_basis": "图形基础",
-      "query": "周期状态查询",
-      "refresh": "余额自动刷新",
-      "show_graph_range_selector": "显示图形范围选择器"
+      "alias_names": "地址的别名"
     },
     "title": "仅前端设置",
     "validation": {
-      "animations": {
-        "error": "错误设置动画状态：{message}"
-      },
-      "enable_alias_names": {
-        "error": "无法更改别名可见性"
-      },
-      "periodic_query": {
-        "error": "查询周期设置错误",
-        "invalid_period": "周期必须在 {start} 和 {end} 之间",
-        "non_empty": "请输入秒数"
-      },
-      "refresh_period": {
-        "error": "设置刷新周期失败",
-        "invalid_period": "周期必须在 {start} 和 {end} 分钟之间",
-        "non_empty": "请输入分钟数"
-      },
-      "scramble": {
-        "error": "错误设置打乱模式：{message}"
-      },
       "timeframe": {
         "error": "无法为用户设置默认时间范围",
         "success": "默认时间范围设置为{timeframe}"
@@ -2264,7 +2197,7 @@
       },
       "labels": {
         "floating_precision": "浮动精度",
-        "main_currency": "选择主要货币",
+        "main_currency": "主要货币",
         "main_currency_subtitle": "选择为主货币"
       },
       "title": "金额设置"
@@ -2311,25 +2244,16 @@
       }
     },
     "labels": {
-      "anonymous_analytics": "是否应该提交匿名使用分析？",
-      "balance_saving_frequency": "以小时为单位的余额数据保存频率",
       "btc_derivation_gap": "BTC衍生差距限制",
       "date_display_format": "日期显示格式",
       "date_input_format": "日期输入格式",
-      "display_date_in_localtime": "CSV 导出以本地时间而非 UTC 显示日期",
       "dot_rpc_endpoint": "Polkadot 节点 RPC 端点",
-      "force_saved_language_setting_in_machine_hint": "此设置保存在您的用户设置中。激活此设置可在您注销时保留此设置。",
       "ksm_rpc_endpoint": "Kusama 节点 RPC 端点",
-      "language": "选择的语言",
       "treat_eth2_as_eth": "应将 ETH2 (Staked ETH) 视为 ETH",
-      "version_update_check": "在应用中设置版本更新检查周期",
-      "version_update_check_enabled": "启用",
       "chains_to_skip_detection": "跳过自动检测的 EVM 链"
     },
-    "language_contribution_tooltip": "此功能是实验性的，对于某些语言可能无法按预期工作。这是因为应用程序中的所有静态句子都必须手动翻译，这是一个漫长而持续的过程。因此，我们需要您的贡献来加快速度 起来。单击此处了解更多信息。",
     "nft_setting": {
       "label": {
-        "include_nfts": "在图表和总净值中包含 NFT",
         "include_nfts_hint": "默认情况下，图表和仪表盘包括所有 NFT 的值",
         "render_setting": {
           "allow_all": "允许所有图像",
@@ -2339,9 +2263,6 @@
         "whitelisted_domains": "白名单域",
         "whitelisted_domains_hint": "输入单个或多个逗号分隔的域。按右侧的保存按钮保存更改",
         "whitelisted_domain_entries": "无条目 | {count} 唯一条目 | {count} 唯一条目"
-      },
-      "subtitle": {
-        "include_nfts": "在图表和总量中包含 NFT"
       },
       "title": "NFT setting",
       "messages": {
@@ -2361,15 +2282,6 @@
     },
     "title": "通用设置",
     "validation": {
-      "analytics": {
-        "error": "设置匿名使用分析时出错"
-      },
-      "balance_frequency": {
-        "error": "将余额保存频率设置为 {frequency} 时出错",
-        "invalid_frequency": "频率必须在 {start} 和 {end} 小时之间",
-        "non_empty": "请输入小时数",
-        "success": "数据保存频率设置为 {frequency} 小时"
-      },
       "btc_derivation_gap": {
         "error": "设置BTC差额限额错误",
         "success": "BTC衍生差额限制已成功更改为{limit}"
@@ -2394,9 +2306,6 @@
         "error": "设置小数点分隔符错误",
         "success": "十进制分隔符设置为 {decimalSeparator}"
       },
-      "display_date_in_localtime": {
-        "error": "在本地时间设置中设置显示日期时出错"
-      },
       "dot_rpc": {
         "error": "设置 Polkadot 节点 RPC 端点时出错",
         "success_set": "Polkadot 节点 RPC 端点被设置为 {endpoint}",
@@ -2412,9 +2321,6 @@
         "success_set": "Kusama 节点 RPC 端点被设置为 {endpoint}",
         "success_unset": "Kusama 节点 RPC 端点已成功取消设置"
       },
-      "language": {
-        "error": "错误更改语言设置"
-      },
       "thousand_separator": {
         "error": "千位分隔符设置错误",
         "success": "千位分隔符设置为 {thousandSeparator}"
@@ -2422,17 +2328,11 @@
       "treat_eth2_as_eth": {
         "error": "将 ETH2 视为 ETH 的错误更改设置"
       },
-      "version_update_check_frequency": {
-        "error": "错误设置版本更新检查频率",
-        "invalid_frequency": "周期必须在 {start} 和 {end} 小时之间",
-        "non_empty": "请输入小时数"
-      },
       "chains_to_skip_detection": {
         "error": "错误设置跳过自动令牌检测的 EVM 链",
         "success": "成功保存的跳过自动令牌检测的 EVM 链"
       }
-    },
-    "version_update_check_hint": "多久（以小时为单位）检查您的应用程序版本以进行更新"
+    }
   },
   "generate": {
     "custom_selection": "自定义",
@@ -2852,7 +2752,6 @@
     "import": {
       "subtitle": "从 zip 存档中恢复用户资产"
     },
-    "title": "导出/导入用户资产",
     "warning": "此功能旨在让您轻松地将资产从一个 rotki 实例移动到另一个实例。它要求两个实例具有相同的版本。在不同版本之间使用此功能可能会导致错误。"
   },
   "managed_asset_content": {
@@ -2955,8 +2854,6 @@
     }
   },
   "module_settings": {
-    "active_modules_description": "仅查询所选模块的数据。如果未选择任何模块，将禁用查询所有支持的模块。",
-    "hint": "请记住，激活模块后，您需要注销并重新登录才能使激活生效",
     "title": "模块设置"
   },
   "navigation_menu": {
@@ -3015,7 +2912,7 @@
     "settings": "设置",
     "settings_sub": {
       "accounting": "会计",
-      "data_security": "数据与安全",
+      "database": "数据库",
       "general": "一般",
       "modules": "模块"
     },
@@ -3470,7 +3367,6 @@
     "was_worth": "值得"
   },
   "prioritized_list": {
-    "add_tooltip": "将 {name} 添加到列表中",
     "all_added": "没有禁用 {namePluralized}",
     "disabled_items": "{num} 个禁用的 {namePluralized}",
     "item": {
@@ -3609,7 +3505,6 @@
       "hint": "清空此字段以删除所有 defi 模块的数据"
     },
     "label": "选择数据源",
-    "tooltip": "清除所选源的缓存数据",
     "transactions": "交易"
   },
   "queried_address_dialog": {
@@ -3933,8 +3828,7 @@
             "some": "已处理 {successful} 个（共 {total} 个）被跳过的外部事件",
             "title": "已处理的被跳过事件"
           }
-        },
-        "title": "被跳过的外部事件"
+        }
       },
       "view": {
         "hide": "隐藏事件",
@@ -4052,9 +3946,6 @@
       "private_mode": {
         "description": "隐藏金额和百分比",
         "label": "私人"
-      },
-      "scramble": {
-        "label": "争夺"
       },
       "semi_private_mode": {
         "description": "隐藏金额显示百分比",

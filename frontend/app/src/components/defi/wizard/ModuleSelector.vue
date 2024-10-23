@@ -37,6 +37,11 @@ const headers = computed<DataTableColumn<ModuleEntry>[]>(() => [
     align: 'end',
     cellClass: 'flex justify-end align-center',
   },
+  {
+    label: '',
+    key: 'actions',
+    align: 'center',
+  },
 ]);
 
 const modules = computed<ModuleEntry[]>(() => {
@@ -100,7 +105,9 @@ function selected(identifier: Module) {
   if (!addresses || addresses.length === 0)
     return t('module_selector.all_accounts');
 
-  return addresses.length.toString();
+  return t('module_selector.some_accounts', {
+    number: addresses.length,
+  });
 }
 
 onMounted(async () => {
@@ -109,12 +116,24 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div>
+  <RuiCard>
     <div class="flex flex-col md:flex-row md:justify-between gap-4 mb-4">
+      <RuiTextField
+        v-model="search"
+        variant="outlined"
+        color="primary"
+        class="min-w-[20rem] flex-1"
+        :label="t('module_selector.filter')"
+        clearable
+        hide-details
+        dense
+        prepend-icon="search-line"
+      />
       <div class="flex items-center gap-2">
         <RuiButton
           color="primary"
           :loading="loading"
+          class="!py-2"
           data-cy="modules_enable_all"
           @click="enableAll()"
         >
@@ -124,24 +143,14 @@ onMounted(async () => {
         <RuiButton
           color="primary"
           variant="outlined"
+          :loading="loading"
+          class="!py-2"
           data-cy="modules_disable_all"
           @click="disableAll()"
         >
           {{ t('module_selector.actions.disable_all') }}
         </RuiButton>
       </div>
-
-      <RuiTextField
-        v-model="search"
-        variant="outlined"
-        color="primary"
-        class="md:min-w-[20rem]"
-        :label="t('module_selector.filter')"
-        clearable
-        hide-details
-        dense
-        prepend-icon="search-line"
-      />
     </div>
 
     <RuiDataTable
@@ -171,21 +180,15 @@ onMounted(async () => {
       </template>
 
       <template #item.selectedAccounts="{ row }">
-        <div class="flex items-center text-no-wrap">
-          <RowActions
-            no-delete
-            class="px-4"
-            :edit-disabled="!row.enabled"
-            :edit-tooltip="t('module_selector.select_accounts_hint')"
-            @edit-click="manageModule = row.identifier"
-          />
-
-          <RuiBadge
-            color="primary"
-            :text="selected(row.identifier)"
-            placement="center"
-          />
-        </div>
+        <RuiChip
+          color="primary"
+          placement="center"
+          size="sm"
+          variant="outlined"
+          class="!h-5 !bg-rui-primary-lighter/[0.2] font-medium"
+        >
+          {{ selected(row.identifier) }}
+        </RuiChip>
       </template>
 
       <template #item.enabled="{ row }">
@@ -199,6 +202,15 @@ onMounted(async () => {
           @update:model-value="switchModule(row.identifier, $event)"
         />
       </template>
+      <template #item.actions="{ row }">
+        <RowActions
+          no-delete
+          class="px-4"
+          :edit-disabled="!row.enabled"
+          :edit-tooltip="t('module_selector.select_accounts_hint')"
+          @edit-click="manageModule = row.identifier"
+        />
+      </template>
     </RuiDataTable>
 
     <QueriedAddressDialog
@@ -206,5 +218,5 @@ onMounted(async () => {
       :module="manageModule"
       @close="manageModule = undefined"
     />
-  </div>
+  </RuiCard>
 </template>

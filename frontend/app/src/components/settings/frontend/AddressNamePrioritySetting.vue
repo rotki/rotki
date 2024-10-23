@@ -32,35 +32,41 @@ function availableCurrentAddressNamePriorities(): PrioritizedListData<Prioritize
     HARDCODED_MAPPINGS_PRIO_LIST_ITEM,
     PRIVATE_ADDRESSBOOK_PRIO_LIST_ITEM,
   ];
-
   return new PrioritizedListData(itemData);
 }
 
 onMounted(() => {
   resetCurrentAddressNamePriorities();
 });
-const { t } = useI18n();
 </script>
 
 <template>
-  <div>
-    <div class="text-subtitle-1 mb-3">
-      {{ t('address_book.hint.priority.title') }}
-    </div>
-    <SettingsOption
-      #default="{ error, success, updateImmediate }"
-      setting="addressNamePriority"
-      @finished="finishEditing()"
+  <SettingsOption
+    #default="{ error, success, updateImmediate }"
+    setting="addressNamePriority"
+    @finished="finishEditing()"
+  >
+    <RuiCard
+      rounded="md"
+      no-padding
+      class="overflow-hidden"
     >
+      <div class="pl-8 pt-2 border-b border-default">
+        <EnableEnsNamesSetting />
+      </div>
       <PrioritizedList
+        variant="flat"
         :model-value="currentAddressNamePriorities"
         :all-items="availableCurrentAddressNamePriorities()"
-        :item-data-name="t('address_name_priority_setting.data_name')"
         :disable-add="true"
         :disable-delete="true"
-        :status="{ error, success }"
         @update:model-value="updateImmediate($event)"
       />
-    </SettingsOption>
-  </div>
+    </RuiCard>
+
+    <ActionStatusIndicator
+      class="mx-[1px] mt-4"
+      :status="{ error, success }"
+    />
+  </SettingsOption>
 </template>

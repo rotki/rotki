@@ -1,22 +1,40 @@
 <script setup lang="ts">
-import { useAppRoutes } from '@/router/routes';
+import { Routes, useAppRoutes } from '@/router/routes';
 import type { TabContent } from '@/types/tabs';
 
 definePage({
-  redirect: '/settings/general',
+  redirect: Routes.SETTINGS_ACCOUNT,
 });
+
+const { t } = useI18n();
 
 const { appRoutes } = useAppRoutes();
 
 const tabs = computed<TabContent[]>(() => {
   const Routes = get(appRoutes);
-  return [Routes.SETTINGS_GENERAL, Routes.SETTINGS_ACCOUNTING, Routes.SETTINGS_DATA_SECURITY, Routes.SETTINGS_MODULES];
+  return [
+    Routes.SETTINGS_ACCOUNT,
+    Routes.SETTINGS_GENERAL,
+    Routes.SETTINGS_DATABASE,
+    Routes.SETTINGS_ACCOUNTING,
+    Routes.SETTINGS_ORACLE,
+    Routes.SETTINGS_RPC,
+    Routes.SETTINGS_MODULES,
+    Routes.SETTINGS_INTERFACE,
+  ];
 });
 </script>
 
 <template>
-  <TabNavigation
-    :tabs="tabs"
-    class="settings"
-  />
+  <div class="container lg:px-8">
+    <h5 class="text-h5 font-semibold mb-6">
+      {{ t('navigation_menu.settings') }}
+    </h5>
+    <TabNavigation
+      :tabs="tabs"
+      plain
+      child
+      class="settings"
+    />
+  </div>
 </template>

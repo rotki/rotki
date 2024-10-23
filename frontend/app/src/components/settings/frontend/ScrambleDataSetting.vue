@@ -21,18 +21,22 @@ watch([enabled, multiplier], setData);
 </script>
 
 <template>
-  <div>
+  <SettingsItem>
+    <template #title>
+      {{ t('frontend_settings.scramble.title') }}
+    </template>
+
     <SettingsOption
       #default="{ error, success, update }"
       setting="scrambleData"
       session-setting
-      :error-message="t('frontend_settings.validation.scramble.error')"
+      :error-message="t('frontend_settings.scramble.validation.error')"
     >
       <RuiSwitch
         v-model="scrambleData"
         color="primary"
         class="general-settings__fields__scramble-data my-2"
-        :label="t('frontend_settings.label.scramble')"
+        :label="t('frontend_settings.scramble.label')"
         :success-messages="success"
         :error-messages="error"
         @update:model-value="update($event)"
@@ -40,40 +44,31 @@ watch([enabled, multiplier], setData);
     </SettingsOption>
     <SettingsOption
       #default="{ error, success, update }"
-      class="pt-4"
       setting="scrambleMultiplier"
       session-setting
     >
-      <div :class="$style.multiplier">
-        <AmountInput
-          v-model="scrambleMultiplier"
-          class="general-settings__fields__scramble-multiplier"
-          :label="t('frontend_settings.label.scramble_multiplier')"
-          :hint="t('frontend_settings.subtitle.scramble_multiplier')"
-          variant="outlined"
-          :disabled="!scrambleData"
-          :success-messages="success"
-          :error-messages="error"
-          @change="update($event)"
-        >
-          <template #append>
-            <RuiButton
-              variant="text"
-              icon
-              :disabled="!scrambleData"
-              @click="randomMultiplier()"
-            >
-              <RuiIcon name="shuffle-line" />
-            </RuiButton>
-          </template>
-        </AmountInput>
-      </div>
+      <AmountInput
+        v-model="scrambleMultiplier"
+        class="general-settings__fields__scramble-multiplier"
+        :label="t('frontend_settings.scramble.multiplier.label')"
+        :hint="t('frontend_settings.scramble.multiplier.hint')"
+        variant="outlined"
+        :disabled="!scrambleData"
+        :success-messages="success"
+        :error-messages="error"
+        @change="update($event)"
+      >
+        <template #append>
+          <RuiButton
+            variant="text"
+            icon
+            :disabled="!scrambleData"
+            @click="randomMultiplier()"
+          >
+            <RuiIcon name="shuffle-line" />
+          </RuiButton>
+        </template>
+      </AmountInput>
     </SettingsOption>
-  </div>
+  </SettingsItem>
 </template>
-
-<style module lang="scss">
-.multiplier {
-  max-width: 520px;
-}
-</style>

@@ -3,16 +3,15 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <SettingCategory>
+  <SettingCategory class="pt-5 border-t border-default">
     <template #title>
       {{ t('data_management.title') }}
     </template>
-
-    <div class="flex flex-col gap-4">
-      <PurgeData />
-      <PurgeImagesCache />
-      <RefreshCache />
-      <HistoryEventsSkippedExternalEvents />
-    </div>
+    <template #subtitle>
+      {{ t('database_settings.manage_data.subtitle') }}
+    </template>
+    <PurgeData />
+    <PurgeImagesCache />
+    <RefreshCache />
   </SettingCategory>
 </template>

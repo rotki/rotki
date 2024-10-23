@@ -14,9 +14,9 @@ const { t } = useI18n();
 
 const rules = {
   refreshPeriod: {
-    required: helpers.withMessage(t('frontend_settings.validation.refresh_period.non_empty'), required),
+    required: helpers.withMessage(t('frontend_settings.refresh_balance.validation.non_empty'), required),
     between: helpers.withMessage(
-      t('frontend_settings.validation.refresh_period.invalid_period', {
+      t('frontend_settings.refresh_balance.validation.invalid_period', {
         start: minRefreshPeriod,
         end: maxRefreshPeriod,
       }),
@@ -45,52 +45,47 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="mt-8">
-    <div class="text-h6">
-      {{ t('frontend_settings.subtitle.refresh') }}
-    </div>
-    <div class="flex gap-6 mt-1">
-      <div class="grow">
-        <SettingsOption
-          #default="{ error, success, update }"
-          setting="refreshPeriod"
-          frontend-setting
-          :transform="transform"
-          :error-message="t('frontend_settings.validation.refresh_period.error')"
-          @finished="resetRefreshPeriod()"
-        >
-          <RuiTextField
-            v-model="refreshPeriod"
-            variant="outlined"
-            color="primary"
-            :disabled="!refreshEnabled"
-            type="number"
-            :min="minRefreshPeriod"
-            :max="maxRefreshPeriod"
-            :label="t('frontend_settings.label.refresh')"
-            :hint="t('frontend_settings.hint.refresh')"
-            :success-messages="success"
-            :error-messages="error || toMessages(v$.refreshPeriod)"
-            @update:model-value="callIfValid($event, update)"
-          />
-        </SettingsOption>
-      </div>
-      <SettingsOption
-        #default="{ updateImmediate }"
-        setting="refreshPeriod"
-        frontend-setting
-        :transform="transformSwitch"
-        :error-message="t('frontend_settings.validation.refresh_period.error')"
-        @finished="resetRefreshPeriod()"
-      >
-        <RuiSwitch
-          v-model="refreshEnabled"
-          class="mt-4"
-          :label="t('frontend_settings.label.refresh_enabled')"
-          color="primary"
-          @update:model-value="updateImmediate($event)"
-        />
-      </SettingsOption>
-    </div>
-  </div>
+  <SettingsItem>
+    <template #title>
+      {{ t('frontend_settings.refresh_balance.title') }}
+    </template>
+    <SettingsOption
+      #default="{ updateImmediate }"
+      setting="refreshPeriod"
+      frontend-setting
+      :transform="transformSwitch"
+      :error-message="t('frontend_settings.refresh_balance.validation.error')"
+      @finished="resetRefreshPeriod()"
+    >
+      <RuiSwitch
+        v-model="refreshEnabled"
+        :label="t('frontend_settings.refresh_balance.label')"
+        color="primary"
+        @update:model-value="updateImmediate($event)"
+      />
+    </SettingsOption>
+
+    <SettingsOption
+      #default="{ error, success, update }"
+      setting="refreshPeriod"
+      frontend-setting
+      :transform="transform"
+      :error-message="t('frontend_settings.refresh_balance.validation.error')"
+      @finished="resetRefreshPeriod()"
+    >
+      <RuiTextField
+        v-model="refreshPeriod"
+        variant="outlined"
+        color="primary"
+        :disabled="!refreshEnabled"
+        type="number"
+        :min="minRefreshPeriod"
+        :max="maxRefreshPeriod"
+        :label="t('frontend_settings.refresh_balance.period_label')"
+        :success-messages="success"
+        :error-messages="refreshEnabled ? (error || toMessages(v$.refreshPeriod)) : []"
+        @update:model-value="callIfValid($event, update)"
+      />
+    </SettingsOption>
+  </SettingsItem>
 </template>
