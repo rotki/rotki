@@ -3,7 +3,7 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <SettingsItem>
+  <SettingsItem class="border-t mt-6">
     <template #title>
       {{ t('accounting_settings.trade.title') }}
     </template>

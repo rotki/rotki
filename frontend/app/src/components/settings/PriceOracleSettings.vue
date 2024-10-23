@@ -59,7 +59,7 @@ const { t } = useI18n();
 
 <template>
   <div class="flex flex-col gap-5">
-    <div class="pb-5 flex flex-wrap gap-4 items-center justify-between border-b">
+    <div class="pb-5 flex flex-wrap gap-4 items-center justify-between border-b border-default">
       <SettingCategoryHeader>
         <template #title>
           {{ t('price_oracle_settings.title') }}
