@@ -33,7 +33,6 @@ const cancellable = ref<boolean>(false);
 const errorMessages = useRefMap(status, (status) => {
   if (!status || status.success)
     return [];
-  set(editMode, true);
   return [status.message];
 });
 
@@ -83,6 +82,11 @@ onMounted(() => {
 
 watch(apiKey, () => {
   updateStatus();
+});
+
+watch(status, (newStatus) => {
+  if (newStatus && !newStatus.success)
+    set(editMode, true);
 });
 </script>
 
