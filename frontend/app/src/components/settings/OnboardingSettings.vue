@@ -264,11 +264,8 @@ const [CreateLabel, ReuseLabel] = createReusableTemplate<{ item: LogLevel }>();
     :title="t('frontend_settings.title')"
     @cancel="dismiss()"
   >
-    <div class="mb-8">
-      <LanguageSetting
-        use-local-setting
-        class="mb-10"
-      />
+    <div class="mb-4">
+      <LanguageSetting use-local-setting />
     </div>
 
     <div class="mb-4">

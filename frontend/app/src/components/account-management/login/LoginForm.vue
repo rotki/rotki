@@ -378,7 +378,7 @@ function abortLogin() {
               autocomplete="current-password"
               :error-messages="passwordErrors"
               :disabled="loading || conflictExist || customBackendDisplay"
-              class="mb-2"
+              class="mb-2 [&>div]:bg-transparent"
               :label="t('login.label_password')"
               data-cy="password-input"
               dense
@@ -477,6 +477,7 @@ function abortLogin() {
                   :label="t('login.custom_backend.label')"
                   :placeholder="t('login.custom_backend.placeholder')"
                   :hint="t('login.custom_backend.hint')"
+                  class="[&>div]:bg-transparent"
                   dense
                 >
                   <template #prepend>
