@@ -96,6 +96,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'Paraswap',
         'Paladin',
         'PickleFinance',
+        'PolygonPosBridge',
         'Puffer',
         'Safemultisig',
         'ScrollBridge',
