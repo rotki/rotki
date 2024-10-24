@@ -1,43 +1,36 @@
 <script setup lang="ts">
-import { CURRENCY_USD } from '@/types/currencies';
 import { TableColumn } from '@/types/table-column';
 import { isEvmNativeToken } from '@/types/asset';
 import { DashboardTableType } from '@/types/settings/frontend-settings';
-import type { AssetBalance, AssetBalanceWithPrice, BigNumber, Nullable } from '@rotki/common';
+import type { BigNumber, Nullable } from '@rotki/common';
 import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
+import type { AssetBalance, AssetBalanceWithBreakdown } from '@/types/balances';
 
-const props = withDefaults(
-  defineProps<{
-    title: string;
-    balances: AssetBalanceWithPrice[];
-    tableType: DashboardTableType;
-    loading?: boolean;
-  }>(),
-  { loading: false },
-);
+const props = withDefaults(defineProps<{
+  title: string;
+  balances: AssetBalanceWithBreakdown[];
+  tableType: DashboardTableType;
+  loading?: boolean;
+}>(), { loading: false });
 
 const { t } = useI18n();
 
 const { balances, title, tableType } = toRefs(props);
+
 const search = ref('');
-
-const expanded = ref<AssetBalanceWithPrice[]>([]);
-
-const sort = ref<DataTableSortData<AssetBalanceWithPrice>>({
-  column: 'usdValue',
+const expanded = ref<AssetBalanceWithBreakdown[]>([]);
+const sort = ref<DataTableSortData<AssetBalanceWithBreakdown>>({
+  column: 'value',
   direction: 'desc' as const,
 });
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-const { exchangeRate } = useBalancePricesStore();
-
-const totalInUsd = computed(() => aggregateTotal(get(balances), CURRENCY_USD, One));
-const total = computed(() => {
-  const mainCurrency = get(currencySymbol);
-  return get(totalInUsd).multipliedBy(get(exchangeRate(mainCurrency)) ?? One);
-});
+const statisticsStore = useStatisticsStore();
+const { totalNetWorth } = storeToRefs(statisticsStore);
 
 const { assetSymbol, assetName, assetInfo } = useAssetInfoRetrieval();
+
+const total = computed(() => get(balances).reduce((acc, item) => acc.plus(item.value), Zero));
 
 function assetFilter(item: Nullable<AssetBalance>) {
   const keyword = get(search).toLocaleLowerCase()?.trim() ?? '';
@@ -49,24 +42,21 @@ function assetFilter(item: Nullable<AssetBalance>) {
   return symbol.includes(keyword) || name.includes(keyword);
 }
 
-const statisticsStore = useStatisticsStore();
-const { totalNetWorthUsd } = storeToRefs(statisticsStore);
-
 function percentageOfTotalNetValue(value: BigNumber) {
-  const netWorth = get(totalNetWorthUsd) as BigNumber;
-  const total = netWorth.lt(0) ? get(totalInUsd) : netWorth;
-  return calculatePercentage(value, total);
+  const netWorth = get(totalNetWorth);
+  const totalValue = netWorth.lt(0) ? get(total) : netWorth;
+  return calculatePercentage(value, totalValue);
 }
 
 function percentageOfCurrentGroup(value: BigNumber) {
-  return calculatePercentage(value, get(totalInUsd));
+  return calculatePercentage(value, get(total));
 }
 
 const { dashboardTablesVisibleColumns } = storeToRefs(useFrontendSettingsStore());
 
-const sortItems = getSortItems<AssetBalanceWithPrice>(asset => get(assetInfo(asset)));
+const sortItems = getSortItems<AssetBalanceWithBreakdown>(asset => get(assetInfo(asset)));
 
-const filtered = computed<AssetBalanceWithPrice[]>(() => {
+const filtered = computed<AssetBalanceWithBreakdown[]>(() => {
   const sortBy = get(sort);
   const data = get(balances).filter(assetFilter);
   if (!Array.isArray(sortBy) && sortBy?.column)
@@ -75,10 +65,10 @@ const filtered = computed<AssetBalanceWithPrice[]>(() => {
   return data;
 });
 
-const tableHeaders = computed<DataTableColumn<AssetBalanceWithPrice>[]>(() => {
+const tableHeaders = computed<DataTableColumn<AssetBalanceWithBreakdown>[]>(() => {
   const visibleColumns = get(dashboardTablesVisibleColumns)[get(tableType)];
 
-  const headers: DataTableColumn<AssetBalanceWithPrice>[] = [
+  const headers: DataTableColumn<AssetBalanceWithBreakdown>[] = [
     {
       label: t('common.asset'),
       key: 'asset',
@@ -90,7 +80,7 @@ const tableHeaders = computed<DataTableColumn<AssetBalanceWithPrice>[]>(() => {
       label: t('common.price_in_symbol', {
         symbol: get(currencySymbol),
       }),
-      key: 'usdPrice',
+      key: 'price',
       align: 'end',
       class: 'text-no-wrap',
       cellClass: 'py-0',
@@ -107,7 +97,7 @@ const tableHeaders = computed<DataTableColumn<AssetBalanceWithPrice>[]>(() => {
       label: t('common.value_in_symbol', {
         symbol: get(currencySymbol),
       }),
-      key: 'usdValue',
+      key: 'value',
       align: 'end',
       class: 'text-no-wrap',
       cellClass: 'py-0',
@@ -117,7 +107,7 @@ const tableHeaders = computed<DataTableColumn<AssetBalanceWithPrice>[]>(() => {
 
   if (visibleColumns.includes(TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE)) {
     headers.push({
-      label: get(totalNetWorthUsd).gt(0)
+      label: get(totalNetWorth).gt(0)
         ? t('dashboard_asset_table.headers.percentage_of_total_net_value')
         : t('dashboard_asset_table.headers.percentage_total'),
       key: 'percentageOfTotalNetValue',
@@ -165,7 +155,7 @@ function setTablePagination(event: TablePaginationData | undefined) {
   });
 }
 
-function getAssets(item: AssetBalanceWithPrice): string[] {
+function getAssets(item: AssetBalanceWithBreakdown): string[] {
   return item.breakdown?.map(entry => entry.asset) ?? [];
 }
 
@@ -246,39 +236,38 @@ watch(search, () => setPage(1));
           :is-collection-parent="!!row.breakdown"
         />
       </template>
-      <template #item.usdPrice="{ row }">
+      <template #item.price="{ row }">
         <AmountDisplay
-          :loading="!row.usdPrice || row.usdPrice.lt(0)"
+          :loading="!row.price || row.price.lt(0)"
           no-scramble
           show-currency="symbol"
           :price-asset="row.asset"
-          :price-of-asset="row.usdPrice"
-          fiat-currency="USD"
-          :value="row.usdPrice"
+          :price-of-asset="row.price"
+          :value="row.price"
         />
       </template>
       <template #item.amount="{ row }">
         <AmountDisplay :value="row.amount" />
       </template>
-      <template #item.usdValue="{ row }">
+      <template #item.value="{ row }">
         <AmountDisplay
           show-currency="symbol"
           :amount="row.amount"
           :price-asset="row.asset"
-          :price-of-asset="row.usdPrice"
-          fiat-currency="USD"
-          :value="row.usdValue"
+          :price-of-asset="row.price"
+          :fiat-currency="currencySymbol"
+          :value="row.value"
         />
       </template>
       <template #item.percentageOfTotalNetValue="{ row }">
         <PercentageDisplay
-          :value="percentageOfTotalNetValue(row.usdValue)"
+          :value="percentageOfTotalNetValue(row.value)"
           :asset-padding="0.1"
         />
       </template>
       <template #item.percentageOfTotalCurrentGroup="{ row }">
         <PercentageDisplay
-          :value="percentageOfCurrentGroup(row.usdValue)"
+          :value="percentageOfCurrentGroup(row.value)"
           :asset-padding="0.1"
         />
       </template>
@@ -311,7 +300,7 @@ watch(search, () => setPage(1));
         <EvmNativeTokenBreakdown
           v-if="isEvmNativeToken(row.asset)"
           show-percentage
-          :total="row.usdValue"
+          :total="row.value"
           :assets="getAssets(row)"
           :identifier="row.asset"
           :is-liability="tableType === DashboardTableType.LIABILITIES"

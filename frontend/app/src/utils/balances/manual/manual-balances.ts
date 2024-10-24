@@ -98,8 +98,8 @@ export function sortAndFilterManualBalance(
   return {
     data: sorted.slice(offset, offset + limit).map(balance => ({
       ...balance,
-      usdPrice: resolvers.resolveAssetPrice(balance.asset),
-    })),
+      price: resolvers.resolveAssetPrice(balance.asset),
+    }) satisfies ManualBalanceWithPrice),
     limit: -1,
     total: balances.length,
     found: sorted.length,

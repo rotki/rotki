@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { some } from 'lodash-es';
 import { isEvmNativeToken } from '@/types/asset';
-import type { AssetBalance, AssetBalanceWithPrice } from '@rotki/common';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
+import type { AssetBalance, AssetBalanceWithBreakdown, AssetBalanceWithPrice } from '@/types/balances';
 
 defineOptions({
   name: 'AssetBalances',
@@ -10,7 +10,7 @@ defineOptions({
 
 const props = withDefaults(
   defineProps<{
-    balances: AssetBalanceWithPrice[];
+    balances: AssetBalanceWithBreakdown[];
     details?: {
       groupId: string;
       chains: string[];
@@ -36,19 +36,19 @@ const props = withDefaults(
 const { t } = useI18n();
 
 const { balances } = toRefs(props);
-const expanded = ref<AssetBalanceWithPrice[]>([]);
+const expanded = ref<AssetBalanceWithBreakdown[]>([]);
 
-const total = computed(() => bigNumberSum(balances.value.map(({ usdValue }) => usdValue)));
+const total = computed(() => bigNumberSum(balances.value.map(({ value }) => value)));
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { assetInfo } = useAssetInfoRetrieval();
 
-const sort = ref<DataTableSortData<AssetBalanceWithPrice>>({
-  column: 'usdValue',
+const sort = ref<DataTableSortData<AssetBalanceWithBreakdown>>({
+  column: 'value',
   direction: 'desc' as const,
 });
 
-const tableHeaders = computed<DataTableColumn<AssetBalanceWithPrice>[]>(() => [
+const cols = computed<DataTableColumn<AssetBalanceWithBreakdown>[]>(() => [
   {
     label: t('common.asset'),
     key: 'asset',
@@ -60,7 +60,7 @@ const tableHeaders = computed<DataTableColumn<AssetBalanceWithPrice>[]>(() => [
     label: t('common.price_in_symbol', {
       symbol: get(currencySymbol),
     }),
-    key: 'usdPrice',
+    key: 'price',
     align: 'end',
     cellClass: 'py-0',
     sortable: true,
@@ -76,7 +76,7 @@ const tableHeaders = computed<DataTableColumn<AssetBalanceWithPrice>[]>(() => [
     label: t('common.value_in_symbol', {
       symbol: get(currencySymbol),
     }),
-    key: 'usdValue',
+    key: 'value',
     align: 'end',
     class: 'text-no-wrap',
     cellClass: 'py-0',
@@ -84,9 +84,9 @@ const tableHeaders = computed<DataTableColumn<AssetBalanceWithPrice>[]>(() => [
   },
 ]);
 
-const sortItems = getSortItems<AssetBalanceWithPrice>(asset => get(assetInfo(asset)));
+const sortItems = getSortItems<AssetBalanceWithBreakdown>(asset => get(assetInfo(asset)));
 
-const sorted = computed<AssetBalanceWithPrice[]>(() => {
+const sorted = computed<AssetBalanceWithBreakdown[]>(() => {
   const sortBy = get(sort);
   const data = [...get(balances)];
   if (!Array.isArray(sortBy) && sortBy?.column)
@@ -101,15 +101,15 @@ function expand(item: AssetBalanceWithPrice) {
   set(expanded, isExpanded(item.asset) ? [] : [item]);
 }
 
-function getAssets(item: AssetBalanceWithPrice): string[] {
-  return item.breakdown?.map(entry => entry.asset) ?? [];
+function getAssets(item: AssetBalanceWithBreakdown): string[] {
+  return item.breakdown?.map(item => item.asset) ?? [];
 }
 </script>
 
 <template>
   <RuiDataTable
     v-model:sort.external="sort"
-    :cols="tableHeaders"
+    :cols="cols"
     :rows="sorted"
     :loading="loading"
     :expanded="expanded"
@@ -128,15 +128,15 @@ function getAssets(item: AssetBalanceWithPrice): string[] {
         :is-collection-parent="!!row.breakdown"
       />
     </template>
-    <template #item.usdPrice="{ row }">
+    <template #item.price="{ row }">
       <AmountDisplay
-        :loading="!row.usdPrice || row.usdPrice.lt(0)"
+        :loading="!row.price || row.price.lt(0)"
         no-scramble
         show-currency="symbol"
         :price-asset="row.asset"
-        :price-of-asset="row.usdPrice"
-        fiat-currency="USD"
-        :value="row.usdPrice"
+        :price-of-asset="row.price"
+        :fiat-currency="currencySymbol"
+        :value="row.price"
       />
     </template>
     <template #item.amount="{ row }">
@@ -147,9 +147,9 @@ function getAssets(item: AssetBalanceWithPrice): string[] {
         show-currency="symbol"
         :amount="row.amount"
         :price-asset="row.asset"
-        :price-of-asset="row.usdPrice"
-        fiat-currency="USD"
-        :value="row.usdValue"
+        :price-of-asset="row.price"
+        :fiat-currency="currencySymbol"
+        :value="row.value"
       />
     </template>
     <template

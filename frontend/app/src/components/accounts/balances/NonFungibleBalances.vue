@@ -6,6 +6,7 @@ import type { IgnoredAssetsHandlingType } from '@/types/asset';
 import type { Module } from '@/types/modules';
 import type { NonFungibleBalance, NonFungibleBalancesRequestPayload } from '@/types/nfbalances';
 import type { ManualPriceFormPayload } from '@/types/prices';
+import type { BigNumber } from '@rotki/common';
 
 defineProps<{ modules: Module[] }>();
 
@@ -69,10 +70,11 @@ const tableHeaders = computed<DataTableColumn<NonFungibleBalance>[]>(() => [
 ]);
 
 const { isLoading: isSectionLoading } = useStatusStore();
-const loading = isSectionLoading(Section.NON_FUNGIBLE_BALANCES);
-
 const { setMessage } = useMessageStore();
 const { isAssetIgnored, ignoreAsset, unignoreAsset } = useIgnoredAssetsStore();
+const { assetPrice } = useBalancePricesStore();
+
+const loading = isSectionLoading(Section.NON_FUNGIBLE_BALANCES);
 
 const {
   state: balances,
@@ -184,12 +186,9 @@ function showDeleteConfirmation(item: NonFungibleBalance) {
   );
 }
 
-onMounted(async () => {
-  await fetchData();
-  await refreshNonFungibleBalances();
-
-  setPostSubmitFunc(fetchData);
-});
+function getAssetPrice(asset: string): BigNumber | undefined {
+  return get(assetPrice(asset));
+}
 
 watch(ignoredAssetsHandling, () => {
   setPage(1);
@@ -198,6 +197,13 @@ watch(ignoredAssetsHandling, () => {
 watch(loading, async (isLoading, wasLoading) => {
   if (!isLoading && wasLoading)
     await fetchData();
+});
+
+onMounted(async () => {
+  await fetchData();
+  await refreshNonFungibleBalances();
+
+  setPostSubmitFunc(fetchData);
 });
 </script>
 
@@ -277,10 +283,10 @@ watch(loading, async (isLoading, wasLoading) => {
               <AmountDisplay
                 :price-asset="row.priceAsset"
                 :amount="row.priceInAsset"
-                :value="row.usdPrice"
+                :value="getAssetPrice(row.priceAsset)"
                 no-scramble
                 show-currency="symbol"
-                fiat-currency="USD"
+                :fiat-currency="currencySymbol"
               />
             </template>
             <template #item.actions="{ row }">

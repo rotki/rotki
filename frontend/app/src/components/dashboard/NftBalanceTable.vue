@@ -14,12 +14,14 @@ const extraParams = computed(() => ({ ignoredAssetsHandling }));
 
 const nonFungibleRoute = Routes.ACCOUNTS_BALANCES_NON_FUNGIBLE;
 
+const { t } = useI18n();
+
 const statistics = useStatisticsStore();
 const { totalNetWorthUsd } = storeToRefs(statistics);
 const { fetchNonFungibleBalances, refreshNonFungibleBalances } = useNonFungibleBalancesStore();
 const { dashboardTablesVisibleColumns } = storeToRefs(useFrontendSettingsStore());
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-const { t } = useI18n();
+const { assetPrice } = useBalancePricesStore();
 
 const group = DashboardTableType.NFT;
 
@@ -45,7 +47,7 @@ const { isLoading: isSectionLoading } = useStatusStore();
 const loading = isSectionLoading(Section.NON_FUNGIBLE_BALANCES);
 const { totalUsdValue } = getCollectionData<NonFungibleBalance>(balances);
 
-const tableHeaders = computed<DataTableColumn<NonFungibleBalance>[]>(() => {
+const cols = computed<DataTableColumn<NonFungibleBalance>[]>(() => {
   const visibleColumns = get(dashboardTablesVisibleColumns)[group];
 
   const headers: DataTableColumn<NonFungibleBalance>[] = [
@@ -108,14 +110,18 @@ function percentageOfCurrentGroup(value: BigNumber) {
   return calculatePercentage(value, get(totalUsdValue) as BigNumber);
 }
 
-onMounted(async () => {
-  await fetchData();
-  await refreshNonFungibleBalances();
-});
+function getAssetPrice(asset: string): BigNumber | undefined {
+  return get(assetPrice(asset));
+}
 
 watch(loading, async (isLoading, wasLoading) => {
   if (!isLoading && wasLoading)
     await fetchData();
+});
+
+onMounted(async () => {
+  await fetchData();
+  await refreshNonFungibleBalances();
 });
 </script>
 
@@ -175,7 +181,7 @@ watch(loading, async (isLoading, wasLoading) => {
         <RuiDataTable
           v-model:sort.external="sort"
           v-model:pagination.external="pagination"
-          :cols="tableHeaders"
+          :cols="cols"
           :rows="data"
           :loading="isLoading"
           :empty="{ description: t('data_table.no_data') }"
@@ -200,9 +206,9 @@ watch(loading, async (isLoading, wasLoading) => {
               no-scramble
               :price-asset="row.priceAsset"
               :amount="row.priceInAsset"
-              :value="row.usdPrice"
+              :value="getAssetPrice(row.priceAsset)"
               show-currency="symbol"
-              fiat-currency="USD"
+              :fiat-currency="currencySymbol"
             />
           </template>
           <template #item.percentageOfTotalNetValue="{ row }">
@@ -221,7 +227,7 @@ watch(loading, async (isLoading, wasLoading) => {
             <RowAppend
               label-colspan="2"
               :label="t('common.total')"
-              :right-patch-colspan="tableHeaders.length - 3"
+              :right-patch-colspan="cols.length - 3"
               :is-mobile="false"
               class-name="[&>td]:p-4 text-sm"
             >

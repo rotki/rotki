@@ -1,4 +1,5 @@
-import type { AssetBalance, AssetInfo } from '@rotki/common';
+import type { AssetInfo } from '@rotki/common';
+import type { AssetBalance } from '@/types/balances';
 
 function levenshtein(a: string, b: string): number {
   let tmp;

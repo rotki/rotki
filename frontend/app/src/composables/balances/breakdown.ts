@@ -1,13 +1,14 @@
 import { TRADE_LOCATION_BLOCKCHAIN } from '@/data/defaults';
-import type { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
+import type { BigNumber } from '@rotki/common';
 import type { MaybeRef } from '@vueuse/core';
 import type { AssetBreakdown } from '@/types/blockchain/accounts';
 import type { ComputedRef } from 'vue';
+import type { AssetBalanceWithBreakdown } from '@/types/balances';
 
 interface UseBalancesBreakdownReturn {
   assetBreakdown: (asset: string) => ComputedRef<AssetBreakdown[]>;
   liabilityBreakdown: (asset: string) => ComputedRef<AssetBreakdown[]>;
-  locationBreakdown: (identifier: MaybeRef<string>) => ComputedRef<AssetBalanceWithPrice[]>;
+  locationBreakdown: (identifier: MaybeRef<string>) => ComputedRef<AssetBalanceWithBreakdown[]>;
   balancesByLocation: ComputedRef<Record<string, BigNumber>>;
 }
 
@@ -43,8 +44,8 @@ export function useBalancesBreakdown(): UseBalancesBreakdownReturn {
     ),
   );
 
-  const locationBreakdown = (identifier: MaybeRef<string>): ComputedRef<AssetBalanceWithPrice[]> =>
-    computed<AssetBalanceWithPrice[]>(() => {
+  const locationBreakdown = (identifier: MaybeRef<string>): ComputedRef<AssetBalanceWithBreakdown[]> =>
+    computed<AssetBalanceWithBreakdown[]>(() => {
       const id = get(identifier);
       let balances = mergeAssetBalances(get(getManualLocationBreakdown(id)), get(getExchangesLocationBreakdown(id)));
 

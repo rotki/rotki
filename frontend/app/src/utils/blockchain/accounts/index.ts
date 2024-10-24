@@ -1,6 +1,7 @@
 import { camelCase, isEmpty } from 'lodash-es';
 import { type MaybeRef, objectOmit } from '@vueuse/core';
 import type {
+  Balance,
   BlockchainAssetBalances,
   BlockchainBalances,
   BlockchainTotals,
@@ -18,7 +19,6 @@ import type {
   ValidatorData,
 } from '@/types/blockchain/accounts';
 import type { Collection } from '@/types/collection';
-import type { Balance } from '@rotki/common';
 import type { AssetBalances } from '@/types/balances';
 import type { Ref } from 'vue';
 
@@ -93,7 +93,7 @@ function applyExclusionFilter<T extends BlockchainAccountBalance>(
 
   return {
     ...account,
-    includedUsdValue: sum(selectedAccounts),
+    includedValue: sum(selectedAccounts),
   };
 }
 
@@ -298,11 +298,11 @@ export function getAccountBalance(account: BlockchainAccount, chainBalances: Blo
   const balance = assets
     ? {
         amount: assets[nativeAsset]?.amount ?? Zero,
-        usdValue: assetSum(accountBalances.assets),
+        value: assetSum(accountBalances.assets),
       }
     : {
         amount: Zero,
-        usdValue: Zero,
+        value: Zero,
       };
 
   const expandable = hasTokens(nativeAsset, accountBalances.assets)

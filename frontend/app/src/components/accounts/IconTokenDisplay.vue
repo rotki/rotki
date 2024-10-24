@@ -1,6 +1,6 @@
 <script lang="ts" setup>
-import type { AssetBalance } from '@rotki/common';
 import type { AssetResolutionOptions } from '@/composables/assets/retrieval';
+import type { AssetBalance } from '@/types/balances';
 
 const props = withDefaults(defineProps<{
   assets: AssetBalance[];

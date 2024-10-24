@@ -1,5 +1,5 @@
 import { camelCase, isEmpty } from 'lodash-es';
-import { type AssetBalance, type Balance, Blockchain } from '@rotki/common';
+import { Blockchain } from '@rotki/common';
 import { type MaybeRef, objectOmit } from '@vueuse/core';
 import type {
   AccountPayload,
@@ -15,8 +15,9 @@ import type {
 } from '@/types/blockchain/accounts';
 import type { Collection } from '@/types/collection';
 import type { BlockchainTotal } from '@/types/blockchain';
-import type { BlockchainBalances, BlockchainTotals } from '@/types/blockchain/balances';
+import type { Balance, BlockchainBalances, BlockchainTotals } from '@/types/blockchain/balances';
 import type { AssetPrices } from '@/types/prices';
+import type { AssetBalance } from '@/types/balances';
 
 export const useBlockchainStore = defineStore('blockchain', () => {
   const accounts = ref<Accounts>({});
@@ -51,7 +52,7 @@ export const useBlockchainStore = defineStore('blockchain', () => {
       const accountAssets = Object.values(balanceData)
         .filter(data => !isEmpty(data) && !isEmpty(data[address]))
         .map(data => data[address]);
-      const usdValue = accountAssets.reduce((previousValue, currentValue) => previousValue.plus(assetSum(currentValue.assets)), Zero);
+      const value = accountAssets.reduce((previousValue, currentValue) => previousValue.plus(assetSum(currentValue.assets)), Zero);
 
       const accountsForAddress = Object.values(accountData).flatMap(
         accounts => accounts.filter(account => getAccountAddress(account) === address),
@@ -72,7 +73,7 @@ export const useBlockchainStore = defineStore('blockchain', () => {
         type: 'group',
         data: accountsForAddress.length === 1 ? accountsForAddress[0].data : { type: 'address', address },
         category: getChainAccountType(chains[0]),
-        usdValue,
+        value,
         label,
         tags: tags.length > 0 ? tags : undefined,
         chains,
@@ -83,7 +84,7 @@ export const useBlockchainStore = defineStore('blockchain', () => {
     const preGrouped = Object.values(accountData)
       .flatMap(accounts => accounts.filter(account => account.groupHeader))
       .map((account) => {
-        const balance: Balance = { amount: Zero, usdValue: Zero };
+        const balance: Balance = { amount: Zero, value: Zero };
         const chainBalances = balanceData[account.chain];
         const accounts = accountData[account.chain];
         const groupAccounts = accounts.filter(acc => !acc.groupHeader && acc.groupId === account.groupId);
@@ -92,7 +93,7 @@ export const useBlockchainStore = defineStore('blockchain', () => {
           if (account.nativeAsset === subAccount.nativeAsset)
             balance.amount = balance.amount.plus(subBalance.amount);
 
-          balance.usdValue = balance.usdValue.plus(subBalance.usdValue);
+          balance.value = balance.value.plus(subBalance.value);
         }
         return {
           ...objectOmit(account, ['chain', 'groupId', 'groupHeader']),

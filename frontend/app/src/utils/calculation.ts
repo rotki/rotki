@@ -1,4 +1,6 @@
-import type { Balance, BigNumber } from '@rotki/common';
+import type { BigNumber } from '@rotki/common';
+
+type Balance = ({ usdValue: BigNumber } | { value: BigNumber }) & { amount: BigNumber };
 
 export function assetSum(balances: Record<string, Balance>): BigNumber {
   const { isAssetIgnored } = useIgnoredAssetsStore();
@@ -7,28 +9,28 @@ export function assetSum(balances: Record<string, Balance>): BigNumber {
     if (get(isAssetIgnored(asset)))
       return sum;
 
-    return sum.plus(balance.usdValue);
+    return sum.plus(`usdValue` in balance ? balance.usdValue : balance.value);
   }, Zero);
 }
 
-export enum Unit {
-  GWEI,
-  ETH,
-}
-
-export function toUnit(value: BigNumber, unit: Unit = Unit.ETH): BigNumber {
-  if (value.isZero())
-    return value;
-
-  const pow = unit === Unit.ETH ? 18 : 9;
-  return value.div(bigNumberify('10').pow(pow));
-}
-
-export function balanceSum(sum: Balance, { amount, usdValue }: Balance): Balance {
-  return {
-    amount: sum.amount.plus(amount),
-    usdValue: sum.usdValue.plus(usdValue),
-  };
+export function balanceSum<T extends Balance>(sum: T, balance: T): T {
+  if (`usdValue` in sum && `usdValue` in balance) {
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+    return {
+      amount: sum.amount.plus(balance.amount),
+      usdValue: sum.usdValue.plus(balance.usdValue),
+    } as T;
+  }
+  else if (`value` in sum && `value` in balance) {
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+    return {
+      amount: sum.amount.plus(balance.amount),
+      value: sum.value.plus(balance.value),
+    } as T;
+  }
+  else {
+    throw new Error('Invalid balance');
+  }
 }
 
 export function calculatePercentage(value: BigNumber, divider: BigNumber): string {

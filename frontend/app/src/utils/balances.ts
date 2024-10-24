@@ -1,11 +1,10 @@
 import type {
-  AssetBalance,
   BigNumber,
   HasBalance,
   Writeable,
 } from '@rotki/common';
 import type { MaybeRef } from '@vueuse/core';
-import type { AssetBalances } from '@/types/balances';
+import type { AssetBalance, AssetBalances } from '@/types/balances';
 import type { AssetBreakdown } from '@/types/blockchain/accounts';
 import type { ComputedRef } from 'vue';
 
@@ -55,21 +54,26 @@ export function groupAssetBreakdown(
   const initial: Record<string, Writeable<AssetBreakdown>> = {};
   const grouped = breakdowns.reduce((acc, breakdown) => {
     const key = groupBy(breakdown);
-    if (!acc[key])
-      acc[key] = { ...breakdown, ...zeroBalance() };
+    if (!acc[key]) {
+      acc[key] = {
+        ...breakdown,
+        amount: Zero,
+        value: Zero,
+      } satisfies AssetBreakdown;
+    }
 
     const balance = balanceSum(acc[key], breakdown);
     acc[key].amount = balance.amount;
-    acc[key].usdValue = balance.usdValue;
+    acc[key].value = balance.value;
     return acc;
   }, initial);
 
-  return Object.values(grouped).sort((a, b) => sortDesc(a.usdValue, b.usdValue));
+  return Object.values(grouped).sort((a, b) => sortDesc(a.value, b.value));
 }
 
-export function appendAssetBalance(
-  value: AssetBalance,
-  assets: AssetBalances,
+export function appendAssetBalance<T extends AssetBalance>(
+  value: T,
+  assets: Record<string, T>,
   getAssociatedAssetIdentifier: (identifier: string) => ComputedRef<string>,
 ): void {
   const identifier = getAssociatedAssetIdentifier(value.asset);
@@ -77,7 +81,8 @@ export function appendAssetBalance(
   const ownedAsset = assets[associatedAsset];
   if (!ownedAsset)
     assets[associatedAsset] = { ...value };
-  else assets[associatedAsset] = { ...balanceSum(ownedAsset, value) };
+  else
+    assets[associatedAsset] = { ...balanceSum(ownedAsset, value) };
 }
 
 export function sumAssetBalances(
@@ -98,8 +103,8 @@ export function sumAssetBalances(
   return summed;
 }
 
-export function sum(balances: { usdValue: BigNumber }[]): BigNumber {
-  return bigNumberSum(balances.map(account => account.usdValue));
+export function sum(balances: { usdValue: BigNumber }[] | { value: BigNumber }[]): BigNumber {
+  return bigNumberSum(balances.map(account => 'usdValue' in account ? account.usdValue : account.value));
 }
 
 export function balanceUsdValueSum(balances: HasBalance[]): BigNumber {

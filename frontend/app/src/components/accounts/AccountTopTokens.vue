@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import type { AssetBalance } from '@rotki/common';
+import type { AssetBalance } from '@/types/balances';
 
 const props = defineProps<{
   chains: string[];
@@ -33,7 +33,7 @@ const assets = computed<AssetBalance[]>(() => {
     });
   });
 
-  return Object.values(assets).sort((a, b) => sortDesc(a.usdValue, b.usdValue));
+  return Object.values(assets).sort((a, b) => sortDesc(a.value, b.value));
 });
 </script>
 

@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { type AssetBalance, type BigNumber, Blockchain } from '@rotki/common';
+import { type BigNumber, Blockchain } from '@rotki/common';
 import { CURRENCY_USD } from '@/types/currencies';
 import type { AssetBreakdown } from '@/types/blockchain/accounts';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
+import type { AssetBalance } from '@/types/balances';
 
 const props = withDefaults(
   defineProps<{
@@ -65,7 +66,7 @@ const rows = computed<AssetBreakdown[]>(() => {
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
 const sort = ref<DataTableSortData<AssetBreakdown>>({
-  column: 'usdValue',
+  column: 'value',
   direction: 'desc' as const,
 });
 
@@ -137,7 +138,7 @@ function getAssets(location: string): AssetBalance[] {
       balances.push({
         asset,
         amount: entry.amount,
-        usdValue: entry.usdValue,
+        value: entry.value,
       });
     }
   }
@@ -179,14 +180,14 @@ function getAssets(location: string): AssetBalance[] {
           show-currency="symbol"
           :amount="row.amount"
           :price-asset="identifier"
-          fiat-currency="USD"
-          :value="row.usdValue"
+          :fiat-currency="currencySymbol"
+          :value="row.value"
         />
       </div>
     </template>
     <template #item.percentage="{ row }">
       <PercentageDisplay
-        :value="percentage(row.usdValue)"
+        :value="percentage(row.value)"
         :asset-padding="0.1"
       />
     </template>

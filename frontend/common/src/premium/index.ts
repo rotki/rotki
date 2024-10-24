@@ -64,7 +64,6 @@ export interface SushiApi {
 
 export interface BalancesApi {
   byLocation: Ref<Record<string, BigNumber>>;
-  aggregatedBalances: Ref<AssetBalanceWithPrice[]>;
   balances: (groupMultiChain?: boolean) => ComputedRef<AssetBalanceWithPrice[]>;
   exchangeRate: (currency: string) => Ref<BigNumber>;
 }

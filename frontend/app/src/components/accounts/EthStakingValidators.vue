@@ -76,7 +76,7 @@ const cols = computed<DataTableColumn<EthereumValidator>[]>(() => {
     },
     {
       label: t('account_balances.headers.usd_value', currency),
-      key: 'usdValue',
+      key: 'value',
       sortable: true,
       cellClass: 'py-0',
       align: 'end',
@@ -234,10 +234,10 @@ watchImmediate(ethStakingValidators, async () => {
           :asset-padding="0.1"
         />
       </template>
-      <template #item.usdValue="{ row }">
+      <template #item.value="{ row }">
         <AmountDisplay
-          fiat-currency="USD"
-          :value="row.usdValue"
+          :fiat-currency="currencySymbol"
+          :value="row.value"
           show-currency="symbol"
         />
       </template>

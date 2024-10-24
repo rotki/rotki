@@ -1,10 +1,9 @@
 import { z } from 'zod';
 import type BigNumber from 'bignumber.js';
-import type { AssetBalance, Balance } from '@rotki/common';
+import type { AssetBalance } from '@rotki/common';
 import type { Module } from '@/types/modules';
 import type { PaginationRequestPayload } from '@/types/common';
-import type { BlockchainAssetBalances } from '@/types/blockchain/balances';
-import type { AssetBalances } from '@/types/balances';
+import type { Balance, BlockchainAssetBalances } from '@/types/blockchain/balances';
 
 export interface AddressData {
   readonly type: 'address';
@@ -57,8 +56,8 @@ export interface BlockchainAccountWithBalance<T extends BlockchainAccountData = 
   readonly type: 'account';
   readonly category?: string;
   readonly amount: BigNumber;
-  readonly usdValue: BigNumber;
-  readonly includedUsdValue?: BigNumber;
+  readonly value: BigNumber;
+  readonly includedValue?: BigNumber;
 }
 
 export type EthereumValidator = ValidatorData & Balance;
@@ -73,8 +72,8 @@ export interface BlockchainAccountGroupWithBalance<T extends BlockchainAccountDa
   readonly type: 'group';
   readonly category?: string;
   readonly amount?: BigNumber;
-  readonly usdValue: BigNumber;
-  readonly includedUsdValue?: BigNumber;
+  readonly value: BigNumber;
+  readonly includedValue?: BigNumber;
   readonly nativeAsset?: string;
   readonly aggregatedAssets?: AssetBalance[];
   readonly chains: string[];
@@ -215,7 +214,5 @@ export interface ERC20Token {
 }
 
 export type Accounts = Record<string, BlockchainAccount[]>;
-
-export type Totals = Record<string, AssetBalances>;
 
 export type Balances = Record<string, BlockchainAssetBalances>;

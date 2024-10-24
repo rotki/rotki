@@ -26,7 +26,7 @@ export const useBlockchainValidatorsStore = defineStore('blockchain/validators',
   const ethStakingValidators = computed<EthereumValidator[]>(() => {
     const validatorAccounts = get(blockchainAccounts)[Blockchain.ETH2] ?? [];
     return validatorAccounts.filter(isAccountWithBalanceValidator).map(validator => ({
-      ...objectPick(validator, ['usdValue', 'amount']),
+      ...objectPick(validator, ['value', 'amount']),
       ...validator.data,
     }));
   });

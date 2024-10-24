@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CURRENCY_USD, useCurrencies } from '@/types/currencies';
 import { PriceOracle } from '@/types/settings/price-oracle';
 import { updateGeneralSettings } from '../../../utils/general-settings';
+import type { Balances } from '@/types/blockchain/balances';
 
 vi.mock('@/store/tasks', () => ({
   useTaskStore: vi.fn().mockReturnValue({
@@ -48,7 +49,6 @@ describe('store::balances/manual', () => {
         DAI: {
           value: bigNumberify(1),
           isManualPrice: false,
-          isCurrentCurrency: false,
         },
       });
     });
@@ -82,12 +82,10 @@ describe('store::balances/manual', () => {
         DAI: {
           value: bigNumberify(1),
           isManualPrice: false,
-          isCurrentCurrency: false,
         },
         ETH: {
           value: bigNumberify(2),
           isManualPrice: true,
-          isCurrentCurrency: true,
         },
       });
     });
@@ -98,24 +96,24 @@ describe('store::balances/manual', () => {
       const newBalances = store.updateBalancesPrices({
         DAI: {
           amount: bigNumberify(10),
-          usdValue: bigNumberify(0),
+          value: bigNumberify(0),
         },
         ETH: {
           amount: bigNumberify(10),
-          usdValue: bigNumberify(10),
+          value: bigNumberify(10),
         },
       });
 
       expect(newBalances).toMatchObject({
         DAI: {
           amount: bigNumberify(10),
-          usdValue: bigNumberify(10),
+          value: bigNumberify(10),
         },
         ETH: {
           amount: bigNumberify(10),
-          usdValue: bigNumberify(20),
+          value: bigNumberify(20),
         },
-      });
+      } satisfies Balances);
     });
   });
 
@@ -218,13 +216,6 @@ describe('store::balances/manual', () => {
     it('default', () => {
       expect(get(store.isManualAssetPrice('DAI'))).toEqual(false);
       expect(get(store.isManualAssetPrice('ETH'))).toEqual(true);
-    });
-  });
-
-  describe('isAssetPriceInCurrentCurrency', () => {
-    it('default', () => {
-      expect(get(store.isAssetPriceInCurrentCurrency('DAI'))).toEqual(false);
-      expect(get(store.isAssetPriceInCurrentCurrency('ETH'))).toEqual(true);
     });
   });
 });
