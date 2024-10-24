@@ -197,7 +197,7 @@ def test_add_edit_delete_entries(rotkehlchen_api_server: 'APIServer'):
     )
     assert_editing_works(entry, rotkehlchen_api_server, db, 4, also_redecode=True)  # evm event
     assert_editing_works(entries[5], rotkehlchen_api_server, db, 5)  # history event
-    assert_editing_works(entries[6], rotkehlchen_api_server, db, 6, {'notes': 'Exited validator 1001 with 1500.1 ETH', 'event_identifier': 'EW_1001_19460'})  # eth withdrawal event  # noqa: E501
+    assert_editing_works(entries[6], rotkehlchen_api_server, db, 6, {'notes': 'Exit validator 1001 with 1500.1 ETH', 'event_identifier': 'EW_1001_19460'})  # eth withdrawal event  # noqa: E501
     assert_editing_works(entries[7], rotkehlchen_api_server, db, 7, {'notes': 'Deposit 1500.1 ETH to validator 1001'})  # eth deposit event  # noqa: E501
     assert_editing_works(entries[8], rotkehlchen_api_server, db, 8, {'notes': 'Validator 1001 produced block 5 with 1500.1 ETH going to 0x9531C059098e3d194fF87FebB587aB07B30B1306 as the mev reward', 'event_identifier': 'BP1_5'})  # eth block event  # noqa: E501
 
