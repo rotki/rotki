@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`8439` Rotki will now correctly decode Ethereum/Polygon PoS bridging.
 * :feature:`8809` Rotki now correctly tracks bridge transactions between Ethereum and Superchain networks (Base and OP Mainnet).
 * :feature:`-` Users will now be able to search for assets in the blockchain balances asset table.
 * :feature:`8690` Users will be able to see related event when dealing with missing acquisitions in the PnL report.
