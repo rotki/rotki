@@ -292,24 +292,28 @@ def test_staking_performance(rotkehlchen_api_server, ethereum_accounts):
     result = assert_proper_sync_response_with_result(response)
     expected_validators_result = {
         'sums': {
-            'apr': '0.0424775793265764082855623252084392229313421239502676478367328536179575826476231',  # noqa: E501
-            'execution': '0.22318938600728405',
             'outstanding_consensus_pnl': '-0.0011592',
-            'sum': '0.82216012100728395',
             'withdrawals': '0.6001299349999999',
         },
         'validators': {
             '1187604': {
-                'apr': '0.0424775793265764082855623252084392229313421239502676478367328536179575826476231',  # noqa: E501
-                'execution': '0.22318938600728405',
                 'outstanding_consensus_pnl': '-0.0011592',
-                'sum': '0.82216012100728395',
                 'withdrawals': '0.6001299349999999',
             },
         },
         'entries_found': 1,
         'entries_total': 1,
     }
+
+    # we don't compare directly the dict values because they come from the database and there
+    # is a rounding difference between linux and macos.
+    expected_sum, expected_execution, expected_apr = FVal('0.82216012100728395'), FVal('0.22318938600728405'), FVal('0.0424775793265764082855623252084392229313421239502676478367328536179575826476231')  # noqa: E501
+    assert FVal(result['sums'].pop('execution')).is_close(expected_execution)
+    assert FVal(result['sums'].pop('sum')).is_close(expected_sum)
+    assert FVal(result['sums'].pop('apr')).is_close(expected_apr)
+    assert FVal(result['validators']['1187604'].pop('execution')).is_close(expected_execution)
+    assert FVal(result['validators']['1187604'].pop('sum')).is_close(expected_sum)
+    assert FVal(result['validators']['1187604'].pop('apr')).is_close(expected_apr)
     assert result == expected_validators_result
 
 
