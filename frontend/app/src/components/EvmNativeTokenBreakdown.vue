@@ -1,29 +1,26 @@
 <script setup lang="ts">
-import { type AssetBalance, type BigNumber, Blockchain } from '@rotki/common';
-import { CURRENCY_USD } from '@/types/currencies';
+import { type BigNumber, Blockchain } from '@rotki/common';
 import type { AssetBreakdown } from '@/types/blockchain/accounts';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
+import type { AssetBalance } from '@/types/balances';
 
-const props = withDefaults(
-  defineProps<{
-    identifier: string;
-    assets: string[];
-    details?: {
-      groupId: string;
-      chains: string[];
-    };
-    blockchainOnly?: boolean;
-    showPercentage?: boolean;
-    total?: BigNumber;
-    isLiability?: boolean;
-  }>(),
-  {
-    blockchainOnly: false,
-    showPercentage: false,
-    total: undefined,
-    isLiability: false,
-  },
-);
+const props = withDefaults(defineProps<{
+  identifier: string;
+  assets: string[];
+  details?: {
+    groupId: string;
+    chains: string[];
+  };
+  blockchainOnly?: boolean;
+  showPercentage?: boolean;
+  total?: BigNumber;
+  isLiability?: boolean;
+}>(), {
+  blockchainOnly: false,
+  showPercentage: false,
+  total: undefined,
+  isLiability: false,
+});
 
 const { t } = useI18n();
 
@@ -65,7 +62,7 @@ const rows = computed<AssetBreakdown[]>(() => {
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
 const sort = ref<DataTableSortData<AssetBreakdown>>({
-  column: 'usdValue',
+  column: 'value',
   direction: 'desc' as const,
 });
 
@@ -96,9 +93,9 @@ const cols = computed<DataTableColumn<AssetBreakdown>[]>(() => {
     },
     {
       label: t('asset_locations.header.value', {
-        symbol: get(currencySymbol) ?? CURRENCY_USD,
+        symbol: get(currencySymbol),
       }),
-      key: 'usdValue',
+      key: 'value',
       align: 'end',
       cellClass: 'py-2',
       sortable: true,
@@ -137,7 +134,7 @@ function getAssets(location: string): AssetBalance[] {
       balances.push({
         asset,
         amount: entry.amount,
-        usdValue: entry.usdValue,
+        value: entry.value,
       });
     }
   }
@@ -171,7 +168,7 @@ function getAssets(location: string): AssetBalance[] {
     <template #item.amount="{ row }">
       <AmountDisplay :value="row.amount" />
     </template>
-    <template #item.usdValue="{ row }">
+    <template #item.value="{ row }">
       <div class="flex items-center justify-end gap-2">
         <Eth2ValidatorLimitTooltip v-if="row.location === Blockchain.ETH2" />
 
@@ -179,14 +176,14 @@ function getAssets(location: string): AssetBalance[] {
           show-currency="symbol"
           :amount="row.amount"
           :price-asset="identifier"
-          fiat-currency="USD"
-          :value="row.usdValue"
+          :fiat-currency="currencySymbol"
+          :value="row.value"
         />
       </div>
     </template>
     <template #item.percentage="{ row }">
       <PercentageDisplay
-        :value="percentage(row.usdValue)"
+        :value="percentage(row.value)"
         :asset-padding="0.1"
       />
     </template>

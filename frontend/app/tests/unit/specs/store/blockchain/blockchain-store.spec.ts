@@ -3,6 +3,7 @@ import { Blockchain } from '@rotki/common';
 import { useBlockchainStore } from '@/store/blockchain';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 import type { AssetPrices } from '@/types/prices';
+import type { Balance } from '@/types/blockchain/balances';
 
 describe('useBlockchainStore', () => {
   let store: ReturnType<typeof useBlockchainStore>;
@@ -29,7 +30,7 @@ describe('useBlockchainStore', () => {
               assets: {
                 ETH: {
                   amount: bigNumberify(10),
-                  usdValue: bigNumberify(20000),
+                  value: bigNumberify(20000),
                 },
               },
               liabilities: {},
@@ -40,7 +41,7 @@ describe('useBlockchainStore', () => {
           assets: {
             ETH: {
               amount: bigNumberify(10),
-              usdValue: bigNumberify(20000),
+              value: bigNumberify(20000),
             },
           },
           liabilities: {},
@@ -51,13 +52,13 @@ describe('useBlockchainStore', () => {
 
       expect(store.aggregatedTotals.ETH).toEqual({
         amount: bigNumberify(10),
-        usdValue: bigNumberify(25000),
-      });
+        value: bigNumberify(25000),
+      } satisfies Balance);
 
       expect(store.balances.eth['0xacc'].assets.ETH).toEqual({
         amount: bigNumberify(10),
-        usdValue: bigNumberify(25000),
-      });
+        value: bigNumberify(25000),
+      } satisfies Balance);
     });
   });
 
@@ -75,7 +76,7 @@ describe('useBlockchainStore', () => {
         assets: {
           ETH: {
             amount: bigNumberify(1),
-            usdValue: bigNumberify(2501),
+            value: bigNumberify(2501),
           },
         },
         liabilities: {},
@@ -90,7 +91,7 @@ describe('useBlockchainStore', () => {
         assets: {
           ETH: {
             amount: bigNumberify(1),
-            usdValue: bigNumberify(2501),
+            value: bigNumberify(2501),
           },
         },
         liabilities: {},

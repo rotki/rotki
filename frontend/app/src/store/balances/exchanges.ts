@@ -1,7 +1,7 @@
-import { AssetBalances } from '@/types/balances';
+import { type AssetBalanceWithPrice, AssetBalances } from '@/types/balances';
 import { Section, Status } from '@/types/status';
 import { TaskType } from '@/types/task-type';
-import type { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
+import type { BigNumber } from '@rotki/common';
 import type { MaybeRef } from '@vueuse/core';
 import type {
   ExchangeData,
@@ -81,13 +81,14 @@ export const useExchangeBalancesStore = defineStore('balances/exchanges', () => 
     return [];
   });
 
-  const getLocationBreakdown = (id: string): ComputedRef<AssetBalances> => computed(() => {
-    const assets: AssetBalances = {};
+  const getLocationBreakdown = (id: string): ComputedRef<Record<string, AssetBalanceWithPrice>> => computed(() => {
+    const assets: Record<string, AssetBalanceWithPrice> = {};
     const exchange = get(connectedExchanges).find(({ location }) => id === location);
 
     if (exchange) {
       const balances = get(getBalances(exchange.location));
-      for (const balance of balances) appendAssetBalance(balance, assets, getAssociatedAssetIdentifier);
+      for (const balance of balances)
+        appendAssetBalance(balance, assets, getAssociatedAssetIdentifier);
     }
     return assets;
   });

@@ -29,7 +29,7 @@ const assetPriceForm = ref<InstanceType<typeof HistoryEventAssetPriceForm>>();
 const eventIdentifier = ref<string>('');
 const datetime = ref<string>('');
 const amount = ref<string>('');
-const usdValue = ref<string>('');
+const value = ref<string>('');
 const validatorIndex = ref<string>('');
 const withdrawalAddress = ref<string>('');
 const isExit = ref<boolean>(false);
@@ -47,7 +47,7 @@ const rules = {
   amount: {
     required: helpers.withMessage(t('transactions.events.form.amount.validation.non_empty'), required),
   },
-  usdValue: {
+  value: {
     required: helpers.withMessage(
       t('transactions.events.form.fiat_value.validation.non_empty', {
         currency: get(currencySymbol),
@@ -66,7 +66,7 @@ const rules = {
 };
 
 const numericAmount = bigNumberifyFromRef(amount);
-const numericUsdValue = bigNumberifyFromRef(usdValue);
+const numericValue = bigNumberifyFromRef(value);
 
 const { setValidation, setSubmitFunc, saveHistoryEventHandler } = useHistoryEventsForm();
 
@@ -76,7 +76,7 @@ const v$ = setValidation(
     eventIdentifier,
     timestamp: datetime,
     amount,
-    usdValue,
+    value,
     validatorIndex,
     withdrawalAddress,
   },
@@ -90,7 +90,7 @@ function reset() {
   set(eventIdentifier, null);
   set(datetime, convertFromTimestamp(dayjs().valueOf(), DateFormat.DateMonthYearHourMinuteSecond, true));
   set(amount, '0');
-  set(usdValue, '0');
+  set(value, '0');
   set(validatorIndex, '');
   set(withdrawalAddress, '');
   set(isExit, false);
@@ -103,7 +103,7 @@ function applyEditableData(entry: EthWithdrawalEvent) {
   set(eventIdentifier, entry.eventIdentifier);
   set(datetime, convertFromTimestamp(entry.timestamp, DateFormat.DateMonthYearHourMinuteSecond, true));
   set(amount, entry.balance.amount.toFixed());
-  set(usdValue, entry.balance.usdValue.toFixed());
+  set(value, entry.balance.usdValue.toFixed());
   set(validatorIndex, entry.validatorIndex.toString());
   set(withdrawalAddress, entry.locationLabel);
   set(isExit, entry.isExit);
@@ -114,7 +114,7 @@ function applyGroupHeaderData(entry: EthWithdrawalEvent) {
   set(withdrawalAddress, entry.locationLabel ?? '');
   set(validatorIndex, entry.validatorIndex.toString());
   set(datetime, convertFromTimestamp(entry.timestamp, DateFormat.DateMonthYearHourMinuteSecond, true));
-  set(usdValue, '0');
+  set(value, '0');
 }
 
 watch(errorMessages, (errors) => {
@@ -131,7 +131,7 @@ async function save(): Promise<boolean> {
     timestamp,
     balance: {
       amount: get(numericAmount).isNaN() ? Zero : get(numericAmount),
-      usdValue: get(numericUsdValue).isNaN() ? Zero : get(numericUsdValue),
+      usdValue: get(numericValue).isNaN() ? Zero : get(numericValue),
     },
     validatorIndex: parseInt(get(validatorIndex)),
     withdrawalAddress: get(withdrawalAddress),
@@ -205,7 +205,7 @@ const withdrawalAddressSuggestions = computed(() => getAddresses(Blockchain.ETH)
     <HistoryEventAssetPriceForm
       ref="assetPriceForm"
       v-model:amount="amount"
-      v-model:usd-value="usdValue"
+      v-model:value="value"
       asset="ETH"
       :v$="v$"
       :datetime="datetime"

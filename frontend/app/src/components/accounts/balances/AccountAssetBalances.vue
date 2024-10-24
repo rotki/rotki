@@ -1,10 +1,6 @@
 <script setup lang="ts">
-import type { AssetBalance, BigNumber } from '@rotki/common';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
-
-type AssetWithPrice = AssetBalance & {
-  price: BigNumber;
-};
+import type { AssetBalance, AssetBalanceWithPrice } from '@/types/balances';
 
 const props = withDefaults(
   defineProps<{
@@ -25,18 +21,18 @@ const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { assetInfo } = useAssetInfoRetrieval();
 const getPrice = (asset: string) => get(assetPrice(asset)) ?? Zero;
 
-const sort = ref<DataTableSortData<AssetWithPrice>>({
-  column: 'usdValue',
+const sort = ref<DataTableSortData<AssetBalanceWithPrice>>({
+  column: 'value',
   direction: 'desc' as const,
 });
 
-const assetsWithPrice = computed<AssetWithPrice[]>(() =>
+const assetsWithPrice = computed<AssetBalanceWithPrice[]>(() =>
   get(assets).map(row => ({ ...row, price: get(getPrice(row.asset)) })),
 );
 
-const sortItems = getSortItems<AssetWithPrice>(asset => get(assetInfo(asset)));
+const sortItems = getSortItems<AssetBalanceWithPrice>(asset => get(assetInfo(asset)));
 
-const sorted = computed<AssetWithPrice[]>(() => {
+const sorted = computed<AssetBalanceWithPrice[]>(() => {
   const sortBy = get(sort);
   const data = [...get(assetsWithPrice)];
   if (!Array.isArray(sortBy) && sortBy?.column)
@@ -45,7 +41,7 @@ const sorted = computed<AssetWithPrice[]>(() => {
   return data;
 });
 
-const headers = computed<DataTableColumn<AssetWithPrice>[]>(() => [
+const headers = computed<DataTableColumn<AssetBalanceWithPrice>[]>(() => [
   {
     label: t('common.asset'),
     class: 'text-no-wrap w-full',
@@ -75,7 +71,7 @@ const headers = computed<DataTableColumn<AssetWithPrice>[]>(() => [
     label: t('common.value_in_symbol', {
       symbol: get(currencySymbol),
     }),
-    key: 'usdValue',
+    key: 'value',
     align: 'end',
     class: 'text-no-wrap',
     cellClass: 'py-1',
@@ -127,10 +123,10 @@ const headers = computed<DataTableColumn<AssetWithPrice>[]>(() => [
       <template #item.amount="{ row }">
         <AmountDisplay :value="row.amount" />
       </template>
-      <template #item.usdValue="{ row }">
+      <template #item.value="{ row }">
         <AmountDisplay
-          fiat-currency="USD"
-          :value="row.usdValue"
+          :fiat-currency="currencySymbol"
+          :value="row.value"
           show-currency="symbol"
         />
       </template>

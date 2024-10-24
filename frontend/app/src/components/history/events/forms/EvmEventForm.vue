@@ -43,7 +43,7 @@ const eventType = ref<string>('');
 const eventSubtype = ref<string>('');
 const asset = ref<string>('');
 const amount = ref<string>('');
-const usdValue = ref<string>('');
+const value = ref<string>('');
 const address = ref<string>('');
 const locationLabel = ref<string>('');
 const notes = ref<string>('');
@@ -91,7 +91,7 @@ const rules = {
   amount: {
     required: helpers.withMessage(t('transactions.events.form.amount.validation.non_empty'), required),
   },
-  usdValue: {
+  value: {
     required: helpers.withMessage(
       t('transactions.events.form.fiat_value.validation.non_empty', {
         currency: get(currencySymbol),
@@ -129,7 +129,7 @@ const rules = {
 };
 
 const numericAmount = bigNumberifyFromRef(amount);
-const numericUsdValue = bigNumberifyFromRef(usdValue);
+const numericValue = bigNumberifyFromRef(value);
 
 const { setValidation, setSubmitFunc, saveHistoryEventHandler, getPayloadNotes } = useHistoryEventsForm();
 
@@ -144,7 +144,7 @@ const v$ = setValidation(
     location,
     asset,
     amount,
-    usdValue,
+    value,
     address,
     sequenceIndex,
     eventType,
@@ -170,7 +170,7 @@ function reset() {
   set(eventSubtype, '');
   set(asset, '');
   set(amount, '0');
-  set(usdValue, '0');
+  set(value, '0');
   set(notes, '');
   set(counterparty, '');
   set(product, '');
@@ -190,7 +190,7 @@ function applyEditableData(entry: EvmHistoryEvent) {
   set(eventSubtype, entry.eventSubtype || 'none');
   set(asset, entry.asset);
   set(amount, entry.balance.amount.toFixed());
-  set(usdValue, entry.balance.usdValue.toFixed());
+  set(value, entry.balance.usdValue.toFixed());
   set(address, entry.address ?? '');
   set(locationLabel, entry.locationLabel ?? '');
   set(notes, entry.notes ?? '');
@@ -207,7 +207,7 @@ function applyGroupHeaderData(entry: EvmHistoryEvent) {
   set(locationLabel, entry.locationLabel ?? '');
   set(txHash, entry.txHash);
   set(datetime, convertFromTimestamp(entry.timestamp, DateFormat.DateMonthYearHourMinuteSecond, true));
-  set(usdValue, '0');
+  set(value, '0');
 }
 
 watch(errorMessages, (errors) => {
@@ -232,7 +232,7 @@ async function save(): Promise<boolean> {
     asset: get(asset),
     balance: {
       amount: get(numericAmount).isNaN() ? Zero : get(numericAmount),
-      usdValue: get(numericUsdValue).isNaN() || get(isInformationalEvent) ? Zero : get(numericUsdValue),
+      usdValue: get(numericValue).isNaN() || get(isInformationalEvent) ? Zero : get(numericValue),
     },
     location: get(location),
     address: get(address) || null,
@@ -342,7 +342,7 @@ const addressSuggestions = computed(() => getAddresses(Blockchain.ETH));
       ref="assetPriceForm"
       v-model:asset="asset"
       v-model:amount="amount"
-      v-model:usd-value="usdValue"
+      v-model:value="value"
       :v$="v$"
       :datetime="datetime"
       :hide-price-fields="isInformationalEvent"

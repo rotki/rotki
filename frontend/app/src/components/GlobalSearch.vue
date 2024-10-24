@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useAppRoutes } from '@/router/routes';
 import type { RuiIcons } from '@rotki/ui-library';
-import type { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
+import type { BigNumber } from '@rotki/common';
 import type { Exchange } from '@/types/exchanges';
 import type { TradeLocationData } from '@/types/history/trade/location';
 import type { RouteLocationRaw } from 'vue-router';
@@ -259,7 +259,7 @@ async function getAssets(keyword: string): Promise<SearchItemWithoutValue[]> {
     value: keyword,
     limit: 5,
   });
-  const assetBalances = get(balances()) as AssetBalanceWithPrice[];
+  const assetBalances = get(balances());
   const map: Record<string, string> = {};
   for (const match of matches) map[match.identifier] = match.symbol ?? match.name ?? '';
 

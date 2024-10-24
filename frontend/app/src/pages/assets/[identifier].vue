@@ -3,7 +3,7 @@ import { AssetAmountAndValueOverTime } from '@/premium/premium';
 import { EVM_TOKEN } from '@/types/asset';
 import { NoteLocation } from '@/types/notes';
 import type { RouteLocationRaw } from 'vue-router';
-import type { AssetBalanceWithPrice } from '@rotki/common';
+import type { AssetBalanceWithBreakdown } from '@/types/balances';
 import type { AssetResolutionOptions } from '@/composables/assets/retrieval';
 
 definePage({
@@ -83,7 +83,7 @@ const editRoute = computed<RouteLocationRaw>(() => ({
   },
 }));
 
-const collectionBalance = computed<AssetBalanceWithPrice[]>(() => {
+const collectionBalance = computed<AssetBalanceWithBreakdown[]>(() => {
   if (!get(isCollectionParent))
     return [];
 

@@ -1,4 +1,19 @@
-import type { AssetsApi, BalancerApi, BalancesApi, CompoundApi, LocationData, OwnedAssets, ProfitLossModel, StatisticsApi, SushiApi, TimedAssetBalances, TimedBalances, UserSettingsApi, UtilsApi } from '@rotki/common';
+import type {
+  AssetBalanceWithPrice,
+  AssetsApi,
+  BalancerApi,
+  BalancesApi,
+  CompoundApi,
+  LocationData,
+  OwnedAssets,
+  ProfitLossModel,
+  StatisticsApi,
+  SushiApi,
+  TimedAssetBalances,
+  TimedBalances,
+  UserSettingsApi,
+  UtilsApi,
+} from '@rotki/common';
 import type { MaybeRef } from '@vueuse/core';
 
 export function assetsApi(): AssetsApi {
@@ -73,9 +88,16 @@ export function balancesApi(): BalancesApi {
   const { balances } = useAggregatedBalances();
   return {
     byLocation: balancesByLocation,
-    // TODO: deprecate on the next major components version (it's only here for backwards compat)
-    aggregatedBalances: balances(false, false),
-    balances: (groupMultiChain = false) => balances(false, groupMultiChain),
+    balances: (groupMultiChain: boolean = false): ComputedRef<AssetBalanceWithPrice[]> =>
+      // TODO update components
+      useRefMap(balances(false, groupMultiChain), balances => balances.map(item => ({
+        ...item,
+        usdValue: item.value,
+        breakdown: item.breakdown?.map(entry => ({
+          ...entry,
+          usdValue: entry.value,
+        })),
+      }))),
     exchangeRate: (currency: string) => computed(() => get(exchangeRate(currency)) ?? One),
   };
 }

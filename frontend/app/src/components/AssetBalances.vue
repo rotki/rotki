@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { some } from 'lodash-es';
 import { isEvmNativeToken } from '@/types/asset';
-import type { AssetBalance, AssetBalanceWithPrice, Nullable } from '@rotki/common';
+import type { AssetBalance, AssetBalanceWithBreakdown } from '@/types/balances';
+import type { Nullable } from '@rotki/common';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 
 defineOptions({
@@ -12,7 +13,7 @@ const search = defineModel<string>('search', { required: false, default: '' });
 
 const props = withDefaults(
   defineProps<{
-    balances: AssetBalanceWithPrice[];
+    balances: AssetBalanceWithBreakdown[];
     details?: {
       groupId: string;
       chains: string[];
@@ -38,10 +39,10 @@ const props = withDefaults(
 const { t } = useI18n();
 
 const { balances } = toRefs(props);
-const expanded = ref<AssetBalanceWithPrice[]>([]);
+const expanded = ref<AssetBalanceWithBreakdown[]>([]);
 
-const sort = ref<DataTableSortData<AssetBalanceWithPrice>>({
-  column: 'usdValue',
+const sort = ref<DataTableSortData<AssetBalanceWithBreakdown>>({
+  column: 'value',
   direction: 'desc' as const,
 });
 
@@ -50,11 +51,11 @@ const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
 const isExpanded = (asset: string) => some(get(expanded), { asset });
 
-function expand(item: AssetBalanceWithPrice) {
+function expand(item: AssetBalanceWithBreakdown) {
   set(expanded, isExpanded(item.asset) ? [] : [item]);
 }
 
-function getAssets(item: AssetBalanceWithPrice): string[] {
+function getAssets(item: AssetBalanceWithBreakdown): string[] {
   return item.breakdown?.map(entry => entry.asset) ?? [];
 }
 
@@ -64,9 +65,9 @@ function assetFilter(item: Nullable<AssetBalance>) {
 
 const filteredBalances = computed(() => get(balances).filter(assetFilter));
 
-const total = computed(() => bigNumberSum(get(filteredBalances).map(({ usdValue }) => usdValue)));
+const total = computed(() => bigNumberSum(get(filteredBalances).map(({ value }) => value)));
 
-const tableHeaders = computed<DataTableColumn<AssetBalanceWithPrice>[]>(() => [
+const cols = computed<DataTableColumn<AssetBalanceWithBreakdown>[]>(() => [
   {
     label: t('common.asset'),
     key: 'asset',
@@ -94,7 +95,7 @@ const tableHeaders = computed<DataTableColumn<AssetBalanceWithPrice>[]>(() => [
     label: t('common.value_in_symbol', {
       symbol: get(currencySymbol),
     }),
-    key: 'usdValue',
+    key: 'value',
     align: 'end',
     class: 'text-no-wrap',
     cellClass: 'py-0',
@@ -102,13 +103,13 @@ const tableHeaders = computed<DataTableColumn<AssetBalanceWithPrice>[]>(() => [
   },
 ]);
 
-const sorted = computed<AssetBalanceWithPrice[]>(() => sortAssetBalances([...get(filteredBalances)], get(sort), assetInfo));
+const sorted = computed<AssetBalanceWithBreakdown[]>(() => sortAssetBalances([...get(filteredBalances)], get(sort), assetInfo));
 </script>
 
 <template>
   <RuiDataTable
     v-model:sort.external="sort"
-    :cols="tableHeaders"
+    :cols="cols"
     :rows="sorted"
     :loading="loading"
     :expanded="expanded"
@@ -139,16 +140,15 @@ const sorted = computed<AssetBalanceWithPrice[]>(() => sortAssetBalances([...get
       />
     </template>
     <template #item.amount="{ row }">
-      <AmountDisplay :value="row.amount" />
+      <AmountDisplay :value="row.amount " />
     </template>
-    <template #item.usdValue="{ row }">
+    <template #item.value="{ row }">
       <AmountDisplay
         show-currency="symbol"
         :amount="row.amount"
-        :price-asset="row.asset"
-        :price-of-asset="row.price"
         :fiat-currency="currencySymbol"
-        :value="row.usdValue"
+        :value="row.value"
+        :loading="row.price.lt(0)"
       />
     </template>
     <template
@@ -163,9 +163,10 @@ const sorted = computed<AssetBalanceWithPrice[]>(() => sortAssetBalances([...get
         class-name="[&>td]:p-4 text-sm"
       >
         <AmountDisplay
-          fiat-currency="USD"
+          :fiat-currency="currencySymbol"
           show-currency="symbol"
           :value="total"
+          :loading="loading || total.eq(0)"
         />
       </RowAppend>
     </template>

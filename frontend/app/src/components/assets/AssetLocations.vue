@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { type BigNumber, Blockchain } from '@rotki/common';
-import { CURRENCY_USD } from '@/types/currencies';
 import { isBlockchain } from '@/types/blockchain/chains';
 import type { AssetBreakdown, BlockchainAccount } from '@/types/blockchain/accounts';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
@@ -31,7 +30,7 @@ const { assetBreakdown } = useBalancesBreakdown();
 
 const onlyTags = ref<string[]>([]);
 
-const totalUsdValue = computed<BigNumber>(() => get(assetPriceInfo(identifier)).usdValue);
+const totalValue = computed<BigNumber>(() => get(assetPriceInfo(identifier)).value);
 
 const assetLocations = computed<AssetLocations>(() => {
   const breakdowns = get(assetBreakdown(get(identifier)));
@@ -50,8 +49,7 @@ const { addressNameSelector } = useAddressesNamesStore();
 const visibleAssetLocations = computed<AssetLocations>(() => {
   const locations = get(assetLocations).map(item => ({
     ...item,
-    label:
-      (isBlockchain(item.location) ? get(addressNameSelector(item.address, item.location)) : null)
+    label: (isBlockchain(item.location) ? get(addressNameSelector(item.address, item.location)) : null)
       || item.label
       || item.address,
   }));
@@ -65,9 +63,8 @@ const visibleAssetLocations = computed<AssetLocations>(() => {
   });
 });
 
-function getPercentage(usdValue: BigNumber): string {
-  const percentage = get(totalUsdValue).isZero() ? 0 : usdValue.div(get(totalUsdValue)).multipliedBy(100);
-
+function getPercentage(value: BigNumber): string {
+  const percentage = get(totalValue).isZero() ? 0 : value.div(get(totalValue)).multipliedBy(100);
   return percentage.toFixed(2);
 }
 
@@ -106,9 +103,9 @@ const headers = computed<DataTableColumn<AssetLocation>[]>(() => {
     },
     {
       label: t('asset_locations.header.value', {
-        symbol: get(currencySymbol) ?? CURRENCY_USD,
+        symbol: get(currencySymbol),
       }),
-      key: 'usdValue',
+      key: 'value',
       align: 'end',
       sortable: true,
     },
@@ -164,17 +161,17 @@ const headers = computed<DataTableColumn<AssetLocation>[]>(() => {
       <template #item.amount="{ row }">
         <AmountDisplay :value="row.amount" />
       </template>
-      <template #item.usdValue="{ row }">
+      <template #item.value="{ row }">
         <AmountDisplay
           show-currency="symbol"
           :amount="row.amount"
           :price-asset="identifier"
-          fiat-currency="USD"
-          :value="row.usdValue"
+          :fiat-currency="currencySymbol"
+          :value="row.value"
         />
       </template>
       <template #item.percentage="{ row }">
-        <PercentageDisplay :value="getPercentage(row.usdValue)" />
+        <PercentageDisplay :value="getPercentage(row.value)" />
       </template>
     </RuiDataTable>
   </RuiCard>

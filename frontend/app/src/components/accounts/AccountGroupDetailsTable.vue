@@ -43,7 +43,7 @@ const {
     tags: props.tags,
   })),
   defaultSortBy: {
-    column: 'usdValue',
+    column: 'value',
     direction: 'desc',
   },
   query,
