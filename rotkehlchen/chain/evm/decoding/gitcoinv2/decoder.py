@@ -3,6 +3,7 @@ from abc import ABC
 from typing import TYPE_CHECKING, Any, Optional
 
 from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.chain.ethereum.abi import decode_event_data_abi
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.constants import ETH_SPECIAL_ADDRESS, ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import CPT_GITCOIN, GITCOIN_CPT_DETAILS
@@ -14,6 +15,8 @@ from rotkehlchen.chain.evm.decoding.gitcoinv2.constants import (
     NEW_PROJECT_APPLICATION_2ARGS,
     NEW_PROJECT_APPLICATION_3ARGS,
     PROJECT_CREATED,
+    REGISTERED,
+    REGISTERED_ABI,
     VOTED,
     VOTED_WITH_ORIGIN,
     VOTED_WITHOUT_APPLICATION_IDX,
@@ -180,6 +183,45 @@ class GitcoinV2CommonDecoder(DecoderInterface, ABC):
 
         return DEFAULT_DECODING_OUTPUT
 
+    def _decode_voting_merkle_distributor(self, context: DecoderContext) -> DecodingOutput:
+        if context.tx_log.topics[0] == ALLOCATED:
+            return self._decode_allocated(context)
+        elif context.tx_log.topics[0] == REGISTERED:
+            return self._decode_registered(context)
+
+        return DEFAULT_DECODING_OUTPUT
+
+    def _decode_registered(self, context: DecoderContext) -> DecodingOutput:
+        try:
+            topic_data, decoded_data = decode_event_data_abi(context.tx_log, REGISTERED_ABI)
+        except DeserializationError as e:
+            log.error(
+                f'Failed to deserialize gitcoin registered event at '
+                f'{context.transaction.tx_hash.hex()} due to {e}',
+            )
+            return DEFAULT_DECODING_OUTPUT
+
+        if not self.base.is_tracked(sender := decoded_data[1]):
+            return DEFAULT_DECODING_OUTPUT
+
+        self.recipient_id_to_addr.add(  # store the recipient id to address mapping in the cache
+            key=(recipient_id := topic_data[0]),
+            value=sender,
+        )  # and now create the informational registered event
+        event = self.base.make_event_from_transaction(
+            transaction=context.transaction,
+            tx_log=context.tx_log,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.APPLY,
+            asset=A_ETH,
+            balance=Balance(),
+            location_label=sender,
+            notes=f'Register for a gitcoin round with recipient id {recipient_id}',
+            counterparty=CPT_GITCOIN,
+            extra_data={'recipient_id': recipient_id},
+        )
+        return DecodingOutput(event=event)
+
     def _decode_allocated(self, context: DecoderContext) -> DecodingOutput:
         """Decode the allocated events
 
@@ -191,9 +233,6 @@ class GitcoinV2CommonDecoder(DecoderInterface, ABC):
 
         Example: https://arbiscan.io/tx/0x0388c141d93924d4737c4c52956469ecdb2c0a8dd9b3802317994c027d0a38af#eventlog
         """
-        if context.tx_log.topics[0] != ALLOCATED:
-            return DEFAULT_DECODING_OUTPUT
-
         origin = bytes_to_address(context.tx_log.data[96:128])
         if (recipient_address := self._get_recipient_address_from_id(
             recipient_id=(recipient_id := bytes_to_address(context.tx_log.topics[1])),
@@ -410,7 +449,7 @@ class GitcoinV2CommonDecoder(DecoderInterface, ABC):
         mappings |= dict.fromkeys(self.round_impl_addresses, (self._decode_round_action,))
         mappings |= dict.fromkeys(self.payout_strategy_addresses, (self._decode_payout_action,))
         if self.voting_merkle_distributor_addresses:
-            mappings |= dict.fromkeys(self.voting_merkle_distributor_addresses, (self._decode_allocated,))  # noqa: E501
+            mappings |= dict.fromkeys(self.voting_merkle_distributor_addresses, (self._decode_voting_merkle_distributor,))  # noqa: E501
         if self.project_registry:
             mappings[self.project_registry] = (self._decode_project_action,)
 
