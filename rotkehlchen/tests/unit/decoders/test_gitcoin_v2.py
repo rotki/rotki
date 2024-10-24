@@ -3,7 +3,7 @@ import pytest
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS, CPT_GITCOIN
-from rotkehlchen.constants.assets import A_DAI, A_ETH, A_POLYGON_POS_MATIC
+from rotkehlchen.constants.assets import A_ARB, A_DAI, A_ETH, A_POLYGON_POS_MATIC
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -441,5 +441,157 @@ def test_ethereum_voted_without_application_index(ethereum_inquirer, ethereum_ac
         notes=f'Receive a gitcoin donation of {amount} ETH from 0xcD9a4e7C2ad6AAae7Ac25c2139d71739d9Fa2284',  # noqa: E501
         counterparty=CPT_GITCOIN,
         address='0x8fBEa07446DdF4518b1a7BA2B4f11Bd140a8DF41',
+    )]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('arbitrum_one_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
+def test_allocated_receive_token(arbitrum_one_inquirer, arbitrum_one_accounts):
+    tx_hash = deserialize_evm_tx_hash('0x0388c141d93924d4737c4c52956469ecdb2c0a8dd9b3802317994c027d0a38af')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=arbitrum_one_inquirer,
+        tx_hash=tx_hash,
+    )
+    user_address, timestamp, amount = arbitrum_one_accounts[0], TimestampMS(1729693571000), '1.77'
+    expected_events = [EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=81,
+        timestamp=timestamp,
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.DONATE,
+        asset=A_ARB,
+        balance=Balance(amount=FVal(amount)),
+        location_label=user_address,
+        notes=f'Receive a gitcoin donation of {amount} ARB from 0x830862F98399520f351273B12FD3C622a226bDfE',  # noqa: E501
+        counterparty=CPT_GITCOIN,
+        address='0x8e1bD5Da87C14dd8e08F7ecc2aBf9D1d558ea174',
+    )]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('arbitrum_one_accounts', [['0x514e84986C09Ca52661eeE5EC8a3E6b645c54388']])
+def test_allocated_donate_token(arbitrum_one_inquirer, arbitrum_one_accounts):
+    tx_hash = deserialize_evm_tx_hash('0x9509a7be197f1926a480f0c02251c5b1f7d4fc4334a77c991efb61f55c243e5f')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=arbitrum_one_inquirer,
+        tx_hash=tx_hash,
+    )
+    user_address, timestamp, gas, amount, approve = arbitrum_one_accounts[0], TimestampMS(1729720900000), '0.00000367783', '2', '4'  # noqa: E501
+    expected_events = [EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=0,
+        timestamp=timestamp,
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        balance=Balance(amount=FVal(gas)),
+        location_label=user_address,
+        notes=f'Burned {gas} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.APPROVE,
+        asset=A_ARB,
+        balance=Balance(FVal(approve)),
+        location_label=user_address,
+        notes=f'Set ARB spending approval of {user_address} by 0x8e1bD5Da87C14dd8e08F7ecc2aBf9D1d558ea174 to {approve}',  # noqa: E501
+        address='0x8e1bD5Da87C14dd8e08F7ecc2aBf9D1d558ea174',
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=2,
+        timestamp=timestamp,
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.APPROVE,
+        asset=A_ARB,
+        balance=Balance(),
+        location_label=user_address,
+        notes=f'Revoke ARB spending approval of {user_address} by 0x8e1bD5Da87C14dd8e08F7ecc2aBf9D1d558ea174',  # noqa: E501
+        address='0x8e1bD5Da87C14dd8e08F7ecc2aBf9D1d558ea174',
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=3,
+        timestamp=timestamp,
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.DONATE,
+        asset=A_ARB,
+        balance=Balance(FVal(amount)),
+        location_label=user_address,
+        notes=f'Make a gitcoin donation of {amount} ARB to 0xb9ecee9a0e273d8A1857F3B8EeA30e5dD3cb6335',  # noqa: E501
+        counterparty=CPT_GITCOIN,
+        address='0xb9ecee9a0e273d8A1857F3B8EeA30e5dD3cb6335',
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=9,
+        timestamp=timestamp,
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.DONATE,
+        asset=A_ARB,
+        balance=Balance(FVal(amount)),
+        location_label=user_address,
+        notes=f'Make a gitcoin donation of {amount} ARB to 0xE6D7b9Fb31B93E542f57c7B6bfa0a5a48EfC9D0f',  # noqa: E501
+        counterparty=CPT_GITCOIN,
+        address='0xE6D7b9Fb31B93E542f57c7B6bfa0a5a48EfC9D0f',
+    )]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('arbitrum_one_accounts', [['0x173a7942Ac9989d8A2203051bF22E673BcDa6e9D']])
+def test_allocated_donate_eth(arbitrum_one_inquirer, arbitrum_one_accounts):
+    tx_hash = deserialize_evm_tx_hash('0x92450a269e9dc36bb78e3c631104eec0e9e190f5672e666bcd6397f310617849')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=arbitrum_one_inquirer,
+        tx_hash=tx_hash,
+    )
+    user_address, timestamp, gas, amount = arbitrum_one_accounts[0], TimestampMS(1729747404000), '0.00000219175', '0.001'  # noqa: E501
+    expected_events = [EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=0,
+        timestamp=timestamp,
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        balance=Balance(amount=FVal(gas)),
+        location_label=user_address,
+        notes=f'Burned {gas} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.DONATE,
+        asset=A_ETH,
+        balance=Balance(FVal(amount)),
+        location_label=user_address,
+        notes=f'Make a gitcoin donation of {amount} ETH to 0x698386C93513d6D0C58f296633A7A3e529bd4026',  # noqa: E501
+        counterparty=CPT_GITCOIN,
+        address='0x698386C93513d6D0C58f296633A7A3e529bd4026',
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=10,
+        timestamp=timestamp,
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.DONATE,
+        asset=A_ETH,
+        balance=Balance(FVal(amount)),
+        location_label=user_address,
+        notes=f'Make a gitcoin donation of {amount} ETH to 0xfcBf17200C64E860F6639aa12B525015d115F863',  # noqa: E501
+        counterparty=CPT_GITCOIN,
+        address='0xfcBf17200C64E860F6639aa12B525015d115F863',
     )]
     assert events == expected_events
