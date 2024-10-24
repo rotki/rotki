@@ -1,5 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { updateGeneralSettings } from '../../../utils/general-settings';
+import type { AssetBalanceWithPrice, AssetBalances } from '@/types/balances';
+import type { ExchangeData } from '@/types/exchanges';
+import type { AssetBreakdown } from '@/types/blockchain/accounts';
 
 describe('store::balances/manual', () => {
   setActivePinia(createPinia());
@@ -9,25 +12,25 @@ describe('store::balances/manual', () => {
     vi.clearAllMocks();
   });
 
-  const mockBalances = {
+  const mockBalances: ExchangeData = {
     kraken: {
       ETH: {
         amount: bigNumberify(1000),
-        usdValue: bigNumberify(1000),
+        value: bigNumberify(1000),
       },
       ETH2: {
         amount: bigNumberify(1000),
-        usdValue: bigNumberify(1000),
+        value: bigNumberify(1000),
       },
     },
     coinbase: {
       ETH: {
         amount: bigNumberify(2000),
-        usdValue: bigNumberify(2000),
+        value: bigNumberify(2000),
       },
       ETH2: {
         amount: bigNumberify(2000),
-        usdValue: bigNumberify(2000),
+        value: bigNumberify(2000),
       },
     },
   };
@@ -60,13 +63,13 @@ describe('store::balances/manual', () => {
       const expectedResult = {
         ETH: {
           amount: bigNumberify(3000),
-          usdValue: bigNumberify(3000),
+          value: bigNumberify(3000),
         },
         ETH2: {
           amount: bigNumberify(3000),
-          usdValue: bigNumberify(3000),
+          value: bigNumberify(3000),
         },
-      };
+      } satisfies AssetBalances;
       expect(get(balances)).toMatchObject(expectedResult);
     });
 
@@ -82,15 +85,15 @@ describe('store::balances/manual', () => {
           address: '',
           location: 'kraken',
           amount: bigNumberify(1000),
-          usdValue: bigNumberify(1000),
+          value: bigNumberify(1000),
         },
         {
           address: '',
           location: 'coinbase',
           amount: bigNumberify(2000),
-          usdValue: bigNumberify(2000),
+          value: bigNumberify(2000),
         },
-      ]);
+      ] satisfies AssetBreakdown[]);
 
       updateGeneralSettings({
         treatEth2AsEth: true,
@@ -101,27 +104,27 @@ describe('store::balances/manual', () => {
           address: '',
           location: 'kraken',
           amount: bigNumberify(1000),
-          usdValue: bigNumberify(1000),
+          value: bigNumberify(1000),
         },
         {
           address: '',
           location: 'kraken',
           amount: bigNumberify(1000),
-          usdValue: bigNumberify(1000),
+          value: bigNumberify(1000),
         },
         {
           address: '',
           location: 'coinbase',
           amount: bigNumberify(2000),
-          usdValue: bigNumberify(2000),
+          value: bigNumberify(2000),
         },
         {
           address: '',
           location: 'coinbase',
           amount: bigNumberify(2000),
-          usdValue: bigNumberify(2000),
+          value: bigNumberify(2000),
         },
-      ]);
+      ] satisfies AssetBreakdown[]);
     });
 
     it('getLocationBreakdown', () => {
@@ -149,16 +152,16 @@ describe('store::balances/manual', () => {
         ETH: {
           asset: 'ETH',
           amount: bigNumberify(1000),
-          usdValue: bigNumberify(1000),
+          value: bigNumberify(1000),
           price: bigNumberify(-1),
         },
         ETH2: {
           asset: 'ETH2',
           amount: bigNumberify(1000),
-          usdValue: bigNumberify(1000),
+          value: bigNumberify(1000),
           price: bigNumberify(-1),
         },
-      });
+      } satisfies Record<string, AssetBalanceWithPrice>);
 
       updateGeneralSettings({
         treatEth2AsEth: true,
@@ -168,10 +171,10 @@ describe('store::balances/manual', () => {
         ETH: {
           asset: 'ETH',
           amount: bigNumberify(2000),
-          usdValue: bigNumberify(2000),
+          value: bigNumberify(2000),
           price: bigNumberify(-1),
         },
-      });
+      } satisfies Record<string, AssetBalanceWithPrice>);
     });
 
     it('getByLocationBalances', () => {

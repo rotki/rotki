@@ -1,4 +1,4 @@
-import { NumericString } from '@rotki/common';
+import { type BigNumber, NumericString } from '@rotki/common';
 import { z } from 'zod';
 import { BalanceType } from '@/types/balances';
 import type { PaginationRequestPayload } from '@/types/common';
@@ -22,7 +22,9 @@ export const ManualBalance = z
 
 export type ManualBalance = z.infer<typeof ManualBalance>;
 
-export const ManualBalanceWithValue = ManualBalance.merge(z.object({ usdValue: NumericString }));
+export const ManualBalanceWithValue = ManualBalance.merge(z.object({
+  value: NumericString.optional().default(0),
+}));
 
 export type ManualBalanceWithValue = z.infer<typeof ManualBalanceWithValue>;
 
@@ -32,9 +34,9 @@ export const ManualBalances = z.object({
 
 export type ManualBalances = z.infer<typeof ManualBalances>;
 
-const ManualBalanceWithPrice = ManualBalanceWithValue.merge(z.object({ price: NumericString.optional() }));
-
-export type ManualBalanceWithPrice = z.infer<typeof ManualBalanceWithPrice>;
+export interface ManualBalanceWithPrice extends ManualBalanceWithValue {
+  price?: BigNumber;
+};
 
 export interface ManualBalanceRequestPayload extends PaginationRequestPayload<ManualBalanceWithValue> {
   readonly tags?: string[];

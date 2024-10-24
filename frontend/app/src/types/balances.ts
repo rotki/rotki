@@ -1,5 +1,6 @@
-import { Balance, type BigNumber } from '@rotki/common';
 import { z } from 'zod';
+import { Balance } from '@/types/blockchain/balances';
+import type { BigNumber } from '@rotki/common';
 
 export interface Eth2Validator {
   readonly validatorIndex?: string;
@@ -9,10 +10,22 @@ export interface Eth2Validator {
 
 export interface LocationBalance {
   readonly location: string;
-  readonly usdValue: BigNumber;
+  readonly value: BigNumber;
 }
 
 export type BalanceByLocation = Record<string, BigNumber>;
+
+export interface AssetBalance extends Balance {
+  readonly asset: string;
+}
+
+export interface AssetBalanceWithPrice extends AssetBalance {
+  readonly price: BigNumber;
+}
+
+export interface AssetBalanceWithBreakdown extends AssetBalanceWithPrice {
+  readonly breakdown?: AssetBalanceWithPrice[];
+}
 
 export const AssetBalances = z.record(Balance);
 

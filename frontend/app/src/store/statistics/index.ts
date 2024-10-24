@@ -42,8 +42,8 @@ export const useStatisticsStore = defineStore('statistics', () => {
 
     const lpTotalBalance = get(lpTotal(false));
 
-    const assetValue = aggregatedBalances.reduce((sum, value) => sum.plus(value.usdValue), Zero);
-    const liabilityValue = totalLiabilities.reduce((sum, value) => sum.plus(value.usdValue), Zero);
+    const assetValue = aggregatedBalances.reduce((sum, value) => sum.plus(value.value), Zero);
+    const liabilityValue = totalLiabilities.reduce((sum, value) => sum.plus(value.value), Zero);
 
     return assetValue.plus(nftTotal).plus(lpTotalBalance).minus(liabilityValue);
   });

@@ -2,7 +2,8 @@
 import { Routes } from '@/router/routes';
 import { TaskType } from '@/types/task-type';
 import { NoteLocation } from '@/types/notes';
-import type { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
+import type { BigNumber } from '@rotki/common';
+import type { AssetBalanceWithPrice } from '@/types/balances';
 
 definePage({
   name: 'accounts-balances-exchange',
@@ -55,7 +56,7 @@ watch(route, () => {
 
 function exchangeBalance(exchange: string): BigNumber {
   const balances = get(getBalances(exchange));
-  return balances.reduce((sum, asset: AssetBalanceWithPrice) => sum.plus(asset.usdValue), Zero);
+  return balances.reduce((sum, asset: AssetBalanceWithPrice) => sum.plus(asset.value), Zero);
 }
 
 const sortedExchanges = computed(() =>

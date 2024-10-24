@@ -1,19 +1,20 @@
-import type { Balance } from '@rotki/common';
 import type { AssetBalances } from '@/types/balances';
 import type { ManualBalanceWithValue } from '@/types/manual-balances';
 import type { ComputedRef } from 'vue';
+import type { Balance } from '@/types/blockchain/balances';
 
 function toAssetBalances(balances: ManualBalanceWithValue[]): AssetBalances {
   const ownedAssets: AssetBalances = {};
 
-  for (const { asset, usdValue, amount } of balances) {
+  for (const { asset, value, amount } of balances) {
     const balance: Balance = {
       amount,
-      usdValue,
+      value,
     };
     if (!ownedAssets[asset])
       ownedAssets[asset] = balance;
-    else ownedAssets[asset] = balanceSum(ownedAssets[asset], balance);
+    else
+      ownedAssets[asset] = balanceSum(ownedAssets[asset], balance);
   }
   return ownedAssets;
 }

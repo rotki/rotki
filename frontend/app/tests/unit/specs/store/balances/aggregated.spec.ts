@@ -1,12 +1,16 @@
-import { type AssetBalanceWithPrice, Blockchain } from '@rotki/common';
+import { Blockchain } from '@rotki/common';
 import { sortBy } from 'lodash-es';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { TRADE_LOCATION_BANKS } from '@/data/defaults';
 import { useCurrencies } from '@/types/currencies';
-import { BalanceType } from '@/types/balances';
+import { type AssetBalanceWithPrice, BalanceType } from '@/types/balances';
 import { updateGeneralSettings } from '../../../utils/general-settings';
 import type { BlockchainTotals, BtcBalances } from '@/types/blockchain/balances';
-import type { BitcoinAccounts, BlockchainAccountGroupWithBalance } from '@/types/blockchain/accounts';
+import type {
+  BitcoinAccounts,
+  BlockchainAccountGroupWithBalance,
+  BlockchainAccountWithBalance,
+} from '@/types/blockchain/accounts';
 import '../../../i18n';
 
 describe('store::balances/aggregated', () => {
@@ -33,19 +37,19 @@ describe('store::balances/aggregated', () => {
       kraken: {
         DAI: {
           amount: bigNumberify(50),
-          usdValue: bigNumberify(50),
+          value: bigNumberify(50),
         },
         BTC: {
           amount: bigNumberify(50),
-          usdValue: bigNumberify(50),
+          value: bigNumberify(50),
         },
         ETH: {
           amount: bigNumberify(50),
-          usdValue: bigNumberify(50),
+          value: bigNumberify(50),
         },
         EUR: {
           amount: bigNumberify(50),
-          usdValue: bigNumberify(50),
+          value: bigNumberify(50),
         },
       },
     });
@@ -76,7 +80,7 @@ describe('store::balances/aggregated', () => {
     set(manualBalancesData, [
       {
         identifier: 1,
-        usdValue: bigNumberify(50),
+        value: bigNumberify(50),
         amount: bigNumberify(50),
         asset: 'DAI',
         label: '123',
@@ -92,19 +96,19 @@ describe('store::balances/aggregated', () => {
           assets: {
             DAI: {
               amount: bigNumberify(100),
-              usdValue: bigNumberify(100),
+              value: bigNumberify(100),
             },
             BTC: {
               amount: bigNumberify(100),
-              usdValue: bigNumberify(100),
+              value: bigNumberify(100),
             },
             ETH: {
               amount: bigNumberify(100),
-              usdValue: bigNumberify(100),
+              value: bigNumberify(100),
             },
             SAI: {
               amount: bigNumberify(100),
-              usdValue: bigNumberify(100),
+              value: bigNumberify(100),
             },
           },
           liabilities: {},
@@ -119,31 +123,31 @@ describe('store::balances/aggregated', () => {
         {
           asset: 'EUR',
           amount: bigNumberify(50),
-          usdValue: bigNumberify(50),
+          value: bigNumberify(50),
           price: bigNumberify(1),
         },
         {
           asset: 'DAI',
           amount: bigNumberify(200),
-          usdValue: bigNumberify(200),
+          value: bigNumberify(200),
           price: bigNumberify(1),
         },
         {
           asset: 'BTC',
           amount: bigNumberify(150),
-          usdValue: bigNumberify(150),
+          value: bigNumberify(150),
           price: bigNumberify(40000),
         },
         {
           asset: 'ETH',
           amount: bigNumberify(150),
-          usdValue: bigNumberify(150),
+          value: bigNumberify(150),
           price: bigNumberify(3000),
         },
         {
           asset: 'SAI',
           amount: bigNumberify(100),
-          usdValue: bigNumberify(100),
+          value: bigNumberify(100),
           price: bigNumberify(1),
         },
       ] satisfies AssetBalanceWithPrice[],
@@ -187,14 +191,14 @@ describe('store::balances/aggregated', () => {
     };
     const btcBalances: BtcBalances = {
       standalone: {
-        123: { usdValue: bigNumberify(10), amount: bigNumberify(10) },
+        123: { value: bigNumberify(10), amount: bigNumberify(10) },
       },
       xpubs: [
         {
           xpub: 'xpub123',
           derivationPath: 'm',
           addresses: {
-            1234: { usdValue: bigNumberify(10), amount: bigNumberify(10) },
+            1234: { value: bigNumberify(10), amount: bigNumberify(10) },
           },
         },
       ],
@@ -203,7 +207,7 @@ describe('store::balances/aggregated', () => {
     const totals: BlockchainTotals = {
       assets: {
         [Blockchain.BTC.toUpperCase()]: {
-          usdValue: bigNumberify(20),
+          value: bigNumberify(20),
           amount: bigNumberify(20),
         },
       },
@@ -226,7 +230,7 @@ describe('store::balances/aggregated', () => {
           address: '1234',
         },
         amount: bigNumberify(10),
-        usdValue: bigNumberify(10),
+        value: bigNumberify(10),
         chain: Blockchain.BTC,
         nativeAsset: 'BTC',
         groupId: 'xpub123#m#btc',
@@ -241,7 +245,7 @@ describe('store::balances/aggregated', () => {
           address: '123',
         },
         amount: bigNumberify(10),
-        usdValue: bigNumberify(10),
+        value: bigNumberify(10),
         chain: Blockchain.BTC,
         groupId: '123',
         nativeAsset: 'BTC',
@@ -249,7 +253,7 @@ describe('store::balances/aggregated', () => {
         label: undefined,
         tags: undefined,
       },
-    ]);
+    ] satisfies BlockchainAccountWithBalance[]);
 
     const knownGroups = await fetchAccounts({ limit: 10, offset: 0 });
 
@@ -262,7 +266,7 @@ describe('store::balances/aggregated', () => {
           type: 'address',
           address: '123',
         },
-        usdValue: bigNumberify(10),
+        value: bigNumberify(10),
         chains: [chain],
         label: '123',
         tags: undefined,
@@ -280,7 +284,7 @@ describe('store::balances/aggregated', () => {
         label: undefined,
         tags: undefined,
         amount: bigNumberify(10),
-        usdValue: bigNumberify(10),
+        value: bigNumberify(10),
       },
       {
         type: 'group',
@@ -290,7 +294,7 @@ describe('store::balances/aggregated', () => {
           derivationPath: undefined,
         },
         amount: Zero,
-        usdValue: Zero,
+        value: Zero,
         nativeAsset: 'BTC',
         chains: [chain],
         label: '123',
@@ -315,19 +319,19 @@ describe('store::balances/aggregated', () => {
       kraken: {
         DAI: {
           amount: bigNumberify(50),
-          usdValue: bigNumberify(50),
+          value: bigNumberify(50),
         },
         BTC: {
           amount: bigNumberify(50),
-          usdValue: bigNumberify(50),
+          value: bigNumberify(50),
         },
         ETH: {
           amount: bigNumberify(50),
-          usdValue: bigNumberify(50),
+          value: bigNumberify(50),
         },
         EUR: {
           amount: bigNumberify(50),
-          usdValue: bigNumberify(50),
+          value: bigNumberify(50),
         },
       },
     });
@@ -369,7 +373,7 @@ describe('store::balances/aggregated', () => {
     const { manualBalancesData } = storeToRefs(useManualBalancesStore());
     set(manualBalancesData, [{
       identifier: 1,
-      usdValue: bigNumberify(50),
+      value: bigNumberify(50),
       amount: bigNumberify(50),
       asset: 'DAI',
       label: '123',
@@ -387,19 +391,19 @@ describe('store::balances/aggregated', () => {
           assets: {
             DAI: {
               amount: bigNumberify(100),
-              usdValue: bigNumberify(100),
+              value: bigNumberify(100),
             },
             BTC: {
               amount: bigNumberify(100),
-              usdValue: bigNumberify(100),
+              value: bigNumberify(100),
             },
             ETH: {
               amount: bigNumberify(100),
-              usdValue: bigNumberify(100),
+              value: bigNumberify(100),
             },
             SAI: {
               amount: bigNumberify(100),
-              usdValue: bigNumberify(100),
+              value: bigNumberify(100),
             },
           },
           liabilities: {},
@@ -412,31 +416,31 @@ describe('store::balances/aggregated', () => {
       {
         asset: 'EUR',
         amount: bigNumberify(50),
-        usdValue: bigNumberify(50),
+        value: bigNumberify(50),
         price: bigNumberify(1),
       },
       {
         asset: 'DAI',
         amount: bigNumberify(200),
-        usdValue: bigNumberify(200),
+        value: bigNumberify(200),
         price: bigNumberify(1),
       },
       {
         asset: 'BTC',
         amount: bigNumberify(150),
-        usdValue: bigNumberify(6000000),
+        value: bigNumberify(6000000),
         price: bigNumberify(40000),
       },
       {
         asset: 'ETH',
         amount: bigNumberify(150),
-        usdValue: bigNumberify(450000),
+        value: bigNumberify(450000),
         price: bigNumberify(3000),
       },
       {
         asset: 'SAI',
         amount: bigNumberify(100),
-        usdValue: bigNumberify(100),
+        value: bigNumberify(100),
         price: bigNumberify(1),
       },
     ] satisfies AssetBalanceWithPrice[], 'asset');

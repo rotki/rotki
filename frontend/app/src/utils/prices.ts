@@ -1,32 +1,9 @@
 import { cloneDeep } from 'lodash-es';
 import type { Blockchain } from '@rotki/common';
 import type { MaybeRef } from '@vueuse/core';
-import type { AccountAssetBalances, AssetBalances } from '@/types/balances';
+import type { AccountAssetBalances } from '@/types/balances';
 import type { Balances, BlockchainAssetBalances, BtcBalances } from '@/types/blockchain/balances';
 import type { AssetPrices } from '@/types/prices';
-
-export function updateTotalsPrices(
-  state: MaybeRef<Record<string, AssetBalances>>,
-  prices: MaybeRef<AssetPrices>,
-): Record<string, AssetBalances> {
-  const totals = cloneDeep(get(state));
-
-  for (const chain in totals) {
-    const balances = totals[chain];
-    for (const asset in balances) {
-      const assetPrice = get(prices)[asset];
-      if (!assetPrice)
-        continue;
-
-      const amount = balances[asset].amount;
-      balances[asset] = {
-        amount,
-        usdValue: amount.times(assetPrice.value),
-      };
-    }
-  }
-  return totals;
-}
 
 export function updateBalancesPrices(balances: Balances, prices: MaybeRef<AssetPrices>): Balances {
   for (const asset in balances) {
@@ -37,7 +14,7 @@ export function updateBalancesPrices(balances: Balances, prices: MaybeRef<AssetP
     const assetInfo = balances[asset];
     balances[asset] = {
       amount: assetInfo.amount,
-      usdValue: assetInfo.amount.times(assetPrice.value),
+      value: assetInfo.amount.times(assetPrice.value),
     };
   }
   return balances;
@@ -76,7 +53,7 @@ export function updateAssetBalances(
       const amount = addressAssets[asset].amount;
       addressAssets[asset] = {
         amount,
-        usdValue: amount.times(assetPrice.value),
+        value: amount.times(assetPrice.value),
       };
     }
   }
@@ -99,7 +76,7 @@ export function updateBtcPrices(
       const amount = addressBalance.amount;
       balance.standalone[address] = {
         amount,
-        usdValue: amount.times(assetPrice.value),
+        value: amount.times(assetPrice.value),
       };
     }
     const xpubs = balance.xpubs;
@@ -110,7 +87,7 @@ export function updateBtcPrices(
           const amount = balance.amount;
           xpub.addresses[address] = {
             amount,
-            usdValue: amount.times(assetPrice.value),
+            value: amount.times(assetPrice.value),
           };
         }
       }

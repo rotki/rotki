@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CURRENCY_USD, useCurrencies } from '@/types/currencies';
 import { PriceOracle } from '@/types/settings/price-oracle';
 import { updateGeneralSettings } from '../../../utils/general-settings';
+import type { Balances } from '@/types/blockchain/balances';
 
 vi.mock('@/store/tasks', () => ({
   useTaskStore: vi.fn().mockReturnValue({
@@ -95,24 +96,24 @@ describe('store::balances/manual', () => {
       const newBalances = store.updateBalancesPrices({
         DAI: {
           amount: bigNumberify(10),
-          usdValue: bigNumberify(0),
+          value: bigNumberify(0),
         },
         ETH: {
           amount: bigNumberify(10),
-          usdValue: bigNumberify(10),
+          value: bigNumberify(10),
         },
       });
 
       expect(newBalances).toMatchObject({
         DAI: {
           amount: bigNumberify(10),
-          usdValue: bigNumberify(10),
+          value: bigNumberify(10),
         },
         ETH: {
           amount: bigNumberify(10),
-          usdValue: bigNumberify(20),
+          value: bigNumberify(20),
         },
-      });
+      } satisfies Balances);
     });
   });
 

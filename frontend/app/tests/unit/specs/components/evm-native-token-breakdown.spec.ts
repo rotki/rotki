@@ -4,6 +4,8 @@ import { type ComponentMountingOptions, type VueWrapper, mount } from '@vue/test
 import { computed, ref } from 'vue';
 import EvmNativeTokenBreakdown from '@/components/EvmNativeTokenBreakdown.vue';
 import { libraryDefaults } from '../../utils/provide-defaults';
+import type { AssetBreakdown } from '@/types/blockchain/accounts';
+import type { AssetBalances } from '@/types/balances';
 
 vi.mock('vue-router', () => ({
   useRoute: vi.fn(),
@@ -32,28 +34,26 @@ vi.mock('@/store/balances/manual', () => ({
   useManualBalancesStore: vi.fn().mockReturnValue({
     manualBalanceByLocation: ref([]),
     assetBreakdown: vi.fn().mockReturnValue(
-      computed(() => [
+      computed<AssetBreakdown[]>(() => [
         {
           location: 'external',
           amount: bigNumberify(1000),
-          usdValue: bigNumberify(2000),
+          value: bigNumberify(2000),
           address: '',
-          tags: null,
         },
         {
           location: 'kraken',
           amount: bigNumberify(1000),
-          usdValue: bigNumberify(2000),
+          value: bigNumberify(2000),
           address: '',
-          tags: null,
         },
       ]),
     ),
     getLocationBreakdown: vi.fn().mockReturnValue(
-      computed(() => ({
+      computed<AssetBalances>(() => ({
         ETH: {
           amount: bigNumberify(1000),
-          usdValue: bigNumberify(2000),
+          value: bigNumberify(2000),
         },
       })),
     ),
@@ -63,21 +63,20 @@ vi.mock('@/store/balances/manual', () => ({
 vi.mock('@/store/balances/exchanges', () => ({
   useExchangeBalancesStore: vi.fn().mockReturnValue({
     getBreakdown: vi.fn().mockReturnValue(
-      computed(() => [
+      computed<AssetBreakdown[]>(() => [
         {
           location: 'kraken',
           amount: bigNumberify(1000),
-          usdValue: bigNumberify(2000),
+          value: bigNumberify(2000),
           address: '',
-          tags: null,
         },
       ]),
     ),
     getLocationBreakdown: vi.fn().mockReturnValue(
-      computed(() => ({
+      computed<AssetBalances>(() => ({
         ETH: {
           amount: bigNumberify(1000),
-          usdValue: bigNumberify(2000),
+          value: bigNumberify(2000),
         },
       })),
     ),
@@ -88,27 +87,24 @@ vi.mock('@/store/balances/exchanges', () => ({
 vi.mock('@/store/blockchain/index', () => ({
   useBlockchainStore: vi.fn().mockReturnValue({
     assetBreakdown: vi.fn().mockReturnValue(
-      computed(() => [
+      computed<AssetBreakdown[]>(() => [
         {
           location: 'ethereum',
           address: '0xaddress1',
           amount: bigNumberify(1000),
-          usdValue: bigNumberify(2000),
-          tags: null,
+          value: bigNumberify(2000),
         },
         {
           location: 'ethereum',
           address: '0xaddress2',
           amount: bigNumberify(2000),
-          usdValue: bigNumberify(4000),
-          tags: null,
+          value: bigNumberify(4000),
         },
         {
           location: 'optimism',
           address: '0xaddress3',
           amount: bigNumberify(1000),
-          usdValue: bigNumberify(2000),
-          tags: null,
+          value: bigNumberify(2000),
         },
       ]),
     ),
@@ -144,22 +140,22 @@ describe('evmNativeTokenBreakdown.vue', () => {
       {
         location: 'ethereum',
         amount: bigNumberify(3000),
-        usdValue: bigNumberify(6000),
+        value: bigNumberify(6000),
       },
       {
         location: 'kraken',
         amount: bigNumberify(2000),
-        usdValue: bigNumberify(4000),
+        value: bigNumberify(4000),
       },
       {
         location: 'optimism',
         amount: bigNumberify(1000),
-        usdValue: bigNumberify(2000),
+        value: bigNumberify(2000),
       },
       {
         location: 'external',
         amount: bigNumberify(1000),
-        usdValue: bigNumberify(2000),
+        value: bigNumberify(2000),
       },
     ];
 
@@ -167,7 +163,7 @@ describe('evmNativeTokenBreakdown.vue', () => {
       const tr = wrapper.find(`tbody tr:nth-child(${index + 1})`);
       expect(tr.find('td:first-child').text()).toBe(result.location);
       expect(tr.find('td:nth-child(3)').text()).toBe(result.amount.toFormat(2));
-      expect(tr.find('td:nth-child(4)').text()).toContain(result.usdValue.toFormat(2));
+      expect(tr.find('td:nth-child(4)').text()).toContain(result.value.toFormat(2));
     });
   });
 
@@ -180,12 +176,12 @@ describe('evmNativeTokenBreakdown.vue', () => {
       {
         location: 'ethereum',
         amount: bigNumberify(3000),
-        usdValue: bigNumberify(6000),
+        value: bigNumberify(6000),
       },
       {
         location: 'optimism',
         amount: bigNumberify(1000),
-        usdValue: bigNumberify(2000),
+        value: bigNumberify(2000),
       },
     ];
 
@@ -193,7 +189,7 @@ describe('evmNativeTokenBreakdown.vue', () => {
       const tr = wrapper.find(`tbody tr:nth-child(${index + 1})`);
       expect(tr.find('td:first-child').text()).toBe(result.location);
       expect(tr.find('td:nth-child(3)').text()).toBe(result.amount.toFormat(2));
-      expect(tr.find('td:nth-child(4)').text()).toContain(result.usdValue.toFormat(2));
+      expect(tr.find('td:nth-child(4)').text()).toContain(result.value.toFormat(2));
     });
   });
 });
