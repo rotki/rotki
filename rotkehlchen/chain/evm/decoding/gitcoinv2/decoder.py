@@ -4,21 +4,39 @@ from typing import TYPE_CHECKING, Any, Optional
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
-from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
+from rotkehlchen.chain.evm.constants import ETH_SPECIAL_ADDRESS, ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import CPT_GITCOIN, GITCOIN_CPT_DETAILS
+from rotkehlchen.chain.evm.decoding.gitcoinv2.constants import (
+    ALLOCATED,
+    FUNDS_DISTRIBUTED,
+    GET_RECIPIENT_ABI,
+    METADATA_UPDATED,
+    NEW_PROJECT_APPLICATION_2ARGS,
+    NEW_PROJECT_APPLICATION_3ARGS,
+    PROJECT_CREATED,
+    VOTED,
+    VOTED_WITH_ORIGIN,
+    VOTED_WITHOUT_APPLICATION_IDX,
+)
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
+    ActionItem,
     DecoderContext,
     DecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.errors.serialization import DeserializationError
+from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.serialization.deserialize import deserialize_evm_address
+from rotkehlchen.utils.data_structures import LRUCacheWithRemove
 from rotkehlchen.utils.misc import bytes_to_address
 
 if TYPE_CHECKING:
+    from rotkehlchen.assets.asset import CryptoAsset
     from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.types import ChecksumEvmAddress
@@ -26,16 +44,6 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
-
-
-VOTED = b'\x00d\xca\xa7?\x1dY\xb6\x9a\xdb\xebeeK\x0f\tSYy\x94\xe4$\x1e\xe2F\x0bV\x0b\x8de\xaa\xa2'  # example: https://etherscan.io/tx/0x71fc406467f342f5801560a326aa29ac424381daf17cc04b5573960425ba605b#eventlog  # noqa: E501
-VOTED_WITH_ORIGIN = b'\xbf5\xc00\x17\x8a\x1eg\x8c\x82\x96\xa4\xe5\x08>\x90!\xa2L\x1a\x1d\xef\xa5\xbf\xbd\xfd\xe7K\xce\xcf\xa3v'  # noqa: E501 # example: https://optimistic.etherscan.io/tx/0x08685669305ee26060a5a78ae70065aec76d9e62a35f0837c291fb1232f33601#eventlog
-VOTED_WITHOUT_APPLICATION_IDX = b'A\x82\xeb\x95\xd4\x86\xb4/\xdd\xce\xa2%\x16/\x9a_\x93\xb0m\xfe\xbe\xdd\xf5\x81\x9d\x0fW\xf2\xc6\xaf>\x1b'  # noqa: E501 # example: 0xdcb6d2282b34a3cb7637ac65d8b7f1d0e8f2bc149379767f0b6f9ba2afa8a359
-PROJECT_CREATED = b'c\xc9/\x95\x05\xd4 \xbf\xf61\xcb\x9d\xf3;\xe9R\xbd\xc1\x1e!\x18\xda6\xa8P\xb4>k\xccL\xe4\xde'  # noqa: E501
-METADATA_UPDATED = b'\xf9,&9\xc2]j"\xc3\x8emk)?t\xa9\xb2$\x91\';\x1d\xbbg\xfc\x12U"&\x96\xbe['
-NEW_PROJECT_APPLICATION_3ARGS = b'\xcay&"\x04c%\xe9\xcdN$\xb4\x90\xcb\x00\x0e\xf7*\xce\xa3\xa1R\x84\xef\xc1N\xe7\t0z^\x00'  # noqa: E501
-NEW_PROJECT_APPLICATION_2ARGS = b'\xecy?\xe7\x04\xd3@\xd9b\xcd\x02\xd8\x1a\xd5@E\xe7\xce\xeaq:\xcaN1\xc7\xc5\xc4>=\xcb\x19*'  # noqa: E501
-FUNDS_DISTRIBUTED = b'z\x0b2\xf6\x04\xa8\xc9C&2(a\x03\x9aD\xb7\xedxbL\xf2 \xba\x8bXj$G\xaf\r\x9c\x9b'  # noqa: E501
 
 
 class GitcoinV2CommonDecoder(DecoderInterface, ABC):
@@ -50,6 +58,9 @@ class GitcoinV2CommonDecoder(DecoderInterface, ABC):
     Each payout address is found from the round implementation by querying the
     public variable payoutStrategy()
 
+    voting_merkle_distributor_addresses are
+    DonationVotingMerkleDistributionDirectTransferStrategy contracts
+
     TODO: Figure out if this can scale better as finding all contract addresses is error prone
     """
 
@@ -62,6 +73,7 @@ class GitcoinV2CommonDecoder(DecoderInterface, ABC):
             voting_impl_addresses: list['ChecksumEvmAddress'],
             round_impl_addresses: list['ChecksumEvmAddress'],
             payout_strategy_addresses: list['ChecksumEvmAddress'],
+            voting_merkle_distributor_addresses: list['ChecksumEvmAddress'] | None = None,
     ) -> None:
         super().__init__(
             evm_inquirer=evm_inquirer,
@@ -73,7 +85,173 @@ class GitcoinV2CommonDecoder(DecoderInterface, ABC):
         self.payout_strategy_addresses = payout_strategy_addresses
         assert len(self.payout_strategy_addresses) == len(self.round_impl_addresses), 'payout should match round number'  # noqa: E501
         self.voting_impl_addresses = voting_impl_addresses
+        self.voting_merkle_distributor_addresses = voting_merkle_distributor_addresses
         self.eth = A_ETH.resolve_to_crypto_asset()
+        self.recipient_id_to_addr: LRUCacheWithRemove[ChecksumEvmAddress, ChecksumEvmAddress] = LRUCacheWithRemove(maxsize=512)  # noqa: E501
+
+    def _get_recipient_address_from_id(
+            self,
+            recipient_id: 'ChecksumEvmAddress',
+            contract_address: 'ChecksumEvmAddress',
+    ) -> 'ChecksumEvmAddress | None':
+        """Query the relevant contract to get the recipient id to address mappping.
+
+        Also use a cace to save on contract calls"""
+        if (recipient_address := self.recipient_id_to_addr.get(recipient_id)) is not None:
+            return recipient_address
+
+        result = self.evm_inquirer.call_contract(
+            contract_address=contract_address,
+            abi=GET_RECIPIENT_ABI,
+            method_name='getRecipient',
+            arguments=[recipient_id],
+        )
+        if result is None or len(result) != 3:
+            return None
+
+        try:
+            self.recipient_id_to_addr.add(
+                key=recipient_id,
+                value=(recipient_address := deserialize_evm_address(result[1])),
+            )
+        except DeserializationError:
+            log.error(f'Got invalid evm address {result[1]} from getRecipient({recipient_id})')
+            return None
+
+        return recipient_address
+
+    def _common_donator_logic(
+            self,
+            context: DecoderContext,
+            sender_address: 'ChecksumEvmAddress',
+            recipient_address: 'ChecksumEvmAddress',
+            recipient_tracked: bool,
+            asset: 'CryptoAsset',
+            amount: FVal,
+            payer_address: 'ChecksumEvmAddress',
+    ) -> DecodingOutput:
+        """Common logic across Allocated and Voted events for the donator side
+
+        sender_address: The original sender address
+        recipient_address: The final address of the recipient
+        payer_address: The in-between contract that splits the payment
+        """
+        if recipient_tracked:
+            new_type = HistoryEventType.TRANSFER
+            expected_type = HistoryEventType.RECEIVE
+            expected_address = context.tx_log.address
+            expected_location_label = recipient_address
+            verb = 'Transfer'
+        else:
+            new_type = HistoryEventType.SPEND
+            expected_type = HistoryEventType.SPEND
+            expected_address = payer_address
+            expected_location_label = sender_address
+            verb = 'Make'
+
+        notes = f'{verb} a gitcoin donation of {amount} {asset.symbol} to {recipient_address}'
+        for event in context.decoded_events:
+            if event.event_type == expected_type and event.event_subtype == HistoryEventSubType.NONE and event.asset == asset and event.location_label == expected_location_label and event.address == expected_address:  # noqa: E501
+                # this is either the internal transfer to the contract that
+                # should later break up into the transfers, or the internal
+                # transfer to the grant if both are tracked. Replace it
+                event.event_type = new_type
+                event.event_subtype = HistoryEventSubType.DONATE
+                event.counterparty = CPT_GITCOIN
+                event.notes = notes
+                event.address = recipient_address
+                event.balance = Balance(amount)
+                event.location_label = sender_address
+                break
+        else:  # no event found, so create a new one
+            event = self.base.make_event_from_transaction(
+                transaction=context.transaction,
+                tx_log=context.tx_log,
+                event_type=new_type,
+                event_subtype=HistoryEventSubType.DONATE,
+                asset=asset,
+                balance=Balance(amount),
+                location_label=sender_address,
+                notes=notes,
+                counterparty=CPT_GITCOIN,
+                address=recipient_address,
+            )
+            return DecodingOutput(event=event)
+
+        return DEFAULT_DECODING_OUTPUT
+
+    def _decode_allocated(self, context: DecoderContext) -> DecodingOutput:
+        """Decode the allocated events
+
+        The problem with those is that the recipient address is not known and needs a contract
+        call to turn recipient id to address. This is bad since the allocated event
+        comes before the token transfer. Which means we have no way to identify
+        which of the allocated events concern the tracked addresses. And in some transactions
+        there is hundreds such events.
+
+        Example: https://arbiscan.io/tx/0x0388c141d93924d4737c4c52956469ecdb2c0a8dd9b3802317994c027d0a38af#eventlog
+        """
+        if context.tx_log.topics[0] != ALLOCATED:
+            return DEFAULT_DECODING_OUTPUT
+
+        origin = bytes_to_address(context.tx_log.data[96:128])
+        if (recipient_address := self._get_recipient_address_from_id(
+            recipient_id=(recipient_id := bytes_to_address(context.tx_log.topics[1])),
+            contract_address=context.tx_log.address,
+        )) is None:
+            log.error(f'Could not get recipient_address for recipient_id: {recipient_id}')
+            return DEFAULT_DECODING_OUTPUT
+
+        recipient_tracked = self.base.is_tracked(recipient_address)
+        if not (origin_tracked := self.base.is_tracked(origin)) and not recipient_tracked:
+            return DEFAULT_DECODING_OUTPUT
+
+        token_address = bytes_to_address(context.tx_log.data[32:64])
+        amount_raw = int.from_bytes(context.tx_log.data[:32])
+        if token_address == ETH_SPECIAL_ADDRESS:
+            asset = self.evm_inquirer.native_token
+        else:
+            asset = self.base.get_or_create_evm_token(token_address)
+
+        amount = asset_normalized_value(amount_raw, asset)
+
+        if origin_tracked:
+            return self._common_donator_logic(
+                context=context,
+                sender_address=origin,
+                recipient_address=recipient_address,
+                recipient_tracked=recipient_tracked,
+                asset=asset,
+                amount=amount,
+                payer_address=bytes_to_address(context.tx_log.data[64:96]),  # called sender in log
+            )
+
+        # else only recipient tracked
+        new_type = HistoryEventType.RECEIVE
+        expected_type = HistoryEventType.RECEIVE
+        notes = f'Receive a gitcoin donation of {amount} {asset.symbol} from {origin}'
+        for event in context.decoded_events:
+            if event.event_type == expected_type and event.event_subtype == HistoryEventSubType.NONE and event.asset == asset and event.balance.amount == amount and event.asset == asset:  # noqa: E501
+                event.event_type = new_type
+                event.event_subtype = HistoryEventSubType.DONATE
+                event.counterparty = CPT_GITCOIN
+                event.notes = notes
+                break
+
+        else:  # no event found. Comes afterwards. Find it with ActionItem
+            action_item = ActionItem(
+                action='transform',
+                from_event_type=expected_type,
+                from_event_subtype=HistoryEventSubType.NONE,
+                asset=asset,
+                to_event_type=new_type,
+                to_event_subtype=HistoryEventSubType.DONATE,
+                to_notes=notes,
+                to_counterparty=CPT_GITCOIN,
+            )
+            return DecodingOutput(action_items=[action_item])
+
+        return DEFAULT_DECODING_OUTPUT
 
     def _decode_vote_action(self, context: DecoderContext) -> DecodingOutput:
         if context.tx_log.topics[0] == VOTED_WITH_ORIGIN:
@@ -118,61 +296,29 @@ class GitcoinV2CommonDecoder(DecoderInterface, ABC):
         amount_raw = int.from_bytes(context.tx_log.data[32:64])
         amount = asset_normalized_value(amount_raw, asset)
 
-        if donator_tracked:  # with or without receiver tracked we take this
-            if receiver_tracked:
-                new_type = HistoryEventType.TRANSFER
-                expected_type = HistoryEventType.RECEIVE
-                verb = 'Transfer'
-                expected_address = context.tx_log.address
-                expected_location_label = receiver
-            else:
-                new_type = HistoryEventType.SPEND
-                expected_type = HistoryEventType.SPEND
-                verb = 'Make'
-                expected_address = paying_contract_address
-                expected_location_label = donator
+        if donator_tracked:
+            return self._common_donator_logic(
+                context=context,
+                sender_address=donator,
+                recipient_address=receiver,
+                recipient_tracked=receiver_tracked,
+                asset=asset,
+                amount=amount,
+                payer_address=paying_contract_address,
+            )
 
-            notes = f'{verb} a gitcoin donation of {amount} {asset.symbol} to {receiver}'
-            for event in context.decoded_events:
-                if event.event_type == expected_type and event.event_subtype == HistoryEventSubType.NONE and event.asset == asset and event.location_label == expected_location_label and event.address == expected_address:  # noqa: E501
-                    # this is either the internal transfer to the contract that
-                    # should later break up into the transfers, or the internal
-                    # transfer to the grant if both are tracked. Replace it
-                    event.event_type = new_type
-                    event.event_subtype = HistoryEventSubType.DONATE
-                    event.counterparty = CPT_GITCOIN
-                    event.notes = notes
-                    event.address = receiver
-                    event.balance = Balance(amount)
-                    event.location_label = donator
-                    break
-            else:  # no event found, so create a new one
-                event = self.base.make_event_from_transaction(
-                    transaction=context.transaction,
-                    tx_log=context.tx_log,
-                    event_type=new_type,
-                    event_subtype=HistoryEventSubType.DONATE,
-                    asset=asset,
-                    balance=Balance(amount),
-                    location_label=donator,
-                    notes=notes,
-                    counterparty=CPT_GITCOIN,
-                    address=receiver,
-                )
-                return DecodingOutput(event=event)
-
-        else:  # only receiver tracked
-            for event in context.decoded_events:
-                if event.event_type == HistoryEventType.RECEIVE and event.event_subtype == HistoryEventSubType.NONE and event.asset == asset and event.balance.amount == amount:  # noqa: E501
-                    event.event_subtype = HistoryEventSubType.DONATE
-                    event.counterparty = CPT_GITCOIN
-                    event.notes = f'Receive a gitcoin donation of {amount} {asset.symbol} from {donator}'  # noqa: E501
-                    break
-            else:
-                log.error(
-                    f'Could not find a corresponding event for donation to {receiver}'
-                    f' in {self.evm_inquirer.chain_name} transaction {context.transaction.tx_hash.hex()}',  # noqa: E501
-                )
+        # else only receiver tracked
+        for event in context.decoded_events:
+            if event.event_type == HistoryEventType.RECEIVE and event.event_subtype == HistoryEventSubType.NONE and event.asset == asset and event.balance.amount == amount:  # noqa: E501
+                event.event_subtype = HistoryEventSubType.DONATE
+                event.counterparty = CPT_GITCOIN
+                event.notes = f'Receive a gitcoin donation of {amount} {asset.symbol} from {donator}'  # noqa: E501
+                break
+        else:
+            log.error(
+                f'Could not find a corresponding event for donation to {receiver}'
+                f' in {self.evm_inquirer.chain_name} transaction {context.transaction.tx_hash.hex()}',  # noqa: E501
+            )
 
         return DEFAULT_DECODING_OUTPUT
 
@@ -263,8 +409,11 @@ class GitcoinV2CommonDecoder(DecoderInterface, ABC):
         mappings: dict[ChecksumEvmAddress, tuple[Any, ...]] = dict.fromkeys(self.voting_impl_addresses, (self._decode_vote_action,))  # noqa: E501
         mappings |= dict.fromkeys(self.round_impl_addresses, (self._decode_round_action,))
         mappings |= dict.fromkeys(self.payout_strategy_addresses, (self._decode_payout_action,))
+        if self.voting_merkle_distributor_addresses:
+            mappings |= dict.fromkeys(self.voting_merkle_distributor_addresses, (self._decode_allocated,))  # noqa: E501
         if self.project_registry:
             mappings[self.project_registry] = (self._decode_project_action,)
+
         return mappings
 
     @staticmethod
