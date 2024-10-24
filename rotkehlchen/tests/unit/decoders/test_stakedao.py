@@ -39,7 +39,7 @@ def test_claim_one(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             balance=Balance(amount=FVal('0.003543266133945936')),
             location_label=user_address,
-            notes='Burned 0.003543266133945936 ETH for gas',
+            notes='Burn 0.003543266133945936 ETH for gas',
             counterparty=CPT_GAS,
             address=None,
         ), EvmEvent(
@@ -80,7 +80,7 @@ def test_old_claim(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             balance=Balance(amount=FVal(gas_str)),
             location_label=user_address,
-            notes=f'Burned {gas_str} ETH for gas',
+            notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
             address=None,
         ), EvmEvent(
@@ -124,7 +124,7 @@ def test_claim_multiple(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             balance=Balance(amount=FVal('0.002833214770290904')),
             location_label=user_address,
-            notes='Burned 0.002833214770290904 ETH for gas',
+            notes='Burn 0.002833214770290904 ETH for gas',
             counterparty=CPT_GAS,
             address=None,
         ), EvmEvent(

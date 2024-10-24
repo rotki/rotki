@@ -53,7 +53,7 @@ def test_uniswap_v2_swap(ethereum_inquirer):
             asset=A_ETH,
             balance=Balance(amount=FVal(0.00847616)),
             location_label=ADDY_1,
-            notes='Burned 0.00847616 ETH for gas',
+            notes='Burn 0.00847616 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -104,7 +104,7 @@ def test_uniswap_v2_swap_eth_returned(ethereum_inquirer):
             asset=A_ETH,
             balance=Balance(amount=FVal(0.006697194528224109)),
             location_label=ADDY_1,
-            notes='Burned 0.006697194528224109 ETH for gas',
+            notes='Burn 0.006697194528224109 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -168,7 +168,7 @@ def test_uniswap_v2_swap_with_approval(ethereum_inquirer, ethereum_accounts):
             asset=Asset('ETH'),
             balance=Balance(amount=FVal('0.003227029072809172')),
             location_label=user_address,
-            notes='Burned 0.003227029072809172 ETH for gas',
+            notes='Burn 0.003227029072809172 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,
@@ -234,7 +234,7 @@ def test_uniswap_v2_add_liquidity(ethereum_inquirer):
             asset=A_ETH,
             balance=Balance(amount=FVal('0.002931805211106758')),
             location_label=ADDY_2,
-            notes='Burned 0.002931805211106758 ETH for gas',
+            notes='Burn 0.002931805211106758 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -302,7 +302,7 @@ def test_uniswap_v2_remove_liquidity(ethereum_inquirer):
             asset=A_ETH,
             balance=Balance(amount=FVal('0.00468942')),
             location_label=ADDY_3,
-            notes='Burned 0.00468942 ETH for gas',
+            notes='Burn 0.00468942 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -510,7 +510,7 @@ def test_uniswap_v2_swap_events_order(
             asset=A_ETH,
             balance=Balance(FVal('0.00468942')),
             location_label=user_address,
-            notes='Burned 0.00468942 ETH for gas',
+            notes='Burn 0.00468942 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,
@@ -575,7 +575,7 @@ def test_remove_liquidity_with_weth(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             balance=Balance(amount=FVal('0.018446778')),
             location_label=user_address,
-            notes='Burned 0.018446778 ETH for gas',
+            notes='Burn 0.018446778 ETH for gas',
             counterparty=CPT_GAS,
             address=None,
         ), EvmEvent(
@@ -644,7 +644,7 @@ def test_claim_airdrop(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             balance=Balance(amount=FVal(gas_amount)),
             location_label=user_address,
-            notes=f'Burned {gas_amount} ETH for gas',
+            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
             address=None,
         ), EvmEvent(

@@ -33,7 +33,7 @@ def test_votium_claim_1(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             balance=Balance(amount=FVal(gas)),
             location_label=user_address,
-            notes=f'Burned {gas} ETH for gas',
+            notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
             address=None,
         ), EvmEvent(
@@ -74,7 +74,7 @@ def test_votium_claim_2(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             balance=Balance(amount=FVal(gas)),
             location_label=user_address,
-            notes=f'Burned {gas} ETH for gas',
+            notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
             address=None,
         ), EvmEvent(

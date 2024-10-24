@@ -38,7 +38,7 @@ def test_deposit_erc20(ethereum_inquirer, ethereum_accounts):
             asset=Asset('ETH'),
             balance=Balance(amount=FVal('0.00465973024452012')),
             location_label=user_address,
-            notes='Burned 0.00465973024452012 ETH for gas',
+            notes='Burn 0.00465973024452012 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,
@@ -77,7 +77,7 @@ def test_deposit_eth(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             balance=Balance(amount=FVal('0.006541751818933373')),
             location_label=user_address,
-            notes='Burned 0.006541751818933373 ETH for gas',
+            notes='Burn 0.006541751818933373 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,
@@ -193,7 +193,7 @@ def test_withdraw_erc20(optimism_inquirer, optimism_accounts):
             asset=A_ETH,
             balance=Balance(amount=FVal('0.000063967090470944')),
             location_label=user_address,
-            notes='Burned 0.000063967090470944 ETH for gas',
+            notes='Burn 0.000063967090470944 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,
@@ -232,7 +232,7 @@ def test_withdraw_eth(optimism_inquirer, optimism_accounts):
             asset=A_ETH,
             balance=Balance(amount=FVal('0.000062680826296456')),
             location_label=user_address,
-            notes='Burned 0.000062680826296456 ETH for gas',
+            notes='Burn 0.000062680826296456 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,
@@ -271,7 +271,7 @@ def test_claim_erc20_on_ethereum(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             balance=Balance(amount=FVal('0.01405791999714114')),
             location_label=user_address,
-            notes='Burned 0.01405791999714114 ETH for gas',
+            notes='Burn 0.01405791999714114 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,
@@ -310,7 +310,7 @@ def test_claim_eth_on_ethereum(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             balance=Balance(amount=FVal('0.012214330132870492')),
             location_label=user_address,
-            notes='Burned 0.012214330132870492 ETH for gas',
+            notes='Burn 0.012214330132870492 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,
@@ -351,7 +351,7 @@ def test_prove_withdrawal(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             balance=Balance(amount=FVal(gas_str)),
             location_label=user_address,
-            notes=f'Burned {gas_str} ETH for gas',
+            notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,
@@ -387,7 +387,7 @@ def test_deposit_dai_on_ethereum(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             balance=Balance(amount=FVal(gas_amount)),
             location_label=user_address,
-            notes=f'Burned {gas_amount} ETH for gas',
+            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,
@@ -423,7 +423,7 @@ def test_deposit_dai_on_optimism(optimism_inquirer, optimism_accounts):
             asset=A_ETH,
             balance=Balance(amount=FVal(gas_amount)),
             location_label=user_address,
-            notes=f'Burned {gas_amount} ETH for gas',
+            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,
@@ -459,7 +459,7 @@ def test_withdraw_dai_on_ethereum(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             balance=Balance(amount=FVal(gas_amount)),
             location_label=user_address,
-            notes=f'Burned {gas_amount} ETH for gas',
+            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,

@@ -31,7 +31,7 @@ def test_ygov_stake(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             balance=Balance(amount=FVal(gas_amount)),
             location_label=addy_user,
-            notes=f'Burned {gas_amount} ETH for gas',
+            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ),
         EvmEvent(
@@ -71,7 +71,7 @@ def test_ygov_get_reward(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             balance=Balance(amount=FVal(gas_amount)),
             location_label=addy_user,
-            notes=f'Burned {gas_amount} ETH for gas',
+            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ),
         EvmEvent(
@@ -111,7 +111,7 @@ def test_ygov_exit(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             balance=Balance(amount=FVal(gas_amount)),
             location_label=addy_user,
-            notes=f'Burned {gas_amount} ETH for gas',
+            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ),
         EvmEvent(

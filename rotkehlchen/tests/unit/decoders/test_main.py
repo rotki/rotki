@@ -346,7 +346,7 @@ def test_simple_erc20_transfer(
             asset=A_ETH,
             balance=Balance(amount=FVal('0.00045')) if chain is ChainID.ETHEREUM else Balance(amount=FVal('0.00055')),  # noqa: E501
             location_label=from_address,
-            notes='Burned 0.00045 ETH for gas' if chain is ChainID.ETHEREUM else 'Burned 0.00055 ETH for gas',  # noqa: E501
+            notes='Burn 0.00045 ETH for gas' if chain is ChainID.ETHEREUM else 'Burn 0.00055 ETH for gas',  # noqa: E501
             counterparty=CPT_GAS,
             identifier=None,
             extra_data=None,
@@ -430,7 +430,7 @@ def test_eth_transfer(
             asset=A_ETH,
             balance=Balance(amount=FVal('0.001')) if chain is ChainID.ETHEREUM else Balance(amount=FVal('0.0011')),  # noqa: E501
             location_label=from_address,
-            notes='Burned 0.001 ETH for gas' if chain is ChainID.ETHEREUM else 'Burned 0.0011 ETH for gas',  # noqa: E501
+            notes='Burn 0.001 ETH for gas' if chain is ChainID.ETHEREUM else 'Burn 0.0011 ETH for gas',  # noqa: E501
             counterparty=CPT_GAS,
             identifier=None,
             extra_data=None,
@@ -514,7 +514,7 @@ def test_eth_spend(
             asset=A_ETH,
             balance=Balance(amount=FVal('0.001')) if chain is ChainID.ETHEREUM else Balance(amount=FVal('0.0011')),  # noqa: E501
             location_label=from_address,
-            notes='Burned 0.001 ETH for gas' if chain is ChainID.ETHEREUM else 'Burned 0.0011 ETH for gas',  # noqa: E501
+            notes='Burn 0.001 ETH for gas' if chain is ChainID.ETHEREUM else 'Burn 0.0011 ETH for gas',  # noqa: E501
             counterparty=CPT_GAS,
             identifier=None,
             extra_data=None,
@@ -590,7 +590,7 @@ def test_eth_deposit(
             asset=A_ETH,
             balance=Balance(amount=FVal(0.001)),
             location_label=from_address,
-            notes='Burned 0.001 ETH for gas',
+            notes='Burn 0.001 ETH for gas',
             counterparty=CPT_GAS,
             identifier=None,
             extra_data=None,
@@ -952,6 +952,6 @@ def test_failed_transaction(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         balance=Balance(amount=FVal(gas)),
         location_label=ethereum_accounts[0],
-        notes=f'Burned {gas} ETH for gas of a failed transaction',
+        notes=f'Burn {gas} ETH for gas of a failed transaction',
         counterparty=CPT_GAS,
     )]

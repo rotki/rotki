@@ -32,7 +32,7 @@ def test_gitcoin_old_donation(ethereum_inquirer):
             asset=A_ETH,
             balance=Balance(amount=FVal(gas)),
             location_label=ADDY,
-            notes=f'Burned {gas} ETH for gas',
+            notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -105,7 +105,7 @@ def test_bulkcheckout_send_token(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             balance=Balance(amount=FVal(gas)),
             location_label=user_address,
-            notes=f'Burned {gas} ETH for gas',
+            notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -182,7 +182,7 @@ def test_gitcoin_vote_cast(ethereum_inquirer):
             asset=A_ETH,
             balance=Balance(amount=FVal(gas)),
             location_label=ADDY,
-            notes=f'Burned {gas} ETH for gas',
+            notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -219,7 +219,7 @@ def test_gitcoin_gr15_matching_claim(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             balance=Balance(amount=FVal(gas)),
             location_label=user,
-            notes=f'Burned {gas} ETH for gas',
+            notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -256,7 +256,7 @@ def test_gitcoin_payout_claimed_matching_gr12(ethereum_inquirer, ethereum_accoun
             asset=A_ETH,
             balance=Balance(amount=FVal(gas)),
             location_label=user,
-            notes=f'Burned {gas} ETH for gas',
+            notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -294,7 +294,7 @@ def test_gitcoin_payout_claimed_matching_gr11(ethereum_inquirer, ethereum_accoun
             asset=A_ETH,
             balance=Balance(amount=FVal(gas)),
             location_label=user,
-            notes=f'Burned {gas} ETH for gas',
+            notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,

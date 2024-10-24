@@ -32,7 +32,7 @@ def test_attest_optimism(optimism_inquirer, optimism_accounts):
             asset=A_ETH,
             balance=Balance(amount=FVal(gas_amount_str)),
             location_label=user_address,
-            notes=f'Burned {gas_amount_str} ETH for gas',
+            notes=f'Burn {gas_amount_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,

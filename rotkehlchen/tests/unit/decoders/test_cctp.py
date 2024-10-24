@@ -42,7 +42,7 @@ def test_deposit_usdc_from_ethereum_to_arbitrum_one(
             asset=A_ETH,
             balance=Balance(amount=FVal(gas)),
             location_label=ethereum_accounts[0],
-            notes=f'Burned {gas} ETH for gas',
+            notes=f'Burn {gas} ETH for gas',
             tx_hash=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -85,7 +85,7 @@ def test_receive_usdc_on_arbitrum_one_from_ethereum(
             asset=A_ETH,
             balance=Balance(amount=FVal(gas)),
             location_label=arbitrum_one_accounts[0],
-            notes=f'Burned {gas} ETH for gas',
+            notes=f'Burn {gas} ETH for gas',
             tx_hash=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -128,7 +128,7 @@ def test_deposit_usdc_from_polygon_to_arbitrum_one(
             asset=A_POLYGON_POS_MATIC,
             balance=Balance(amount=FVal(gas)),
             location_label=polygon_pos_accounts[0],
-            notes=f'Burned {gas} POL for gas',
+            notes=f'Burn {gas} POL for gas',
             tx_hash=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -171,7 +171,7 @@ def test_receive_usdc_on_arbitrum_one_from_polygon(
             asset=A_ETH,
             balance=Balance(amount=FVal(gas)),
             location_label=arbitrum_one_accounts[0],
-            notes=f'Burned {gas} ETH for gas',
+            notes=f'Burn {gas} ETH for gas',
             tx_hash=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(

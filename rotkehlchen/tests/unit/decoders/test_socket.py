@@ -31,7 +31,7 @@ def test_optimism_to_arb_bridge(optimism_inquirer, optimism_accounts):
             asset=A_ETH,
             balance=Balance(amount=FVal(gas_amount)),
             location_label=user_address,
-            notes=f'Burned {gas_amount} ETH for gas',
+            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,
@@ -72,7 +72,7 @@ def test_bridge_eth(arbitrum_one_inquirer, arbitrum_one_accounts):
             asset=A_ETH,
             balance=Balance(amount=FVal(gas_amount)),
             location_label=user_address,
-            notes=f'Burned {gas_amount} ETH for gas',
+            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,

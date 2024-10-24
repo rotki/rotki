@@ -29,7 +29,7 @@ def test_vote_cast(optimism_inquirer, optimism_accounts):
             asset=Asset('ETH'),
             balance=Balance(amount=FVal('0.000656986283649328')),
             location_label=user_address,
-            notes='Burned 0.000656986283649328 ETH for gas',
+            notes='Burn 0.000656986283649328 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,
@@ -68,7 +68,7 @@ def test_vote_cast_with_params(optimism_inquirer, optimism_accounts):
             asset=Asset('ETH'),
             balance=Balance(amount=FVal('0.000033338918413158')),
             location_label=user_address,
-            notes='Burned 0.000033338918413158 ETH for gas',
+            notes='Burn 0.000033338918413158 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,
@@ -106,7 +106,7 @@ def test_vote_cast_with_reason(optimism_inquirer, optimism_accounts):
             asset=Asset('ETH'),
             balance=Balance(amount=FVal(gas_amount)),
             location_label=user_address,
-            notes=f'Burned {gas_amount} ETH for gas',
+            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,

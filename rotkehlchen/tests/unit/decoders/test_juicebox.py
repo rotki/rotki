@@ -34,7 +34,7 @@ def test_donation(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         balance=Balance(amount=FVal(gas_fees)),
         location_label=user_address,
-        notes=f'Burned {gas_fees} ETH for gas',
+        notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_hash=tx_hash,
@@ -101,7 +101,7 @@ def test_fund_raising(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         balance=Balance(amount=FVal(gas_fees)),
         location_label=user_address,
-        notes=f'Burned {gas_fees} ETH for gas',
+        notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_hash=tx_hash,

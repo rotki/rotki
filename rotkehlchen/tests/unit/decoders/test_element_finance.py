@@ -35,7 +35,7 @@ def test_claim_airdrop(ethereum_inquirer):
             asset=A_ETH,
             balance=Balance(amount=FVal('0.0061843862')),
             location_label=ADDY,
-            notes='Burned 0.0061843862 ETH for gas',
+            notes='Burn 0.0061843862 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,

@@ -63,7 +63,7 @@ def test_hop_l2_deposit(ethereum_inquirer):
             asset=A_ETH,
             balance=Balance(amount=FVal('0.001964214783875487')),
             location_label=ADDY,
-            notes='Burned 0.001964214783875487 ETH for gas',
+            notes='Burn 0.001964214783875487 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -99,7 +99,7 @@ def test_hop_l2_deposit_usdc(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             balance=Balance(amount=FVal(gas_fee)),
             location_label=ethereum_accounts[0],
-            notes=f'Burned {gas_fee} ETH for gas',
+            notes=f'Burn {gas_fee} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -377,7 +377,7 @@ def test_hop_eth_bridge_l2_to_l1_arbitrum_one(arbitrum_one_inquirer: 'ArbitrumOn
             asset=A_ETH,
             balance=Balance(amount=FVal(gas_fee)),
             location_label=user_address,
-            notes=f'Burned {gas_fee} ETH for gas',
+            notes=f'Burn {gas_fee} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -457,7 +457,7 @@ def test_hop_magic_bridge_l2_to_l1_arbitrum_one(arbitrum_one_inquirer: 'Arbitrum
             asset=A_ETH,
             balance=Balance(amount=FVal(gas_fee)),
             location_label=user_address,
-            notes=f'Burned {gas_fee} ETH for gas',
+            notes=f'Burn {gas_fee} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -544,7 +544,7 @@ def test_hop_usdc_bridge_l2_to_l1_gnosis(gnosis_inquirer: 'GnosisInquirer', gnos
             asset=A_XDAI,
             balance=Balance(amount=FVal(gas_fees)),
             location_label=user_address,
-            notes=f'Burned {gas_fees} XDAI for gas',
+            notes=f'Burn {gas_fees} XDAI for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -584,7 +584,7 @@ def test_hop_eth_bridge_arbitrum_custom_recipient(arbitrum_one_inquirer: 'Arbitr
             asset=A_ETH,
             balance=Balance(amount=FVal(gas)),
             location_label=user_address,
-            notes=f'Burned {gas} ETH for gas',
+            notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -639,7 +639,7 @@ def test_hop_add_liquidity(
             asset=A_ETH,
             balance=Balance(amount=FVal(gas)),
             location_label=base_accounts[0],
-            notes=f'Burned {gas} ETH for gas',
+            notes=f'Burn {gas} ETH for gas',
             tx_hash=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -708,7 +708,7 @@ def test_hop_add_liquidity_2(
             asset=A_ETH,
             balance=Balance(amount=FVal(gas)),
             location_label=arbitrum_one_accounts[0],
-            notes=f'Burned {gas} ETH for gas',
+            notes=f'Burn {gas} ETH for gas',
             tx_hash=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -798,7 +798,7 @@ def test_hop_remove_liquidity(
             asset=A_ETH,
             balance=Balance(amount=FVal(gas)),
             location_label=base_accounts[0],
-            notes=f'Burned {gas} ETH for gas',
+            notes=f'Burn {gas} ETH for gas',
             tx_hash=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -863,7 +863,7 @@ def test_hop_remove_liquidity_2(
             asset=A_ETH,
             balance=Balance(amount=FVal(gas)),
             location_label=base_accounts[0],
-            notes=f'Burned {gas} ETH for gas',
+            notes=f'Burn {gas} ETH for gas',
             tx_hash=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -941,7 +941,7 @@ def test_hop_remove_liquidity_usdc_gnosis(
             asset=A_XDAI,
             balance=Balance(amount=FVal(gas)),
             location_label=gnosis_accounts[0],
-            notes=f'Burned {gas} XDAI for gas',
+            notes=f'Burn {gas} XDAI for gas',
             tx_hash=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -1029,7 +1029,7 @@ def test_hop_stake(
             asset=A_ETH,
             balance=Balance(amount=FVal(gas)),
             location_label=arbitrum_one_accounts[0],
-            notes=f'Burned {gas} ETH for gas',
+            notes=f'Burn {gas} ETH for gas',
             tx_hash=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -1087,7 +1087,7 @@ def test_hop_stake_2(
             asset=A_ETH,
             balance=Balance(amount=FVal(gas)),
             location_label=arbitrum_one_accounts[0],
-            notes=f'Burned {gas} ETH for gas',
+            notes=f'Burn {gas} ETH for gas',
             tx_hash=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -1143,7 +1143,7 @@ def test_hop_claim_rewards(
             asset=A_ETH,
             balance=Balance(amount=FVal(gas)),
             location_label=arbitrum_one_accounts[0],
-            notes=f'Burned {gas} ETH for gas',
+            notes=f'Burn {gas} ETH for gas',
             tx_hash=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -1186,7 +1186,7 @@ def test_hop_claim_rewards_2(
             asset=A_ETH,
             balance=Balance(amount=FVal(gas)),
             location_label=arbitrum_one_accounts[0],
-            notes=f'Burned {gas} ETH for gas',
+            notes=f'Burn {gas} ETH for gas',
             tx_hash=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -1229,7 +1229,7 @@ def test_hop_unstake(
             asset=A_ETH,
             balance=Balance(amount=FVal(gas)),
             location_label=arbitrum_one_accounts[0],
-            notes=f'Burned {gas} ETH for gas',
+            notes=f'Burn {gas} ETH for gas',
             tx_hash=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -1282,7 +1282,7 @@ def test_hop_stake_gnosis(
             asset=A_XDAI,
             balance=Balance(amount=FVal(gas)),
             location_label=gnosis_accounts[0],
-            notes=f'Burned {gas} XDAI for gas',
+            notes=f'Burn {gas} XDAI for gas',
             tx_hash=tx_hash,
             counterparty='gas',
         ), EvmEvent(
@@ -1335,7 +1335,7 @@ def test_hop_claim_rewards_gnosis(
             asset=A_XDAI,
             balance=Balance(amount=FVal(gas)),
             location_label=gnosis_accounts[0],
-            notes=f'Burned {gas} XDAI for gas',
+            notes=f'Burn {gas} XDAI for gas',
             tx_hash=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -1375,7 +1375,7 @@ def test_hop_unstake_gnosis(
             asset=A_XDAI,
             balance=Balance(amount=FVal(gas)),
             location_label=gnosis_accounts[0],
-            notes=f'Burned {gas} XDAI for gas',
+            notes=f'Burn {gas} XDAI for gas',
             tx_hash=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -1426,7 +1426,7 @@ def test_vote_cast(ethereum_inquirer):
             asset=A_ETH,
             balance=Balance(amount=FVal(gas)),
             location_label=ADDY,
-            notes=f'Burned {gas} ETH for gas',
+            notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -1464,7 +1464,7 @@ def test_hop_add_liquidity_optimism_usdc(
             asset=A_ETH,
             balance=Balance(amount=FVal(gas)),
             location_label=optimism_accounts[0],
-            notes=f'Burned {gas} ETH for gas',
+            notes=f'Burn {gas} ETH for gas',
             tx_hash=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(

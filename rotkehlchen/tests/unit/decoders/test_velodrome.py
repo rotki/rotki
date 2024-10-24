@@ -68,7 +68,7 @@ def test_add_liquidity_v2(optimism_transaction_decoder, optimism_accounts, load_
             balance=Balance(FVal('0.000054658008447046')),
             location_label=user_address,
             counterparty=CPT_GAS,
-            notes='Burned 0.000054658008447046 ETH for gas',
+            notes='Burn 0.000054658008447046 ETH for gas',
         ), EvmEvent(
             tx_hash=evmhash,
             sequence_index=68,
@@ -156,7 +156,7 @@ def test_add_liquidity_v1(optimism_transaction_decoder, optimism_accounts, load_
             balance=Balance(FVal('0.00016522650722948')),
             location_label=user_address,
             counterparty=CPT_GAS,
-            notes='Burned 0.00016522650722948 ETH for gas',
+            notes='Burn 0.00016522650722948 ETH for gas',
         ), EvmEvent(
             tx_hash=evmhash,
             sequence_index=1,
@@ -237,7 +237,7 @@ def test_remove_liquidity_v2(optimism_transaction_decoder, optimism_accounts, lo
             balance=Balance(FVal('0.000024369543627752')),
             location_label=user_address,
             counterparty=CPT_GAS,
-            notes='Burned 0.000024369543627752 ETH for gas',
+            notes='Burn 0.000024369543627752 ETH for gas',
         ), EvmEvent(
             tx_hash=evmhash,
             sequence_index=33,
@@ -323,7 +323,7 @@ def test_remove_liquidity_v1(optimism_transaction_decoder, optimism_accounts, lo
             balance=Balance(FVal('0.000037049807135563')),
             location_label=user_address,
             counterparty=CPT_GAS,
-            notes='Burned 0.000037049807135563 ETH for gas',
+            notes='Burn 0.000037049807135563 ETH for gas',
         ), EvmEvent(
             tx_hash=evmhash,
             sequence_index=39,
@@ -408,7 +408,7 @@ def test_swap_eth_to_token_v2(optimism_accounts, optimism_transaction_decoder, l
             balance=Balance(FVal('0.000044146364876824')),
             location_label=user_address,
             counterparty=CPT_GAS,
-            notes='Burned 0.000044146364876824 ETH for gas',
+            notes='Burn 0.000044146364876824 ETH for gas',
         ), EvmEvent(
             tx_hash=evmhash,
             sequence_index=1,
@@ -465,7 +465,7 @@ def test_swap_eth_to_token_v1(optimism_accounts, optimism_transaction_decoder, l
             balance=Balance(FVal('0.000184626805145159')),
             location_label=user_address,
             counterparty=CPT_GAS,
-            notes='Burned 0.000184626805145159 ETH for gas',
+            notes='Burn 0.000184626805145159 ETH for gas',
         ), EvmEvent(
             tx_hash=evmhash,
             sequence_index=1,
@@ -522,7 +522,7 @@ def test_swap_token_to_eth_v2(optimism_accounts, optimism_transaction_decoder, l
             balance=Balance(FVal('0.000059095022720367')),
             location_label=user_address,
             counterparty=CPT_GAS,
-            notes='Burned 0.000059095022720367 ETH for gas',
+            notes='Burn 0.000059095022720367 ETH for gas',
         ), EvmEvent(
             tx_hash=evmhash,
             sequence_index=97,
@@ -591,7 +591,7 @@ def test_swap_token_to_eth_v1(optimism_accounts, optimism_transaction_decoder, l
             balance=Balance(FVal('0.000076204005061914')),
             location_label=user_address,
             counterparty=CPT_GAS,
-            notes='Burned 0.000076204005061914 ETH for gas',
+            notes='Burn 0.000076204005061914 ETH for gas',
         ), EvmEvent(
             tx_hash=evmhash,
             sequence_index=1,
@@ -648,7 +648,7 @@ def test_swap_tokens_v2(optimism_accounts, optimism_transaction_decoder, load_gl
             balance=Balance(FVal('0.000034672969663309')),
             location_label=user_address,
             counterparty=CPT_GAS,
-            notes='Burned 0.000034672969663309 ETH for gas',
+            notes='Burn 0.000034672969663309 ETH for gas',
         ), EvmEvent(
             tx_hash=evmhash,
             sequence_index=92,
@@ -717,7 +717,7 @@ def test_swap_tokens_v1(optimism_accounts, optimism_transaction_decoder, load_gl
             balance=Balance(FVal('0.00003955388723844')),
             location_label=user_address,
             counterparty=CPT_GAS,
-            notes='Burned 0.00003955388723844 ETH for gas',
+            notes='Burn 0.00003955388723844 ETH for gas',
         ), EvmEvent(
             tx_hash=evmhash,
             sequence_index=1,
@@ -781,7 +781,7 @@ def test_stake_lp_token_to_gauge_v2(optimism_accounts, optimism_transaction_deco
             balance=Balance(FVal('0.000019177994860846')),
             location_label=user_address,
             counterparty=CPT_GAS,
-            notes='Burned 0.000019177994860846 ETH for gas',
+            notes='Burn 0.000019177994860846 ETH for gas',
         ), EvmEvent(
             tx_hash=evmhash,
             sequence_index=19,
@@ -839,7 +839,7 @@ def test_unstake_lp_token_to_gauge_v2(optimism_accounts, optimism_transaction_de
             balance=Balance(FVal('0.00001849989800651')),
             location_label=user_address,
             counterparty=CPT_GAS,
-            notes='Burned 0.00001849989800651 ETH for gas',
+            notes='Burn 0.00001849989800651 ETH for gas',
         ), EvmEvent(
             tx_hash=evmhash,
             sequence_index=85,
@@ -885,7 +885,7 @@ def test_get_reward_from_gauge_v2(optimism_accounts, optimism_transaction_decode
             balance=Balance(FVal('0.000024794371949528')),
             location_label=user_address,
             counterparty=CPT_GAS,
-            notes='Burned 0.000024794371949528 ETH for gas',
+            notes='Burn 0.000024794371949528 ETH for gas',
         ), EvmEvent(
             tx_hash=evmhash,
             sequence_index=35,

@@ -32,7 +32,7 @@ def test_makerdao_simple_transaction(ethereum_inquirer):
             asset=A_ETH,
             balance=Balance(amount=FVal(0.00926134)),
             location_label='0x648aA14e4424e0825A5cE739C8C68610e143FB79',
-            notes='Burned 0.00926134 ETH for gas',
+            notes='Burn 0.00926134 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -70,7 +70,7 @@ def test_withdraw_dai_from_sdai(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             balance=Balance(amount=FVal('0.001301015216220134')),
             location_label=user_address,
-            notes='Burned 0.001301015216220134 ETH for gas',
+            notes='Burn 0.001301015216220134 ETH for gas',
             tx_hash=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -121,7 +121,7 @@ def test_deposit_dai_to_sdai(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             balance=Balance(amount=FVal(0.00152049387145495)),
             location_label=user_address,
-            notes='Burned 0.00152049387145495 ETH for gas',
+            notes='Burn 0.00152049387145495 ETH for gas',
             tx_hash=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(

@@ -39,7 +39,7 @@ def test_deposit(database, ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             balance=Balance(amount=FVal('0.000788637337054068')),
             location_label=user_address,
-            notes='Burned 0.000788637337054068 ETH for gas',
+            notes='Burn 0.000788637337054068 ETH for gas',
             counterparty=CPT_GAS,
         ), EthDepositEvent(
             tx_hash=evmhash,
@@ -87,7 +87,7 @@ def test_multiple_deposits(database, ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             balance=Balance(amount=FVal('0.010956672')),
             location_label=user_address,
-            notes='Burned 0.010956672 ETH for gas',
+            notes='Burn 0.010956672 ETH for gas',
             counterparty=CPT_GAS,
             address=None,
         ), EthDepositEvent(
@@ -148,7 +148,7 @@ def test_deposit_with_anonymous_event(database, ethereum_inquirer, ethereum_acco
             asset=A_ETH,
             balance=Balance(amount=FVal('0.00071529566834925')),
             location_label=user_address,
-            notes='Burned 0.00071529566834925 ETH for gas',
+            notes='Burn 0.00071529566834925 ETH for gas',
             counterparty=CPT_GAS,
         ), EthDepositEvent(
             tx_hash=evmhash,

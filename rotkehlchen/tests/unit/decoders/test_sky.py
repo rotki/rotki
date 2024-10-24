@@ -38,7 +38,7 @@ def test_migrate_dai(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         balance=Balance(amount=FVal(gas_amount)),
         location_label=ethereum_accounts[0],
-        notes=f'Burned {gas_amount} ETH for gas',
+        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_hash=tx_hash,
@@ -87,7 +87,7 @@ def test_redeem_susds(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         balance=Balance(amount=FVal(gas_amount)),
         location_label=ethereum_accounts[0],
-        notes=f'Burned {gas_amount} ETH for gas',
+        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_hash=tx_hash,
@@ -136,7 +136,7 @@ def test_deposit_susds(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         balance=Balance(amount=FVal(gas_amount)),
         location_label=ethereum_accounts[0],
-        notes=f'Burned {gas_amount} ETH for gas',
+        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_hash=tx_hash,
@@ -185,7 +185,7 @@ def test_migrate_maker(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         balance=Balance(amount=FVal(gas_amount)),
         location_label=ethereum_accounts[0],
-        notes=f'Burned {gas_amount} ETH for gas',
+        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_hash=tx_hash,

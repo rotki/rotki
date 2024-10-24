@@ -46,7 +46,7 @@ def test_thegraph_delegate(ethereum_inquirer):
             asset=A_ETH,
             balance=Balance(amount=FVal(gas_fees)),
             location_label=ADDY_USER,
-            notes=f'Burned {gas_fees} ETH for gas',
+            notes=f'Burn {gas_fees} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -112,7 +112,7 @@ def test_thegraph_contract_deposit_gas(ethereum_inquirer):
             asset=A_ETH,
             balance=Balance(amount=FVal(gas)),
             location_label=ADDY_ROTKI,
-            notes=f'Burned {gas} ETH for gas',
+            notes=f'Burn {gas} ETH for gas',
             tx_hash=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -152,7 +152,7 @@ def test_thegraph_contract_transfer_approval(ethereum_inquirer):
             asset=A_ETH,
             balance=Balance(amount=FVal(gas)),
             location_label=ADDY_ROTKI,
-            notes=f'Burned {gas} ETH for gas',
+            notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -193,7 +193,7 @@ def test_thegraph_contract_delegation_transferred_to_l2_vested(ethereum_inquirer
             asset=A_ETH,
             balance=Balance(amount=FVal(gas)),
             location_label=ADDY_ROTKI,
-            notes=f'Burned {gas} ETH for gas',
+            notes=f'Burn {gas} ETH for gas',
             identifier=None,
             tx_hash=tx_hash,
             counterparty=CPT_GAS,
@@ -238,7 +238,7 @@ def test_thegraph_contract_delegation_transferred_to_l2(ethereum_inquirer):
             asset=A_ETH,
             balance=Balance(amount=FVal(gas)),
             location_label=ADDY_USER_2,
-            notes=f'Burned {gas} ETH for gas',
+            notes=f'Burn {gas} ETH for gas',
             tx_hash=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -293,7 +293,7 @@ def test_thegraph_undelegate(ethereum_inquirer):
             asset=A_ETH,
             balance=Balance(amount=FVal(gas_fee)),
             location_label=ADDY_USER,
-            notes=f'Burned {gas_fee} ETH for gas',
+            notes=f'Burn {gas_fee} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -332,7 +332,7 @@ def test_thegraph_delegated_withdrawn(ethereum_inquirer):
             asset=A_ETH,
             balance=Balance(amount=FVal(gas_fees)),
             location_label=ADDY_USER,
-            notes=f'Burned {gas_fees} ETH for gas',
+            notes=f'Burn {gas_fees} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -374,7 +374,7 @@ def test_thegraph_delegate_arbitrum_one(arbitrum_one_inquirer):
             asset=A_ETH,
             balance=Balance(amount=FVal(gas_fees)),
             location_label=ADDY_USER_1_ARB,
-            notes=f'Burned {gas_fees} ETH for gas',
+            notes=f'Burn {gas_fees} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -446,7 +446,7 @@ def test_thegraph_undelegate_arbitrum_one(arbitrum_one_inquirer):
             asset=A_ETH,
             balance=Balance(amount=FVal(gas_fees)),
             location_label=ADDY_USER_2_ARB,
-            notes=f'Burned {gas_fees} ETH for gas',
+            notes=f'Burn {gas_fees} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -501,7 +501,7 @@ def test_thegraph_delegated_withdrawn_arbitrum_one(arbitrum_one_inquirer):
             asset=A_ETH,
             balance=Balance(amount=FVal(gas_fees)),
             location_label=ADDY_USER_3_ARB,
-            notes=f'Burned {gas_fees} ETH for gas',
+            notes=f'Burn {gas_fees} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,

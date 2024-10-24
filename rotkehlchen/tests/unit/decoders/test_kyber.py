@@ -42,7 +42,7 @@ def test_kyber_legacy_old_contract(ethereum_inquirer, ethereum_accounts):
                 usd_value=ZERO,
             ),
             location_label=ethereum_accounts[0],
-            notes='Burned 0.01212979988 ETH for gas',
+            notes='Burn 0.01212979988 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,
@@ -102,7 +102,7 @@ def test_kyber_legacy_new_contract(ethereum_inquirer):
                 usd_value=ZERO,
             ),
             location_label='0x5340F6faff9BF55F66C16Db6Bf9E020d987F87D0',
-            notes='Burned 0.066614401 ETH for gas',
+            notes='Burn 0.066614401 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,
@@ -155,7 +155,7 @@ def test_kyber_aggregator_swap_ethereum(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             balance=Balance(amount=FVal(gas)),
             location_label=ethereum_accounts[0],
-            notes=f'Burned {gas} ETH for gas',
+            notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -222,7 +222,7 @@ def test_kyber_aggregator_swap_arbitrum_one(arbitrum_one_inquirer, arbitrum_one_
             asset=A_ETH,
             balance=Balance(amount=FVal(gas)),
             location_label=arbitrum_one_accounts[0],
-            notes=f'Burned {gas} ETH for gas',
+            notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -275,7 +275,7 @@ def test_kyber_aggregator_swap_base(base_inquirer, base_accounts):
             asset=A_ETH,
             balance=Balance(amount=FVal(gas)),
             location_label=base_accounts[0],
-            notes=f'Burned {gas} ETH for gas',
+            notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -339,7 +339,7 @@ def test_kyber_aggregator_swap_optimism(optimism_inquirer, optimism_accounts):
             asset=A_ETH,
             balance=Balance(amount=FVal(gas)),
             location_label=optimism_accounts[0],
-            notes=f'Burned {gas} ETH for gas',
+            notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -407,7 +407,7 @@ def test_kyber_aggregator_swap_polygon(polygon_pos_inquirer, polygon_pos_account
             asset=A_POLYGON_POS_MATIC,
             balance=Balance(amount=FVal(gas)),
             location_label=polygon_pos_accounts[0],
-            notes=f'Burned {gas} POL for gas',
+            notes=f'Burn {gas} POL for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -459,7 +459,7 @@ def test_kyber_aggregator_swap_scroll(scroll_inquirer, scroll_accounts):
             asset=A_ETH,
             balance=Balance(amount=FVal(gas)),
             location_label=scroll_accounts[0],
-            notes=f'Burned {gas} ETH for gas',
+            notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,

@@ -46,7 +46,7 @@ def test_aave_v3_enable_collateral(ethereum_inquirer, ethereum_accounts) -> None
             asset=A_ETH,
             balance=Balance(amount=FVal(gas_fees)),
             location_label=ethereum_accounts[0],
-            notes=f'Burned {gas_fees} ETH for gas',
+            notes=f'Burn {gas_fees} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -110,7 +110,7 @@ def test_aave_v3_disable_collateral(ethereum_inquirer, ethereum_accounts) -> Non
             asset=A_ETH,
             balance=Balance(amount=FVal(gas_fees)),
             location_label=ethereum_accounts[0],
-            notes=f'Burned {gas_fees} ETH for gas',
+            notes=f'Burn {gas_fees} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -186,7 +186,7 @@ def test_aave_v3_deposit(ethereum_inquirer, ethereum_accounts) -> None:
             asset=A_ETH,
             balance=Balance(amount=FVal(gas_fees)),
             location_label=ethereum_accounts[0],
-            notes=f'Burned {gas_fees} ETH for gas',
+            notes=f'Burn {gas_fees} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -237,7 +237,7 @@ def test_aave_v3_deposit_with_interest(ethereum_inquirer, ethereum_accounts) -> 
             asset=A_ETH,
             balance=Balance(amount=FVal(gas_fees)),
             location_label=ethereum_accounts[0],
-            notes=f'Burned {gas_fees} ETH for gas',
+            notes=f'Burn {gas_fees} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -300,7 +300,7 @@ def test_aave_v3_withdraw(ethereum_inquirer, ethereum_accounts) -> None:
             asset=A_ETH,
             balance=Balance(amount=FVal(gas_fees)),
             location_label=ethereum_accounts[0],
-            notes=f'Burned {gas_fees} ETH for gas',
+            notes=f'Burn {gas_fees} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -363,7 +363,7 @@ def test_aave_v3_withdraw_with_bigger_interest(ethereum_inquirer, ethereum_accou
             asset=A_ETH,
             balance=Balance(amount=FVal(gas_fees)),
             location_label=ethereum_accounts[0],
-            notes=f'Burned {gas_fees} ETH for gas',
+            notes=f'Burn {gas_fees} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -426,7 +426,7 @@ def test_aave_v3_borrow(ethereum_inquirer, ethereum_accounts) -> None:
             asset=A_ETH,
             balance=Balance(amount=FVal(gas_fees)),
             location_label=ethereum_accounts[0],
-            notes=f'Burned {gas_fees} ETH for gas',
+            notes=f'Burn {gas_fees} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -477,7 +477,7 @@ def test_aave_v3_repay(ethereum_inquirer, ethereum_accounts) -> None:
             asset=A_ETH,
             balance=Balance(amount=FVal(gas_fees)),
             location_label=ethereum_accounts[0],
-            notes=f'Burned {gas_fees} ETH for gas',
+            notes=f'Burn {gas_fees} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -597,7 +597,7 @@ def test_aave_v3_enable_collateral_polygon(polygon_pos_inquirer, polygon_pos_acc
             asset=A_POLYGON_POS_MATIC,
             balance=Balance(amount=FVal(gas_fees)),
             location_label=polygon_pos_accounts[0],
-            notes=f'Burned {gas_fees} POL for gas',
+            notes=f'Burn {gas_fees} POL for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -664,7 +664,7 @@ def test_aave_v3_withdraw_arbitrum_one(arbitrum_one_inquirer, arbitrum_one_accou
             asset=A_ETH,
             balance=Balance(amount=FVal(gas_fees)),
             location_label=arbitrum_one_accounts[0],
-            notes=f'Burned {gas_fees} ETH for gas',
+            notes=f'Burn {gas_fees} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -727,7 +727,7 @@ def test_aave_v3_borrow_base(base_inquirer, base_accounts) -> None:
             asset=A_ETH,
             balance=Balance(amount=FVal(gas_fees)),
             location_label=base_accounts[0],
-            notes=f'Burned {gas_fees} ETH for gas',
+            notes=f'Burn {gas_fees} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -778,7 +778,7 @@ def test_aave_v3_withdraw_gnosis(gnosis_inquirer, gnosis_accounts) -> None:
             asset=A_XDAI,
             balance=Balance(amount=FVal(gas_fees)),
             location_label=gnosis_accounts[0],
-            notes=f'Burned {gas_fees} XDAI for gas',
+            notes=f'Burn {gas_fees} XDAI for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -829,7 +829,7 @@ def test_aave_v3_borrow_optimism(optimism_inquirer, optimism_accounts) -> None:
             asset=A_ETH,
             balance=Balance(amount=FVal(gas_fees)),
             location_label=optimism_accounts[0],
-            notes=f'Burned {gas_fees} ETH for gas',
+            notes=f'Burn {gas_fees} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -880,7 +880,7 @@ def test_aave_v3_repay_scroll(scroll_inquirer, scroll_accounts) -> None:
             asset=A_ETH,
             balance=Balance(amount=FVal(gas_fees)),
             location_label=scroll_accounts[0],
-            notes=f'Burned {gas_fees} ETH for gas',
+            notes=f'Burn {gas_fees} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -932,7 +932,7 @@ def test_non_aave_tx(ethereum_inquirer, ethereum_accounts) -> None:
             asset=A_ETH,
             balance=Balance(amount=FVal(gas_fees)),
             location_label=ethereum_accounts[0],
-            notes=f'Burned {gas_fees} ETH for gas',
+            notes=f'Burn {gas_fees} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -970,7 +970,7 @@ def test_claim_incentives_reward(optimism_inquirer, optimism_accounts) -> None:
             asset=A_ETH,
             balance=Balance(amount=FVal(gas)),
             location_label=user,
-            notes=f'Burned {gas} ETH for gas',
+            notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -1010,7 +1010,7 @@ def test_aave_v3_events_with_approval(polygon_pos_inquirer, polygon_pos_accounts
             asset=A_POLYGON_POS_MATIC,
             balance=Balance(amount=FVal(gas_fees)),
             location_label=polygon_pos_accounts[0],
-            notes=f'Burned {gas_fees} POL for gas',
+            notes=f'Burn {gas_fees} POL for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             sequence_index=142,
@@ -1087,7 +1087,7 @@ def test_aave_v3_withdraw_eth(scroll_inquirer, scroll_accounts) -> None:
             asset=A_ETH,
             balance=Balance(amount=FVal(gas_fees)),
             location_label=scroll_accounts[0],
-            notes=f'Burned {gas_fees} ETH for gas',
+            notes=f'Burn {gas_fees} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -1179,7 +1179,7 @@ def test_aave_v3_withdraw_matic(polygon_pos_inquirer, polygon_pos_accounts) -> N
             asset=A_POLYGON_POS_MATIC,
             balance=Balance(amount=FVal(gas_fees)),
             location_label=polygon_pos_accounts[0],
-            notes=f'Burned {gas_fees} POL for gas',
+            notes=f'Burn {gas_fees} POL for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             sequence_index=1223,
@@ -1254,7 +1254,7 @@ def test_aave_v3_withdraw_xdai(gnosis_inquirer, gnosis_accounts) -> None:
             asset=A_XDAI,
             balance=Balance(amount=FVal(gas_fees)),
             location_label=gnosis_accounts[0],
-            notes=f'Burned {gas_fees} XDAI for gas',
+            notes=f'Burn {gas_fees} XDAI for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             sequence_index=2,
@@ -1343,7 +1343,7 @@ def test_aave_v3_interest_on_transfer(ethereum_inquirer, ethereum_accounts) -> N
             asset=A_ETH,
             balance=Balance(amount=FVal(gas_fees)),
             location_label=ethereum_accounts[0],
-            notes=f'Burned {gas_fees} ETH for gas',
+            notes=f'Burn {gas_fees} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,

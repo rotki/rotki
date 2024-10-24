@@ -33,7 +33,7 @@ def test_bridge_dai_from_ethereum(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             balance=Balance(amount=FVal(0.000639911080514288)),
             location_label=user_address,
-            notes='Burned 0.000639911080514288 ETH for gas',
+            notes='Burn 0.000639911080514288 ETH for gas',
             tx_hash=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -72,7 +72,7 @@ def test_bridge_dai_from_ethereum_nolog(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             balance=Balance(FVal(gas)),
             location_label=user_address,
-            notes=f'Burned {gas} ETH for gas',
+            notes=f'Burn {gas} ETH for gas',
             tx_hash=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -110,7 +110,7 @@ def test_withdraw_dai_to_ethereum(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             balance=Balance(amount=FVal(0.004855251)),
             location_label=user_address,
-            notes='Burned 0.004855251 ETH for gas',
+            notes='Burn 0.004855251 ETH for gas',
             tx_hash=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -148,7 +148,7 @@ def test_withdraw_dai_from_gnosis(gnosis_inquirer, gnosis_accounts):
             asset=A_XDAI,
             balance=Balance(amount=FVal(0.0003624774)),
             location_label=user_address,
-            notes='Burned 0.0003624774 XDAI for gas',
+            notes='Burn 0.0003624774 XDAI for gas',
             tx_hash=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(

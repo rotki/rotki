@@ -44,7 +44,7 @@ def test_optimism_airdrop_1_claim(optimism_inquirer):
             asset=A_ETH,
             balance=Balance(amount=FVal('0.0002038856162166')),
             location_label=ADDY,
-            notes='Burned 0.0002038856162166 ETH for gas',
+            notes='Burn 0.0002038856162166 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -81,7 +81,7 @@ def test_optimism_airdrop_4_claim(optimism_accounts, optimism_inquirer):
             asset=A_ETH,
             balance=Balance(amount=FVal(gas_amount)),
             location_label=optimism_accounts[0],
-            notes=f'Burned {gas_amount} ETH for gas',
+            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -121,7 +121,7 @@ def test_optimism_delegate_change(optimism_inquirer):
             asset=A_ETH,
             balance=Balance(amount=FVal('0.00005701303160652')),
             location_label=ADDY,
-            notes='Burned 0.00005701303160652 ETH for gas',
+            notes='Burn 0.00005701303160652 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,

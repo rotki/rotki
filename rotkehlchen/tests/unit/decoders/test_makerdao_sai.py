@@ -111,7 +111,7 @@ def test_makerdao_sai_new_cdp(ethereum_transaction_decoder):
             asset=A_ETH,
             balance=Balance(amount=FVal(0.00393701451)),
             location_label=ADDY_1,
-            notes='Burned 0.00393701451 ETH for gas',
+            notes='Burn 0.00393701451 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=deserialize_evm_tx_hash(tx_hex),
@@ -264,7 +264,7 @@ def test_makerdao_sai_borrow_sai(ethereum_transaction_decoder):
             asset=A_ETH,
             balance=Balance(amount=FVal('0.00508884')),
             location_label=ADDY_2,
-            notes='Burned 0.00508884 ETH for gas',
+            notes='Burn 0.00508884 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,
@@ -398,7 +398,7 @@ def test_makerdao_sai_close_cdp(ethereum_transaction_decoder):
             asset=A_ETH,
             balance=Balance(amount=FVal('0.0037108')),
             location_label=ADDY_3,
-            notes='Burned 0.0037108 ETH for gas',
+            notes='Burn 0.0037108 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,
@@ -570,7 +570,7 @@ def test_makerdao_sai_repay_sai(ethereum_transaction_decoder):
             asset=A_ETH,
             balance=Balance(amount=FVal('0.00515524')),
             location_label=ADDY_4,
-            notes='Burned 0.00515524 ETH for gas',
+            notes='Burn 0.00515524 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,
@@ -681,7 +681,7 @@ def test_makerdao_sai_deposit_weth(ethereum_transaction_decoder):
             asset=A_ETH,
             balance=Balance(amount=FVal('0.0037036')),
             location_label=ADDY_5,
-            notes='Burned 0.0037036 ETH for gas',
+            notes='Burn 0.0037036 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,
@@ -785,7 +785,7 @@ def test_makerdao_sai_deposit_peth(ethereum_transaction_decoder):
             asset=A_ETH,
             balance=Balance(amount=FVal('0.00138008')),
             location_label=ADDY_5,
-            notes='Burned 0.00138008 ETH for gas',
+            notes='Burn 0.00138008 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,
@@ -924,7 +924,7 @@ def test_makerdao_sai_liquidation(ethereum_transaction_decoder):
             asset=A_ETH,
             balance=Balance(amount=FVal('0.00478524')),
             location_label=ADDY_6,
-            notes='Burned 0.00478524 ETH for gas',
+            notes='Burn 0.00478524 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,
@@ -1036,7 +1036,7 @@ def test_makerdao_sai_collateral_removal(ethereum_transaction_decoder):
             asset=A_ETH,
             balance=Balance(amount=FVal('0.003528768')),
             location_label=ADDY_7,
-            notes='Burned 0.003528768 ETH for gas',
+            notes='Burn 0.003528768 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,
@@ -1136,7 +1136,7 @@ def test_makerdao_sai_underlying_collateral_removal(ethereum_transaction_decoder
             asset=A_ETH,
             balance=Balance(amount=FVal('0.001070825480009344')),
             location_label=ADDY_8,
-            notes='Burned 0.001070825480009344 ETH for gas',
+            notes='Burn 0.001070825480009344 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,
@@ -1411,7 +1411,7 @@ def test_makerdao_sai_proxy_interaction(ethereum_transaction_decoder):
             asset=A_ETH,
             balance=Balance(amount=FVal('0.002845233')),
             location_label=ADDY_9,
-            notes='Burned 0.002845233 ETH for gas',
+            notes='Burn 0.002845233 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,
@@ -1675,7 +1675,7 @@ def test_makerdao_sai_proxy_interaction(ethereum_transaction_decoder):
             asset=A_ETH,
             balance=Balance(amount=FVal('0.00043181')),
             location_label=ADDY_10,
-            notes='Burned 0.00043181 ETH for gas',
+            notes='Burn 0.00043181 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,
@@ -1919,7 +1919,7 @@ def test_makerdao_sai_proxy_interaction(ethereum_transaction_decoder):
             asset=A_ETH,
             balance=Balance(amount=FVal('0.000937104')),
             location_label=ADDY_10,
-            notes='Burned 0.000937104 ETH for gas',
+            notes='Burn 0.000937104 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,
@@ -2157,7 +2157,7 @@ def test_makerdao_sai_proxy_interaction(ethereum_transaction_decoder):
             asset=A_ETH,
             balance=Balance(amount=FVal('0.000571796')),
             location_label=ADDY_10,
-            notes='Burned 0.000571796 ETH for gas',
+            notes='Burn 0.000571796 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,
@@ -2345,7 +2345,7 @@ def test_sai_dai_migration(ethereum_transaction_decoder, ethereum_accounts):
             asset=A_ETH,
             balance=Balance(amount=FVal(gas_str)),
             location_label=user_address,
-            notes=f'Burned {gas_str} ETH for gas',
+            notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
             address=None,
         ), EvmEvent(

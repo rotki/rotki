@@ -79,7 +79,7 @@ def test_gas_fees_after_year(accountant, google_service):
             location_label=make_evm_address(),
             asset=A_ETH,
             balance=Balance(amount=FVal('0.01')),
-            notes='Burned 0.01 ETH for gas',
+            notes='Burn 0.01 ETH for gas',
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             counterparty=CPT_GAS,

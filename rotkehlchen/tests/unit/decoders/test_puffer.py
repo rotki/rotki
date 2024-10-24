@@ -35,7 +35,7 @@ def test_pufferxeigen_s2_airdrop(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         balance=Balance(amount=FVal(gas_amount)),
         location_label=ethereum_accounts[0],
-        notes=f'Burned {gas_amount} ETH for gas',
+        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_hash=tx_hash,
@@ -70,7 +70,7 @@ def test_puffer_s1_airdrop_2_campaigns(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         balance=Balance(amount=FVal(gas_amount)),
         location_label=ethereum_accounts[0],
-        notes=f'Burned {gas_amount} ETH for gas',
+        notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_hash=tx_hash,

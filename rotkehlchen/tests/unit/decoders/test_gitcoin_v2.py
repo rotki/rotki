@@ -80,7 +80,7 @@ def test_ethereum_make_donation(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         balance=Balance(amount=FVal(gas_str)),
         location_label=user_address,
-        notes=f'Burned {gas_str} ETH for gas',
+        notes=f'Burn {gas_str} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_hash=tx_hash,
@@ -135,7 +135,7 @@ def test_optimism_create_project(optimism_inquirer, optimism_accounts):
         asset=A_ETH,
         balance=Balance(amount=FVal(gas_str)),
         location_label=user_address,
-        notes=f'Burned {gas_str} ETH for gas',
+        notes=f'Burn {gas_str} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_hash=tx_hash,
@@ -183,7 +183,7 @@ def test_ethereum_project_apply(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         balance=Balance(amount=FVal(gas_str)),
         location_label=user_address,
-        notes=f'Burned {gas_str} ETH for gas',
+        notes=f'Burn {gas_str} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_hash=tx_hash,
@@ -218,7 +218,7 @@ def test_ethereum_project_update(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         balance=Balance(amount=FVal(gas_str)),
         location_label=user_address,
-        notes=f'Burned {gas_str} ETH for gas',
+        notes=f'Burn {gas_str} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_hash=tx_hash,
@@ -254,7 +254,7 @@ def test_optimism_many_donations_different_strategies(optimism_inquirer, optimis
         asset=A_ETH,
         balance=Balance(amount=FVal(gas_str)),
         location_label=user_address,
-        notes=f'Burned {gas_str} ETH for gas',
+        notes=f'Burn {gas_str} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_hash=tx_hash,
@@ -399,7 +399,7 @@ def test_polygon_apply_to_round(polygon_pos_inquirer, polygon_pos_accounts):
         asset=A_POLYGON_POS_MATIC,
         balance=Balance(amount=FVal(gas_str)),
         location_label=user_address,
-        notes=f'Burned {gas_str} POL for gas',
+        notes=f'Burn {gas_str} POL for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_hash=tx_hash,
@@ -490,7 +490,7 @@ def test_allocated_donate_token(arbitrum_one_inquirer, arbitrum_one_accounts):
         asset=A_ETH,
         balance=Balance(amount=FVal(gas)),
         location_label=user_address,
-        notes=f'Burned {gas} ETH for gas',
+        notes=f'Burn {gas} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_hash=tx_hash,
@@ -565,7 +565,7 @@ def test_allocated_donate_eth(arbitrum_one_inquirer, arbitrum_one_accounts):
         asset=A_ETH,
         balance=Balance(amount=FVal(gas)),
         location_label=user_address,
-        notes=f'Burned {gas} ETH for gas',
+        notes=f'Burn {gas} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_hash=tx_hash,
@@ -616,7 +616,7 @@ def test_registered(arbitrum_one_inquirer, arbitrum_one_accounts):
         asset=A_ETH,
         balance=Balance(amount=FVal(gas)),
         location_label=user_address,
-        notes=f'Burned {gas} ETH for gas',
+        notes=f'Burn {gas} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_hash=tx_hash,

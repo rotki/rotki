@@ -75,7 +75,7 @@ def test_add_liquidity(base_transaction_decoder, base_accounts, load_global_cach
             balance=Balance(FVal(gas_amount)),
             location_label=user_address,
             counterparty=CPT_GAS,
-            notes=f'Burned {gas_amount} ETH for gas',
+            notes=f'Burn {gas_amount} ETH for gas',
         ), EvmEvent(
             tx_hash=evmhash,
             sequence_index=14,
@@ -162,7 +162,7 @@ def test_stake_lp_token_to_gauge(base_accounts, base_transaction_decoder, load_g
             balance=Balance(FVal(gas_amount)),
             location_label=user_address,
             counterparty=CPT_GAS,
-            notes=f'Burned {gas_amount} ETH for gas',
+            notes=f'Burn {gas_amount} ETH for gas',
         ), EvmEvent(
             tx_hash=evmhash,
             sequence_index=1,
@@ -226,7 +226,7 @@ def test_remove_liquidity(base_accounts, base_transaction_decoder, load_global_c
             balance=Balance(FVal(gas_amount)),
             location_label=user_address,
             counterparty=CPT_GAS,
-            notes=f'Burned {gas_amount} ETH for gas',
+            notes=f'Burn {gas_amount} ETH for gas',
         ), EvmEvent(
             tx_hash=evmhash,
             sequence_index=2,

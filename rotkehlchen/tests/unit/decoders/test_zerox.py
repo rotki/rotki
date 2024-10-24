@@ -60,7 +60,7 @@ def test_sell_to_uniswap(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         balance=Balance(amount=FVal(gas_fees)),
         location_label=ethereum_accounts[0],
-        notes=f'Burned {gas_fees} ETH for gas',
+        notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_hash=tx_hash,
@@ -109,7 +109,7 @@ def test_sell_eth_for_token_to_uniswap_v3(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         balance=Balance(amount=FVal(gas_fees)),
         location_label=ethereum_accounts[0],
-        notes=f'Burned {gas_fees} ETH for gas',
+        notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_hash=tx_hash,
@@ -158,7 +158,7 @@ def test_sell_token_for_eth_to_uniswap_v3(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         balance=Balance(amount=FVal(gas_fees)),
         location_label=ethereum_accounts[0],
-        notes=f'Burned {gas_fees} ETH for gas',
+        notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_hash=tx_hash,
@@ -207,7 +207,7 @@ def test_sell_token_for_token_to_uniswap_v3(ethereum_inquirer, ethereum_accounts
         asset=A_ETH,
         balance=Balance(amount=FVal(gas_fees)),
         location_label=ethereum_accounts[0],
-        notes=f'Burned {gas_fees} ETH for gas',
+        notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_hash=tx_hash,
@@ -256,7 +256,7 @@ def test_multiplex_batch_sell_eth_for_token(ethereum_inquirer, ethereum_accounts
         asset=A_ETH,
         balance=Balance(amount=FVal(gas_fees)),
         location_label=ethereum_accounts[0],
-        notes=f'Burned {gas_fees} ETH for gas',
+        notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_hash=tx_hash,
@@ -305,7 +305,7 @@ def test_multiplex_batch_sell_token_for_eth(ethereum_inquirer, ethereum_accounts
         asset=A_ETH,
         balance=Balance(amount=FVal(gas_fees)),
         location_label=ethereum_accounts[0],
-        notes=f'Burned {gas_fees} ETH for gas',
+        notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_hash=tx_hash,
@@ -354,7 +354,7 @@ def test_multiplex_batch_sell_token_for_token(ethereum_inquirer, ethereum_accoun
         asset=A_ETH,
         balance=Balance(amount=FVal(gas_fees)),
         location_label=ethereum_accounts[0],
-        notes=f'Burned {gas_fees} ETH for gas',
+        notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_hash=tx_hash,
@@ -403,7 +403,7 @@ def test_multiplex_multihop_sell_token_for_token(ethereum_inquirer, ethereum_acc
         asset=A_ETH,
         balance=Balance(amount=FVal(gas_fees)),
         location_label=ethereum_accounts[0],
-        notes=f'Burned {gas_fees} ETH for gas',
+        notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_hash=tx_hash,
@@ -453,7 +453,7 @@ def test_0x415565b0_eth_to_token(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         balance=Balance(amount=FVal(gas_fees)),
         location_label=ethereum_accounts[0],
-        notes=f'Burned {gas_fees} ETH for gas',
+        notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_hash=tx_hash,
@@ -503,7 +503,7 @@ def test_0x415565b0_token_to_eth(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         balance=Balance(amount=FVal(gas_fees)),
         location_label=ethereum_accounts[0],
-        notes=f'Burned {gas_fees} ETH for gas',
+        notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_hash=tx_hash,
@@ -553,7 +553,7 @@ def test_0x415565b0_token_to_token(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         balance=Balance(amount=FVal(gas_fees)),
         location_label=ethereum_accounts[0],
-        notes=f'Burned {gas_fees} ETH for gas',
+        notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_hash=tx_hash,
@@ -758,7 +758,7 @@ def test_swap_on_polygon_pos(polygon_pos_inquirer, polygon_pos_accounts):
         asset=A_POLYGON_POS_MATIC,
         balance=Balance(amount=FVal(gas_fees)),
         location_label=polygon_pos_accounts[0],
-        notes=f'Burned {gas_fees} POL for gas',
+        notes=f'Burn {gas_fees} POL for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_hash=tx_hash,
@@ -960,7 +960,7 @@ def test_swap_on_pancakeswap(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         balance=Balance(amount=FVal(gas_fees)),
         location_label=ethereum_accounts[0],
-        notes=f'Burned {gas_fees} ETH for gas',
+        notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_hash=tx_hash,
@@ -1009,7 +1009,7 @@ def test_swap_on_curve(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         balance=Balance(amount=FVal(gas_fees)),
         location_label=ethereum_accounts[0],
-        notes=f'Burned {gas_fees} ETH for gas',
+        notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_hash=tx_hash,
@@ -1058,7 +1058,7 @@ def test_swap_on_sushiswap(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         balance=Balance(amount=FVal(gas_fees)),
         location_label=ethereum_accounts[0],
-        notes=f'Burned {gas_fees} ETH for gas',
+        notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_hash=tx_hash,
@@ -1110,7 +1110,7 @@ def test_swap_on_quickswap(polygon_pos_inquirer, polygon_pos_accounts):
         asset=A_POLYGON_POS_MATIC,
         balance=Balance(amount=FVal(gas_fees)),
         location_label=polygon_pos_accounts[0],
-        notes=f'Burned {gas_fees} POL for gas',
+        notes=f'Burn {gas_fees} POL for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_hash=tx_hash,
