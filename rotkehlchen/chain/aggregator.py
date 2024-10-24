@@ -45,6 +45,7 @@ from rotkehlchen.chain.ethereum.modules import (
     YearnVaults,
     YearnVaultsV2,
 )
+from rotkehlchen.chain.ethereum.modules.aave.balances import AaveBalances
 from rotkehlchen.chain.ethereum.modules.blur.balances import BlurBalances
 from rotkehlchen.chain.ethereum.modules.convex.balances import ConvexBalances
 from rotkehlchen.chain.ethereum.modules.curve.balances import CurveBalances
@@ -213,6 +214,7 @@ CHAIN_TO_BALANCE_PROTOCOLS = {
         BlurBalances,
         GearboxBalances,
         SafeBalances,
+        AaveBalances,
     ),
     ChainID.OPTIMISM: (VelodromeBalances, HopBalances, GearboxBalancesOptimism, ExtrafiBalancesOp),
     ChainID.BASE: (Compoundv3Balances, AerodromeBalances, HopBalances, ExtrafiBalancesBase),
