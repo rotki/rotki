@@ -40,7 +40,7 @@ def test_deposit_xdai_to_sdai(gnosis_inquirer, gnosis_accounts):
             asset=A_XDAI,
             balance=Balance(amount=FVal(gas_amount)),
             location_label=user_address,
-            notes=f'Burned {gas_amount} XDAI for gas',
+            notes=f'Burn {gas_amount} XDAI for gas',
             tx_hash=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -98,7 +98,7 @@ def test_withdraw_xdai_from_sdai(gnosis_inquirer, gnosis_accounts):
             asset=A_XDAI,
             balance=Balance(amount=FVal(gas_amount)),
             location_label=user_address,
-            notes=f'Burned {gas_amount} XDAI for gas',
+            notes=f'Burn {gas_amount} XDAI for gas',
             tx_hash=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -154,7 +154,7 @@ def test_deposit_wxdai_to_sdai(gnosis_inquirer, gnosis_accounts):
             asset=A_XDAI,
             balance=Balance(amount=FVal(gas_amount)),
             location_label=user_address,
-            notes=f'Burned {gas_amount} XDAI for gas',
+            notes=f'Burn {gas_amount} XDAI for gas',
             tx_hash=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -210,7 +210,7 @@ def test_withdraw_wxdai_from_sdai(gnosis_inquirer, gnosis_accounts):
             asset=A_XDAI,
             balance=Balance(amount=FVal(gas_amount)),
             location_label=user_address,
-            notes=f'Burned {gas_amount} XDAI for gas',
+            notes=f'Burn {gas_amount} XDAI for gas',
             tx_hash=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(

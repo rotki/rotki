@@ -65,7 +65,7 @@ def test_simple_swap_no_fee(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         balance=Balance(amount=FVal(gas_fees)),
         location_label=user_address,
-        notes=f'Burned {gas_fees} ETH for gas',
+        notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_hash=tx_hash,
@@ -128,7 +128,7 @@ def test_simple_swap_eth_fee(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         balance=Balance(amount=FVal(gas_fees)),
         location_label=user_address,
-        notes=f'Burned {gas_fees} ETH for gas',
+        notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_hash=tx_hash,
@@ -191,7 +191,7 @@ def test_simple_swap_token_fee(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         balance=Balance(amount=FVal(gas_fees)),
         location_label=user_address,
-        notes=f'Burned {gas_fees} ETH for gas',
+        notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_hash=tx_hash,
@@ -267,7 +267,7 @@ def test_simple_buy(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         balance=Balance(amount=FVal(gas_fees)),
         location_label=user_address,
-        notes=f'Burned {gas_fees} ETH for gas',
+        notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_hash=tx_hash,
@@ -317,7 +317,7 @@ def test_multi_swap_no_fee(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         balance=Balance(amount=FVal(gas_fees)),
         location_label=user_address,
-        notes=f'Burned {gas_fees} ETH for gas',
+        notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_hash=tx_hash,
@@ -367,7 +367,7 @@ def test_multi_swap_token_fee(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         balance=Balance(amount=FVal(gas_fees)),
         location_label=user_address,
-        notes=f'Burned {gas_fees} ETH for gas',
+        notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_hash=tx_hash,
@@ -430,7 +430,7 @@ def test_mega_swap_no_fee(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         balance=Balance(amount=FVal(gas_fees)),
         location_label=user_address,
-        notes=f'Burned {gas_fees} ETH for gas',
+        notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_hash=tx_hash,
@@ -493,7 +493,7 @@ def test_mega_swap_token_fee(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         balance=Balance(amount=FVal(gas_fees)),
         location_label=user_address,
-        notes=f'Burned {gas_fees} ETH for gas',
+        notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_hash=tx_hash,
@@ -556,7 +556,7 @@ def test_swap_on_uniswap_v2_fork(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         balance=Balance(amount=FVal(gas_fees)),
         location_label=user_address,
-        notes=f'Burned {gas_fees} ETH for gas',
+        notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_hash=tx_hash,
@@ -606,7 +606,7 @@ def test_swap_on_uniswap_v2_fork_with_permit(ethereum_inquirer, ethereum_account
         asset=A_ETH,
         balance=Balance(amount=FVal(gas_fees)),
         location_label=user_address,
-        notes=f'Burned {gas_fees} ETH for gas',
+        notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_hash=tx_hash,
@@ -669,7 +669,7 @@ def test_buy_uniswap_v2_fork(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         balance=Balance(amount=FVal(gas_fees)),
         location_label=user_address,
-        notes=f'Burned {gas_fees} ETH for gas',
+        notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_hash=tx_hash,
@@ -719,7 +719,7 @@ def test_direct_uniswap_v3_swap(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         balance=Balance(amount=FVal(gas_fees)),
         location_label=user_address,
-        notes=f'Burned {gas_fees} ETH for gas',
+        notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_hash=tx_hash,
@@ -769,7 +769,7 @@ def test_direct_curve_v1_swap(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         balance=Balance(amount=FVal(gas_fees)),
         location_label=user_address,
-        notes=f'Burned {gas_fees} ETH for gas',
+        notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_hash=tx_hash,
@@ -832,7 +832,7 @@ def test_direct_curve_v2_swap(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         balance=Balance(amount=FVal(gas_fees)),
         location_label=user_address,
-        notes=f'Burned {gas_fees} ETH for gas',
+        notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_hash=tx_hash,
@@ -882,7 +882,7 @@ def test_direct_balancer_v2_given_swap(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         balance=Balance(amount=FVal(gas_fees)),
         location_label=user_address,
-        notes=f'Burned {gas_fees} ETH for gas',
+        notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_hash=tx_hash,
@@ -961,7 +961,7 @@ def test_simple_buy_fee_arbitrum_one(arbitrum_one_inquirer, arbitrum_one_account
         asset=A_ETH,
         balance=Balance(amount=FVal(gas_fees)),
         location_label=user_address,
-        notes=f'Burned {gas_fees} ETH for gas',
+        notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_hash=tx_hash,
@@ -1040,7 +1040,7 @@ def test_simple_swap_no_fee_base(base_inquirer, base_accounts):
         asset=A_ETH,
         balance=Balance(amount=FVal(gas_fees)),
         location_label=user_address,
-        notes=f'Burned {gas_fees} ETH for gas',
+        notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_hash=tx_hash,
@@ -1093,7 +1093,7 @@ def test_direct_curve_v1_swap_optimism(optimism_inquirer, optimism_accounts):
         asset=A_ETH,
         balance=Balance(amount=FVal(gas_fees)),
         location_label=user_address,
-        notes=f'Burned {gas_fees} ETH for gas',
+        notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_hash=tx_hash,
@@ -1172,7 +1172,7 @@ def test_direct_uniswap_v3_swap_polygon(polygon_pos_inquirer, polygon_pos_accoun
         asset=A_POLYGON_POS_MATIC,
         balance=Balance(amount=FVal(gas_fees)),
         location_label=user_address,
-        notes=f'Burned {gas_fees} POL for gas',
+        notes=f'Burn {gas_fees} POL for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_hash=tx_hash,
@@ -1236,7 +1236,7 @@ def test_paraswap_fork_with_factory(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         balance=Balance(amount=FVal(gas_fees)),
         location_label=user_address,
-        notes=f'Burned {gas_fees} ETH for gas',
+        notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_hash=tx_hash,

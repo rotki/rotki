@@ -48,7 +48,7 @@ def test_claim_airdrop_2(
             balance=Balance(FVal(gas_amount)),
             location_label=user_address,
             counterparty=CPT_GAS,
-            notes=f'Burned {gas_amount} ETH for gas',
+            notes=f'Burn {gas_amount} ETH for gas',
         ), EvmEvent(
             tx_hash=evmhash,
             sequence_index=9,
@@ -93,7 +93,7 @@ def test_claim_airdrop_3(
             balance=Balance(FVal(gas_amount)),
             location_label=user_address,
             counterparty=CPT_GAS,
-            notes=f'Burned {gas_amount} ETH for gas',
+            notes=f'Burn {gas_amount} ETH for gas',
         ), EvmEvent(
             tx_hash=evmhash,
             sequence_index=121,

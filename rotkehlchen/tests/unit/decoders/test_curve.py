@@ -146,7 +146,7 @@ def test_curve_deposit(database, ethereum_transaction_decoder):
                 usd_value=ZERO,
             ),
             location_label=location_label,
-            notes='Burned 0.00393701451 ETH for gas',
+            notes='Burn 0.00393701451 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,
@@ -287,7 +287,7 @@ def test_curve_deposit_eth(database, ethereum_transaction_decoder):
                 usd_value=ZERO,
             ),
             location_label=location_label,
-            notes='Burned 0.00393701451 ETH for gas',
+            notes='Burn 0.00393701451 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,
@@ -444,7 +444,7 @@ def test_curve_remove_liquidity(
                 usd_value=ZERO,
             ),
             location_label=location_label,
-            notes='Burned 0.00393701451 ETH for gas',
+            notes='Burn 0.00393701451 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,
@@ -561,7 +561,7 @@ def test_curve_remove_liquidity_with_internal(database, ethereum_transaction_dec
                 usd_value=ZERO,
             ),
             location_label=location_label,
-            notes='Burned 0.00393701451 ETH for gas',
+            notes='Burn 0.00393701451 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,
@@ -724,7 +724,7 @@ def test_curve_remove_imbalanced(database, ethereum_transaction_decoder):
                 usd_value=ZERO,
             ),
             location_label=location_label,
-            notes='Burned 0.00393701451 ETH for gas',
+            notes='Burn 0.00393701451 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,
@@ -781,7 +781,7 @@ def test_deposit_multiple_tokens(ethereum_transaction_decoder, ethereum_accounts
             asset=A_ETH,
             balance=Balance(amount=FVal('0.011180845456491718')),
             location_label=user_address,
-            notes='Burned 0.011180845456491718 ETH for gas',
+            notes='Burn 0.011180845456491718 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,
@@ -837,7 +837,7 @@ def test_gauge_vote(ethereum_accounts, ethereum_transaction_decoder) -> None:
             asset=Asset('ETH'),
             balance=Balance(amount=FVal('0.01847747115186684')),
             location_label=user_address,
-            notes='Burned 0.01847747115186684 ETH for gas',
+            notes='Burn 0.01847747115186684 ETH for gas',
             counterparty='gas',
         ), EvmEvent(
             tx_hash=evmhash,
@@ -896,7 +896,7 @@ def test_gauge_deposit(
             asset=Asset('ETH'),
             balance=Balance(amount=FVal('0.007333038632457846')),
             location_label=user_address,
-            notes='Burned 0.007333038632457846 ETH for gas',
+            notes='Burn 0.007333038632457846 ETH for gas',
             counterparty='gas',
         ), EvmEvent(
             tx_hash=evmhash,
@@ -940,7 +940,7 @@ def test_gauge_withdraw(ethereum_transaction_decoder, ethereum_accounts, load_gl
             asset=Asset('ETH'),
             balance=Balance(amount=FVal('0.01157725763881742')),
             location_label=user_address,
-            notes='Burned 0.01157725763881742 ETH for gas',
+            notes='Burn 0.01157725763881742 ETH for gas',
             counterparty='gas',
             address=None,
         ), EvmEvent(
@@ -985,7 +985,7 @@ def test_gauge_claim_rewards(ethereum_transaction_decoder, ethereum_accounts, lo
             asset=Asset('ETH'),
             balance=Balance(amount=FVal('0.004486722780852585')),
             location_label=user_address,
-            notes='Burned 0.004486722780852585 ETH for gas',
+            notes='Burn 0.004486722780852585 ETH for gas',
             counterparty='gas',
             address=None,
         ), EvmEvent(
@@ -1030,7 +1030,7 @@ def test_curve_trade_token_to_token(ethereum_transaction_decoder, ethereum_accou
             asset=Asset('ETH'),
             balance=Balance(amount=FVal('0.002265287178848788')),
             location_label=user_address,
-            notes='Burned 0.002265287178848788 ETH for gas',
+            notes='Burn 0.002265287178848788 ETH for gas',
             counterparty='gas',
             address=None,
         ), EvmEvent(
@@ -1088,7 +1088,7 @@ def test_curve_trade_eth_to_token(ethereum_transaction_decoder, ethereum_account
             asset=Asset('ETH'),
             balance=Balance(amount=FVal('0.001727872677935233')),
             location_label=user_address,
-            notes='Burned 0.001727872677935233 ETH for gas',
+            notes='Burn 0.001727872677935233 ETH for gas',
             counterparty='gas',
             address=None,
         ), EvmEvent(
@@ -1146,7 +1146,7 @@ def test_curve_trade_exchange_underlying(ethereum_transaction_decoder, ethereum_
             asset=Asset('ETH'),
             balance=Balance(amount=FVal('0.003678824742134973')),
             location_label=user_address,
-            notes='Burned 0.003678824742134973 ETH for gas',
+            notes='Burn 0.003678824742134973 ETH for gas',
             counterparty='gas',
             address=None,
         ), EvmEvent(
@@ -1202,7 +1202,7 @@ def test_curve_swap_router(ethereum_transaction_decoder, ethereum_accounts):
             asset=Asset('ETH'),
             balance=Balance(amount=FVal('0.003261945529483024')),
             location_label=user_address,
-            notes='Burned 0.003261945529483024 ETH for gas',
+            notes='Burn 0.003261945529483024 ETH for gas',
             counterparty='gas',
             address=None,
         ), EvmEvent(
@@ -1262,7 +1262,7 @@ def test_curve_usdn_add_liquidity(ethereum_transaction_decoder, ethereum_account
             balance=Balance(FVal('0.005672980418415474')),
             location_label=user_address,
             counterparty=CPT_GAS,
-            notes='Burned 0.005672980418415474 ETH for gas',
+            notes='Burn 0.005672980418415474 ETH for gas',
         ), EvmEvent(
             tx_hash=evmhash,
             sequence_index=1,
@@ -1320,7 +1320,7 @@ def test_curve_usdn_remove_liquidity(ethereum_transaction_decoder, ethereum_acco
             asset=A_ETH,
             balance=Balance(FVal('0.009847222')),
             location_label=user_address,
-            notes='Burned 0.009847222 ETH for gas',
+            notes='Burn 0.009847222 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,
@@ -1419,7 +1419,7 @@ def test_3pool_add_liquidity(ethereum_transaction_decoder, ethereum_accounts, lo
             balance=Balance(FVal('0.006158572854866488')),
             location_label=user_address,
             counterparty=CPT_GAS,
-            notes='Burned 0.006158572854866488 ETH for gas',
+            notes='Burn 0.006158572854866488 ETH for gas',
         ), EvmEvent(
             tx_hash=evmhash,
             sequence_index=1,
@@ -1477,7 +1477,7 @@ def test_3pool_remove_liquidity(ethereum_transaction_decoder, ethereum_accounts,
             asset=A_ETH,
             balance=Balance(FVal('0.007508781310937599')),
             location_label=user_address,
-            notes='Burned 0.007508781310937599 ETH for gas',
+            notes='Burn 0.007508781310937599 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,
@@ -1577,7 +1577,7 @@ def test_remove_from_aave_pool(ethereum_transaction_decoder, ethereum_accounts, 
             asset=Asset('ETH'),
             balance=Balance(amount=FVal('0.01441418456991474')),
             location_label=user_address,
-            notes='Burned 0.01441418456991474 ETH for gas',
+            notes='Burn 0.01441418456991474 ETH for gas',
             counterparty=CPT_GAS,
             address=None,
         ), EvmEvent(
@@ -1639,7 +1639,7 @@ def test_deposit_via_zap_in_metapool(ethereum_transaction_decoder, ethereum_acco
             asset=Asset('ETH'),
             balance=Balance(amount=FVal('0.01900328031277868')),
             location_label=user_address,
-            notes='Burned 0.01900328031277868 ETH for gas',
+            notes='Burn 0.01900328031277868 ETH for gas',
             counterparty=CPT_GAS,
             address=None,
         ), EvmEvent(
@@ -1714,7 +1714,7 @@ def test_no_zap_event(ethereum_transaction_decoder, ethereum_accounts, load_glob
             asset=A_ETH,
             balance=Balance(amount=FVal('0.010742095846323672')),
             location_label=user_address,
-            notes='Burned 0.010742095846323672 ETH for gas',
+            notes='Burn 0.010742095846323672 ETH for gas',
             counterparty=CPT_GAS,
             address=None,
         ), EvmEvent(
@@ -1770,7 +1770,7 @@ def test_gauge_bribe_v2(ethereum_transaction_decoder, ethereum_accounts):
             asset=A_ETH,
             balance=Balance(amount=FVal(gas)),
             location_label=user_address,
-            notes=f'Burned {gas} ETH for gas',
+            notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,
@@ -1812,7 +1812,7 @@ def test_curve_deposit_polygon(polygon_pos_inquirer, polygon_pos_accounts, load_
             asset=A_POLYGON_POS_MATIC,
             balance=Balance(amount=FVal(gas_fees)),
             location_label=polygon_pos_accounts[0],
-            notes=f'Burned {gas_fees} POL for gas',
+            notes=f'Burn {gas_fees} POL for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -1888,7 +1888,7 @@ def test_gauge_deposit_optimism(database, optimism_inquirer, optimism_accounts, 
             asset=A_ETH,
             balance=Balance(amount=FVal(gas_fees)),
             location_label=optimism_accounts[0],
-            notes=f'Burned {gas_fees} ETH for gas',
+            notes=f'Burn {gas_fees} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -1952,7 +1952,7 @@ def test_gauge_withdraw_gnosis(database, gnosis_inquirer, gnosis_accounts, load_
             asset=A_XDAI,
             balance=Balance(amount=FVal(gas_fees)),
             location_label=gnosis_accounts[0],
-            notes=f'Burned {gas_fees} XDAI for gas',
+            notes=f'Burn {gas_fees} XDAI for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -2004,7 +2004,7 @@ def test_curve_swap_router_base(base_inquirer, base_accounts):
             asset=A_ETH,
             balance=Balance(amount=FVal(gas_fees)),
             location_label=base_accounts[0],
-            notes=f'Burned {gas_fees} ETH for gas',
+            notes=f'Burn {gas_fees} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -2060,7 +2060,7 @@ def test_deposit_via_zap_arbitrum(arbitrum_one_inquirer, arbitrum_one_accounts, 
             asset=A_ETH,
             balance=Balance(amount=FVal(gas_fees)),
             location_label=arbitrum_one_accounts[0],
-            notes=f'Burned {gas_fees} ETH for gas',
+            notes=f'Burn {gas_fees} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -2127,7 +2127,7 @@ def test_fee_distributor(ethereum_transaction_decoder, ethereum_accounts):
             asset=A_ETH,
             balance=Balance(amount=FVal(gas)),
             location_label=user_address,
-            notes=f'Burned {gas} ETH for gas',
+            notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,
@@ -2168,7 +2168,7 @@ def test_vote_escrow_deposit(ethereum_transaction_decoder, ethereum_accounts):
             asset=A_ETH,
             balance=Balance(amount=FVal(gas)),
             location_label=user_address,
-            notes=f'Burned {gas} ETH for gas',
+            notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,
@@ -2210,7 +2210,7 @@ def test_vote_escrow_withdraw(ethereum_transaction_decoder, ethereum_accounts):
             asset=A_ETH,
             balance=Balance(amount=FVal(gas)),
             location_label=user_address,
-            notes=f'Burned {gas} ETH for gas',
+            notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,
@@ -2252,7 +2252,7 @@ def test_gauge_deposit_and_stake(gnosis_inquirer, gnosis_accounts, load_global_c
             asset=A_XDAI,
             balance=Balance(amount=FVal(gas_fees)),
             location_label=gnosis_accounts[0],
-            notes=f'Burned {gas_fees} XDAI for gas',
+            notes=f'Burn {gas_fees} XDAI for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -2308,7 +2308,7 @@ def test_gauge_deposit_and_stake_multiple(gnosis_inquirer, gnosis_accounts, load
             asset=A_XDAI,
             balance=Balance(amount=FVal(gas_fees)),
             location_label=gnosis_accounts[0],
-            notes=f'Burned {gas_fees} XDAI for gas',
+            notes=f'Burn {gas_fees} XDAI for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -2379,7 +2379,7 @@ def test_liquidity_withdrawal(gnosis_inquirer, gnosis_accounts, load_global_cach
             asset=A_XDAI,
             balance=Balance(amount=FVal(gas_fees)),
             location_label=gnosis_accounts[0],
-            notes=f'Burned {gas_fees} XDAI for gas',
+            notes=f'Burn {gas_fees} XDAI for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -2439,7 +2439,7 @@ def test_monerium_eure_v2(gnosis_inquirer, gnosis_accounts, load_global_caches):
             asset=A_XDAI,
             balance=Balance(amount=FVal(gas_fees)),
             location_label=gnosis_accounts[0],
-            notes=f'Burned {gas_fees} XDAI for gas',
+            notes=f'Burn {gas_fees} XDAI for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,

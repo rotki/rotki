@@ -37,7 +37,7 @@ def test_deposit_eth_borrow_lusd(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         balance=Balance(FVal(gas_str)),
         location_label=user_address,
-        notes=f'Burned {gas_str} ETH for gas',
+        notes=f'Burn {gas_str} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_hash=evmhash,
@@ -100,7 +100,7 @@ def test_payback_lusd(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         balance=Balance(FVal(gas_str)),
         location_label=user_address,
-        notes=f'Burned {gas_str} ETH for gas',
+        notes=f'Burn {gas_str} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_hash=evmhash,
@@ -138,7 +138,7 @@ def test_remove_eth(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         balance=Balance(FVal(gas_str)),
         location_label=user_address,
-        notes=f'Burned {gas_str} ETH for gas',
+        notes=f'Burn {gas_str} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_hash=evmhash,
@@ -175,7 +175,7 @@ def test_stability_pool_deposit(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         balance=Balance(FVal(gas_str)),
         location_label=user_address,
-        notes=f'Burned {gas_str} ETH for gas',
+        notes=f'Burn {gas_str} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_hash=evmhash,
@@ -223,7 +223,7 @@ def test_stability_pool_collect_rewards(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         balance=Balance(FVal(gas_str)),
         location_label=user_address,
-        notes=f'Burned {gas_str} ETH for gas',
+        notes=f'Burn {gas_str} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_hash=evmhash,
@@ -284,7 +284,7 @@ def test_increase_lqty_staking(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         balance=Balance(FVal(gas_str)),
         location_label=user_address,
-        notes=f'Burned {gas_str} ETH for gas',
+        notes=f'Burn {gas_str} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_hash=evmhash,
@@ -347,7 +347,7 @@ def test_remove_liquity_staking(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         balance=Balance(FVal(gas_str)),
         location_label=user_address,
-        notes=f'Burned {gas_str} ETH for gas',
+        notes=f'Burn {gas_str} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_hash=evmhash,
@@ -410,7 +410,7 @@ def test_stability_pool_withdrawal(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         balance=Balance(FVal(gas_str)),
         location_label=user_address,
-        notes=f'Burned {gas_str} ETH for gas',
+        notes=f'Burn {gas_str} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_hash=evmhash,
@@ -472,7 +472,7 @@ def test_ds_proxy_liquity_deposit(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             balance=Balance(amount=FVal('0.002962168608405875')),
             location_label=user_address,
-            notes='Burned 0.002962168608405875 ETH for gas',
+            notes='Burn 0.002962168608405875 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,
@@ -520,7 +520,7 @@ def test_ds_proxy_liquity_withdraw(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             balance=Balance(amount=FVal('0.002590429704686116')),
             location_label=ethereum_accounts[0],
-            notes='Burned 0.002590429704686116 ETH for gas',
+            notes='Burn 0.002590429704686116 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,
@@ -582,7 +582,7 @@ def test_ds_proxy_liquity_staking(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             balance=Balance(amount=FVal('0.009100878613428384')),
             location_label=ethereum_accounts[0],
-            notes='Burned 0.009100878613428384 ETH for gas',
+            notes='Burn 0.009100878613428384 ETH for gas',
             counterparty=CPT_GAS,
             address=None,
         ), EvmEvent(
@@ -663,7 +663,7 @@ def test_ds_proxy_borrow_lusd(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         balance=Balance(FVal(gas_str)),
         location_label=user_address,
-        notes=f'Burned {gas_str} ETH for gas',
+        notes=f'Burn {gas_str} ETH for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_hash=evmhash,

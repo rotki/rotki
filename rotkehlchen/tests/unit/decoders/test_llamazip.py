@@ -36,7 +36,7 @@ def test_llamazip_optimism_swap_token_to_eth(optimism_inquirer, optimism_account
             asset=A_ETH,
             balance=Balance(amount=FVal(fee_amount)),
             location_label=optimism_accounts[0],
-            notes=f'Burned {fee_amount} ETH for gas',
+            notes=f'Burn {fee_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -85,7 +85,7 @@ def test_llamazip_optimism_swap_eth_to_token(optimism_inquirer, optimism_account
             asset=A_ETH,
             balance=Balance(amount=FVal(fee_amount)),
             location_label=optimism_accounts[0],
-            notes=f'Burned {fee_amount} ETH for gas',
+            notes=f'Burn {fee_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -134,7 +134,7 @@ def test_llamazip_optimism_swap_token_to_token(optimism_inquirer, optimism_accou
             asset=A_ETH,
             balance=Balance(amount=FVal(fee_amount)),
             location_label=optimism_accounts[0],
-            notes=f'Burned {fee_amount} ETH for gas',
+            notes=f'Burn {fee_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -186,7 +186,7 @@ def test_llamazip_arbitrum_swap_token_to_eth(arbitrum_one_inquirer, arbitrum_one
             asset=A_ETH,
             balance=Balance(amount=FVal(fee_amount)),
             location_label=arbitrum_one_accounts[0],
-            notes=f'Burned {fee_amount} ETH for gas',
+            notes=f'Burn {fee_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -250,7 +250,7 @@ def test_llamazip_arbitrum_swap_eth_to_token(arbitrum_one_inquirer, arbitrum_one
             asset=A_ETH,
             balance=Balance(amount=FVal(fee_amount)),
             location_label=arbitrum_one_accounts[0],
-            notes=f'Burned {fee_amount} ETH for gas',
+            notes=f'Burn {fee_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -302,7 +302,7 @@ def test_llamazip_arbitrum_swap_token_to_token(arbitrum_one_inquirer, arbitrum_o
             asset=A_ETH,
             balance=Balance(amount=FVal(fee_amount)),
             location_label=arbitrum_one_accounts[0],
-            notes=f'Burned {fee_amount} ETH for gas',
+            notes=f'Burn {fee_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -366,7 +366,7 @@ def test_llamazip_arbitrum_swap_eth_to_arb(arbitrum_one_inquirer, arbitrum_one_a
             asset=A_ETH,
             balance=Balance(amount=FVal(fee_amount)),
             location_label=arbitrum_one_accounts[0],
-            notes=f'Burned {fee_amount} ETH for gas',
+            notes=f'Burn {fee_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,

@@ -39,7 +39,7 @@ def test_blur_claim_and_stake(ethereum_inquirer: 'EthereumInquirer', ethereum_ac
             asset=A_ETH,
             balance=Balance(amount=FVal(gas_fees)),
             location_label=ethereum_accounts[0],
-            notes=f'Burned {gas_fees} ETH for gas',
+            notes=f'Burn {gas_fees} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -90,7 +90,7 @@ def test_blur_stake(ethereum_inquirer: 'EthereumInquirer', ethereum_accounts: li
             asset=A_ETH,
             balance=Balance(amount=FVal(gas_fees)),
             location_label=ethereum_accounts[0],
-            notes=f'Burned {gas_fees} ETH for gas',
+            notes=f'Burn {gas_fees} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -127,7 +127,7 @@ def test_blur_unstake(ethereum_inquirer: 'EthereumInquirer', ethereum_accounts: 
             asset=A_ETH,
             balance=Balance(amount=FVal(gas_fees)),
             location_label=ethereum_accounts[0],
-            notes=f'Burned {gas_fees} ETH for gas',
+            notes=f'Burn {gas_fees} ETH for gas',
             tx_hash=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(

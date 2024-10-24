@@ -43,7 +43,7 @@ def test_sushiswap_single_swap(ethereum_inquirer):
             asset=A_ETH,
             balance=Balance(amount=FVal(gas)),
             location_label=ADDY_1,
-            notes=f'Burned {gas} ETH for gas',
+            notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -107,7 +107,7 @@ def test_sushiswap_v2_remove_liquidity(ethereum_inquirer):
             asset=A_ETH,
             balance=Balance(amount=FVal(gas_amount)),
             location_label=ADDY_2,
-            notes=f'Burned {gas_amount} ETH for gas',
+            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -178,7 +178,7 @@ def test_sushiswap_v2_add_liquidity(ethereum_inquirer):
             asset=A_ETH,
             balance=Balance(amount=FVal(gas_amount)),
             location_label=ADDY_3,
-            notes=f'Burned {gas_amount} ETH for gas',
+            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,

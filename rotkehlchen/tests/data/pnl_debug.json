@@ -33,7 +33,7 @@
       "accounting_event_type": "history event",
       "event_subtype": "fee",
       "location_label": "0x19e4057A38a730be37c4DB690b103267AAE1d75d",
-      "notes": "Burned 0.001367993179812 ETH for gas",
+      "notes": "Burn 0.001367993179812 ETH for gas",
       "counterparty": "gas"
     },
     {

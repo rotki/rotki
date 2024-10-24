@@ -106,7 +106,7 @@ def predefined_events_to_insert() -> list['HistoryBaseEntry']:
         asset=A_ETH,
         balance=Balance(amount=FVal('0.0001'), usd_value=FVal('5.31')),
         location_label='0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',
-        notes='Burned 0.0001 ETH for gas',
+        notes='Burn 0.0001 ETH for gas',
         event_subtype=HistoryEventSubType.FEE,
         counterparty=CPT_GAS,
         extra_data={'testing_data': 42},

@@ -150,7 +150,7 @@ def test_tx_decode(ethereum_transaction_decoder, database):
                         asset=A_ETH,
                         balance=Balance(amount=FVal('0.000030921')),
                         # The no-member is due to https://github.com/PyCQA/pylint/issues/3162
-                        notes='Burned 0.000030921 ETH for gas',
+                        notes='Burn 0.000030921 ETH for gas',
                         event_type=HistoryEventType.SPEND,
                         event_subtype=HistoryEventSubType.FEE,
                         counterparty=CPT_GAS,

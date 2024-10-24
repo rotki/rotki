@@ -4856,7 +4856,7 @@ Dealing with History Events
                       "event_type": "spend",
                       "location": "ethereum",
                       "location_label": "0x6e15887E2CEC81434C16D587709f64603b39b545",
-                      "notes": "Burned 0.00863351371344 ETH for gas",
+                      "notes": "Burn 0.00863351371344 ETH for gas",
                       "sequence_index": 0,
                       "timestamp": 1642802807,
                       "event_accounting_rule_status": "not processed",
@@ -4881,7 +4881,7 @@ Dealing with History Events
                       "event_type": "spend",
                       "location": "ethereum",
                       "location_label": "0xce15887E2CEC81434C16D587709f64603b39b545",
-                      "notes": "Burned 0.00863351371344 ETH for gas",
+                      "notes": "Burn 0.00863351371344 ETH for gas",
                       "sequence_index": 0,
                       "timestamp": 1642802807,
                       "event_accounting_rule_status": "not processed",
@@ -5584,7 +5584,7 @@ Export PnL report debug data
                 "event_type": "spend",
                 "event_subtype": "fee",
                 "location_label": "0x19e4057A38a730be37c4DA690b103267AAE1d75d",
-                "notes": "Burned 0.001367993179812 ETH for gas",
+                "notes": "Burn 0.001367993179812 ETH for gas",
                 "counterparty": "gas"
                 }
             ],

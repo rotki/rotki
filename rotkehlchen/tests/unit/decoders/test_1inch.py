@@ -59,7 +59,7 @@ def test_1inchv1_swap(ethereum_inquirer):
             asset=A_ETH,
             balance=Balance(amount=FVal('0.00896373909')),
             location_label=ADDY,
-            notes='Burned 0.00896373909 ETH for gas',
+            notes='Burn 0.00896373909 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -127,7 +127,7 @@ def test_1inchv2_swap_for_eth(ethereum_inquirer):
             asset=A_ETH,
             balance=Balance(amount=FVal('0.002618947')),
             location_label=ADDY,
-            notes='Burned 0.002618947 ETH for gas',
+            notes='Burn 0.002618947 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -191,7 +191,7 @@ def test_1inchv3_swap_for_eth(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             balance=Balance(amount=FVal('0.0103897731')),
             location_label=user_address,
-            notes='Burned 0.0103897731 ETH for gas',
+            notes='Burn 0.0103897731 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -248,7 +248,7 @@ def test_1inchv4_swap_on_uniswapv3(ethereum_inquirer):
             asset=A_ETH,
             balance=Balance(amount=FVal('0.005753512813468296')),
             location_label=user_address,
-            notes='Burned 0.005753512813468296 ETH for gas',
+            notes='Burn 0.005753512813468296 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -301,7 +301,7 @@ def test_1inchv4_orderfilledrfq(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             balance=Balance(amount=FVal(gas)),
             location_label=user_address,
-            notes=f'Burned {gas} ETH for gas',
+            notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -361,7 +361,7 @@ def test_1inchv4_swap_on_sushiswap(ethereum_inquirer):
             asset=A_ETH,
             balance=Balance(amount=FVal('0.003337072472716185')),
             location_label=user_address,
-            notes='Burned 0.003337072472716185 ETH for gas',
+            notes='Burn 0.003337072472716185 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -421,7 +421,7 @@ def test_1inchv4_multiple_swaps(ethereum_inquirer):
             asset=A_ETH,
             balance=Balance(amount=FVal('0.007395128691813344')),
             location_label=user_address,
-            notes='Burned 0.007395128691813344 ETH for gas',
+            notes='Burn 0.007395128691813344 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -493,7 +493,7 @@ def test_1inchv4_weth_eth_swap(ethereum_inquirer):
             asset=A_ETH,
             balance=Balance(amount=FVal('0.001057637854578432')),
             location_label=user_address,
-            notes='Burned 0.001057637854578432 ETH for gas',
+            notes='Burn 0.001057637854578432 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -553,7 +553,7 @@ def test_1inchv4_eth_weth_swap(ethereum_inquirer):
             asset=A_ETH,
             balance=Balance(amount=FVal('0.002694727747581802')),
             location_label=user_address,
-            notes='Burned 0.002694727747581802 ETH for gas',
+            notes='Burn 0.002694727747581802 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -612,7 +612,7 @@ def test_1inch_swap_polygon(polygon_pos_inquirer, polygon_pos_accounts):
             asset=A_POLYGON_POS_MATIC,
             balance=Balance(amount=FVal('0.0579902')),
             location_label=user_addy,
-            notes='Burned 0.0579902 POL for gas',
+            notes='Burn 0.0579902 POL for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -678,7 +678,7 @@ def test_1inch_gnosis_v5_swap(gnosis_inquirer, gnosis_accounts):
             asset=A_XDAI,
             balance=Balance(amount=FVal('0.0004273965')),
             location_label=user_addy,
-            notes='Burned 0.0004273965 XDAI for gas',
+            notes='Burn 0.0004273965 XDAI for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -732,7 +732,7 @@ def test_1inch_velodrome(optimism_inquirer, optimism_accounts):
             asset=A_ETH,
             balance=Balance(amount=FVal('0.000274323853192674')),
             location_label=user_addy,
-            notes='Burned 0.000274323853192674 ETH for gas',
+            notes='Burn 0.000274323853192674 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -790,7 +790,7 @@ def test_half_decoded_1inch_v5_swap(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             balance=Balance(amount=FVal('0.00205570157007332')),
             location_label=user_address,
-            notes='Burned 0.00205570157007332 ETH for gas',
+            notes='Burn 0.00205570157007332 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -856,7 +856,7 @@ def test_1inch_base_v6_swap(base_inquirer, base_accounts):
             asset=A_ETH,
             balance=Balance(amount=FVal(gas)),
             location_label=base_accounts[0],
-            notes=f'Burned {gas} ETH for gas',
+            notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -921,7 +921,7 @@ def test_1inchv4_swap_on_polygon(polygon_pos_inquirer, polygon_pos_accounts):
             asset=A_POLYGON_POS_MATIC,
             balance=Balance(amount=FVal(gas)),
             location_label=user,
-            notes=f'Burned {gas} POL for gas',
+            notes=f'Burn {gas} POL for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,

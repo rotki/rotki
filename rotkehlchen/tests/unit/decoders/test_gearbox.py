@@ -47,7 +47,7 @@ def test_gearbox_deposit(
             asset=A_ETH,
             balance=Balance(amount=FVal(gas)),
             location_label=ethereum_accounts[0],
-            notes=f'Burned {gas} ETH for gas',
+            notes=f'Burn {gas} ETH for gas',
             tx_hash=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -106,7 +106,7 @@ def test_gearbox_deposit_usdc(
             asset=A_ETH,
             balance=Balance(amount=FVal(gas)),
             location_label=ethereum_accounts[0],
-            notes=f'Burned {gas} ETH for gas',
+            notes=f'Burn {gas} ETH for gas',
             tx_hash=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -177,7 +177,7 @@ def test_gearbox_withdraw(
             asset=A_ETH,
             balance=Balance(amount=FVal(gas)),
             location_label=ethereum_accounts[0],
-            notes=f'Burned {gas} ETH for gas',
+            notes=f'Burn {gas} ETH for gas',
             tx_hash=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -236,7 +236,7 @@ def test_gearbox_deposit_arbitrum(
             asset=A_ETH,
             balance=Balance(amount=FVal(gas)),
             location_label=arbitrum_one_accounts[0],
-            notes=f'Burned {gas} ETH for gas',
+            notes=f'Burn {gas} ETH for gas',
             tx_hash=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -295,7 +295,7 @@ def test_gearbox_deposit_arbitrum_lp(
             asset=A_ETH,
             balance=Balance(amount=FVal(gas)),
             location_label=arbitrum_one_accounts[0],
-            notes=f'Burned {gas} ETH for gas',
+            notes=f'Burn {gas} ETH for gas',
             tx_hash=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -354,7 +354,7 @@ def test_gearbox_withdraw_arbitrum(
             asset=A_ETH,
             balance=Balance(amount=FVal(gas)),
             location_label=arbitrum_one_accounts[0],
-            notes=f'Burned {gas} ETH for gas',
+            notes=f'Burn {gas} ETH for gas',
             tx_hash=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -413,7 +413,7 @@ def test_gearbox_deposit_usdc_arbitrum(
             asset=A_ETH,
             balance=Balance(amount=FVal(gas)),
             location_label=arbitrum_one_accounts[0],
-            notes=f'Burned {gas} ETH for gas',
+            notes=f'Burn {gas} ETH for gas',
             tx_hash=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -496,7 +496,7 @@ def test_gearbox_deposit_optimism(
             asset=A_ETH,
             balance=Balance(amount=FVal(gas)),
             location_label=optimism_accounts[0],
-            notes=f'Burned {gas} ETH for gas',
+            notes=f'Burn {gas} ETH for gas',
             tx_hash=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -555,7 +555,7 @@ def test_gearbox_deposit_usdc_optimism(
             asset=A_ETH,
             balance=Balance(amount=FVal(gas)),
             location_label=optimism_accounts[0],
-            notes=f'Burned {gas} ETH for gas',
+            notes=f'Burn {gas} ETH for gas',
             tx_hash=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -626,7 +626,7 @@ def test_gearbox_withdraw_optimism_usdc(
             asset=A_ETH,
             balance=Balance(amount=FVal(gas)),
             location_label=optimism_accounts[0],
-            notes=f'Burned {gas} ETH for gas',
+            notes=f'Burn {gas} ETH for gas',
             tx_hash=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -679,7 +679,7 @@ def test_gearbox_staking(
             asset=A_ETH,
             balance=Balance(amount=FVal(gas)),
             location_label=ethereum_accounts[0],
-            notes=f'Burned {gas} ETH for gas',
+            notes=f'Burn {gas} ETH for gas',
             tx_hash=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -744,7 +744,7 @@ def test_gearbox_unstaking(
             asset=A_ETH,
             balance=Balance(amount=FVal(gas)),
             location_label=ethereum_accounts[0],
-            notes=f'Burned {gas} ETH for gas',
+            notes=f'Burn {gas} ETH for gas',
             tx_hash=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(

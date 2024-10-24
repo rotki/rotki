@@ -940,7 +940,7 @@ class EVMTransactionDecoder(ABC):
             event_type, _, location_label, _, _, _ = direction_result
             if event_type in OUTGOING_EVENT_TYPES:
                 eth_burned_as_gas = self._calculate_gas_burned(tx)
-                notes = f'Burned {eth_burned_as_gas} {self.value_asset.symbol} for gas'
+                notes = f'Burn {eth_burned_as_gas} {self.value_asset.symbol} for gas'
                 event_type = HistoryEventType.SPEND
 
                 if tx_receipt.status is False:

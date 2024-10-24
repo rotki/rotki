@@ -47,7 +47,7 @@ def test_extrafi_deposit_and_stake(
             asset=A_ETH,
             balance=Balance(amount=FVal(fee_amount)),
             location_label=optimism_accounts[0],
-            notes=f'Burned {fee_amount} ETH for gas',
+            notes=f'Burn {fee_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -99,7 +99,7 @@ def test_extrafi_unstake_and_withdraw(
             asset=A_ETH,
             balance=Balance(amount=FVal(fee_amount)),
             location_label=optimism_accounts[0],
-            notes=f'Burned {fee_amount} ETH for gas',
+            notes=f'Burn {fee_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -138,7 +138,7 @@ def test_extrafi_claim_from_pool(
             asset=A_ETH,
             balance=Balance(amount=FVal(fee_amount)),
             location_label=optimism_accounts[0],
-            notes=f'Burned {fee_amount} ETH for gas',
+            notes=f'Burn {fee_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -190,7 +190,7 @@ def test_extrafi_lock_token(
             asset=A_ETH,
             balance=Balance(amount=FVal(fee_amount)),
             location_label=optimism_accounts[0],
-            notes=f'Burned {fee_amount} ETH for gas',
+            notes=f'Burn {fee_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -242,7 +242,7 @@ def test_extrafi_repay(
             asset=A_ETH,
             balance=Balance(amount=FVal(fee_amount)),
             location_label=optimism_accounts[0],
-            notes=f'Burned {fee_amount} ETH for gas',
+            notes=f'Burn {fee_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -294,7 +294,7 @@ def test_extrafi_repay_with_token(
             asset=A_ETH,
             balance=Balance(amount=FVal(fee_amount)),
             location_label=optimism_accounts[0],
-            notes=f'Burned {fee_amount} ETH for gas',
+            notes=f'Burn {fee_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -358,7 +358,7 @@ def test_close_position(
             asset=A_ETH,
             balance=Balance(amount=FVal(fee_amount)),
             location_label=optimism_accounts[0],
-            notes=f'Burned {fee_amount} ETH for gas',
+            notes=f'Burn {fee_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -397,7 +397,7 @@ def test_farm_investment(
             asset=A_ETH,
             balance=Balance(amount=FVal(fee_amount)),
             location_label=optimism_accounts[0],
-            notes=f'Burned {fee_amount} ETH for gas',
+            notes=f'Burn {fee_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -472,7 +472,7 @@ def test_new_farm_borrow_position_on_base(base_inquirer, base_accounts):
             asset=A_ETH,
             balance=Balance(amount=FVal(gas_fees)),
             location_label=base_accounts[0],
-            notes=f'Burned {gas_fees} ETH for gas',
+            notes=f'Burn {gas_fees} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,
@@ -521,7 +521,7 @@ def test_new_farm_position_on_base(base_inquirer, base_accounts):
             asset=A_ETH,
             balance=Balance(amount=FVal(gas_fees)),
             location_label=base_accounts[0],
-            notes=f'Burned {gas_fees} ETH for gas',
+            notes=f'Burn {gas_fees} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,
@@ -558,7 +558,7 @@ def test_vested_extra_base(base_inquirer, base_accounts):
             asset=A_ETH,
             balance=Balance(amount=FVal(gas_fees)),
             location_label=base_accounts[0],
-            notes=f'Burned {gas_fees} ETH for gas',
+            notes=f'Burn {gas_fees} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,
@@ -616,7 +616,7 @@ def test_extrafi_claim_lending(
             asset=A_ETH,
             balance=Balance(amount=FVal(fee_amount)),
             location_label=optimism_accounts[0],
-            notes=f'Burned {fee_amount} ETH for gas',
+            notes=f'Burn {fee_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -674,7 +674,7 @@ def test_extrafi_claim_lending_base(
             asset=A_ETH,
             balance=Balance(amount=FVal(fee_amount)),
             location_label=base_accounts[0],
-            notes=f'Burned {fee_amount} ETH for gas',
+            notes=f'Burn {fee_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,

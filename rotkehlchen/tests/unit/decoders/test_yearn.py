@@ -74,7 +74,7 @@ def test_deposit_yearn_v3(
             asset=A_ETH,
             balance=Balance(amount=FVal(gas_amount)),
             location_label=user_address,
-            notes=f'Burned {gas_amount} ETH for gas',
+            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -155,7 +155,7 @@ def test_withdraw_yearn_v3(
             asset=A_ETH,
             balance=Balance(amount=FVal(gas_amount)),
             location_label=user_address,
-            notes=f'Burned {gas_amount} ETH for gas',
+            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -224,7 +224,7 @@ def test_deposit_yearn_v2(
             asset=A_ETH,
             balance=Balance(amount=FVal(gas_amount)),
             location_label=user_address,
-            notes=f'Burned {gas_amount} ETH for gas',
+            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -305,7 +305,7 @@ def test_increase_deposit_yearn_v2(
             asset=A_ETH,
             balance=Balance(amount=FVal(gas_amount)),
             location_label=user_address,
-            notes=f'Burned {gas_amount} ETH for gas',
+            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -374,7 +374,7 @@ def test_withdraw_yearn_v2(
             asset=A_ETH,
             balance=Balance(amount=FVal(gas_amount)),
             location_label=user_address,
-            notes=f'Burned {gas_amount} ETH for gas',
+            notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -426,7 +426,7 @@ def test_deposit_yearn_v2_without_logs(
             asset=A_ETH,
             balance=Balance(amount=FVal(0.001003537266292329)),
             location_label=user_address,
-            notes='Burned 0.001003537266292329 ETH for gas',
+            notes='Burn 0.001003537266292329 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -490,7 +490,7 @@ def test_withdraw_yearn_v2_without_logs(
             asset=A_ETH,
             balance=Balance(amount=FVal(0.000631154785993836)),
             location_label=user_address,
-            notes='Burned 0.000631154785993836 ETH for gas',
+            notes='Burn 0.000631154785993836 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -542,7 +542,7 @@ def test_deposit_yearn_v1(
             asset=A_ETH,
             balance=Balance(amount=FVal(0.007502376)),
             location_label=user_address,
-            notes='Burned 0.007502376 ETH for gas',
+            notes='Burn 0.007502376 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -594,7 +594,7 @@ def test_withdraw_yearn_v1(
             asset=A_ETH,
             balance=Balance(amount=FVal(0.008944164419689952)),
             location_label=user_address,
-            notes='Burned 0.008944164419689952 ETH for gas',
+            notes='Burn 0.008944164419689952 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -651,7 +651,7 @@ def test_deposit_yearn_full_amount(ethereum_inquirer, ethereum_accounts):
                 usd_value=ZERO,
             ),
             location_label=user_address,
-            notes='Burned 0.0108951 ETH for gas',
+            notes='Burn 0.0108951 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,

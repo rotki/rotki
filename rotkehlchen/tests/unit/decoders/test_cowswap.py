@@ -468,7 +468,7 @@ def test_place_eth_order(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             balance=Balance(amount=FVal('0.001768460133875456')),
             location_label=user_address,
-            notes='Burned 0.001768460133875456 ETH for gas',
+            notes='Burn 0.001768460133875456 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hex,
@@ -505,7 +505,7 @@ def test_place_xdai_order(gnosis_inquirer, gnosis_accounts):
             asset=A_XDAI,
             balance=Balance(amount=FVal('0.0000901568')),
             location_label=user_address,
-            notes='Burned 0.0000901568 XDAI for gas',
+            notes='Burn 0.0000901568 XDAI for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hex,
@@ -542,7 +542,7 @@ def test_invalidate_eth_order(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             balance=Balance(amount=FVal('0.001171136978414093')),
             location_label=user_address,
-            notes='Burned 0.001171136978414093 ETH for gas',
+            notes='Burn 0.001171136978414093 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hex,
@@ -579,7 +579,7 @@ def test_invalidate_gnosis_order(gnosis_inquirer, gnosis_accounts):
             asset=A_XDAI,
             balance=Balance(amount=FVal('0.000369223819835234')),
             location_label=user_address,
-            notes='Burned 0.000369223819835234 XDAI for gas',
+            notes='Burn 0.000369223819835234 XDAI for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hex,
@@ -724,7 +724,7 @@ def test_ethereum_claim_airdrop(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             balance=Balance(amount=FVal(0.006544511735317699)),
             location_label=user_address,
-            notes='Burned 0.006544511735317699 ETH for gas',
+            notes='Burn 0.006544511735317699 ETH for gas',
             tx_hash=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -763,7 +763,7 @@ def test_gnosis_claim_airdrop(gnosis_inquirer, gnosis_accounts):
             asset=A_XDAI,
             balance=Balance(amount=FVal(0.000121524)),
             location_label=user_address,
-            notes='Burned 0.000121524 XDAI for gas',
+            notes='Burn 0.000121524 XDAI for gas',
             tx_hash=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -802,7 +802,7 @@ def test_ethereum_vested_claim(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             balance=Balance(FVal(gas)),
             location_label=user_address,
-            notes=f'Burned {gas} ETH for gas',
+            notes=f'Burn {gas} ETH for gas',
             tx_hash=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -853,7 +853,7 @@ def test_gnosis_vested_claim(gnosis_inquirer, gnosis_accounts):
             asset=A_XDAI,
             balance=Balance(FVal(gas)),
             location_label=user_address,
-            notes=f'Burned {gas} XDAI for gas',
+            notes=f'Burn {gas} XDAI for gas',
             tx_hash=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -903,7 +903,7 @@ def test_gnosis_claim_airdrop_with_xdai_payment(gnosis_inquirer, gnosis_accounts
             asset=A_XDAI,
             balance=Balance(amount=FVal(gas_amount)),
             location_label=user_address,
-            notes=f'Burned {gas_amount} XDAI for gas',
+            notes=f'Burn {gas_amount} XDAI for gas',
             tx_hash=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -954,7 +954,7 @@ def test_gnosis_claim_airdrop_with_gno_payment(gnosis_inquirer, gnosis_accounts)
             asset=A_XDAI,
             balance=Balance(amount=FVal(gas_amount)),
             location_label=user_address,
-            notes=f'Burned {gas_amount} XDAI for gas',
+            notes=f'Burn {gas_amount} XDAI for gas',
             tx_hash=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(

@@ -47,7 +47,7 @@ def test_compound_v3_claim_comp(
             asset=A_ETH,
             balance=Balance(amount=FVal(gas_str), usd_value=ZERO),
             location_label=user_address,
-            notes=f'Burned {gas_str} ETH for gas',
+            notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -85,7 +85,7 @@ def test_compound_v3_supply(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             balance=Balance(amount=FVal(gas_fees)),
             location_label=ethereum_accounts[0],
-            notes=f'Burned {gas_fees} ETH for gas',
+            notes=f'Burn {gas_fees} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -135,7 +135,7 @@ def test_compound_v3_withdraw(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             balance=Balance(amount=FVal(gas_fees)),
             location_label=ethereum_accounts[0],
-            notes=f'Burned {gas_fees} ETH for gas',
+            notes=f'Burn {gas_fees} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -185,7 +185,7 @@ def test_compound_v3_withdraw_collateral(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             balance=Balance(amount=FVal(gas_fees)),
             location_label=ethereum_accounts[0],
-            notes=f'Burned {gas_fees} ETH for gas',
+            notes=f'Burn {gas_fees} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -235,7 +235,7 @@ def test_compound_v3_deposit_collateral(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             balance=Balance(amount=FVal(gas_fees)),
             location_label=ethereum_accounts[0],
-            notes=f'Burned {gas_fees} ETH for gas',
+            notes=f'Burn {gas_fees} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -288,7 +288,7 @@ def test_polygon_pos_withdraw(polygon_pos_inquirer, polygon_pos_accounts):
             asset=A_POLYGON_POS_MATIC,
             balance=Balance(amount=FVal(gas_fees)),
             location_label=polygon_pos_accounts[0],
-            notes=f'Burned {gas_fees} POL for gas',
+            notes=f'Burn {gas_fees} POL for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -341,7 +341,7 @@ def test_arbitrum_one_borrow(arbitrum_one_inquirer, arbitrum_one_accounts):
             asset=A_ETH,
             balance=Balance(amount=FVal(gas_fees)),
             location_label=arbitrum_one_accounts[0],
-            notes=f'Burned {gas_fees} ETH for gas',
+            notes=f'Burn {gas_fees} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -381,7 +381,7 @@ def test_base_repay(base_inquirer, base_accounts):
             asset=A_ETH,
             balance=Balance(amount=FVal(gas_fees)),
             location_label=base_accounts[0],
-            notes=f'Burned {gas_fees} ETH for gas',
+            notes=f'Burn {gas_fees} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -422,7 +422,7 @@ def test_scroll_withdraw(scroll_inquirer, scroll_accounts):
             asset=A_ETH,
             balance=Balance(amount=FVal(gas_fees)),
             location_label=scroll_accounts[0],
-            notes=f'Burned {gas_fees} ETH for gas',
+            notes=f'Burn {gas_fees} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
