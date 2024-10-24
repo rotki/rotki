@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import { isEqual } from 'lodash-es';
 import type { SavedFilterLocation, SearchMatcher, Suggestion } from '@/types/filtering';
 
 const props = defineProps<{
@@ -47,6 +48,23 @@ function isAsset(searchKey: string): boolean {
 }
 
 const { savedFilters, addFilter, deleteFilter } = useSavedFilter(location, isAsset);
+
+const filtersList = computed(() => {
+  const matcherKeys = get(matchers).map(item => item.key);
+  return get(savedFilters)
+    // Filter out keys that doesn't supported in the matchers list
+    .map(filters => filters.filter(filter => matcherKeys.includes(filter.key)))
+    .filter((filter, index, self) => {
+      if (filter.length === 0)
+        return false;
+      // Sort the current filter array for consistent comparison
+      const sortedFilter = filter.slice().sort((a, b) => a.key.localeCompare(b.key));
+      // Check if this is the first occurrence of this filter combination
+      return index === self.findIndex(f =>
+        isEqual(sortedFilter, f.slice().sort((a, b) => a.key.localeCompare(b.key))),
+      );
+    });
+});
 
 const { setMessage } = useMessageStore();
 
@@ -137,11 +155,11 @@ async function addToSavedFilter() {
         </RuiTooltip>
       </template>
       <div
-        v-if="savedFilters.length > 0"
+        v-if="filtersList.length > 0"
         class="py-2"
       >
         <div
-          v-for="(filters, index) in savedFilters"
+          v-for="(filters, index) in filtersList"
           :key="index"
         >
           <RuiDivider
