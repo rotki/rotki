@@ -613,8 +613,8 @@ def test_get_assets_mappings(rotkehlchen_api_server: 'APIServer') -> None:
             'symbol': 'DAI',
         },
         '40': {
-            'name': 'Wrapped Bitcoin',
-            'symbol': 'WBTC',
+            'name': 'Bitcoin',
+            'symbol': 'BTC',
         },
     }
 
