@@ -89,7 +89,7 @@ def assert_csv_export_response(
         assert count == expected_count
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['api_key'])
 @pytest.mark.parametrize('should_mock_price_queries', [False])
 def test_history_export_download_csv(
         rotkehlchen_api_server_with_exchanges,
@@ -202,7 +202,7 @@ def test_history_export_csv_errors(
     )
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['api_key'])
 @pytest.mark.parametrize('start_with_valid_premium', [True, False])
 @pytest.mark.parametrize('default_mock_price_value', [FVal(1)])
 def test_history_export_csv_free_limit(
