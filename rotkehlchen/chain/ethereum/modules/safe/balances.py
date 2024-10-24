@@ -56,7 +56,7 @@ class SafeBalances(ProtocolWithBalance):
         try:
             results = self.evm_inquirer.multicall(calls=calls)
         except RemoteError as e:
-            log.error(f'Failed to query BLUR balances due to {e!s}')
+            log.error(f'Failed to query locked SAFE balances due to {e!s}')
             return balances
 
         if len(results) == 0:

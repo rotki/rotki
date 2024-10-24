@@ -1,6 +1,7 @@
 import datetime
 from collections import defaultdict
 from functools import wraps
+from pathlib import Path
 from typing import TYPE_CHECKING
 from unittest.mock import patch
 
@@ -9,6 +10,7 @@ import pytest
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.assets.utils import get_or_create_evm_token
+from rotkehlchen.chain.aggregator import CHAIN_TO_BALANCE_PROTOCOLS
 from rotkehlchen.chain.arbitrum_one.constants import ARBITRUM_ONE_ETHERSCAN_NODE
 from rotkehlchen.chain.arbitrum_one.modules.gearbox.balances import (
     GearboxBalances as GearboxBalancesArbitrumOne,
@@ -19,6 +21,7 @@ from rotkehlchen.chain.arbitrum_one.modules.thegraph.balances import (
     ThegraphBalances as ThegraphBalancesArbitrumOne,
 )
 from rotkehlchen.chain.base.modules.extrafi.balances import ExtrafiBalances as ExtrafiBalancesBase
+from rotkehlchen.chain.ethereum.interfaces.balances import ProtocolWithBalance
 from rotkehlchen.chain.ethereum.modules.aave.balances import AaveBalances
 from rotkehlchen.chain.ethereum.modules.blur.balances import BlurBalances
 from rotkehlchen.chain.ethereum.modules.blur.constants import BLUR_IDENTIFIER
@@ -63,6 +66,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.cache import globaldb_get_unique_cache_last_queried_ts_by_key
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.tests.utils.arbitrum_one import get_arbitrum_allthatnode
+from rotkehlchen.tests.utils.balances import find_inheriting_classes
 from rotkehlchen.tests.utils.constants import CURRENT_PRICE_MOCK
 from rotkehlchen.tests.utils.ethereum import (
     get_decoded_events_of_transaction,
@@ -1028,3 +1032,30 @@ def test_extrafi_cache(optimism_inquirer: 'OptimismInquirer', freezer):
             cursor=cursor,
             key_parts=(CacheType.EXTRAFI_NEXT_RESERVE_ID, chain),
         ) > last_queried_ts
+
+
+def test_all_balance_classes_used():
+    """
+    Test that all protocol balance classes are used properly in the
+    CHAIN_TO_BALANCE_PROTOCOLS mapping
+    """
+    classes = find_inheriting_classes(
+        root_directory=(root_directory := Path(__file__).resolve().parent.parent.parent),
+        search_directory=root_directory / 'chain',
+        base_class=ProtocolWithBalance,
+        exclude_class_names={
+            'GearboxCommonBalances',
+            'ExtrafiCommonBalances',
+            'VelodromeLikeBalances',
+        },
+    )
+    unused_classes = set()
+
+    for class_entry in classes:
+        for balances in CHAIN_TO_BALANCE_PROTOCOLS.values():
+            if class_entry in balances:
+                break
+        else:  # not found
+            unused_classes.add(class_entry)
+
+    assert unused_classes == set(), f'Found unused classes {unused_classes}'
