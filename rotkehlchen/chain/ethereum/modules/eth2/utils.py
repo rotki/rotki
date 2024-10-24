@@ -32,9 +32,9 @@ def epoch_to_timestamp(epoch: int) -> Timestamp:
 def form_withdrawal_notes(is_exit: bool, validator_index: int, amount: FVal) -> str:
     """Forms the ethereum withdrawal notes depending on is_exit and other attributes"""
     if is_exit is True:
-        notes = f'Exited validator {validator_index} with {amount} ETH'
+        notes = f'Exit validator {validator_index} with {amount} ETH'
     else:
-        notes = f'Withdrew {amount} ETH from validator {validator_index}'
+        notes = f'Withdraw {amount} ETH from validator {validator_index}'
     return notes
 
 

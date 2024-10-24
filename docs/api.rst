@@ -4904,7 +4904,7 @@ Dealing with History Events
                       "event_type": "staking",
                       "location": "ethereum",
                       "location_label": "0xce15887E2CEC81434C16D587709f64603b39b545",
-                      "notes": "Withdrew 0.00163351371344 ETH from validator 1454",
+                      "notes": "Withdraw 0.00163351371344 ETH from validator 1454",
                       "sequence_index": 0,
                       "timestamp": 1652802807,
                       "event_accounting_rule_status": "not processed",
