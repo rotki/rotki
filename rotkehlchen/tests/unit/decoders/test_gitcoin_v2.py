@@ -595,3 +595,41 @@ def test_allocated_donate_eth(arbitrum_one_inquirer, arbitrum_one_accounts):
         address='0xfcBf17200C64E860F6639aa12B525015d115F863',
     )]
     assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('arbitrum_one_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
+def test_registered(arbitrum_one_inquirer, arbitrum_one_accounts):
+    tx_hash = deserialize_evm_tx_hash('0x75d7138bc9f43954d64120d29be217274e08a6e27a7f3634e5dbc6f1f466e372')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=arbitrum_one_inquirer,
+        tx_hash=tx_hash,
+    )
+    user_address, timestamp, gas, recipient_id = arbitrum_one_accounts[0], TimestampMS(1727784046000), '0.0000047042', '0x73B00B94762f800A244B6a84617Adbf07b9520a8'  # noqa: E501
+    expected_events = [EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=0,
+        timestamp=timestamp,
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        balance=Balance(amount=FVal(gas)),
+        location_label=user_address,
+        notes=f'Burned {gas} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.APPLY,
+        asset=A_ETH,
+        balance=Balance(),
+        location_label=user_address,
+        notes=f'Register for a gitcoin round with recipient id {recipient_id}',
+        counterparty=CPT_GITCOIN,
+        extra_data={'recipient_id': recipient_id},
+    )]
+    assert events == expected_events

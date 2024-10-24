@@ -1,6 +1,6 @@
 from typing import Final
 
-from eth_typing.abi import ABI
+from eth_typing.abi import ABI, ABIEvent
 
 VOTED: Final = b'\x00d\xca\xa7?\x1dY\xb6\x9a\xdb\xebeeK\x0f\tSYy\x94\xe4$\x1e\xe2F\x0bV\x0b\x8de\xaa\xa2'  # example: https://etherscan.io/tx/0x71fc406467f342f5801560a326aa29ac424381daf17cc04b5573960425ba605b#eventlog  # noqa: E501
 VOTED_WITH_ORIGIN: Final = b'\xbf5\xc00\x17\x8a\x1eg\x8c\x82\x96\xa4\xe5\x08>\x90!\xa2L\x1a\x1d\xef\xa5\xbf\xbd\xfd\xe7K\xce\xcf\xa3v'  # noqa: E501 # example: https://optimistic.etherscan.io/tx/0x08685669305ee26060a5a78ae70065aec76d9e62a35f0837c291fb1232f33601#eventlog
@@ -11,6 +11,10 @@ NEW_PROJECT_APPLICATION_3ARGS: Final = b'\xcay&"\x04c%\xe9\xcdN$\xb4\x90\xcb\x00
 NEW_PROJECT_APPLICATION_2ARGS: Final = b'\xecy?\xe7\x04\xd3@\xd9b\xcd\x02\xd8\x1a\xd5@E\xe7\xce\xeaq:\xcaN1\xc7\xc5\xc4>=\xcb\x19*'  # noqa: E501
 FUNDS_DISTRIBUTED: Final = b'z\x0b2\xf6\x04\xa8\xc9C&2(a\x03\x9aD\xb7\xedxbL\xf2 \xba\x8bXj$G\xaf\r\x9c\x9b'  # noqa: E501
 ALLOCATED: Final = b'\xdc\x9d@v\x03\x08U}\x13w\xc2\xfe|\x98J\xce\x9e\xb0-#\xb6\n_o&\xbeb\xc5$1\xbc8'  # noqa: E501
+REGISTERED: Final = b'\xa1\x970n=\xd5IJa\xa6\x958\x1a\xa8\t\xa5;\x8e7zh^\x84\xe4\x04\xa8]Z\x8d\xa6\xccb'  # noqa: E501
 
 
 GET_RECIPIENT_ABI: Final[ABI] = [{'inputs': [{'name': '_recipientId', 'type': 'address'}], 'name': 'getRecipient', 'outputs': [{'components': [{'name': 'useRegistryAnchor', 'type': 'bool'}, {'name': 'recipientAddress', 'type': 'address'}, {'components': [{'name': 'protocol', 'type': 'uint256'}, {'name': 'pointer', 'type': 'string'}], 'name': 'metadata', 'type': 'tuple'}], 'name': 'recipient', 'type': 'tuple'}], 'stateMutability': 'view', 'type': 'function'}]  # noqa: E501
+
+
+REGISTERED_ABI: Final[ABIEvent] = {'anonymous': False, 'inputs': [{'indexed': True, 'name': 'recipientId', 'type': 'address'}, {'indexed': False, 'name': 'data', 'type': 'bytes'}, {'indexed': False, 'name': 'sender', 'type': 'address'}], 'name': 'Registered', 'type': 'event'}  # noqa: E501
