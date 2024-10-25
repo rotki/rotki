@@ -51,7 +51,7 @@ function isLinkType(t: any): t is keyof ExplorerUrls {
 <template>
   <div
     v-bind="$attrs"
-    class="inline-flex items-center gap-x-1 flex-wrap"
+    class="inline"
   >
     <template
       v-for="(note, index) in formattedNotes"
@@ -64,7 +64,7 @@ function isLinkType(t: any): t is keyof ExplorerUrls {
         />
       </template>
       <template v-else-if="note.type === NoteType.WORD && note.word">
-        {{ note.word }}
+        {{ ` ${note.word} ` }}
       </template>
       <HashLink
         v-else-if="note.showHashLink && isLinkType(note.type)"
@@ -99,7 +99,7 @@ function isLinkType(t: any): t is keyof ExplorerUrls {
         custom
       />
       <template v-else>
-        {{ `${note.word} ` }}
+        {{ ` ${note.word} ` }}
       </template>
     </template>
   </div>
