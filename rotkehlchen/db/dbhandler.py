@@ -358,7 +358,7 @@ class DBHandler:
 
         if transient_version != ROTKEHLCHEN_TRANSIENT_DB_VERSION:
             # "upgrade" transient DB
-            tables = list(cursor.execute('select name from sqlite_master where type is "table"'))
+            tables = list(cursor.execute("SELECT name FROM sqlite_master WHERE type IS 'table'"))
             cursor.executescript('PRAGMA foreign_keys = OFF;')
             cursor.executescript(';'.join([f'DROP TABLE IF EXISTS {name[0]}' for name in tables]))
             cursor.executescript('PRAGMA foreign_keys = ON;')
@@ -487,7 +487,7 @@ class DBHandler:
             ) from e
 
         password_for_sqlcipher = protect_password_sqlcipher(self.password)
-        script = f'PRAGMA key="{password_for_sqlcipher}";'
+        script = f"PRAGMA key='{password_for_sqlcipher}';"
         if self.sqlcipher_version == 3:
             script += f'PRAGMA kdf_iter={KDF_ITER};'
         try:
@@ -521,7 +521,7 @@ class DBHandler:
             )
             return False
         new_password_for_sqlcipher = protect_password_sqlcipher(new_password)
-        script = f'PRAGMA rekey="{new_password_for_sqlcipher}";'
+        script = f"PRAGMA rekey='{new_password_for_sqlcipher}';"
         if self.sqlcipher_version == 3:
             script += f'PRAGMA kdf_iter={KDF_ITER};'
         try:
@@ -564,9 +564,9 @@ class DBHandler:
             # flush the wal file to have up to date information when exporting data
             self.conn.execute('PRAGMA wal_checkpoint;')
             self.conn.executescript(
-                f'ATTACH DATABASE "{temppath}" AS plaintext KEY "";'
-                'SELECT sqlcipher_export("plaintext");'
-                'DETACH DATABASE plaintext;',
+                f"ATTACH DATABASE '{temppath}' AS plaintext KEY '';"
+                "SELECT sqlcipher_export('plaintext');"
+                "DETACH DATABASE plaintext;",
             )
 
     def import_unencrypted(self, unencrypted_db_data: bytes) -> None:
@@ -600,10 +600,10 @@ class DBHandler:
                 sql_vm_instructions_cb=self.sql_vm_instructions_cb,
             )
             password_for_sqlcipher = protect_password_sqlcipher(self.password)
-            script = f'ATTACH DATABASE "{rdbpath}" AS encrypted KEY "{password_for_sqlcipher}";'
+            script = f"ATTACH DATABASE '{rdbpath}' AS encrypted KEY '{password_for_sqlcipher}';"
             if self.sqlcipher_version == 3:
                 script += f'PRAGMA encrypted.kdf_iter={KDF_ITER};'
-            script += 'SELECT sqlcipher_export("encrypted");DETACH DATABASE encrypted;'
+            script += "SELECT sqlcipher_export('encrypted');DETACH DATABASE encrypted;"
             self.conn.executescript(script)
             self.disconnect()
 
@@ -923,7 +923,7 @@ class DBHandler:
 
     def remove_from_ignored_assets(self, write_cursor: 'DBCursor', asset: Asset) -> None:
         write_cursor.execute(
-            'DELETE FROM multisettings WHERE name="ignored_asset" AND value=?;',
+            "DELETE FROM multisettings WHERE name='ignored_asset' AND value=?;",
             (asset.identifier,),
         )
 
@@ -934,7 +934,7 @@ class DBHandler:
         it due to unnecessary roundtrips to the global DB for each asset initialization
         """
         bindings = []
-        query = 'SELECT value FROM multisettings WHERE name="ignored_asset" '
+        query = "SELECT value FROM multisettings WHERE name='ignored_asset' "
         if only_nfts is True:
             query += 'AND value LIKE ?'
             bindings.append(f'{NFT_DIRECTIVE}%')
@@ -1059,7 +1059,7 @@ class DBHandler:
 
     def delete_loopring_data(self, write_cursor: 'DBCursor') -> None:
         """Delete all loopring related data"""
-        write_cursor.execute('DELETE FROM multisettings WHERE name LIKE "loopring_%";')
+        write_cursor.execute("DELETE FROM multisettings WHERE name LIKE 'loopring_%';")
 
     def get_used_query_range(self, cursor: 'DBCursor', name: str) -> tuple[Timestamp, Timestamp] | None:  # noqa: E501
         """Get the last start/end timestamp range that has been queried for name
@@ -1263,9 +1263,9 @@ class DBHandler:
         """
         last_queried_ts = None
         querystr = (
-            'SELECT key, value FROM evm_accounts_details WHERE account=? AND chain_id=? '
-            'AND (key=? OR key=?) AND value NOT IN '
-            '(SELECT value FROM multisettings WHERE name="ignored_asset")'
+            "SELECT key, value FROM evm_accounts_details WHERE account=? AND chain_id=? "
+            "AND (key=? OR key=?) AND value NOT IN "
+            "(SELECT value FROM multisettings WHERE name='ignored_asset')"
         )
         bindings = (address, blockchain.to_chain_id().serialize_for_db(), EVM_ACCOUNTS_DETAILS_LAST_QUERIED_TS, EVM_ACCOUNTS_DETAILS_TOKENS)  # noqa: E501
         cursor.execute(querystr, bindings)  # original place https://github.com/rotki/rotki/issues/5432 was seen # noqa: E501
@@ -1383,11 +1383,11 @@ class DBHandler:
         Each account entry contains address and potentially label and tags
         """
         query = cursor.execute(
-            'SELECT A.account, C.name, group_concat(B.tag_name,",") '
-            'FROM blockchain_accounts AS A '
-            'LEFT OUTER JOIN tag_mappings AS B ON B.object_reference = A.account '
-            'LEFT OUTER JOIN address_book AS C ON C.address = A.account AND (A.blockchain IS C.blockchain OR C.blockchain IS ?) '  # noqa: E501
-            'WHERE A.blockchain=? GROUP BY account;',
+            "SELECT A.account, C.name, group_concat(B.tag_name,',') "
+            "FROM blockchain_accounts AS A "
+            "LEFT OUTER JOIN tag_mappings AS B ON B.object_reference = A.account "
+            "LEFT OUTER JOIN address_book AS C ON C.address = A.account AND (A.blockchain IS C.blockchain OR C.blockchain IS ?) "  # noqa: E501
+            "WHERE A.blockchain=? GROUP BY account;",
             (ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE, blockchain.value),
         )
 
@@ -1459,12 +1459,12 @@ class DBHandler:
         """Returns the manually tracked balances from the DB"""
         query_balance_type = ''
         if balance_type is not None:
-            query_balance_type = f'WHERE A.category="{balance_type.serialize_for_db()}"'
+            query_balance_type = f"WHERE A.category='{balance_type.serialize_for_db()}'"
         query = cursor.execute(
-            f'SELECT A.asset, A.label, A.amount, A.location, group_concat(B.tag_name,","), '
-            f'A.category, A.id FROM manually_tracked_balances as A '
-            f'LEFT OUTER JOIN tag_mappings as B on B.object_reference = A.id '
-            f'{query_balance_type} GROUP BY label;',
+            f"SELECT A.asset, A.label, A.amount, A.location, group_concat(B.tag_name,','), "
+            f"A.category, A.id FROM manually_tracked_balances as A "
+            f"LEFT OUTER JOIN tag_mappings as B on B.object_reference = A.id "
+            f"{query_balance_type} GROUP BY label;",
         )
 
         data = []
@@ -1988,7 +1988,7 @@ class DBHandler:
         """
         query = 'SELECT * FROM margin_positions '
         if location is not None:
-            query += f'WHERE location="{location.serialize_for_db()}" '
+            query += f"WHERE location='{location.serialize_for_db()}' "
         query, bindings = form_query_to_filter_timestamps(query, 'close_time', from_ts, to_ts)
         results = cursor.execute(query, bindings)
 
@@ -2145,7 +2145,7 @@ class DBHandler:
         if blockchain == SupportedBlockchain.ETHEREUM:  # mainnet only behaviour
             write_cursor.execute('DELETE FROM used_query_ranges WHERE name = ?', (f'aave_events_{address}',))  # noqa: E501
             write_cursor.execute(  # queried addresses per module
-                'DELETE FROM multisettings WHERE name LIKE "queried_address_%" AND value = ?',
+                "DELETE FROM multisettings WHERE name LIKE 'queried_address_%' AND value = ?",
                 (address,),
             )
             loopring = DBLoopring(self)
@@ -2156,7 +2156,7 @@ class DBHandler:
             (address, blockchain.to_chain_id().serialize_for_db()),
         )
         write_cursor.execute(
-            f'DELETE FROM key_value_cache WHERE name LIKE "{EXTRAINTERNALTXPREFIX}_%" AND value = ?',  # noqa: E501
+            f"DELETE FROM key_value_cache WHERE name LIKE '{EXTRAINTERNALTXPREFIX}_%' AND value = ?",  # noqa: E501
             (address,),
         )
 
@@ -2366,7 +2366,7 @@ class DBHandler:
 
     def get_rotkehlchen_premium(self, cursor: 'DBCursor') -> PremiumCredentials | None:
         cursor.execute(
-            'SELECT api_key, api_secret FROM user_credentials where name="rotkehlchen";',
+            "SELECT api_key, api_secret FROM user_credentials where name='rotkehlchen';",
         )
         result = cursor.fetchone()
         if result is None:
@@ -2394,8 +2394,8 @@ class DBHandler:
         with self.conn.read_ctx() as cursor:
             # Get the total location ("H") entries in ascending time
             cursor.execute(
-                'SELECT timestamp, usd_value FROM timed_location_data '
-                'WHERE location="H" AND timestamp >= ? ORDER BY timestamp ASC;',
+                "SELECT timestamp, usd_value FROM timed_location_data "
+                "WHERE location='H' AND timestamp >= ? ORDER BY timestamp ASC;",
                 (from_ts,),
             )
             if not include_nfts:
@@ -3147,9 +3147,9 @@ class DBHandler:
             blockchain: Literal[SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH],
     ) -> list[XpubData]:
         query = cursor.execute(
-            'SELECT A.xpub, A.blockchain, A.derivation_path, A.label, '
-            'group_concat(B.tag_name,",") FROM xpubs as A LEFT OUTER JOIN tag_mappings AS B ON '
-            'B.object_reference = A.xpub || A.derivation_path WHERE A.blockchain=? GROUP BY A.xpub || A.derivation_path',  # noqa: E501
+            "SELECT A.xpub, A.blockchain, A.derivation_path, A.label, "
+            "group_concat(B.tag_name,',') FROM xpubs as A LEFT OUTER JOIN tag_mappings AS B ON "
+            "B.object_reference = A.xpub || A.derivation_path WHERE A.blockchain=? GROUP BY A.xpub || A.derivation_path",  # noqa: E501
             (blockchain.value,),
         )
         result = []
@@ -3438,7 +3438,7 @@ class DBHandler:
         """Checks if a a given node is an etherscan node (ethereum, optimism, etc)"""
         with self.conn.read_ctx() as cursor:
             return bool(cursor.execute(
-                'SELECT COUNT(*) FROM rpc_nodes WHERE identifier=? AND endpoint=""',
+                "SELECT COUNT(*) FROM rpc_nodes WHERE identifier=? AND endpoint=''",
                 (node_identifier,),
             ).fetchone()[0])
 

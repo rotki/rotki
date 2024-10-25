@@ -46,7 +46,7 @@ def upgrade_v35_to_v36(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
                 'DELETE FROM used_query_ranges WHERE name LIKE ?', ('adex_events%',),
             )
 
-        write_cursor.execute('SELECT value FROM settings where name="active_modules"')
+        write_cursor.execute("SELECT value FROM settings where name='active_modules'")
         active_modules_result = write_cursor.fetchone()
         if active_modules_result is not None:
             active_modules_str = active_modules_result[0]
@@ -63,7 +63,7 @@ def upgrade_v35_to_v36(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
                 new_value = DEFAULT_ACTIVE_MODULES
 
             write_cursor.execute(
-                'UPDATE OR IGNORE settings SET value=? WHERE name="active_modules"',
+                "UPDATE OR IGNORE settings SET value=? WHERE name='active_modules'",
                 (json.dumps(new_value),),
             )
 
@@ -71,7 +71,7 @@ def upgrade_v35_to_v36(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
     def _upgrade_ignored_actionids(write_cursor: 'DBCursor') -> None:
         """ignored_action_ids of ActionType ETHEREUM_TRANSACTION need chainid prepended"""
         if table_exists(write_cursor, 'used_query_ranges'):
-            write_cursor.execute('UPDATE ignored_actions SET identifier = "1" || identifier WHERE type="C"')  # noqa: E501
+            write_cursor.execute("UPDATE ignored_actions SET identifier = '1' || identifier WHERE type='C'")  # noqa: E501
 
     @progress_step(description='Upgrading account details.')
     def _upgrade_account_details(write_cursor: 'DBCursor') -> None:
@@ -437,7 +437,7 @@ def upgrade_v35_to_v36(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
                 last_price_asset TEXT,
                 manual_price INTEGER NOT NULL CHECK (manual_price IN (0, 1)),
                 owner_address TEXT,
-                blockchain TEXT GENERATED ALWAYS AS ("ETH") VIRTUAL,
+                blockchain TEXT GENERATED ALWAYS AS ('ETH') VIRTUAL,
                 is_lp INTEGER NOT NULL CHECK (is_lp IN (0, 1)),
                 image_url TEXT,
                 collection_name TEXT,
@@ -461,7 +461,7 @@ def upgrade_v35_to_v36(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         # I suspect the tests I noticed it were due to the developer who created the DB error, but
         # since this is equivalent to reading the blockchain column, better safe than sorry
         nodes_tuples = write_cursor.execute(
-            'SELECT name, endpoint, owned, active, weight, "ETH" from web3_nodes',
+            "SELECT name, endpoint, owned, active, weight, 'ETH' from web3_nodes",
         ).fetchall()
         write_cursor.execute('DROP TABLE IF EXISTS web3_nodes')
         write_cursor.execute(
@@ -521,7 +521,7 @@ def upgrade_v35_to_v36(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
 
     @progress_step(description='Adding OKX.')
     def _add_okx(write_cursor: 'DBCursor') -> None:
-        write_cursor.execute('INSERT OR IGNORE INTO location(location, seq) VALUES ("e", 37);')
+        write_cursor.execute("INSERT OR IGNORE INTO location(location, seq) VALUES ('e', 37);")
 
     @progress_step(description='Removing old tables.')
     def _remove_old_tables(write_cursor: 'DBCursor') -> None:

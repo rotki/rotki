@@ -78,6 +78,23 @@ def test_user_password_with_double_quote(
     )
 
 
+def test_user_password_with_single_quote(
+        data_dir: Path,
+        function_scope_messages_aggregator: MessagesAggregator,
+        sql_vm_instructions_cb: int,
+):
+    """Since we now use single quotes in sqlite statements, make sure they work too for password"""
+    username = 'foo'
+    password = "pass'word"
+    _user_creation_and_login(
+        username=username,
+        password=password,
+        data_dir=data_dir,
+        msg_aggregator=function_scope_messages_aggregator,
+        sql_vm_instructions_cb=sql_vm_instructions_cb,
+    )
+
+
 def test_user_password_with_all_ascii(
         data_dir: Path,
         function_scope_messages_aggregator: MessagesAggregator,

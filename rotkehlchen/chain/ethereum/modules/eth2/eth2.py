@@ -13,6 +13,7 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.ethereum.modules.eth2.beacon import BeaconInquirer
 from rotkehlchen.chain.structures import TimestampOrBlockRange
 from rotkehlchen.constants import ONE, ZERO
+from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.timing import DAY_IN_SECONDS, HOUR_IN_SECONDS, YEAR_IN_SECONDS
 from rotkehlchen.db.cache import DBCacheDynamic, DBCacheStatic
 from rotkehlchen.db.eth2 import DBEth2
@@ -569,13 +570,15 @@ class Eth2(EthereumModule):
                 'LEFT JOIN evm_events_info B_E '
                 'ON B_T.tx_hash=B_E.tx_hash LEFT JOIN history_events B_H '
                 'ON B_E.identifier=B_H.identifier WHERE '
-                'B_H.asset="ETH" AND B_H.type="receive" AND B_H.subtype="none" '
+                'B_H.asset=? AND B_H.type=? AND B_H.subtype=? '
                 'AND B_T.block_number=('
                 'SELECT A_S.is_exit_or_blocknumber '
                 'FROM history_events A_H LEFT JOIN eth_staking_events_info A_S '
-                'ON A_H.identifier=A_S.identifier WHERE A_H.subtype="mev reward" AND '
+                'ON A_H.identifier=A_S.identifier WHERE A_H.subtype=? AND '
                 'A_S.is_exit_or_blocknumber=B_T.block_number AND '
                 'A_H.amount=B_H.amount AND A_H.location_label=B_H.location_label)',
+                (A_ETH.identifier, HistoryEventType.RECEIVE.serialize(),
+                 HistoryEventSubType.NONE.serialize(), HistoryEventSubType.MEV_REWARD.serialize()),
             )
             result = cursor.fetchall()
 

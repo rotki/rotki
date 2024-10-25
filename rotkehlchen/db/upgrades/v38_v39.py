@@ -234,7 +234,7 @@ def upgrade_v38_to_v39(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
 
     @progress_step(description='Adding Arbitrum One location')
     def _add_arbitrum_one_location(write_cursor: 'DBCursor') -> None:
-        write_cursor.execute('INSERT OR IGNORE INTO location(location, seq) VALUES ("i", 41);')
+        write_cursor.execute("INSERT OR IGNORE INTO location(location, seq) VALUES ('i', 41);")
 
     @progress_step(description='Updating rpc nodes table.')
     def _update_rpc_nodes_table(write_cursor: 'DBCursor') -> None:
@@ -245,10 +245,10 @@ def upgrade_v38_to_v39(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         if table_exists:
             # For 1.28 we released v2 of the rpc nodes with polygon etherscan instead of
             # polygon pos etherscan. In migration 10 we ensured that if it was
-            # present we delete "polygon etherscan" from the rpc nodes.Since data migrations happen
+            # present we delete 'polygon etherscan' from the rpc nodes.Since data migrations happen
             # after db upgrades we need to be sure that there are no duplicates since in both cases
             # the chain and endpoint is the same.
-            write_cursor.execute('DELETE FROM rpc_nodes WHERE name="polygon etherscan"')
+            write_cursor.execute("DELETE FROM rpc_nodes WHERE name='polygon etherscan'")
 
         update_table_schema(
             write_cursor=write_cursor,
@@ -266,7 +266,7 @@ def upgrade_v38_to_v39(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
 
     @progress_step(description='Removing saddle oracle.')
     def _remove_saddle_oracle(write_cursor: 'DBCursor') -> None:
-        write_cursor.execute('SELECT value FROM settings WHERE name="current_price_oracles"')
+        write_cursor.execute("SELECT value FROM settings WHERE name='current_price_oracles'")
         if (data := write_cursor.fetchone()) is None:
             return  # oracles not configured
         try:

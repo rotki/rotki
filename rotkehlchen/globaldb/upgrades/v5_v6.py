@@ -46,7 +46,7 @@ def migrate_to_v6(connection: 'DBConnection', progress_handler: 'DBUpgradeProgre
         )
 
         cursor.execute(
-            'SELECT COUNT(*) FROM sqlite_master WHERE type="table" and name=?',
+            "SELECT COUNT(*) FROM sqlite_master WHERE type='table' and name=?",
             ('general_cache',),
         )
         if cursor.fetchone() is None:  # If the general_cache table doesn't exist then there is nothing to transfer to the unique_cache table. We can exit immediately.  # noqa: E501

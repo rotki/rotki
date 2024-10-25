@@ -39,7 +39,7 @@ if TYPE_CHECKING:
 ASSET_COLLECTION_UPDATE: Final = 'INSERT INTO asset_collections(id, name, symbol) VALUES ({collection}, "{name}", "{symbol}");'  # noqa: E501
 ASSET_MAPPING: Final = 'INSERT INTO multiasset_mappings(collection_id, asset) VALUES ({collection}, "{id}");'  # noqa: E501
 ASSET_UPDATE: Final = "[('{address}', Chain.{chain_name}, '{coingecko}', '{cryptocompare}', {field_updates}, '{protocol}', {underlying_token_addresses})],"  # noqa: E501
-NON_EVM_ASSET_INSERT = 'INSERT INTO assets(identifier, name, type) VALUES("{identifier}", "{name}", "{type}"); INSERT INTO common_asset_details(identifier, symbol, coingecko, cryptocompare, forked, started, swapped_for) VALUES("{identifier}", "{symbol}", "{coingecko}", "{cryptocompare}", {forked}, {started}, {swapped_for});'  # noqa: E501
+NON_EVM_ASSET_INSERT = "INSERT INTO assets(identifier, name, type) VALUES('{identifier}', '{name}', '{type}'); INSERT INTO common_asset_details(identifier, symbol, coingecko, cryptocompare, forked, started, swapped_for) VALUES('{identifier}', '{symbol}', '{coingecko}', '{cryptocompare}', {forked}, {started}, {swapped_for});"  # noqa: E501
 IGNORED_PROTOCOLS: Final = {
     CURVE_POOL_PROTOCOL,
     YEARN_VAULTS_V1_PROTOCOL,
@@ -111,8 +111,8 @@ def test_asset_updates_consistency_with_packaged_db(
         globaldb.conn.read_ctx() as old_db_cursor,
         globaldb.packaged_db_conn().read_ctx() as packaged_db_cursor,
     ):
-        assert old_db_cursor.execute('SELECT value FROM settings WHERE name="assets_version"').fetchone()[0] == '15'  # noqa: E501
-        assert packaged_db_cursor.execute('SELECT value FROM settings WHERE name="assets_version"').fetchone()[0] == '30'  # noqa: E501
+        assert old_db_cursor.execute("SELECT value FROM settings WHERE name='assets_version'").fetchone()[0] == '15'  # noqa: E501
+        assert packaged_db_cursor.execute("SELECT value FROM settings WHERE name='assets_version'").fetchone()[0] == '30'  # noqa: E501
 
     assets_updater = AssetsUpdater(msg_aggregator=messages_aggregator)
     if (conflicts := assets_updater.perform_update(

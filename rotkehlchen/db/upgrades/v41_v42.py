@@ -142,7 +142,7 @@ def upgrade_v41_to_v42(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
     @progress_step(description='Removing manual current price oracle.')
     def _remove_manualcurrent_oracle(write_cursor: 'DBCursor') -> None:
         """Removes the manualcurrent oracle from the current_price_oracles setting"""
-        write_cursor.execute('SELECT value FROM settings WHERE name="current_price_oracles"')
+        write_cursor.execute("SELECT value FROM settings WHERE name='current_price_oracles'")
         if (data := write_cursor.fetchone()) is None:
             return  # oracles not configured
 
@@ -199,7 +199,7 @@ def upgrade_v41_to_v42(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         """Delete the table with balancer events"""
         write_cursor.execute('DROP TABLE yearn_vaults_events')
         write_cursor.execute(
-            'DELETE FROM used_query_ranges WHERE name LIKE "yearn_vaults%"',
+            "DELETE FROM used_query_ranges WHERE name LIKE 'yearn_vaults%'",
         )
 
     @progress_step(description='Deleting orphan events.')

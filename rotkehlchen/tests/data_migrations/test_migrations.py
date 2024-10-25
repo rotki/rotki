@@ -191,7 +191,7 @@ def test_migration_1(database):
         )
         cursor = database.conn.cursor()
         result = cursor.execute(
-            'SELECT COUNT(*) from used_query_ranges WHERE name="bittrex_trades"',
+            "SELECT COUNT(*) from used_query_ranges WHERE name='bittrex_trades'",
         )
         assert result.fetchone()[0] == 1
 
@@ -362,13 +362,13 @@ def test_migration_10(
     with GlobalDBHandler().conn.write_ctx() as write_cursor:
         # replace the packaged db polygon pos etherscan node for the bad one
         # propagated in the data repo
-        write_cursor.execute('DELETE from default_rpc_nodes WHERE name="polygon pos etherscan"')
+        write_cursor.execute("DELETE from default_rpc_nodes WHERE name='polygon pos etherscan'")
         write_cursor.execute(
             'INSERT OR IGNORE INTO default_rpc_nodes(name, endpoint, owned, active, weight, blockchain) '  # noqa: E501
             'VALUES (?, ?, ?, ?, ?, ?)',
             ('polygon etherscan', '', 0, 1, '0.25', 'POLYGON_POS'),
         )
-        assert write_cursor.execute('SELECT COUNT(*) FROM default_rpc_nodes WHERE name="polygon etherscan"').fetchone()[0] == 1  # noqa: E501
+        assert write_cursor.execute("SELECT COUNT(*) FROM default_rpc_nodes WHERE name='polygon etherscan'").fetchone()[0] == 1  # noqa: E501
 
     avalanche_addresses = [ethereum_accounts[1], ethereum_accounts[3]]
     optimism_addresses = [ethereum_accounts[2], ethereum_accounts[3]]
@@ -398,11 +398,11 @@ def test_migration_10(
         )
 
     with GlobalDBHandler().conn.write_ctx() as write_cursor:  # check the global db for the polygon etherscan node  # noqa: E501
-        assert write_cursor.execute('SELECT COUNT(*) FROM default_rpc_nodes WHERE name="polygon etherscan"').fetchone()[0] == 0  # noqa: E501
-        assert write_cursor.execute('SELECT COUNT(*) FROM default_rpc_nodes WHERE name="polygon pos etherscan"').fetchone()[0] == 1  # noqa: E501
+        assert write_cursor.execute("SELECT COUNT(*) FROM default_rpc_nodes WHERE name='polygon etherscan'").fetchone()[0] == 0  # noqa: E501
+        assert write_cursor.execute("SELECT COUNT(*) FROM default_rpc_nodes WHERE name='polygon pos etherscan'").fetchone()[0] == 1  # noqa: E501
     with rotki.data.db.user_write() as write_cursor:  # check the user db for the polygon etherscan node  # noqa: E501
-        assert write_cursor.execute('SELECT COUNT(*) FROM rpc_nodes WHERE name="polygon etherscan"').fetchone()[0] == 0  # noqa: E501
-        assert write_cursor.execute('SELECT COUNT(*) FROM rpc_nodes WHERE name="polygon pos etherscan"').fetchone()[0] == 1  # noqa: E501
+        assert write_cursor.execute("SELECT COUNT(*) FROM rpc_nodes WHERE name='polygon etherscan'").fetchone()[0] == 0  # noqa: E501
+        assert write_cursor.execute("SELECT COUNT(*) FROM rpc_nodes WHERE name='polygon pos etherscan'").fetchone()[0] == 1  # noqa: E501
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -555,7 +555,7 @@ def test_migration_18(rotkehlchen_api_server: 'APIServer') -> None:
         )
         spam_transaction_id = spam_transaction.get_or_query_db_id(cursor)
         assert json.loads(cursor.execute(  # make sure manual oracle is there before the migration
-            'SELECT value from settings where name="current_price_oracles"',
+            "SELECT value from settings where name='current_price_oracles'",
         ).fetchone()[0]) == ['coingecko', 'cryptocompare', 'manualcurrent', 'defillama']
 
     with rotki.data.db.conn.write_ctx() as write_cursor:
@@ -608,7 +608,7 @@ def test_migration_18(rotkehlchen_api_server: 'APIServer') -> None:
         assert {x[0] for x in cursor.execute('SELECT tx_hash FROM evm_transactions').fetchall()} == set(kept_txs + bad_txs + [spam_hash])  # make sure they are all written in the DB  # noqa: E501
 
         assert cursor.execute(  # make sure the given tokens were marked as ignored
-            'SELECT COUNT(*) FROM multisettings WHERE name="ignored_asset" AND value IN (?, ?, ?, ?)',  # noqa: E501
+            "SELECT COUNT(*) FROM multisettings WHERE name='ignored_asset' AND value IN (?, ?, ?, ?)",  # noqa: E501
             [token.identifier for token in tokens],
         ).fetchone()[0] == len(tokens)
 
@@ -626,7 +626,7 @@ def test_migration_18(rotkehlchen_api_server: 'APIServer') -> None:
     with rotki.data.db.conn.read_ctx() as cursor:
         result_kept_txs = {x[0] for x in cursor.execute('SELECT tx_hash FROM evm_transactions').fetchall()}  # noqa: E501
         assert cursor.execute(  # now make sure they are no longer ignored
-            'SELECT COUNT(*) FROM multisettings WHERE name="ignored_asset" AND value IN (?, ?, ?, ?)',  # noqa: E501
+            "SELECT COUNT(*) FROM multisettings WHERE name='ignored_asset' AND value IN (?, ?, ?, ?)",  # noqa: E501
             [token.identifier for token in tokens],
         ).fetchone()[0] == 0
 
@@ -635,7 +635,7 @@ def test_migration_18(rotkehlchen_api_server: 'APIServer') -> None:
             (spam_transaction_id,),
         ).fetchone()[0] == 0
         assert json.loads(cursor.execute(  # make sure manual oracle is gone after the migration
-            'SELECT value from settings where name="current_price_oracles"',
+            "SELECT value from settings where name='current_price_oracles'",
         ).fetchone()[0]) == ['coingecko', 'cryptocompare', 'defillama']
 
     for token in tokens:
@@ -657,7 +657,7 @@ def test_new_db_remembers_last_migration_even_if_no_migrations_run(database):
     at the time of creation even if no migration has actually ran"""
     rotki = MockRotkiForMigrations(database)
     with rotki.data.db.conn.read_ctx() as cursor:
-        cursor.execute('SELECT value FROM settings WHERE name="last_data_migration"')
+        cursor.execute("SELECT value FROM settings WHERE name='last_data_migration'")
         assert cursor.fetchone() is None
 
     migration_patch = patch(
@@ -668,7 +668,7 @@ def test_new_db_remembers_last_migration_even_if_no_migrations_run(database):
         DataMigrationManager(rotki).maybe_migrate_data()
 
     with rotki.data.db.conn.read_ctx() as cursor:
-        cursor.execute('SELECT value FROM settings WHERE name="last_data_migration"')
+        cursor.execute("SELECT value FROM settings WHERE name='last_data_migration'")
         assert int(cursor.fetchone()[0]) == LAST_DATA_MIGRATION
 
 

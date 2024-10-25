@@ -70,7 +70,7 @@ log = RotkehlchenLogsAdapter(logger)
 def filter_ignore_asset_query(include_ignored_assets: bool = False) -> str:
     """Create and return the subquery to filter ignored assets. If `include_ignored_assets`
     is true then the filter is returned to include them."""
-    ignored_asset_subquery = 'SELECT value FROM multisettings WHERE name="ignored_asset")'
+    ignored_asset_subquery = "SELECT value FROM multisettings WHERE name='ignored_asset')"
     if include_ignored_assets:
         return f'WHERE (asset IN ({ignored_asset_subquery}) '
     return f'WHERE (asset IS NULL OR asset NOT IN ({ignored_asset_subquery}) '

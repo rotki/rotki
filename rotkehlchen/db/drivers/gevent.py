@@ -442,7 +442,7 @@ class DBConnection:
                 f'already exists. Current savepoints: {list(self.savepoints)}',
             )
         cursor = self.cursor()
-        cursor.execute(f'SAVEPOINT "{savepoint_name}"')
+        cursor.execute(f"SAVEPOINT '{savepoint_name}'")
         self.savepoints[savepoint_name] = None
         self.savepoint_greenlet_id = current_id
         return cursor, savepoint_name
@@ -465,7 +465,7 @@ class DBConnection:
                 f'Incorrect use of savepoints! Wanted to {rollback_or_release.lower()} savepoint '
                 f'{savepoint_name}, but it is not present in the stack: {list_savepoints}',
             )
-        self.execute(f'{rollback_or_release} SAVEPOINT "{savepoint_name}"')
+        self.execute(f"{rollback_or_release} SAVEPOINT '{savepoint_name}'")
 
         # Release all savepoints until, and including, the one with name `savepoint_name`.
         # For rollback we don't remove the savepoints since they are not released yet.

@@ -103,7 +103,7 @@ def export_assets_from_file(
             log.error(e)
 
     with globaldb.conn.read_ctx() as gdb_cursor:
-        query = gdb_cursor.execute('SELECT value from settings WHERE name="version";')
+        query = gdb_cursor.execute("SELECT value from settings WHERE name='version';")
         version = query.fetchone()[0]
         data = {
             'version': version,

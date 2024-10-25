@@ -79,10 +79,10 @@ def upgrade_v42_to_v43(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
                 (HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED),
             ).fetchone()[0]
             querystr = (
-                'DELETE FROM history_events WHERE identifier IN ('
-                'SELECT H.identifier from history_events H INNER JOIN evm_events_info E '
-                'ON H.identifier=E.identifier AND E.tx_hash IN '
-                '(SELECT tx_hash FROM evm_transactions) AND H.location != "o")'  # location 'o' is zksync lite  # noqa: E501
+                "DELETE FROM history_events WHERE identifier IN ("
+                "SELECT H.identifier from history_events H INNER JOIN evm_events_info E "
+                "ON H.identifier=E.identifier AND E.tx_hash IN "
+                "(SELECT tx_hash FROM evm_transactions) AND H.location != 'o')"  # location 'o' is zksync lite  # noqa: E501
             )
             bindings: tuple = ()
             if customized_events != 0:

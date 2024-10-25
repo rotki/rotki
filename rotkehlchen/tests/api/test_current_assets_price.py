@@ -397,7 +397,8 @@ def test_get_all_current_prices(rotkehlchen_api_server):
     # Check that the old ETH -> EUR price has become historical
     with GlobalDBHandler().conn.read_ctx() as cursor:
         cursor.execute(
-            'SELECT source_type FROM price_history WHERE from_asset="ETH" AND price="10"',
+            'SELECT source_type FROM price_history WHERE from_asset=? AND price=?',
+            ('ETH', '10'),
         )
         assert cursor.fetchone()[0] == HistoricalPriceOracle.MANUAL.serialize_for_db()
 

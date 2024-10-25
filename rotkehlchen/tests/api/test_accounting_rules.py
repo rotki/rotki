@@ -618,10 +618,11 @@ def test_import_export_accounting_rules(rotkehlchen_api_server: 'APIServer') -> 
         # edit the rules and setting properties
         with rotkehlchen_api_server.rest_api.rotkehlchen.data.db.conn.write_ctx() as write_cursor:
             write_cursor.execute(
-                'UPDATE accounting_rules SET identifier = 83 WHERE identifier = 82;',
+                'UPDATE accounting_rules SET identifier=83 WHERE identifier=82',
             )
             write_cursor.execute(
-                'UPDATE linked_rules_properties SET setting_name = "include_gas_costs" WHERE identifier = 2;',  # noqa: E501
+                'UPDATE linked_rules_properties SET setting_name=? WHERE identifier=?',
+                ('include_gas_costs', '2'),
             )
 
         response = requests.put(

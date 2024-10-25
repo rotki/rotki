@@ -136,33 +136,33 @@ def test_upgrade_v2_v3(globaldb: GlobalDBHandler, messages_aggregator):
         assert actual_assets_num == ASSETS_IN_V2_GLOBALDB + assets_inserted_by_update - len(OTHER_EVM_CHAINS_ASSETS)  # noqa: E501
 
         # Check that the properties of LUSD (ethereum token) have been correctly translated
-        weth_token_data = cursor.execute('SELECT identifier, token_kind, chain, address, decimals, protocol FROM evm_tokens WHERE address = "0x5f98805A4E8be255a32880FDeC7F6728C6568bA0"').fetchone()  # noqa: E501
+        weth_token_data = cursor.execute("SELECT identifier, token_kind, chain, address, decimals, protocol FROM evm_tokens WHERE address = '0x5f98805A4E8be255a32880FDeC7F6728C6568bA0'").fetchone()  # noqa: E501
         assert weth_token_data[0] == 'eip155:1/erc20:0x5f98805A4E8be255a32880FDeC7F6728C6568bA0'
         assert EvmTokenKind.deserialize_from_db(weth_token_data[1]) == EvmTokenKind.ERC20
         assert ChainID.deserialize_from_db(weth_token_data[2]) == ChainID.ETHEREUM
         assert weth_token_data[3] == '0x5f98805A4E8be255a32880FDeC7F6728C6568bA0'
         assert weth_token_data[4] == 18
         assert weth_token_data[5] is None
-        weth_asset_data = cursor.execute('SELECT symbol, coingecko, cryptocompare, forked, started, swapped_for FROM common_asset_details WHERE identifier = "eip155:1/erc20:0x5f98805A4E8be255a32880FDeC7F6728C6568bA0"').fetchone()  # noqa: E501
+        weth_asset_data = cursor.execute("SELECT symbol, coingecko, cryptocompare, forked, started, swapped_for FROM common_asset_details WHERE identifier = 'eip155:1/erc20:0x5f98805A4E8be255a32880FDeC7F6728C6568bA0'").fetchone()  # noqa: E501
         assert weth_asset_data[0] == 'LUSD'
         assert weth_asset_data[1] == 'liquity-usd'
         assert weth_asset_data[2] == 'LUSD'
         assert weth_asset_data[3] is None
         assert weth_asset_data[4] == 1617611299
         assert weth_asset_data[5] is None
-        weth_asset_data = cursor.execute('SELECT name, type FROM assets WHERE identifier = "eip155:1/erc20:0x5f98805A4E8be255a32880FDeC7F6728C6568bA0"').fetchone()  # noqa: E501
+        weth_asset_data = cursor.execute("SELECT name, type FROM assets WHERE identifier = 'eip155:1/erc20:0x5f98805A4E8be255a32880FDeC7F6728C6568bA0'").fetchone()  # noqa: E501
         assert weth_asset_data[0] == 'LUSD Stablecoin'
         assert AssetType.deserialize_from_db(weth_asset_data[1]) == AssetType.EVM_TOKEN
 
         # Check that a normal asset also gets correctly mapped
-        weth_asset_data = cursor.execute('SELECT symbol, coingecko, cryptocompare, forked, started, swapped_for FROM common_asset_details WHERE identifier = "BCH"').fetchone()  # noqa: E501
+        weth_asset_data = cursor.execute("SELECT symbol, coingecko, cryptocompare, forked, started, swapped_for FROM common_asset_details WHERE identifier = 'BCH'").fetchone()  # noqa: E501
         assert weth_asset_data[0] == 'BCH'
         assert weth_asset_data[1] == 'bitcoin-cash'
         assert weth_asset_data[2] is None
         assert weth_asset_data[3] == 'BTC'
         assert weth_asset_data[4] == 1501593374
         assert weth_asset_data[5] is None
-        weth_asset_data = cursor.execute('SELECT name, type FROM assets WHERE identifier = "BCH"').fetchone()  # noqa: E501
+        weth_asset_data = cursor.execute("SELECT name, type FROM assets WHERE identifier = 'BCH'").fetchone()  # noqa: E501
         assert weth_asset_data[0] == 'Bitcoin Cash'
         assert AssetType.deserialize_from_db(weth_asset_data[1]) == AssetType.OWN_CHAIN
 
@@ -183,7 +183,7 @@ def test_upgrade_v2_v3(globaldb: GlobalDBHandler, messages_aggregator):
         # token. Here we check that its `swapped_for` field is updated properly.
         # 1. Check that FLO asset exists
         flo_swapped_for = cursor.execute(
-            'SELECT swapped_for FROM common_asset_details WHERE identifier="FLO"',
+            "SELECT swapped_for FROM common_asset_details WHERE identifier='FLO'",
         ).fetchone()
         assert flo_swapped_for is not None
         # 2. Check that its `swapped_for` was updated properly
@@ -194,9 +194,9 @@ def test_upgrade_v2_v3(globaldb: GlobalDBHandler, messages_aggregator):
         assert found_assets == 1
 
         # Check that new evm tokens have been correctly upgraded in price_history. Checking BIFI
-        cursor.execute('SELECT price FROM price_history WHERE from_asset == "eip155:56/erc20:0xCa3F508B8e4Dd382eE878A314789373D80A5190A"')  # noqa: E501
+        cursor.execute("SELECT price FROM price_history WHERE from_asset == 'eip155:56/erc20:0xCa3F508B8e4Dd382eE878A314789373D80A5190A'")  # noqa: E501
         assert cursor.fetchone()[0] == '464.99'
-        cursor.execute('SELECT price FROM price_history WHERE to_asset == "eip155:56/erc20:0xCa3F508B8e4Dd382eE878A314789373D80A5190A"')  # noqa: E501
+        cursor.execute("SELECT price FROM price_history WHERE to_asset == 'eip155:56/erc20:0xCa3F508B8e4Dd382eE878A314789373D80A5190A'")  # noqa: E501
         assert cursor.fetchone()[0] == '0.00215058388'
         cursor.execute(
             'SELECT COUNT(*) FROM price_history WHERE from_asset=? OR to_asset=?',
@@ -216,11 +216,11 @@ def test_upgrade_v3_v4(globaldb: GlobalDBHandler, messages_aggregator):
     with globaldb.conn.read_ctx() as cursor:
         assert globaldb.get_setting_value('version', 0) == 3
         cursor.execute(
-            'SELECT COUNT(*) FROM sqlite_master WHERE type="table" and name IN (?, ?)',
-            ('contract_abi', 'contract_data'),
+            'SELECT COUNT(*) FROM sqlite_master WHERE type=? and name IN (?, ?)',
+            ('table', 'contract_abi', 'contract_data'),
         )
         assert cursor.fetchone()[0] == 0
-        cursor.execute('SELECT COUNT(*) from evm_tokens WHERE protocol="yearn-v1"')
+        cursor.execute('SELECT COUNT(*) from evm_tokens WHERE protocol=?', ('yearn-v1',))
         assert cursor.fetchone()[0] == YEARN_V1_ASSETS_IN_V3
 
     # execute upgrade
@@ -236,8 +236,8 @@ def test_upgrade_v3_v4(globaldb: GlobalDBHandler, messages_aggregator):
     assert globaldb.get_setting_value('version', 0) == 4
     with globaldb.conn.read_ctx() as cursor:
         cursor.execute(
-            'SELECT COUNT(*) FROM sqlite_master WHERE type="table" and name IN (?, ?)',
-            ('contract_abi', 'contract_data'),
+            'SELECT COUNT(*) FROM sqlite_master WHERE type=? and name IN (?, ?)',
+            ('table', 'contract_abi', 'contract_data'),
         )
         assert cursor.fetchone()[0] == 2
         expected_contracts_length = 93 - 1 + 1 + 3 + 1  # len(eth_contracts) + 1 in dxdao file -1 by removing multicall1 + 3 the new optimism contracts + by adding liquity staking  # noqa: E501
@@ -302,7 +302,7 @@ def test_upgrade_v3_v4(globaldb: GlobalDBHandler, messages_aggregator):
         assert GlobalDBHandler.get_schema_version() == 4
 
         # test that the blockchain column is nullable
-        cursor.execute('INSERT INTO address_book(address, blockchain, name) VALUES ("0xc37b40ABdB939635068d3c5f13E7faF686F03B65", NULL, "yabir everywhere")')  # noqa: E501
+        cursor.execute("INSERT INTO address_book(address, blockchain, name) VALUES ('0xc37b40ABdB939635068d3c5f13E7faF686F03B65', NULL, 'yabir everywhere')")  # noqa: E501
 
         # test that address book entries were kept
         cursor.execute('SELECT * FROM address_book')
@@ -313,7 +313,7 @@ def test_upgrade_v3_v4(globaldb: GlobalDBHandler, messages_aggregator):
         ]
 
         # check that yearn tokens got their protocol updated
-        cursor.execute('SELECT COUNT(*) from evm_tokens WHERE protocol="yearn-v1"')
+        cursor.execute('SELECT COUNT(*) from evm_tokens WHERE protocol=?', ('yearn-v1',))
         assert cursor.fetchone()[0] == 0
         cursor.execute('SELECT COUNT(*) from evm_tokens WHERE protocol=?', (YEARN_VAULTS_V1_PROTOCOL,))  # noqa: E501
         assert cursor.fetchone()[0] == YEARN_V1_ASSETS_IN_V3
@@ -330,8 +330,8 @@ def test_upgrade_v4_v5(globaldb: GlobalDBHandler, messages_aggregator):
     with globaldb.conn.read_ctx() as cursor:
         assert globaldb.get_setting_value('version', 0) == 4
         cursor.execute(
-            'SELECT COUNT(*) FROM sqlite_master WHERE type="table" and name=?',
-            ('default_rpc_nodes',),
+            'SELECT COUNT(*) FROM sqlite_master WHERE type=? and name=?',
+            ('table', 'default_rpc_nodes'),
         )
         assert cursor.fetchone()[0] == 0
         last_queried_ts = globaldb_get_general_cache_last_queried_ts_by_key(
@@ -365,8 +365,8 @@ def test_upgrade_v4_v5(globaldb: GlobalDBHandler, messages_aggregator):
 
     with globaldb.conn.read_ctx() as cursor:
         cursor.execute(
-            'SELECT COUNT(*) FROM sqlite_master WHERE type="table" and name=?',
-            ('default_rpc_nodes',),
+            'SELECT COUNT(*) FROM sqlite_master WHERE type=? and name=?',
+            ('table', 'default_rpc_nodes'),
         )
         assert cursor.fetchone()[0] == 1
 
@@ -410,8 +410,8 @@ def test_upgrade_v5_v6(globaldb: GlobalDBHandler, messages_aggregator):
     with globaldb.conn.read_ctx() as cursor:
         # check that unique_cache table is not present in the database
         cursor.execute(
-            'SELECT COUNT(*) FROM sqlite_master WHERE type="table" and name=?',
-            ('unique_cache',),
+            'SELECT COUNT(*) FROM sqlite_master WHERE type=? and name=?',
+            ('table', 'unique_cache'),
         )
         assert cursor.fetchone()[0] == 0
         # get number of entries in general_cache before upgrade
@@ -476,8 +476,8 @@ def test_upgrade_v5_v6(globaldb: GlobalDBHandler, messages_aggregator):
     with globaldb.conn.read_ctx() as cursor:
         # check that unique_cache table is present in the database
         cursor.execute(
-            'SELECT COUNT(*) FROM sqlite_master WHERE type="table" and name=?',
-            ('unique_cache',),
+            'SELECT COUNT(*) FROM sqlite_master WHERE type=? and name=?',
+            ('table', 'unique_cache'),
         )
         assert cursor.fetchone()[0] == 1
         # check that of dummy entry, only first value is transferred to unique_cache
@@ -654,11 +654,11 @@ def test_upgrade_v7_v8(globaldb: GlobalDBHandler, messages_aggregator):
             'SELECT rowid, collection_id, asset FROM multiasset_mappings;',
         ).fetchall()
 
-        cached_lp_tokens = set(cursor.execute('SELECT value FROM general_cache WHERE key LIKE "CURVE_LP_TOKENS%"').fetchall())  # noqa: E501
-        cached_pool_tokens = set(cursor.execute('SELECT value FROM general_cache WHERE key LIKE "CURVE_POOL_TOKENS%"').fetchall())  # noqa: E501
-        cached_underlying_tokens = set(cursor.execute('SELECT value FROM general_cache WHERE key LIKE "CURVE_POOL_UNDERLYING_TOKENS%"').fetchall())  # noqa: E501
-        cached_gauges = set(cursor.execute('SELECT value FROM unique_cache WHERE key LIKE "CURVE_GAUGE_ADDRESS%"').fetchall())  # noqa: E501
-        cached_pools = set(cursor.execute('SELECT value FROM unique_cache WHERE key LIKE "CURVE_POOL_ADDRESS%"').fetchall())  # noqa: E501
+        cached_lp_tokens = set(cursor.execute("SELECT value FROM general_cache WHERE key LIKE 'CURVE_LP_TOKENS%'").fetchall())  # noqa: E501
+        cached_pool_tokens = set(cursor.execute("SELECT value FROM general_cache WHERE key LIKE 'CURVE_POOL_TOKENS%'").fetchall())  # noqa: E501
+        cached_underlying_tokens = set(cursor.execute("SELECT value FROM general_cache WHERE key LIKE 'CURVE_POOL_UNDERLYING_TOKENS%'").fetchall())  # noqa: E501
+        cached_gauges = set(cursor.execute("SELECT value FROM unique_cache WHERE key LIKE 'CURVE_GAUGE_ADDRESS%'").fetchall())  # noqa: E501
+        cached_pools = set(cursor.execute("SELECT value FROM unique_cache WHERE key LIKE 'CURVE_POOL_ADDRESS%'").fetchall())  # noqa: E501
 
         assert len(cached_lp_tokens) == 973
         assert len(cached_pool_tokens) == 555
@@ -667,10 +667,10 @@ def test_upgrade_v7_v8(globaldb: GlobalDBHandler, messages_aggregator):
         assert len(cached_pools) == 973
 
         # cache with new keys doesn't exist yet
-        assert cursor.execute('SELECT COUNT(*) FROM general_cache WHERE key LIKE "CURVE_LP_TOKENS1%"').fetchone()[0] == 0  # noqa: E501
-        assert cursor.execute('SELECT COUNT(*) FROM general_cache WHERE key LIKE "CURVE_POOL_TOKENS1%"').fetchone()[0] == 0  # noqa: E501
-        assert cursor.execute('SELECT COUNT(*) FROM unique_cache WHERE key LIKE "CURVE_GAUGE_ADDRESS1%"').fetchone()[0] == 0  # noqa: E501
-        assert cursor.execute('SELECT COUNT(*) FROM unique_cache WHERE key LIKE "CURVE_POOL_ADDRESS1%"').fetchone()[0] == 0  # noqa: E501
+        assert cursor.execute("SELECT COUNT(*) FROM general_cache WHERE key LIKE 'CURVE_LP_TOKENS1%'").fetchone()[0] == 0  # noqa: E501
+        assert cursor.execute("SELECT COUNT(*) FROM general_cache WHERE key LIKE 'CURVE_POOL_TOKENS1%'").fetchone()[0] == 0  # noqa: E501
+        assert cursor.execute("SELECT COUNT(*) FROM unique_cache WHERE key LIKE 'CURVE_GAUGE_ADDRESS1%'").fetchone()[0] == 0  # noqa: E501
+        assert cursor.execute("SELECT COUNT(*) FROM unique_cache WHERE key LIKE 'CURVE_POOL_ADDRESS1%'").fetchone()[0] == 0  # noqa: E501
 
         # before update, the cache is not eligible to refresh, because last_queried_ts is ts_now()
         cursor.execute('UPDATE general_cache SET last_queried_ts=? WHERE key LIKE ?', (ts_now(), 'CURVE_LP_TOKENS%'))  # noqa: E501
@@ -744,19 +744,19 @@ def test_upgrade_v7_v8(globaldb: GlobalDBHandler, messages_aggregator):
         ).fetchone()[0] == 1
 
         # previous keys were deleted
-        assert cursor.execute('SELECT COUNT(*) FROM general_cache WHERE key LIKE "CURVE_LP_TOKENS0x%"').fetchone()[0] == 0  # noqa: E501
-        assert cursor.execute('SELECT COUNT(*) FROM general_cache WHERE key LIKE "CURVE_POOL_TOKENS0x%"').fetchone()[0] == 0  # noqa: E501
-        assert cursor.execute('SELECT COUNT(*) FROM unique_cache WHERE key LIKE "CURVE_GAUGE_ADDRESS0x%"').fetchone()[0] == 0  # noqa: E501
-        assert cursor.execute('SELECT COUNT(*) FROM unique_cache WHERE key LIKE "CURVE_POOL_ADDRESS0x%"').fetchone()[0] == 0  # noqa: E501
+        assert cursor.execute("SELECT COUNT(*) FROM general_cache WHERE key LIKE 'CURVE_LP_TOKENS0x%'").fetchone()[0] == 0  # noqa: E501
+        assert cursor.execute("SELECT COUNT(*) FROM general_cache WHERE key LIKE 'CURVE_POOL_TOKENS0x%'").fetchone()[0] == 0  # noqa: E501
+        assert cursor.execute("SELECT COUNT(*) FROM unique_cache WHERE key LIKE 'CURVE_GAUGE_ADDRESS0x%'").fetchone()[0] == 0  # noqa: E501
+        assert cursor.execute("SELECT COUNT(*) FROM unique_cache WHERE key LIKE 'CURVE_POOL_ADDRESS0x%'").fetchone()[0] == 0  # noqa: E501
 
         # values are same as in v7 with key containing the chain id
-        assert set(cursor.execute('SELECT value FROM general_cache WHERE key LIKE "CURVE_LP_TOKENS1%"').fetchall()) == cached_lp_tokens  # noqa: E501
-        assert set(cursor.execute('SELECT value FROM general_cache WHERE key LIKE "CURVE_POOL_TOKENS1%"').fetchall()) == cached_pool_tokens  # noqa: E501
-        assert set(cursor.execute('SELECT value FROM unique_cache WHERE key LIKE "CURVE_GAUGE_ADDRESS1%"').fetchall()) == cached_gauges  # noqa: E501
-        assert set(cursor.execute('SELECT value FROM unique_cache WHERE key LIKE "CURVE_POOL_ADDRESS1%"').fetchall()) == cached_pools  # noqa: E501
+        assert set(cursor.execute("SELECT value FROM general_cache WHERE key LIKE 'CURVE_LP_TOKENS1%'").fetchall()) == cached_lp_tokens  # noqa: E501
+        assert set(cursor.execute("SELECT value FROM general_cache WHERE key LIKE 'CURVE_POOL_TOKENS1%'").fetchall()) == cached_pool_tokens  # noqa: E501
+        assert set(cursor.execute("SELECT value FROM unique_cache WHERE key LIKE 'CURVE_GAUGE_ADDRESS1%'").fetchall()) == cached_gauges  # noqa: E501
+        assert set(cursor.execute("SELECT value FROM unique_cache WHERE key LIKE 'CURVE_POOL_ADDRESS1%'").fetchall()) == cached_pools  # noqa: E501
 
         # CURVE_POOL_UNDERLYING_TOKENS should be deleted
-        assert cursor.execute('SELECT COUNT(*) FROM general_cache WHERE key LIKE "CURVE_POOL_UNDERLYING_TOKENS%"').fetchone()[0] == 0  # noqa: E501
+        assert cursor.execute("SELECT COUNT(*) FROM general_cache WHERE key LIKE 'CURVE_POOL_UNDERLYING_TOKENS%'").fetchone()[0] == 0  # noqa: E501
 
         # ensure that now curve cache should be eligible to update
         assert should_update_protocol_cache(CacheType.CURVE_LP_TOKENS, '1') is True
@@ -766,7 +766,7 @@ def test_upgrade_v7_v8(globaldb: GlobalDBHandler, messages_aggregator):
         globaldb.conn.write_ctx() as write_cursor,
     ):
         write_cursor.execute(
-            'INSERT INTO contract_abi(id, value, name) SELECT 100, value, "yabir" FROM contract_abi WHERE id=1',  # noqa: E501
+            "INSERT INTO contract_abi(id, value, name) SELECT 100, value, 'yabir' FROM contract_abi WHERE id=1",  # noqa: E501
         )  # test that raises unique error when trying to copy an existing abi
 
 
@@ -790,8 +790,8 @@ def test_upgrade_v8_v9(globaldb: GlobalDBHandler, messages_aggregator):
             inserted_rows,
         )
         write_cursor.execute(
-            'INSERT OR REPLACE INTO general_cache ("key", "value", "last_queried_ts") '
-            'VALUES (?, ?, ?);',
+            "INSERT OR REPLACE INTO general_cache ('key', 'value', 'last_queried_ts') "
+            "VALUES (?, ?, ?);",
             ('CURVE_LP_TOKENS1', '0xEd4064f376cB8d68F770FB1Ff088a3d0F3FF5c4d', 0),
         )  # entry to ensure that cache with wrong entries gets cleared correctly
         write_cursor.execute(
@@ -845,7 +845,7 @@ def test_upgrade_v8_v9(globaldb: GlobalDBHandler, messages_aggregator):
             "SELECT * FROM price_history_source_types WHERE type IN ('G', 'H') AND seq IN (7, 8);",
         ).fetchall()) == 2
         assert cursor.execute(
-            'SELECT last_queried_ts FROM general_cache WHERE key LIKE "CURVE_LP_TOKENS%" '
+            "SELECT last_queried_ts FROM general_cache WHERE key LIKE 'CURVE_LP_TOKENS%' "
             'ORDER BY last_queried_ts ASC LIMIT 2',
         ).fetchall() == [(1718795451,), (1718795451,)]
         assert cursor.execute(  # Check that the two underlying tokens that havethemselves as underlying have been removed  # noqa: E501
@@ -880,7 +880,7 @@ def test_unfinished_upgrades(globaldb: GlobalDBHandler, messages_aggregator):
         sql_vm_instructions_cb=0,
     )
     with backup_connection.write_ctx() as write_cursor:
-        write_cursor.execute('INSERT INTO settings VALUES("is_backup", "Yes")')  # mark as a backup  # noqa: E501
+        write_cursor.execute("INSERT INTO settings VALUES('is_backup', 'Yes')")  # mark as a backup  # noqa: E501
     backup_connection.close()
 
     globaldb = create_globaldb(globaldb._data_directory, 0, messages_aggregator)  # Now the backup should be used  # noqa: E501
@@ -888,7 +888,7 @@ def test_unfinished_upgrades(globaldb: GlobalDBHandler, messages_aggregator):
     # Check that there is no setting left
     assert globaldb.get_setting_value('ongoing_upgrade_from_version', -1) == -1
     with globaldb.conn.read_ctx() as cursor:
-        assert cursor.execute('SELECT value FROM settings WHERE name="is_backup"').fetchone()[0] == 'Yes'  # noqa: E501
+        assert cursor.execute('SELECT value FROM settings WHERE name=?', ('is_backup',)).fetchone()[0] == 'Yes'  # noqa: E501
     globaldb.cleanup()
 
 
@@ -901,7 +901,7 @@ def test_applying_all_upgrade(globaldb: GlobalDBHandler, messages_aggregator):
     # Check the state before upgrading
     assert globaldb.get_setting_value('version', 0) == 2
     with globaldb.conn.cursor() as cursor:
-        assert cursor.execute('SELECT COUNT(*) from assets WHERE identifier="eip155:/erc20:0x32c6fcC9bC912C4A30cd53D2E606461e44B77AF2"').fetchone()[0] == 0  # noqa: E501
+        assert cursor.execute('SELECT COUNT(*) from assets WHERE identifier=?', ('eip155:/erc20:0x32c6fcC9bC912C4A30cd53D2E606461e44B77AF2',)).fetchone()[0] == 0  # noqa: E501
 
     maybe_upgrade_globaldb(
         connection=globaldb.conn,
@@ -912,4 +912,4 @@ def test_applying_all_upgrade(globaldb: GlobalDBHandler, messages_aggregator):
 
     assert globaldb.get_setting_value('version', 0) == GLOBAL_DB_VERSION
     with globaldb.conn.cursor() as cursor:
-        assert cursor.execute('SELECT COUNT(*) from assets WHERE identifier="eip155:/erc20:0x32c6fcC9bC912C4A30cd53D2E606461e44B77AF2"').fetchone()[0] == 1  # noqa: E501
+        assert cursor.execute('SELECT COUNT(*) from assets WHERE identifier=?', ('eip155:/erc20:0x32c6fcC9bC912C4A30cd53D2E606461e44B77AF2',)).fetchone()[0] == 1  # noqa: E501

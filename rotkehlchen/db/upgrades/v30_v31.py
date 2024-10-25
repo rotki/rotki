@@ -10,11 +10,11 @@ def _do_upgrade(cursor: 'DBCursor', progress_handler: 'DBUpgradeProgressHandler'
     progress_handler.new_step(name='Deleting all ignored ethereum transaction ids.')
     # Should exist -- but we are being extremely pedantic here
     ignored_actions_exists = cursor.execute(  # always returns value
-        'SELECT count(*) FROM sqlite_master WHERE type="table" AND name="ignored_actions";',
+        "SELECT count(*) FROM sqlite_master WHERE type='table' AND name='ignored_actions';",
     ).fetchone()[0]
     # Delete all ignored ethereum transaction ids
     if ignored_actions_exists == 1:
-        cursor.execute('DELETE FROM ignored_actions WHERE type="C";')
+        cursor.execute("DELETE FROM ignored_actions WHERE type='C';")
     else:
         cursor.execute("""
         CREATE TABLE IF NOT EXISTS ignored_actions (
@@ -26,8 +26,8 @@ def _do_upgrade(cursor: 'DBCursor', progress_handler: 'DBUpgradeProgressHandler'
 
     progress_handler.new_step(name='Deleting all kraken trades and their used query ranges.')
     # Delete kraken trades so they can be requeried
-    cursor.execute('DELETE FROM trades WHERE location="B";')
-    cursor.execute('DELETE FROM used_query_ranges WHERE name LIKE "kraken_trades_%";')
+    cursor.execute("DELETE FROM trades WHERE location='B';")
+    cursor.execute("DELETE FROM used_query_ranges WHERE name LIKE 'kraken_trades_%';")
 
     progress_handler.new_step(name='Updating eth2 tables.')
     # Add all new tables

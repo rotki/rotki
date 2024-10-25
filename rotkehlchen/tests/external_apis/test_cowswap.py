@@ -4,7 +4,7 @@ from rotkehlchen.types import SupportedBlockchain
 
 def test_get_data_from_database(database):
     with database.conn.write_ctx() as write_cursor:
-        write_cursor.execute('INSERT INTO cowswap_orders(identifier, order_type, raw_fee_amount) VALUES ("TEST_ORDER", "market", 12345678)')  # noqa: E501
+        write_cursor.execute("INSERT INTO cowswap_orders(identifier, order_type, raw_fee_amount) VALUES ('TEST_ORDER', 'market', 12345678)")  # noqa: E501
 
     assert CowswapAPI(
         database=database,

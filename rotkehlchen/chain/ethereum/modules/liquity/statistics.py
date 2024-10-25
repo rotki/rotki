@@ -34,7 +34,7 @@ QUERY_STABILITY_POOL_EVENTS = """
 WHERE event_identifier IN (
     SELECT A.event_identifier FROM history_events AS A JOIN history_events AS B ON
     A.event_identifier = B.event_identifier JOIN evm_events_info AS C ON A.identifier=C.identifier
-    WHERE C.counterparty = "liquity" AND B.asset=? AND B.subtype=?
+    WHERE C.counterparty = 'liquity' AND B.asset=? AND B.subtype=?
 ) AND type=? AND subtype=?
 """
 BINDINGS_STABILITY_POOL_EVENTS = [

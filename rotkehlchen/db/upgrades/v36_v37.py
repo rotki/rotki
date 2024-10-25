@@ -67,8 +67,8 @@ def upgrade_v36_to_v37(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
 
         This should always be at the start of this DB upgrade as it relies on the old schema.
         """
-        write_cursor.execute('INSERT OR IGNORE INTO location(location, seq) VALUES ("f", 38);')
-        write_cursor.execute('INSERT OR IGNORE INTO location(location, seq) VALUES ("g", 39);')
+        write_cursor.execute("INSERT OR IGNORE INTO location(location, seq) VALUES ('f', 38);")
+        write_cursor.execute("INSERT OR IGNORE INTO location(location, seq) VALUES ('g', 39);")
 
         write_cursor.execute(
             'SELECT chain_id, tx_hash FROM evm_transactions WHERE '
@@ -89,7 +89,7 @@ def upgrade_v36_to_v37(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         write_cursor.executemany(
             'UPDATE history_events SET location=? WHERE event_identifier=?', update_tuples,
         )
-        write_cursor.execute('DELETE FROM history_events_mappings WHERE name="chain_id"')
+        write_cursor.execute("DELETE FROM history_events_mappings WHERE name='chain_id'")
 
     @progress_step(description='Creating new tables.')
     def _create_new_tables(write_cursor: 'DBCursor') -> None:
@@ -226,8 +226,8 @@ def upgrade_v36_to_v37(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         Needs to be executed after _update_history_events_schema
         """
         write_cursor.execute(
-            'SELECT identifier, amount, usd_value FROM history_events WHERE location="B" AND '
-            'asset=? AND type="staking" AND subtype="reward" AND CAST(amount AS REAL) < 0',
+            "SELECT identifier, amount, usd_value FROM history_events WHERE location='B' AND "
+            "asset=? AND type='staking' AND subtype='reward' AND CAST(amount AS REAL) < 0",
             (A_ETH2.identifier,),
         )
         update_tuples: list[Any] = [(
@@ -246,8 +246,8 @@ def upgrade_v36_to_v37(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
 
         log.debug('Fixing kraken trades')
         write_cursor.execute(
-            'SELECT identifier, amount, usd_value FROM history_events WHERE location="B" AND '
-            'type="trade" AND subtype="none"',
+            "SELECT identifier, amount, usd_value FROM history_events WHERE location='B' AND "
+            "type='trade' AND subtype='none'",
         )
 
         trade_db_type = HistoryEventType.TRADE.serialize()
@@ -280,8 +280,8 @@ def upgrade_v36_to_v37(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
 
         log.debug('Fixing kraken withdrawals')  # deposits are all positive amount already
         write_cursor.execute(
-            'SELECT identifier, amount, usd_value FROM history_events WHERE location="B" AND '
-            'type="withdrawal"',
+            "SELECT identifier, amount, usd_value FROM history_events WHERE location='B' AND "
+            "type='withdrawal'",
         )
         update_tuples = [(
             str(-FVal(event_row[1])),
@@ -298,8 +298,8 @@ def upgrade_v36_to_v37(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         update_tuples = []
         grouped_events: dict[str, list[Any]] = defaultdict(list)
         write_cursor.execute(
-            'SELECT identifier, event_identifier, type, amount, usd_value FROM history_events '
-            'WHERE location="B" AND type IN ("spend", "receive") AND subtype="none"',
+            "SELECT identifier, event_identifier, type, amount, usd_value FROM history_events "
+            "WHERE location='B' AND type IN ('spend', 'receive') AND subtype='none'",
         )
         for row in write_cursor:
             grouped_events[row[1]].append(row)
@@ -371,13 +371,13 @@ def upgrade_v36_to_v37(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
             (f'{Location.FTXUS!s}\\_%', '\\'),
         )
         non_syncing_exchanges_in_db = write_cursor.execute(
-            'SELECT value FROM settings WHERE name="non_syncing_exchanges"',
+            "SELECT value FROM settings WHERE name='non_syncing_exchanges'",
         ).fetchone()
         if non_syncing_exchanges_in_db is not None:
             non_syncing_exchanges = json.loads(non_syncing_exchanges_in_db[0])
             new_values = [x for x in non_syncing_exchanges if x['location'] not in (Location.FTX.serialize(), Location.FTXUS.serialize())]  # noqa: E501
             write_cursor.execute(
-                'UPDATE settings SET value=? WHERE name="non_syncing_exchanges"',
+                "UPDATE settings SET value=? WHERE name='non_syncing_exchanges'",
                 (json.dumps(new_values),),
             )
 
@@ -385,6 +385,6 @@ def upgrade_v36_to_v37(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
     def _adjust_user_settings(write_cursor: 'DBCursor') -> None:
         """Adjust user settings, renaming a key that misbehaves in frontend transformation"""
         write_cursor.execute(
-            'UPDATE settings SET name="ssf_graph_multiplier" WHERE name="ssf_0graph_multiplier"')
+            "UPDATE settings SET name='ssf_graph_multiplier' WHERE name='ssf_0graph_multiplier'")
 
     perform_userdb_upgrade_steps(db=db, progress_handler=progress_handler)

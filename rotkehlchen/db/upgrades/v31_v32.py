@@ -33,8 +33,8 @@ def upgrade_v31_to_v32(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         - Make sure that no other event has duplicated sequence indexes
         """
         cursor.execute("""
-        DELETE FROM history_events where location="B" AND asset="KFEE" AND
-         type="trade" AND subtype=NULL;
+        DELETE FROM history_events where location='B' AND asset='KFEE' AND
+         type='trade' AND subtype=NULL;
         """)
 
         cursor.execute('SELECT event_identifier, sequence_index from history_events')
@@ -83,11 +83,11 @@ def upgrade_v31_to_v32(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
             UNIQUE(event_identifier, sequence_index)
         );""")
         cursor.execute('UPDATE history_events SET timestamp = timestamp / 10;')
-        cursor.execute('UPDATE history_events SET subtype = "deposit asset" WHERE subtype = "staking deposit asset";')  # noqa: E501
-        cursor.execute('UPDATE history_events SET subtype = "receive wrapped" WHERE subtype = "staking receive asset";')  # noqa: E501
-        cursor.execute('UPDATE history_events SET subtype = "remove asset", type = "staking" WHERE subtype = "staking remove asset" AND type = "unstaking";')  # noqa: E501
-        cursor.execute('UPDATE history_events SET subtype = "return wrapped", type = "staking" WHERE subtype = "staking receive asset" AND type = "unstaking";')  # noqa: E501
-        cursor.execute('UPDATE history_events SET type = "informational" WHERE subtype = "unknown";')  # noqa: E501
+        cursor.execute("UPDATE history_events SET subtype = 'deposit asset' WHERE subtype = 'staking deposit asset';")  # noqa: E501
+        cursor.execute("UPDATE history_events SET subtype = 'receive wrapped' WHERE subtype = 'staking receive asset';")  # noqa: E501
+        cursor.execute("UPDATE history_events SET subtype = 'remove asset', type = 'staking' WHERE subtype = 'staking remove asset' AND type = 'unstaking';")  # noqa: E501
+        cursor.execute("UPDATE history_events SET subtype = 'return wrapped', type = 'staking' WHERE subtype = 'staking receive asset' AND type = 'unstaking';")  # noqa: E501
+        cursor.execute("UPDATE history_events SET type = 'informational' WHERE subtype = 'unknown';")  # noqa: E501
         cursor.execute("""
         INSERT INTO history_events_copy (event_identifier, sequence_index, timestamp, location,
         location_label, asset, amount, usd_value, notes, type, subtype)
@@ -98,20 +98,20 @@ def upgrade_v31_to_v32(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         cursor.execute('DROP TABLE history_events;')
         cursor.execute('ALTER TABLE history_events_copy RENAME TO history_events;')
         cursor.execute(
-            'UPDATE history_events SET subtype="reward" WHERE type="staking" AND subtype IS NULL;',
+            "UPDATE history_events SET subtype='reward' WHERE type='staking' AND subtype IS NULL;",
         )
 
     @progress_step(description='Removing gitcoin.')
     def _remove_gitcoin(cursor: 'DBCursor') -> None:
         cursor.execute('DELETE from ledger_actions WHERE identifier IN (SELECT parent_id FROM ledger_actions_gitcoin_data)')  # noqa: E501
-        cursor.execute('DELETE from used_query_ranges WHERE name LIKE "gitcoingrants_%"')
+        cursor.execute("DELETE from used_query_ranges WHERE name LIKE 'gitcoingrants_%'")
         cursor.execute('DROP TABLE IF exists gitcoin_grant_metadata')
         cursor.execute('DROP TABLE IF exists ledger_actions_gitcoin_data')
         cursor.execute('DROP TABLE IF exists gitcoin_tx_type')
 
     @progress_step(description='Adding new tables.')
     def _add_new_tables(cursor: 'DBCursor') -> None:
-        cursor.execute('INSERT OR IGNORE INTO location(location, seq) VALUES ("d", 36)')
+        cursor.execute("INSERT OR IGNORE INTO location(location, seq) VALUES ('d', 36)")
         cursor.execute("""
         CREATE TABLE IF NOT EXISTS ethereum_internal_transactions (
         parent_tx_hash BLOB NOT NULL,
@@ -180,7 +180,7 @@ def upgrade_v31_to_v32(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
     @progress_step(description='Updating settings name for selected Binance markets.')
     def _update_settings_name_for_selected_binance_markets(cursor: 'DBCursor') -> None:
         cursor.execute("""
-        UPDATE user_credentials_mappings SET setting_name = ? WHERE setting_name = "PAIRS"
+        UPDATE user_credentials_mappings SET setting_name = ? WHERE setting_name = 'PAIRS'
         """, (BINANCE_MARKETS_KEY,))
 
     @progress_step(description='Updating manual balances tags.')

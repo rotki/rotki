@@ -107,7 +107,7 @@ def upgrade_v33_to_v34(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
             rate,
             NULL AS fee, /* no fee */
             NULL AS fee_currency, /* no fee */
-            "0x" || lower(hex(txhash)) AS link,
+            '0x' || lower(hex(txhash)) AS link,
             NULL AS notes /* no notes */
         FROM SWAPS
         UNION ALL /* using union all as there can be no duplicates so no need to handle them */

@@ -76,7 +76,7 @@ def upgrade_v40_to_v41(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
             (f'{Location.BITTREX!s}\\_%', '\\'),
         )
         non_syncing_exchanges_in_db = write_cursor.execute(
-            'SELECT value FROM settings WHERE name="non_syncing_exchanges"',
+            "SELECT value FROM settings WHERE name='non_syncing_exchanges'",
         ).fetchone()
         if non_syncing_exchanges_in_db is not None:
             try:
@@ -89,7 +89,7 @@ def upgrade_v40_to_v41(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
             else:
                 new_values = [x for x in non_syncing_exchanges if x['location'] != Location.BITTREX.serialize()]  # noqa: E501
                 write_cursor.execute(
-                    'UPDATE settings SET value=? WHERE name="non_syncing_exchanges"',
+                    "UPDATE settings SET value=? WHERE name='non_syncing_exchanges'",
                     (json.dumps(new_values),),
                 )
 
@@ -167,7 +167,7 @@ def upgrade_v40_to_v41(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         `address_name_priority` setting is used to determine which one to keep. Defaults to
         `DEFAULT_ADDRESS_NAME_PRIORITY`."""
         address_name_priority = write_cursor.execute(  # get priority settings
-            'SELECT value FROM settings WHERE name = "address_name_priority"',
+            "SELECT value FROM settings WHERE name = 'address_name_priority'",
         ).fetchone()
         if address_name_priority is not None:
             try:
