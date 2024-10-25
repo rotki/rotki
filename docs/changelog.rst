@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`8807` Binance CSVs with the new trade entry format should import correctly.
 * :bug:`-` Pending AAVE to claim from staking should now appear as balance in the address that is staking.
 * :bug:`-` Locked SAFE token balances for SAFE{Pass} should be properly detected during balance query again. 
 * :bug:`8777` ZKSync lite transactions should no longer be skipped under special circumstances.
