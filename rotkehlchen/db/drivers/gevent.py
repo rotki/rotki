@@ -37,6 +37,14 @@ class ContextError(Exception):
     """Intended to be raised when something is wrong with db context management"""
 
 
+def temporary_doublequote_assert(statement: str) -> None:
+    """Temporary assertion to make sure that double quotes do not make it in sqlite
+
+    Part of https://github.com/rotki/rotki/issues/6368 and should be removed once tested.
+    """
+    assert '"' not in statement or 'PRAGMA key=' in statement, f'Double quote in: {statement}'
+
+
 class DBCursor:
 
     def __init__(self, connection: 'DBConnection', cursor: UnderlyingCursor) -> None:
@@ -81,6 +89,7 @@ class DBCursor:
     def execute(self, statement: str, *bindings: Sequence) -> 'DBCursor':
         if __debug__:
             logger.trace(f'EXECUTE {statement}')
+            temporary_doublequote_assert(statement)
         try:
             self._cursor.execute(statement, *bindings)
         except (sqlcipher.InterfaceError, sqlite3.InterfaceError):  # pylint: disable=no-member
@@ -95,6 +104,7 @@ class DBCursor:
     def executemany(self, statement: str, *bindings: Sequence[Sequence]) -> 'DBCursor':
         if __debug__:
             logger.trace(f'EXECUTEMANY {statement}')
+            temporary_doublequote_assert(statement)
         self._cursor.executemany(statement, *bindings)
         if __debug__:
             logger.trace(f'FINISH EXECUTEMANY {statement}')
@@ -106,6 +116,7 @@ class DBCursor:
         """
         if __debug__:
             logger.trace(f'EXECUTESCRIPT {script}')
+            temporary_doublequote_assert(script)
         self._cursor.executescript(script)
         if __debug__:
             logger.trace(f'FINISH EXECUTESCRIPT {script}')
@@ -275,6 +286,7 @@ class DBConnection:
     def execute(self, statement: str, *bindings: Sequence) -> DBCursor:
         if __debug__:
             logger.trace(f'DB CONNECTION EXECUTE {statement}')
+            temporary_doublequote_assert(statement)
         underlying_cursor = self._conn.execute(statement, *bindings)
         if __debug__:
             logger.trace(f'FINISH DB CONNECTION EXECUTEMANY {statement}')
@@ -283,6 +295,7 @@ class DBConnection:
     def executemany(self, statement: str, *bindings: Sequence[Sequence]) -> DBCursor:
         if __debug__:
             logger.trace(f'DB CONNECTION EXECUTEMANY {statement}')
+            temporary_doublequote_assert(statement)
         underlying_cursor = self._conn.executemany(statement, *bindings)
         if __debug__:
             logger.trace(f'FINISH DB CONNECTION EXECUTEMANY {statement}')
@@ -294,6 +307,7 @@ class DBConnection:
         """
         if __debug__:
             logger.trace(f'DB CONNECTION EXECUTESCRIPT {script}')
+            temporary_doublequote_assert(script)
         underlying_cursor = self._conn.executescript(script)
         if __debug__:
             logger.trace(f'DB CONNECTION EXECUTESCRIPT {script}')
