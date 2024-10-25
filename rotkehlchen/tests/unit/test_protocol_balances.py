@@ -924,7 +924,7 @@ def test_extrafi_lending_balances(
 
     with globaldb.conn.read_ctx() as cursor:
         assert cursor.execute(
-            'SELECT key, value FROM unique_cache WHERE key LIKE "EXTRAFI_LENDING_RESERVES%"',
+            "SELECT key, value FROM unique_cache WHERE key LIKE 'EXTRAFI_LENDING_RESERVES%'",
         ).fetchall() == [(
             'EXTRAFI_LENDING_RESERVES1035',
             '0x9560e827aF36c94D2Ac33a39bCE1Fe78631088Db',
@@ -965,7 +965,7 @@ def test_extrafi_farm_balances(
 
     with globaldb.conn.read_ctx() as cursor:
         assert cursor.execute(
-            'SELECT key, value FROM unique_cache WHERE key LIKE "EXTRAFI_FARM_METADADATA%"',
+            "SELECT key, value FROM unique_cache WHERE key LIKE 'EXTRAFI_FARM_METADADATA%'",
         ).fetchall() == [(
             'EXTRAFI_FARM_METADADATA845320',
             '["0x61366A4e6b1DB1b85DD701f2f4BFa275EF271197", "0xA3d1a8DEB97B111454B294E2324EfAD13a9d8396", "0xB79DD08EA68A908A97220C76d19A6aA9cBDE4376"]',  # noqa: E501
@@ -991,10 +991,10 @@ def test_extrafi_cache(optimism_inquirer: 'OptimismInquirer', freezer):
     we requery again"""
     with GlobalDBHandler().conn.write_ctx() as write_cursor:
         write_cursor.execute(
-            'DELETE FROM general_cache WHERE key LIKE "EXTRAFI%"',
+            "DELETE FROM general_cache WHERE key LIKE 'EXTRAFI%'",
         )
         write_cursor.execute(
-            'DELETE FROM unique_cache WHERE key LIKE "EXTRAFI%"',
+            "DELETE FROM unique_cache WHERE key LIKE 'EXTRAFI%'",
         )
 
     start_ts = 1727436933

@@ -66,7 +66,7 @@ def _replace_assets_from_db(
 ) -> None:
     with connection.write_ctx() as cursor:
         cursor.executescript(f"""
-        ATTACH DATABASE "{sourcedb_path}" AS other_db;
+        ATTACH DATABASE '{sourcedb_path}' AS other_db;
         PRAGMA foreign_keys = OFF;
         DELETE FROM assets;
         DELETE FROM evm_tokens;
@@ -80,11 +80,11 @@ def _replace_assets_from_db(
         INSERT INTO common_asset_details SELECT * FROM other_db.common_asset_details;
         INSERT INTO asset_collections SELECT * FROM other_db.asset_collections;
         INSERT INTO multiasset_mappings SELECT * FROM other_db.multiasset_mappings;
-        INSERT OR REPLACE INTO settings(name, value) VALUES("{ASSETS_VERSION_KEY}",
-        (SELECT value FROM other_db.settings WHERE name="{ASSETS_VERSION_KEY}")
+        INSERT OR REPLACE INTO settings(name, value) VALUES('{ASSETS_VERSION_KEY}',
+        (SELECT value FROM other_db.settings WHERE name='{ASSETS_VERSION_KEY}')
         );
         PRAGMA foreign_keys = ON;
-        DETACH DATABASE "other_db";
+        DETACH DATABASE 'other_db';
         """)
 
 
@@ -138,6 +138,15 @@ class ParsedAssetData(NamedTuple):
     forked: str | None
 
 
+def replace_double_quotes(match_result: re.Match[str]) -> str:
+    """Utility function to act on double quote regex matching and also
+    escape single quotes inside the string literal body.
+
+    Should act on the matching of double_quotes_re"""
+    content = match_result.group(1).replace("'", "''")
+    return f"'{content}'"
+
+
 class AssetsUpdater:
 
     def __init__(self, msg_aggregator: 'MessagesAggregator') -> None:
@@ -149,8 +158,9 @@ class AssetsUpdater:
         self.evm_tokens_re = re.compile(r'.*INSERT +INTO +evm_tokens\( *identifier *, *token_kind *, *chain *, *address *, *decimals *, *protocol *\) *VALUES\(([^,]*?),([^,]*?),([^,]*?),([^,]*?),([^,]*?),([^,]*?)\).*')  # noqa: E501
         self.common_asset_details_re = re.compile(r'.*INSERT +INTO +common_asset_details\( *identifier *, *symbol *, *coingecko *, *cryptocompare *, *forked *, *started *, *swapped_for *\) *VALUES\((.*?),(.*?),(.*?),(.*?),(.*?),([^,]*?),([^,]*?)\).*')  # noqa: E501
         self.assets_collection_re = re.compile(r'.*INSERT +INTO +asset_collections\( *id *, *name *, *symbol *\) *VALUES +\(([^,]*?),([^,]*?),([^,]*?)\).*?')  # noqa: E501
-        self.multiasset_mappings_re = re.compile(r'.*INSERT +INTO +multiasset_mappings\( *collection_id *, *asset *\) *VALUES +\(([^,]*?), *"([^,]+?)"\).*?')  # noqa: E501
-        self.string_re = re.compile(r'.*"(.*?)".*')
+        self.multiasset_mappings_re = re.compile(r'.*INSERT +INTO +multiasset_mappings\( *collection_id *, *asset *\) *VALUES +\(([^,]*?), *([\'"])([^,]+?)\2\).*?')  # noqa: E501
+        self.string_re = re.compile(r'.*([\'"])(.*?)\1.*')
+        self.double_quotes_re = re.compile(r'\"(.*?)\"')
         self.branch = 'develop'
         if is_production():
             self.branch = 'master'
@@ -201,7 +211,7 @@ class AssetsUpdater:
     def _parse_value(self, value: str) -> str | int | None:
         match = self.string_re.match(value)
         if match is not None:
-            return match.group(1)
+            return match.group(2)
 
         value = value.strip()
         if value == 'NULL':
@@ -404,7 +414,7 @@ class AssetsUpdater:
             )
 
         groups = mapping_match.groups()
-        if len(groups) != 2:
+        if len(groups) != 3:
             log.error(f'Failed to find all elements in asset collection mapping {full_insert}')
             raise DeserializationError(
                 f'At asset DB update could not parse asset collection data out of {action}',
@@ -412,9 +422,9 @@ class AssetsUpdater:
 
         # check that the asset exists and so does the collection
         with connection.read_ctx() as cursor:
-            cursor.execute('SELECT COUNT(*) FROM assets where identifier=?', (groups[1],))
+            cursor.execute('SELECT COUNT(*) FROM assets where identifier=?', (groups[2],))
             if cursor.fetchone()[0] == 0:
-                raise UnknownAsset(groups[1])
+                raise UnknownAsset(groups[2])
 
             cursor.execute(
                 'SELECT COUNT(*) FROM asset_collections WHERE id=?',
@@ -434,7 +444,7 @@ class AssetsUpdater:
                     executeall(cursor, full_insert)
             except sqlite3.Error as e:
                 log.error(
-                    f'Failed to edit asset collection mapping with asset {groups[1]} '
+                    f'Failed to edit asset collection mapping with asset {groups[2]} '
                     f'and id {groups[0]}. {action}. Error: {e!s}',
                 )
 
@@ -530,9 +540,17 @@ class AssetsUpdater:
         lines = [x for x in text.splitlines() if x.strip() != '']
         try:  # strip() check above is to remove empty lines (say trailing newline in the file
             for action_raw, full_insert_raw in zip(*[iter(lines)] * 2, strict=True):
+
                 action: str = action_raw.strip()
                 if (full_insert := full_insert_raw.strip()) == '*':
                     full_insert = action
+
+                # We now enforce single quote. If any of the old updates some here
+                # with double quotes we need to replace them here
+                # https://github.com/rotki/rotki/issues/6368
+                # TODO: Get rid of all those
+                full_insert = self.double_quotes_re.sub(replace_double_quotes, full_insert)
+                action = self.double_quotes_re.sub(replace_double_quotes, action)
 
                 if (
                     (update_file_type in (  # handle update/delete for collections

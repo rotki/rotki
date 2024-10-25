@@ -68,7 +68,7 @@ def _populate_db_with_balances(write_cursor: 'DBCursor', db: 'DBHandler', ts: Ti
 
 
 def _populate_db_with_balances_unknown_asset(write_cursor: 'DBCursor', ts: Timestamp):
-    write_cursor.execute('INSERT INTO assets(identifier) VALUES ("YABIRXROTKI")')
+    write_cursor.execute('INSERT INTO assets(identifier) VALUES (?)', ('YABIRXROTKI',))
     serialized_balances = [
         (ts, 'BTC', '1.00', '178.44', BalanceType.ASSET.serialize_for_db()),
         (ts, 'YABIRXROTKI', '1.00', '87', BalanceType.ASSET.serialize_for_db()),

@@ -198,7 +198,7 @@ def data_migration_18(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgress
         we need to do it one more time here.
         """
         with rotki.data.db.conn.read_ctx() as cursor:
-            cursor.execute('SELECT value FROM settings WHERE name="current_price_oracles"')
+            cursor.execute("SELECT value FROM settings WHERE name='current_price_oracles'")
             if (data := cursor.fetchone()) is None:
                 return  # oracles not configured
 

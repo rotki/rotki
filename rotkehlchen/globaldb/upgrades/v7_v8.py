@@ -135,12 +135,12 @@ def migrate_to_v8(connection: 'DBConnection', progress_handler: 'DBUpgradeProgre
         as chain_id because at the time of this upgrade only ethereum
         tokens are present in the cache.
         """
-        write_cursor.execute('UPDATE general_cache SET key=replace(key, "CURVE_LP_TOKENS", "CURVE_LP_TOKENS1"), last_queried_ts=0')  # noqa: E501
-        write_cursor.execute('UPDATE general_cache SET key=replace(key, "CURVE_POOL_TOKENS", "CURVE_POOL_TOKENS1"), last_queried_ts=0')  # noqa: E501
-        write_cursor.execute('UPDATE unique_cache SET key=replace(key, "CURVE_GAUGE_ADDRESS", "CURVE_GAUGE_ADDRESS1"), last_queried_ts=0')  # noqa: E501
-        write_cursor.execute('UPDATE unique_cache SET key=replace(key, "CURVE_POOL_ADDRESS", "CURVE_POOL_ADDRESS1"), last_queried_ts=0')  # noqa: E501
+        write_cursor.execute("UPDATE general_cache SET key=replace(key, 'CURVE_LP_TOKENS', 'CURVE_LP_TOKENS1'), last_queried_ts=0")  # noqa: E501
+        write_cursor.execute("UPDATE general_cache SET key=replace(key, 'CURVE_POOL_TOKENS', 'CURVE_POOL_TOKENS1'), last_queried_ts=0")  # noqa: E501
+        write_cursor.execute("UPDATE unique_cache SET key=replace(key, 'CURVE_GAUGE_ADDRESS', 'CURVE_GAUGE_ADDRESS1'), last_queried_ts=0")  # noqa: E501
+        write_cursor.execute("UPDATE unique_cache SET key=replace(key, 'CURVE_POOL_ADDRESS', 'CURVE_POOL_ADDRESS1'), last_queried_ts=0")  # noqa: E501
         # remove CURVE_POOL_UNDERLYING_TOKENS because they are no longer needed
-        write_cursor.execute('DELETE FROM general_cache WHERE key LIKE "CURVE_POOL_UNDERLYING_TOKENS%"')  # noqa: E501
+        write_cursor.execute("DELETE FROM general_cache WHERE key LIKE 'CURVE_POOL_UNDERLYING_TOKENS%'")  # noqa: E501
 
     @progress_step('Updating contracts ABI schema.')
     def _update_contracts_abis(write_cursor: 'DBCursor') -> None:

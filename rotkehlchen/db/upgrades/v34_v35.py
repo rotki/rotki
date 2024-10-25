@@ -74,9 +74,9 @@ def upgrade_v34_to_v35(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
     @progress_step(description='Cleaning amm swaps.')
     def _clean_amm_swaps(cursor: 'DBCursor') -> None:
         """Since we remove the amm swaps, clean all related DB tables and entries"""
-        cursor.execute('DELETE FROM used_query_ranges WHERE name LIKE "uniswap_trades%";')
-        cursor.execute('DELETE FROM used_query_ranges WHERE name LIKE "sushiswap_trades%";')
-        cursor.execute('DELETE FROM used_query_ranges WHERE name LIKE "balancer_trades%";')
+        cursor.execute("DELETE FROM used_query_ranges WHERE name LIKE 'uniswap_trades%';")
+        cursor.execute("DELETE FROM used_query_ranges WHERE name LIKE 'sushiswap_trades%';")
+        cursor.execute("DELETE FROM used_query_ranges WHERE name LIKE 'balancer_trades%';")
         cursor.execute('DROP VIEW IF EXISTS combined_trades_view;')
         cursor.execute('DROP TABLE IF EXISTS amm_swaps;')
 
@@ -144,7 +144,7 @@ def upgrade_v34_to_v35(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
 
     @progress_step(description='Updating ignored asset identifiers to caip format.')
     def _update_ignored_assets_identifiers_to_caip_format(cursor: 'DBCursor') -> None:
-        cursor.execute('SELECT value FROM multisettings WHERE name="ignored_asset";')
+        cursor.execute("SELECT value FROM multisettings WHERE name='ignored_asset';")
         old_ids_to_caip_ids_mappings: list[tuple[str, str]] = []
         for (old_identifier,) in cursor:
             if old_identifier is not None and old_identifier.startswith(ETHEREUM_DIRECTIVE):
@@ -160,7 +160,7 @@ def upgrade_v34_to_v35(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
                 )
 
         cursor.executemany(
-            'UPDATE multisettings SET value=? WHERE value=? AND name="ignored_asset"',
+            "UPDATE multisettings SET value=? WHERE value=? AND name='ignored_asset'",
             old_ids_to_caip_ids_mappings,
         )
 
@@ -365,7 +365,7 @@ def upgrade_v34_to_v35(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         prioritized oracle.
         """
         current_oracles_order = cursor.execute(
-            'SELECT value FROM settings WHERE name="current_price_oracles"',
+            "SELECT value FROM settings WHERE name='current_price_oracles'",
         ).fetchone()
         if current_oracles_order is None:
             return
@@ -373,7 +373,7 @@ def upgrade_v34_to_v35(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         list_oracles_order: list = json.loads(current_oracles_order[0])
         list_oracles_order.insert(0, 'manualcurrent')
         cursor.execute(
-            'UPDATE settings SET value=? WHERE name="current_price_oracles"',
+            "UPDATE settings SET value=? WHERE name='current_price_oracles'",
             (json.dumps(list_oracles_order),),
         )
 

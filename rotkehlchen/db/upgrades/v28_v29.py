@@ -46,7 +46,7 @@ def _create_new_tables(cursor: 'DBCursor') -> None:
     last_price_asset TEXT,
     manual_price INTEGER NOT NULL CHECK (manual_price IN (0, 1)),
     owner_address TEXT,
-    blockchain TEXT GENERATED ALWAYS AS ("ETH") VIRTUAL,
+    blockchain TEXT GENERATED ALWAYS AS ('ETH') VIRTUAL,
     FOREIGN KEY(blockchain, owner_address) REFERENCES blockchain_accounts(blockchain, account) ON DELETE CASCADE,
     FOREIGN KEY (identifier) REFERENCES assets(identifier) ON UPDATE CASCADE,
     FOREIGN KEY (last_price_asset) REFERENCES assets(identifier) ON UPDATE CASCADE
@@ -88,7 +88,7 @@ def _upgrade_existing_tables(
     derivation_path TEXT NOT NULL,
     account_index INTEGER,
     derived_index INTEGER,
-    blockchain TEXT GENERATED ALWAYS AS ("BTC") VIRTUAL,
+    blockchain TEXT GENERATED ALWAYS AS ('BTC') VIRTUAL,
     FOREIGN KEY(blockchain, address) REFERENCES blockchain_accounts(blockchain, account) ON DELETE CASCADE
     FOREIGN KEY(xpub, derivation_path) REFERENCES xpubs(xpub, derivation_path) ON DELETE CASCADE
     PRIMARY KEY (address, xpub, derivation_path)

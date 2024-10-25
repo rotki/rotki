@@ -201,7 +201,7 @@ def upgrade_v43_to_v44(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
 
     @progress_step(description='Removing zksynclite used query ranges.')
     def _remove_zksynclite_used_query_ranges(write_cursor: 'DBCursor') -> None:
-        write_cursor.execute('DELETE FROM used_query_ranges WHERE name LIKE "zksynclitetxs_%"')
+        write_cursor.execute("DELETE FROM used_query_ranges WHERE name LIKE 'zksynclitetxs_%'")
 
     @progress_step(description='Reseting decoded events.')
     def _reset_decoded_events(write_cursor: 'DBCursor') -> None:
@@ -212,10 +212,10 @@ def upgrade_v43_to_v44(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
                 (HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED),
             ).fetchone()[0]
             querystr = (
-                'DELETE FROM history_events WHERE identifier IN ('
-                'SELECT H.identifier from history_events H INNER JOIN evm_events_info E '
-                'ON H.identifier=E.identifier AND E.tx_hash IN '
-                '(SELECT tx_hash FROM evm_transactions) AND H.location != "o")'  # location 'o' is zksync lite  # noqa: E501
+                "DELETE FROM history_events WHERE identifier IN ("
+                "SELECT H.identifier from history_events H INNER JOIN evm_events_info E "
+                "ON H.identifier=E.identifier AND E.tx_hash IN "
+                "(SELECT tx_hash FROM evm_transactions) AND H.location != 'o')"  # location 'o' is zksync lite  # noqa: E501
             )
             bindings: tuple = ()
             if customized_events != 0:

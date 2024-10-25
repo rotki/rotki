@@ -36,7 +36,7 @@ def upgrade_v37_to_v38(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
     """
     @progress_step(description='Adding Polygon PoS location.')
     def _add_polygon_pos_location(write_cursor: 'DBCursor') -> None:
-        write_cursor.execute('INSERT OR IGNORE INTO location(location, seq) VALUES ("h", 40);')
+        write_cursor.execute("INSERT OR IGNORE INTO location(location, seq) VALUES ('h', 40);")
 
     @progress_step(description='Adding Polygon PoS nodes.')
     def _add_polygon_pos_nodes(write_cursor: 'DBCursor') -> None:
@@ -69,7 +69,7 @@ def upgrade_v37_to_v38(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         Delete aave events from the database since we don't need them anymore
         """
         write_cursor.execute('DROP TABLE IF EXISTS aave_events;')
-        write_cursor.execute('DELETE FROM used_query_ranges WHERE name LIKE "aave_events%";')
+        write_cursor.execute("DELETE FROM used_query_ranges WHERE name LIKE 'aave_events%';")
 
     @progress_step(description='Deleting Uniswap/Sushiswap events.')
     def _delete_uniswap_sushiswap_events(write_cursor: 'DBCursor') -> None:
@@ -121,10 +121,10 @@ def upgrade_v37_to_v38(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         In that case it needs to be deleted.
         """
         write_cursor.execute(
-            'DELETE FROM history_events WHERE identifier IN ('
-            'SELECT B.identifier from history_events A INNER JOIN history_events B '
-            'ON A.event_identifier=B.event_identifier AND A.subtype="block production" '
-            'AND B.subtype="mev reward" AND A.amount=B.amount WHERE A.entry_type=4);',
+            "DELETE FROM history_events WHERE identifier IN ("
+            "SELECT B.identifier from history_events A INNER JOIN history_events B "
+            "ON A.event_identifier=B.event_identifier AND A.subtype='block production' "
+            "AND B.subtype='mev reward' AND A.amount=B.amount WHERE A.entry_type=4);",
         )
 
     perform_userdb_upgrade_steps(db=db, progress_handler=progress_handler)

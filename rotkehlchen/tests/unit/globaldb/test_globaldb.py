@@ -502,22 +502,22 @@ def test_globaldb_pragma_foreign_keys(globaldb):
     cursor.execute(
         """
         INSERT INTO evm_tokens(identifier, token_kind, chain, address, decimals, protocol) VALUES(
-        "eip155:100/erc20:0xD178b20c6007572bD1FD01D205cC20D32B4A6017", "A", "A",
-        "0xD178b20c6007572bD1FD01D205cC20D32B4A6017", 18, NULL)
+        'eip155:100/erc20:0xD178b20c6007572bD1FD01D205cC20D32B4A6017', 'A', 'A',
+        '0xD178b20c6007572bD1FD01D205cC20D32B4A6017', 18, NULL)
         """,
     )
     cursor.execute(
         """
         INSERT INTO assets(identifier, name, type) VALUES(
-        "eip155:100/erc20:0xD178b20c6007572bD1FD01D205cC20D32B4A6017", "Aidus", "C")
+        'eip155:100/erc20:0xD178b20c6007572bD1FD01D205cC20D32B4A6017', 'Aidus', 'C')
         """,
     )
     cursor.execute(
         """
         INSERT INTO common_asset_details(identifier, symbol, coingecko, cryptocompare,
         forked, started, swapped_for)
-        VALUES("eip155:100/erc20:0xD178b20c6007572bD1FD01D205cC20D32B4A6017",
-        NULL, "AIDU", "", NULL, 123, NULL);
+        VALUES('eip155:100/erc20:0xD178b20c6007572bD1FD01D205cC20D32B4A6017',
+        NULL, 'AIDU', '', NULL, 123, NULL);
         """,
     )
     # activate them again
@@ -621,22 +621,22 @@ def test_global_db_restore(globaldb, database):
     status, msg = GlobalDBHandler().hard_reset_assets_list(database, True)
     assert status, msg
     cursor = globaldb.conn.cursor()
-    query = f'SELECT COUNT(*) FROM evm_tokens where address == "{address_to_delete}";'
+    query = f"SELECT COUNT(*) FROM evm_tokens where address == '{address_to_delete}';"
     r = cursor.execute(query)
     assert r.fetchone() == (0,), 'Ethereum token should have been deleted'
-    query = f'SELECT COUNT(*) FROM evm_tokens where address == "{address_to_delete}";'
+    query = f"SELECT COUNT(*) FROM evm_tokens where address == '{address_to_delete}';"
     r = cursor.execute(query)
     assert r.fetchone() == (0,), 'Ethereum token should have been deleted from assets'
-    query = f'SELECT COUNT(*) FROM evm_tokens where address == "{with_underlying_address}";'
+    query = f"SELECT COUNT(*) FROM evm_tokens where address == '{with_underlying_address}';"
     r = cursor.execute(query)
     assert r.fetchone() == (0,), 'Token with underlying token should have been deleted from assets'
-    query = f'SELECT COUNT(*) FROM evm_tokens where address == "{with_underlying_address}";'
+    query = f"SELECT COUNT(*) FROM evm_tokens where address == '{with_underlying_address}';"
     r = cursor.execute(query)
     assert r.fetchone() == (0,)
-    query = f'SELECT COUNT(*) FROM underlying_tokens_list where identifier == "{ethaddress_to_identifier(address_to_delete)}";'  # noqa: E501
+    query = f"SELECT COUNT(*) FROM underlying_tokens_list where identifier == '{ethaddress_to_identifier(address_to_delete)}';"  # noqa: E501
     r = cursor.execute(query)
     assert r.fetchone() == (0,)
-    query = 'SELECT COUNT(*) FROM assets where identifier == "1";'
+    query = "SELECT COUNT(*) FROM assets where identifier == '1';"
     r = cursor.execute(query)
     assert r.fetchone() == (0,), 'Non ethereum token should be deleted'
     # Check that the user database is correctly updated
@@ -767,22 +767,22 @@ def test_global_db_reset(globaldb, database):
     status, _ = GlobalDBHandler().soft_reset_assets_list()
     assert status
     cursor = globaldb.conn.cursor()
-    query = f'SELECT COUNT(*) FROM evm_tokens where address == "{address_to_delete}";'
-    r = cursor.execute(query)
+    query = 'SELECT COUNT(*) FROM evm_tokens where address == ?;'
+    r = cursor.execute(query, (address_to_delete,))
     assert r.fetchone() == (1,), 'Custom ethereum tokens should not been deleted'
-    query = f'SELECT COUNT(*) FROM evm_tokens where address == "{address_to_delete}";'
-    r = cursor.execute(query)
+    query = 'SELECT COUNT(*) FROM evm_tokens where address == ?;'
+    r = cursor.execute(query, (address_to_delete,))
     assert r.fetchone() == (1,)
-    query = f'SELECT COUNT(*) FROM evm_tokens where address == "{with_underlying_address}";'
-    r = cursor.execute(query)
+    query = 'SELECT COUNT(*) FROM evm_tokens where address == ?;'
+    r = cursor.execute(query, (with_underlying_address,))
     assert r.fetchone() == (1,), 'Ethereum token with underlying token should not be deleted'
-    query = f'SELECT COUNT(*) FROM evm_tokens where address == "{with_underlying_address}";'
-    r = cursor.execute(query)
+    query = 'SELECT COUNT(*) FROM evm_tokens where address == ?;'
+    r = cursor.execute(query, (with_underlying_address,))
     assert r.fetchone() == (1,)
-    query = f'SELECT COUNT(*) FROM underlying_tokens_list where identifier == "{ethaddress_to_identifier(address_to_delete)}";'  # noqa: E501
-    r = cursor.execute(query)
+    query = 'SELECT COUNT(*) FROM underlying_tokens_list where identifier == ?;'
+    r = cursor.execute(query, (ethaddress_to_identifier(address_to_delete),))
     assert r.fetchone() == (1,)
-    query = 'SELECT COUNT(*) FROM assets where identifier == "1";'
+    query = "SELECT COUNT(*) FROM assets where identifier == '1';"
     r = cursor.execute(query)
     assert r.fetchone() == (1,), 'Non ethereum token added should be in the db'
     # Check that the 1inch token was correctly fixed

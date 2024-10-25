@@ -57,7 +57,7 @@ def migrate_to_v5(connection: 'DBConnection', progress_handler: 'DBUpgradeProgre
     @progress_step('Resetting curve cache.')
     def _reset_curve_cache(write_cursor: 'DBCursor') -> None:
         """Resets curve cache to query gauges and update format of the lp tokens"""
-        write_cursor.execute('DELETE FROM general_cache WHERE key LIKE "%CURVE%"')
+        write_cursor.execute("DELETE FROM general_cache WHERE key LIKE '%CURVE%'")
 
     @progress_step('Removing name column from contract_data table.')
     def _remove_name_from_contracts(cursor: 'DBCursor') -> None:

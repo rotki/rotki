@@ -22,7 +22,7 @@ def test_migration1(globaldb):
         assert globaldb.get_setting_value('version', None) == GLOBAL_DB_VERSION
         assert globaldb.get_setting_value('last_data_migration', None) is None
         assert globaldb.get_setting_value('last_assets_json_version', None) == 72
-        assert cursor.execute('SELECT COUNT(*) FROM unique_cache WHERE key LIKE "MAKERDAO_VAULT_ILK%"').fetchone()[0] == 0  # noqa: E501
+        assert cursor.execute("SELECT COUNT(*) FROM unique_cache WHERE key LIKE 'MAKERDAO_VAULT_ILK%'").fetchone()[0] == 0  # noqa: E501
 
     with ExitStack() as stack:
         patch_for_globaldb_migrations(stack, [MIGRATIONS_LIST[0]])
@@ -33,7 +33,7 @@ def test_migration1(globaldb):
         assert globaldb.get_setting_value('version', None) == GLOBAL_DB_VERSION
         assert globaldb.get_setting_value('last_assets_json_version', None) is None
         assert globaldb.get_setting_value('last_data_migration', None) == 1
-        assert cursor.execute('SELECT COUNT(*) FROM unique_cache WHERE key LIKE "MAKERDAO_VAULT_ILK%"').fetchone()[0] == 25  # noqa: E501
+        assert cursor.execute("SELECT COUNT(*) FROM unique_cache WHERE key LIKE 'MAKERDAO_VAULT_ILK%'").fetchone()[0] == 25  # noqa: E501
 
         for ilk, info in ilk_mapping.items():
             cursor.execute(

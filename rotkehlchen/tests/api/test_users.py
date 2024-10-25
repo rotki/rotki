@@ -756,9 +756,9 @@ def test_user_login(rotkehlchen_api_server, username, db_password, data_dir):
         connection_type=DBConnectionType.USER,
         sql_vm_instructions_cb=0,
     )
-    backup_connection.executescript(f'PRAGMA key="{db_password}"')  # unlock
+    backup_connection.executescript(f"PRAGMA key='{db_password}'")  # unlock
     with backup_connection.write_ctx() as write_cursor:
-        write_cursor.execute('INSERT INTO settings VALUES("is_backup", "Yes")')
+        write_cursor.execute("INSERT INTO settings VALUES('is_backup', 'Yes')")
     backup_connection.close()
 
     with rotki.data.db.user_write() as write_cursor:
@@ -820,7 +820,7 @@ def test_user_login(rotkehlchen_api_server, username, db_password, data_dir):
 
     # check that the backup db is used
     with rotki.data.db.conn.read_ctx() as cursor:
-        cursor.execute('SELECT * FROM settings WHERE name = "is_backup";')
+        cursor.execute('SELECT * FROM settings WHERE name=?', ('is_backup',))
         results = cursor.fetchall()
         assert len(results) == 1, f'Expected one result, got {len(results)}'
         result = results[0]

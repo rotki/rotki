@@ -309,10 +309,10 @@ def combine_asset_balances(balances: list[SingleDBAssetBalance]) -> list[SingleD
 
 def table_exists(cursor: 'DBCursor', name: str, schema: str | None = None) -> bool:
     exists: bool = cursor.execute(
-        'SELECT COUNT(*) FROM sqlite_master WHERE type="table" AND name=?', (name,),
+        "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name=?", (name,),
     ).fetchone()[0] == 1
     if exists and schema is not None:
-        cursor.execute('SELECT sql from sqlite_master WHERE type="table" AND name=?', (name,))
+        cursor.execute("SELECT sql from sqlite_master WHERE type='table' AND name=?", (name,))
         returned_schema = cursor.fetchone()[0].lower()
         returned_properties = re.findall(
             pattern=r'createtable.*?\((.+)\)',
@@ -370,11 +370,11 @@ def db_tuple_to_str(
 
 
 def protect_password_sqlcipher(password: str) -> str:
-    """A double quote in the password would close the string. To escape it double it
+    """A single quote in the password would close the string. To escape it double it
 
     source: https://stackoverflow.com/a/603579/110395
 """
-    return password.replace(r'"', r'""')
+    return password.replace(r"'", r"''")
 
 
 def update_table_schema(

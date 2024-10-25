@@ -82,9 +82,9 @@ class DBFilterOrder(NamedTuple):
                 order_by = attribute
 
             if self.case_sensitive is False:
-                querystr += f'{order_by} COLLATE NOCASE {"ASC" if ascending else "DESC"}'
+                querystr += f"{order_by} COLLATE NOCASE {'ASC' if ascending else 'DESC'}"
             else:
-                querystr += f'{order_by} {"ASC" if ascending else "DESC"}'
+                querystr += f"{order_by} {'ASC' if ascending else 'DESC'}"
 
         return querystr
 
@@ -1429,7 +1429,7 @@ class DBIgnoredAssetsFilter(DBSubtableSelectFilter):
     """Filter that filters ignored assets"""
     select_value: str = field(default='value', init=False)
     select_table: str = field(default='multisettings', init=False)
-    select_condition: str = field(default='name="ignored_asset"', init=False)
+    select_condition: str = field(default="name='ignored_asset'", init=False)
 
 
 class UserNotesFilterQuery(DBFilterQuery, FilterWithTimestamp):
@@ -1619,7 +1619,7 @@ class AssetsFilterQuery(DBFilterQuery):
                 operator='IN',
                 select_value='value',
                 select_table='general_cache',
-                select_condition=f'key="{compute_cache_key((CacheType.SPAM_ASSET_FALSE_POSITIVE,))}"',
+                select_condition=f"key='{compute_cache_key((CacheType.SPAM_ASSET_FALSE_POSITIVE,))}'",
             ))
         filter_query.filters = filters
         return filter_query

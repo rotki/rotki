@@ -48,7 +48,7 @@ def globaldb_data_migration_1(conn: 'DBConnection') -> None:
     """
     with conn.write_ctx() as write_cursor:
         # Remove old setting if existing
-        write_cursor.execute('DELETE FROM settings WHERE name="last_assets_json_version";')
+        write_cursor.execute("DELETE FROM settings WHERE name='last_assets_json_version';")
 
         # Add a makerdao vault types cache, at a time that will allow refresh
         timestamp = Timestamp(ts_now() - ETH_PROTOCOLS_CACHE_REFRESH - 1)

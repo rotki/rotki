@@ -245,7 +245,7 @@ def _copy_assets_from_packaged_db(
     """
     packaged_db_path = root_dir / 'data' / 'global.db'
     identifiers_quotes = ','.join('?' * len(assets_ids))
-    cursor.execute(f'ATTACH DATABASE "{packaged_db_path}" AS packaged_db;')
+    cursor.execute(f"ATTACH DATABASE '{packaged_db_path}' AS packaged_db;")
     cursor.execute(f'INSERT INTO assets SELECT * FROM packaged_db.assets WHERE identifier IN ({identifiers_quotes});', assets_ids)  # noqa: E501
     cursor.execute(f'INSERT INTO evm_tokens SELECT * FROM packaged_db.evm_tokens WHERE identifier IN ({identifiers_quotes});', assets_ids)  # noqa: E501
     cursor.execute(f'INSERT INTO common_asset_details SELECT * FROM packaged_db.common_asset_details WHERE identifier IN ({identifiers_quotes});', assets_ids)  # noqa: E501
@@ -354,6 +354,6 @@ def migrate_to_v4(connection: 'DBConnection', progress_handler: 'DBUpgradeProgre
     @progress_step('Updating protocol name for yearn assets.')
     def _update_yearn_v1_protocol(cursor: 'DBCursor') -> None:
         """Update the protocol name for yearn assets"""
-        cursor.execute('UPDATE evm_tokens SET protocol=? WHERE protocol="yearn-v1"', (YEARN_VAULTS_V1_PROTOCOL,))  # noqa: E501
+        cursor.execute("UPDATE evm_tokens SET protocol=? WHERE protocol='yearn-v1'", (YEARN_VAULTS_V1_PROTOCOL,))  # noqa: E501
 
     perform_globaldb_upgrade_steps(connection, progress_handler)

@@ -1694,10 +1694,10 @@ class GlobalDBHandler:
                     return False, msg
 
             with self.packaged_db_lock:
-                read_cursor.execute(f'ATTACH DATABASE "{builtin_database}" AS clean_db;')
+                read_cursor.execute(f"ATTACH DATABASE '{builtin_database}' AS clean_db;")
                 try:
                     # Check that versions match
-                    query = read_cursor.execute('SELECT value from clean_db.settings WHERE name="version";')  # noqa: E501
+                    query = read_cursor.execute("SELECT value from clean_db.settings WHERE name='version';")  # noqa: E501
                     version = query.fetchone()
                     if version is None or int(version[0]) != globaldb_get_setting_value(read_cursor, 'version', GLOBAL_DB_VERSION):  # noqa: E501
                         msg = (
@@ -1727,7 +1727,7 @@ class GlobalDBHandler:
                             # Get ids for assets to insert them in the user db
                             write_cursor.execute('SELECT identifier from assets')
                             ids = write_cursor.fetchall()
-                            ids_proccesed = ', '.join([f'("{identifier[0]}")' for identifier in ids])  # noqa: E501
+                            ids_proccesed = ', '.join([f"('{identifier[0]}')" for identifier in ids])  # noqa: E501
                             user_db_cursor.execute(f'INSERT INTO assets(identifier) VALUES {ids_proccesed};')  # noqa: E501
                             user_db_cursor.switch_foreign_keys('ON')
 
@@ -1740,7 +1740,7 @@ class GlobalDBHandler:
                     return False, 'Failed to restore assets. Read logs to get more information.'
                 finally:  # on the way out always detach the DB. Make sure no transaction is active
                     with self.conn.critical_section_and_transaction_lock():
-                        read_cursor.execute('DETACH DATABASE "clean_db";')
+                        read_cursor.execute("DETACH DATABASE 'clean_db';")
 
         return True, ''
 
@@ -1755,9 +1755,9 @@ class GlobalDBHandler:
         with self.packaged_db_lock:
             try:
                 with self.conn.read_ctx() as read_cursor:
-                    read_cursor.execute(f'ATTACH DATABASE "{builtin_database}" AS clean_db;')
+                    read_cursor.execute(f"ATTACH DATABASE '{builtin_database}' AS clean_db;")
                     # Check that versions match
-                    query = read_cursor.execute('SELECT value from clean_db.settings WHERE name="version";')  # noqa: E501
+                    query = read_cursor.execute("SELECT value from clean_db.settings WHERE name='version';")  # noqa: E501
                     version = query.fetchone()
                     if version is None or int(version[0]) != globaldb_get_setting_value(read_cursor, 'version', GLOBAL_DB_VERSION):  # noqa: E501
                         msg = (
@@ -1769,10 +1769,10 @@ class GlobalDBHandler:
                     # Get the list of ids that we will restore
                     query = read_cursor.execute('SELECT identifier from clean_db.assets;')
                     shipped_asset_ids = set(query.fetchall())
-                    asset_ids = ', '.join([f'"{identifier[0]}"' for identifier in shipped_asset_ids])  # noqa: E501
+                    asset_ids = ', '.join([f"'{identifier[0]}'" for identifier in shipped_asset_ids])  # noqa: E501
                     query = read_cursor.execute('SELECT id FROM clean_db.asset_collections')
                     shipped_collection_ids = set(query.fetchall())
-                    collection_ids = ', '.join([f'"{identifier[0]}"' for identifier in shipped_collection_ids])  # noqa: E501
+                    collection_ids = ', '.join([f"'{identifier[0]}'" for identifier in shipped_collection_ids])  # noqa: E501
 
                 with self.conn.write_ctx() as write_cursor:
                     # If versions match drop tables
@@ -1797,7 +1797,7 @@ class GlobalDBHandler:
                 return False, 'Failed to restore assets. Read logs to get more information.'
             finally:  # on the way out always detach the DB. Make sure no transaction is active
                 with self.conn.transaction_lock, self.conn.read_ctx() as read_cursor:
-                    read_cursor.execute('DETACH DATABASE "clean_db";')
+                    read_cursor.execute("DETACH DATABASE 'clean_db';")
 
         return True, ''
 

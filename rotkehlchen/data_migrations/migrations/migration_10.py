@@ -34,7 +34,7 @@ def data_migration_10(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgress
     with GlobalDBHandler().conn.write_ctx() as write_cursor:
         # Update the default nodes, stored in the global DB. It is either the correct name
         # or the wrong name since when updating nodes in the globaldb we delete all the nodes
-        write_cursor.execute('UPDATE default_rpc_nodes SET name="polygon pos etherscan" WHERE name="polygon etherscan"')  # noqa: E501
+        write_cursor.execute("UPDATE default_rpc_nodes SET name='polygon pos etherscan' WHERE name='polygon etherscan'")  # noqa: E501
 
     with rotki.data.db.conn.write_ctx() as write_cursor:
         rotki.data.db.add_external_service_credentials(

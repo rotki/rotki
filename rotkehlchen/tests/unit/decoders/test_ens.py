@@ -905,7 +905,7 @@ def test_invalid_ens_name(globaldb: 'GlobalDBHandler'):
     with globaldb.conn.read_ctx() as cursor:
         for cache_key in (CacheType.ENS_NAMEHASH, CacheType.ENS_LABELHASH):
             assert cursor.execute(
-                f'SELECT COUNT(*) FROM unique_cache WHERE key LIKE "{cache_key.serialize()}%"',
+                f"SELECT COUNT(*) FROM unique_cache WHERE key LIKE '{cache_key.serialize()}%'",
             ).fetchone()[0] == 0
 
 

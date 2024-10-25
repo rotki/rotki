@@ -182,10 +182,10 @@ def upgrade_ethereum_asset_ids_v3(cursor: 'DBCursor') -> EVM_TUPLES_CREATION_TYP
     """Query all the information available from ethereum tokens in
     the v2 schema to be used in v3"""
     result = cursor.execute(
-        'SELECT A.address, A.decimals, A.protocol, B.identifier, B.name, B.symbol, B.started, '
-        'B.swapped_for, B.coingecko, B.cryptocompare FROM assets '
-        'AS B JOIN ethereum_tokens '
-        'AS A ON A.address = B.details_reference WHERE B.type="C";',
+        "SELECT A.address, A.decimals, A.protocol, B.identifier, B.name, B.symbol, B.started, "
+        "B.swapped_for, B.coingecko, B.cryptocompare FROM assets "
+        "AS B JOIN ethereum_tokens "
+        "AS A ON A.address = B.details_reference WHERE B.type='C';",
     )
     query = result.fetchall()
     old_ethereum_data = []
@@ -243,11 +243,11 @@ def upgrade_ethereum_asset_ids_v3(cursor: 'DBCursor') -> EVM_TUPLES_CREATION_TYP
 def upgrade_other_assets(cursor: 'DBCursor') -> ASSET_CREATION_TYPE:
     """Create the bindings tuple for the assets and common_asset_details tables using the
     information from the V2 tables for non ethereum assets"""
-    chains = ','.join([f'"{x}"' for x in ('C',)])
     result = cursor.execute(
-        f'SELECT A.identifier, A.type, A.name, A.symbol, A.started, A.swapped_for, A.coingecko, '
-        f'A.cryptocompare, B.forked FROM assets as A JOIN common_asset_details AS B '
-        f'ON B.asset_id=A.identifier WHERE A.type NOT IN ({chains})',
+        'SELECT A.identifier, A.type, A.name, A.symbol, A.started, A.swapped_for, A.coingecko, '
+        'A.cryptocompare, B.forked FROM assets as A JOIN common_asset_details AS B '
+        'ON B.asset_id=A.identifier WHERE A.type!=?',
+        ('C', ),
     )
 
     assets_tuple = []
@@ -316,7 +316,7 @@ def translate_owned_assets(cursor: 'DBCursor') -> list[tuple[str]]:
 def translate_binance_pairs(cursor: 'DBCursor') -> list[tuple[str, str, str, str]]:
     """Collect and update assets in the binance_pairs tables to use the new id format"""
     table_exists = cursor.execute(
-        'SELECT COUNT(*) FROM sqlite_master WHERE type="table" AND name="binance_pairs"',
+        "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='binance_pairs'",
     ).fetchone()[0]
     if table_exists == 0:  # handle binance_pairs not having been created
         cursor.execute(  # fix https://github.com/rotki/rotki/issues/5073
@@ -359,8 +359,8 @@ def translate_assets_in_price_table(cursor: 'DBCursor') -> list[tuple[str, str, 
         'KSM',
     )
     cursor.execute(
-        f'SELECT from_asset, to_asset, source_type, timestamp, price FROM '
-        f'price_history WHERE (source_type=="A" OR from_asset IN ({",".join(["?"] * len(assets))}))',  # noqa: E501
+        f"SELECT from_asset, to_asset, source_type, timestamp, price FROM "
+        f"price_history WHERE (source_type=='A' OR from_asset IN ({','.join(['?'] * len(assets))}))",  # noqa: E501
         assets,
     )
     updated_rows = []
@@ -413,11 +413,11 @@ def migrate_to_v3(connection: 'DBConnection', progress_handler: 'DBUpgradeProgre
           seq     INTEGER UNIQUE
         );""")
         # ERC20
-        cursor.execute('INSERT OR IGNORE INTO token_kinds(token_kind, seq) VALUES ("A", 1)')
+        cursor.execute("INSERT OR IGNORE INTO token_kinds(token_kind, seq) VALUES ('A', 1)")
         # ERC721
-        cursor.execute('INSERT OR IGNORE INTO token_kinds(token_kind, seq) VALUES ("B", 2)')
+        cursor.execute("INSERT OR IGNORE INTO token_kinds(token_kind, seq) VALUES ('B', 2)")
         # UNKNOWN
-        cursor.execute('INSERT OR IGNORE INTO token_kinds(token_kind, seq) VALUES ("C", 3)')
+        cursor.execute("INSERT OR IGNORE INTO token_kinds(token_kind, seq) VALUES ('C', 3)")
 
         cursor.execute("""
         CREATE TABLE IF NOT EXISTS assets (
@@ -540,10 +540,10 @@ def migrate_to_v3(connection: 'DBConnection', progress_handler: 'DBUpgradeProgre
         cursor.executemany(EVM_TOKEN_INSERT, evm_tuples)
         cursor.executemany(UNDERLYING_TOKEN_INSERT, mappings)
         # Add `custom asset` asset type
-        cursor.execute('INSERT OR IGNORE INTO asset_types(type, seq) VALUES ("[", 27)')
+        cursor.execute("INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('[', 27)")
         # Add manual current price source and defillama
-        cursor.execute('INSERT OR IGNORE INTO price_history_source_types(type, seq) VALUES ("E", 5)')  # noqa: E501
-        cursor.execute('INSERT OR IGNORE INTO price_history_source_types(type, seq) VALUES ("F", 6)')  # noqa: E501
+        cursor.execute("INSERT OR IGNORE INTO price_history_source_types(type, seq) VALUES ('E', 5)")  # noqa: E501
+        cursor.execute("INSERT OR IGNORE INTO price_history_source_types(type, seq) VALUES ('F', 6)")  # noqa: E501
 
         dir_path = Path(__file__).resolve().parent.parent.parent
         # This file contains the EVM version of the assets that are currently in the

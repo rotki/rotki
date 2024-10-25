@@ -22,4 +22,4 @@ def upgrade_v29_to_v30(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         )
         cursor.switch_foreign_keys('ON')
         # Insert the new bitpanda location
-        cursor.execute('INSERT OR IGNORE INTO location(location, seq) VALUES ("b", 34);')
+        cursor.execute("INSERT OR IGNORE INTO location(location, seq) VALUES ('b', 34);")

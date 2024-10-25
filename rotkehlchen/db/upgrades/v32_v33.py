@@ -84,7 +84,7 @@ def upgrade_v32_to_v33(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         cursor.execute("""
         CREATE TABLE IF NOT EXISTS address_book (
             address TEXT NOT NULL,
-            blockchain TEXT NOT NULL DEFAULT "ETH",
+            blockchain TEXT NOT NULL DEFAULT 'ETH',
             name TEXT NOT NULL,
             PRIMARY KEY(address, blockchain)
         );
@@ -489,6 +489,6 @@ def upgrade_v32_to_v33(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
 
     @progress_step(description='Refactoring blockchain account labels.')
     def _refactor_blockchain_account_labels(cursor: 'DBCursor') -> None:
-        cursor.execute('UPDATE blockchain_accounts SET label = NULL WHERE label = ""')
+        cursor.execute("UPDATE blockchain_accounts SET label = NULL WHERE label =''")
 
     perform_userdb_upgrade_steps(db=db, progress_handler=progress_handler)

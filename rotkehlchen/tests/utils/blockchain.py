@@ -715,7 +715,7 @@ def maybe_modify_rpc_nodes(
         nodes_to_connect_to = manager_connect_at_start
         with database.user_write() as write_cursor:
             write_cursor.execute(  # Delete all but etherscan endpoint
-                'DELETE FROM rpc_nodes WHERE blockchain=? and endpoint!=""',
+                "DELETE FROM rpc_nodes WHERE blockchain=? and endpoint!=''",
                 (blockchain.value,))
         for entry in nodes_to_connect_to:
             if entry.node_info.endpoint != '':  # don't re-add etherscan

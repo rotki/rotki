@@ -1115,4 +1115,4 @@ def test_graph_query_query_delegations(
                 ) == target_block
 
             # we expect two addresses and not all 3 tracked ones
-            assert cursor.execute('SELECT COUNT(*) FROM key_value_cache WHERE name LIKE "ethereum_GRAPH_DELEGATIONS%"').fetchone() == (2,)  # noqa: E501
+            assert cursor.execute("SELECT COUNT(*) FROM key_value_cache WHERE name LIKE 'ethereum_GRAPH_DELEGATIONS%'").fetchone() == (2,)  # noqa: E501

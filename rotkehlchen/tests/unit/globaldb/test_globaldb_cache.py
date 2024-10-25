@@ -216,11 +216,11 @@ def test_velodrome_cache(optimism_inquirer):
     with GlobalDBHandler().conn.write_ctx() as write_cursor:
         # make sure that velodrome cache is clear of expected pools and gauges
         for pool in VELODROME_SOME_EXPECTED_POOLS | VELODROME_SOME_EXPECTED_GAUGES:
-            write_cursor.execute(f'DELETE FROM general_cache WHERE value LIKE "%{pool}%"')
-            write_cursor.execute(f'DELETE FROM address_book WHERE address="{pool}"')
+            write_cursor.execute(f"DELETE FROM general_cache WHERE value LIKE '%{pool}%'")
+            write_cursor.execute('DELETE FROM address_book WHERE address=?', (pool,))
 
         for asset in VELODROME_SOME_EXPECTED_ASSETS:
-            write_cursor.execute(f'DELETE FROM assets WHERE identifier LIKE "%{asset}%"')
+            write_cursor.execute(f"DELETE FROM assets WHERE identifier LIKE '%{asset}%'")
 
     pools, gauges = read_velodrome_pools_and_gauges_from_cache()
     assert not pools & VELODROME_SOME_EXPECTED_POOLS
@@ -291,8 +291,8 @@ def test_convex_cache(ethereum_inquirer):
     with GlobalDBHandler().conn.write_ctx() as write_cursor:
         # make sure that convex cache is clear of expected pools
         for pool, _ in convex_expected_pools:
-            write_cursor.execute(f'DELETE FROM general_cache WHERE value="{pool}"')
-            write_cursor.execute(f'DELETE FROM unique_cache WHERE key LIKE "%{pool}%"')
+            write_cursor.execute('DELETE FROM general_cache WHERE value=?', (pool,))
+            write_cursor.execute(f"DELETE FROM unique_cache WHERE key LIKE '%{pool}%'")
 
     assert not read_convex_data_from_cache()[0].items() & convex_expected_pools
 
@@ -314,9 +314,9 @@ def test_curve_cache(rotkehlchen_instance, use_curve_api, globaldb):
     with GlobalDBHandler().conn.write_ctx() as write_cursor:
         # make sure that curve cache is clear of expected pools and addressbook entries
         for lp_token in CURVE_EXPECTED_LP_TOKENS_TO_POOLS:
-            write_cursor.execute(f'DELETE FROM unique_cache WHERE key LIKE "%{lp_token}%"')
+            write_cursor.execute(f"DELETE FROM unique_cache WHERE key LIKE '%{lp_token}%'")
         for entry in CURVE_EXPECTED_ADDRESBOOK_ENTRIES_FROM_CHAIN:
-            write_cursor.execute(f'DELETE FROM address_book WHERE address="{entry.address}"')
+            write_cursor.execute('DELETE FROM address_book WHERE address=?', (entry.address,))
 
     # delete one of the tokens to check that it is created during the update
     with suppress(InputError):
@@ -430,11 +430,11 @@ def test_gearbox_cache(ethereum_inquirer: EthereumInquirer):
     with GlobalDBHandler().conn.write_ctx() as write_cursor:
         # make sure that gearbox cache is clear of expected pools and gauges
         for pool in GEARBOX_SOME_EXPECTED_POOLS:
-            write_cursor.execute(f'DELETE FROM general_cache WHERE value LIKE "%{pool}%"')
-            write_cursor.execute(f'DELETE FROM address_book WHERE address="{pool}"')
+            write_cursor.execute(f"DELETE FROM general_cache WHERE value LIKE '%{pool}%'")
+            write_cursor.execute('DELETE FROM address_book WHERE address=?', (pool,))
 
         for asset in GEARBOX_SOME_EXPECTED_ASSETS:
-            write_cursor.execute(f'DELETE FROM assets WHERE identifier LIKE "%{asset}%"')
+            write_cursor.execute(f"DELETE FROM assets WHERE identifier LIKE '%{asset}%'")
 
     pools, = read_gearbox_data_from_cache(ChainID.ETHEREUM)
     assert not pools.keys() & GEARBOX_SOME_EXPECTED_POOLS

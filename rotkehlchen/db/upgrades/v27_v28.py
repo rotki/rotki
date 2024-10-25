@@ -16,7 +16,7 @@ def upgrade_v27_to_v28(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
     with db.user_write() as cursor:
         progress_handler.new_step(name='Adding version column to yearn vaults table.')
         cursor.execute(
-            'SELECT COUNT(*) FROM sqlite_master WHERE type="yearn_vaults_events" AND name="version"',  # noqa: E501
+            "SELECT COUNT(*) FROM sqlite_master WHERE type='yearn_vaults_events' AND name='version'",  # noqa: E501
         )
         if cursor.fetchone()[0] == 0:  # should return a value here
             cursor.execute(
@@ -25,7 +25,7 @@ def upgrade_v27_to_v28(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
 
         progress_handler.new_step(name='Removing Aave data due to addition of Aave 2.')
         cursor.execute('DELETE FROM aave_events;')
-        cursor.execute('DELETE FROM used_query_ranges WHERE name LIKE "aave_events%";')
+        cursor.execute("DELETE FROM used_query_ranges WHERE name LIKE 'aave_events%';")
 
         progress_handler.new_step(name='Creating Gitcoin tables.')
         # Create the gitcoin tables that are added in this DB version
@@ -35,9 +35,9 @@ def upgrade_v27_to_v28(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         seq     INTEGER UNIQUE
         )""")
         # Ethereum Transaction
-        cursor.execute('INSERT OR IGNORE INTO gitcoin_tx_type(type, seq) VALUES ("A", 1)')
+        cursor.execute("INSERT OR IGNORE INTO gitcoin_tx_type(type, seq) VALUES ('A', 1)")
         # ZKSync Transaction
-        cursor.execute('INSERT OR IGNORE INTO gitcoin_tx_type(type, seq) VALUES ("B", 2)')
+        cursor.execute("INSERT OR IGNORE INTO gitcoin_tx_type(type, seq) VALUES ('B', 2)")
 
         cursor.execute("""CREATE TABLE IF NOT EXISTS ledger_actions_gitcoin_data (
         parent_id INTEGER NOT NULL,

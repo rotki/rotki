@@ -372,13 +372,13 @@ def test_some_updates_are_malformed(assets_updater: AssetsUpdater) -> None:
     # In "BTC" update everything is good
     # In "NEW-ASSET-1" insertion swapped_for is incorrect
     # In "NEW-ASSET-2" insertion everything is good
-    update_text = """INSERT INTO assets(identifier, name, type) VALUES("ETH", "name1", "B"); INSERT INTO common_asset_details(identifier, symbol, coingecko, cryptocompare, forked, started, swapped_for) VALUES("ETH", "symbol1", "", "", NULL, NULL, "NONEXISTENT");
+    update_text = """INSERT INTO assets(identifier, name, type) VALUES('ETH', 'name1', 'B'); INSERT INTO common_asset_details(identifier, symbol, coingecko, cryptocompare, forked, started, swapped_for) VALUES('ETH', 'symbol1', '', '', NULL, NULL, 'NONEXISTENT');
 *
-INSERT INTO assets(identifier, name, type) VALUES("BTC", "name2", "B"); INSERT INTO common_asset_details(identifier, symbol, coingecko, cryptocompare, forked, started, swapped_for) VALUES("BTC", "symbol2", "", "", NULL, NULL, NULL);
+INSERT INTO assets(identifier, name, type) VALUES('BTC', 'name2', 'B'); INSERT INTO common_asset_details(identifier, symbol, coingecko, cryptocompare, forked, started, swapped_for) VALUES('BTC', 'symbol2', '', '', NULL, NULL, NULL);
 *
-INSERT INTO assets(identifier, name, type) VALUES("NEW-ASSET-1", "name3", "B"); INSERT INTO common_asset_details(identifier, symbol, coingecko, cryptocompare, forked, started, swapped_for) VALUES("NEW-ASSET-1", "symbol3", "", "", NULL, NULL, "LOLKEK");
+INSERT INTO assets(identifier, name, type) VALUES('NEW-ASSET-1', 'name3', 'B'); INSERT INTO common_asset_details(identifier, symbol, coingecko, cryptocompare, forked, started, swapped_for) VALUES('NEW-ASSET-1', 'symbol3', '', '', NULL, NULL, 'LOLKEK');
 *
-INSERT INTO assets(identifier, name, type) VALUES("NEW-ASSET-2", "name4", "B"); INSERT INTO common_asset_details(identifier, symbol, coingecko, cryptocompare, forked, started, swapped_for) VALUES("NEW-ASSET-2", "symbol4", "", "", NULL, NULL, NULL);
+INSERT INTO assets(identifier, name, type) VALUES('NEW-ASSET-2', 'name4', 'B'); INSERT INTO common_asset_details(identifier, symbol, coingecko, cryptocompare, forked, started, swapped_for) VALUES('NEW-ASSET-2', 'symbol4', '', '', NULL, NULL, NULL);
 *
 """  # noqa: E501
     connection = GlobalDBHandler().conn
@@ -391,16 +391,16 @@ INSERT INTO assets(identifier, name, type) VALUES("NEW-ASSET-2", "name4", "B"); 
     )
 
     # Should have stayed unchanged since one of the insertions was incorrect
-    assert connection.execute('SELECT name FROM assets WHERE identifier="ETH"').fetchone()[0] == 'Ethereum'  # noqa: E501
-    assert connection.execute('SELECT symbol FROM common_asset_details WHERE identifier="ETH"').fetchone()[0] == 'ETH'  # noqa: E501
+    assert connection.execute("SELECT name FROM assets WHERE identifier='ETH'").fetchone()[0] == 'Ethereum'  # noqa: E501
+    assert connection.execute("SELECT symbol FROM common_asset_details WHERE identifier='ETH'").fetchone()[0] == 'ETH'  # noqa: E501
     # BTC should have been updated since the insertion were correct
-    assert connection.execute('SELECT name FROM assets WHERE identifier="BTC"').fetchone()[0] == 'name2'  # noqa: E501
-    assert connection.execute('SELECT symbol FROM common_asset_details WHERE identifier="BTC"').fetchone()[0] == 'symbol2'  # noqa: E501
+    assert connection.execute("SELECT name FROM assets WHERE identifier='BTC'").fetchone()[0] == 'name2'  # noqa: E501
+    assert connection.execute("SELECT symbol FROM common_asset_details WHERE identifier='BTC'").fetchone()[0] == 'symbol2'  # noqa: E501
     # NEW-ASSET-1 should have not been added since the insertions were incorrect
-    assert connection.execute('SELECT * FROM assets WHERE identifier="NEW-ASSET-1"').fetchone() is None  # noqa: E501
+    assert connection.execute("SELECT * FROM assets WHERE identifier='NEW-ASSET-1'").fetchone() is None  # noqa: E501
     # NEW-ASSET-2 should have been added since the insertions were correct
-    assert connection.execute('SELECT name FROM assets WHERE identifier="NEW-ASSET-2"').fetchone()[0] == 'name4'  # noqa: E501
-    assert connection.execute('SELECT symbol FROM common_asset_details WHERE identifier="NEW-ASSET-2"').fetchone()[0] == 'symbol4'  # noqa: E501
+    assert connection.execute("SELECT name FROM assets WHERE identifier='NEW-ASSET-2'").fetchone()[0] == 'name4'  # noqa: E501
+    assert connection.execute("SELECT symbol FROM common_asset_details WHERE identifier='NEW-ASSET-2'").fetchone()[0] == 'symbol4'  # noqa: E501
 
 
 def test_updates_assets_collections_errors(assets_updater: AssetsUpdater):
@@ -412,17 +412,17 @@ def test_updates_assets_collections_errors(assets_updater: AssetsUpdater):
     - Try to add to a collection that doesn't exists
     - Add an asset that was newly introduced to a collection
     """
-    update_text_assets = """INSERT INTO assets(identifier, name, type) VALUES("MYBONK", "Bonk", "Y"); INSERT INTO common_asset_details(identifier, symbol, coingecko, cryptocompare, forked, started, swapped_for) VALUES("MYBONK", "BONK", "bonk", "BONK", NULL, 1672279200, NULL);
+    update_text_assets = """INSERT INTO assets(identifier, name, type) VALUES('MYBONK', 'Bonk', 'Y'); INSERT INTO common_asset_details(identifier, symbol, coingecko, cryptocompare, forked, started, swapped_for) VALUES('MYBONK', 'BONK', 'bonk', 'BONK', NULL, 1672279200, NULL);
     *
     """  # noqa: E501
-    update_text_collection = """INSERT INTO asset_collections(id, name) VALUES (99999999, "My custom ETH")
+    update_text_collection = """INSERT INTO asset_collections(id, name) VALUES (99999999, 'My custom ETH')
     *
     """  # noqa: E501
-    update_mapping_collection = """INSERT INTO multiasset_mappings(collection_id, asset) VALUES (1, "ETH99999");
+    update_mapping_collection = """INSERT INTO multiasset_mappings(collection_id, asset) VALUES (1, 'ETH99999');
     *
-    INSERT INTO multiasset_mappings(collection_id, asset) VALUES (99999999, "eip155:1/erc20:0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84");
+    INSERT INTO multiasset_mappings(collection_id, asset) VALUES (99999999, 'eip155:1/erc20:0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84');
     *
-    INSERT INTO multiasset_mappings(collection_id, asset) VALUES (1, "MYBONK");
+    INSERT INTO multiasset_mappings(collection_id, asset) VALUES (1, 'MYBONK');
     *
     """  # noqa: E501
 
@@ -456,7 +456,7 @@ def test_updates_assets_collections_errors(assets_updater: AssetsUpdater):
 
     warnings = assets_updater.msg_aggregator.consume_warnings()
     assert warnings == [
-        'Skipping entry during assets collection update to v999 due to a deserialization error. At asset DB update could not parse asset collection data out of INSERT INTO asset_collections(id, name) VALUES (99999999, "My custom ETH")',  # noqa: E501
+        "Skipping entry during assets collection update to v999 due to a deserialization error. At asset DB update could not parse asset collection data out of INSERT INTO asset_collections(id, name) VALUES (99999999, 'My custom ETH')",  # noqa: E501
         'Tried to add unknown asset ETH99999 to collection of assets. Skipping',
         'Skipping entry during assets collection multimapping update to v999 due to a deserialization error. Tried to add asset to collection with id 99999999 but it does not exist',  # noqa: E501
     ]
@@ -483,10 +483,10 @@ def test_asset_update(
         assets_updater.perform_update(up_to_version=999, conflicts={})
 
     with GlobalDBHandler().conn.read_ctx() as cursor:
-        assert cursor.execute('SELECT * FROM assets WHERE identifier = "MYBONK"').fetchall() == ([
+        assert cursor.execute("SELECT * FROM assets WHERE identifier = 'MYBONK'").fetchall() == ([
             ('MYBONK', 'Bonk', 'Y'),
         ] if update_assets else [])
-        assert cursor.execute('SELECT * FROM assets WHERE identifier = "new-asset"').fetchall() == ([  # noqa: E501
+        assert cursor.execute("SELECT * FROM assets WHERE identifier = 'new-asset'").fetchall() == ([  # noqa: E501
             ('new-asset', 'New Asset', 'Y'),
         ] if update_assets else [])
 
@@ -543,7 +543,7 @@ def test_conflict_updates(assets_updater: AssetsUpdater, globaldb: GlobalDBHandl
         sql_actions={'1': {'assets': update_1, 'collections': '', 'mappings': ''}, '2': {'assets': update_2, 'collections': '', 'mappings': ''}},  # noqa: E501
     )
     cursor = globaldb.conn.cursor()
-    cursor.execute(f'DELETE FROM settings WHERE name="{ASSETS_VERSION_KEY}"')
+    cursor.execute(f"DELETE FROM settings WHERE name='{ASSETS_VERSION_KEY}'")
     with update_patch:
         conflicts = assets_updater.perform_update(
             up_to_version=2,
@@ -562,7 +562,7 @@ def test_conflict_updates(assets_updater: AssetsUpdater, globaldb: GlobalDBHandl
                 for conflict in conflicts
             },
         )
-    assert cursor.execute('SELECT value FROM settings WHERE name="assets_version"').fetchone()[0] == '2'  # noqa: E501
+    assert cursor.execute("SELECT value FROM settings WHERE name='assets_version'").fetchone()[0] == '2'  # noqa: E501
     with globaldb.conn.read_ctx() as cursor:
         assert cursor.execute(
             'SELECT COUNT(*) FROM underlying_tokens_list WHERE parent_token_entry=?;',
