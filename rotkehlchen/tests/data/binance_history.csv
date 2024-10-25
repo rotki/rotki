@@ -83,3 +83,6 @@ User_ID,UTC_Time,Account,Operation,Coin,Change,Remark
 1,2023-09-29 09:56:26,Spot,Transaction Buy,ETH,0.01700000,""
 1,2023-09-29 09:56:26,Spot,Transaction Fee,BNB,-0.00009883,""
 1,2023-09-29 09:56:26,Spot,Transaction Spend,USDT,-28.46106000,""
+1,2024-01-01 14:21:20,Spot,Fee,ETH,-3.605E-05,
+1,2024-01-01 14:21:20,Spot,Sell,EUR,-134.4719075,
+1,2024-01-01 14:21:20,Spot,Buy,ETH,0.03605,
