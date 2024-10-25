@@ -27,9 +27,9 @@ const { tab } = toRefs(props);
 
 const account = ref<AccountManageState>();
 const balances = ref<ComponentExposed<typeof AccountBalances>>();
+const search = ref('');
 
 const { t } = useI18n();
-
 const router = useRouter();
 const route = useRoute('accounts-balances-blockchain');
 
@@ -124,9 +124,21 @@ watchImmediate(route, (route) => {
 
     <div class="flex flex-col gap-8">
       <RuiCard>
-        <template #header>
+        <div class="p-6 flex items-center justify-between">
           <CardTitle>{{ t('blockchain_balances.title') }}</CardTitle>
-        </template>
+          <RuiTextField
+            v-model="search"
+            variant="outlined"
+            color="primary"
+            dense
+            prepend-icon="search-line"
+            :placeholder="t('common.actions.search')"
+            hide-details
+            clearable
+            class="w-[300px]"
+            @click:clear="search = ''"
+          />
+        </div>
 
         <AccountDialog
           v-model="account"
@@ -137,6 +149,7 @@ watchImmediate(route, (route) => {
           :loading="isBlockchainLoading"
           :title="t('blockchain_balances.per_asset.title')"
           :balances="blockchainAssets"
+          :search="search"
           sticky-header
         />
       </RuiCard>
@@ -186,6 +199,7 @@ watchImmediate(route, (route) => {
           :key="tab"
           ref="balances"
           :category="tab"
+          :search="search"
           @edit="account = $event"
         />
 
