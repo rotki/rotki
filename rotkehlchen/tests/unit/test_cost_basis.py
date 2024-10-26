@@ -473,7 +473,12 @@ def test_reduce_asset_amount(accountant: Accountant):
         ),
     )
 
-    assert cost_basis.reduce_asset_amount(asset=asset, amount=FVal(1.5), timestamp=Timestamp(0))
+    assert cost_basis.reduce_asset_amount(
+        originating_event_id=None,  # not relevant
+        asset=asset,
+        amount=FVal(1.5),
+        timestamp=Timestamp(0),
+    )
     acquisitions = asset_events.acquisitions_manager.get_acquisitions()
     acquisitions_num = len(acquisitions)
     assert acquisitions_num == 2, '1 buy should be used'
@@ -506,13 +511,13 @@ def test_reduce_asset_amount_exact(accountant: Accountant):
         ),
     )
 
-    assert cost_basis.reduce_asset_amount(asset, FVal(2), Timestamp(0))
+    assert cost_basis.reduce_asset_amount(None, asset, FVal(2), Timestamp(0))
     acquisitions_num = len(asset_events.acquisitions_manager)
     assert acquisitions_num == 0, 'all buys should be used'
 
 
 def test_reduce_asset_amount_not_bought(accountant: Accountant):
-    assert not accountant.pots[0].cost_basis.reduce_asset_amount(A_BTC, FVal(3), Timestamp(0))
+    assert not accountant.pots[0].cost_basis.reduce_asset_amount(None, A_BTC, FVal(3), Timestamp(0))  # noqa: E501
 
 
 def test_reduce_asset_amount_more_than_bought(accountant: Accountant):
@@ -536,7 +541,7 @@ def test_reduce_asset_amount_more_than_bought(accountant: Accountant):
     )
 
     # Also reduce WETH, to make sure it's counted same as ETH
-    assert not cost_basis.reduce_asset_amount(A_WETH, FVal(3), Timestamp(0))
+    assert not cost_basis.reduce_asset_amount(None, A_WETH, FVal(3), Timestamp(0))
     acquisitions_num = len(asset_events.acquisitions_manager)
     assert acquisitions_num == 0, 'all buys should be used'
 
@@ -562,7 +567,7 @@ def test_accounting_lifo_order(accountant: Accountant):
     )
     asset_events.acquisitions_manager.add_in_event(event1)
     asset_events.acquisitions_manager.add_in_event(event2)
-    assert cost_basis.reduce_asset_amount(A_ETH, ONE, Timestamp(0))
+    assert cost_basis.reduce_asset_amount(None, A_ETH, ONE, Timestamp(0))
     acquisitions = asset_events.acquisitions_manager.get_acquisitions()
     assert len(acquisitions) == 1 and acquisitions[0] == event1
     # then test to reset
@@ -644,6 +649,7 @@ def test_accounting_lifo_order(accountant: Accountant):
     )
     asset_events.acquisitions_manager.add_in_event(event7)
     assert asset_events.acquisitions_manager.calculate_spend_cost_basis(
+        originating_event_id=(originating_event_id := 424242),
         spending_amount=FVal(2),
         spending_asset=asset,
         timestamp=Timestamp(4),
@@ -655,6 +661,7 @@ def test_accounting_lifo_order(accountant: Accountant):
     ).is_complete is False
     assert cost_basis.missing_acquisitions == [
         MissingAcquisition(
+            originating_event_id=originating_event_id,
             asset=A_ETH,
             time=Timestamp(4),
             found_amount=ONE,
@@ -683,7 +690,7 @@ def test_accounting_simple_hifo_order(accountant: Accountant):
     )
     asset_events.acquisitions_manager.add_in_event(event1)
     asset_events.acquisitions_manager.add_in_event(event2)
-    assert cost_basis.reduce_asset_amount(asset, FVal(0.5), Timestamp(0)) is True
+    assert cost_basis.reduce_asset_amount(None, asset, FVal(0.5), Timestamp(0)) is True
     acquisitions = asset_events.acquisitions_manager.get_acquisitions()
     assert len(acquisitions) == 2 and acquisitions[0] == event2 and acquisitions[1] == event1
 
@@ -770,6 +777,7 @@ def test_accounting_hifo_order(accountant: Accountant):
     )
     asset_events.acquisitions_manager.add_in_event(event7)
     assert asset_events.acquisitions_manager.calculate_spend_cost_basis(
+        originating_event_id=(originating_event_id := 6464),
         spending_amount=FVal(2),
         spending_asset=asset,
         timestamp=Timestamp(4),
@@ -781,6 +789,7 @@ def test_accounting_hifo_order(accountant: Accountant):
     ).is_complete is False
     assert cost_basis.missing_acquisitions == [
         MissingAcquisition(
+            originating_event_id=originating_event_id,
             asset=asset,
             time=Timestamp(4),
             found_amount=ONE,
@@ -799,12 +808,14 @@ def test_missing_acquisitions(accountant: Accountant):
     base_ts = 1614556800  # 01/03/2021, changed from 1 for windows. See https://github.com/rotki/rotki/pull/6398#discussion_r1271323846 # noqa: E501
     # Test when there are no documented acquisitions
     cost_basis.reduce_asset_amount(
+        originating_event_id=None,
         asset=A_ETH,
         amount=ONE,
         timestamp=Timestamp(1),
     )
     assert cost_basis.missing_acquisitions == expected_missing_acquisitions
     all_events.acquisitions_manager.calculate_spend_cost_basis(
+        originating_event_id=(originating_event_id := 6969),
         spending_amount=ONE,
         spending_asset=A_ETH,
         timestamp=Timestamp(1),
@@ -815,6 +826,7 @@ def test_missing_acquisitions(accountant: Accountant):
         average_cost_basis=None,
     )
     expected_missing_acquisitions.append(MissingAcquisition(
+        originating_event_id=originating_event_id,
         asset=A_ETH,
         missing_amount=ONE,
         found_amount=ZERO,
@@ -829,11 +841,13 @@ def test_missing_acquisitions(accountant: Accountant):
         timestamp=Timestamp(base_ts + 10),
     ))
     cost_basis.reduce_asset_amount(
+        None,
         asset=A_ETH,
         amount=FVal(3),
         timestamp=Timestamp(3),
     )
     expected_missing_acquisitions.append(MissingAcquisition(
+        originating_event_id=None,
         asset=A_ETH,
         missing_amount=ONE,
         found_amount=FVal(2),
@@ -847,6 +861,7 @@ def test_missing_acquisitions(accountant: Accountant):
         timestamp=Timestamp(base_ts + 20),
     ))
     all_events.acquisitions_manager.calculate_spend_cost_basis(
+        originating_event_id=(originating_event_id := 8989),
         spending_amount=FVal(3),
         spending_asset=A_ETH,
         timestamp=Timestamp(4),
@@ -857,6 +872,7 @@ def test_missing_acquisitions(accountant: Accountant):
         average_cost_basis=None,
     )
     expected_missing_acquisitions.append(MissingAcquisition(
+        originating_event_id=originating_event_id,
         asset=A_ETH,
         missing_amount=ONE,
         found_amount=FVal(2),

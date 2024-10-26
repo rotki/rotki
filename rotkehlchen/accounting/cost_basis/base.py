@@ -176,6 +176,7 @@ class BaseCostBasisMethod(ABC):
             settings: DBSettings,
             timestamp_to_date: Callable[[Timestamp], str],
             average_cost_basis: FVal | None = None,
+            originating_event_id: int | None = None,
     ) -> 'CostBasisInfo':
         """
         When spending `spending_amount` of `spending_asset` at `timestamp` this function
@@ -272,6 +273,7 @@ class BaseCostBasisMethod(ABC):
             adjusted_amount = spending_amount - taxfree_amount
             missing_acquisitions.append(
                 MissingAcquisition(
+                    originating_event_id=originating_event_id,
                     asset=spending_asset,
                     time=timestamp,
                     found_amount=taxable_amount + taxfree_amount,
@@ -406,11 +408,13 @@ class AverageCostBasisMethod(BaseCostBasisMethod):
             settings: DBSettings,
             timestamp_to_date: Callable[[Timestamp], str],
             average_cost_basis: FVal | None = None,  # pylint: disable=unused-argument
+            originating_event_id: int | None = None,
     ) -> 'CostBasisInfo':
         """Calculates the cost basis of the spend using the average cost basis method."""
         if self.current_amount == ZERO:
             missing_acquisitions.append(
                 MissingAcquisition(
+                    originating_event_id=originating_event_id,
                     asset=spending_asset,
                     time=timestamp,
                     found_amount=self.current_amount,
@@ -439,6 +443,7 @@ class AverageCostBasisMethod(BaseCostBasisMethod):
             # `current_amount` have to be used before applying the effect of the event that is
             # being processed.
             average_cost_basis=self.current_total_acb / self.current_amount,
+            originating_event_id=originating_event_id,
         )
 
 
@@ -593,7 +598,13 @@ class CostBasisCalculator(CustomizableDateMixin):
 
         return self._events[asset]
 
-    def reduce_asset_amount(self, asset: Asset, amount: FVal, timestamp: Timestamp) -> bool:
+    def reduce_asset_amount(
+            self,
+            originating_event_id: int | None,
+            asset: Asset,
+            amount: FVal,
+            timestamp: Timestamp,
+    ) -> bool:
         """Searches all acquisition events for asset and reduces them by amount.
 
         Returns True if enough acquisition events to reduce the asset by amount were
@@ -627,6 +638,7 @@ class CostBasisCalculator(CustomizableDateMixin):
             if not asset.is_fiat():
                 self.missing_acquisitions.append(
                     MissingAcquisition(
+                        originating_event_id=originating_event_id,
                         asset=asset,
                         time=timestamp,
                         found_amount=amount - remaining_amount,
@@ -649,6 +661,7 @@ class CostBasisCalculator(CustomizableDateMixin):
     @overload
     def spend_asset(
             self,
+            originating_event_id: int | None,
             location: Location,
             timestamp: Timestamp,
             asset: Asset,
@@ -661,6 +674,7 @@ class CostBasisCalculator(CustomizableDateMixin):
     @overload
     def spend_asset(
             self,
+            originating_event_id: int | None,
             location: Location,
             timestamp: Timestamp,
             asset: Asset,
@@ -673,6 +687,7 @@ class CostBasisCalculator(CustomizableDateMixin):
     @overload  # not sure why we need this overload too -> https://github.com/python/mypy/issues/6113  # noqa: E501
     def spend_asset(
             self,
+            originating_event_id: int | None,
             location: Location,
             timestamp: Timestamp,
             asset: Asset,
@@ -684,6 +699,7 @@ class CostBasisCalculator(CustomizableDateMixin):
 
     def spend_asset(
             self,
+            originating_event_id: int | None,
             location: Location,
             timestamp: Timestamp,
             asset: Asset,
@@ -716,9 +732,15 @@ class CostBasisCalculator(CustomizableDateMixin):
                 used_acquisitions=asset_events.used_acquisitions,
                 settings=self.settings,
                 timestamp_to_date=self.timestamp_to_date,
+                originating_event_id=originating_event_id,
             )
         # just reduce the amount's acquisition without counting anything
-        self.reduce_asset_amount(asset=asset, amount=amount, timestamp=timestamp)
+        self.reduce_asset_amount(
+            originating_event_id=originating_event_id,
+            asset=asset,
+            amount=amount,
+            timestamp=timestamp,
+        )
         return None
 
     def get_calculated_asset_amount(self, asset: Asset) -> FVal | None:

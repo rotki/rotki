@@ -170,6 +170,7 @@ class EventsAccountant:
         group_id = out_event.event_identifier + str(out_event.sequence_index) + str(in_event.sequence_index)  # noqa: E501
         extra_data = general_extra_data | {'group_id': group_id}
         _, trade_taxable_amount = self.pot.add_out_event(
+            originating_event_id=out_event.identifier,
             event_type=AccountingEventType.TRANSACTION_EVENT,
             notes=out_event.notes or '',
             location=out_event.location,
@@ -215,6 +216,7 @@ class EventsAccountant:
             events_to_add_queue.extend([
                 (self.pot.add_in_event, add_in_event_kwargs),
                 (self.pot.add_out_event, {
+                    'originating_event_id': fee_event.identifier,
                     'event_type': AccountingEventType.FEE,
                     'notes': fee_event.notes,
                     'location': fee_event.location,

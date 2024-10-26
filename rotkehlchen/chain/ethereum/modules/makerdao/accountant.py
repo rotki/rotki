@@ -46,6 +46,7 @@ class MakerdaoAccountant(ModuleAccountantInterface):
         if self.vault_balances[cdp_id] < ZERO:
             loss = -1 * self.vault_balances[cdp_id]
             pot.add_out_event(
+                originating_event_id=event.identifier,
                 event_type=AccountingEventType.TRANSACTION_EVENT,
                 notes=f'Lost {loss} DAI as debt during payback to CDP {cdp_id}',
                 location=event.location,
