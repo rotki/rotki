@@ -224,8 +224,11 @@ class AccountingPot(CustomizableDateMixin):
             count_entire_amount_spend: bool = True,
             count_cost_basis_pnl: bool = True,
             extra_data: dict[str, Any] | None = None,
+            originating_event_id: int | None = None,
     ) -> tuple[FVal, FVal]:
         """Add an asset spend event for the pot and count it in PnL if needed
+
+        Since we still have history events mixed with other type of events this can be None.
 
         If a custom price for the asset should be used it can be passed here via
         given_price. Price is always in profit currency during accounting.
@@ -239,6 +242,9 @@ class AccountingPot(CustomizableDateMixin):
         If count_cost_basis_pnl is True then we also count any profit/loss the asset
         may have had compared to when it was acquired.
 
+        originating_event_id is the identifier of the history event that originated it.
+        Can be missing since at the moment not all events are history events.
+
         Returns (free, taxable) amounts.
         """
         if amount == ZERO:  # do nothing for zero spends
@@ -248,6 +254,7 @@ class AccountingPot(CustomizableDateMixin):
             taxable = False  # for buys with fiat do not count it as taxable
 
         handle_prefork_asset_spends(
+            originating_event_id=originating_event_id,
             cost_basis=self.cost_basis,
             asset=asset,
             amount=amount,
@@ -268,6 +275,7 @@ class AccountingPot(CustomizableDateMixin):
         spend_cost = None
         if count_cost_basis_pnl:
             spend_cost = self.cost_basis.spend_asset(
+                originating_event_id=originating_event_id,
                 location=location,
                 timestamp=timestamp,
                 asset=asset,

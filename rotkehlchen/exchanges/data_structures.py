@@ -191,6 +191,7 @@ class AssetMovement(AccountingEventMixin):
             return 1
 
         accounting.add_out_event(
+            originating_event_id=None,  # not a history event, but an asset movement
             event_type=AccountingEventType.ASSET_MOVEMENT,
             notes=f'{self.location} {self.category!s}',
             location=self.location,
@@ -392,6 +393,7 @@ class Trade(AccountingEventMixin):
             return 1
 
         _, trade_taxable_amount = accounting.add_out_event(
+            originating_event_id=None,  # not a history event, but a Trade
             event_type=AccountingEventType.TRADE,
             notes=notes + ' Amount out',
             location=self.location,
@@ -434,6 +436,7 @@ class Trade(AccountingEventMixin):
                 fee_taxable_amount_ratio = trade_taxable_amount / amount_out
 
             accounting.add_out_event(
+                originating_event_id=None,  # not a history event, but a Trade
                 event_type=AccountingEventType.FEE,
                 notes=notes + 'Fee',
                 location=self.location,
@@ -607,6 +610,7 @@ class MarginPosition(AccountingEventMixin):
         )
         if self.fee != ZERO:  # Fee is not included in the asset price here since it is not a swap/trade event.  # noqa: E501
             accounting.add_out_event(
+                originating_event_id=None,  # not a history event, but a Trade
                 event_type=AccountingEventType.FEE,
                 notes='Margin position. Fee',
                 location=self.location,

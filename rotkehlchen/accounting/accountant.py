@@ -140,7 +140,7 @@ class Accountant:
         with self.db.conn.read_ctx() as cursor:
             db_settings = self.db.get_settings(cursor)
             self.ignored_asset_ids = self.db.get_ignored_asset_ids(cursor)
-            # Create a new pnl report in the DB to be used to save each event generated
+            # Create a new pnl report in the DB to be used to save each generated event
             dbpnl = DBAccountingReports(self.db)
             first_ts = Timestamp(0) if len(events) == 0 else events[0].get_timestamp()
             report_id = dbpnl.add_report(

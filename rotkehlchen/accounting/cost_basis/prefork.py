@@ -69,6 +69,7 @@ def handle_prefork_asset_acquisitions(
 
 
 def handle_prefork_asset_spends(
+        originating_event_id: int | None,
         cost_basis: 'CostBasisCalculator',
         asset: Asset,
         amount: FVal,
@@ -84,11 +85,31 @@ def handle_prefork_asset_spends(
     # the preforked asset acquisition data is what's missing so user would getLogger
     # two messages. So as an example one for missing ETH data and one for ETC data
     if asset == A_ETH and timestamp < ETH_DAO_FORK_TS:
-        cost_basis.reduce_asset_amount(asset=A_ETC, amount=amount, timestamp=timestamp)
+        cost_basis.reduce_asset_amount(
+            originating_event_id=originating_event_id,
+            asset=A_ETC,
+            amount=amount,
+            timestamp=timestamp,
+        )
 
     if asset == A_BTC and timestamp < BTC_BCH_FORK_TS:
-        cost_basis.reduce_asset_amount(asset=A_BCH, amount=amount, timestamp=timestamp)
-        cost_basis.reduce_asset_amount(asset=A_BSV, amount=amount, timestamp=timestamp)
+        cost_basis.reduce_asset_amount(
+            originating_event_id=originating_event_id,
+            asset=A_BCH,
+            amount=amount,
+            timestamp=timestamp,
+        )
+        cost_basis.reduce_asset_amount(
+            originating_event_id=originating_event_id,
+            asset=A_BSV,
+            amount=amount,
+            timestamp=timestamp,
+        )
 
     if asset == A_BCH and timestamp < BCH_BSV_FORK_TS:
-        cost_basis.reduce_asset_amount(asset=A_BSV, amount=amount, timestamp=timestamp)
+        cost_basis.reduce_asset_amount(
+            originating_event_id=originating_event_id,
+            asset=A_BSV,
+            amount=amount,
+            timestamp=timestamp,
+        )

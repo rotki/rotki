@@ -50,6 +50,7 @@ class Aavev2Accountant(ModuleAccountantInterface):
             loss = -1 * self.assets_borrowed[key]
             resolved_asset = event.asset.resolve_to_asset_with_symbol()
             pot.add_out_event(
+                originating_event_id=event.identifier,
                 event_type=AccountingEventType.TRANSACTION_EVENT,
                 notes=f'Lost {loss} {resolved_asset.symbol} as debt during payback to Aave v2 loan for {event.location_label}',  # noqa: E501
                 location=event.location,

@@ -108,18 +108,36 @@ class NamedJson(NamedTuple):
 
 
 class MissingAcquisition(NamedTuple):
+    """Data for a missing acquisition
+
+    originating_event_id is the identifier of the history event that originated it.
+    Can be missing since at the moment not all events are history events.
+
+    asset is the asset whose acquisition we can't find
+
+    time is the time of the originating event
+
+    found_amount is the amount needed by the originating event that we have found
+
+    missing_amount is the amount needed by the originating event that we have not found
+    """
+    originating_event_id: int | None
     asset: Asset
     time: Timestamp
     found_amount: FVal
     missing_amount: FVal
 
     def serialize(self) -> dict[str, str | int]:
-        return {
+        data = {
             'asset': self.asset.identifier,
             'time': self.time,
             'found_amount': str(self.found_amount),
             'missing_amount': str(self.missing_amount),
         }
+        if self.originating_event_id:
+            data['originating_event_id'] = self.originating_event_id
+
+        return data  # type: ignore
 
 
 class MissingPrice(NamedTuple):
