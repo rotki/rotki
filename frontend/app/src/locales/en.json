@@ -4196,6 +4196,7 @@
           "total_missing": "Amount Missing"
         },
         "hint": "Some asset acquisitions are missing. You will need to figure out where you bought them and either import or manually create the relevant acquisition events",
+        "show_in_history_event": "Show in history event",
         "title": "Missing Acquisitions ({total})",
         "to": "to"
       },
@@ -4699,6 +4700,7 @@
       },
       "loading": "Loading events...",
       "no_data": "Events are hidden because they contain ignored assets",
+      "show_missing_acquisition": "Showing event for missing acquisition",
       "skipped": {
         "csv_export_error": "There was an error with export",
         "download_failed": "Download of CSV is not possible",

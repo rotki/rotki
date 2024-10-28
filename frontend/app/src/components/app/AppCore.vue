@@ -124,7 +124,7 @@ onMounted(() => {
     }
 
     &.pinned {
-      @apply xl:pr-[485px];
+      @apply xl:pr-[500px];
     }
   }
 }

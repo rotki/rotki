@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Routes } from '@/router/routes';
 import type { BigNumber } from '@rotki/common';
 import type { MissingAcquisition, SelectedReport } from '@/types/reports';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
@@ -19,8 +20,13 @@ const props = defineProps<{
   isPinned: boolean;
 }>();
 
+const emit = defineEmits<{
+  (e: 'pin'): void;
+}>();
+
 const { items, isPinned } = toRefs(props);
 
+const router = useRouter();
 const { isAssetIgnored, ignoreAsset } = useIgnoredAssetsStore();
 
 const groupedMissingAcquisitions = computed<MappedGroupedItems[]>(() => {
@@ -124,11 +130,27 @@ const childHeaders = computed<DataTableColumn<MissingAcquisition>[]>(() => [
     align: 'end',
     sortable: true,
   },
+  {
+    label: t('common.actions_text'),
+    key: 'actions',
+    sortable: true,
+  },
 ]);
 
 const isIgnored = (asset: string) => get(isAssetIgnored(asset));
 
 const [CreateDate, ReuseDate] = createReusableTemplate<{ row: MappedGroupedItems }>();
+
+async function showInHistoryEvent(identifier: number) {
+  emit('pin');
+
+  await router.push({
+    path: Routes.HISTORY_EVENTS.toString(),
+    query: {
+      identifiers: identifier.toString(),
+    },
+  });
+}
 </script>
 
 <template>
@@ -258,6 +280,19 @@ const [CreateDate, ReuseDate] = createReusableTemplate<{ row: MappedGroupedItems
               class="text-rui-error"
               :value="childItem.missingAmount"
             />
+          </template>
+          <template #item.actions="{ row: childItem }">
+            <RuiButton
+              v-if="childItem.originatingEventId"
+              variant="text"
+              color="primary"
+              @click="showInHistoryEvent(childItem.originatingEventId)"
+            >
+              {{ t('profit_loss_report.actionable.missing_acquisitions.show_in_history_event') }}
+              <template #append>
+                <RuiIcon name="arrow-right-s-line" />
+              </template>
+            </RuiButton>
           </template>
         </RuiDataTable>
       </template>
