@@ -941,6 +941,7 @@ class HistoryBaseEntryFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWith
             excluded_locations: list[Location] | None = None,
             ignored_ids: list[str] | None = None,
             null_columns: list[str] | None = None,
+            identifiers: list[int] | None = None,
             event_identifiers: list[str] | None = None,
             entry_types: IncludeExcludeFilterData | None = None,
             exclude_ignored_assets: bool = False,
@@ -1051,6 +1052,14 @@ class HistoryBaseEntryFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWith
                 asset_key='asset',
                 operator='NOT IN',
             ))
+        if identifiers is not None:
+            filters.append(
+                DBMultiIntegerFilter(
+                    and_op=True,
+                    column='history_events_identifier',
+                    values=identifiers,
+                ),
+            )
 
         filter_query.timestamp_filter = DBTimestampFilter(
             and_op=True,
@@ -1105,6 +1114,7 @@ class EvmEventFilterQuery(HistoryBaseEntryFilterQuery):
             excluded_locations: list[Location] | None = None,
             ignored_ids: list[str] | None = None,
             null_columns: list[str] | None = None,
+            identifiers: list[int] | None = None,
             event_identifiers: list[str] | None = None,
             entry_types: IncludeExcludeFilterData | None = None,
             exclude_ignored_assets: bool = False,
@@ -1134,6 +1144,7 @@ class EvmEventFilterQuery(HistoryBaseEntryFilterQuery):
             excluded_locations=excluded_locations,
             ignored_ids=ignored_ids,
             null_columns=null_columns,
+            identifiers=identifiers,
             event_identifiers=event_identifiers,
             entry_types=entry_types,
             exclude_ignored_assets=exclude_ignored_assets,
@@ -1202,6 +1213,7 @@ class EthStakingEventFilterQuery(HistoryBaseEntryFilterQuery, ABC):
             excluded_locations: list[Location] | None = None,
             ignored_ids: list[str] | None = None,
             null_columns: list[str] | None = None,
+            identifiers: list[int] | None = None,
             event_identifiers: list[str] | None = None,
             entry_types: IncludeExcludeFilterData | None = None,
             exclude_ignored_assets: bool = False,
@@ -1228,6 +1240,7 @@ class EthStakingEventFilterQuery(HistoryBaseEntryFilterQuery, ABC):
             excluded_locations=excluded_locations,
             ignored_ids=ignored_ids,
             null_columns=null_columns,
+            identifiers=identifiers,
             event_identifiers=event_identifiers,
             entry_types=entry_types,
             exclude_ignored_assets=exclude_ignored_assets,
@@ -1278,6 +1291,7 @@ class EthWithdrawalFilterQuery(EthStakingEventFilterQuery):
             excluded_locations: list[Location] | None = None,
             ignored_ids: list[str] | None = None,
             null_columns: list[str] | None = None,
+            identifiers: list[int] | None = None,
             event_identifiers: list[str] | None = None,
             entry_types: IncludeExcludeFilterData | None = None,
             exclude_ignored_assets: bool = False,
@@ -1305,6 +1319,7 @@ class EthWithdrawalFilterQuery(EthStakingEventFilterQuery):
             excluded_locations=excluded_locations,
             ignored_ids=ignored_ids,
             null_columns=null_columns,
+            identifiers=identifiers,
             event_identifiers=event_identifiers,
             entry_types=entry_types,
             exclude_ignored_assets=exclude_ignored_assets,
@@ -1352,6 +1367,7 @@ class EthDepositEventFilterQuery(EvmEventFilterQuery, EthStakingEventFilterQuery
             excluded_locations: list[Location] | None = None,
             ignored_ids: list[str] | None = None,
             null_columns: list[str] | None = None,
+            identifiers: list[int] | None = None,
             event_identifiers: list[str] | None = None,
             entry_types: IncludeExcludeFilterData | None = None,
             exclude_ignored_assets: bool = False,
@@ -1379,6 +1395,7 @@ class EthDepositEventFilterQuery(EvmEventFilterQuery, EthStakingEventFilterQuery
             excluded_locations=excluded_locations,
             ignored_ids=ignored_ids,
             null_columns=null_columns,
+            identifiers=identifiers,
             event_identifiers=event_identifiers,
             entry_types=entry_types,
             exclude_ignored_assets=exclude_ignored_assets,

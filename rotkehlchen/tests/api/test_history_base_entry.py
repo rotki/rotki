@@ -410,6 +410,27 @@ def test_get_events(rotkehlchen_api_server: 'APIServer'):
             identifiers=[f'{entries[0].event_identifier}'],
         )
 
+    queried_identifiers = [1, 4]
+    with rotki.data.db.conn.read_ctx() as cursor:
+        cursor.execute(
+            'SELECT event_identifier, sequence_index FROM history_events WHERE '
+            'identifier IN (?, ?)',
+            queried_identifiers,
+        )
+        expected_events = set(cursor)
+
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'historyeventresource',
+        ),
+        json={'identifiers': queried_identifiers},
+    )
+    assert {
+        (data['entry']['event_identifier'], data['entry']['sequence_index'])
+        for data in response.json()['result']['entries']
+    } == expected_events
+
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
