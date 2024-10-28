@@ -293,12 +293,12 @@ def test_staking_performance(rotkehlchen_api_server, ethereum_accounts):
     expected_validators_result = {
         'sums': {
             'outstanding_consensus_pnl': '-0.0011592',
-            'withdrawals': '0.6001299349999999',
+            'withdrawals': '0.600129935',
         },
         'validators': {
             '1187604': {
                 'outstanding_consensus_pnl': '-0.0011592',
-                'withdrawals': '0.6001299349999999',
+                'withdrawals': '0.600129935',
             },
         },
         'entries_found': 1,
@@ -447,16 +447,16 @@ def test_staking_performance_filtering_pagination(rotkehlchen_api_server, ethere
                 'apr': '0.79047922897503225775055426615612469746775999711013979698732073835928186973955',  # noqa: E501
             },
             '624729': {
-                'withdrawals': '1.2899177879999995',
-                'sum': '1.2899177879999995',
-                'apr': '0.0300134962463827726326766930127899483281034982030938918413981715625958791630076',  # noqa: E501
+                'withdrawals': '1.289917788',
+                'sum': '1.289917788',
+                'apr': '0.0300134962463827842665562028528326637310648429119334799442187646271982041209314',  # noqa: E501
             },
         },
         'sums': {
-            'withdrawals': '34.8829280469999995',
-            'sum': '35.3965000887808178',
+            'withdrawals': '34.882928047',
+            'sum': '35.3965000887808183',
             'execution': '0.5135720417808183',
-            'apr': '0.410246362610707515191615479584457322897931747656616844414359454960938874451279',  # noqa: E501
+            'apr': '0.410246362610707521008555234504478680599412420011036638465769751493240036930240',  # noqa: E501
         },
         'entries_total': 402,
         'entries_found': 2,
