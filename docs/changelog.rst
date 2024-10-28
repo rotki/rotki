@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`8809` Rotki now correctly tracks bridge transactions between Ethereum and Superchain networks (Base and OP Mainnet).
 * :feature:`-` Users will now be able to search for assets in the blockchain balances asset table.
 * :feature:`8690` Users will be able to see related event when dealing with missing acquisitions in the PnL report.
 * :feature:`7622` Rotki will now support Umami Finance in arbitrum. All related historical events will be properly recognized and any balances parked in the platform will be detected.

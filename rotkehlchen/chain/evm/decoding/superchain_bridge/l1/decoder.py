@@ -1,31 +1,28 @@
-from typing import Any, Final
+from abc import ABC
+from typing import TYPE_CHECKING, Any, Final
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
-from rotkehlchen.chain.evm.decoding.constants import OPTIMISM_CPT_DETAILS
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     DecoderContext,
     DecodingOutput,
 )
-from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.utils import bridge_match_transfer, bridge_prepare_data
-from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.chain.optimism.constants import CPT_OPTIMISM
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind
 from rotkehlchen.utils.misc import bytes_to_address
 
-BRIDGE_ADDRESSES: Final = (
-    string_to_evm_address('0x99C9fc46f92E8a1c0deC1b1747d010903E884bE1'),  # Normal Bridge
-    string_to_evm_address('0x10E6593CDda8c58a1d0f14C5164B376352a55f2F'),  # L1DAITokenBridge
-)
-OPTIMISM_L1_ESCROW: Final = string_to_evm_address('0x467194771dAe2967Aef3ECbEDD3Bf9a310C76C65')
-OPTIMISM_PORTAL_ADDRESS: Final = string_to_evm_address('0xbEb5Fc579115071764c7423A4f12eDde41f106Ed')  # noqa: E501
+if TYPE_CHECKING:
+    from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
+    from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
+    from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
+    from rotkehlchen.user_messages import MessagesAggregator
+
 
 ERC20_DEPOSIT_INITIATED: Final = b'q\x85\x94\x02z\xbdN\xae\xd5\x9f\x95\x16%c\xe0\xccm\x0e\x8d[\x86\xb1\xc7\xbe\x8b\x1b\n\xc34=\x03\x96'  # noqa: E501
 ETH_DEPOSIT_INITIATED: Final = b'5\xd7\x9a\xb8\x1f+ \x17\xe1\x9a\xfb\\Uqw\x88wx-z\x87\x86\xf5\x90\x7f\x93\xb0\xf4p/O#'  # noqa: E501
@@ -34,10 +31,34 @@ ETH_WITHDRAWAL_FINALIZED: Final = b'*\xc6\x9e\xe8\x04\xd9\xa7\xa0\x98BI\xf5\x08\
 WITHDRAWAL_PROVEN: Final = b'g\xa6 \x8c\xfc\xc0\x80\x1dP\xf6\xcb\xe7ds?O\xdd\xf6j\xc0\xb0DB\x06\x1a\x8a\x8c\x0c\xb6\xb6?b'  # noqa: E501
 
 
-class OptimismBridgeDecoder(DecoderInterface):
+class SuperchainL1SideCommonBridgeDecoder(DecoderInterface, ABC):
+    def __init__(
+            self,
+            evm_inquirer: 'EvmNodeInquirer',
+            base_tools: 'BaseDecoderTools',
+            msg_aggregator: 'MessagesAggregator',
+            bridge_addresses: tuple['ChecksumEvmAddress', ...],
+            counterparty: 'CounterpartyDetails',
+            l2_chain: 'ChainID',
+    ):
+        super().__init__(
+            evm_inquirer=evm_inquirer,
+            base_tools=base_tools,
+            msg_aggregator=msg_aggregator,
+        )
+        self.bride_addresses = bridge_addresses
+        self.counterparty = counterparty
+        self.l2_chain = l2_chain
+
     def _decode_bridge(self, context: DecoderContext) -> DecodingOutput:
-        """Decodes a bridging event. Either a deposit or a withdrawal.
-        DAI uses special bridge. See https://github.com/makerdao/optimism-dai-bridge
+        """Decodes a bridging(deposit or withdrawal) event for superchain chains.
+
+        Note:
+            DAI uses special bridge for OP mainnet.
+
+        See:
+             https://github.com/makerdao/optimism-dai-bridge
+             https://docs.optimism.io/builders/app-developers/bridging/custom-bridge
         """
         if context.tx_log.topics[0] not in {
             ETH_DEPOSIT_INITIATED,
@@ -70,8 +91,8 @@ class OptimismBridgeDecoder(DecoderInterface):
         expected_event_type, new_event_type, from_chain, to_chain, expected_location_label = bridge_prepare_data(  # noqa: E501
             tx_log=context.tx_log,
             deposit_topics=(ETH_DEPOSIT_INITIATED, ERC20_DEPOSIT_INITIATED),
+            target_chain=self.l2_chain,
             source_chain=ChainID.ETHEREUM,
-            target_chain=ChainID.OPTIMISM,
             from_address=from_address,
             to_address=to_address,
         )
@@ -81,7 +102,7 @@ class OptimismBridgeDecoder(DecoderInterface):
             if (
                 event.event_type == expected_event_type and
                 event.location_label == expected_location_label and
-                event.address in (*BRIDGE_ADDRESSES, OPTIMISM_L1_ESCROW) and
+                event.address in self.bride_addresses and
                 event.asset == asset and
                 event.balance.amount == amount
             ):
@@ -95,7 +116,7 @@ class OptimismBridgeDecoder(DecoderInterface):
                     asset=asset,
                     expected_event_type=expected_event_type,
                     new_event_type=new_event_type,
-                    counterparty=OPTIMISM_CPT_DETAILS,
+                    counterparty=self.counterparty,
                 )
 
         return DEFAULT_DECODING_OUTPUT
@@ -115,16 +136,10 @@ class OptimismBridgeDecoder(DecoderInterface):
             balance=Balance(),
             location_label=context.transaction.from_address,
             notes=f'Prove optimism bridge withdrawal 0x{withdrawal_hash}',
-            counterparty=CPT_OPTIMISM,
+            counterparty=self.counterparty.identifier,
             address=context.tx_log.address,
         )
         return DecodingOutput(event=event)
 
-    # -- DecoderInterface methods
-
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
-        return dict.fromkeys(BRIDGE_ADDRESSES, (self._decode_bridge,)) | {OPTIMISM_PORTAL_ADDRESS: (self._decode_prove_withdrawal,)}  # noqa: E501
-
-    @staticmethod
-    def counterparties() -> tuple[CounterpartyDetails, ...]:
-        return (OPTIMISM_CPT_DETAILS,)
+        return dict.fromkeys(self.bride_addresses, (self._decode_bridge,))
