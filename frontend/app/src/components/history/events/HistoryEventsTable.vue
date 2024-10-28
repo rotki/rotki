@@ -19,6 +19,7 @@ const props = defineProps<{
   groups: Collection<HistoryEventEntry>;
   excludeIgnored: boolean;
   groupLoading: boolean;
+  identifiers?: string[];
 }>();
 
 const emit = defineEmits<{
@@ -98,6 +99,7 @@ const events: Ref<HistoryEventEntry[]> = asyncComputed(async () => {
     eventIdentifiers: data.map(item => item.eventIdentifier),
     groupByEventIds: false,
     excludeIgnoredAssets: props.excludeIgnored,
+    identifiers: props.identifiers,
   });
 
   return response.data;

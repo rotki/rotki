@@ -124,6 +124,12 @@ const includes = computed<{ evmEvents: boolean; onlineEvents: boolean }>(() => {
   };
 });
 
+const identifiers = computed<string[] | undefined>(() => {
+  const { identifiers } = get(route).query;
+
+  return identifiers ? [identifiers as string] : undefined;
+});
+
 const { editableItem } = useCommonTableProps<HistoryEventEntry>();
 
 const {
@@ -165,6 +171,7 @@ const {
     accounts: get(usedAccounts).map(account => `${account.address}#${account.chain}`),
     customizedEventsOnly: get(toggles, 'customizedEventsOnly'),
     excludeIgnoredAssets: !get(toggles, 'showIgnoredAssets'),
+    identifiers: get(identifiers),
   })),
   defaultParams: computed(() => {
     if (isDefined(entryTypes)) {
@@ -332,6 +339,13 @@ async function redecodePageTransactions(): Promise<void> {
   await fetchUndecodedTransactionsStatus();
   await fetchData();
 }
+
+function removeIdentifierParam() {
+  const query = { ...route.query };
+  delete query.identifiers;
+  router.push({ query });
+}
+
 watchImmediate(route, async (route) => {
   if (route.query.openDecodingStatusDialog) {
     set(decodingStatusDialogOpen, true);
@@ -425,12 +439,28 @@ onUnmounted(() => {
         @redecode-page="redecodePageTransactions()"
       />
 
+      <div
+        v-if="route.query.identifiers"
+        class="mb-4"
+      >
+        <RuiChip
+          closeable
+          color="primary"
+          size="sm"
+          variant="outlined"
+          @click:close="removeIdentifierParam()"
+        >
+          {{ t('transactions.events.show_missing_acquisition') }}
+        </RuiChip>
+      </div>
+
       <HistoryEventsTable
         v-model:sort="sort"
         v-model:pagination="pagination"
         :group-loading="groupLoading"
         :groups="groups"
         :exclude-ignored="!toggles.showIgnoredAssets"
+        :identifiers="identifiers"
         @show:form="showForm($event)"
         @refresh="fetchAndRedecodeEvents($event)"
         @set-page="setPage($event)"

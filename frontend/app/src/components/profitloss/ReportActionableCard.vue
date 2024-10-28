@@ -297,6 +297,7 @@ function closePinnedSidebar() {
         :items="content.items"
         :report="report"
         :is-pinned="isPinned"
+        @pin="pinSection()"
       >
         <template
           v-if="step === index + 1"

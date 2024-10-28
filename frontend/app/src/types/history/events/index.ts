@@ -155,6 +155,7 @@ export interface HistoryEventRequestPayload extends PaginationRequestPayload<{ t
   readonly validatorIndices?: string | string[];
   readonly customizedEventsOnly?: boolean;
   readonly excludeIgnoredAssets?: boolean;
+  readonly identifiers?: string[];
 }
 
 export type EditEvmHistoryEventPayload = Omit<

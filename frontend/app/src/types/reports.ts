@@ -137,6 +137,7 @@ export interface ProfitLossReportDebugPayload {
 
 export const MissingAcquisition = z.object({
   asset: z.string(),
+  originatingEventId: z.number().optional(),
   foundAmount: NumericString,
   missingAmount: NumericString,
   time: z.number(),
