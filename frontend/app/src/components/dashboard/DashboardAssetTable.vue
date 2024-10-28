@@ -3,7 +3,7 @@ import { CURRENCY_USD } from '@/types/currencies';
 import { TableColumn } from '@/types/table-column';
 import { isEvmNativeToken } from '@/types/asset';
 import { DashboardTableType } from '@/types/settings/frontend-settings';
-import type { AssetBalance, AssetBalanceWithPrice, BigNumber, Nullable } from '@rotki/common';
+import type { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
 import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 
 const props = withDefaults(
@@ -37,18 +37,6 @@ const total = computed(() => {
   return get(totalInUsd).multipliedBy(get(exchangeRate(mainCurrency)) ?? One);
 });
 
-const { assetSymbol, assetName, assetInfo } = useAssetInfoRetrieval();
-
-function assetFilter(item: Nullable<AssetBalance>) {
-  const keyword = get(search).toLocaleLowerCase()?.trim() ?? '';
-  if (!keyword || !item)
-    return true;
-
-  const name = get(assetName(item.asset))?.toLocaleLowerCase()?.trim();
-  const symbol = get(assetSymbol(item.asset))?.toLocaleLowerCase()?.trim();
-  return symbol.includes(keyword) || name.includes(keyword);
-}
-
 const statisticsStore = useStatisticsStore();
 const { totalNetWorthUsd } = storeToRefs(statisticsStore);
 
@@ -63,17 +51,6 @@ function percentageOfCurrentGroup(value: BigNumber) {
 }
 
 const { dashboardTablesVisibleColumns } = storeToRefs(useFrontendSettingsStore());
-
-const sortItems = getSortItems<AssetBalanceWithPrice>(asset => get(assetInfo(asset)));
-
-const filtered = computed<AssetBalanceWithPrice[]>(() => {
-  const sortBy = get(sort);
-  const data = get(balances).filter(assetFilter);
-  if (!Array.isArray(sortBy) && sortBy?.column)
-    return sortItems(data, [sortBy.column as keyof AssetBalance], [sortBy.direction === 'desc']);
-
-  return data;
-});
 
 const tableHeaders = computed<DataTableColumn<AssetBalanceWithPrice>[]>(() => {
   const visibleColumns = get(dashboardTablesVisibleColumns)[get(tableType)];
@@ -223,15 +200,16 @@ watch(search, () => setPage(1));
       v-model:sort.external="sort"
       data-cy="dashboard-asset-table__balances"
       :cols="tableHeaders"
-      :rows="filtered"
+      :rows="balances"
       :loading="loading"
       :empty="{ description: t('data_table.no_data') }"
       :expanded="expanded"
       :pagination="{
         page: pagination.page,
         limit: pagination.itemsPerPage,
-        total: filtered.length,
+        total: balances.length,
       }"
+      :search="search"
       row-attr="asset"
       sticky-header
       single-expand

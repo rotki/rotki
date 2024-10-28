@@ -8,6 +8,8 @@ defineOptions({
   name: 'AssetBalances',
 });
 
+const search = defineModel<string>('search', { required: false, default: '' });
+
 const props = withDefaults(
   defineProps<{
     balances: AssetBalanceWithPrice[];
@@ -38,10 +40,24 @@ const { t } = useI18n();
 const { balances } = toRefs(props);
 const expanded = ref<AssetBalanceWithPrice[]>([]);
 
-const total = computed(() => bigNumberSum(balances.value.map(({ usdValue }) => usdValue)));
+const { assetSymbol, assetName, assetInfo } = useAssetInfoRetrieval();
+
+function assetFilter(item: AssetBalance) {
+  const keyword = get(search).toLowerCase()?.trim() ?? '';
+  if (!keyword)
+    return true;
+
+  const name = get(assetName(item.asset))?.toLowerCase()?.trim();
+  const symbol = get(assetSymbol(item.asset))?.toLowerCase()?.trim();
+
+  return symbol.includes(keyword) || name.includes(keyword);
+}
+
+const filteredBalances = computed(() => get(balances).filter(assetFilter));
+
+const total = computed(() => bigNumberSum(filteredBalances.value.map(({ usdValue }) => usdValue)));
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-const { assetInfo } = useAssetInfoRetrieval();
 
 const sort = ref<DataTableSortData<AssetBalanceWithPrice>>({
   column: 'usdValue',
@@ -88,7 +104,7 @@ const sortItems = getSortItems<AssetBalanceWithPrice>(asset => get(assetInfo(ass
 
 const sorted = computed<AssetBalanceWithPrice[]>(() => {
   const sortBy = get(sort);
-  const data = [...get(balances)];
+  const data = [...get(filteredBalances)];
   if (!Array.isArray(sortBy) && sortBy?.column)
     return sortItems(data, [sortBy.column as keyof AssetBalance], [sortBy.direction === 'desc']);
 
