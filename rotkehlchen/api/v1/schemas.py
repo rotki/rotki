@@ -689,6 +689,14 @@ class HistoryEventSchema(
         load_default=None,
     )
     customized_events_only = fields.Boolean(load_default=False)
+    identifiers = DelimitedOrNormalList(fields.Integer(
+        validate=webargs.validate.Range(
+                min=0,
+                error='Identifier must be an integer >= 0',
+            ),
+        ),
+        load_default=None,
+    )
 
     # EvmEvent only
     tx_hashes = DelimitedOrNormalList(EVMTransactionHashField(), load_default=None)
@@ -776,6 +784,7 @@ class HistoryEventSchema(
             'event_subtypes': data['event_subtypes'],
             'location': data['location'],
             'customized_events_only': data['customized_events_only'],
+            'identifiers': data['identifiers'],
         }
 
         filter_query: HistoryEventFilterQuery | (EvmEventFilterQuery | EthStakingEventFilterQuery)

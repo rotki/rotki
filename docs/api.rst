@@ -5351,6 +5351,7 @@ Exporting History Events
    :reqjson bool group_by_event_ids: A boolean determining if results should be grouped by common event identifiers. If true, the result will return only the first event of each group but also the number of events the group has. Default is false.
    :reqjson int from_timestamp: The timestamp from which to start querying. Default is 0.
    :reqjson int to_timestamp: The timestamp until which to query. Default is now.
+   :reqjson list[int] identifiers: List of unique integer identifiers of the history events to retrieve.
    :reqjson list[string] event_identifiers: An optional list of event identifiers to filter for.
    :reqjson list[string] event_types: An optional list of event types by which to filter the decoded events.
    :reqjson list[string] event_subtypes: An optional list of event subtypes by which to filter the decoded events.
