@@ -126,12 +126,12 @@ const hintText = computed<string>(() => {
   return selection ? '1' : all;
 });
 
-const displayedAccounts = computed<(AccountWithAddressData & { address: string; uniqueKey: string })[]>(() => {
+const displayedAccounts = computed<(AccountWithAddressData & { address: string; key: string })[]>(() => {
   const addresses = get(usableAddresses);
   const accounts = [...get(selectableAccounts)].map(item => ({
     ...item,
     address: getAccountAddress(item),
-    uniqueKey: `${item.chain}-${getAccountAddress(item)}`,
+    key: getAccountId(item),
   }));
   if (addresses.length > 0)
     return accounts.filter(account => addresses.includes(account.address));
@@ -199,7 +199,7 @@ function getAccount(account: AccountWithAddressData): Account {
       :model-value="internalValue"
       :options="displayedAccounts"
       :filter="filter"
-      key-attr="uniqueKey"
+      key-attr="key"
       text-attr="address"
       auto-select-first
       :loading="loading"
