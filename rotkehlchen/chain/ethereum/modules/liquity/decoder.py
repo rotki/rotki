@@ -83,16 +83,34 @@ class LiquityDecoder(DecoderInterface):
             # This comment applies to all decoding functions in this file.
             return DecodingOutput(matched_counterparty=CPT_LIQUITY)
 
+        debt_event: EvmEvent | None = None
+        fee_event: EvmEvent | None = None
         for event in context.decoded_events:
             try:
                 crypto_asset = event.asset.resolve_to_crypto_asset()
             except (UnknownAsset, WrongAssetType):
                 self.notify_user(event=event, counterparty=CPT_LIQUITY)
                 continue
+
+            if event.event_type == HistoryEventType.SPEND and event.event_subtype == HistoryEventSubType.FEE and event.counterparty == CPT_LIQUITY and event.asset == self.lusd:  # noqa: E501
+                fee_event = event
+                if debt_event:  # debt event appeared before fee event. We need to make changes
+                    # You borrow debt + fee, and right after pay the fee. If we
+                    # don't do that the fee payment is a missing acquisition
+                    debt_event.balance.amount += fee_event.balance.amount
+                    debt_event.notes = f'Generate {debt_event.balance.amount} LUSD from liquity'
+
             if event.event_type == HistoryEventType.RECEIVE and event.asset == A_LUSD:
                 event.event_type = HistoryEventType.WITHDRAWAL
                 event.event_subtype = HistoryEventSubType.GENERATE_DEBT
                 event.counterparty = CPT_LIQUITY
+                debt_event = event
+
+                if fee_event:  # fee event appears before the debt event, we need to make changes
+                    # You borrow debt + fee, and right after pay the fee. If we
+                    # don't do that the fee payment is a missing acquisition
+                    event.balance.amount += fee_event.balance.amount
+
                 event.notes = f'Generate {event.balance.amount} LUSD from liquity'
 
             elif event.event_type == HistoryEventType.SPEND and event.event_subtype == HistoryEventSubType.NONE and event.asset == A_LUSD:  # noqa: E501
@@ -111,6 +129,10 @@ class LiquityDecoder(DecoderInterface):
                 event.counterparty = CPT_LIQUITY
                 event.notes = f'Withdraw {event.balance.amount} {crypto_asset.symbol} collateral from liquity'  # noqa: E501
 
+        maybe_reshuffle_events(  # make sure debt generation event comes before fee
+            ordered_events=[debt_event, fee_event],
+            events_list=context.decoded_events,
+        )
         return DEFAULT_DECODING_OUTPUT
 
     def _decode_stability_pool_event(

@@ -23,10 +23,8 @@ from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 @pytest.mark.parametrize('ethereum_accounts', [['0x9ba961989Dd6609Ed091f512bE947118c40F2291']])
 def test_deposit_eth_borrow_lusd(ethereum_inquirer, ethereum_accounts):
     evmhash = deserialize_evm_tx_hash('0xdb9a541a4af7d5d46d7ea5fe4a2a752dcb731d64d052f86f630e97362063602c')  # noqa: E501
-    user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=evmhash)
-    timestamp = TimestampMS(1650878514000)
-    gas_str, fee_str, debt_str = '0.013622314246080246', '23.795404790091371686', '4751.162005820150243344'  # noqa: E501
+    gas_str, fee_str, debt_str, timestamp, user_address = '0.013622314246080246', '23.795404790091371686', '4774.957410610241615030', TimestampMS(1650878514000), ethereum_accounts[0]  # noqa: E501
     expected_events = [EvmEvent(
         tx_hash=evmhash,
         sequence_index=0,
@@ -54,20 +52,7 @@ def test_deposit_eth_borrow_lusd(ethereum_inquirer, ethereum_accounts):
         address=string_to_evm_address('0x24179CD81c9e782A4096035f7eC97fB8B783e007'),
     ), EvmEvent(
         tx_hash=evmhash,
-        sequence_index=98,
-        timestamp=timestamp,
-        location=Location.ETHEREUM,
-        event_type=HistoryEventType.SPEND,
-        event_subtype=HistoryEventSubType.FEE,
-        asset=A_LUSD,
-        balance=Balance(FVal(fee_str)),
-        location_label=user_address,
-        notes=f'Paid {fee_str} LUSD as a borrowing fee',
-        counterparty=CPT_LIQUITY,
-        address=BORROWER_OPERATIONS,
-    ), EvmEvent(
-        tx_hash=evmhash,
-        sequence_index=100,
+        sequence_index=2,
         timestamp=timestamp,
         location=Location.ETHEREUM,
         event_type=HistoryEventType.WITHDRAWAL,
@@ -78,6 +63,19 @@ def test_deposit_eth_borrow_lusd(ethereum_inquirer, ethereum_accounts):
         notes=f'Generate {debt_str} LUSD from liquity',
         counterparty=CPT_LIQUITY,
         address=ZERO_ADDRESS,
+    ), EvmEvent(
+        tx_hash=evmhash,
+        sequence_index=3,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_LUSD,
+        balance=Balance(FVal(fee_str)),
+        location_label=user_address,
+        notes=f'Paid {fee_str} LUSD as a borrowing fee',
+        counterparty=CPT_LIQUITY,
+        address=BORROWER_OPERATIONS,
     )]
     assert events == expected_events
 
@@ -652,7 +650,7 @@ def test_ds_proxy_liquity_staking(ethereum_inquirer, ethereum_accounts):
 def test_ds_proxy_borrow_lusd(ethereum_inquirer, ethereum_accounts):
     evmhash = deserialize_evm_tx_hash('0xa7404dc759fdef08fde6dbb227d6c55276861853d274c9a739236488a123f794')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=evmhash)
-    timestamp, user_address, gas_str, debt_str, fee_str = TimestampMS(1704486503000), ethereum_accounts[0], '0.006847541539452045', '50000', '300.21680310311845'  # noqa: E501
+    timestamp, user_address, gas_str, debt_str, fee_str = TimestampMS(1704486503000), ethereum_accounts[0], '0.006847541539452045', '50300.21680310311845', '300.21680310311845'  # noqa: E501
     expected_events = [EvmEvent(
         tx_hash=evmhash,
         sequence_index=0,
@@ -667,20 +665,7 @@ def test_ds_proxy_borrow_lusd(ethereum_inquirer, ethereum_accounts):
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_hash=evmhash,
-        sequence_index=62,
-        timestamp=timestamp,
-        location=Location.ETHEREUM,
-        event_type=HistoryEventType.SPEND,
-        event_subtype=HistoryEventSubType.FEE,
-        asset=A_LUSD,
-        balance=Balance(FVal(fee_str)),
-        location_label=user_address,
-        notes=f'Paid {fee_str} LUSD as a borrowing fee',
-        counterparty=CPT_LIQUITY,
-        address=BORROWER_OPERATIONS,
-    ), EvmEvent(
-        tx_hash=evmhash,
-        sequence_index=67,
+        sequence_index=1,
         timestamp=timestamp,
         location=Location.ETHEREUM,
         event_type=HistoryEventType.WITHDRAWAL,
@@ -691,5 +676,18 @@ def test_ds_proxy_borrow_lusd(ethereum_inquirer, ethereum_accounts):
         notes=f'Generate {debt_str} LUSD from liquity',
         counterparty=CPT_LIQUITY,
         address=string_to_evm_address('0x76eb7232943AAe8546440A945C2D6bDd146C0299'),
+    ), EvmEvent(
+        tx_hash=evmhash,
+        sequence_index=2,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_LUSD,
+        balance=Balance(FVal(fee_str)),
+        location_label=user_address,
+        notes=f'Paid {fee_str} LUSD as a borrowing fee',
+        counterparty=CPT_LIQUITY,
+        address=BORROWER_OPERATIONS,
     )]
     assert events == expected_events
