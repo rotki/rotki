@@ -189,8 +189,9 @@ class BinanceTradeEntry(BinanceMultipleEntry):
             (keys == {'Transaction Buy', 'Transaction Spend'} and counted['Transaction Buy'] - counted['Transaction Spend'] == 0) or  # noqa: E501
             (keys == {'Transaction Revenue', 'Transaction Sold'} and counted['Transaction Revenue'] - counted['Transaction Sold'] == 0) or  # noqa: E501
             (keys == {'Buy', 'Sell'} and counted['Buy'] % 2 == 0 and counted['Sell'] % 2 == 0) or
-            (keys == {'Buy'} and counted['Buy'] % 2 == 0) or
-            (keys == {'Sell'} and counted['Sell'] % 2 == 0) or
+            (keys == {'Buy'} and counted['Buy'] % 2 == 0) or  # deprecated, new CSVs use Buy/Sell
+            (keys == {'Sell'} and counted['Sell'] % 2 == 0) or  # deprecated, new CSVs use Buy/Sell
+            (keys == {'Buy', 'Sell'} and counted['Buy'] - counted['Sell'] == 0) or
             (keys == {'Transaction Related'} and counted['Transaction Related'] % 2 == 0) or
             (keys == {'Small assets exchange BNB'} and counted['Small assets exchange BNB'] % 2 == 0) or  # noqa: E501
             (keys == {'Small Assets Exchange BNB'} and counted['Small Assets Exchange BNB'] % 2 == 0) or  # noqa: E501
@@ -773,8 +774,9 @@ class BinanceImporter(BaseExchangeImporter):
         """Processes binance entries that are represented with 2+ rows in a csv file.
         Returns Entry type and entries count if any entries were processed. Otherwise, None and 0.
         """
+        operations = [row['Operation'] for row in rows]
         for multiple_entry_class in MULTIPLE_BINANCE_ENTRIES:
-            if multiple_entry_class.are_entries([row['Operation'] for row in rows]):
+            if multiple_entry_class.are_entries(operations):
                 processed_count = multiple_entry_class.process_entries(
                     write_cursor=write_cursor,
                     importer=self,
@@ -787,7 +789,7 @@ class BinanceImporter(BaseExchangeImporter):
             self.send_message(
                 row_index=row[INDEX],
                 csv_row=row,
-                msg='Could not process CSV entry',
+                msg=f'Could not process row in multi-line entry. Expected a valid combination of operations but got "{", ".join(operations)}" instead',  # noqa: E501
                 is_error=True,
             )
         return None, 0

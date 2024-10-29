@@ -1,4 +1,5 @@
 import json
+import os
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
@@ -93,13 +94,18 @@ def test_asset_updates_consistency_with_packaged_db(
     - All assets are present in both cases.
     - All details of these assets are the same in both cases.
     - All underlying assets are present and mapped in both cases.
-    Protocol tokens that are queried automatically are not tested here."""
+    Protocol tokens that are queried automatically are not tested here.
+
+    This test uses the env variable `TARGET_BRANCH` to select what branch in the assets repo
+    it needs to check. Defaults to `develop`.
+    """
     temp_data_dir = Path(tmpdir_factory.mktemp(GLOBALDIR_NAME))
     (old_db_dir := temp_data_dir / GLOBALDIR_NAME).mkdir(parents=True, exist_ok=True)
     request.urlretrieve(
         url='https://github.com/rotki/rotki/raw/v1.26.0/rotkehlchen/data/global.db',
         filename=old_db_dir / 'global.db',
     )
+    target_branch = os.environ.get('TARGET_BRANCH', 'develop')
 
     globaldb = create_globaldb(
         data_directory=temp_data_dir,
@@ -115,6 +121,7 @@ def test_asset_updates_consistency_with_packaged_db(
         assert packaged_db_cursor.execute("SELECT value FROM settings WHERE name='assets_version'").fetchone()[0] == '30'  # noqa: E501
 
     assets_updater = AssetsUpdater(msg_aggregator=messages_aggregator)
+    assets_updater.branch = target_branch
     if (conflicts := assets_updater.perform_update(
         up_to_version=None,
         conflicts=None,

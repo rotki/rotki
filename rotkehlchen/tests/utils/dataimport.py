@@ -1625,6 +1625,19 @@ def assert_binance_import_results(rotki: Rotkehlchen, websocket_connection: Webs
             link='',
             notes='Imported from binance CSV file. Binance operation: Buy / Sell',
         ),
+        Trade(
+            timestamp=Timestamp(1704118880),
+            location=Location.BINANCE,
+            base_asset=A_ETH,
+            quote_asset=A_EUR,
+            trade_type=TradeType.BUY,
+            amount=AssetAmount(FVal('0.03605')),
+            rate=Price(FVal('0.000268085733817674892430599305657949412222028604747798345911022344945913703202284')),
+            fee=Fee(FVal('0.00003605')),
+            fee_currency=A_ETH,
+            link='',
+            notes='Imported from binance CSV file. Binance operation: Buy / Sell',
+        ),
     ]
 
     expected_asset_movements = [
@@ -1969,12 +1982,13 @@ def assert_binance_import_results(rotki: Rotkehlchen, websocket_connection: Webs
         'type': 'csv_import_result',
         'data': {
             'source_name': 'Binance',
-            'total_entries': 84,
-            'imported_entries': 78,
+            'total_entries': 87,
+            'imported_entries': 81,
             'messages': [
                 {'msg': 'Failed to deserialize a timestamp from a null entry in binance', 'rows': [4], 'is_error': True},  # noqa: E501
                 {'msg': 'Unknown asset "" provided.', 'rows': [5], 'is_error': True},
-                {'msg': 'Could not process CSV entry', 'rows': [31, 32, 33, 41], 'is_error': True},
+                {'msg': 'Could not process row in multi-line entry. Expected a valid combination of operations but got "Small assets exchange BNB, Small assets exchange BNB, Small assets exchange BNB" instead', 'rows': [31, 32, 33], 'is_error': True},  # noqa: E501
+                {'msg': 'Could not process row in multi-line entry. Expected a valid combination of operations but got "ABC" instead', 'rows': [41], 'is_error': True},  # noqa: E501
             ],
         },
     }

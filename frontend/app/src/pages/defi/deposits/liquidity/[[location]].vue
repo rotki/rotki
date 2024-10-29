@@ -135,38 +135,36 @@ watchImmediate(lastLocation, async (location) => {
           {{ t('staking_page.dropdown_hint') }}
         </div>
       </div>
-      <FullSizeContent>
-        <div class="flex flex-col h-full items-center justify-center gap-6">
-          <span class="font-bold text-h5">
-            {{ t('staking_page.page.title') }}
-          </span>
-          <div class="flex gap-4">
-            <RuiTooltip
-              v-for="item in liquidities"
-              :key="item.id"
-              :open-delay="400"
-            >
-              <template #activator>
-                <InternalLink
-                  :to="{
-                    path: '/defi/deposits/liquidity',
-                    query: { location },
-                  }"
-                >
-                  <AppImage
-                    :size="imageSize"
-                    contain
-                    :src="item.image"
-                  />
-                </InternalLink>
-              </template>
-              {{ item.name }}
-            </RuiTooltip>
-          </div>
+      <FullSizeContent class="gap-6">
+        <span class="font-bold text-h5">
+          {{ t('staking_page.page.title') }}
+        </span>
+        <div class="flex gap-4">
+          <RuiTooltip
+            v-for="item in liquidities"
+            :key="item.id"
+            :open-delay="400"
+          >
+            <template #activator>
+              <InternalLink
+                :to="{
+                  path: '/defi/deposits/liquidity',
+                  query: { location },
+                }"
+              >
+                <AppImage
+                  :size="imageSize"
+                  contain
+                  :src="item.image"
+                />
+              </InternalLink>
+            </template>
+            {{ item.name }}
+          </RuiTooltip>
+        </div>
 
-          <div class="text-body-1 text-rui-text-secondary text-center max-w-[37rem]">
-            {{ t('staking_page.page.description') }}
-          </div>
+        <div class="text-body-1 text-rui-text-secondary text-center max-w-[37rem]">
+          {{ t('staking_page.page.description') }}
         </div>
       </FullSizeContent>
     </div>

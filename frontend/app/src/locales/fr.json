@@ -2228,12 +2228,6 @@
       "message": "Voulez-vous vraiment supprimer cette clé API ?",
       "title": "Supprimer la Clé API"
     },
-    "covalent": {
-      "delete_tooltip": "Supprime la clé API Covalent",
-      "description": "rotki peut utiliser Covalent pour obtenir des données historiques pour diverses chaînes",
-      "hint": "Entrer votre clé API Covalent",
-      "title": "Covalent"
-    },
     "credential": {
       "username": "Nom d'Utilisateur",
       "password": "Mot de Passe"
