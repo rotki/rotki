@@ -13,15 +13,18 @@ type ShowConfirmationParams = {
   data: EthereumValidator;
 };
 
+interface EvmPayloadData {
+  address: string;
+  chains: string[];
+  includeAllChains: boolean;
+};
+
 type Payload = {
   type: 'validator';
   data: string;
 } | {
   type: 'evm';
-  data: {
-    address: string;
-    chains: string[];
-  };
+  data: EvmPayloadData;
 } | {
   type: 'xpub';
   data: XpubData & { chain: string };
@@ -42,18 +45,10 @@ function toPayload(params: ShowConfirmationParams): Payload {
   }
 
   const account = params.data;
+  const address = getAccountAddress(account);
 
   if (account.type === 'group') {
-    if (account.category === 'evm') {
-      return {
-        type: 'evm',
-        data: {
-          address: getAccountAddress(account),
-          chains: account.chains,
-        },
-      };
-    }
-    else if (account.data.type === 'xpub') {
+    if (account.data.type === 'xpub') {
       return {
         type: 'xpub',
         data: {
@@ -62,22 +57,49 @@ function toPayload(params: ShowConfirmationParams): Payload {
         },
       };
     }
-    else {
+
+    const { chains, allChains } = account;
+
+    // A group but only has 1 chain
+    if (chains.length === 1) {
       return {
         type: 'account',
         data: {
           chain: account.chains[0],
-          address: getAccountAddress(account),
+          address,
         },
       };
     }
+
+    // A group that showing multiple chains, but not all
+    if (allChains && allChains.length > chains.length) {
+      return {
+        type: 'evm',
+        data: {
+          address,
+          chains,
+          includeAllChains: false,
+        },
+      };
+    }
+
+    // A group that showing all its chains
+    return {
+      type: 'evm',
+      data: {
+        address,
+        chains,
+        includeAllChains: true,
+      },
+    };
   }
 
+  // Single account inside the group
   return {
     type: 'account',
     data: {
       chain: account.chain,
-      address: getAccountAddress(account),
+      address,
     },
   };
 }
@@ -92,6 +114,7 @@ export function useAccountDelete(): UseAccountDeleteReturn {
   const { removeAccounts } = useBlockchainStore();
   const { t } = useI18n();
   const { show } = useConfirmStore();
+  const { getChainName } = useSupportedChains();
 
   async function removeValidator(publicKey: string): Promise<void> {
     await deleteEth2Validators([publicKey]);
@@ -100,10 +123,25 @@ export function useAccountDelete(): UseAccountDeleteReturn {
 
   async function removeGroupAccounts(
     category: string,
-    { address, chains }: { address: string; chains: string[] },
+    { address, chains, includeAllChains }: EvmPayloadData,
   ): Promise<void> {
-    await removeAgnosticAccount(category, address);
-    removeAccounts({ addresses: [address], chains });
+    if (includeAllChains) {
+      await removeAgnosticAccount(category, address);
+      removeAccounts({ addresses: [address], chains });
+    }
+    else {
+      await awaitParallelExecution(
+        chains,
+        chain => chain,
+        chain => removeAccount({ accounts: [address], chain }),
+        1,
+      );
+
+      removeAccounts({
+        addresses: [address],
+        chains,
+      });
+    }
   }
 
   async function removeSingleAccount({ address, chain }: { address: string; chain: string }): Promise<void> {
@@ -126,17 +164,40 @@ export function useAccountDelete(): UseAccountDeleteReturn {
     });
   }
 
-  function showConfirmation(params: ShowConfirmationParams, onComplete?: () => void): void {
+  function getConfirmationMessage(params: ShowConfirmationParams): string {
     const address = params.type === 'validator' ? params.data.publicKey : getAccountAddress(params.data);
 
-    let message: string = t('account_balances.confirm_delete.description_address', { address });
-    if (params.type === 'account') {
-      if (params.data.data.type === 'xpub')
-        message = t('account_balances.confirm_delete.description_xpub', { address });
-      else if (params.data.category)
-        message = t('account_balances.confirm_delete.agnostic.description', { address });
+    if (params.type === 'validator') {
+      const { index, publicKey } = params.data;
+      return t('account_balances.confirm_delete.description_validator', { publicKey, index });
     }
 
+    const account = params.data;
+
+    if (account.type === 'group') {
+      if (account.data.type === 'xpub')
+        return t('account_balances.confirm_delete.description_xpub', { address });
+
+      const { chains, allChains } = account;
+
+      // A group but only has 1 chain
+      if (chains.length === 1)
+        return t('account_balances.confirm_delete.description_address', { address, chain: get(getChainName(chains[0])) });
+
+      // A group that showing multiple chains, but not all
+      if (allChains && allChains.length > chains.length)
+        return t('account_balances.confirm_delete.description_multiple_address', { address, length: chains.length, chains: chains.map(item => get(getChainName(item))).join(', ') });
+
+      // A group that showing all its chains
+      return t('account_balances.confirm_delete.agnostic.description', { address });
+    }
+
+    // Single account inside the group
+    return t('account_balances.confirm_delete.description_address', { address, chain: get(getChainName(account.chain)) });
+  }
+
+  function showConfirmation(params: ShowConfirmationParams, onComplete?: () => void): void {
+    const message = getConfirmationMessage(params);
     show({ title: t('account_balances.confirm_delete.title'), message }, async () => {
       const payload = toPayload(params);
 

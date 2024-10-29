@@ -25,7 +25,7 @@
   },
   "account_balances": {
     "confirm_delete": {
-      "description_address": "你确定要删除{address}个地址",
+      "description_address": "您确定要从 {chain} 链中删除 {address} 地址吗？",
       "description_xpub": "你确定要删除{address}",
       "title": "账号删除"
     },

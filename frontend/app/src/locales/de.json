@@ -19,7 +19,7 @@
   },
   "account_balances": {
     "confirm_delete": {
-      "description_address": "Sind Sie sicher dass Sie {address} Adresse entfernen möchten",
+      "description_address": "Sind Sie sicher, dass Sie die Adresse {address} aus der Kette {chain} löschen möchten?",
       "description_xpub": "Sind Sie sicher dass Sie {address} entfernen möchten",
       "title": "Konto entfernen"
     },
