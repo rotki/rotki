@@ -432,8 +432,7 @@ def test_withdraw_dai_on_optimism(optimism_inquirer, optimism_accounts):
 @pytest.mark.parametrize('ethereum_accounts', [['0x6D376A5863324489BD65AB2cc8E24d6cE3775848']])
 def test_deposit_eth_ethereum_to_base_bridge(ethereum_inquirer, ethereum_accounts):
     evmhash = deserialize_evm_tx_hash('0xe5e26e70a257ca733042d8cbbc4764737d115016892e440ad6cea43933a655d7')  # noqa: E501
-    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=evmhash)
-    user_address, timestamp, deposit_amount = ethereum_accounts[0], TimestampMS(1730128127000), '2'
+    (events, _), user_address, timestamp, deposit_amount = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=evmhash), ethereum_accounts[0], TimestampMS(1730128127000), '2'  # noqa: E501
     expected_events = [EvmEvent(
             tx_hash=evmhash,
             sequence_index=0,
@@ -468,9 +467,7 @@ def test_deposit_eth_ethereum_to_base_bridge(ethereum_inquirer, ethereum_account
 @pytest.mark.parametrize('ethereum_accounts', [['0x150f4a772a640BeD3a33E5919D1E3f4fc8dE2cd0']])
 def test_deposit_erc20_ethereum_to_base_bridge(ethereum_inquirer, ethereum_accounts):
     evmhash = deserialize_evm_tx_hash('0x58160ce93b20fa0ec513dd956325ef8e11f9478af21573bb3986b3fb167f475e')  # noqa: E501
-    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=evmhash)
-    gas_amount, deposit_amount = '0.002095833929196665', '15828.918676384591706627'
-    user_address, timestamp = ethereum_accounts[0], TimestampMS(1730111759000)
+    (events, _), gas_amount, deposit_amount, user_address, timestamp = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=evmhash), '0.002095833929196665', '15828.918676384591706627', ethereum_accounts[0], TimestampMS(1730111759000)  # noqa: E501
     expected_events = [EvmEvent(
             tx_hash=evmhash,
             sequence_index=0,
@@ -505,9 +502,7 @@ def test_deposit_erc20_ethereum_to_base_bridge(ethereum_inquirer, ethereum_accou
 @pytest.mark.parametrize('base_accounts', [['0xd34Ec2202b56261b6d7586a752E37a36818c0538']])
 def test_receive_eth_ethereum_to_base_bridge(base_inquirer, base_accounts):
     evmhash = deserialize_evm_tx_hash('0x924167064e29ecb68ea9586811b63799b6154158a6607ac9fcf9530667446a5c')  # noqa: E501
-    events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=evmhash)
-    amount = '0.83'
-    user_address, timestamp = base_accounts[0], TimestampMS(1730133657000)
+    (events, _), amount, user_address, timestamp = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=evmhash), '0.83', base_accounts[0], TimestampMS(1730133657000)  # noqa: E501
     expected_events = [EvmEvent(
             tx_hash=evmhash,
             sequence_index=0,
@@ -530,9 +525,7 @@ def test_receive_eth_ethereum_to_base_bridge(base_inquirer, base_accounts):
 @pytest.mark.parametrize('base_accounts', [['0x1218d6396dC67eC0FFBEBDF049C865B83636EddA']])
 def test_receive_erc20_ethereum_to_base_bridge(base_inquirer, base_accounts):
     evmhash = deserialize_evm_tx_hash('0xf731b5c5dc53117413b880d0c65501cebe50c78ba3621eca9344747c95b83357')  # noqa: E501
-    events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=evmhash)
-    amount = '4900031.556715611515583027'
-    user_address, timestamp = base_accounts[0], TimestampMS(1730133393000)
+    (events, _), amount, user_address, timestamp = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=evmhash), '4900031.556715611515583027', base_accounts[0], TimestampMS(1730133393000)  # noqa: E501
     expected_events = [EvmEvent(
             tx_hash=evmhash,
             sequence_index=0,
@@ -555,13 +548,11 @@ def test_receive_erc20_ethereum_to_base_bridge(base_inquirer, base_accounts):
 @pytest.mark.parametrize('base_accounts', [['0x6730b1Df17E50217777EeE475E34815964e3BFb2']])
 def test_withdraw_eth_base_to_ethereum_bridge(base_inquirer, base_accounts):
     evmhash = deserialize_evm_tx_hash('0xe451ca095dd9d48f6558a226fc6cc9b28d19f39080545db63b8ba9410fe3df3e')  # noqa: E501
-    events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=evmhash)
-    gas_amount, deposit_amount = '0.000000442236014244', '133.00839331231264871'
-    user_address = base_accounts[0]
+    (events, _), gas_amount, deposit_amount, user_address, timestamp = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=evmhash), '0.000000442236014244', '133.00839331231264871', base_accounts[0], TimestampMS(1729279481000)  # noqa: E501
     expected_events = [EvmEvent(
             tx_hash=evmhash,
             sequence_index=0,
-            timestamp=TimestampMS(1729279481000),
+            timestamp=timestamp,
             location=Location.BASE,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -573,7 +564,7 @@ def test_withdraw_eth_base_to_ethereum_bridge(base_inquirer, base_accounts):
         ), EvmEvent(
             tx_hash=evmhash,
             sequence_index=1,
-            timestamp=TimestampMS(1729279481000),
+            timestamp=timestamp,
             location=Location.BASE,
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.BRIDGE,
@@ -592,13 +583,11 @@ def test_withdraw_eth_base_to_ethereum_bridge(base_inquirer, base_accounts):
 @pytest.mark.parametrize('base_accounts', [['0x779e4b47c3Dea5689233821dFcf429E0485eF116']])
 def test_withdraw_erc20_base_to_ethereum_bridge(base_inquirer, base_accounts):
     evmhash = deserialize_evm_tx_hash('0xbe4e54e77cb700f2755b236d7823295129c4d5e22fdc87df8058274bc0fefab1')  # noqa: E501
-    events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=evmhash)
-    gas_amount, deposit_amount = '0.000029210771559657', '49352.072702'
-    user_address = base_accounts[0]
+    (events, _), gas_amount, deposit_amount, user_address, timestamp = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=evmhash), '0.000029210771559657', '49352.072702', base_accounts[0], TimestampMS(1729293119000)  # noqa: E501
     expected_events = [EvmEvent(
             tx_hash=evmhash,
             sequence_index=0,
-            timestamp=TimestampMS(1729293119000),
+            timestamp=timestamp,
             location=Location.BASE,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -610,7 +599,7 @@ def test_withdraw_erc20_base_to_ethereum_bridge(base_inquirer, base_accounts):
         ), EvmEvent(
             tx_hash=evmhash,
             sequence_index=79,
-            timestamp=TimestampMS(1729293119000),
+            timestamp=timestamp,
             location=Location.BASE,
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.BRIDGE,
