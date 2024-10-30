@@ -163,5 +163,36 @@ describe('composables::history/filter-paginate', () => {
         direction: 'asc',
       });
     });
+
+    it('handles pagination correctly when limit is less than total', async () => {
+      const mockResponse: Collection<TradeEntry> = {
+        data: new Array(10).fill({}),
+        found: 300,
+        limit: 100,
+        total: 100,
+      };
+
+      const mockFetchTrades = vi.fn().mockResolvedValue(mockResponse);
+
+      const { state, pagination, fetchData } = usePaginationFilters<
+        TradeEntry,
+        TradeRequestPayload,
+        Filters,
+        Matcher
+      >(mockFetchTrades, {
+        history: get(mainPage) ? 'router' : false,
+        filterSchema: useTradeFilters,
+        locationOverview,
+        onUpdateFilters,
+        extraParams,
+      });
+
+      await fetchData();
+      await flushPromises();
+
+      expect(get(state).found).toBe(300);
+      expect(get(state).limit).toBe(100);
+      expect(get(pagination).total).toBe(100);
+    });
   });
 });
