@@ -378,7 +378,7 @@ def test_withdraw_yearn_v2(
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=166,
+            sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
@@ -391,7 +391,7 @@ def test_withdraw_yearn_v2(
             address=ZERO_ADDRESS,
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=167,
+            sequence_index=2,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.WITHDRAWAL,
@@ -430,7 +430,19 @@ def test_deposit_yearn_v2_without_logs(
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=1,
+            sequence_index=157,
+            timestamp=TimestampMS(1667679923000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.APPROVE,
+            asset=A_YFI,
+            balance=Balance(amount=FVal('115792089237316195423570985008687907853269984665640564039457.562087073129639935')),
+            location_label=user_address,
+            notes='Set YFI spending approval of 0xb524c787669185E11d01C645D1910631e04Fa5Eb by 0xdb25cA703181E7484a155DD612b06f57E12Be5F0 to 115792089237316195423570985008687907853269984665640564039457.562087073129639935',  # noqa: E501
+            address=string_to_evm_address('0xdb25cA703181E7484a155DD612b06f57E12Be5F0'),
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=158,
             timestamp=TimestampMS(1667679923000),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.DEPOSIT,
@@ -443,7 +455,7 @@ def test_deposit_yearn_v2_without_logs(
             address=string_to_evm_address('0xdb25cA703181E7484a155DD612b06f57E12Be5F0'),
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=2,
+            sequence_index=159,
             timestamp=TimestampMS(1667679923000),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
@@ -454,18 +466,6 @@ def test_deposit_yearn_v2_without_logs(
             notes='Receive 0.02164738945170483 yvYFI after deposit in a yearn-v2 vault',
             counterparty=CPT_YEARN_V2,
             address=ZERO_ADDRESS,
-        ), EvmEvent(
-            tx_hash=tx_hash,
-            sequence_index=157,
-            timestamp=TimestampMS(1667679923000),
-            location=Location.ETHEREUM,
-            event_type=HistoryEventType.INFORMATIONAL,
-            event_subtype=HistoryEventSubType.APPROVE,
-            asset=A_YFI,
-            balance=Balance(amount=FVal('115792089237316195423570985008687907853269984665640564039457.562087073129639935')),
-            location_label=user_address,
-            notes='Set YFI spending approval of 0xb524c787669185E11d01C645D1910631e04Fa5Eb by 0xdb25cA703181E7484a155DD612b06f57E12Be5F0 to 115792089237316195423570985008687907853269984665640564039457.562087073129639935',  # noqa: E501
-            address=string_to_evm_address('0xdb25cA703181E7484a155DD612b06f57E12Be5F0'),
         ),
     ]
 
@@ -655,7 +655,20 @@ def test_deposit_yearn_full_amount(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=1,
+            sequence_index=224,
+            timestamp=TimestampMS(1614241909000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.APPROVE,
+            asset=A_1INCH,
+            balance=Balance(amount=FVal('115792089237316195423570985008687907853269984665640564038972.292276463862611574'), usd_value=ZERO),  # noqa: E501
+            location_label=user_address,
+            notes='Set 1INCH spending approval of 0xfDb7EEc5eBF4c4aC7734748474123aC25C6eDCc8 by 0xB8C3B7A2A618C552C23B1E4701109a9E756Bab67 to 115792089237316195423570985008687907853269984665640564038972.292276463862611574',  # noqa: E501
+            counterparty=None,
+            address=string_to_evm_address('0xB8C3B7A2A618C552C23B1E4701109a9E756Bab67'),
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=225,
             timestamp=TimestampMS(1614241909000),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.DEPOSIT,
@@ -668,7 +681,7 @@ def test_deposit_yearn_full_amount(ethereum_inquirer, ethereum_accounts):
             address=string_to_evm_address('0xB8C3B7A2A618C552C23B1E4701109a9E756Bab67'),
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=2,
+            sequence_index=226,
             timestamp=TimestampMS(1614241909000),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
@@ -679,18 +692,5 @@ def test_deposit_yearn_full_amount(ethereum_inquirer, ethereum_accounts):
             notes='Receive 484.583645343659242764 yv1INCH after deposit in a yearn-v2 vault',
             counterparty=CPT_YEARN_V2,
             address=ZERO_ADDRESS,
-        ), EvmEvent(
-            tx_hash=evmhash,
-            sequence_index=224,
-            timestamp=TimestampMS(1614241909000),
-            location=Location.ETHEREUM,
-            event_type=HistoryEventType.INFORMATIONAL,
-            event_subtype=HistoryEventSubType.APPROVE,
-            asset=A_1INCH,
-            balance=Balance(amount=FVal('115792089237316195423570985008687907853269984665640564038972.292276463862611574'), usd_value=ZERO),  # noqa: E501
-            location_label=user_address,
-            notes='Set 1INCH spending approval of 0xfDb7EEc5eBF4c4aC7734748474123aC25C6eDCc8 by 0xB8C3B7A2A618C552C23B1E4701109a9E756Bab67 to 115792089237316195423570985008687907853269984665640564038972.292276463862611574',  # noqa: E501
-            counterparty=None,
-            address=string_to_evm_address('0xB8C3B7A2A618C552C23B1E4701109a9E756Bab67'),
         ),
     ]

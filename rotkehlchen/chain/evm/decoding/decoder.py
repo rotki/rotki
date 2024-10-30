@@ -334,6 +334,7 @@ class EVMTransactionDecoder(ABC):
             new_mappings = decoder.reload_data()
             if new_mappings is not None:
                 self.rules.address_mappings.update(new_mappings)
+                self.rules.addresses_to_counterparties.update(decoder.addresses_to_counterparties())
 
     def reload_data(self, cursor: 'DBCursor') -> None:
         """Reload all related settings from DB and data that any decoder may require from the chain
