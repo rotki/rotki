@@ -6,10 +6,13 @@ from eth_typing import ChecksumAddress
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import EvmToken
+from rotkehlchen.chain.arbitrum_one.constants import CPT_ARBITRUM_ONE
+from rotkehlchen.chain.base.constants import CPT_BASE
 from rotkehlchen.chain.ethereum.airdrops import check_airdrops
 from rotkehlchen.chain.ethereum.modules.ens.constants import CPT_ENS
 from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.chain.optimism.constants import CPT_OPTIMISM
 from rotkehlchen.constants.timing import DAY_IN_SECONDS, WEEK_IN_SECONDS
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.calendar import (
@@ -22,13 +25,21 @@ from rotkehlchen.db.calendar import (
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.filtering import EvmEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_hex_color_code
-from rotkehlchen.types import ChainID, OptionalBlockchainAddress, SupportedBlockchain, Timestamp
+from rotkehlchen.types import (
+    ChainID,
+    Location,
+    OptionalBlockchainAddress,
+    SupportedBlockchain,
+    Timestamp,
+    TimestampMS,
+)
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import ts_now
+from rotkehlchen.utils.misc import ts_ms_to_sec, ts_now, ts_now_in_ms
 from rotkehlchen.utils.mixins.customizable_date import CustomizableDateMixin
 
 logger = logging.getLogger(__name__)
@@ -36,6 +47,7 @@ log = RotkehlchenLogsAdapter(logger)
 ENS_CALENDAR_COLOR: Final = deserialize_hex_color_code('5298FF')
 CRV_CALENDAR_COLOR: Final = deserialize_hex_color_code('5bf054')
 AIRDROP_CALENDAR_COLOR: Final = deserialize_hex_color_code('ffd966')
+BRIDGE_CALENDAR_COLOR: Final = deserialize_hex_color_code('fcceee')
 
 if TYPE_CHECKING:
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
@@ -410,6 +422,58 @@ class CalendarReminderCreator(CustomizableDateMixin):
             error_msg='Failed to add the airdrop claim reminders',
         )
 
+    def maybe_create_l2_bridging_reminder(self) -> None:
+        """Creates calendar reminders for L2 bridge claims (7 days after deposit).
+        Tracks deposits on Base, Optimism, and Arbitrum networks.
+        """
+        bridge_events: list[EvmEvent] = []
+        locations_to_counterparties = (
+            (Location.BASE, CPT_BASE),
+            (Location.OPTIMISM, CPT_OPTIMISM),
+            (Location.ARBITRUM_ONE, CPT_ARBITRUM_ONE),
+        )
+        db_history_events = DBHistoryEvents(database=self.database)
+        with self.database.conn.read_ctx() as cursor:
+            for location, counterparty in locations_to_counterparties:
+                bridge_events.extend(db_history_events.get_history_events(
+                    cursor=cursor,
+                    has_premium=True,
+                    filter_query=EvmEventFilterQuery.make(
+                        and_op=True,
+                        location=location,
+                        counterparties=[counterparty],
+                        event_types=[HistoryEventType.DEPOSIT],
+                        event_subtypes=[HistoryEventSubType.BRIDGE],
+                    ),
+                ))
+
+        now = ts_now_in_ms()
+        bridge_calendar_entries: list[int] = []
+        for bridge_event in bridge_events:
+            if now - bridge_event.timestamp > WEEK_IN_SECONDS * 1000:
+                continue
+
+            try:
+                asset_symbol = bridge_event.asset.resolve_to_asset_with_symbol().symbol
+                if (entry_id := self.create_or_update_calendar_entry_from_event(
+                        name=f'Claim {bridge_event.balance.amount} {asset_symbol} bridge deposit on Ethereum',  # noqa: E501
+                        event=bridge_event,
+                        color=BRIDGE_CALENDAR_COLOR,
+                        counterparty=bridge_event.counterparty,  # type: ignore[arg-type]  # counterparty is always present
+                        timestamp=ts_ms_to_sec(TimestampMS(bridge_event.timestamp + WEEK_IN_SECONDS)),  # noqa: E501
+                        description=f'Bridge deposit of {bridge_event.balance.amount} {asset_symbol} is ready to claim on Ethereum',  # noqa: E501
+                )) is not None:
+                    bridge_calendar_entries.append(entry_id)
+            except UnknownAsset:
+                log.exception(f'Unable to add reminder for brige event with hash {bridge_event.tx_hash.hex()} on {bridge_event.location.name}')  # noqa: E501
+                continue
+
+        self.maybe_create_reminders(
+            secs_befores=[0],
+            calendar_identifiers=bridge_calendar_entries,
+            error_msg='Failed to add the bridge claim reminders',
+        )
+
 
 def maybe_create_calendar_reminders(database: DBHandler) -> None:
     """Create all needed calendar reminders"""
@@ -418,6 +482,7 @@ def maybe_create_calendar_reminders(database: DBHandler) -> None:
     reminder_creator.maybe_create_ens_reminders()
     reminder_creator.maybe_create_locked_crv_reminders()
     reminder_creator.maybe_create_airdrop_claim_reminder()
+    reminder_creator.maybe_create_l2_bridging_reminder()
 
     with database.conn.write_ctx() as write_cursor:
         database.set_static_cache(

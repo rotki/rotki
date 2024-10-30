@@ -2,6 +2,7 @@ from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import pytest
+from freezegun import freeze_time
 
 from rotkehlchen.chain.ethereum.airdrops import AIRDROPS_REPO_BASE
 from rotkehlchen.chain.ethereum.modules.ens.constants import CPT_ENS
@@ -10,6 +11,7 @@ from rotkehlchen.constants.timing import DAY_IN_SECONDS, WEEK_IN_SECONDS
 from rotkehlchen.db.calendar import CalendarEntry, CalendarFilterQuery, DBCalendar
 from rotkehlchen.tasks.calendar import (
     AIRDROP_CALENDAR_COLOR,
+    BRIDGE_CALENDAR_COLOR,
     CRV_CALENDAR_COLOR,
     ENS_CALENDAR_COLOR,
     CalendarReminderCreator,
@@ -21,9 +23,10 @@ from rotkehlchen.types import (
     EVMTxHash,
     SupportedBlockchain,
     Timestamp,
+    TimestampMS,
     deserialize_evm_tx_hash,
 )
-from rotkehlchen.utils.misc import ts_now
+from rotkehlchen.utils.misc import ts_ms_to_sec, ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
@@ -260,3 +263,63 @@ def test_airdrop_claim_calendar_reminders(
     assert reminders[0].event_id == reminders[1].event_id == calendar_entry.identifier
     assert reminders[0].secs_before == DAY_IN_SECONDS
     assert reminders[1].secs_before == WEEK_IN_SECONDS
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.freeze_time('2023-06-30 15:45:00 GMT')
+@pytest.mark.parametrize('arbitrum_one_accounts', [[
+    '0x5EA45c8E36704d7F4053Bb0e23cDd96E4d8b80F7',
+]])
+@pytest.mark.parametrize('optimism_accounts', [[
+    '0xE232E72983E329757F02292322296f5B96dAfC8F',
+]])
+@pytest.mark.parametrize('base_accounts', [[
+    '0x6730b1Df17E50217777EeE475E34815964e3BFb2',
+]])
+def test_l2_bridge_claim_reminders(arbitrum_one_accounts, arbitrum_one_inquirer, optimism_accounts, optimism_inquirer, base_accounts, base_inquirer, database):  # noqa: E501
+    parameters = [
+        (optimism_accounts, optimism_inquirer, '0xe2111cddcd42c8214770c7a3270490c31663cd8b4b20b3fc27018ca3ce7a3979', '2023-01-09 08:34:00 GMT'),  # noqa: E501
+        (arbitrum_one_accounts, arbitrum_one_inquirer, '0xdb8e29f27a7b7b416f168e8135347703268a142b6776503e26419dbfc43bcabf', '2023-06-30 15:45:00 GMT'),  # noqa: E501
+        (base_accounts, base_inquirer, '0xe451ca095dd9d48f6558a226fc6cc9b28d19f39080545db63b8ba9410fe3df3e', '2024-10-18 07:24:00 GMT'),  # noqa: E501
+    ]
+    expected_entries = 0
+    for idx, (accounts, inquirer, tx_hash, time_to_freeze) in enumerate(parameters):
+        with freeze_time(time_to_freeze):
+            events, _ = get_decoded_events_of_transaction(
+                tx_hash=deserialize_evm_tx_hash(tx_hash),
+                evm_inquirer=inquirer,
+            )
+
+            calendar_db = DBCalendar(database)
+            all_calendar_entries = calendar_db.query_calendar_entry(CalendarFilterQuery.make())
+            assert all_calendar_entries['entries_total'] == expected_entries
+
+            CalendarReminderCreator(
+                database=database,
+                current_ts=ts_now(),
+            ).maybe_create_l2_bridging_reminder()
+            expected_entries += 1
+
+            new_calendar_entries = calendar_db.query_calendar_entry(CalendarFilterQuery.make())
+            assert new_calendar_entries['entries_found'] == expected_entries
+
+            calendar_entry = new_calendar_entries['entries'][-1]
+            bridge_event = events[-1]
+            asset_symbol = bridge_event.asset.resolve_to_asset_with_symbol().symbol
+            assert calendar_entry == CalendarEntry(
+                identifier=idx + 1,
+                name=f'Claim {bridge_event.balance.amount} {asset_symbol} bridge deposit on Ethereum',  # noqa: E501
+                timestamp=ts_ms_to_sec(TimestampMS(bridge_event.timestamp + WEEK_IN_SECONDS)),
+                description=f'Bridge deposit of {bridge_event.balance.amount} {asset_symbol} is ready to claim on Ethereum',  # noqa: E501
+                counterparty=bridge_event.counterparty,
+                auto_delete=True,
+                blockchain=inquirer.chain_id.to_blockchain(),
+                address=accounts[0],
+                color=BRIDGE_CALENDAR_COLOR,
+            )
+
+            # one reminder is created at the time of the calendar entry
+            reminders = calendar_db.query_reminder_entry(event_id=calendar_entry.identifier)['entries']  # noqa: E501
+            assert len(reminders) == 1
+            assert reminders[0].event_id == calendar_entry.identifier
+            assert reminders[0].secs_before == 0
