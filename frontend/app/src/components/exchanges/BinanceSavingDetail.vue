@@ -152,9 +152,9 @@ onMounted(async () => {
             class="[&>td]:p-4"
           >
             <AmountDisplay
-              v-if="collection.totalUsdValue"
+              v-if="collection.totalValue"
               :fiat-currency="CURRENCY_USD"
-              :value="collection.totalUsdValue"
+              :value="collection.totalValue"
               show-currency="symbol"
             />
           </RowAppend>

@@ -208,7 +208,7 @@ export function sortAndFilterAccounts<T extends BlockchainAccountBalance>(
     limit: -1,
     total: accounts.length,
     found: sorted.length,
-    totalUsdValue: sum(filtered),
+    totalValue: sum(filtered),
   };
 }
 
