@@ -64,7 +64,7 @@ onMounted(() => {
             enter-active-class="transition duration-300"
             leave-from-class="opacity-1"
             leave-to-class="opacity-0"
-            leave-active-class="transition duration-100"
+            leave-active-class="transition duration-100 h-0"
           >
             <div
               v-if="!logged"
