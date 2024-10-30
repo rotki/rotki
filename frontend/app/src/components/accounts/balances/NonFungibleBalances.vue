@@ -75,6 +75,7 @@ const { isAssetIgnored, ignoreAsset, unignoreAsset } = useIgnoredAssetsStore();
 const { assetPrice } = useBalancePricesStore();
 
 const loading = isSectionLoading(Section.NON_FUNGIBLE_BALANCES);
+const isPriceLoading = isSectionLoading(Section.PRICES);
 
 const {
   state: balances,
@@ -186,8 +187,8 @@ function showDeleteConfirmation(item: NonFungibleBalance) {
   );
 }
 
-function getAssetPrice(asset: string): BigNumber | undefined {
-  return get(assetPrice(asset));
+function getAssetAmount(row: NonFungibleBalance): BigNumber | undefined {
+  return get(assetPrice(row.priceAsset))?.times(row.priceInAsset);
 }
 
 watch(ignoredAssetsHandling, () => {
@@ -245,7 +246,7 @@ onMounted(async () => {
         :collection="balances"
         @set-page="setPage($event)"
       >
-        <template #default="{ data, totalUsdValue }">
+        <template #default="{ data, totalValue }">
           <RuiDataTable
             v-model="selected"
             v-model:sort.external="sort"
@@ -281,12 +282,11 @@ onMounted(async () => {
             </template>
             <template #item.usdPrice="{ row }">
               <AmountDisplay
-                :price-asset="row.priceAsset"
-                :amount="row.priceInAsset"
-                :value="getAssetPrice(row.priceAsset)"
+                :value="getAssetAmount(row)"
                 no-scramble
                 show-currency="symbol"
                 :fiat-currency="currencySymbol"
+                :loading="isPriceLoading"
               />
             </template>
             <template #item.actions="{ row }">
@@ -308,14 +308,14 @@ onMounted(async () => {
             </template>
             <template #body.append>
               <RowAppend
-                v-if="totalUsdValue"
+                v-if="totalValue"
                 label-colspan="4"
                 :label="t('common.total')"
                 class="[&>td]:p-4"
                 :right-patch-colspan="2"
               >
                 <AmountDisplay
-                  :value="totalUsdValue"
+                  :value="totalValue"
                   show-currency="symbol"
                   fiat-currency="USD"
                 />

@@ -1,5 +1,5 @@
 import type { BigNumber } from '@rotki/common';
-import type {AssetBalance} from "@/types/balances";
+import type { AssetBalance } from '@/types/balances';
 
 type Balance = ({ usdValue: BigNumber } | { value: BigNumber }) & { amount: BigNumber };
 
