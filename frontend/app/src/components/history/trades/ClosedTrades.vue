@@ -399,7 +399,7 @@ watch(loading, async (isLoading, wasLoading) => {
         :collection="trades"
         @set-page="setPage($event)"
       >
-        <template #default="{ data, limit, total, showUpgradeRow }">
+        <template #default="{ data, limit, total, found, entriesFoundTotal, showUpgradeRow }">
           <RuiDataTable
             v-model="value"
             v-model:expanded="expanded"
@@ -485,7 +485,9 @@ watch(loading, async (isLoading, wasLoading) => {
               <UpgradeRow
                 :limit="limit"
                 :total="total"
+                :found="found"
                 :colspan="colspan"
+                :entries-found-total="entriesFoundTotal"
                 :label="t('closed_trades.label')"
               />
             </template>
