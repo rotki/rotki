@@ -164,7 +164,7 @@ class PolygonPosBridgeDecoder(DecoderInterface):
                 )
                 break
         else:
-            log.error(f'Failed to find Polygon bridge deposit event for {context.transaction}')
+            log.error(f'Failed to find Polygon bridge plasma deposit event for {context.transaction}')  # noqa: E501
 
         return DEFAULT_DECODING_OUTPUT
 
