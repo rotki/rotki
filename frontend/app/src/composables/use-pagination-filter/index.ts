@@ -222,9 +222,9 @@ export function usePaginationFilters<
   const pagination = computed<TablePaginationData>({
     get() {
       const { page, limit } = get(internalPagination);
-      const { found: total } = get(state);
+      const { found: total, limit: entriesLimit } = get(state);
       return {
-        total,
+        total: entriesLimit > 0 && entriesLimit < total ? entriesLimit : total,
         page,
         limit,
       };
