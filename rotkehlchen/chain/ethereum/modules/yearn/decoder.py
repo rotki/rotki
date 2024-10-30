@@ -1,3 +1,4 @@
+import logging
 from collections.abc import Callable, Mapping
 from typing import TYPE_CHECKING, Any, Final, Literal, TypeAlias
 
@@ -15,6 +16,7 @@ from rotkehlchen.chain.ethereum.modules.yearn.constants import (
 from rotkehlchen.chain.ethereum.modules.yearn.utils import query_yearn_vaults
 from rotkehlchen.chain.ethereum.utils import should_update_protocol_cache, token_normalized_value
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
+from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface, ReloadableDecoderMixin
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
@@ -29,6 +31,7 @@ from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
     YEARN_VAULTS_V1_PROTOCOL,
     YEARN_VAULTS_V2_PROTOCOL,
@@ -41,20 +44,19 @@ from rotkehlchen.utils.misc import bytes_to_address
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumInquirer
     from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
-    from rotkehlchen.fval import FVal
+    from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
-    from rotkehlchen.types import ChecksumEvmAddress
+    from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
     from rotkehlchen.user_messages import MessagesAggregator
 
-YEARN_DEPOSIT_AMOUNT_4_BYTES: Final = b'\xd0\xe3\r\xb0'
-YEARN_DEPOSIT_4_BYTES: Final = b'\xb6\xb5_%'
-YEARN_WITHDRAW_AMOUNT_4_BYTES: Final = b'.\x1a}M'
-YEARN_WITHDRAW_4_BYTES: Final = b'<\xcf\xd6\x0b'
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
+
+YEARN_DEPOSIT_4_BYTES: Final = b'\x83@\xf5I'
+YEARN_DEPOSIT_NO_LOGS_4_BYTES: Final = b'\xb6\xb5_%'
 YEARN_V2_DEPOSIT_TOPIC: Final = b'\x90\x89\x08\t\xc6T\xf1\x1dnr\xa2\x8f\xa6\x01Iw\n\r\x11\xecl\x921\x9dl\xeb+\xb0\xa4\xea\x1a\x15'  # noqa: E501
 YEARN_V3_DEPOSIT_TOPIC: Final = b'\xdc\xbc\x1c\x05$\x0f1\xff:\xd0g\xef\x1e\xe3\\\xe4\x99wbu.:\tR\x84uED\xf4\xc7\t\xd7'  # noqa: E501
-YEARN_V2_WITHDRAW_TOPIC: Final = b'\xf2y\xe6\xa1\xf5\xe3 \xcc\xa9\x115gm\x9c\xb6\xe4L\xa8\xa0\x8c\x0b\x884+\xcd\xb1\x14Oe\x11\xb5h'  # noqa: E501
 YEARN_V3_WITHDRAW_TOPIC: Final = b'\xfb\xdey} \x1ch\x1b\x91\x05e)\x11\x9e\x0b\x02@|{\xb9jJ,u\xc0\x1f\xc9fr2\xc8\xdb'  # noqa: E501
-TRANSFER_TOPIC: Final = b'\xdd\xf2R\xad\x1b\xe2\xc8\x9bi\xc2\xb0h\xfc7\x8d\xaa\x95+\xa7\xf1c\xc4\xa1\x16(\xf5ZM\xf5#\xb3\xef'  # noqa: E501
 YEARN_V2_INCREASE_DEPOSIT_TOPIC: Final = b"\xdb\x11\x01&'\xbc\xb8W\xec\x91^\x92\xe4\xc5\xa6\\\x80\t\x8e\xa7r\x90\xa7\xb3-Y\xa8\xef+>\xa4\x1b"  # noqa: E501
 PROTOCOL_CPT_MAPPING: Final = {
     YEARN_VAULTS_V1_PROTOCOL: CPT_YEARN_V1,
@@ -184,23 +186,122 @@ class YearnDecoder(DecoderInterface, ReloadableDecoderMixin):
 
         return deposit_event, receive_event
 
+    def _handle_transfer_events(self, context: DecoderContext) -> DecodingOutput:
+        """Decode v1 and v2 vault events that only have transfer log events."""
+        counterparty = CPT_YEARN_V1 if (vault_address := context.tx_log.address) in self.vaults[CPT_YEARN_V1] else CPT_YEARN_V2  # noqa: E501
+
+        # For some deposits one of the transfers is already decoded and the action items
+        # can't modify it, so it needs to be found in decoded_events and modified there.
+        if context.transaction.input_data.startswith(YEARN_DEPOSIT_NO_LOGS_4_BYTES):
+            self._handle_deposit_events(
+                events=context.decoded_events,
+                counterparty=counterparty,  # type: ignore  # will always be either CPT_YEARN_V1 or CPT_YEARN_V2
+            )
+
+        vault_token = self.base.get_or_create_evm_token(vault_address)
+        if vault_token.underlying_tokens is not None and len(vault_token.underlying_tokens) > 0:
+            underlying_vault_token = self.base.get_or_create_evm_token(vault_token.underlying_tokens[0].address)  # noqa: E501
+        else:
+            log.error(f'Failed to find underlying token for yearn vault {vault_address}')
+            return DEFAULT_DECODING_OUTPUT
+
+        vault_amount = token_normalized_value(
+            token_amount=int.from_bytes(context.tx_log.data[0:32]),
+            token=vault_token,
+        )
+
+        for tx_log in context.all_logs:
+            if (
+                tx_log.topics[0] == ERC20_OR_ERC721_TRANSFER and
+                tx_log != context.tx_log and
+                tx_log.address == underlying_vault_token.evm_address
+            ):
+                underlying_transfer_tx_log = tx_log
+                break
+        else:
+            log.error(f'Failed to find transfer of yearn vault underlying token for {context.transaction}')  # noqa: E501
+            return DEFAULT_DECODING_OUTPUT
+
+        underlying_amount = token_normalized_value(
+            token_amount=int.from_bytes(underlying_transfer_tx_log.data[0:32]),
+            token=underlying_vault_token,
+        )
+
+        if bytes_to_address(context.tx_log.topics[1]) == ZERO_ADDRESS:  # deposit
+            return DecodingOutput(action_items=[
+                ActionItem(
+                    action='transform',
+                    from_event_type=HistoryEventType.SPEND,
+                    from_event_subtype=HistoryEventSubType.NONE,
+                    asset=underlying_vault_token,
+                    amount=underlying_amount,
+                    to_event_type=HistoryEventType.DEPOSIT,
+                    to_event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+                    to_notes=f'Deposit {underlying_amount} {underlying_vault_token.symbol} in {counterparty} vault {_get_vault_token_name(vault_token.evm_address)}',  # noqa: E501
+                    to_counterparty=counterparty,
+                ), ActionItem(
+                    action='transform',
+                    from_event_type=HistoryEventType.RECEIVE,
+                    from_event_subtype=HistoryEventSubType.NONE,
+                    asset=vault_token,
+                    amount=vault_amount,
+                    to_event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+                    to_notes=f'Receive {vault_amount} {vault_token.symbol} after deposit in a {counterparty} vault',  # noqa: E501
+                    to_counterparty=counterparty,
+                ),
+            ])
+        elif bytes_to_address(context.tx_log.topics[2]) == ZERO_ADDRESS:  # withdraw
+            return DecodingOutput(action_items=[
+                ActionItem(
+                    action='transform',
+                    from_event_type=HistoryEventType.SPEND,
+                    from_event_subtype=HistoryEventSubType.NONE,
+                    asset=vault_token,
+                    amount=vault_amount,
+                    to_event_subtype=HistoryEventSubType.RETURN_WRAPPED,
+                    to_notes=f'Return {vault_amount} {vault_token.symbol} to a {counterparty} vault',  # noqa: E501
+                    to_counterparty=counterparty,
+                ), ActionItem(
+                    action='transform',
+                    from_event_type=HistoryEventType.RECEIVE,
+                    from_event_subtype=HistoryEventSubType.NONE,
+                    asset=underlying_vault_token,
+                    amount=underlying_amount,
+                    to_event_type=HistoryEventType.WITHDRAWAL,
+                    to_event_subtype=HistoryEventSubType.REMOVE_ASSET,
+                    to_notes=f'Withdraw {underlying_amount} {underlying_vault_token.symbol} from {counterparty} vault {_get_vault_token_name(vault_token.evm_address)}',  # noqa: E501
+                    to_counterparty=counterparty,
+                ),
+            ])
+
+        return DEFAULT_DECODING_OUTPUT
+
     def _decode_vault_event(self, context: DecoderContext) -> DecodingOutput:
-        """Decode yearn v2 and v3 vault events."""
-        out_event, in_event = None, None
-        if context.tx_log.topics[0] == YEARN_V2_WITHDRAW_TOPIC:
-            out_event, in_event = self._handle_withdraw_events(
-                events=context.decoded_events,
-                counterparty=CPT_YEARN_V2,
-            )
-        elif context.tx_log.topics[0] == YEARN_V3_WITHDRAW_TOPIC:
-            out_event, in_event = self._handle_withdraw_events(
-                events=context.decoded_events,
-                counterparty=CPT_YEARN_V3,
-            )
-        elif context.tx_log.topics[0] == YEARN_V2_DEPOSIT_TOPIC:
+        """Decode yearn v1 and v2 vault events."""
+        if context.tx_log.topics[0] == YEARN_V2_DEPOSIT_TOPIC:
             out_event, in_event = self._handle_deposit_events(
                 events=context.decoded_events,
                 counterparty=CPT_YEARN_V2,
+            )
+            maybe_reshuffle_events(
+                ordered_events=[out_event, in_event],
+                events_list=context.decoded_events,
+            )
+        elif (
+            context.tx_log.topics[0] == ERC20_OR_ERC721_TRANSFER and
+            not context.transaction.input_data.startswith(YEARN_DEPOSIT_4_BYTES)  # decoded via YEARN_V2_DEPOSIT_TOPIC above  # noqa: E501
+        ):
+            return self._handle_transfer_events(context=context)
+
+        return DEFAULT_DECODING_OUTPUT
+
+    def _decode_v3_vault_event(self, context: DecoderContext) -> DecodingOutput:
+        """Decode yearn v3 vault events."""
+        out_event, in_event = None, None
+        if context.tx_log.topics[0] == YEARN_V3_WITHDRAW_TOPIC:
+            out_event, in_event = self._handle_withdraw_events(
+                events=context.decoded_events,
+                counterparty=CPT_YEARN_V3,
             )
         elif context.tx_log.topics[0] == YEARN_V3_DEPOSIT_TOPIC:
             out_event, in_event = self._handle_deposit_events(
@@ -212,144 +313,6 @@ class YearnDecoder(DecoderInterface, ReloadableDecoderMixin):
             ordered_events=[out_event, in_event],
             events_list=context.decoded_events,
         )
-
-        return DEFAULT_DECODING_OUTPUT
-
-    def _decode_common_transfer_events_data(self, context: DecoderContext) -> tuple[YEARN_COUNTERPARTIES, 'EvmToken', 'FVal', 'ChecksumEvmAddress'] | None:  # noqa: E501
-        """Decode common data from v1 and v2 events that only have transfer log events.
-        Returns the counterparty, token, amount, and the vault address in a tuple,
-        or None if the needed data is not found.
-        """
-        if (vault_address := context.transaction.to_address) is None:
-            return None
-
-        event_token = self.base.get_or_create_evm_token(context.tx_log.address)
-        amount = token_normalized_value(
-            token_amount=int.from_bytes(context.tx_log.data[0:32]),
-            token=event_token,
-        )
-
-        if context.transaction.to_address in self.vaults[CPT_YEARN_V1]:
-            return CPT_YEARN_V1, event_token, amount, vault_address
-        elif context.transaction.to_address in self.vaults[CPT_YEARN_V2]:
-            return CPT_YEARN_V2, event_token, amount, vault_address
-
-        return None
-
-    def _maybe_get_other_transfer_event(
-            self,
-            context: DecoderContext,
-            event_type: HistoryEventType,
-            event_subtype: HistoryEventSubType,
-            counterparty: str,
-    ) -> 'EvmEvent | None':
-        """Find matching event in decoded_events, to be used for event reordering.
-        Returns the event or None if no matching event is found.
-
-        The matching is too open here, but there isn't enough data available in the log
-        to match anything against the asset, amount, or location_label.
-        """
-        for event in context.decoded_events:
-            if (
-                event.event_type == event_type and
-                event.event_subtype == event_subtype and
-                event.counterparty == counterparty
-            ):
-                return event
-
-        return None
-
-    def _decode_deposit_transfers(self, context: DecoderContext) -> DecodingOutput:
-        """Decode v1 and v2 deposit events that only have transfer log events."""
-        if (common_data := self._decode_common_transfer_events_data(context)) is None:
-            return DEFAULT_DECODING_OUTPUT
-
-        counterparty, event_token, amount, vault_address = common_data
-        from_address = bytes_to_address(context.tx_log.topics[1])
-        if from_address == ZERO_ADDRESS:
-            other_event = self._maybe_get_other_transfer_event(
-                context=context,
-                event_type=HistoryEventType.DEPOSIT,
-                event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
-                counterparty=counterparty,
-            )
-            context.action_items.append(ActionItem(
-                action='transform',
-                from_event_type=HistoryEventType.RECEIVE,
-                from_event_subtype=HistoryEventSubType.NONE,
-                asset=event_token,
-                amount=amount,
-                to_event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
-                to_notes=f'Receive {amount} {event_token.symbol} after deposit in a {counterparty} vault',  # noqa: E501
-                to_counterparty=counterparty,
-                paired_events_data=([other_event], True) if other_event is not None else None,
-            ))
-        else:
-            other_event = self._maybe_get_other_transfer_event(
-                context=context,
-                event_type=HistoryEventType.RECEIVE,
-                event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
-                counterparty=counterparty,
-            )
-            context.action_items.append(ActionItem(
-                action='transform',
-                from_event_type=HistoryEventType.SPEND,
-                from_event_subtype=HistoryEventSubType.NONE,
-                asset=event_token,
-                amount=amount,
-                to_event_type=HistoryEventType.DEPOSIT,
-                to_event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
-                to_notes=f'Deposit {amount} {event_token.symbol} in {counterparty} vault {_get_vault_token_name(vault_address)}',  # noqa: E501
-                to_counterparty=counterparty,
-                paired_events_data=([other_event], False) if other_event is not None else None,
-            ))
-
-        return DEFAULT_DECODING_OUTPUT
-
-    def _decode_withdraw_transfers(self, context: DecoderContext) -> DecodingOutput:
-        """Decode v1 and v2 withdraw events that only have transfer log events."""
-        if (common_data := self._decode_common_transfer_events_data(context)) is None:
-            return DEFAULT_DECODING_OUTPUT
-
-        counterparty, vault_token, amount, vault_address = common_data
-        to_address = bytes_to_address(context.tx_log.topics[2])
-        if to_address == ZERO_ADDRESS:
-            other_event = self._maybe_get_other_transfer_event(
-                context=context,
-                event_type=HistoryEventType.WITHDRAWAL,
-                event_subtype=HistoryEventSubType.REMOVE_ASSET,
-                counterparty=counterparty,
-            )
-            context.action_items.append(ActionItem(
-                action='transform',
-                from_event_type=HistoryEventType.SPEND,
-                from_event_subtype=HistoryEventSubType.NONE,
-                asset=vault_token,
-                amount=amount,
-                to_event_subtype=HistoryEventSubType.RETURN_WRAPPED,
-                to_notes=f'Return {amount} {vault_token.symbol} to a {counterparty} vault',
-                to_counterparty=counterparty,
-                paired_events_data=([other_event], False) if other_event is not None else None,
-            ))
-        else:
-            other_event = self._maybe_get_other_transfer_event(
-                context=context,
-                event_type=HistoryEventType.SPEND,
-                event_subtype=HistoryEventSubType.RETURN_WRAPPED,
-                counterparty=counterparty,
-            )
-            context.action_items.append(ActionItem(
-                action='transform',
-                from_event_type=HistoryEventType.RECEIVE,
-                from_event_subtype=HistoryEventSubType.NONE,
-                asset=vault_token,
-                amount=amount,
-                to_event_type=HistoryEventType.WITHDRAWAL,
-                to_event_subtype=HistoryEventSubType.REMOVE_ASSET,
-                to_notes=f'Withdraw {amount} {vault_token.symbol} from {counterparty} vault {_get_vault_token_name(vault_address)}',  # noqa: E501
-                to_counterparty=counterparty,
-                paired_events_data=([other_event], True) if other_event is not None else None,
-            ))
 
         return DEFAULT_DECODING_OUTPUT
 
@@ -367,20 +330,60 @@ class YearnDecoder(DecoderInterface, ReloadableDecoderMixin):
 
         return DEFAULT_DECODING_OUTPUT
 
+    def _reorder_events(
+            self,
+            transaction: 'EvmTransaction',
+            decoded_events: list['EvmEvent'],
+            all_logs: list['EvmTxReceiptLog'],  # pylint: disable=unused-argument
+    ) -> list['EvmEvent']:
+        """Reorder events for v1 and v2 vault transactions decoded by _handle_transfer_events."""
+        out_event, in_event = None, None
+        for event in decoded_events:
+            if event.counterparty not in {CPT_YEARN_V1, CPT_YEARN_V2, CPT_YEARN_V3}:
+                continue
+
+            if (
+                (event.event_type == HistoryEventType.SPEND and event.event_subtype == HistoryEventSubType.RETURN_WRAPPED) or  # noqa: E501
+                (event.event_type == HistoryEventType.DEPOSIT and event.event_subtype == HistoryEventSubType.DEPOSIT_ASSET)  # noqa: E501
+            ):
+                out_event = event
+            elif (
+                (event.event_type == HistoryEventType.RECEIVE and event.event_subtype == HistoryEventSubType.RECEIVE_WRAPPED) or  # noqa: E501
+                (event.event_type == HistoryEventType.WITHDRAWAL and event.event_subtype == HistoryEventSubType.REMOVE_ASSET)  # noqa: E501
+            ):
+                in_event = event
+
+        if out_event is None or in_event is None:
+            log.error(f'Failed to find both out and in events for yearn vault transaction {transaction}')  # noqa: E501
+            return decoded_events
+
+        maybe_reshuffle_events(
+            ordered_events=[out_event, in_event],
+            events_list=decoded_events,
+        )
+        return decoded_events
+
     # -- DecoderInterface methods
 
     def addresses_to_decoders(self) -> dict['ChecksumEvmAddress', tuple[Any, ...]]:
         return dict.fromkeys(
-            (self.vaults[CPT_YEARN_V2] | self.vaults[CPT_YEARN_V3]),
+            (self.vaults[CPT_YEARN_V1] | self.vaults[CPT_YEARN_V2]),
             (self._decode_vault_event,),
+        ) | dict.fromkeys(
+            self.vaults[CPT_YEARN_V3],
+            (self._decode_v3_vault_event,),
         ) | {YEARN_PARTNER_TRACKER: (self._decode_v2_increase_deposit,)}
 
-    def decoding_by_input_data(self) -> dict[bytes, dict[bytes, Callable]]:
+    def addresses_to_counterparties(self) -> dict['ChecksumEvmAddress', str]:
+        return (
+            dict.fromkeys(self.vaults[CPT_YEARN_V1], CPT_YEARN_V1) |
+            dict.fromkeys(self.vaults[CPT_YEARN_V2], CPT_YEARN_V2)
+        )
+
+    def post_decoding_rules(self) -> dict[str, list[tuple[int, Callable]]]:
         return {
-            YEARN_DEPOSIT_4_BYTES: {TRANSFER_TOPIC: self._decode_deposit_transfers},
-            YEARN_DEPOSIT_AMOUNT_4_BYTES: {TRANSFER_TOPIC: self._decode_deposit_transfers},
-            YEARN_WITHDRAW_4_BYTES: {TRANSFER_TOPIC: self._decode_withdraw_transfers},
-            YEARN_WITHDRAW_AMOUNT_4_BYTES: {TRANSFER_TOPIC: self._decode_withdraw_transfers},
+            CPT_YEARN_V1: [(0, self._reorder_events)],
+            CPT_YEARN_V2: [(0, self._reorder_events)],
         }
 
     @staticmethod
