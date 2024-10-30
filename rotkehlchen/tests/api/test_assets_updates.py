@@ -9,9 +9,10 @@ from unittest.mock import patch
 import pytest
 import requests
 
-from rotkehlchen.assets.asset import Asset, CryptoAsset, EvmToken
+from rotkehlchen.assets.asset import Asset, CryptoAsset, EvmToken, UnderlyingToken
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_GLM
 from rotkehlchen.constants.resolver import strethaddress_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset
@@ -860,6 +861,47 @@ INSERT INTO evm_tokens(identifier, token_kind, chain, address, decimals, protoco
         assert len(errors) == 0, f'Found errors: {errors}'
         assert len(warnings) == 1
         assert 'Failed to resolve conflict for eip155:1/erc20:0xa74476443119A942dE498590Fe1f2454d7D4aC0d in the DB during the v1 assets update. Skipping entry' in warnings[0]  # noqa: E501
+
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_update_underlying_tokens(rotkehlchen_api_server: 'APIServer', globaldb: GlobalDBHandler) -> None:  # noqa: E501
+    """Test that updating underlying tokens is handled properly."""
+    update_1 = """DELETE FROM underlying_tokens_list WHERE parent_token_entry="eip155:1/erc20:0x5dbcF33D8c2E976c6b560249878e6F1491Bca25c"; INSERT INTO underlying_tokens_list(identifier, weight, parent_token_entry) VALUES("eip155:1/erc20:0xdF5e0e81Dff6FAF3A7e52BA697820c5e32D806A8", "1", "eip155:1/erc20:0x5dbcF33D8c2E976c6b560249878e6F1491Bca25c");
+INSERT INTO assets(identifier, name, type) VALUES("eip155:1/erc20:0x5dbcF33D8c2E976c6b560249878e6F1491Bca25c", "yearn Curve.fi yDAI/yUSDC/yUSDT/yTUSD", "C"); INSERT INTO evm_tokens(identifier, token_kind, chain, address, decimals, protocol) VALUES("eip155:1/erc20:0x5dbcF33D8c2E976c6b560249878e6F1491Bca25c", "A", 1, "0x5dbcF33D8c2E976c6b560249878e6F1491Bca25c", 18, "yearn_vaults_v1"); INSERT INTO common_asset_details(identifier, symbol, coingecko, cryptocompare, forked, started, swapped_for) VALUES("eip155:1/erc20:0x5dbcF33D8c2E976c6b560249878e6F1491Bca25c", "yyDAI+yUSDC+yUSDT+yTUSD", "yvault-lp-ycurve", "", NULL, 1596091760, NULL); INSERT INTO underlying_tokens_list(identifier, weight, parent_token_entry) VALUES("eip155:1/erc20:0xdF5e0e81Dff6FAF3A7e52BA697820c5e32D806A8", "1", "eip155:1/erc20:0x5dbcF33D8c2E976c6b560249878e6F1491Bca25c");
+    """  # noqa: E501
+    update_patch = mock_asset_updates(
+        original_requests_get=requests.get,
+        latest=999999991,
+        updates={'999999991': {
+            'changes': 1,
+            'min_schema_version': GLOBAL_DB_VERSION,
+            'max_schema_version': GLOBAL_DB_VERSION,
+        }},
+        sql_actions={'999999991': {'assets': update_1, 'collections': '', 'mappings': ''}},
+    )
+    globaldb.add_setting_value(ASSETS_VERSION_KEY, 999999990)
+    with update_patch:
+        response = requests.get(
+            api_url_for(
+                rotkehlchen_api_server,
+                'assetupdatesresource',
+            ),
+        )
+        result = assert_proper_sync_response_with_result(response)
+        assert result['local'] == 999999990
+        assert result['remote'] == 999999991
+        assert result['new_changes'] == 1
+
+    token = globaldb.get_evm_token(
+        address=string_to_evm_address('0x5dbcF33D8c2E976c6b560249878e6F1491Bca25c'),
+        chain_id=ChainID.ETHEREUM,
+    )
+    assert token is not None
+    assert token.underlying_tokens == [UnderlyingToken(
+        address=string_to_evm_address('0xdF5e0e81Dff6FAF3A7e52BA697820c5e32D806A8'),
+        token_kind=EvmTokenKind.ERC20,
+        weight=ONE,
+    )]
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])

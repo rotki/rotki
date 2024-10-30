@@ -7,5 +7,4 @@ from rotkehlchen.chain.evm.contracts import EvmContract
 class YearnVault(NamedTuple):
     name: str
     contract: EvmContract
-    underlying_token: EvmToken
     token: EvmToken
