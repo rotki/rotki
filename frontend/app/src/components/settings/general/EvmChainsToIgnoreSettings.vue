@@ -5,6 +5,12 @@ const { evmchainsToSkipDetection } = storeToRefs(useGeneralSettingsStore());
 const { evmChainsData, evmLikeChainsData } = useSupportedChains();
 
 const chains = computed(() => [...get(evmChainsData), ...get(evmLikeChainsData)]);
+
+function toggleAllChains(updateImmediate: (value: string[]) => void) {
+  const currentValue = get(evmchainsToSkipDetection);
+  const allChainIds = get(chains).map(chain => chain.id);
+  updateImmediate(currentValue?.length === allChainIds.length ? [] : allChainIds);
+}
 </script>
 
 <template>
@@ -18,36 +24,47 @@ const chains = computed(() => [...get(evmChainsData), ...get(evmLikeChainsData)]
       :error-message="t('general_settings.validation.chains_to_skip_detection.error')"
       :success-message="t('general_settings.validation.chains_to_skip_detection.success')"
     >
-      <RuiAutoComplete
-        :disabled="loading"
-        :options="chains"
-        :label="t('account_form.labels.blockchain', 2)"
-        :model-value="evmchainsToSkipDetection"
-        :success-messages="success"
-        :error-messages="error"
-        class="general-settings__fields__account-chains-to-skip-detection"
-        data-cy="account-chain-skip-detection-field"
-        variant="outlined"
-        key-attr="id"
-        text-attr="name"
-        chips
-        :item-height="56"
-        auto-select-first
-        @update:model-value="updateImmediate($event)"
-      >
-        <template #selection="{ item }">
-          <ChainDisplay
-            dense
-            :chain="item.id"
-          />
-        </template>
-        <template #item="{ item }">
-          <ChainDisplay
-            dense
-            :chain="item.id"
-          />
-        </template>
-      </RuiAutoComplete>
+      <div class="flex flex-col gap-2">
+        <div class="flex gap-2 pb-2">
+          <RuiButton
+            variant="text"
+            size="sm"
+            @click="toggleAllChains(updateImmediate)"
+          >
+            {{ t('general_settings.labels.select_deselect_chains') }}
+          </RuiButton>
+        </div>
+        <RuiAutoComplete
+          :disabled="loading"
+          :options="chains"
+          :label="t('account_form.labels.blockchain', 2)"
+          :model-value="evmchainsToSkipDetection"
+          :success-messages="success"
+          :error-messages="error"
+          class="general-settings__fields__account-chains-to-skip-detection"
+          data-cy="account-chain-skip-detection-field"
+          variant="outlined"
+          key-attr="id"
+          text-attr="name"
+          chips
+          :item-height="56"
+          auto-select-first
+          @update:model-value="updateImmediate($event)"
+        >
+          <template #selection="{ item }">
+            <ChainDisplay
+              dense
+              :chain="item.id"
+            />
+          </template>
+          <template #item="{ item }">
+            <ChainDisplay
+              dense
+              :chain="item.id"
+            />
+          </template>
+        </RuiAutoComplete>
+      </div>
     </SettingsOption>
   </div>
 </template>

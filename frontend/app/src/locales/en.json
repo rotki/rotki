@@ -2774,7 +2774,8 @@
       "csv_delimiter": "CSV export delimiter",
       "treat_eth2_as_eth": "Should treat ETH2 (Staked ETH) as ETH",
       "chains_to_skip_detection": "EVM Chains for which to skip automatic detection",
-      "evm_chains": "EVM Chains"
+      "evm_chains": "EVM Chains",
+      "select_deselect_chains": "Select / Deselect all chains"
     },
     "language": {
       "contribution": "This feature is experimental and may not work as expected for some languages. This is because all static sentences in the app have to be manually translated and that is a long and ongoing process. Therefore, we need your contribution to speed it up.",
