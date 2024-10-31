@@ -25,9 +25,9 @@
     "zod": "3.23.8"
   },
   "devDependencies": {
-    "@vueuse/core": "11.1.0",
+    "@vueuse/core": "11.2.0",
     "bignumber.js": "9.1.2",
-    "tsup": "8.3.0",
+    "tsup": "8.3.5",
     "typescript": "5.6.3",
     "vue": "3.5.12",
     "zod": "3.23.8"
