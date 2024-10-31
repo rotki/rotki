@@ -173,6 +173,7 @@ export function sortAndFilterAccounts<T extends BlockchainAccountBalance>(
             includedUsdValue,
             tags: matches.flatMap(match => match.tags ?? []).filter(uniqueStrings),
             chains,
+            allChains: groupAccounts.map(item => item.chain),
             expansion: matches.length === 1 ? matches[0].expansion : 'accounts',
           };
         }

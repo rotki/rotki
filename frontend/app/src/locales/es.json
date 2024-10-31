@@ -25,7 +25,6 @@
   },
   "account_balances": {
     "confirm_delete": {
-      "description_address": "Are you sure you want to delete {address} address",
       "description_xpub": "Are you sure you want to delete {address}",
       "title": "Account delete"
     },

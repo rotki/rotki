@@ -29,7 +29,9 @@
   "account_balances": {
     "aggregated_assets": "Aggregated assets",
     "confirm_delete": {
-      "description_address": "Are you sure you want to delete {address} address",
+      "description_address": "Are you sure you want to delete {address} address from {chain} chain",
+      "description_multiple_address": "Are you sure you want to delete {address} address from {length} chains: {chains}",
+      "description_validator": "Are you sure you want to delete validator with public key: {publicKey} ({index})",
       "description_xpub": "Are you sure you want to delete {address}",
       "title": "Account delete",
       "agnostic": {

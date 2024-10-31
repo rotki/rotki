@@ -126,7 +126,7 @@ const hintText = computed<string>(() => {
   return selection ? '1' : all;
 });
 
-const displayedAccounts = computed<(AccountWithAddressData & { address: string })[]>(() => {
+const displayedAccounts = computed<(AccountWithAddressData & { address: string; key: string })[]>(() => {
   const addresses = get(usableAddresses);
   const accounts = [...get(selectableAccounts)].map(item => ({
     ...item,
@@ -199,7 +199,8 @@ function getAccount(account: AccountWithAddressData): Account {
       :model-value="internalValue"
       :options="displayedAccounts"
       :filter="filter"
-      key-attr="address"
+      key-attr="key"
+      text-attr="address"
       auto-select-first
       :loading="loading"
       :disabled="loading"
