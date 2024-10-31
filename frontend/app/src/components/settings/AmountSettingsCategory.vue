@@ -15,7 +15,7 @@ const amountExample = bigNumberify(123456.789);
 
     <SettingsItem>
       <template #title>
-        {{ t('general_settings.version_update_check.title') }}
+        {{ t('general_settings.amount.label.amount') }}
       </template>
       <MainCurrencySetting />
       <div class="grid sm:grid-cols-3 gap-4">
