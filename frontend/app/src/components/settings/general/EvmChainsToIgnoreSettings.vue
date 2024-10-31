@@ -4,6 +4,9 @@ const { evmchainsToSkipDetection } = storeToRefs(useGeneralSettingsStore());
 const { evmChainsData, evmLikeChainsData } = useSupportedChains();
 const chains = computed(() => [...get(evmChainsData), ...get(evmLikeChainsData)]);
 
+const allSelected = computed(() => get(evmchainsToSkipDetection).length === get(chains).length);
+const noneSelected = computed(() => get(evmchainsToSkipDetection).length === 0);
+
 function selectAll(updateImmediate: (value: string[]) => void) {
   const allChainIds = get(chains).map(chain => chain.id);
   updateImmediate(allChainIds);
@@ -30,6 +33,7 @@ function deselectAll(updateImmediate: (value: string[]) => void) {
           <RuiButton
             variant="text"
             size="sm"
+            :disabled="loading || allSelected"
             @click="selectAll(updateImmediate)"
           >
             {{ t('general_settings.evm_chains.select') }}
@@ -37,6 +41,7 @@ function deselectAll(updateImmediate: (value: string[]) => void) {
           <RuiButton
             variant="text"
             size="sm"
+            :disabled="loading || noneSelected"
             @click="deselectAll(updateImmediate)"
           >
             {{ t('general_settings.evm_chains.deselect') }}
