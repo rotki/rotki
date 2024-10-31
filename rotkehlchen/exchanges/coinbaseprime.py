@@ -12,11 +12,18 @@ import requests
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.converters import asset_from_coinbase
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import AssetMovement, Fee, MarginPosition, Trade
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
+from rotkehlchen.history.events.structures.base import (
+    HistoryEvent,
+    HistoryEventSubType,
+    HistoryEventType,
+)
 from rotkehlchen.inquirer import Inquirer, Price
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
@@ -35,14 +42,18 @@ from rotkehlchen.types import (
     TradeType,
 )
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import iso8601ts_to_timestamp, timestamp_to_iso8601, ts_now
+from rotkehlchen.utils.misc import (
+    iso8601ts_to_timestamp,
+    timestamp_to_iso8601,
+    ts_now,
+    ts_sec_to_ms,
+)
 from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
 from rotkehlchen.utils.mixins.lockable import protect_with_lock
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import AssetWithOracles
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.history.events.structures.base import HistoryEvent
 
 
 PRIME_BASE_URL: Final = 'https://api.prime.coinbase.com/v1'
@@ -157,6 +168,111 @@ def _process_deposit_withdrawal(event_data: dict[str, Any]) -> AssetMovement | N
         ) from e
 
 
+def _process_conversions(raw_data: dict[str, Any]) -> list[HistoryEvent]:
+    """Process conversion from coinbase prime
+    May raise:
+    - KeyError
+    - DeserializationError
+    """
+    from_asset = asset_from_coinbase(raw_data['symbol'])
+    to_asset = asset_from_coinbase(raw_data['destination_symbol'])
+    converted_amount = deserialize_fval(
+        value=raw_data['amount'],
+        name='history_event',
+        location='coinbase prime',
+    )
+    timestamp_ms = ts_sec_to_ms(iso8601ts_to_timestamp(raw_data['completed_at']))
+
+    conversion_events = [
+        HistoryEvent(
+            event_identifier=raw_data['id'],
+            sequence_index=0,
+            timestamp=timestamp_ms,
+            location=Location.COINBASEPRIME,
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.SPEND,
+            balance=Balance(amount=converted_amount),
+            asset=from_asset,
+            notes=f'Swap {converted_amount} {from_asset.symbol} in Coinbase Prime',
+        ), HistoryEvent(
+            event_identifier=raw_data['id'],
+            sequence_index=1,
+            timestamp=timestamp_ms,
+            location=Location.COINBASEPRIME,
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            balance=Balance(amount=converted_amount),
+            asset=to_asset,
+            notes=f'Receive {converted_amount} {to_asset.symbol} from a Coinbase Prime conversion',
+        ),
+    ]
+
+    if (fee_amount := deserialize_fval(
+        value=raw_data['fees'],
+        name='history_event',
+        location='coinbase prime',
+    )) != ZERO:
+        conversion_events.append(HistoryEvent(
+            event_identifier=raw_data['id'],
+            sequence_index=2,
+            timestamp=timestamp_ms,
+            location=Location.COINBASEPRIME,
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.FEE,
+            balance=Balance(amount=fee_amount),
+            asset=(fee_asset := asset_from_coinbase(raw_data['fee_symbol'])),
+            notes=f'Spend {fee_amount} {fee_asset.symbol} as Coinbase Prime conversion fee',
+        ))
+
+    return conversion_events
+
+
+def _process_reward(raw_data: dict[str, Any]) -> list[HistoryEvent]:
+    """Process rewards from coinbase prime.
+    At the moment of writing this logic we don't have any real example, only the docs
+    so it might need adjustment in the future.
+
+    May raise:
+    - DeserializationError
+    - KeyError
+    """
+    return [HistoryEvent(
+        event_identifier=raw_data['id'],
+        sequence_index=0,
+        timestamp=ts_sec_to_ms(iso8601ts_to_timestamp(raw_data['completed_at'])),
+        location=Location.COINBASEPRIME,
+        event_type=HistoryEventType.STAKING,
+        event_subtype=HistoryEventSubType.REWARD,
+        balance=Balance(amount=(amount := deserialize_fval(
+            value=raw_data['amount'],
+            name='history_event reward',
+            location='coinbase prime',
+        ))),
+        asset=(asset := asset_from_coinbase(raw_data['symbol'])),
+        notes=f'Receive {amount} {asset.symbol} as Coinbase Prime staking reward',
+    )]
+
+
+def _decode_history_events(raw_data: dict[str, Any]) -> list[HistoryEvent]:
+    """Process transaction as history events from coinbase prime
+    May raise:
+    - DeserializationError
+    """
+    try:
+        if (tx_type := raw_data['type']) == 'CONVERSION':
+            return _process_conversions(raw_data)
+        elif tx_type == 'REWARD':
+            return _process_reward(raw_data)
+    except KeyError as e:
+        log.error(f'Missing key {e} when processing history events at coinbase prime')
+        raise DeserializationError(
+            'Unexpected format in coinbase prime event. Check logs for more details',
+        ) from e
+
+    log.error(f'Unknown tx_type in {raw_data} at coinbase prime')
+    raise DeserializationError(f'Unknown transaction type in coinbase prime {tx_type}')
+
+
 class Coinbaseprime(ExchangeInterface):
 
     def __init__(
@@ -259,13 +375,27 @@ class Coinbaseprime(ExchangeInterface):
     ) -> list[Trade]:
         ...
 
+    @overload
+    def _query_paginated_endpoint(
+            self,
+            query_params: dict[str, Any],
+            portfolio_id: str,
+            method: Literal['transactions'],
+            decoding_logic: Callable[[dict[str, Any]], list[HistoryEvent]],
+    ) -> list[list[HistoryEvent]]:
+        ...
+
     def _query_paginated_endpoint(
             self,
             query_params: dict[str, Any],
             portfolio_id: str,
             method: Literal['orders', 'transactions'],
-            decoding_logic: Callable[[dict[str, Any]], AssetMovement | None] | Callable[[dict[str, Any]], Trade | None],  # noqa: E501
-    ) -> list[Trade] | list[AssetMovement]:
+            decoding_logic: (
+                Callable[[dict[str, Any]], AssetMovement | None] |
+                Callable[[dict[str, Any]], Trade | None] |
+                Callable[[dict[str, Any]], list[HistoryEvent]]
+            ),
+    ) -> list[Trade] | list[AssetMovement] | list[list[HistoryEvent]]:
         """Abstraction to consume all the events in the selected queries.
         It uses the `decoding_logic` to process the different events and returns a list
         whose contents depend on the function's called arguments.
@@ -409,6 +539,51 @@ class Coinbaseprime(ExchangeInterface):
             end_ts: Timestamp,
     ) -> list['HistoryEvent']:
         return []
+
+    def query_history_events(self) -> None:
+        """Query history events from the current exchange
+        instance and store them in the database
+        """
+        ranges = DBQueryRanges(self.db)
+        history_events_db = DBHistoryEvents(self.db)
+        portfolio_ids = self._get_portfolio_ids()
+        for portfolio_id in portfolio_ids:
+            range_query_name = f'{self.location}_history_events_{self.name}_{portfolio_id}'
+            with self.db.conn.read_ctx() as cursor:
+                ranges_to_query = ranges.get_location_query_ranges(
+                    cursor=cursor,
+                    location_string=range_query_name,
+                    start_ts=Timestamp(0),
+                    end_ts=ts_now(),
+                )
+
+            for start_ts, end_ts in ranges_to_query:
+                history_events = []
+                query_params = {
+                    'sort_direction': 'ASC',
+                    'start_time': timestamp_to_iso8601(start_ts),
+                    'end_time': timestamp_to_iso8601(end_ts),
+                    'types': ['CONVERSION', 'REWARD'],
+                }
+                new_events_list: list[list[HistoryEvent]] = self._query_paginated_endpoint(
+                    query_params=query_params,
+                    portfolio_id=portfolio_id,
+                    method='transactions',
+                    decoding_logic=_decode_history_events,
+                )
+                history_events.extend(
+                    [event for sublist in new_events_list for event in sublist],
+                )
+                with self.db.conn.write_ctx() as write_cursor:
+                    history_events_db.add_history_events(
+                        write_cursor=write_cursor,
+                        history=history_events,
+                    )
+                    ranges.update_used_query_range(
+                        write_cursor=write_cursor,
+                        location_string=range_query_name,
+                        queried_ranges=[(start_ts, end_ts)],
+                    )
 
     def query_online_deposits_withdrawals(
             self,
