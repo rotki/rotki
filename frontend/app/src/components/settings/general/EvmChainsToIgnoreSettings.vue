@@ -33,6 +33,7 @@ function deselectAll(updateImmediate: (value: string[]) => void) {
           <RuiButton
             variant="text"
             size="sm"
+            color="primary"
             :disabled="loading || allSelected"
             @click="selectAll(updateImmediate)"
           >
@@ -41,6 +42,7 @@ function deselectAll(updateImmediate: (value: string[]) => void) {
           <RuiButton
             variant="text"
             size="sm"
+            color="primary"
             :disabled="loading || noneSelected"
             @click="deselectAll(updateImmediate)"
           >
@@ -48,7 +50,6 @@ function deselectAll(updateImmediate: (value: string[]) => void) {
           </RuiButton>
         </div>
         <RuiAutoComplete
-          :disabled="loading"
           :options="chains"
           :label="t('account_form.labels.blockchain', 2)"
           :model-value="evmchainsToSkipDetection"
