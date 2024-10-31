@@ -37,6 +37,9 @@ from rotkehlchen.constants.assets import (
     A_USDC,
     A_USDT,
     A_WETH_ARB,
+    A_YV1_DAI,
+    A_YV1_USDC,
+    A_YV1_WETH,
 )
 from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.constants.resolver import ethaddress_to_identifier, evm_address_to_identifier
@@ -733,6 +736,18 @@ def test_find_protocol_price_falllback_to_oracle(inquirer_defi):
     with yearn_patch:
         price = inquirer_defi.find_usd_price(yvusdc)
     assert price is not None and price != ZERO
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+def test_find_yearn_v1_vault_token_price(inquirer_defi):
+    """Regression test for https://github.com/rotki/rotki/pull/8838
+    Similar prices were found by this method with and without the change in PR 8838
+    """
+    assert inquirer_defi.find_usd_price(A_YV1_USDC).is_close(FVal(1.10959), max_diff=1e-5)
+    assert inquirer_defi.find_usd_price(A_YV1_WETH).is_close(FVal(2555.94460), max_diff=1e-5)
+    assert inquirer_defi.find_usd_price(A_YV1_DAI).is_close(FVal(1.15431), max_diff=1e-5)
 
 
 @pytest.mark.vcr

@@ -34,7 +34,6 @@ from rotkehlchen.chain.polygon_pos.constants import POLYGON_POS_POL_HARDFORK
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import (
     A_3CRV,
-    A_ALINK_V1,
     A_BSQ,
     A_BTC,
     A_CRV_3CRV,
@@ -57,7 +56,6 @@ from rotkehlchen.constants.assets import (
     A_FARM_USDT,
     A_FARM_WBTC,
     A_FARM_WETH,
-    A_GUSD,
     A_KFEE,
     A_POLYGON_POS_MATIC,
     A_TUSD,
@@ -65,7 +63,6 @@ from rotkehlchen.constants.assets import (
     A_USDC,
     A_USDT,
     A_WETH,
-    A_YFI,
     A_YV1_3CRV,
     A_YV1_ALINK,
     A_YV1_DAI,
@@ -207,21 +204,15 @@ def get_underlying_asset_price(token: EvmToken) -> tuple[Price | None, CurrentPr
     elif token.protocol == HOP_PROTOCOL_LP:
         price = Inquirer().find_hop_lp_price(token)
 
-    if token == A_YV1_ALINK:
-        price, oracle, _ = Inquirer.find_usd_price_and_oracle(A_ALINK_V1)
-    elif token == A_YV1_GUSD:
-        price, oracle, _ = Inquirer.find_usd_price_and_oracle(A_GUSD)
-    elif token in (A_YV1_DAI, A_FARM_DAI):
+    if token == A_FARM_DAI:
         price, oracle, _ = Inquirer.find_usd_price_and_oracle(A_DAI)
-    elif token in (A_FARM_WETH, A_YV1_WETH):
+    elif token == A_FARM_WETH:
         price, oracle, _ = Inquirer.find_usd_price_and_oracle(A_ETH)
-    elif token == A_YV1_YFI:
-        price, oracle, _ = Inquirer.find_usd_price_and_oracle(A_YFI)
-    elif token in (A_FARM_USDT, A_YV1_USDT):
+    elif token == A_FARM_USDT:
         price, oracle, _ = Inquirer.find_usd_price_and_oracle(A_USDT)
-    elif token in (A_FARM_USDC, A_YV1_USDC):
+    elif token == A_FARM_USDC:
         price, oracle, _ = Inquirer.find_usd_price_and_oracle(A_USDC)
-    elif token in (A_FARM_TUSD, A_YV1_TUSD):
+    elif token == A_FARM_TUSD:
         price, oracle, _ = Inquirer.find_usd_price_and_oracle(A_TUSD)
     elif token in ASSETS_UNDERLYING_BTC:
         price, oracle, _ = Inquirer.find_usd_price_and_oracle(A_BTC)
