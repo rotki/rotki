@@ -34,8 +34,6 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.evm.decoding.velodrome.velodrome_cache import VelodromePoolData
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
-    from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBCursor
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
     from rotkehlchen.user_messages import MessagesAggregator
 
@@ -69,13 +67,6 @@ CACHE_QUERY_METHOD_TYPE = (
         list | None,
     ]
 )
-SAVE_CACHE_DATA_METHOD_TYPE = Callable[
-    ['DBCursor', 'DBHandler', list, ChainID],
-    None,
-] | Callable[
-    ['DBCursor', 'DBHandler', list],
-    None,
-]
 
 
 class DecoderInterface(ABC):
