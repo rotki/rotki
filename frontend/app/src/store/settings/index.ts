@@ -1,3 +1,4 @@
+import { ApiValidationError } from '@/types/api/errors';
 import type { KrakenAccountType } from '@/types/exchanges';
 import type { Module } from '@/types/modules';
 import type { SettingsUpdate } from '@/types/user';
@@ -33,6 +34,21 @@ export const useSettingsStore = defineStore('settings', () => {
     }
   };
 
+  function handleErrors(error: any, keys: string[]): string {
+    if (!(error instanceof ApiValidationError)) {
+      return error.message;
+    }
+
+    const settingsErrors = error.errors.settings as unknown as Record<string, string | string[]>;
+
+    if (settingsErrors && keys.length === 1 && settingsErrors[keys[0]]) {
+      const errorValues = settingsErrors[keys[0]];
+      return Array.isArray(errorValues) ? errorValues.join(', ') : errorValues;
+    }
+
+    return error.message;
+  }
+
   const update = async (update: SettingsUpdate): Promise<ActionStatus> => {
     let success = false;
     let message = '';
@@ -50,7 +66,7 @@ export const useSettingsStore = defineStore('settings', () => {
     }
     catch (error: any) {
       logger.error(error);
-      message = error.message;
+      message = handleErrors(error, Object.keys(update));
     }
     return {
       success,
