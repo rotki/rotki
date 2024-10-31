@@ -1,18 +1,30 @@
 import uuid
 from unittest.mock import patch
 
+import pytest
+
+from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.converters import Asset
 from rotkehlchen.constants import ZERO
-from rotkehlchen.constants.assets import A_ENS, A_SOL
+from rotkehlchen.constants.assets import A_ENS, A_SOL, A_USDC
+from rotkehlchen.constants.misc import ONE
+from rotkehlchen.db.filtering import HistoryEventFilterQuery
+from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.exchanges.coinbaseprime import (
     Coinbaseprime,
     _process_deposit_withdrawal,
     _process_trade,
 )
+from rotkehlchen.history.events.structures.base import (
+    HistoryEvent,
+    HistoryEventSubType,
+    HistoryEventType,
+)
 from rotkehlchen.inquirer import A_ETH, A_USD
 from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import FVal
+from rotkehlchen.types import FVal, Location
+from rotkehlchen.utils.misc import TimestampMS, ts_now
 
 
 def test_coinbase_query_balances(function_scope_coinbaseprime: Coinbaseprime):
@@ -223,3 +235,185 @@ def test_process_movements(function_scope_coinbaseprime: Coinbaseprime):
     assert processed_withdrawal.amount == FVal(250)
     assert processed_withdrawal.timestamp == 1728720987
     assert processed_withdrawal.fee == ZERO
+
+
+@pytest.mark.freeze_time('2024-10-31 13:50:00 GMT')
+def test_history_events(function_scope_coinbaseprime: Coinbaseprime):
+    """Test history events in coinbase prime. It tests conversions and staking rewards
+    This test checks the logic for _query_paginated_endpoint by returning
+    a mocked pagination from _api_query and the logic of query_history_events
+    """
+    first_id, second_id, third_id = str(uuid.uuid4()), str(uuid.uuid4()), str(uuid.uuid4())
+    raw_data = [{
+        'amount': '50',
+        'blockchain_ids': [],
+        'completed_at': '2024-07-24T20:50:21.849Z',
+        'created_at': '2024-07-24T20:50:19.484Z',
+        'destination_symbol': 'USDC',
+        'estimated_asset_changes': [],
+        'estimated_network_fees': None,
+        'fee_symbol': 'USD',
+        'fees': '0',
+        'id': first_id,
+        'idempotency_key': uuid.uuid4(),
+        'metadata': None,
+        'network': '',
+        'network_fees': '0',
+        'portfolio_id': uuid.uuid4(),
+        'status': 'TRANSACTION_DONE',
+        'symbol': 'USD',
+        'transaction_id': 'XXXXX123',
+        'transfer_from': {'type': 'WALLET', 'value': uuid.uuid4()},
+        'transfer_to': {'type': 'WALLET', 'value': uuid.uuid4()},
+        'type': 'CONVERSION',
+        'wallet_id': uuid.uuid4(),
+    }, {
+        'amount': '150',
+        'blockchain_ids': [],
+        'completed_at': '2024-08-24T20:50:21.849Z',
+        'created_at': '2024-08-24T20:50:19.484Z',
+        'destination_symbol': 'USD',
+        'estimated_asset_changes': [],
+        'estimated_network_fees': None,
+        'fee_symbol': 'USDC',
+        'fees': '1',
+        'id': second_id,
+        'idempotency_key': uuid.uuid4(),
+        'metadata': None,
+        'network': '',
+        'network_fees': '0',
+        'portfolio_id': uuid.uuid4(),
+        'status': 'TRANSACTION_DONE',
+        'symbol': 'USDC',
+        'transaction_id': 'XXXXX124',
+        'transfer_from': {'type': 'WALLET', 'value': uuid.uuid4()},
+        'transfer_to': {'type': 'WALLET', 'value': uuid.uuid4()},
+        'type': 'CONVERSION',
+        'wallet_id': uuid.uuid4(),
+    }, {
+        'amount': '20',
+        'blockchain_ids': [],
+        'completed_at': '2024-09-24T20:50:21.849Z',
+        'created_at': '2024-09-24T20:50:19.484Z',
+        'destination_symbol': '',
+        'estimated_asset_changes': [],
+        'estimated_network_fees': None,
+        'fee_symbol': 'ETH',
+        'fees': '0',
+        'id': third_id,
+        'idempotency_key': uuid.uuid4(),
+        'metadata': None,
+        'network': '',
+        'network_fees': '0',
+        'portfolio_id': uuid.uuid4(),
+        'status': 'TRANSACTION_DONE',
+        'symbol': 'ETH',
+        'transaction_id': 'XXXXX124',
+        'transfer_from': {'type': 'WALLET', 'value': uuid.uuid4()},
+        'transfer_to': {'type': 'WALLET', 'value': uuid.uuid4()},
+        'type': 'REWARD',
+        'wallet_id': uuid.uuid4(),
+    }]
+
+    raw_data_iter = iter(enumerate(raw_data))
+
+    def mock_query(module, path='', params=None):
+        if 'transaction' in path:
+            idx, raw_entry = next(raw_data_iter)
+            return {
+                'transactions': [raw_entry],
+                'pagination': {'has_next': idx < len(raw_data) - 1, 'next_cursor': 'any_string'},
+            }
+        elif path == '':
+            return {'portfolios': [{'id': uuid.uuid4()}]}
+
+        raise AttributeError('Bad path provided')
+
+    with patch.object(
+        function_scope_coinbaseprime,
+        attribute='_api_query',
+        new=mock_query,
+    ):
+        function_scope_coinbaseprime.query_history_events()
+
+    history_events_db = DBHistoryEvents(function_scope_coinbaseprime.db)
+    with history_events_db.db.conn.read_ctx() as cursor:
+        new_events = history_events_db.get_history_events(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(location=function_scope_coinbaseprime.location),
+            has_premium=True,
+        )
+
+    assert new_events == [
+        HistoryEvent(
+            identifier=1,
+            event_identifier=first_id,
+            sequence_index=0,
+            timestamp=TimestampMS(1721854222000),
+            location=Location.COINBASEPRIME,
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.SPEND,
+            balance=Balance(amount=FVal(50)),
+            asset=A_USD,
+            notes='Swap 50 USD in Coinbase Prime',
+        ), HistoryEvent(
+            identifier=2,
+            event_identifier=first_id,
+            sequence_index=1,
+            timestamp=TimestampMS(1721854222000),
+            location=Location.COINBASEPRIME,
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            balance=Balance(amount=FVal(50)),
+            asset=A_USDC,
+            notes='Receive 50 USDC from a Coinbase Prime conversion',
+        ), HistoryEvent(
+            identifier=3,
+            event_identifier=second_id,
+            sequence_index=0,
+            timestamp=TimestampMS(1724532622000),
+            location=Location.COINBASEPRIME,
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.SPEND,
+            balance=Balance(amount=FVal(150)),
+            asset=A_USDC,
+            notes='Swap 150 USDC in Coinbase Prime',
+        ), HistoryEvent(
+            identifier=4,
+            event_identifier=second_id,
+            sequence_index=1,
+            timestamp=TimestampMS(1724532622000),
+            location=Location.COINBASEPRIME,
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            balance=Balance(amount=FVal(150)),
+            asset=A_USD,
+            notes='Receive 150 USD from a Coinbase Prime conversion',
+        ), HistoryEvent(
+            identifier=5,
+            event_identifier=second_id,
+            sequence_index=2,
+            timestamp=TimestampMS(1724532622000),
+            location=Location.COINBASEPRIME,
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.FEE,
+            balance=Balance(amount=ONE),
+            asset=A_USDC,
+            notes='Spend 1 USDC as Coinbase Prime conversion fee',
+        ), HistoryEvent(
+            identifier=6,
+            event_identifier=third_id,
+            sequence_index=0,
+            timestamp=TimestampMS(1727211022000),
+            location=Location.COINBASEPRIME,
+            event_type=HistoryEventType.STAKING,
+            event_subtype=HistoryEventSubType.REWARD,
+            balance=Balance(amount=FVal(20)),
+            asset=A_ETH,
+            notes='Receive 20 ETH as Coinbase Prime staking reward',
+        ),
+    ]
+
+    with function_scope_coinbaseprime.db.conn.read_ctx() as cursor:
+        cursor.execute('SELECT start_ts, end_ts FROM used_query_ranges')
+        assert cursor.fetchall() == [(0, ts_now())]
