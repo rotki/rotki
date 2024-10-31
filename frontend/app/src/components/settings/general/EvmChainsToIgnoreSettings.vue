@@ -1,15 +1,16 @@
 <script setup lang="ts">
 const { t } = useI18n();
 const { evmchainsToSkipDetection } = storeToRefs(useGeneralSettingsStore());
-
 const { evmChainsData, evmLikeChainsData } = useSupportedChains();
-
 const chains = computed(() => [...get(evmChainsData), ...get(evmLikeChainsData)]);
 
-function toggleAllChains(updateImmediate: (value: string[]) => void) {
-  const currentValue = get(evmchainsToSkipDetection);
+function selectAll(updateImmediate: (value: string[]) => void) {
   const allChainIds = get(chains).map(chain => chain.id);
-  updateImmediate(currentValue?.length === allChainIds.length ? [] : allChainIds);
+  updateImmediate(allChainIds);
+}
+
+function deselectAll(updateImmediate: (value: string[]) => void) {
+  updateImmediate([]);
 }
 </script>
 
@@ -29,9 +30,16 @@ function toggleAllChains(updateImmediate: (value: string[]) => void) {
           <RuiButton
             variant="text"
             size="sm"
-            @click="toggleAllChains(updateImmediate)"
+            @click="selectAll(updateImmediate)"
           >
-            {{ t('general_settings.labels.select_deselect_chains') }}
+            {{ t('general_settings.evm_chains.select') }}
+          </RuiButton>
+          <RuiButton
+            variant="text"
+            size="sm"
+            @click="deselectAll(updateImmediate)"
+          >
+            {{ t('general_settings.evm_chains.deselect') }}
           </RuiButton>
         </div>
         <RuiAutoComplete

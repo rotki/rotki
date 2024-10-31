@@ -26,7 +26,7 @@ const { t } = useI18n();
     <BalanceSaveFrequencySetting />
     <SettingsItem>
       <template #title>
-        {{ t('general_settings.labels.evm_chains') }}
+        {{ t('general_settings.evm_chains.title') }}
       </template>
       <TreatEthAsEth2Setting />
       <EvmChainsToIgnoreSettings />
