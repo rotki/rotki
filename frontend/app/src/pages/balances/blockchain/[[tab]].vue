@@ -124,7 +124,7 @@ watchImmediate(route, (route) => {
 
     <div class="flex flex-col gap-8">
       <RuiCard>
-        <div class="p-6 flex items-center justify-between">
+        <div class="pb-6 flex flex-wrap gap-3 items-center justify-between">
           <CardTitle>{{ t('blockchain_balances.title') }}</CardTitle>
           <RuiTextField
             v-model="search"
@@ -132,10 +132,10 @@ watchImmediate(route, (route) => {
             color="primary"
             dense
             prepend-icon="search-line"
-            :placeholder="t('common.actions.search')"
+            :label="t('common.actions.search')"
             hide-details
             clearable
-            class="w-[300px]"
+            class="w-[28rem]"
             @click:clear="search = ''"
           />
         </div>
