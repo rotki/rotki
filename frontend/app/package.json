@@ -30,7 +30,8 @@
     "test:integration-ci": "node scripts/e2e.js --ci",
     "test:unit": "vitest --dir tests/unit --coverage",
     "test:unit:run": "vitest run --dir tests/unit --coverage",
-    "typecheck": "vue-tsc --build --force"
+    "typecheck": "vue-tsc --build --force",
+    "traces": "vue-tsc --build --force --generateTrace traces"
   },
   "optionalDependencies": {
     "@babel/core": "7.26.0",
