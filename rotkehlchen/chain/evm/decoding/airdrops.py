@@ -16,7 +16,7 @@ def match_airdrop_claim(
         amount: 'FVal',
         asset: 'Asset',
         counterparty: str,
-        airdrop_identifier: Literal['shapeshift', 'badger', 'cow_mainnet', 'cow_gnosis', 'convex', 'fpis'],  # noqa: E501
+        airdrop_identifier: Literal['shapeshift', 'badger', 'cow_mainnet', 'cow_gnosis', 'convex', 'fpis', 'scroll'],  # noqa: E501
         notes: str | None = None,
 ) -> bool:
     """It matches a transfer event to an airdrop claim, changes the required fields
