@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { Defaults } from '@/data/defaults';
+
 const { t } = useI18n();
 
 function minValueMessage(min: number) {
@@ -13,5 +15,6 @@ function minValueMessage(min: number) {
     setting="connectTimeout"
     :label="t('general_settings.external_service_setting.label.connect_timeout')"
     :hint="t('general_settings.external_service_setting.label.connect_timeout_hint')"
+    :default-value="Defaults.DEFAULT_CONNECT_TIMEOUT"
   />
 </template>

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { Defaults } from '@/data/defaults';
+
 const { t } = useI18n();
 
 function minValueMessage(min: number) {
@@ -13,5 +15,6 @@ function minValueMessage(min: number) {
     setting="queryRetryLimit"
     :label="t('general_settings.external_service_setting.label.query_retry_limit')"
     :hint="t('general_settings.external_service_setting.label.query_retry_limit_hint')"
+    :default-value="Defaults.DEFAULT_QUERY_RETRY_LIMIT"
   />
 </template>

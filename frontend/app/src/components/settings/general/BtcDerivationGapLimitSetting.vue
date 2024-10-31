@@ -1,5 +1,9 @@
 <script setup lang="ts">
-const btcDerivationGapLimit = ref<string>('20');
+import { Defaults } from '@/data/defaults';
+
+const DEFAULT = Defaults.BTC_DERIVATION_GAP_LIMIT;
+
+const btcDerivationGapLimit = ref<string>(DEFAULT.toString());
 const { btcDerivationGapLimit: limit } = storeToRefs(useGeneralSettingsStore());
 const { t } = useI18n();
 
@@ -7,6 +11,11 @@ function successMessage(limit: string) {
   return t('general_settings.validation.btc_derivation_gap.success', {
     limit,
   });
+}
+
+function reset(update: (value: number) => void) {
+  update(DEFAULT);
+  set(btcDerivationGapLimit, DEFAULT.toString());
 }
 
 onMounted(() => {
@@ -20,22 +29,32 @@ onMounted(() => {
       {{ t('general_settings.labels.btc_derivation_gap') }}
     </template>
     <SettingsOption
-      #default="{ error, success, update }"
+      #default="{ error, success, update, updateImmediate }"
       setting="btcDerivationGapLimit"
       :error-message="t('general_settings.validation.btc_derivation_gap.error')"
       :success-message="successMessage"
     >
-      <RuiTextField
-        v-model.number="btcDerivationGapLimit"
-        variant="outlined"
-        color="primary"
-        class="general-settings__fields__btc-derivation-gap"
-        :label="t('general_settings.labels.btc_derivation_gap')"
-        type="number"
-        :success-messages="success"
-        :error-messages="error"
-        @update:model-value="update($event ? parseInt($event) : $event)"
-      />
+      <div class="flex items-start w-full">
+        <RuiTextField
+          v-model.number="btcDerivationGapLimit"
+          variant="outlined"
+          color="primary"
+          class="w-full"
+          :label="t('general_settings.labels.btc_derivation_gap')"
+          type="number"
+          :success-messages="success"
+          :error-messages="error"
+          @update:model-value="update($event ? parseInt($event) : $event)"
+        />
+        <RuiButton
+          class="mt-1 ml-2"
+          variant="text"
+          icon
+          @click="reset(updateImmediate)"
+        >
+          <RuiIcon name="history-line" />
+        </RuiButton>
+      </div>
     </SettingsOption>
   </SettingsItem>
 </template>

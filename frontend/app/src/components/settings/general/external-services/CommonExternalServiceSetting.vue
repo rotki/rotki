@@ -3,21 +3,19 @@ import useVuelidate from '@vuelidate/core';
 import { helpers, minValue, required } from '@vuelidate/validators';
 import { toMessages } from '@/utils/validation';
 
-const props = withDefaults(
-  defineProps<{
-    setting: 'queryRetryLimit' | 'connectTimeout' | 'readTimeout';
-    min?: number;
-    requiredMessage: string;
-    minValueMessage: (min: number) => string;
-    label?: string;
-    hint?: string;
-  }>(),
-  {
-    min: 1,
-    label: '',
-    hint: '',
-  },
-);
+const props = withDefaults(defineProps<{
+  setting: 'queryRetryLimit' | 'connectTimeout' | 'readTimeout';
+  min?: number;
+  requiredMessage: string;
+  minValueMessage: (min: number) => string;
+  label?: string;
+  hint?: string;
+  defaultValue: number;
+}>(), {
+  min: 1,
+  label: '',
+  hint: '',
+});
 
 const { min, setting, requiredMessage, minValueMessage } = toRefs(props);
 
@@ -41,7 +39,14 @@ const { callIfValid } = useValidation(v$);
 
 const { restart } = useMonitorStore();
 
-const transform = (value: string) => (value ? Number.parseInt(value) : value);
+function transform(value: string) {
+  return value ? Number.parseInt(value) : value;
+}
+
+function reset(update: (value: number) => void) {
+  update(props.defaultValue);
+  set(inputValue, props.defaultValue.toString());
+}
 
 onMounted(() => {
   resetValue();
@@ -63,19 +68,28 @@ onMounted(() => {
       <template #subtitle>
         {{ hint }}
       </template>
-      <template
-        #default="{ error, success, update }"
-      >
-        <RuiTextField
-          v-model="inputValue"
-          variant="outlined"
-          color="primary"
-          type="number"
-          :min="min"
-          :success-messages="success"
-          :error-messages="error || toMessages(v$.inputValue)"
-          @update:model-value="callIfValid($event, update)"
-        />
+      <template #default="{ error, success, update, updateImmediate }">
+        <div class="flex items-start w-full">
+          <RuiTextField
+            v-model="inputValue"
+            variant="outlined"
+            color="primary"
+            type="number"
+            class="w-full"
+            :min="min"
+            :success-messages="success"
+            :error-messages="error || toMessages(v$.inputValue)"
+            @update:model-value="callIfValid($event, update)"
+          />
+          <RuiButton
+            class="mt-1 ml-2"
+            variant="text"
+            icon
+            @click="reset(updateImmediate)"
+          >
+            <RuiIcon name="history-line" />
+          </RuiButton>
+        </div>
       </template>
     </SettingsOption>
   </div>
