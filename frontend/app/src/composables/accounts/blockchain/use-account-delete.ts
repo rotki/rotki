@@ -133,7 +133,7 @@ export function useAccountDelete(): UseAccountDeleteReturn {
       await awaitParallelExecution(
         chains,
         chain => chain,
-        chain => removeAccount({ accounts: [address], chain }),
+        async chain => removeAccount({ accounts: [address], chain }),
         1,
       );
 
