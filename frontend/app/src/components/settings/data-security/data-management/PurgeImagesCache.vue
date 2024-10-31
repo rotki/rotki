@@ -102,28 +102,27 @@ const { status, pending, showConfirmation } = useCacheClear<PurgeableImageCache>
         :label="t('data_management.purge_images_cache.label.ens_to_clear')"
         :hint="t('data_management.purge_images_cache.hint')"
       />
-    </div>
+      <ActionStatusIndicator
+        v-if="status"
+        :status="status"
+      />
 
-    <ActionStatusIndicator
-      v-if="status"
-      :status="status"
-    />
-
-    <div class="flex justify-end">
-      <RuiButton
-        :disabled="!source || pending"
-        :loading="pending"
-        color="error"
-        @click="showConfirmation(source)"
-      >
-        <template #prepend>
-          <RuiIcon
-            name="delete-bin-line"
-            size="16"
-          />
-        </template>
-        {{ t('purge_selector.tooltip') }}
-      </RuiButton>
+      <div class="flex justify-end">
+        <RuiButton
+          :disabled="!source || pending"
+          :loading="pending"
+          color="error"
+          @click="showConfirmation(source)"
+        >
+          <template #prepend>
+            <RuiIcon
+              name="delete-bin-line"
+              size="16"
+            />
+          </template>
+          {{ t('purge_selector.tooltip') }}
+        </RuiButton>
+      </div>
     </div>
   </SettingsItem>
 </template>

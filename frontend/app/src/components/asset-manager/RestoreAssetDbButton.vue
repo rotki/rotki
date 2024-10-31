@@ -132,7 +132,7 @@ function showDoneConfirmation() {
     class="flex flex-col gap-4"
   >
     <RuiCard>
-      <div class="flex justify-between items-center">
+      <div class="flex justify-between items-center gap-2">
         {{ t('asset_update.restore.soft_reset_hint') }}
         <RuiButton
           variant="outlined"
@@ -145,7 +145,7 @@ function showDoneConfirmation() {
       </div>
     </RuiCard>
     <RuiCard>
-      <div class="flex justify-between items-center">
+      <div class="flex justify-between items-center gap-2">
         {{ t('asset_update.restore.hard_reset_hint') }}
         <RuiButton
           color="error"

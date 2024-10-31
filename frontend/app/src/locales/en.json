@@ -2687,6 +2687,7 @@
     },
     "amount": {
       "label": {
+        "amount": "Amount",
         "currency_location": "Currency location",
         "decimal_separator": "Decimal separator",
         "location_after": "After",
