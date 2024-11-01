@@ -27,7 +27,7 @@ NFT_DIRECTIVE: Final = '_nft_'
 
 @enter_exit_debug_log(name='UserDB v43->v44 upgrade')
 def upgrade_v43_to_v44(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
-    """Upgrades the DB from v42 to v43. This was in v1.35 release.
+    """Upgrades the DB from v43 to v44. This was in v1.35 release.
 
     - last_price and last_price asset are no longer optional in the nfts table
     - update tags of accounts
