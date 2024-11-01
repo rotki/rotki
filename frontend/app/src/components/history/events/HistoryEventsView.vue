@@ -6,10 +6,10 @@ import { RouterAccountsSchema } from '@/types/route';
 import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import type {
-  EvmChainAndTxHash,
   HistoryEvent,
   HistoryEventEntry,
   HistoryEventRequestPayload,
+  PullEvmTransactionPayload,
   ShowEventHistoryForm,
 } from '@/types/history/events';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
@@ -254,9 +254,9 @@ async function redecodeAllEventsHandler(): Promise<void> {
   await fetchData();
 }
 
-async function forceRedecodeEvmEvents(data: EvmChainAndTxHash): Promise<void> {
+async function forceRedecodeEvmEvents(data: PullEvmTransactionPayload): Promise<void> {
   set(currentAction, 'decode');
-  await pullAndRedecodeTransactions([data]);
+  await pullAndRedecodeTransactions(data);
   await fetchData();
 }
 
@@ -318,7 +318,7 @@ async function refresh(userInitiated = false): Promise<void> {
   startPromise(fetchDataAndLocations());
 }
 
-async function fetchAndRedecodeEvents(data?: EvmChainAndTxHash): Promise<void> {
+async function fetchAndRedecodeEvents(data?: PullEvmTransactionPayload): Promise<void> {
   await fetchDataAndLocations();
   if (data)
     await forceRedecodeEvmEvents(data);
@@ -333,9 +333,9 @@ function onShowDialog(type: 'decode' | 'protocol-refresh'): void {
 
 async function redecodePageTransactions(): Promise<void> {
   const evmEvents = get(groups).data.filter(isEvmEvent);
-  const payload = evmEvents.map(item => toEvmChainAndTxHash(item));
+  const transactions = evmEvents.map(item => toEvmChainAndTxHash(item));
 
-  await pullAndRedecodeTransactions(payload);
+  await pullAndRedecodeTransactions({ transactions });
   await fetchUndecodedTransactionsStatus();
   await fetchData();
 }
@@ -406,7 +406,7 @@ onUnmounted(() => {
         :loading="eventTaskLoading"
         :include-evm-events="includes.evmEvents"
         @refresh="refresh(true)"
-        @reload="fetchAndRedecodeEvents($event)"
+        @reload="fetchAndRedecodeEvents({ transactions: [$event] })"
         @show:form="showForm($event)"
       />
     </template>
@@ -490,7 +490,7 @@ onUnmounted(() => {
       <MissingRulesDialog
         v-model="eventWithMissingRules"
         @edit-event="editMissingRulesEntry($event)"
-        @redecode="forceRedecodeEvmEvents($event)"
+        @redecode="forceRedecodeEvmEvents({ transactions: [$event] })"
         @add="onAddMissingRule($event)"
         @dismiss="eventWithMissingRules = undefined"
       />

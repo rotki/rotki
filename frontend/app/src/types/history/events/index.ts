@@ -24,21 +24,26 @@ export interface TransactionHashAndEvmChainPayload {
   readonly evmChain: string;
 }
 
-export interface AddressesAndEvmChainPayload {
-  readonly addresses?: string[] | null;
-  readonly evmChain: string;
+export interface PullEvmTransactionPayload {
+  readonly transactions: EvmChainAndTxHash[];
+  readonly deleteCustom?: boolean;
 }
+
+export interface PullEvmLikeTransactionPayload {
+  readonly transactions: ChainAndTxHash[];
+  readonly deleteCustom?: boolean;
+}
+
+export type PullTransactionPayload = PullEvmTransactionPayload | PullEvmLikeTransactionPayload;
 
 export interface ChainAndTxHash {
   readonly chain: string;
   readonly txHash: string;
-  readonly deleteCustom?: boolean;
 }
 
 export interface EvmChainAndTxHash {
   readonly evmChain: string;
   readonly txHash: string;
-  readonly deleteCustom?: boolean;
 }
 
 export interface AddTransactionHashPayload extends EvmChainAndTxHash {

@@ -1,4 +1,5 @@
 .eslintcache
+.vscode
 app/cypress/
 .nyc_output
 dist
