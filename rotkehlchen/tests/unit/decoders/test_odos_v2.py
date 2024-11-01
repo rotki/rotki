@@ -49,7 +49,7 @@ def test_swap_token_to_token(ethereum_inquirer, ethereum_accounts):
         asset=Asset('eip155:1/erc20:0x1aBaEA1f7C830bD89Acc67eC4af516284b1bC33c'),
         balance=Balance(amount=FVal(swap_amount)),
         location_label=ethereum_accounts[0],
-        notes=f'Swap {swap_amount} EUROC in Odos v2',
+        notes=f'Swap {swap_amount} EURC in Odos v2',
         counterparty=CPT_ODOS_V2,
         address=ETH_ROUTER,
     ), EvmEvent(
