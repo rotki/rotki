@@ -5,6 +5,10 @@ import type { ManualBalance, RawManualBalance } from '@/types/manual-balances';
 
 const modelValue = defineModel<ManualBalance | RawManualBalance | undefined>({ required: true });
 
+const emit = defineEmits<{
+  (e: 'update-tab', tab: string | number): void;
+}>();
+
 const { t } = useI18n();
 
 const loading = ref(false);
@@ -38,13 +42,19 @@ async function save(): Promise<boolean> {
 
   await get(form)?.savePrice();
 
-  const status = await saveBalance(get(modelValue));
+  const payload = get(modelValue);
+  const status = await saveBalance(payload);
 
   startPromise(refreshPrices(true));
 
   if (status.success) {
     set(modelValue, undefined);
     set(loading, false);
+
+    if (!('identifier' in payload)) {
+      emit('update-tab', payload.balanceType === 'asset' ? 'assets' : 'liabilities');
+    }
+
     return true;
   }
 

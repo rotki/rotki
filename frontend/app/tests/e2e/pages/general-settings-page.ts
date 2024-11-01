@@ -36,6 +36,7 @@ export class GeneralSettingsPage {
     cy.get('[data-cy=account-chain-skip-detection-field] input').type(value);
     cy.get('[role=menu-content] button').should('have.length', 1);
     cy.get('[data-cy=account-chain-skip-detection-field] input').type('{enter}');
+    cy.get('.general-settings__fields__account-chains-to-skip-detection [class*=icon__wrapper]').click();
   }
 
   setBalanceSaveFrequency(value: string) {

@@ -146,7 +146,7 @@ const Type = DashboardTableType;
               <SummaryCardCreateButton
                 v-if="manualBalanceByLocation.length === 0"
                 :to="{
-                  path: '/balances/manual',
+                  path: '/balances/manual/assets',
                   query: {
                     add: 'true',
                   },

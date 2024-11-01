@@ -48,7 +48,7 @@ watchImmediate(route, (route) => {
     router.push('/balances/manual/assets');
 }, { deep: true });
 
-onMounted(async () => {
+onBeforeMount(async () => {
   const { query } = get(route);
   if (query.add) {
     await router.replace({ query: {} });
@@ -115,6 +115,9 @@ onMounted(async () => {
       </RuiTabItems>
     </div>
 
-    <ManualBalancesDialog v-model="balance" />
+    <ManualBalancesDialog
+      v-model="balance"
+      @update-tab="goToTab($event)"
+    />
   </TablePageLayout>
 </template>
