@@ -12,7 +12,7 @@ withDefaults(
   },
 );
 
-const { availableTags } = storeToRefs(useTagStore());
+const { allTags } = storeToRefs(useTagStore());
 </script>
 
 <template>
@@ -25,7 +25,7 @@ const { availableTags } = storeToRefs(useTagStore());
       v-for="tag in tags"
       :key="tag"
       :small="small"
-      :tag="availableTags[tag]"
+      :tag="allTags[tag]"
     />
   </div>
 </template>

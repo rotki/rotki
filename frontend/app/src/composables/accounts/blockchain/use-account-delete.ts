@@ -1,4 +1,5 @@
 import { Blockchain } from '@rotki/common';
+import { isBlockchain } from '@/types/blockchain/chains';
 import type {
   BlockchainAccountBalance,
   EthereumValidator,
@@ -60,24 +61,28 @@ function toPayload(params: ShowConfirmationParams): Payload {
 
     const { chains, allChains } = account;
 
+    // Only allow Blockchain values, used to filter out virtual chains such as Loopring.
+    const allFilteredChains = allChains?.filter(isBlockchain);
+    const filteredChains = chains.filter(isBlockchain);
+
     // A group but only has 1 chain
-    if (chains.length === 1) {
+    if (filteredChains.length === 1) {
       return {
         type: 'account',
         data: {
-          chain: account.chains[0],
+          chain: filteredChains[0],
           address,
         },
       };
     }
 
     // A group that showing multiple chains, but not all
-    if (allChains && allChains.length > chains.length) {
+    if (allFilteredChains && allFilteredChains.length > filteredChains.length) {
       return {
         type: 'evm',
         data: {
           address,
-          chains,
+          chains: filteredChains,
           includeAllChains: false,
         },
       };
@@ -88,7 +93,7 @@ function toPayload(params: ShowConfirmationParams): Payload {
       type: 'evm',
       data: {
         address,
-        chains,
+        chains: filteredChains,
         includeAllChains: true,
       },
     };
@@ -180,13 +185,17 @@ export function useAccountDelete(): UseAccountDeleteReturn {
 
       const { chains, allChains } = account;
 
+      // Only allow Blockchain values, used to filter out virtual chains such as Loopring.
+      const allFilteredChains = allChains?.filter(isBlockchain);
+      const filteredChains = chains.filter(isBlockchain);
+
       // A group but only has 1 chain
-      if (chains.length === 1)
-        return t('account_balances.confirm_delete.description_address', { address, chain: get(getChainName(chains[0])) });
+      if (filteredChains.length === 1)
+        return t('account_balances.confirm_delete.description_address', { address, chain: get(getChainName(filteredChains[0])) });
 
       // A group that showing multiple chains, but not all
-      if (allChains && allChains.length > chains.length)
-        return t('account_balances.confirm_delete.description_multiple_address', { address, length: chains.length, chains: chains.map(item => get(getChainName(item))).join(', ') });
+      if (allFilteredChains && allFilteredChains.length > filteredChains.length)
+        return t('account_balances.confirm_delete.description_multiple_address', { address, length: filteredChains.length, chains: filteredChains.map(item => get(getChainName(item))).join(', ') });
 
       // A group that showing all its chains
       return t('account_balances.confirm_delete.agnostic.description', { address });

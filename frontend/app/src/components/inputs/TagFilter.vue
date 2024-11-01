@@ -16,10 +16,10 @@ withDefaults(
 
 const { t } = useI18n();
 
-const { availableTags } = storeToRefs(useTagStore());
+const { allTags } = storeToRefs(useTagStore());
 
 const availableTagsList = computed<Tag[]>(() => {
-  const tags = get(availableTags);
+  const tags = get(allTags);
   return Object.values(tags);
 });
 </script>

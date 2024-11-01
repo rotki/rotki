@@ -213,6 +213,14 @@ function getChains(row: DataRow): string[] {
     : row.chains.filter(chain => !excluded.includes(chain));
 }
 
+function isVirtual(row: DataRow): boolean {
+  return !!(('virtual' in row) && row.virtual);
+}
+
+function isOnlyShowingLoopringChain(row: DataRow): boolean {
+  return ('chains' in row) && (row.chains.length === 1 && row.chains[0] === 'loopring');
+}
+
 defineExpose({
   confirmDelete,
 });
@@ -297,7 +305,7 @@ defineExpose({
           :chain="row.type === 'group' ? row.chains[0] : row.chain"
         />
         <RowActions
-          v-if="!('virtual' in row) || !row.virtual"
+          v-if="!isVirtual(row) && !isOnlyShowingLoopringChain(row)"
           class="account-balance-table__actions"
           :edit-tooltip="t('account_balances.edit_tooltip')"
           :disabled="accountOperation"

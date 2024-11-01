@@ -18,6 +18,8 @@ const dialogOpen = ref(false);
         <RuiIcon name="file-settings-line" />
       </RuiButton>
     </template>
-    <NftImageRenderingSetting @dialog-open="dialogOpen = $event" />
+    <div class="p-4">
+      <NftImageRenderingSetting @dialog-open="dialogOpen = $event" />
+    </div>
   </RuiMenu>
 </template>

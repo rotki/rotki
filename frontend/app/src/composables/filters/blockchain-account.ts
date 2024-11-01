@@ -34,6 +34,7 @@ export function useBlockchainAccountFilter(t: ReturnType<typeof useI18n>['t'], c
     return chains.filter(item => item.type === categoryVal || (categoryVal === 'evm' && item.type === 'evmlike')).map(chain => chain.id);
   });
 
+  const filterableChains = [...get(chainIds), 'loopring'];
   const matchers = computed<Matcher[]>(() => [
     {
       key: BlockchainAccountFilterKeys.ADDRESS,
@@ -49,8 +50,8 @@ export function useBlockchainAccountFilter(t: ReturnType<typeof useI18n>['t'], c
       description: t('common.chain'),
       multiple: true,
       string: true,
-      suggestions: (): string[] => get(chainIds),
-      validate: (id: string): boolean => get(chainIds).some(chainId => chainId.toLocaleLowerCase() === id.toLocaleLowerCase()),
+      suggestions: (): string[] => filterableChains,
+      validate: (id: string): boolean => filterableChains.some(chainId => chainId.toLocaleLowerCase() === id.toLocaleLowerCase()),
     },
     {
       key: BlockchainAccountFilterKeys.LABEL,
