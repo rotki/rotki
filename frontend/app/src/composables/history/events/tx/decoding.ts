@@ -2,7 +2,13 @@ import { groupBy } from 'lodash-es';
 import { TaskType } from '@/types/task-type';
 import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { Section } from '@/types/status';
-import { type ChainAndTxHash, type EvmChainAndTxHash, TransactionChainType } from '@/types/history/events';
+import {
+  type ChainAndTxHash,
+  type EvmChainAndTxHash,
+  type PullEvmTransactionPayload,
+  type PullTransactionPayload,
+  TransactionChainType,
+} from '@/types/history/events';
 import { EvmUndecodedTransactionResponse } from '@/types/websocket-messages';
 import type { TaskMeta } from '@/types/task';
 
@@ -175,7 +181,7 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
     );
   };
 
-  const pullAndRecodeTransactionsByType = async (payload: (ChainAndTxHash | EvmChainAndTxHash)[], type: TransactionChainType): Promise<void> => {
+  const pullAndRecodeTransactionsByType = async (payload: PullTransactionPayload, type: TransactionChainType): Promise<void> => {
     try {
       const taskType = TaskType.TRANSACTIONS_DECODING;
       const { taskId } = await pullAndRecodeTransactionRequest(payload, type);
@@ -183,12 +189,12 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
       let taskMeta = {
         title: t('actions.transactions_redecode.task.title'),
         description: t('actions.transactions_redecode.task.single_description', {
-          number: payload.length,
+          number: payload.transactions.length,
         }),
       };
 
-      if (payload.length === 1) {
-        const data = payload[0];
+      if (payload.transactions.length === 1) {
+        const data = payload.transactions[0];
         taskMeta = {
           title: t('actions.transactions_redecode.task.title'),
           description: t('actions.transactions_redecode.task.description', {
@@ -217,7 +223,7 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
     }
   };
 
-  const pullAndRedecodeTransactions = async (transactions: EvmChainAndTxHash[]): Promise<void> => {
+  const pullAndRedecodeTransactions = async ({ transactions, deleteCustom }: PullEvmTransactionPayload): Promise<void> => {
     resetUndecodedTransactionsStatus();
 
     const groupped = groupBy(transactions, 'evmChain');
@@ -243,7 +249,6 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
           {
             evmChain: item.evmChain,
             txHash: item.txHash,
-            deleteCustom: item.deleteCustom,
           },
         );
       }
@@ -252,18 +257,17 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
           {
             chain,
             txHash: item.txHash,
-            deleteCustom: item.deleteCustom,
           },
         );
       }
     });
 
     if (evmChainsPayload.length > 0) {
-      await pullAndRecodeTransactionsByType(evmChainsPayload, TransactionChainType.EVM);
+      await pullAndRecodeTransactionsByType({ transactions: evmChainsPayload, deleteCustom }, TransactionChainType.EVM);
     }
 
     if (evmLikeChainsPayload.length > 0) {
-      await pullAndRecodeTransactionsByType(evmLikeChainsPayload, TransactionChainType.EVMLIKE);
+      await pullAndRecodeTransactionsByType({ transactions: evmLikeChainsPayload, deleteCustom }, TransactionChainType.EVMLIKE);
     }
   };
 

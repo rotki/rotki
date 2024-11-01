@@ -10,15 +10,14 @@ import {
 } from '@/services/utils';
 import {
   type AddTransactionHashPayload,
-  type ChainAndTxHash,
   type EditHistoryEventPayload,
-  type EvmChainAndTxHash,
   HistoryEventDetail,
   type HistoryEventEntryWithMeta,
   type HistoryEventRequestPayload,
   HistoryEventsCollectionResponse,
   type NewHistoryEventPayload,
   type OnlineHistoryEventsRequestPayload,
+  type PullTransactionPayload,
   TransactionChainType,
   type TransactionRequestPayload,
 } from '@/types/history/events';
@@ -31,7 +30,7 @@ import type { ActionDataEntry } from '@/types/action';
 interface UseHistoryEventsApiReturn {
   fetchTransactionsTask: (payload: TransactionRequestPayload, type?: TransactionChainType) => Promise<PendingTask>;
   deleteTransactions: (chain: string, txHash?: string) => Promise<boolean>;
-  pullAndRecodeTransactionRequest: (payload: (ChainAndTxHash | EvmChainAndTxHash)[], type?: TransactionChainType) => Promise<PendingTask>;
+  pullAndRecodeTransactionRequest: (payload: PullTransactionPayload, type?: TransactionChainType) => Promise<PendingTask>;
   getUndecodedTransactionsBreakdown: (type?: TransactionChainType) => Promise<PendingTask>;
   decodeTransactions: (chains: string[], type?: TransactionChainType, ignoreCache?: boolean) => Promise<PendingTask>;
   addHistoryEvent: (event: NewHistoryEventPayload) => Promise<{ identifier: number }>;
@@ -89,14 +88,14 @@ export function useHistoryEventsApi(): UseHistoryEventsApiReturn {
   };
 
   const pullAndRecodeTransactionRequest = async (
-    payload: (ChainAndTxHash | EvmChainAndTxHash)[],
+    payload: PullTransactionPayload,
     type: TransactionChainType = TransactionChainType.EVM,
   ): Promise<PendingTask> => {
     const response = await api.instance.put<ActionResult<PendingTask>>(
       `blockchains/${type}/transactions`,
       snakeCaseTransformer({
         asyncQuery: true,
-        transactions: payload,
+        ...payload,
       }),
     );
 

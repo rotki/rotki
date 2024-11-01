@@ -2,7 +2,12 @@
 import { groupBy } from 'lodash-es';
 import { IgnoreActionType } from '@/types/history/ignored';
 import { Section } from '@/types/status';
-import type { EvmChainAndTxHash, HistoryEventEntry, ShowEventHistoryForm } from '@/types/history/events';
+import type {
+  EvmChainAndTxHash,
+  HistoryEventEntry,
+  PullEvmTransactionPayload,
+  ShowEventHistoryForm,
+} from '@/types/history/events';
 import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import type { Collection } from '@/types/collection';
 
@@ -25,7 +30,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   'show:form': [payload: ShowEventHistoryForm];
   'set-page': [page: number];
-  'refresh': [data?: EvmChainAndTxHash];
+  'refresh': [payload?: PullEvmTransactionPayload];
 }>();
 
 const { groups, groupLoading } = toRefs(props);
@@ -214,7 +219,7 @@ function redecode(payload: EvmChainAndTxHash, eventIdentifier: string): void {
   const isAnyCustom = childEvents.some(item => item.customized);
 
   if (!isAnyCustom) {
-    emit('refresh', payload);
+    emit('refresh', { transactions: [payload] });
   }
   else {
     set(redecodePayload, payload);
@@ -227,7 +232,7 @@ function forceRedecode(): void {
   const payload = get(redecodePayload);
   if (payload) {
     emit('refresh', {
-      ...payload,
+      transactions: [payload],
       deleteCustom: get(deleteCustom),
     });
   }
