@@ -1,10 +1,6 @@
 <script setup lang="ts">
 import { isEqual } from 'lodash-es';
 
-defineProps<{
-  noPadding?: boolean;
-}>();
-
 const emit = defineEmits<{ (e: 'dialog-open', value: boolean): void }>();
 
 const { t } = useI18n();
@@ -124,7 +120,7 @@ onMounted(() => {
     </p>
 
     <template v-if="whitelist.length > 0">
-      <h5 class="mb-2 font-medium">
+      <h5 class="mt-4 mb-2 font-medium">
         {{ t('general_settings.nft_setting.label.whitelisted_domains') }}
       </h5>
 

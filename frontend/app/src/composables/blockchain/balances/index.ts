@@ -4,7 +4,6 @@ import { Section, Status } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import { Module } from '@/types/modules';
 import { AccountAssetBalances, type AssetBalances } from '@/types/balances';
-import { ReadOnlyTag } from '@/types/tags';
 import type { BlockchainMetadata, TaskMeta } from '@/types/task';
 import type { BlockchainAccount, BlockchainBalancePayload } from '@/types/blockchain/accounts';
 
@@ -164,7 +163,7 @@ export function useBlockchainBalances(): UseBlockchainbalancesReturn {
               address,
             },
             chain: 'loopring',
-            tags: [ReadOnlyTag.LOOPRING],
+            tags: [],
             nativeAsset: Blockchain.ETH.toUpperCase(),
             virtual: true,
           }) satisfies BlockchainAccount,

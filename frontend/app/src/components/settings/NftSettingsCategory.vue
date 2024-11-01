@@ -40,7 +40,7 @@ const { t } = useI18n();
           </template>
         </i18n-t>
       </template>
-      <NftImageRenderingSetting no-padding />
+      <NftImageRenderingSetting />
     </SettingsItem>
   </SettingCategory>
 </template>

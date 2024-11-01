@@ -1,15 +1,10 @@
-import { READ_ONLY_TAGS, type Tag, type Tags } from '@/types/tags';
+import type { Tag, Tags } from '@/types/tags';
 import type { ActionStatus } from '@/types/action';
 
 export const useTagStore = defineStore('session/tags', () => {
   const allTags = ref<Tags>({});
 
   const tags = computed(() => Object.values(get(allTags)));
-
-  const availableTags = computed<Record<string, Tag>>(() => ({
-    ...get(allTags),
-    ...READ_ONLY_TAGS,
-  }));
 
   const { removeTag } = useBlockchainAccounts();
   const { setMessage } = useMessageStore();
@@ -75,7 +70,6 @@ export const useTagStore = defineStore('session/tags', () => {
   return {
     allTags,
     tags,
-    availableTags,
     fetchTags,
     addTag,
     editTag,

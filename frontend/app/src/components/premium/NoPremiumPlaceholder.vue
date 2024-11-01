@@ -28,6 +28,7 @@ const { isMdAndUp } = useBreakpoint();
       {{ t('no_premium_placeholder.premium_only', { text }) }}
     </div>
     <i18n-t
+      tag="div"
       keypath="no_premium_placeholder.get_premium"
       class="text-rui-text-secondary"
     >
