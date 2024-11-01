@@ -54,6 +54,7 @@ describe('settings::general', () => {
       );
       cy.get(target).should('be.empty');
     });
+    cy.get('.general-settings__fields__account-chains-to-skip-detection').type('{esc}');
   });
 
   it('change balance save frequency and validate UI message', () => {
