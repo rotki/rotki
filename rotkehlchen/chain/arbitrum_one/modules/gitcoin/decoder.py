@@ -1,6 +1,5 @@
 from typing import TYPE_CHECKING
 
-from rotkehlchen.chain.arbitrum_one.node_inquirer import ArbitrumOneInquirer
 from rotkehlchen.chain.evm.decoding.gitcoinv2.decoder import GitcoinV2CommonDecoder
 from rotkehlchen.chain.evm.types import string_to_evm_address
 

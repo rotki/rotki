@@ -2,7 +2,7 @@
 
 import argparse
 import contextlib
-import logging.config
+import logging
 import os
 import time
 from collections import defaultdict
