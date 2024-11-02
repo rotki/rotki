@@ -19,7 +19,6 @@ from rotkehlchen.serialization.serialize import process_result
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.utils.misc import (
     combine_dicts,
-    combine_stat_dicts,
     convert_to_int,
     is_production,
     iso8601ts_to_timestamp,
@@ -85,28 +84,6 @@ def test_combine_dicts():
     b = {'a': 4, 'c': 2}
     result = combine_dicts(a, b)
     assert result == {'a': 5, 'b': 2, 'c': 5}
-
-
-def test_combine_stat_dicts():
-    a = {
-        'EUR': {'amount': FVal('50.5'), 'usd_value': FVal('200.1')},
-        'BTC': {'amount': FVal('2.5'), 'usd_value': FVal('12200.5')},
-    }
-    b = {
-        'RDN': {'amount': FVal('15.5'), 'usd_value': FVal('105.9')},
-    }
-    c = {
-        'EUR': {'amount': FVal('15.5'), 'usd_value': FVal('105.9')},
-        'BTC': {'amount': FVal('3.5'), 'usd_value': FVal('18200.5')},
-        'ETH': {'amount': FVal('100.1'), 'usd_value': FVal('11200.1')},
-    }
-    result = combine_stat_dicts([a, b, c])
-    assert result == {
-        'EUR': {'amount': FVal('66'), 'usd_value': FVal('306')},
-        'RDN': {'amount': FVal('15.5'), 'usd_value': FVal('105.9')},
-        'ETH': {'amount': FVal('100.1'), 'usd_value': FVal('11200.1')},
-        'BTC': {'amount': FVal('6'), 'usd_value': FVal('30401')},
-    }
 
 
 def test_check_if_version_up_to_date():

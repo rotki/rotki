@@ -20,6 +20,7 @@ from rotkehlchen.tests.utils.accounting import (
     accounting_history_process,
     assert_pnl_totals_close,
     check_pnls_and_csv,
+    get_calculated_asset_amount,
     history1,
 )
 from rotkehlchen.tests.utils.constants import A_DASH
@@ -236,7 +237,7 @@ def test_margin_events_affect_gained_lost_amount(accountant, google_service):
         history_list=history,
     )
     no_message_errors(accountant.msg_aggregator)
-    assert accountant.pots[0].cost_basis.get_calculated_asset_amount('BTC').is_close('3.7468')
+    assert get_calculated_asset_amount(accountant.pots[0].cost_basis, A_BTC).is_close('3.7468')
     expected_pnls = PnlTotals({
         AccountingEventType.TRADE: PNL(taxable=FVal('1941.115'), free=ZERO),
         AccountingEventType.FEE: PNL(taxable=FVal('-1.8712160'), free=ZERO),

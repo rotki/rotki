@@ -6,7 +6,7 @@ from typing import Any
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.exchanges.data_structures import TradeType
-from rotkehlchen.exchanges.kraken import KRAKEN_DELISTED, Kraken
+from rotkehlchen.exchanges.kraken import Kraken
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.tests.utils.factories import (
@@ -18,6 +18,8 @@ from rotkehlchen.types import ApiKey, ApiSecret, Location, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_now
 from rotkehlchen.utils.serialization import jsonloads_dict
+
+KRAKEN_DELISTED = ('XDAO', 'XXVN', 'ZKRW', 'XNMC', 'BSV', 'XICN')
 
 KRAKEN_SPECIFIC_TRADES_HISTORY_RESPONSE = """{
     "trades": {
@@ -351,6 +353,18 @@ def generate_random_kraken_id() -> str:
     )
 
 
+def get_exchange_name_from_assetid(exchange: Location, asset_identifier: str) -> str | None:
+    """Returns the ticker symbol used in the given exchange from asset's identifier according
+        to location_asset_mappings table. If the mapping is not present returns None."""
+    with GlobalDBHandler().conn.read_ctx() as cursor:
+        identifier = cursor.execute(
+            'SELECT exchange_symbol FROM location_asset_mappings WHERE (location IS ? OR location IS NULL) AND local_id=?',  # noqa: E501
+            (exchange.serialize_for_db(), asset_identifier),
+        ).fetchone()
+
+        return None if identifier is None else identifier[0]
+
+
 def create_kraken_trade(
         tradeable_pairs: list[str],
         base_asset: str | None = None,
@@ -369,11 +383,11 @@ def create_kraken_trade(
     if base_asset is None or quote_asset is None:
         pair = random.choice(tradeable_pairs)
     else:
-        base_symbol = GlobalDBHandler.get_exchange_name_from_assetid(
+        base_symbol = get_exchange_name_from_assetid(
             exchange=Location.KRAKEN,
             asset_identifier=base_asset,
         )
-        quote_symbol = GlobalDBHandler.get_exchange_name_from_assetid(
+        quote_symbol = get_exchange_name_from_assetid(
             exchange=Location.KRAKEN,
             asset_identifier=quote_asset,
         )

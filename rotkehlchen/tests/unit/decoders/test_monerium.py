@@ -5,15 +5,19 @@ import pytest
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.evm.decoding.monerium.constants import CPT_MONERIUM
-from rotkehlchen.constants.assets import A_ETH_EURE, A_GNOSIS_EURE, A_POLYGON_EURE
+from rotkehlchen.constants.assets import A_ETH_EURE
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.tests.utils.constants import A_GNOSIS_EURE
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import ChecksumEvmAddress, Location, TimestampMS, deserialize_evm_tx_hash
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.gnosis.node_inquirer import GnosisInquirer
+
+
+A_POLYGON_EURE = Asset('eip155:137/erc20:0x18ec0A6E18E5bc3784fDd3a3634b31245ab704F6')
 
 
 @pytest.mark.vcr

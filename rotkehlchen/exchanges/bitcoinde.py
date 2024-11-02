@@ -45,26 +45,6 @@ log = RotkehlchenLogsAdapter(logger)
 # This corresponds to md5('') and is used in signature generation
 MD5_EMPTY_STR = 'd41d8cd98f00b204e9800998ecf8427e'
 
-# Pairs can be found in Basic API doc https://www.bitcoin.de/en/api/basic. There is no api to
-# query this pairs.
-BITCOINDE_TRADING_PAIRS = (
-    'btceur',
-    'bcheur',
-    'btgeur',
-    'etheur',
-    'bsveur',
-    'ltceur',
-    'usdteur',
-    'xrpeur',
-    'dogeeur',
-    'soleur',
-    'trxeur',
-    'iotabtc',  # not listed anymore
-    'dashbtc',  # not listed anymore
-    'gntbtc',  # not listed anymore
-    'ltcbtc',  # not listed anymore
-)
-
 
 def bitcoinde_pair_to_world(pair: str) -> tuple[AssetWithOracles, AssetWithOracles]:
     if len(pair) == 6:

@@ -10,7 +10,6 @@ from rotkehlchen.assets.asset import Asset, AssetWithOracles
 from rotkehlchen.assets.converters import asset_from_binance
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.crypto import sha3
-from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.history.events.structures.types import EventDirection
@@ -30,13 +29,11 @@ from rotkehlchen.types import (
     Price,
     Timestamp,
     TradeID,
-    TradePair,
     TradeType,
 )
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.pot import AccountingPot
-    from rotkehlchen.user_messages import MessagesAggregator
 
 
 logger = logging.getLogger(__name__)
@@ -699,10 +696,6 @@ class Loan(AccountingEventMixin):
         return 1
 
 
-def trade_pair_from_assets(base: AssetWithOracles, quote: AssetWithOracles) -> TradePair:
-    return TradePair(f'{base.identifier}_{quote.identifier}')
-
-
 def deserialize_trade(data: dict[str, Any]) -> Trade:
     """
     Takes a dict trade representation of our common trade format and serializes
@@ -737,39 +730,6 @@ def deserialize_trade(data: dict[str, Any]) -> Trade:
         link=trade_link,
         notes=trade_notes,
     )
-
-
-def trades_from_dictlist(
-        given_trades: list[dict[str, Any]],
-        start_ts: Timestamp,
-        end_ts: Timestamp,
-        location: str,
-        msg_aggregator: 'MessagesAggregator',
-) -> list[Trade]:
-    """ Gets a list of dict trades, most probably read from the json files and
-    a time period. Returns it as a list of the Trade tuples that are inside the time period
-
-    Can raise:
-      - KeyError: If a trade dict does not have a key as we expect it
-      - DeserializationError: If a trade dict entry is of an unexpected format
-    """
-    returned_trades = []
-    for given_trade in given_trades:
-        timestamp = deserialize_timestamp(given_trade['timestamp'])
-        if timestamp < start_ts:
-            continue
-        if timestamp > end_ts:
-            break
-
-        try:
-            returned_trades.append(deserialize_trade(given_trade))
-        except UnknownAsset as e:
-            msg_aggregator.add_warning(
-                f'When processing {location} trades found a trade containing unknown '
-                f'asset {e.identifier}. Ignoring it.')
-            continue
-
-    return returned_trades
 
 
 BINANCE_PAIR_DB_TUPLE = tuple[str, str, str, str]

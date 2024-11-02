@@ -39,7 +39,7 @@ from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnprocessableTradePair
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import Trade
-from rotkehlchen.exchanges.kraken import KRAKEN_DELISTED, Kraken
+from rotkehlchen.exchanges.kraken import Kraken
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -71,7 +71,7 @@ from rotkehlchen.tests.utils.exchanges import (
     try_get_first_exchange,
 )
 from rotkehlchen.tests.utils.history import TEST_END_TS, prices
-from rotkehlchen.tests.utils.kraken import MockKraken
+from rotkehlchen.tests.utils.kraken import KRAKEN_DELISTED, MockKraken
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.tests.utils.pnl_report import query_api_create_and_get_report
 from rotkehlchen.types import AssetMovementCategory, Location, Timestamp, TimestampMS, TradeType

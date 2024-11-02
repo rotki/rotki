@@ -393,3 +393,16 @@ def toggle_ignore_an_asset(
     with rotki.data.db.conn.read_ctx() as cursor:
         result = rotki.data.db.get_ignored_asset_ids(cursor)
     assert asset_to_ignore.identifier in result
+
+
+def get_calculated_asset_amount(cost_basis, asset: Asset) -> FVal | None:
+    """Get the amount of asset accounting has calculated we should have after
+    the history has been processed on a cost basis object
+    """
+    asset_events = cost_basis.get_events(asset)
+
+    amount = ZERO
+    for acquisition_event in asset_events.acquisitions_manager.get_acquisitions():
+        amount += acquisition_event.remaining_amount
+
+    return amount if amount != ZERO else None

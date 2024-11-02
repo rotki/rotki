@@ -360,7 +360,7 @@ def test_inquirer_oracles_does_not_affect_manual_price(inquirer):
         oracles=[CurrentPriceOracle.COINGECKO, CurrentPriceOracle.MANUALCURRENT],
     )
     assert inquirer.find_usd_price(A_ETH) == 3  # Should remain the same since cache should be hit
-    inquirer.remove_cached_current_price_entry(cache_key=(A_ETH, A_USD))
+    Inquirer._cached_current_price.remove((A_ETH, A_USD))
     assert inquirer.find_usd_price(A_ETH) == 3  # manual price is still prioritized
 
 

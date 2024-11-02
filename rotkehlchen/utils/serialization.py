@@ -62,16 +62,6 @@ def rlk_jsondumps(data: dict | list) -> str:
     return json.dumps(data, cls=RKLEncoder)
 
 
-def pretty_json_dumps(data: dict) -> str:
-    return json.dumps(
-        data,
-        sort_keys=True,
-        indent=4,
-        separators=(',', ': '),
-        cls=RKLEncoder,
-    )
-
-
 def deserialize_asset_with_oracles_from_db(
         asset_type: AssetType,
         asset_data: list[Any],

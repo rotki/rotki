@@ -569,7 +569,7 @@ def test_price_for_custom_assets(inquirer, database, globaldb):
         to_asset=A_USD,
         price=Price(FVal(10)),
     )
-    inquirer.remove_cached_current_price_entry((asset, A_USD))
+    Inquirer._cached_current_price.remove((asset, A_USD))
     assert inquirer.find_usd_price(asset) == Price(FVal(10))
 
 

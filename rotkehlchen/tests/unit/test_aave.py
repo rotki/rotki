@@ -3,18 +3,13 @@ from typing import TYPE_CHECKING
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.assets.asset import Asset, EvmToken
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.modules.aave.aave import Aave
-from rotkehlchen.chain.ethereum.modules.aave.common import AaveStats, asset_to_aave_reserve_address
-from rotkehlchen.chain.evm.constants import ETH_SPECIAL_ADDRESS
+from rotkehlchen.chain.ethereum.modules.aave.common import AaveStats
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE
-from rotkehlchen.constants.assets import A_ETH
-from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.fval import FVal
-from rotkehlchen.globaldb.handler import GlobalDBHandler
-from rotkehlchen.tests.utils.aave import ATOKENV1_TO_ASSET
-from rotkehlchen.types import ChainID, Timestamp, deserialize_evm_tx_hash
+from rotkehlchen.types import Timestamp, deserialize_evm_tx_hash
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
@@ -24,18 +19,6 @@ if TYPE_CHECKING:
     from rotkehlchen.history.price import PriceHistorian
     from rotkehlchen.inquirer import Inquirer
     from rotkehlchen.premium.premium import Premium
-
-
-def test_aave_reserve_mapping():
-    atokensv1 = GlobalDBHandler().get_evm_tokens(chain_id=ChainID.ETHEREUM, protocol='aave')
-    for token in atokensv1:
-        underlying_asset = ATOKENV1_TO_ASSET[token].resolve_to_crypto_asset()
-        if underlying_asset == A_ETH:
-            assert asset_to_aave_reserve_address(underlying_asset) == ETH_SPECIAL_ADDRESS
-            continue
-
-        assert EvmToken(ethaddress_to_identifier(underlying_asset.evm_address)) == underlying_asset
-        assert asset_to_aave_reserve_address(underlying_asset) == underlying_asset.evm_address
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])

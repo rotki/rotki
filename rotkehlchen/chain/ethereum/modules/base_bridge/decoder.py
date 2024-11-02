@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Final
 
 from rotkehlchen.assets.asset import AssetWithSymbol
 from rotkehlchen.chain.evm.decoding.constants import BASE_CPT_DETAILS
@@ -21,11 +21,9 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.user_messages import MessagesAggregator
 
-BRIDGE_ADDRESS = string_to_evm_address('0x49048044D57e1C92A77f79988d21Fa8fAF74E97e')
-TRANSACTION_DEPOSITED = b'\xb3\x815h\xd9\x99\x1f\xc9Q\x96\x1f\xcbLxH\x93WB@\xa2\x89%`M\t\xfcW|U\xbb|2'  # noqa: E501
-WITHDRAWAL_FINALIZED = b"\xdb\\vR\x85z\xa1c\xda\xad\xd6p\xe1\x16b\x8f\xb4.\x86\x9d\x8a\xc4%\x1e\xf8\x97\x1d\x9eW'\xdf\x1b"  # noqa: E501
-BRIDGE_TOKEN = b'\x7f\xf1&\xdb\x80$BK\xbf\xd9\x82n\x8a\xb8/\xf5\x916(\x9e\xa4@\xb0K9\xa0\xdf\x1b\x03\xb9\xca\xbf'  # noqa: E501
-WITHDRAWAL_TOKEN = b'\xd5\x9ce\xb3TE"X5\xc8?P\xb6\xed\xe0j{\xe0G\xd2.5ps\xe2P\xd9\xafSu\x18\xcd'
+BRIDGE_ADDRESS: Final = string_to_evm_address('0x49048044D57e1C92A77f79988d21Fa8fAF74E97e')
+TRANSACTION_DEPOSITED: Final = b'\xb3\x815h\xd9\x99\x1f\xc9Q\x96\x1f\xcbLxH\x93WB@\xa2\x89%`M\t\xfcW|U\xbb|2'  # noqa: E501
+WITHDRAWAL_FINALIZED: Final = b"\xdb\\vR\x85z\xa1c\xda\xad\xd6p\xe1\x16b\x8f\xb4.\x86\x9d\x8a\xc4%\x1e\xf8\x97\x1d\x9eW'\xdf\x1b"  # noqa: E501
 
 
 class BaseBridgeDecoder(DecoderInterface):

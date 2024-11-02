@@ -11,13 +11,14 @@ from rotkehlchen.chain.ethereum.tokens import EthereumTokens
 from rotkehlchen.chain.evm.tokens import generate_multicall_chunks
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE
-from rotkehlchen.constants.assets import A_DAI, A_GNOSIS_EURE, A_OMG, A_WETH
+from rotkehlchen.constants.assets import A_DAI, A_OMG, A_WETH
+from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.db.constants import EVM_ACCOUNTS_DETAILS_TOKENS
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.inquirer import Inquirer
-from rotkehlchen.tests.utils.constants import A_LPT
+from rotkehlchen.tests.utils.constants import A_GNOSIS_EURE, A_LPT
 from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind, SupportedBlockchain
 from rotkehlchen.utils.misc import ts_now
@@ -294,7 +295,10 @@ def test_old_curve_gauge(ethereum_inquirer: 'EthereumInquirer'):
     # old gauge
     gauge_address = string_to_evm_address('0xC2b1DF84112619D190193E48148000e3990Bf627')
     with suppress(InputError):
-        GlobalDBHandler.delete_evm_token(gauge_address, chain_id=ChainID.ETHEREUM)
+        GlobalDBHandler.delete_asset_by_identifier(evm_address_to_identifier(
+            address=gauge_address,
+            chain_id=ChainID.ETHEREUM,
+        ))
 
     gauge_token = get_or_create_evm_token(
         userdb=ethereum_inquirer.database,
@@ -312,7 +316,10 @@ def test_old_curve_gauge(ethereum_inquirer: 'EthereumInquirer'):
     # new gauge
     gauge_address = string_to_evm_address('0x182B723a58739a9c974cFDB385ceaDb237453c28')
     with suppress(InputError):
-        GlobalDBHandler.delete_evm_token(gauge_address, chain_id=ChainID.ETHEREUM)
+        GlobalDBHandler.delete_asset_by_identifier(evm_address_to_identifier(
+            address=gauge_address,
+            chain_id=ChainID.ETHEREUM,
+        ))
 
     gauge_token = get_or_create_evm_token(
         userdb=ethereum_inquirer.database,
@@ -335,7 +342,10 @@ def test_chain_is_not_queried_when_details(ethereum_inquirer: 'EthereumInquirer'
     """
     lido_address = string_to_evm_address('0x5A98FcBEA516Cf06857215779Fd812CA3beF1B32')
     with suppress(InputError):
-        GlobalDBHandler.delete_evm_token(lido_address, chain_id=ChainID.ETHEREUM)
+        GlobalDBHandler.delete_asset_by_identifier(evm_address_to_identifier(
+            address=lido_address,
+            chain_id=ChainID.ETHEREUM,
+        ))
 
     with patch(
         'rotkehlchen.assets.utils._query_or_get_given_token_info',

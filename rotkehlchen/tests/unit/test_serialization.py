@@ -20,7 +20,7 @@ from rotkehlchen.types import (
     TradeType,
     deserialize_evm_tx_hash,
 )
-from rotkehlchen.utils.serialization import pretty_json_dumps, rlk_jsondumps
+from rotkehlchen.utils.serialization import rlk_jsondumps
 
 TEST_DATA = {
     'a': FVal('5.4'),
@@ -39,13 +39,6 @@ def test_rlk_jsondumps():
         '{"a": "5.4", "b": "foo", "c": "32.1", "d": 5, '
         '"e": [1, "a", "5.1"], "f": "ETH", "BTC": "test_with_asset_key"}'
     )
-
-
-def test_pretty_json_dumps():
-    """Simply test that pretty json dumps also works. That means that sorting
-    of all serializable assets is enabled"""
-    result = pretty_json_dumps(TEST_DATA)
-    assert result
 
 
 def test_deserialize_trade_type():

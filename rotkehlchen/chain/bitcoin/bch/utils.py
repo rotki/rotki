@@ -1,6 +1,6 @@
 
 import bech32
-from base58 import b58decode_check, b58encode_check
+from base58 import b58encode_check
 from eth_typing import ChecksumAddress
 from marshmallow import ValidationError
 
@@ -91,29 +91,6 @@ def _code_list_to_string(code_list: list[int]) -> bytes:
     for code in code_list:
         output += bytes([code])
     return output
-
-
-def legacy_to_cash_address(address: str) -> BTCAddress | None:
-    """
-    Converts a legacy BCH address to CashAddr format.
-    Code is taken from:
-    https://github.com/oskyk/cashaddress/blob/master/cashaddress/convert.py#L46
-
-    Returns None if an error occured during conversion.
-    """
-    try:
-        decoded = bytearray(b58decode_check(address))
-        version = _address_type('legacy', decoded[0])[0]
-        payload = list(decoded[1:])
-        version_int = _address_type('cash', version)[1]
-        new_payload = [version_int] + payload
-        converted_bits = bech32.convertbits(new_payload, 8, 5)
-        if converted_bits is None:
-            return None
-        checksum = _calculate_checksum(_PREFIX, converted_bits)
-        return BTCAddress(_PREFIX + ':' + _b32encode(converted_bits + checksum))
-    except ValueError:
-        return None
 
 
 def cash_to_legacy_address(address: str) -> BTCAddress | None:

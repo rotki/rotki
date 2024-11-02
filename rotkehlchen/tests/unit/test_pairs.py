@@ -1,15 +1,7 @@
 import pytest
 
-from rotkehlchen.constants.assets import A_BTC, A_EUR
 from rotkehlchen.errors.asset import UnprocessableTradePair
-from rotkehlchen.exchanges.data_structures import trade_pair_from_assets
 from rotkehlchen.serialization.deserialize import get_pair_position_str
-from rotkehlchen.types import TradePair
-
-
-def test_trade_pair_from_assets():
-    pair = trade_pair_from_assets(A_BTC, A_EUR)
-    assert pair == TradePair('BTC_EUR')
 
 
 def test_get_pair_position_str():

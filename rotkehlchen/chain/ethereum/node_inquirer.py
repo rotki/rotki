@@ -50,7 +50,6 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
-BLOCKCYPHER_URL = 'https://api.blockcypher.com/v1/eth/main'
 MAX_ADDRESSES_IN_REVERSE_ENS_QUERY = 80
 
 

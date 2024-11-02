@@ -55,15 +55,6 @@ class AaveBalances(NamedTuple):
     borrowing: dict[CryptoAsset, AaveBorrowingBalance]
 
 
-def asset_to_aave_reserve_address(asset: CryptoAsset) -> ChecksumEvmAddress | None:
-    if asset == A_ETH:  # for v2 this should be WETH
-        return ETH_SPECIAL_ADDRESS
-
-    token = EvmToken(asset.identifier)
-    assert token, 'should not be a non token asset at this point'
-    return token.evm_address
-
-
 def asset_to_atoken(asset: CryptoAsset, version: int) -> EvmToken | None:
     if asset == A_ETH:
         return A_AETH_V1.resolve_to_evm_token()

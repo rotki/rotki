@@ -9,7 +9,7 @@ EVM_CHAIN_DIRECTIVE = 'eip155'
 def evm_address_to_identifier(
         address: str,
         chain_id: ChainID,
-        token_type: EvmTokenKind,
+        token_type: EvmTokenKind = EvmTokenKind.ERC20,
         collectible_id: str | None = None,
 ) -> str:
     """Format EVM token information into the CAIPs identifier format"""

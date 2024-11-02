@@ -182,17 +182,6 @@ def _add_entries(a: dict[str, FVal], b: dict[str, FVal]) -> dict[str, FVal]:
     }
 
 
-def combine_stat_dicts(list_of_dicts: list[dict]) -> dict:
-    if len(list_of_dicts) == 0:
-        return {}
-
-    combined_dict = list_of_dicts[0]
-    for d in list_of_dicts[1:]:
-        combined_dict = combine_dicts(combined_dict, d, _add_entries)
-
-    return combined_dict
-
-
 def convert_to_int(
         val: FVal | (bytes | (str | float)),
         accept_only_exact: bool = True,
