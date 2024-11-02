@@ -742,14 +742,3 @@ class CostBasisCalculator(CustomizableDateMixin):
             timestamp=timestamp,
         )
         return None
-
-    def get_calculated_asset_amount(self, asset: Asset) -> FVal | None:
-        """Get the amount of asset accounting has calculated we should have after
-        the history has been processed
-        """
-        asset_events = self.get_events(asset)
-
-        amount = ZERO
-        for acquisition_event in asset_events.acquisitions_manager.get_acquisitions():
-            amount += acquisition_event.remaining_amount
-        return amount if amount != ZERO else None

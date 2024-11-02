@@ -6,7 +6,11 @@ from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_BCH, A_BSV, A_BTC, A_ETC, A_ETH, A_EUR
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
-from rotkehlchen.tests.utils.accounting import accounting_history_process, check_pnls_and_csv
+from rotkehlchen.tests.utils.accounting import (
+    accounting_history_process,
+    check_pnls_and_csv,
+    get_calculated_asset_amount,
+)
 from rotkehlchen.tests.utils.history import prices
 from rotkehlchen.tests.utils.messages import no_message_errors
 from rotkehlchen.types import Location, TradeType
@@ -67,8 +71,8 @@ def test_buying_selling_eth_before_daofork(accountant, ignored_assets, google_se
     no_message_errors(accountant.msg_aggregator)
     expected_etc_amount = FVal(850) if len(ignored_assets) == 0 else None
     # make sure that the intermediate ETH sell before the fork reduced our ETC if not ignored
-    assert accountant.pots[0].cost_basis.get_calculated_asset_amount('ETC') == expected_etc_amount
-    assert accountant.pots[0].cost_basis.get_calculated_asset_amount('ETH') == FVal(1390)
+    assert get_calculated_asset_amount(accountant.pots[0].cost_basis, A_ETC) == expected_etc_amount
+    assert get_calculated_asset_amount(accountant.pots[0].cost_basis, A_ETH) == FVal(1390)
 
     if len(ignored_assets) == 0:
         expected_pnls = PnlTotals({
@@ -143,8 +147,8 @@ def test_buying_selling_btc_before_bchfork(accountant, google_service):
     assert buys[0].remaining_amount == amount_bch
     assert buys[0].timestamp == 1491593374
     assert buys[0].rate.is_close('1128.905')
-    assert accountant.pots[0].cost_basis.get_calculated_asset_amount(A_BCH) == amount_bch
-    assert accountant.pots[0].cost_basis.get_calculated_asset_amount(A_BTC) == amount_btc
+    assert get_calculated_asset_amount(accountant.pots[0].cost_basis, A_BCH) == amount_bch
+    assert get_calculated_asset_amount(accountant.pots[0].cost_basis, A_BTC) == amount_btc
 
     expected_pnls = PnlTotals({
         AccountingEventType.TRADE: PNL(taxable=FVal('13877.898'), free=ZERO),
@@ -257,9 +261,9 @@ def test_buying_selling_bch_before_bsvfork(accountant, google_service):
     assert sum(x.remaining_amount for x in bsv_buys) == amount_bsv
     assert bsv_buys[0].timestamp == 1491593374
     assert bsv_buys[1].timestamp == 1524937600
-    assert accountant.pots[0].cost_basis.get_calculated_asset_amount(A_BCH) == amount_bch
-    assert accountant.pots[0].cost_basis.get_calculated_asset_amount(A_BTC) == amount_btc
-    assert accountant.pots[0].cost_basis.get_calculated_asset_amount(A_BSV) == amount_bsv
+    assert get_calculated_asset_amount(accountant.pots[0].cost_basis, A_BCH) == amount_bch
+    assert get_calculated_asset_amount(accountant.pots[0].cost_basis, A_BTC) == amount_btc
+    assert get_calculated_asset_amount(accountant.pots[0].cost_basis, A_BSV) == amount_bsv
     expected_pnls = PnlTotals({
         AccountingEventType.TRADE: PNL(
             taxable=FVal('13877.898'),

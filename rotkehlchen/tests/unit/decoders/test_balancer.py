@@ -6,12 +6,14 @@ from rotkehlchen.chain.ethereum.modules.balancer.constants import CPT_BALANCER_V
 from rotkehlchen.chain.ethereum.modules.balancer.v2.constants import VAULT_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants.assets import A_BAL, A_BPT, A_DAI, A_ETH, A_USDC, A_WETH
+from rotkehlchen.constants.assets import A_BAL, A_DAI, A_ETH, A_USDC, A_WETH
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
+
+A_BPT = Asset('eip155:1/erc20:0x59A19D8c652FA0284f44113D0ff9aBa70bd46fB4')
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])

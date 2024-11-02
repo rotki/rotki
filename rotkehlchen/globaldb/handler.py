@@ -1089,31 +1089,6 @@ class GlobalDBHandler:
         AssetResolver.clean_memory_cache(token.identifier)
 
     @staticmethod
-    def delete_evm_token(
-            address: ChecksumEvmAddress,
-            chain_id: ChainID,
-    ) -> str:
-        """Deletes an EVM token from the global DB
-
-        May raise InputError if the token does not exist in the DB.
-        """
-        with GlobalDBHandler().conn.read_ctx() as cursor:
-            # first get the identifier for the asset
-            cursor.execute(
-                'SELECT identifier from evm_tokens WHERE address=? AND chain=?',
-                (address, chain_id.serialize_for_db()),
-            )
-            result = cursor.fetchone()
-        if result is None:
-            raise InputError(
-                f'Tried to delete EVM token with address {address} at chain {chain_id} '
-                f'but it was not found in the DB',
-            )
-        asset_identifier = result[0]
-        GlobalDBHandler().delete_asset_by_identifier(asset_identifier)
-        return asset_identifier
-
-    @staticmethod
     def edit_user_asset(asset: AssetWithOracles) -> None:
         """Edits an already existing user asset in the DB. Atm only AssetWithOracles are supported.
 
@@ -2060,18 +2035,6 @@ class GlobalDBHandler:
             ).fetchone()
 
         return default if identifier is None else identifier[0]
-
-    @staticmethod
-    def get_exchange_name_from_assetid(exchange: Location, asset_identifier: str) -> str | None:
-        """Returns the ticker symbol used in the given exchange from asset's identifier according
-        to location_asset_mappings table. If the mapping is not present returns None."""
-        with GlobalDBHandler().conn.read_ctx() as cursor:
-            identifier = cursor.execute(
-                'SELECT exchange_symbol FROM location_asset_mappings WHERE (location IS ? OR location IS NULL) AND local_id=?',  # noqa: E501
-                (exchange.serialize_for_db(), asset_identifier),
-            ).fetchone()
-
-        return None if identifier is None else identifier[0]
 
     @staticmethod
     def query_location_asset_mappings(

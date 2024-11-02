@@ -50,7 +50,6 @@ from rotkehlchen.types import (
     AddressbookEntry,
     CacheType,
     ChainID,
-    EvmTokenKind,
     SupportedBlockchain,
 )
 
@@ -319,16 +318,13 @@ def test_curve_cache(rotkehlchen_instance, use_curve_api, globaldb):
             write_cursor.execute('DELETE FROM address_book WHERE address=?', (entry.address,))
 
     # delete one of the tokens to check that it is created during the update
-    with suppress(InputError):
-        GlobalDBHandler().delete_evm_token(  # token may not exist but we don't care
-            address='0x3Ed3B47Dd13EC9a98b44e6204A523E766B225811',  # aUSDT
-            chain_id=ChainID.ETHEREUM,
-        )
-    AssetResolver().clean_memory_cache(identifier=evm_address_to_identifier(
-        address='0x3Ed3B47Dd13EC9a98b44e6204A523E766B225811',
+    token_id = evm_address_to_identifier(
+        address='0x3Ed3B47Dd13EC9a98b44e6204A523E766B225811',  # aUSDT
         chain_id=ChainID.ETHEREUM,
-        token_type=EvmTokenKind.ERC20,
-    ))
+    )
+    with suppress(InputError):  # token may not exist but we don't care
+        GlobalDBHandler().delete_asset_by_identifier(token_id)
+    AssetResolver().clean_memory_cache(token_id)
 
     # Check the pools, coins and addresses from addressbook have been properly cleared
     pools, gauges = read_curve_pools_and_gauges(chain_id=ChainID.ETHEREUM)

@@ -93,6 +93,3 @@ class LRUSetCache(Generic[VT]):
         """Remove an item from the cache"""
         if key in self.cache:
             self.cache.pop(key)
-
-    def get_values(self) -> set[VT]:
-        return set(self.cache.keys())

@@ -103,9 +103,8 @@ def test_purge_blockchain_transaction_data(rotkehlchen_api_server):
                 )
 
     with rotki.data.db.conn.read_ctx() as cursor:
-        result, filter_count = db.get_evm_transactions_and_limit_info(cursor, EvmTransactionsFilterQuery.make(), True)  # noqa: E501
+        result = db.get_evm_transactions(cursor, EvmTransactionsFilterQuery.make(), True)
         assert len(result) == 7
-        assert filter_count == 7
         response = requests.delete(
             api_url_for(
                 rotkehlchen_api_server,
@@ -114,12 +113,10 @@ def test_purge_blockchain_transaction_data(rotkehlchen_api_server):
             json={'chain': 'eth'},
         )
         assert_simple_ok_response(response)
-        result, filter_count = db.get_evm_transactions_and_limit_info(cursor, EvmTransactionsFilterQuery.make(), True)  # noqa: E501
+        result = db.get_evm_transactions(cursor, EvmTransactionsFilterQuery.make(), True)
         assert len(result) == 4
-        assert filter_count == 4
-        result, filter_count = db.get_evm_transactions_and_limit_info(cursor, EvmTransactionsFilterQuery.make(chain_id=ChainID.ETHEREUM), True)  # noqa: E501
+        result = db.get_evm_transactions(cursor, EvmTransactionsFilterQuery.make(chain_id=ChainID.ETHEREUM), True)  # noqa: E501
         assert len(result) == 0
-        assert filter_count == 0
 
     def _add_zksynclitetxs(write_cursor):
         for i in range(2):
@@ -158,9 +155,8 @@ def test_purge_blockchain_transaction_data(rotkehlchen_api_server):
     )
     assert_simple_ok_response(response)
     with rotki.data.db.conn.read_ctx() as cursor:
-        result, filter_count = db.get_evm_transactions_and_limit_info(cursor, EvmTransactionsFilterQuery.make(), True)  # noqa: E501
+        result = db.get_evm_transactions(cursor, EvmTransactionsFilterQuery.make(), True)
         assert len(result) == 0
-        assert filter_count == 0
         _assert_zksynclite_txs_num(cursor, tx_num=0, swap_num=0)
 
     # re-add a few zksync lite transactions

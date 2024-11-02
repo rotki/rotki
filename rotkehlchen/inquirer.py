@@ -449,10 +449,6 @@ class Inquirer:
                 Inquirer._cached_current_price.remove(asset_pair)
 
     @staticmethod
-    def remove_cached_current_price_entry(cache_key: tuple[Asset, Asset]) -> None:
-        Inquirer._cached_current_price.remove(cache_key)
-
-    @staticmethod
     def set_oracles_order(oracles: Sequence[CurrentPriceOracle]) -> None:
         assert len(oracles) != 0 and len(oracles) == len(set(oracles)), (
             "Oracles can't be empty or have repeated items"

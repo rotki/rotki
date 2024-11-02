@@ -214,22 +214,6 @@ class DBEvmTx:
 
         return evm_transactions
 
-    def get_evm_transactions_and_limit_info(
-            self,
-            cursor: 'DBCursor',
-            filter_: EvmTransactionsFilterQuery,
-            has_premium: bool,
-    ) -> tuple[list[EvmTransaction], int]:
-        """Gets all evm transactions for the query from the DB.
-
-        Also returns how many are the total found for the filter.
-        """
-        txs = self.get_evm_transactions(cursor, filter_=filter_, has_premium=has_premium)
-        query, bindings = filter_.prepare(with_pagination=False)
-        query = 'SELECT COUNT(DISTINCT evm_transactions.tx_hash) FROM evm_transactions ' + query
-        total_found_result = cursor.execute(query, bindings)
-        return txs, total_found_result.fetchone()[0]  # always returns result
-
     def delete_evm_transaction_data(
             self,
             chain: SUPPORTED_EVM_CHAINS_TYPE | None,

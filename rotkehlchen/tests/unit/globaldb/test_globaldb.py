@@ -202,10 +202,7 @@ def test_add_edit_token_with_wrong_swapped_for(globaldb):
     token_to_delete_id = token_to_delete.identifier
     globaldb.add_asset(token_to_delete)
     asset_to_delete = Asset(token_to_delete_id)
-    assert globaldb.delete_evm_token(
-        address=address_to_delete,
-        chain_id=ChainID.ETHEREUM,
-    ) == token_to_delete_id
+    globaldb.delete_asset_by_identifier(token_to_delete_id)
 
     # now try to add a new token with swapped_for pointing to a non existing token in the DB
     with pytest.raises(InputError):
@@ -905,10 +902,7 @@ def test_asset_deletion(globaldb):
     )
 
     # Then delete this token
-    GlobalDBHandler.delete_evm_token(
-        address=token_data.evm_address,
-        chain_id=ChainID.ETHEREUM,
-    )
+    GlobalDBHandler.delete_asset_by_identifier(token_data.identifier)
     # Check that it was deleted
     check_tables(
         asset_id=token_data.identifier,

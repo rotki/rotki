@@ -476,6 +476,8 @@ class RestAPI:
         log.debug('Waited for greenlets. Killing all other greenlets')
         gevent.killall(self.rotkehlchen.api_task_greenlets)
         self.rotkehlchen.api_task_greenlets.clear()
+        log.debug('Cleaning up global DB')
+        GlobalDBHandler().cleanup()
         log.debug('Shutdown completed')
         logging.shutdown()
         self.stop_event.set()

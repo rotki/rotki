@@ -17,7 +17,6 @@ from rotkehlchen.constants.assets import (
     A_KP3R,
     A_LINK,
     A_POLYGON_POS_MATIC,
-    A_PSP,
     A_SUSHI,
     A_USDC,
     A_USDT,
@@ -31,6 +30,7 @@ from rotkehlchen.tests.utils.constants import A_OPTIMISM_USDT
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 
+A_PSP = Asset('eip155:1/erc20:0xcAfE001067cDEF266AfB7Eb5A286dCFD277f3dE5')
 A_ROUTE = Asset('eip155:1/erc20:0x16ECCfDbb4eE1A85A33f3A9B21175Cd7Ae753dB4')
 A_stETH = Asset('eip155:1/erc20:0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84')
 A_MPL = Asset('eip155:1/erc20:0x33349B282065b0284d756F0577FB39c158F935e6')
