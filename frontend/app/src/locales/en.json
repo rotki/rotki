@@ -4331,6 +4331,7 @@
     "weight_per_hundred": "/100"
   },
   "settings": {
+    "go_to_section": "Go to section",
     "security_settings": {
       "subtitle": "Manage your account security",
       "title": "Security"

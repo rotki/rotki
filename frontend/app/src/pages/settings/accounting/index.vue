@@ -10,7 +10,11 @@ definePage({
 </script>
 
 <template>
-  <AccountingRuleSetting />
-  <AccountingTradeSettings />
-  <AccountingCsvExportSetting />
+  <SettingsPage>
+    <div>
+      <AccountingRuleSetting />
+      <AccountingTradeSettings />
+      <AccountingCsvExportSetting />
+    </div>
+  </SettingsPage>
 </template>

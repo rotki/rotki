@@ -1,5 +1,8 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from 'vue';
+interface Nav {
+  id: string;
+  label: string;
+}
 
 defineOptions({
   inheritAttrs: false,
@@ -14,13 +17,12 @@ const props = withDefaults(
   },
 );
 
-interface Nav {
-  id: string;
-  label: string;
-}
+const { t } = useI18n();
 
 const parentScroller = ref<HTMLDivElement>();
 const currentId = ref<string>(props.navigation[0]?.id ?? '');
+
+const { isMdAndUp } = useBreakpoint();
 
 function isElementInViewport(el: Element): boolean {
   const parent = get(parentScroller);
@@ -57,8 +59,11 @@ function checkVisibility() {
   set(currentId, props.navigation[0]?.id ?? '');
 }
 
-function scrollToElement(nav: Nav) {
-  const element = document.getElementById(nav.id);
+function scrollToElement(navId?: string) {
+  if (!navId)
+    return;
+
+  const element = document.getElementById(navId);
   const parent = get(parentScroller);
   if (element && parent) {
     parent.scrollTo({
@@ -89,37 +94,53 @@ onUnmounted(() => {
 
 <template>
   <div
-    ref="parentScroller"
-    class="flex items-start h-[calc(100vh-210px)] -mb-16 overflow-y-auto mt-6"
+    class="md:flex md:flex-row-reverse md:items-start h-[calc(100vh-179px)] md:h-[calc(100vh-186px)] -mb-16 md:pt-6"
   >
+    <template v-if="navigation.length > 0">
+      <div
+        v-if="isMdAndUp"
+        class="w-[200px] lg:w-[240px] sticky top-0 bg-rui-grey-50 dark:bg-[#121212] border-default border-b-0"
+      >
+        <RuiTabs
+          :vertical="isMdAndUp"
+          :indicator-position="isMdAndUp ? 'start' : 'end'"
+          color="primary"
+        >
+          <RuiTab
+            v-for="nav in navigation"
+            :key="nav.id"
+            align="start"
+            :active="currentId === nav.id"
+            @click="scrollToElement(nav.id)"
+          >
+            {{ nav.label }}
+          </RuiTab>
+        </RuiTabs>
+      </div>
+      <RuiMenuSelect
+        v-else
+        :model-value="currentId"
+        :options="navigation"
+        variant="outlined"
+        key-attr="id"
+        text-attr="label"
+        :label="t('settings.go_to_section')"
+        class="py-4"
+        hide-details
+        dense
+        @update:model-value="scrollToElement($event)"
+      />
+    </template>
     <div
-      class="flex-1 pr-8 overflow-hidden border-default pb-16 min-h-full flex flex-col gap-8"
+      ref="parentScroller"
+      class="flex-1 overflow-y-auto border-default pb-16 h-full flex flex-col gap-8 -mr-4 pr-4 md:pr-8"
       v-bind="$attrs"
       :class="{
-        'border-r': navigation.length > 0,
+        'md:border-r h-[calc(100%-72px)] md:!h-full md:mr-0': navigation.length > 0,
+        'md:!-mr-8 pt-6 md:pt-0': navigation.length === 0,
       }"
     >
       <slot />
-    </div>
-    <div
-      v-if="navigation.length > 0"
-      class="w-[200px] lg:w-[240px] sticky top-0"
-    >
-      <RuiTabs
-        vertical
-        indicator-position="start"
-        color="primary"
-      >
-        <RuiTab
-          v-for="nav in navigation"
-          :key="nav.id"
-          align="start"
-          :active="currentId === nav.id"
-          @click="scrollToElement(nav)"
-        >
-          {{ nav.label }}
-        </RuiTab>
-      </RuiTabs>
     </div>
   </div>
 </template>

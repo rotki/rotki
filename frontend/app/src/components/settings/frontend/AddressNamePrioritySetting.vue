@@ -49,7 +49,7 @@ onMounted(() => {
     <RuiCard
       rounded="md"
       no-padding
-      class="overflow-hidden"
+      class="overflow-hidden h-auto"
     >
       <div class="pl-8 pt-2 border-b border-default">
         <EnableEnsNamesSetting />
