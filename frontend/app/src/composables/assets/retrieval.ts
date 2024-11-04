@@ -25,7 +25,7 @@ interface UseAssetInfoRetrievalReturn {
   assetInfo: (identifier: MaybeRef<string | undefined>, options?: MaybeRef<AssetResolutionOptions>) => ComputedRef<AssetWithResolutionStatus | null>;
   refetchAssetInfo: (key: string) => void;
   assetSymbol: (identifier: MaybeRef<string | undefined>, options?: MaybeRef<AssetResolutionOptions>) => ComputedRef<string>;
-  assetName: (identifier: MaybeRef<string | undefined>, enableAssociation?: MaybeRef<boolean>) => ComputedRef<string>;
+  assetName: (identifier: MaybeRef<string | undefined>, options?: MaybeRef<AssetResolutionOptions>) => ComputedRef<string>;
   tokenAddress: (identifier: MaybeRef<string>, enableAssociation?: MaybeRef<boolean>) => ComputedRef<string>;
   assetSearch: (params: AssetSearchParams) => Promise<AssetsWithId>;
 }
@@ -130,13 +130,13 @@ export function useAssetInfoRetrieval(): UseAssetInfoRetrievalReturn {
 
   const assetName = (
     identifier: MaybeRef<string | undefined>,
-    enableAssociation: MaybeRef<boolean> = true,
+    options?: MaybeRef<AssetResolutionOptions>,
   ): ComputedRef<string> => computed(() => {
     const id = get(identifier);
     if (!id)
       return '';
 
-    const name = get(assetInfo(id, { associate: get(enableAssociation) }))?.name;
+    const name = get(assetInfo(id, options))?.name;
     return name || '';
   });
 
