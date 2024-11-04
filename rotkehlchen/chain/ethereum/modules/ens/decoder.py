@@ -1,14 +1,11 @@
 import logging
 from typing import TYPE_CHECKING, Any
 
-import content_hash
 import ens
 
-from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token
 from rotkehlchen.chain.ethereum.abi import decode_event_data_abi_str
 from rotkehlchen.chain.ethereum.graph import Graph
-from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
+from rotkehlchen.chain.evm.decoding.ens.decoder import EnsCommonDecoder
 from rotkehlchen.chain.evm.decoding.interfaces import GovernableDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
@@ -29,13 +26,10 @@ from rotkehlchen.globaldb.cache import (
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import CacheType, ChecksumEvmAddress, EvmTokenKind, EVMTxHash
-from rotkehlchen.utils.misc import bytes_to_address, from_wei
-from rotkehlchen.utils.mixins.customizable_date import CustomizableDateMixin
+from rotkehlchen.types import CacheType, ChecksumEvmAddress, EVMTxHash
+from rotkehlchen.utils.misc import from_wei
 
 from .constants import (
-    ADDR_CHANGED,
-    CONTENT_HASH_CHANGED,
     CPT_ENS,
     ENS_BASE_REGISTRAR_IMPLEMENTATION,
     ENS_CPT_DETAILS,
@@ -52,12 +46,6 @@ from .constants import (
     NAME_REGISTERED_SINGLE_COST_ABI,
     NAME_RENEWED,
     NAME_RENEWED_ABI,
-    NEW_OWNER,
-    NEW_RESOLVER,
-    TEXT_CHANGED_KEY_AND_VALUE,
-    TEXT_CHANGED_KEY_AND_VALUE_ABI,
-    TEXT_CHANGED_KEY_ONLY,
-    TEXT_CHANGED_KEY_ONLY_ABI,
 )
 
 if TYPE_CHECKING:
@@ -99,24 +87,32 @@ def _save_hash_mappings_get_fullname(name: str, tx_hash: EVMTxHash) -> str:
     return full_name
 
 
-class EnsDecoder(GovernableDecoderInterface, CustomizableDateMixin):
+class EnsDecoder(GovernableDecoderInterface, EnsCommonDecoder):
     def __init__(  # pylint: disable=super-init-not-called
             self,
             ethereum_inquirer: 'EthereumInquirer',
             base_tools: 'BaseDecoderTools',
             msg_aggregator: 'MessagesAggregator',  # pylint: disable=unused-argument
     ) -> None:
-        super().__init__(
+        EnsCommonDecoder.__init__(
+            self,
+            evm_inquirer=ethereum_inquirer,
+            base_tools=base_tools,
+            msg_aggregator=msg_aggregator,
+            reverse_resolver=ENS_REVERSE_RESOLVER,
+            counterparty=CPT_ENS,
+            suffix='eth',
+            display_name='ENS',
+        )
+        GovernableDecoderInterface.__init__(
+            self,
             evm_inquirer=ethereum_inquirer,
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
             protocol=CPT_ENS,
             proposals_url='https://www.tally.xyz/gov/ens/proposal',
         )
-        self.base = base_tools
         self.ethereum = ethereum_inquirer
-        CustomizableDateMixin.__init__(self, base_tools.database)
-        self.eth = A_ETH.resolve_to_crypto_asset()
         self.graph = Graph(
             subgraph_id='5XqPmWe6gjyrJtFn9cLy237i4cWw2j9HcUJEXsP5qGtH',
             database=self.database,
@@ -286,118 +282,7 @@ class EnsDecoder(GovernableDecoderInterface, CustomizableDateMixin):
             del context.decoded_events[refund_event_idx]
         return DEFAULT_DECODING_OUTPUT
 
-    def _decode_name_transfer(self, context: DecoderContext) -> DecodingOutput:
-        if context.tx_log.topics[0] != ERC20_OR_ERC721_TRANSFER:
-            return DEFAULT_DECODING_OUTPUT
-
-        to_address = bytes_to_address(context.tx_log.topics[2])
-        token = get_or_create_evm_token(
-            userdb=self.database,
-            evm_address=context.tx_log.address,
-            chain_id=self.evm_inquirer.chain_id,
-            token_kind=EvmTokenKind.ERC721,
-            evm_inquirer=self.evm_inquirer,
-            encounter=TokenEncounterInfo(tx_hash=context.transaction.tx_hash),
-        )
-        transfer_event = self.base.decode_erc20_721_transfer(
-            token=token,
-            tx_log=context.tx_log,
-            transaction=context.transaction,
-        )
-        if transfer_event is None:  # Can happen if neither from/to is tracked
-            return DEFAULT_DECODING_OUTPUT
-
-        label_hash = '0x{:064x}'.format(transfer_event.extra_data['token_id'])  # type: ignore[index]  # ERC721 transfer always has extra data. This code is to transform the int token id to a 32 bytes hex label hash
-        found_name = self._maybe_get_labelhash_name(context=context, label_hash=label_hash)
-        if found_name is None:
-            name_to_show = ''
-        else:
-            name_to_show = f'{found_name}.eth ' if not found_name.endswith('.eth') else f'{found_name} '  # noqa: E501
-
-        from_text = to_text = ''
-        if transfer_event.event_type == HistoryEventType.SPEND:
-            verb = 'Send'
-            if transfer_event.location_label != context.transaction.from_address:
-                from_text = f'from {transfer_event.location_label} '
-            to_text = f'to {to_address}'
-        elif transfer_event.event_type == HistoryEventType.RECEIVE:
-            verb = 'Receive'
-            from_text = f'from {transfer_event.address} '
-            to_text = f'to {transfer_event.location_label}'
-        else:  # can only be ...
-            verb = 'Transfer'
-            if transfer_event.location_label != context.transaction.from_address:
-                from_text = f'from {transfer_event.location_label} '
-            to_text = f'to {to_address}'
-
-        transfer_event.counterparty = CPT_ENS
-        transfer_event.notes = f'{verb} ENS name {name_to_show}{from_text}{to_text}'
-        return DecodingOutput(event=transfer_event, refresh_balances=False)
-
-    def _decode_new_resolver(self, context: DecoderContext) -> DecodingOutput:
-        """Decode event where address is set for an ENS name."""
-        ens_name = self._get_name_to_show(node=context.tx_log.topics[1], tx_hash=context.transaction.tx_hash)  # noqa: E501
-        suffix = ens_name if ens_name is not None else 'an ENS name'
-
-        # Not able to give more info to the user such as address that was set since
-        # we don't have historical info and event doesn't provide it
-        notes = f'Set ENS address for {suffix}'
-        context.decoded_events.append(self.base.make_event_from_transaction(
-            transaction=context.transaction,
-            tx_log=context.tx_log,
-            event_type=HistoryEventType.INFORMATIONAL,
-            event_subtype=HistoryEventSubType.NONE,
-            asset=A_ETH,
-            balance=Balance(),
-            location_label=context.transaction.from_address,
-            notes=notes,
-            counterparty=CPT_ENS,
-            address=context.transaction.to_address,
-        ))
-        return DEFAULT_DECODING_OUTPUT
-
-    def _decode_new_owner(self, context: DecoderContext) -> DecodingOutput:
-        if self.base.is_tracked(new_owner := bytes_to_address(context.tx_log.data[:32])):
-            associated_address = new_owner
-        elif self.base.is_tracked(context.transaction.from_address):
-            associated_address = context.transaction.from_address
-        else:
-            return DEFAULT_DECODING_OUTPUT
-
-        node_name = self._get_name_to_show(node=(node := context.tx_log.topics[1]), tx_hash=context.transaction.tx_hash)  # noqa: E501
-        label_hash = '0x' + context.tx_log.topics[2].hex()
-        label_name = self._maybe_get_labelhash_name(context=context, label_hash=label_hash, node=node)  # noqa: E501
-
-        node_str = f'{node_name} node' if node_name else f'node witn nodehash {context.tx_log.topics[1].hex()}'  # noqa: E501
-        if label_name:
-            subnode_str = f'{label_name}.eth' if (not label_name.endswith('.eth') and node_name == 'eth') else label_name  # noqa: E501
-        else:
-            subnode_str = f'with label hash {label_hash}'
-
-        event = self.base.make_event_from_transaction(
-            transaction=context.transaction,
-            tx_log=context.tx_log,
-            event_type=HistoryEventType.INFORMATIONAL,
-            event_subtype=HistoryEventSubType.NONE,
-            asset=A_ETH,
-            balance=Balance(),
-            location_label=associated_address,
-            notes=f'Transfer {node_str} ownership of subnode {subnode_str} to {new_owner}',
-            address=context.tx_log.address,
-            counterparty=CPT_ENS,
-        )
-        return DecodingOutput(event=event)
-
-    def _decode_ens_registry_with_fallback_event(self, context: DecoderContext) -> DecodingOutput:
-        """Decode event where address is set for an ENS name."""
-        if context.tx_log.topics[0] == NEW_RESOLVER:
-            return self._decode_new_resolver(context)
-        elif context.tx_log.topics[0] == NEW_OWNER:
-            return self._decode_new_owner(context)
-
-        return DEFAULT_DECODING_OUTPUT
-
-    def _get_name_to_show(self, node: bytes, tx_hash: EVMTxHash) -> str | None:
+    def _get_name_to_show(self, node: bytes, context: DecoderContext) -> str | None:
         """Try to find the name associated with the ENS namehash/node that is being modified
 
         Returns the fullname
@@ -419,12 +304,12 @@ class EnsDecoder(GovernableDecoderInterface, CustomizableDateMixin):
                     msg = f'Missing key {msg}'
                 log.error(
                     f'Failed to query graph for namehash to ENS name in '
-                    f'{tx_hash.hex()} due to {msg} '
+                    f'{context.transaction} due to {msg} '
                     f'during decoding events. Not adding name to event',
                 )
             except APIKeyNotConfigured as e:
                 log.warning(
-                    f'Not adding name to ENS event in {tx_hash.hex()} since '
+                    f'Not adding name to ENS event in {context.transaction} since '
                     f'The Graph cannot be queried. {e}',
                 )
             else:
@@ -440,127 +325,9 @@ class EnsDecoder(GovernableDecoderInterface, CustomizableDateMixin):
                         return None
 
         elif queried_graph:  # if we successfully asked the graph, save the mapping
-            _save_hash_mappings_get_fullname(name=name_to_show[:-4], tx_hash=tx_hash)
+            _save_hash_mappings_get_fullname(name=name_to_show[:-4], tx_hash=context.transaction.tx_hash)  # noqa: E501
 
         return name_to_show
-
-    def _decode_ens_public_resolver_content_hash(self, context: DecoderContext) -> DecodingOutput:
-        """Decode an event that modifies a content hash for the public ENS resolver"""
-        node = context.tx_log.topics[1]  # node is a hash of the name used by ens internals
-        contract = self.ethereum.contracts.contract_by_address(address=context.tx_log.address)
-        if contract is None:
-            self.msg_aggregator.add_error(
-                f'Failed to find ENS public resolver contract with address '
-                f'{context.tx_log.address} for {context.transaction.tx_hash.hex()}. '
-                f'This should never happen. Please, '
-                f"open an issue in rotki's github repository.",
-            )
-            return DEFAULT_DECODING_OUTPUT
-
-        result = contract.decode_event(context.tx_log, 'ContenthashChanged', argument_names=None)
-        new_hash = result[1][0].hex()
-        name_to_show = self._get_name_to_show(node=node, tx_hash=context.transaction.tx_hash)
-
-        try:
-            codec = content_hash.get_codec(new_hash)
-            value_hash = content_hash.decode(new_hash)
-            value = f'{codec}://{value_hash}'
-        except (TypeError, KeyError, ValueError) as e:
-            msg = str(e)
-            if isinstance(e, KeyError):
-                msg = f'Inability to find key {msg}'
-            log.error(f'Failed to decode content hash {new_hash} in {context.transaction.tx_hash.hex()} due to {msg}')  # noqa: E501
-            value = f'unknown type hash {new_hash}'
-
-        notes = f'Change ENS content hash to {value}'
-        if name_to_show is not None:
-            notes += f' for {name_to_show}'
-        context.decoded_events.append(self.base.make_event_from_transaction(
-            transaction=context.transaction,
-            tx_log=context.tx_log,
-            event_type=HistoryEventType.INFORMATIONAL,
-            event_subtype=HistoryEventSubType.NONE,
-            asset=A_ETH,
-            balance=Balance(),
-            location_label=context.transaction.from_address,
-            notes=notes,
-            counterparty=CPT_ENS,
-            address=context.transaction.to_address,
-        ))
-        return DEFAULT_DECODING_OUTPUT
-
-    def _decode_addr_changed(self, context: DecoderContext) -> DecodingOutput:
-
-        if self.base.is_tracked(new_address := bytes_to_address(context.tx_log.data[:32])):
-            associated_address = new_address
-        elif self.base.is_tracked(context.transaction.from_address):
-            associated_address = context.transaction.from_address
-        else:
-            return DEFAULT_DECODING_OUTPUT
-
-        node = context.tx_log.topics[1]  # node is a hash of the name used by ens internals
-        name = self._get_name_to_show(node=node, tx_hash=context.transaction.tx_hash)
-        name_str = name or f'name with nodehash {node.hex()}'
-        event = self.base.make_event_from_transaction(
-            transaction=context.transaction,
-            tx_log=context.tx_log,
-            event_type=HistoryEventType.INFORMATIONAL,
-            event_subtype=HistoryEventSubType.NONE,
-            asset=A_ETH,
-            balance=Balance(),
-            location_label=associated_address,
-            notes=f'Address for {name_str} changed to {new_address}',
-            address=context.tx_log.address,
-            counterparty=CPT_ENS,
-        )
-        return DecodingOutput(event=event)
-
-    def _decode_ens_public_resolver_events(self, context: DecoderContext) -> DecodingOutput:
-        """Decode events that modify the ENS resolver.
-
-        For example, where a text property (discord, telegram, etc.) is set for an ENS name.
-        Also forward to different functions that do non-text modifications
-        """
-        if context.tx_log.topics[0] == CONTENT_HASH_CHANGED:
-            return self._decode_ens_public_resolver_content_hash(context)
-
-        if context.tx_log.topics[0] == ADDR_CHANGED:
-            return self._decode_addr_changed(context)
-
-        # else by now it should only be text attribute changes
-        if context.tx_log.topics[0] not in (TEXT_CHANGED_KEY_ONLY, TEXT_CHANGED_KEY_AND_VALUE):
-            return DEFAULT_DECODING_OUTPUT
-
-        try:
-            _, decoded_data = decode_event_data_abi_str(
-                context.tx_log,
-                TEXT_CHANGED_KEY_ONLY_ABI if context.tx_log.topics[0] == TEXT_CHANGED_KEY_ONLY else TEXT_CHANGED_KEY_AND_VALUE_ABI,  # noqa: E501
-            )
-        except DeserializationError as e:
-            log.error(f'Failed to decode ENS set-text event in {context.transaction.tx_hash.hex()} due to {e!s}')  # noqa: E501
-            return DEFAULT_DECODING_OUTPUT
-
-        changed_key = decoded_data[0]
-        new_value = decoded_data[1] if context.tx_log.topics[0] == TEXT_CHANGED_KEY_AND_VALUE else None  # noqa: E501
-        node = context.tx_log.topics[1]  # node is a hash of the name used by ens internals
-
-        name_to_show = self._get_name_to_show(node=node, tx_hash=context.transaction.tx_hash)
-        notes = f'Set ENS {changed_key} {f"to {new_value} " if new_value else ""}attribute'
-        if name_to_show is not None:
-            notes += f' for {name_to_show}'
-        context.decoded_events.append(self.base.make_event_from_transaction(
-            transaction=context.transaction,
-            tx_log=context.tx_log,
-            event_type=HistoryEventType.INFORMATIONAL,
-            event_subtype=HistoryEventSubType.NONE,
-            asset=A_ETH,
-            balance=Balance(),
-            location_label=context.transaction.from_address,
-            notes=notes,
-            counterparty=CPT_ENS,
-            address=context.transaction.to_address,
-        ))
-        return DEFAULT_DECODING_OUTPUT
 
     # -- DecoderInterface methods
 
