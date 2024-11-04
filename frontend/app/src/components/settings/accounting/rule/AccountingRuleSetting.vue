@@ -216,7 +216,7 @@ const importFileDialog = ref<boolean>(false);
 
 <template>
   <div>
-    <div class="pt-6 pb-5 border-b border-default flex flex-wrap items-center justify-between">
+    <div class="pb-5 border-b border-default flex flex-wrap gap-2 items-center justify-between">
       <SettingCategoryHeader>
         <template #title>
           {{ t('accounting_settings.rule.title') }}
@@ -297,7 +297,7 @@ const importFileDialog = ref<boolean>(false);
 
     <RuiCard class="mt-5">
       <template #custom-header>
-        <div class="flex items-center justify-between p-4 pb-0">
+        <div class="flex flex-wrap gap-x-4 gap-y-2 items-center justify-between p-4 pb-0">
           <template v-if="conflictsNumber > 0">
             <RuiButton
               color="warning"
