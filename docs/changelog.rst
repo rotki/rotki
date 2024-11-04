@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :release:`1.36.0 <2024-11-06>`
 * :feature:`8793` rotki will now correctly decode the Scroll airdrop claim.
 * :feature:`8663` rotki will now create calendar reminders for claiming bridge withdrawals from Layer 2 networks (Base, Optimism, Arbitrum) after the 7-day waiting period.
 * :feature:`8170` rotki now supports Coinbase Prime.
