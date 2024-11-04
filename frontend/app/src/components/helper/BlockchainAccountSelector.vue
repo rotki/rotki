@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import { uniqBy } from 'lodash-es';
 import { type Account, Blockchain } from '@rotki/common';
+import { objectOmit } from '@vueuse/core';
 import { getNonRootAttrs, getRootAttrs } from '@/utils/attrs';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 
 type AccountWithAddressData = BlockchainAccount<AddressData>;
+
+type AccountWithExtra = AccountWithAddressData & { address: string; key: string };
 
 defineOptions({
   inheritAttrs: false,
@@ -61,8 +64,8 @@ const accounts = computed<AccountWithAddressData[]>(() =>
     .filter(hasAccountAddress),
 );
 
-const internalValue = computed<AccountWithAddressData | AccountWithAddressData[] | undefined>(() => {
-  const accounts = get(modelValue).map(item => ({ ...item, address: getAccountAddress(item) }));
+const internalValue = computed<AccountWithExtra | AccountWithExtra[] | undefined>(() => {
+  const accounts = get(modelValue).map(item => ({ ...item, address: getAccountAddress(item), key: getAccountId(item) }));
   if (get(multiple))
     return accounts;
 
@@ -126,7 +129,7 @@ const hintText = computed<string>(() => {
   return selection ? '1' : all;
 });
 
-const displayedAccounts = computed<(AccountWithAddressData & { address: string; key: string })[]>(() => {
+const displayedAccounts = computed<AccountWithExtra[]>(() => {
   const addresses = get(usableAddresses);
   const accounts = [...get(selectableAccounts)].map(item => ({
     ...item,
@@ -159,30 +162,31 @@ function filter(item: BlockchainAccount, queryText: string) {
     : false;
 }
 
-function filterOutElements(
-  lastElement: AccountWithAddressData,
-  nextValue: AccountWithAddressData[],
-): AccountWithAddressData[] {
+function filterOutElements<T extends AccountWithAddressData>(
+  lastElement: T,
+  nextValue: T[],
+): T[] {
   if (lastElement.chain === 'ALL')
     return nextValue.filter(x => getAccountAddress(x) !== getAccountAddress(lastElement) || x.chain === 'ALL');
 
   return nextValue.filter(x => getAccountAddress(x) !== getAccountAddress(lastElement) || x.chain !== 'ALL');
 }
 
-function input(nextValue?: AccountWithAddressData | AccountWithAddressData[]) {
+function input(nextValue?: AccountWithExtra | AccountWithExtra[]) {
   const previousValue = get(modelValue);
-  let result: AccountWithAddressData[];
+  let result: AccountWithExtra[];
   if (Array.isArray(nextValue)) {
     const lastElement = nextValue.at(-1);
     if (lastElement && nextValue.length > previousValue.length)
       result = filterOutElements(lastElement, nextValue);
-    else result = nextValue;
+    else
+      result = nextValue;
   }
   else {
     result = nextValue ? [nextValue] : [];
   }
 
-  set(modelValue, result);
+  set(modelValue, result.map(item => objectOmit(item, ['address', 'key'])));
 }
 
 function getAccount(account: AccountWithAddressData): Account {
