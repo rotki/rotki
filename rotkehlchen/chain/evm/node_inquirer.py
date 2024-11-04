@@ -225,7 +225,11 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
         # A cache for erc20 and erc721 contract info to not requery the info
         self.contract_info_erc20_cache: LRUCacheWithRemove[ChecksumEvmAddress, dict[str, Any]] = LRUCacheWithRemove(maxsize=1024)  # noqa: E501
         self.contract_info_erc721_cache: LRUCacheWithRemove[ChecksumEvmAddress, dict[str, Any]] = LRUCacheWithRemove(maxsize=512)  # noqa: E501
-        self.maybe_connect_to_nodes(when_tracked_accounts=True)
+        # failed_to_connect_nodes keeps the nodes that we couldn't connect while
+        # doing remote queries so they aren't tried again if they get chosen. At the
+        # moment of writing this we don't remove entries from the set after some time.
+        # To force the app to retry a node a restart is needed.
+        self.failed_to_connect_nodes: set[str] = set()
         LockableQueryMixIn.__init__(self)
 
     def maybe_connect_to_nodes(self, when_tracked_accounts: bool) -> None:
@@ -300,7 +304,7 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
             ordered_list.append(node[0])
             selection.remove(node[0])
 
-        owned_nodes = [node for node in self.web3_mapping if node.owned]
+        owned_nodes = [node.node_info for node in open_nodes if node.node_info.owned]
         if len(owned_nodes) != 0:
             # Assigning one is just a default since we always use it.
             # The weight is only important for the other nodes since they
@@ -515,8 +519,19 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
         for weighted_node in call_order:
             node_info = weighted_node.node_info
             web3node = self.web3_mapping.get(node_info, None)
-            if web3node is None and node_info.name != self.etherscan_node_name:
-                continue
+            if (
+                web3node is None and
+                node_info.name != self.etherscan_node_name and
+                node_info.name not in self.failed_to_connect_nodes
+            ):
+                success, _ = self.attempt_connect(node=node_info)
+                if success is False:
+                    self.failed_to_connect_nodes.add(node_info.name)
+                    continue
+
+                if (web3node := self.web3_mapping.get(node_info, None)) is None:
+                    log.error(f'Unexpected missing node {node_info} at {self.chain_id}')
+                    continue
 
             if (
                 web3node is not None and

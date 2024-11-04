@@ -35,7 +35,6 @@ from rotkehlchen.tests.utils.database import (
     run_no_db_upgrades,
 )
 from rotkehlchen.tests.utils.decoders import patch_decoder_reload_data
-from rotkehlchen.tests.utils.ethereum import wait_until_all_nodes_connected
 from rotkehlchen.tests.utils.evm import maybe_mock_evm_inquirer
 from rotkehlchen.tests.utils.factories import make_random_b64bytes
 from rotkehlchen.tests.utils.history import maybe_mock_historical_price_queries
@@ -412,9 +411,6 @@ def initialize_mock_rotkehlchen_instance(
         mocked_price_queries=mocked_price_queries,
         default_mock_value=default_mock_price_value,
     )
-    if network_mocking is False:
-        for evm_inquirer, connect_at_start in evm_nodes_wait:
-            wait_until_all_nodes_connected(connect_at_start=connect_at_start, evm_inquirer=evm_inquirer)  # noqa: E501
 
     if len(rotki.chains_aggregator.accounts.ksm) != 0:
         wait_until_all_substrate_nodes_connected(  # no connection would have been attempted if there are no accounts  # noqa: E501

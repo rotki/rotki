@@ -43,7 +43,6 @@ from rotkehlchen.externalapis.opensea import Opensea
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.tests.utils.blockchain import maybe_modify_rpc_nodes
 from rotkehlchen.tests.utils.decoders import patch_decoder_reload_data
-from rotkehlchen.tests.utils.ethereum import wait_until_all_nodes_connected
 from rotkehlchen.tests.utils.evm import maybe_mock_evm_inquirer
 from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.tests.utils.mock import mock_proxies
@@ -94,12 +93,6 @@ def _initialize_and_yield_evm_inquirer_fixture(
         inquirer = klass(
             greenlet_manager=greenlet_manager,
             database=database,
-        )
-
-    if mock_other_web3 is False:  # no mocking means we should wait till connect is done
-        wait_until_all_nodes_connected(
-            connect_at_start=nodes_to_connect_to,
-            evm_inquirer=inquirer,
         )
 
     maybe_mock_evm_inquirer(
