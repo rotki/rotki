@@ -65,8 +65,15 @@ class EthereumTransactions(EvmTransactions):
         contract, if the events have delegated to any of the accounts. Then it will add the
         transactions to the database."""
         log.debug('Started query of thegraph delegations')
+        now = ts_now()
         if len(addresses) == 0:
             log.debug('No ethereum addresses. Stopping thegraph delegations query task')
+            with self.database.user_write() as write_cursor:
+                self.database.set_static_cache(
+                    write_cursor=write_cursor,
+                    name=DBCacheStatic.LAST_GRAPH_DELEGATIONS_CHECK_TS,
+                    value=now,
+                )
             return
 
         dbevents = DBHistoryEvents(self.database)
@@ -87,6 +94,12 @@ class EthereumTransactions(EvmTransactions):
             )
         if len(events) == 0:
             log.debug('No thegraph approvals found. Stopping thegraph delegations query task')
+            with self.database.user_write() as write_cursor:
+                self.database.set_static_cache(
+                    write_cursor=write_cursor,
+                    name=DBCacheStatic.LAST_GRAPH_DELEGATIONS_CHECK_TS,
+                    value=now,
+                )
             return
 
         user_to_delegator = {}
@@ -168,7 +181,7 @@ class EthereumTransactions(EvmTransactions):
             self.database.set_static_cache(
                 write_cursor=write_cursor,
                 name=DBCacheStatic.LAST_GRAPH_DELEGATIONS_CHECK_TS,
-                value=ts_now(),
+                value=now,
             )
         log.debug(f'Finished querying thegraph delegations for {addresses}')
         return
