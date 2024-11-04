@@ -18,6 +18,8 @@ from rotkehlchen.chain.ethereum.defi.structures import (
 )
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_DAI, A_USDT
+from rotkehlchen.db.addressbook import DBAddressbook
+from rotkehlchen.db.filtering import AddressbookFilterQuery
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.tests.utils.api import (
@@ -1577,7 +1579,7 @@ def test_remove_nonexisting_blockchain_account_along_with_existing(
     assert_proper_response(response)
     # Edit the first ethereum account which we will attempt to delete
     # to have this tag so that we see the mapping is still there afterwards
-    request_data = {'accounts': [{'address': ethereum_accounts[0], 'tags': ['public']}]}
+    request_data = {'accounts': [{'address': ethereum_accounts[0], 'label': 'account1', 'tags': ['public']}]}  # noqa: E501
     response = requests.patch(api_url_for(
         rotkehlchen_api_server,
         'blockchainsaccountsresource',
@@ -1783,3 +1785,45 @@ def test_remove_chain_agnostic_accounts(rotkehlchen_api_server: 'APIServer') -> 
         contained_in_msg='Tried to delete non tracked addresses',
         status_code=HTTPStatus.BAD_REQUEST,
     )
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [1])
+def test_edit_blockchain_account_blank_label(
+        rotkehlchen_api_server: 'APIServer',
+        ethereum_accounts: list['ChecksumEvmAddress'],
+) -> None:
+    """Test that setting a blank label on a blockchain account deletes the addressbook entry.
+    Regression test for https://github.com/rotki/rotki/pull/8863
+    """
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    db_addressbook = DBAddressbook(rotki.data.db)
+
+    # Add account with a label, adding an addressbook entry
+    request_data = {'accounts': [{'address': ethereum_accounts[0], 'label': 'account1'}]}
+    response = requests.patch(api_url_for(
+        rotkehlchen_api_server,
+        'blockchainsaccountsresource',
+        blockchain='ETH',
+    ), json=request_data)
+    assert_proper_response(response)
+
+    with rotki.data.db.conn.read_ctx() as cursor:
+        assert len(db_addressbook.get_addressbook_entries(
+            cursor=cursor,
+            filter_query=AddressbookFilterQuery.make(),
+        )[0]) == 1  # has an addressbook entry
+
+    # Modify the account setting no label
+    request_data = {'accounts': [{'address': ethereum_accounts[0], 'label': ''}]}
+    response = requests.patch(api_url_for(
+        rotkehlchen_api_server,
+        'blockchainsaccountsresource',
+        blockchain='ETH',
+    ), json=request_data)
+    assert_proper_response(response)
+
+    with rotki.data.db.conn.read_ctx() as cursor:
+        assert len(db_addressbook.get_addressbook_entries(
+            cursor=cursor,
+            filter_query=AddressbookFilterQuery.make(),
+        )[0]) == 0  # addressbook entry has been deleted
