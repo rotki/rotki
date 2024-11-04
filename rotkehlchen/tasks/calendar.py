@@ -8,6 +8,7 @@ from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.arbitrum_one.constants import CPT_ARBITRUM_ONE
 from rotkehlchen.chain.base.constants import CPT_BASE
+from rotkehlchen.chain.base.modules.basenames.constants import CPT_BASENAMES
 from rotkehlchen.chain.ethereum.airdrops import check_airdrops
 from rotkehlchen.chain.ethereum.modules.ens.constants import CPT_ENS
 from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE
@@ -109,7 +110,7 @@ class CalendarReminderCreator(CustomizableDateMixin):
         with self.database.conn.read_ctx() as cursor:
             self.blockchain_accounts = self.database.get_blockchain_accounts(cursor=cursor)
 
-    def get_history_events(self, event_types: list[tuple[HistoryEventType, HistoryEventSubType]], counterparty: str) -> list['EvmEvent']:  # noqa: E501
+    def get_history_events(self, event_types: list[tuple[HistoryEventType, HistoryEventSubType]], counterparties: list[str]) -> list['EvmEvent']:  # noqa: E501
         """Get history events by event_type, event_subtype, and counterparty"""
         db_history_events = DBHistoryEvents(database=self.database)
         events: list[EvmEvent] = []
@@ -121,7 +122,7 @@ class CalendarReminderCreator(CustomizableDateMixin):
                     group_by_event_ids=False,
                     filter_query=EvmEventFilterQuery.make(
                         and_op=True,
-                        counterparties=[counterparty],
+                        counterparties=counterparties,
                         event_types=[event_type],
                         event_subtypes=[event_subtype],
                     ),
@@ -294,7 +295,7 @@ class CalendarReminderCreator(CustomizableDateMixin):
                 (HistoryEventType.TRADE, HistoryEventSubType.SPEND),
                 (HistoryEventType.RENEW, HistoryEventSubType.NONE),
             ],
-            counterparty=CPT_ENS,
+            counterparties=[CPT_ENS, CPT_BASENAMES],
         )) == 0:
             return
 
@@ -303,7 +304,8 @@ class CalendarReminderCreator(CustomizableDateMixin):
             if (
                 not (extra_data := ens_event.extra_data or {}) or
                 (ens_name := extra_data.get('name')) is None or
-                (ens_expires := extra_data.get('expires')) is None
+                (ens_expires := extra_data.get('expires')) is None or
+                (counterparty := ens_event.counterparty) is None
             ):
                 continue
 
@@ -312,7 +314,7 @@ class CalendarReminderCreator(CustomizableDateMixin):
                 name=f'{ens_name} expiry',
                 timestamp=Timestamp(ens_expires),
                 color=ENS_CALENDAR_COLOR,
-                counterparty=CPT_ENS,
+                counterparty=counterparty,
                 description=f'{ens_name} expires on {self.timestamp_to_date(ens_expires)}',
             )
 
@@ -334,7 +336,7 @@ class CalendarReminderCreator(CustomizableDateMixin):
         """Check for lock CRV in vote escrow history events and create reminders if needed."""
         if len(crv_events := self.get_history_events(
             event_types=[(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET)],
-            counterparty=CPT_CURVE,
+            counterparties=[CPT_CURVE],
         )) == 0:
             return
 

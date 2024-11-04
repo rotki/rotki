@@ -5,6 +5,7 @@ from unittest.mock import patch
 import pytest
 from freezegun import freeze_time
 
+from rotkehlchen.chain.base.modules.basenames.constants import CPT_BASENAMES
 from rotkehlchen.chain.ethereum.airdrops import AIRDROPS_REPO_BASE
 from rotkehlchen.chain.ethereum.modules.ens.constants import CPT_ENS
 from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE
@@ -30,6 +31,7 @@ from rotkehlchen.types import (
 from rotkehlchen.utils.misc import ts_ms_to_sec, ts_now
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.base.node_inquirer import BaseInquirer
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.types import ChecksumEvmAddress
@@ -101,34 +103,42 @@ def get_airdrop_request_mock(user_address: 'ChecksumEvmAddress') -> Callable:
     '0xA3B9E4b2C18eFB1C767542e8eb9419B840881467',
     '0xA01f6D0985389a8E106D3158A9441aC21EAC8D8c',
 ]])
+@pytest.mark.parametrize('base_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
 @pytest.mark.parametrize('ens_data', [(
     [
         deserialize_evm_tx_hash('0x4fdcd2632c6aa5549f884c9322943690e4f3c08e20a4dffe59e198ee737b54e8'),  # Register  # noqa: E501
         deserialize_evm_tx_hash('0xd4fd01f50c3c86e7e119311d6830d975cf7d78d6906004d30370ffcbaabdff95'),  # Renew old (same ENS)  # noqa: E501
     ],
     {'dfern.eth': 2310615949},
+    CPT_ENS,
 ), (
     [
         deserialize_evm_tx_hash('0x5150f6e1c76b74fa914e06df9e56577cdeec0faea11f9949ff529daeb16b1c76'),  # Register v2  # noqa: E501
         deserialize_evm_tx_hash('0x0faef1a1a714d5f2f2e5fb344bd186a745180849bae2c92f9d595d8552ef5c96'),  # Renew new  # noqa: E501
     ],
     {'ens2qr.eth': 1712756435, 'karapetsas.eth': 1849443293},
+    CPT_ENS,
+), (
+    [deserialize_evm_tx_hash('0x20280b43dbcfa86cdf0703d2e9f8f2ef200839b2ee0e819d895515d3adb74eff')],  # Register  # noqa: E501
+    {'yabir.base.eth': 1758296219},
+    CPT_BASENAMES,
 )])
 def test_ens_expiry_calendar_reminders(
         database: 'DBHandler',
+        base_inquirer: 'BaseInquirer',
         ethereum_inquirer: 'EthereumInquirer',
-        ens_data: tuple[list['EVMTxHash'], dict[str, Timestamp]],
+        ens_data: tuple[list['EVMTxHash'], dict[str, Timestamp], str],
         add_subgraph_api_key,  # pylint: disable=unused-argument
 ) -> None:
     """Test that ENS reminders are created at the expiry time of ENS registrations and renewals."""
-    ens_tx_hashes, latest_expiry_of_ens = ens_data
+    ens_tx_hashes, latest_expiry_of_ens, counterparty = ens_data
     calendar_db = DBCalendar(database)
     all_calendar_entries = calendar_db.query_calendar_entry(CalendarFilterQuery.make())
     assert all_calendar_entries['entries_total'] == 0
 
     ens_events = [
         next(x for x in get_decoded_events_of_transaction(  # decode ENS registration/renewal event and get the event with the metadata  # noqa: E501
-            evm_inquirer=ethereum_inquirer,
+            evm_inquirer=ethereum_inquirer if counterparty == CPT_ENS else base_inquirer,
             tx_hash=ens_tx_hash,
         )[0] if x.extra_data is not None) for ens_tx_hash in ens_tx_hashes
     ]
@@ -144,13 +154,12 @@ def test_ens_expiry_calendar_reminders(
         assert ens_events[idx].location_label is not None
         ens_name: str = ens_events[idx].extra_data['name']  # type: ignore[index]  # extra_data is not None, checked above
         ens_expires = latest_expiry_of_ens[ens_name]
-
         assert calendar_entry == CalendarEntry(  # calendar entry is created for expiry
             identifier=idx + 1,
             name=f'{ens_name} expiry',
             timestamp=ens_expires,
             description=f'{ens_name} expires on {reminder_creator.timestamp_to_date(ens_expires)}',
-            counterparty=CPT_ENS,
+            counterparty=counterparty,
             address=ens_events[idx].location_label,  # type: ignore[arg-type]  # location_label is not None, checked above
             blockchain=ChainID.deserialize(ens_events[idx].location.to_chain_id()).to_blockchain(),
             color=ENS_CALENDAR_COLOR,

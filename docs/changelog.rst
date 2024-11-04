@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :feature:`8602` rotki will now properly decode Basenames transactions and add calendar reminders for name expiry.
+
 * :release:`1.36.0 <2024-11-06>`
 * :bug:`-` The exported file that overrides the file with the same name should have the latest modified time.
 * :feature:`8793` rotki will now correctly decode the Scroll airdrop claim.
