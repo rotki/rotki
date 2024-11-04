@@ -1145,21 +1145,20 @@ class DBHandler:
             account_data: list[BlockchainAccountData],
     ) -> None:
         # Insert the blockchain account addresses and labels to the DB
-        blockchain_accounts_query = []
-        address_book_query = []
+        blockchain_accounts_query, bindings_to_update = [], []
         for entry in account_data:
             blockchain_accounts_query.append((entry.chain.value, entry.address))
-            if entry.label is not None:
-                address_book_query.append((entry.address, entry.chain.value, entry.label))
+            if entry.label:
+                bindings_to_update.append((entry.address, entry.chain.value, entry.label))
         try:
             write_cursor.executemany(
                 'INSERT INTO blockchain_accounts(blockchain, account) VALUES (?, ?)',
                 blockchain_accounts_query,
             )
-            if len(address_book_query) > 0:
+            if len(bindings_to_update) > 0:
                 write_cursor.executemany(
                     'INSERT OR REPLACE INTO address_book(address, blockchain, name) VALUES (?, ?, ?)',  # noqa: E501
-                    address_book_query,
+                    bindings_to_update,
                 )
         except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
             raise InputError(
@@ -1180,22 +1179,36 @@ class DBHandler:
         - All accounts exist in the DB
         """
         # Update the blockchain account labels in the DB
-        bindings = [
-            (entry.address, entry.chain.value, entry.label)
-            for entry in account_data if entry.label is not None
-        ]
-        if len(bindings) > 0:
+        bindings_to_update, bindings_to_delete = [], []
+        for entry in account_data:
+            if entry.label:
+                bindings_to_update.append((entry.address, entry.chain.value, entry.label))
+            else:
+                bindings_to_delete.append((entry.address, entry.chain.value))
+
+        modified_count, deleted_count = 0, 0
+        if len(bindings_to_update) > 0:
             write_cursor.executemany(
                 'INSERT OR REPLACE INTO address_book(address, blockchain, name) VALUES (?, ?, ?);',
-                bindings,
+                bindings_to_update,
             )
-            if write_cursor.rowcount != len(bindings):
-                msg = (
-                    f'When updating blockchain accounts {len(bindings)} entries should '
-                    f'have been edited but only {write_cursor.rowcount} were. Should not happen.'
-                )
-                log.error(msg)
-                raise InputError(msg)
+            modified_count += write_cursor.rowcount
+
+        if len(bindings_to_delete) > 0:
+            write_cursor.executemany(
+                'DELETE FROM address_book WHERE address=? AND blockchain=?;',
+                bindings_to_delete,
+            )
+            deleted_count += write_cursor.rowcount
+
+        if modified_count != len(bindings_to_update) or deleted_count != len(bindings_to_delete):
+            msg = (
+                f'When updating blockchain accounts expected {len(bindings_to_update)}'
+                f'modified and {len(bindings_to_delete)} deleted, but instead there were'
+                f'{modified_count} modified and {deleted_count} deleted. Should not happen.'
+            )
+            log.error(msg)
+            raise InputError(msg)
 
         replace_tag_mappings(
             write_cursor=write_cursor,
