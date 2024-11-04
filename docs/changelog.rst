@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Extrafi lending balances when having used multiple pools of the same asset at the same time will now be properly queried.
 * :bug:`-` Liquity v1 borrowing should now properly include the fee as part of the borrowing event and present proper order of borrowing coming before the fee payment.
 * :bug:`8807` Binance CSVs with the new trade entry format should import correctly.
 * :bug:`-` Pending AAVE to claim from staking should now appear as balance in the address that is staking.

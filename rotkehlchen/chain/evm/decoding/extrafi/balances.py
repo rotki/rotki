@@ -272,7 +272,7 @@ class ExtrafiCommonBalances(ProtocolWithBalance):
             )
             return {}
 
-        reserve_to_balance: dict[EvmToken, FVal] = {}
+        reserve_to_balance: dict[EvmToken, FVal] = defaultdict(FVal)
         for idx, result in enumerate(raw_balances):
             try:
                 reserve_token = self._maybe_query_reserve_idx_to_underlying(
@@ -286,7 +286,7 @@ class ExtrafiCommonBalances(ProtocolWithBalance):
                 )
                 continue
 
-            reserve_to_balance[reserve_token] = token_normalized_value(
+            reserve_to_balance[reserve_token] += token_normalized_value(
                 token_amount=result[-1],
                 token=reserve_token,
             )
