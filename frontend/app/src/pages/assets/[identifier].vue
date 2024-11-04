@@ -4,6 +4,7 @@ import { EVM_TOKEN } from '@/types/asset';
 import { NoteLocation } from '@/types/notes';
 import type { RouteLocationRaw } from 'vue-router';
 import type { AssetBalanceWithPrice } from '@rotki/common';
+import type { AssetResolutionOptions } from '@/composables/assets/retrieval';
 
 definePage({
   meta: {
@@ -22,14 +23,88 @@ const props = defineProps<{
 }>();
 
 const { identifier } = toRefs(props);
+
+const { t } = useI18n();
+const router = useRouter();
+const route = useRoute();
+
+const {
+  coingeckoAsset,
+  cryptocompareAsset,
+} = externalLinks;
+
 const { isAssetIgnored, ignoreAsset, unignoreAsset } = useIgnoredAssetsStore();
 const { isAssetWhitelisted, whitelistAsset, unWhitelistAsset } = useWhitelistedAssetsStore();
 const { markAssetsAsSpam, removeAssetFromSpamList } = useSpamAsset();
 const { assetName, assetSymbol, assetInfo, tokenAddress, refetchAssetInfo } = useAssetInfoRetrieval();
 const { getChain } = useSupportedChains();
+const premium = usePremium();
+const { balances } = useAggregatedBalances();
 
 const isIgnored = isAssetIgnored(identifier);
 const isWhitelisted = isAssetWhitelisted(identifier);
+
+const isCollectionParent = computed<boolean>(() => {
+  const currentRoute = get(route);
+  const collectionParent = currentRoute.query.collectionParent;
+
+  return !!collectionParent;
+});
+
+const assetRetrievalOption = computed<AssetResolutionOptions>(() => ({
+  collectionParent: get(isCollectionParent),
+}));
+
+const name = assetName(identifier, assetRetrievalOption);
+const symbol = assetSymbol(identifier, assetRetrievalOption);
+const asset = assetInfo(identifier, assetRetrievalOption);
+const address = tokenAddress(identifier);
+const chain = computed(() => {
+  const evmChain = get(asset)?.evmChain;
+  if (evmChain)
+    return getChain(evmChain);
+
+  return undefined;
+});
+const isCustomAsset = computed(() => get(asset)?.isCustomAsset);
+
+const collectionId = computed<number | undefined>(() => {
+  if (!get(isCollectionParent))
+    return undefined;
+
+  const collectionId = get(asset)?.collectionId;
+  return (collectionId && parseInt(collectionId)) || undefined;
+});
+
+const editRoute = computed<RouteLocationRaw>(() => ({
+  path: get(isCustomAsset) ? '/asset-manager/custom' : '/asset-manager/managed',
+  query: {
+    id: get(identifier),
+  },
+}));
+
+const collectionBalance = computed<AssetBalanceWithPrice[]>(() => {
+  if (!get(isCollectionParent))
+    return [];
+
+  return get(balances()).find(data => data.asset === get(identifier))?.breakdown || [];
+});
+
+const isSpam = computed(() => get(asset)?.isSpam || false);
+
+function goToEdit() {
+  router.push(get(editRoute));
+}
+
+async function toggleSpam() {
+  const id = get(identifier);
+  if (get(isSpam))
+    await removeAssetFromSpamList(id);
+  else
+    await markAssetsAsSpam([id]);
+
+  refetchAssetInfo(id);
+}
 
 async function toggleIgnoreAsset() {
   const id = get(identifier);
@@ -48,76 +123,6 @@ async function toggleWhitelistAsset() {
 
   refetchAssetInfo(id);
 }
-const premium = usePremium();
-
-const name = assetName(identifier);
-const symbol = assetSymbol(identifier);
-const asset = assetInfo(identifier);
-const address = tokenAddress(identifier);
-const chain = computed(() => {
-  const evmChain = get(asset)?.evmChain;
-  if (evmChain)
-    return getChain(evmChain);
-
-  return undefined;
-});
-const isCustomAsset = computed(() => get(asset)?.isCustomAsset);
-
-const { t } = useI18n();
-
-const route = useRoute();
-const router = useRouter();
-
-const isCollectionParent = computed<boolean>(() => {
-  const currentRoute = get(route);
-  const collectionParent = currentRoute.query.collectionParent;
-
-  return !!collectionParent;
-});
-
-const collectionId = computed<number | undefined>(() => {
-  if (!get(isCollectionParent))
-    return undefined;
-
-  const collectionId = get(asset)?.collectionId;
-  return (collectionId && parseInt(collectionId)) || undefined;
-});
-
-const editRoute = computed<RouteLocationRaw>(() => ({
-  path: get(isCustomAsset) ? '/asset-manager/custom' : '/asset-manager/managed',
-  query: {
-    id: get(identifier),
-  },
-}));
-
-const { balances } = useAggregatedBalances();
-const collectionBalance = computed<AssetBalanceWithPrice[]>(() => {
-  if (!get(isCollectionParent))
-    return [];
-
-  return get(balances()).find(data => data.asset === get(identifier))?.breakdown || [];
-});
-
-function goToEdit() {
-  router.push(get(editRoute));
-}
-
-const isSpam = computed(() => get(asset)?.isSpam || false);
-
-async function toggleSpam() {
-  const id = get(identifier);
-  if (get(isSpam))
-    await removeAssetFromSpamList(id);
-  else
-    await markAssetsAsSpam([id]);
-
-  refetchAssetInfo(id);
-}
-
-const {
-  coingeckoAsset,
-  cryptocompareAsset,
-} = externalLinks;
 </script>
 
 <template>
