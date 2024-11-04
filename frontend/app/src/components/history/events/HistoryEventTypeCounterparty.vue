@@ -25,7 +25,7 @@ const imagePath = '/assets/images/protocols/';
         :open-delay="400"
       >
         <template #activator>
-          <div class="rounded-full overflow-hidden bg-white">
+          <div class="rounded-full overflow-hidden bg-white w-5 h-5 flex items-center justify-center">
             <template v-if="counterparty">
               <RuiIcon
                 v-if="counterparty.icon"
@@ -37,7 +37,7 @@ const imagePath = '/assets/images/protocols/';
                 v-else-if="counterparty.image"
                 :src="`${imagePath}${counterparty.image}`"
                 contain
-                size="20px"
+                size="16px"
               />
 
               <EnsAvatar
