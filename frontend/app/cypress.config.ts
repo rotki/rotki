@@ -2,6 +2,7 @@ import * as process from 'node:process';
 import * as fs from 'node:fs';
 import { defineConfig } from 'cypress';
 import coverageTask from '@cypress/code-coverage/task';
+import consola from 'consola';
 
 const group = process.env.GROUP ? `${process.env.GROUP}/` : '';
 const captureVideo = !!process.env.CI;
@@ -23,16 +24,25 @@ export default defineConfig({
     experimentalMemoryManagement: true,
     numTestsKeptInMemory: process.env.CI ? 1 : 5,
     setupNodeEvents: (on, config) => {
-      on('after:spec', (spec: Cypress.Spec, results: CypressCommandLine.RunResult) => {
-        if (results && results.video) {
-          // Do we have failures for any retry attempts?
-          const failures = results.tests.some(test => test.attempts.some(attempt => attempt.state === 'failed'));
-          if (!failures) {
-            // delete the video if the spec passed and no tests retried
-            fs.unlinkSync(results.video);
-          }
+      on('after:spec', (spec: Cypress.Spec, results?: CypressCommandLine.RunResult) => {
+        // When running via cypress open the results are undefined and there is nothing to do.
+        if (!results) {
+          return;
+        }
+        // Do we have failures for any retry attempts?
+        const failures = results.tests.some(test => test.attempts.some(attempt => attempt.state === 'failed'));
+
+        if (results.video && !failures) {
+          // delete the video if the spec passed and no tests retried
+          fs.unlinkSync(results.video);
+        }
+
+        if (failures) {
+          consola.error(`spec: ${spec.name} had failures, bailing out.`);
+          process.exit(1);
         }
       });
+
       return coverageTask(on, config);
     },
   },

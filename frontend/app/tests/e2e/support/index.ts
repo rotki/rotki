@@ -27,3 +27,18 @@ Cypress.on('uncaught:exception', (err) => {
 
   return false;
 });
+
+let hasTestFailed = false;
+
+beforeEach(function () {
+  if (hasTestFailed) {
+    // Forcefully terminate the current test
+    this.skip();
+  }
+});
+
+afterEach(function () {
+  if (this.currentTest?.state === 'failed') {
+    hasTestFailed = true;
+  }
+});
