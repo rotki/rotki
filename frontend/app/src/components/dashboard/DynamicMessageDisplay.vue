@@ -31,7 +31,7 @@ const activeItem = computed<DashboardMessage>(() => props.messages[get(step) - 1
           {{ activeItem.message }}
           <div class="font-semibold inline">
             <template v-if="activeItem.messageHighlight">
-              {{ activeItem.messageHighlight }}
+              {{ ` ${activeItem.messageHighlight} ` }}
             </template>
 
             <ExternalLink

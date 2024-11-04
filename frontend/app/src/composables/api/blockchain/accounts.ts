@@ -38,14 +38,16 @@ async function performAsyncQuery(url: string, payload: any): Promise<PendingTask
   return handleResponse(response);
 }
 
-function payloadToData({ address, label, tags }: Omit<BlockchainAccountPayload, 'blockchain'>): {
+function payloadToData({ address, label, tags }: Omit<BlockchainAccountPayload, 'blockchain'>, isAdd = false): {
   accounts: GeneralAccountData[];
 } {
+  const usedLabel = isAdd ? (label || null) : (label ?? null);
+
   return {
     accounts: [
       {
         address,
-        label: isDefined(label) ? label : null,
+        label: usedLabel,
         tags,
       },
     ],
@@ -243,7 +245,7 @@ export function useBlockchainAccountsApi(): UseBlockchainAccountsApiReturn {
   };
 
   const addEvmAccount = async (payload: Omit<BlockchainAccountPayload, 'blockchain'>): Promise<PendingTask> =>
-    performAsyncQuery('/blockchains/evm/accounts', nonEmptyProperties(payloadToData(payload)));
+    performAsyncQuery('/blockchains/evm/accounts', nonEmptyProperties(payloadToData(payload, true)));
 
   const detectEvmAccounts = async (): Promise<PendingTask> => {
     const response = await api.instance.post<ActionResult<PendingTask>>(
