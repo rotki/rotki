@@ -14,6 +14,7 @@ Changelog
 * :feature:`7540` rotki will now support Yearn V3 vaults and more V2 vaults.
 * :feature:`-` Gitcoin donations for more rounds will now be properly seen by rotki.
 * :feature:`7920` rotki will now create calendar reminders for airdrop claim deadlines
+* :bug:`-` Extrafi lending balances when having used multiple pools of the same asset at the same time will now be properly queried.
 * :bug:`-` Liquity v1 borrowing should now properly include the fee as part of the borrowing event and present proper order of borrowing coming before the fee payment.
 * :bug:`8807` Binance CSVs with the new trade entry format should import correctly.
 * :bug:`-` Pending AAVE to claim from staking should now appear as balance in the address that is staking.
