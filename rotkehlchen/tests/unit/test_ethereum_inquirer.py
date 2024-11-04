@@ -1,3 +1,4 @@
+from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import pytest
@@ -11,7 +12,7 @@ from rotkehlchen.chain.evm.decoding.kyber.constants import KYBER_AGGREGATOR_SWAP
 from rotkehlchen.chain.evm.decoding.thegraph.constants import GRAPH_DELEGATION_TRANSFER_ABI
 from rotkehlchen.chain.evm.node_inquirer import _query_web3_get_logs
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
-from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.chain.evm.types import WeightedNode, string_to_evm_address
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.errors.misc import EventNotInABI, RemoteError
 from rotkehlchen.tests.utils.checks import assert_serialized_dicts_equal
@@ -26,6 +27,9 @@ from rotkehlchen.tests.utils.ethereum import (
 from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.types import ChainID, EvmTransaction, SupportedBlockchain, deserialize_evm_tx_hash
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
+
+if TYPE_CHECKING:
+    from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 
 
 @pytest.mark.parametrize(*ETHEREUM_TEST_PARAMETERS)
@@ -337,10 +341,11 @@ def test_get_blocknumber_by_time_etherscan(ethereum_inquirer):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize(*ETHEREUM_NODES_PARAMETERS_WITH_PRUNED_AND_NOT_ARCHIVED)
 def test_ethereum_nodes_prune_and_archive_status(
-        ethereum_inquirer,
-        ethereum_manager_connect_at_start,
+        ethereum_inquirer: 'EthereumInquirer',
+        ethereum_manager_connect_at_start: list[WeightedNode],
 ):
     """Checks that connecting to a set of ethereum nodes, the capabilities of those nodes are known and stored."""  # noqa: E501
+    ethereum_inquirer.maybe_connect_to_nodes(when_tracked_accounts=True)
     wait_until_all_nodes_connected(
         connect_at_start=ethereum_manager_connect_at_start,
         evm_inquirer=ethereum_inquirer,

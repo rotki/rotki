@@ -1,12 +1,12 @@
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Any
+from unittest.mock import patch
 
 import gevent
 import pytest
 import requests
 
 from rotkehlchen.tests.utils.api import (
-    ASYNC_TASK_WAIT_TIMEOUT,
     api_url_for,
     assert_error_response,
     assert_ok_async_response,
@@ -269,6 +269,8 @@ def test_add_delete_xpub_multiple_chains(rotkehlchen_api_server: 'APIServer') ->
     # Disable caching of query results
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     rotki.chains_aggregator.cache_ttl_secs = 0
+    assert rotki.task_manager is not None
+    rotki.task_manager.should_schedule = False
 
     # Test that adding a BCH xpub works
     xpub = 'xpub6By8JDaPr5L6oHfgQDc47quD69qH1hTwnFYbuia8paiYxSE9u84KZfYqn6xLMUqxKK3wNpsgP4Kwu1gzXHD5xBxj5HrLposEYL6PwZzpAMZ'  # noqa: E501
@@ -286,12 +288,11 @@ def test_add_delete_xpub_multiple_chains(rotkehlchen_api_server: 'APIServer') ->
 
     # Check that periodic derivation doesn't break anything
     # Testing here since test_tasks_manager.py only tests scheduling
-    assert rotki.task_manager is not None
     rotki.task_manager.last_xpub_derivation_ts = 0   # to be sure that the task will be scheduled
-    rotki.task_manager._maybe_schedule_xpub_derivation()
-    with gevent.Timeout(ASYNC_TASK_WAIT_TIMEOUT):
-        while len(rotki.task_manager.greenlet_manager.greenlets) != 0:
-            gevent.sleep(1)
+    with patch('rotkehlchen.tasks.manager.XpubManager.check_for_new_xpub_addresses') as patch_method:  # noqa: E501
+        rotki.task_manager._maybe_schedule_xpub_derivation()
+        gevent.sleep(0)
+        assert patch_method.call_count == 1
 
     # Check that bch accounts were detected while btc accounts were not affected
     assert len(rotki.chains_aggregator.accounts.bch) != 0
