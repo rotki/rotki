@@ -2,7 +2,6 @@ import * as process from 'node:process';
 import * as fs from 'node:fs';
 import { defineConfig } from 'cypress';
 import coverageTask from '@cypress/code-coverage/task';
-import consola from 'consola';
 
 const group = process.env.GROUP ? `${process.env.GROUP}/` : '';
 const captureVideo = !!process.env.CI;
@@ -38,8 +37,9 @@ export default defineConfig({
         }
 
         if (failures) {
-          consola.error(`spec: ${spec.name} had failures, bailing out.`);
-          process.exit(1);
+          // throwing an exception here seems to properly stop the suite from running.
+          // process exit does not seem to work
+          throw new Error(`spec: ${spec.name} had failures, bailing out.`);
         }
       });
 
