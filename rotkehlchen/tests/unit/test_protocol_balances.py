@@ -20,6 +20,7 @@ from rotkehlchen.chain.arbitrum_one.modules.gmx.balances import GmxBalances
 from rotkehlchen.chain.arbitrum_one.modules.thegraph.balances import (
     ThegraphBalances as ThegraphBalancesArbitrumOne,
 )
+from rotkehlchen.chain.arbitrum_one.modules.umami.balances import UmamiBalances
 from rotkehlchen.chain.base.modules.extrafi.balances import ExtrafiBalances as ExtrafiBalancesBase
 from rotkehlchen.chain.ethereum.interfaces.balances import ProtocolWithBalance
 from rotkehlchen.chain.ethereum.modules.aave.balances import AaveBalances
@@ -1032,6 +1033,32 @@ def test_extrafi_cache(optimism_inquirer: 'OptimismInquirer', freezer):
             cursor=cursor,
             key_parts=(CacheType.EXTRAFI_NEXT_RESERVE_ID, chain),
         ) > last_queried_ts
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('arbitrum_one_accounts', [['0x706A70067BE19BdadBea3600Db0626859Ff25D74']])
+def test_umami_balances(
+        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
+        arbitrum_one_accounts: list[ChecksumEvmAddress],
+        inquirer: 'Inquirer',  # pylint: disable=unused-argument
+) -> None:
+    """Check that staked & unstaked balances of Umami are properly detected."""
+    amount, usd_value, gm_usdc_vault = FVal('46.422107'), FVal('74.988646874055'), Asset('eip155:42161/erc20:0x5f851F67D24419982EcD7b7765deFD64fBb50a97')  # noqa: E501
+    _, tx_decoder = get_decoded_events_of_transaction(
+        evm_inquirer=arbitrum_one_inquirer,
+        tx_hash=deserialize_evm_tx_hash('0x4688c10bc6fadf06c2348fffe1e13c6d7a0b0c586438944aa9557b447a5f319a'),
+    )
+
+    protocol_balances_inquirer = UmamiBalances(
+        evm_inquirer=arbitrum_one_inquirer,
+        tx_decoder=tx_decoder,
+    )
+    protocol_balances = protocol_balances_inquirer.query_balances()
+    user_balance = protocol_balances[arbitrum_one_accounts[0]]
+    assert user_balance.assets[gm_usdc_vault] == Balance(
+        amount=amount,
+        usd_value=usd_value,
+    )
 
 
 def test_all_balance_classes_used():
