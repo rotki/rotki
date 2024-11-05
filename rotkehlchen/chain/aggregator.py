@@ -23,6 +23,7 @@ from rotkehlchen.chain.arbitrum_one.modules.gmx.balances import GmxBalances
 from rotkehlchen.chain.arbitrum_one.modules.thegraph.balances import (
     ThegraphBalances as ThegraphBalancesArbitrumOne,
 )
+from rotkehlchen.chain.arbitrum_one.modules.umami.balances import UmamiBalances
 from rotkehlchen.chain.avalanche.manager import AvalancheManager
 from rotkehlchen.chain.base.modules.aerodrome.balances import AerodromeBalances
 from rotkehlchen.chain.base.modules.extrafi.balances import (
@@ -218,7 +219,7 @@ CHAIN_TO_BALANCE_PROTOCOLS = {
     ),
     ChainID.OPTIMISM: (VelodromeBalances, HopBalances, GearboxBalancesOptimism, ExtrafiBalancesOp),
     ChainID.BASE: (Compoundv3Balances, AerodromeBalances, HopBalances, ExtrafiBalancesBase),
-    ChainID.ARBITRUM_ONE: (Compoundv3Balances, GmxBalances, ThegraphBalancesArbitrumOne, HopBalances, GearboxBalancesArbitrumOne),  # noqa: E501
+    ChainID.ARBITRUM_ONE: (Compoundv3Balances, GmxBalances, ThegraphBalancesArbitrumOne, HopBalances, GearboxBalancesArbitrumOne, UmamiBalances),  # noqa: E501
     ChainID.POLYGON_POS: (Compoundv3Balances, HopBalances),
     ChainID.GNOSIS: (HopBalances,),
     ChainID.SCROLL: (Compoundv3Balances,),

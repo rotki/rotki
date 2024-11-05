@@ -19,6 +19,8 @@ from typing import (
 
 from rotkehlchen.assets.asset import Asset, AssetWithOracles, EvmToken, FiatAsset, UnderlyingToken
 from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token
+from rotkehlchen.chain.arbitrum_one.modules.umami.constants import CPT_UMAMI
+from rotkehlchen.chain.arbitrum_one.modules.umami.utils import get_umami_vault_token_price
 from rotkehlchen.chain.ethereum.defi.price import handle_defi_price_query
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.constants import ETH_SPECIAL_ADDRESS
@@ -206,6 +208,12 @@ def get_underlying_asset_price(token: EvmToken) -> tuple[Price | None, CurrentPr
         price = Inquirer().find_hop_lp_price(token)
     elif token.protocol == YEARN_STAKING_PROTOCOL:
         price = Inquirer().find_yearn_staking_price(token)
+    elif token.protocol == CPT_UMAMI:
+        price = get_umami_vault_token_price(
+            vault_token=token,
+            inquirer=Inquirer(),
+            evm_inquirer=Inquirer.get_evm_manager(chain_id=ChainID.ARBITRUM_ONE).node_inquirer,
+        )
 
     if token == A_FARM_DAI:
         price, oracle, _ = Inquirer.find_usd_price_and_oracle(A_DAI)
