@@ -18,14 +18,20 @@ interface AssetWithResolutionStatus extends AssetInfo {
   resolved: boolean;
 };
 
+export type AssetInfoReturn = (identifier: MaybeRef<string | undefined>, options?: MaybeRef<AssetResolutionOptions>) => ComputedRef<AssetWithResolutionStatus | null>;
+
+export type AssetSymbolReturn = (identifier: MaybeRef<string | undefined>, options?: MaybeRef<AssetResolutionOptions>) => ComputedRef<string>;
+
+export type AssetNameReturn = (identifier: MaybeRef<string | undefined>, options?: MaybeRef<AssetResolutionOptions>) => ComputedRef<string>;
+
 interface UseAssetInfoRetrievalReturn {
   fetchTokenDetails: (payload: EvmChainAddress) => Promise<ERC20Token>;
   getAssociatedAssetIdentifier: (identifier: string) => ComputedRef<string>;
   getAssetAssociationIdentifiers: (identifier: string) => string[];
-  assetInfo: (identifier: MaybeRef<string | undefined>, options?: MaybeRef<AssetResolutionOptions>) => ComputedRef<AssetWithResolutionStatus | null>;
+  assetInfo: AssetInfoReturn;
   refetchAssetInfo: (key: string) => void;
-  assetSymbol: (identifier: MaybeRef<string | undefined>, options?: MaybeRef<AssetResolutionOptions>) => ComputedRef<string>;
-  assetName: (identifier: MaybeRef<string | undefined>, options?: MaybeRef<AssetResolutionOptions>) => ComputedRef<string>;
+  assetSymbol: AssetSymbolReturn;
+  assetName: AssetNameReturn;
   tokenAddress: (identifier: MaybeRef<string>, enableAssociation?: MaybeRef<boolean>) => ComputedRef<string>;
   assetSearch: (params: AssetSearchParams) => Promise<AssetsWithId>;
 }

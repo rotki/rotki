@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { some } from 'lodash-es';
 import { isEvmNativeToken } from '@/types/asset';
-import type { AssetBalance, AssetBalanceWithPrice } from '@rotki/common';
+import type { AssetBalance, AssetBalanceWithPrice, Nullable } from '@rotki/common';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 
 defineOptions({
@@ -40,29 +40,31 @@ const { t } = useI18n();
 const { balances } = toRefs(props);
 const expanded = ref<AssetBalanceWithPrice[]>([]);
 
-const { assetSymbol, assetName, assetInfo } = useAssetInfoRetrieval();
-
-function assetFilter(item: AssetBalance) {
-  const keyword = get(search).toLowerCase()?.trim() ?? '';
-  if (!keyword)
-    return true;
-
-  const name = get(assetName(item.asset))?.toLowerCase()?.trim();
-  const symbol = get(assetSymbol(item.asset))?.toLowerCase()?.trim();
-
-  return symbol.includes(keyword) || name.includes(keyword);
-}
-
-const filteredBalances = computed(() => get(balances).filter(assetFilter));
-
-const total = computed(() => bigNumberSum(filteredBalances.value.map(({ usdValue }) => usdValue)));
-
-const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-
 const sort = ref<DataTableSortData<AssetBalanceWithPrice>>({
   column: 'usdValue',
   direction: 'desc' as const,
 });
+
+const { assetSymbol, assetName, assetInfo } = useAssetInfoRetrieval();
+const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
+
+const isExpanded = (asset: string) => some(get(expanded), { asset });
+
+function expand(item: AssetBalanceWithPrice) {
+  set(expanded, isExpanded(item.asset) ? [] : [item]);
+}
+
+function getAssets(item: AssetBalanceWithPrice): string[] {
+  return item.breakdown?.map(entry => entry.asset) ?? [];
+}
+
+function assetFilter(item: Nullable<AssetBalance>) {
+  return assetFilterByKeyword(item, get(search), assetName, assetSymbol);
+}
+
+const filteredBalances = computed(() => get(balances).filter(assetFilter));
+
+const total = computed(() => bigNumberSum(get(filteredBalances).map(({ usdValue }) => usdValue)));
 
 const tableHeaders = computed<DataTableColumn<AssetBalanceWithPrice>[]>(() => [
   {
@@ -100,26 +102,7 @@ const tableHeaders = computed<DataTableColumn<AssetBalanceWithPrice>[]>(() => [
   },
 ]);
 
-const sortItems = getSortItems<AssetBalanceWithPrice>(asset => get(assetInfo(asset)));
-
-const sorted = computed<AssetBalanceWithPrice[]>(() => {
-  const sortBy = get(sort);
-  const data = [...get(filteredBalances)];
-  if (!Array.isArray(sortBy) && sortBy?.column)
-    return sortItems(data, [sortBy.column as keyof AssetBalance], [sortBy.direction === 'desc']);
-
-  return data;
-});
-
-const isExpanded = (asset: string) => some(get(expanded), { asset });
-
-function expand(item: AssetBalanceWithPrice) {
-  set(expanded, isExpanded(item.asset) ? [] : [item]);
-}
-
-function getAssets(item: AssetBalanceWithPrice): string[] {
-  return item.breakdown?.map(entry => entry.asset) ?? [];
-}
+const sorted = computed<AssetBalanceWithPrice[]>(() => sortAssetBalances([...get(filteredBalances)], get(sort), assetInfo));
 </script>
 
 <template>

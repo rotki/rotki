@@ -24,7 +24,7 @@ export function getTextToken(string: string): string {
   if (!string)
     return '';
 
-  return string.toLowerCase().replace(/[^\dA-Za-z]/g, '');
+  return string.toLowerCase().trim().replace(/[^\dA-Za-z]/g, '');
 }
 
 /**
