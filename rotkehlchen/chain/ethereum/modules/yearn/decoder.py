@@ -1,6 +1,6 @@
 import logging
 from collections.abc import Callable, Mapping
-from typing import TYPE_CHECKING, Any, Final, Literal, TypeAlias
+from typing import TYPE_CHECKING, Any, Final, Literal, TypeAlias, cast
 
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.modules.yearn.constants import (
@@ -99,7 +99,10 @@ class YearnDecoder(DecoderInterface, ReloadableDecoderMixin):
         Returns a fresh addresses to decoders mapping.
         """
         if should_update_protocol_cache(CacheType.YEARN_VAULTS) is True:
-            query_yearn_vaults(db=self.evm_inquirer.database)
+            query_yearn_vaults(
+                db=self.evm_inquirer.database,
+                ethereum_inquirer=cast('EthereumInquirer', self.evm_inquirer),
+            )
         elif len(self.vaults[CPT_YEARN_V2]) != 0:
             return None  # we didn't update the globaldb cache and we have the data already
 

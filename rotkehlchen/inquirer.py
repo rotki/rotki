@@ -109,6 +109,7 @@ from rotkehlchen.types import (
     GEARBOX_PROTOCOL,
     HOP_PROTOCOL_LP,
     LP_TOKEN_AS_POOL_PROTOCOLS,
+    YEARN_STAKING_PROTOCOL,
     YEARN_VAULTS_V2_PROTOCOL,
     YEARN_VAULTS_V3_PROTOCOL,
     CacheType,
@@ -203,6 +204,8 @@ def get_underlying_asset_price(token: EvmToken) -> tuple[Price | None, CurrentPr
         price = Inquirer().find_gearbox_price(token)
     elif token.protocol == HOP_PROTOCOL_LP:
         price = Inquirer().find_hop_lp_price(token)
+    elif token.protocol == YEARN_STAKING_PROTOCOL:
+        price = Inquirer().find_yearn_staking_price(token)
 
     if token == A_FARM_DAI:
         price, oracle, _ = Inquirer.find_usd_price_and_oracle(A_DAI)
@@ -1188,6 +1191,36 @@ class Inquirer:
             return Price(price_per_share * underlying_token_price / 10 ** token.get_decimals())
 
         return None
+
+    def find_yearn_staking_price(self, token: EvmToken) -> Price | None:
+        """Find prices for staked yearn tokens
+        Those tokens are confirmed to be 1:1 with the underlying token.
+        There are 3 types of vaults reported by the API but all of them respect
+        the proportion 1:1.
+
+        The tokens representing staked yearn vaults have the protocol `YEARN_STAKING_PROTOCOL`
+        and as underlying token they have a Yearn Vault token. The information is populated
+        by calling the yearn API. Until the yearn vault api cache creation runs the price is
+        not reliable.
+        """
+        if (
+            token.underlying_tokens is None or
+            len(token.underlying_tokens) == 0 or
+            token.protocol != YEARN_STAKING_PROTOCOL
+        ):
+            log.error(f'Logic to query staked yearn vault price with a malformed token {token}')
+            return None
+
+        try:
+            vault = EvmToken(evm_address_to_identifier(
+                address=token.underlying_tokens[0].address,
+                chain_id=token.chain_id,
+            ))
+        except UnknownAsset:
+            log.error(f'Unknown vault for yearn staked token {token}. {token.underlying_tokens[0].address=}')  # noqa: E501
+            return None
+
+        return get_underlying_asset_price(vault)[0]
 
     def find_hop_lp_price(self, lp_token: EvmToken) -> Price | None:
         """Returns the price of a hop lp token fetched from the pool contract"""
