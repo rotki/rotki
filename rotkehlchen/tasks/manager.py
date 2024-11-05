@@ -680,6 +680,7 @@ class TaskManager:
                 exception_is_error=False,
                 method=self.query_yearn_vaults,
                 db=self.database,
+                ethereum_inquirer=self.chains_aggregator.ethereum.node_inquirer,
             )]
 
         return None

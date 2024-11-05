@@ -4705,7 +4705,10 @@ class RestAPI:
                 )
 
         try:
-            query_yearn_vaults(db=self.rotkehlchen.data.db)
+            query_yearn_vaults(
+                db=self.rotkehlchen.data.db,
+                ethereum_inquirer=eth_node_inquirer,
+            )
         except RemoteError as e:
             return wrap_in_fail_result(
                 message=f'Failed to refresh yearn vaults cache due to: {e!s}',

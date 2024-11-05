@@ -18,7 +18,9 @@ from rotkehlchen.globaldb.cache import (
 )
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.serialization.deserialize import deserialize_int
 from rotkehlchen.types import (
+    YEARN_STAKING_PROTOCOL,
     YEARN_VAULTS_V2_PROTOCOL,
     YEARN_VAULTS_V3_PROTOCOL,
     CacheType,
@@ -27,6 +29,7 @@ from rotkehlchen.types import (
 )
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
 
 YDAEMON_API: Final[str] = 'https://ydaemon.yearn.fi/rotki'  # contains v2 and v3 vaults
@@ -111,11 +114,11 @@ def _query_yearn_vaults() -> list[dict[str, Any]]:
     """Query list of yearn v2 and v3 vaults from the ydaemon api.
     Returns the list of vaults.
 
+    At the moment this logic queries only ethereum vaults.
     May raise:
         - RemoteError
     """
-    all_vaults = []
-    offset = 0
+    all_vaults, offset = [], 0
     while True:
         data = _query_ydaemon(
             endpoint='list/vaults',
@@ -142,10 +145,16 @@ def _query_yearn_vault_count() -> int:
         log.error(f'{msg} Expected a dict containing numberOfVaults integer, got {data}')
         raise RemoteError(msg)
 
-    return data['numberOfVaults']
+    try:
+        return deserialize_int(data['numberOfVaults'])
+    except DeserializationError as e:
+        log.error(f'Yearn number of vaults is not an integer {data}')
+        raise RemoteError(
+            'Yearn number of vaults is not an integer. Check logs for more details',
+        ) from e
 
 
-def query_yearn_vaults(db: 'DBHandler') -> None:
+def query_yearn_vaults(db: 'DBHandler', ethereum_inquirer: 'EthereumInquirer') -> None:
     """Query yearn API and ensure that all the tokens exist locally. If they exist but the protocol
     is not the correct one, then the asset will be edited.
 
@@ -158,13 +167,16 @@ def query_yearn_vaults(db: 'DBHandler') -> None:
             return  # no new vaults
 
         data = _query_yearn_vaults()
-        if (vault_count := len(data)) != count:
-            msg = 'Unexpected response from yearn vaults query.'
-            log.error(f'{msg} Expected {count} vaults, got {vault_count}. {data}')
-            raise RemoteError(msg)
-    except RemoteError:
+    except RemoteError as e:
+        log.error(f'Failed to query yearn vaults due to {e}. Resetting yearn cache ts')
         _maybe_reset_yearn_cache_timestamp(count=None)  # reset timestamp to prevent repeated errors  # noqa: E501
         raise
+
+    if (vault_count := len(data)) != count:
+        log.error(
+            'Queried amount of yearn vaults does not match expected number. '
+            f'Expected {count} vaults, got {vault_count}. {data}',
+        )
 
     assert data is not None, 'data exists. Checked by _maybe_reset_yearn_cache_timestamp'
     for vault in data:
@@ -205,6 +217,24 @@ def query_yearn_vaults(db: 'DBHandler') -> None:
                 )],
                 encounter=TokenEncounterInfo(description=f'Querying {vault_type} balances', should_notify=False),  # noqa: E501
             )
+            if (staking_address := vault.get('staking')) is not None:  # check if the vault has a staking contract where the user can deposit vault tokens. Shares are 1:1  # noqa: E501
+                get_or_create_evm_token(
+                    userdb=db,
+                    evm_address=staking_address,
+                    evm_inquirer=ethereum_inquirer,
+                    chain_id=ChainID.ETHEREUM,
+                    protocol=YEARN_STAKING_PROTOCOL,
+                    underlying_tokens=[UnderlyingToken(
+                        address=vault_token.evm_address,
+                        token_kind=EvmTokenKind.ERC20,
+                        weight=ONE,
+                    )],
+                    fallback_name=f'Yearn staking {vault_token.name}',  # fallback in case for the vaults that aren't ERC20  # noqa: E501
+                    fallback_symbol=f'YG-{vault_token.symbol}',
+                    fallback_decimals=18,
+                    encounter=TokenEncounterInfo(description='Querying yearn vaults', should_notify=False),  # noqa: E501
+                )
+
         except KeyError as e:
             log.error(
                 f'Failed to store token information for yearn {vault_type} vault due to '
