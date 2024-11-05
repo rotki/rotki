@@ -44,11 +44,10 @@ class PickleFinanceDecoder(MerkleClaimDecoderInterface):
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
         )
-        jars = GlobalDBHandler().get_evm_tokens(
+        self.pickle_contracts = set(GlobalDBHandler.get_addresses_by_protocol(
             chain_id=ethereum_inquirer.chain_id,
             protocol=PICKLE_JAR_PROTOCOL,
-        )
-        self.pickle_contracts = {jar.evm_address for jar in jars}
+        ))
 
     def _maybe_enrich_pickle_transfers(
             self,

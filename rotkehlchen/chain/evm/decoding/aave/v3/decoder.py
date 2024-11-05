@@ -267,10 +267,10 @@ class Aavev3CommonDecoder(Commonv2v3Decoder):
         ),)
 
     def addresses_to_counterparties(self) -> dict[ChecksumEvmAddress, str]:
-        return {token.evm_address: CPT_AAVE_V3 for token in GlobalDBHandler.get_evm_tokens(
+        return dict.fromkeys(GlobalDBHandler.get_addresses_by_protocol(
             chain_id=self.evm_inquirer.chain_id,
             protocol=CPT_AAVE_V3,
-        )} | {self.pool_address: CPT_AAVE_V3}
+        ), CPT_AAVE_V3) | {self.pool_address: CPT_AAVE_V3}
 
     def post_decoding_rules(self) -> dict[str, list[tuple[int, Callable]]]:
         return {CPT_AAVE_V3: [(0, self._decode_interest)]}

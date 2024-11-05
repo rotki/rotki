@@ -945,6 +945,15 @@ class GlobalDBHandler:
         return tokens
 
     @staticmethod
+    def get_addresses_by_protocol(chain_id: ChainID, protocol: str) -> tuple[ChecksumEvmAddress, ...]:  # noqa: E501
+        with GlobalDBHandler().conn.read_ctx() as cursor:
+            cursor.execute(
+                'SELECT address FROM evm_tokens WHERE protocol=? AND chain=?',
+                (protocol, chain_id.serialize_for_db()),
+            )
+            return tuple(string_to_evm_address(entry[0]) for entry in cursor)
+
+    @staticmethod
     def get_token_name(address: ChecksumEvmAddress, chain_id: ChainID) -> str | None:
         """Gets address -> name for the token and given chain if existing"""
         with GlobalDBHandler().conn.read_ctx() as cursor:
