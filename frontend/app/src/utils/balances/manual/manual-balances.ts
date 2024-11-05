@@ -26,10 +26,6 @@ function sortBy(a: any, b: any, asc: boolean): number {
   return `${aValue}`.localeCompare(`${bValue}`, undefined, sortOptions);
 }
 
-function includes(value: string, search: string): boolean {
-  return value.toLocaleLowerCase().includes(search.toLocaleLowerCase());
-}
-
 function filterBalance(balance: ManualBalance, filters: Filters): boolean {
   const { tags: tagFilter, label: labelFilter, asset: assetFilter, location: locationFilter } = filters;
 

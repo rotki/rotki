@@ -1,5 +1,6 @@
 import type {
   AssetBalance,
+  AssetBalanceWithPrice,
   BigNumber,
   HasBalance,
   Writeable,
@@ -8,6 +9,8 @@ import type { MaybeRef } from '@vueuse/core';
 import type { AssetBalances } from '@/types/balances';
 import type { AssetBreakdown } from '@/types/blockchain/accounts';
 import type { ComputedRef } from 'vue';
+import type { DataTableSortData } from '@rotki/ui-library';
+import type { AssetInfoReturn } from '@/composables/assets/retrieval';
 
 export function removeZeroAssets(entries: AssetBalances): AssetBalances {
   const balances = { ...entries };
@@ -104,4 +107,14 @@ export function sum(balances: { usdValue: BigNumber }[]): BigNumber {
 
 export function balanceUsdValueSum(balances: HasBalance[]): BigNumber {
   return balances.reduce((sum, balance) => sum.plus(balance.balance.usdValue), Zero);
+}
+
+export function sortAssetBalances<T extends AssetBalance = AssetBalanceWithPrice>(data: T[], sort: DataTableSortData<T>, assetInfo: AssetInfoReturn): T[] {
+  const sortItems = getSortItems<T>(asset => get(assetInfo(asset)));
+
+  const sortBy = get(sort);
+  if (!Array.isArray(sortBy) && sortBy?.column)
+    return sortItems(data, [sortBy.column as keyof AssetBalance], [sortBy.direction === 'desc']);
+
+  return data;
 }

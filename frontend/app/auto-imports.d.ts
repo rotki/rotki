@@ -97,6 +97,7 @@ declare global {
   const applySortingDefaults: typeof import('./src/composables/use-pagination-filter/utils')['applySortingDefaults']
   const arrayify: typeof import('./src/utils/array')['arrayify']
   const assert: typeof import('@rotki/common')['assert']
+  const assetFilterByKeyword: typeof import('./src/utils/assets')['assetFilterByKeyword']
   const assetSum: typeof import('./src/utils/calculation')['assetSum']
   const assetSymbolToIdentifierMap: typeof import('@rotki/common')['assetSymbolToIdentifierMap']
   const asyncComputed: typeof import('@vueuse/core')['asyncComputed']
@@ -350,6 +351,7 @@ declare global {
   const resolveUnref: typeof import('@vueuse/core')['resolveUnref']
   const rgbPointsToHex: typeof import('@rotki/common')['rgbPointsToHex']
   const sanitizeAddress: typeof import('@rotki/common')['sanitizeAddress']
+  const sanitizeKeyword: typeof import('./src/utils/string')['sanitizeKeyword']
   const saveBackendUrl: typeof import('./src/utils/account-management')['saveBackendUrl']
   const saveUserOptions: typeof import('./src/composables/backend')['saveUserOptions']
   const serializer: typeof import('./src/composables/dynamic-messages')['serializer']
@@ -368,6 +370,7 @@ declare global {
   const sortAndFilterAccounts: typeof import('./src/utils/blockchain/accounts/index')['sortAndFilterAccounts']
   const sortAndFilterManualBalance: typeof import('./src/utils/balances/manual/manual-balances')['sortAndFilterManualBalance']
   const sortAndFilterValidators: typeof import('./src/utils/blockchain/accounts/validator')['sortAndFilterValidators']
+  const sortAssetBalances: typeof import('./src/utils/balances')['sortAssetBalances']
   const sortBy: typeof import('./src/utils/blockchain/accounts/common')['sortBy']
   const sortDesc: typeof import('./src/utils/bignumbers')['sortDesc']
   const splitSearch: typeof import('./src/utils/search')['splitSearch']
@@ -978,6 +981,7 @@ declare module 'vue' {
     readonly applySortingDefaults: UnwrapRef<typeof import('./src/composables/use-pagination-filter/utils')['applySortingDefaults']>
     readonly arrayify: UnwrapRef<typeof import('./src/utils/array')['arrayify']>
     readonly assert: UnwrapRef<typeof import('@rotki/common')['assert']>
+    readonly assetFilterByKeyword: UnwrapRef<typeof import('./src/utils/assets')['assetFilterByKeyword']>
     readonly assetSum: UnwrapRef<typeof import('./src/utils/calculation')['assetSum']>
     readonly assetSymbolToIdentifierMap: UnwrapRef<typeof import('@rotki/common')['assetSymbolToIdentifierMap']>
     readonly asyncComputed: UnwrapRef<typeof import('@vueuse/core')['asyncComputed']>
@@ -1247,6 +1251,7 @@ declare module 'vue' {
     readonly sortAndFilterAccounts: UnwrapRef<typeof import('./src/utils/blockchain/accounts/index')['sortAndFilterAccounts']>
     readonly sortAndFilterManualBalance: UnwrapRef<typeof import('./src/utils/balances/manual/manual-balances')['sortAndFilterManualBalance']>
     readonly sortAndFilterValidators: UnwrapRef<typeof import('./src/utils/blockchain/accounts/validator')['sortAndFilterValidators']>
+    readonly sortAssetBalances: UnwrapRef<typeof import('./src/utils/balances')['sortAssetBalances']>
     readonly sortBy: UnwrapRef<typeof import('./src/utils/blockchain/accounts/common')['sortBy']>
     readonly sortDesc: UnwrapRef<typeof import('./src/utils/bignumbers')['sortDesc']>
     readonly splitSearch: UnwrapRef<typeof import('./src/utils/search')['splitSearch']>

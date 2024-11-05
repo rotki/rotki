@@ -3,7 +3,7 @@ import { CURRENCY_USD } from '@/types/currencies';
 import { TableColumn } from '@/types/table-column';
 import { isEvmNativeToken } from '@/types/asset';
 import { DashboardTableType } from '@/types/settings/frontend-settings';
-import type { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
+import type { AssetBalance, AssetBalanceWithPrice, BigNumber, Nullable } from '@rotki/common';
 import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 
 const props = withDefaults(
@@ -28,17 +28,27 @@ const sort = ref<DataTableSortData<AssetBalanceWithPrice>>({
   direction: 'desc' as const,
 });
 
+const pagination = ref({
+  page: 1,
+  itemsPerPage: 10,
+});
+
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { exchangeRate } = useBalancePricesStore();
+const { assetSymbol, assetName, assetInfo } = useAssetInfoRetrieval();
+const { dashboardTablesVisibleColumns } = storeToRefs(useFrontendSettingsStore());
+const statisticsStore = useStatisticsStore();
+const { totalNetWorthUsd } = storeToRefs(statisticsStore);
+
+function assetFilter(item: Nullable<AssetBalance>) {
+  return assetFilterByKeyword(item, get(search), assetName, assetSymbol);
+}
 
 const totalInUsd = computed(() => aggregateTotal(get(balances), CURRENCY_USD, One));
 const total = computed(() => {
   const mainCurrency = get(currencySymbol);
   return get(totalInUsd).multipliedBy(get(exchangeRate(mainCurrency)) ?? One);
 });
-
-const statisticsStore = useStatisticsStore();
-const { totalNetWorthUsd } = storeToRefs(statisticsStore);
 
 function percentageOfTotalNetValue(value: BigNumber) {
   const netWorth = get(totalNetWorthUsd) as BigNumber;
@@ -50,7 +60,32 @@ function percentageOfCurrentGroup(value: BigNumber) {
   return calculatePercentage(value, get(totalInUsd));
 }
 
-const { dashboardTablesVisibleColumns } = storeToRefs(useFrontendSettingsStore());
+function setPage(page: number) {
+  set(pagination, {
+    ...get(pagination),
+    page,
+  });
+}
+
+function setTablePagination(event: TablePaginationData | undefined) {
+  if (!isDefined(event))
+    return;
+
+  const { page, limit } = event;
+  set(pagination, {
+    page,
+    itemsPerPage: limit,
+  });
+}
+
+function getAssets(item: AssetBalanceWithPrice): string[] {
+  return item.breakdown?.map(entry => entry.asset) ?? [];
+}
+
+const sorted = computed<AssetBalanceWithPrice[]>(() => {
+  const filteredBalances = get(balances).filter(assetFilter);
+  return sortAssetBalances(filteredBalances, get(sort), assetInfo);
+});
 
 const tableHeaders = computed<DataTableColumn<AssetBalanceWithPrice>[]>(() => {
   const visibleColumns = get(dashboardTablesVisibleColumns)[get(tableType)];
@@ -119,33 +154,6 @@ const tableHeaders = computed<DataTableColumn<AssetBalanceWithPrice>[]>(() => {
   return headers;
 });
 
-const pagination = ref({
-  page: 1,
-  itemsPerPage: 10,
-});
-
-function setPage(page: number) {
-  set(pagination, {
-    ...get(pagination),
-    page,
-  });
-}
-
-function setTablePagination(event: TablePaginationData | undefined) {
-  if (!isDefined(event))
-    return;
-
-  const { page, limit } = event;
-  set(pagination, {
-    page,
-    itemsPerPage: limit,
-  });
-}
-
-function getAssets(item: AssetBalanceWithPrice): string[] {
-  return item.breakdown?.map(entry => entry.asset) ?? [];
-}
-
 watch(search, () => setPage(1));
 </script>
 
@@ -200,16 +208,15 @@ watch(search, () => setPage(1));
       v-model:sort.external="sort"
       data-cy="dashboard-asset-table__balances"
       :cols="tableHeaders"
-      :rows="balances"
+      :rows="sorted"
       :loading="loading"
       :empty="{ description: t('data_table.no_data') }"
       :expanded="expanded"
       :pagination="{
         page: pagination.page,
         limit: pagination.itemsPerPage,
-        total: balances.length,
+        total: sorted.length,
       }"
-      :search="search"
       row-attr="asset"
       sticky-header
       single-expand

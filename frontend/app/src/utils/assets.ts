@@ -1,4 +1,5 @@
-import type { AssetBalance, AssetInfo } from '@rotki/common';
+import type { AssetBalance, AssetInfo, Nullable } from '@rotki/common';
+import type { AssetNameReturn, AssetSymbolReturn } from '@/composables/assets/retrieval';
 
 function levenshtein(a: string, b: string): number {
   let tmp;
@@ -100,4 +101,19 @@ export function getSortItems<T extends AssetBalance>(getInfo: (identifier: strin
       return (sortByDesc ? bElement.minus(aElement) : aElement.minus(bElement)).toNumber();
     });
   };
+}
+
+export function assetFilterByKeyword(
+  item: Nullable<AssetBalance>,
+  search: string,
+  assetName: AssetNameReturn,
+  assetSymbol: AssetSymbolReturn,
+): boolean {
+  const keyword = getTextToken(search);
+  if (!keyword || !item)
+    return true;
+
+  const name = getTextToken(get(assetName(item.asset)));
+  const symbol = getTextToken(get(assetSymbol(item.asset)));
+  return symbol.includes(keyword) || name.includes(keyword);
 }
