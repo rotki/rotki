@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 from collections.abc import Collection
 from csv import DictWriter
 from pathlib import Path
@@ -76,6 +77,8 @@ def dict_to_csv_file(
                 w.writerow(dic)
         except ValueError as e:
             raise CSVWriteError(f'Failed to write {path} CSV due to {e!s}') from e
+
+    os.utime(path)
 
 
 class CSVExporter(CustomizableDateMixin):

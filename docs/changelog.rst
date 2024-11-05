@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :release:`1.36.0 <2024-11-06>`
+* :bug:`-` The exported file that overrides the file with the same name should have the latest modified time.
 * :feature:`8793` rotki will now correctly decode the Scroll airdrop claim.
 * :feature:`8663` rotki will now create calendar reminders for claiming bridge withdrawals from Layer 2 networks (Base, Optimism, Arbitrum) after the 7-day waiting period.
 * :feature:`8170` rotki now supports Coinbase Prime.
@@ -19,7 +20,7 @@ Changelog
 * :bug:`-` Liquity v1 borrowing should now properly include the fee as part of the borrowing event and present proper order of borrowing coming before the fee payment.
 * :bug:`8807` Binance CSVs with the new trade entry format should import correctly.
 * :bug:`-` Pending AAVE to claim from staking should now appear as balance in the address that is staking.
-* :bug:`-` Locked SAFE token balances for SAFE{Pass} should be properly detected during balance query again. 
+* :bug:`-` Locked SAFE token balances for SAFE{Pass} should be properly detected during balance query again.
 * :bug:`8777` ZKSync lite transactions should no longer be skipped under special circumstances.
 
 * :release:`1.35.1 <2024-10-18>`
