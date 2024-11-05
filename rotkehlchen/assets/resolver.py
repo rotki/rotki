@@ -8,6 +8,7 @@ from rotkehlchen.utils.data_structures import LRUCacheLowerKey
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import (
+        Asset,
         AssetWithNameAndType,
         AssetWithOracles,
         AssetWithSymbol,
@@ -16,6 +17,7 @@ if TYPE_CHECKING:
         FiatAsset,
         Nft,
     )
+    from rotkehlchen.globaldb.handler import GlobalDBHandler
 
 
 logger = logging.getLogger(__name__)
@@ -25,12 +27,18 @@ T = TypeVar('T', 'FiatAsset', 'CryptoAsset', 'EvmToken', 'Nft', 'AssetWithNameAn
 
 class AssetResolver:
     __instance: Optional['AssetResolver'] = None
+    _globaldb: 'GlobalDBHandler'
+    _constant_assets: set['Asset']
     # A cache so that the DB is not hit every time
     # the cache maps identifier -> final representation of the asset
     assets_cache: LRUCacheLowerKey['AssetWithNameAndType'] = LRUCacheLowerKey(maxsize=512)
     types_cache: LRUCacheLowerKey[AssetType] = LRUCacheLowerKey(maxsize=512)
 
-    def __new__(cls) -> 'AssetResolver':
+    def __new__(
+            cls,
+            globaldb: 'GlobalDBHandler | None' = None,
+            constant_assets: set['Asset'] | None = None,
+    ) -> 'AssetResolver':
         """Lazily initializes AssetResolver
 
         It always uses the GlobalDB to resolve assets
@@ -38,7 +46,11 @@ class AssetResolver:
         if AssetResolver.__instance is not None:
             return AssetResolver.__instance
 
+        assert globaldb is not None
+        assert constant_assets is not None
         AssetResolver.__instance = object.__new__(cls)
+        AssetResolver._globaldb = globaldb
+        AssetResolver._constant_assets = constant_assets
         return AssetResolver.__instance
 
     @staticmethod
@@ -68,20 +80,17 @@ class AssetResolver:
         if (cached_data := AssetResolver.assets_cache.get(identifier)) is not None:
             return cached_data
 
-        # TODO: This is ugly here but is here to avoid a cyclic import in the Assets file
-        # Couldn't find a reorg that solves this cyclic import
-        from rotkehlchen.constants.assets import CONSTANT_ASSETS  # pylint: disable=import-outside-toplevel  # isort:skip
-        from rotkehlchen.globaldb.handler import GlobalDBHandler  # pylint: disable=import-outside-toplevel  # isort:skip
-
         # If was not found in the cache try querying it in the globaldb
         try:
-            asset = GlobalDBHandler.resolve_asset(identifier=identifier)
+            asset = AssetResolver._globaldb.resolve_asset(identifier=identifier)
         except UnknownAsset:
-            if identifier not in CONSTANT_ASSETS:
+            if identifier not in AssetResolver._constant_assets:
                 raise
 
             log.debug(f'Attempt to resolve asset {identifier} using the packaged database')
-            asset = GlobalDBHandler().resolve_asset_from_packaged_and_store(identifier=identifier)
+            asset = AssetResolver._globaldb.resolve_asset_from_packaged_and_store(
+                identifier=identifier,
+            )
 
         # Save it in the cache
         AssetResolver.assets_cache.add(identifier, asset)
@@ -92,19 +101,16 @@ class AssetResolver:
         if (cached_data := AssetResolver.types_cache.get(identifier)) is not None:
             return cached_data
 
-        # TODO: This is ugly here but is here to avoid a cyclic import in the Assets file
-        # Couldn't find a reorg that solves this cyclic import
-        from rotkehlchen.constants.assets import CONSTANT_ASSETS  # pylint: disable=import-outside-toplevel  # isort:skip
-        from rotkehlchen.globaldb.handler import GlobalDBHandler  # pylint: disable=import-outside-toplevel  # isort:skip
-
         try:
-            asset_type = GlobalDBHandler.get_asset_type(identifier)
+            asset_type = AssetResolver._globaldb.get_asset_type(identifier)
         except UnknownAsset:
-            if identifier not in CONSTANT_ASSETS or query_packaged_db is False:
+            if identifier not in AssetResolver._constant_assets or query_packaged_db is False:
                 raise
 
             log.debug(f'Attempt to get asset_type for {identifier} using the packaged database')
-            asset = GlobalDBHandler().resolve_asset_from_packaged_and_store(identifier=identifier)
+            asset = AssetResolver._globaldb.resolve_asset_from_packaged_and_store(
+                identifier=identifier,
+            )
             asset_type = asset.asset_type
         AssetResolver.types_cache.add(identifier, asset_type)
         return asset_type
@@ -121,19 +127,17 @@ class AssetResolver:
         if (cached_data := AssetResolver.assets_cache.get(identifier)) is not None:
             return cached_data.identifier
 
-        # TODO: This is ugly here but is here to avoid a cyclic import in the Assets file
-        # Couldn't find a reorg that solves this cyclic import
-        from rotkehlchen.constants.assets import CONSTANT_ASSETS  # pylint: disable=import-outside-toplevel  # isort:skip
-        from rotkehlchen.globaldb.handler import GlobalDBHandler  # pylint: disable=import-outside-toplevel  # isort:skip
-
         try:
-            normalized_id = GlobalDBHandler.asset_id_exists(identifier)
+            normalized_id = AssetResolver._globaldb.asset_id_exists(identifier)
         except UnknownAsset:
-            if identifier not in CONSTANT_ASSETS or query_packaged_db is False:
+            if identifier not in AssetResolver._constant_assets or query_packaged_db is False:
                 raise
 
             log.debug(f'Attempt to find normalized asset ID for {identifier} using the packaged database')  # noqa: E501
-            normalized_id = GlobalDBHandler.asset_id_exists(identifier=identifier, use_packaged_db=True)  # noqa: E501
+            normalized_id = AssetResolver._globaldb.asset_id_exists(
+                identifier=identifier,
+                use_packaged_db=True,
+            )
 
         return normalized_id
 
@@ -154,12 +158,9 @@ class AssetResolver:
             # resolve_asset returns Asset, but we already narrow type with the if check above
             return resolved_asset  # type: ignore
 
-        from rotkehlchen.constants.assets import CONSTANT_ASSETS  # pylint: disable=import-outside-toplevel  # isort:skip
-        from rotkehlchen.globaldb.handler import GlobalDBHandler  # pylint: disable=import-outside-toplevel  # isort:skip
-
-        if identifier in CONSTANT_ASSETS:
+        if identifier in AssetResolver._constant_assets:
             # Check if the version in the packaged globaldb is correct
-            globaldb = GlobalDBHandler()
+            globaldb = AssetResolver._globaldb
             packaged_asset = globaldb.resolve_asset(identifier=identifier, use_packaged_db=True)
             if isinstance(packaged_asset, expected_type):  # it's what was requested. So fix local global db  # noqa: E501
                 resolved_asset = globaldb.resolve_asset_from_packaged_and_store(identifier=identifier)  # noqa: E501

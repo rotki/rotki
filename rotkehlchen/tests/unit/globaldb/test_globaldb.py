@@ -1103,7 +1103,8 @@ def test_edit_token_with_missing_information(database):
     assert peth.decimals == 18
 
 
-def test_packaged_db_check_for_constant_assets(globaldb):
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_packaged_db_check_for_constant_assets(globaldb: 'GlobalDBHandler'):
     """Check that UnknownAsset & WrongAssetType is not raised for an asset in CONSTANT_ASSETS"""
     # delete one entry in `CONSTANT_ASSETS`
     with globaldb.conn.write_ctx() as cursor:

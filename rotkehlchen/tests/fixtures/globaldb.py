@@ -9,7 +9,6 @@ from unittest.mock import patch
 import pytest
 
 from rotkehlchen.assets.asset import EvmToken
-from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
 from rotkehlchen.constants.misc import GLOBALDB_NAME, GLOBALDIR_NAME
 from rotkehlchen.fval import FVal
@@ -115,7 +114,6 @@ def _initialize_fixture_globaldb(
 ) -> tuple[GlobalDBHandler, Path]:
     # clean the previous resolver memory cache, as it
     # may have cached results from a discarded database
-    AssetResolver().clean_memory_cache()
     root_dir = Path(__file__).resolve().parent.parent.parent
     if custom_globaldb is None:  # no specific version -- normal test
         source_db_path = root_dir / 'data' / GLOBALDB_NAME
