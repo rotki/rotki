@@ -2,6 +2,7 @@
 import pytest
 
 from rotkehlchen.assets.resolver import AssetResolver
+from rotkehlchen.constants.assets import CONSTANT_ASSETS
 
 
 @pytest.fixture(name='force_reinitialize_asset_resolver')
@@ -31,7 +32,8 @@ def asset_resolver(
     if force_reinitialize_asset_resolver or use_clean_caching_directory:
         AssetResolver._AssetResolver__instance = None
 
-    resolver = AssetResolver()
+    resolver = AssetResolver(globaldb=globaldb, constant_assets=CONSTANT_ASSETS)
+    AssetResolver.clean_memory_cache()
     # add any custom ethereum tokens given by the fixtures for a test
     if user_ethereum_tokens is not None:
         if generatable_user_ethereum_tokens is False:

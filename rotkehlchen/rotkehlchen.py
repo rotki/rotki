@@ -16,7 +16,7 @@ from rotkehlchen.accounting.accountant import Accountant
 from rotkehlchen.accounting.structures.balance import Balance, BalanceType
 from rotkehlchen.api.websockets.notifier import RotkiNotifier
 from rotkehlchen.api.websockets.typedefs import WSMessageType
-from rotkehlchen.assets.asset import Asset, AssetWithOracles, Nft
+from rotkehlchen.assets.asset import Asset, AssetResolver, AssetWithOracles, Nft
 from rotkehlchen.balances.manual import (
     account_for_manually_tracked_asset_balances,
     get_manually_tracked_balances,
@@ -50,6 +50,7 @@ from rotkehlchen.chain.substrate.utils import (
 from rotkehlchen.chain.zksync_lite.manager import ZksyncLiteManager
 from rotkehlchen.config import default_data_directory
 from rotkehlchen.constants import ONE, ZERO
+from rotkehlchen.constants.assets import CONSTANT_ASSETS
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.data_import.manager import CSVDataImporter
 from rotkehlchen.data_migrations.manager import DataMigrationManager
@@ -170,6 +171,7 @@ class Rotkehlchen:
             sql_vm_instructions_cb=self.args.sqlite_instructions,
             msg_aggregator=self.msg_aggregator,
         )
+        AssetResolver(globaldb=globaldb, constant_assets=CONSTANT_ASSETS)
         if globaldb.used_backup is True:
             self.msg_aggregator.add_warning(
                 'Your global database was left in an half-upgraded state. '
