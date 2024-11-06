@@ -121,7 +121,7 @@ def _query_web3_get_logs(
         try:
             new_events_web3: list[dict[str, Any]] = [dict(x) for x in web3.eth.get_logs(filter_args)]  # noqa: E501
         except (Web3Exception, ValueError, KeyError) as e:
-            if isinstance(e, ValueError):
+            if isinstance(e, ValueError | Web3Exception):
                 try:
                     decoded_error = json.loads(str(e).replace("'", '"'))
                 except json.JSONDecodeError:
@@ -133,14 +133,20 @@ def _query_web3_get_logs(
                 msg = 'query returned more than 10000 results'
 
             # errors from: https://infura.io/docs/ethereum/json-rpc/eth-getLogs
-            if msg in {'query returned more than 10000 results', 'query timeout exceeded'}:
+            if msg == 'query returned more than 10000 results':
+                block_range = initial_block_range = 9999  # ensure that block range doesn't get reset to a range bigger than what is allowed for this node  # noqa: E501
+                continue
+            elif 'eth_getLogs is limited to a 1000 blocks range':  # seen in https://1rpc.io/gnosis  # noqa: E501
+                block_range = initial_block_range = 999
+                continue
+            elif msg == 'query timeout exceeded':
                 block_range //= 2
                 if block_range < 50:
                     raise  # stop retrying if block range gets too small
                 # repeat the query with smaller block range
                 continue
-            # else, well we tried .. reraise the error
-            raise
+            else:  # else, well we tried .. reraise the error
+                raise
 
         # Turn all HexBytes into hex strings
         for e_idx, event in enumerate(new_events_web3):
@@ -534,7 +540,7 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
                     TypeError,  # happened at the web3 level calling `apply_result_formatters` when the RPC node returned `None` in the response's result # noqa: E501
                     ValueError,  # not removing yet due to possibility of raising from missing trie error  # noqa: E501
             ) as e:
-                log.warning(f'Failed to query {node_info} for {method!s} due to {e!s}')
+                log.warning(f'Failed to query {node_info.name} for {method!s} due to {e!s}')
                 # Catch all possible errors here and just try next node call
                 continue
 

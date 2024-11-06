@@ -1,3 +1,4 @@
+import logging
 from collections.abc import Sequence
 from contextlib import suppress
 from dataclasses import dataclass
@@ -6,7 +7,7 @@ from typing import TYPE_CHECKING, Any, Final
 from eth_typing.abi import ABI
 
 from rotkehlchen.accounting.accountant import RemoteError
-from rotkehlchen.assets.asset import DeserializationError
+from rotkehlchen.assets.asset import DeserializationError, RotkehlchenLogsAdapter
 from rotkehlchen.chain.evm.transactions import EvmTransactions
 from rotkehlchen.errors.misc import AlreadyExists
 from rotkehlchen.types import ChecksumEvmAddress, Timestamp, deserialize_evm_tx_hash
@@ -24,6 +25,9 @@ ADDED_RECEIVER_ABI: Final[ABI] = [{'anonymous': False, 'inputs': [{'indexed': Fa
 DEPLOYED_BLOCK: Final = 9053325
 DEPLOYED_TS: Final = 1539027985
 NO_BLOCK_PROCESSED_VALUE = -1
+
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 
 @dataclass
@@ -134,3 +138,5 @@ class GnosisTransactions(EvmTransactions):
                             start_ts=from_ts,
                             end_ts=last_queried_ts,
                         )
+            else:
+                log.debug(f'Gnosis bridge logs not queried. Not saving any query range for {address} in range {from_ts} to {to_ts}')  # noqa: E501
