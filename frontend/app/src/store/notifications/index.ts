@@ -61,8 +61,18 @@ export const useNotificationsStore = defineStore('notifications', () => {
   }
 
   const notify = (newData: SemiPartial<NotificationPayload, 'title' | 'message'>): void => {
-    const groupToFind = newData.group;
     const dataList = [...get(data)];
+
+    if (newData.priority === Priority.BULK) {
+      const messages = dataList.filter(notification => notification.priority === Priority.BULK)
+        .map(notification => notification.message);
+
+      if (messages.includes(newData.message)) {
+        return;
+      }
+    }
+
+    const groupToFind = newData.group;
 
     const notificationIndex = groupToFind ? dataList.findIndex(({ group }) => group === groupToFind) : -1;
 
