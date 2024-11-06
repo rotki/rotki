@@ -1,4 +1,5 @@
 import datetime
+import math
 import os
 from http import HTTPStatus
 from typing import TYPE_CHECKING
@@ -8,18 +9,22 @@ from unittest.mock import MagicMock, patch
 import pytest
 import requests
 from freezegun import freeze_time
+from web3 import HTTPProvider, Web3
 
 from rotkehlchen.assets.asset import Asset, CustomAsset, EvmToken, FiatAsset, UnderlyingToken
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
+from rotkehlchen.chain.evm.contracts import find_matching_event_abi
 from rotkehlchen.chain.evm.decoding.curve.constants import CURVE_CHAIN_ID
 from rotkehlchen.chain.evm.decoding.curve.curve_cache import (
     CurvePoolData,
     _query_curve_data_from_api,
     query_curve_data,
 )
+from rotkehlchen.chain.evm.node_inquirer import _query_web3_get_logs, construct_event_filter_params
 from rotkehlchen.chain.evm.types import NodeName, string_to_evm_address
+from rotkehlchen.chain.gnosis.transactions import ADDED_RECEIVER_ABI, BLOCKREWARDS_ADDRESS
 from rotkehlchen.chain.polygon_pos.constants import POLYGON_POS_POL_HARDFORK
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import (
@@ -943,3 +948,51 @@ def test_fiat_to_fiat(inquirer):
             base=A_USD.resolve_to_fiat_asset(),
             quote=A_EUR.resolve_to_fiat_asset(),
         )
+
+
+@pytest.mark.vcr
+def test_errors_web3_logs():
+    """
+    1rpc.io/gnosis has a limit of 1000 logs per query. This test
+    ensure that the amount of queries made to the node is the minimum
+    possible and that the limits are respected. Also tests that errors
+    from `Web3Exception` are processed correctly in the logs logic.
+
+    We had an issue where the error was not handled properly and block_range
+    was getting reset after every succesful query.
+    """
+    provider = HTTPProvider(
+        endpoint_uri='https://1rpc.io/gnosis',
+        request_kwargs={'timeout': 10},
+    )
+    web3 = Web3(provider=provider)
+    address = '0xc37b40ABdB939635068d3c5f13E7faF686F03B65'
+    count = 0
+    make_request = web3.HTTPProvider.make_request
+    start_block, end_block = 50000, 60000
+
+    def wrapper(*args, **kwargs):
+        nonlocal count
+        count += 1
+        return make_request(*args, **kwargs)
+
+    _, filter_args = construct_event_filter_params(
+        event_abi=find_matching_event_abi(abi=ADDED_RECEIVER_ABI, event_name='AddedReceiver'),
+        abi_codec=Web3().codec,
+        contract_address=BLOCKREWARDS_ADDRESS,
+        argument_filters={'receiver': address},
+        from_block=start_block,
+        to_block=end_block,
+    )
+    with patch.object(web3.HTTPProvider, 'make_request', new=wrapper):
+        _query_web3_get_logs(
+            web3=web3,
+            filter_args=filter_args,
+            from_block=start_block,
+            to_block=end_block,
+            contract_address=BLOCKREWARDS_ADDRESS,
+            event_name='AddedReceiver',
+            argument_filters={'receiver': address},
+            initial_block_range=20000,
+        )
+        assert count == math.ceil((end_block - start_block) / 999) + 1  # + 1 is the failed request
