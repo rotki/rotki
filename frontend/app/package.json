@@ -91,7 +91,7 @@
     "dmg-license": "1.0.11",
     "dotenv": "16.4.5",
     "dotenv-cli": "7.4.2",
-    "electron": "33.0.2",
+    "electron": "33.1.0",
     "electron-builder": "25.1.8",
     "electron-store": "8.2.0",
     "flush-promises": "1.0.2",
