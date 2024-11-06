@@ -1,5 +1,6 @@
 import logging
 from dataclasses import dataclass
+from http import HTTPStatus
 from json import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Literal
 
@@ -109,7 +110,12 @@ class GnosisPay:
         except requests.exceptions.RequestException as e:
             raise RemoteError(f'Querying {querystr} failed due to {e!s}') from e
 
-        if response.status_code != 200:
+        if response.status_code != HTTPStatus.OK:
+            if response.status_code == HTTPStatus.UNAUTHORIZED:
+                self.database.msg_aggregator.add_warning(
+                    msg='Gnosis Pay authentication token is invalid or has expired. Either remove it or get a new one.',  # noqa: E501
+                )
+
             raise RemoteError(
                 f'Gnosis Pay API request {response.url} failed '
                 f'with HTTP status code {response.status_code} and text '
