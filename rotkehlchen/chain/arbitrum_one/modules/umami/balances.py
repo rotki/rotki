@@ -3,6 +3,7 @@ from collections import defaultdict
 from typing import TYPE_CHECKING
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
+from rotkehlchen.assets.utils import get_token
 from rotkehlchen.chain.arbitrum_one.modules.umami.constants import (
     CPT_UMAMI,
     UMAMI_ASSET_VAULT_ABI,
@@ -158,10 +159,9 @@ class UmamiBalances(ProtocolWithBalance):
                     if balance == 0:
                         continue
 
-                    gm_vault_token_address = gm_vault_addresses[idx]
-                    if (gm_vault_token := GlobalDBHandler().get_evm_token(
-                        address=gm_vault_token_address,
-                        chain_id=self.evm_inquirer.chain_id,
+                    if (gm_vault_token := get_token(
+                            evm_address=(gm_vault_token_address := gm_vault_addresses[idx]),
+                            chain_id=self.evm_inquirer.chain_id,
                     )) is None:
                         log.error(f'Missing vault {gm_vault_token_address} from DB, cannot process vault balance. Skipping')  # noqa: E501
                         continue
