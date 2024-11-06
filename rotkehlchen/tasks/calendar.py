@@ -463,7 +463,7 @@ class CalendarReminderCreator(CustomizableDateMixin):
                         event=bridge_event,
                         color=BRIDGE_CALENDAR_COLOR,
                         counterparty=bridge_event.counterparty,  # type: ignore[arg-type]  # counterparty is always present
-                        timestamp=ts_ms_to_sec(TimestampMS(bridge_event.timestamp + WEEK_IN_SECONDS)),  # noqa: E501
+                        timestamp=ts_ms_to_sec(TimestampMS(bridge_event.timestamp + WEEK_IN_SECONDS * 1000)),  # noqa: E501
                         description=f'Bridge deposit of {bridge_event.balance.amount} {asset_symbol} is ready to claim on Ethereum',  # noqa: E501
                 )) is not None:
                     bridge_calendar_entries.append(entry_id)
