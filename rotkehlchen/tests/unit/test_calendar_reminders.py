@@ -309,7 +309,7 @@ def test_l2_bridge_claim_reminders(arbitrum_one_accounts, arbitrum_one_inquirer,
             assert calendar_entry == CalendarEntry(
                 identifier=idx + 1,
                 name=f'Claim {bridge_event.balance.amount} {asset_symbol} bridge deposit on Ethereum',  # noqa: E501
-                timestamp=ts_ms_to_sec(TimestampMS(bridge_event.timestamp + WEEK_IN_SECONDS)),
+                timestamp=ts_ms_to_sec(TimestampMS(bridge_event.timestamp + WEEK_IN_SECONDS * 1000)),  # noqa: E501
                 description=f'Bridge deposit of {bridge_event.balance.amount} {asset_symbol} is ready to claim on Ethereum',  # noqa: E501
                 counterparty=bridge_event.counterparty,
                 auto_delete=True,
