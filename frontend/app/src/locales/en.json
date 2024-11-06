@@ -1085,6 +1085,12 @@
     "unknown_info": "Airdrops are available for these addresses, but we can't yet analyze if it has been claimed or not.",
     "unknown_tooltip": "Address is eligible for this airdrop, but we can't yet analyze if it has been claimed or not."
   },
+  "alias_names": {
+    "error": {
+      "message": "Failed to retrieve the alias names: {message}",
+      "title": "Querying alias names"
+    }
+  },
   "amount_display": {
     "abbreviation": {
       "k": "thousands",
