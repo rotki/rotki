@@ -392,6 +392,9 @@ class CalendarReminderCreator(CustomizableDateMixin):
                     continue  # Skip airdrops on zksync era
 
                 blockchain = asset.chain_id.to_blockchain()
+                if address not in self.blockchain_accounts.get(blockchain):
+                    continue  # skip if address hasn't been added to this chain in rotki
+
                 if (
                     airdrop_info.get('claimed', False) is True or
                     cutoff_time <= ts_now()

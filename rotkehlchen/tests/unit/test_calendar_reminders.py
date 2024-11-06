@@ -1,3 +1,4 @@
+from collections.abc import Callable
 from typing import TYPE_CHECKING
 from unittest.mock import patch
 
@@ -76,6 +77,21 @@ MOCK_MYSO_ZK_AIRDROP_INDEX = {
     },
     'poap_airdrops': {},
 }
+
+
+def get_airdrop_request_mock(user_address: 'ChecksumEvmAddress') -> Callable:
+    """Get airdrop request mocking function for the specified address."""
+    def mock_requests_get(url: str, timeout: int = 0, headers: dict | None = None):  # pylint: disable=unused-argument
+        """Mock airdrop data retrival to avoid huge VCRs"""
+        return prepare_airdrop_mock_response(
+            url=url,
+            mock_airdrop_index=MOCK_MYSO_ZK_AIRDROP_INDEX,
+            mock_airdrop_data={
+                f'{AIRDROPS_REPO_BASE}/airdrops/myso.parquet': f'address,tokens\n{user_address},100.0\n',  # noqa: E501
+            },
+        )
+
+    return mock_requests_get
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -225,17 +241,7 @@ def test_airdrop_claim_calendar_reminders(
 
     reminder_creator = CalendarReminderCreator(database=database, current_ts=ts_now())
 
-    def mock_requests_get(url: str, timeout: int = 0, headers: dict | None = None):  # pylint: disable=unused-argument
-        """Mock airdrop data retrival to avoid huge VCRs"""
-        return prepare_airdrop_mock_response(
-            url=url,
-            mock_airdrop_index=MOCK_MYSO_ZK_AIRDROP_INDEX,
-            mock_airdrop_data={
-                f'{AIRDROPS_REPO_BASE}/airdrops/myso.parquet': f'address,tokens\n{user_address},100.0\n',  # noqa: E501
-            },
-        )
-
-    with patch('rotkehlchen.chain.ethereum.airdrops.requests.get', side_effect=mock_requests_get):
+    with patch('rotkehlchen.chain.ethereum.airdrops.requests.get', side_effect=get_airdrop_request_mock(user_address)):  # noqa: E501
         reminder_creator.maybe_create_airdrop_claim_reminder()
 
     new_calendar_entries = calendar_db.query_calendar_entry(CalendarFilterQuery.make())
@@ -263,6 +269,28 @@ def test_airdrop_claim_calendar_reminders(
     assert reminders[0].event_id == reminders[1].event_id == calendar_entry.identifier
     assert reminders[0].secs_before == DAY_IN_SECONDS
     assert reminders[1].secs_before == WEEK_IN_SECONDS
+
+
+@pytest.mark.freeze_time('2024-01-01 00:00:00 GMT')
+@pytest.mark.parametrize('arbitrum_one_accounts', [[
+    '0x510B0068C0756bBEFCBaffB6567e467d661291FE',
+]])
+def test_airdrop_claim_calendar_reminders_wrong_chain(
+        database: 'DBHandler',
+        arbitrum_one_accounts: list['ChecksumEvmAddress'],
+) -> None:
+    """Test that no calendar entries are created if the airdrop is for a chain
+    that the given address is not configured to track.
+    """
+    calendar_db = DBCalendar(database)
+    user_address = arbitrum_one_accounts[0]
+    reminder_creator = CalendarReminderCreator(database=database, current_ts=ts_now())
+
+    with patch('rotkehlchen.chain.ethereum.airdrops.requests.get', side_effect=get_airdrop_request_mock(user_address)):  # noqa: E501
+        reminder_creator.maybe_create_airdrop_claim_reminder()
+
+    new_calendar_entries = calendar_db.query_calendar_entry(CalendarFilterQuery.make())
+    assert new_calendar_entries['entries_found'] == 0
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
