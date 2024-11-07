@@ -24,7 +24,7 @@ def test_query_db_info(
         data_dir: Path,
         username: str,
         start_with_logged_in_user: bool,
-):
+) -> None:
     """Test that retrieving user and global database details works fine"""
     users_dir = data_dir / USERSDIR_NAME
     if start_with_logged_in_user:
@@ -60,7 +60,7 @@ def test_create_download_delete_backup(
         rotkehlchen_api_server: APIServer,
         data_dir: Path,
         username: str,
-):
+) -> None:
     """Test that creating, downloading and deleting a backup works fine"""
     start_ts = ts_now()
     response = requests.put(api_url_for(rotkehlchen_api_server, 'databasebackupsresource'))
@@ -108,7 +108,7 @@ def test_delete_download_backup_errors(
         rotkehlchen_api_server: APIServer,
         data_dir: Path,
         username: str,
-):
+) -> None:
     """Test that errors are handled properly in backup deletion and download"""
     user_data_dir = Path(data_dir, username)
     # Make sure deleting file outside  of user data dir fails

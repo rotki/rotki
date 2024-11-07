@@ -1,5 +1,6 @@
 import random
 import warnings as test_warnings
+from collections.abc import Sequence
 from contextlib import ExitStack
 from http import HTTPStatus
 from unittest.mock import patch
@@ -125,7 +126,9 @@ def test_query_compound_v3_balances(
             for token, addresses in unique_borrows.items()
         }, underlying_tokens
 
-    def mock_query_tokens(addresses):
+    def mock_query_tokens(
+            addresses: Sequence[ChecksumEvmAddress],
+    ) -> tuple[dict[ChecksumEvmAddress, dict[EvmToken, FVal]], dict[EvmToken, Price]]:
         return ({
             ethereum_accounts[0]: {c_usdc_v3: FVal('333349.851793')},
             ethereum_accounts[1]: {c_usdc_v3: FVal('0.32795')},
