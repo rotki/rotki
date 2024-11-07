@@ -410,7 +410,7 @@ onBeforeMount(async () => {
       variant="flat"
       no-padding
       rounded="sm"
-      class="[&>div:last-child]:overflow-hidden"
+      content-class="overflow-hidden"
     >
       <RuiAutoComplete
         ref="input"

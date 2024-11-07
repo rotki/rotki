@@ -13,12 +13,13 @@ const content = refOptional(useRefPropVModel(modelValue, 'content'), '');
 const { setValidation } = useUserNotesForm();
 
 const rules = {
+  title: {},
   content: {
     required: helpers.withMessage(t('notes_menu.rules.content.non_empty'), required),
   },
 };
 
-const v$ = setValidation(rules, { content }, { $autoDirty: true });
+const v$ = setValidation(rules, { title, content }, { $autoDirty: true });
 </script>
 
 <template>

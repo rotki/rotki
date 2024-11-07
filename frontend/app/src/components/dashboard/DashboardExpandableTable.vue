@@ -5,7 +5,7 @@ const panel = computed<number>(() => (get(expanded) ? 0 : -1));
 </script>
 
 <template>
-  <RuiCard :class="{ '[&>div:last-child]:!py-0': !expanded }">
+  <RuiCard :content-class="!expanded ? '!py-0' : ''">
     <template #custom-header>
       <div class="flex justify-between items-center flex-wrap p-4 gap-2">
         <CardTitle>

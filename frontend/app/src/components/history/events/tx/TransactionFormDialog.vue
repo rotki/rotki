@@ -8,7 +8,7 @@ withDefaults(
   },
 );
 
-const { openDialog, submitting, closeDialog, trySubmit } = useHistoryTransactionsForm();
+const { openDialog, submitting, closeDialog, trySubmit, stateUpdated } = useHistoryTransactionsForm();
 
 const { t } = useI18n();
 </script>
@@ -20,6 +20,7 @@ const { t } = useI18n();
     :primary-action="t('common.actions.save')"
     :action-disabled="loading"
     :loading="submitting"
+    :prompt-on-close="stateUpdated"
     @confirm="trySubmit()"
     @cancel="closeDialog()"
   >

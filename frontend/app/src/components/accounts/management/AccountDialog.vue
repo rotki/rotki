@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { isEqual } from 'lodash-es';
 import type AccountForm from '@/components/accounts/management/AccountForm.vue';
 import type { AccountManageState } from '@/composables/accounts/blockchain/use-account-manage';
 
@@ -11,6 +12,7 @@ const emit = defineEmits<{
 const { t } = useI18n();
 
 const form = ref<InstanceType<typeof AccountForm>>();
+const stateUpdated = ref(false);
 
 const title = computed<string>(() =>
   get(model)?.mode === 'edit'
@@ -46,6 +48,16 @@ async function confirm() {
     dismiss();
   }
 }
+watch(model, (model, oldModel) => {
+  if (!model || !oldModel) {
+    set(stateUpdated, false);
+    return;
+  }
+
+  if (model.chain === oldModel.chain && !isEqual(model.data, oldModel.data)) {
+    set(stateUpdated, true);
+  }
+}, { deep: true });
 </script>
 
 <template>
@@ -56,6 +68,7 @@ async function confirm() {
     :primary-action="t('common.actions.save')"
     :secondary-action="t('common.actions.cancel')"
     :loading="loading || pending"
+    :prompt-on-close="stateUpdated"
     @confirm="confirm()"
     @cancel="dismiss()"
   >

@@ -18,7 +18,7 @@ const { t } = useI18n();
 
 type IndexedLocationDataSnapshot = LocationDataSnapshot & { index: number };
 
-const { openDialog, setOpenDialog, closeDialog, submitting, setSubmitFunc, trySubmit } = useEditLocationsSnapshotForm();
+const { openDialog, setOpenDialog, closeDialog, submitting, setSubmitFunc, trySubmit, stateUpdated } = useEditLocationsSnapshotForm();
 
 const { timestamp } = toRefs(props);
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
@@ -275,6 +275,7 @@ function showDeleteConfirmation(item: IndexedLocationDataSnapshot) {
       "
       :primary-action="t('common.actions.save')"
       :loading="submitting"
+      :prompt-on-close="stateUpdated"
       @confirm="trySubmit()"
       @cancel="clearEditDialog()"
     >

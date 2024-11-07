@@ -16,6 +16,7 @@ const props = withDefaults(
     persistent?: boolean;
     divide?: boolean;
     autoHeight?: boolean;
+    promptOnClose?: boolean;
   }>(),
   {
     subtitle: '',
@@ -27,6 +28,7 @@ const props = withDefaults(
     persistent: false,
     divide: false,
     autoHeight: false,
+    promptOnClose: false,
   },
 );
 const emit = defineEmits<{
@@ -36,7 +38,7 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 
-const { subtitle, primaryAction, secondaryAction, display } = toRefs(props);
+const { subtitle, primaryAction, secondaryAction, display, promptOnClose } = toRefs(props);
 const wrapper = ref<HTMLElement>();
 
 const primary = computed(() => get(primaryAction) || t('common.actions.confirm'));
@@ -54,16 +56,37 @@ const displayModel = computed({
       cancel();
   },
 });
+
+const { show } = useConfirmStore();
+
+function promptClose() {
+  if (!get(promptOnClose))
+    return;
+
+  show(
+    {
+      title: 'You have unsave changes',
+      message: 'Are you sure you want to discard the changes?',
+      type: 'info',
+      primaryAction: 'Discard',
+    },
+    async () => {
+      set(displayModel, false);
+    },
+  );
+}
 </script>
 
 <template>
   <RuiBottomSheet
     v-model="displayModel"
     v-bind="$attrs"
-    :persistent="persistent"
+    :persistent="persistent || promptOnClose"
     class="big-dialog"
     width="98%"
     :max-width="maxWidth"
+    @click:esc="promptClose()"
+    @click:outside="promptClose()"
   >
     <RuiCard
       :divide="divide"

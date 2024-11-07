@@ -28,7 +28,7 @@ watchImmediate(value, (value) => {
     set(form, { ...emptyPrice(), ...value });
 });
 
-const { openDialog, submitting, closeDialog, setSubmitFunc, trySubmit } = useLatestPriceForm();
+const { openDialog, submitting, closeDialog, setSubmitFunc, trySubmit, stateUpdated } = useLatestPriceForm();
 
 const { t } = useI18n();
 
@@ -44,6 +44,7 @@ onMounted(() => {
     :display="openDialog"
     :title="editMode ? t('price_management.dialog.edit_title') : t('price_management.dialog.add_title')"
     :loading="submitting"
+    :prompt-on-close="stateUpdated"
     @confirm="trySubmit()"
     @cancel="closeDialog()"
   >

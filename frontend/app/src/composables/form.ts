@@ -1,6 +1,6 @@
 import useVuelidate, { type GlobalConfig, type Validation, type ValidationArgs } from '@vuelidate/core';
 import type { MaybeRef } from '@vueuse/core';
-import type { Ref } from 'vue';
+import type { ModelRef, Ref } from 'vue';
 
 export interface UseFormReturn<T = void> {
   submitting: Ref<boolean>;
@@ -13,6 +13,7 @@ export interface UseFormReturn<T = void> {
   setPostSubmitFunc: (func: (result: T) => void) => void;
   setValidation: (validationsArgs: ValidationArgs, states: Record<string, MaybeRef<any>>, config?: GlobalConfig) => Ref<Validation>;
   trySubmit: () => Promise<T | void>;
+  stateUpdated: Ref<boolean>;
 }
 
 /**
@@ -23,6 +24,7 @@ export interface UseFormReturn<T = void> {
 export function useForm<T = void>(): UseFormReturn<T> {
   const openDialog = ref<boolean>(false);
   const valid = ref<boolean>(true);
+  const stateUpdated = ref<boolean>(false);
   let v$: Ref<Validation> | undefined;
   const submitFunc = ref<() => Promise<T> | void>(() => {});
   const postSubmitFunc = ref<(result: T | void) => void>(() => {});
@@ -39,6 +41,16 @@ export function useForm<T = void>(): UseFormReturn<T> {
       if ($dirty)
         set(valid, !$invalid);
     });
+
+    setTimeout(() => {
+      watch(
+        () => states,
+        () => {
+          set(stateUpdated, true);
+        },
+        { deep: true, once: true },
+      );
+    }, 500);
 
     return v$;
   };
@@ -58,6 +70,7 @@ export function useForm<T = void>(): UseFormReturn<T> {
   const closeDialog = (): void => {
     setOpenDialog(false);
     set(valid, true);
+    set(stateUpdated, false);
   };
 
   const trySubmit = async (): Promise<T | void> => {
@@ -83,6 +96,7 @@ export function useForm<T = void>(): UseFormReturn<T> {
     submitting,
     openDialog,
     valid,
+    stateUpdated,
     v$,
     setOpenDialog,
     closeDialog,
@@ -91,4 +105,23 @@ export function useForm<T = void>(): UseFormReturn<T> {
     setValidation,
     trySubmit,
   };
+}
+
+export function useFormStateWatcher(
+  states: Record<string, MaybeRef<any>>,
+  stateUpdated: ModelRef<boolean>,
+): void {
+  setTimeout(() => {
+    watch(
+      () => states,
+      () => {
+        set(stateUpdated, true);
+      },
+      { deep: true, once: true },
+    );
+  }, 500);
+
+  onUnmounted(() => {
+    set(stateUpdated, false);
+  });
 }

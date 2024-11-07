@@ -14,7 +14,7 @@ const savedRememberPassword = useLocalStorage(KEY_REMEMBER_PASSWORD, null);
 const { show } = useConfirmStore();
 
 function showConfirmation() {
-  return show(
+  show(
     {
       title: t('user_dropdown.confirmation.title'),
       message: t('user_dropdown.confirmation.message'),

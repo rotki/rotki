@@ -53,28 +53,28 @@ const tableHeaders = computed<DataTableColumn<AccountingRuleConflict>[]>(() => [
   {
     label: t('accounting_settings.rule.labels.taxable'),
     key: 'taxable',
-    class: 'px-2 max-w-[7.5rem] whitespace-normal font-medium !text-sm',
-    cellClass: 'px-0 py-2',
+    class: 'p-0 max-w-[7.5rem] whitespace-normal font-medium !text-sm',
+    cellClass: '!p-0',
   },
   {
     label: t('accounting_settings.rule.labels.count_entire_amount_spend'),
     key: 'countEntireAmountSpend',
-    class: 'px-2 max-w-[7.5rem] whitespace-normal font-medium !text-sm',
+    class: 'p-0 max-w-[7.5rem] whitespace-normal font-medium !text-sm',
     align: 'center',
-    cellClass: 'px-0 py-2',
+    cellClass: '!p-0',
   },
   {
     label: t('accounting_settings.rule.labels.count_cost_basis_pnl'),
     key: 'countCostBasisPnl',
-    class: 'px-2 max-w-[7.5rem] whitespace-normal font-medium !text-sm',
+    class: 'p-0 max-w-[7.5rem] whitespace-normal font-medium !text-sm',
     align: 'center',
-    cellClass: 'px-0 py-2',
+    cellClass: '!p-0',
   },
   {
     label: t('accounting_settings.rule.labels.accounting_treatment'),
     key: 'accountingTreatment',
-    class: 'max-w-[7.5rem] whitespace-normal font-medium !text-sm',
-    cellClass: 'px-0 py-2',
+    class: 'p-0 max-w-[7.5rem] whitespace-normal font-medium !text-sm',
+    cellClass: '!p-0',
     align: 'center',
   },
   {
@@ -113,7 +113,7 @@ function diffClass(
   remoteSetting: boolean | string | AccountingTreatment | null,
 ) {
   if (localSetting !== remoteSetting)
-    return 'bg-rui-error-lighter/[0.2]';
+    return 'bg-rui-error-lighter/[0.1]';
 
   return '';
 }
@@ -337,55 +337,60 @@ async function save() {
               <span v-else>-</span>
             </template>
             <template #item.taxable="{ row }">
-              <div class="w-full flex flex-col items-center justify-center">
+              <div
+                class="w-full flex flex-col items-center justify-center p-4"
+                :class="diffClass(row.localData.taxable.value, row.remoteData.taxable.value)"
+              >
                 <AccountingRuleWithLinkedSettingDisplay
-                  :class="diffClass(row.localData.taxable.value, row.remoteData.taxable.value)"
                   :item="row.localData.taxable"
                   identifier="taxable"
                 />
                 <RuiDivider class="w-full my-2" />
                 <AccountingRuleWithLinkedSettingDisplay
-                  :class="diffClass(row.localData.taxable.value, row.remoteData.taxable.value)"
                   :item="row.remoteData.taxable"
                   identifier="taxable"
                 />
               </div>
             </template>
             <template #item.countEntireAmountSpend="{ row }">
-              <div class="w-full flex flex-col items-center justify-center">
+              <div
+                class="w-full flex flex-col items-center justify-center p-4"
+                :class="diffClass(row.localData.taxable.value, row.remoteData.taxable.value)"
+              >
                 <AccountingRuleWithLinkedSettingDisplay
-                  :class="diffClass(row.localData.taxable.value, row.remoteData.taxable.value)"
                   :item="row.localData.countEntireAmountSpend"
                   identifier="countEntireAmountSpend"
                 />
                 <RuiDivider class="w-full my-2" />
                 <AccountingRuleWithLinkedSettingDisplay
-                  :class="diffClass(row.localData.taxable.value, row.remoteData.taxable.value)"
                   :item="row.remoteData.countEntireAmountSpend"
                   identifier="countEntireAmountSpend"
                 />
               </div>
             </template>
             <template #item.countCostBasisPnl="{ row }">
-              <div class="w-full flex flex-col items-center justify-center">
+              <div
+                class="w-full flex flex-col items-center justify-center p-4"
+                :class="diffClass(row.localData.countCostBasisPnl.value, row.remoteData.countCostBasisPnl.value)"
+              >
                 <AccountingRuleWithLinkedSettingDisplay
-                  :class="diffClass(row.localData.countCostBasisPnl.value, row.remoteData.countCostBasisPnl.value)"
                   :item="row.localData.countCostBasisPnl"
                   identifier="countCostBasisPnl"
                 />
                 <RuiDivider class="w-full my-2" />
                 <AccountingRuleWithLinkedSettingDisplay
-                  :class="diffClass(row.localData.countCostBasisPnl.value, row.remoteData.countCostBasisPnl.value)"
                   :item="row.remoteData.countCostBasisPnl"
                   identifier="countCostBasisPnl"
                 />
               </div>
             </template>
             <template #item.accountingTreatment="{ row }">
-              <div class="w-full flex flex-col items-center justify-center">
+              <div
+                class="w-full flex flex-col items-center justify-center p-4"
+                :class="diffClass(row.localData.accountingTreatment, row.remoteData.accountingTreatment)"
+              >
                 <BadgeDisplay
                   v-if="row.localData.accountingTreatment"
-                  :class="diffClass(row.localData.accountingTreatment, row.remoteData.accountingTreatment)"
                 >
                   {{ row.localData.accountingTreatment }}
                 </BadgeDisplay>
@@ -393,7 +398,6 @@ async function save() {
                 <RuiDivider class="w-full my-2" />
                 <BadgeDisplay
                   v-if="row.remoteData.accountingTreatment"
-                  :class="diffClass(row.localData.accountingTreatment, row.remoteData.accountingTreatment)"
                 >
                   {{ row.remoteData.accountingTreatment }}
                 </BadgeDisplay>

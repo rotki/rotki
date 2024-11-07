@@ -18,7 +18,8 @@ withDefaults(
 <template>
   <RuiCard
     no-padding
-    class="overflow-hidden [&>div:last-child]:h-full"
+    class="overflow-hidden"
+    content-class="h-full"
   >
     <div class="flex p-0 h-full min-h-[130px]">
       <div

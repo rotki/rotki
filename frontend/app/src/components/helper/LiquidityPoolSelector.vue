@@ -34,7 +34,7 @@ const { t } = useI18n();
     variant="flat"
     :no-padding="noPadding"
     rounded="sm"
-    class="[&>div:last-child]:overflow-visible"
+    content-class="overflow-visible"
   >
     <RuiAutoComplete
       v-model="model"

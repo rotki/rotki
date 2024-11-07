@@ -44,6 +44,7 @@ const secondaryText = computed<string>(() => get(secondaryAction) || t('common.a
     z-index="10000"
     :max-width="maxWidth"
     @keydown.esc.stop="emit('cancel')"
+    @keydown.enter.stop="emit('confirm')"
   >
     <RuiCard data-cy="confirm-dialog">
       <template #header>
