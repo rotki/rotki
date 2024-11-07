@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_icons_and_avatars_cache_deletion(rotkehlchen_api_server):
+def test_icons_and_avatars_cache_deletion(rotkehlchen_api_server: 'APIServer') -> None:
     """Checks that clearing the cache for avatars and icons work as expected."""
     icons_dir = rotkehlchen_api_server.rest_api.rotkehlchen.icon_manager.icons_dir
     data_dir = rotkehlchen_api_server.rest_api.rotkehlchen.data_dir
@@ -114,7 +114,7 @@ def test_icons_and_avatars_cache_deletion(rotkehlchen_api_server):
 
 
 @pytest.mark.vcr
-def test_general_cache_refresh(rotkehlchen_api_server: 'APIServer'):
+def test_general_cache_refresh(rotkehlchen_api_server: 'APIServer') -> None:
     """Tests that refreshing the general cache works as expected"""
     with ExitStack() as stack:
         stack.enter_context(patch(

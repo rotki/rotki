@@ -82,6 +82,15 @@ module = [
     "rotkehlchen.tests.api.test_balancer",
     "rotkehlchen.tests.api.test_balances",
     "rotkehlchen.tests.api.test_bitcoin",
+    "rotkehlchen.tests.api.test_caching",
+    "rotkehlchen.tests.api.test_calendar",
+    "rotkehlchen.tests.api.test_compound",
+    "rotkehlchen.tests.api.test_current_assets_price",
+    "rotkehlchen.tests.api.test_custom_assets",
+    "rotkehlchen.tests.api.test_data_import",
+    "rotkehlchen.tests.api.test_data_purging",
+    "rotkehlchen.tests.api.test_database",
+    "rotkehlchen.tests.api.test_defi",
 ]
 check_untyped_defs = true
 disallow_untyped_defs = true

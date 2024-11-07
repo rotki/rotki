@@ -7,6 +7,7 @@ import requests
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.utils import get_or_create_evm_token
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR, A_USD
 from rotkehlchen.fval import FVal
@@ -31,7 +32,7 @@ if TYPE_CHECKING:
     ('BTC', 'USD'): (FVal('33183.98'), CurrentPriceOracle.BLOCKCHAIN),
     ('GBP', 'USD'): (FVal('1.367'), CurrentPriceOracle.FIAT),
 }])
-def test_get_current_assets_price_in_usd(rotkehlchen_api_server):
+def test_get_current_assets_price_in_usd(rotkehlchen_api_server: 'APIServer') -> None:
     async_query = random.choice([False, True])
     response = requests.post(
         api_url_for(
@@ -62,7 +63,7 @@ def test_get_current_assets_price_in_usd(rotkehlchen_api_server):
     ('USD', 'BTC'): (FVal('0.00003013502298398202988309419184'), CurrentPriceOracle.COINGECKO),
     ('GBP', 'BTC'): (FVal('0.00004119457641910343485018976024'), CurrentPriceOracle.COINGECKO),
 }])
-def test_get_current_assets_price_in_btc(rotkehlchen_api_server):
+def test_get_current_assets_price_in_btc(rotkehlchen_api_server: 'APIServer') -> None:
 
     async_query = random.choice([False, True])
     response = requests.post(
@@ -91,12 +92,12 @@ def test_get_current_assets_price_in_btc(rotkehlchen_api_server):
 
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_add_manual_latest_price(rotkehlchen_api_server):
+def test_add_manual_latest_price(rotkehlchen_api_server: 'APIServer') -> None:
     """Check that addition of manual current prices work fine."""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     get_or_create_evm_token(  # create a specific token in base
         userdb=rotki.data.db,
-        evm_address='0xe66E3A37C3274Ac24FE8590f7D84A2427194DC17',
+        evm_address=string_to_evm_address('0xe66E3A37C3274Ac24FE8590f7D84A2427194DC17'),
         chain_id=ChainID.BASE,
     )
     response = requests.put(  # add a latest price for it
@@ -181,7 +182,7 @@ def test_add_manual_latest_price(rotkehlchen_api_server):
 
 
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_edit_manual_current_price(rotkehlchen_api_server):
+def test_edit_manual_current_price(rotkehlchen_api_server: 'APIServer') -> None:
     GlobalDBHandler.add_manual_latest_price(
         from_asset=A_ETH,
         to_asset=A_EUR,
@@ -233,7 +234,7 @@ def test_edit_manual_current_price(rotkehlchen_api_server):
         from_asset=A_ETH,
         to_asset=A_EUR,
         timestamp=manual_current_timestamp,
-        price=ONE,
+        price=Price(ONE),
         source=HistoricalPriceOracle.MANUAL,
     ))
     response = requests.put(
@@ -255,7 +256,7 @@ def test_edit_manual_current_price(rotkehlchen_api_server):
 
 
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_remove_manual_current_price(rotkehlchen_api_server):
+def test_remove_manual_current_price(rotkehlchen_api_server: 'APIServer') -> None:
     GlobalDBHandler.add_manual_latest_price(
         from_asset=A_ETH,
         to_asset=A_EUR,
@@ -310,7 +311,7 @@ def test_remove_manual_current_price(rotkehlchen_api_server):
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_manual_current_prices_loop(inquirer: 'Inquirer'):
+def test_manual_current_prices_loop(inquirer: 'Inquirer') -> None:
     """Check that if we got a loop of manual current prices
     (e.g. 1 ETH costs 2 BTC and 1 BTC costs 5 ETH), it is handled properly.
 
@@ -344,7 +345,7 @@ def test_manual_current_prices_loop(inquirer: 'Inquirer'):
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ignore_mocked_prices_for', ['ETH'])
-def test_inquirer_oracles_does_not_affect_manual_price(inquirer):
+def test_inquirer_oracles_does_not_affect_manual_price(inquirer: 'Inquirer') -> None:
     """Checks that change of oracles order does not affect manual current price usage.
 
     This test is mocked because we were seeing cases of tests failing due to
@@ -365,7 +366,7 @@ def test_inquirer_oracles_does_not_affect_manual_price(inquirer):
 
 
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_get_all_current_prices(rotkehlchen_api_server):
+def test_get_all_current_prices(rotkehlchen_api_server: 'APIServer') -> None:
     """Test that the endpoint to fetch all manual input returns the correct prices results"""
     # Check that when there are no entries in the database the result is empty
     response = requests.post(
@@ -461,7 +462,7 @@ def test_get_all_current_prices(rotkehlchen_api_server):
 
 
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_prices_cache_invalidation_for_manual_prices(rotkehlchen_api_server):
+def test_prices_cache_invalidation_for_manual_prices(rotkehlchen_api_server: 'APIServer') -> None:
     """
     Check that the prices cache are properly invalidated upon addition
     and deletion of manual prices.

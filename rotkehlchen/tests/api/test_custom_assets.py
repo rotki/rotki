@@ -15,6 +15,7 @@ from rotkehlchen.tests.utils.api import (
 from rotkehlchen.tests.utils.checks import assert_asset_result_order
 
 if TYPE_CHECKING:
+    from rotkehlchen.api.server import APIServer
     from rotkehlchen.db.dbhandler import DBHandler
 
 TEST_CUSTOM_ASSETS = [
@@ -42,13 +43,13 @@ TEST_CUSTOM_ASSETS = [
 ]
 
 
-def _populate_custom_assets_table(db_handler: 'DBHandler'):
+def _populate_custom_assets_table(db_handler: 'DBHandler') -> None:
     db_custom_assets = DBCustomAssets(db_handler)
     for entry in TEST_CUSTOM_ASSETS:
         db_custom_assets.add_custom_asset(entry)
 
 
-def test_get_custom_assets(rotkehlchen_api_server) -> None:
+def test_get_custom_assets(rotkehlchen_api_server: 'APIServer') -> None:
     _populate_custom_assets_table(rotkehlchen_api_server.rest_api.rotkehlchen.data.db)
     response = requests.post(
         api_url_for(
@@ -150,7 +151,7 @@ def test_get_custom_assets(rotkehlchen_api_server) -> None:
     )
 
 
-def test_add_custom_asset(rotkehlchen_api_server) -> None:
+def test_add_custom_asset(rotkehlchen_api_server: 'APIServer') -> None:
     data = {'name': 'XYZ', 'custom_asset_type': 'stocks'}
     response = requests.put(
         api_url_for(
@@ -202,7 +203,7 @@ def test_add_custom_asset(rotkehlchen_api_server) -> None:
     )
 
 
-def test_edit_custom_asset(rotkehlchen_api_server) -> None:
+def test_edit_custom_asset(rotkehlchen_api_server: 'APIServer') -> None:
     _populate_custom_assets_table(rotkehlchen_api_server.rest_api.rotkehlchen.data.db)
     data = TEST_CUSTOM_ASSETS[0].to_dict(export_with_type=False)
     data['name'] = 'Milky Way'
@@ -280,7 +281,7 @@ def test_edit_custom_asset(rotkehlchen_api_server) -> None:
     assert result['entries'][0] == data
 
 
-def test_delete_custom_asset(rotkehlchen_api_server) -> None:
+def test_delete_custom_asset(rotkehlchen_api_server: 'APIServer') -> None:
     _populate_custom_assets_table(rotkehlchen_api_server.rest_api.rotkehlchen.data.db)
     response = requests.delete(
         api_url_for(
@@ -319,7 +320,7 @@ def test_delete_custom_asset(rotkehlchen_api_server) -> None:
     )
 
 
-def test_custom_asset_types(rotkehlchen_api_server) -> None:
+def test_custom_asset_types(rotkehlchen_api_server: 'APIServer') -> None:
     response = requests.get(
         api_url_for(
             rotkehlchen_api_server,

@@ -27,7 +27,7 @@ from rotkehlchen.types import ChecksumEvmAddress, SupportedBlockchain
 def test_basic_calendar_operations(
         rotkehlchen_api_server: APIServer,
         ethereum_accounts: list[ChecksumEvmAddress],
-):
+) -> None:
     database = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
     crv_event = (2, 'CRV unlock', 'Unlock date for CRV', CPT_CURVE, ethereum_accounts[1], 1851422011)  # noqa: E501
 
@@ -236,7 +236,7 @@ def test_basic_calendar_operations(
 def test_validation_calendar(
         rotkehlchen_api_server: APIServer,
         ethereum_accounts: list[ChecksumEvmAddress],
-):
+) -> None:
     database = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
 
     # test creating event without address
@@ -361,7 +361,7 @@ def test_validation_calendar(
 
 
 @pytest.mark.parametrize('have_decoders', [True])
-def test_reminder_operations(rotkehlchen_api_server: APIServer):
+def test_reminder_operations(rotkehlchen_api_server: APIServer) -> None:
     # save 2 entries in the db
     response = requests.put(
         api_url_for(rotkehlchen_api_server, 'calendarresource'),
