@@ -86,7 +86,7 @@ jobs:
             arch: 'arm64'
             target: 11
             platform: macosx-11.0-arm64
-          - runner: macos-12
+          - runner: macos-13
             arch: 'x86_64'
             target: 10.9
             platform: macosx-10.9-x86_64
