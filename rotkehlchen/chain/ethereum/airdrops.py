@@ -577,7 +577,6 @@ def _process_airdrop_file(
 def check_airdrops(
         addresses: Sequence[ChecksumEvmAddress],
         database: DBHandler,
-        data_dir: Path,
         tolerance_for_amount_check: FVal = ZERO,
 ) -> dict[ChecksumEvmAddress, dict]:
     """Checks airdrop data for the given list of ethereum addresses
@@ -588,6 +587,7 @@ def check_airdrops(
     found_data: dict[ChecksumEvmAddress, dict] = defaultdict(lambda: defaultdict(dict))
     airdrop_tuples = []
     airdrops, poap_airdrops = fetch_airdrops_metadata(database=database)
+    data_dir = database.user_data_dir.parent.parent
 
     for protocol_name, airdrop_data in airdrops.items():
         if isinstance(airdrop_data, AirdropFileMetadata):
