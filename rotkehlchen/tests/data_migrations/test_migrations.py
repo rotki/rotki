@@ -11,7 +11,7 @@ from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.scroll.constants import SCROLL_ETHERSCAN_NODE
-from rotkehlchen.constants import ONE
+from rotkehlchen.constants import APPDIR_NAME, ONE
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.data_migrations.constants import LAST_DATA_MIGRATION
 from rotkehlchen.data_migrations.manager import (
@@ -675,3 +675,28 @@ def test_new_db_remembers_last_migration_even_if_no_migrations_run(database):
 def test_last_data_migration_constant() -> None:
     """Test that the LAST_DATA_MIGRATION constant is updated correctly"""
     assert max(x.version for x in MIGRATION_LIST) == LAST_DATA_MIGRATION
+
+
+@pytest.mark.parametrize('data_migration_version', [18])
+@pytest.mark.parametrize('perform_upgrades_at_unlock', [True])
+@pytest.mark.parametrize('legacy_messages_via_websockets', [True])
+@pytest.mark.parametrize('network_mocking', [False])
+def test_migration_19(rotkehlchen_api_server: 'APIServer') -> None:
+    """
+    Test migration 19
+
+    - Test that wrongly created folders get deleted
+    """
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    bad_appdir_folder = rotki.data.db.user_data_dir / APPDIR_NAME
+    bad_appdir_folder.mkdir()
+    (bad_appdir_folder / 'myso.parquet').touch()
+
+    migration_patch = patch(
+        'rotkehlchen.data_migrations.manager.MIGRATION_LIST',
+        new=[MIGRATION_LIST[9]],
+    )
+    with migration_patch:
+        DataMigrationManager(rotki).maybe_migrate_data()
+
+    assert (bad_appdir_folder).exists() is False

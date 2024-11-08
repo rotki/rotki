@@ -2417,7 +2417,6 @@ class RestAPI:
             data = check_airdrops(
                 addresses=self.rotkehlchen.chains_aggregator.accounts.eth,
                 database=self.rotkehlchen.data.db,
-                data_dir=self.rotkehlchen.data.data_directory,
                 tolerance_for_amount_check=AIRDROPS_TOLERANCE,
             )
         except RemoteError as e:

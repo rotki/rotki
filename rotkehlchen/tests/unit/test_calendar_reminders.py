@@ -1,4 +1,5 @@
 from collections.abc import Callable
+from pathlib import Path
 from typing import TYPE_CHECKING
 from unittest.mock import patch
 
@@ -8,6 +9,7 @@ from freezegun import freeze_time
 from rotkehlchen.chain.ethereum.airdrops import AIRDROPS_REPO_BASE
 from rotkehlchen.chain.ethereum.modules.ens.constants import CPT_ENS
 from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE
+from rotkehlchen.constants import AIRDROPSDIR_NAME, APPDIR_NAME
 from rotkehlchen.constants.timing import DAY_IN_SECONDS, WEEK_IN_SECONDS
 from rotkehlchen.db.calendar import CalendarEntry, CalendarFilterQuery, DBCalendar
 from rotkehlchen.tasks.calendar import (
@@ -228,6 +230,7 @@ def test_locked_crv_calendar_reminders(
 ]])
 def test_airdrop_claim_calendar_reminders(
         database: 'DBHandler',
+        data_dir: Path,
         ethereum_accounts: list['ChecksumEvmAddress'],
         ethereum_inquirer: 'EthereumInquirer',
 ) -> None:
@@ -238,12 +241,16 @@ def test_airdrop_claim_calendar_reminders(
     user_address = ethereum_accounts[0]
     all_calendar_entries = calendar_db.query_calendar_entry(CalendarFilterQuery.make())
     assert all_calendar_entries['entries_total'] == 0
-
+    myso_airdrop_file = data_dir / APPDIR_NAME / AIRDROPSDIR_NAME / 'myso.parquet'
+    myso_airdrop_file.unlink(missing_ok=True)
+    assert myso_airdrop_file.exists() is False
     reminder_creator = CalendarReminderCreator(database=database, current_ts=ts_now())
 
     with patch('rotkehlchen.chain.ethereum.airdrops.requests.get', side_effect=get_airdrop_request_mock(user_address)):  # noqa: E501
         reminder_creator.maybe_create_airdrop_claim_reminder()
 
+    assert (database.user_data_dir / APPDIR_NAME / AIRDROPSDIR_NAME).exists() is False  # regression check for an issue creating the airdrops folder in the wrong directory.  # noqa: E501
+    assert myso_airdrop_file.exists() is True
     new_calendar_entries = calendar_db.query_calendar_entry(CalendarFilterQuery.make())
     assert new_calendar_entries['entries_found'] == 1
 
