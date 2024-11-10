@@ -2,7 +2,7 @@
 Changelog
 =========
 
-* :bug:`-` Fixes an issue that was creating the airdrops folder inside the user's folder.
+* :bug:`-` The airdrops directory should no longer appear under the user directory in certain cirsumstances
 
 * :release:`1.36.0 <2024-11-06>`
 * :bug:`-` The exported file that overrides the file with the same name should have the latest modified time.
