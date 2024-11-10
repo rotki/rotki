@@ -699,4 +699,4 @@ def test_migration_19(rotkehlchen_api_server: 'APIServer') -> None:
     with migration_patch:
         DataMigrationManager(rotki).maybe_migrate_data()
 
-    assert (bad_appdir_folder).exists() is False
+    assert not bad_appdir_folder.exists()
