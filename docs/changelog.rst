@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`8618` rotki will now support Morpho vaults on Ethereum and Base, with related historical events properly decoded and correct prices shown for vault tokens.
 * :feature:`8620` rotki will now properly decode EFP (Ethereum Follow Protocol) transactions.
 * :feature:`8602` rotki will now properly decode Basenames transactions and add calendar reminders for name expiry.
 

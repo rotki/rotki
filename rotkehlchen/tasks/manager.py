@@ -14,6 +14,7 @@ from rotkehlchen.chain.ethereum.modules.makerdao.cache import (
 )
 from rotkehlchen.chain.ethereum.modules.yearn.utils import query_yearn_vaults
 from rotkehlchen.chain.ethereum.utils import should_update_protocol_cache
+from rotkehlchen.chain.evm.decoding.morpho.utils import query_morpho_vaults
 from rotkehlchen.constants.timing import (
     AAVE_V3_ASSETS_UPDATE,
     DATA_UPDATES_REFRESH,
@@ -141,6 +142,7 @@ class TaskManager:
         self.activate_premium = activate_premium
         self.query_balances = query_balances
         self.query_yearn_vaults = query_yearn_vaults
+        self.query_morpho_vaults = query_morpho_vaults
         self.last_premium_status_check = ts_now()
         self.last_calendar_reminder_check = Timestamp(0)
         self.msg_aggregator = msg_aggregator
@@ -161,6 +163,7 @@ class TaskManager:
             self._maybe_check_data_updates,
             self._maybe_update_snapshot_balances,
             self._maybe_update_yearn_vaults,
+            self._maybe_update_morpho_vaults,
             self._maybe_detect_evm_accounts,
             self._maybe_update_ilk_cache,
             self._maybe_query_produced_blocks,
@@ -681,6 +684,25 @@ class TaskManager:
                 method=self.query_yearn_vaults,
                 db=self.database,
                 ethereum_inquirer=self.chains_aggregator.ethereum.node_inquirer,
+            )]
+
+        return None
+
+    def _maybe_update_morpho_vaults(self) -> Optional[list[gevent.Greenlet]]:
+        with self.database.conn.read_ctx() as cursor:
+            if (
+                len(self.database.get_single_blockchain_addresses(cursor, SupportedBlockchain.ETHEREUM)) == 0 and  # noqa: E501
+                len(self.database.get_single_blockchain_addresses(cursor, SupportedBlockchain.BASE)) == 0  # noqa: E501
+            ):
+                return None
+
+        if should_update_protocol_cache(CacheType.MORPHO_VAULTS) is True:
+            return [self.greenlet_manager.spawn_and_track(
+                after_seconds=None,
+                task_name='Update Morpho vaults',
+                exception_is_error=False,
+                method=self.query_morpho_vaults,
+                database=self.database,
             )]
 
         return None

@@ -30,6 +30,7 @@ from rotkehlchen.chain.evm.decoding.gearbox.gearbox_cache import (
     ensure_gearbox_lp_underlying_tokens,
     read_gearbox_data_from_cache,
 )
+from rotkehlchen.chain.evm.decoding.morpho.utils import get_morpho_vault_token_price
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.evm.utils import lp_price_from_uniswaplike_pool_contract
 from rotkehlchen.chain.polygon_pos.constants import POLYGON_POS_POL_HARDFORK
@@ -111,6 +112,7 @@ from rotkehlchen.types import (
     GEARBOX_PROTOCOL,
     HOP_PROTOCOL_LP,
     LP_TOKEN_AS_POOL_PROTOCOLS,
+    MORPHO_VAULT_PROTOCOL,
     YEARN_STAKING_PROTOCOL,
     YEARN_VAULTS_V2_PROTOCOL,
     YEARN_VAULTS_V3_PROTOCOL,
@@ -211,8 +213,14 @@ def get_underlying_asset_price(token: EvmToken) -> tuple[Price | None, CurrentPr
     elif token.protocol == CPT_UMAMI:
         price = get_umami_vault_token_price(
             vault_token=token,
-            inquirer=Inquirer(),
+            inquirer=Inquirer(),  # Initialize here to avoid a circular import
             evm_inquirer=Inquirer.get_evm_manager(chain_id=ChainID.ARBITRUM_ONE).node_inquirer,
+        )
+    elif token.protocol == MORPHO_VAULT_PROTOCOL:
+        price = get_morpho_vault_token_price(
+            vault_token=token,
+            inquirer=Inquirer(),  # Initialize here to avoid a circular import
+            evm_inquirer=Inquirer.get_evm_manager(chain_id=token.chain_id).node_inquirer,
         )
 
     if token == A_FARM_DAI:
