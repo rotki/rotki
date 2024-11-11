@@ -676,6 +676,9 @@ def test_compound_v3_token_balances_liabilities(
         patch(
             target='rotkehlchen.chain.ethereum.modules.yearn.decoder.should_update_protocol_cache',
         ),
+        patch(
+            target='rotkehlchen.chain.evm.decoding.morpho.decoder.should_update_protocol_cache',
+        ),
     ):
         blockchain.ethereum.transactions_decoder.decode_transaction_hashes(
             ignore_cache=True,

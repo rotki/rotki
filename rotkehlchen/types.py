@@ -97,6 +97,7 @@ PICKLE_JAR_PROTOCOL = 'pickle_jar'
 SPAM_PROTOCOL = 'spam'
 GEARBOX_PROTOCOL = 'gearbox'
 HOP_PROTOCOL_LP = 'hop_lp'
+MORPHO_VAULT_PROTOCOL: Final = 'morpho_vaults'
 
 
 # The protocols for which we know how to calculate their prices
@@ -1152,6 +1153,7 @@ class CacheType(Enum):
     EXTRAFI_REWARD_CONTRACTS = auto()
     EXTRAFI_NEXT_RESERVE_ID = auto()
     EFP_SLOT_ADDRESS = auto()
+    MORPHO_VAULTS = auto()
 
     def serialize(self) -> str:
         # Using custom serialize method instead of SerializableEnumMixin since mixin replaces
@@ -1182,6 +1184,7 @@ UniqueCacheType = Literal[
     CacheType.EXTRAFI_FARM_METADADATA,
     CacheType.EXTRAFI_NEXT_RESERVE_ID,
     CacheType.EFP_SLOT_ADDRESS,
+    CacheType.MORPHO_VAULTS,
 ]
 
 UNIQUE_CACHE_KEYS: tuple[UniqueCacheType, ...] = typing.get_args(UniqueCacheType)
