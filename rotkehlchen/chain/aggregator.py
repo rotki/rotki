@@ -37,7 +37,6 @@ from rotkehlchen.chain.ethereum.defi.chad import DefiChad
 from rotkehlchen.chain.ethereum.defi.structures import DefiProtocolBalances
 from rotkehlchen.chain.ethereum.modules import (
     MODULE_NAME_TO_PATH,
-    Balancer,
     Liquity,
     Loopring,
     MakerdaoDsr,
@@ -55,6 +54,7 @@ from rotkehlchen.chain.ethereum.modules.gearbox.balances import GearboxBalances
 from rotkehlchen.chain.ethereum.modules.octant.balances import OctantBalances
 from rotkehlchen.chain.ethereum.modules.safe.balances import SafeBalances
 from rotkehlchen.chain.ethereum.modules.thegraph.balances import ThegraphBalances
+from rotkehlchen.chain.evm.decoding.balancer.v1.balances import Balancerv1Balances
 from rotkehlchen.chain.evm.decoding.compound.v3.balances import Compoundv3Balances
 from rotkehlchen.chain.evm.decoding.hop.balances import HopBalances
 from rotkehlchen.chain.optimism.modules.extrafi.balances import (
@@ -215,12 +215,13 @@ CHAIN_TO_BALANCE_PROTOCOLS = {
         GearboxBalances,
         SafeBalances,
         AaveBalances,
+        Balancerv1Balances,
     ),
     ChainID.OPTIMISM: (VelodromeBalances, HopBalances, GearboxBalancesOptimism, ExtrafiBalancesOp),
     ChainID.BASE: (Compoundv3Balances, AerodromeBalances, HopBalances, ExtrafiBalancesBase),
-    ChainID.ARBITRUM_ONE: (Compoundv3Balances, GmxBalances, ThegraphBalancesArbitrumOne, HopBalances, GearboxBalancesArbitrumOne, UmamiBalances),  # noqa: E501
+    ChainID.ARBITRUM_ONE: (Compoundv3Balances, GmxBalances, ThegraphBalancesArbitrumOne, HopBalances, GearboxBalancesArbitrumOne, UmamiBalances, Balancerv1Balances),  # noqa: E501
     ChainID.POLYGON_POS: (Compoundv3Balances, HopBalances),
-    ChainID.GNOSIS: (HopBalances,),
+    ChainID.GNOSIS: (HopBalances, Balancerv1Balances),
     ChainID.SCROLL: (Compoundv3Balances,),
 }
 
@@ -421,10 +422,6 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
 
     @overload
     def get_module(self, module_name: Literal['aave']) -> Optional['Aave']:
-        ...
-
-    @overload
-    def get_module(self, module_name: Literal['balancer']) -> Balancer | None:
         ...
 
     @overload

@@ -2,12 +2,12 @@ from abc import ABC
 from collections.abc import Callable
 from typing import TYPE_CHECKING
 
-from rotkehlchen.chain.ethereum.modules.balancer.v2.constants import (
-    V2_SWAP as BALANCER_V2_SWAP_SIGNATURE,
-)
 from rotkehlchen.chain.ethereum.modules.oneinch.constants import CPT_ONEINCH_V4
 from rotkehlchen.chain.ethereum.modules.uniswap.v2.constants import (
     SWAP_SIGNATURE as UNISWAP_V2_SWAP_SIGNATURE,
+)
+from rotkehlchen.chain.evm.decoding.balancer.v2.constants import (
+    V2_SWAP as BALANCER_V2_SWAP_SIGNATURE,
 )
 from rotkehlchen.chain.evm.decoding.curve.constants import TOKEN_EXCHANGE
 from rotkehlchen.chain.evm.decoding.kyber.constants import KYBER_AGGREGATOR_SWAPPED

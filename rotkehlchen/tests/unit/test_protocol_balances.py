@@ -8,7 +8,7 @@ from unittest.mock import patch
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
-from rotkehlchen.assets.asset import Asset, EvmToken
+from rotkehlchen.assets.asset import Asset, EvmToken, UnderlyingToken
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.aggregator import CHAIN_TO_BALANCE_PROTOCOLS
 from rotkehlchen.chain.arbitrum_one.constants import ARBITRUM_ONE_ETHERSCAN_NODE
@@ -37,6 +37,8 @@ from rotkehlchen.chain.ethereum.modules.safe.constants import SAFE_TOKEN_ID
 from rotkehlchen.chain.ethereum.modules.thegraph.balances import ThegraphBalances
 from rotkehlchen.chain.ethereum.utils import should_update_protocol_cache
 from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE_V3
+from rotkehlchen.chain.evm.decoding.balancer.constants import CPT_BALANCER_V1
+from rotkehlchen.chain.evm.decoding.balancer.v1.balances import Balancerv1Balances
 from rotkehlchen.chain.evm.decoding.compound.v3.balances import Compoundv3Balances
 from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE
 from rotkehlchen.chain.evm.decoding.extrafi.cache import (
@@ -679,6 +681,9 @@ def test_compound_v3_token_balances_liabilities(
         patch(
             target='rotkehlchen.chain.evm.decoding.morpho.decoder.should_update_protocol_cache',
         ),
+        patch(
+            target='rotkehlchen.chain.evm.decoding.balancer.v1.decoder.should_update_protocol_cache',
+        ),
     ):
         blockchain.ethereum.transactions_decoder.decode_transaction_hashes(
             ignore_cache=True,
@@ -1059,6 +1064,47 @@ def test_umami_balances(
     protocol_balances = protocol_balances_inquirer.query_balances()
     user_balance = protocol_balances[arbitrum_one_accounts[0]]
     assert user_balance.assets[gm_usdc_vault] == Balance(
+        amount=amount,
+        usd_value=usd_value,
+    )
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0xF01adF04216C35448456fdaA6BBFff4055527Dd1']])
+def test_balancer_v1_balances(
+        ethereum_inquirer: 'EthereumInquirer',
+        ethereum_accounts: list[ChecksumEvmAddress],
+        inquirer: 'Inquirer',  # pylint: disable=unused-argument
+) -> None:
+    balancer_qqq_weth_pool_token = get_or_create_evm_token(
+        userdb=ethereum_inquirer.database,
+        evm_address=string_to_evm_address('0x0ce69A796aBe0c0451585aA88F6F45ebaC9E12dc'),
+        chain_id=ChainID.ETHEREUM,
+        token_kind=EvmTokenKind.ERC20,
+        symbol='BCoW-80QQQ-20WETH',
+        name='Balancer CoW AMM 80 QQQ 20 WETH',
+        decimals=18,
+        protocol=CPT_BALANCER_V1,
+        underlying_tokens=[
+            UnderlyingToken(  # including just one of two underlying token.
+                address=string_to_evm_address('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'),
+                token_kind=EvmTokenKind.ERC20,
+                weight=FVal('0.2'),
+            ),
+        ],
+    )
+    amount, usd_value = FVal('4152.559258169060848717'), FVal('4214.758208714533361366494567184512985')  # noqa: E501
+    _, tx_decoder = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        tx_hash=deserialize_evm_tx_hash('0xbba2e9e46c773b91b1528e48af1ed479132353473726d75e7a0f74bfb687613e'),
+    )
+    protocol_balances_inquirer = Balancerv1Balances(
+        evm_inquirer=ethereum_inquirer,
+        tx_decoder=tx_decoder,
+    )
+    protocol_balances = protocol_balances_inquirer.query_balances()
+    user_balance = protocol_balances[ethereum_accounts[0]]
+    assert user_balance.assets[balancer_qqq_weth_pool_token] == Balance(
         amount=amount,
         usd_value=usd_value,
     )

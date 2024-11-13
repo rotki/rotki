@@ -4,9 +4,9 @@ import pytest
 from rotkehlchen.accounting.accountant import Accountant
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.types import EventAccountingRuleStatus
-from rotkehlchen.chain.ethereum.modules.balancer.constants import CPT_BALANCER_V1
 from rotkehlchen.chain.ethereum.modules.compound.constants import CPT_COMPOUND
 from rotkehlchen.chain.evm.accounting.structures import TxAccountingTreatment, TxEventSettings
+from rotkehlchen.chain.evm.decoding.balancer.constants import CPT_BALANCER_V1
 from rotkehlchen.chain.evm.decoding.cowswap.constants import CPT_COWSWAP
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_CUSDC, A_ETH, A_USDC, A_WETH
