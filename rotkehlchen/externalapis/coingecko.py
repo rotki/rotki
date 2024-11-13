@@ -817,7 +817,6 @@ class Coingecko(
                 'localization': 'false',
             },
         )
-
         # https://github.com/PyCQA/pylint/issues/4739
         try:
             price = Price(FVal(result['market_data']['current_price'][vs_currency]))
