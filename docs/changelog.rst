@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`8892` rotki will now correctly fetch Starknet token prices before May 2024 from Cryptocompare, when the ticker changed from STARK to STRK.
 * :bug:`-` The airdrops directory should no longer appear under the user directory in certain cirsumstances
 
 * :release:`1.36.0 <2024-11-06>`

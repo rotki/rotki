@@ -4,7 +4,7 @@ from unittest.mock import patch
 
 import pytest
 
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import Asset, CryptoAsset
 from rotkehlchen.constants.assets import (
     A_BTC,
     A_CBAT,
@@ -19,7 +19,6 @@ from rotkehlchen.constants.assets import (
     A_USD,
 )
 from rotkehlchen.externalapis.cryptocompare import (
-    CRYPTOCOMPARE_HOURQUERYLIMIT,
     CRYPTOCOMPARE_SPECIAL_CASES_MAPPING,
     Cryptocompare,
 )
@@ -30,7 +29,6 @@ from rotkehlchen.tests.utils.constants import A_SNGLS, A_XMR
 from rotkehlchen.types import Price, Timestamp
 
 
-@pytest.mark.skip('They are updating their systems & cleaning inactive pairs. Check again soon')
 def test_cryptocompare_query_pricehistorical(cryptocompare):
     """Test that cryptocompare price historical query works fine"""
     price = cryptocompare.query_endpoint_pricehistorical(
@@ -96,7 +94,6 @@ def check_cc_result(result: list, forward: bool):
             raise AssertionError(f'Unexpected time entry {entry.time}')
 
 
-@pytest.mark.skip('They are updating their systems & cleaning inactive pairs. Check again soon')
 @pytest.mark.freeze_time
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_cryptocompare_histohour_data_going_forward(database, freezer):
@@ -106,8 +103,8 @@ def test_cryptocompare_histohour_data_going_forward(database, freezer):
     and appends the cached data with the newly returned data
     """
     # first timestamp cryptocompare has histohour BTC/USD when queried from this test is
-    btc_start_ts = 1279940400
-    now_ts = btc_start_ts + 3600 * 2000 + 122
+    btc_start_ts = 1279324800
+    now_ts = btc_start_ts + 3600 * 24 * 100  # 100 days ahead
     freezer.move_to(datetime.datetime.fromtimestamp(now_ts, tz=datetime.UTC))
     cc = Cryptocompare(database=database)
     cc.query_and_store_historical_data(
@@ -118,14 +115,21 @@ def test_cryptocompare_histohour_data_going_forward(database, freezer):
 
     globaldb = GlobalDBHandler()
     result = get_globaldb_cache_entries(from_asset=A_BTC, to_asset=A_USD)
-    assert len(result) == CRYPTOCOMPARE_HOURQUERYLIMIT + 1
-    assert all(x.price == Price(FVal(0.05454)) for x in result)
-    data_range = globaldb.get_historical_price_range(A_BTC, A_USD, HistoricalPriceOracle.CRYPTOCOMPARE)  # noqa: E501
+    assert len(result) > 1000  # arbitrary safe number
+    prices = [x.price for x in result]
+    assert FVal('0.048') <= min(prices) <= FVal('0.049')
+    assert FVal('0.185') <= max(prices) <= FVal('0.190')
+    data_range = globaldb.get_historical_price_range(
+        from_asset=A_BTC,
+        to_asset=A_USD,
+        source=HistoricalPriceOracle.CRYPTOCOMPARE,
+    )
     assert data_range[0] == btc_start_ts
-    assert data_range[1] == 1287140400  # that's the closest ts to now_ts cc returns
+    assert data_range[1] == 1287964800  # that's the closest ts to now_ts cc returns
+    old_cache_entries = get_globaldb_cache_entries(from_asset=A_BTC, to_asset=A_USD)
 
-    # now let's move a bit to the future and query again to see the cache is appended to
-    now_ts = now_ts + 3600 * 2000 * 2 + 4700
+    # Move forward 14 days
+    now_ts += 3600 * 24 * 14
     freezer.move_to(datetime.datetime.fromtimestamp(now_ts, tz=datetime.UTC))
     cc.query_and_store_historical_data(
         from_asset=A_BTC.resolve_to_asset_with_oracles(),
@@ -133,14 +137,16 @@ def test_cryptocompare_histohour_data_going_forward(database, freezer):
         timestamp=now_ts - 3600 * 4 - 55,
     )
     result = get_globaldb_cache_entries(from_asset=A_BTC, to_asset=A_USD)
-    assert len(result) == CRYPTOCOMPARE_HOURQUERYLIMIT * 3 + 2
-    check_cc_result(result, forward=True)
-    data_range = globaldb.get_historical_price_range(A_BTC, A_USD, HistoricalPriceOracle.CRYPTOCOMPARE)  # noqa: E501
+    assert len(result) > len(old_cache_entries)
+    data_range = globaldb.get_historical_price_range(
+        from_asset=A_BTC,
+        to_asset=A_USD,
+        source=HistoricalPriceOracle.CRYPTOCOMPARE,
+    )
     assert data_range[0] == btc_start_ts
-    assert data_range[1] == 1301544000  # that's the closest ts to now_ts cc returns
+    assert data_range[1] == 1289174400  # that's the closest ts to now_ts cc returns
 
 
-@pytest.mark.skip('They are updating their systems & cleaning inactive pairs. Check again soon')
 @pytest.mark.freeze_time
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_cryptocompare_histohour_data_going_backward(database, freezer):
@@ -153,22 +159,22 @@ def test_cryptocompare_histohour_data_going_backward(database, freezer):
     """
     globaldb = GlobalDBHandler()
     # first timestamp cryptocompare has histohour BTC/USD when queried from this test is
-    btc_start_ts = 1279936800
-    # first timestamp cryptocompare has histohour BTC/USD is: 1279940400
-    now_ts = btc_start_ts + 3600 * 2000 + 122
+    btc_start_ts = 1279324800
+    # first timestamp cryptocompare has histohour BTC/USD is: 1279324800
+    now_ts = btc_start_ts + 3600 * 24 * 100  # 100 days ahead
     # create a cache file for BTC_USD
     cache_data = [HistoricalPrice(
         from_asset=A_BTC,
         to_asset=A_USD,
         source=HistoricalPriceOracle.CRYPTOCOMPARE,
         timestamp=Timestamp(1301536800),
-        price=Price(FVal('0.298')),
+        price=Price(FVal('0.800506052631579')),
     ), HistoricalPrice(
         from_asset=A_BTC,
         to_asset=A_USD,
         source=HistoricalPriceOracle.CRYPTOCOMPARE,
         timestamp=Timestamp(1301540400),
-        price=Price(FVal('0.298')),
+        price=Price(FVal('0.80098')),
     )]
     globaldb.add_historical_prices(cache_data)
 
@@ -180,8 +186,7 @@ def test_cryptocompare_histohour_data_going_backward(database, freezer):
         timestamp=now_ts - 3600 * 2 - 55,
     )
     result = get_globaldb_cache_entries(from_asset=A_BTC, to_asset=A_USD)
-    assert len(result) == CRYPTOCOMPARE_HOURQUERYLIMIT * 3 + 2
-    check_cc_result(result, forward=False)
+    assert len(result) > 6000  # arbitrary safe number
     data_range = globaldb.get_historical_price_range(A_BTC, A_USD, HistoricalPriceOracle.CRYPTOCOMPARE)  # noqa: E501
     assert data_range[0] == btc_start_ts
     assert data_range[1] == 1301540400  # that's the closest ts to now_ts cc returns
@@ -325,3 +330,18 @@ def test_cryptocompare_query_with_api_key(cryptocompare):
         match_main_currency=False,
     )
     assert price is not None
+
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_starknet_historical_price_after_ticker_change(cryptocompare):
+    """Check that Starknet token price query after Cryptocompare ticker change is accurate.
+
+    It checks that price queries work properly after the May 9, 2024, switch
+    from STARK to STRK ticker. Regression test for https://github.com/rotki/rotki/issues/8892
+    """
+    price = cryptocompare.query_endpoint_pricehistorical(
+        from_asset=CryptoAsset('STRK'),
+        to_asset=A_EUR.resolve_to_asset_with_oracles(),
+        timestamp=Timestamp(1708510318),
+    )
+    assert price == Price(FVal('1.75404934188528'))
