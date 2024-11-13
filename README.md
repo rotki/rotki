@@ -32,6 +32,7 @@
 <p align="center">
   <a href="#overview">Overview</a> •
   <a href="#features-at-a-glance">Features at a Glance</a> •
+  <a href="#requirements">requirements</a> •
   <a href="#installation">Installation</a> •
   <a href="#usage">Usage</a> •
   <a href="#changelog">Changelog</a> •
