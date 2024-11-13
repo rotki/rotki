@@ -2660,7 +2660,7 @@ class RestAPI:
     @async_api_call()
     def get_amm_platform_balances(
             self,
-            module: Literal['uniswap', 'sushiswap', 'balancer'],
+            module: Literal['uniswap', 'sushiswap'],
             method: str = 'get_balances',
     ) -> dict[str, Any]:
         return self._eth_module_query(

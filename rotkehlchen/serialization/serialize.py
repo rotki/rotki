@@ -27,10 +27,6 @@ from rotkehlchen.chain.ethereum.modules.aave.aave import (
     AaveLendingBalance,
 )
 from rotkehlchen.chain.ethereum.modules.aave.common import AaveStats
-from rotkehlchen.chain.ethereum.modules.balancer import (
-    BalancerPoolBalance,
-    BalancerPoolTokenBalance,
-)
 from rotkehlchen.chain.ethereum.modules.compound.utils import CompoundBalance
 from rotkehlchen.chain.ethereum.modules.liquity.trove import Trove
 from rotkehlchen.chain.ethereum.modules.makerdao.dsr import DSRAccountReport, DSRCurrentBalances
@@ -149,8 +145,6 @@ def _process_entry(entry: Any) -> str | (list[Any] | (dict[str, Any] | Any)):
             LiquidityPool |
             LiquidityPoolAsset |
             LiquidityPoolEventsBalance |
-            BalancerPoolBalance |
-            BalancerPoolTokenBalance |
             ManuallyTrackedBalanceWithValue |
             Trove |
             DillBalance |

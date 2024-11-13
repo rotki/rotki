@@ -45,7 +45,6 @@ ModuleName = Literal[
     'yearn_vaults_v2',
     'uniswap',
     'loopring',
-    'balancer',
     'eth2',
     'sushiswap',
     'liquity',
@@ -71,7 +70,6 @@ AVAILABLE_MODULES_MAP = {
     'yearn_vaults_v2': 'Yearn V2 Vaults',
     'uniswap': 'Uniswap',
     'loopring': 'Loopring',
-    'balancer': 'Balancer',
     'eth2': 'Eth2',
     'sushiswap': 'Sushiswap',
     'liquity': 'Liquity',
@@ -1154,6 +1152,7 @@ class CacheType(Enum):
     EXTRAFI_NEXT_RESERVE_ID = auto()
     EFP_SLOT_ADDRESS = auto()
     MORPHO_VAULTS = auto()
+    BALANCER_V1_POOLS = auto()
 
     def serialize(self) -> str:
         # Using custom serialize method instead of SerializableEnumMixin since mixin replaces
@@ -1185,6 +1184,7 @@ UniqueCacheType = Literal[
     CacheType.EXTRAFI_NEXT_RESERVE_ID,
     CacheType.EFP_SLOT_ADDRESS,
     CacheType.MORPHO_VAULTS,
+    CacheType.BALANCER_V1_POOLS,
 ]
 
 UNIQUE_CACHE_KEYS: tuple[UniqueCacheType, ...] = typing.get_args(UniqueCacheType)

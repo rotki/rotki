@@ -45,6 +45,7 @@ PROTOCOLS_WITH_BALANCES = Literal[
     'safe',
     'extrafi',
     'umami',
+    'balancer-v1',
 ]
 BalancesSheetType = dict[ChecksumEvmAddress, BalanceSheet]
 

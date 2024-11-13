@@ -1,6 +1,5 @@
 __all__ = [
     'MODULE_NAME_TO_PATH',
-    'Balancer',
     'Liquity',
     'Loopring',
     'MakerdaoDsr',
@@ -20,7 +19,6 @@ MODULE_NAME_TO_PATH = {
     'uniswap': '.uniswap.uniswap',
 }
 
-from .balancer.balancer import Balancer
 from .l2.loopring import Loopring
 from .liquity.trove import Liquity
 from .makerdao.dsr import MakerdaoDsr
