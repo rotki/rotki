@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`8620` rotki will now properly decode EFP (Ethereum Follow Protocol) transactions.
 * :feature:`8602` rotki will now properly decode Basenames transactions and add calendar reminders for name expiry.
 
 * :release:`1.36.0 <2024-11-06>`
