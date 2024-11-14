@@ -1151,6 +1151,7 @@ class CacheType(Enum):
     EXTRAFI_FARM_METADADATA = auto()
     EXTRAFI_REWARD_CONTRACTS = auto()
     EXTRAFI_NEXT_RESERVE_ID = auto()
+    EFP_SLOT_ADDRESS = auto()
 
     def serialize(self) -> str:
         # Using custom serialize method instead of SerializableEnumMixin since mixin replaces
@@ -1180,6 +1181,7 @@ UniqueCacheType = Literal[
     CacheType.EXTRAFI_LENDING_RESERVES,
     CacheType.EXTRAFI_FARM_METADADATA,
     CacheType.EXTRAFI_NEXT_RESERVE_ID,
+    CacheType.EFP_SLOT_ADDRESS,
 ]
 
 UNIQUE_CACHE_KEYS: tuple[UniqueCacheType, ...] = typing.get_args(UniqueCacheType)
