@@ -55,6 +55,8 @@ const {
   extraParams: computed(() => ({
     tags: get(visibleTags),
     ...(get(category) !== 'all' ? { category: get(category) } : {}),
+  })),
+  queryParamsOnly: computed(() => ({
     ...(get(expanded).length > 0
       ? {
           tab: get(tab),
