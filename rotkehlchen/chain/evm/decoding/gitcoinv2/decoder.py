@@ -97,9 +97,9 @@ class GitcoinV2CommonDecoder(DecoderInterface, ABC):
             recipient_id: 'ChecksumEvmAddress',
             contract_address: 'ChecksumEvmAddress',
     ) -> 'ChecksumEvmAddress | None':
-        """Query the relevant contract to get the recipient id to address mappping.
+        """Query the relevant contract to get the recipient id to address mapping.
 
-        Also use a cace to save on contract calls"""
+        Also use a cache to save on contract calls"""
         if (recipient_address := self.recipient_id_to_addr.get(recipient_id)) is not None:
             return recipient_address
 
@@ -229,7 +229,7 @@ class GitcoinV2CommonDecoder(DecoderInterface, ABC):
         call to turn recipient id to address. This is bad since the allocated event
         comes before the token transfer. Which means we have no way to identify
         which of the allocated events concern the tracked addresses. And in some transactions
-        there is hundreds such events.
+        there are hundreds such events.
 
         Example: https://arbiscan.io/tx/0x0388c141d93924d4737c4c52956469ecdb2c0a8dd9b3802317994c027d0a38af#eventlog
         """

@@ -2283,7 +2283,7 @@ class AssetsSearchByColumnSchema(DBOrderBySchema, DBPaginationSchema):
             return_exact_matches=data['return_exact_matches'],
             chain_id=data['evm_chain'],
             identifier_column_name='assets.identifier',
-            ignored_assets_handling=IgnoredAssetsHandling.EXCLUDE,  # do not check ignored asssets at search  # noqa: E501
+            ignored_assets_handling=IgnoredAssetsHandling.EXCLUDE,  # do not check ignored assets at search  # noqa: E501
         )
         return {'filter_query': filter_query}
 

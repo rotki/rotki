@@ -60,7 +60,7 @@ pnpm run dev
 
 ## Serving the premium components
 
-To serve the premium components using the proxy, you must the `PREMIUM_COMPONENT_DIR`
+To serve the premium components using the proxy, you must set the `PREMIUM_COMPONENT_DIR`
 environment variable. The variable should contain the directory where you store your
 premium components source code. You must have the variable set before starting the
 proxy, otherwise the proxy will serve the production components instead.

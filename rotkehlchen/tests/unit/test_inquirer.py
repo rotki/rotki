@@ -732,7 +732,7 @@ def test_find_gearbox_lp_price(inquirer: 'Inquirer', arbitrum_one_manager: 'Arbi
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_find_protocol_price_falllback_to_oracle(inquirer_defi):
+def test_find_protocol_price_fallback_to_oracle(inquirer_defi):
     """Test that if the onchain price query fails for a known protocol token,
     the external oracles are still queried and provide us (potentially) with an answer
     """
@@ -833,7 +833,7 @@ def test_usd_price(inquirer: Inquirer, globaldb: GlobalDBHandler):
 @pytest.mark.parametrize('network_mocking', [False])
 def test_connect_rpc_with_hex_chainid(ethereum_inquirer: EthereumInquirer):
     """Test that connecting to an RPC that returns the chain id as an hex value
-    instead of an integer works correcly
+    instead of an integer works correctly
     """
     success, msg = ethereum_inquirer.attempt_connect(
         node=NodeName(
@@ -909,7 +909,7 @@ def test_matic_pol_hardforked_price(inquirer: Inquirer, freezer):
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 def test_find_vthor_price(inquirer_defi: 'Inquirer', database: 'DBHandler'):
-    """Test that we can query price for vTHOR using the ratio that it mantains with THOR"""
+    """Test that we can query price for vTHOR using the ratio that it maintains with THOR"""
     inquirer_defi._oracle_instances = [inquirer_defi._defillama]
     get_or_create_evm_token(
         userdb=database,

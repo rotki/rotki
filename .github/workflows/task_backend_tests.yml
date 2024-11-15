@@ -92,7 +92,7 @@ jobs:
                     
           $DLL_PATH = (Join-Path $PYTHON_LOCATION "miniupnpc.dll")
           
-          echo "miniupnpc.dll will be installled in $PYTHON_LOCATION"
+          echo "miniupnpc.dll will be installed in $PYTHON_LOCATION"
           curl.exe -L -O "https://github.com/mrx23dot/miniupnp/releases/download/miniupnpd_2_2_24/$MINIUPNPC_ZIP"
           
           echo "Downloaded miniupnpc.zip"

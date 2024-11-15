@@ -28,7 +28,7 @@ All endpoints have their response wrapped in the following JSON object
     }
 
 
-In the case of a successful response the ``"result"`` attribute is populated and is not ``null``. The message is almost always going to be empty but may at some cases also contain some informational message.
+In the case of a successful response the ``"result"`` attribute is populated and is not ``null``. The message is almost always going to be empty but may in some cases also contain some informational message.
 
 ::
 
