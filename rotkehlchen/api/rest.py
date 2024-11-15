@@ -733,7 +733,11 @@ class RestAPI:
             status_code = HTTPStatus.CONFLICT
         return api_response(_wrap_in_result(result, message), status_code=status_code)
 
-    def _query_all_exchange_balances(self, ignore_cache: bool) -> dict[str, Any]:
+    def _query_all_exchange_balances(
+            self,
+            ignore_cache: bool,
+            usd_value_threshold: FVal | None = None,
+    ) -> dict[str, Any]:
         final_balances = {}
         error_msg = ''
         for exchange_obj in self.rotkehlchen.exchange_manager.iterate_exchanges():
@@ -754,16 +758,34 @@ class RestAPI:
             result = None
             status_code = HTTPStatus.CONFLICT
         else:
-            result = final_balances
+            # Filter balances by threshold for each exchange
+            if usd_value_threshold is not None:
+                filtered_balances = {}
+                for location, balances in final_balances.items():
+                    filtered_balances[location] = {
+                        asset: balance for asset, balance in balances.items()
+                        if balance.usd_value > usd_value_threshold
+                    }
+                result = filtered_balances
+            else:
+                result = final_balances
             status_code = HTTPStatus.OK
 
         return {'result': result, 'message': error_msg, 'status_code': status_code}
 
     @async_api_call()
-    def query_exchange_balances(self, location: Location | None, ignore_cache: bool) -> dict[str, Any]:  # noqa: E501
+    def query_exchange_balances(
+            self,
+            location: Location | None,
+            ignore_cache: bool,
+            usd_value_threshold: FVal | None = None,
+    ) -> dict[str, Any]:
         if location is None:
             # Query all exchanges
-            return self._query_all_exchange_balances(ignore_cache=ignore_cache)
+            return self._query_all_exchange_balances(
+                ignore_cache=ignore_cache,
+                usd_value_threshold=usd_value_threshold,
+            )
 
         # else query only the specific exchange
         exchanges_list = self.rotkehlchen.exchange_manager.connected_exchanges.get(location)
@@ -784,6 +806,13 @@ class RestAPI:
                     'status_code': HTTPStatus.CONFLICT,
                 }
             balances = combine_dicts(balances, result)
+
+        # Filter balances by threshold for single exchange
+        if usd_value_threshold is not None:
+            balances = {
+                asset: balance for asset, balance in balances.items()
+                if balance.usd_value > usd_value_threshold
+            }
 
         return {
             'result': balances,
@@ -812,6 +841,7 @@ class RestAPI:
             self,
             blockchain: SupportedBlockchain | None,
             ignore_cache: bool,
+            usd_value_threshold: FVal | None = None,
     ) -> dict[str, Any]:
         msg = ''
         status_code = HTTPStatus.OK
@@ -829,6 +859,14 @@ class RestAPI:
             status_code = HTTPStatus.BAD_GATEWAY
         else:
             result = balances.serialize()
+            # Filter balances by threshold after serialization
+            if usd_value_threshold is not None and result is not None:
+                # Filter per chain balances
+                for chain, chain_balances in result.items():
+                    result[chain] = {
+                        asset: balance for asset, balance in chain_balances.items()
+                        if balance['usd_value'] > usd_value_threshold
+                    }
 
         return {'result': result, 'message': msg, 'status_code': status_code}
 
@@ -2049,19 +2087,25 @@ class RestAPI:
 
         return OK_RESULT
 
-    def _get_manually_tracked_balances(self) -> dict[str, Any]:
+    def _get_manually_tracked_balances(self, usd_value_threshold: FVal | None) -> dict[str, Any]:
         db_entries = get_manually_tracked_balances(db=self.rotkehlchen.data.db, balance_type=None)
         balances = process_result(
             {
                 'balances': db_entries,
             },
-
         )
+        # Filter balances if threshold is set
+        if usd_value_threshold is not None:
+            balances['balances'] = [
+                balance for balance in balances['balances']
+                if balance['usd_value'] > usd_value_threshold
+            ]
+
         return _wrap_in_ok_result(balances)
 
     @async_api_call()
-    def get_manually_tracked_balances(self) -> dict[str, Any]:
-        return self._get_manually_tracked_balances()
+    def get_manually_tracked_balances(self, usd_value_threshold: FVal | None) -> dict[str, Any]:
+        return self._get_manually_tracked_balances(usd_value_threshold=usd_value_threshold)
 
     @overload
     def _modify_manually_tracked_balances(  # pylint: disable=unused-argument

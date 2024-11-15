@@ -112,6 +112,7 @@ from rotkehlchen.api.v1.schemas import (
     LocationAssetMappingsDeleteSchema,
     LocationAssetMappingsPostSchema,
     LocationAssetMappingsUpdateSchema,
+    ManualBalanceQuerySchema,
     ManuallyTrackedBalancesAddSchema,
     ManuallyTrackedBalancesDeleteSchema,
     ManuallyTrackedBalancesEditSchema,
@@ -868,11 +869,18 @@ class ExchangeBalancesResource(BaseMethodView):
 
     @require_loggedin_user()
     @use_kwargs(get_schema, location='json_and_query_and_view_args')
-    def get(self, location: Location | None, async_query: bool, ignore_cache: bool) -> Response:
+    def get(
+            self,
+            location: Location | None,
+            async_query: bool,
+            ignore_cache: bool,
+            usd_value_threshold: FVal | None,
+    ) -> Response:
         return self.rest_api.query_exchange_balances(
             location=location,
             async_query=async_query,
             ignore_cache=ignore_cache,
+            usd_value_threshold=usd_value_threshold,
         )
 
 
@@ -1069,25 +1077,30 @@ class BlockchainBalancesResource(BaseMethodView):
             blockchain: SupportedBlockchain | None,
             async_query: bool,
             ignore_cache: bool,
+            usd_value_threshold: FVal | None,
     ) -> Response:
         return self.rest_api.query_blockchain_balances(
             blockchain=blockchain,
             async_query=async_query,
             ignore_cache=ignore_cache,
+            usd_value_threshold=usd_value_threshold,
         )
 
 
 class ManuallyTrackedBalancesResource(BaseMethodView):
 
-    get_schema = AsyncQueryArgumentSchema()
+    get_schema = ManualBalanceQuerySchema()
     put_schema = ManuallyTrackedBalancesAddSchema()
     patch_schema = ManuallyTrackedBalancesEditSchema()
     delete_schema = ManuallyTrackedBalancesDeleteSchema()
 
     @require_loggedin_user()
     @use_kwargs(get_schema, location='json_and_query')
-    def get(self, async_query: bool) -> Response:
-        return self.rest_api.get_manually_tracked_balances(async_query=async_query)
+    def get(self, async_query: bool, usd_value_threshold: FVal | None) -> Response:
+        return self.rest_api.get_manually_tracked_balances(
+            async_query=async_query,
+            usd_value_threshold=usd_value_threshold,
+        )
 
     @require_loggedin_user()
     @use_kwargs(put_schema, location='json')

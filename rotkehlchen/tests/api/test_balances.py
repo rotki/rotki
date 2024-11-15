@@ -14,7 +14,17 @@ from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.bitcoin import get_bitcoin_addresses_balances
 from rotkehlchen.chain.ethereum.modules.makerdao.vaults import MakerdaoVault
 from rotkehlchen.constants import ZERO
-from rotkehlchen.constants.assets import A_AVAX, A_BTC, A_DAI, A_ETH, A_EUR, A_KSM, A_USDC, A_USDT
+from rotkehlchen.constants.assets import (
+    A_AVAX,
+    A_BTC,
+    A_DAI,
+    A_ETH,
+    A_EUR,
+    A_KSM,
+    A_USD,
+    A_USDC,
+    A_USDT,
+)
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
@@ -973,3 +983,108 @@ def test_blockchain_balances_refresh(
             A_USDT.identifier: {'amount': '3', 'usd_value': '54'},
         }
         assert one_time_query_result == query_blockchain_balance(4)
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [2])
+@pytest.mark.parametrize('btc_accounts', [[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]])
+@pytest.mark.parametrize('added_exchanges', [(Location.BINANCE, Location.POLONIEX)])
+def test_query_balances_with_threshold(
+        rotkehlchen_api_server_with_exchanges: 'APIServer',
+        ethereum_accounts: list['ChecksumEvmAddress'],
+        btc_accounts: list['BTCAddress'],
+) -> None:
+    """Test that balance filtering by USD value threshold works for all balance types"""
+    rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
+
+    manually_tracked_balances = [
+        ManuallyTrackedBalance(
+            identifier=-1,
+            asset=A_EUR,
+            label='Small EUR',
+            amount=FVal('1'),
+            location=Location.BANKS,
+            tags=None,
+            balance_type=BalanceType.ASSET,
+        ),
+        ManuallyTrackedBalance(
+            identifier=-2,
+            asset=A_USD,
+            label='USD',
+            amount=FVal('10'),
+            location=Location.BANKS,
+            tags=None,
+            balance_type=BalanceType.ASSET,
+        ),
+        ManuallyTrackedBalance(
+            identifier=-3,
+            asset=A_BTC,
+            label='Large BTC',
+            amount=FVal('1'),
+            location=Location.EXTERNAL,
+            tags=None,
+            balance_type=BalanceType.ASSET,
+        ),
+    ]
+
+    setup = setup_balances(
+        rotki=rotki,
+        ethereum_accounts=ethereum_accounts,
+        btc_accounts=btc_accounts,
+        manually_tracked_balances=manually_tracked_balances,
+        eth_balances=['100000000000000000', '200000000000000000'],  # 0.1 and 0.2 ETH
+        token_balances={
+            A_DAI.resolve_to_evm_token(): ['5000000000000000000', '0'],  # 5 DAI and 0 DAI
+            A_USDC.resolve_to_evm_token(): ['1000000', '2000000'],  # 1 USDC and 2 USDC
+        },
+    )
+
+    threshold = 10  # Set threshold to 10 USD
+
+    with ExitStack() as stack:
+        setup.enter_all_patches(stack)
+
+        # Test blockchain balances
+        response = requests.get(
+            api_url_for(
+                rotkehlchen_api_server_with_exchanges,
+                'blockchainbalancesresource',
+            ),
+            params={'usd_value_threshold': threshold},
+        )
+        blockchain_result = assert_proper_sync_response_with_result(response)
+
+        # Test exchange balances
+        response = requests.get(
+            api_url_for(
+                rotkehlchen_api_server_with_exchanges,
+                'exchangebalancesresource',
+            ),
+            params={'usd_value_threshold': threshold},
+        )
+        exchange_result = assert_proper_sync_response_with_result(response)
+
+        # Test manual balances
+        response = requests.get(
+            api_url_for(
+                rotkehlchen_api_server_with_exchanges,
+                'manuallytrackedbalancesresource',
+            ),
+            params={'usd_value_threshold': threshold},
+        )
+        manual_result = assert_proper_sync_response_with_result(response)
+
+        # Assert blockchain balances
+        for chain in blockchain_result['per_account']:
+            for account in blockchain_result['per_account'][chain]:
+                assets = blockchain_result['per_account'][chain][account]['assets']
+                for balance in assets.values():
+                    assert FVal(balance['usd_value']) > FVal(threshold)
+
+        # Assert exchange balances
+        for exchange in exchange_result:
+            for balance in exchange_result[exchange].values():
+                assert FVal(balance['usd_value']) > FVal(threshold)
+
+        # Assert manual balances
+        for balance in manual_result['balances']:
+            assert FVal(balance['usd_value']) > FVal(threshold)

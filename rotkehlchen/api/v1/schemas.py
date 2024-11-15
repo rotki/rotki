@@ -177,6 +177,12 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
+class AssetValueThresholdSchema(Schema):
+    usd_value_threshold = AmountField(
+        load_default=None,
+    )
+
+
 class AsyncQueryArgumentSchema(Schema):
     """A schema for getters that only have one argument enabling async query"""
     async_query = fields.Boolean(load_default=False)
@@ -1489,6 +1495,10 @@ class AllBalancesQuerySchema(AsyncQueryArgumentSchema):
     ignore_cache = fields.Boolean(load_default=False)
 
 
+class ManualBalanceQuerySchema(AsyncQueryArgumentSchema, AssetValueThresholdSchema):
+    """Schema for querying manual balances with optional USD threshold filtering"""
+
+
 class ExternalServiceSchema(Schema):
     name = SerializableEnumField(enum_class=ExternalService, required=True)
     api_key = fields.String(required=False)
@@ -1573,12 +1583,12 @@ class ExchangesResourceRemoveSchema(Schema):
     location = LocationField(limit_to=SUPPORTED_EXCHANGES, required=True)
 
 
-class ExchangeBalanceQuerySchema(AsyncQueryArgumentSchema):
+class ExchangeBalanceQuerySchema(AsyncQueryArgumentSchema, AssetValueThresholdSchema):
     location = LocationField(limit_to=SUPPORTED_EXCHANGES, load_default=None)
     ignore_cache = fields.Boolean(load_default=False)
 
 
-class BlockchainBalanceQuerySchema(AsyncQueryArgumentSchema):
+class BlockchainBalanceQuerySchema(AsyncQueryArgumentSchema, AssetValueThresholdSchema):
     blockchain = BlockchainField(load_default=None)
     ignore_cache = fields.Boolean(load_default=False)
 
