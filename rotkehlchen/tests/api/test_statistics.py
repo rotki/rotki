@@ -180,11 +180,11 @@ def test_query_statistics_asset_balance_errors(rotkehlchen_api_server: APIServer
         api_url_for(
             rotkehlchen_api_server,
             'statisticsassetbalanceresource',
-        ), json={'from_timestamp': 0, 'to_timestamp': start_time, 'asset': 'NOTAREALASSSETLOL'},
+        ), json={'from_timestamp': 0, 'to_timestamp': start_time, 'asset': 'NOTAREALASSETLOL'},
     )
     assert_error_response(
         response=response,
-        contained_in_msg='Unknown asset NOTAREALASSSETLOL provided',
+        contained_in_msg='Unknown asset NOTAREALASSETLOL provided',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 

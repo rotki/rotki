@@ -227,7 +227,7 @@ def test_gnosis_pay_refund(gnosis_inquirer, gnosis_accounts):
             (
                 deserialize_evm_tx_hash('0xb3be0391a753de5ef54b6b43c716240e1cb2a4a0a1120420f5ce168fdd08f17c'),
                 1726712020, 'Acme Inc.',
-                'Sevillla', 'ES', 6666,
+                'Sevilla', 'ES', 6666,
                 'EUR', '42.24',
                 None, None,
                 'EUR', '2.35',
@@ -242,7 +242,7 @@ def test_gnosis_pay_refund(gnosis_inquirer, gnosis_accounts):
     ):
         events = gnosis_txs_decoder.decode_and_get_transaction_hashes(ignore_cache=True, tx_hashes=[tx_hash])  # noqa: E501
 
-    expected_events[0].notes = 'Receive refund of 2.35 EUR from Acme Inc. in Sevillla :country:ES:'
+    expected_events[0].notes = 'Receive refund of 2.35 EUR from Acme Inc. in Sevilla :country:ES:'
     assert events == expected_events
 
     with gnosis_inquirer.database.conn.read_ctx() as cursor:  # also check refund tx hash updated

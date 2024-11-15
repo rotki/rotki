@@ -518,7 +518,7 @@ class TaskManager:
                 },
             )
         else:
-            log.debug('Premium check succesful. Sending activate message')
+            log.debug('Premium check successful. Sending activate message')
             self.activate_premium(premium)
             self.msg_aggregator.add_message(
                 message_type=WSMessageType.PREMIUM_STATUS_UPDATE,
@@ -951,7 +951,7 @@ class TaskManager:
     def schedule(self) -> None:
         """Schedules background task while holding the scheduling lock
 
-        Only if should_schedule has been set to True, which happpens after the first
+        Only if should_schedule has been set to True, which happens after the first
         time the user loads up the dashboard. This is to avoid any background tasks running
         during user migrations, db upgrades and asset upgrades.
 
