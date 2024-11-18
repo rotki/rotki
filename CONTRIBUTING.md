@@ -5,7 +5,7 @@ We welcome feedback, bug reports, and pull requests!
 For pull requests (PRs), please stick to the following guidelines:
 
 * Before submitting a PR, verify that [an issue](https://github.com/rotki/rotki/issues) exists that describes the bug fix or feature you want to contribute. If there's no issue yet, please [create one](https://github.com/rotki/rotki/issues/new/choose).
-* Fork rotki on your GitHub user account, make code changes there, and then create a PR against develop rotki repository.
+* Fork rotki on your GitHub user account, make code changes there, and then create a PR against the develop branch of the rotki repository.
 * Add tests for any new features or bug fixes. Ideally, each PR increases the test coverage. Please read our [Python](https://docs.rotki.com/contribution-guides/python-testing.html#python-code-testing), [Vue/Typescript](https://docs.rotki.com/contribution-guides/vue-typescript-testing.html), [Manual Testing](https://docs.rotki.com/contribution-guides/manual-testing.html) testing guides on how to write tests.
 * Refer to [Development Environment Setup](https://docs.rotki.com/requirement-and-installation) if your local testing environment is not yet properly set up.
 * Separate unrelated changes into multiple PRs.
