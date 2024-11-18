@@ -44,13 +44,27 @@ query GetPoolsCount($chain: GqlChain!, $version: Int!) {
 """
 
 
-GET_V1_POOL_PRICE_QUERY = """
+GET_POOL_PRICE_QUERY = """
 query GetPoolPrice($chain: GqlChain!, $poolId: String!) {
     poolGetPool(chain: $chain, id: $poolId ) {
         dynamicData {
           totalLiquidity
           totalSupply
         }
+    }
+}
+"""
+
+USER_GET_POOL_BALANCES_QUERY = """
+query UserGetPoolBalances($address: String, $chain: GqlChain!) {
+    userGetPoolBalances(address: $address, chains: [$chain]) {
+        chain
+        poolId
+        stakedBalance
+        tokenAddress
+        tokenPrice
+        totalBalance
+        walletBalance
     }
 }
 """

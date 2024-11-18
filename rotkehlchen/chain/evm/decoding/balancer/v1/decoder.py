@@ -4,8 +4,9 @@ from typing import TYPE_CHECKING, Any, Final
 
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value, should_update_protocol_cache
 from rotkehlchen.chain.evm.decoding.balancer.constants import BALANCER_LABEL, CPT_BALANCER_V1
+from rotkehlchen.chain.evm.decoding.balancer.mixins import BalancerCommonAccountingMixin
 from rotkehlchen.chain.evm.decoding.balancer.types import BalancerV1EventTypes
-from rotkehlchen.chain.evm.decoding.balancer.utils import query_balancer_v1_data
+from rotkehlchen.chain.evm.decoding.balancer.utils import query_balancer_data
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface, ReloadableDecoderMixin
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
@@ -17,7 +18,6 @@ from rotkehlchen.chain.evm.decoding.structures import (
     TransferEnrichmentOutput,
 )
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
-from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -40,7 +40,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class Balancerv1CommonDecoder(DecoderInterface, ReloadableDecoderMixin):
+class Balancerv1CommonDecoder(DecoderInterface, BalancerCommonAccountingMixin, ReloadableDecoderMixin):  # noqa: E501
 
     def __init__(
             self,
@@ -53,6 +53,7 @@ class Balancerv1CommonDecoder(DecoderInterface, ReloadableDecoderMixin):
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
         )
+        BalancerCommonAccountingMixin.__init__(self, counterparty=CPT_BALANCER_V1)
         self.pools: set[ChecksumEvmAddress] = set()
 
     def _decode_v1_pool_event(self, all_logs: list[EvmTxReceiptLog]) -> list[dict[str, Any]] | None:  # noqa: E501
@@ -221,101 +222,13 @@ class Balancerv1CommonDecoder(DecoderInterface, ReloadableDecoderMixin):
 
         return decoded_events
 
-    def _check_deposits_withdrawals_v1(
-            self,
-            transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: list['EvmEvent'],
-            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-    ) -> list['EvmEvent']:
-        """
-        Check for accounting in v1 that the deposits/withdrawals events have the needed information
-        to process them during accounting.
-        """
-        related_events: list[EvmEvent] = []
-        related_events_map: dict[EvmEvent, list[EvmEvent]] = {}
-        # last event is only tracked in the case of exiting a pool and contains the event
-        # sending the BPT token
-        last_event = None
-        for event in decoded_events:
-            if event.counterparty != CPT_BALANCER_V1:
-                continue
-
-            # When joining a pool first we spend the assets and then we receive the BPT token.
-            # In the case of exiting the pool first we return the BPT token and then we receive
-            # the assets.
-            # To handle the case of multiple events happening in the same transaction properly we
-            # accumulate them in the current list of events and then we empty it in the
-            # related_events map
-            if (
-                event.event_type == HistoryEventType.RECEIVE and
-                event.event_subtype == HistoryEventSubType.RECEIVE_WRAPPED
-            ):
-                if len(related_events) != 0:
-                    related_events_map[event] = related_events
-                    related_events = []
-                    last_event = None
-
-            elif (
-                event.event_type == HistoryEventType.SPEND and
-                event.event_subtype == HistoryEventSubType.RETURN_WRAPPED
-            ):
-                related_events = []
-                last_event = event
-
-            elif ((
-                  event.event_type == HistoryEventType.DEPOSIT and
-                  event.event_subtype == HistoryEventSubType.DEPOSIT_ASSET
-            ) or (
-                  event.event_type == HistoryEventType.WITHDRAWAL and
-                  event.event_subtype == HistoryEventSubType.REFUND
-            )):
-                # In the case that we are handling a join that comes after an exit we have to
-                # check if there is a change in the direction of the assets (from spending them)
-                # to receiving them
-                if last_event is not None:
-                    # save the exit event and reset the related events
-                    related_events_map[last_event] = related_events
-                    last_event = None
-                    related_events = []
-
-                related_events.append(event)
-
-            elif (
-                event.event_type == HistoryEventType.WITHDRAWAL and
-                event.event_subtype == HistoryEventSubType.REMOVE_ASSET
-            ):
-                related_events.append(event)
-
-        # in the case of returning the BPT token we have to see if we had any pending operation
-        if last_event is not None:
-            related_events_map[last_event] = related_events
-
-        if len(related_events_map) == 0:
-            # it was not a balancer v1 related transaction so exit early
-            return decoded_events
-
-        for pool_token_event, token_related_events in related_events_map.items():
-            if pool_token_event.event_type == HistoryEventType.RECEIVE:
-                ordered_events = token_related_events + [pool_token_event]
-                pool_token_event.extra_data = {'deposit_events_num': len(token_related_events)}
-            else:
-                ordered_events = [pool_token_event] + token_related_events
-                pool_token_event.extra_data = {'withdrawal_events_num': len(token_related_events)}
-
-            # sort the events so the send/receive of the wrapped token comes first
-            # and then the related events
-            maybe_reshuffle_events(
-                ordered_events=ordered_events,
-                events_list=decoded_events,
-            )
-
-        return decoded_events
-
     def reload_data(self) -> Mapping[ChecksumEvmAddress, tuple[Any, ...]] | None:
         if should_update_protocol_cache(cache_key=CacheType.BALANCER_V1_POOLS, args=(self.evm_inquirer.chain_name, '1')) is True:  # noqa: E501
-            query_balancer_v1_data(
-                cache_type=CacheType.BALANCER_V1_POOLS,
+            query_balancer_data(
+                version=1,
+                protocol=CPT_BALANCER_V1,
                 inquirer=self.evm_inquirer,
+                cache_type=CacheType.BALANCER_V1_POOLS,
             )
 
         with GlobalDBHandler().conn.read_ctx() as cursor:
@@ -364,6 +277,6 @@ class Balancerv1CommonDecoder(DecoderInterface, ReloadableDecoderMixin):
         return {
             CPT_BALANCER_V1: [
                 (0, self._check_refunds_v1),
-                (1, self._check_deposits_withdrawals_v1),
+                (1, self._check_deposits_withdrawals),
             ],
         }

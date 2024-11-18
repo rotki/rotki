@@ -8,8 +8,9 @@ from rotkehlchen.chain.ethereum.utils import (
     asset_normalized_value,
     token_normalized_value_decimals,
 )
-from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS
+from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS, ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.balancer.constants import BALANCER_LABEL, CPT_BALANCER_V2
+from rotkehlchen.chain.evm.decoding.balancer.mixins import BalancerCommonAccountingMixin
 from rotkehlchen.chain.evm.decoding.balancer.v2.constants import V2_SWAP, VAULT_ADDRESS
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
@@ -22,7 +23,6 @@ from rotkehlchen.chain.evm.decoding.structures import (
     TransferEnrichmentOutput,
 )
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
-from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
@@ -37,8 +37,10 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
+POOL_BALANCE_CHANGED_TOPIC = b'\xe5\xce$\x90\x87\xce\x04\xf0Z\x95q\x92CT\x00\xfd\x97\x86\x8d\xba\x0ejKL\x04\x9a\xbf\x8a\xf8\r\xaex'  # noqa: E501
 
-class Balancerv2CommonDecoder(DecoderInterface):
+
+class Balancerv2CommonDecoder(DecoderInterface, BalancerCommonAccountingMixin):
 
     def __init__(
             self,
@@ -51,17 +53,74 @@ class Balancerv2CommonDecoder(DecoderInterface):
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
         )
+        BalancerCommonAccountingMixin.__init__(self, counterparty=CPT_BALANCER_V2)
 
-    def decode_swap_creation(self, context: DecoderContext) -> DecodingOutput:
+    def decode_vault_events(self, context: DecoderContext) -> DecodingOutput:
+        if context.tx_log.topics[0] == V2_SWAP:
+            return self._decode_swap_creation(context)
+
+        if context.tx_log.topics[0] == POOL_BALANCE_CHANGED_TOPIC:
+            return self._decode_join_or_exit(context)
+
+        return DEFAULT_DECODING_OUTPUT
+
+    def _decode_join_or_exit(self, context: DecoderContext) -> DecodingOutput:
+        """Decodes and processes Balancer v2 pool join/exit events"""
+        for event in context.decoded_events:
+            token = event.asset.resolve_to_asset_with_symbol()
+            if (
+                event.event_type == HistoryEventType.SPEND and
+                event.event_subtype == HistoryEventSubType.NONE and
+                event.address == ZERO_ADDRESS
+            ):  # exit pool: return wrapped token
+                event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
+                event.notes = f'Return {event.balance.amount} {token.symbol} to a Balancer v2 pool'
+                event.counterparty = CPT_BALANCER_V2
+
+            if (
+                event.event_type == HistoryEventType.RECEIVE and
+                event.event_subtype == HistoryEventSubType.NONE and
+                event.address == context.tx_log.address
+            ):  # exit pool: withdraw token
+                event.event_type = HistoryEventType.WITHDRAWAL
+                event.event_subtype = HistoryEventSubType.REMOVE_ASSET
+                event.counterparty = CPT_BALANCER_V2
+                event.notes = f'Receive {event.balance.amount} {token.symbol} after removing liquidity from a Balancer v2 pool'  # noqa: E501
+
+            if (
+                event.event_type == HistoryEventType.RECEIVE and
+                event.event_subtype == HistoryEventSubType.NONE and
+                event.address == ZERO_ADDRESS
+            ):  # join pool: receive wrapped token
+                event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
+                event.counterparty = CPT_BALANCER_V2
+                event.notes = f'Receive {event.balance.amount} {token.symbol} from a Balancer v2 pool'  # noqa: E501
+
+            if (
+                event.event_type == HistoryEventType.SPEND and
+                event.event_subtype == HistoryEventSubType.NONE and
+                event.address == VAULT_ADDRESS
+            ):  # join pool: deposit token
+                event.event_type = HistoryEventType.DEPOSIT
+                event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
+                event.counterparty = CPT_BALANCER_V2
+                event.notes = f'Deposit {event.balance.amount} {token.symbol} to a Balancer v2 pool'  # noqa: E501
+
+        self._check_deposits_withdrawals(
+            all_logs=context.all_logs,
+            transaction=context.transaction,
+            decoded_events=context.decoded_events,
+        )
+        return DEFAULT_DECODING_OUTPUT
+
+    def _decode_swap_creation(self, context: DecoderContext) -> DecodingOutput:
         """Decode swaps in Balancer v2. A SWAP event is created at transaction start containing
         token and amount information, followed by transfer executions.
+
         The swap event must be detected and transfer amounts matched against it. Special handling
         is needed when native asset is swapped - it's wrapped before sending, so the token shows
         as wrapped native asset, but we have a native asset transfer from user.
         """
-        if context.tx_log.topics[0] != V2_SWAP:
-            return DEFAULT_DECODING_OUTPUT
-
         # The transfer event appears after the swap event, so we need to propagate information
         from_token_address = bytes_to_address(context.tx_log.topics[2])
         to_token_address = bytes_to_address(context.tx_log.topics[3])
@@ -104,7 +163,7 @@ class Balancerv2CommonDecoder(DecoderInterface):
             )
             for event in context.decoded_events:
                 if (
-                    event.asset == A_ETH and event.balance.amount == amount_of_eth and
+                    event.asset == self.evm_inquirer.native_token and event.balance.amount == amount_of_eth and  # noqa: E501
                     event.event_type == HistoryEventType.SPEND and
                     event.event_subtype == HistoryEventSubType.NONE
                 ):
@@ -160,7 +219,7 @@ class Balancerv2CommonDecoder(DecoderInterface):
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {
-            VAULT_ADDRESS: (self.decode_swap_creation,),
+            VAULT_ADDRESS: (self.decode_vault_events,),
         }
 
     def enricher_rules(self) -> list[Callable]:

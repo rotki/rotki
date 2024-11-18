@@ -1153,6 +1153,7 @@ class CacheType(Enum):
     EFP_SLOT_ADDRESS = auto()
     MORPHO_VAULTS = auto()
     BALANCER_V1_POOLS = auto()
+    BALANCER_V2_POOLS = auto()
 
     def serialize(self) -> str:
         # Using custom serialize method instead of SerializableEnumMixin since mixin replaces
@@ -1185,6 +1186,7 @@ UniqueCacheType = Literal[
     CacheType.EFP_SLOT_ADDRESS,
     CacheType.MORPHO_VAULTS,
     CacheType.BALANCER_V1_POOLS,
+    CacheType.BALANCER_V2_POOLS,
 ]
 
 UNIQUE_CACHE_KEYS: tuple[UniqueCacheType, ...] = typing.get_args(UniqueCacheType)
