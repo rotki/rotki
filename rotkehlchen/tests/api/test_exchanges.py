@@ -1,8 +1,8 @@
 import os
 import random
 from http import HTTPStatus
-from typing import TYPE_CHECKING
-from unittest.mock import patch
+from typing import TYPE_CHECKING, Any
+from unittest.mock import _patch, patch
 from urllib.parse import urlencode
 
 import pytest
@@ -57,8 +57,18 @@ from rotkehlchen.tests.utils.history import (
     mock_history_processing_and_exchanges,
     prepare_rotki_for_history_processing_test,
 )
+from rotkehlchen.tests.utils.kraken import MockKraken
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import AssetMovementCategory, Location, Timestamp, TimestampMS, TradeType
+from rotkehlchen.types import (
+    AssetAmount,
+    AssetMovementCategory,
+    Fee,
+    Location,
+    Price,
+    Timestamp,
+    TimestampMS,
+    TradeType,
+)
 
 if TYPE_CHECKING:
     from requests import Response
@@ -66,7 +76,7 @@ if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
 
 
-def mock_validate_api_key():
+def mock_validate_api_key() -> None:
     raise ValueError('BOOM ERROR!')
 
 
@@ -76,7 +86,7 @@ API_KEYPAIR_KRAKEN_VALIDATION_FAIL_PATCH = patch(
 )
 
 
-def mock_validate_api_key_success(location: Location):
+def mock_validate_api_key_success(location: Location) -> _patch:
     name = str(location)
     if location == Location.BINANCEUS:
         name = 'binance'
@@ -86,7 +96,7 @@ def mock_validate_api_key_success(location: Location):
     )
 
 
-def mock_validate_api_key_failure(location: Location):
+def mock_validate_api_key_failure(location: Location) -> _patch:
     name = str(location)
     if location == Location.BINANCEUS:
         name = 'binance'
@@ -101,7 +111,7 @@ def mock_validate_api_key_failure(location: Location):
     reason='Dont query all production exchanges when CI runs',
 )
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
-def test_setup_exchange(rotkehlchen_api_server):
+def test_setup_exchange(rotkehlchen_api_server: 'APIServer') -> None:
     """Test that setting up an exchange via the api works
 
     Hits all production exchange servers with a query to make sure that the api key
@@ -211,7 +221,7 @@ def test_setup_exchange(rotkehlchen_api_server):
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('added_exchanges', [(Location.KRAKEN,)])
-def test_kraken_malformed_response(rotkehlchen_api_server_with_exchanges):
+def test_kraken_malformed_response(rotkehlchen_api_server_with_exchanges: 'APIServer') -> None:
     """Test that if rotki gets a malformed response from Kraken it's handled properly
 
     Regression test for the first part of https://github.com/rotki/rotki/issues/943
@@ -219,11 +229,12 @@ def test_kraken_malformed_response(rotkehlchen_api_server_with_exchanges):
     """
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
     kraken = try_get_first_exchange(rotki.exchange_manager, Location.KRAKEN)
+    assert isinstance(kraken, MockKraken)
     kraken.cache_ttl_secs = 0
     kraken.use_original_kraken = True
     response_data = '{"'
 
-    def mock_kraken_return(url, *args, **kwargs):  # pylint: disable=unused-argument
+    def mock_kraken_return(url: str, *args: Any, **kwargs: Any) -> MockResponse:  # pylint: disable=unused-argument
         return MockResponse(200, response_data)
     kraken_patch = patch.object(kraken.session, 'post', side_effect=mock_kraken_return)
 
@@ -257,7 +268,9 @@ def test_kraken_malformed_response(rotkehlchen_api_server_with_exchanges):
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
-def test_setup_exchange_does_not_stay_in_mapping_after_500_error(rotkehlchen_api_server):
+def test_setup_exchange_does_not_stay_in_mapping_after_500_error(
+        rotkehlchen_api_server: 'APIServer',
+) -> None:
     """Test that if 500 error is returned during setup of an exchange and it's stuck
     in the exchange mapping rotki doesn't still think the exchange is registered.
 
@@ -288,14 +301,14 @@ def test_setup_exchange_does_not_stay_in_mapping_after_500_error(rotkehlchen_api
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
-def test_setup_exchange_errors(rotkehlchen_api_server):
+def test_setup_exchange_errors(rotkehlchen_api_server: 'APIServer') -> None:
     """Test errors and edge cases of setup_exchange endpoint"""
 
     # Provide unsupported exchange location
-    data = {'location': 'notexisting', 'name': 'foo', 'api_key': 'ddddd', 'api_secret': 'fffffff'}
     with mock_validate_api_key_success(Location.KRAKEN):
         response = requests.put(
-            api_url_for(rotkehlchen_api_server, 'exchangesresource'), json=data,
+            api_url_for(rotkehlchen_api_server, 'exchangesresource'),
+            json={'location': 'notexisting', 'name': 'foo', 'api_key': 'ddddd', 'api_secret': 'fffffff'},  # noqa: E501
         )
     assert_error_response(
         response=response,
@@ -304,10 +317,10 @@ def test_setup_exchange_errors(rotkehlchen_api_server):
     )
 
     # Provide invalid type exchange location
-    data = {'location': 3434, 'name': 'foo', 'api_key': 'ddddd', 'api_secret': 'fffffff'}
     with mock_validate_api_key_success(Location.KRAKEN):
         response = requests.put(
-            api_url_for(rotkehlchen_api_server, 'exchangesresource'), json=data,
+            api_url_for(rotkehlchen_api_server, 'exchangesresource'),
+            json={'location': 3434, 'name': 'foo', 'api_key': 'ddddd', 'api_secret': 'fffffff'},
         )
     assert_error_response(
         response=response,
@@ -316,10 +329,10 @@ def test_setup_exchange_errors(rotkehlchen_api_server):
     )
 
     # Provide invalid type exchange name
-    data = {'location': 'kraken', 'name': 55, 'api_key': 'ddddd', 'api_secret': 'fffffff'}
     with mock_validate_api_key_success(Location.KRAKEN):
         response = requests.put(
-            api_url_for(rotkehlchen_api_server, 'exchangesresource'), json=data,
+            api_url_for(rotkehlchen_api_server, 'exchangesresource'),
+            json={'location': 'kraken', 'name': 55, 'api_key': 'ddddd', 'api_secret': 'fffffff'},
         )
     assert_error_response(
         response=response,
@@ -328,10 +341,10 @@ def test_setup_exchange_errors(rotkehlchen_api_server):
     )
 
     # Omit exchange name and location
-    data = {'api_key': 'ddddd', 'api_secret': 'fffffff'}
     with mock_validate_api_key_success(Location.KRAKEN):
         response = requests.put(
-            api_url_for(rotkehlchen_api_server, 'exchangesresource'), json=data,
+            api_url_for(rotkehlchen_api_server, 'exchangesresource'),
+            json={'api_key': 'ddddd', 'api_secret': 'fffffff'},
         )
     assert_error_response(
         response=response,
@@ -340,10 +353,10 @@ def test_setup_exchange_errors(rotkehlchen_api_server):
     )
 
     # Provide invalid type for api key
-    data = {'name': 'kraken', 'api_key': True, 'api_secret': 'fffffff'}
     with mock_validate_api_key_success(Location.KRAKEN):
         response = requests.put(
-            api_url_for(rotkehlchen_api_server, 'exchangesresource'), json=data,
+            api_url_for(rotkehlchen_api_server, 'exchangesresource'),
+            json={'name': 'kraken', 'api_key': True, 'api_secret': 'fffffff'},
         )
     assert_error_response(
         response=response,
@@ -352,10 +365,10 @@ def test_setup_exchange_errors(rotkehlchen_api_server):
     )
 
     # Omit api key
-    data = {'name': 'kraken', 'api_secret': 'fffffff'}
     with mock_validate_api_key_success(Location.KRAKEN):
         response = requests.put(
-            api_url_for(rotkehlchen_api_server, 'exchangesresource'), json=data,
+            api_url_for(rotkehlchen_api_server, 'exchangesresource'),
+            json={'name': 'kraken', 'api_secret': 'fffffff'},
         )
     assert_error_response(
         response=response,
@@ -364,10 +377,10 @@ def test_setup_exchange_errors(rotkehlchen_api_server):
     )
 
     # Provide invalid type for api secret
-    data = {'name': 'kraken', 'api_key': 'ddddd', 'api_secret': 234.1}
     with mock_validate_api_key_success(Location.KRAKEN):
         response = requests.put(
-            api_url_for(rotkehlchen_api_server, 'exchangesresource'), json=data,
+            api_url_for(rotkehlchen_api_server, 'exchangesresource'),
+            json={'name': 'kraken', 'api_key': 'ddddd', 'api_secret': 234.1},
         )
     assert_error_response(
         response=response,
@@ -376,10 +389,10 @@ def test_setup_exchange_errors(rotkehlchen_api_server):
     )
 
     # Omit api secret
-    data = {'name': 'kraken', 'api_key': 'ddddd'}
     with mock_validate_api_key_success(Location.KRAKEN):
         response = requests.put(
-            api_url_for(rotkehlchen_api_server, 'exchangesresource'), json=data,
+            api_url_for(rotkehlchen_api_server, 'exchangesresource'),
+            json={'name': 'kraken', 'api_key': 'ddddd'},
         )
     assert_error_response(
         response=response,
@@ -389,7 +402,7 @@ def test_setup_exchange_errors(rotkehlchen_api_server):
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
-def test_remove_exchange(rotkehlchen_api_server):
+def test_remove_exchange(rotkehlchen_api_server: 'APIServer') -> None:
     """Test that removing a setup exchange via the api works"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     db = rotki.data.db
@@ -457,11 +470,13 @@ def test_remove_exchange(rotkehlchen_api_server):
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
-def test_remove_exchange_errors(rotkehlchen_api_server):
+def test_remove_exchange_errors(rotkehlchen_api_server: 'APIServer') -> None:
     """Errors and edge cases when using the remove exchange endpoint"""
     # remove unsupported exchange
-    data = {'location': 'wowexchange', 'name': 'foo'}
-    response = requests.delete(api_url_for(rotkehlchen_api_server, 'exchangesresource'), json=data)
+    response = requests.delete(
+        api_url_for(rotkehlchen_api_server, 'exchangesresource'),
+        json={'location': 'wowexchange', 'name': 'foo'},
+    )
     assert_error_response(
         response=response,
         contained_in_msg='Failed to deserialize Location value wowexchange',
@@ -469,8 +484,10 @@ def test_remove_exchange_errors(rotkehlchen_api_server):
     )
 
     # invalid type for exchange location
-    data = {'location': 5533, 'name': 'foo'}
-    response = requests.delete(api_url_for(rotkehlchen_api_server, 'exchangesresource'), json=data)
+    response = requests.delete(
+        api_url_for(rotkehlchen_api_server, 'exchangesresource'),
+        json={'location': 5533, 'name': 'foo'},
+    )
     assert_error_response(
         response=response,
         contained_in_msg='Failed to deserialize Location value from non string value',
@@ -478,8 +495,10 @@ def test_remove_exchange_errors(rotkehlchen_api_server):
     )
 
     # invalid type for exchange name
-    data = {'location': 'kraken', 'name': 55}
-    response = requests.delete(api_url_for(rotkehlchen_api_server, 'exchangesresource'), json=data)
+    response = requests.delete(
+        api_url_for(rotkehlchen_api_server, 'exchangesresource'),
+        json={'location': 'kraken', 'name': 55},
+    )
     assert_error_response(
         response=response,
         contained_in_msg='Not a valid string',
@@ -496,14 +515,14 @@ def test_remove_exchange_errors(rotkehlchen_api_server):
 
 
 @pytest.mark.parametrize('added_exchanges', [(Location.BINANCE, Location.POLONIEX)])
-def test_exchange_query_balances(rotkehlchen_api_server_with_exchanges):
+def test_exchange_query_balances(rotkehlchen_api_server_with_exchanges: 'APIServer') -> None:
     """Test that using the exchange balances query endpoint works fine"""
     async_query = random.choice([False, True])
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
     # query balances of one specific exchange
     server = rotkehlchen_api_server_with_exchanges
     binance = try_get_first_exchange(rotki.exchange_manager, Location.BINANCE)
-
+    assert binance is not None
     binance_patch = patch_binance_balances_query(binance)
     with binance_patch:
         response = requests.get(api_url_for(
@@ -520,6 +539,7 @@ def test_exchange_query_balances(rotkehlchen_api_server_with_exchanges):
 
     # query balances of all setup exchanges
     poloniex = try_get_first_exchange(rotki.exchange_manager, Location.POLONIEX)
+    assert poloniex is not None
     poloniex_patch = patch_poloniex_balances_query(poloniex)
     with binance_patch, poloniex_patch:
         response = requests.get(
@@ -538,11 +558,14 @@ def test_exchange_query_balances(rotkehlchen_api_server_with_exchanges):
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('added_exchanges', [(Location.BINANCE, Location.POLONIEX)])
-def test_exchange_query_balances_ignore_cache(rotkehlchen_api_server_with_exchanges):
+def test_exchange_query_balances_ignore_cache(
+        rotkehlchen_api_server_with_exchanges: 'APIServer',
+) -> None:
     """Test that using the exchange balances query endpoint can ignore cache"""
     server = rotkehlchen_api_server_with_exchanges
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
     binance = try_get_first_exchange(rotki.exchange_manager, Location.BINANCE)
+    assert binance is not None
     binance_patch = patch_binance_balances_query(binance)
     binance_api_query_dict = patch.object(binance, 'api_query_dict', wraps=binance.api_query_dict)
     binance_api_query_list = patch.object(binance, 'api_query_list', wraps=binance.api_query_list)
@@ -584,7 +607,9 @@ def test_exchange_query_balances_ignore_cache(rotkehlchen_api_server_with_exchan
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('added_exchanges', [(Location.BINANCE, Location.POLONIEX)])
-def test_exchange_query_balances_errors(rotkehlchen_api_server_with_exchanges):
+def test_exchange_query_balances_errors(
+        rotkehlchen_api_server_with_exchanges: 'APIServer',
+) -> None:
     """Test errors and edge cases of the exchange balances query endpoint"""
     server = rotkehlchen_api_server_with_exchanges
     # Invalid exchange
@@ -614,7 +639,7 @@ def test_exchange_query_balances_errors(rotkehlchen_api_server_with_exchanges):
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('added_exchanges', [(Location.BINANCE, Location.POLONIEX)])
-def test_exchange_query_trades(rotkehlchen_api_server_with_exchanges: 'APIServer'):
+def test_exchange_query_trades(rotkehlchen_api_server_with_exchanges: 'APIServer') -> None:
     """Test that using the exchange trades query endpoint works fine"""
     async_query = random.choice([False, True])
     server = rotkehlchen_api_server_with_exchanges
@@ -654,7 +679,7 @@ def test_exchange_query_trades(rotkehlchen_api_server_with_exchanges: 'APIServer
     assert_binance_trades_result([x['entry'] for x in trades if x['entry']['location'] == 'binance'])  # noqa: E501
     assert_poloniex_trades_result([x['entry'] for x in trades if x['entry']['location'] == 'poloniex'])  # noqa: E501
 
-    def assert_okay(response: 'Response'):
+    def assert_okay(response: 'Response') -> None:
         """Helper function for DRY checking below assertions"""
         if async_query:
             task_id = assert_ok_async_response(response)
@@ -714,7 +739,10 @@ def test_exchange_query_trades(rotkehlchen_api_server_with_exchanges: 'APIServer
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('added_exchanges', [(Location.KRAKEN, Location.POLONIEX)])
 @pytest.mark.parametrize('start_with_valid_premium', [False, True])
-def test_query_asset_movements(rotkehlchen_api_server_with_exchanges, start_with_valid_premium):
+def test_query_asset_movements(
+        rotkehlchen_api_server_with_exchanges: 'APIServer',
+        start_with_valid_premium: bool,
+) -> None:
     """Test that using the asset movements query endpoint works fine"""
     async_query = random.choice([False, True])
     server = rotkehlchen_api_server_with_exchanges
@@ -769,7 +797,7 @@ def test_query_asset_movements(rotkehlchen_api_server_with_exchanges, start_with
     assert_poloniex_asset_movements([x['entry'] for x in movements if x['entry']['location'] == 'poloniex'], True)  # noqa: E501
     assert_kraken_asset_movements([x['entry'] for x in movements if x['entry']['location'] == 'kraken'], True)  # noqa: E501
 
-    def assert_okay(response):
+    def assert_okay(response: 'Response') -> None:
         """Helper function for DRY checking below assertions"""
         if async_query:
             task_id = assert_ok_async_response(response)
@@ -792,7 +820,7 @@ def test_query_asset_movements(rotkehlchen_api_server_with_exchanges, start_with
         )
 
     # and now query them in a specific time range excluding some asset movements
-    data = {'from_timestamp': 1439994442, 'to_timestamp': 1458994442, 'async_query': async_query}
+    data: dict[str, Any] = {'from_timestamp': 1439994442, 'to_timestamp': 1458994442, 'async_query': async_query}  # noqa: E501
     with setup.polo_patch:
         response = requests.get(api_url_for(server, 'assetmovementsresource'), json=data)
         assert_okay(response)
@@ -814,16 +842,16 @@ def test_query_asset_movements(rotkehlchen_api_server_with_exchanges, start_with
         toggle_ignore_an_asset(rotkehlchen_api_server_with_exchanges, A_BTC)
         data |= {'exclude_ignored_assets': True}
         ignored_response = requests.get(api_url_for(server, 'assetmovementsresource'), json=data)
-        ignored_response = assert_proper_sync_response_with_result(ignored_response)
+        ignored_response_data = assert_proper_sync_response_with_result(ignored_response)
         default_response = requests.get(api_url_for(server, 'assetmovementsresource'))
-        default_response = assert_proper_sync_response_with_result(default_response)
-        assert ignored_response == default_response, '`exclude_ignored_assets` should be True by default'  # noqa: E501
+        default_response_data = assert_proper_sync_response_with_result(default_response)
+        assert ignored_response_data == default_response_data, '`exclude_ignored_assets` should be True by default'  # noqa: E501
 
         assert all(
             x['entry']['asset'] != 'BTC'
-            for x in ignored_response['entries']
+            for x in ignored_response_data['entries']
         ), 'BTC asset movements should have now been ignored for accounting'
-        assert len(ignored_response['entries']) == 6, 'Only 6 asset movements should have been returned'  # noqa: E501
+        assert len(ignored_response_data['entries']) == 6, 'Only 6 asset movements should have been returned'  # noqa: E501
 
         data['exclude_ignored_assets'] = False
         not_exclude_response = requests.get(
@@ -851,7 +879,7 @@ def test_query_asset_movements(rotkehlchen_api_server_with_exchanges, start_with
         movements_to_check=(1, 2),
     )
 
-    def assert_order_by(order_by: str):
+    def assert_order_by(order_by: str) -> tuple[list[dict[str, Any]], ...]:
         """A helper to keep things DRY in the test"""
         data = {'order_by_attributes': [order_by], 'ascending': [False], 'only_cache': True}
         response = requests.get(
@@ -918,9 +946,9 @@ def test_query_asset_movements(rotkehlchen_api_server_with_exchanges, start_with
 @pytest.mark.parametrize('added_exchanges', [(Location.KRAKEN, Location.POLONIEX)])
 @pytest.mark.parametrize('start_with_valid_premium', [False, True])
 def test_query_asset_movements_over_limit(
-        rotkehlchen_api_server_with_exchanges,
-        start_with_valid_premium,
-):
+        rotkehlchen_api_server_with_exchanges: 'APIServer',
+        start_with_valid_premium: bool,
+) -> None:
     """Test that using the asset movements query endpoint works fine"""
     start_ts = 0
     end_ts = 1598453214
@@ -931,8 +959,8 @@ def test_query_asset_movements_over_limit(
         rotki.data.db.update_used_query_range(
             write_cursor=cursor,
             name='kraken_asset_movements_mockkraken',
-            start_ts=start_ts,
-            end_ts=end_ts,
+            start_ts=Timestamp(start_ts),
+            end_ts=Timestamp(end_ts),
         )
         polo_entries_num = 4
         # Set a ton of kraken asset movements in the DB
@@ -942,11 +970,11 @@ def test_query_asset_movements_over_limit(
             category=AssetMovementCategory.DEPOSIT,
             address=None,
             transaction_id=None,
-            timestamp=x,
+            timestamp=Timestamp(x),
             asset=A_BTC,
             amount=FVal(x * 100),
             fee_asset=A_BTC,
-            fee=FVal(x),
+            fee=Fee(FVal(x)),
             link='') for x in range(kraken_entries_num)
         ]
         rotki.data.db.add_asset_movements(cursor, movements)
@@ -990,19 +1018,21 @@ def test_query_asset_movements_over_limit(
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
-def test_delete_external_exchange_data_works(rotkehlchen_api_server_with_exchanges):
+def test_delete_external_exchange_data_works(
+        rotkehlchen_api_server_with_exchanges: 'APIServer',
+) -> None:
     server = rotkehlchen_api_server_with_exchanges
     rotki = server.rest_api.rotkehlchen
 
     trades = [Trade(
-        timestamp=0,
+        timestamp=Timestamp(0),
         location=x,
         base_asset=A_ETH,
         quote_asset=A_EUR,
         trade_type=TradeType.BUY,
-        amount=ONE,
-        rate=ONE,
-        fee=ONE,
+        amount=AssetAmount(ONE),
+        rate=Price(ONE),
+        fee=Fee(ONE),
         fee_currency=A_EUR,
         link='',
         notes='',
@@ -1012,11 +1042,11 @@ def test_delete_external_exchange_data_works(rotkehlchen_api_server_with_exchang
         category=AssetMovementCategory.DEPOSIT,
         address=None,
         transaction_id=None,
-        timestamp=0,
+        timestamp=Timestamp(0),
         asset=A_BTC,
-        amount=FVal(100),
+        amount=AssetAmount(FVal(100)),
         fee_asset=A_BTC,
-        fee=ONE,
+        fee=Fee(ONE),
         link='') for x in (Location.CRYPTOCOM, Location.KRAKEN)]
     with rotki.data.db.user_write() as cursor:
         rotki.data.db.add_trades(cursor, trades)
@@ -1172,11 +1202,15 @@ def test_edit_exchange_account(rotkehlchen_api_server_with_exchanges: 'APIServer
 
 
 @pytest.mark.parametrize('added_exchanges', [(Location.OKX, Location.KUCOIN)])
-def test_edit_exchange_account_passphrase(rotkehlchen_api_server_with_exchanges):
+def test_edit_exchange_account_passphrase(
+        rotkehlchen_api_server_with_exchanges: 'APIServer',
+) -> None:
     server = rotkehlchen_api_server_with_exchanges
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
     okx = try_get_first_exchange(rotki.exchange_manager, Location.OKX)
+    assert okx is not None
     kucoin = try_get_first_exchange(rotki.exchange_manager, Location.KUCOIN)
+    assert kucoin is not None
     assert kucoin.name == 'kucoin'
     assert kucoin.api_passphrase == '123'
     assert okx.name == 'okx'
@@ -1189,6 +1223,7 @@ def test_edit_exchange_account_passphrase(rotkehlchen_api_server_with_exchanges)
     result = assert_proper_sync_response_with_result(response)
     assert result is True
     kucoin = try_get_first_exchange(rotki.exchange_manager, Location.KUCOIN)
+    assert kucoin is not None
     assert kucoin.name == 'my_kucoin'
     assert kucoin.api_passphrase == '$123$'
 
@@ -1199,15 +1234,19 @@ def test_edit_exchange_account_passphrase(rotkehlchen_api_server_with_exchanges)
     result = assert_proper_sync_response_with_result(response)
     assert result is True
     okx = try_get_first_exchange(rotki.exchange_manager, Location.OKX)
+    assert okx is not None
     assert okx.name == 'okx'
     assert okx.session.headers['OK-ACCESS-PASSPHRASE'] == '$321$'
 
 
 @pytest.mark.parametrize('added_exchanges', [(Location.KRAKEN,)])
-def test_edit_exchange_kraken_account_type(rotkehlchen_api_server_with_exchanges):
+def test_edit_exchange_kraken_account_type(
+        rotkehlchen_api_server_with_exchanges: 'APIServer',
+) -> None:
     server = rotkehlchen_api_server_with_exchanges
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
     kraken = try_get_first_exchange(rotki.exchange_manager, Location.KRAKEN)
+    assert kraken is not None
     assert kraken.account_type == DEFAULT_KRAKEN_ACCOUNT_TYPE
     assert kraken.call_limit == 15
     assert kraken.reduction_every_secs == 3
@@ -1217,6 +1256,7 @@ def test_edit_exchange_kraken_account_type(rotkehlchen_api_server_with_exchanges
     result = assert_proper_sync_response_with_result(response)
     assert result is True
     kraken = try_get_first_exchange(rotki.exchange_manager, Location.KRAKEN)
+    assert kraken is not None
     assert kraken.name == 'mockkraken'
     assert kraken.account_type == KrakenAccountType.INTERMEDIATE
     assert kraken.call_limit == 20
@@ -1228,6 +1268,7 @@ def test_edit_exchange_kraken_account_type(rotkehlchen_api_server_with_exchanges
     result = assert_proper_sync_response_with_result(response)
     assert result is True
     kraken = try_get_first_exchange(rotki.exchange_manager, Location.KRAKEN)
+    assert kraken is not None
     assert kraken.name == 'lolkraken'
     assert kraken.account_type == KrakenAccountType.PRO
     assert kraken.call_limit == 20
@@ -1244,7 +1285,7 @@ def test_edit_exchange_kraken_account_type(rotkehlchen_api_server_with_exchanges
 
 
 @pytest.mark.parametrize('added_exchanges', [SUPPORTED_EXCHANGES])
-def test_edit_exchange_credentials(rotkehlchen_api_server_with_exchanges):
+def test_edit_exchange_credentials(rotkehlchen_api_server_with_exchanges: 'APIServer') -> None:
     server = rotkehlchen_api_server_with_exchanges
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
 
@@ -1252,7 +1293,7 @@ def test_edit_exchange_credentials(rotkehlchen_api_server_with_exchanges):
     new_key = 'new_key'
     new_secret = 'new_secret'
     for location in SUPPORTED_EXCHANGES:
-        exchange = try_get_first_exchange(rotki.exchange_manager, location)
+        exchange = try_get_first_exchange(rotki.exchange_manager, location)  # type: ignore[call-overload]  # mypy only sees the type as Location
         # change both passphrase and name -- kucoin
         data = {
             'name': exchange.name,
@@ -1278,7 +1319,7 @@ def test_edit_exchange_credentials(rotkehlchen_api_server_with_exchanges):
 
     # Test that api key validation failure is handled correctly
     for location in SUPPORTED_EXCHANGES:
-        exchange = try_get_first_exchange(rotki.exchange_manager, location)
+        exchange = try_get_first_exchange(rotki.exchange_manager, location)  # type: ignore[call-overload]  # mypy only sees the type as Location
         # change both passphrase and name -- kucoin
         data = {
             'name': exchange.name,
@@ -1305,7 +1346,7 @@ def test_edit_exchange_credentials(rotkehlchen_api_server_with_exchanges):
 
 
 @pytest.mark.parametrize('added_exchanges', [(Location.BINANCE,)])
-def test_binance_query_pairs(rotkehlchen_api_server_with_exchanges):
+def test_binance_query_pairs(rotkehlchen_api_server_with_exchanges: 'APIServer') -> None:
     """Test that the binance endpoint returns some market pairs"""
     ci_run = 'CI' in os.environ
     server = rotkehlchen_api_server_with_exchanges
@@ -1316,7 +1357,7 @@ def test_binance_query_pairs(rotkehlchen_api_server_with_exchanges):
                 server,
                 'binanceavailablemarkets',
             ),
-            params={'location': Location.BINANCE},
+            params={'location': Location.BINANCE.name},
         )
         result = assert_proper_sync_response_with_result(response)
         some_pairs = {'ETHUSDC', 'BTCUSDC', 'BNBBTC', 'FTTBNB'}
@@ -1329,7 +1370,7 @@ def test_binance_query_pairs(rotkehlchen_api_server_with_exchanges):
             server,
             'binanceavailablemarkets',
         ),
-        params={'location': Location.BINANCEUS},
+        params={'location': Location.BINANCEUS.name},
     )
     binanceus_pairs_num = len(binance_globaldb.get_all_binance_pairs(Location.BINANCEUS))
     assert binanceus_pairs_num != 0

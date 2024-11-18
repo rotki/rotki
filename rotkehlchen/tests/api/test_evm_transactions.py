@@ -84,7 +84,7 @@ def _assert_evm_transaction_status(
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.freeze_time('2022-12-29 10:10:00 GMT')
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
-def test_query_transactions(rotkehlchen_api_server: 'APIServer'):
+def test_query_transactions(rotkehlchen_api_server: 'APIServer') -> None:
     """Test that querying the evm transactions endpoint for an address with
     transactions in multiple chains works fine.
 

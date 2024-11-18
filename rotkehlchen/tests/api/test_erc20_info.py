@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pytest
 import requests
@@ -10,6 +10,9 @@ from rotkehlchen.tests.utils.api import (
     assert_error_response,
     assert_proper_sync_response_with_result,
 )
+
+if TYPE_CHECKING:
+    from rotkehlchen.api.server import APIServer
 
 
 def assert_default_erc20_info_response(result: Any) -> None:
@@ -23,7 +26,7 @@ def assert_default_erc20_info_response(result: Any) -> None:
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
-def test_query_token_with_info(rotkehlchen_api_server):
+def test_query_token_with_info(rotkehlchen_api_server: 'APIServer') -> None:
     """Test api for querying evm token details"""
 
     response = requests.get(

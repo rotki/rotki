@@ -1,10 +1,12 @@
 from http import HTTPStatus
+from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import pytest
 import requests
 
 from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.timing import ENS_UPDATE_INTERVAL
 from rotkehlchen.db.ens import DBEns
 from rotkehlchen.errors.misc import BlockchainQueryError, RemoteError
@@ -16,11 +18,17 @@ from rotkehlchen.tests.utils.api import (
 from rotkehlchen.types import ChecksumEvmAddress, EnsMapping, Timestamp
 from rotkehlchen.utils.misc import ts_now
 
+if TYPE_CHECKING:
+    from rotkehlchen.api.server import APIServer
 
-def _get_timestamps(db: DBEns, addresses: list[ChecksumEvmAddress]):
+
+def _get_timestamps(db: DBEns, addresses: list[ChecksumEvmAddress]) -> list[Timestamp]:
     timestamps = []
     with db.db.conn.read_ctx() as cursor:
-        for value in db.get_reverse_ens(cursor, addresses).values():
+        for value in db.get_reverse_ens(
+            cursor=cursor,
+            addresses=addresses,
+        ).values():
             if isinstance(value, int):
                 timestamps.append(value)
             else:
@@ -75,13 +83,13 @@ def mocked_find_ens_mappings(
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.freeze_time('2024-04-11 23:00:00 GMT')
-def test_reverse_ens(rotkehlchen_api_server):
+def test_reverse_ens(rotkehlchen_api_server: 'APIServer') -> None:
     """Test that we can reverse resolve ENS names"""
     db = DBEns(rotkehlchen_api_server.rest_api.rotkehlchen.data.db)
     db_conn = rotkehlchen_api_server.rest_api.rotkehlchen.data.db.conn
     addrs_1 = [
-        '0x9531C059098e3d194fF87FebB587aB07B30B1306',
-        '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',
+        string_to_evm_address('0x9531C059098e3d194fF87FebB587aB07B30B1306'),
+        string_to_evm_address('0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'),
     ]
     with patch('rotkehlchen.api.rest.find_ens_mappings', wraps=mocked_find_ens_mappings):
         response = requests.post(
@@ -99,9 +107,9 @@ def test_reverse_ens(rotkehlchen_api_server):
         assert result == expected_resp_1
 
         addrs_2 = [
-            '0x9531C059098e3d194fF87FebB587aB07B30B1306',
-            '0xA4b73b39F73F73655e9fdC5D167c21b3fA4A1eD6',
-            '0x71C7656EC7ab88b098defB751B7401B5f6d8976F',
+            string_to_evm_address('0x9531C059098e3d194fF87FebB587aB07B30B1306'),
+            string_to_evm_address('0xA4b73b39F73F73655e9fdC5D167c21b3fA4A1eD6'),
+            string_to_evm_address('0x71C7656EC7ab88b098defB751B7401B5f6d8976F'),
         ]
         timestamps_before_request = _get_timestamps(db, addrs_1)
         response = requests.post(

@@ -1,4 +1,5 @@
 from http import HTTPStatus
+from typing import TYPE_CHECKING
 
 import pytest
 import requests
@@ -12,14 +13,17 @@ from rotkehlchen.tests.utils.api import (
     assert_proper_sync_response_with_result,
 )
 
+if TYPE_CHECKING:
+    from rotkehlchen.api.server import APIServer
+
 
 @pytest.mark.parametrize('start_with_logged_in_user', [False])
-def test_querying_exchange_rates(rotkehlchen_api_server):
+def test_querying_exchange_rates(rotkehlchen_api_server: 'APIServer') -> None:
     """Make sure that querying exchange rates works also without logging in"""
     # Test with empty list of currencies
-    data = {'currencies': []}
     response = requests.get(
-        api_url_for(rotkehlchen_api_server, 'exchangeratesresource'), json=data,
+        api_url_for(rotkehlchen_api_server, 'exchangeratesresource'),
+        json={'currencies': []},
     )
     assert_error_response(
         response=response,
@@ -27,7 +31,7 @@ def test_querying_exchange_rates(rotkehlchen_api_server):
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
-    def assert_okay(response):
+    def assert_okay(response: requests.Response) -> None:
         """Helper function for DRY checking below assertions"""
         assert_proper_response(response)
         json_data = response.json()
@@ -58,7 +62,7 @@ def test_querying_exchange_rates(rotkehlchen_api_server):
 
 
 @pytest.mark.parametrize('start_with_logged_in_user', [False])
-def test_querying_exchange_rates_errors(rotkehlchen_api_server):
+def test_querying_exchange_rates_errors(rotkehlchen_api_server: 'APIServer') -> None:
     """Make sure that querying exchange rates with wrong input is handled"""
 
     # Test with invalid type for currency

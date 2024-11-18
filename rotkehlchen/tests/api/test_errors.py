@@ -1,11 +1,20 @@
+from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import requests
 
 from rotkehlchen.tests.utils.api import api_url_for, assert_proper_response
 
+if TYPE_CHECKING:
+    import pytest
 
-def test_async_task_death_traceback(rotkehlchen_api_server, caplog):
+    from rotkehlchen.api.server import APIServer
+
+
+def test_async_task_death_traceback(
+        rotkehlchen_api_server: 'APIServer',
+        caplog: 'pytest.LogCaptureFixture',
+) -> None:
     """Test that the exception traceback appears in the logs for dead async tasks
 
     Note that there still can be some tasks for which the task's gevent has saved

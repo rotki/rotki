@@ -903,8 +903,120 @@ def create_test_woo(
 @overload
 def try_get_first_exchange(
         exchange_manager: ExchangeManager,
-        location: Literal[Location.BINANCE],
+        location: Literal[Location.BINANCE, Location.BINANCEUS],
 ) -> Binance | None:
+    ...
+
+
+@overload
+def try_get_first_exchange(
+        exchange_manager: ExchangeManager,
+        location: Literal[Location.BITPANDA],
+) -> Bitpanda | None:
+    ...
+
+
+@overload
+def try_get_first_exchange(
+        exchange_manager: ExchangeManager,
+        location: Literal[Location.BITCOINDE],
+) -> Bitcoinde | None:
+    ...
+
+
+@overload
+def try_get_first_exchange(
+        exchange_manager: ExchangeManager,
+        location: Literal[Location.BITFINEX],
+) -> Bitfinex | None:
+    ...
+
+
+@overload
+def try_get_first_exchange(
+        exchange_manager: ExchangeManager,
+        location: Literal[Location.BITMEX],
+) -> Bitmex | None:
+    ...
+
+
+@overload
+def try_get_first_exchange(
+        exchange_manager: ExchangeManager,
+        location: Literal[Location.BITSTAMP],
+) -> Bitstamp | None:
+    ...
+
+
+@overload
+def try_get_first_exchange(
+        exchange_manager: ExchangeManager,
+        location: Literal[Location.BYBIT],
+) -> Bybit | None:
+    ...
+
+
+@overload
+def try_get_first_exchange(
+        exchange_manager: ExchangeManager,
+        location: Literal[Location.COINBASE],
+) -> Coinbase | None:
+    ...
+
+
+@overload
+def try_get_first_exchange(
+        exchange_manager: ExchangeManager,
+        location: Literal[Location.COINBASEPRIME],
+) -> Coinbaseprime | None:
+    ...
+
+
+@overload
+def try_get_first_exchange(
+        exchange_manager: ExchangeManager,
+        location: Literal[Location.GEMINI],
+) -> Gemini | None:
+    ...
+
+
+@overload
+def try_get_first_exchange(
+        exchange_manager: ExchangeManager,
+        location: Literal[Location.HTX],
+) -> Htx | None:
+    ...
+
+
+@overload
+def try_get_first_exchange(
+        exchange_manager: ExchangeManager,
+        location: Literal[Location.ICONOMI],
+) -> Iconomi | None:
+    ...
+
+
+@overload
+def try_get_first_exchange(
+        exchange_manager: ExchangeManager,
+        location: Literal[Location.INDEPENDENTRESERVE],
+) -> Independentreserve | None:
+    ...
+
+
+@overload
+def try_get_first_exchange(
+        exchange_manager: ExchangeManager,
+        location: Literal[Location.KRAKEN],
+) -> 'Kraken | None':
+    ...
+
+
+@overload
+def try_get_first_exchange(
+        exchange_manager: ExchangeManager,
+        location: Literal[Location.OKX],
+) -> Okx | None:
     ...
 
 
@@ -919,8 +1031,16 @@ def try_get_first_exchange(
 @overload
 def try_get_first_exchange(
         exchange_manager: ExchangeManager,
-        location: Literal[Location.KRAKEN],
-) -> 'Kraken | None':
+        location: Literal[Location.WOO],
+) -> Woo | None:
+    ...
+
+
+@overload
+def try_get_first_exchange(
+        exchange_manager: ExchangeManager,
+        location: Literal[Location.KUCOIN],
+) -> 'Kucoin | None':
     ...
 
 
