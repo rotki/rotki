@@ -25,8 +25,8 @@ from rotkehlchen.chain.ethereum.defi.price import handle_defi_price_query
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.constants import ETH_SPECIAL_ADDRESS
 from rotkehlchen.chain.evm.contracts import EvmContract
-from rotkehlchen.chain.evm.decoding.balancer.constants import CPT_BALANCER_V1
-from rotkehlchen.chain.evm.decoding.balancer.utils import get_balancer_v1_pool_price
+from rotkehlchen.chain.evm.decoding.balancer.constants import CPT_BALANCER_V1, CPT_BALANCER_V2
+from rotkehlchen.chain.evm.decoding.balancer.utils import get_balancer_pool_price
 from rotkehlchen.chain.evm.decoding.curve.constants import CURVE_CHAIN_ID_TYPE, CURVE_CHAIN_IDS
 from rotkehlchen.chain.evm.decoding.gearbox.gearbox_cache import (
     ensure_gearbox_lp_underlying_tokens,
@@ -224,8 +224,8 @@ def get_underlying_asset_price(token: EvmToken) -> tuple[Price | None, CurrentPr
             inquirer=Inquirer(),  # Initialize here to avoid a circular import
             evm_inquirer=Inquirer.get_evm_manager(chain_id=token.chain_id).node_inquirer,
         )
-    elif token.protocol == CPT_BALANCER_V1:
-        price = get_balancer_v1_pool_price(token)
+    elif token.protocol in (CPT_BALANCER_V1, CPT_BALANCER_V2):
+        price = get_balancer_pool_price(token)
 
     if token == A_FARM_DAI:
         price, oracle, _ = Inquirer.find_usd_price_and_oracle(A_DAI)

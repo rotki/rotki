@@ -3,6 +3,7 @@ import pytest
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset, UnderlyingToken
 from rotkehlchen.assets.utils import get_or_create_evm_token
+from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.balancer.constants import CPT_BALANCER_V1, CPT_BALANCER_V2
 from rotkehlchen.chain.evm.decoding.balancer.v2.constants import VAULT_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
@@ -636,6 +637,159 @@ def test_balancer_v1_join_gnosis(gnosis_inquirer, gnosis_accounts):
             notes=f'Receive {receive_amt} BCoW-50GNO-50COW from a Balancer v1 pool',
             address=balancer_gno_cow_pool_token.evm_address,
             extra_data={'deposit_events_num': 2},
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x2E1336f7710B89153aFE979cD14644AfcFb32212']])
+def test_balancer_v2_exit_ethereum(ethereum_inquirer, ethereum_accounts):
+    tx_hash = deserialize_evm_tx_hash('0xcc1636487bd419892133c0e1245e2f427819193fbaef68270111580291c0b285')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    user_address, timestamp, gas_str, return_amt, withdrawn_rsweth_amt = ethereum_accounts[0], TimestampMS(1731642119000), '0.003934656379000305', '14.957821596922618203', '14.953427656474271108'  # noqa: E501
+    expected_events = [
+        EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(FVal(gas_str)),
+            location_label=user_address,
+            notes=f'Burn {gas_str} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.RETURN_WRAPPED,
+            asset=Asset('eip155:1/erc20:0x848a5564158d84b8A8fb68ab5D004Fae11619A54'),
+            balance=Balance(FVal(return_amt)),
+            location_label=user_address,
+            counterparty=CPT_BALANCER_V2,
+            notes=f'Return {return_amt} weETH/ezETH/rswETH to a Balancer v2 pool',
+            address=ZERO_ADDRESS,
+            extra_data={'withdrawal_events_num': 1},
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=2,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.REMOVE_ASSET,
+            asset=Asset('eip155:1/erc20:0xFAe103DC9cf190eD75350761e95403b7b8aFa6c0'),
+            balance=Balance(FVal(withdrawn_rsweth_amt)),
+            location_label=user_address,
+            notes=f'Receive {withdrawn_rsweth_amt} rswETH after removing liquidity from a Balancer v2 pool',  # noqa: E501
+            counterparty=CPT_BALANCER_V2,
+            address=VAULT_ADDRESS,
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('gnosis_accounts', [['0x63A49B0cA8B5B907dd083ada6D9F6853522Bb975']])
+def test_balancer_v2_exit_gnosis(gnosis_inquirer, gnosis_accounts):
+    tx_hash = deserialize_evm_tx_hash('0x1a9e201fcec608a49dd6b106c46818f2f898401f6439dc5e619869ad48167a3a')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
+    user_address, timestamp, gas_str, return_amt, withdrawn_sdai_amt = gnosis_accounts[0], TimestampMS(1731923340000), '0.0003807456', '2403.555042425564723735', '2215.645258238073851336'  # noqa: E501
+    expected_events = [
+        EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_XDAI,
+            balance=Balance(FVal(gas_str)),
+            location_label=user_address,
+            notes=f'Burn {gas_str} XDAI for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.RETURN_WRAPPED,
+            asset=Asset('eip155:100/erc20:0xc9F00C3a713008DDf69b768d90d4978549bFDF94'),
+            balance=Balance(FVal(return_amt)),
+            location_label=user_address,
+            counterparty=CPT_BALANCER_V2,
+            notes=f'Return {return_amt} crvUSD/sDAI to a Balancer v2 pool',
+            address=ZERO_ADDRESS,
+            extra_data={'withdrawal_events_num': 1},
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=2,
+            timestamp=timestamp,
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.REMOVE_ASSET,
+            asset=Asset('eip155:100/erc20:0xaf204776c7245bF4147c2612BF6e5972Ee483701'),
+            balance=Balance(FVal(withdrawn_sdai_amt)),
+            location_label=user_address,
+            notes=f'Receive {withdrawn_sdai_amt} sDAI after removing liquidity from a Balancer v2 pool',  # noqa: E501
+            counterparty=CPT_BALANCER_V2,
+            address=VAULT_ADDRESS,
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('gnosis_accounts', [['0x63A49B0cA8B5B907dd083ada6D9F6853522Bb975']])
+def test_balancer_v2_join_gnosis(gnosis_inquirer, gnosis_accounts):
+    tx_hash = deserialize_evm_tx_hash('0x1915189b0ad23d6c8e6f23df298e92504ec7537dfa8d52571c60193bc598a8b8')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
+    user_address, timestamp, gas_str, receive_amt, deposit_sdai_amt = gnosis_accounts[0], TimestampMS(1729441770000), '0.0003671558', '2403.555042425564723735', '2229.291979360811376949'  # noqa: E501
+    expected_events = [
+        EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_XDAI,
+            balance=Balance(FVal(gas_str)),
+            location_label=user_address,
+            notes=f'Burn {gas_str} XDAI for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+            asset=Asset('eip155:100/erc20:0xaf204776c7245bF4147c2612BF6e5972Ee483701'),
+            balance=Balance(FVal(deposit_sdai_amt)),
+            location_label=user_address,
+            notes=f'Deposit {deposit_sdai_amt} sDAI to a Balancer v2 pool',
+            counterparty=CPT_BALANCER_V2,
+            address=VAULT_ADDRESS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=2,
+            timestamp=timestamp,
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+            asset=Asset('eip155:100/erc20:0xc9F00C3a713008DDf69b768d90d4978549bFDF94'),
+            balance=Balance(FVal(receive_amt)),
+            location_label=user_address,
+            counterparty=CPT_BALANCER_V2,
+            notes=f'Receive {receive_amt} crvUSD/sDAI from a Balancer v2 pool',
+            address=ZERO_ADDRESS,
+            extra_data={'deposit_events_num': 1},
         ),
     ]
     assert events == expected_events

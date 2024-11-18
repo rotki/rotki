@@ -39,6 +39,7 @@ from rotkehlchen.chain.ethereum.utils import should_update_protocol_cache
 from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE_V3
 from rotkehlchen.chain.evm.decoding.balancer.constants import CPT_BALANCER_V1
 from rotkehlchen.chain.evm.decoding.balancer.v1.balances import Balancerv1Balances
+from rotkehlchen.chain.evm.decoding.balancer.v2.balances import Balancerv2Balances
 from rotkehlchen.chain.evm.decoding.compound.v3.balances import Compoundv3Balances
 from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE
 from rotkehlchen.chain.evm.decoding.extrafi.cache import (
@@ -93,6 +94,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.base.node_inquirer import BaseInquirer
     from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
+    from rotkehlchen.chain.gnosis.node_inquirer import GnosisInquirer
     from rotkehlchen.chain.optimism.decoding.decoder import OptimismTransactionDecoder
     from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
     from rotkehlchen.inquirer import Inquirer
@@ -1105,6 +1107,30 @@ def test_balancer_v1_balances(
     protocol_balances = protocol_balances_inquirer.query_balances()
     user_balance = protocol_balances[ethereum_accounts[0]]
     assert user_balance.assets[balancer_qqq_weth_pool_token] == Balance(
+        amount=amount,
+        usd_value=usd_value,
+    )
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('gnosis_accounts', [['0x63A49B0cA8B5B907dd083ada6D9F6853522Bb975']])
+def test_balancer_v2_balances(
+        gnosis_inquirer: 'GnosisInquirer',
+        gnosis_accounts: list[ChecksumEvmAddress],
+        inquirer: 'Inquirer',  # pylint: disable=unused-argument
+) -> None:
+    amount, usd_value = FVal('2447.961642702451874694'), FVal('2459.833477353114303049279423099206954')  # noqa: E501
+    _, tx_decoder = get_decoded_events_of_transaction(
+        evm_inquirer=gnosis_inquirer,
+        tx_hash=deserialize_evm_tx_hash('0xfa42add74972324dd00d242963b653e2979f56cf8739dd987515470e87dff3e7'),
+    )
+    protocol_balances_inquirer = Balancerv2Balances(
+        evm_inquirer=gnosis_inquirer,
+        tx_decoder=tx_decoder,
+    )
+    protocol_balances = protocol_balances_inquirer.query_balances()
+    user_balance = protocol_balances[gnosis_accounts[0]]
+    assert user_balance.assets[Asset('eip155:100/erc20:0xaa56989Be5E6267fC579919576948DB3e1F10807')] == Balance(  # noqa: E501
         amount=amount,
         usd_value=usd_value,
     )

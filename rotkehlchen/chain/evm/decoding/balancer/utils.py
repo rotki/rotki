@@ -11,9 +11,9 @@ from rotkehlchen.chain.evm.decoding.balancer.constants import (
     BALANCER_API_URL,
     CHAIN_ID_TO_BALANCER_API_MAPPINGS,
     CPT_BALANCER_V1,
+    GET_POOL_PRICE_QUERY,
     GET_POOLS_COUNT_QUERY,
     GET_POOLS_QUERY,
-    GET_V1_POOL_PRICE_QUERY,
 )
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.db.settings import CachedSettings
@@ -39,19 +39,21 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-def query_balancer_v1_data(
+def query_balancer_data(
+        version: Literal[1, 2],
         inquirer: 'EvmNodeInquirer',
-        cache_type: Literal[CacheType.BALANCER_V1_POOLS],
+        protocol: Literal['balancer-v1', 'balancer-v2'],
+        cache_type: Literal[CacheType.BALANCER_V1_POOLS, CacheType.BALANCER_V2_POOLS],
 ) -> None:
-    """Query and store balancer v1 pools.
+    """Query and store balancer pools.
     May raise:
     - RemoteError
     """
     latest_pools_count = _query_balancer_pools_count(
         chain=inquirer.chain_id,
-        version=1,
+        version=version,
     )
-    cache_key_parts = (cache_type, str(inquirer.chain_id.value), '1')
+    cache_key_parts = (cache_type, str(inquirer.chain_id.value), str(version))
     now = ts_now()
     with GlobalDBHandler().conn.read_ctx() as cursor:
         if (saved_pools_count_str := globaldb_get_unique_cache_value(
@@ -72,17 +74,18 @@ def query_balancer_v1_data(
             )
             return None
 
-    for pool in _query_balancer_pools(chain=inquirer.chain_id, version=1):
+    for pool in _query_balancer_pools(chain=inquirer.chain_id, version=version):
         try:
             pool_token = get_or_create_evm_token(
                 userdb=inquirer.database,
                 chain_id=inquirer.chain_id,
+                protocol=protocol,
                 name=pool['name'].strip(),
                 symbol=pool['symbol'].strip(),
                 decimals=deserialize_int(pool['decimals']),
                 evm_address=string_to_evm_address(to_checksum_address(pool['address'])),
                 encounter=TokenEncounterInfo(
-                    description=f'Querying {inquirer.chain_name} {CPT_BALANCER_V1} balances',
+                    description=f'Querying {inquirer.chain_name} {protocol} balances',
                     should_notify=False,
                 ),
                 underlying_tokens=[
@@ -90,12 +93,12 @@ def query_balancer_v1_data(
                         address=get_or_create_evm_token(
                             userdb=inquirer.database,
                             chain_id=inquirer.chain_id,
-                            protocol=CPT_BALANCER_V1,
+                            protocol=protocol,
                             name=token['name'].strip(),
                             symbol=token['symbol'].strip(),
                             evm_address=string_to_evm_address(to_checksum_address(token['address'])),
                             encounter=TokenEncounterInfo(
-                                description=f'Querying {inquirer.chain_name} {CPT_BALANCER_V1} balances',  # noqa: E501
+                                description=f'Querying {inquirer.chain_name} {protocol} balances',
                                 should_notify=False,
                             ),
                         ).evm_address,
@@ -108,13 +111,13 @@ def query_balancer_v1_data(
         except (KeyError, ValueError, TypeError, DeserializationError) as e:
             msg = f'missing key {e!s}' if isinstance(e, KeyError) else str(e)
             log.error(
-                f'Failed to process balancer v1 pool on {inquirer.chain_name} due to {msg}. '
+                f'Failed to process {protocol} pool on {inquirer.chain_name} due to {msg}. '
                 f'Pool: {pool}. Skipping...',
             )
             continue
 
         if pool_token.protocol != CPT_BALANCER_V1:
-            log.debug(f'Updating protocol for {inquirer.chain_name} balancer v1 asset {pool_token}')  # noqa: E501
+            log.debug(f'Updating protocol for {inquirer.chain_name} {protocol} asset {pool_token}')
             GlobalDBHandler.set_token_protocol_if_missing(
                 token=pool_token,
                 new_protocol=CPT_BALANCER_V1,
@@ -203,13 +206,13 @@ def _query_balancer_pools(chain: 'ChainID', version: Literal[1, 2]) -> list[dict
     return all_pools
 
 
-def get_balancer_v1_pool_price(pool_token: 'EvmToken') -> Price:
-    """Get price for a Balancer V1 pool token
+def get_balancer_pool_price(pool_token: 'EvmToken') -> Price:
+    """Get price for a Balancer pool token
     May raise:
     - RemoteError
     """
     data = query_balancer_api(
-        query=GET_V1_POOL_PRICE_QUERY,
+        query=GET_POOL_PRICE_QUERY,
         variables={
             'chain': CHAIN_ID_TO_BALANCER_API_MAPPINGS[pool_token.chain_id],
             'poolId': pool_token.evm_address,
@@ -223,6 +226,6 @@ def get_balancer_v1_pool_price(pool_token: 'EvmToken') -> Price:
     except (ValueError, KeyError) as e:
         msg = f'missing key {e!s}' if isinstance(e, KeyError) else str(e)
         raise RemoteError(
-            f'Balancer v1 pool price for {pool_token.evm_address} query '
+            f'Balancer pool price for {pool_token.evm_address} query '
             f'on {pool_token.chain_id.to_name()} failed due to {msg}',
         ) from e

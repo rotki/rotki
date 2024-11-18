@@ -55,6 +55,7 @@ from rotkehlchen.chain.ethereum.modules.octant.balances import OctantBalances
 from rotkehlchen.chain.ethereum.modules.safe.balances import SafeBalances
 from rotkehlchen.chain.ethereum.modules.thegraph.balances import ThegraphBalances
 from rotkehlchen.chain.evm.decoding.balancer.v1.balances import Balancerv1Balances
+from rotkehlchen.chain.evm.decoding.balancer.v2.balances import Balancerv2Balances
 from rotkehlchen.chain.evm.decoding.compound.v3.balances import Compoundv3Balances
 from rotkehlchen.chain.evm.decoding.hop.balances import HopBalances
 from rotkehlchen.chain.optimism.modules.extrafi.balances import (
@@ -216,12 +217,34 @@ CHAIN_TO_BALANCE_PROTOCOLS = {
         SafeBalances,
         AaveBalances,
         Balancerv1Balances,
+        Balancerv2Balances,
     ),
-    ChainID.OPTIMISM: (VelodromeBalances, HopBalances, GearboxBalancesOptimism, ExtrafiBalancesOp),
-    ChainID.BASE: (Compoundv3Balances, AerodromeBalances, HopBalances, ExtrafiBalancesBase),
-    ChainID.ARBITRUM_ONE: (Compoundv3Balances, GmxBalances, ThegraphBalancesArbitrumOne, HopBalances, GearboxBalancesArbitrumOne, UmamiBalances, Balancerv1Balances),  # noqa: E501
-    ChainID.POLYGON_POS: (Compoundv3Balances, HopBalances),
-    ChainID.GNOSIS: (HopBalances, Balancerv1Balances),
+    ChainID.OPTIMISM: (
+        VelodromeBalances,
+        HopBalances,
+        GearboxBalancesOptimism,
+        ExtrafiBalancesOp,
+        Balancerv2Balances,
+    ),
+    ChainID.BASE: (
+        Compoundv3Balances,
+        AerodromeBalances,
+        HopBalances,
+        ExtrafiBalancesBase,
+        Balancerv2Balances,
+    ),
+    ChainID.ARBITRUM_ONE: (
+        Compoundv3Balances,
+        GmxBalances,
+        ThegraphBalancesArbitrumOne,
+        HopBalances,
+        GearboxBalancesArbitrumOne,
+        UmamiBalances,
+        Balancerv1Balances,
+        Balancerv2Balances,
+    ),
+    ChainID.POLYGON_POS: (Compoundv3Balances, HopBalances, Balancerv2Balances),
+    ChainID.GNOSIS: (HopBalances, Balancerv1Balances, Balancerv2Balances),
     ChainID.SCROLL: (Compoundv3Balances,),
 }
 
