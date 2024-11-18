@@ -7,7 +7,7 @@ from eth_utils.address import to_checksum_address
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.types import EventAccountingRuleStatus
-from rotkehlchen.assets.asset import CryptoAsset, EvmToken
+from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.substrate.types import SubstrateAddress
 from rotkehlchen.constants import ONE, ZERO
@@ -131,7 +131,7 @@ def make_ethereum_event(
         index: int,
         tx_hash: bytes | None = None,
         location_label: str | None = None,
-        asset: CryptoAsset = CUSTOM_USDT,
+        asset: Asset = CUSTOM_USDT,
         counterparty: str | None = None,
         event_type: HistoryEventType = HistoryEventType.INFORMATIONAL,
         event_subtype: HistoryEventSubType = HistoryEventSubType.NONE,

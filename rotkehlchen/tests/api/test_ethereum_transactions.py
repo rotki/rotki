@@ -2,12 +2,13 @@ import os
 import random
 from contextlib import ExitStack
 from http import HTTPStatus
-from typing import TYPE_CHECKING
-from unittest.mock import patch
+from typing import TYPE_CHECKING, Any
+from unittest.mock import _patch, patch
 
 import gevent
 import pytest
 import requests
+from requests import Response
 
 from rotkehlchen.accounting.types import EventAccountingRuleStatus
 from rotkehlchen.chain.ethereum.transactions import EthereumTransactions
@@ -72,6 +73,8 @@ from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.rotkehlchen import Rotkehlchen
+
 
 EXPECTED_AFB7_TXS = [
     EvmTransaction(
@@ -183,7 +186,7 @@ EXPECTED_4193_TXS = [EvmTransaction(
 )]
 
 
-def assert_txlists_equal(l1, l2):
+def assert_txlists_equal(l1: list[EvmTransaction], l2: list[EvmTransaction]) -> None:
     l1.sort(key=lambda x: x.timestamp)
     l2.sort(key=lambda x: x.timestamp)
 
@@ -195,7 +198,13 @@ def assert_txlists_equal(l1, l2):
             assert getattr(tx1, attr_name) == getattr(l2[idx], attr_name)
 
 
-def query_events(server, json, expected_num_with_grouping, expected_totals_with_grouping, entries_limit=-1):  # noqa: E501
+def query_events(
+        server: 'APIServer',
+        json: dict[str, Any],
+        expected_num_with_grouping: int,
+        expected_totals_with_grouping: int,
+        entries_limit: int = -1,
+) -> list[dict[str, Any]]:
     """Query history events as frontend would have, with grouped identifiers
 
     First query all events with grouping enabled. Then if any events have more,
@@ -230,7 +239,7 @@ def query_events(server, json, expected_num_with_grouping, expected_totals_with_
     return remove_added_event_fields(augmented_entries)
 
 
-def assert_force_redecode_txns_works(api_server: 'APIServer'):
+def assert_force_redecode_txns_works(api_server: 'APIServer') -> None:
     rotki = api_server.rest_api.rotkehlchen
     get_eth_txns_patch = patch.object(
         rotki.chains_aggregator.ethereum.transactions_decoder.transactions,
@@ -287,7 +296,7 @@ def _write_transactions_to_db(
                 )
 
 
-def remove_added_event_fields(returned_events):
+def remove_added_event_fields(returned_events: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """removes any fields added to events during serialization"""
     for event in returned_events:
         event.pop('missing_accounting_rule', None)
@@ -303,7 +312,7 @@ def remove_added_event_fields(returned_events):
 ]])
 @pytest.mark.parametrize('should_mock_price_queries', [True])
 @pytest.mark.parametrize('default_mock_price_value', [FVal(1.5)])
-def test_query_transactions(rotkehlchen_api_server):
+def test_query_transactions(rotkehlchen_api_server: 'APIServer') -> None:
     """Test that querying the ethereum transactions endpoint works as expected.
     Also tests that requesting for transaction decoding works.
 
@@ -354,7 +363,7 @@ def test_query_transactions(rotkehlchen_api_server):
     event_ids = set()
     with rotki.data.db.conn.read_ctx() as cursor:
         for tx_hash_hex in hashes:
-            receipt = dbevmtx.get_receipt(cursor, hexstring_to_bytes(tx_hash_hex), ChainID.ETHEREUM)  # noqa: E501
+            receipt = dbevmtx.get_receipt(cursor, deserialize_evm_tx_hash(hexstring_to_bytes(tx_hash_hex)), ChainID.ETHEREUM)  # noqa: E501
             assert isinstance(receipt, EvmTxReceipt) and receipt.tx_hash == hexstring_to_bytes(tx_hash_hex)  # noqa: E501
             events = dbevents.get_history_events(
                 cursor=cursor,
@@ -374,7 +383,7 @@ def test_query_transactions(rotkehlchen_api_server):
 @pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize('should_mock_price_queries', [True])
 @pytest.mark.parametrize('default_mock_price_value', [ONE])
-def test_request_transaction_decoding_errors(rotkehlchen_api_server):
+def test_request_transaction_decoding_errors(rotkehlchen_api_server: 'APIServer') -> None:
     """Test that the request transaction decoding endpoint handles input errors"""
     response = requests.put(
         api_url_for(
@@ -474,7 +483,7 @@ def test_request_transaction_decoding_errors(rotkehlchen_api_server):
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('should_mock_price_queries', [True])
 @pytest.mark.parametrize('default_mock_price_value', [ONE])
-def test_query_over_10k_transactions(rotkehlchen_api_server):
+def test_query_over_10k_transactions(rotkehlchen_api_server: 'APIServer') -> None:
     """Test that querying for an address with over 10k transactions works
 
     This test uses real etherscan queries and an address that we found that has > 10k transactions.
@@ -485,11 +494,11 @@ def test_query_over_10k_transactions(rotkehlchen_api_server):
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     original_get = requests.get
 
-    def mock_some_etherscan_queries(etherscan: Etherscan):
+    def mock_some_etherscan_queries(etherscan: Etherscan) -> _patch:
         """Just hit etherscan for the actual transactions and mock all else.
         This test just needs to see that pagination works on the tx endpoint
         """
-        def mocked_request_dict(url, *_args, **_kwargs):
+        def mocked_request_dict(url: str, *_args: Any, **_kwargs: Any) -> Response | MockResponse:
             if '=txlistinternal&' in url or '=tokentx&' in url:
                 # don't return any internal or token transactions
                 payload = '{"status":"1","message":"OK","result":[]}'
@@ -528,7 +537,7 @@ def test_query_over_10k_transactions(rotkehlchen_api_server):
     assert rresult[16172]['nonce'] == 16169
 
 
-def test_query_transactions_errors(rotkehlchen_api_server):
+def test_query_transactions_errors(rotkehlchen_api_server: 'APIServer') -> None:
     # Malformed address
     response = requests.post(
         api_url_for(
@@ -587,21 +596,21 @@ def test_query_transactions_errors(rotkehlchen_api_server):
 @pytest.mark.parametrize('should_mock_price_queries', [True])
 @pytest.mark.parametrize('default_mock_price_value', [ONE])
 def test_query_transactions_removed_address(
-        rotkehlchen_api_server,
-        ethereum_accounts,
-):
+        rotkehlchen_api_server: 'APIServer',
+        ethereum_accounts: list['ChecksumEvmAddress'],
+) -> None:
     """Make sure that if an address is removed so are the transactions from the DB.
     Also assure that a transaction is not deleted so long as it touches a tracked
     address, even if one of the touched address is removed.
     """
-    start_ts = 0
-    end_ts = 1598453214
+    start_ts = Timestamp(0)
+    end_ts = Timestamp(1598453214)
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     db = rotki.data.db
     transactions = [EvmTransaction(
         tx_hash=deserialize_evm_tx_hash(b'1'),
         chain_id=ChainID.ETHEREUM,
-        timestamp=0,
+        timestamp=Timestamp(0),
         block_number=0,
         from_address=ethereum_accounts[0],
         to_address=make_evm_address(),
@@ -614,7 +623,7 @@ def test_query_transactions_removed_address(
     ), EvmTransaction(
         tx_hash=deserialize_evm_tx_hash(b'2'),
         chain_id=ChainID.ETHEREUM,
-        timestamp=0,
+        timestamp=Timestamp(0),
         block_number=0,
         from_address=ethereum_accounts[0],
         to_address=make_evm_address(),
@@ -627,7 +636,7 @@ def test_query_transactions_removed_address(
     ), EvmTransaction(  # should remain after deleting account[0]
         tx_hash=deserialize_evm_tx_hash(b'3'),
         chain_id=ChainID.ETHEREUM,
-        timestamp=0,
+        timestamp=Timestamp(0),
         block_number=0,
         from_address=make_evm_address(),
         to_address=ethereum_accounts[1],
@@ -640,7 +649,7 @@ def test_query_transactions_removed_address(
     ), EvmTransaction(  # should remain after deleting account[0]
         tx_hash=deserialize_evm_tx_hash(b'4'),
         chain_id=ChainID.ETHEREUM,
-        timestamp=0,
+        timestamp=Timestamp(0),
         block_number=0,
         from_address=ethereum_accounts[1],
         to_address=ethereum_accounts[0],
@@ -653,7 +662,7 @@ def test_query_transactions_removed_address(
     ), EvmTransaction(  # should remain after deleting account[0]
         tx_hash=deserialize_evm_tx_hash(b'5'),
         chain_id=ChainID.ETHEREUM,
-        timestamp=0,
+        timestamp=Timestamp(0),
         block_number=0,
         from_address=ethereum_accounts[0],
         to_address=ethereum_accounts[1],
@@ -687,16 +696,19 @@ def test_query_transactions_removed_address(
 @pytest.mark.parametrize('should_mock_price_queries', [True])
 @pytest.mark.parametrize('default_mock_price_value', [ONE])
 def test_transaction_same_hash_same_nonce_two_tracked_accounts(
-        rotkehlchen_api_server,
-        ethereum_accounts,
-):
+        rotkehlchen_api_server: 'APIServer',
+        ethereum_accounts: list['ChecksumEvmAddress'],
+) -> None:
     """Make sure that if we track two addresses and they send one transaction
     to each other it's not counted as duplicate in the DB but is returned
     every time by both addresses"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
 
-    def mock_etherscan_transaction_response(etherscan: Etherscan, eth_accounts):
-        def mocked_request_dict(url, *_args, **_kwargs):
+    def mock_etherscan_transaction_response(
+            etherscan: Etherscan,
+            eth_accounts: list['ChecksumEvmAddress'],
+    ) -> _patch:
+        def mocked_request_dict(url: str, *_args: Any, **_kwargs: Any) -> MockResponse:
 
             addr1_tx = f"""{{"blockNumber":"1","timeStamp":"1","hash":"0x9c81f44c29ff0226f835cd0a8a2f2a7eca6db52a711f8211b566fd15d3e0e8d4","nonce":"0","blockHash":"0xd3cabad6adab0b52ea632c386ea19403680571e682c62cb589b5abcd76de2159","transactionIndex":"0","from":"{eth_accounts[0]}","to":"{eth_accounts[1]}","value":"1","gas":"2000000","gasPrice":"10000000000000","isError":"0","txreceipt_status":"","input":"0x","contractAddress":"","cumulativeGasUsed":"1436963","gasUsed":"1436963","confirmations":"1"}}"""  # noqa: E501
             addr2_txs = f"""{addr1_tx}, {{"blockNumber":"2","timeStamp":"2","hash":"0x1c81f54c29ff0226f835cd0a2a2f2a7eca6db52a711f8211b566fd15d3e0e8d4","nonce":"1","blockHash":"0xd1cabad2adab0b56ea632c386ea19403680571e682c62cb589b5abcd76de2159","transactionIndex":"0","from":"{eth_accounts[1]}","to":"{make_evm_address()}","value":"1","gas":"2000000","gasPrice":"10000000000000","isError":"0","txreceipt_status":"","input":"0x","contractAddress":"","cumulativeGasUsed":"1436963","gasUsed":"1436963","confirmations":"1"}}"""  # noqa: E501
@@ -748,9 +760,9 @@ def test_transaction_same_hash_same_nonce_two_tracked_accounts(
 @pytest.mark.parametrize('should_mock_price_queries', [True])
 @pytest.mark.parametrize('default_mock_price_value', [ONE])
 def test_query_transactions_check_decoded_events(
-        rotkehlchen_api_server,
-        ethereum_accounts,
-):
+        rotkehlchen_api_server: 'APIServer',
+        ethereum_accounts: list['ChecksumEvmAddress'],
+) -> None:
     """Test that transactions and associated events can be queried via their respective endpoints.
 
     Also test that if an event is edited or added to a transaction that transaction and
@@ -762,12 +774,13 @@ def test_query_transactions_check_decoded_events(
     end_ts = Timestamp(1642803566)  # time of test writing
     dbevents = DBHistoryEvents(rotki.data.db)
 
-    def query_transactions(rotki):
+    def query_transactions(rotki: 'Rotkehlchen') -> None:
         rotki.chains_aggregator.ethereum.transactions.single_address_query_transactions(
             address=ethereum_accounts[0],
             start_ts=start_ts,
             end_ts=end_ts,
         )
+        assert rotki.task_manager is not None
         with mock_evm_chains_with_transactions():
             rotki.task_manager._maybe_schedule_evm_txreceipts()
             gevent.joinall(rotki.greenlet_manager.greenlets)
@@ -794,7 +807,7 @@ def test_query_transactions_check_decoded_events(
     assert len(transactions) == 4
 
     returned_events = query_events(rotkehlchen_api_server, json={'location': 'ethereum'}, expected_num_with_grouping=4, expected_totals_with_grouping=4)  # noqa: E501
-    tx1_events = [{
+    tx1_events: list[dict] = [{
         'entry': {
             'identifier': 5,
             'entry_type': 'evm event',
@@ -838,7 +851,7 @@ def test_query_transactions_check_decoded_events(
         'event_accounting_rule_status': 'not processed',
     }]
     assert returned_events[:2] == tx1_events
-    tx2_events = [{
+    tx2_events: list[dict] = [{
         'entry': {
             'identifier': 3,
             'entry_type': 'evm event',
@@ -882,7 +895,7 @@ def test_query_transactions_check_decoded_events(
         'event_accounting_rule_status': 'not processed',
     }]
     assert returned_events[2:4] == tx2_events
-    tx3_events = [{
+    tx3_events: list[dict] = [{
         'entry': {
             'identifier': 2,
             'entry_type': 'evm event',
@@ -905,7 +918,7 @@ def test_query_transactions_check_decoded_events(
         'event_accounting_rule_status': 'not processed',
     }]
     assert returned_events[4:5] == tx3_events
-    tx4_events = [{
+    tx4_events: list[dict] = [{
         'entry': {
             'identifier': 1,
             'entry_type': 'evm event',
@@ -1035,13 +1048,13 @@ def test_query_transactions_check_decoded_events(
     returned_events = query_events(rotkehlchen_api_server, json={'location': 'ethereum'}, expected_num_with_grouping=4, expected_totals_with_grouping=4)  # noqa: E501
 
     assert len(returned_events) == 7
-    assert_serialized_lists_equal(returned_events[0:2], tx1_events, ignore_keys='identifier')
-    assert_serialized_lists_equal(remove_added_event_fields(returned_events[2:4]), tx2_events, ignore_keys='identifier')  # noqa: E501
-    assert_serialized_lists_equal(returned_events[4:5], tx3_events, ignore_keys='identifier')
-    assert_serialized_lists_equal(returned_events[5:7], tx4_events, ignore_keys='identifier')
+    assert_serialized_lists_equal(returned_events[0:2], tx1_events, ignore_keys=['identifier'])
+    assert_serialized_lists_equal(remove_added_event_fields(returned_events[2:4]), tx2_events, ignore_keys=['identifier'])  # noqa: E501
+    assert_serialized_lists_equal(returned_events[4:5], tx3_events, ignore_keys=['identifier'])
+    assert_serialized_lists_equal(returned_events[5:7], tx4_events, ignore_keys=['identifier'])
 
     # explicitly delete the customized (added/edited) transactions
-    dbevents.delete_history_events_by_identifier([x.identifier for x in customized_events])
+    dbevents.delete_history_events_by_identifier([x.identifier for x in customized_events if x.identifier is not None])  # noqa: E501
 
     with rotki.data.db.user_write() as write_cursor:
         # and now purge all transactions again and see everything is deleted
@@ -1064,7 +1077,11 @@ def test_query_transactions_check_decoded_events(
 @patch.object(EthereumTransactions, '_get_internal_transactions_for_ranges', lambda *args, **kargs: None)  # noqa: E501
 @patch.object(EthereumTransactions, '_get_erc20_transfers_for_ranges', lambda *args, **kargs: None)
 @pytest.mark.parametrize('start_with_valid_premium', [True])  # TODO: Test for whichever filters we allow in free  # noqa: E501
-def test_events_filter_params(rotkehlchen_api_server, ethereum_accounts, start_with_valid_premium):
+def test_events_filter_params(
+        rotkehlchen_api_server: 'APIServer',
+        ethereum_accounts: list['ChecksumEvmAddress'],
+        start_with_valid_premium: bool,
+) -> None:
     """Tests filtering by transaction's events' properties
     Test cases:
         - Filtering by asset
@@ -1080,10 +1097,10 @@ def test_events_filter_params(rotkehlchen_api_server, ethereum_accounts, start_w
     """
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     db = rotki.data.db
-    tx1 = make_ethereum_transaction(tx_hash=b'1', timestamp=1)
-    tx2 = make_ethereum_transaction(tx_hash=b'2', timestamp=2)
-    tx3 = make_ethereum_transaction(tx_hash=b'3', timestamp=3)
-    tx4 = make_ethereum_transaction(tx_hash=b'4', timestamp=4)
+    tx1 = make_ethereum_transaction(tx_hash=b'1', timestamp=Timestamp(1))
+    tx2 = make_ethereum_transaction(tx_hash=b'2', timestamp=Timestamp(2))
+    tx3 = make_ethereum_transaction(tx_hash=b'3', timestamp=Timestamp(3))
+    tx4 = make_ethereum_transaction(tx_hash=b'4', timestamp=Timestamp(4))
     test_contract_address = make_evm_address()
     event1 = make_ethereum_event(tx_hash=b'1', index=1, asset=A_ETH, timestamp=TimestampMS(1), location_label=ethereum_accounts[0], product=EvmProduct.STAKING)  # noqa: E501
     event2 = make_ethereum_event(tx_hash=b'1', index=2, asset=A_ETH, counterparty='EXAMPLE_PROTOCOL', timestamp=TimestampMS(1), location_label=ethereum_accounts[0])  # noqa: E501
@@ -1242,7 +1259,10 @@ def test_events_filter_params(rotkehlchen_api_server, ethereum_accounts, start_w
 
 @pytest.mark.parametrize('should_mock_price_queries', [True])
 @pytest.mark.parametrize('default_mock_price_value', [ONE])
-def test_ignored_assets(rotkehlchen_api_server, ethereum_accounts):
+def test_ignored_assets(
+        rotkehlchen_api_server: 'APIServer',
+        ethereum_accounts: list['ChecksumEvmAddress'],
+) -> None:
     """This test tests that transactions with ignored assets are excluded when needed"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     db = rotki.data.db
@@ -1252,9 +1272,9 @@ def test_ignored_assets(rotkehlchen_api_server, ethereum_accounts):
 
     dbevmtx = DBEvmTx(db)
     dbevents = DBHistoryEvents(db)
-    tx1 = make_ethereum_transaction(timestamp=1)
-    tx2 = make_ethereum_transaction(timestamp=2)
-    tx3 = make_ethereum_transaction(timestamp=3)
+    tx1 = make_ethereum_transaction(timestamp=Timestamp(1))
+    tx2 = make_ethereum_transaction(timestamp=Timestamp(2))
+    tx3 = make_ethereum_transaction(timestamp=Timestamp(3))
     event1 = make_ethereum_event(tx_hash=tx1.tx_hash, index=1, asset=A_ETH, timestamp=TimestampMS(1))  # noqa: E501
     event2 = make_ethereum_event(tx_hash=tx1.tx_hash, index=2, asset=A_BTC, timestamp=TimestampMS(1))  # noqa: E501
     event3 = make_ethereum_event(tx_hash=tx2.tx_hash, index=3, asset=A_MKR, timestamp=TimestampMS(1))  # noqa: E501
@@ -1294,7 +1314,7 @@ def test_ignored_assets(rotkehlchen_api_server, ethereum_accounts):
 @patch.object(EthereumTransactions, '_get_erc20_transfers_for_ranges', lambda *args, **kargs: None)
 @pytest.mark.parametrize('should_mock_price_queries', [True])
 @pytest.mark.parametrize('default_mock_price_value', [FVal(1.5)])
-def test_no_value_eth_transfer(rotkehlchen_api_server: 'APIServer'):
+def test_no_value_eth_transfer(rotkehlchen_api_server: 'APIServer') -> None:
     """Test that eth transactions with no value are correctly decoded and returned in the API.
     In this case we don't need any erc20 or internal transaction, this is why they are omitted
     in this test.
@@ -1498,7 +1518,7 @@ def test_count_transactions_missing_decoding(rotkehlchen_api_server: 'APIServer'
 @pytest.mark.parametrize('ethereum_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
 @pytest.mark.parametrize('should_mock_price_queries', [True])
 @pytest.mark.parametrize('default_mock_price_value', [ONE])
-def test_repulling_transaction_with_internal_txs(rotkehlchen_api_server: 'APIServer'):
+def test_repulling_transaction_with_internal_txs(rotkehlchen_api_server: 'APIServer') -> None:
     """Check that re-decoding a transaction that has internal ETH transfers correctly
     repulls them"""
     tx_hash = deserialize_evm_tx_hash('0x4ea72ae535e32d5edc543a9ace5f736c7037cc63e4088de38511297c764049b5')  # noqa: E501

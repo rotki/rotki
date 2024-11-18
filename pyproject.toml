@@ -91,6 +91,16 @@ module = [
     "rotkehlchen.tests.api.test_data_purging",
     "rotkehlchen.tests.api.test_database",
     "rotkehlchen.tests.api.test_defi",
+    "rotkehlchen.tests.api.test_ens",
+    "rotkehlchen.tests.api.test_erc20_info",
+    "rotkehlchen.tests.api.test_errors",
+    "rotkehlchen.tests.api.test_eth2",
+    "rotkehlchen.tests.api.test_ethereum_transactions",
+    "rotkehlchen.tests.api.test_evm_transactions",
+    "rotkehlchen.tests.api.test_evmlike",
+    "rotkehlchen.tests.api.test_exchange_rates_query",
+    "rotkehlchen.tests.api.test_exchanges",
+    "rotkehlchen.tests.api.test_external_services",
 ]
 check_untyped_defs = true
 disallow_untyped_defs = true

@@ -1,7 +1,7 @@
 import random
 from contextlib import ExitStack
 from http import HTTPStatus
-from typing import TYPE_CHECKING, Final
+from typing import TYPE_CHECKING, Final, Literal
 from unittest.mock import patch
 
 import pytest
@@ -41,6 +41,8 @@ from rotkehlchen.types import Eth2PubKey, Timestamp, TimestampMS, deserialize_ev
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
+    from rotkehlchen.chain.ethereum.modules.eth2.eth2 import Eth2
+    from rotkehlchen.types import ChecksumEvmAddress
 
 
 # Validators with clean short history and different withdrawal address where only they withdrew
@@ -52,7 +54,7 @@ CLEAN_HISTORY_WITHDRAWAL2: Final = '0xfAD07927C990a52e434909c9Bb1f0EC785a68F00'
 CLEAN_HISTORY_WITHDRAWAL3: Final = '0xF368A42D316070Cd53515fBF67Ac219aa29D5FE0'
 
 
-def _prepare_clean_validators(rotkehlchen_api_server):
+def _prepare_clean_validators(rotkehlchen_api_server: 'APIServer') -> None:
     """Populate history with clean validator data and ask for events"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     for index in (CLEAN_HISTORY_VALIDATOR1, CLEAN_HISTORY_VALIDATOR2, CLEAN_HISTORY_VALIDATOR3):
@@ -93,7 +95,7 @@ def _prepare_clean_validators(rotkehlchen_api_server):
 @pytest.mark.parametrize('ethereum_accounts', [[
     CLEAN_HISTORY_WITHDRAWAL1, CLEAN_HISTORY_WITHDRAWAL2, CLEAN_HISTORY_WITHDRAWAL3,
 ]])
-def test_eth2_daily_stats(rotkehlchen_api_server):
+def test_eth2_daily_stats(rotkehlchen_api_server: 'APIServer') -> None:
     """Test eth2 daily stats api endpoint along with filtering by various arguments"""
     # Patching here since I can't re-record this test and for some reason
     # 1118011 was not returned as active validator in the previous test.
@@ -243,7 +245,10 @@ def test_eth2_daily_stats(rotkehlchen_api_server):
 @pytest.mark.parametrize('ethereum_modules', [['eth2']])
 @pytest.mark.freeze_time('2024-09-15 10:00:00 GMT')
 @pytest.mark.parametrize('network_mocking', [False])
-def test_staking_performance(rotkehlchen_api_server, ethereum_accounts):
+def test_staking_performance(
+        rotkehlchen_api_server: 'APIServer',
+        ethereum_accounts: list['ChecksumEvmAddress'],
+) -> None:
     response = requests.put(api_url_for(  # track the depositor address
         rotkehlchen_api_server,
         'blockchainsaccountsresource',
@@ -331,7 +336,10 @@ def test_staking_performance(rotkehlchen_api_server, ethereum_accounts):
 @pytest.mark.parametrize('ethereum_modules', [['eth2']])
 @pytest.mark.freeze_time('2024-09-15 09:00:00 GMT')
 @pytest.mark.parametrize('network_mocking', [False])
-def test_staking_performance_filtering_pagination(rotkehlchen_api_server, ethereum_accounts):
+def test_staking_performance_filtering_pagination(
+        rotkehlchen_api_server: 'APIServer',
+        ethereum_accounts: list['ChecksumEvmAddress'],
+) -> None:
     # Add ETH1 account and detect validators it deposited
     addresses = [
         '0x53DeB4aF24c7c8D04832B43C2B21fa75e50A145d',  # depositor of normal validator
@@ -358,6 +366,7 @@ def test_staking_performance_filtering_pagination(rotkehlchen_api_server, ethere
     total_validators = 402
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     eth2 = rotki.chains_aggregator.get_module('eth2')
+    assert eth2 is not None
     with patch.object(eth2.beacon_inquirer, 'get_balances', wraps=eth2.beacon_inquirer.get_balances) as get_balances:  # noqa: E501
         # now query performance for all validators with pagination and check validity
         page, last_validator, count = 0, 0, 0
@@ -469,7 +478,10 @@ def test_staking_performance_filtering_pagination(rotkehlchen_api_server, ethere
 ]])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('default_mock_price_value', [ONE])
-def test_query_eth2_inactive(rotkehlchen_api_server, ethereum_accounts):
+def test_query_eth2_inactive(
+        rotkehlchen_api_server: 'APIServer',
+        ethereum_accounts: list['ChecksumEvmAddress'],
+) -> None:
     """Test that querying eth2 module while it's not active properly errors"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     setup = setup_balances(
@@ -502,7 +514,10 @@ def test_query_eth2_inactive(rotkehlchen_api_server, ethereum_accounts):
 @pytest.mark.parametrize('ethereum_accounts', [[]])
 @pytest.mark.parametrize('ethereum_modules', [['eth2']])
 @pytest.mark.parametrize('start_with_valid_premium', [True, False])
-def test_add_get_edit_delete_eth2_validators(rotkehlchen_api_server, start_with_valid_premium):
+def test_add_get_edit_delete_eth2_validators(
+        rotkehlchen_api_server: 'APIServer',
+        start_with_valid_premium: bool,
+) -> None:
     response = requests.get(
         api_url_for(
             rotkehlchen_api_server,
@@ -597,21 +612,21 @@ def test_add_get_edit_delete_eth2_validators(rotkehlchen_api_server, start_with_
         EthDepositEvent(
             identifier=1,
             tx_hash=make_evm_tx_hash(),
-            validator_index=validators[0].validator_index,
+            validator_index=validators[0].validator_index,  # type: ignore[arg-type]  # validator indexes are defined above and will not be None
             sequence_index=1,
             timestamp=TimestampMS(1601379127000),
             balance=Balance(FVal(32)),
             depositor=make_evm_address(),
         ), EthWithdrawalEvent(
             identifier=2,
-            validator_index=validators[0].validator_index,
+            validator_index=validators[0].validator_index,  # type: ignore[arg-type]  # validator indexes are defined above and will not be None
             timestamp=TimestampMS(1611379127000),
             balance=Balance(FVal('0.01')),
             withdrawal_address=make_evm_address(),
             is_exit=False,
         ), EthBlockEvent(
             identifier=3,
-            validator_index=validators[2].validator_index,
+            validator_index=validators[2].validator_index,  # type: ignore[arg-type]  # validator indexes are defined above and will not be None
             timestamp=TimestampMS(1671379127000),
             balance=Balance(FVal(1)),
             fee_recipient=make_evm_address(),
@@ -713,7 +728,10 @@ def test_add_get_edit_delete_eth2_validators(rotkehlchen_api_server, start_with_
 @pytest.mark.parametrize('ethereum_modules', [['eth2']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('method', ['PUT', 'DELETE'])
-def test_add_delete_validator_errors(rotkehlchen_api_server, method):
+def test_add_delete_validator_errors(
+        rotkehlchen_api_server: 'APIServer',
+        method: Literal['PUT', 'DELETE'],
+) -> None:
     """Tests the error cases of adding/deleting a validator"""
     response = requests.request(
         method=method,
@@ -732,30 +750,24 @@ def test_add_delete_validator_errors(rotkehlchen_api_server, method):
         contained_in_msg=msg,
         status_code=HTTPStatus.BAD_REQUEST,
     )
-    invalid_index = {'validator_index': -1}
-    if method == 'DELETE':
-        invalid_index = {'validators': [-1]}
     response = requests.request(
         method=method,
         url=api_url_for(
             rotkehlchen_api_server,
             'eth2validatorsresource',
-        ), json=invalid_index,
+        ), json={'validators': [-1]} if method == 'DELETE' else {'validator_index': -1},
     )
     assert_error_response(
         response=response,
         contained_in_msg='Validator index must be an integer >= 0',
         status_code=HTTPStatus.BAD_REQUEST,
     )
-    unknown_index = {'validator_index': 999957426}
-    if method == 'DELETE':
-        unknown_index = {'validators': [999957426]}
     response = requests.request(
         method=method,
         url=api_url_for(
             rotkehlchen_api_server,
             'eth2validatorsresource',
-        ), json=unknown_index,
+        ), json={'validators': [999957426]} if method == 'DELETE' else {'validator_index': 999957426},  # noqa: E501
     )
     if method == 'PUT':
         msg = 'Validator data for 999957426 could not be found. Likely invalid validator'
@@ -851,7 +863,10 @@ def test_add_delete_validator_errors(rotkehlchen_api_server, method):
 @pytest.mark.parametrize('ethereum_modules', [['eth2']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('query_all_balances', [False, True])
-def test_query_eth2_balances(rotkehlchen_api_server, query_all_balances):
+def test_query_eth2_balances(
+        rotkehlchen_api_server: 'APIServer',
+        query_all_balances: bool,
+) -> None:
     ownership_proportion = FVal(0.45)
     base_amount = FVal(32)
     response = requests.get(
@@ -968,14 +983,17 @@ def test_query_eth2_balances(rotkehlchen_api_server, query_all_balances):
 @pytest.mark.parametrize('network_mocking', [False])
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('ethereum_modules', [['eth2']])
-def test_query_eth2_balances_without_premium(rotkehlchen_api_server, eth2):
+def test_query_eth2_balances_without_premium(
+        rotkehlchen_api_server: 'APIServer',
+        eth2: 'Eth2',
+) -> None:
     """Check that without premium the number of validators queried for balances
     is limited to FREE_VALIDATORS_LIMIT.
     """
     dbeth2 = DBEth2(rotkehlchen_api_server.rest_api.rotkehlchen.data.db)
     for i in range(FREE_VALIDATORS_LIMIT + 1):
         result = eth2.beacon_inquirer.get_validator_data(indices_or_pubkeys=[i])
-        result[0].ownership_proportion = 0.25
+        result[0].ownership_proportion = FVal(0.25)
         with rotkehlchen_api_server.rest_api.rotkehlchen.data.db.user_write() as write_cursor:
             dbeth2.add_or_update_validators(write_cursor, [result[0]])
 
@@ -983,8 +1001,8 @@ def test_query_eth2_balances_without_premium(rotkehlchen_api_server, eth2):
         rotkehlchen_api_server,
         'blockchainbalancesresource',
     ))
-    result = assert_proper_sync_response_with_result(response)
-    assert len(result['per_account']['eth2']) == FREE_VALIDATORS_LIMIT
+    balances_result = assert_proper_sync_response_with_result(response)
+    assert len(balances_result['per_account']['eth2']) == FREE_VALIDATORS_LIMIT
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -1176,7 +1194,7 @@ def test_query_combined_mev_reward_and_block_production_events(rotkehlchen_api_s
 @pytest.mark.parametrize('ethereum_accounts', [[
     CLEAN_HISTORY_WITHDRAWAL1, CLEAN_HISTORY_WITHDRAWAL2, CLEAN_HISTORY_WITHDRAWAL3,
 ]])
-def test_get_validators(rotkehlchen_api_server):
+def test_get_validators(rotkehlchen_api_server: 'APIServer') -> None:
     """Test getting validators works for all filters"""
     _prepare_clean_validators(rotkehlchen_api_server)
     # Check they are returned fine
@@ -1243,7 +1261,7 @@ def test_get_validators(rotkehlchen_api_server):
 @pytest.mark.parametrize('network_mocking', [False])
 @pytest.mark.parametrize('ethereum_modules', [['eth2']])
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
-def test_balances_get_deleted_when_removing_validator(rotkehlchen_api_server):
+def test_balances_get_deleted_when_removing_validator(rotkehlchen_api_server: 'APIServer') -> None:
     """Test that removing a validator correctly resets the balance caches"""
     response = requests.put(  # add a validator
         api_url_for(

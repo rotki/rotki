@@ -2,7 +2,7 @@ import json
 import re
 from pathlib import Path
 from typing import Any, NamedTuple
-from unittest.mock import patch
+from unittest.mock import _patch, patch
 
 import requests
 from hexbytes import HexBytes
@@ -276,7 +276,7 @@ def mock_proxies(stack, mocked_proxies):
     ))
 
 
-def mock_evm_chains_with_transactions():
+def mock_evm_chains_with_transactions() -> _patch:
     return patch(
         'rotkehlchen.tasks.manager.EVM_CHAINS_WITH_TRANSACTIONS',
         new=(SupportedBlockchain.ETHEREUM,),
