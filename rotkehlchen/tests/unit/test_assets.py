@@ -189,7 +189,7 @@ def test_cryptocompare_asset_support(cryptocompare):
         'eip155:56/erc20:0xE4FAE3Faa8300810C835970b9187c268f55D998F',  # catecoin but another CATE in CC  # noqa: E501
         'eip155:56/erc20:0x20de22029ab63cf9A7Cf5fEB2b737Ca1eE4c82A6'  # tranchess but another CHESS in CC  # noqa: E501
         'BNC',  # Bifrost but another BNC in CC
-        'eip155:56/erc20:0x8C851d1a123Ff703BD1f9dabe631b69902Df5f97',  # BinaryX but anohter BNX in CC  # noqa: E501
+        'eip155:56/erc20:0x8C851d1a123Ff703BD1f9dabe631b69902Df5f97',  # BinaryX but another BNX in CC  # noqa: E501
         'eip155:56/erc20:0x23CE9e926048273eF83be0A3A8Ba9Cb6D45cd978',  # Mines of Dalarnia but a different DAR in CC  # noqa: E501
         strethaddress_to_identifier('0xEf51c9377FeB29856E61625cAf9390bD0B67eA18'),  # Bionic but another BNC in CC  # noqa: E501
         'CHESS',  # tranchess but another chess in CC
@@ -238,7 +238,7 @@ def test_cryptocompare_asset_support(cryptocompare):
         'BSX',  # basilixc but cc has bitspace
         'eip155:43114/erc20:0xb54f16fB19478766A268F172C9480f8da1a7c9C3',  # wonderland but a different time in cc  # noqa: E501
         'eip155:56/erc20:0x5F2F6c4C491B690216E0f8Ea753fF49eF4E36ba6',  # Metaland but cc has crops
-        strethaddress_to_identifier('0x2620638EDA99F9e7E902Ea24a285456EE9438861'),  # crust storeage but cc has consentium  # noqa: E501
+        strethaddress_to_identifier('0x2620638EDA99F9e7E902Ea24a285456EE9438861'),  # crust storage but cc has consentium  # noqa: E501
         'FB',  # fitbit but cc has fenerbache
         'CMP',  # cadecius but cc has compcoin
         'KUSD',  # kolibri usd but cc has kowala
@@ -253,7 +253,7 @@ def test_cryptocompare_asset_support(cryptocompare):
         'STC',  # starchain but cc has satoshi island
         'KCAL',  # kcal but cc has pantasma energy
         'MC',  # mechaverse but cc has merit circle
-        'eip155:250/erc20:0x904f51a2E7eEaf76aaF0418cbAF0B71149686f4A',  # fantom maker but cc has fane mma  # noqa: E501
+        'eip155:250/erc20:0x904f51a2E7eEaf76aaF0418cbAF0B71149686f4A',  # fantom maker but cc has fane mma  # noqa: E501  # spellchecker:disable-line
         'ARG',  # argentina fc token but cc has argentum
         'eip155:56/erc20:0x9df90628D40c72F85137e8cEE09dde353a651266',  # mechaverse but cc has merit circle  # noqa: E501
         'ALT',  # aptos launch but cc has alitas
@@ -269,7 +269,7 @@ def test_cryptocompare_asset_support(cryptocompare):
         strethaddress_to_identifier('0x5E5d9aEeC4a6b775a175b883DCA61E4297c14Ecb'),  # florin but cc has flare  # noqa: E501
         strethaddress_to_identifier('0x178E029173417b1F9C8bC16DCeC6f697bC323746'),  # fiat stable pool but cc has fud finance  # noqa: E501
         strethaddress_to_identifier('0x6BC08509B36A98E829dFfAD49Fde5e412645d0a3'),  # woofwoof but cc has shibance token  # noqa: E501
-        strethaddress_to_identifier('0x865377367054516e17014CcdED1e7d814EDC9ce4'),  # we have dolla stable coin but cc has a differen dolla  # noqa: E501
+        strethaddress_to_identifier('0x865377367054516e17014CcdED1e7d814EDC9ce4'),  # we have dolla stable coin but cc has a different dolla  # noqa: E501
         strethaddress_to_identifier('0xBEA0000029AD1c77D3d5D23Ba2D8893dB9d1Efab'),  # cc has a different bean than us  # noqa: E501
         # assets that match the one in coingecko and are not the ones locally
         strethaddress_to_identifier('0x68037790A0229e9Ce6EaA8A99ea92964106C4703'),
@@ -293,7 +293,7 @@ def test_cryptocompare_asset_support(cryptocompare):
         evm_address_to_identifier(address='0xA35923162C49cF95e6BF26623385eb431ad920D3', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501
         evm_address_to_identifier(address='0x297E4e5e59Ad72B1B0A2fd446929e76117be0E0a', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501
         evm_address_to_identifier(address='0x297E4e5e59Ad72B1B0A2fd446929e76117be0E0a', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # GDX but cc has gold miner
-        'KING',  # differnt king
+        'KING',  # different king
         evm_address_to_identifier(address='0x9bf1D7D63dD7a4ce167CF4866388226EEefa702E', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # BEN memecoin but cc has bitcoen
         evm_address_to_identifier(address='0xF831938CaF837cd505dE196BBb408D81A06376ab', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # JEFF memecoin but cc has jeff on space
         evm_address_to_identifier(address='0x3c8b650257cfb5f272f799f5e2b4e65093a11a05', chain_id=ChainID.OPTIMISM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # velodrome but cc has a different one
@@ -663,7 +663,7 @@ def test_coingecko_identifiers_are_reachable(socket_enabled):  # pylint: disable
         strethaddress_to_identifier('0x04969cD041C0cafB6AC462Bd65B536A5bDB3A670'),
         # fiat stable pool but coingecko has fud aavegochi
         strethaddress_to_identifier('0x178E029173417b1F9C8bC16DCeC6f697bC323746'),
-        # titanium dollar but coingecko hash treshold
+        # titanium dollar but coingecko hash threshold
         strethaddress_to_identifier('0x6967299e9F3d5312740Aa61dEe6E9ea658958e31'),
         # we have transfercoin but coingecko has tradix
         'TX',
@@ -754,7 +754,7 @@ def test_get_or_create_evm_token(globaldb, database):
         evm_address='0x6B175474E89094C44Da98b954EedeAC495271d0F',
         chain_id=ChainID.ETHEREUM,
     ) == A_DAI
-    # Try getting a DAI token of a different address. Shold add new token to DB
+    # Try getting a DAI token of a different address. Should add new token to DB
     new_token = get_or_create_evm_token(
         userdb=database,
         symbol='DAI',
@@ -847,7 +847,7 @@ def test_load_from_packaged_db(globaldb: GlobalDBHandler):
 
 
 def test_nexo_converter():
-    """Test that we don't have overlaping keys in nexo and resolve to the expected assets"""
+    """Test that we don't have overlapping keys in nexo and resolve to the expected assets"""
     assert asset_from_nexo('USDT') == A_USDT
     assert asset_from_nexo('USDTERC') == A_USDT
     assert EvmToken('eip155:1/erc20:0xB62132e35a6c13ee1EE0f84dC5d40bad8d815206') == asset_from_nexo('NEXONEXO')  # noqa: E501

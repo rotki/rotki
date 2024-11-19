@@ -362,7 +362,7 @@ def test_parse_full_insert_assets(
 
 def test_some_updates_are_malformed(assets_updater: AssetsUpdater) -> None:
     """
-    Checks the folowing cases:
+    Checks the following cases:
     1. If some of the updates are broken, others are not affected.
     2. If an update is broken, info about asset stays the same in all tables as before the update.
 

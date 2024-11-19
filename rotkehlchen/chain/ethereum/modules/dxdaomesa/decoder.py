@@ -145,7 +145,7 @@ class DxdaomesaDecoder(DecoderInterface):
             contract=self.contract,
             method_name='tokenIdToAddressMap',
             arguments=[[topic_data[1]], [topic_data[2]]],
-        )  # The resulting addresses are non checksumed but they can be found in the DB
+        )  # The resulting addresses are non checksummed but they can be found in the DB
         buy_token = self.base.get_or_create_evm_asset(result[0][0])
         sell_token = self.base.get_or_create_evm_asset(result[1][0])
         buy_amount = asset_normalized_value(amount=log_data[3], asset=buy_token)

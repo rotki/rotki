@@ -63,7 +63,7 @@ class Aavev2CommonDecoder(Commonv2v3Decoder):
                 amount=int.from_bytes(context.tx_log.data[32:64]),  # liquidated amount
                 asset=asset,
             ) == event.balance.amount and asset.protocol == CPT_AAVE_V2:
-                # we are transfering the aTOKEN
+                # we are transferring the aTOKEN
                 event.event_type = HistoryEventType.LOSS
                 event.event_subtype = HistoryEventSubType.LIQUIDATE
                 event.notes = f'An {self.label} position got liquidated for {event.balance.amount} {asset.symbol}'  # noqa: E501
@@ -73,12 +73,12 @@ class Aavev2CommonDecoder(Commonv2v3Decoder):
                 amount=int.from_bytes(context.tx_log.data[:32]),  # debt amount
                 asset=asset,
             ) == event.balance.amount:
-                # we are transfering the debt token
+                # we are transferring the debt token
                 event.event_subtype = HistoryEventSubType.PAYBACK_DEBT
                 event.notes = f'Payback {event.balance.amount} {asset.symbol} for an {self.label} position'  # noqa: E501
                 event.counterparty = CPT_AAVE_V2
                 event.address = context.tx_log.address
-                event.extra_data = {'is_liquidation': True}  # adding this field to the decoded event to differenciate paybacks happening in liquidations.  # noqa: E501
+                event.extra_data = {'is_liquidation': True}  # adding this field to the decoded event to differentiate paybacks happening in liquidations.  # noqa: E501
 
     def _decode_incentives(self, context: 'DecoderContext') -> DecodingOutput:
         if context.tx_log.topics[0] != b'V7\xd7\xf9b$\x8a\x7f\x05\xa7\xabi\xee\xc6Dn1\xf3\xd0\xa2\x99\xd9\x97\xf15\xa6\\b\x80nx\x91':  # RewardsClaimed  # noqa: E501

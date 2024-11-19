@@ -42,7 +42,7 @@ class Monerium:
             endpoint: Literal['orders'],
             params: dict[str, Any] | None = None,
     ) -> list[dict[str, Any]]:
-        """Query a monerium API endpoint with basic authenication"""
+        """Query a monerium API endpoint with basic authentication"""
         querystr = 'https://api.monerium.app/' + endpoint
         log.debug(f'Querying monerium API  {querystr}')
         timeout = CachedSettings().get_timeout_tuple()

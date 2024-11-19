@@ -3,7 +3,7 @@ import { PurgeableImageCache } from '@/types/session/purge';
 
 const { t } = useI18n();
 
-const purgable = [
+const purgeable = [
   {
     id: PurgeableImageCache.ASSET_ICONS,
     text: t('data_management.purge_images_cache.label.asset_icons'),
@@ -46,7 +46,7 @@ async function purgeSource(source: PurgeableImageCache) {
 }
 
 const { status, pending, showConfirmation } = useCacheClear<PurgeableImageCache>(
-  purgable,
+  purgeable,
   purgeSource,
   (source: string) => ({
     success: t('data_management.purge_images_cache.success', {
@@ -78,7 +78,7 @@ const { status, pending, showConfirmation } = useCacheClear<PurgeableImageCache>
         v-model="source"
         variant="outlined"
         :label="t('data_management.purge_images_cache.select_image_source')"
-        :options="purgable"
+        :options="purgeable"
         text-attr="text"
         key-attr="id"
         hide-details

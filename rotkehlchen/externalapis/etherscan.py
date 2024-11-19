@@ -72,7 +72,7 @@ class HasChainActivity(Enum):
 def _hashes_tuple_to_list(hashes: set[tuple[EVMTxHash, Timestamp]]) -> list[EVMTxHash]:
     """Turns the set of hashes/timestamp to a timestamp ascending ordered list
 
-    This function needs to exist since Set has no guranteed order of iteration.
+    This function needs to exist since Set has no guaranteed order of iteration.
     """
     return [x[0] for x in sorted(hashes, key=operator.itemgetter(1))]
 

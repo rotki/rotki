@@ -46,7 +46,7 @@ def _validate_single_oracle_id(
         all_coins = oracle_obj.all_coins()
     except RemoteError as e:
         raise ValidationError(
-            f'Could not validate {oracle_name} identifer {coin_key} due to '
+            f'Could not validate {oracle_name} identifier {coin_key} due to '
             f'problem communicating with {oracle_name}: {e!s}',
         ) from e
 

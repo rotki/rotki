@@ -73,7 +73,7 @@ def assert_csv_export_response(
         'validator_index',
     )
 
-    # check the csv files were generated succesfully
+    # check the csv files were generated successfully
     with open(os.path.join(csv_dir, FILENAME_HISTORY_EVENTS_CSV), newline='', encoding='utf-8') as csvfile:  # noqa: E501
         reader = csv.DictReader(csvfile, delimiter=csv_delimiter)
         count = 0

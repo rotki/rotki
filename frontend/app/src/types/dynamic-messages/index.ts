@@ -5,19 +5,19 @@ const Action = z.object({
   url: z.string(),
 });
 
-const VisiblityPeriod = z.object({
+const VisibilityPeriod = z.object({
   start: z.number().positive(),
   end: z.number().positive(),
 });
 
-export type VisibilityPeriod = z.infer<typeof VisiblityPeriod>;
+export type VisibilityPeriod = z.infer<typeof VisibilityPeriod>;
 
 const WelcomeMessage = z.object({
   header: z.string().optional(),
   icon: z.string().optional(),
   text: z.string(),
   action: Action.optional(),
-  period: VisiblityPeriod,
+  period: VisibilityPeriod,
 });
 
 export type WelcomeMessage = z.infer<typeof WelcomeMessage>;
@@ -34,7 +34,7 @@ const DashboardMessage = z.object({
   message: z.string(),
   messageHighlight: z.string().optional(),
   action: Action.optional(),
-  period: VisiblityPeriod,
+  period: VisibilityPeriod,
 });
 
 export type DashboardMessage = z.infer<typeof DashboardMessage>;

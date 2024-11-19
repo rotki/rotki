@@ -192,7 +192,7 @@ def test_querying_trade_history(kraken):
 
 def test_querying_rate_limit_exhaustion(kraken, database):
     """Test that if kraken api rates limit us we don't get stuck in an infinite loop
-    and also that we return what we managed to retrieve until rate limit occured.
+    and also that we return what we managed to retrieve until rate limit occurred.
 
     Regression test for https://github.com/rotki/rotki/issues/3629
     """
@@ -717,7 +717,7 @@ def test_trade_from_kraken_unexpected_data(kraken):
     query_kraken_and_test(input_trades, expected_warnings_num=0, expected_errors_num=2)
 
 
-def test_emptry_kraken_balance_response():
+def test_empty_kraken_balance_response():
     """Balance api query returns a response without a result
 
     Regression test for: https://github.com/rotki/rotki/issues/2443

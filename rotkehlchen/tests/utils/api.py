@@ -25,7 +25,7 @@ def _wait_for_listening_port(
         pid = os.getpid()
     for _ in range(tries):
         gevent.sleep(sleep)
-        # macoOS requires root access for the connections api to work
+        # macOS requires root access for the connections api to work
         # so get connections of the current process only
         connections = psutil.Process(pid).net_connections()
         for conn in connections:

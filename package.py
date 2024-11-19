@@ -675,7 +675,8 @@ class BackendBuilder:
         self.__sanity_check()
         self.__package()
 
-        # When building for mac perfom_zip() is responsible for moving the packaged backend to dist
+        # When building for mac perform_zip() is
+        # responsible for moving the packaged backend to dist
         if mac is not None:
             backend_directory = self.__storage.backend_directory / BACKEND_PREFIX
             mac.sign(paths=backend_directory.glob('**/*'))

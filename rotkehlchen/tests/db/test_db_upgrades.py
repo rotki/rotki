@@ -53,7 +53,7 @@ from rotkehlchen.utils.misc import ts_now
 
 
 def make_serialized_event_identifier(location: Location, raw_event_identifier: bytes) -> str:
-    """Creates a serialized event identifeir using the logic at the moment of v32_v33 upgrade"""
+    """Creates a serialized event identifier using the logic at the moment of v32_v33 upgrade"""
     if location == Location.KRAKEN or raw_event_identifier.startswith(b'rotki_events'):
         return raw_event_identifier.decode()
 
@@ -607,7 +607,7 @@ def test_upgrade_db_31_to_32(user_data_dir):  # pylint: disable=unused-argument
         ('1111113', 1595640208, 'external', 'ETH', 'USD', 'buy', '1.5541', '22.1', None, None, None, None),  # noqa: E501
     ]
 
-    # Check that sequence indeces are unique for the same event identifier
+    # Check that sequence indices are unique for the same event identifier
     base_entries_query = "SELECT * from history_events WHERE event_identifier='KRAKEN-REMOTE-ID3'"
     result = cursor.execute(base_entries_query).fetchall()
     assert len(result) == 5
@@ -1962,7 +1962,7 @@ def test_upgrade_db_39_to_40(user_data_dir):  # pylint: disable=unused-argument
     assert cursor.execute('SELECT type, seq FROM action_type').fetchall() == [
         ('A', 1), ('B', 2), ('C', 3),
     ]
-    # check that we have a defined accounting rule for aidrops comming from ledger actions
+    # check that we have a defined accounting rule for aidrops coming from ledger actions
     accounting_row = cursor.execute(
         "SELECT * FROM accounting_rules WHERE type='receive' AND subtype='airdrop'",
     ).fetchone()

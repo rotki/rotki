@@ -222,7 +222,7 @@ def test_query_all_balances(
         # Can't save balances again if it's the same timestamp
         gevent.sleep(1)
         # now do the same but test that balance are saved since the balance save frequency delay
-        # is overriden via `save_data` = True
+        # is overridden via `save_data` = True
         with ExitStack() as stack:
             setup.enter_all_patches(stack)
             response = requests.get(

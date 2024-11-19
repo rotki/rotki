@@ -77,7 +77,7 @@ A_MKR = Asset('eip155:1/erc20:0x9f8F72aA9304c8B593d555F12eF6589cC3A579A2')
 A_REN = Asset('eip155:1/erc20:0x408e41876cCCDC0F92210600ef50372656052a38')
 A_SNX = Asset('eip155:1/erc20:0xC011a73ee8576Fb46F5E1c5751cA3B9Fe0af2a6F')
 
-# atokens TODO: These can be handled programatically if enough info is in the assets DB
+# atokens TODO: These can be handled programmatically if enough info is in the assets DB
 # protocol and underlying asset
 
 A_ALINK_V1 = Asset('eip155:1/erc20:0xA64BD6C70Cb9051F6A9ba1F163Fdc07E0DfB5F84')

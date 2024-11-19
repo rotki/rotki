@@ -44,6 +44,15 @@ jobs:
           frontend_paths: |
             frontend
 
+  check-typos:
+    name: 'Check Typos'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Run typos checker
+        uses: crate-ci/typos@master
+
   code-analyze-frontend:
     name: 'Code analyze frontend'
     needs: ['check-changes']

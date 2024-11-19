@@ -51,12 +51,12 @@ def test_add_avax_blockchain_account(rotkehlchen_api_server: 'APIServer') -> Non
     works as expected."""
     async_query = random.choice([False, True])
 
-    avalance_chain_key = SupportedBlockchain.AVALANCHE.serialize()
+    avalanche_chain_key = SupportedBlockchain.AVALANCHE.serialize()
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
             'blockchainsaccountsresource',
-            blockchain=avalance_chain_key,
+            blockchain=avalanche_chain_key,
         ),
         json={
             'accounts': [{'address': AVALANCHE_ACC1_AVAX_ADDR}],
@@ -71,12 +71,12 @@ def test_add_avax_blockchain_account(rotkehlchen_api_server: 'APIServer') -> Non
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
         'named_blockchain_balances_resource',
-        blockchain=avalance_chain_key,
+        blockchain=avalanche_chain_key,
     ))
     result = assert_proper_sync_response_with_result(response)
 
     # Check per account
-    account_balances = result['per_account'][avalance_chain_key][AVALANCHE_ACC1_AVAX_ADDR]
+    account_balances = result['per_account'][avalanche_chain_key][AVALANCHE_ACC1_AVAX_ADDR]
     assert 'liabilities' in account_balances
     asset_avax = account_balances['assets'][A_AVAX.identifier]
     assert FVal(asset_avax['amount']) >= ZERO

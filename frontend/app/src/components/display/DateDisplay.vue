@@ -56,7 +56,7 @@ const showTooltip = computed(() => {
   return !timezone && (format.includes('%z') || format.includes('%Z'));
 });
 
-const splittedByMillisecondsPart = computed(() => get(formattedDate).split('.'));
+const splitByMillisecondsPart = computed(() => get(formattedDate).split('.'));
 
 const { copy, copied } = useCopy(formattedDate);
 </script>
@@ -70,12 +70,12 @@ const { copy, copied } = useCopy(formattedDate);
     :disabled="hideTooltip"
     @click="copy()"
   >
-    {{ splittedByMillisecondsPart[0] }}
+    {{ splitByMillisecondsPart[0] }}
     <span
-      v-if="splittedByMillisecondsPart[1]"
+      v-if="splitByMillisecondsPart[1]"
       class="text-[0.625rem]"
     >
-      .{{ splittedByMillisecondsPart[1] }}
+      .{{ splitByMillisecondsPart[1] }}
     </span>
   </CopyTooltip>
 </template>

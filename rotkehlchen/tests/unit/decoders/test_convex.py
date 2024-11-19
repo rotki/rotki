@@ -42,7 +42,7 @@ def test_booster_deposit(
         ethereum_inquirer: 'EthereumInquirer',
 ) -> None:
     tx_hex = '0x8f643dc245ce64085197692ed98309a94fd176a1e7394e8967ae7bfa10ad1f8f'
-    timestmap = TimestampMS(1655810357000)
+    timestamp = TimestampMS(1655810357000)
     evmhash = deserialize_evm_tx_hash(tx_hex)
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(
@@ -68,7 +68,7 @@ def test_booster_deposit(
         EvmEvent(
             tx_hash=evmhash,
             sequence_index=0,
-            timestamp=timestmap,
+            timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -82,7 +82,7 @@ def test_booster_deposit(
         ), EvmEvent(
             tx_hash=evmhash,
             sequence_index=461,
-            timestamp=timestmap,
+            timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
@@ -105,13 +105,13 @@ def test_booster_deposit(
 def test_booster_withdraw(ethereum_inquirer, ethereum_accounts):
     evmhash = deserialize_evm_tx_hash('0x79fcbafa4367e0563d3e614f774c5e4257c4e41f124ae8288980a310e2b2b547')  # noqa: E501
     user_address = ethereum_accounts[0]
-    timestmap = TimestampMS(1655877898000)
+    timestamp = TimestampMS(1655877898000)
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=evmhash)
     expected_events = [
         EvmEvent(
             tx_hash=evmhash,
             sequence_index=0,
-            timestamp=timestmap,
+            timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -125,7 +125,7 @@ def test_booster_withdraw(ethereum_inquirer, ethereum_accounts):
         ), EvmEvent(
             tx_hash=evmhash,
             sequence_index=223,
-            timestamp=timestmap,
+            timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.RETURN_WRAPPED,
@@ -140,7 +140,7 @@ def test_booster_withdraw(ethereum_inquirer, ethereum_accounts):
         ), EvmEvent(
             tx_hash=evmhash,
             sequence_index=229,
-            timestamp=timestmap,
+            timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.REMOVE_ASSET,
@@ -312,13 +312,13 @@ def test_cvxcrv_get_reward(database, ethereum_inquirer, eth_transactions):
 def test_cvxcrv_withdraw(ethereum_inquirer, ethereum_accounts):
     evmhash = deserialize_evm_tx_hash('0x0a804804cc62f615b72dff55e8c245d9b69aa8f8ed3de549101ae128a4ae432b')  # noqa: E501
     user_address = ethereum_accounts[0]
-    timestmap = TimestampMS(1655747494000)
+    timestamp = TimestampMS(1655747494000)
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=evmhash)
     expected_events = [
         EvmEvent(
             tx_hash=evmhash,
             sequence_index=0,
-            timestamp=timestmap,
+            timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -332,7 +332,7 @@ def test_cvxcrv_withdraw(ethereum_inquirer, ethereum_accounts):
         ), EvmEvent(
             tx_hash=evmhash,
             sequence_index=424,
-            timestamp=timestmap,
+            timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.REMOVE_ASSET,
@@ -354,13 +354,13 @@ def test_cvxcrv_withdraw(ethereum_inquirer, ethereum_accounts):
 def test_cvxcrv_stake(ethereum_inquirer, ethereum_accounts):
     evmhash = deserialize_evm_tx_hash('0x3cc0b25887e2f0dac7f86fabd81aaafb1e041e84dbe8167885073c443320ad5f')  # noqa: E501
     user_address = ethereum_accounts[0]
-    timestmap = TimestampMS(1655750059000)
+    timestamp = TimestampMS(1655750059000)
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=evmhash)
     expected_events = [
         EvmEvent(
             tx_hash=evmhash,
             sequence_index=0,
-            timestamp=timestmap,
+            timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -374,7 +374,7 @@ def test_cvxcrv_stake(ethereum_inquirer, ethereum_accounts):
         ), EvmEvent(
             tx_hash=evmhash,
             sequence_index=426,
-            timestamp=timestmap,
+            timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
@@ -389,7 +389,7 @@ def test_cvxcrv_stake(ethereum_inquirer, ethereum_accounts):
         ), EvmEvent(
             tx_hash=evmhash,
             sequence_index=427,
-            timestamp=timestmap,
+            timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,

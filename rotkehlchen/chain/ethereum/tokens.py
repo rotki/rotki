@@ -28,7 +28,7 @@ ETH_TOKEN_EXCEPTIONS = {
     # duplicated the balances at upgrade instead of doing a token swap.
     # e.g.: https://github.com/rotki/rotki/issues/3548
     # TODO: At some point we should actually remove them from the DB and
-    # upgrade possible occurences in the user DB
+    # upgrade possible occurrences in the user DB
     #
     # Old contract of Fetch.ai
     string_to_evm_address('0x1D287CC25dAD7cCaF76a26bc660c5F7C8E2a05BD'),

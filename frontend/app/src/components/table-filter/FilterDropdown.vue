@@ -17,7 +17,7 @@ const emit = defineEmits<{
 
 const { keyword, selectedMatcher, selectedSuggestion } = toRefs(props);
 
-const keywordSplitted = computed(() => splitSearch(get(keyword)));
+const keywordSplit = computed(() => splitSearch(get(keyword)));
 
 const lastSuggestion = ref<Suggestion | null>(null);
 const suggested = ref<Suggestion[]>([]);
@@ -172,7 +172,7 @@ const highlightedTextClasses = 'text-subtitle-2 text-rui-text-secondary';
         >
           <template #search>
             <span class="font-medium text-rui-primary">
-              {{ keywordSplitted.key }}
+              {{ keywordSplit.key }}
             </span>
           </template>
         </i18n-t>

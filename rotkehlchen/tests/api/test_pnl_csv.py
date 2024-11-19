@@ -45,7 +45,7 @@ def assert_csv_export_response(response, csv_dir, is_download=False, expected_nu
         assert data['message'] == ''
         assert data['result'] is True
 
-    # and check the csv files were generated succesfully. Here we are only checking
+    # and check the csv files were generated successfully. Here we are only checking
     # for valid CSV and not for the values to be valid. Valid values are tested
     # in unit/test_accounting.py
     rows = []

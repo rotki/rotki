@@ -643,7 +643,7 @@ def setup_evm_addresses_activity_mock(
 
     def mock_zksync_lite_query_api(url, options):  # pylint: disable=unused-argument
         re_match = re.search(r'accounts\/(0x[a-fA-F0-9]{40})\/transactions', url)
-        assert re_match, f'Unexpeced zksync lite url: {url}'
+        assert re_match, f'Unexpected zksync lite url: {url}'
         address = re_match.group(1)
         if zksync_lite_addresses and address in zksync_lite_addresses:
             return {'list': [1, 2]}  # a list with non zero length -- exists

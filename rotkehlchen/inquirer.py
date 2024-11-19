@@ -949,7 +949,7 @@ class Inquirer:
             )
             if pool_address_in_cache is None:
                 return None
-            # pool address is guaranteed to be checksumed due to how we save it
+            # pool address is guaranteed to be checksummed due to how we save it
             pool_address = string_to_evm_address(pool_address_in_cache)
             pool_tokens_addresses = read_curve_pool_tokens(
                 cursor=cursor,
@@ -1343,7 +1343,7 @@ class Inquirer:
             )
             return None
 
-        log.debug('Historical fiat exchange rate query succesful', rate=rate)
+        log.debug('Historical fiat exchange rate query successful', rate=rate)
         return rate
 
     @staticmethod

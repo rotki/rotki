@@ -1269,11 +1269,11 @@ def test_edit_blockchain_account_errors(
     ), json={'accounts': [{
         'address': ethereum_accounts[1],
         'label': 'a label',
-        'tags': ['nonexistant'],
+        'tags': ['nonexistent'],
     }]})
     assert_error_response(
         response=response,
-        contained_in_msg='When editing blockchain accounts, unknown tags nonexistant were found',
+        contained_in_msg='When editing blockchain accounts, unknown tags nonexistent were found',
         status_code=HTTPStatus.CONFLICT,
     )
 

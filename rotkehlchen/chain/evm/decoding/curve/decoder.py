@@ -446,7 +446,7 @@ class CurveCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin)
         - `raw_sold_amount`
         - `raw_bought_amount`
 
-        First iterate all logs to check if any pool is used seperately before the router. If there
+        First iterate all logs to check if any pool is used separately before the router. If there
         is one then get the spender side of details from it. Then check if the current tx_log is
         from router, extract the rest of the details from it.
 

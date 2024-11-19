@@ -52,7 +52,7 @@ SUSHISWAP_TRADES_PREFIX = 'sushiswap_trades'
 
 class AMMSwapPlatform:
     """
-    AMM Module interace
+    AMM Module interface
     This class uses decoded events from protocols following the Uniswap design to query balances
     and stats.
     The counterparties provided are the ones used to filter the history events for querying the

@@ -1097,7 +1097,7 @@ Cancel ongoing async tasks
 
       **Example Response**:
 
-      The following is an example response of a succesfully canceled task
+      The following is an example response of a successfully canceled task
 
       .. sourcecode:: http
 
@@ -3068,7 +3068,7 @@ Querying all balances
           "message": ""
       }
 
-   :resjson object result: The result object has two main subkeys. Assets and liabilities. Both assets and liabilities value is another object with the following keys. ``"amount"`` is the amount owned in total for that asset or owed in total as a liablity. ``"percentage_of_net_value"`` is the percentage the user's net worth that this asset or liability represents. And finally ``"usd_value"`` is the total $ value this asset/liability is worth as of this query. There is also a ``"location"`` key in the result. In there are the same results as the rest but divided by location as can be seen by the example response above.
+   :resjson object result: The result object has two main subkeys. Assets and liabilities. Both assets and liabilities value is another object with the following keys. ``"amount"`` is the amount owned in total for that asset or owed in total as a liability. ``"percentage_of_net_value"`` is the percentage the user's net worth that this asset or liability represents. And finally ``"usd_value"`` is the total $ value this asset/liability is worth as of this query. There is also a ``"location"`` key in the result. In there are the same results as the rest but divided by location as can be seen by the example response above.
    :statuscode 200: Balances successfully queried.
    :statuscode 400: Provided JSON is in some way malformed
    :statuscode 401: User is not logged in.
@@ -8274,7 +8274,7 @@ Getting eth2 staking performance
    :reqjson int[optional] to_timestamp: The timestamp until which to query. Can be missing in which case we query until now.
    :reqjson list[optional] validator_indices: The indices of the validators to filter for
    :reqjson list[optional] addresses: The associated addresses for which to filter the results. These will associate with a validator if the address is a depositor, a withdrawal address or a fee recipient.
-   :reqjson string[optional] status: The status by which to filter. By default and if missing it's ``"all"`` validators. Can also fiter by ``"active"`` or ``"exited"``.
+   :reqjson string[optional] status: The status by which to filter. By default and if missing it's ``"all"`` validators. Can also filter by ``"active"`` or ``"exited"``.
 
    **Example Response**:
 
@@ -8364,7 +8364,7 @@ Getting Eth2 Staking daily stats
    :reqjson int to_timestamp: The timestamp until which to query. Can be missing in which case we query until now.
    :reqjson list(string)[optional] validator_indices: Optionally filter entries validator indices. If missing data for all validators are returned.
    :reqjson list(string)[optional] addresses: The associated addresses for which to filter the results. These will associate with a validator if the address is a depositor, a withdrawal address or a fee recipient.
-   :reqjson string[optional] status: The status by which to filter. By default and if missing it's ``"all"`` validators. Can also fiter by ``"active"`` or ``"exited"``.
+   :reqjson string[optional] status: The status by which to filter. By default and if missing it's ``"all"`` validators. Can also filter by ``"active"`` or ``"exited"``.
 
    **Example Response**:
 
@@ -8552,7 +8552,7 @@ Getting tracked Eth2 validators
    :reqjson bool ignore_cache: Boolean denoting whether to ignore the DB cache and refresh all validator data.
    :reqjson list(string)[optional] validator_indices: Optionally filter entries validator indices. If missing data for all validators are returned.
    :reqjson list(string)[optional] addresses: The associated addresses for which to filter the results. These will associate with a validator if the address is a depositor, a withdrawal address or a fee recipient.
-   :reqjson string[optional] status: The status by which to filter. By default and if missing it's ``"all"`` validators. Can also fiter by ``"active"`` or ``"exited"``.
+   :reqjson string[optional] status: The status by which to filter. By default and if missing it's ``"all"`` validators. Can also filter by ``"active"`` or ``"exited"``.
 
 
    **Example Response**:
@@ -10244,7 +10244,7 @@ False positive in spam assets
       }
 
   :resjson bool result: list of the assets whitelisted.
-  :statuscode 200: Assets listed succesfully.
+  :statuscode 200: Assets listed successfully.
   :statuscode 409: No user is currently logged in.
   :statuscode 500: Internal rotki error.
 
@@ -10598,7 +10598,7 @@ ERC20 token info
 
       {"address": "0x6B175474E89094C44Da98b954EedeAC495271d0F", "evm_chain": "optimism"}
 
-   :reqjson str address: The checksumed address of a contract
+   :reqjson str address: The checksummed address of a contract
    :reqjson str evm_chain: The name of the evm chain to check for token info e.g. ``"ethereum"``, ``"optimism"`` etc.
    :reqjson bool async_query: A boolean denoting whether the query should be made asynchronously or not. Missing defaults to false.
 
@@ -12618,7 +12618,7 @@ Event Mappings
       }
 
   :resjson object global_mappings: keys of this object are the history event types names and values are mappings of subtypes' names to the ``EventCategory`` mapping. Each mapping is either a simple {"default": "send"}, or a different one depending on specific string values. Such as "exchange". At the moment the only such possible values are "default" and "exchange".
-  :resjson object type_mappings: the keys of this mapping are entry types and it contains the combinations of event type and subtype that would overwritte the information in ``global_mappings`` only for that entry type.
+  :resjson object type_mappings: the keys of this mapping are entry types and it contains the combinations of event type and subtype that would overwrite the information in ``global_mappings`` only for that entry type.
   :resjson object per_protocol_mappings: same as global_mappings but contains specific mappings per chain and protocol.
   :resjson object event_category_details: This is a mapping of ``EventCategory`` to its direction and mapping of counterparty to details. For all the ``EventCategoryDetails`` mapping there is a ``"default"`` key mapping to the default details. For some exceptions there is also other keys which are counterparties. Such as for spend/fee and counterparty gas.
   :resjon object accounting_events_icons: Mapping of accounting event type to its corresponding icon name.
@@ -13008,7 +13008,7 @@ Dealing with skipped external events
       }
 
   :resjson int total: The total number of skipped events that we tried to reprocess
-  :resjson int succesfull: The number of skipped events that we reprocessed successfully and were thus deleted from the skipped events table.
+  :resjson int successful: The number of skipped events that we reprocessed successfully and were thus deleted from the skipped events table.
 
   :statuscode 200: Reprocessing went fine.
   :statuscode 409: An issue occurred during reprocessing
@@ -13353,7 +13353,7 @@ Solving conflicts in accounting rules
       }
 
   :resjson bool result: Boolean denoting success or failure.
-  :statuscode 200: Conflicts resolved succesfully.
+  :statuscode 200: Conflicts resolved successfully.
   :statuscode 401: No user is currently logged in.
   :statuscode 409: Couldn't find the rule locally.
   :statuscode 500: Internal rotki error.
@@ -13647,7 +13647,7 @@ Managing calendar reminders
          "message": ""
       }
 
-  :resjson object result: object with the ids of the events for which the reminders were created succesfully and for which it failed. If none failed the failed key is not returned.
+  :resjson object result: object with the ids of the events for which the reminders were created successfully and for which it failed. If none failed the failed key is not returned.
   :statuscode 200: Entry correctly stored.
   :statuscode 401: No user is currently logged in.
   :statuscode 409: Failed to validate the data.

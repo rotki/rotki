@@ -257,7 +257,7 @@ from rotkehlchen.types import (
     ModuleName,
     OptionalChainAddress,
     Price,
-    PurgableModuleName,
+    PurgeableModuleName,
     SubstrateAddress,
     SupportedBlockchain,
     Timestamp,
@@ -345,7 +345,7 @@ def async_api_call() -> Callable:
 
     Endpoints that it wraps must return a dictionary with result, message and optionally a
     status code.
-    This decorator reads the dictionary and transforms it to a Reponse object.
+    This decorator reads the dictionary and transforms it to a Response object.
     """
     def wrapper(func: Callable[..., dict[str, Any]]) -> Callable[..., Response]:
         def inner(rest_api: 'RestAPI', async_query: bool = False, **kwargs: Any) -> Response:
@@ -2477,7 +2477,7 @@ class RestAPI:
         manager.node_inquirer.connect_to_multiple_nodes(nodes_to_connect)
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
-    def purge_module_data(self, module_name: PurgableModuleName | None) -> Response:
+    def purge_module_data(self, module_name: PurgeableModuleName | None) -> Response:
         self.rotkehlchen.data.db.purge_module_data(module_name)
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
@@ -2871,7 +2871,7 @@ class RestAPI:
     ) -> dict[str, Any]:
         """
         Repull data for the given transactions and redecode all events. Also prices for
-        the assets involed in these events are requeried.
+        the assets involved in these events are requeried.
         """
         task_manager = self.rotkehlchen.task_manager
         assert task_manager, 'task manager should have been initialized at this point'

@@ -147,7 +147,7 @@ def deserialize_timestamp_from_bitstamp_date(date: str) -> Timestamp:
 
     The bitstamp dates follow the %Y-%m-%d %H:%M:%S format but are in UTC time
     and not local time so can't use iso8601ts_to_timestamp() directly since that
-    would interpet them as local time.
+    would interpret them as local time.
 
     Can throw DeserializationError if the data is not as expected
     """
@@ -196,7 +196,7 @@ def deserialize_timestamp_from_floatstr(time: str | (FVal | float)) -> Timestamp
 
 
 def deserialize_timestamp_from_intms(time: int) -> Timestamp:
-    """Deserializes a timestamp an integer in millseconds
+    """Deserializes a timestamp an integer in milliseconds
 
 
     Can throw DeserializationError if the data is not as expected

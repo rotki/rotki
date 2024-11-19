@@ -339,7 +339,7 @@ class Commonv2v3Decoder(DecoderInterface):
 
     def _maybe_decode_mint_events(self, context: DecoderContext) -> None:
         """Decode possible mint events in transactions. Those are result of the aW(NATIVE)
-        contract minting and transfering before withdrawing the native asset. Code at
+        contract minting and transferring before withdrawing the native asset. Code at
         https://scrollscan.com/address/0xFF75A4B698E3Ec95E608ac0f22A03B8368E05F5D#code
 
         Example tx: https://scrollscan.com/tx/0x65cd06fd54a10052c3d9084d14d28c06e2bb328b1ec39730fab9284cb529d068

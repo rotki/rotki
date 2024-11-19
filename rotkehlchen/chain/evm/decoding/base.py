@@ -71,8 +71,8 @@ class BaseDecoderTools:
     def refresh_tracked_accounts(self, cursor: 'DBCursor') -> None:
         self.tracked_accounts = self.database.get_blockchain_accounts(cursor)
 
-    def is_tracked(self, adddress: ChecksumEvmAddress) -> bool:
-        return adddress in self.tracked_accounts.get(self.evm_inquirer.chain_id.to_blockchain())
+    def is_tracked(self, address: ChecksumEvmAddress) -> bool:
+        return address in self.tracked_accounts.get(self.evm_inquirer.chain_id.to_blockchain())
 
     def any_tracked(self, addresses: Sequence[ChecksumEvmAddress]) -> bool:
         return set(addresses).isdisjoint(self.tracked_accounts.get(self.evm_inquirer.chain_id.to_blockchain())) is False  # noqa: E501

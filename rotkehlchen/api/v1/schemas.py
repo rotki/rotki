@@ -121,7 +121,7 @@ from rotkehlchen.types import (
     LocationAssetMappingDeleteEntry,
     LocationAssetMappingUpdateEntry,
     ModuleName,
-    OnlyPurgableModuleName,
+    OnlyPurgeableModuleName,
     OptionalBlockchainAddress,
     OptionalChainAddress,
     SupportedBlockchain,
@@ -677,7 +677,7 @@ class HistoryEventSchema(
     DBPaginationSchema,
     DBOrderBySchema,
 ):
-    """Schema for quering history events"""
+    """Schema for querying history events"""
     exclude_ignored_assets = fields.Boolean(load_default=True)
     group_by_event_ids = fields.Boolean(load_default=False)
     event_identifiers = DelimitedOrNormalList(fields.String(), load_default=None)
@@ -2567,7 +2567,7 @@ class AssetResetRequestSchema(AsyncQueryArgumentSchema):
 
 class NamedEthereumModuleDataSchema(Schema):
     module_name = fields.String(
-        validate=webargs.validate.OneOf(choices=list(typing.get_args(ModuleName) + typing.get_args(OnlyPurgableModuleName))),  # noqa: E501
+        validate=webargs.validate.OneOf(choices=list(typing.get_args(ModuleName) + typing.get_args(OnlyPurgeableModuleName))),  # noqa: E501
     )
 
 
@@ -3419,7 +3419,7 @@ class SkippedExternalEventsExportSchema(Schema):
 
 
 class ExportHistoryEventSchema(HistoryEventSchema, AsyncQueryArgumentSchema):
-    """Schema for quering history events"""
+    """Schema for querying history events"""
     directory_path = DirectoryField(required=True)
 
     def make_extra_filtering_arguments(self, data: dict[str, Any]) -> dict[str, Any]:

@@ -172,20 +172,20 @@ export function useHistoryEventNote(): UseHistoryEventsNoteReturn {
         return;
       }
 
-      const splitted = separateByPunctuation(wordItem);
+      const split = separateByPunctuation(wordItem);
 
-      if (splitted.length === 0)
+      if (split.length === 0)
         return;
 
-      const word = splitted[0];
+      const word = split[0];
 
       const putBackPunctuation = (): void => {
-        if (!splitted[1])
+        if (!split[1])
           return;
 
         formats.push({
           type: NoteType.WORD,
-          word: splitted[1],
+          word: split[1],
         });
       };
 
@@ -309,7 +309,7 @@ export function useHistoryEventNote(): UseHistoryEventsNoteReturn {
         return putBackPunctuation();
       }
 
-      formats.push({ type: NoteType.WORD, word: splitted.join('') });
+      formats.push({ type: NoteType.WORD, word: split.join('') });
     });
 
     return formats.reduce(mergeSequentialWords, new Array<NoteFormat>());

@@ -82,8 +82,8 @@ def upgrade_v38_to_v39(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
             "SELECT identifier, event_identifier FROM history_events WHERE event_identifier LIKE 'rotki_events_%'",  # noqa: E501
         ).fetchall()
         for identifier, event_identifier in imported_events:
-            new_event_identifer = event_identifier.replace('rotki_events_bitcoin_tax_', 'REBTX_').replace('rotki_events_', 'RE_')  # noqa: E501
-            updates.append((new_event_identifer, identifier))
+            new_event_identifier = event_identifier.replace('rotki_events_bitcoin_tax_', 'REBTX_').replace('rotki_events_', 'RE_')  # noqa: E501
+            updates.append((new_event_identifier, identifier))
 
         write_cursor.executemany(
             'UPDATE history_events SET event_identifier=? WHERE identifier=?', updates,

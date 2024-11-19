@@ -80,7 +80,7 @@ def retry_calls(
         **kwargs: Any,
 ) -> Any:
     """Calls a function that deals with external apis for a given number of times
-    untils it fails or until it succeeds.
+    until it fails or until it succeeds.
 
     If it fails with an acceptable error then we wait for a bit until the next try.
 

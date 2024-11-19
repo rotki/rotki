@@ -345,7 +345,7 @@ class Rotkehlchen:
                 'Could not authenticate the rotki premium API keys found in the DB. '
                 f'Error: {e}. Check logs for more details',
             )
-            # else let's just continue. User signed in succesfully, but he just
+            # else let's just continue. User signed in successfully, but he just
             # has unauthenticable/invalid premium credentials remaining in his DB
 
         with self.data.db.conn.read_ctx() as cursor:

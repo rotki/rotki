@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
 
 def _deserialize_event_identifier(val: str) -> bytes:
-    """Takes the event identifer string as it was in the DB in v32 and encodes in bytes
+    """Takes the event identifier string as it was in the DB in v32 and encodes in bytes
     depending on the string value
     """
     if is_valid_ethereum_tx_hash(val):

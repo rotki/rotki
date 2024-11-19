@@ -8,7 +8,7 @@ import GreenletProfiler
 class CpuProfiler:
     def __init__(self, datadir: str) -> None:
         date_now = datetime.datetime.now(tz=datetime.UTC)
-        # create a new file every time instead of overwritting the latest profiling
+        # create a new file every time instead of overwriting the latest profiling
         summary_file = f'{date_now:%Y%m%d_%H%M}_profile_summary'
         stats_file = f'{date_now:%Y%m%d_%H%M}_profile_stats'
 

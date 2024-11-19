@@ -185,7 +185,7 @@ def terminate_process(process_name: str, process: subprocess.Popen) -> None:
         sys.exit(1)
 
     process.terminate()
-    process.wait()  # wait untill the process terminates
+    process.wait()  # wait until the process terminates
 
 
 def graceful_exit(received_signal: int, _frame: FrameType | None) -> None:

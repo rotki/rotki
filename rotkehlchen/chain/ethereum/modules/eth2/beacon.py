@@ -214,7 +214,7 @@ class BeaconInquirer:
                 log.error(f'Querying validator data via a beacon node failed due to {e!s}')
                 node_results = self.beaconchain.get_validator_data(indices_or_pubkeys)
                 queried_beaconchain = True
-            else:  # succesfull beacon node query. Set keys
+            else:  # successful beacon node query. Set keys
                 index_key = 'index'
                 valuegetter = lambda x, y: x['validator'][y]  # don't want to turn this into a def, and can't find a way to do this with functools # noqa: E501, E731
                 withdrawal_credentials_key = 'withdrawal_credentials'

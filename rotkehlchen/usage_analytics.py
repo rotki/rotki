@@ -28,7 +28,7 @@ class GeolocationData(NamedTuple):
 def retrieve_location_data(data_dir: Path) -> GeolocationData | None:
     """This functions tries to get the country of the user based on the ip.
     To do that it makes use of an open ip to country database and tries to obtain
-    the ip ussing UPnP protocol.
+    the ip using UPnP protocol.
 
     If UpNP fails we just return None
 
@@ -149,7 +149,7 @@ def maybe_submit_usage_analytics(data_dir: Path, should_submit: bool) -> None:
         return None
 
     if response.status_code == HTTPStatus.NO_CONTENT:
-        # Succesfully submitted
+        # Successfully submitted
         log.info('Submitted usage analytics')
 
     return None

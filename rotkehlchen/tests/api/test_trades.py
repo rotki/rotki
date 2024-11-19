@@ -355,7 +355,7 @@ def test_add_trades(rotkehlchen_api_server):
         'amount': '1.5541',
         'rate': '22.1',
     }]
-    # add multple trades
+    # add multiple trades
     all_expected_trades = []
     for new_trade in new_trades:
         response = requests.put(

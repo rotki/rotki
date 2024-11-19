@@ -529,7 +529,7 @@ class MockKraken(Kraken):
         return jsonloads_dict((dir_path / 'data' / filename).read_text(encoding='utf8'))
 
     def api_query(self, method: str, req: dict | None = None) -> dict:
-        # Pretty ugly ... mock a kraken remote eror
+        # Pretty ugly ... mock a kraken remote error
         if self.remote_errors:
             raise RemoteError('Kraken remote error')
 

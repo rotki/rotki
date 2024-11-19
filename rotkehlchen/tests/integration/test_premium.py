@@ -449,7 +449,7 @@ def test_try_premium_at_start_first_time_no_previous_db(
     with rotkehlchen_instance.data.db.conn.read_ctx() as cursor:
         assert rotkehlchen_instance.data.db.get_setting(cursor, name='main_currency') == DEFAULT_TESTS_MAIN_CURRENCY  # noqa: E501
         # DB should have the given rotki premium credentials saved in it since premium
-        # was succesfully initialized
+        # was successfully initialized
         credentials = rotkehlchen_instance.data.db.get_rotkehlchen_premium(cursor)
 
     assert credentials is not None
@@ -558,7 +558,7 @@ def test_upload_data_to_server_db_locked(rotkehlchen_instance):
 
     def function_to_context_switch_to():
         """This is the function that export_unencrypted should context switch to.
-        When the error occured any detach or other operation here would result
+        When the error occurred any detach or other operation here would result
         in database is locked.
 
         So to check this does not happen we make sure that when we come here

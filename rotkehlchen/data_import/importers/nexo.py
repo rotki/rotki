@@ -171,7 +171,7 @@ class NexoImporter(BaseExchangeImporter):
         elif entry_type in ignored_entries:
             pass
         else:
-            raise UnsupportedCSVEntry(f'Unsuported entry {entry_type}. Data: {csv_row}')
+            raise UnsupportedCSVEntry(f'Unsupported entry {entry_type}. Data: {csv_row}')
 
     def _import_csv(self, write_cursor: DBCursor, filepath: Path, **kwargs: Any) -> None:
         """

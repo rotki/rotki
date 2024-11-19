@@ -26,7 +26,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.bitcoin.xpub import XpubData
     from rotkehlchen.db.drivers.gevent import DBCursor
 
-TAG_REFENCE_ENTRY_TYPE = Union[
+TAG_REFERENCE_ENTRY_TYPE = Union[
     'ManuallyTrackedBalance',
     BlockchainAccountData,
     'XpubData',
@@ -189,7 +189,7 @@ def deserialize_tags_from_db(val: str | None) -> list[str] | None:
 
 
 def _get_tag_reference(
-        entry: TAG_REFENCE_ENTRY_TYPE,
+        entry: TAG_REFERENCE_ENTRY_TYPE,
         object_reference_keys: list[
             Literal['identifier', 'chain', 'address', 'xpub.xpub', 'derivation_path'],
         ],
@@ -203,7 +203,7 @@ def _get_tag_reference(
 
 
 def _prepare_tag_mappings(
-        entry: TAG_REFENCE_ENTRY_TYPE,
+        entry: TAG_REFERENCE_ENTRY_TYPE,
         object_reference_keys: list[
             Literal['identifier', 'chain', 'address', 'xpub.xpub', 'derivation_path'],
         ],

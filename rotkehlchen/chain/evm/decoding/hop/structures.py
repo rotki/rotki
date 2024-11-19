@@ -11,12 +11,12 @@ class HopBridgeEventData(NamedTuple):
 
     Attributes:
         asset (Asset): The asset identifier that is being transferred using this Hop bridge.
-        hop_asset (Asset): The intermediate asset identifer that represents the real asset
+        hop_asset (Asset): The intermediate asset identifier that represents the real asset
             being transferred. It will be swapped to the real asset at the end of the bridge.
         amm_wrapper (ChecksumEvmAddress | None): The address of the AMM wrapper used for
             asset bridging. This field is optional and can be None if no AMM wrapper is used.
         saddle_swap (ChecksumEvmAddress | None): The address of the Token Swap used for
-            swaping bridging hop assets to native assets.
+            swapping bridging hop assets to native assets.
     """
     identifier: str
     hop_identifier: str | None = None

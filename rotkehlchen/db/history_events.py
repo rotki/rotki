@@ -80,7 +80,7 @@ def maybe_filter_ignore_asset(
         filter_query: HistoryBaseEntryFilterQuery,
         include_ignored_assets: bool = False,
 ) -> str:
-    """An auxiliar function to find if query_filter contains `DBIgnoredAssetsFilter`. If it does
+    """An auxiliary function to find if query_filter contains `DBIgnoredAssetsFilter`. If it does
     then return that filter clause. This is done where we want to filter ignored assets
     before applying the free limit. If `include_ignored_assets` is true then the filter is returned
     to include them."""

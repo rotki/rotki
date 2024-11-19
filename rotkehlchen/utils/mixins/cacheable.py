@@ -85,7 +85,7 @@ def cache_response_timewise(
         forward_ignore_cache: bool = False,
 ) -> Callable:
     """ This is a decorator for caching results of functions of objects.
-    The objects must adhere to the CachableOject interface.
+    The objects must adhere to the CacheableObject interface.
 
     **Important note**: The returned dict is mutable and if mutated will mutate the
     cache itself. So handle with care. Caller should never mutate the result.

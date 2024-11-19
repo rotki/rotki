@@ -107,7 +107,7 @@ def upgrade_v40_to_v41(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
 
     @progress_step(description='Moving non settings mappings to cache.')
     def _move_non_settings_mappings_to_cache(write_cursor: 'DBCursor') -> None:
-        """Move the non-settings value from `settings` to a seperate `key_value_cache` table"""
+        """Move the non-settings value from `settings` to a separate `key_value_cache` table"""
         settings_moved = (
             'last_balance_save',
             'last_data_upload_ts',

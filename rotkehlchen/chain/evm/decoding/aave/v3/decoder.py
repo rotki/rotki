@@ -94,14 +94,14 @@ class Aavev3CommonDecoder(Commonv2v3Decoder):
 
             asset = event.asset.resolve_to_evm_token()
             if amounts[1] == event.balance.amount and event.address == ZERO_ADDRESS:
-                # we are transfering the debt token
+                # we are transferring the debt token
                 event.event_type = HistoryEventType.LOSS
                 event.event_subtype = HistoryEventSubType.LIQUIDATE
                 event.notes = f'An {self.label} position got liquidated for {event.balance.amount} {asset.symbol}'  # noqa: E501
                 event.counterparty = CPT_AAVE_V3
                 event.address = context.tx_log.address
             elif amounts[0] == event.balance.amount and event.address == ZERO_ADDRESS:
-                # we are transfering the aTOKEN
+                # we are transferring the aTOKEN
                 event.event_subtype = HistoryEventSubType.PAYBACK_DEBT
                 event.notes = f'Payback {event.balance.amount} {asset.symbol} for an {self.label} position'  # noqa: E501
                 event.counterparty = CPT_AAVE_V3
@@ -165,7 +165,7 @@ class Aavev3CommonDecoder(Commonv2v3Decoder):
                 event.event_subtype == HistoryEventSubType.NONE and
                 event.address == ZERO_ADDRESS and
                 self._token_is_aave_contract(event.asset)
-            ):  # we received aTokens when transfering, so it's an interest event
+            ):  # we received aTokens when transferring, so it's an interest event
                 event.event_subtype = HistoryEventSubType.INTEREST
                 event.notes = f'Receive {event.balance.amount} {event.asset.symbol_or_name()} as interest earned from {self.label}'  # noqa: E501
                 event.counterparty = CPT_AAVE_V3

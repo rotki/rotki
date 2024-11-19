@@ -40,7 +40,7 @@ def fixture_use_clean_caching_directory():
 
 @pytest.fixture(name='data_dir')
 def fixture_data_dir(use_clean_caching_directory, tmpdir_factory, worker_id) -> Generator[Path | None, None, None]:  # noqa: E501
-    """The tests data dir is peristent so that we can cache global DB.
+    """The tests data dir is persistent so that we can cache global DB.
     Adjusted from old code. Not sure if it makes sense to keep. Could also just
     force clean caching directory everywhere"""
     if use_clean_caching_directory:

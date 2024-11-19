@@ -1227,7 +1227,7 @@ def kraken_to_world_pair(pair: str) -> tuple[AssetWithOracles, AssetWithOracles]
     """Turns a pair from kraken to our base/quote asset tuple
 
     Can throw:
-        - UknownAsset if one of the assets of the pair are not known
+        - UnknownAsset if one of the assets of the pair are not known
         - DeserializationError if one of the assets is not a sting
         - UnprocessableTradePair if the pair can't be processed and
           split into its base/quote assets

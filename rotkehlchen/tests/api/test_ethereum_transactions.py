@@ -486,7 +486,7 @@ def test_query_over_10k_transactions(rotkehlchen_api_server):
     original_get = requests.get
 
     def mock_some_etherscan_queries(etherscan: Etherscan):
-        """Just hit etherscan for the actual transations and mock all else.
+        """Just hit etherscan for the actual transactions and mock all else.
         This test just needs to see that pagination works on the tx endpoint
         """
         def mocked_request_dict(url, *_args, **_kwargs):

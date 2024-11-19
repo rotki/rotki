@@ -35,7 +35,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 # size assumes a user loads 5 pages of 100 events each one
 # and each event having in average 3 subevents.
-# TODO: Make this changable depending on user's set page size
+# TODO: Make this changeable depending on user's set page size
 PROCESSABLE_EVENTS_CACHE_SIZE = 1500
 
 

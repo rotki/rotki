@@ -156,7 +156,7 @@ def _perform_single_upgrade(
         shutil.copyfile(tmp_db_path, global_dir / db_filename)
         raise ValueError(error_message) from e
 
-    # single upgrade succesfull
+    # single upgrade successful
     with connection.write_ctx() as write_cursor:
         write_cursor.execute(
             'DELETE FROM settings WHERE name=?',

@@ -1120,7 +1120,7 @@ def test_get_active_validator_indices(database):
 @pytest.mark.parametrize('network_mocking', [False])
 @pytest.mark.freeze_time('2024-02-15 13:00:00 GMT')
 def test_refresh_validator_data_after_v40_v41_upgrade(eth2):
-    """In v40->v41 upgrade the validator table changed, and more columns were addedd.
+    """In v40->v41 upgrade the validator table changed, and more columns were added.
     Most of them were optional but in normal operation they would be detected.
     Adding this test to make sure this happens.
 

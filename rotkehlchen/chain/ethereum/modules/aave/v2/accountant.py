@@ -41,7 +41,7 @@ class Aavev2Accountant(ModuleAccountantInterface):
             other_events: Iterator['EvmEvent'],  # pylint: disable=unused-argument
     ) -> int:
         """
-        Process payback events. If the payed back amount is higher that the borrowed amount,
+        Process payback events. If the paid back amount is higher that the borrowed amount,
         a loss event is added to the accounting pot.
         """
         key = (string_to_evm_address(event.location_label), event.asset)  # type: ignore[arg-type]  # location_label can't be None here

@@ -49,7 +49,7 @@ class PremiumSyncManager:
             )
             self.last_data_upload_ts = Timestamp(0) if self.last_data_upload_ts is None else self.last_data_upload_ts  # noqa: E501
             self.last_upload_attempt_ts = self.last_data_upload_ts
-        # This contains the last known succesful DB upload timestamp in the remote.
+        # This contains the last known successful DB upload timestamp in the remote.
         self.last_remote_data_upload_ts = 0  # gets populated only after the first API call
         self.data = data
         self.migration_manager = migration_manager

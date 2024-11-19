@@ -830,7 +830,7 @@ class Cryptocompare(
         # As described in the docs
         # https://min-api.cryptocompare.com/documentation?key=Other&cat=allCoinsWithContentEndpoint
         # This is not the entire list of assets in the system, so I am manually adding
-        # here assets I am aware of that they already have historical data for in thei
+        # here assets I am aware of that they already have historical data for in their
         # cryptocompare system
         data['DAO'] = object()
         data['USDT'] = object()
@@ -853,7 +853,7 @@ class Cryptocompare(
         data['GENE*'] = object()
         # This is GazeCoin (https://coinmarketcap.com/currencies/gazecoin/)
         data['GZE'] = object()
-        # This is probaly HarmonyCoin (https://coinmarketcap.com/currencies/harmonycoin-hmc/)
+        # This is probably HarmonyCoin (https://coinmarketcap.com/currencies/harmonycoin-hmc/)
         data['HMC*'] = object()
         # This is IoTChain (https://coinmarketcap.com/currencies/iot-chain/)
         data['ITC'] = object()

@@ -100,7 +100,7 @@ def _query_or_get_given_token_info(
             name = info['name'] if info['name'] is not None else ''
 
     else:
-        raise NotERC20Conformant(f'Token {evm_address} is of uknown type')  # pylint: disable=raise-missing-from
+        raise NotERC20Conformant(f'Token {evm_address} is of unknown type')  # pylint: disable=raise-missing-from
 
     return name, symbol, decimals
 

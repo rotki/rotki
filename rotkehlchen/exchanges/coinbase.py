@@ -988,7 +988,7 @@ class Coinbase(ExchangeInterface):
             start_ts: Timestamp,
             end_ts: Timestamp,
     ) -> list[AssetMovement]:
-        """Make sure latest transactions are queried and saved in the DB. Since all history comes from one endpoint and can't be queried by time range this doesn't follow the same logic as aother exchanges"""  # noqa: E501
+        """Make sure latest transactions are queried and saved in the DB. Since all history comes from one endpoint and can't be queried by time range this doesn't follow the same logic as another exchanges"""  # noqa: E501
         self._query_transactions()
         return []
 
@@ -997,7 +997,7 @@ class Coinbase(ExchangeInterface):
             start_ts: Timestamp,
             end_ts: Timestamp,
     ) -> list[HistoryEvent]:
-        """Make sure latest transactions are queried and saved in the DB. Since all history comes from one endpoint and can't be queried by time range this doesn't follow the same logic as aother exchanges"""  # noqa: E501
+        """Make sure latest transactions are queried and saved in the DB. Since all history comes from one endpoint and can't be queried by time range this doesn't follow the same logic as another exchanges"""  # noqa: E501
         self._query_transactions()
         return []
 

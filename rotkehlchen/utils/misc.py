@@ -298,7 +298,7 @@ def rgetattr(obj: Any, attr: str, *args: Any) -> Any:
 
 
 def pairwise(iterable: Iterable[Any]) -> Iterator:
-    """ Takes an iteratable and returns an iterator that iterates over two of its
+    """ Takes an iterable and returns an iterator that iterates over two of its
     elements in each iteration.
 
     IMPORTANT: If an ODD number of elements is given then the last one is not iterated.
@@ -309,7 +309,7 @@ def pairwise(iterable: Iterable[Any]) -> Iterator:
 
 
 def pairwise_longest(iterable: Iterable[Any]) -> Iterator:
-    """ Takes an iteratable and returns an iterator that iterates over two of its
+    """ Takes an iterable and returns an iterator that iterates over two of its
     elements in each iteration.
 
     If an odd number of elements is passed then the last elements is None.

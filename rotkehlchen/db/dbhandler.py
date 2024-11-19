@@ -141,7 +141,7 @@ from rotkehlchen.types import (
     HexColorCode,
     ListOfBlockchainAddresses,
     Location,
-    PurgableModuleName,
+    PurgeableModuleName,
     SupportedBlockchain,
     Timestamp,
     UserNote,
@@ -1034,7 +1034,7 @@ class DBHandler:
         )
         write_cursor.execute('DELETE FROM gnosispay_data;')
 
-    def purge_module_data(self, module_name: PurgableModuleName | None) -> None:
+    def purge_module_data(self, module_name: PurgeableModuleName | None) -> None:
         with self.user_write() as cursor:
             if module_name is None:
                 self.delete_loopring_data(cursor)
@@ -2705,7 +2705,7 @@ class DBHandler:
         are set to be part of the user's ignored list
         """
         with GlobalDBHandler().conn.read_ctx() as cursor:
-            # after succesfull update add all asset ids
+            # after successful update add all asset ids
             cursor.execute('SELECT identifier from assets;')
             self.add_asset_identifiers(
                 write_cursor=write_cursor,

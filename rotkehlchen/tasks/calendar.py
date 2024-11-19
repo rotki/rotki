@@ -266,15 +266,15 @@ class CalendarReminderCreator(CustomizableDateMixin):
         except InputError as e:
             log.warning(f'Failed to remove calendar entry and reminders for {calendar_entry.name} due to {e!s}')  # noqa: E501
 
-    def maybe_create_reminders(self, calendar_identifiers: list[int], secs_befores: list[int], error_msg: str) -> None:  # noqa: E501
+    def maybe_create_reminders(self, calendar_identifiers: list[int], secs_before: list[int], error_msg: str) -> None:  # noqa: E501
         _, failed_to_add = self.db_calendar.create_reminder_entries(reminders=[
             ReminderEntry(
                 identifier=calendar_identifier,  # this is only used for logging below, it's auto generated in db  # noqa: E501
                 event_id=calendar_identifier,
-                secs_before=secs_before,
+                secs_before=entry,
             )
             for calendar_identifier in calendar_identifiers
-            for secs_before in secs_befores
+            for entry in secs_before
         ])
 
         if len(failed_to_add) == 0:
@@ -328,7 +328,7 @@ class CalendarReminderCreator(CustomizableDateMixin):
 
         self.maybe_create_reminders(
             calendar_identifiers=[t[0] for t in ens_to_event.values()],
-            secs_befores=[WEEK_IN_SECONDS, DAY_IN_SECONDS],
+            secs_before=[WEEK_IN_SECONDS, DAY_IN_SECONDS],
             error_msg='Failed to add the ENS expiry reminders',
         )
 
@@ -361,7 +361,7 @@ class CalendarReminderCreator(CustomizableDateMixin):
 
         self.maybe_create_reminders(
             calendar_identifiers=crv_calendar_entries,
-            secs_befores=[0],
+            secs_before=[0],
             error_msg='Failed to add the CRV lock period end reminders',
         )
 
@@ -423,7 +423,7 @@ class CalendarReminderCreator(CustomizableDateMixin):
 
         self.maybe_create_reminders(
             calendar_identifiers=calendar_entries,
-            secs_befores=[WEEK_IN_SECONDS, DAY_IN_SECONDS],
+            secs_before=[WEEK_IN_SECONDS, DAY_IN_SECONDS],
             error_msg='Failed to add the airdrop claim reminders',
         )
 
@@ -470,11 +470,11 @@ class CalendarReminderCreator(CustomizableDateMixin):
                 )) is not None:
                     bridge_calendar_entries.append(entry_id)
             except UnknownAsset:
-                log.exception(f'Unable to add reminder for brige event with hash {bridge_event.tx_hash.hex()} on {bridge_event.location.name}')  # noqa: E501
+                log.exception(f'Unable to add reminder for bridge event with hash {bridge_event.tx_hash.hex()} on {bridge_event.location.name}')  # noqa: E501
                 continue
 
         self.maybe_create_reminders(
-            secs_befores=[0],
+            secs_before=[0],
             calendar_identifiers=bridge_calendar_entries,
             error_msg='Failed to add the bridge claim reminders',
         )

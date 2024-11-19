@@ -124,7 +124,7 @@ def deserialize_generic_asset_from_db(
     """
     From a db tuple containing information about any asset deserialize to the correct Asset class
     according to type in the database. Is a wrapper around deserialize_asset_with_oracles_from_db
-    And extends it by allowing the deserialization of CustomAsset objets.
+    And extends it by allowing the deserialization of CustomAsset objects.
     May raise:
     - DeserializationError
     - WrongAssetType

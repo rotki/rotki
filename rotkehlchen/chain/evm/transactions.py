@@ -429,7 +429,7 @@ class EvmTransactions(ABC):  # noqa: B024
 
     def address_has_been_spammed(self, address: ChecksumEvmAddress) -> bool:
         """
-        Queries erc20 tranfers for the given address and if it has only transfer of spam assets
+        Queries erc20 transfers for the given address and if it has only transfer of spam assets
         or ignored assets we return True. Stop at the first valid ERC20 transfer we find to exit
         as early as possible. If any transfer had an unknown asset mark the address as not spammed
         since we can't do more to classify it.

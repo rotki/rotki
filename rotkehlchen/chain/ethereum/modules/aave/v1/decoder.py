@@ -120,12 +120,12 @@ class Aavev1Decoder(DecoderInterface):
                 amount=int.from_bytes(context.tx_log.data[32:64]),  # debt amount
                 asset=asset,
             ) == event.balance.amount:
-                # we are transfering the debt token
+                # we are transferring the debt token
                 event.event_subtype = HistoryEventSubType.PAYBACK_DEBT
                 event.notes = f'Payback {event.balance.amount} {asset.symbol} for an aave-v1 position'  # noqa: E501
                 event.counterparty = CPT_AAVE_V1
                 event.address = context.tx_log.address
-                event.extra_data = {'is_liquidation': True}  # adding this field to the decoded event to differenciate paybacks happening in liquidations.  # noqa: E501
+                event.extra_data = {'is_liquidation': True}  # adding this field to the decoded event to differentiate paybacks happening in liquidations.  # noqa: E501
             elif event.event_type == HistoryEventType.RECEIVE:
                 event.event_subtype = HistoryEventSubType.GENERATE_DEBT
                 event.counterparty = CPT_AAVE_V1

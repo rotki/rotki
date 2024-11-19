@@ -28,7 +28,7 @@ from rotkehlchen.types import (
     Fee,
     Location,
     ModuleName,
-    OnlyPurgableModuleName,
+    OnlyPurgeableModuleName,
     SupportedBlockchain,
     Timestamp,
 )
@@ -158,7 +158,7 @@ def test_purge_blockchain_transaction_data(rotkehlchen_api_server: 'APIServer') 
         _assert_zksynclite_txs_num(write_cursor, tx_num=2, swap_num=1)
 
     # see that purging without arguments removes the remaining
-    # optimism, gnosis and zksync_lite transctions
+    # optimism, gnosis and zksync_lite transactions
     response = requests.delete(
         api_url_for(
             rotkehlchen_api_server,
@@ -239,7 +239,7 @@ def test_purge_module_data(rotkehlchen_api_server: 'APIServer') -> None:
 
     populate_data()
     check_data(name=None, before=True)
-    valid_names = typing.get_args(ModuleName) + typing.get_args(OnlyPurgableModuleName)
+    valid_names = typing.get_args(ModuleName) + typing.get_args(OnlyPurgeableModuleName)
     for name in valid_names:
         response = requests.delete(
             api_url_for(

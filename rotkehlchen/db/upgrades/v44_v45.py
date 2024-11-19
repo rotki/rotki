@@ -31,7 +31,7 @@ def upgrade_v44_to_v45(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         INSERT OR IGNORE INTO location(location, seq) VALUES ('u', 53);
         """)
 
-    @progress_step(description='Reseting decoded events.')
+    @progress_step(description='Resetting decoded events.')
     def _reset_decoded_events(write_cursor: 'DBCursor') -> None:
         """Reset all decoded evm events except for the customized ones and those in zksync lite.
         Code taken from previous upgrade

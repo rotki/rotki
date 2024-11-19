@@ -52,7 +52,7 @@ if TYPE_CHECKING:
 from rotkehlchen.constants.limits import FREE_ETH_TX_LIMIT
 
 # This is only used in get_transaction_hashes_not_decoded and count_hashes_not_decoded
-# in conjuction with TransactionsNotDecodedFilterQuery. In that filter query we also
+# in conjunction with TransactionsNotDecodedFilterQuery. In that filter query we also
 # make sure to check that the evmtx_mapping value is that of the decoded attribute
 # The reason it happens there is that it needs to be in the WHERE
 TRANSACTIONS_MISSING_DECODING_QUERY = (

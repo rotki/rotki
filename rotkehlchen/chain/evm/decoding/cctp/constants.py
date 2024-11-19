@@ -6,7 +6,7 @@ from rotkehlchen.types import ChainID
 CPT_CCTP: Final = 'cctp'
 CCTP_CPT_DETAILS: Final = CounterpartyDetails(
     identifier=CPT_CCTP,
-    label='Cirle CCTP',
+    label='Circle CCTP',
     image='cctp.svg',
 )
 DEPOSIT_FOR_BURN: Final = b'/\xa9\xca\x89I\x82\x93\x01\x90r~uP\n\x97\xd8\xdcP\x023\xa5\x06^\x0f1&\xc4\x8f\xbe\x03C\xc0'  # noqa: E501

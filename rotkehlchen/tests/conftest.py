@@ -160,7 +160,7 @@ def requires_env(allowed_envs: list[TestEnvironment]):
 
     return pytest.mark.skipif(
         'CI' in os.environ and env not in allowed_envs,
-        reason=f'Not suitable envrionment {env} for current test',
+        reason=f'Not suitable environment {env} for current test',
     )
 
 
@@ -277,7 +277,7 @@ def fixture_vcr_base_dir() -> Path:
     if 'CI' in os.environ:
         # the CI action Ensure VCR branch is fully rebased handles it. Do nothing
         # Also important since running this with xdist and -n X then this runs X
-        # times and causes the CI to fail dueto incosistencies and multi cloning
+        # times and causes the CI to fail dueto inconsistencies and multi cloning
         return Path(os.environ['CASSETTES_DIR']) / 'cassettes'
 
     current_branch = os.environ.get('VCR_BRANCH')
@@ -326,11 +326,11 @@ def fixture_vcr_base_dir() -> Path:
 
     log.debug(f'VCR setup: Checked out test-caching {current_branch} branch')
 
-    # see if we have any uncomitted work
+    # see if we have any uncommitted work
     for diff_type in ('diff', 'diff --staged'):
         diff_result = os.popen(f'cd "{root_dir}" && git {diff_type}').read()
         if diff_result != '':
-            log.debug('VCR setup: There is uncomitted work at the test-caching repository. Not modifying it')  # noqa: E501
+            log.debug('VCR setup: There is uncommitted work at the test-caching repository. Not modifying it')  # noqa: E501
             return base_dir
 
     # see if the branch is ahead of origin, meaning local is being worked on

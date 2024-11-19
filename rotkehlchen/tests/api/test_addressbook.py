@@ -322,7 +322,7 @@ def test_insert_into_addressbook(
         },
     )
 
-    # quering by address should return the only one with blockchain None
+    # querying by address should return the only one with blockchain None
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,

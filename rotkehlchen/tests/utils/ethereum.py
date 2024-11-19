@@ -218,7 +218,7 @@ def setup_ethereum_transactions_test(
         one_receipt_in_db: bool = False,
         second_receipt_in_db: bool = False,
 ) -> tuple[list[EvmTransaction], list[EvmTxReceipt]]:
-    """This setup assummes that TEST_ADDR1 and TEST_ADDR2 are already present in the db"""
+    """This setup assumes that TEST_ADDR1 and TEST_ADDR2 are already present in the db"""
     dbevmtx = DBEvmTx(database)
     tx_hash1 = deserialize_evm_tx_hash('0x692f9a6083e905bdeca4f0293f3473d7a287260547f8cbccc38c5cb01591fcda')  # noqa: E501
     transaction1 = EvmTransaction(
@@ -424,7 +424,7 @@ def get_decoded_events_of_transaction(
 ) -> tuple[list['EvmEvent'], 'EVMTransactionDecoder']:
     """A convenience function to ask get transaction, receipt and decoded event for a tx_hash
 
-    It also accepts `transactions` in case the caller whants to apply some mocks (like call_count)
+    It also accepts `transactions` in case the caller wants to apply some mocks (like call_count)
     on that object. Same thing for evm_decoder if the callers want to use it before
     for any reason.
 
