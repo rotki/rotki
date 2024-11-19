@@ -2424,7 +2424,6 @@
   "external_services": {
     "api_key": "API key",
     "beaconchain": {
-      "delete_tooltip": "Deletes the Beaconcha.in API key",
       "description": "rotki uses Beaconcha.in to obtain information about ETH staking in your portfolio. An API key is only needed if you are being rate-limited.",
       "hint": "Enter your Beaconcha.in API key",
       "title": "Beaconcha.in"
@@ -2436,7 +2435,6 @@
       "title": "Blockscout"
     },
     "coingecko": {
-      "delete_tooltip": "Delete your CoinGecko API key",
       "description": "Used for cryptocurrency data. An API key increases rate limits.",
       "hint": "Enter your CoinGecko API key",
       "title": "CoinGecko"
@@ -2450,13 +2448,11 @@
       "password": "Password"
     },
     "cryptocompare": {
-      "delete_tooltip": "Deletes the CryptoCompare API key",
       "description": "rotki uses cryptocompare to obtain price information about assets in your portfolio. An API key is only needed if you have a lot of assets and are being rate-limited.",
       "hint": "Enter your CryptoCompare API key",
       "title": "CryptoCompare"
     },
     "defillama": {
-      "delete_tooltip": "Delete your DefiLlama Pro API key",
       "description": "Used to query higher rate limits for DeFi prices and data. An API key increases rate limits.",
       "hint": "Enter your DefiLlama Pro API key",
       "title": "DefiLlama Pro"
@@ -2464,6 +2460,8 @@
     "delete_error": {
       "description": "Error while removing the external service api keys: {message}"
     },
+    "delete_key": "Delete key",
+    "enter_api_key": "Enter API key",
     "etherscan": {
       "delete_tooltip": "Deletes the {chain} Etherscan API key",
       "description": "Recommended for any EVM blockchain balances or transactions if you are not using your own node.",
@@ -2473,7 +2471,6 @@
     },
     "get_api_key": "You can apply for an API key {link}",
     "loopring": {
-      "delete_tooltip": "Delete your Loopring API key",
       "description": "Used to query balances in Loopring. This API key will only be able to query the account that generated this key.",
       "hint": "Enter your Loopring API key",
       "not_enabled": "The Loopring module is not enabled. Your balances won't be retrieved unless you enable the loopring module",
@@ -2485,26 +2482,26 @@
       "description": "Add your Gnosis Pay session token to integrate Gnosis Pay transactions.",
       "warning": "Gnosis Pay integration is experimental. The session token provides read-only access to your Gnosis Pay data.",
       "understand": "I understand",
-      "delete_tooltip": "Delete Gnosis Pay session token",
-      "non_premium": "Gnosis Pay integration is only available for premium users.",
       "api_key_label": "Session Token",
       "api_key_hint": "Enter your Gnosis Pay session token",
       "session_token_instructions": "Follow the guide to obtain your Gnosis Pay session token {link}"
     },
     "monerium": {
-      "delete_tooltip": "Deletes the Monerium credentials",
       "description": "Used to augment Monerium EVM transactions with banking information.",
-      "non_premium": "Upgrade to premium to be able to use this feature",
       "title": "Monerium",
       "understand": "I understand the risk",
       "warning": "At the moment, Monerium uses basic authentication only, so these are not read-only credentials."
     },
+    "need_premium": "Upgrade to premium to use this feature.",
+    "no_services_found": "No services found",
     "opensea": {
-      "delete_tooltip": "Delete your OpenSea API key",
       "description": "Used to query NFT information and balances from OpenSea.",
       "hint": "Enter your OpenSea API key",
       "title": "Opensea"
     },
+    "replace_key": "Replace key",
+    "save_key": "Save key",
+    "search": "Search for external services",
     "set": {
       "error": {
         "message": "Error while settings external service api keys: {error}"
@@ -2523,7 +2520,6 @@
     },
     "subtitle": "rotki connects to various service providers in order to obtain information such as historical prices or blockchain data. In certain cases rotki depends on these APIs for basic information, in which case you will need to provide an API key.",
     "thegraph": {
-      "delete_tooltip": "Deletes the Graph API key",
       "description": "rotki uses the Graph to obtain a variety of information such as balancer balances and ENS data",
       "hint": "Enter your The Graph API key",
       "title": "The Graph"

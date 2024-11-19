@@ -9,6 +9,7 @@ const props = withDefaults(
     tooltip?: string;
     hint?: string;
     status?: { message: string; success?: boolean };
+    hideActions?: boolean;
   }>(),
   {
     credential: null,
@@ -16,6 +17,7 @@ const props = withDefaults(
     loading: false,
     tooltip: '',
     hint: '',
+    hideActions: false,
   },
 );
 
@@ -95,6 +97,13 @@ watch(
     deep: true,
   },
 );
+
+const allFilled = computed(() => get(username) && get(password));
+defineExpose({
+  saveHandler,
+  allFilled,
+  editMode,
+});
 </script>
 
 <template>
@@ -132,6 +141,7 @@ watch(
       />
 
       <RuiTooltip
+        v-if="!hideActions"
         :open-delay="400"
         :popper="{ placement: 'top' }"
       >
@@ -155,6 +165,7 @@ watch(
     <slot v-if="$slots.default" />
 
     <div
+      v-if="!hideActions"
       class="pt-4 flex gap-2"
       data-cy="service-key__buttons"
     >

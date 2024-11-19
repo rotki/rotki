@@ -61,17 +61,15 @@ const { t } = useI18n();
       persistent
       max-width="500"
     >
-      <RuiCard>
-        <div class="flex flex-col md:flex-row gap-4 text-center items-center justify-between">
-          {{ t('update_notifier.update_available') }}
-          <RuiButton
-            color="primary"
-            :loading="updating"
-            @click="update()"
-          >
-            {{ t('common.actions.update') }}
-          </RuiButton>
-        </div>
+      <RuiCard content-class="flex flex-col md:flex-row gap-4 text-center items-center justify-between">
+        {{ t('update_notifier.update_available') }}
+        <RuiButton
+          color="primary"
+          :loading="updating"
+          @click="update()"
+        >
+          {{ t('common.actions.update') }}
+        </RuiButton>
       </RuiCard>
     </RuiDialog>
   </div>

@@ -1,6 +1,8 @@
 import type { Auth, ExternalServiceKey, ExternalServiceKeys, ExternalServiceName } from '@/types/user';
 import type { MaybeRef } from '@vueuse/core';
 import type { ComputedRef, Ref } from 'vue';
+import type ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
+import type ServiceWithAuth from '@/components/settings/api-keys/ServiceWithAuth.vue';
 
 function getName(name: ExternalServiceName, chain?: string): string {
   if (name === 'etherscan' || name === 'blockscout') {
@@ -203,3 +205,24 @@ export const useExternalApiKeys = createSharedComposable((t: ReturnType<typeof u
     keys,
   };
 });
+
+interface UseServiceKeyHandlerReturn<T extends InstanceType<typeof ServiceKey | typeof ServiceWithAuth>> {
+  serviceKeyRef: Ref<T | undefined>;
+  saveHandler: () => void;
+}
+
+export function useServiceKeyHandler<T extends InstanceType<typeof ServiceKey | typeof ServiceWithAuth>>(): UseServiceKeyHandlerReturn<T> {
+  const serviceKeyRef = ref<T | undefined>();
+
+  const saveHandler = (): void => {
+    const serviceKey = get(serviceKeyRef);
+    if (serviceKey) {
+      serviceKey.saveHandler();
+    }
+  };
+
+  return {
+    serviceKeyRef,
+    saveHandler,
+  };
+}

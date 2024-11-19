@@ -1990,7 +1990,6 @@
   "external_services": {
     "api_key": "API key",
     "beaconchain": {
-      "delete_tooltip": "Deletes the Beaconcha.in API key",
       "description": "rotki uses Beaconcha.in to obtain information about ETH staking in your portfolio. An API key is only needed if you are being rate-limited.",
       "hint": "Enter your Beaconcha.in API key",
       "title": "Beaconcha.in"
@@ -2006,7 +2005,6 @@
       "title": "Delete API Key"
     },
     "cryptocompare": {
-      "delete_tooltip": "Deletes the CryptoCompare API key",
       "description": "rotki uses cryptocompare to obtain price information about assets in your portfolio. An API key is only needed if you have a lot of assets and are being rate-limited.",
       "hint": "Enter your CryptoCompare API key",
       "title": "CryptoCompare"
@@ -2022,7 +2020,6 @@
     },
     "get_api_key": "You can apply for an API key {link}",
     "loopring": {
-      "delete_tooltip": "Delete your Loopring API key",
       "description": "Used to query balances in Loopring. This API key will only be able to query the account that generated this key.",
       "hint": "Enter your Loopring API key",
       "not_enabled": "The Loopring module is not enabled. Your balances won't be retrieved unless you enable the loopring module",
@@ -2030,7 +2027,6 @@
       "title": "Loopring"
     },
     "opensea": {
-      "delete_tooltip": "Delete your OpenSea API key",
       "description": "Used to query NFT information and balances from OpenSea.",
       "hint": "Enter your OpenSea API key",
       "title": "Opensea"

@@ -141,7 +141,10 @@ const imageUrl = getDefiImage(protocol);
             </template>
           </RuiButton>
         </template>
-        <RuiCard divide>
+        <RuiCard
+          divide
+          content-class="h-[300px] flex flex-col gap-2"
+        >
           <template #custom-header>
             <div class="flex items-center p-4 gap-4">
               <AppImage
@@ -161,13 +164,11 @@ const imageUrl = getDefiImage(protocol);
               </RuiCardHeader>
             </div>
           </template>
-          <div class="h-[300px] flex flex-col gap-2">
-            <DefiAsset
-              v-for="(asset, index) in assets"
-              :key="index"
-              :asset="asset"
-            />
-          </div>
+          <DefiAsset
+            v-for="(asset, index) in assets"
+            :key="index"
+            :asset="asset"
+          />
         </RuiCard>
       </RuiDialog>
     </div>

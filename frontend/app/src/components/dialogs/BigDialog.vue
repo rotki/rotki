@@ -9,6 +9,7 @@ const props = withDefaults(
     subtitle?: string;
     display: boolean;
     loading?: boolean;
+    actionHidden?: boolean;
     actionDisabled?: boolean;
     primaryAction?: string;
     secondaryAction?: string;
@@ -21,6 +22,7 @@ const props = withDefaults(
   {
     subtitle: '',
     loading: false,
+    actionHidden: false,
     actionDisabled: false,
     primaryAction: undefined,
     secondaryAction: undefined,
@@ -130,6 +132,7 @@ function promptClose() {
             {{ secondary }}
           </RuiButton>
           <RuiButton
+            v-if="!actionHidden"
             data-cy="confirm"
             color="primary"
             :disabled="actionDisabled || loading"

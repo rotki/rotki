@@ -112,76 +112,77 @@ const chartSectionHeight = computed<string>(() => {
 </script>
 
 <template>
-  <RuiCard class="overall-balances">
-    <div class="grid md:grid-cols-2 lg:grid-cols-12 p-2 gap-4 overflow-hidden">
-      <div class="lg:col-span-5 flex flex-col items-center justify-center">
-        <div
-          class="text-center font-medium mb-2 flex"
-          data-cy="overall-balances__net-worth"
-          :style="`font-size: ${adjustedTotalNetWorthFontSize}em`"
-        >
-          <AmountDisplay
-            class="ps-4"
-            xl
-            show-currency="symbol"
-            :fiat-currency="currencySymbol"
-            :value="totalNetWorth"
-          />
-        </div>
-        <div class="flex justify-center items-center">
-          <RuiSkeletonLoader
-            v-if="isLoading"
-            class="w-[10.625rem] h-8"
-            rounded="full"
-          />
-          <span
-            v-else
-            :class="balanceClass"
-            class="py-1 px-3 flex flex-row rounded-full min-h-[2rem] min-w-[170px] text-white dark:text-rui-light-text"
-          >
-            <span>
-              <RuiIcon :name="indicator" />
-            </span>
-            <AmountDisplay
-              v-if="!isLoading"
-              class="px-3"
-              show-currency="symbol"
-              :fiat-currency="currencySymbol"
-              :value="balanceDelta"
-            />
-            <PercentageDisplay
-              v-if="!isLoading"
-              class="pr-2 opacity-80"
-              :value="percentage"
-            />
-          </span>
-        </div>
-        <TimeframeSelector
-          class="pt-6"
-          :model-value="timeframe"
-          :visible-timeframes="visibleTimeframes"
-          @update:model-value="setTimeframe($event)"
+  <RuiCard
+    class="overall-balances"
+    content-class="grid md:grid-cols-2 lg:grid-cols-12 p-2 gap-4 overflow-hidden"
+  >
+    <div class="lg:col-span-5 flex flex-col items-center justify-center">
+      <div
+        class="text-center font-medium mb-2 flex"
+        data-cy="overall-balances__net-worth"
+        :style="`font-size: ${adjustedTotalNetWorthFontSize}em`"
+      >
+        <AmountDisplay
+          class="ps-4"
+          xl
+          show-currency="symbol"
+          :fiat-currency="currencySymbol"
+          :value="totalNetWorth"
         />
       </div>
-      <div class="lg:col-span-7 flex justify-center items-center overall-balances__net-worth-chart">
-        <NetWorthChart
-          v-if="!isLoading"
-          :chart-data="timeframeData"
-          :timeframe="timeframe"
-          :timeframes="allTimeframes"
+      <div class="flex justify-center items-center">
+        <RuiSkeletonLoader
+          v-if="isLoading"
+          class="w-[10.625rem] h-8"
+          rounded="full"
         />
-        <div
+        <span
           v-else
-          class="overall-balances__net-worth-chart__loader flex h-full flex flex-col text-center justify-center items-center"
+          :class="balanceClass"
+          class="py-1 px-3 flex flex-row rounded-full min-h-[2rem] min-w-[170px] text-white dark:text-rui-light-text"
         >
-          <RuiProgress
-            circular
-            variant="indeterminate"
-            color="primary"
+          <span>
+            <RuiIcon :name="indicator" />
+          </span>
+          <AmountDisplay
+            v-if="!isLoading"
+            class="px-3"
+            show-currency="symbol"
+            :fiat-currency="currencySymbol"
+            :value="balanceDelta"
           />
-          <div class="pt-5 text-caption">
-            {{ t('overall_balances.loading') }}
-          </div>
+          <PercentageDisplay
+            v-if="!isLoading"
+            class="pr-2 opacity-80"
+            :value="percentage"
+          />
+        </span>
+      </div>
+      <TimeframeSelector
+        class="pt-6"
+        :model-value="timeframe"
+        :visible-timeframes="visibleTimeframes"
+        @update:model-value="setTimeframe($event)"
+      />
+    </div>
+    <div class="lg:col-span-7 flex justify-center items-center overall-balances__net-worth-chart">
+      <NetWorthChart
+        v-if="!isLoading"
+        :chart-data="timeframeData"
+        :timeframe="timeframe"
+        :timeframes="allTimeframes"
+      />
+      <div
+        v-else
+        class="overall-balances__net-worth-chart__loader flex h-full flex flex-col text-center justify-center items-center"
+      >
+        <RuiProgress
+          circular
+          variant="indeterminate"
+          color="primary"
+        />
+        <div class="pt-5 text-caption">
+          {{ t('overall_balances.loading') }}
         </div>
       </div>
     </div>

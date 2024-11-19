@@ -272,33 +272,31 @@ const nftLimited = computed(() => get(error).includes('limit'));
     </template>
 
     <div class="flex flex-col gap-6">
-      <RuiCard>
-        <div class="grid md:grid-cols-8 gap-4">
-          <BlockchainAccountSelector
-            v-model="selectedAccounts"
-            class="md:col-span-3"
-            :label="t('nft_gallery.select_account')"
-            :chains="chains"
-            dense
-            outlined
-            :usable-addresses="availableAddresses"
-          />
+      <RuiCard content-class="grid md:grid-cols-8 gap-4">
+        <BlockchainAccountSelector
+          v-model="selectedAccounts"
+          class="md:col-span-3"
+          :label="t('nft_gallery.select_account')"
+          :chains="chains"
+          dense
+          outlined
+          :usable-addresses="availableAddresses"
+        />
 
-          <NftCollectionSelector
-            v-model="selectedCollection"
-            class="md:col-span-3"
-            :items="collections"
-            variant="outlined"
-            density="compact"
-          />
+        <NftCollectionSelector
+          v-model="selectedCollection"
+          class="md:col-span-3"
+          :items="collections"
+          variant="outlined"
+          density="compact"
+        />
 
-          <NftSorter
-            v-model:sort-desc="sortDescending"
-            class="md:col-span-2"
-            :sort-by="sortBy"
-            @update:sort-by="updateSortBy($event)"
-          />
-        </div>
+        <NftSorter
+          v-model:sort-desc="sortDescending"
+          class="md:col-span-2"
+          :sort-by="sortBy"
+          @update:sort-by="updateSortBy($event)"
+        />
       </RuiCard>
 
       <RuiAlert

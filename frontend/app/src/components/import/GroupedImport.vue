@@ -107,56 +107,54 @@ const [DefineDisplay, ReuseDisplay] = createReusableTemplate<{
 </script>
 
 <template>
-  <RuiCard>
-    <div class="p-1 pt-2">
-      <DefineDisplay #default="{ logo, icon, label }">
-        <div class="flex items-center gap-3">
-          <AdaptiveWrapper
-            padding="0"
-            width="1.5rem"
-            height="1.5rem"
-          >
-            <AppImage
-              v-if="logo"
-              :src="logo"
-              size="1.5rem"
-              contain
-            />
-            <RuiIcon
-              v-else-if="icon"
-              size="24"
-              class="text-rui-light-text-secondary"
-              :name="icon"
-            />
-          </AdaptiveWrapper>
-          {{ label }}
-        </div>
-      </DefineDisplay>
-      <RuiAutoComplete
-        v-model="selectedSource"
-        :label="t('import_data.select_source.title')"
-        :append-width="1.75"
-        :options="sources"
-        text-attr="label"
-        hide-details
-        return-object
-        auto-select-first
-        variant="outlined"
-        key-attr="key"
-      >
-        <template #selection="{ item }">
-          <ReuseDisplay v-bind="item" />
-        </template>
-        <template #item="{ item }">
-          <ReuseDisplay v-bind="item" />
-        </template>
-      </RuiAutoComplete>
-      <div
-        v-if="selectedSource"
-        class="mt-8"
-      >
-        <Component :is="selectedSource.form" />
+  <RuiCard content-class="p-1 pt-2">
+    <DefineDisplay #default="{ logo, icon, label }">
+      <div class="flex items-center gap-3">
+        <AdaptiveWrapper
+          padding="0"
+          width="1.5rem"
+          height="1.5rem"
+        >
+          <AppImage
+            v-if="logo"
+            :src="logo"
+            size="1.5rem"
+            contain
+          />
+          <RuiIcon
+            v-else-if="icon"
+            size="24"
+            class="text-rui-light-text-secondary"
+            :name="icon"
+          />
+        </AdaptiveWrapper>
+        {{ label }}
       </div>
+    </DefineDisplay>
+    <RuiAutoComplete
+      v-model="selectedSource"
+      :label="t('import_data.select_source.title')"
+      :append-width="1.75"
+      :options="sources"
+      text-attr="label"
+      hide-details
+      return-object
+      auto-select-first
+      variant="outlined"
+      key-attr="key"
+    >
+      <template #selection="{ item }">
+        <ReuseDisplay v-bind="item" />
+      </template>
+      <template #item="{ item }">
+        <ReuseDisplay v-bind="item" />
+      </template>
+    </RuiAutoComplete>
+    <div
+      v-if="selectedSource"
+      class="mt-8"
+    >
+      <Component :is="selectedSource.form" />
     </div>
   </RuiCard>
 </template>

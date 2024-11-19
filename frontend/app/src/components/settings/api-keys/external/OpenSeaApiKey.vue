@@ -1,34 +1,56 @@
 <script setup lang="ts">
+import type ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
+
 const { t } = useI18n();
 
 const name = 'opensea';
 
 const { loading, apiKey, actionStatus, save, confirmDelete } = useExternalApiKeys(t);
+const { serviceKeyRef, saveHandler } = useServiceKeyHandler<InstanceType<typeof ServiceKey>>();
 
 const key = apiKey(name);
 const status = actionStatus(name);
 </script>
 
 <template>
-  <RuiCard id="open-sea-api-key">
-    <template #header>
-      {{ t('external_services.opensea.title') }}
+  <ServiceKeyCard
+    :key-set="!!key"
+    :title="t('external_services.opensea.title')"
+    :subtitle="t('external_services.opensea.description')"
+    image-src="./assets/images/services/opensea.svg"
+    :primary-action="key
+      ? t('external_services.replace_key')
+      : t('external_services.save_key')"
+    :action-disabled="!serviceKeyRef?.currentValue"
+    @confirm="saveHandler()"
+  >
+    <template #left-buttons>
+      <RuiButton
+        :disabled="loading || !key"
+        color="error"
+        variant="text"
+        @click="confirmDelete(name)"
+      >
+        <template #prepend>
+          <RuiIcon
+            name="delete-bin-line"
+            size="16"
+          />
+        </template>
+        {{ t('external_services.delete_key') }}
+      </RuiButton>
     </template>
-    <template #subheader>
-      {{ t('external_services.opensea.description') }}
-    </template>
-
     <ServiceKey
+      ref="serviceKeyRef"
+      hide-actions
       :api-key="key"
       :name="name"
       :data-cy="name"
       :label="t('external_services.api_key')"
       :hint="t('external_services.opensea.hint')"
       :loading="loading"
-      :tooltip="t('external_services.opensea.delete_tooltip')"
       :status="status"
       @save="save($event)"
-      @delete-key="confirmDelete($event)"
     >
       <i18n-t
         tag="div"
@@ -45,5 +67,5 @@ const status = actionStatus(name);
         </template>
       </i18n-t>
     </ServiceKey>
-  </RuiCard>
+  </ServiceKeyCard>
 </template>

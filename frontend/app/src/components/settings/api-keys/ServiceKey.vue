@@ -8,6 +8,7 @@ const props = withDefaults(
     hint?: string;
     label?: string;
     status?: { message: string; success?: boolean };
+    hideActions?: boolean;
   }>(),
   {
     status: undefined,
@@ -15,6 +16,7 @@ const props = withDefaults(
     tooltip: '',
     hint: '',
     label: '',
+    hideActions: false,
   },
 );
 
@@ -24,7 +26,7 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n();
-const { apiKey, status } = toRefs(props);
+const { apiKey, status, hideActions } = toRefs(props);
 
 const currentValue = ref<string>('');
 const editMode = ref<boolean>(false);
@@ -55,7 +57,7 @@ function updateStatus() {
 }
 
 function saveHandler() {
-  if (get(editMode)) {
+  if (get(editMode) || get(hideActions)) {
     emit('save', {
       name: props.name,
       apiKey: get(currentValue),
@@ -88,6 +90,11 @@ watch(status, (newStatus) => {
   if (newStatus && !newStatus.success)
     set(editMode, true);
 });
+
+defineExpose({
+  saveHandler,
+  currentValue,
+});
 </script>
 
 <template>
@@ -102,16 +109,17 @@ watch(status, (newStatus) => {
         color="primary"
         class="grow"
         data-cy="service-key__api-key"
-        :text-color="!editMode && errorMessages.length === 0 ? 'success' : undefined"
+        :text-color="!editMode && !hideActions && errorMessages.length === 0 ? 'success' : undefined"
         :error-messages="errorMessages"
         :success-messages="successMessages"
         :hint="currentValue ? '' : hint"
-        :disabled="!editMode"
+        :disabled="!editMode && !hideActions"
         :label="label"
         prepend-icon="key-line"
       />
 
       <RuiTooltip
+        v-if="!hideActions"
         :open-delay="400"
         :popper="{ placement: 'top' }"
       >
@@ -133,7 +141,8 @@ watch(status, (newStatus) => {
     </div>
 
     <div
-      class="pt-4 flex gap-2"
+      v-if="!hideActions"
+      class="flex gap-2"
       data-cy="service-key__buttons"
     >
       <RuiButton
