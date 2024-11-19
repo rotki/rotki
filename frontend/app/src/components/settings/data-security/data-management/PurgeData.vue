@@ -21,7 +21,7 @@ const decentralizedExchangeToClear = ref<string>('');
 const chainToClear = ref<string>('');
 const moduleToClear = ref<string>('');
 
-const purgable = [
+const purgeable = [
   {
     id: Purgeable.CENTRALIZED_EXCHANGES,
     text: t('purge_selector.centralized_exchanges'),
@@ -45,7 +45,7 @@ const purgable = [
 ];
 
 async function purgeSource(source: Purgeable) {
-  const valueRef = purgable.find(({ id }) => id === source)?.value;
+  const valueRef = purgeable.find(({ id }) => id === source)?.value;
   const value = valueRef ? get(valueRef) : '';
   if (source === Purgeable.TRANSACTIONS) {
     await deleteTransactions(value);
@@ -71,7 +71,7 @@ async function purgeSource(source: Purgeable) {
 }
 
 const { status, pending, showConfirmation } = useCacheClear<Purgeable>(
-  purgable,
+  purgeable,
   purgeSource,
   (source: string) => ({
     success: t('data_management.purge_data.success', {
@@ -82,7 +82,7 @@ const { status, pending, showConfirmation } = useCacheClear<Purgeable>(
     }),
   }),
   (textSource, source) => {
-    const valueRef = purgable.find(({ id }) => id === source)?.value;
+    const valueRef = purgeable.find(({ id }) => id === source)?.value;
     const value = valueRef ? get(valueRef) : '';
 
     let message = '';
@@ -124,7 +124,7 @@ const chainsSelection = useArrayMap(txChains, item => item.id);
         v-model="source"
         variant="outlined"
         :label="t('purge_selector.label')"
-        :options="purgable"
+        :options="purgeable"
         text-attr="text"
         key-attr="id"
         hide-details

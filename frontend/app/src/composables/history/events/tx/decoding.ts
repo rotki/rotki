@@ -226,8 +226,8 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
   const pullAndRedecodeTransactions = async ({ transactions, deleteCustom }: PullEvmTransactionPayload): Promise<void> => {
     resetUndecodedTransactionsStatus();
 
-    const groupped = groupBy(transactions, 'evmChain');
-    Object.entries(groupped).forEach(([chain, transactions]) => {
+    const grouped = groupBy(transactions, 'evmChain');
+    Object.entries(grouped).forEach(([chain, transactions]) => {
       updateUndecodedTransactionsStatus({
         [chain]: {
           chain,

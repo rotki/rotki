@@ -67,14 +67,14 @@ class YearnVaultsV2(EthereumModule):
         nominator = price_per_full_share - EXP18
         now_block_number = self.ethereum.get_latest_block_number()
         try:
-            denonimator = now_block_number - self.ethereum.etherscan.get_blocknumber_by_time(ts=vault.started, closest='before')  # noqa: E501
+            denominator = now_block_number - self.ethereum.etherscan.get_blocknumber_by_time(ts=vault.started, closest='before')  # noqa: E501
         except RemoteError as e:
             self.msg_aggregator.add_error(
                 f'Failed to query ROI for vault {vault.evm_address}. '
                 f'Etherscan error {e!s}.',
             )
             return None, price_per_full_share
-        return FVal(nominator) / FVal(denonimator) * BLOCKS_PER_YEAR / EXP18, price_per_full_share
+        return FVal(nominator) / FVal(denominator) * BLOCKS_PER_YEAR / EXP18, price_per_full_share
 
     def _get_single_addr_balance(
             self,

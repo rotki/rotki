@@ -922,7 +922,7 @@ def test_update_no_user_loggedin(rotkehlchen_api_server: 'APIServer') -> None:
 
 
 def test_async_db_reset(rotkehlchen_api_server: 'APIServer') -> None:
-    """Test the endpoint for reseting the globaldb using an async task"""
+    """Test the endpoint for resetting the globaldb using an async task"""
     asset_id = 'my_custom_id'
     GlobalDBHandler.add_asset(CryptoAsset.initialize(
         identifier=asset_id,

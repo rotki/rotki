@@ -72,7 +72,7 @@ def _process_dict_response(
         status_codes: Sequence[HTTPStatus] = DEFAULT_OK_CODES,
         user_msg: str = DEFAULT_ERROR_MSG,
 ) -> dict:
-    """Processess a dict response returned from the Rotkehlchen server and returns
+    """Processes a dict response returned from the Rotkehlchen server and returns
     the result for success or raises RemoteError if an error happened"""
     check_response_status_code(
         response=response,

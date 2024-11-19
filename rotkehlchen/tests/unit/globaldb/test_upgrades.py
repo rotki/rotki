@@ -495,7 +495,7 @@ def test_upgrade_v5_v6(globaldb: GlobalDBHandler, messages_aggregator):
                     (7, 'eip155:1/erc20:0xD46bA6D942050d489DBd938a2C909A5d5039A161'),
                 )
 
-        # check that appropriate cache data is transfered
+        # check that appropriate cache data is transferred
         for key_part in V5_V6_UPGRADE_UNIQUE_CACHE_KEYS:
             cursor.execute(
                 'SELECT COUNT(*) FROM unique_cache WHERE key LIKE ?',

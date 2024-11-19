@@ -50,7 +50,7 @@ def maybe_apply_globaldb_migrations(connection: 'DBConnection') -> None:
                 break
 
             current_migration += 1
-            log.debug(f'Successfuly applied global DB data migration {current_migration}')
+            log.debug(f'Successfully applied global DB data migration {current_migration}')
             with connection.write_ctx() as write_cursor:
                 write_cursor.execute(  # even if no migration happens we need to remember last one
                     'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',

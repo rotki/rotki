@@ -284,7 +284,7 @@ class EthereumInquirer(DSProxyInquirerWithCacheData):
             contract_address: ChecksumEvmAddress,
     ) -> int:
         """We know that in most of its early life the Eth2 contract address returns a
-        a lot of results. So limit the query range to not hit the infura limits every tiem
+        lot of results. So limit the query range to not hit the infura limits every time
         """
         infura_eth2_log_query = (
             'infura.io' in web3.manager.provider.endpoint_uri and  # type: ignore # lgtm [py/incomplete-url-substring-sanitization]

@@ -82,7 +82,7 @@ class ProcessedAccountingEvent:
         """Aux method to enrich addresses in the event notes using the addressbook"""
         chain_address = ChainAddress(
             address=string_to_evm_address(matched_address.group()),
-            blockchain=SupportedBlockchain.from_location(self.location),  # type: ignore  # where this is caled from we check self.location in EVM_EVMLIKE_LOCATIONS
+            blockchain=SupportedBlockchain.from_location(self.location),  # type: ignore  # where this is called from we check self.location in EVM_EVMLIKE_LOCATIONS
         )
         name = DBAddressbook(database).get_addressbook_entry_name(AddressbookType.PRIVATE, chain_address)  # noqa: E501
         return f'{chain_address.address} [{name}]' if name else chain_address.address
@@ -272,6 +272,6 @@ class ProcessedAccountingEvent:
         except KeyError as e:
             raise DeserializationError(f'Could not decode processed accounting event json from the DB due to missing key {e!s}') from e  # noqa: E501
         except UnknownAsset as e:
-            raise DeserializationError(f'Couldnt deserialize processed accounting event due to unkown asset {e.identifier}') from e  # noqa: E501
+            raise DeserializationError(f'Couldnt deserialize processed accounting event due to unknown asset {e.identifier}') from e  # noqa: E501
         else:
             return event

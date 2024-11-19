@@ -1110,7 +1110,7 @@ class EVMTransactionDecoder(ABC):
                 break  # found an action item and acted on it
 
         # Add additional information to transfers for different protocols
-        enrichment_output = self._enrich_protocol_tranfers(
+        enrichment_output = self._enrich_protocol_transfers(
             context=EnricherContext(
                 tx_log=tx_log,
                 transaction=transaction,
@@ -1172,7 +1172,7 @@ class EVMTransactionDecoder(ABC):
             if len(intersection) != 0:
                 raise AssertionError(f'{type_name} duplicates found in decoding rules of {self.evm_inquirer.chain_name} {class_name}: {intersection}')  # noqa: E501
 
-    def _enrich_protocol_tranfers(self, context: EnricherContext) -> TransferEnrichmentOutput:
+    def _enrich_protocol_transfers(self, context: EnricherContext) -> TransferEnrichmentOutput:
         """Decode special transfers made by contract execution for example at the moment
         of depositing assets or withdrawing.
         It assumes that the event being decoded has been already filtered and is a transfer.

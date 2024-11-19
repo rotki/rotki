@@ -247,7 +247,7 @@ class GlobalDBHandler:
         return GlobalDBHandler.__instance
 
     def filepath(self) -> Path:
-        """This should only be called after initalization of the global DB"""
+        """This should only be called after initialization of the global DB"""
         return self._data_directory / GLOBALDIR_NAME / GLOBALDB_NAME  # type: ignore [operator]
 
     def cleanup(self) -> None:
@@ -1711,8 +1711,8 @@ class GlobalDBHandler:
                             # Get ids for assets to insert them in the user db
                             write_cursor.execute('SELECT identifier from assets')
                             ids = write_cursor.fetchall()
-                            ids_proccesed = ', '.join([f"('{identifier[0]}')" for identifier in ids])  # noqa: E501
-                            user_db_cursor.execute(f'INSERT INTO assets(identifier) VALUES {ids_proccesed};')  # noqa: E501
+                            ids_processed = ', '.join([f"('{identifier[0]}')" for identifier in ids])  # noqa: E501
+                            user_db_cursor.execute(f'INSERT INTO assets(identifier) VALUES {ids_processed};')  # noqa: E501
                             user_db_cursor.switch_foreign_keys('ON')
 
                     with user_db.conn.read_ctx() as cursor:

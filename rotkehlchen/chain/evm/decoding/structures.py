@@ -76,7 +76,7 @@ class DecodingOutput:
     and is used in post-decoding rules like in the case of balancer
     - refresh_balances may be set to True if the user's on-chain balances in some protocols has
     changed (for example if the user has deposited / withdrawn funds from a curve gauge).
-    - reload_decoders can be None in which case nothing happens. Or a set of decoders names for which to reload data. The decoder's name is the class name without the Decoder suffic. For example Eigenlayer for EigenlayerDecoder
+    - reload_decoders can be None in which case nothing happens. Or a set of decoders names for which to reload data. The decoder's name is the class name without the Decoder suffix. For example Eigenlayer for EigenlayerDecoder
     """  # noqa: E501
     event: Optional['EvmEvent'] = None
     action_items: list[ActionItem] = field(default_factory=list)

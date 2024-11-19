@@ -283,7 +283,7 @@ class CryptocomImporter(BaseExchangeImporter):
             'lockup_swap_debited',
             'lockup_swap_credited',
             'lockup_swap_rebate',
-            # we don't handle cryto.com exchange yet
+            # we don't handle crypto.com exchange yet
             'crypto_to_exchange_transfer',
             'exchange_to_crypto_transfer',
             # supercharger actions

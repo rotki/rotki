@@ -597,7 +597,7 @@ def test_coingecko_handles_rate_limit(inquirer):
         price = inquirer.find_usd_price(A_ETH)
         assert price == ZERO_PRICE
         assert inquirer._coingecko.last_rate_limit > 0
-        # Now try again, since we are rate limited the price query wil fail
+        # Now try again, since we are rate limited the price query will fail
         assert inquirer.find_usd_price(A_ETH, ignore_cache=True) == ZERO_PRICE
         # Change the last_rate_limit time to allow for further calls
         inquirer._coingecko.last_rate_limit = ts_now() - (DEFAULT_RATE_LIMIT_WAITING_TIME + 10)
@@ -959,7 +959,7 @@ def test_errors_web3_logs():
     from `Web3Exception` are processed correctly in the logs logic.
 
     We had an issue where the error was not handled properly and block_range
-    was getting reset after every succesful query.
+    was getting reset after every successful query.
     """
     provider = HTTPProvider(
         endpoint_uri='https://1rpc.io/gnosis',

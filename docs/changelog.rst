@@ -87,7 +87,7 @@ Changelog
 * :bug:`-` Fix an error introduced in 1.34.2 that was creating snapshots more frequently than expected.
 * :bug:`8350` Users will no longer be able to add duplicate names for an address for all evm chains to the address book.
 * :bug:`-` Eigenlayer native restaking exited balances residing in eigenpod will no longer be double counted.
-* :bug:`8397` Active/exited validators will now be propely displayed and filtered for validators that are tracked but the withdrawal address is not. This applies to protocols such as eigenlayer.
+* :bug:`8397` Active/exited validators will now be properly displayed and filtered for validators that are tracked but the withdrawal address is not. This applies to protocols such as eigenlayer.
 * :bug:`8414` Detected tokens will no longer randomly disappear from a tracked address if new events are processed.
 * :bug:`-` It will now be possible to refresh counterparty data if loading initially fails.
 
@@ -601,7 +601,7 @@ Changelog
 * :feature:`4704` Management of ignored assets is now moved to asset settings.
 * :feature:`-` Ethereum transactions involving convex finance should now be automatically decoded.
 * :feature:`1705` Ethereum token for each address will no longer be automatically detected with each query. Query speed performance improvement.
-* :feature:`-` Transactions that have interaced with the WETH contract are now properly decoded.
+* :feature:`-` Transactions that have interacted with the WETH contract are now properly decoded.
 * :feature:`-` An ethereum address's tokens can now be manually detected by pressing a specific button in the UI.
 * :feature:`-` Transactions involving uniswap v2 and uniswap v3 will now be properly decoded in the ethereum transactions view
 * :feature:`2701` Multi-evm assets are now supported. All EVM assets display the chain they correspond to in the UI.
@@ -736,7 +736,7 @@ Changelog
 
 * :release:`1.23.2 <2022-01-21>`
 * :bug:`-` Users will now be properly prompted to restart the application after the auto-updater downloads the update.
-* :bug:`3943` Users will now be able to properly add multiple accounts on Avalance even if they exist on Ethereum.
+* :bug:`3943` Users will now be able to properly add multiple accounts on Avalanche even if they exist on Ethereum.
 * :bug:`3964` Liquity Troves managed by a DSProxy will now see their events properly listed.
 * :bug:`-` The application will now notify the user and exit if multiple backend binaries exist due to a failed update.
 * :bug:`-` Kraken's KFEE will use the price of 0.01 USD when it is needed.

@@ -125,7 +125,7 @@ def kraken_ledger_entry_type_to_ours(value: str) -> tuple[HistoryEventType, Hist
 
 
 def _check_and_get_response(response: Response, method: str) -> str | dict:
-    """Checks the kraken response and if it's succesfull returns the result.
+    """Checks the kraken response and if it's successful returns the result.
 
     If there is recoverable error a string is returned explaining the error
     May raise:
@@ -982,12 +982,12 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
         """
         Query Kraken's ledger to retrieve events and transform them to our internal representation
         of history events. Internally we look for the query range that needs to be queried in the
-        range (start_ts, end_ts) to avoid double quering the kraken API when this method is called
+        range (start_ts, end_ts) to avoid double querying the kraken API when this method is called
         for deposits/withdrawals and trades. The events queried are then stored in the database.
 
         If notify_events is True we send websocket messages to notify the current interval of
         time being queried. By default it is set to False to avoid sending unwanted message when
-        this funtion is called internally and not directly from the UI by the user.
+        this function is called internally and not directly from the UI by the user.
         May raise:
         - RemoteError if request to kraken fails for whatever reason
 
@@ -1054,7 +1054,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
     ) -> tuple[list[HistoryEvent], bool, bool]:
         """
         This function gets raw data from kraken and creates a list of related history events
-        to be used in the app. All events passed to this functon have same refid.
+        to be used in the app. All events passed to this function have same refid.
 
         It returns a list of events, a boolean indicating events are skipped
         and a boolean in the case that an unknown type is found.

@@ -169,7 +169,7 @@ def trade_from_binance(
         base_asset=base_asset,
         quote=quote_asset,
         order_type=order_type,
-        commision_asset=binance_trade['commissionAsset'],
+        commission_asset=binance_trade['commissionAsset'],
         fee=fee,
     )
     return Trade(
@@ -315,7 +315,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
 
             is_v3_api_method = api_type == 'api' and method in V3_METHODS
             is_new_futures_api = api_type in {'fapi', 'dapi'}
-            api_version = 3  # public methos are v3
+            api_version = 3  # public methods are v3
             if method not in PUBLIC_METHODS:  # api call needs signature
                 if api_type in {'sapi', 'dapi'}:
                     api_version = 1

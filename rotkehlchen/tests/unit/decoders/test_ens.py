@@ -533,7 +533,7 @@ def test_content_hash_changed(ethereum_inquirer, ethereum_accounts, add_subgraph
     ('Receive', ['0x34207C538E39F2600FE672bB84A90efF190ae4C7']),
 ])
 def test_transfer_ens_name(database, ethereum_inquirer, action, ethereum_accounts, add_subgraph_api_key):  # pylint: disable=unused-argument  # noqa: E501
-    """Test that transfering an ENS name is decoded properly for all 3 cases.
+    """Test that transferring an ENS name is decoded properly for all 3 cases.
 
     Owning both addresses in the transfer, only sender or only receiver
     """

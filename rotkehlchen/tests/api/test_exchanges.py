@@ -1105,7 +1105,7 @@ def test_edit_exchange_account(rotkehlchen_api_server_with_exchanges: 'APIServer
     assert kraken.name == 'my_kraken'
     assert kraken.account_type == DEFAULT_KRAKEN_ACCOUNT_TYPE
 
-    # check that queryranges were succesfuly updated and the others were unmodified
+    # check that queryranges were successfully updated and the others were unmodified
     expected_ranges_tuple = (start_ts, end_ts)
     with db.conn.read_ctx() as cursor:
         assert db.get_used_query_range(cursor, 'kraken_trades_mockkraken') is None

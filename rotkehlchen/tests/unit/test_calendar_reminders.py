@@ -84,7 +84,7 @@ MOCK_MYSO_ZK_AIRDROP_INDEX = {
 def get_airdrop_request_mock(user_address: 'ChecksumEvmAddress') -> Callable:
     """Get airdrop request mocking function for the specified address."""
     def mock_requests_get(url: str, timeout: int = 0, headers: dict | None = None):  # pylint: disable=unused-argument
-        """Mock airdrop data retrival to avoid huge VCRs"""
+        """Mock airdrop data retrieval to avoid huge VCRs"""
         return prepare_airdrop_mock_response(
             url=url,
             mock_airdrop_index=MOCK_MYSO_ZK_AIRDROP_INDEX,

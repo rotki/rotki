@@ -204,7 +204,7 @@ class Poloniex(ExchangeInterface):
         """A single api query for poloniex
 
         Returns the response if all went well or None if a recoverable poloniex
-        error occured such as a 504.
+        error occurred such as a 504.
 
         Can raise:
          - RemoteError if there is a problem with the response

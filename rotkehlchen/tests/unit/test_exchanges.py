@@ -84,7 +84,7 @@ TEST_CREDENTIALS_3 = ExchangeApiCredentials(
 
 def test_change_credentials(rotkehlchen_api_server: APIServer) -> None:
     """
-    Test that chaning exchange credentials works as expected and if incorrect credentials
+    Test that chaining exchange credentials works as expected and if incorrect credentials
     were provided then the old credentials are restored.
     """
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen

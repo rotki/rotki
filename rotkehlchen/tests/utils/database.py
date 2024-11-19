@@ -129,7 +129,7 @@ def add_settings_to_test_db(
         'submit_usage_analytics': False,
         'main_currency': DEFAULT_TESTS_MAIN_CURRENCY,
     }
-    # Set the given db_settings. The pre-set values have priority unless overriden here
+    # Set the given db_settings. The pre-set values have priority unless overridden here
     if db_settings is not None:
         settings.update(db_settings)
 

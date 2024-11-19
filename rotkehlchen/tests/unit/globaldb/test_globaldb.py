@@ -755,7 +755,7 @@ def test_global_db_reset(globaldb, database):
             (A_yDAI.identifier,),
         ).fetchall()
         assert len(ydai_underlying_tokens) > 0
-        # And put someting extra in there which should be deleted by the reset
+        # And put something extra in there which should be deleted by the reset
         cursor.execute(
             'INSERT INTO underlying_tokens_list(identifier, weight, parent_token_entry) VALUES (?, ?, ?)',  # noqa: E501
             (A_CRV.identifier, '1.0', A_yDAI.identifier),
@@ -1275,9 +1275,9 @@ def test_get_evm_tokens(globaldb):
 def test_assets_in_same_collection(globaldb: GlobalDBHandler):
     """Check that we get the expected related assets when querying assets in a collection"""
     wsteth = Asset('eip155:1/erc20:0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0')
-    realted_assets = globaldb.get_assets_in_same_collection(identifier=wsteth.identifier)
+    related_assets = globaldb.get_assets_in_same_collection(identifier=wsteth.identifier)
 
-    assert realted_assets == (
+    assert related_assets == (
         wsteth,
         Asset('eip155:10/erc20:0x1F32b1c2345538c0c6f582fCB022739c4A194Ebb'),
         Asset('eip155:100/erc20:0x6C76971f98945AE98dD7d4DFcA8711ebea946eA6'),

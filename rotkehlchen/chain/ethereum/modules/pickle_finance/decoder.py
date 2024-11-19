@@ -54,7 +54,7 @@ class PickleFinanceDecoder(MerkleClaimDecoderInterface):
             context: EnricherContext,
     ) -> TransferEnrichmentOutput:
         """
-        Enrich tranfer transactions to address for jar deposits and withdrawals
+        Enrich transfer transactions to address for jar deposits and withdrawals
         May raise:
         - UnknownAsset
         - WrongAssetType

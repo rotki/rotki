@@ -51,12 +51,12 @@ class Balancerv2Decoder(DecoderInterface):
 
     def decode_swap_creation(self, context: DecoderContext) -> DecodingOutput:
         """
-        Decode swap in Balancer v2. At the beggining of the transaction a SWAP event is created
+        Decode swap in Balancer v2. At the beginning of the transaction a SWAP event is created
         with the information of the tokens and amounts and later some transfers are executed.
 
         We need to detect this swap event and then match the transferred amounts with the ones
         in the swap event. A special case is the swap of ETH that is wrapped before being sent.
-        In this case the token is WETH but we have a tranfer of ETH from the user.
+        In this case the token is WETH but we have a transfer of ETH from the user.
         """
         if context.tx_log.topics[0] != V2_SWAP:
             return DEFAULT_DECODING_OUTPUT
@@ -131,7 +131,7 @@ class Balancerv2Decoder(DecoderInterface):
         if (
             isinstance(context.action_items[-1].asset, EvmToken) is False and
             not ((
-                context.action_items[-1].asset.evm_address != context.tx_log.address and  # type: ignore[attr-defined]  # mypy fails to understand that due the previous statmenet in the or this check won't be evaluated if the asset isn't a token
+                context.action_items[-1].asset.evm_address != context.tx_log.address and  # type: ignore[attr-defined]  # mypy fails to understand that due the previous statement in the or this check won't be evaluated if the asset isn't a token
                 context.action_items[-1].amount != context.event.balance.amount
             ) or (
                 context.action_items[-1].extra_data['from_token'] != context.tx_log.address and

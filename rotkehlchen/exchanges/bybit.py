@@ -52,10 +52,10 @@ if TYPE_CHECKING:
 
 
 PAGINATION_LIMIT: Final = 50
-# RECEIV_WINDOW specifies how long an HTTP request is valid.
+# RECEIVE_WINDOW specifies how long an HTTP request is valid.
 # It is also used to prevent replay attacks. its unit in ms
 # https://bybit-exchange.github.io/docs/v5/guide#parameters-for-authenticated-endpoints
-RECEIV_WINDOW: Final = '5000'
+RECEIVE_WINDOW: Final = '5000'
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
@@ -123,7 +123,7 @@ class Bybit(ExchangeInterface):
         self.session.headers.update({
             'Content-Type': 'application/json',
             'X-BAPI-SIGN-TYPE': '2',
-            'X-BAPI-RECV-WINDOW': RECEIV_WINDOW,
+            'X-BAPI-RECV-WINDOW': RECEIVE_WINDOW,
             'X-BAPI-API-KEY': self.api_key,
         })
         self.authenticated_methods = {
@@ -203,7 +203,7 @@ class Bybit(ExchangeInterface):
             if requires_auth:
                 timestamp = ts_now_in_ms()
                 # the order in this string is defined by the api
-                param_str = str(timestamp) + self.api_key + RECEIV_WINDOW
+                param_str = str(timestamp) + self.api_key + RECEIVE_WINDOW
                 if options is not None:
                     options = dict(sorted(options.items()))
                     param_str += '&'.join(  # params need to be sorted to be correctly validated

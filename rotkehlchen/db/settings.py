@@ -429,7 +429,7 @@ class CachedSettings:
         return CachedSettings.__instance
 
     def initialize(self, settings: DBSettings) -> None:
-        """Intialize with saved DB settings
+        """Initialize with saved DB settings
 
         This overwrites the default db settings set at class instantiation"""
         self._settings = settings
@@ -455,8 +455,8 @@ class CachedSettings:
     # commonly used settings with their own get function
     def get_timeout_tuple(self) -> tuple[int, int]:
         conn_timeout = self.get_entry('connect_timeout')
-        read_timout = self.get_entry('read_timeout')
-        return conn_timeout, read_timout  # type: ignore
+        read_timeout = self.get_entry('read_timeout')
+        return conn_timeout, read_timeout  # type: ignore
 
     def get_query_retry_limit(self) -> int:
         return self.get_entry('query_retry_limit')  # type: ignore

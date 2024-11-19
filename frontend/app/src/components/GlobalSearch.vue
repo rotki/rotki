@@ -58,10 +58,10 @@ function getItemText(item: SearchItemWithoutValue): string {
 }
 
 function filterItems(items: SearchItemWithoutValue[], keyword: string): SearchItemWithoutValue[] {
-  const splittedKeyword = keyword.split(' ');
+  const splitKeyword = keyword.split(' ');
   return items.filter((item) => {
     let matchedPoints = 0;
-    for (const word of splittedKeyword) {
+    for (const word of splitKeyword) {
       const indexOf = getItemText(item).toLowerCase().indexOf(word);
       if (indexOf > -1) {
         matchedPoints++;

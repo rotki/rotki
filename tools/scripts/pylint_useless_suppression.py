@@ -7,7 +7,7 @@ There is a few problems with this and it's all due to pylint.
 2. It has false positives. Which means that it may flag as useless suppressions that are needed.
 
 In general when the codebase has too many useless suppressions like the first time
-I ran this, it's usefull. Removed ~500 occurences.  20 of them were false positives,
+I ran this, it's useful. Removed ~500 occurrences.  20 of them were false positives,
 which I manually entered again later.
 
 We should probably open bug reports to pylint for all of these at some point.
@@ -19,7 +19,7 @@ from collections import defaultdict
 from pathlib import Path
 from typing import NamedTuple
 
-OCCURENCE_RE = re.compile(r'(.*\.py):(\d+):(\d+): I0021: Useless suppression of \'(.*)\'.*')
+OCCURRENCE_RE = re.compile(r'(.*\.py):(\d+):(\d+): I0021: Useless suppression of \'(.*)\'.*')
 
 
 root_path = Path(__file__).resolve().parent.parent.parent
@@ -44,7 +44,7 @@ class Suppression(NamedTuple):
 files = defaultdict(dict)
 for line in io.TextIOWrapper(pylint_call.stdout, encoding='utf-8'):
     print(line)
-    match = OCCURENCE_RE.search(line)
+    match = OCCURRENCE_RE.search(line)
     if match is None:
         continue
 
@@ -56,13 +56,13 @@ for line in io.TextIOWrapper(pylint_call.stdout, encoding='utf-8'):
         error=match.group(4),
     )
 
-for filename, occurences in files.items():
+for filename, occurrences in files.items():
     with open(filename, encoding='utf8') as file:
         line_data = file.readlines()
 
     count = 0
     for idx, line in enumerate(line_data):
-        suppression = occurences.get(idx)
+        suppression = occurrences.get(idx)
         if suppression is None:
             continue
 

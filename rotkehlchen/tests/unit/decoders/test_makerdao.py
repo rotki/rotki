@@ -19,7 +19,7 @@ def test_makerdao_simple_transaction(ethereum_inquirer):
     https://etherscan.io/tx/0x95de47059bcc084ebb8bdd60f48fbcf05619c2af84bf612fdc27a6bbf9b5097e
     """
     tx_hash = deserialize_evm_tx_hash('0x95de47059bcc084ebb8bdd60f48fbcf05619c2af84bf612fdc27a6bbf9b5097e')  # noqa: E501
-    # We don't need any events here, we just check that no errors occured during decoding
+    # We don't need any events here, we just check that no errors occurred during decoding
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     assert events == [
         EvmEvent(

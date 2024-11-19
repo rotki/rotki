@@ -1,0 +1,69 @@
+[files]
+extend-exclude = [
+    "**/**/*.svg",  # images.
+    "**/**/*.csv",  # import data
+    "**/**/*.json",  # translation files, etc.
+]
+
+[default]
+extend-ignore-re = [
+    "(?Rm)^.*(#|//)\\s*spellchecker:disable-line$",  # spellchecker:disable-line
+    "(?s)(#|//)\\s*spellchecker:off.*?\\n\\s*(#|//)\\s*spellchecker:on",  # spellchecker:<on|off>
+    "(?m)^.*MockResponse\\(HTTPStatus\\.OK,\\s*\\\"\\\"\\\".*$",  # Mock responses
+    "(?m)^.*mIneR.*$",  # miner misspelling in test to check case-sensitivity
+]
+extend-ignore-identifiers-re = [
+    "^0x.+$",  # hexstrings
+    "^[xyztuvw]pub.{107}$",  # all xpubs (mainnet + testnet)
+    "^[123mn].{25,50}$",  # legacy/p2sh addresses (mainnet + testnet)
+    "^(bc|tb)1.{8,100}$",  # bech32/taproot addresses (mainnet + testnet)
+    "^CCM_.+$",  # CCM prefixed words
+    "^BLF_.+$",  # BLF prefixed words
+    "^BNC_.+$",  # BNC prefixed words
+    "^A3Np3RQbaBA6oKJgiwDJeo5T3zrYfGHPWFYayMwtNDum$",  # uniswap subgraph id
+    "^10x6c27ea39e5046646aaf24e1bb451caf466058278685102d89979197fdb89d007",  # event identifier in test
+    "^astroid$",  # astroid library
+]
+locale = "en"
+
+[default.extend-words]
+# Common Abbreviations
+Pn = "Pn"     # Profit and Loss
+BA = "BA"
+FND = "FND"
+
+# Asset Symbols
+ADN = "ADN"
+THR = "THR"
+DNE = "DNE"
+vai = "vai"
+VAI = "VAI"
+BLOK = "BLOK"
+DOWS = "DOWS"
+EDN = "EDN"
+MCH = "MCH"
+GIV = "GIV"
+Contentos = "Contentos"
+Snet = "Snet"  # IRISnet token
+AXE = "AXE"
+ONL = "ONL"
+Axe = "Axe"
+
+
+# DeFi Terms
+allo = "allo"
+ser = "ser"
+zlot = "zlot"
+
+# Test Variables
+ethe = "ethe"
+strat = "strat"  # as in strategy
+thie = "thie"  # frontend regex check for thief
+Realised = "Realised"  # bitmex import
+daa = "daa"  # iconomi test
+ede = "ede"  # coinbase test json payload
+datas = "datas"  # used in packaging
+
+requeried = "requeried"
+othere = "othere"  # other exception
+queriable = "queriable"  # https://en.wiktionary.org/wiki/queriable

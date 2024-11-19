@@ -50,7 +50,7 @@ def test_query_balances(
         function_scope_independentreserve,
         inquirer,  # pylint: disable=unused-argument
 ):
-    """Test all balances returned by IndependentReserve are proccessed properly"""
+    """Test all balances returned by IndependentReserve are processed properly"""
     exchange = function_scope_independentreserve
 
     def mock_api_return(method, url, **kwargs):    # pylint: disable=unused-argument

@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-# the seconds around a transaction to search for when quering the API
+# the seconds around a transaction to search for when querying the API
 GNOSIS_PAY_TX_TIMESTAMP_RANGE = 10
 
 

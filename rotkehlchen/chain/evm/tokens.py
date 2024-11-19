@@ -37,7 +37,7 @@ DetectedTokensType = dict[
 # Etherscan has by far the fastest responding server if you use a (free) API key
 # The chunk length for Etherscan is limited though to 120 addresses due to the URI length.
 # For all other nodes (mycrypto, avado cloud, blockscout) we have run some benchmarks
-# with them being queried randomly with different chunk lenghts. They are all for an account with:
+# with them being queried randomly with different chunk lengths. They are all for an account with:
 # - 29 ethereum addresses
 # - rotki knows of 1010 different ethereum tokens as of this writing
 # Type        |  Chunk Length | Elapsed Seconds | Avg. secs per call

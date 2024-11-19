@@ -32,8 +32,8 @@ class ModuleAccountantInterface(ABC):
         To have smaller objects and since few decoders use most of the given objects
         we do not save anything here at the moment, but instead let it up to the individual
         decoder to choose what to keep"""
-        # It's okay to call overriden reset here, since super class reset does not do anything.
-        # If at any point it does we have to make sure all overriden reset() call parent
+        # It's okay to call overridden reset here, since super class reset does not do anything.
+        # If at any point it does we have to make sure all overridden reset() call parent
         self.reset()
 
     @abstractmethod

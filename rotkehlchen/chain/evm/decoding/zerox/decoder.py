@@ -181,7 +181,7 @@ class ZeroxCommonDecoder(DecoderInterface):
             }:
                 self._update_send_receive_fee_events(send_event=send_event, receive_event=receive_event)  # noqa: E501
 
-            if (  # sent_token is transfered from tracked sender to 0x
+            if (  # sent_token is transferred from tracked sender to 0x
                 send_event is not None and
                 send_event.asset.is_evm_token() and
                 _log.address == send_event.asset.evm_address and  # type: ignore[attr-defined]  # is EVM token

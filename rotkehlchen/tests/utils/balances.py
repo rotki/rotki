@@ -54,7 +54,7 @@ def find_inheriting_classes(
 
     Args:
         rootdirectory: The project root
-        search_directory: Seach directory to start searching from
+        search_directory: Search directory to start searching from
         base_class: The base class to check inheritance against
         exclude_class_names: The names of classes to exclude. These are needed
         since unfortunately common classes are not seen as abstract.

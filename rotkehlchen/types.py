@@ -53,12 +53,12 @@ ModuleName = Literal[
     'nfts',
 ]
 
-OnlyPurgableModuleName = Literal[
+OnlyPurgeableModuleName = Literal[
     'gnosis_pay',  # only to purge DB table
     'cowswap',     # only to purge DB table
 ]
 
-PurgableModuleName = ModuleName | OnlyPurgableModuleName
+PurgeableModuleName = ModuleName | OnlyPurgeableModuleName
 
 # TODO: Turn this into some kind of light data structure and not just a mapping
 # This is a mapping of module ids to human readable names

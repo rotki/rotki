@@ -271,7 +271,7 @@ class Compoundv3CommonDecoder(DecoderInterface):
 
         return DecodingOutput(action_items=action_items)
 
-    def _decode_collateral_movemement(
+    def _decode_collateral_movement(
             self,
             context: DecoderContext,
             compound_token: EvmToken,
@@ -363,7 +363,7 @@ class Compoundv3CommonDecoder(DecoderInterface):
                 compound_token=compound_token,
             )
         else:
-            return self._decode_collateral_movemement(
+            return self._decode_collateral_movement(
                 context=context,
                 compound_token=compound_token,
             )

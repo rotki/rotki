@@ -66,7 +66,7 @@ def dict_to_csv_file(
     fields not in fieldnames
     """
     if len(dictionary_list) == 0:
-        log.debug(f'Skipping writting empty CSV for {path}')
+        log.debug(f'Skipping writing empty CSV for {path}')
         return
 
     with open(path, 'w', newline='', encoding='utf-8') as f:

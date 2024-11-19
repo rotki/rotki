@@ -71,12 +71,12 @@ def export_skipped_external_events(rotki: 'Rotkehlchen', directory: Path | None)
 
 def reprocess_skipped_external_events(rotki: 'Rotkehlchen') -> tuple[int, int]:
     """Go through the skipped external events, try to re-process them and if any
-    are succesfully reprocessed them remove them from the table
+    are successfully reprocessed them remove them from the table
 
     This is effectively containing only the kraken exchange logic right now
 
     Returns number of current skipped events processed, and how many were
-    reprocessed succesfully.
+    reprocessed successfully.
     """
     raw_kraken_events = defaultdict(list)
     total_num, processed_num = 0, 0

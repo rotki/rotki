@@ -99,7 +99,7 @@ def cash_to_legacy_address(address: str) -> BTCAddress | None:
     Code is taken from:
     https://github.com/oskyk/cashaddress/blob/master/cashaddress/convert.py#L46
 
-    Returns None if an error occured during conversion.
+    Returns None if an error occurred during conversion.
     """
     try:
         is_valid = is_valid_bitcoin_cash_address(address)

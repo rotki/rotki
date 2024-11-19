@@ -98,7 +98,7 @@ def test_eth2_daily_stats(rotkehlchen_api_server):
     # Patching here since I can't re-record this test and for some reason
     # 1118011 was not returned as active validator in the previous test.
     # TODO: Perhaps this should be re-recorded in a simpler way as daily stats
-    # are not used much anymore. Or left as is ... for the same reaon
+    # are not used much anymore. Or left as is ... for the same reason
     with patch('rotkehlchen.db.eth2.DBEth2.get_active_validator_indices', side_effect=lambda x: {1118010}):  # noqa: E501
         _prepare_clean_validators(rotkehlchen_api_server)
     # query daily stats, first without cache -- requesting all
@@ -470,7 +470,7 @@ def test_staking_performance_filtering_pagination(rotkehlchen_api_server, ethere
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('default_mock_price_value', [ONE])
 def test_query_eth2_inactive(rotkehlchen_api_server, ethereum_accounts):
-    """Test that quering eth2 module while it's not active properly errors"""
+    """Test that querying eth2 module while it's not active properly errors"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     setup = setup_balances(
         rotki,

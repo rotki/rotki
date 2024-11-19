@@ -560,7 +560,7 @@ def test_user_logout(
         username: str,
         db_password: str,
 ):
-    """Test that user logout works succesfully and that common errors are handled"""
+    """Test that user logout works successfully and that common errors are handled"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
 
     # Logout of a non-existing/different user

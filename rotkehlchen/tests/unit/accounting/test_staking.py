@@ -138,14 +138,14 @@ def test_mev_events(accountant: Accountant, ethereum_accounts: list[ChecksumEvmA
     """Check that mev rewards and block rewards are correctly processed for accounting when
     they come as events.
     """
-    fee_receipient = ethereum_accounts[0]
+    fee_recipient = ethereum_accounts[0]
     events = [
         EthBlockEvent(
             identifier=13674,
             validator_index=610696,
             timestamp=TimestampMS(1687117319000),
             balance=Balance(FVal('0.126419309459217215')),
-            fee_recipient=fee_receipient,
+            fee_recipient=fee_recipient,
             block_number=17508810,
             is_mev_reward=False,
         ), HistoryEvent(
@@ -196,7 +196,7 @@ def test_mev_events(accountant: Accountant, ethereum_accounts: list[ChecksumEvmA
             validator_index=610696,
             timestamp=TimestampMS(1687117319000),
             balance=Balance(FVal('0.126458404824519798')),
-            fee_recipient=fee_receipient,
+            fee_recipient=fee_recipient,
             block_number=17508810,
             is_mev_reward=True,
         ), HistoryEvent(

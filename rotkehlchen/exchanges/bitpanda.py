@@ -230,7 +230,7 @@ class Bitpanda(ExchangeInterface):
     ) -> Trade | None:
         """Deserializes a bitpanda trades result entry to a Trade
 
-        Returns None and logs error is there is a problem or simpy None if
+        Returns None and logs error is there is a problem or simply None if
         it's not a type of trade we are interested in
         """
         try:

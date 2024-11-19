@@ -188,7 +188,7 @@ class DBEth2:
         return {x[0] for x in cursor}
 
     def get_exited_validator_indices(self, cursor: 'DBCursor') -> set[int]:
-        """Returns the indices of the tracked validators that we know have exite"""
+        """Returns the indices of the tracked validators that we know have exited"""
         cursor.execute(
             'SELECT validator_index FROM eth2_validators WHERE exited_timestamp IS NOT NULL',
         )

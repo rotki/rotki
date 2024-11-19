@@ -79,7 +79,7 @@ def upgrade_v43_to_v44(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         assets_updates = []
         for row in write_cursor:
             final_row = list(row)
-            try:  # update the identifier to ensure that the addresses are checksumed
+            try:  # update the identifier to ensure that the addresses are checksummed
                 nft_address = final_row[0][len(NFT_DIRECTIVE):].split('_')[0]
                 new_id = final_row[0].replace(nft_address, to_checksum_address(nft_address))
             except (ValueError, KeyError, TypeError):
@@ -203,7 +203,7 @@ def upgrade_v43_to_v44(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
     def _remove_zksynclite_used_query_ranges(write_cursor: 'DBCursor') -> None:
         write_cursor.execute("DELETE FROM used_query_ranges WHERE name LIKE 'zksynclitetxs_%'")
 
-    @progress_step(description='Reseting decoded events.')
+    @progress_step(description='Resetting decoded events.')
     def _reset_decoded_events(write_cursor: 'DBCursor') -> None:
         """Reset all decoded evm events except for the customized ones and those in zksync lite."""
         if write_cursor.execute('SELECT COUNT(*) FROM evm_transactions').fetchone()[0] > 0:

@@ -153,7 +153,7 @@ class EnsDecoder(GovernableDecoderInterface, EnsCommonDecoder):
                 f'Not adding name to ENS event in {context.transaction.tx_hash.hex()} since '
                 f'The Graph cannot be queried. {e}',
             )
-        else:  # succesfully queried the graph. Save in the cache
+        else:  # successfully queried the graph. Save in the cache
             assert found_name is not None, 'should not be None here'
             if '].addr.reverse' in found_name and node:  # then this node is not a namehash
                 try:  # this kind of result can be returned by the graph query and means we need to do reverse resolution  # noqa: E501

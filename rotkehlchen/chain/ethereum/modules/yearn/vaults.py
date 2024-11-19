@@ -272,8 +272,8 @@ class YearnVaults(EthereumModule):
             method_name='getPricePerFullShare',
         )
         nominator = price_per_full_share - EXP18
-        denonimator = now_block_number - vault.contract.deployed_block
-        return FVal(nominator) / FVal(denonimator) * BLOCKS_PER_YEAR / EXP18
+        denominator = now_block_number - vault.contract.deployed_block
+        return FVal(nominator) / FVal(denominator) * BLOCKS_PER_YEAR / EXP18
 
     def _get_single_addr_balance(
             self,

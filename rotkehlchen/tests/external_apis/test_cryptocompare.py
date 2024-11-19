@@ -43,7 +43,7 @@ def test_cryptocompare_query_pricehistorical(cryptocompare):
 
 
 def get_globaldb_cache_entries(from_asset: Asset, to_asset: Asset) -> list[HistoricalPrice]:
-    """TODO: This should probaly be moved in the globaldb/handler.py if we use it elsewhere
+    """TODO: This should probably be moved in the globaldb/handler.py if we use it elsewhere
     and made more generic (accept different sources)"""
     connection = GlobalDBHandler().conn
     cursor = connection.cursor()
@@ -146,7 +146,7 @@ def test_cryptocompare_histohour_data_going_forward(database, freezer):
 def test_cryptocompare_histohour_data_going_backward(database, freezer):
     """Test that the cryptocompare histohour data retrieval works properly
 
-    This test checks that doing an additional query in the past workd properly
+    This test checks that doing an additional query in the past worked properly
     and that the cached data are properly appended to the cached result. In production
     this scenario should not happen often. Only way to happen if cryptocompare somehow adds
     older data than what was previously queried.

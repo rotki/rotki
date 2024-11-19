@@ -484,7 +484,7 @@ def test_data_import_custom_format(rotkehlchen_api_server: 'APIServer', file_upl
 
     result = assert_proper_sync_response_with_result(response)
     assert result is True
-    # And also assert data was imported succesfully
+    # And also assert data was imported successfully
     assert_custom_cointracking(rotki)
 
 

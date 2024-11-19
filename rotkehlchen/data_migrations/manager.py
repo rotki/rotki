@@ -60,7 +60,7 @@ class DataMigrationManager:
                 if self._perform_migration(migration) is False:
                     break  # a migration failed -- no point continuing
 
-                log.debug(f'Successfuly applied migration {migration.version}')
+                log.debug(f'Successfully applied migration {migration.version}')
                 last_migration_version = migration.version
                 with self.rotki.data.db.user_write() as write_cursor:
                     write_cursor.execute(

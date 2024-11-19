@@ -21,7 +21,7 @@ if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
     from rotkehlchen.tests.fixtures.networking import ConfigurableSession
 
-EXPECTED_XPUB_ADDESSES = [
+EXPECTED_XPUB_ADDRESSES = [
     '125yorj66rmk82tMAPG7x97iY8D7cashiA',
     '13X9bcSY1UXwAwz6WaScAMFawpeTnPn1VU',
     '13hSrTAvfRzyEcjRcGS5gLEcNVNDhPvvUv',
@@ -80,7 +80,7 @@ def _check_xpub_addition_outcome(outcome: dict[str, Any], xpub: str) -> None:
     xpub_data = btc['xpubs'][0]
     assert xpub_data['xpub'] == xpub
     assert xpub_data['derivation_path'] is None
-    for address in EXPECTED_XPUB_ADDESSES:
+    for address in EXPECTED_XPUB_ADDRESSES:
         assert address in xpub_data['addresses']
         assert xpub_data['addresses'][address]['amount'] is not None
         assert xpub_data['addresses'][address]['usd_value'] is not None
@@ -216,7 +216,7 @@ def test_add_delete_xpub(rotkehlchen_api_server: 'APIServer') -> None:
         assert len(entry) == 6
         if entry['xpub'] == TEST_BITCOIN_XPUB_1:
             for address_data in entry['addresses']:
-                assert address_data['address'] in EXPECTED_XPUB_ADDESSES
+                assert address_data['address'] in EXPECTED_XPUB_ADDRESSES
                 assert address_data['label'] is None
                 assert address_data['tags'] == xpub1_tags
                 assert entry['blockchain'] == 'btc'
@@ -257,7 +257,7 @@ def test_add_delete_xpub(rotkehlchen_api_server: 'APIServer') -> None:
 def test_add_delete_xpub_multiple_chains(rotkehlchen_api_server: 'APIServer') -> None:
     """Test adding xpub for multiple bitcoin chains (BTC/BCH)
 
-    This test actually has a VCR cassete in test-caching. It's not used at
+    This test actually has a VCR cassette in test-caching. It's not used at
     the moment since for some weird, arcane, fucked up, demented reason
     it fails only in the CI when using VCR.
 

@@ -160,7 +160,7 @@ def test_query_statistics_asset_balance(
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 def test_query_statistics_asset_balance_errors(rotkehlchen_api_server: APIServer):
-    """Test that errors at the statistics asset balance over time endpoint are hanled properly"""
+    """Test that errors at the statistics asset balance over time endpoint are handled properly"""
     start_time = ts_now()
 
     # Check that no asset given is an error

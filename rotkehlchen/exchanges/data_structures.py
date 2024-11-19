@@ -248,7 +248,7 @@ class Trade(AccountingEventMixin):
     fee: Fee | None = None
     fee_currency: Asset | None = None
     # For external trades this is optional and is a link to the trade in an explorer
-    # For exchange trades this should be the exchange unique trade identifer
+    # For exchange trades this should be the exchange unique trade identifier
     # For trades imported from third parties we should generate a unique id for this.
     # If trades are both imported from third parties like cointracking.info and from
     # the exchanges themselves then there is no way to avoid duplicates.
@@ -481,7 +481,7 @@ class MarginPosition(AccountingEventMixin):
     fee: Fee
     # The asset in which fees were paid
     fee_currency: Asset
-    # For exchange margins this should be the exchange unique identifer
+    # For exchange margins this should be the exchange unique identifier
     # For margins imported from third parties we should generate a unique id for this.
     # If margins are both imported from third parties like cointracking.info and from
     # the exchanges themselves then there is no way to avoid duplicates.

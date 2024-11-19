@@ -41,7 +41,7 @@ def test_simple_logger_with_kwargs(pylint_test_linter):
 
 
 def test_works_for_nodes_without_kwargs(pylint_test_linter):
-    """Test that the custome checker also works for nodes without kwargs"""
+    """Test that the custom checker also works for nodes without kwargs"""
     checker = LogNokwargsChecker(linter=pylint_test_linter)
     # Check that simple loggers with kwargs raise the checker's error
     node = astroid.extract_node("""

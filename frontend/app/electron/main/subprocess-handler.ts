@@ -158,7 +158,7 @@ export class SubprocessHandler {
   }
 
   /**
-   * Removes the error/out listeners from the backend when the app is quiting.
+   * Removes the error/out listeners from the backend when the app is quitting.
    * It should be called `before-quit` to avoid having weird unhandled exceptions on SIGINT.
    */
   quitting(): void {

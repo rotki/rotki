@@ -394,7 +394,7 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
                 'ens_name_to_address',  # we do our own handling for ens names
         ):
             # https://github.com/ethereum/web3.py/blob/bba87a283d802bbebbfe3f8c7dc47560c7a08583/web3/middleware/validation.py#L137-L142  # noqa: E501
-            with suppress(ValueError):  # If not existing raises ValuError, so ignore
+            with suppress(ValueError):  # If not existing raises ValueError, so ignore
                 web3.middleware_onion.remove(middleware)
 
         if self.chain_id in (ChainID.OPTIMISM, ChainID.POLYGON_POS, ChainID.ARBITRUM_ONE, ChainID.BASE):  # noqa: E501
@@ -1217,7 +1217,7 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
                 contract=contract,
                 token_kind=EvmTokenKind.ERC20,
             )
-            log.debug(f'{address} was succesfuly decoded as ERC20 token')
+            log.debug(f'{address} was successfully decoded as ERC20 token')
 
         for prop, value in zip_longest(ERC20_PROPERTIES, decoded):
             if isinstance(value, bytes):

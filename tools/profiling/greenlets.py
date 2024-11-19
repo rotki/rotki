@@ -13,7 +13,7 @@ log = structlog.get_logger(__name__)
 
 def install_switch_log():
     # Do not overwrite the previous installed tracing function, this could be
-    # another profiling tool, and if the callback is overwriten the tool would
+    # another profiling tool, and if the callback is overwritten the tool would
     # not work as expected (e.g. a trace sampler)
     previous_callback = greenlet.gettrace()
 
