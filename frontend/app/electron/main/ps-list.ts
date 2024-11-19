@@ -53,15 +53,14 @@ export interface ProcessDescriptor {
 async function windows(): Promise<ProcessDescriptor[]> {
   // Source: https://github.com/MarkTiedemann/fastlist
   let binary;
-  switch (process.arch) {
-    case 'x64':
-      binary = 'fastlist-0.3.0-x64.exe';
-      break;
-    case 'ia32':
-      binary = 'fastlist-0.3.0-x86.exe';
-      break;
-    default:
-      throw new Error(`Unsupported architecture: ${process.arch}`);
+  if (process.arch === 'x64') {
+    binary = 'fastlist-0.3.0-x64.exe';
+  }
+  else if (process.arch === 'ia32') {
+    binary = 'fastlist-0.3.0-x86.exe';
+  }
+  else {
+    throw new Error(`Unsupported architecture: ${process.arch}`);
   }
 
   const basePath = process.resourcesPath ? process.resourcesPath : currentDirectory;

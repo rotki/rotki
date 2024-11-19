@@ -45,5 +45,6 @@ export function updateLocationBalance(amount: string, balances: Map<string, BigN
   const locationBalance = balances.get(location);
   if (!locationBalance)
     balances.set(location, balance);
-  else balances.set(location, locationBalance.plus(balance));
+  else
+    balances.set(location, locationBalance.plus(balance));
 }
