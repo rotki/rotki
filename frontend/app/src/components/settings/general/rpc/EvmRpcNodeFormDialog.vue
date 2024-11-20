@@ -21,6 +21,7 @@ const { t } = useI18n();
 const errorMessages = ref<ValidationErrors>({});
 const submitting = ref<boolean>(false);
 const form = ref<InstanceType<typeof EvmRpcNodeForm>>();
+const stateUpdated = ref(false);
 
 const { getChainName } = useSupportedChains();
 
@@ -111,6 +112,7 @@ async function save() {
     :title="dialogTitle"
     :primary-action="t('common.actions.save')"
     :secondary-action="t('common.actions.cancel')"
+    :prompt-on-close="stateUpdated"
     :loading="submitting"
     :retain-focus="false"
     @confirm="save()"
@@ -121,6 +123,7 @@ async function save() {
       ref="form"
       v-model="model"
       v-model:error-messages="errorMessages"
+      v-model:state-updated="stateUpdated"
     />
   </BigDialog>
 </template>

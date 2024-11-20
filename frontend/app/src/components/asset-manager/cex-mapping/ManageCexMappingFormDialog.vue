@@ -20,7 +20,7 @@ const props = withDefaults(
 const { form } = toRefs(props);
 const { t } = useI18n();
 
-const { openDialog, submitting, closeDialog, trySubmit } = useCexMappingForm();
+const { openDialog, submitting, closeDialog, trySubmit, stateUpdated } = useCexMappingForm();
 </script>
 
 <template>
@@ -30,6 +30,7 @@ const { openDialog, submitting, closeDialog, trySubmit } = useCexMappingForm();
     :subtitle="subtitle"
     :primary-action="t('common.actions.save')"
     :loading="submitting"
+    :prompt-on-close="stateUpdated"
     @confirm="trySubmit()"
     @cancel="closeDialog()"
   >

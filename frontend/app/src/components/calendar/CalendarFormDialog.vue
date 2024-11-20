@@ -20,7 +20,7 @@ const emit = defineEmits<{
 
 const { editableItem, loading } = toRefs(props);
 
-const { openDialog, submitting, closeDialog, trySubmit } = useCalendarEventForm();
+const { openDialog, submitting, closeDialog, trySubmit, stateUpdated } = useCalendarEventForm();
 
 const { t } = useI18n();
 
@@ -36,6 +36,7 @@ const title = computed<string>(() =>
     :primary-action="t('common.actions.save')"
     :action-disabled="loading"
     :loading="submitting"
+    :prompt-on-close="stateUpdated"
     @confirm="trySubmit()"
     @cancel="closeDialog()"
   >

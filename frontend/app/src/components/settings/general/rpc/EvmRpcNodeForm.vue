@@ -7,6 +7,7 @@ import type { ValidationErrors } from '@/types/api/errors';
 import type { EvmRpcNodeManageState } from '@/types/settings/rpc';
 
 const errors = defineModel<ValidationErrors>('errorMessages', { required: true });
+const stateUpdated = defineModel<boolean>('stateUpdated', { required: false, default: false });
 
 const props = defineProps<{
   modelValue: EvmRpcNodeManageState;
@@ -53,20 +54,24 @@ const rules = {
   weight: { required, between: between(0, 100) },
 };
 
+const states = {
+  name,
+  endpoint,
+  weight,
+  active,
+  owned,
+};
+
 const v$ = useVuelidate(
   rules,
-  {
-    name,
-    endpoint,
-    weight,
-    active,
-    owned,
-  },
+  states,
   {
     $autoDirty: true,
     $externalResults: errors,
   },
 );
+
+useFormStateWatcher(states, stateUpdated);
 
 watch(errors, (errors) => {
   if (!isEmpty(errors))

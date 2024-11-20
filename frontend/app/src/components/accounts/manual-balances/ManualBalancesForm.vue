@@ -7,6 +7,7 @@ import type { ManualBalance, RawManualBalance } from '@/types/manual-balances';
 import type { ValidationErrors } from '@/types/api/errors';
 
 const errors = defineModel<ValidationErrors>('errorMessages', { required: true });
+const stateUpdated = defineModel<boolean>('stateUpdated', { required: false, default: false });
 
 const props = defineProps<{
   modelValue: RawManualBalance | ManualBalance;
@@ -72,18 +73,26 @@ const rules = {
   location: {
     required,
   },
+  tags: {},
+  balanceType: {},
+};
+
+const states = {
+  amount,
+  asset,
+  label,
+  location,
+  tags,
+  balanceType,
 };
 
 const v$ = useVuelidate(
   rules,
-  {
-    amount,
-    asset,
-    label,
-    location,
-  },
+  states,
   { $autoDirty: true, $externalResults: errors },
 );
+
+useFormStateWatcher(states, stateUpdated);
 
 const { setOpenDialog, setPostSubmitFunc } = useCustomAssetForm();
 

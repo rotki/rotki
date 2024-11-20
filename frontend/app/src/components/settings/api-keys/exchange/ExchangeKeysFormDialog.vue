@@ -13,7 +13,7 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 
-const { openDialog, submitting, trySubmit } = useExchangeApiKeysForm();
+const { openDialog, submitting, trySubmit, stateUpdated } = useExchangeApiKeysForm();
 
 function resetForm() {
   emit('reset');
@@ -27,6 +27,7 @@ function resetForm() {
     :primary-action="t('common.actions.save')"
     :secondary-action="t('common.actions.cancel')"
     :loading="submitting"
+    :prompt-on-close="stateUpdated"
     @confirm="trySubmit()"
     @cancel="resetForm()"
   >

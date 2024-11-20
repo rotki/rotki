@@ -22,7 +22,7 @@ const emit = defineEmits<{
 
 const { editMode, payload: passedPayload } = toRefs(props);
 
-const { openDialog, submitting, trySubmit } = useAddressBookForm();
+const { openDialog, submitting, trySubmit, stateUpdated } = useAddressBookForm();
 
 const { t } = useI18n();
 
@@ -112,6 +112,7 @@ watch(formPayload, ({ blockchain }, { blockchain: oldBlockchain }) => {
     :display="openDialog"
     :title="editMode ? t('address_book.dialog.edit_title') : t('address_book.dialog.add_title')"
     :loading="submitting"
+    :prompt-on-close="stateUpdated"
     @confirm="trySubmit()"
     @cancel="resetForm()"
   >

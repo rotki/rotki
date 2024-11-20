@@ -21,7 +21,7 @@ const { t } = useI18n();
 
 type IndexedBalanceSnapshot = BalanceSnapshot & { index: number; categoryLabel: string };
 
-const { openDialog, setOpenDialog, closeDialog, submitting, setSubmitFunc, trySubmit } = useEditBalancesSnapshotForm();
+const { openDialog, setOpenDialog, closeDialog, submitting, setSubmitFunc, trySubmit, stateUpdated } = useEditBalancesSnapshotForm();
 
 const { timestamp } = toRefs(props);
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
@@ -463,6 +463,7 @@ function confirmDelete() {
       "
       :primary-action="t('common.actions.save')"
       :loading="submitting"
+      :prompt-on-close="stateUpdated"
       @confirm="trySubmit()"
       @cancel="clearEditDialog()"
     >

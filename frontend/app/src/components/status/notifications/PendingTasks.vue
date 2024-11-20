@@ -15,7 +15,7 @@ function showConfirmation(task: Task<TaskMeta>) {
   const taskRef = isTaskRunning(task.type, task.meta);
   const unwatch = watch(taskRef, debounceDismiss);
 
-  return show(
+  show(
     {
       title: t('collapsed_pending_tasks.cancel_task'),
       message: t('collapsed_pending_tasks.cancel_task_info', {

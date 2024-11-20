@@ -601,6 +601,7 @@ declare global {
   const useFocus: typeof import('@vueuse/core')['useFocus']
   const useFocusWithin: typeof import('@vueuse/core')['useFocusWithin']
   const useForm: typeof import('./src/composables/form')['useForm']
+  const useFormStateWatcher: typeof import('./src/composables/form')['useFormStateWatcher']
   const useFps: typeof import('@vueuse/core')['useFps']
   const useFrontendSettingsStore: typeof import('./src/store/settings/frontend')['useFrontendSettingsStore']
   const useFullscreen: typeof import('@vueuse/core')['useFullscreen']
@@ -1483,6 +1484,7 @@ declare module 'vue' {
     readonly useFocus: UnwrapRef<typeof import('@vueuse/core')['useFocus']>
     readonly useFocusWithin: UnwrapRef<typeof import('@vueuse/core')['useFocusWithin']>
     readonly useForm: UnwrapRef<typeof import('./src/composables/form')['useForm']>
+    readonly useFormStateWatcher: UnwrapRef<typeof import('./src/composables/form')['useFormStateWatcher']>
     readonly useFps: UnwrapRef<typeof import('@vueuse/core')['useFps']>
     readonly useFrontendSettingsStore: UnwrapRef<typeof import('./src/store/settings/frontend')['useFrontendSettingsStore']>
     readonly useFullscreen: UnwrapRef<typeof import('@vueuse/core')['useFullscreen']>

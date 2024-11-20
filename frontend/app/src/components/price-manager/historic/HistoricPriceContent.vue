@@ -69,7 +69,7 @@ const route = useRoute();
 
 const { items, loading, save, deletePrice, refresh } = useHistoricPrices(filter, t);
 
-const { openDialog, setOpenDialog, submitting, closeDialog, setSubmitFunc, trySubmit, setPostSubmitFunc }
+const { openDialog, setOpenDialog, submitting, closeDialog, setSubmitFunc, trySubmit, setPostSubmitFunc, stateUpdated }
   = useHistoricPriceForm();
 
 function openForm(hPrice: HistoricalPrice | null = null) {
@@ -221,6 +221,7 @@ setPostSubmitFunc(() => refresh({ modified: true }));
       :display="openDialog"
       :title="update ? t('price_management.dialog.edit_title') : t('price_management.dialog.add_title')"
       :loading="submitting"
+      :prompt-on-close="stateUpdated"
       @confirm="trySubmit()"
       @cancel="hideForm()"
     >

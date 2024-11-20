@@ -15,7 +15,7 @@ function resetForm() {
   emit('reset');
 }
 
-const { openDialog, submitting, trySubmit } = useUserNotesForm();
+const { openDialog, submitting, trySubmit, stateUpdated } = useUserNotesForm();
 
 const { t } = useI18n();
 </script>
@@ -25,6 +25,7 @@ const { t } = useI18n();
     :display="openDialog"
     :title="editMode ? t('notes_menu.dialog.edit_title') : t('notes_menu.dialog.add_title')"
     :loading="submitting"
+    :prompt-on-close="stateUpdated"
     @confirm="trySubmit()"
     @cancel="resetForm()"
   >

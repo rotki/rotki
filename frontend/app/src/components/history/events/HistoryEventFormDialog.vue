@@ -18,7 +18,7 @@ const props = withDefaults(
 
 const { editableItem, groupHeader } = toRefs(props);
 
-const { openDialog, submitting, closeDialog, trySubmit, defaultNotes } = useHistoryEventsForm();
+const { openDialog, submitting, closeDialog, trySubmit, defaultNotes, stateUpdated } = useHistoryEventsForm();
 
 const { t } = useI18n();
 
@@ -38,6 +38,7 @@ watchImmediate(editableItem, (editable) => {
     :primary-action="t('common.actions.save')"
     :action-disabled="loading"
     :loading="submitting"
+    :prompt-on-close="stateUpdated"
     @confirm="trySubmit()"
     @cancel="closeDialog()"
   >

@@ -16,7 +16,7 @@ const props = withDefaults(
 const { editableItem } = toRefs(props);
 const { t } = useI18n();
 
-const { openDialog, submitting, closeDialog, trySubmit } = useManagedAssetForm();
+const { openDialog, submitting, closeDialog, trySubmit, stateUpdated } = useManagedAssetForm();
 </script>
 
 <template>
@@ -26,6 +26,7 @@ const { openDialog, submitting, closeDialog, trySubmit } = useManagedAssetForm()
     :subtitle="subtitle"
     :primary-action="t('common.actions.save')"
     :loading="submitting"
+    :prompt-on-close="stateUpdated"
     @confirm="trySubmit()"
     @cancel="closeDialog()"
   >

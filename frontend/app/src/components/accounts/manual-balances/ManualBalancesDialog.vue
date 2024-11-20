@@ -14,6 +14,7 @@ const { t } = useI18n();
 const loading = ref(false);
 const errorMessages = ref<Record<string, string[]>>({});
 const form = useTemplateRef<InstanceType<typeof ManualBalancesForm>>('form');
+const stateUpdated = ref(false);
 
 const { setMessage } = useMessageStore();
 const { save: saveBalance } = useManualBalancesStore();
@@ -85,6 +86,7 @@ async function save(): Promise<boolean> {
     :subtitle="dialogSubtitle"
     :loading="loading"
     :primary-action="t('common.actions.save')"
+    :prompt-on-close="stateUpdated"
     @confirm="save()"
     @cancel="modelValue = undefined"
   >
@@ -93,6 +95,7 @@ async function save(): Promise<boolean> {
       ref="form"
       v-model="modelValue"
       v-model:error-messages="errorMessages"
+      v-model:state-updated="stateUpdated"
       :submitting="loading"
     />
   </BigDialog>
