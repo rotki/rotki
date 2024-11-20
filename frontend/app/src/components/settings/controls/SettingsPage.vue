@@ -94,7 +94,7 @@ onUnmounted(() => {
 
 <template>
   <div
-    class="md:flex md:flex-row-reverse md:items-start h-[calc(100vh-179px)] md:h-[calc(100vh-186px)] -mb-16 md:pt-6"
+    class="md:flex md:flex-row-reverse md:items-start h-[calc(100vh-178px)] md:h-[calc(100vh-186px)] -mb-16 md:pt-6"
   >
     <template v-if="navigation.length > 0">
       <div
@@ -133,10 +133,10 @@ onUnmounted(() => {
     </template>
     <div
       ref="parentScroller"
-      class="flex-1 overflow-y-auto border-default pb-16 h-full flex flex-col gap-8 -mr-4 pr-4 md:pr-8"
+      class="flex-1 overflow-y-auto border-default pb-8 md:pb-16 h-full flex flex-col gap-6 md:gap-8 -mr-4 pr-4 md:pr-8"
       v-bind="$attrs"
       :class="{
-        'md:border-r h-[calc(100%-72px)] md:!h-full md:mr-0': navigation.length > 0,
+        'md:border-r !h-[calc(100%-72px)] md:!h-full md:mr-0': navigation.length > 0,
         'md:!-mr-8 pt-6 md:pt-0': navigation.length === 0,
       }"
     >
