@@ -143,8 +143,8 @@ importers:
         specifier: 1.1.13
         version: 1.1.13
       vanilla-jsoneditor:
-        specifier: 1.1.2
-        version: 1.1.2(@lezer/common@1.2.3)
+        specifier: 2.1.0
+        version: 2.1.0(@lezer/common@1.2.3)
       vue:
         specifier: 3.5.13
         version: 3.5.13(typescript@5.6.3)
@@ -166,7 +166,7 @@ importers:
         version: 7.26.0(@babel/core@7.26.0)
       '@cypress/code-coverage':
         specifier: 3.13.7
-        version: 3.13.7(@babel/core@7.26.0)(@babel/preset-env@7.26.0(@babel/core@7.26.0))(babel-loader@9.2.1(@babel/core@7.26.0)(webpack@5.96.1))(cypress@13.15.2)(webpack@5.96.1)
+        version: 3.13.7(@babel/core@7.26.0)(@babel/preset-env@7.26.0(@babel/core@7.26.0))(babel-loader@9.2.1(@babel/core@7.26.0)(webpack@5.96.1))(cypress@13.16.0)(webpack@5.96.1)
       babel-loader:
         specifier: 9.2.1
         version: 9.2.1(@babel/core@7.26.0)(webpack@5.96.1)
@@ -214,8 +214,8 @@ importers:
         specifier: 10.4.20
         version: 10.4.20(postcss@8.4.49)
       cypress:
-        specifier: 13.15.2
-        version: 13.15.2
+        specifier: 13.16.0
+        version: 13.16.0
       dmg-license:
         specifier: 1.0.11
         version: 1.0.11
@@ -3325,8 +3325,8 @@ packages:
     resolution: {integrity: sha512-QTaY0XjjhTQOdguARF0lGKm5/mEq9PD9/VhZZegHDIBq2tQwgNpHc3dneD4mGo2iJs+fTKv5Bp0fZ+BRuY3Z0g==}
     engines: {node: '>= 0.1.90'}
 
-  cypress@13.15.2:
-    resolution: {integrity: sha512-ARbnUorjcCM3XiPwgHKuqsyr5W9Qn+pIIBPaoilnoBkLdSC2oLQjV1BUpnmc7KR+b7Avah3Ly2RMFnfxr96E/A==}
+  cypress@13.16.0:
+    resolution: {integrity: sha512-g6XcwqnvzXrqiBQR/5gN+QsyRmKRhls1y5E42fyOvsmU7JuY+wM6uHJWj4ZPttjabzbnRvxcik2WemR8+xT6FA==}
     engines: {node: ^16.0.0 || ^18.0.0 || >=20.0.0}
     hasBin: true
 
@@ -7066,8 +7066,8 @@ packages:
   validate-npm-package-license@3.0.4:
     resolution: {integrity: sha512-DpKm2Ui/xN7/HQKCtpZxoRWBhZ9Z0kqtygG8XCgNQ8ZlDnxuQmWhj566j8fN4Cu3/JmbhsDo7fcAJq4s9h27Ew==}
 
-  vanilla-jsoneditor@1.1.2:
-    resolution: {integrity: sha512-IQ8pFTThwgcW1ArkOjPnW0/TD2azw5lv7ut+kQx2tH6AnDthcIFAR8knH1kR4rXGnL+J2oy9FgT49u5jvL5TbQ==}
+  vanilla-jsoneditor@2.1.0:
+    resolution: {integrity: sha512-2KXye9BssRr0qo9WiiuIKOtkt2NZKAEWYlBpo7+mcJzEVdGoZOWIWvQ2krgGpFatBP7Nc+0kJG3h+94IEzGvcg==}
 
   vanilla-picker@2.12.3:
     resolution: {integrity: sha512-qVkT1E7yMbUsB2mmJNFmaXMWE2hF8ffqzMMwe9zdAikd8u2VfnsVY2HQcOUi2F38bgbxzlJBEdS1UUhOXdF9GQ==}
@@ -8394,14 +8394,14 @@ snapshots:
     dependencies:
       postcss-selector-parser: 6.1.2
 
-  '@cypress/code-coverage@3.13.7(@babel/core@7.26.0)(@babel/preset-env@7.26.0(@babel/core@7.26.0))(babel-loader@9.2.1(@babel/core@7.26.0)(webpack@5.96.1))(cypress@13.15.2)(webpack@5.96.1)':
+  '@cypress/code-coverage@3.13.7(@babel/core@7.26.0)(@babel/preset-env@7.26.0(@babel/core@7.26.0))(babel-loader@9.2.1(@babel/core@7.26.0)(webpack@5.96.1))(cypress@13.16.0)(webpack@5.96.1)':
     dependencies:
       '@babel/core': 7.26.0
       '@babel/preset-env': 7.26.0(@babel/core@7.26.0)
       '@cypress/webpack-preprocessor': 6.0.2(@babel/core@7.26.0)(@babel/preset-env@7.26.0(@babel/core@7.26.0))(babel-loader@9.2.1(@babel/core@7.26.0)(webpack@5.96.1))(webpack@5.96.1)
       babel-loader: 9.2.1(@babel/core@7.26.0)(webpack@5.96.1)
       chalk: 4.1.2
-      cypress: 13.15.2
+      cypress: 13.16.0
       dayjs: 1.11.13
       debug: 4.3.7(supports-color@8.1.1)
       execa: 4.1.0
@@ -10848,7 +10848,7 @@ snapshots:
       csv-stringify: 5.6.5
       stream-transform: 2.1.3
 
-  cypress@13.15.2:
+  cypress@13.16.0:
     dependencies:
       '@cypress/request': 3.0.6
       '@cypress/xvfb': 1.2.4(supports-color@8.1.1)
@@ -15263,7 +15263,7 @@ snapshots:
       spdx-correct: 3.2.0
       spdx-expression-parse: 3.0.1
 
-  vanilla-jsoneditor@1.1.2(@lezer/common@1.2.3):
+  vanilla-jsoneditor@2.1.0(@lezer/common@1.2.3):
     dependencies:
       '@codemirror/autocomplete': 6.18.3(@codemirror/language@6.10.3)(@codemirror/state@6.4.1)(@codemirror/view@6.34.3)(@lezer/common@1.2.3)
       '@codemirror/commands': 6.7.1
@@ -15289,7 +15289,6 @@ snapshots:
       lodash-es: 4.17.21
       memoize-one: 6.0.0
       natural-compare-lite: 1.4.0
-      sass: 1.81.0
       svelte: 4.2.19
       vanilla-picker: 2.12.3
     transitivePeerDependencies:
@@ -15305,7 +15304,7 @@ snapshots:
     dependencies:
       assert-plus: 1.0.0
       core-util-is: 1.0.2
-      extsprintf: 1.3.0
+      extsprintf: 1.4.1
 
   verror@1.10.1:
     dependencies:
