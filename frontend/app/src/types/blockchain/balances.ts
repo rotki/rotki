@@ -1,11 +1,5 @@
+import { Balance } from '@rotki/common';
 import { z } from 'zod';
-
-export const Balance = z.object({
-  amount: NumericString,
-  value: NumericString.optional().default(0),
-});
-
-export type Balance = z.infer<typeof Balance>;
 
 export const Balances = z.record(Balance);
 

@@ -1,7 +1,6 @@
-import { AssetEntry, type BigNumber, NumericString } from '@rotki/common';
+import { AssetEntry, type Balance, type BigNumber, NumericString } from '@rotki/common';
 import { z } from 'zod';
 import { type PriceOracle, PriceOracleEnum } from '@/types/settings/price-oracle';
-import type { Balance } from '@/types/blockchain/balances';
 
 export const AssetPriceInput = z.tuple([NumericString, z.number(), z.boolean()]);
 
@@ -65,7 +64,7 @@ export interface HistoricPricesPayload {
   readonly targetAsset: string;
 }
 
-export interface BalanceWithPrice extends Balance {
+export interface AssetPriceInfo extends Balance {
   readonly price: BigNumber;
 }
 

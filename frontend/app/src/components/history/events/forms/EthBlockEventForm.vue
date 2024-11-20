@@ -29,7 +29,7 @@ const assetPriceForm = ref<InstanceType<typeof HistoryEventAssetPriceForm>>();
 const eventIdentifier = ref<string>('');
 const datetime = ref<string>('');
 const amount = ref<string>('');
-const value = ref<string>('');
+const usdValue = ref<string>('');
 const blockNumber = ref<string>('');
 const validatorIndex = ref<string>('');
 const feeRecipient = ref<string>('');
@@ -48,7 +48,7 @@ const rules = {
   amount: {
     required: helpers.withMessage(t('transactions.events.form.amount.validation.non_empty'), required),
   },
-  value: {
+  usdValue: {
     required: helpers.withMessage(
       t('transactions.events.form.fiat_value.validation.non_empty', {
         currency: get(currencySymbol),
@@ -70,7 +70,7 @@ const rules = {
 };
 
 const numericAmount = bigNumberifyFromRef(amount);
-const numericValue = bigNumberifyFromRef(value);
+const numericUsdValue = bigNumberifyFromRef(usdValue);
 
 const { setValidation, setSubmitFunc, saveHistoryEventHandler } = useHistoryEventsForm();
 
@@ -80,7 +80,7 @@ const v$ = setValidation(
     eventIdentifier,
     timestamp: datetime,
     amount,
-    value,
+    usdValue,
     blockNumber,
     validatorIndex,
     feeRecipient,
@@ -95,7 +95,7 @@ function reset() {
   set(eventIdentifier, null);
   set(datetime, convertFromTimestamp(dayjs().valueOf(), DateFormat.DateMonthYearHourMinuteSecond, true));
   set(amount, '0');
-  set(value, '0');
+  set(usdValue, '0');
   set(blockNumber, '');
   set(validatorIndex, '');
   set(feeRecipient, '');
@@ -109,7 +109,7 @@ function applyEditableData(entry: EthBlockEvent) {
   set(eventIdentifier, entry.eventIdentifier);
   set(datetime, convertFromTimestamp(entry.timestamp, DateFormat.DateMonthYearHourMinuteSecond, true));
   set(amount, entry.balance.amount.toFixed());
-  set(value, entry.balance.usdValue.toFixed());
+  set(usdValue, entry.balance.usdValue.toFixed());
   set(blockNumber, entry.blockNumber.toString());
   set(validatorIndex, entry.validatorIndex.toString());
   set(feeRecipient, entry.locationLabel);
@@ -122,7 +122,7 @@ function applyGroupHeaderData(entry: EthBlockEvent) {
   set(blockNumber, entry.blockNumber.toString());
   set(validatorIndex, entry.validatorIndex.toString());
   set(datetime, convertFromTimestamp(entry.timestamp, DateFormat.DateMonthYearHourMinuteSecond, true));
-  set(value, '0');
+  set(usdValue, '0');
 }
 
 watch(errorMessages, (errors) => {
@@ -139,7 +139,7 @@ async function save(): Promise<boolean> {
     timestamp,
     balance: {
       amount: get(numericAmount).isNaN() ? Zero : get(numericAmount),
-      usdValue: get(numericValue).isNaN() ? Zero : get(numericValue),
+      usdValue: get(numericUsdValue).isNaN() ? Zero : get(numericUsdValue),
     },
     blockNumber: parseInt(get(blockNumber)),
     validatorIndex: parseInt(get(validatorIndex)),
@@ -223,7 +223,7 @@ const feeRecipientSuggestions = computed(() => getAddresses(Blockchain.ETH));
     <HistoryEventAssetPriceForm
       ref="assetPriceForm"
       v-model:amount="amount"
-      v-model:value="value"
+      v-model:usd-value="usdValue"
       asset="ETH"
       :v$="v$"
       :datetime="datetime"

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { BalanceWithPrice, ManualPriceFormPayload } from '@/types/prices';
+import type { AssetPriceInfo, ManualPriceFormPayload } from '@/types/prices';
 
 const props = withDefaults(
   defineProps<{
@@ -14,7 +14,7 @@ const { assetPriceInfo } = useAggregatedBalances();
 
 const { assetName } = useAssetInfoRetrieval();
 
-const info = computed<BalanceWithPrice>(() => get(assetPriceInfo(identifier, isCollectionParent)));
+const info = computed<AssetPriceInfo>(() => get(assetPriceInfo(identifier, isCollectionParent)));
 
 const { isManualAssetPrice } = useBalancePricesStore();
 const isManualPrice = isManualAssetPrice(identifier);
@@ -116,7 +116,7 @@ onMounted(() => {
         :price-asset="identifier"
         :price-of-asset="info.price"
         :fiat-currency="currencySymbol"
-        :value="info.value"
+        :value="info.usdValue"
       />
     </RuiCard>
 

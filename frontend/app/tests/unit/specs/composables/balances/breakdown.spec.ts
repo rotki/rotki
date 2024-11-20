@@ -1,7 +1,4 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { AssetBalanceWithBreakdown, AssetBalances } from '@/types/balances';
-import type { AssetBreakdown } from '@/types/blockchain/accounts';
-import type { AssetInfoWithId } from '@/types/asset';
 
 vi.mock('@/composables/assets/retrieval', () => ({
   useAssetInfoRetrieval: vi.fn().mockReturnValue({
@@ -14,7 +11,7 @@ vi.mock('@/composables/assets/retrieval', () => ({
         isCustomAsset: false,
         name: `Name ${identifier}`,
         collectionId,
-      } satisfies AssetInfoWithId;
+      };
     }),
   }),
 }));
@@ -23,34 +20,36 @@ vi.mock('@/store/balances/manual', () => ({
   useManualBalancesStore: vi.fn().mockReturnValue({
     manualBalanceByLocation: ref([]),
     assetBreakdown: vi.fn().mockReturnValue(
-      computed<AssetBreakdown[]>(() => [
+      computed(() => [
         {
           location: 'external',
           amount: bigNumberify(1000),
-          value: bigNumberify(1000),
+          usdValue: bigNumberify(1000),
           address: '',
+          tags: null,
         },
         {
           location: 'kraken',
           amount: bigNumberify(1000),
-          value: bigNumberify(1000),
+          usdValue: bigNumberify(1000),
           address: '',
+          tags: null,
         },
       ]),
     ),
     getLocationBreakdown: vi.fn().mockReturnValue(
-      computed<AssetBalances>(() => ({
+      computed(() => ({
         ETH: {
           amount: bigNumberify(1000),
-          value: bigNumberify(1000),
+          usdValue: bigNumberify(1000),
         },
         aUSDC: {
           amount: bigNumberify(2000),
-          value: bigNumberify(2000),
+          usdValue: bigNumberify(2000),
         },
         bUSDC: {
           amount: bigNumberify(1000),
-          value: bigNumberify(1000),
+          usdValue: bigNumberify(1000),
         },
       })),
     ),
@@ -60,28 +59,29 @@ vi.mock('@/store/balances/manual', () => ({
 vi.mock('@/store/balances/exchanges', () => ({
   useExchangeBalancesStore: vi.fn().mockReturnValue({
     getBreakdown: vi.fn().mockReturnValue(
-      computed<AssetBreakdown[]>(() => [
+      computed(() => [
         {
           location: 'kraken',
           amount: bigNumberify(1000),
-          value: bigNumberify(1000),
+          usdValue: bigNumberify(1000),
           address: '',
+          tags: null,
         },
       ]),
     ),
     getLocationBreakdown: vi.fn().mockReturnValue(
-      computed<AssetBalances>(() => ({
+      computed(() => ({
         ETH: {
           amount: bigNumberify(1000),
-          value: bigNumberify(1000),
+          usdValue: bigNumberify(1000),
         },
         aUSDC: {
           amount: bigNumberify(2000),
-          value: bigNumberify(2000),
+          usdValue: bigNumberify(2000),
         },
         cUSDC: {
           amount: bigNumberify(1000),
-          value: bigNumberify(1000),
+          usdValue: bigNumberify(1000),
         },
       })),
     ),
@@ -92,18 +92,20 @@ vi.mock('@/store/balances/exchanges', () => ({
 vi.mock('@/store/blockchain/index', () => ({
   useBlockchainStore: vi.fn().mockReturnValue({
     assetBreakdown: vi.fn().mockReturnValue(
-      computed<AssetBreakdown[]>(() => [
+      computed(() => [
         {
           location: 'ethereum',
           address: '0xaddress1',
           amount: bigNumberify(1000),
-          value: bigNumberify(1000),
+          usdValue: bigNumberify(1000),
+          tags: null,
         },
         {
           location: 'ethereum',
           address: '0xaddress2',
           amount: bigNumberify(2000),
-          value: bigNumberify(2000),
+          usdValue: bigNumberify(2000),
+          tags: null,
         },
       ]),
     ),
@@ -120,30 +122,34 @@ describe('composables::balances/breakdown', () => {
 
   it('assetBreakdown', () => {
     const assetBreakdown = balancesBreakdown.assetBreakdown('ETH');
-    const expectedResult: AssetBreakdown[] = [
+    const expectedResult = [
       {
         location: 'ethereum',
         address: '0xaddress2',
         amount: bigNumberify(2000),
-        value: bigNumberify(2000),
+        usdValue: bigNumberify(2000),
+        tags: null,
       },
       {
         location: 'kraken',
         amount: bigNumberify(2000),
-        value: bigNumberify(2000),
+        usdValue: bigNumberify(2000),
         address: '',
+        tags: null,
       },
       {
         location: 'ethereum',
         address: '0xaddress1',
         amount: bigNumberify(1000),
-        value: bigNumberify(1000),
+        usdValue: bigNumberify(1000),
+        tags: null,
       },
       {
         location: 'external',
         amount: bigNumberify(1000),
-        value: bigNumberify(1000),
+        usdValue: bigNumberify(1000),
         address: '',
+        tags: null,
       },
     ];
 
@@ -159,29 +165,29 @@ describe('composables::balances/breakdown', () => {
       },
     });
     const locationBreakdown = balancesBreakdown.locationBreakdown('kraken');
-    const expectedResult: AssetBalanceWithBreakdown[] = [
+    const expectedResult = [
       {
         asset: 'aUSDC',
         amount: bigNumberify(6000),
-        value: bigNumberify(6000),
+        usdValue: bigNumberify(6000),
         price: bigNumberify(-1),
         breakdown: [
           {
             asset: 'aUSDC',
             amount: bigNumberify(4000),
-            value: bigNumberify(4000),
+            usdValue: bigNumberify(4000),
             price: bigNumberify(-1),
           },
           {
             asset: 'bUSDC',
             amount: bigNumberify(1000),
-            value: bigNumberify(1000),
+            usdValue: bigNumberify(1000),
             price: bigNumberify(-1),
           },
           {
             asset: 'cUSDC',
             amount: bigNumberify(1000),
-            value: bigNumberify(1000),
+            usdValue: bigNumberify(1000),
             price: bigNumberify(-1),
           },
         ],
@@ -189,7 +195,7 @@ describe('composables::balances/breakdown', () => {
       {
         asset: 'ETH',
         amount: bigNumberify(2000),
-        value: bigNumberify(2000),
+        usdValue: bigNumberify(2000),
         price: bigNumberify(-1),
       },
     ];

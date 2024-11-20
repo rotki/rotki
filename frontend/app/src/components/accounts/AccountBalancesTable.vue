@@ -53,7 +53,6 @@ const { supportsTransactions } = useSupportedChains();
 const { showConfirmation } = useAccountDelete();
 
 const loading = isLoading(Section.BLOCKCHAIN);
-const isPricesLoading = isLoading(Section.PRICES);
 
 const totalValue = computed<BigNumber | undefined>(() => {
   const totalUsdValue = props.accounts.totalUsdValue;
@@ -128,7 +127,7 @@ const cols = computed<DataTableColumn<DataRow>[]>(() => {
     },
     {
       label: t('account_balances.headers.usd_value', currency),
-      key: 'value',
+      key: 'usdValue',
       sortable: true,
       cellClass: 'py-0',
       align: 'end',
@@ -273,26 +272,26 @@ defineExpose({
         :loading="isRowLoading(row)"
       />
     </template>
-    <template #item.value="{ row }">
+    <template #item.usdValue="{ row }">
       <div class="flex flex-col items-end justify-end">
         <div
-          v-if="row.includedValue && !isRowLoading(row)"
+          v-if="row.includedUsdValue && !isRowLoading(row)"
           class="text-xs"
         >
           <AmountDisplay
-            v-if="row.includedValue"
-            :fiat-currency="currencySymbol"
-            :value="row.includedValue"
+            v-if="row.includedUsdValue"
+            fiat-currency="USD"
+            :value="row.includedUsdValue"
             show-currency="symbol"
           />
           /
         </div>
         <AmountDisplay
           class="font-medium"
-          :fiat-currency="currencySymbol"
-          :value="row.value"
+          fiat-currency="USD"
+          :value="row.usdValue"
           show-currency="symbol"
-          :loading="isRowLoading(row) || isPricesLoading"
+          :loading="isRowLoading(row)"
         />
       </div>
     </template>
@@ -330,8 +329,8 @@ defineExpose({
         <template #custom-columns>
           <td class="text-end">
             <AmountDisplay
-              :loading="loading || isPricesLoading"
-              :fiat-currency="currencySymbol"
+              :loading="loading"
+              fiat-currency="USD"
               show-currency="symbol"
               :value="totalValue"
             />
@@ -380,7 +379,7 @@ defineExpose({
       <td class="text-end text-body-2 px-4 py-0">
         <AmountDisplay
           v-if="header.group.category"
-          :fiat-currency="currencySymbol"
+          fiat-currency="USD"
           :value="getCategoryTotal(header.group.category)"
           show-currency="symbol"
           :loading="loading"

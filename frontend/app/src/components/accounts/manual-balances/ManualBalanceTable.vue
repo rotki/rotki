@@ -30,10 +30,7 @@ const { isLoading } = useStatusStore();
 const dataSource = computed(() => (props.type === 'liabilities' ? get(manualLiabilities) : get(manualBalances)));
 
 const locations = computed(() =>
-  [
-    ...get(manualBalances).map(item => item.location),
-    ...get(manualLiabilities).map(item => item.location),
-  ].filter(
+  [...get(manualBalances).map(item => item.location), ...get(manualLiabilities).map(item => item.location)].filter(
     uniqueStrings,
   ),
 );
@@ -59,10 +56,12 @@ const {
     extraParams: computed(() => ({
       tags: get(tags),
     })),
-    defaultSortBy: [{
-      column: 'value',
-      direction: 'desc',
-    }],
+    defaultSortBy: [
+      {
+        column: 'usdValue',
+        direction: 'desc',
+      },
+    ],
     onUpdateFilters(query) {
       const schema = ManualBalancesFilterSchema.parse(query);
       if (schema.tags)
@@ -78,7 +77,7 @@ async function refresh() {
 }
 
 function edit(balance: ManualBalanceWithPrice) {
-  emit('edit', objectOmit(balance, ['value', 'price']));
+  emit('edit', objectOmit(balance, ['usdValue', 'price']));
 }
 
 function getRowClass(item: ManualBalance) {
@@ -122,7 +121,7 @@ const cols = computed<DataTableColumn<ManualBalanceWithPrice>[]>(() => [
     label: t('common.value_in_symbol', {
       symbol: get(currencySymbol),
     }),
-    key: 'value',
+    key: 'usdValue',
     sortable: true,
     align: 'end',
   },
@@ -246,14 +245,14 @@ watchDebounced(
           :value="row.amount"
         />
       </template>
-      <template #item.value="{ row }">
+      <template #item.usdValue="{ row }">
         <AmountDisplay
           show-currency="symbol"
           :amount="row.amount"
           :price-asset="row.asset"
           :price-of-asset="row.price"
           :fiat-currency="currencySymbol"
-          :value="row.value"
+          :value="row.usdValue"
         />
       </template>
       <template #item.location="{ row }">

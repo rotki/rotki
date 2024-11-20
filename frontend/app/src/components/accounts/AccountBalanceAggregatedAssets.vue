@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import type { AssetBalance, AssetBalanceWithPrice } from '@/types/balances';
+import type { AssetBalance, AssetBalanceWithPrice } from '@rotki/common';
 
 const props = defineProps<{
   groupId: string;

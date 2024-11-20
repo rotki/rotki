@@ -1,4 +1,4 @@
-import { type AssetBalance, type BalanceByLocation, BalanceType, type LocationBalance } from '@/types/balances';
+import { type AssetBalances, type BalanceByLocation, BalanceType, type LocationBalance } from '@/types/balances';
 import {
   type ManualBalance,
   type ManualBalanceRequestPayload,
@@ -25,8 +25,9 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
   const { notify } = useNotificationsStore();
   const { setMessage } = useMessageStore();
   const { awaitTask } = useTaskStore();
-  const { assetPrice } = useBalancePricesStore();
+  const { exchangeRate, assetPrice } = useBalancePricesStore();
   const { queryManualBalances, addManualBalances, editManualBalances, deleteManualBalances } = useManualBalancesApi();
+  const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
   const { getAssociatedAssetIdentifier } = useAssetInfoRetrieval();
 
   const manualBalances = computed<ManualBalanceWithValue[]>(() =>
@@ -40,31 +41,52 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
   const manualLabels = computed<string[]>(() => get(manualBalancesData).map(x => x.label));
 
   const manualBalanceByLocation = computed<LocationBalance[]>(() => {
+    const mainCurrency = get(currencySymbol);
     const balances = get(manualBalances);
+    const currentExchangeRate = get(exchangeRate(mainCurrency));
+    if (currentExchangeRate === undefined)
+      return [];
+
+    const simplifyManualBalances = balances.map((perLocationBalance) => {
+      // because we mix different assets we need to convert them before they are aggregated
+      // thus in amount display we always pass the manualBalanceByLocation in the user's main currency
+      let convertedValue: BigNumber;
+      if (mainCurrency === perLocationBalance.asset)
+        convertedValue = perLocationBalance.amount;
+      else convertedValue = perLocationBalance.usdValue.multipliedBy(currentExchangeRate);
+
+      // to avoid double-conversion, we take as usdValue the amount property when the original asset type and
+      // user's main currency coincide
+      const { location, usdValue }: LocationBalance = {
+        location: perLocationBalance.location,
+        usdValue: convertedValue,
+      };
+      return { location, usdValue };
+    });
 
     // Aggregate all balances per location
-    const aggregateManualBalancesByLocation: BalanceByLocation = balances.reduce((
-      acc: BalanceByLocation,
-      balance: LocationBalance,
-    ) => {
-      if (acc[balance.location]) {
-        // if the location exists on the reduced object, add the value of the current item to the previous total
-        acc[balance.location] = acc[balance.location].plus(balance.value);
-      }
-      else {
-        // otherwise create the location and initiate its value
-        acc[balance.location] = balance.value;
-      }
+    const aggregateManualBalancesByLocation: BalanceByLocation = simplifyManualBalances.reduce(
+      (result: BalanceByLocation, manualBalance: LocationBalance) => {
+        if (result[manualBalance.location]) {
+          // if the location exists on the reduced object, add the usdValue of the current item to the previous total
+          result[manualBalance.location] = result[manualBalance.location].plus(manualBalance.usdValue);
+        }
+        else {
+          // otherwise create the location and initiate its value
+          result[manualBalance.location] = manualBalance.usdValue;
+        }
 
-      return acc;
-    }, {});
+        return result;
+      },
+      {},
+    );
 
     return Object.keys(aggregateManualBalancesByLocation)
       .map(location => ({
         location,
-        value: aggregateManualBalancesByLocation[location],
+        usdValue: aggregateManualBalancesByLocation[location],
       }))
-      .sort((a, b) => sortDesc(a.value, b.value));
+      .sort((a, b) => sortDesc(a.usdValue, b.usdValue));
   });
 
   const getBreakdown = (asset: string, isLiability = false): ComputedRef<AssetBreakdown[]> => computed<AssetBreakdown[]>(() => {
@@ -80,7 +102,7 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
         address: '',
         location: balance.location,
         amount: balance.amount,
-        value: balance.value,
+        usdValue: balance.usdValue,
         tags: balance.tags ?? undefined,
       });
     }
@@ -90,8 +112,8 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
   const assetBreakdown = (asset: string): ComputedRef<AssetBreakdown[]> => getBreakdown(asset);
   const liabilityBreakdown = (asset: string): ComputedRef<AssetBreakdown[]> => getBreakdown(asset, true);
 
-  const getLocationBreakdown = (id: string): ComputedRef<Record<string, AssetBalance>> => computed<Record<string, AssetBalance>>(() => {
-    const assets: Record<string, AssetBalance> = {};
+  const getLocationBreakdown = (id: string): ComputedRef<AssetBalances> => computed<AssetBalances>(() => {
+    const assets: AssetBalances = {};
     const balances = get(manualBalances);
     for (const balance of balances) {
       if (balance.location !== id)
@@ -220,8 +242,8 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
 
       return {
         ...item,
-        value: item.amount.times(assetPrice.value),
-      } satisfies ManualBalanceWithValue;
+        usdValue: item.amount.times(assetPrice.value),
+      };
     });
 
     set(manualBalancesData, newManualBalancesData);

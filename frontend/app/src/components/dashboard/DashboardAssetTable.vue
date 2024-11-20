@@ -1,14 +1,14 @@
 <script setup lang="ts">
+import { CURRENCY_USD } from '@/types/currencies';
 import { TableColumn } from '@/types/table-column';
 import { isEvmNativeToken } from '@/types/asset';
 import { DashboardTableType } from '@/types/settings/frontend-settings';
-import type { BigNumber, Nullable } from '@rotki/common';
+import type { AssetBalance, AssetBalanceWithPrice, BigNumber, Nullable } from '@rotki/common';
 import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
-import type { AssetBalanceWithBreakdown } from '@/types/balances';
 
 const props = withDefaults(defineProps<{
   title: string;
-  balances: AssetBalanceWithBreakdown[];
+  balances: AssetBalanceWithPrice[];
   tableType: DashboardTableType;
   loading?: boolean;
 }>(), { loading: false });
@@ -18,10 +18,10 @@ const { t } = useI18n();
 const { balances, title, tableType } = toRefs(props);
 const search = ref('');
 
-const expanded = ref<AssetBalanceWithBreakdown[]>([]);
+const expanded = ref<AssetBalanceWithPrice[]>([]);
 
-const sort = ref<DataTableSortData<AssetBalanceWithBreakdown>>({
-  column: 'value',
+const sort = ref<DataTableSortData<AssetBalanceWithPrice>>({
+  column: 'usdValue',
   direction: 'desc' as const,
 });
 
@@ -31,25 +31,30 @@ const pagination = ref({
 });
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
+const { exchangeRate } = useBalancePricesStore();
 const { assetSymbol, assetName, assetInfo } = useAssetInfoRetrieval();
 const { dashboardTablesVisibleColumns } = storeToRefs(useFrontendSettingsStore());
 const statisticsStore = useStatisticsStore();
 const { totalNetWorthUsd } = storeToRefs(statisticsStore);
 
-const total = computed(() => sum(get(balances)));
-
-function assetFilter(item: Nullable<AssetBalanceWithBreakdown>) {
+function assetFilter(item: Nullable<AssetBalance>) {
   return assetFilterByKeyword(item, get(search), assetName, assetSymbol);
 }
 
+const totalInUsd = computed(() => aggregateTotal(get(balances), CURRENCY_USD, One));
+const total = computed(() => {
+  const mainCurrency = get(currencySymbol);
+  return get(totalInUsd).multipliedBy(get(exchangeRate(mainCurrency)) ?? One);
+});
+
 function percentageOfTotalNetValue(value: BigNumber) {
   const netWorth = get(totalNetWorthUsd) as BigNumber;
-  const totalValue = netWorth.lt(0) ? get(total) : netWorth;
-  return calculatePercentage(value, totalValue);
+  const total = netWorth.lt(0) ? get(totalInUsd) : netWorth;
+  return calculatePercentage(value, total);
 }
 
 function percentageOfCurrentGroup(value: BigNumber) {
-  return calculatePercentage(value, get(total));
+  return calculatePercentage(value, get(totalInUsd));
 }
 
 function setPage(page: number) {
@@ -70,19 +75,19 @@ function setTablePagination(event: TablePaginationData | undefined) {
   });
 }
 
-function getAssets(item: AssetBalanceWithBreakdown): string[] {
+function getAssets(item: AssetBalanceWithPrice): string[] {
   return item.breakdown?.map(entry => entry.asset) ?? [];
 }
 
-const sorted = computed<AssetBalanceWithBreakdown[]>(() => {
+const sorted = computed<AssetBalanceWithPrice[]>(() => {
   const filteredBalances = get(balances).filter(assetFilter);
   return sortAssetBalances(filteredBalances, get(sort), assetInfo);
 });
 
-const cols = computed<DataTableColumn<AssetBalanceWithBreakdown>[]>(() => {
+const tableHeaders = computed<DataTableColumn<AssetBalanceWithPrice>[]>(() => {
   const visibleColumns = get(dashboardTablesVisibleColumns)[get(tableType)];
 
-  const headers: DataTableColumn<AssetBalanceWithBreakdown>[] = [
+  const headers: DataTableColumn<AssetBalanceWithPrice>[] = [
     {
       label: t('common.asset'),
       key: 'asset',
@@ -111,7 +116,7 @@ const cols = computed<DataTableColumn<AssetBalanceWithBreakdown>[]>(() => {
       label: t('common.value_in_symbol', {
         symbol: get(currencySymbol),
       }),
-      key: 'value',
+      key: 'usdValue',
       align: 'end',
       class: 'text-no-wrap',
       cellClass: 'py-0',
@@ -199,7 +204,7 @@ watch(search, () => setPage(1));
     <RuiDataTable
       v-model:sort.external="sort"
       data-cy="dashboard-asset-table__balances"
-      :cols="cols"
+      :cols="tableHeaders"
       :rows="sorted"
       :loading="loading"
       :empty="{ description: t('data_table.no_data') }"
@@ -236,23 +241,25 @@ watch(search, () => setPage(1));
       <template #item.amount="{ row }">
         <AmountDisplay :value="row.amount" />
       </template>
-      <template #item.value="{ row }">
+      <template #item.usdValue="{ row }">
         <AmountDisplay
           show-currency="symbol"
-          :loading="row.price.lt(0)"
+          :amount="row.amount"
+          :price-asset="row.asset"
+          :price-of-asset="row.price"
           :fiat-currency="currencySymbol"
-          :value="row.value"
+          :value="row.usdValue"
         />
       </template>
       <template #item.percentageOfTotalNetValue="{ row }">
         <PercentageDisplay
-          :value="percentageOfTotalNetValue(row.value)"
+          :value="percentageOfTotalNetValue(row.usdValue)"
           :asset-padding="0.1"
         />
       </template>
       <template #item.percentageOfTotalCurrentGroup="{ row }">
         <PercentageDisplay
-          :value="percentageOfCurrentGroup(row.value)"
+          :value="percentageOfCurrentGroup(row.usdValue)"
           :asset-padding="0.1"
         />
       </template>
@@ -271,13 +278,12 @@ watch(search, () => setPage(1));
         <RowAppend
           label-colspan="3"
           :label="t('common.total')"
-          :right-patch-colspan="cols.length - 4"
+          :right-patch-colspan="tableHeaders.length - 4"
           :class-name="$style['dashboard-asset-table__body-append']"
         >
           <AmountDisplay
             :fiat-currency="currencySymbol"
             :value="total"
-            :loading="loading || (total.eq(0) && balances.length > 0)"
             show-currency="symbol"
           />
         </RowAppend>
@@ -286,7 +292,7 @@ watch(search, () => setPage(1));
         <EvmNativeTokenBreakdown
           v-if="isEvmNativeToken(row.asset)"
           show-percentage
-          :total="row.value"
+          :total="row.usdValue"
           :assets="getAssets(row)"
           :identifier="row.asset"
           :is-liability="tableType === DashboardTableType.LIABILITIES"

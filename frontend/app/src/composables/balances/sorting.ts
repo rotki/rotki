@@ -1,9 +1,8 @@
 import { groupBy } from 'lodash-es';
 import { EvmNativeToken } from '@/types/asset';
-import type { BigNumber } from '@rotki/common';
-import type { AssetBalance, AssetBalanceWithBreakdown, AssetBalances } from '@/types/balances';
+import type { AssetBalance, AssetBalanceWithPrice, Balance, BigNumber } from '@rotki/common';
+import type { AssetBalances } from '@/types/balances';
 import type { ComputedRef } from 'vue';
-import type { Balance } from '@/types/blockchain/balances';
 
 interface UseBalanceSortingReturn {
   toSortedAssetBalanceArray: (
@@ -16,7 +15,7 @@ interface UseBalanceSortingReturn {
     isIgnored: (asset: string) => boolean,
     getPrice: (asset: string) => ComputedRef<BigNumber | null | undefined>,
     groupMultiChain?: boolean
-  ) => AssetBalanceWithBreakdown[];
+  ) => AssetBalanceWithPrice[];
 }
 
 export function useBalanceSorting(): UseBalanceSortingReturn {
@@ -34,7 +33,7 @@ export function useBalanceSorting(): UseBalanceSortingReturn {
       .map(map);
 
     if (!groupMultiChain)
-      return data.sort((a, b) => sortDesc(a.value, b.value));
+      return data.sort((a, b) => sortDesc(a.usdValue, b.usdValue));
 
     const groupedBalances = groupBy(data, (balance) => {
       const info = get(assetInfo(balance.asset));
@@ -54,10 +53,9 @@ export function useBalanceSorting(): UseBalanceSortingReturn {
       const assetCollectionInfo = !isAssetCollection ? false : get(fetchedAssetCollections)?.[collectionKey];
 
       if (assetCollectionInfo && grouped.length > 1) {
-        const start: Balance = { amount: Zero, value: Zero };
         const sumBalance = grouped.reduce(
           (accumulator, currentBalance) => balanceSum(accumulator, currentBalance),
-          start,
+          zeroBalance(),
         );
 
         // If it's a native asset (e.g., ETH), it should be used rather than the wrapped version (e.g., WETH)
@@ -79,7 +77,7 @@ export function useBalanceSorting(): UseBalanceSortingReturn {
       }
     });
 
-    return mapped.sort((a, b) => sortDesc(a.value, b.value));
+    return mapped.sort((a, b) => sortDesc(a.usdValue, b.usdValue));
   };
 
   const toSortedAssetBalanceWithPrice = (
@@ -87,11 +85,11 @@ export function useBalanceSorting(): UseBalanceSortingReturn {
     isIgnored: (asset: string) => boolean,
     getPrice: (asset: string) => ComputedRef<BigNumber | null | undefined>,
     groupMultiChain = true,
-  ): AssetBalanceWithBreakdown[] =>
+  ): AssetBalanceWithPrice[] =>
     toSortedAndGroupedArray(ownedAssets, isIgnored, groupMultiChain, asset => ({
       asset,
       amount: ownedAssets[asset].amount,
-      value: ownedAssets[asset].value,
+      usdValue: ownedAssets[asset].usdValue,
       price: get(getPrice(asset)) ?? NoPrice,
     }));
 
@@ -103,7 +101,7 @@ export function useBalanceSorting(): UseBalanceSortingReturn {
     toSortedAndGroupedArray(ownedAssets, isIgnored, groupMultiChain, asset => ({
       asset,
       amount: ownedAssets[asset].amount,
-      value: ownedAssets[asset].value,
+      usdValue: ownedAssets[asset].usdValue,
     }));
 
   return {

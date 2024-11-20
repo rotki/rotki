@@ -88,7 +88,7 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
       const assetInfo = balances[asset];
       balances[asset] = {
         amount: assetInfo.amount,
-        value: assetInfo.amount.times(assetPrice.value),
+        usdValue: assetInfo.amount.times(assetPrice.value),
       };
     }
     return balances;
