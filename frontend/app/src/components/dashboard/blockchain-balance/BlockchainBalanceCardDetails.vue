@@ -2,14 +2,15 @@
 import type { SubBlockchainTotal } from '@/types/blockchain';
 import type { ActionDataEntry } from '@/types/action';
 
-withDefaults(defineProps<{
-  child: SubBlockchainTotal;
-  details: ActionDataEntry | null;
-}>(), {
-  details: null,
-});
-
-const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
+withDefaults(
+  defineProps<{
+    child: SubBlockchainTotal;
+    details: ActionDataEntry | null;
+  }>(),
+  {
+    details: null,
+  },
+);
 </script>
 
 <template>
@@ -38,8 +39,8 @@ const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
         {{ details.label }}
         <AmountDisplay
           show-currency="symbol"
-          :fiat-currency="currencySymbol"
-          :value="child.value"
+          fiat-currency="USD"
+          :value="child.usdValue"
           :loading="child.loading"
           class="font-medium"
         />

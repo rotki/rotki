@@ -876,6 +876,9 @@ declare global {
   export type { SettingLocation } from './src/composables/settings/index'
   import('./src/composables/settings/index')
   // @ts-ignore
+  export type { Unit } from './src/utils/calculation'
+  import('./src/utils/calculation')
+  // @ts-ignore
   export type { XpubPrefix } from './src/utils/xpub'
   import('./src/utils/xpub')
   // @ts-ignore
@@ -963,6 +966,7 @@ declare module 'vue' {
     readonly TimedAssetBalances: UnwrapRef<typeof import('@rotki/common')['TimedAssetBalances']>
     readonly TimedBalances: UnwrapRef<typeof import('@rotki/common')['TimedBalances']>
     readonly UnderlyingToken: UnwrapRef<typeof import('@rotki/common')['UnderlyingToken']>
+    readonly Unit: UnwrapRef<typeof import('./src/utils/calculation')['Unit']>
     readonly XpubPrefix: UnwrapRef<typeof import('./src/utils/xpub')['XpubPrefix']>
     readonly XswapAsset: UnwrapRef<typeof import('@rotki/common')['XswapAsset']>
     readonly XswapBalance: UnwrapRef<typeof import('@rotki/common')['XswapBalance']>
@@ -1274,6 +1278,7 @@ declare module 'vue' {
     readonly toRem: UnwrapRef<typeof import('./src/utils/data')['toRem']>
     readonly toSentenceCase: UnwrapRef<typeof import('@rotki/common')['toSentenceCase']>
     readonly toSnakeCase: UnwrapRef<typeof import('@rotki/common')['toSnakeCase']>
+    readonly toUnit: UnwrapRef<typeof import('./src/utils/calculation')['toUnit']>
     readonly toUriEncoded: UnwrapRef<typeof import('./src/utils/route-uri')['toUriEncoded']>
     readonly toValue: UnwrapRef<typeof import('vue')['toValue']>
     readonly totalCollateral: UnwrapRef<typeof import('./src/utils/total-collateral')['totalCollateral']>
@@ -1297,6 +1302,7 @@ declare module 'vue' {
     readonly updateBalancesPrices: UnwrapRef<typeof import('./src/utils/prices')['updateBalancesPrices']>
     readonly updateBlockchainAssetBalances: UnwrapRef<typeof import('./src/utils/prices')['updateBlockchainAssetBalances']>
     readonly updateBtcPrices: UnwrapRef<typeof import('./src/utils/prices')['updateBtcPrices']>
+    readonly updateTotalsPrices: UnwrapRef<typeof import('./src/utils/prices')['updateTotalsPrices']>
     readonly useAaveApi: UnwrapRef<typeof import('./src/composables/api/defi/aave')['useAaveApi']>
     readonly useAaveStore: UnwrapRef<typeof import('./src/store/defi/aave/index')['useAaveStore']>
     readonly useAbs: UnwrapRef<typeof import('@vueuse/math')['useAbs']>

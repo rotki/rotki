@@ -1,10 +1,12 @@
 import type {
+  AssetBalance,
+  AssetBalanceWithPrice,
   BigNumber,
   HasBalance,
   Writeable,
 } from '@rotki/common';
 import type { MaybeRef } from '@vueuse/core';
-import type { AssetBalance, AssetBalanceWithBreakdown, AssetBalances } from '@/types/balances';
+import type { AssetBalances } from '@/types/balances';
 import type { AssetBreakdown } from '@/types/blockchain/accounts';
 import type { ComputedRef } from 'vue';
 import type { DataTableSortData } from '@rotki/ui-library';
@@ -56,26 +58,21 @@ export function groupAssetBreakdown(
   const initial: Record<string, Writeable<AssetBreakdown>> = {};
   const grouped = breakdowns.reduce((acc, breakdown) => {
     const key = groupBy(breakdown);
-    if (!acc[key]) {
-      acc[key] = {
-        ...breakdown,
-        amount: Zero,
-        value: Zero,
-      } satisfies AssetBreakdown;
-    }
+    if (!acc[key])
+      acc[key] = { ...breakdown, ...zeroBalance() };
 
     const balance = balanceSum(acc[key], breakdown);
     acc[key].amount = balance.amount;
-    acc[key].value = balance.value;
+    acc[key].usdValue = balance.usdValue;
     return acc;
   }, initial);
 
-  return Object.values(grouped).sort((a, b) => sortDesc(a.value, b.value));
+  return Object.values(grouped).sort((a, b) => sortDesc(a.usdValue, b.usdValue));
 }
 
-export function appendAssetBalance<T extends AssetBalance>(
-  value: T,
-  assets: Record<string, T>,
+export function appendAssetBalance(
+  value: AssetBalance,
+  assets: AssetBalances,
   getAssociatedAssetIdentifier: (identifier: string) => ComputedRef<string>,
 ): void {
   const identifier = getAssociatedAssetIdentifier(value.asset);
@@ -83,8 +80,7 @@ export function appendAssetBalance<T extends AssetBalance>(
   const ownedAsset = assets[associatedAsset];
   if (!ownedAsset)
     assets[associatedAsset] = { ...value };
-  else
-    assets[associatedAsset] = { ...balanceSum(ownedAsset, value) };
+  else assets[associatedAsset] = { ...balanceSum(ownedAsset, value) };
 }
 
 export function sumAssetBalances(
@@ -105,15 +101,15 @@ export function sumAssetBalances(
   return summed;
 }
 
-export function sum(balances: { usdValue: BigNumber }[] | { value: BigNumber }[]): BigNumber {
-  return bigNumberSum(balances.map(account => 'usdValue' in account ? account.usdValue : account.value));
+export function sum(balances: { usdValue: BigNumber }[]): BigNumber {
+  return bigNumberSum(balances.map(account => account.usdValue));
 }
 
 export function balanceUsdValueSum(balances: HasBalance[]): BigNumber {
   return balances.reduce((sum, balance) => sum.plus(balance.balance.usdValue), Zero);
 }
 
-export function sortAssetBalances<T extends AssetBalance = AssetBalanceWithBreakdown>(data: T[], sort: DataTableSortData<T>, assetInfo: AssetInfoReturn): T[] {
+export function sortAssetBalances<T extends AssetBalance = AssetBalanceWithPrice>(data: T[], sort: DataTableSortData<T>, assetInfo: AssetInfoReturn): T[] {
   const sortItems = getSortItems<T>(asset => get(assetInfo(asset)));
 
   const sortBy = get(sort);

@@ -40,7 +40,7 @@ const eventType = ref<string>('');
 const eventSubtype = ref<string>('');
 const asset = ref<string>('');
 const amount = ref<string>('');
-const value = ref<string>('');
+const usdValue = ref<string>('');
 const locationLabel = ref<string>('');
 const notes = ref<string>('');
 
@@ -64,7 +64,7 @@ const rules = {
   amount: {
     required: helpers.withMessage(t('transactions.events.form.amount.validation.non_empty'), required),
   },
-  value: {
+  usdValue: {
     required: helpers.withMessage(
       t('transactions.events.form.fiat_value.validation.non_empty', {
         currency: get(currencySymbol),
@@ -84,7 +84,7 @@ const rules = {
 };
 
 const numericAmount = bigNumberifyFromRef(amount);
-const numericValue = bigNumberifyFromRef(value);
+const numericUsdValue = bigNumberifyFromRef(usdValue);
 
 const { setValidation, setSubmitFunc, saveHistoryEventHandler, getPayloadNotes } = useHistoryEventsForm();
 
@@ -98,7 +98,7 @@ const v$ = setValidation(
     location,
     asset,
     amount,
-    value,
+    usdValue,
     sequenceIndex,
     eventType,
     eventSubtype,
@@ -119,7 +119,7 @@ function reset() {
   set(eventSubtype, '');
   set(asset, '');
   set(amount, '0');
-  set(value, '0');
+  set(usdValue, '0');
   set(notes, '');
   set(errorMessages, {});
 
@@ -135,7 +135,7 @@ function applyEditableData(entry: OnlineHistoryEvent) {
   set(eventSubtype, entry.eventSubtype || 'none');
   set(asset, entry.asset);
   set(amount, entry.balance.amount.toFixed());
-  set(value, entry.balance.usdValue.toFixed());
+  set(usdValue, entry.balance.usdValue.toFixed());
   set(locationLabel, entry.locationLabel ?? '');
   set(notes, entry.notes ?? '');
 }
@@ -146,7 +146,7 @@ function applyGroupHeaderData(entry: OnlineHistoryEvent) {
   set(locationLabel, entry.locationLabel ?? '');
   set(eventIdentifier, entry.eventIdentifier);
   set(datetime, convertFromTimestamp(entry.timestamp, DateFormat.DateMonthYearHourMinuteSecond, true));
-  set(value, '0');
+  set(usdValue, '0');
 }
 
 watch(errorMessages, (errors) => {
@@ -170,7 +170,7 @@ async function save(): Promise<boolean> {
     asset: get(asset),
     balance: {
       amount: get(numericAmount).isNaN() ? Zero : get(numericAmount),
-      usdValue: get(numericValue).isNaN() ? Zero : get(numericValue),
+      usdValue: get(numericUsdValue).isNaN() ? Zero : get(numericUsdValue),
     },
     location: get(location),
     locationLabel: get(locationLabel) || null,
@@ -269,7 +269,7 @@ const locationLabelSuggestions = computed(() =>
       ref="assetPriceForm"
       v-model:asset="asset"
       v-model:amount="amount"
-      v-model:value="value"
+      v-model:usd-value="usdValue"
       :v$="v$"
       :datetime="datetime"
     />

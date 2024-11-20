@@ -61,7 +61,6 @@ describe('blockchain balances', () => {
   it('data is reflected in dashboard', () => {
     blockchainBalancesPage.getTotals().then(({ total, balances }) => {
       dashboardPage.visit();
-      cy.get('[data-cy=dashboard]').should('be.visible');
       dashboardPage.getOverallBalance().then(($overallBalance) => {
         dashboardPage.getNonFungibleBalances().then(($nonFungibleBalance) => {
           const totalPlusNft = total.plus($nonFungibleBalance);

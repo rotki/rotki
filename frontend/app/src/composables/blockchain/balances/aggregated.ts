@@ -1,11 +1,11 @@
-import type { BigNumber } from '@rotki/common';
-import type { AssetBalance, AssetBalanceWithPrice } from '@/types/balances';
+import type { AssetBalance, AssetBalanceWithPrice, BigNumber } from '@rotki/common';
+import type { AssetBalances } from '@/types/balances';
 import type { ComputedRef } from 'vue';
 
 interface UseBlockchainAggregatedBalancesReturn {
   blockchainTotal: ComputedRef<BigNumber>;
   blockchainAssets: ComputedRef<AssetBalanceWithPrice[]>;
-  locationBreakdown: ComputedRef<Record<string, AssetBalance>>;
+  locationBreakdown: ComputedRef<AssetBalances>;
 }
 
 export function useBlockchainAggregatedBalances(): UseBlockchainAggregatedBalancesReturn {
@@ -21,17 +21,16 @@ export function useBlockchainAggregatedBalances(): UseBlockchainAggregatedBalanc
     return toSortedAssetBalanceArray(get(ownedAssets), asset => get(isAssetIgnored(asset)));
   };
 
-  const blockchainTotal = computed<BigNumber>(() => bigNumberSum(getTotals().map(asset => asset.value)));
+  const blockchainTotal = computed<BigNumber>(() => bigNumberSum(getTotals().map(asset => asset.usdValue)));
 
   const blockchainAssets = computed<AssetBalanceWithPrice[]>(() => {
     const ownedAssets = mergeAssociatedAssets(aggregatedTotals, getAssociatedAssetIdentifier);
     return toSortedAssetBalanceWithPrice(get(ownedAssets), asset => get(isAssetIgnored(asset)), assetPrice);
   });
 
-  const locationBreakdown = computed<Record<string, AssetBalance>>(() => {
-    const assets: Record<string, AssetBalance> = {};
-    for (const asset of getTotals())
-      appendAssetBalance(asset, assets, getAssociatedAssetIdentifier);
+  const locationBreakdown = computed<AssetBalances>(() => {
+    const assets: AssetBalances = {};
+    for (const asset of getTotals()) appendAssetBalance(asset, assets, getAssociatedAssetIdentifier);
 
     return assets;
   });

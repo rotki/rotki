@@ -78,7 +78,7 @@ const { currency, currencySymbol: currentCurrency, floatingPrecision } = storeTo
 
 const { scrambleData, shouldShowAmount, scrambleMultiplier } = storeToRefs(useSessionSettingsStore());
 
-const { exchangeRate, assetPrice } = useBalancePricesStore();
+const { exchangeRate, assetPrice, isAssetPriceInCurrentCurrency } = useBalancePricesStore();
 
 const {
   abbreviateNumber,
@@ -89,6 +89,8 @@ const {
   amountRoundingMode,
   valueRoundingMode,
 } = storeToRefs(useFrontendSettingsStore());
+
+const isCurrentCurrency = isAssetPriceInCurrentCurrency(priceAsset);
 
 const { findCurrency } = useCurrencies();
 
@@ -135,7 +137,7 @@ const internalValue = computed<BigNumber>(() => {
   const sourceCurrencyVal = get(sourceCurrency);
   const currentCurrencyVal = get(currentCurrency);
   const priceAssetVal = get(priceAsset);
-  const isCurrentCurrencyVal = get(currentCurrencyVal) === get(sourceCurrencyVal);
+  const isCurrentCurrencyVal = get(isCurrentCurrency);
   const timestampVal = get(timestampToUse);
 
   // If `priceAsset` is defined, it means we will not use value from `value`, but calculate it ourselves from the price of `priceAsset`

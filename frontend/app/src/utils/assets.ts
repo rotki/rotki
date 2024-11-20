@@ -1,6 +1,5 @@
-import type { AssetInfo, Nullable } from '@rotki/common';
+import type { AssetBalance, AssetInfo, Nullable } from '@rotki/common';
 import type { AssetNameReturn, AssetSymbolReturn } from '@/composables/assets/retrieval';
-import type { AssetBalance } from '@/types/balances';
 
 function levenshtein(a: string, b: string): number {
   let tmp;

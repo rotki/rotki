@@ -13,7 +13,7 @@ const { total } = toRefs(props);
 
 const { getChainName, getChainAccountType } = useSupportedChains();
 
-const amount = useRefMap(total, ({ value }) => value);
+const amount = useRefMap(total, ({ usdValue }) => usdValue);
 const loading = useRefMap(total, ({ loading }) => loading);
 const chain = useRefMap(total, ({ chain }) => chain);
 const name = getChainName(chain);

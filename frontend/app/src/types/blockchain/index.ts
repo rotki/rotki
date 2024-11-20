@@ -18,13 +18,13 @@ export const SupportedSubBlockchainProtocolData: ActionDataEntry[] = [
 
 export interface SubBlockchainTotal {
   readonly protocol: SupportedSubBlockchainProtocol;
-  readonly value: BigNumber;
+  readonly usdValue: BigNumber;
   readonly loading: boolean;
 }
 
 export interface BlockchainTotal {
   readonly chain: string;
   readonly children: SubBlockchainTotal[];
-  readonly value: BigNumber;
+  readonly usdValue: BigNumber;
   readonly loading: boolean;
 }

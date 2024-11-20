@@ -2,7 +2,7 @@
 import { objectOmit } from '@vueuse/core';
 import { isNft } from '@/utils/nft';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
-import type { ManualPriceEntry, ManualPriceFormPayload } from '@/types/prices';
+import type { ManualPriceFormPayload, ManualPriceWithUsd } from '@/types/prices';
 
 const { t } = useI18n();
 
@@ -12,9 +12,9 @@ const editMode = ref<boolean>(false);
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
-const sort = ref<DataTableSortData<ManualPriceEntry>>([]);
+const sort = ref<DataTableSortData<ManualPriceWithUsd>>([]);
 
-const headers = computed<DataTableColumn<ManualPriceEntry>[]>(() => [
+const headers = computed<DataTableColumn<ManualPriceWithUsd>[]>(() => [
   {
     label: t('price_table.headers.from_asset'),
     key: 'fromAsset',
@@ -38,7 +38,7 @@ const headers = computed<DataTableColumn<ManualPriceEntry>[]>(() => [
   },
   {
     label: t('common.price_in_symbol', { symbol: get(currencySymbol) }),
-    key: 'localizedPrice',
+    key: 'usdPrice',
     align: 'end',
     sortable: true,
   },
@@ -57,7 +57,7 @@ const { items, loading, refreshing, deletePrice, refreshCurrentPrices } = useLat
 const { setPostSubmitFunc, setOpenDialog } = useLatestPriceForm();
 const { show } = useConfirmStore();
 
-function showDeleteConfirmation(item: ManualPriceEntry) {
+function showDeleteConfirmation(item: ManualPriceWithUsd) {
   show(
     {
       title: t('price_table.delete.dialog.title'),
@@ -67,13 +67,13 @@ function showDeleteConfirmation(item: ManualPriceEntry) {
   );
 }
 
-function openForm(selectedEntry: ManualPriceEntry | null = null) {
+function openForm(selectedEntry: ManualPriceWithUsd | null = null) {
   set(editMode, !!selectedEntry);
   if (selectedEntry) {
     set(price, objectOmit({
       ...selectedEntry,
       price: selectedEntry.price.toFixed() ?? '',
-    }, ['id', 'localizedPrice']));
+    }, ['id', 'usdPrice']));
   }
   else {
     set(price, {
@@ -175,14 +175,14 @@ onMounted(async () => {
         <template #item.isWorth>
           {{ t('price_table.is_worth') }}
         </template>
-        <template #item.localizedPrice="{ row }">
+        <template #item.usdPrice="{ row }">
           <AmountDisplay
-            :loading="!row.localizedPrice || row.localizedPrice.lt(0)"
+            :loading="!row.usdPrice || row.usdPrice.lt(0)"
             show-currency="symbol"
             :price-asset="row.fromAsset"
-            :price-of-asset="row.localizedPrice"
-            :fiat-currency="currencySymbol"
-            :value="row.localizedPrice"
+            :price-of-asset="row.usdPrice"
+            fiat-currency="USD"
+            :value="row.usdPrice"
           />
         </template>
         <template #item.actions="{ row }">

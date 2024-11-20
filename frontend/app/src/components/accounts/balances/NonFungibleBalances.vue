@@ -6,7 +6,6 @@ import type { IgnoredAssetsHandlingType } from '@/types/asset';
 import type { Module } from '@/types/modules';
 import type { NonFungibleBalance, NonFungibleBalancesRequestPayload } from '@/types/nfbalances';
 import type { ManualPriceFormPayload } from '@/types/prices';
-import type { BigNumber } from '@rotki/common';
 
 defineProps<{ modules: Module[] }>();
 
@@ -70,12 +69,10 @@ const tableHeaders = computed<DataTableColumn<NonFungibleBalance>[]>(() => [
 ]);
 
 const { isLoading: isSectionLoading } = useStatusStore();
+const loading = isSectionLoading(Section.NON_FUNGIBLE_BALANCES);
+
 const { setMessage } = useMessageStore();
 const { isAssetIgnored, ignoreAsset, unignoreAsset } = useIgnoredAssetsStore();
-const { assetPrice } = useBalancePricesStore();
-
-const loading = isSectionLoading(Section.NON_FUNGIBLE_BALANCES);
-const isPriceLoading = isSectionLoading(Section.PRICES);
 
 const {
   state: balances,
@@ -187,9 +184,12 @@ function showDeleteConfirmation(item: NonFungibleBalance) {
   );
 }
 
-function getAssetAmount(row: NonFungibleBalance): BigNumber | undefined {
-  return get(assetPrice(row.priceAsset))?.times(row.priceInAsset);
-}
+onMounted(async () => {
+  await fetchData();
+  await refreshNonFungibleBalances();
+
+  setPostSubmitFunc(fetchData);
+});
 
 watch(ignoredAssetsHandling, () => {
   setPage(1);
@@ -198,13 +198,6 @@ watch(ignoredAssetsHandling, () => {
 watch(loading, async (isLoading, wasLoading) => {
   if (!isLoading && wasLoading)
     await fetchData();
-});
-
-onMounted(async () => {
-  await fetchData();
-  await refreshNonFungibleBalances();
-
-  setPostSubmitFunc(fetchData);
 });
 </script>
 
@@ -246,7 +239,7 @@ onMounted(async () => {
         :collection="balances"
         @set-page="setPage($event)"
       >
-        <template #default="{ data, totalValue }">
+        <template #default="{ data, totalUsdValue }">
           <RuiDataTable
             v-model="selected"
             v-model:sort.external="sort"
@@ -282,11 +275,12 @@ onMounted(async () => {
             </template>
             <template #item.usdPrice="{ row }">
               <AmountDisplay
-                :value="getAssetAmount(row)"
+                :price-asset="row.priceAsset"
+                :amount="row.priceInAsset"
+                :value="row.usdPrice"
                 no-scramble
                 show-currency="symbol"
-                :fiat-currency="currencySymbol"
-                :loading="isPriceLoading"
+                fiat-currency="USD"
               />
             </template>
             <template #item.actions="{ row }">
@@ -308,14 +302,14 @@ onMounted(async () => {
             </template>
             <template #body.append>
               <RowAppend
-                v-if="totalValue"
+                v-if="totalUsdValue"
                 label-colspan="4"
                 :label="t('common.total')"
                 class="[&>td]:p-4"
                 :right-patch-colspan="2"
               >
                 <AmountDisplay
-                  :value="totalValue"
+                  :value="totalUsdValue"
                   show-currency="symbol"
                   fiat-currency="USD"
                 />

@@ -1,7 +1,4 @@
-import type { BigNumber } from '@rotki/common';
-import type { AssetBalance } from '@/types/balances';
-
-type Balance = ({ usdValue: BigNumber } | { value: BigNumber }) & { amount: BigNumber };
+import type { Balance, BigNumber } from '@rotki/common';
 
 export function assetSum(balances: Record<string, Balance>): BigNumber {
   const { isAssetIgnored } = useIgnoredAssetsStore();
@@ -10,28 +7,28 @@ export function assetSum(balances: Record<string, Balance>): BigNumber {
     if (get(isAssetIgnored(asset)))
       return sum;
 
-    return sum.plus(`usdValue` in balance ? balance.usdValue : balance.value);
+    return sum.plus(balance.usdValue);
   }, Zero);
 }
 
-export function balanceSum<T extends Balance>(sum: T, balance: T): T {
-  if (`usdValue` in sum && `usdValue` in balance) {
-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-    return {
-      amount: sum.amount.plus(balance.amount),
-      usdValue: sum.usdValue.plus(balance.usdValue),
-    } as T;
-  }
-  else if (`value` in sum && `value` in balance) {
-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-    return {
-      amount: sum.amount.plus(balance.amount),
-      value: sum.value.plus(balance.value),
-    } as T;
-  }
-  else {
-    throw new Error('Invalid balance');
-  }
+export enum Unit {
+  GWEI,
+  ETH,
+}
+
+export function toUnit(value: BigNumber, unit: Unit = Unit.ETH): BigNumber {
+  if (value.isZero())
+    return value;
+
+  const pow = unit === Unit.ETH ? 18 : 9;
+  return value.div(bigNumberify('10').pow(pow));
+}
+
+export function balanceSum(sum: Balance, { amount, usdValue }: Balance): Balance {
+  return {
+    amount: sum.amount.plus(amount),
+    usdValue: sum.usdValue.plus(usdValue),
+  };
 }
 
 export function calculatePercentage(value: BigNumber, divider: BigNumber): string {
@@ -43,11 +40,11 @@ export function bigNumberSum(value: BigNumber[]): BigNumber {
   return value.reduce((previousValue, currentValue) => previousValue.plus(currentValue), Zero);
 }
 
-export function aggregateTotal<T extends AssetBalance>(balances: T[], mainCurrency: string, exchangeRate: BigNumber): BigNumber {
+export function aggregateTotal(balances: any[], mainCurrency: string, exchangeRate: BigNumber): BigNumber {
   return balances.reduce((previousValue, currentValue) => {
     if (currentValue.asset === mainCurrency)
       return previousValue.plus(currentValue.amount);
 
-    return previousValue.plus(currentValue.value.multipliedBy(exchangeRate));
+    return previousValue.plus(currentValue.usdValue.multipliedBy(exchangeRate));
   }, Zero);
 }

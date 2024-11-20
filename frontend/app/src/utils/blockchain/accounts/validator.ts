@@ -71,6 +71,6 @@ export function sortAndFilterValidators(
     limit: -1,
     total: validators.length,
     found: sorted.length,
-    totalValue: sum(filtered),
+    totalUsdValue: sum(filtered),
   };
 }

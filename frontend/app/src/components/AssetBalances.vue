@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { some } from 'lodash-es';
 import { isEvmNativeToken } from '@/types/asset';
-import type { AssetBalance, AssetBalanceWithBreakdown } from '@/types/balances';
-import type { Nullable } from '@rotki/common';
+import type { AssetBalance, AssetBalanceWithPrice, Nullable } from '@rotki/common';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 
 defineOptions({
@@ -13,7 +12,7 @@ const search = defineModel<string>('search', { required: false, default: '' });
 
 const props = withDefaults(
   defineProps<{
-    balances: AssetBalanceWithBreakdown[];
+    balances: AssetBalanceWithPrice[];
     details?: {
       groupId: string;
       chains: string[];
@@ -39,10 +38,10 @@ const props = withDefaults(
 const { t } = useI18n();
 
 const { balances } = toRefs(props);
-const expanded = ref<AssetBalanceWithBreakdown[]>([]);
+const expanded = ref<AssetBalanceWithPrice[]>([]);
 
-const sort = ref<DataTableSortData<AssetBalanceWithBreakdown>>({
-  column: 'value',
+const sort = ref<DataTableSortData<AssetBalanceWithPrice>>({
+  column: 'usdValue',
   direction: 'desc' as const,
 });
 
@@ -51,11 +50,11 @@ const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
 const isExpanded = (asset: string) => some(get(expanded), { asset });
 
-function expand(item: AssetBalanceWithBreakdown) {
+function expand(item: AssetBalanceWithPrice) {
   set(expanded, isExpanded(item.asset) ? [] : [item]);
 }
 
-function getAssets(item: AssetBalanceWithBreakdown): string[] {
+function getAssets(item: AssetBalanceWithPrice): string[] {
   return item.breakdown?.map(entry => entry.asset) ?? [];
 }
 
@@ -65,9 +64,9 @@ function assetFilter(item: Nullable<AssetBalance>) {
 
 const filteredBalances = computed(() => get(balances).filter(assetFilter));
 
-const total = computed(() => bigNumberSum(get(filteredBalances).map(({ value }) => value)));
+const total = computed(() => bigNumberSum(get(filteredBalances).map(({ usdValue }) => usdValue)));
 
-const cols = computed<DataTableColumn<AssetBalanceWithBreakdown>[]>(() => [
+const tableHeaders = computed<DataTableColumn<AssetBalanceWithPrice>[]>(() => [
   {
     label: t('common.asset'),
     key: 'asset',
@@ -79,7 +78,7 @@ const cols = computed<DataTableColumn<AssetBalanceWithBreakdown>[]>(() => [
     label: t('common.price_in_symbol', {
       symbol: get(currencySymbol),
     }),
-    key: 'price',
+    key: 'usdPrice',
     align: 'end',
     cellClass: 'py-0',
     sortable: true,
@@ -95,7 +94,7 @@ const cols = computed<DataTableColumn<AssetBalanceWithBreakdown>[]>(() => [
     label: t('common.value_in_symbol', {
       symbol: get(currencySymbol),
     }),
-    key: 'value',
+    key: 'usdValue',
     align: 'end',
     class: 'text-no-wrap',
     cellClass: 'py-0',
@@ -103,13 +102,13 @@ const cols = computed<DataTableColumn<AssetBalanceWithBreakdown>[]>(() => [
   },
 ]);
 
-const sorted = computed<AssetBalanceWithBreakdown[]>(() => sortAssetBalances([...get(filteredBalances)], get(sort), assetInfo));
+const sorted = computed<AssetBalanceWithPrice[]>(() => sortAssetBalances([...get(filteredBalances)], get(sort), assetInfo));
 </script>
 
 <template>
   <RuiDataTable
     v-model:sort.external="sort"
-    :cols="cols"
+    :cols="tableHeaders"
     :rows="sorted"
     :loading="loading"
     :expanded="expanded"
@@ -128,27 +127,28 @@ const sorted = computed<AssetBalanceWithBreakdown[]>(() => sortAssetBalances([..
         :is-collection-parent="!!row.breakdown"
       />
     </template>
-    <template #item.price="{ row }">
+    <template #item.usdPrice="{ row }">
       <AmountDisplay
-        :loading="!row.price || row.price.lt(0)"
+        :loading="!row.usdPrice || row.usdPrice.lt(0)"
         no-scramble
         show-currency="symbol"
         :price-asset="row.asset"
-        :price-of-asset="row.price"
-        :fiat-currency="currencySymbol"
-        :value="row.price"
+        :price-of-asset="row.usdPrice"
+        fiat-currency="USD"
+        :value="row.usdPrice"
       />
     </template>
     <template #item.amount="{ row }">
-      <AmountDisplay :value="row.amount " />
+      <AmountDisplay :value="row.amount" />
     </template>
-    <template #item.value="{ row }">
+    <template #item.usdValue="{ row }">
       <AmountDisplay
         show-currency="symbol"
         :amount="row.amount"
-        :fiat-currency="currencySymbol"
-        :value="row.value"
-        :loading="row.price.lt(0)"
+        :price-asset="row.asset"
+        :price-of-asset="row.usdPrice"
+        fiat-currency="USD"
+        :value="row.usdValue"
       />
     </template>
     <template
@@ -163,10 +163,9 @@ const sorted = computed<AssetBalanceWithBreakdown[]>(() => sortAssetBalances([..
         class-name="[&>td]:p-4 text-sm"
       >
         <AmountDisplay
-          :fiat-currency="currencySymbol"
+          fiat-currency="USD"
           show-currency="symbol"
           :value="total"
-          :loading="loading || total.eq(0)"
         />
       </RowAppend>
     </template>

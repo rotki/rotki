@@ -14,14 +14,12 @@ const extraParams = computed(() => ({ ignoredAssetsHandling }));
 
 const nonFungibleRoute = Routes.ACCOUNTS_BALANCES_NON_FUNGIBLE;
 
-const { t } = useI18n();
-
 const statistics = useStatisticsStore();
 const { totalNetWorthUsd } = storeToRefs(statistics);
 const { fetchNonFungibleBalances, refreshNonFungibleBalances } = useNonFungibleBalancesStore();
 const { dashboardTablesVisibleColumns } = storeToRefs(useFrontendSettingsStore());
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-const { assetPrice } = useBalancePricesStore();
+const { t } = useI18n();
 
 const group = DashboardTableType.NFT;
 
@@ -45,10 +43,9 @@ const {
 
 const { isLoading: isSectionLoading } = useStatusStore();
 const loading = isSectionLoading(Section.NON_FUNGIBLE_BALANCES);
-const isPriceLoading = isSectionLoading(Section.PRICES);
-const { totalValue } = getCollectionData<NonFungibleBalance>(balances);
+const { totalUsdValue } = getCollectionData<NonFungibleBalance>(balances);
 
-const cols = computed<DataTableColumn<NonFungibleBalance>[]>(() => {
+const tableHeaders = computed<DataTableColumn<NonFungibleBalance>[]>(() => {
   const visibleColumns = get(dashboardTablesVisibleColumns)[group];
 
   const headers: DataTableColumn<NonFungibleBalance>[] = [
@@ -108,21 +105,17 @@ function percentageOfTotalNetValue(value: BigNumber) {
 }
 
 function percentageOfCurrentGroup(value: BigNumber) {
-  return calculatePercentage(value, get(totalValue) as BigNumber);
+  return calculatePercentage(value, get(totalUsdValue) as BigNumber);
 }
-
-function calculateAmount(row: NonFungibleBalance): BigNumber | undefined {
-  return get(assetPrice(row.priceAsset))?.times(row.priceInAsset);
-}
-
-watch(loading, async (isLoading, wasLoading) => {
-  if (!isLoading && wasLoading)
-    await fetchData();
-});
 
 onMounted(async () => {
   await fetchData();
   await refreshNonFungibleBalances();
+});
+
+watch(loading, async (isLoading, wasLoading) => {
+  if (!isLoading && wasLoading)
+    await fetchData();
 });
 </script>
 
@@ -166,8 +159,8 @@ onMounted(async () => {
     </template>
     <template #shortDetails>
       <AmountDisplay
-        v-if="totalValue"
-        :value="totalValue"
+        v-if="totalUsdValue"
+        :value="totalUsdValue"
         show-currency="symbol"
         fiat-currency="USD"
         class="text-h6 font-bold"
@@ -182,7 +175,7 @@ onMounted(async () => {
         <RuiDataTable
           v-model:sort.external="sort"
           v-model:pagination.external="pagination"
-          :cols="cols"
+          :cols="tableHeaders"
           :rows="data"
           :loading="isLoading"
           :empty="{ description: t('data_table.no_data') }"
@@ -205,10 +198,11 @@ onMounted(async () => {
           <template #item.usdPrice="{ row }">
             <AmountDisplay
               no-scramble
-              :value="calculateAmount(row)"
+              :price-asset="row.priceAsset"
+              :amount="row.priceInAsset"
+              :value="row.usdPrice"
               show-currency="symbol"
-              :loading="isPriceLoading"
-              :fiat-currency="currencySymbol"
+              fiat-currency="USD"
             />
           </template>
           <template #item.percentageOfTotalNetValue="{ row }">
@@ -227,13 +221,13 @@ onMounted(async () => {
             <RowAppend
               label-colspan="2"
               :label="t('common.total')"
-              :right-patch-colspan="cols.length - 3"
+              :right-patch-colspan="tableHeaders.length - 3"
               :is-mobile="false"
               class-name="[&>td]:p-4 text-sm"
             >
               <AmountDisplay
-                v-if="totalValue"
-                :value="totalValue"
+                v-if="totalUsdValue"
+                :value="totalUsdValue"
                 show-currency="symbol"
                 fiat-currency="USD"
               />

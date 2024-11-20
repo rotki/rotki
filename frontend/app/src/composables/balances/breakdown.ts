@@ -1,14 +1,13 @@
 import { TRADE_LOCATION_BLOCKCHAIN } from '@/data/defaults';
-import type { BigNumber } from '@rotki/common';
+import type { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
 import type { MaybeRef } from '@vueuse/core';
 import type { AssetBreakdown } from '@/types/blockchain/accounts';
 import type { ComputedRef } from 'vue';
-import type { AssetBalanceWithBreakdown } from '@/types/balances';
 
 interface UseBalancesBreakdownReturn {
   assetBreakdown: (asset: string) => ComputedRef<AssetBreakdown[]>;
   liabilityBreakdown: (asset: string) => ComputedRef<AssetBreakdown[]>;
-  locationBreakdown: (identifier: MaybeRef<string>) => ComputedRef<AssetBalanceWithBreakdown[]>;
+  locationBreakdown: (identifier: MaybeRef<string>) => ComputedRef<AssetBalanceWithPrice[]>;
   balancesByLocation: ComputedRef<Record<string, BigNumber>>;
 }
 
@@ -44,17 +43,16 @@ export function useBalancesBreakdown(): UseBalancesBreakdownReturn {
     ),
   );
 
-  const locationBreakdown = (
-    identifier: MaybeRef<string>,
-  ): ComputedRef<AssetBalanceWithBreakdown[]> => computed<AssetBalanceWithBreakdown[]>(() => {
-    const id = get(identifier);
-    let balances = mergeAssetBalances(get(getManualLocationBreakdown(id)), get(getExchangesLocationBreakdown(id)));
+  const locationBreakdown = (identifier: MaybeRef<string>): ComputedRef<AssetBalanceWithPrice[]> =>
+    computed<AssetBalanceWithPrice[]>(() => {
+      const id = get(identifier);
+      let balances = mergeAssetBalances(get(getManualLocationBreakdown(id)), get(getExchangesLocationBreakdown(id)));
 
-    if (id === TRADE_LOCATION_BLOCKCHAIN)
-      balances = mergeAssetBalances(balances, get(blockchainLocationBreakdown));
+      if (id === TRADE_LOCATION_BLOCKCHAIN)
+        balances = mergeAssetBalances(balances, get(blockchainLocationBreakdown));
 
-    return toSortedAssetBalanceWithPrice(balances, asset => get(isAssetIgnored(asset)), assetPrice, true);
-  });
+      return toSortedAssetBalanceWithPrice(balances, asset => get(isAssetIgnored(asset)), assetPrice, true);
+    });
 
   const balancesByLocation = computed<Record<string, BigNumber>>(() => {
     const map: Record<string, BigNumber> = {
@@ -69,9 +67,9 @@ export function useBalancesBreakdown(): UseBalancesBreakdownReturn {
     }
 
     const manual = get(manualBalanceByLocation);
-    for (const { location, value } of manual) {
+    for (const { location, usdValue } of manual) {
       const total = map[location];
-      map[location] = total ? total.plus(value) : value;
+      map[location] = total ? total.plus(usdValue) : usdValue;
     }
 
     return map;

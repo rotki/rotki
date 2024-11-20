@@ -30,10 +30,7 @@ const { isLoading } = useStatusStore();
 const dataSource = computed(() => (props.type === 'liabilities' ? get(manualLiabilities) : get(manualBalances)));
 
 const locations = computed(() =>
-  [
-    ...get(manualBalances).map(item => item.location),
-    ...get(manualLiabilities).map(item => item.location),
-  ].filter(
+  [...get(manualBalances).map(item => item.location), ...get(manualLiabilities).map(item => item.location)].filter(
     uniqueStrings,
   ),
 );
@@ -59,10 +56,12 @@ const {
     extraParams: computed(() => ({
       tags: get(tags),
     })),
-    defaultSortBy: [{
-      column: 'value',
-      direction: 'desc',
-    }],
+    defaultSortBy: [
+      {
+        column: 'usdValue',
+        direction: 'desc',
+      },
+    ],
     onUpdateFilters(query) {
       const schema = ManualBalancesFilterSchema.parse(query);
       if (schema.tags)
@@ -78,7 +77,7 @@ async function refresh() {
 }
 
 function edit(balance: ManualBalanceWithPrice) {
-  emit('edit', objectOmit(balance, ['value', 'price']));
+  emit('edit', objectOmit(balance, ['usdValue', 'usdPrice']));
 }
 
 function getRowClass(item: ManualBalance) {
@@ -108,7 +107,7 @@ const cols = computed<DataTableColumn<ManualBalanceWithPrice>[]>(() => [
     label: t('common.price_in_symbol', {
       symbol: get(currencySymbol),
     }),
-    key: 'price',
+    key: 'usdPrice',
     sortable: true,
     align: 'end',
   },
@@ -122,7 +121,7 @@ const cols = computed<DataTableColumn<ManualBalanceWithPrice>[]>(() => [
     label: t('common.value_in_symbol', {
       symbol: get(currencySymbol),
     }),
-    key: 'value',
+    key: 'usdValue',
     sortable: true,
     align: 'end',
   },
@@ -230,14 +229,14 @@ watchDebounced(
           :asset="row.asset"
         />
       </template>
-      <template #item.price="{ row }">
+      <template #item.usdPrice="{ row }">
         <AmountDisplay
-          :loading="!row.price || row.price.lt(0)"
+          :loading="!row.usdPrice || row.usdPrice.lt(0)"
           no-scramble
           show-currency="symbol"
           :price-asset="row.asset"
-          :price-of-asset="row.price"
-          :value="row.price"
+          :price-of-asset="row.usdPrice"
+          :value="row.usdPrice"
         />
       </template>
       <template #item.amount="{ row }">
@@ -246,14 +245,14 @@ watchDebounced(
           :value="row.amount"
         />
       </template>
-      <template #item.value="{ row }">
+      <template #item.usdValue="{ row }">
         <AmountDisplay
           show-currency="symbol"
           :amount="row.amount"
           :price-asset="row.asset"
-          :price-of-asset="row.price"
-          :fiat-currency="currencySymbol"
-          :value="row.value"
+          :price-of-asset="row.usdPrice"
+          fiat-currency="USD"
+          :value="row.usdValue"
         />
       </template>
       <template #item.location="{ row }">
@@ -286,12 +285,12 @@ watchDebounced(
           </template>
 
           <AmountDisplay
-            v-if="state.totalValue"
+            v-if="state.totalUsdValue"
             show-currency="symbol"
             class="p-4"
             :fiat-currency="currencySymbol"
             data-cy="manual-balances__amount"
-            :value="state.totalValue"
+            :value="state.totalUsdValue"
           />
         </RowAppend>
       </template>
