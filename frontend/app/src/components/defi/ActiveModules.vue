@@ -91,41 +91,40 @@ function showConfirmation() {
     <RuiCard
       no-padding
       class="px-1 py-0.5 bg-white dark:bg-rui-grey-900"
+      content-class="flex items-center justify-center"
     >
-      <div class="flex items-center justify-center">
-        <div
-          v-for="module in moduleStatus"
-          :key="module.identifier"
-          class="flex"
+      <div
+        v-for="module in moduleStatus"
+        :key="module.identifier"
+        class="flex"
+      >
+        <RuiTooltip
+          :popper="{ placement: 'top' }"
+          :open-delay="400"
         >
-          <RuiTooltip
-            :popper="{ placement: 'top' }"
-            :open-delay="400"
-          >
-            <template #activator>
-              <RuiButton
-                variant="text"
-                icon
-                size="sm"
-                :class="module.enabled ? null : 'grayscale'"
-                @click="onModulePress(module)"
-              >
-                <AppImage
-                  width="24px"
-                  height="24px"
-                  contain
-                  :src="icon(module.identifier)"
-                />
-              </RuiButton>
-            </template>
-            <span v-if="module.enabled">
-              {{ t('active_modules.view_addresses', getName(module.identifier)) }}
-            </span>
-            <span v-else>
-              {{ t('active_modules.activate', getName(module.identifier)) }}
-            </span>
-          </RuiTooltip>
-        </div>
+          <template #activator>
+            <RuiButton
+              variant="text"
+              icon
+              size="sm"
+              :class="module.enabled ? null : 'grayscale'"
+              @click="onModulePress(module)"
+            >
+              <AppImage
+                width="24px"
+                height="24px"
+                contain
+                :src="icon(module.identifier)"
+              />
+            </RuiButton>
+          </template>
+          <span v-if="module.enabled">
+            {{ t('active_modules.view_addresses', getName(module.identifier)) }}
+          </span>
+          <span v-else>
+            {{ t('active_modules.activate', getName(module.identifier)) }}
+          </span>
+        </RuiTooltip>
       </div>
     </RuiCard>
     <QueriedAddressDialog

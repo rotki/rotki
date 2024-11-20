@@ -81,7 +81,6 @@ declare global {
   const TimedAssetBalances: typeof import('@rotki/common')['TimedAssetBalances']
   const TimedBalances: typeof import('@rotki/common')['TimedBalances']
   const UnderlyingToken: typeof import('@rotki/common')['UnderlyingToken']
-  const Unit: typeof import('./src/utils/calculation')['Unit']
   const XpubPrefix: typeof import('./src/utils/xpub')['XpubPrefix']
   const XswapAsset: typeof import('@rotki/common')['XswapAsset']
   const XswapBalance: typeof import('@rotki/common')['XswapBalance']
@@ -158,7 +157,6 @@ declare global {
   const debouncedWatch: typeof import('@vueuse/core')['debouncedWatch']
   const decodeHtmlEntities: typeof import('@rotki/common')['decodeHtmlEntities']
   const defaultCollectionState: typeof import('./src/utils/collection')['defaultCollectionState']
-  const defaultOptions: typeof import('./src/utils/collection')['defaultOptions']
   const defineAsyncComponent: typeof import('vue')['defineAsyncComponent']
   const defineComponent: typeof import('vue')['defineComponent']
   const defineStore: typeof import('pinia')['defineStore']
@@ -318,7 +316,6 @@ declare global {
   const onUpdated: typeof import('vue')['onUpdated']
   const onWatcherCleanup: typeof import('vue')['onWatcherCleanup']
   const onlyIfTruthy: typeof import('@rotki/common')['onlyIfTruthy']
-  const paginationQueryParsers: typeof import('@/composables/use-pagination-filter/utils')['paginationQueryParsers']
   const parseQueryHistory: typeof import('./src/composables/use-pagination-filter/utils')['parseQueryHistory']
   const parseQueryPagination: typeof import('./src/composables/use-pagination-filter/utils')['parseQueryPagination']
   const pausableWatch: typeof import('@vueuse/core')['pausableWatch']
@@ -351,7 +348,6 @@ declare global {
   const resolveUnref: typeof import('@vueuse/core')['resolveUnref']
   const rgbPointsToHex: typeof import('@rotki/common')['rgbPointsToHex']
   const sanitizeAddress: typeof import('@rotki/common')['sanitizeAddress']
-  const sanitizeKeyword: typeof import('./src/utils/string')['sanitizeKeyword']
   const saveBackendUrl: typeof import('./src/utils/account-management')['saveBackendUrl']
   const saveUserOptions: typeof import('./src/composables/backend')['saveUserOptions']
   const serializer: typeof import('./src/composables/dynamic-messages')['serializer']
@@ -396,7 +392,6 @@ declare global {
   const toRem: typeof import('./src/utils/data')['toRem']
   const toSentenceCase: typeof import('@rotki/common')['toSentenceCase']
   const toSnakeCase: typeof import('@rotki/common')['toSnakeCase']
-  const toUnit: typeof import('./src/utils/calculation')['toUnit']
   const toUriEncoded: typeof import('./src/utils/route-uri')['toUriEncoded']
   const toValue: typeof import('vue')['toValue']
   const totalCollateral: typeof import('./src/utils/total-collateral')['totalCollateral']
@@ -420,7 +415,6 @@ declare global {
   const updateBalancesPrices: typeof import('./src/utils/prices')['updateBalancesPrices']
   const updateBlockchainAssetBalances: typeof import('./src/utils/prices')['updateBlockchainAssetBalances']
   const updateBtcPrices: typeof import('./src/utils/prices')['updateBtcPrices']
-  const updateTotalsPrices: typeof import('./src/utils/prices')['updateTotalsPrices']
   const useAaveApi: typeof import('./src/composables/api/defi/aave')['useAaveApi']
   const useAaveStore: typeof import('./src/store/defi/aave/index')['useAaveStore']
   const useAbs: typeof import('@vueuse/math')['useAbs']
@@ -751,6 +745,7 @@ declare global {
   const useScriptTag: typeof import('@vueuse/core')['useScriptTag']
   const useScroll: typeof import('@vueuse/core')['useScroll']
   const useScrollLock: typeof import('@vueuse/core')['useScrollLock']
+  const useServiceKeyHandler: typeof import('./src/composables/settings/api-keys/external/index')['useServiceKeyHandler']
   const useSessionApi: typeof import('./src/composables/api/session/index')['useSessionApi']
   const useSessionAuthStore: typeof import('./src/store/session/auth')['useSessionAuthStore']
   const useSessionPurge: typeof import('./src/composables/session/purge')['useSessionPurge']
@@ -1634,6 +1629,7 @@ declare module 'vue' {
     readonly useScriptTag: UnwrapRef<typeof import('@vueuse/core')['useScriptTag']>
     readonly useScroll: UnwrapRef<typeof import('@vueuse/core')['useScroll']>
     readonly useScrollLock: UnwrapRef<typeof import('@vueuse/core')['useScrollLock']>
+    readonly useServiceKeyHandler: UnwrapRef<typeof import('./src/composables/settings/api-keys/external/index')['useServiceKeyHandler']>
     readonly useSessionApi: UnwrapRef<typeof import('./src/composables/api/session/index')['useSessionApi']>
     readonly useSessionAuthStore: UnwrapRef<typeof import('./src/store/session/auth')['useSessionAuthStore']>
     readonly useSessionPurge: UnwrapRef<typeof import('./src/composables/session/purge')['useSessionPurge']>

@@ -140,6 +140,7 @@ function showDeleteConfirmation() {
               keypath="premium_settings.subtitle"
             >
               <ExternalLink
+                color="primary"
                 :text="t('premium_settings.title')"
                 premium
               />
@@ -170,16 +171,12 @@ function showDeleteConfirmation() {
         />
       </div>
 
-      <div
+      <RuiAlert
         v-if="premium"
-        class="flex items-center gap-2"
+        type="success"
       >
-        <SuccessDisplay
-          success
-          size="24"
-        />
         {{ t('premium_settings.premium_active') }}
-      </div>
+      </RuiAlert>
 
       <RuiSwitch
         v-model="sync"

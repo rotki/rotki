@@ -1,8 +1,11 @@
 <script setup lang="ts">
+import type ServiceKeyCard from '@/components/settings/api-keys/ServiceKeyCard.vue';
+
 const { t } = useI18n();
 const { keys } = useExternalApiKeys(t);
 const tabIndex = ref<number>(0);
 const route = useRoute();
+const serviceKeyCardRef = ref<InstanceType<typeof ServiceKeyCard>>();
 
 const { getChainName } = useSupportedChains();
 
@@ -23,8 +26,13 @@ function setActiveTab(hash: string) {
   const chains = get(supportedChains);
   const index = chains.findIndex(x => x.evmChainName === evmChain);
   nextTick(() => {
-    if (index >= 0)
+    if (index >= 0) {
+      const serviceKey = get(serviceKeyCardRef);
+      if (serviceKey) {
+        serviceKey.setOpen(true);
+      }
       set(tabIndex, index);
+    }
   });
 }
 
@@ -38,13 +46,13 @@ onMounted(() => {
 </script>
 
 <template>
-  <RuiCard>
-    <template #header>
-      {{ t('external_services.blockscout.title') }}
-    </template>
-    <template #subheader>
-      {{ t('external_services.blockscout.description') }}
-    </template>
+  <ServiceKeyCard
+    ref="serviceKeyCardRef"
+    hide-action
+    :title="t('external_services.blockscout.title')"
+    :subtitle="t('external_services.blockscout.description')"
+    image-src="./assets/images/services/blockscout.svg"
+  >
     <RuiTabs
       v-model="tabIndex"
       color="primary"
@@ -75,5 +83,5 @@ onMounted(() => {
         />
       </RuiTabItem>
     </RuiTabItems>
-  </RuiCard>
+  </ServiceKeyCard>
 </template>

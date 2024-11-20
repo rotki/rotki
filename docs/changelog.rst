@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`-` Page for inputting external API keys has been revamped.
 * :feature:`-` Added a confirmation dialog that appears when users attempt to discard changes on the form dialog, preventing accidental removal of changes.
 * :feature:`8618` rotki will now support Morpho vaults on Ethereum and Base, with related historical events properly decoded and correct prices shown for vault tokens.
 * :feature:`8620` rotki will now properly decode EFP (Ethereum Follow Protocol) transactions.

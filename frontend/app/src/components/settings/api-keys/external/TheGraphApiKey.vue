@@ -1,8 +1,11 @@
 <script setup lang="ts">
+import type ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
+
 const name = 'thegraph';
 const { t } = useI18n();
 
 const { loading, apiKey, actionStatus, save, confirmDelete } = useExternalApiKeys(t);
+const { serviceKeyRef, saveHandler } = useServiceKeyHandler<InstanceType<typeof ServiceKey>>();
 
 const key = apiKey(name);
 const status = actionStatus(name);
@@ -27,26 +30,45 @@ const link = externalLinks.applyTheGraphApiKey;
 </script>
 
 <template>
-  <RuiCard>
-    <template #header>
-      {{ t('external_services.thegraph.title') }}
+  <ServiceKeyCard
+    :key-set="!!key"
+    :title="t('external_services.thegraph.title')"
+    :subtitle="t('external_services.thegraph.description')"
+    image-src="./assets/images/services/thegraph.svg"
+    :primary-action="key
+      ? t('external_services.replace_key')
+      : t('external_services.save_key')"
+    :action-disabled="!serviceKeyRef?.currentValue"
+    @confirm="saveHandler()"
+  >
+    <template #left-buttons>
+      <RuiButton
+        :disabled="loading || !key"
+        color="error"
+        variant="text"
+        @click="confirmDelete(name)"
+      >
+        <template #prepend>
+          <RuiIcon
+            name="delete-bin-line"
+            size="16"
+          />
+        </template>
+        {{ t('external_services.delete_key') }}
+      </RuiButton>
     </template>
-    <template #subheader>
-      {{ t('external_services.thegraph.description') }}
-    </template>
-
     <ServiceKey
       :id="name"
+      ref="serviceKeyRef"
+      hide-actions
       :api-key="key"
       :name="name"
       :data-cy="name"
       :label="t('external_services.api_key')"
       :hint="t('external_services.thegraph.hint')"
       :loading="loading"
-      :tooltip="t('external_services.thegraph.delete_tooltip')"
       :status="status"
       @save="save($event, removeTheGraphNotification)"
-      @delete-key="confirmDelete($event)"
     >
       <i18n-t
         v-if="link"
@@ -64,5 +86,5 @@ const link = externalLinks.applyTheGraphApiKey;
         </template>
       </i18n-t>
     </ServiceKey>
-  </RuiCard>
+  </ServiceKeyCard>
 </template>

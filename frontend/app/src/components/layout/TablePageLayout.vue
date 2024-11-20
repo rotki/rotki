@@ -13,19 +13,29 @@ withDefaults(defineProps<{ hideHeader?: boolean; child?: boolean; title?: string
       >
         <div
           v-if="title"
-          class="text-body-1 text-rui-text"
+          class="text-sm text-rui-text flex items-center font-medium"
         >
           <slot name="title">
             <template v-for="(item, index) in title">
               <span
                 v-if="title && index < title.length - 1"
-                :key="index.toString()"
-                class="text-rui-text-secondary"
+                :key="index"
+                class="text-rui-text-secondary flex items-center"
               >
-                {{ item }} /
+                {{ item }}
+                <RuiIcon
+                  name="arrow-right-s-line"
+                  size="16"
+                  class="mx-2"
+                />
               </span>
               <template v-else>
-                {{ item }}
+                <span
+                  :key="index"
+                  class="bg-rui-grey-200 dark:bg-rui-grey-900 text-rui-text-secondary rounded-md px-2 py-1"
+                >
+                  {{ item }}
+                </span>
               </template>
             </template>
           </slot>

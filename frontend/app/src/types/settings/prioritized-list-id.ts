@@ -32,17 +32,17 @@ export const PRIVATE_ADDRESSBOOK_PRIO_LIST_ITEM: PrioritizedListItemData<Address
 
 export const CRYPTOCOMPARE_PRIO_LIST_ITEM: PrioritizedListItemData<PriceOracle> = {
   identifier: PriceOracle.CRYPTOCOMPARE,
-  icon: './assets/images/oracles/cryptocompare.png',
+  icon: './assets/images/services/cryptocompare.svg',
 };
 
 export const COINGECKO_PRIO_LIST_ITEM: PrioritizedListItemData<PriceOracle> = {
   identifier: PriceOracle.COINGECKO,
-  icon: './assets/images/oracles/coingecko.svg',
+  icon: './assets/images/services/coingecko.svg',
 };
 
 export const DEFILAMA_PRIO_LIST_ITEM: PrioritizedListItemData<PriceOracle> = {
   identifier: PriceOracle.DEFILLAMA,
-  icon: './assets/images/oracles/defillama.svg',
+  icon: './assets/images/services/defillama.svg',
 };
 
 export const UNISWAP2_PRIO_LIST_ITEM: PrioritizedListItemData<PriceOracle> = {

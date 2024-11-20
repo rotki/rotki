@@ -185,7 +185,7 @@ async function toggleWhitelistAsset() {
                 <template #prepend>
                   <AppImage
                     size="30px"
-                    src="./assets/images/oracles/coingecko.svg"
+                    src="./assets/images/services/coingecko.svg"
                   />
                 </template>
               </RuiButton>
@@ -202,7 +202,7 @@ async function toggleWhitelistAsset() {
                 <template #prepend>
                   <AppImage
                     size="30px"
-                    src="./assets/images/oracles/cryptocompare.png"
+                    src="./assets/images/services/cryptocompare.svg"
                   />
                 </template>
               </RuiButton>

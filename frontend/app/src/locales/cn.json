@@ -2038,7 +2038,6 @@
   "external_services": {
     "api_key": "API key",
     "beaconchain": {
-      "delete_tooltip": "删除 Beaconcha.in API 密钥",
       "description": "rotki 使用 Beaconcha.in 獲取有關您投資組合中 ETH 質押的信息。 只有在您受到速率限制時才需要 API 密鑰。",
       "hint": "输入您的 Beaconcha.in API 密钥",
       "title": "Beaconcha.in"
@@ -2054,7 +2053,6 @@
       "title": "删除 API Key"
     },
     "cryptocompare": {
-      "delete_tooltip": "删除 CryptoCompare API 密钥",
       "description": "rotki 使用 cryptocompare 来获取您投资组合中资产的价格信息。只有当您拥有大量资产并且受到速率限制时才需要 API 密钥。",
       "hint": "输入您的 CryptoCompare API 密钥",
       "title": "加密比较"
@@ -2070,7 +2068,6 @@
     },
     "get_api_key": "您可以申请 an API key {link}",
     "loopring": {
-      "delete_tooltip": "删除您的 Loopring API key",
       "description": "用于查询路印协议中的余额。此API密钥只能查询生成此密钥的账户。",
       "hint": "输入您的 Loopring API 密钥",
       "not_enabled": "路印协议模块未启用。除非您启用路印协议模块，否则您的余额将不会被检索",
@@ -2078,7 +2075,6 @@
       "title": "Loopring"
     },
     "opensea": {
-      "delete_tooltip": "删除你的 OpenSea API key",
       "description": "用于查询OpenSea的NFT信息和余额。",
       "hint": "输入您的 OpenSea API key",
       "title": "Opensea"

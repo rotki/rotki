@@ -2213,7 +2213,6 @@
   "external_services": {
     "api_key": "Clé API",
     "beaconchain": {
-      "delete_tooltip": "Supprime la clé API Beaconcha.in",
       "description": "rotki utilise Beaconcha.in pour obtenir des informations sur le staking ETH dans votre portefeuille. Une clé API est uniquement nécessaire si vous êtes soumis à une limitation de taux.",
       "hint": "Entrer votre clé API Beaconcha.in",
       "title": "Beaconcha.in"
@@ -2233,7 +2232,6 @@
       "password": "Mot de Passe"
     },
     "cryptocompare": {
-      "delete_tooltip": "Supprime la clé API CryptoCompare",
       "description": "rotki utilise cryptocompare pour obtenir des informations de prix sur les actifs de votre portefeuille. Une clé API est uniquement nécessaire si vous disposez de nombreux actifs et êtes soumis à une limitation de taux.",
       "hint": "Entrer votre clé API CryptoCompare",
       "title": "CryptoCompare"
@@ -2249,7 +2247,6 @@
     },
     "get_api_key": "Vous pouvez demander une clé API {link}",
     "loopring": {
-      "delete_tooltip": "Supprimer la clé API Loopring",
       "description": "Utilisé pour interroger les soldes Loopring. Cette clé API ne pourra interroger que le compte qui a généré cette clé.",
       "hint": "Entrer votre clé API Loopring",
       "not_enabled": "Le module Loopring n'est pas activé. Vos soldes ne seront pas récupérés à moins que vous n'activiez le module Loopring",
@@ -2257,14 +2254,12 @@
       "title": "Loopring"
     },
     "monerium": {
-      "delete_tooltip": "Supprime les informations d'identification Monerium",
       "description": "Utilisé pour afficher correctement les transactions Monerium avec les informations pertinentes.",
       "title": "Monerium",
       "understand": "Je comprends le risque",
       "warning": "À l'heure actuelle, Monerium utilise uniquement une authentification de base, il ne s'agit donc pas de données en lecture seule."
     },
     "opensea": {
-      "delete_tooltip": "Supprimer votre clé API Opensea",
       "description": "Utilisé pour interroger les informations et soldes NFT sur Opensea.",
       "hint": "Entrer votre clé API Opensea",
       "title": "Opensea"

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Module } from '@/types/modules';
 import { Routes } from '@/router/routes';
+import type ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
 
 const name = 'loopring';
 
@@ -10,6 +11,7 @@ const router = useRouter();
 const { activeModules } = storeToRefs(useGeneralSettingsStore());
 const { fetchLoopringBalances } = useBlockchainBalances();
 const { loading, apiKey, actionStatus, save, confirmDelete } = useExternalApiKeys(t);
+const { serviceKeyRef, saveHandler } = useServiceKeyHandler<InstanceType<typeof ServiceKey>>();
 
 const key = apiKey(name);
 const status = actionStatus(name);
@@ -20,25 +22,44 @@ const navigateToModules = () => router.push(Routes.SETTINGS_MODULES);
 </script>
 
 <template>
-  <RuiCard>
-    <template #header>
-      {{ t('external_services.loopring.title') }}
+  <ServiceKeyCard
+    :key-set="!!key"
+    :title="t('external_services.loopring.title')"
+    :subtitle="t('external_services.loopring.description')"
+    image-src="./assets/images/protocols/loopring.svg"
+    :primary-action="key
+      ? t('external_services.replace_key')
+      : t('external_services.save_key')"
+    :action-disabled="!serviceKeyRef?.currentValue"
+    @confirm="saveHandler()"
+  >
+    <template #left-buttons>
+      <RuiButton
+        :disabled="loading || !key"
+        color="error"
+        variant="text"
+        @click="confirmDelete(name, refresh)"
+      >
+        <template #prepend>
+          <RuiIcon
+            name="delete-bin-line"
+            size="16"
+          />
+        </template>
+        {{ t('external_services.delete_key') }}
+      </RuiButton>
     </template>
-    <template #subheader>
-      {{ t('external_services.loopring.description') }}
-    </template>
-
     <ServiceKey
+      ref="serviceKeyRef"
+      hide-actions
       :api-key="key"
       :name="name"
       :data-cy="name"
       :label="t('external_services.api_key')"
       :hint="t('external_services.loopring.hint')"
       :loading="loading"
-      :tooltip="t('external_services.loopring.delete_tooltip')"
       :status="status"
       @save="save($event)"
-      @delete-key="confirmDelete($event, refresh)"
     >
       <RuiAlert
         v-if="key && !isLoopringActive"
@@ -58,5 +79,5 @@ const navigateToModules = () => router.push(Routes.SETTINGS_MODULES);
         </div>
       </RuiAlert>
     </ServiceKey>
-  </RuiCard>
+  </ServiceKeyCard>
 </template>
