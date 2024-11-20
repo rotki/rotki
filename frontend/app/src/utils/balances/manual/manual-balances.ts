@@ -99,6 +99,6 @@ export function sortAndFilterManualBalance(
     limit: -1,
     total: balances.length,
     found: sorted.length,
-    totalValue: total,
+    totalUsdValue: total,
   };
 }

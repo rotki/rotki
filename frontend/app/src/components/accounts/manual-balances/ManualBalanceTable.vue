@@ -286,12 +286,12 @@ watchDebounced(
           </template>
 
           <AmountDisplay
-            v-if="state.totalValue"
+            v-if="state.totalUsdValue"
             show-currency="symbol"
             class="p-4"
             :fiat-currency="currencySymbol"
             data-cy="manual-balances__amount"
-            :value="state.totalValue"
+            :value="state.totalUsdValue"
           />
         </RowAppend>
       </template>

@@ -75,7 +75,6 @@ const { isAssetIgnored, ignoreAsset, unignoreAsset } = useIgnoredAssetsStore();
 const { assetPrice } = useBalancePricesStore();
 
 const loading = isSectionLoading(Section.NON_FUNGIBLE_BALANCES);
-const isPriceLoading = isSectionLoading(Section.PRICES);
 
 const {
   state: balances,
@@ -187,8 +186,8 @@ function showDeleteConfirmation(item: NonFungibleBalance) {
   );
 }
 
-function getAssetAmount(row: NonFungibleBalance): BigNumber | undefined {
-  return get(assetPrice(row.priceAsset))?.times(row.priceInAsset);
+function getAssetPrice(asset: string): BigNumber | undefined {
+  return get(assetPrice(asset));
 }
 
 watch(ignoredAssetsHandling, () => {
@@ -246,7 +245,7 @@ onMounted(async () => {
         :collection="balances"
         @set-page="setPage($event)"
       >
-        <template #default="{ data, totalValue }">
+        <template #default="{ data, totalUsdValue }">
           <RuiDataTable
             v-model="selected"
             v-model:sort.external="sort"
@@ -282,11 +281,12 @@ onMounted(async () => {
             </template>
             <template #item.usdPrice="{ row }">
               <AmountDisplay
-                :value="getAssetAmount(row)"
+                :price-asset="row.priceAsset"
+                :amount="row.priceInAsset"
+                :value="getAssetPrice(row.priceAsset)"
                 no-scramble
                 show-currency="symbol"
                 :fiat-currency="currencySymbol"
-                :loading="isPriceLoading"
               />
             </template>
             <template #item.actions="{ row }">
@@ -308,14 +308,14 @@ onMounted(async () => {
             </template>
             <template #body.append>
               <RowAppend
-                v-if="totalValue"
+                v-if="totalUsdValue"
                 label-colspan="4"
                 :label="t('common.total')"
                 class="[&>td]:p-4"
                 :right-patch-colspan="2"
               >
                 <AmountDisplay
-                  :value="totalValue"
+                  :value="totalUsdValue"
                   show-currency="symbol"
                   fiat-currency="USD"
                 />

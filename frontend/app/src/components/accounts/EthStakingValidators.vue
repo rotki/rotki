@@ -155,7 +155,7 @@ function confirmDelete(item: EthereumValidator) {
 
 const total = computed(() => {
   const mainCurrency = get(currencySymbol);
-  return (get(rows).totalValue || Zero).multipliedBy(get(exchangeRate(mainCurrency)) ?? One);
+  return (get(rows).totalUsdValue || Zero).multipliedBy(get(exchangeRate(mainCurrency)) ?? One);
 });
 
 watchImmediate(ethStakingValidators, async () => {

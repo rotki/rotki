@@ -45,8 +45,7 @@ const {
 
 const { isLoading: isSectionLoading } = useStatusStore();
 const loading = isSectionLoading(Section.NON_FUNGIBLE_BALANCES);
-const isPriceLoading = isSectionLoading(Section.PRICES);
-const { totalValue } = getCollectionData<NonFungibleBalance>(balances);
+const { totalUsdValue } = getCollectionData<NonFungibleBalance>(balances);
 
 const cols = computed<DataTableColumn<NonFungibleBalance>[]>(() => {
   const visibleColumns = get(dashboardTablesVisibleColumns)[group];
@@ -108,11 +107,11 @@ function percentageOfTotalNetValue(value: BigNumber) {
 }
 
 function percentageOfCurrentGroup(value: BigNumber) {
-  return calculatePercentage(value, get(totalValue) as BigNumber);
+  return calculatePercentage(value, get(totalUsdValue) as BigNumber);
 }
 
-function calculateAmount(row: NonFungibleBalance): BigNumber | undefined {
-  return get(assetPrice(row.priceAsset))?.times(row.priceInAsset);
+function getAssetPrice(asset: string): BigNumber | undefined {
+  return get(assetPrice(asset));
 }
 
 watch(loading, async (isLoading, wasLoading) => {
@@ -166,8 +165,8 @@ onMounted(async () => {
     </template>
     <template #shortDetails>
       <AmountDisplay
-        v-if="totalValue"
-        :value="totalValue"
+        v-if="totalUsdValue"
+        :value="totalUsdValue"
         show-currency="symbol"
         fiat-currency="USD"
         class="text-h6 font-bold"
@@ -205,9 +204,10 @@ onMounted(async () => {
           <template #item.usdPrice="{ row }">
             <AmountDisplay
               no-scramble
-              :value="calculateAmount(row)"
+              :price-asset="row.priceAsset"
+              :amount="row.priceInAsset"
+              :value="getAssetPrice(row.priceAsset)"
               show-currency="symbol"
-              :loading="isPriceLoading"
               :fiat-currency="currencySymbol"
             />
           </template>
@@ -232,8 +232,8 @@ onMounted(async () => {
               class-name="[&>td]:p-4 text-sm"
             >
               <AmountDisplay
-                v-if="totalValue"
-                :value="totalValue"
+                v-if="totalUsdValue"
+                :value="totalUsdValue"
                 show-currency="symbol"
                 fiat-currency="USD"
               />

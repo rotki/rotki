@@ -56,11 +56,11 @@ const loading = isLoading(Section.BLOCKCHAIN);
 const isPricesLoading = isLoading(Section.PRICES);
 
 const totalValue = computed<BigNumber | undefined>(() => {
-  const totalValue = props.accounts.totalValue;
-  if (!totalValue)
+  const totalUsdValue = props.accounts.totalUsdValue;
+  if (!totalUsdValue)
     return undefined;
 
-  return totalValue.minus(sum(get(collapsed)));
+  return totalUsdValue.minus(sum(get(collapsed)));
 });
 
 const rows = computed<DataRow[]>(() => {

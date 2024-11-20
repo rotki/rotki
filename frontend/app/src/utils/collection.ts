@@ -2,18 +2,17 @@ import type { BigNumber } from '@rotki/common';
 import type { Collection, CollectionResponse } from '@/types/collection';
 import type { ComputedRef, Ref } from 'vue';
 
-type Entries = 'entries' | 'entriesFound' | 'entriesLimit' | 'entriesTotal' | 'totalUsdValue';
+type Entries = 'entries' | 'entriesFound' | 'entriesLimit' | 'entriesTotal';
 
 export function mapCollectionResponse<T, C extends CollectionResponse<T>>(
   response: C,
 ): Collection<T> & Omit<C, Entries> {
-  const { entries, entriesLimit, entriesFound, entriesTotal, totalUsdValue, ...rest } = response;
+  const { entries, entriesLimit, entriesFound, entriesTotal, ...rest } = response;
   return {
     data: entries,
     found: entriesFound,
     limit: entriesLimit,
     total: entriesTotal,
-    totalValue: totalUsdValue,
     ...rest,
   };
 }
@@ -24,28 +23,26 @@ export function defaultCollectionState<T>(): Collection<T> {
     limit: 0,
     data: [],
     total: 0,
-    totalValue: Zero,
+    totalUsdValue: Zero,
   };
 }
 
 type TotalValue = BigNumber | undefined | null;
 
-interface CollectionData<T> {
+export function getCollectionData<T>(collection: Ref<Collection<T>>): {
   data: ComputedRef<T[]>;
   limit: ComputedRef<number>;
   found: ComputedRef<number>;
   total: ComputedRef<number>;
   entriesFoundTotal: ComputedRef<number | undefined>;
-  totalValue: ComputedRef<TotalValue>;
-}
-
-export function getCollectionData<T>(collection: Ref<Collection<T>>): CollectionData<T> {
+  totalUsdValue: ComputedRef<TotalValue>;
+} {
   const data = computed<T[]>(() => get(collection).data);
   const limit = computed<number>(() => get(collection).limit);
   const found = computed<number>(() => get(collection).found);
   const total = computed<number>(() => get(collection).total);
   const entriesFoundTotal = computed<number | undefined>(() => get(collection).entriesFoundTotal);
-  const totalValue = computed<TotalValue>(() => get(collection).totalValue);
+  const totalUsdValue = computed<TotalValue>(() => get(collection).totalUsdValue);
 
   return {
     data,
@@ -53,7 +50,7 @@ export function getCollectionData<T>(collection: Ref<Collection<T>>): Collection
     found,
     total,
     entriesFoundTotal,
-    totalValue,
+    totalUsdValue,
   };
 }
 
