@@ -8,9 +8,9 @@ defineOptions({
   <div
     v-if="$slots.title || $slots.subtitle"
     v-bind="$attrs"
-    class="flex py-6 gap-4 md:gap-8 lg:gap-12 border-b border-default"
+    class="flex flex-col md:flex-row py-4 md:py-6 gap-4 md:gap-8 lg:gap-12 border-b border-default"
   >
-    <div class="w-[150px] lg:w-[200px] xl:w-[288px] shrink-0">
+    <div class="w-full md:w-[150px] lg:w-[200px] xl:w-[288px] shrink-0">
       <div
         v-if="$slots.title"
         class="font-medium"
