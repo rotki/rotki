@@ -18,6 +18,10 @@ export type NonFungibleBalance = z.infer<typeof NonFungibleBalance>;
 
 const NonFungibleBalanceArray = z.array(NonFungibleBalance);
 
+export const NonFungibleBalances = z.record(NonFungibleBalanceArray);
+
+export type NonFungibleBalances = z.infer<typeof NonFungibleBalances>;
+
 export const NonFungibleBalancesCollectionResponse = CollectionCommonFields.extend({
   entries: NonFungibleBalanceArray,
 });

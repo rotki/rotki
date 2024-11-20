@@ -6,12 +6,15 @@ import { DashboardTableType } from '@/types/settings/frontend-settings';
 import type { AssetBalance, AssetBalanceWithPrice, BigNumber, Nullable } from '@rotki/common';
 import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 
-const props = withDefaults(defineProps<{
-  title: string;
-  balances: AssetBalanceWithPrice[];
-  tableType: DashboardTableType;
-  loading?: boolean;
-}>(), { loading: false });
+const props = withDefaults(
+  defineProps<{
+    title: string;
+    balances: AssetBalanceWithPrice[];
+    tableType: DashboardTableType;
+    loading?: boolean;
+  }>(),
+  { loading: false },
+);
 
 const { t } = useI18n();
 
@@ -99,7 +102,7 @@ const tableHeaders = computed<DataTableColumn<AssetBalanceWithPrice>[]>(() => {
       label: t('common.price_in_symbol', {
         symbol: get(currencySymbol),
       }),
-      key: 'price',
+      key: 'usdPrice',
       align: 'end',
       class: 'text-no-wrap',
       cellClass: 'py-0',
@@ -228,14 +231,15 @@ watch(search, () => setPage(1));
           :is-collection-parent="!!row.breakdown"
         />
       </template>
-      <template #item.price="{ row }">
+      <template #item.usdPrice="{ row }">
         <AmountDisplay
-          :loading="!row.price || row.price.lt(0)"
+          :loading="!row.usdPrice || row.usdPrice.lt(0)"
           no-scramble
           show-currency="symbol"
           :price-asset="row.asset"
-          :price-of-asset="row.price"
-          :value="row.price"
+          :price-of-asset="row.usdPrice"
+          fiat-currency="USD"
+          :value="row.usdPrice"
         />
       </template>
       <template #item.amount="{ row }">
@@ -246,8 +250,8 @@ watch(search, () => setPage(1));
           show-currency="symbol"
           :amount="row.amount"
           :price-asset="row.asset"
-          :price-of-asset="row.price"
-          :fiat-currency="currencySymbol"
+          :price-of-asset="row.usdPrice"
+          fiat-currency="USD"
           :value="row.usdValue"
         />
       </template>

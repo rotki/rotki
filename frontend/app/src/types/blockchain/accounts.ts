@@ -4,6 +4,7 @@ import type { AssetBalance, Balance } from '@rotki/common';
 import type { Module } from '@/types/modules';
 import type { PaginationRequestPayload } from '@/types/common';
 import type { BlockchainAssetBalances } from '@/types/blockchain/balances';
+import type { AssetBalances } from '@/types/balances';
 
 export interface AddressData {
   readonly type: 'address';
@@ -215,5 +216,7 @@ export interface ERC20Token {
 }
 
 export type Accounts = Record<string, BlockchainAccount[]>;
+
+export type Totals = Record<string, AssetBalances>;
 
 export type Balances = Record<string, BlockchainAssetBalances>;

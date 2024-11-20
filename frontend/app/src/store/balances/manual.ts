@@ -25,7 +25,7 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
   const { notify } = useNotificationsStore();
   const { setMessage } = useMessageStore();
   const { awaitTask } = useTaskStore();
-  const { exchangeRate, assetPrice } = useBalancePricesStore();
+  const { exchangeRate, assetPrice, isAssetPriceInCurrentCurrency } = useBalancePricesStore();
   const { queryManualBalances, addManualBalances, editManualBalances, deleteManualBalances } = useManualBalancesApi();
   const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
   const { getAssociatedAssetIdentifier } = useAssetInfoRetrieval();
@@ -242,7 +242,7 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
 
       return {
         ...item,
-        usdValue: item.amount.times(assetPrice.value),
+        usdValue: item.amount.times(assetPrice.usdPrice ?? assetPrice.value),
       };
     });
 
@@ -257,7 +257,20 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
      * @param asset The asset for which we want the price
      */
     resolveAssetPrice(asset: string): BigNumber | undefined {
-      return get(assetPrice(asset));
+      const inCurrentCurrency = get(isAssetPriceInCurrentCurrency(asset));
+      const price = get(assetPrice(asset));
+      if (!price)
+        return undefined;
+
+      if (inCurrentCurrency)
+        return price;
+
+      const currentExchangeRate = get(exchangeRate(get(currencySymbol)));
+
+      if (!currentExchangeRate)
+        return price;
+
+      return price.times(currentExchangeRate);
     },
   };
 

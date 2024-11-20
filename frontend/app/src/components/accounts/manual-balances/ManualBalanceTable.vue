@@ -77,7 +77,7 @@ async function refresh() {
 }
 
 function edit(balance: ManualBalanceWithPrice) {
-  emit('edit', objectOmit(balance, ['usdValue', 'price']));
+  emit('edit', objectOmit(balance, ['usdValue', 'usdPrice']));
 }
 
 function getRowClass(item: ManualBalance) {
@@ -107,7 +107,7 @@ const cols = computed<DataTableColumn<ManualBalanceWithPrice>[]>(() => [
     label: t('common.price_in_symbol', {
       symbol: get(currencySymbol),
     }),
-    key: 'price',
+    key: 'usdPrice',
     sortable: true,
     align: 'end',
   },
@@ -229,14 +229,14 @@ watchDebounced(
           :asset="row.asset"
         />
       </template>
-      <template #item.price="{ row }">
+      <template #item.usdPrice="{ row }">
         <AmountDisplay
-          :loading="!row.price || row.price.lt(0)"
+          :loading="!row.usdPrice || row.usdPrice.lt(0)"
           no-scramble
           show-currency="symbol"
           :price-asset="row.asset"
-          :price-of-asset="row.price"
-          :value="row.price"
+          :price-of-asset="row.usdPrice"
+          :value="row.usdPrice"
         />
       </template>
       <template #item.amount="{ row }">
@@ -250,8 +250,8 @@ watchDebounced(
           show-currency="symbol"
           :amount="row.amount"
           :price-asset="row.asset"
-          :price-of-asset="row.price"
-          :fiat-currency="currencySymbol"
+          :price-of-asset="row.usdPrice"
+          fiat-currency="USD"
           :value="row.usdValue"
         />
       </template>

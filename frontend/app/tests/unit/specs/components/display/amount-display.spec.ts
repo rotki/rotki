@@ -21,7 +21,7 @@ vi.mock('vue-router', () => ({
   createWebHashHistory: vi.fn(),
 }));
 
-describe('components/display/AmountDisplay.vue', () => {
+describe('amountDisplay.vue', () => {
   let wrapper: VueWrapper<InstanceType<typeof AmountDisplay>>;
   let pinia: Pinia;
 
@@ -345,6 +345,7 @@ describe('components/display/AmountDisplay.vue', () => {
         ETH: {
           value: bigNumberify(500),
           isManualPrice: false,
+          isCurrentCurrency: false,
         },
       });
 
@@ -361,6 +362,7 @@ describe('components/display/AmountDisplay.vue', () => {
         ETH: {
           value: bigNumberify(500),
           isManualPrice: true,
+          isCurrentCurrency: false,
         },
       });
 
@@ -379,6 +381,7 @@ describe('components/display/AmountDisplay.vue', () => {
         ETH: {
           value: bigNumberify(500),
           isManualPrice: true,
+          isCurrentCurrency: false,
         },
       });
 
@@ -401,26 +404,25 @@ describe('components/display/AmountDisplay.vue', () => {
 
     it('`isCurrentCurrency=true`', () => {
       const { prices } = storeToRefs(useBalancePricesStore());
-      const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-
       set(prices, {
         ETH: {
           value: bigNumberify(500),
           isManualPrice: true,
+          isCurrentCurrency: true,
         },
       });
 
       const priceWrapper = createWrapper(bigNumberify(400), {
         priceAsset: 'ETH',
         priceOfAsset: bigNumberify(500),
-        fiatCurrency: get(currencySymbol),
+        fiatCurrency: 'USD',
       });
 
       const valueWrapper = createWrapper(bigNumberify(800), {
         amount: bigNumberify(2),
         priceAsset: 'ETH',
         priceOfAsset: bigNumberify(500),
-        fiatCurrency: get(currencySymbol),
+        fiatCurrency: 'USD',
       });
 
       expect(priceWrapper.find('[data-cy="display-amount"]').text()).toBe('500.00');

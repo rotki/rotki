@@ -90,7 +90,7 @@ export function useBalanceSorting(): UseBalanceSortingReturn {
       asset,
       amount: ownedAssets[asset].amount,
       usdValue: ownedAssets[asset].usdValue,
-      price: get(getPrice(asset)) ?? NoPrice,
+      usdPrice: get(getPrice(asset)) ?? NoPrice,
     }));
 
   const toSortedAssetBalanceArray = (

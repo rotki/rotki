@@ -18,7 +18,9 @@ describe('useBlockchainStore', () => {
       const assetPrices: AssetPrices = {
         ETH: {
           value: bigNumberify(2500),
+          usdPrice: null,
           isManualPrice: false,
+          isCurrentCurrency: true,
         },
       };
 

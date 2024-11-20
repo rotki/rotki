@@ -25,7 +25,7 @@ const tableHeaders = computed<DataTableColumn<AssetBalanceWithPrice>[]>(() => [
     label: t('common.price', {
       symbol: get(currencySymbol),
     }),
-    key: 'price',
+    key: 'usdPrice',
     align: 'end',
     class: 'text-no-wrap',
   },
@@ -51,7 +51,7 @@ const { assetPrice } = useBalancePricesStore();
 function transformAssets(assets: XswapAsset[]): AssetBalanceWithPrice[] {
   return assets.map(item => ({
     asset: item.asset,
-    price: item.usdPrice ?? get(assetPrice(item.asset)) ?? Zero,
+    usdPrice: item.usdPrice ?? get(assetPrice(item.asset)) ?? Zero,
     amount: item.userBalance.amount,
     usdValue: item.userBalance.usdValue,
   }));
@@ -80,15 +80,15 @@ const sort = ref<DataTableSortData<AssetBalanceWithPrice>>({
         :asset="row.asset"
       />
     </template>
-    <template #item.price="{ row }">
+    <template #item.usdPrice="{ row }">
       <AmountDisplay
-        v-if="row.price && row.price.gte(0)"
+        v-if="row.usdPrice && row.usdPrice.gte(0)"
         no-scramble
         show-currency="symbol"
         :price-asset="row.asset"
-        :price-of-asset="row.price"
-        :fiat-currency="currencySymbol"
-        :value="row.price"
+        :price-of-asset="row.usdPrice"
+        fiat-currency="USD"
+        :value="row.usdPrice"
       />
       <span v-else>-</span>
     </template>
@@ -100,8 +100,8 @@ const sort = ref<DataTableSortData<AssetBalanceWithPrice>>({
         show-currency="symbol"
         :amount="row.amount"
         :price-asset="row.asset"
-        :price-of-asset="row.price"
-        :fiat-currency="currencySymbol"
+        :price-of-asset="row.usdPrice"
+        fiat-currency="USD"
         :value="row.usdValue"
       />
     </template>

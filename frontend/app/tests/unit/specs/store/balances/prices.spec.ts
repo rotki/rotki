@@ -48,6 +48,7 @@ describe('store::balances/manual', () => {
         DAI: {
           value: bigNumberify(1),
           isManualPrice: false,
+          isCurrentCurrency: false,
         },
       });
     });
@@ -81,10 +82,12 @@ describe('store::balances/manual', () => {
         DAI: {
           value: bigNumberify(1),
           isManualPrice: false,
+          isCurrentCurrency: false,
         },
         ETH: {
           value: bigNumberify(2),
           isManualPrice: true,
+          isCurrentCurrency: true,
         },
       });
     });
@@ -215,6 +218,13 @@ describe('store::balances/manual', () => {
     it('default', () => {
       expect(get(store.isManualAssetPrice('DAI'))).toEqual(false);
       expect(get(store.isManualAssetPrice('ETH'))).toEqual(true);
+    });
+  });
+
+  describe('isAssetPriceInCurrentCurrency', () => {
+    it('default', () => {
+      expect(get(store.isAssetPriceInCurrentCurrency('DAI'))).toEqual(false);
+      expect(get(store.isAssetPriceInCurrentCurrency('ETH'))).toEqual(true);
     });
   });
 });

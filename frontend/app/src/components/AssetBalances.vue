@@ -78,7 +78,7 @@ const tableHeaders = computed<DataTableColumn<AssetBalanceWithPrice>[]>(() => [
     label: t('common.price_in_symbol', {
       symbol: get(currencySymbol),
     }),
-    key: 'price',
+    key: 'usdPrice',
     align: 'end',
     cellClass: 'py-0',
     sortable: true,
@@ -127,15 +127,15 @@ const sorted = computed<AssetBalanceWithPrice[]>(() => sortAssetBalances([...get
         :is-collection-parent="!!row.breakdown"
       />
     </template>
-    <template #item.price="{ row }">
+    <template #item.usdPrice="{ row }">
       <AmountDisplay
-        :loading="!row.price || row.price.lt(0)"
+        :loading="!row.usdPrice || row.usdPrice.lt(0)"
         no-scramble
         show-currency="symbol"
         :price-asset="row.asset"
-        :price-of-asset="row.price"
-        :fiat-currency="currencySymbol"
-        :value="row.price"
+        :price-of-asset="row.usdPrice"
+        fiat-currency="USD"
+        :value="row.usdPrice"
       />
     </template>
     <template #item.amount="{ row }">
@@ -146,8 +146,8 @@ const sorted = computed<AssetBalanceWithPrice[]>(() => sortAssetBalances([...get
         show-currency="symbol"
         :amount="row.amount"
         :price-asset="row.asset"
-        :price-of-asset="row.price"
-        :fiat-currency="currencySymbol"
+        :price-of-asset="row.usdPrice"
+        fiat-currency="USD"
         :value="row.usdValue"
       />
     </template>
