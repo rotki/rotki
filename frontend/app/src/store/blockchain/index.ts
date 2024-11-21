@@ -339,6 +339,12 @@ export const useBlockchainStore = defineStore('blockchain', () => {
     }));
   });
 
+  const accountTags = (address: string): ComputedRef<string[]> => computed(() => {
+    const account = get(blockchainAccountList)
+      .find(account => getAccountAddress(account) === address);
+    return account?.tags ?? [];
+  });
+
   return {
     accounts,
     addresses,
@@ -365,6 +371,7 @@ export const useBlockchainStore = defineStore('blockchain', () => {
     updatePrices,
     removeAccounts,
     removeTag,
+    accountTags,
   };
 });
 
