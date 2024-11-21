@@ -132,8 +132,6 @@ export const UniswapDetails = createFactory('UniswapDetails');
 
 export const AssetAmountAndValueOverTime = createFactory('AssetAmountAndValueOverTime');
 
-export const BalancerBalances = createFactory('BalancerBalances');
-
 export const ThemeChecker = createFactory('ThemeChecker');
 
 export const ThemeSwitch = createFactory('ThemeSwitch', {

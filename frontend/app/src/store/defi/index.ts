@@ -21,7 +21,6 @@ export const useDefiStore = defineStore('defi', () => {
   const aaveStore = useAaveStore();
   const compoundStore = useCompoundStore();
   const makerDaoStore = useMakerDaoStore();
-  const balancerStore = useBalancerStore();
   const sushiswapStore = useSushiswapStore();
   const uniswapStore = useUniswapStore();
   const { t } = useI18n();
@@ -162,7 +161,6 @@ export const useDefiStore = defineStore('defi', () => {
     [Module.YEARN_V2]: () => yearnStore.reset(ProtocolVersion.V2),
     [Module.UNISWAP]: () => uniswapStore.reset(),
     [Module.SUSHISWAP]: () => sushiswapStore.reset(),
-    [Module.BALANCER]: () => balancerStore.reset(),
     [Module.LIQUITY]: () => liquityStore.reset(),
   };
 

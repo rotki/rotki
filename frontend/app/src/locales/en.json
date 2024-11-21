@@ -490,15 +490,6 @@
           "title": "Querying airdrops"
         }
       },
-      "balancer_balances": {
-        "error": {
-          "description": "Failed to query Balancer balances: {message}",
-          "title": "Querying Balancer balances"
-        },
-        "task": {
-          "title": "Querying Balancer balances"
-        }
-      },
       "balances": {
         "error": {
           "description": "Failed to retrieve DeFi balances: {error}",
@@ -1483,10 +1474,6 @@
   },
   "backend_settings_button": {
     "tooltip": "Change the backend settings. Changing the settings will restart the rotki backend"
-  },
-  "balancer": {
-    "loading": "Please wait while your liquidity pools are getting loaded...",
-    "premium": "Balancer feature "
   },
   "binance_market_selector": {
     "default_label": "Filter market pair(s)",
@@ -3570,7 +3557,6 @@
       "deposits_sub": {
         "liquidity": "Liquidity Pools",
         "liquidity_sub": {
-          "balancer": "Balancer",
           "sushiswap": "Sushiswap",
           "uniswap_v2": "Uniswap v2",
           "uniswap_v3": "Uniswap v3"

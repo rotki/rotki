@@ -65,7 +65,6 @@ const expanded = ref<XSwapLiquidityBalance[]>([]);
 const { fetchV2Balances: fetchUniswapV2Balances, fetchV3Balances: fetchUniswapV3Balances } = useUniswapStore();
 
 const { fetchBalances: fetchSushiswapBalances } = useSushiswapStore();
-const { fetchBalances: fetchBalancerBalances } = useBalancerStore();
 
 const { lpAggregatedBalances, lpTotal, getPoolName } = useLiquidityPosition();
 const balances = lpAggregatedBalances(true);
@@ -81,7 +80,6 @@ const { isLoading } = useStatusStore();
 const loading = logicOr(
   isLoading(Section.DEFI_UNISWAP_V3_BALANCES),
   isLoading(Section.DEFI_UNISWAP_V2_BALANCES),
-  isLoading(Section.DEFI_BALANCER_BALANCES),
   isLoading(Section.DEFI_SUSHISWAP_BALANCES),
 );
 
@@ -110,7 +108,6 @@ async function fetch(refresh = false) {
 
     if (get(premium)) {
       await fetchSushiswapBalances(refresh);
-      await fetchBalancerBalances(refresh);
     }
   }
 }

@@ -7,7 +7,7 @@ const props = defineProps<{
   location: NavType | '';
 }>();
 
-type NavType = 'uniswap-v2' | 'uniswap-v3' | 'balancer' | 'sushiswap';
+type NavType = 'uniswap-v2' | 'uniswap-v3' | 'sushiswap';
 
 interface LiquidityPageInfo {
   id: NavType;
@@ -20,9 +20,8 @@ const imageSize = '64px';
 const pages = {
   'uniswap-v2': defineAsyncComponent(() => import('@/pages/defi/deposits/liquidity/uniswap-v2/index.vue')),
   'uniswap-v3': defineAsyncComponent(() => import('@/pages/defi/deposits/liquidity/uniswap-v3/index.vue')),
-  'balancer': defineAsyncComponent(() => import('@/pages/defi/deposits/liquidity/balancer/index.vue')),
   'sushiswap': defineAsyncComponent(() => import('@/pages/defi/deposits/liquidity/sushiswap/index.vue')),
-};
+} as const;
 
 const { t } = useI18n();
 
@@ -36,11 +35,6 @@ const liquidities = computed<LiquidityPageInfo[]>(() => [
     id: 'uniswap-v3',
     image: './assets/images/protocols/uniswap.svg',
     name: t('navigation_menu.defi_sub.deposits_sub.liquidity_sub.uniswap_v3'),
-  },
-  {
-    id: 'balancer',
-    image: './assets/images/protocols/balancer.svg',
-    name: t('navigation_menu.defi_sub.deposits_sub.liquidity_sub.balancer'),
   },
   {
     id: 'sushiswap',

@@ -3,7 +3,6 @@ import { displayDateFormatter } from '@/data/date-formatter';
 import { DARK_COLORS, LIGHT_COLORS } from '@/plugins/theme';
 import {
   assetsApi,
-  balancerApi,
   balancesApi,
   compoundApi,
   statisticsApi,
@@ -50,7 +49,6 @@ function data(): DataUtilities {
     assets: assetsApi(),
     statistics: statisticsApi(),
     balances: balancesApi(),
-    balancer: balancerApi(),
     compound: compoundApi(),
     sushi: sushiApi(),
     utils: utilsApi(),
