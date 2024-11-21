@@ -338,15 +338,6 @@
           "title": "查询空投"
         }
       },
-      "balancer_balances": {
-        "error": {
-          "description": "无法查询 Balancer 余额： {message}",
-          "title": "查询Balancer余额"
-        },
-        "task": {
-          "title": "查询Balancer余额"
-        }
-      },
       "balances": {
         "error": {
           "description": "获取 DeFi 余额失败：{error}",
@@ -1243,10 +1234,6 @@
   },
   "backend_settings_button": {
     "tooltip": "更改后端设置。更改设置将重启 rotki 后端"
-  },
-  "balancer": {
-    "loading": "请稍候，您的流动资金池正在加载...",
-    "premium": "平衡器功能"
   },
   "binance_market_selector": {
     "default_label": "过滤市场对",
@@ -2867,7 +2854,6 @@
       "deposits_sub": {
         "liquidity": "流动性池",
         "liquidity_sub": {
-          "balancer": "Balancer",
           "sushiswap": "Sushiswap",
           "uniswap_v2": "Uniswap v2",
           "uniswap_v3": "Uniswap v3"

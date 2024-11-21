@@ -18,7 +18,6 @@ declare global {
   const BackendCode: typeof import('./shared/ipc')['BackendCode']
   const BackendOptions: typeof import('./shared/ipc')['BackendOptions']
   const Balance: typeof import('@rotki/common')['Balance']
-  const BalancerBalances: typeof import('@rotki/common')['BalancerBalances']
   const BaseAsset: typeof import('@rotki/common')['BaseAsset']
   const BigNumber: typeof import('@rotki/common')['BigNumber']
   const Blockchain: typeof import('@rotki/common')['Blockchain']
@@ -485,8 +484,6 @@ declare global {
   const useBackupApi: typeof import('./src/composables/api/backup')['useBackupApi']
   const useBalancePricesStore: typeof import('./src/store/balances/prices')['useBalancePricesStore']
   const useBalanceSorting: typeof import('./src/composables/balances/sorting')['useBalanceSorting']
-  const useBalancerApi: typeof import('./src/composables/api/defi/balancer')['useBalancerApi']
-  const useBalancerStore: typeof import('./src/store/defi/balancer/index')['useBalancerStore']
   const useBalances: typeof import('./src/composables/balances/index')['useBalances']
   const useBalancesApi: typeof import('./src/composables/api/balances/index')['useBalancesApi']
   const useBalancesBreakdown: typeof import('./src/composables/balances/breakdown')['useBalancesBreakdown']
@@ -902,7 +899,6 @@ declare module 'vue' {
     readonly BackendCode: UnwrapRef<typeof import('./shared/ipc')['BackendCode']>
     readonly BackendOptions: UnwrapRef<typeof import('./shared/ipc')['BackendOptions']>
     readonly Balance: UnwrapRef<typeof import('@rotki/common')['Balance']>
-    readonly BalancerBalances: UnwrapRef<typeof import('@rotki/common')['BalancerBalances']>
     readonly BaseAsset: UnwrapRef<typeof import('@rotki/common')['BaseAsset']>
     readonly BigNumber: UnwrapRef<typeof import('@rotki/common')['BigNumber']>
     readonly Blockchain: UnwrapRef<typeof import('@rotki/common')['Blockchain']>
@@ -1369,8 +1365,6 @@ declare module 'vue' {
     readonly useBackupApi: UnwrapRef<typeof import('./src/composables/api/backup')['useBackupApi']>
     readonly useBalancePricesStore: UnwrapRef<typeof import('./src/store/balances/prices')['useBalancePricesStore']>
     readonly useBalanceSorting: UnwrapRef<typeof import('./src/composables/balances/sorting')['useBalanceSorting']>
-    readonly useBalancerApi: UnwrapRef<typeof import('./src/composables/api/defi/balancer')['useBalancerApi']>
-    readonly useBalancerStore: UnwrapRef<typeof import('./src/store/defi/balancer/index')['useBalancerStore']>
     readonly useBalances: UnwrapRef<typeof import('./src/composables/balances/index')['useBalances']>
     readonly useBalancesApi: UnwrapRef<typeof import('./src/composables/api/balances/index')['useBalancesApi']>
     readonly useBalancesBreakdown: UnwrapRef<typeof import('./src/composables/balances/breakdown')['useBalancesBreakdown']>

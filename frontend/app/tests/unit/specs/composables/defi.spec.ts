@@ -1,6 +1,5 @@
 import { LpType, type XSwapLiquidityBalance } from '@rotki/common';
 import { beforeAll, describe, expect, it } from 'vitest';
-import { setBalancerBalances } from '../store/defi/balancer.spec';
 import { setSushiswapBalances } from '../store/defi/sushiswap.spec';
 import { setUniswapV2Balances, setUniswapV3Balances } from '../store/defi/uniswap.spec';
 
@@ -10,87 +9,12 @@ describe('composables::defi', () => {
     setUniswapV2Balances();
     setUniswapV3Balances();
     setSushiswapBalances();
-    setBalancerBalances();
   });
 
   it('lpAggregatedBalances', () => {
     const { lpAggregatedBalances } = useLiquidityPosition();
 
     const expectedResult: XSwapLiquidityBalance[] = [
-      {
-        usdValue: bigNumberify(12000),
-        asset: 'eip155:1/erc20:0x49ff149D649769033d43783E7456F626862CD160',
-        premiumOnly: true,
-        assets: [
-          {
-            asset: 'eip155:1/erc20:0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599',
-            totalAmount: bigNumberify(20000),
-            userBalance: {
-              amount: bigNumberify(3),
-              usdValue: bigNumberify(3000),
-            },
-            usdPrice: bigNumberify(1000),
-          },
-          {
-            asset: 'eip155:1/erc20:0x408e41876cCCDC0F92210600ef50372656052a38',
-            totalAmount: bigNumberify(20000),
-            userBalance: {
-              amount: bigNumberify(3),
-              usdValue: bigNumberify(6000),
-            },
-            usdPrice: bigNumberify(2000),
-          },
-          {
-            asset: 'eip155:1/erc20:0x514910771AF9Ca656af840dff83E8264EcF986CA',
-            totalAmount: bigNumberify(20000),
-            userBalance: {
-              amount: bigNumberify(3),
-              usdValue: bigNumberify(3000),
-            },
-            usdPrice: bigNumberify(1000),
-          },
-        ],
-        type: 'token',
-        lpType: LpType.BALANCER,
-        id: 0,
-      },
-      {
-        usdValue: bigNumberify(10000),
-        asset: 'eip155:1/erc20:0xc409D34aCcb279620B1acDc05E408e287d543d17',
-        premiumOnly: true,
-        assets: [
-          {
-            asset: 'eip155:1/erc20:0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599',
-            totalAmount: bigNumberify(20000),
-            userBalance: {
-              amount: bigNumberify(1),
-              usdValue: bigNumberify(4500),
-            },
-            usdPrice: bigNumberify(4500),
-          },
-          {
-            asset: 'eip155:1/erc20:0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
-            totalAmount: bigNumberify(20000),
-            userBalance: {
-              amount: bigNumberify(1),
-              usdValue: bigNumberify(2000),
-            },
-            usdPrice: bigNumberify(2000),
-          },
-          {
-            asset: 'eip155:1/erc20:0xEB4C2781e4ebA804CE9a9803C67d0893436bB27D',
-            totalAmount: bigNumberify(20000),
-            userBalance: {
-              amount: bigNumberify(1),
-              usdValue: bigNumberify(3500),
-            },
-            usdPrice: bigNumberify(3500),
-          },
-        ],
-        type: 'token',
-        lpType: LpType.BALANCER,
-        id: 1,
-      },
       {
         assets: [
           {
@@ -117,7 +41,7 @@ describe('composables::defi', () => {
         premiumOnly: false,
         type: 'token',
         lpType: LpType.UNISWAP_V2,
-        id: 2,
+        id: 0,
       },
       {
         assets: [
@@ -145,7 +69,7 @@ describe('composables::defi', () => {
         premiumOnly: true,
         type: 'token',
         lpType: LpType.SUSHISWAP,
-        id: 3,
+        id: 1,
       },
       {
         assets: [
@@ -173,7 +97,7 @@ describe('composables::defi', () => {
         premiumOnly: true,
         type: 'nft',
         lpType: LpType.UNISWAP_V3,
-        id: 4,
+        id: 2,
       },
       {
         assets: [
@@ -201,7 +125,7 @@ describe('composables::defi', () => {
         premiumOnly: true,
         type: 'nft',
         lpType: LpType.UNISWAP_V3,
-        id: 5,
+        id: 3,
       },
       {
         assets: [
@@ -229,7 +153,7 @@ describe('composables::defi', () => {
         premiumOnly: false,
         type: 'token',
         lpType: LpType.UNISWAP_V2,
-        id: 6,
+        id: 4,
       },
       {
         assets: [
@@ -257,12 +181,10 @@ describe('composables::defi', () => {
         premiumOnly: true,
         type: 'nft',
         lpType: LpType.UNISWAP_V3,
-        id: 7,
+        id: 5,
       },
     ];
 
-    const actualResult = get(lpAggregatedBalances());
-
-    expect(actualResult).toMatchObject(expectedResult);
+    expect(get(lpAggregatedBalances())).toMatchObject(expectedResult);
   });
 });

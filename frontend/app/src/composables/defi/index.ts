@@ -10,7 +10,6 @@ interface UseLiquidityPositionReturn {
 export function useLiquidityPosition(): UseLiquidityPositionReturn {
   const { uniswapV2Balances, uniswapV3Balances } = useUniswapStore();
   const { balanceList: sushiswapBalances } = useSushiswapStore();
-  const { balancerBalances } = useBalancerStore();
   const { assetSymbol } = useAssetInfoRetrieval();
 
   const lpAggregatedBalances = (
@@ -46,24 +45,10 @@ export function useLiquidityPosition(): UseLiquidityPositionReturn {
       lpType: LpType.SUSHISWAP,
     }) satisfies XSwapLiquidityBalance);
 
-    const mappedBalancerBalances = get(balancerBalances([])).map((item, index) => ({
-      id: index,
-      usdValue: item.userBalance.usdValue,
-      asset: createEvmIdentifierFromAddress(item.address),
-      premiumOnly: true,
-      assets: item.tokens.map(asset => ({
-        ...asset,
-        asset: asset.token,
-      })),
-      type: 'token',
-      lpType: LpType.BALANCER,
-    }) satisfies XSwapLiquidityBalance);
-
     return [
       ...(includeNft ? mappedUniswapV3Balances : []),
       ...mappedUniswapV2Balances,
       ...mappedSushiswapBalances,
-      ...mappedBalancerBalances,
     ].sort((a, b) => sortDesc(a.usdValue, b.usdValue)).map((item, id) => ({ ...item, id }));
   });
 
@@ -82,9 +67,6 @@ export function useLiquidityPosition(): UseLiquidityPositionReturn {
     }, {
       identifier: LpType.SUSHISWAP,
       name: (assets: string[]): string => `SLP ${concatAssets(assets)}`,
-    }, {
-      identifier: LpType.BALANCER,
-      name: (assets: string[]): string => concatAssets(assets),
     }];
 
     const selected = data.find(({ identifier }) => identifier === get(type));

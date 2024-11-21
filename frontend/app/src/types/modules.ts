@@ -8,7 +8,6 @@ export enum Module {
   MAKERDAO_DSR = 'makerdao_dsr',
   AAVE = 'aave',
   UNISWAP = 'uniswap',
-  BALANCER = 'balancer',
   LOOPRING = 'loopring',
   ETH2 = 'eth2',
   SUSHISWAP = 'sushiswap',
@@ -28,7 +27,7 @@ export const ModuleEnum = z.nativeEnum(Module);
 
 export type ModuleEnum = z.infer<typeof ModuleEnum>;
 
-export const DECENTRALIZED_EXCHANGES = [Module.UNISWAP, Module.BALANCER, Module.SUSHISWAP];
+export const DECENTRALIZED_EXCHANGES = [Module.UNISWAP, Module.SUSHISWAP];
 
 export interface SupportedModule {
   name: string;
@@ -76,11 +75,6 @@ export const SUPPORTED_MODULES: SupportedModule[] = [
     identifier: Module.LOOPRING,
     name: 'Loopring',
     icon: './assets/images/protocols/loopring.svg',
-  },
-  {
-    identifier: Module.BALANCER,
-    name: 'Balancer',
-    icon: './assets/images/protocols/balancer.svg',
   },
   {
     identifier: Module.ETH2,

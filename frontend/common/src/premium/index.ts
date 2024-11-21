@@ -4,7 +4,6 @@ import type { LpType, ProfitLossModel } from '../defi/common';
 import type { MaybeRef } from '@vueuse/core';
 import type { ComputedRef, Ref } from 'vue';
 import type { AssetInfo } from '../data';
-import type { BalancerBalance, BalancerProfitLoss } from '../defi/balancer';
 import type { XswapBalance, XswapPool, XswapPoolProfit } from '../defi/xswap';
 import type { BigNumber } from '../numbers';
 import type { AssetBalanceWithPrice } from '../balances';
@@ -45,14 +44,6 @@ export interface CompoundApi {
   compoundInterestProfit: Ref<ProfitLossModel[]>;
 }
 
-export interface BalancerApi {
-  balancerProfitLoss: (addresses: string[]) => Ref<BalancerProfitLoss[]>;
-  balancerBalances: (addresses: string[]) => Ref<BalancerBalance[]>;
-  balancerPools: Ref<XswapPool[]>;
-  balancerAddresses: Ref<string[]>;
-  fetchBalancerBalances: (refresh: boolean) => Promise<void>;
-}
-
 export interface SushiApi {
   balances: (addresses: string[]) => Ref<XswapBalance[]>;
   poolProfit: (addresses: string[]) => Ref<XswapPoolProfit[]>;
@@ -85,7 +76,6 @@ export interface DataUtilities {
   readonly utils: UtilsApi;
   readonly statistics: StatisticsApi;
   readonly compound: CompoundApi;
-  readonly balancer: BalancerApi;
   readonly balances: BalancesApi;
   readonly sushi: SushiApi;
 }

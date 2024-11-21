@@ -19,10 +19,6 @@ const data = [
     identifier: LpType.SUSHISWAP,
     icon: './assets/images/protocols/sushiswap.svg',
   },
-  {
-    identifier: LpType.BALANCER,
-    icon: './assets/images/protocols/balancer.svg',
-  },
 ];
 
 const icon = computed(() => {

@@ -1,4 +1,4 @@
-import type { AssetsApi, BalancerApi, BalancesApi, CompoundApi, LocationData, OwnedAssets, ProfitLossModel, StatisticsApi, SushiApi, TimedAssetBalances, TimedBalances, UserSettingsApi, UtilsApi } from '@rotki/common';
+import type { AssetsApi, BalancesApi, CompoundApi, LocationData, OwnedAssets, ProfitLossModel, StatisticsApi, SushiApi, TimedAssetBalances, TimedBalances, UserSettingsApi, UtilsApi } from '@rotki/common';
 import type { MaybeRef } from '@vueuse/core';
 
 export function assetsApi(): AssetsApi {
@@ -77,18 +77,6 @@ export function balancesApi(): BalancesApi {
     aggregatedBalances: balances(false, false),
     balances: (groupMultiChain = false) => balances(false, groupMultiChain),
     exchangeRate: (currency: string) => computed(() => get(exchangeRate(currency)) ?? One),
-  };
-}
-
-export function balancerApi(): BalancerApi {
-  const store = useBalancerStore();
-  const { pools, addresses } = storeToRefs(store);
-  return {
-    balancerProfitLoss: (addresses: string[]) => store.profitLoss(addresses),
-    balancerBalances: (addresses: string[]) => store.balancerBalances(addresses),
-    balancerPools: pools,
-    balancerAddresses: addresses,
-    fetchBalancerBalances: async (refresh: boolean) => store.fetchBalances(refresh),
   };
 }
 
