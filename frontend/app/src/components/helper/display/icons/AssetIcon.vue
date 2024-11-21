@@ -91,7 +91,6 @@ const url = reactify(getAssetImageUrl)(mappedIdentifier);
 
 const usedChainIconSize = computed(() => get(chainIconSize) || `${(Number.parseInt(get(size)) * 50) / 100}px`);
 const chainIconMargin = computed(() => `-${get(usedChainIconSize)}`);
-const chainIconPosition = computed(() => `${(Number.parseInt(get(usedChainIconSize)) * 50) / 100}px`);
 
 const placeholderStyle = computed(() => {
   const pad = get(padding);
@@ -139,8 +138,8 @@ const { copy } = useCopy(identifier);
 
         <div
           :style="styled"
-          class="flex items-center justify-center cursor-pointer h-full w-full icon-bg"
-          :class="{ [$style.circle]: circle }"
+          class="flex items-center justify-center cursor-pointer h-full w-full"
+          :class="[$style.circle]"
         >
           <RuiIcon
             v-if="!currency && pending"
@@ -203,11 +202,12 @@ const { copy } = useCopy(identifier);
 }
 
 .chain {
-  @apply border bg-white absolute z-[1] flex items-center justify-center;
+  @apply bg-white dark:bg-gray-800 absolute z-[1] flex items-center justify-center rounded-lg shadow-sm;
+  @apply border border-gray-200 dark:border-gray-600;
   margin-top: v-bind(chainIconMargin);
   margin-left: v-bind(chainIconMargin);
-  top: v-bind(chainIconPosition);
-  left: v-bind(chainIconPosition);
   padding: v-bind(chainIconPadding);
+  bottom: -4px;
+  right: -4px;
 }
 </style>
