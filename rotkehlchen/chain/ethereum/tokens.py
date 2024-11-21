@@ -5,6 +5,7 @@ from rotkehlchen.chain.ethereum.modules.curve.constants import VOTING_ESCROW
 from rotkehlchen.chain.ethereum.modules.makerdao.cache import ilk_cache_foreach
 from rotkehlchen.chain.evm.tokens import EvmTokensWithDSProxy
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.chain.structures import EvmTokenDetectionData
 from rotkehlchen.constants.assets import A_DAI, A_ETH, A_WETH
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.types import ChainID, ChecksumEvmAddress
@@ -51,19 +52,43 @@ class EthereumTokens(EvmTokensWithDSProxy):
             database=database,
             evm_inquirer=ethereum_inquirer,
         )
-        self.tokens_for_proxies = [A_DAI.resolve_to_evm_token(), A_WETH.resolve_to_evm_token()]
+        dai = A_DAI.resolve_to_evm_token()
+        weth = A_WETH.resolve_to_evm_token()
+        self.tokens_for_proxies = [
+            EvmTokenDetectionData(
+                identifier=dai.identifier,
+                address=dai.evm_address,
+                decimals=dai.decimals,  # type: ignore  # TODO: those tokens have decimals. We need to fix the type in the EVMToken class.
+            ), EvmTokenDetectionData(
+                identifier=weth.identifier,
+                address=weth.evm_address,
+                decimals=weth.decimals,  # type: ignore
+            ),
+        ]
         # Add aave tokens
-        self.tokens_for_proxies.extend(GlobalDBHandler().get_evm_tokens(
+        self.tokens_for_proxies.extend(GlobalDBHandler.get_token_detection_data(
             chain_id=ChainID.ETHEREUM,
+            exceptions=set(),
             protocol='aave',
         ))
-        self.tokens_for_proxies.extend(GlobalDBHandler().get_evm_tokens(
+        self.tokens_for_proxies.extend(GlobalDBHandler.get_token_detection_data(
             chain_id=ChainID.ETHEREUM,
+            exceptions=set(),
             protocol='aave-v2',
         ))
+
         # Add Makerdao vault collateral tokens
         with GlobalDBHandler().conn.read_ctx() as cursor:
-            self.tokens_for_proxies.extend([x for _, _, x, _ in ilk_cache_foreach(cursor) if x != A_ETH])  # type: ignore  # noqa: E501
+            for _, _, asset, _ in ilk_cache_foreach(cursor):
+                if asset == A_ETH:
+                    continue
+
+                token = asset.resolve_to_evm_token()
+                self.tokens_for_proxies.append(EvmTokenDetectionData(
+                    identifier=token.identifier,
+                    address=token.evm_address,
+                    decimals=token.decimals,  # type: ignore
+                ))
 
     # -- methods that need to be implemented per chain
     def _per_chain_token_exceptions(self) -> set[ChecksumEvmAddress]:

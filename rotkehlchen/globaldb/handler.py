@@ -20,7 +20,9 @@ from rotkehlchen.assets.asset import (
 from rotkehlchen.assets.ignored_assets_handling import IgnoredAssetsHandling
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.types import AssetData, AssetType
+from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.chain.structures import EvmTokenDetectionData
 from rotkehlchen.constants.assets import A_ETH, A_ETH2
 from rotkehlchen.constants.misc import (
     DEFAULT_SQL_VM_INSTRUCTIONS_CB,
@@ -943,6 +945,39 @@ class GlobalDBHandler:
                     )
 
         return tokens
+
+    @staticmethod
+    def get_token_detection_data(
+            chain_id: ChainID,
+            exceptions: set[ChecksumEvmAddress],
+            protocol: str | None = None,
+    ) -> list[EvmTokenDetectionData]:
+        """Query EVM token data from the database for token detection.
+
+        Retrieves basic token information including identifier, address, and decimals.
+        Tokens in the exceptions set are excluded from results. If a token doesn't have
+        decimals we default to 18.
+        """
+        result = []
+        query = 'SELECT identifier, address, decimals FROM evm_tokens WHERE chain=?'
+        bindings: list[int | str] = [chain_id.serialize_for_db()]
+        if protocol is not None:
+            query += ' AND protocol=?'
+            bindings.append(protocol)
+
+        with GlobalDBHandler().conn.read_ctx() as cursor:
+            cursor.execute(query, bindings)
+            for identifier, address, decimals in cursor:
+                if address in exceptions:
+                    continue
+
+                result.append(EvmTokenDetectionData(
+                    identifier=identifier,
+                    address=address,
+                    decimals=decimals if decimals is not None else DEFAULT_TOKEN_DECIMALS,  # TODO: at least two tokens are missing the decimals in my DB and also the EvmToken class allows decimals to be None. We need to think if that is correct and if we should enforce or not for all the erc20s to have decimals.  # noqa: E501
+                ))
+
+        return result
 
     @staticmethod
     def get_addresses_by_protocol(chain_id: ChainID, protocol: str) -> tuple[ChecksumEvmAddress, ...]:  # noqa: E501
