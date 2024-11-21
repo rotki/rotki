@@ -53,6 +53,7 @@ const { scrambleData, shouldShowAmount, scrambleAddress, scrambleIdentifier } = 
 
 const { explorers } = storeToRefs(useFrontendSettingsStore());
 const { getChain, getChainInfoByName } = useSupportedChains();
+const { accountTags } = useBlockchainStore();
 
 const { addressNameSelector } = useAddressesNamesStore();
 const addressName = computed(() => {
@@ -145,6 +146,11 @@ function openAddressBookForm() {
 
 const showAddressBookButton = computed(() => get(type) === 'address' && get(blockchain) !== Blockchain.ETH2);
 
+const tags = computed(() => {
+  const address = get(text);
+  return get(accountTags(address));
+});
+
 const [DefineButton, ReuseButton] = createReusableTemplate();
 </script>
 
@@ -154,13 +160,14 @@ const [DefineButton, ReuseButton] = createReusableTemplate();
       v-if="showAddressBookButton"
       size="sm"
       variant="text"
+      class="-my-0.5"
       icon
       @click="openAddressBookForm()"
     >
       <template #prepend>
         <RuiIcon
           name="pencil-line"
-          size="20"
+          size="16"
           class="!text-rui-grey-400"
         />
       </template>
@@ -204,6 +211,13 @@ const [DefineButton, ReuseButton] = createReusableTemplate();
             </template>
           </div>
         </template>
+        <template v-if="tags.length > 0">
+          <TagDisplay
+            :tags="tags"
+            class="!mt-1 mb-2"
+            small
+          />
+        </template>
         <div class="flex items-center gap-2">
           {{ displayText }}
 
@@ -211,7 +225,7 @@ const [DefineButton, ReuseButton] = createReusableTemplate();
         </div>
         <div
           v-if="aliasName"
-          class="font-bold flex justify-between items-center mt-1 !gap-2"
+          class="font-bold flex items-center mt-1 !gap-2"
         >
           {{ aliasName }}
 

@@ -102,7 +102,7 @@ function expandParent() {
       </RuiTooltip>
       <template v-else>
         <ReuseImage />
-        <div class="flex grow py-0 capitalize navigation-menu-item__text">
+        <div class="flex grow py-0 navigation-menu-item__text">
           {{ text }}
         </div>
       </template>

@@ -29,7 +29,7 @@ withDefaults(
         :size="1.25"
         :src="tag.icon"
       />
-      {{ tag.name }}
+      <span class="font-mono">{{ tag.name }}</span>
     </RuiChip>
     <span
       v-if="showDescription"
