@@ -56,6 +56,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'Compoundv3',
         'Cowswap',
         'Curve',
+        'CurveLend',
         'Diva',
         'Defisaver',
         'Dripsv1',

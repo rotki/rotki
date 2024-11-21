@@ -96,6 +96,7 @@ SPAM_PROTOCOL = 'spam'
 GEARBOX_PROTOCOL = 'gearbox'
 HOP_PROTOCOL_LP = 'hop_lp'
 MORPHO_VAULT_PROTOCOL: Final = 'morpho_vaults'
+CURVE_LENDING_VAULTS_PROTOCOL = 'curve_lending_vaults'
 
 
 # The protocols for which we know how to calculate their prices
@@ -1154,6 +1155,11 @@ class CacheType(Enum):
     MORPHO_VAULTS = auto()
     BALANCER_V1_POOLS = auto()
     BALANCER_V2_POOLS = auto()
+    CURVE_LENDING_VAULTS = auto()
+    CURVE_LENDING_VAULT_CONTROLLER = auto()
+    CURVE_LENDING_VAULT_AMM = auto()
+    CURVE_LENDING_VAULT_COLLATERAL_TOKEN = auto()
+    CURVE_LENDING_VAULT_BORROWED_TOKEN = auto()
 
     def serialize(self) -> str:
         # Using custom serialize method instead of SerializableEnumMixin since mixin replaces
@@ -1187,6 +1193,11 @@ UniqueCacheType = Literal[
     CacheType.MORPHO_VAULTS,
     CacheType.BALANCER_V1_POOLS,
     CacheType.BALANCER_V2_POOLS,
+    CacheType.CURVE_LENDING_VAULTS,
+    CacheType.CURVE_LENDING_VAULT_CONTROLLER,
+    CacheType.CURVE_LENDING_VAULT_AMM,
+    CacheType.CURVE_LENDING_VAULT_COLLATERAL_TOKEN,
+    CacheType.CURVE_LENDING_VAULT_BORROWED_TOKEN,
 ]
 
 UNIQUE_CACHE_KEYS: tuple[UniqueCacheType, ...] = typing.get_args(UniqueCacheType)
