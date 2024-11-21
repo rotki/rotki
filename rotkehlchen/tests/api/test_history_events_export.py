@@ -14,7 +14,13 @@ from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.tests.utils.api import api_url_for, assert_error_response, assert_proper_response
+from rotkehlchen.tests.utils.api import (
+    api_url_for,
+    assert_error_response,
+    assert_ok_async_response,
+    assert_proper_response,
+    wait_for_async_task,
+)
 from rotkehlchen.tests.utils.factories import make_evm_tx_hash
 from rotkehlchen.tests.utils.history import prepare_rotki_for_history_processing_test
 from rotkehlchen.tests.utils.history_base_entry import add_entries
@@ -120,11 +126,24 @@ def test_history_export_download_csv(
     ))
     assert_csv_export_response(response, csv_dir2, 2, includes_extra_headers=False)
 
-    # now query the download CSV endpoint
+    # now query the export endpoint with no directory specified
     response = requests.put(
         api_url_for(rotkehlchen_api_server_with_exchanges, 'exporthistoryeventresource'),
-        json={'async_query': False},
+        json={'async_query': True},
     )
+    task_id = assert_ok_async_response(response)
+    outcome = wait_for_async_task(
+        rotkehlchen_api_server_with_exchanges,
+        task_id,
+    )
+    file_path = outcome['result']['file_path']
+
+    # download the csv exported in the last api call
+    response = requests.post(
+        api_url_for(rotkehlchen_api_server_with_exchanges, 'exporthistorydownloadresource'),
+        json={'file_path': file_path},
+    )
+
     temp_csv_file = Path(download_dir, FILENAME_HISTORY_EVENTS_CSV)
     temp_csv_file.write_bytes(response.content)
     assert_csv_export_response(response, download_dir, is_download=True)
