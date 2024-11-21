@@ -1,12 +1,16 @@
 import logging
 from abc import ABC, abstractmethod
 from collections import defaultdict
-from collections.abc import Sequence
-from typing import TYPE_CHECKING
+from collections.abc import Mapping, Sequence
+from typing import TYPE_CHECKING, TypeVar
 
-from rotkehlchen.assets.asset import EvmToken, Nft
-from rotkehlchen.chain.ethereum.utils import token_normalized_value
+from rotkehlchen.assets.asset import Asset, EvmToken, Nft
+from rotkehlchen.chain.ethereum.utils import (
+    token_normalized_value,
+    token_normalized_value_decimals,
+)
 from rotkehlchen.chain.evm.types import WeightedNode, asset_id_is_evm_token
+from rotkehlchen.chain.structures import EvmTokenDetectionData
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.inquirer import Inquirer
@@ -69,11 +73,13 @@ ETHERSCAN_MAX_ARGUMENTS_TO_CONTRACT = 110
 # to multicall. In total, it occupies (7 + number of tokens passed) arguments.
 PURE_TOKENS_BALANCE_ARGUMENTS = 7
 
+T = TypeVar('T')
+
 
 def generate_multicall_chunks(
         chunk_length: int,
-        addresses_to_tokens: dict[ChecksumEvmAddress, list[EvmToken]],
-) -> list[list[tuple[ChecksumEvmAddress, list[EvmToken]]]]:
+        addresses_to_tokens: Mapping[ChecksumEvmAddress, Sequence[T]],
+) -> list[list[tuple[ChecksumEvmAddress, Sequence[T]]]]:
     """Generate appropriate num of chunks for multicall address->tokens, address->tokens query"""
     multicall_chunks = []
     free_space = chunk_length
@@ -127,10 +133,12 @@ class EvmTokens(ABC):
     def get_token_balances(
             self,
             address: ChecksumEvmAddress,
-            tokens: list[EvmToken],
+            tokens: list[EvmTokenDetectionData],
             call_order: Sequence[WeightedNode] | None,
-    ) -> dict[EvmToken, FVal]:
-        """Queries the balances of multiple tokens for an address
+    ) -> dict[Asset, FVal]:
+        """Query multiple token balances for a wallet address.
+        Returns Asset objects instead of EvmTokens for performance optimization since
+        we avoid loading from the database extra information not used here.
 
         May raise:
         - RemoteError if an external service such as Etherscan is queried and
@@ -146,22 +154,25 @@ class EvmTokens(ABC):
         result = self.evm_inquirer.contract_scan.call(
             node_inquirer=self.evm_inquirer,
             method_name='tokensBalance',
-            arguments=[address, [x.evm_address for x in tokens]],
+            arguments=[address, [x.address for x in tokens]],
             call_order=call_order,
         )
-        balances: dict[EvmToken, FVal] = defaultdict(FVal)
+        balances: dict[Asset, FVal] = defaultdict(FVal)
 
         try:
             for token_balance, token in zip(result, tokens, strict=True):
                 if token_balance == 0:
                     continue
 
-                normalized_balance = token_normalized_value(token_balance, token)
+                normalized_balance = token_normalized_value_decimals(
+                    token_amount=token_balance,
+                    token_decimals=token.decimals,
+                )
                 log.debug(
-                    f'Found {self.evm_inquirer.chain_name} {token.symbol}({token.evm_address}) '
+                    f'Found {self.evm_inquirer.chain_name} {token.identifier} '
                     f'token balance for {address} and balance {normalized_balance}',
                 )
-                balances[token] += normalized_balance
+                balances[Asset(token.identifier)] += normalized_balance
         except ValueError:
             log.error(
                 f'{self.evm_inquirer.chain_name} tokensBalance returned different length '
@@ -173,7 +184,7 @@ class EvmTokens(ABC):
 
     def _get_multicall_token_balances(
             self,
-            chunk: list[tuple[ChecksumEvmAddress, list[EvmToken]]],
+            chunk: list[tuple[ChecksumEvmAddress, Sequence[EvmToken]]],
             call_order: Sequence['WeightedNode'] | None = None,
     ) -> dict[ChecksumEvmAddress, dict[EvmToken, FVal]]:
         """Gets token balances from a chunk of address -> token address
@@ -219,11 +230,14 @@ class EvmTokens(ABC):
     def _query_chunks(
             self,
             address: ChecksumEvmAddress,
-            tokens: list[EvmToken],
+            tokens: list[EvmTokenDetectionData],
             chunk_size: int,
             call_order: list[WeightedNode],
-    ) -> dict[EvmToken, FVal]:
-        total_token_balances: dict[EvmToken, FVal] = defaultdict(FVal)
+    ) -> dict[Asset, FVal]:
+        """Processes token balance queries in batches of chunk_size to avoid hitting gas limits.
+        Uses Asset objects directly instead of EvmToken to minimize database queries.
+        """
+        total_token_balances: dict[Asset, FVal] = defaultdict(FVal)
         chunks = get_chunks(tokens, n=chunk_size)
         for chunk in chunks:
             new_token_balances = self.get_token_balances(
@@ -254,7 +268,7 @@ class EvmTokens(ABC):
         return addresses_info
 
     def _query_new_tokens(self, addresses: Sequence[ChecksumEvmAddress]) -> None:
-        all_tokens = GlobalDBHandler.get_evm_tokens(
+        all_tokens = GlobalDBHandler.get_token_detection_data(
             chain_id=self.evm_inquirer.chain_id,
             exceptions=self._get_token_exceptions(),
         )
@@ -288,7 +302,7 @@ class EvmTokens(ABC):
     def _detect_tokens(
             self,
             addresses: Sequence[ChecksumEvmAddress],
-            tokens_to_check: list[EvmToken],
+            tokens_to_check: list[EvmTokenDetectionData],
     ) -> None:
         """
         Detect tokens for the given addresses.
