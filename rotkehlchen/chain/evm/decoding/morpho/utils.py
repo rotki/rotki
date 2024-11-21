@@ -7,15 +7,15 @@ import requests
 from rotkehlchen.assets.asset import UnderlyingToken
 from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token, get_token
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
+from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS
 from rotkehlchen.chain.evm.decoding.morpho.constants import MORPHO_VAULT_ABI
+from rotkehlchen.chain.evm.decoding.utils import update_cached_vaults
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError
-from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.globaldb.cache import (
-    globaldb_get_unique_cache_value,
     globaldb_set_unique_cache_value,
 )
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -78,58 +78,45 @@ def _query_morpho_vaults_api() -> list[dict[str, Any]] | None:
     return all_vaults
 
 
+def _process_morpho_vault(database: 'DBHandler', vault: dict[str, Any]) -> None:
+    """Process Morpho vault data from the api and add its tokens to the database.
+    May raise NotERC20Conformant, NotERC721Conformant, DeserializationError, and KeyError."""
+    vault_chain_id = ChainID.deserialize_from_db(vault['chain']['id'])
+    underlying_token = get_or_create_evm_token(
+        userdb=database,
+        evm_address=string_to_evm_address(vault['asset']['address']),
+        chain_id=vault_chain_id,
+        decimals=deserialize_int(vault['asset']['decimals']),
+        name=vault['asset']['name'],
+        symbol=vault['asset']['symbol'],
+        encounter=TokenEncounterInfo(description='Querying Morpho vaults', should_notify=False),
+    )
+    get_or_create_evm_token(
+        userdb=database,
+        evm_address=string_to_evm_address(vault['address']),
+        chain_id=vault_chain_id,
+        protocol=MORPHO_VAULT_PROTOCOL,
+        decimals=DEFAULT_TOKEN_DECIMALS,  # all morpho vaults have 18 decimals
+        name=vault['name'],
+        symbol=vault['symbol'],
+        underlying_tokens=[UnderlyingToken(
+            address=underlying_token.evm_address,
+            token_kind=EvmTokenKind.ERC20,
+            weight=ONE,
+        )],
+        encounter=TokenEncounterInfo(description='Querying Morpho vaults', should_notify=False),
+    )
+
+
 def query_morpho_vaults(database: 'DBHandler') -> None:
     """Query list of Morpho vaults and add the vault tokens to the global database."""
-    with GlobalDBHandler().conn.read_ctx() as cursor:
-        last_vault_count = globaldb_get_unique_cache_value(
-            cursor=cursor,
-            key_parts=(CacheType.MORPHO_VAULTS,),
-        )
-
-    if (vault_list := _query_morpho_vaults_api()) is None:
-        _update_cache_timestamp()  # Update timestamp to prevent repeated errors.
-        return
-
-    _update_cache_timestamp(count=(vault_count := len(vault_list)))
-
-    try:
-        if last_vault_count is not None and vault_count == int(last_vault_count):
-            log.debug(f'Same number ({vault_count}) of Morpho vaults returned from API as previous query. Skipping vault processing.')  # noqa: E501
-            return
-    except ValueError:
-        log.error(f'Failed to check last Morpho vault count due to {last_vault_count} not being an int')  # noqa: E501
-        return
-
-    for vault in vault_list:
-        try:
-            vault_chain_id = ChainID.deserialize_from_db(vault['chain']['id'])
-            underlying_token = get_or_create_evm_token(
-                userdb=database,
-                evm_address=string_to_evm_address(vault['asset']['address']),
-                chain_id=vault_chain_id,
-                decimals=deserialize_int(vault['asset']['decimals']),
-                name=vault['asset']['name'],
-                symbol=vault['asset']['symbol'],
-                encounter=TokenEncounterInfo(description='Querying Morpho vaults', should_notify=False),  # noqa: E501
-            )
-            get_or_create_evm_token(
-                userdb=database,
-                evm_address=string_to_evm_address(vault['address']),
-                chain_id=vault_chain_id,
-                protocol=MORPHO_VAULT_PROTOCOL,
-                decimals=18,  # all morpho vaults have 18 decimals
-                name=vault['name'],
-                symbol=vault['symbol'],
-                underlying_tokens=[UnderlyingToken(
-                    address=underlying_token.evm_address,
-                    token_kind=EvmTokenKind.ERC20,
-                    weight=ONE,
-                )],
-                encounter=TokenEncounterInfo(description='Querying Morpho vaults', should_notify=False),  # noqa: E501
-            )
-        except (DeserializationError, KeyError) as e:
-            error = f'missing key {e!s}' if isinstance(e, KeyError) else f'{e!s}'
-            log.error(f'Failed to store token information for Morpho vault due to {error}. Vault: {vault}. Skipping...')  # noqa: E501
+    update_cached_vaults(
+        database=database,
+        cache_type=CacheType.MORPHO_VAULTS,
+        display_name='Morpho',
+        query_vault_api=_query_morpho_vaults_api,
+        process_vault=_process_morpho_vault,
+    )
 
 
 def get_morpho_vault_token_price(
