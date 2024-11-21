@@ -121,12 +121,13 @@ export class BlockchainBalancesPage {
         .find('tbody')
         .find('tr[class^="_tr_"]:not(tr[class*="_group_"]')
         .each((row) => {
-          const usdValue = row.find('td').eq(5).find('[data-cy="display-amount"]').text();
-          const asset = row.find('td').eq(2).find('.account-chain').eq(0).attr('data-chain');
-          if (!usdValue || !asset)
+          const value = row.find('[data-cy=display-amount]').text();
+          const asset = row.find('.account-chain').eq(0).attr('data-chain');
+
+          if (!value || !asset)
             return;
 
-          updateLocationBalance(usdValue, balances, asset.trim().toLowerCase());
+          updateLocationBalance(value, balances, asset.trim().toLowerCase());
         });
     });
 
