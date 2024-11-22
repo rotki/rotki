@@ -261,12 +261,12 @@ def test_native_token_balance(
         balances = blockchain.balances.polygon_pos[address].assets
         assert balances == {
             pol: Balance(
-                amount=FVal('8.206486866125895549'),
-                usd_value=FVal('12.3097302991888433235'),
+                amount=FVal('8.204435619126641457'),
+                usd_value=FVal('12.3066534286899621855'),
             ),
             usdc: Balance(
-                amount=FVal('10.045085'),
-                usd_value=FVal('15.0676275'),
+                amount=FVal('0.33078'),
+                usd_value=FVal('0.496170'),
             ),
             weth: Balance(
                 amount=FVal('0.007712106620416874'),

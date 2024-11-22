@@ -329,7 +329,7 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
         )
         result = self.contract_scan.call(
             node_inquirer=self,
-            method_name='etherBalances',
+            method_name='ether_balances',
             arguments=[accounts],
             call_order=call_order if call_order is not None else self.default_call_order(),
         )

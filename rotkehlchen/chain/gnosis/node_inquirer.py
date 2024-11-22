@@ -52,7 +52,7 @@ class GnosisInquirer(EvmNodeInquirer):
             contracts=contracts,
             rpc_timeout=rpc_timeout,
             contract_multicall=contracts.contract(string_to_evm_address('0xcA11bde05977b3631167028862bE2a173976CA11')),
-            contract_scan=contracts.contract(string_to_evm_address('0x571C62a1c863aEAD01c1d34D8cB3Ee2c6f938800')),
+            contract_scan=contracts.contract(string_to_evm_address('0x54eCF3f6f61F63fdFE7c27Ee8A86e54899600C92')),
             native_token=A_XDAI.resolve_to_crypto_asset(),
             blockscout=Blockscout(
                 blockchain=SupportedBlockchain.GNOSIS,
