@@ -55,8 +55,7 @@ function deselectAll(updateImmediate: (value: string[]) => void) {
           :model-value="evmchainsToSkipDetection"
           :success-messages="success"
           :error-messages="error"
-          class="general-settings__fields__account-chains-to-skip-detection"
-          data-cy="account-chain-skip-detection-field"
+          data-cy="chains-to-skip-detection"
           variant="outlined"
           key-attr="id"
           text-attr="name"
@@ -67,6 +66,7 @@ function deselectAll(updateImmediate: (value: string[]) => void) {
         >
           <template #selection="{ item }">
             <ChainDisplay
+              :data-value="item.id"
               dense
               :chain="item.id"
             />

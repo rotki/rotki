@@ -17,7 +17,6 @@ const { t } = useI18n();
   >
     <RuiSwitch
       v-model="showGraphRangeSelector"
-      class="general-settings__fields__show-graph-range-selector"
       :label="t('frontend_settings.graph_basis.range_selector.label')"
       :success-messages="success"
       :error-messages="error"

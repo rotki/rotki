@@ -30,7 +30,7 @@ describe('settings::general', () => {
   it('change precision & validate UI message', () => {
     pageGeneral.setFloatingPrecision(settings.floatingPrecision);
     pageGeneral.confirmInlineSuccess(
-      '.general-settings__fields__floating-precision .details .text-rui-success',
+      '[data-cy=floating-precision-settings] .details .text-rui-success',
       settings.floatingPrecision,
     );
   });
@@ -41,26 +41,22 @@ describe('settings::general', () => {
 
   it('change main currency and validate UI message', () => {
     pageGeneral.selectCurrency(settings.currency);
-    pageGeneral.confirmInlineSuccess('.general-settings__fields__currency-selector .details', settings.currency);
+    pageGeneral.confirmInlineSuccess('[data-cy=currency-selector]', settings.currency);
   });
 
   it('change chains for which to exclude token detection and validate UI message', () => {
-    const target = '.general-settings__fields__account-chains-to-skip-detection .details';
-    cy.wrap(settings.evmchainsToSkipDetection).each((chain: string) => {
+    settings.evmchainsToSkipDetection.forEach((chain: string) => {
       pageGeneral.selectChainToIgnore(chain);
-      pageGeneral.confirmInlineSuccess(
-        target,
-        'EVM Chains for which to skip automatic token detection saved successfully',
-      );
-      cy.get(target).should('be.empty');
     });
-    cy.get('.general-settings__fields__account-chains-to-skip-detection').type('{esc}');
+
+    cy.get('[data-cy=chains-to-skip-detection]').type('{esc}');
+    pageGeneral.verifySkipped(settings.evmchainsToSkipDetection);
   });
 
   it('change balance save frequency and validate UI message', () => {
     pageGeneral.setBalanceSaveFrequency(settings.balanceSaveFrequency);
     pageGeneral.confirmInlineSuccess(
-      '.general-settings__fields__balance-save-frequency .details .text-rui-success',
+      '[data-cy=balance-save-frequency-input] .details',
       settings.balanceSaveFrequency,
     );
   });
@@ -68,7 +64,7 @@ describe('settings::general', () => {
   it('change date display format and validate UI message', () => {
     pageGeneral.setDateDisplayFormat(settings.dateDisplayFormat);
     pageGeneral.confirmInlineSuccess(
-      '.general-settings__fields__date-display-format .details',
+      '[data-cy=date-display-format-input] .details',
       settings.dateDisplayFormat,
     );
   });

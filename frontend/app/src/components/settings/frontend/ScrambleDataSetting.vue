@@ -35,7 +35,7 @@ watch([enabled, multiplier], setData);
       <RuiSwitch
         v-model="scrambleData"
         color="primary"
-        class="general-settings__fields__scramble-data my-2"
+        class="my-2"
         :label="t('frontend_settings.scramble.label')"
         :success-messages="success"
         :error-messages="error"
@@ -49,7 +49,6 @@ watch([enabled, multiplier], setData);
     >
       <AmountInput
         v-model="scrambleMultiplier"
-        class="general-settings__fields__scramble-multiplier"
         :label="t('frontend_settings.scramble.multiplier.label')"
         :hint="t('frontend_settings.scramble.multiplier.hint')"
         variant="outlined"

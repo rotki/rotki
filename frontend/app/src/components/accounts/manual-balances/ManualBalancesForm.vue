@@ -134,7 +134,7 @@ defineExpose({
   >
     <RuiTextField
       v-model="label"
-      class="manual-balances-form__label"
+      data-cy="manual-balances-form-label"
       variant="outlined"
       color="primary"
       :label="t('manual_balances_form.fields.label')"
@@ -153,7 +153,7 @@ defineExpose({
       <AssetSelect
         v-model="asset"
         :label="t('common.asset')"
-        class="manual-balances-form__asset"
+        data-cy="manual-balances-form-asset"
         outlined
         :error-messages="toMessages(v$.asset)"
         :disabled="submitting"
@@ -198,7 +198,7 @@ defineExpose({
       v-model="amount"
       :label="t('common.amount')"
       :error-messages="toMessages(v$.amount)"
-      class="manual-balances-form__amount"
+      data-cy="manual-balances-form-amount"
       variant="outlined"
       autocomplete="off"
       :disabled="submitting"
@@ -209,12 +209,12 @@ defineExpose({
       v-model="tags"
       :label="t('manual_balances_form.fields.tags')"
       :disabled="submitting"
-      class="manual-balances-form__tags"
+      data-cy="manual-balances-form-tags"
     />
 
     <LocationSelector
       v-model="location"
-      class="manual-balances-form__location"
+      data-cy="manual-balances-form-location"
       :error-messages="toMessages(v$.location)"
       :disabled="submitting"
       :label="t('common.location')"

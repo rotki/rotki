@@ -26,8 +26,8 @@ export class BlockchainBalancesPage {
 
   openAddDialog() {
     cy.get('body').then(($body) => {
-      if ($body.find('[data-cy="notification"]').length > 0) {
-        return '[data-cy="notification_dismiss-all"]';
+      if ($body.find('[data-cy=notification]').length > 0) {
+        return '[data-cy=notification_dismiss-all]';
       }
 
       return '';
@@ -37,31 +37,31 @@ export class BlockchainBalancesPage {
       }
     });
 
-    cy.get('[data-cy="notification"]').should('not.exist');
-    cy.get('[data-cy="add-blockchain-balance"]').should('be.visible');
-    cy.get('[data-cy="add-blockchain-balance"]').click();
+    cy.get('[data-cy=notification]').should('not.exist');
+    cy.get('[data-cy=add-blockchain-balance]').should('be.visible');
+    cy.get('[data-cy=add-blockchain-balance]').click();
   }
 
   addBalance(balance: FixtureBlockchainBalance) {
     cy.get('[data-cy=bottom-dialog]').should('be.visible');
-    cy.get('[data-cy="blockchain-balance-form"]').should('be.visible');
-    cy.get('[data-cy=bottom-dialog] [data-cy="account-blockchain-field"] input').should('not.be.disabled');
-    cy.get('[data-cy=bottom-dialog] [data-cy="account-blockchain-field"]').click();
-    cy.get('[data-cy=bottom-dialog] [data-cy="account-blockchain-field"]').type(balance.chainName);
+    cy.get('[data-cy=blockchain-balance-form]').should('be.visible');
+    cy.get('[data-cy=bottom-dialog] [data-cy=account-blockchain-field] input').should('not.be.disabled');
+    cy.get('[data-cy=bottom-dialog] [data-cy=account-blockchain-field]').click();
+    cy.get('[data-cy=bottom-dialog] [data-cy=account-blockchain-field]').type(balance.chainName);
     cy.get('[role=menu-content] button:first-child').should('contain.text', balance.chainName);
-    cy.get('[data-cy=bottom-dialog] [data-cy="account-blockchain-field"]').type('{enter}');
+    cy.get('[data-cy=bottom-dialog] [data-cy=account-blockchain-field]').type('{enter}');
 
     if (balance.blockchain !== Blockchain.ETH)
-      cy.get('[data-cy="input-mode-manual"]').click();
+      cy.get('[data-cy=input-mode-manual]').click();
 
     if (balance.blockchain === Blockchain.ETH)
-      setCheckBox('[data-cy="account-all-evm-chains"]', false);
+      setCheckBox('[data-cy=account-all-evm-chains]', false);
 
-    cy.get('[data-cy="account-address-field"]').should('not.be.disabled');
-    cy.get('[data-cy="account-address-field"]').type(balance.address);
-    cy.get('[data-cy="account-label-field"]').type(balance.label);
+    cy.get('[data-cy=account-address-field]').should('not.be.disabled');
+    cy.get('[data-cy=account-address-field]').type(balance.address);
+    cy.get('[data-cy=account-label-field]').type(balance.label);
 
-    for (const tag of balance.tags) cy.get('[data-cy="account-tag-field"]').type(`${tag}{enter}`);
+    for (const tag of balance.tags) cy.get('[data-cy=account-tag-field]').type(`${tag}{enter}`);
 
     cy.get('[data-cy=bottom-dialog] [data-cy=confirm]').click();
 
@@ -94,7 +94,7 @@ export class BlockchainBalancesPage {
       .eq(position)
       .as('row');
 
-    cy.get('@row').find('[data-cy="labeled-address-display"]').as('address-label');
+    cy.get('@row').find('[data-cy=labeled-address-display]').as('address-label');
     cy.get('@address-label').scrollIntoView();
     cy.get('@address-label').trigger('mouseover');
 
@@ -105,7 +105,7 @@ export class BlockchainBalancesPage {
 
     for (const tag of balance.tags) cy.get('@row').find('.tag').contains(tag).should('be.visible');
 
-    cy.get('@row').find('[data-cy="labeled-address-display"]').as('address-label');
+    cy.get('@row').find('[data-cy=labeled-address-display]').as('address-label');
     cy.get('@address-label').scrollIntoView();
     cy.get('@address-label').trigger('mouseleave');
   }
@@ -158,11 +158,11 @@ export class BlockchainBalancesPage {
     cy.get(`[data-cy=account-table] tbody`)
       .find('tr[class^="_tr_"]:not(tr[class*="_group_"]')
       .eq(position)
-      .find('button[data-cy="row-edit"]')
+      .find('button[data-cy=row-edit]')
       .click();
 
-    cy.get('[data-cy="blockchain-balance-form"]').as('edit-form');
-    cy.get('@edit-form').find('[data-cy="account-label-field"]').as('account-label');
+    cy.get('[data-cy=blockchain-balance-form]').as('edit-form');
+    cy.get('@edit-form').find('[data-cy=account-label-field]').as('account-label');
     cy.get('@account-label').click();
     cy.get('@account-label').clear();
     cy.get('@account-label').type(label);
@@ -174,13 +174,13 @@ export class BlockchainBalancesPage {
     cy.get(`[data-cy=account-table] tbody`)
       .find('tr[class^="_tr_"]:not(tr[class*="_group_"]')
       .eq(position)
-      .find('[data-cy="labeled-address-display"]')
+      .find('[data-cy=labeled-address-display]')
       .invoke('text')
       .then((label) => {
         cy.get(`[data-cy=account-table] tbody`)
           .find('tr[class^="_tr_"]:not(tr[class*="_group_"]')
           .eq(position)
-          .find('button[data-cy="row-delete"]')
+          .find('button[data-cy=row-delete]')
           .click();
 
         this.confirmDelete();
@@ -196,7 +196,7 @@ export class BlockchainBalancesPage {
 
         cy.get(`[data-cy=account-table] tbody`)
           .find('tr[class^="_tr_"]:not(tr[class*="_group_"]')
-          .find('[data-cy="labeled-address-display"]')
+          .find('[data-cy=labeled-address-display]')
           .invoke('text')
           .should('not.contain', label);
       });

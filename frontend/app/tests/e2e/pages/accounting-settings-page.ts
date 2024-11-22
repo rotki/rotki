@@ -1,17 +1,17 @@
 export class AccountingSettingsPage {
   visit() {
-    cy.get('.user-dropdown').click();
+    cy.get('[data-cy=user-menu-button]').click();
     cy.get('[data-cy=user-dropdown]').should('exist');
-    cy.get('.user-dropdown__settings').click();
+    cy.get('[data-cy=settings-button]').click();
     cy.get('a.settings__accounting').click();
     cy.get('[data-cy=user-dropdown]').should('not.exist');
   }
 
   setTaxFreePeriodDays(value: string) {
-    cy.get('.accounting-settings__taxfree-period-days input').clear();
-    cy.get('.accounting-settings__taxfree-period-days input').type(value);
-    cy.get('.accounting-settings__taxfree-period-days input').blur();
-    this.confirmInlineSuccess('.accounting-settings__taxfree-period-days .details', value);
+    cy.get('[data-cy=taxfree-period]').clear();
+    cy.get('[data-cy=taxfree-period]').type(value);
+    cy.get('[data-cy=taxfree-period] input').blur();
+    this.confirmInlineSuccess('[data-cy=taxfree-period]', value);
   }
 
   changeSwitch(target: string, enabled: boolean) {

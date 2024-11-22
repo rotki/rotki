@@ -24,7 +24,6 @@ function getSuccessMessage(enabled: boolean) {
   >
     <RuiSwitch
       v-model="ethStakingTaxableAfterWithdrawalEnabled"
-      class="accounting-settings__eth-staking-taxable-after-withdrawal"
       :success-messages="success"
       :error-messages="error"
       :label="t('accounting_settings.trade.labels.eth_staking_taxable_after_withdrawal_enabled')"

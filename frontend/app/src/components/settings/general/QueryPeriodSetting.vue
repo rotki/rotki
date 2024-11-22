@@ -58,7 +58,6 @@ onMounted(() => {
         v-model="queryPeriod"
         variant="outlined"
         color="primary"
-        class="general-settings__fields__periodic-client-query-period"
         :label="t('frontend_settings.periodic_query.label')"
         :hint="t('frontend_settings.periodic_query.hint')"
         type="number"

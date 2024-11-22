@@ -17,7 +17,6 @@ const { t } = useI18n();
   >
     <RuiSwitch
       v-model="accountForAssetsMovements"
-      class="accounting-settings__account-for-assets-movements"
       :success-messages="success"
       :error-messages="error"
       :label="t('accounting_settings.trade.labels.account_for_assets_movements')"

@@ -17,7 +17,7 @@ const { t } = useI18n();
   >
     <RuiSwitch
       v-model="gasCosts"
-      class="accounting-settings__include-gas-costs"
+      data-cy="include-gas-costs-switch"
       :label="t('accounting_settings.trade.labels.include_gas_costs')"
       :success-messages="success"
       :error-messages="error"

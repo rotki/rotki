@@ -35,14 +35,14 @@ const { darkModeEnabled } = useDarkMode();
 <template>
   <div>
     <RuiMenu
-      id="user-dropdown"
-      menu-class="user-dropdown__menu min-w-[10rem] max-w-[22rem]"
+      data-cy="user-menu"
+      menu-class="min-w-[10rem] max-w-[22rem]"
       close-on-content-click
     >
       <template #activator="{ attrs }">
         <MenuTooltipButton
           tooltip="Account"
-          class-name="user-dropdown"
+          data-cy="user-menu-button"
           v-bind="attrs"
         >
           <RuiIcon name="account-circle-line" />
@@ -53,17 +53,16 @@ const { darkModeEnabled } = useDarkMode();
         class="py-2"
       >
         <div
-          key="username"
-          class="py-3 user-username font-bold text-center"
+          data-cy="username"
+          class="py-3 font-bold text-center"
         >
           {{ username }}
         </div>
         <RuiDivider />
         <RouterLink :to="{ path: '/settings' }">
           <RuiButton
-            key="settings"
             variant="list"
-            class="user-dropdown__settings"
+            data-cy="settings-button"
           >
             <template #prepend>
               <RuiIcon
@@ -77,7 +76,7 @@ const { darkModeEnabled } = useDarkMode();
 
         <RuiButton
           v-if="isXs"
-          key="privacy-mode"
+          data-cy="privacy-mode-button"
           variant="list"
           @click="togglePrivacyMode()"
         >
@@ -89,20 +88,18 @@ const { darkModeEnabled } = useDarkMode();
           </template>
           {{ t('user_dropdown.change_privacy_mode.label') }}
         </RuiButton>
-
         <ThemeControl
           v-if="isXs"
           :dark-mode-enabled="darkModeEnabled"
           menu
+          data-cy="theme-control"
         >
           {{ t('user_dropdown.switch_theme') }}
         </ThemeControl>
-
         <RuiDivider />
         <RuiButton
-          key="logout"
           variant="list"
-          class="user-dropdown__logout"
+          data-cy="logout-button"
           @click="showConfirmation()"
         >
           <template #prepend>

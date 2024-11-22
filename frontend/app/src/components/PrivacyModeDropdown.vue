@@ -38,7 +38,8 @@ watch([enabled, multiplier], setData);
 <template>
   <div class="relative">
     <RuiMenu
-      menu-class="privacy-menu-content w-[22rem]"
+      data-cy="privacy-menu-content"
+      menu-class="w-[22rem]"
       :popper="{ placement: 'bottom-end' }"
     >
       <template #activator="{ attrs }">

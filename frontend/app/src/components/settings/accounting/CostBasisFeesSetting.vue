@@ -24,7 +24,7 @@ function getSuccessMessage(enabled: boolean) {
   >
     <RuiSwitch
       v-model="includeFeesInCostBasis"
-      class="accounting-settings__include-fees-in-cost-basis"
+      data-cy="include-fees-in-cost-basis-switch"
       :success-messages="success"
       :error-messages="error"
       :label="t('accounting_settings.trade.labels.include_fees_in_cost_basis')"

@@ -61,14 +61,14 @@ const steps = computed(() => [
               <RuiButton
                 color="primary"
                 variant="text"
-                class="defi-wizard__use-default"
+                data-cy="use-default-button"
                 @click="done()"
               >
                 {{ t('defi_wizard.steps.setup.used_default') }}
               </RuiButton>
               <RuiButton
                 color="primary"
-                class="defi-wizard__select-modules"
+                data-cy="select-modules-button"
                 @click="step = 2"
               >
                 {{ t('common.actions.continue') }}

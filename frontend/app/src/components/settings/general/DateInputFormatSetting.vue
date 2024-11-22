@@ -53,7 +53,6 @@ onMounted(() => {
     <DateInputFormatSelector
       v-model="dateInputFormat"
       :label="t('general_settings.labels.date_input_format')"
-      class="general-settings__fields__date-input-format"
       :success-messages="success ? [success] : []"
       :error-messages="error ? [error] : toMessages(v$.dateInputFormat)"
       @update:model-value="callIfValid($event, updateImmediate)"

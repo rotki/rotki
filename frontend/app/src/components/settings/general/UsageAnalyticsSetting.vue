@@ -20,7 +20,7 @@ const { t } = useI18n();
     <template #default="{ error, success, updateImmediate }">
       <RuiSwitch
         v-model="anonymousUsageAnalytics"
-        class="general-settings__fields__anonymous-usage-statistics"
+        data-cy="anonymous-usage-statistics-input"
         color="primary"
         :label="t('general_settings.usage_analytics.label')"
         :success-messages="success"

@@ -40,17 +40,17 @@ export class AssetsManagerPage {
   }
 
   searchAsset(asset: string) {
-    cy.get('[data-cy="table-filter"] [data-id=activator] > span:last-child').click();
-    cy.get('[data-cy="table-filter"] [data-id=activator] > span:nth-child(3)').click();
-    cy.get('[data-cy="table-filter"] input').type(`symbol: ${asset}{enter}{esc}`);
+    cy.get('[data-cy=table-filter] [data-id=activator] > span:last-child').click();
+    cy.get('[data-cy=table-filter] [data-id=activator] > span:nth-child(3)').click();
+    cy.get('[data-cy=table-filter] input').type(`symbol: ${asset}{enter}{esc}`);
     cy.get('div[class*=thead__loader]').should('not.exist');
     this.visibleEntries(1);
   }
 
   searchAssetByAddress(address: string) {
-    cy.get('[data-cy="table-filter"] [data-id=activator] > span:last-child').click();
-    cy.get('[data-cy="table-filter"] [data-id=activator] > span:nth-child(3)').click();
-    cy.get('[data-cy="table-filter"] input').type(`address: ${address}{enter}{esc}`);
+    cy.get('[data-cy=table-filter] [data-id=activator] > span:last-child').click();
+    cy.get('[data-cy=table-filter] [data-id=activator] > span:nth-child(3)').click();
+    cy.get('[data-cy=table-filter] input').type(`address: ${address}{enter}{esc}`);
     cy.get('div[class*=thead__loader]').should('not.exist');
     this.visibleEntries(1);
   }
@@ -143,9 +143,9 @@ export class AssetsManagerPage {
 
   addAnEvmAsset(address = '0xfDb7EEc5eBF4c4aC7734748474123aC25C6eDCc8'): void {
     // get the fields
-    cy.get('[data-cy=chain-select] [data-id="activator"]').as('chainInput');
+    cy.get('[data-cy=chain-select]').as('chainInput');
 
-    cy.get('[data-cy=token-select] [data-id="activator"]').as('tokenInput');
+    cy.get('[data-cy=token-select]').as('tokenInput');
 
     cy.get('[data-cy=address-input] input').as('addressInput');
 
@@ -216,7 +216,7 @@ export class AssetsManagerPage {
 
   addOtherAsset() {
     // get the fields
-    cy.get('[data-cy=type-select] [data-id="activator"]').as('typeInput');
+    cy.get('[data-cy=type-select]').as('typeInput');
     cy.get('[data-cy=name-input] input').as('nameInput');
     cy.get('[data-cy=symbol-input] input').as('symbolInput');
 

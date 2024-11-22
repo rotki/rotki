@@ -61,7 +61,8 @@ onMounted(() => {
           v-model="dateDisplayFormat"
           variant="outlined"
           color="primary"
-          class="general-settings__fields__date-display-format flex-grow"
+          data-cy="date-display-format-input"
+          class="flex-grow"
           :label="t('general_settings.labels.date_display_format')"
           type="text"
           :success-messages="success"
@@ -91,7 +92,7 @@ onMounted(() => {
         >
           <template #activator>
             <RuiButton
-              class="general-settings__date-restore  mt-1"
+              class="mt-1"
               variant="text"
               icon
               @click="updateImmediate(defaultDateDisplayFormat)"

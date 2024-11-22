@@ -164,6 +164,7 @@ watch(tags, () => {
     </RuiAutoComplete>
     <RuiButton
       class="tag-input__manage-tags mt-1"
+      data-cy="manage-tags-button"
       icon
       variant="text"
       color="primary"
