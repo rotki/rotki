@@ -13,7 +13,7 @@ from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet, Bal
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.bitcoin import get_bitcoin_addresses_balances
 from rotkehlchen.chain.ethereum.modules.makerdao.vaults import MakerdaoVault
-from rotkehlchen.constants import ZERO
+from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import (
     A_AVAX,
     A_BTC,
@@ -1001,7 +1001,7 @@ def test_query_balances_with_threshold(
             identifier=-1,
             asset=A_EUR,
             label='Small EUR',
-            amount=FVal('1'),
+            amount=ONE,
             location=Location.BANKS,
             tags=None,
             balance_type=BalanceType.ASSET,
@@ -1019,7 +1019,7 @@ def test_query_balances_with_threshold(
             identifier=-3,
             asset=A_BTC,
             label='Large BTC',
-            amount=FVal('1'),
+            amount=ONE,
             location=Location.EXTERNAL,
             tags=None,
             balance_type=BalanceType.ASSET,

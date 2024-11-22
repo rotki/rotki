@@ -865,7 +865,8 @@ class RestAPI:
                 for chain, chain_balances in result.items():
                     result[chain] = {
                         asset: balance for asset, balance in chain_balances.items()
-                        if balance['usd_value'] > usd_value_threshold
+                        if 'usd_value' in balance and FVal(balance['usd_value']) >
+                        usd_value_threshold
                     }
 
         return {'result': result, 'message': msg, 'status_code': status_code}
@@ -2098,7 +2099,8 @@ class RestAPI:
         if usd_value_threshold is not None:
             balances['balances'] = [
                 balance for balance in balances['balances']
-                if balance['usd_value'] > usd_value_threshold
+                if 'usd_value' in balance and FVal(balance['usd_value']) >
+                  usd_value_threshold
             ]
 
         return _wrap_in_ok_result(balances)
@@ -2138,7 +2140,7 @@ class RestAPI:
         except TagConstraintError as e:
             return wrap_in_fail_result(str(e), status_code=HTTPStatus.CONFLICT)
 
-        return self._get_manually_tracked_balances()
+        return self._get_manually_tracked_balances(usd_value_threshold=None)
 
     @async_api_call()
     def add_manually_tracked_balances(
