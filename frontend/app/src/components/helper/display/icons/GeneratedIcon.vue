@@ -56,21 +56,12 @@ const textStyle = computed<Style>(() => {
     fontSize: `${fontSize}px`,
   };
 });
-
-const classes = computed(() => ({
-  'bg-gray-200 dark:bg-gray-800': !props.flat,
-  'text-gray-500 dark:text-gray-300': true,
-  'border-gray-300 dark:border-rui-grey-700': !props.flat,
-  'border': !props.flat,
-  'bg-transparent': props.flat,
-}));
 </script>
 
 <template>
   <span
     :style="{ ...wrapperStyle, ...textStyle }"
-    class="flex items-center justify-center rounded-full whitespace-nowrap tracking-normal font-semibold"
-    :class="classes"
+    class="flex items-center justify-center rounded-full whitespace-nowrap tracking-normal font-semibold bg-rui-grey-200 dark:bg-rui-grey-800 text-rui-grey-600 dark:text-rui-grey-400 border border-rui-grey-300 dark:border-rui-grey-800 uppercase"
   >
     <RuiIcon
       v-if="customAsset"

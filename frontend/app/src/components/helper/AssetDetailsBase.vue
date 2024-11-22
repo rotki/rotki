@@ -78,13 +78,13 @@ const loading = computed<boolean>(() => get(isPending(get(asset).identifier)));
       <AppImage
         v-if="asset.imageUrl"
         contain
-        size="26px"
+        size="30px"
         :src="asset.imageUrl"
       />
       <AssetIcon
         v-else
         :changeable="changeable"
-        size="26px"
+        size="30px"
         :styled="assetStyled"
         :identifier="asset.identifier"
         :resolution-options="{ associate: enableAssociation }"

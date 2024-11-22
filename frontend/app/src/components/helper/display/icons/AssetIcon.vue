@@ -139,7 +139,10 @@ const { copy } = useCopy(identifier);
         <div
           :style="styled"
           class="flex items-center justify-center cursor-pointer h-full w-full"
-          :class="[$style.circle]"
+          :class="{
+            [$style.circle]: circle,
+            'icon-bg': !(currency || error),
+          }"
         >
           <RuiIcon
             v-if="!currency && pending"
