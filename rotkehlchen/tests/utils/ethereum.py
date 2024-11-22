@@ -51,7 +51,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.scroll.node_inquirer import ScrollInquirer
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
 
-NODE_CONNECTION_TIMEOUT = 10
+NODE_CONNECTION_TIMEOUT = 3
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)

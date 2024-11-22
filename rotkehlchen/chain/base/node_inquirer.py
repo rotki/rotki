@@ -52,7 +52,7 @@ class BaseInquirer(L2WithL1FeesInquirer):
             contracts=contracts,
             rpc_timeout=rpc_timeout,
             contract_multicall=contracts.contract(string_to_evm_address('0xeDF6D2a16e8081F777eB623EeB4411466556aF3d')),
-            contract_scan=contracts.contract(string_to_evm_address('0x2d26d6b698f6494efdB908A2A4f11ae5Fee86099')),
+            contract_scan=contracts.contract(string_to_evm_address('0x54eCF3f6f61F63fdFE7c27Ee8A86e54899600C92')),
             native_token=A_ETH.resolve_to_crypto_asset(),
             blockscout=Blockscout(
                 blockchain=SupportedBlockchain.BASE,

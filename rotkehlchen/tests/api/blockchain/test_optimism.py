@@ -66,8 +66,7 @@ def test_add_optimism_blockchain_account(rotkehlchen_api_server: 'APIServer') ->
     now = ts_now()
     # now check that detecting tokens works
     optimism_tokens = (
-        Asset('eip155:10/erc20:0x4F604735c1cF31399C6E711D5962b2B3E0225AD3'),
-        Asset('eip155:10/erc20:0x94b008aA00579c1307B0EF2c499aD98a8ce58e58'),
+        Asset('eip155:10/erc20:0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85'),
     )
     # patch get_evm_tokens return value to just a few tokens
     # to prevent issues when the asset database changes

@@ -64,7 +64,7 @@ DetectedTokensType = dict[
 # tokens the benchmark will probably have to run again.
 
 
-OTHER_MAX_TOKEN_CHUNK_LENGTH = 590
+OTHER_MAX_TOKEN_CHUNK_LENGTH = 460
 
 # maximum 32-bytes arguments in one call to a contract (either tokensBalance or multicall)
 ETHERSCAN_MAX_ARGUMENTS_TO_CONTRACT = 110
@@ -153,7 +153,7 @@ class EvmTokens(ABC):
         )
         result = self.evm_inquirer.contract_scan.call(
             node_inquirer=self.evm_inquirer,
-            method_name='tokensBalance',
+            method_name='tokens_balance',
             arguments=[address, [x.address for x in tokens]],
             call_order=call_order,
         )
@@ -199,7 +199,7 @@ class EvmTokens(ABC):
                 (
                     self.evm_inquirer.contract_scan.address,
                     self.evm_inquirer.contract_scan.encode(
-                        method_name='tokensBalance',
+                        method_name='tokens_balance',
                         arguments=[address, tokens_addrs],
                     ),
                 ),
@@ -212,7 +212,7 @@ class EvmTokens(ABC):
         for (address, tokens), result in zip(chunk, results, strict=True):
             decoded_result = self.evm_inquirer.contract_scan.decode(
                 result=result,
-                method_name='tokensBalance',
+                method_name='tokens_balance',
                 arguments=[address, [token.evm_address for token in tokens]],
             )[0]
             for token, token_balance in zip(tokens, decoded_result, strict=True):

@@ -52,7 +52,7 @@ class PolygonPOSInquirer(EvmNodeInquirer):
             contracts=contracts,
             rpc_timeout=rpc_timeout,
             contract_multicall=contracts.contract(string_to_evm_address('0x275617327c958bD06b5D6b871E7f491D76113dd8')),
-            contract_scan=contracts.contract(string_to_evm_address('0x2aB513B211C801673758D1C32815605B5289ad29')),
+            contract_scan=contracts.contract(string_to_evm_address('0x54eCF3f6f61F63fdFE7c27Ee8A86e54899600C92')),
             native_token=A_POLYGON_POS_MATIC.resolve_to_crypto_asset(),
             blockscout=Blockscout(
                 blockchain=SupportedBlockchain.POLYGON_POS,
