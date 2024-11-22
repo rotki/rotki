@@ -32,14 +32,15 @@ const showMore = computed<number>(() => get(assets).length - get(visible));
         <template #activator>
           <div
             data-cy="top-asset"
-            class="rounded-full w-8 h-8 bg-rui-grey-300 dark:bg-white flex items-center justify-center border-2 border-white dark:border-rui-grey-300 -ml-2 cursor-pointer"
+            class="rounded-full size-8 flex items-center justify-center border-2 border-white dark:border-rui-grey-700 -ml-2 cursor-pointer"
           >
             <AssetIcon
               no-tooltip
               flat
               :identifier="asset.asset"
               :resolution-options="resolutionOptions"
-              size="24px"
+              size="30px"
+              padding="1px"
               class="[&_.icon-bg]:!rounded-full [&_.icon-bg]:!overflow-hidden"
               :show-chain="showChain"
             />
