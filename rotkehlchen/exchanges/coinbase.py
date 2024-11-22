@@ -619,8 +619,10 @@ class Coinbase(ExchangeInterface):
         options = {}
         if last_tx_id is not None:
             options['starting_after'] = last_tx_id
+            options['order'] = 'asc'
         transactions = self._api_query(f'accounts/{account_id}/transactions', options=options)
         if len(transactions) == 0:
+            log.debug('Coinbase API query returned no transactions')
             return trades, asset_movements, history_events
 
         trade_pairs = defaultdict(list)  # Maps every trade id to their two transactions
@@ -666,7 +668,7 @@ class Coinbase(ExchangeInterface):
         with self.db.user_write() as write_cursor:  # Remember last transaction id for account
             write_cursor.execute(
                 'INSERT OR REPLACE INTO key_value_cache(name, value) VALUES(?, ?) ',
-                (account_last_id_name, transactions[-1]['id']),
+                (account_last_id_name, transactions[-1]['id']),  # -1 takes last transaction due to ascending order  # noqa: E501
             )
 
         return trades, asset_movements, history_events
