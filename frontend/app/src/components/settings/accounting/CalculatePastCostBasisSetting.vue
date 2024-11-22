@@ -23,7 +23,6 @@ onMounted(() => {
   >
     <RuiSwitch
       v-model="calculatePastCostBasis"
-      class="accounting-settings__past-cost-basis"
       :success-messages="success"
       :error-messages="error"
       :label="t('accounting_settings.trade.labels.calculate_past_cost_basis')"

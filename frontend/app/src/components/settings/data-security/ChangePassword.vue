@@ -67,7 +67,7 @@ async function change() {
       <RuiRevealableTextField
         v-model="currentPassword"
         color="primary"
-        class="user-security-settings__fields__current-password"
+        data-cy="current-password"
         :label="t('change_password.labels.password')"
         :error-messages="toMessages(v$.currentPassword)"
         variant="outlined"
@@ -75,7 +75,7 @@ async function change() {
       <RuiRevealableTextField
         v-model="newPassword"
         color="primary"
-        class="user-security-settings__fields__new-password"
+        data-cy="new-password"
         :label="t('change_password.labels.new_password')"
         prepend-icon="lock-line"
         :error-messages="toMessages(v$.newPassword)"
@@ -84,7 +84,7 @@ async function change() {
       <RuiRevealableTextField
         v-model="newPasswordConfirm"
         color="primary"
-        class="user-security-settings__fields__new-password-confirm"
+        data-cy="confirm-password"
         :label="t('change_password.labels.confirm_password')"
         prepend-icon="repeat-2-line"
         :error-messages="toMessages(v$.newPasswordConfirm)"
@@ -94,7 +94,7 @@ async function change() {
 
     <div class="flex justify-end">
       <RuiButton
-        class="user-security-settings__buttons__change-password"
+        data-cy="change-password-button"
         color="primary"
         :loading="loading"
         :disabled="v$.$invalid || loading"

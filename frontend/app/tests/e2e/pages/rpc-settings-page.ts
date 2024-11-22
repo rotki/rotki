@@ -2,24 +2,21 @@ import { RotkiApp } from './rotki-app';
 
 export class RpcSettingsPage {
   visit() {
-    cy.get('.user-dropdown').click();
+    cy.get('[data-cy=user-menu-button]').click();
     cy.get('[data-cy=user-dropdown]').should('exist');
-    cy.get('.user-dropdown__settings').click();
+    cy.get('[data-cy=settings-button]').click();
     cy.get('[data-cy=user-dropdown]').should('not.exist');
     cy.get('a.settings__rpc').click();
   }
 
   changePassword(currentPassword: string, newPassword: string) {
-    cy.get('.general-settings__account-and-security__fields__current-password input').clear();
-    cy.get('.general-settings__account-and-security__fields__current-password input').type(currentPassword);
-
-    cy.get('.general-settings__account-and-security__fields__new-password input').clear();
-    cy.get('.general-settings__account-and-security__fields__new-password input').type(newPassword);
-
-    cy.get('.general-settings__account-and-security__fields__new-password-confirm input').clear();
-    cy.get('.general-settings__account-and-security__fields__new-password-confirm input').type(newPassword);
-
-    cy.get('.general-settings__account-and-security__buttons__change-password').click();
+    cy.get('[data-cy=current-password-input]').clear();
+    cy.get('[data-cy=current-password-input]').type(currentPassword);
+    cy.get('[data-cy=new-password-input]').clear();
+    cy.get('[data-cy=new-password-input]').type(newPassword);
+    cy.get('[data-cy=confirm-password-input]').clear();
+    cy.get('[data-cy=confirm-password-input]').type(newPassword);
+    cy.get('[data-cy=change-password-button]').click();
   }
 
   confirmInlineSuccess(target: string, messageContains?: string) {

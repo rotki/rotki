@@ -9,7 +9,7 @@ export class DashboardPage {
 
   getOverallBalance() {
     return cy
-      .get('[data-cy="overall-balances__net-worth"] [data-cy="display-amount"]')
+      .get('[data-cy=overall-balances__net-worth] [data-cy=display-amount]')
       .then($amount => parseBigNumber($amount.text()));
   }
 
@@ -26,7 +26,7 @@ export class DashboardPage {
         return true;
       }
 
-      const amount = $element.find('[data-cy="display-amount"]').text();
+      const amount = $element.find('[data-cy=display-amount]').text();
       updateLocationBalance(amount, balances, location);
     });
     return cy.wrap(balances);
@@ -34,7 +34,7 @@ export class DashboardPage {
 
   getNonFungibleBalances() {
     return cy.get('[data-cy=dashboard]').then(($dashboard) => {
-      const nftTable = $dashboard.find('[data-cy="nft-balance-table"]');
+      const nftTable = $dashboard.find('[data-cy=nft-balance-table]');
       const nftTableExists = nftTable.length > 0;
 
       cy.log('NFT table exists', nftTableExists);
@@ -42,7 +42,7 @@ export class DashboardPage {
       if (!nftTableExists)
         return cy.wrap(Zero);
 
-      const selector = 'tbody tr:last-child td:nth-child(2) [data-cy="display-amount"]';
+      const selector = 'tbody tr:last-child td:nth-child(2) [data-cy=display-amount]';
       const $displayAmount = nftTable.find(selector);
 
       let amount = Zero;
@@ -67,7 +67,7 @@ export class DashboardPage {
         return true;
       }
 
-      const amount = $element.find('[data-cy="display-amount"]').text();
+      const amount = $element.find('[data-cy=display-amount]').text();
       updateLocationBalance(amount, balances, location);
     });
 
@@ -75,22 +75,22 @@ export class DashboardPage {
   }
 
   amountDisplayIsBlurred() {
-    cy.get('[data-cy="amount-display"]').should(($div) => {
+    cy.get('[data-cy=amount-display]').should(($div) => {
       expect($div.css('filter')).to.match(/^blur/);
     });
   }
 
   amountDisplayIsNotBlurred() {
-    cy.get('[data-cy="amount-display"]').should(($div) => {
+    cy.get('[data-cy=amount-display]').should(($div) => {
       expect($div.css('filter')).not.to.match(/^blur/);
     });
   }
 
   percentageDisplayIsBlurred() {
-    cy.get('.percentage-display__amount').should('have.class', 'blur');
+    cy.get('[data-cy=percentage-display]').should('have.class', 'blur');
   }
 
   percentageDisplayIsNotBlurred() {
-    cy.get('.percentage-display__amount').should('not.have.class', 'blur');
+    cy.get('[data-cy=percentage-display]').should('not.have.class', 'blur');
   }
 }

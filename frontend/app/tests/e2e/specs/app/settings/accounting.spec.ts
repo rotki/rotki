@@ -16,30 +16,29 @@ describe('settings::accounting', () => {
   });
 
   it('change crypto2crypto switch & validate UI message', () => {
-    pageAccounting.changeSwitch('.accounting-settings__crypto2crypto', false);
+    pageAccounting.changeSwitch('[data-cy=crypto2crypto-switch]', false);
   });
 
   it('change gas costs switch & validate UI message', () => {
-    pageAccounting.changeSwitch('.accounting-settings__include-gas-costs', false);
+    pageAccounting.changeSwitch('[data-cy=include-gas-costs-switch]', false);
   });
 
   it('change tax free period value and switch & validate UI message', () => {
     pageAccounting.setTaxFreePeriodDays('50');
-    pageAccounting.changeSwitch('.accounting-settings__taxfree-period', false);
+    pageAccounting.changeSwitch('[data-cy=taxfree-period-switch]', false);
   });
 
   it('change cost basis fee settings & validate UI message', () => {
-    pageAccounting.verifySwitchState('.accounting-settings__include-fees-in-cost-basis', true);
-    pageAccounting.changeSwitch('.accounting-settings__include-fees-in-cost-basis', false);
+    pageAccounting.verifySwitchState('[data-cy=include-fees-in-cost-basis-switch]', true);
+    pageAccounting.changeSwitch('[data-cy=include-fees-in-cost-basis-switch]', false);
   });
 
   it('verify changes persist', () => {
     app.relogin(username);
-
     pageAccounting.visit();
-    pageAccounting.verifySwitchState('.accounting-settings__crypto2crypto', false);
-    pageAccounting.verifySwitchState('.accounting-settings__include-gas-costs', false);
-    pageAccounting.verifySwitchState('.accounting-settings__taxfree-period', false);
-    pageAccounting.verifySwitchState('.accounting-settings__include-fees-in-cost-basis', false);
+    pageAccounting.verifySwitchState('[data-cy=crypto2crypto-switch]', false);
+    pageAccounting.verifySwitchState('[data-cy=include-gas-costs-switch]', false);
+    pageAccounting.verifySwitchState('[data-cy=taxfree-period]', false);
+    pageAccounting.verifySwitchState('[data-cy=include-fees-in-cost-basis-switch]', false);
   });
 });

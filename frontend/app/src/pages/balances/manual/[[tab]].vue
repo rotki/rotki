@@ -72,7 +72,7 @@ onBeforeMount(async () => {
       <RuiButton
         v-blur
         color="primary"
-        class="manual-balances__add-balance"
+        data-cy="manual-balances-add-button"
         @click="add()"
       >
         <template #prepend>

@@ -49,7 +49,7 @@ const { t } = useI18n();
     }"
   >
     <div
-      class="percentage-display__amount"
+      data-cy="percentage-display"
       :class="{
         'blur': !shouldShowPercentage,
         'text-end': justify === 'end',

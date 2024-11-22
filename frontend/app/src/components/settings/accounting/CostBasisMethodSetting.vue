@@ -32,7 +32,7 @@ function getErrorMessage(method: string) {
   >
     <CostBasisMethodSettings
       v-model="costBasisMethod"
-      class="accounting-settings__cost-basis-method pt-4"
+      class="pt-4"
       :success-messages="success ? [success] : []"
       :error-messages="error ? [error] : []"
       :label="t('accounting_settings.trade.labels.cost_basis_method')"

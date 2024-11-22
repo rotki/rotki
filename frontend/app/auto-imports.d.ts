@@ -15,6 +15,7 @@ declare global {
   const AssetInfo: typeof import('@rotki/common')['AssetInfo']
   const AssetInfoWithTransformer: typeof import('@rotki/common')['AssetInfoWithTransformer']
   const Balance: typeof import('@rotki/common')['Balance']
+  const BalancerBalances: typeof import('@rotki/common')['BalancerBalances']
   const BaseAsset: typeof import('@rotki/common')['BaseAsset']
   const BigNumber: typeof import('@rotki/common')['BigNumber']
   const Blockchain: typeof import('@rotki/common')['Blockchain']

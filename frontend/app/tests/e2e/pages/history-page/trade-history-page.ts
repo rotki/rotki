@@ -53,7 +53,7 @@ export class TradeHistoryPage {
     cy.get('[data-cy=fee] input').type(trade.fee);
     selectAsset('[data-cy=fee-currency]', trade.fee_currency, trade.fee_id);
     cy.get('[data-cy=link]').type(trade.link);
-    cy.get('[data-cy=notes] textarea:not([aria-hidden="true"])').type(trade.notes);
+    cy.get('[data-cy=notes] textarea:not([aria-hidden="true])').type(trade.notes);
     const waitForTrades = this.createWaitForTrades();
     cy.get('[data-cy=bottom-dialog] [data-cy=confirm]').click();
     waitForTrades();
@@ -122,9 +122,9 @@ export class TradeHistoryPage {
   }
 
   filterTrades(filter: string) {
-    cy.get('[data-cy="table-filter"]').scrollIntoView();
-    cy.get('[data-cy="table-filter"] [data-id=activator] > span:last-child').click();
-    cy.get('[data-cy="table-filter"] input').type(`${filter}`);
+    cy.get('[data-cy=table-filter]').scrollIntoView();
+    cy.get('[data-cy=table-filter] [data-id=activator] > span:last-child').click();
+    cy.get('[data-cy=table-filter] input').type(`${filter}`);
     cy.get('div[role="menu-content"] button:first-child').click();
   }
 
@@ -137,7 +137,7 @@ export class TradeHistoryPage {
   shouldBeOnPage(range: string) {
     cy.get('[class*=_thead__loader_] div[role=progressbar][class*=_progress_]').should('not.exist');
     cy.get('[class*=_tbody__loader_] div[role=progressbar][class*=_circular_]').should('not.exist');
-    cy.get('[data-cy=closed-trades] [data-cy=table-pagination] [class*=_ranges_] [data-id="activator"]').should(
+    cy.get('[data-cy=closed-trades] [data-cy=table-pagination] [class*=_ranges_] [data-id=activator]').should(
       'contain',
       range,
     );

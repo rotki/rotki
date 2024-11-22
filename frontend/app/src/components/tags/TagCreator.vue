@@ -107,6 +107,7 @@ watchImmediate(editMode, (edit) => {
         variant="outlined"
         color="primary"
         class="tag_creator__name"
+        data-cy="tag-creator-name"
         :label="t('common.name')"
         :error-messages="toMessages(v$.name)"
         :disabled="editMode"
@@ -116,6 +117,7 @@ watchImmediate(editMode, (edit) => {
         variant="outlined"
         color="primary"
         class="tag_creator__description"
+        data-cy="tag-creator-description"
         :label="t('common.description')"
       />
     </div>

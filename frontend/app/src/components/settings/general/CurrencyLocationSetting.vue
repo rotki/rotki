@@ -28,7 +28,8 @@ onMounted(() => {
     <RuiRadioGroup
       v-model="currencyLocation"
       color="primary"
-      class="general-settings__fields__currency-location flex flex-col"
+      data-cy="currency-location-input"
+      class="flex flex-col"
       :success-messages="success"
       :error-messages="error"
       @update:model-value="update($event)"

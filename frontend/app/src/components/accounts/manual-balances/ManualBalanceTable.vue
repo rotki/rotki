@@ -164,7 +164,7 @@ watchDebounced(
 </script>
 
 <template>
-  <RuiCard class="manual-balances">
+  <RuiCard data-cy="manual-balances">
     <template #custom-header>
       <div class="px-4 pt-4">
         <div class="flex flex-row items-center flex-wrap gap-3">
@@ -202,7 +202,8 @@ watchDebounced(
       row-attr="label"
       :rows="state.data"
       :item-class="getRowClass"
-      class="manual-balances-list lg:[&_table]:w-full"
+      data-cy="manual-balances"
+      class="lg:[&_table]:w-full"
     >
       <template #item.label="{ row }">
         <div

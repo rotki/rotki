@@ -86,7 +86,7 @@ onMounted(() => {
     >
       <RuiSwitch
         v-model="taxFreePeriod"
-        class="accounting-settings__taxfree-period"
+        data-cy="taxfree-period-switch"
         :success-messages="success"
         :error-messages="error"
         :label="t('accounting_settings.trade.labels.tax_free')"
@@ -106,7 +106,8 @@ onMounted(() => {
         v-model="taxFreeAfterPeriod"
         variant="outlined"
         color="primary"
-        class="accounting-settings__taxfree-period-days pt-4"
+        data-cy="taxfree-period"
+        class="pt-4"
         :success-messages="success"
         :error-messages="error || toMessages(v$.taxFreeAfterPeriod)"
         :disabled="!taxFreePeriod"
