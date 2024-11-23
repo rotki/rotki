@@ -515,4 +515,4 @@ def test_counterparties(rotkehlchen_api_server_with_exchanges: 'APIServer') -> N
         assert 'label' in counterparty_details
         assert 'icon' in counterparty_details or 'image' in counterparty_details
         if counterparty_details['identifier'] == 'gas':
-            assert counterparty_details['icon'] == 'fire-line'
+            assert counterparty_details['icon'] == 'lu-flame'

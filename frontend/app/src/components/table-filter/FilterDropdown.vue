@@ -240,7 +240,7 @@ const highlightedTextClasses = 'text-subtitle-2 text-rui-text-secondary';
     >
       <div class="flex items-center gap-2">
         <RuiIcon
-          name="input-field"
+          name="lu-keyboard"
           size="16"
           class="min-w-4"
         />
@@ -256,7 +256,7 @@ const highlightedTextClasses = 'text-subtitle-2 text-rui-text-secondary';
         class="flex items-center gap-2"
       >
         <RuiIcon
-          name="information-2-line"
+          name="lu-info"
           size="16"
           class="min-w-4"
         />

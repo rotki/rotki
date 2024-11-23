@@ -89,7 +89,7 @@ watch(showNotificationBar, (showNotificationBar) => {
               icon
               @click="dismissAll()"
             >
-              <RuiIcon name="list-unordered" />
+              <RuiIcon name="lu-list" />
             </RuiButton>
           </template>
           {{ t('notification_popup.dismiss_all') }}

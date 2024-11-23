@@ -150,7 +150,7 @@ watch(loading, async (isLoading, wasLoading) => {
           icon
           class="ml-2"
         >
-          <RuiIcon name="arrow-right-s-line" />
+          <RuiIcon name="lu-chevron-right" />
         </RuiButton>
       </RouterLink>
     </template>

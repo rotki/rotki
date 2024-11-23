@@ -13,7 +13,7 @@ const { incompleteUpgradeConflict } = storeToRefs(useSessionAuthStore());
   <Transition>
     <LoginActionAlert
       v-if="incompleteUpgradeConflict"
-      icon="alert-line"
+      icon="lu-triangle-alert"
       @confirm="emit('confirm')"
       @cancel="emit('cancel')"
     >

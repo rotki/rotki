@@ -37,7 +37,7 @@ const { t } = useI18n();
         :class="{
           [$style.visible]: visible,
         }"
-        name="notification-3-line"
+        name="lu-bell"
       />
       <div
         v-else

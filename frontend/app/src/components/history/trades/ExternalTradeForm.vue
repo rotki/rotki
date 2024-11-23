@@ -369,7 +369,7 @@ onMounted(setEditMode);
       >
         <RuiIcon
           size="16"
-          name="chat-quote-line"
+          name="lu-message-square-quote"
         />
         <i18n-t
           v-if="type === 'buy'"
@@ -467,7 +467,7 @@ onMounted(setEditMode);
       data-cy="link"
       variant="outlined"
       color="primary"
-      prepend-icon="link"
+      prepend-icon="lu-link-2"
       :label="t('external_trade_form.link.label')"
       :hint="t('external_trade_form.link.hint')"
       :error-messages="errorMessages.link"
@@ -475,7 +475,7 @@ onMounted(setEditMode);
 
     <RuiTextArea
       v-model="notes"
-      prepend-icon="sticky-note-line"
+      prepend-icon="lu-sticky-note"
       variant="outlined"
       color="primary"
       min-rows="5"

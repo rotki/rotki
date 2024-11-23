@@ -119,7 +119,7 @@ const refreshTooltip = computed<string>(() =>
               @click="refresh(true)"
             >
               <template #prepend>
-                <RuiIcon name="refresh-line" />
+                <RuiIcon name="lu-refresh-ccw" />
               </template>
               {{ t('common.refresh') }}
             </RuiButton>

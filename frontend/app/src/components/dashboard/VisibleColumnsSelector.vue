@@ -70,7 +70,7 @@ function update(value: TableColumn) {
         :tooltip="t('dashboard_asset_table.select_visible_columns')"
         v-bind="attrs"
       >
-        <RuiIcon name="more-2-fill" />
+        <RuiIcon name="lu-ellipsis-vertical" />
       </MenuTooltipButton>
     </template>
     <div class="py-2">

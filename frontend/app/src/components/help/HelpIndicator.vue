@@ -20,7 +20,7 @@ function toggleVisibility() {
   >
     <RuiIcon
       :class="{ [$style.visible]: visible }"
-      name="question-line"
+      name="lu-circle-help"
     />
   </MenuTooltipButton>
 </template>

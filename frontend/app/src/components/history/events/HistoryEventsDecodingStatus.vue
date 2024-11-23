@@ -245,7 +245,7 @@ onMounted(() => refresh());
         <template #prepend>
           <RuiIcon
             v-if="!partialEventTaskLoading"
-            name="list-check-2"
+            name="lu-layout-list"
           />
           <RuiProgress
             v-else
@@ -265,7 +265,7 @@ onMounted(() => refresh());
         <template #prepend>
           <RuiIcon
             v-if="!allEventTaskLoading"
-            name="restart-line"
+            name="lu-rotate-ccw"
           />
           <RuiProgress
             v-else

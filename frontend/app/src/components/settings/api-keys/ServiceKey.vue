@@ -117,7 +117,7 @@ defineExpose({
         :hint="currentValue ? '' : hint"
         :disabled="!editMode && !hideActions"
         :label="label"
-        prepend-icon="key-line"
+        prepend-icon="lu-key"
       />
 
       <RuiTooltip
@@ -135,7 +135,7 @@ defineExpose({
             color="primary"
             @click="emit('delete-key', name)"
           >
-            <RuiIcon name="delete-bin-line" />
+            <RuiIcon name="lu-trash-2" />
           </RuiButton>
         </template>
         {{ tooltip }}

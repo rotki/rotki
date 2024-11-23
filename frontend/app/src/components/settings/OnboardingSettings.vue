@@ -185,17 +185,17 @@ watch(v$, ({ $invalid }) => {
 
 function icon(level: LogLevel): RuiIcons {
   if (level === LogLevel.DEBUG)
-    return 'bug-line';
+    return 'lu-bug';
   else if (level === LogLevel.INFO)
-    return 'information-line';
+    return 'lu-info';
   else if (level === LogLevel.WARNING)
-    return 'alert-line';
+    return 'lu-triangle-alert';
   else if (level === LogLevel.ERROR)
     return 'lu-circle-alert';
   else if (level === LogLevel.CRITICAL)
-    return 'virus-line';
+    return 'lu-skull';
   else if (level === LogLevel.TRACE)
-    return 'file-search-line';
+    return 'file-lu-search';
 
   throw new Error(`Invalid option: ${level}`);
 }
@@ -321,7 +321,7 @@ const [CreateLabel, ReuseLabel] = createReusableTemplate<{ item: LogLevel }>();
             :disabled="!userDataDirectory"
             @click="selectDataDirectory()"
           >
-            <RuiIcon name="folder-line" />
+            <RuiIcon name="lu-folder" />
           </RuiButton>
         </template>
       </RuiTextField>
@@ -342,7 +342,7 @@ const [CreateLabel, ReuseLabel] = createReusableTemplate<{ item: LogLevel }>();
             icon
             @click="selectLogsDirectory()"
           >
-            <RuiIcon name="folder-line" />
+            <RuiIcon name="lu-folder" />
           </RuiButton>
         </template>
       </RuiTextField>

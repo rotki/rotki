@@ -71,7 +71,7 @@ watch([enabled, multiplier], setData);
             :disabled="!scrambleData"
             @click="randomMultiplier()"
           >
-            <RuiIcon name="shuffle-line" />
+            <RuiIcon name="lu-shuffle" />
           </RuiButton>
         </template>
       </AmountInput>

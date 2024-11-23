@@ -23,31 +23,31 @@ interface Entry {
 
 const entries: Entry[] = [
   {
-    icon: 'book-open-line',
+    icon: 'lu-book-open',
     link: externalLinks.usageGuide,
     subtitle: t('help_sidebar.user_guide.subtitle'),
     title: t('help_sidebar.user_guide.title'),
   },
   {
-    icon: 'questionnaire-line',
+    icon: 'lu-message-circle-question',
     link: externalLinks.faq,
     subtitle: t('help_sidebar.faq.subtitle'),
     title: t('help_sidebar.faq.title'),
   },
   {
-    icon: 'discord-line',
+    icon: 'lu-discord',
     link: externalLinks.discord,
     subtitle: t('help_sidebar.support.subtitle'),
     title: t('help_sidebar.support.title'),
   },
   {
-    icon: 'github-line',
+    icon: 'lu-github',
     link: externalLinks.github,
     subtitle: t('help_sidebar.github.subtitle'),
     title: t('help_sidebar.github.title'),
   },
   {
-    icon: 'twitter-x-line',
+    icon: 'lu-x-twitter',
     link: TWITTER_URL,
     subtitle: t('help_sidebar.twitter.subtitle'),
     title: t('help_sidebar.twitter.title'),
@@ -96,7 +96,7 @@ async function downloadBrowserLog() {
         icon
         @click="display = false"
       >
-        <RuiIcon name="close-line" />
+        <RuiIcon name="lu-x" />
       </RuiButton>
     </div>
     <div class="py-0">
@@ -128,7 +128,7 @@ async function downloadBrowserLog() {
         >
           <RuiIcon
             class="text-rui-text-secondary"
-            name="information-line"
+            name="lu-info"
           />
 
           <div class="gap-1">
@@ -147,7 +147,7 @@ async function downloadBrowserLog() {
         >
           <RuiIcon
             class="text-rui-text-secondary"
-            name="file-download-line"
+            name="lu-file-down"
           />
 
           <div class="gap-1">

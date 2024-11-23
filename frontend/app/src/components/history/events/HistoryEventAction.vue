@@ -45,7 +45,7 @@ function onEditRule() {
           v-bind="attrs"
         >
           <RuiIcon
-            name="more-2-fill"
+            name="lu-ellipsis-vertical"
             size="20"
           />
         </RuiButton>
@@ -58,7 +58,7 @@ function onEditRule() {
           <template #prepend>
             <RuiIcon
               class="text-rui-text-secondary"
-              name="pencil-line"
+              name="lu-pencil"
             />
           </template>
           {{ t('accounting_settings.rule.edit') }}

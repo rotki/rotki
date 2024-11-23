@@ -83,7 +83,7 @@ const evmOrEthDepositEvent = computed(() => get(isEvmEventRef(event)) || get(isE
       >
         <div class="flex items-center gap-2 text-caption font-bold">
           <RuiIcon
-            name="file-edit-line"
+            name="lu-square-pen"
             size="14"
           />
           {{ t('transactions.events.customized_event') }}

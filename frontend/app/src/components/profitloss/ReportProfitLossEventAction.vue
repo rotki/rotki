@@ -94,7 +94,7 @@ async function updatePrice() {
           icon
           v-bind="attrs"
         >
-          <RuiIcon name="more-2-fill" />
+          <RuiIcon name="lu-ellipsis-vertical" />
         </RuiButton>
       </template>
       <div class="py-2">
@@ -103,7 +103,7 @@ async function updatePrice() {
           @click="openEditHistoricPriceDialog()"
         >
           <template #prepend>
-            <RuiIcon name="edit-line" />
+            <RuiIcon name="lu-pencil-line" />
           </template>
           {{ t('profit_loss_events.edit_historic_price') }}
         </RuiButton>

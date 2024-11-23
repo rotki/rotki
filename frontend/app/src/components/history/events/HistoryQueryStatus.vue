@@ -129,7 +129,7 @@ function resetQueryStatus() {
             @click="emit('show:dialog', refreshProtocolCacheTaskRunning ? 'protocol-refresh' : 'decode')"
           >
             <template #append>
-              <RuiIcon name="information-line" />
+              <RuiIcon name="lu-info" />
             </template>
           </RuiButton>
         </template>

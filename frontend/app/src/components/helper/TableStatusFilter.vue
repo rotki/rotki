@@ -14,12 +14,12 @@ defineOptions({
       >
         <RuiIcon
           size="20"
-          name="equalizer-line"
+          name="lu-sliders-horizontal"
         />
         <template #append>
           <RuiIcon
             size="20"
-            name="arrow-down-s-line"
+            name="lu-chevron-down"
           />
         </template>
       </RuiButton>

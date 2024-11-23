@@ -35,7 +35,7 @@ function getTotal({ totalAmount, usdPrice }: XswapAsset) {
             icon
             v-bind="attrs"
           >
-            <RuiIcon name="external-link-line" />
+            <RuiIcon name="lu-external-link" />
           </RuiButton>
         </template>
         <span>{{ t('liquidity_pool_details.tooltip') }}</span>

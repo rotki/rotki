@@ -44,11 +44,11 @@ async function importAddresses() {
           :disabled="buttonDisabled || disabled"
           @click="onClick?.()"
         >
-          <RuiIcon name="wallet-line" />
+          <RuiIcon name="lu-wallet-minimal" />
           <template #append>
             <div class="absolute w-4 h-4 bg-current rounded-full text-primary right-2 bottom-2 flex items-center justify-center">
               <RuiIcon
-                name="download-line"
+                name="lu-download"
                 class="text-white"
                 size="10"
               />

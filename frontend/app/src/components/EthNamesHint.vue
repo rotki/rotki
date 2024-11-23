@@ -11,7 +11,7 @@ const { t } = useI18n();
           icon
           v-bind="attrs"
         >
-          <RuiIcon name="question-line" />
+          <RuiIcon name="lu-circle-help" />
         </RuiButton>
       </template>
       <div class="p-4 max-w-[20rem] flex flex-col gap-2">

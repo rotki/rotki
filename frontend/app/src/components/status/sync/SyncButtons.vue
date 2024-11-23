@@ -37,7 +37,7 @@ const { uploadStatus } = useSync();
           @click="action(UPLOAD)"
         >
           <template #prepend>
-            <RuiIcon name="upload-cloud-line" />
+            <RuiIcon name="lu-cloud-upload" />
           </template>
           {{ t('common.actions.push') }}
         </RuiButton>
@@ -58,7 +58,7 @@ const { uploadStatus } = useSync();
           @click="action(DOWNLOAD)"
         >
           <template #prepend>
-            <RuiIcon name="download-cloud-line" />
+            <RuiIcon name="lu-cloud-download" />
           </template>
           {{ t('common.actions.pull') }}
         </RuiButton>

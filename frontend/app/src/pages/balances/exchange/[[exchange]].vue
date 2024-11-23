@@ -149,7 +149,7 @@ function isBinance(exchange?: string): exchange is 'binance' | 'binanceus' {
             @click="refreshExchangeBalances()"
           >
             <template #prepend>
-              <RuiIcon name="refresh-line" />
+              <RuiIcon name="lu-refresh-ccw" />
             </template>
             {{ t('common.refresh') }}
           </RuiButton>
@@ -161,7 +161,7 @@ function isBinance(exchange?: string): exchange is 'binance' | 'binanceus' {
         @click="navigate()"
       >
         <template #prepend>
-          <RuiIcon name="add-line" />
+          <RuiIcon name="lu-plus" />
         </template>
         {{ t('exchange_balances.add_exchange') }}
       </RuiButton>

@@ -55,7 +55,7 @@ const progress = useToNumber(taskProgress);
           icon
           @click="emit('cancel', task)"
         >
-          <RuiIcon name="close-line" />
+          <RuiIcon name="lu-x" />
         </RuiButton>
       </template>
       {{ t('collapsed_pending_tasks.cancel_task') }}

@@ -343,7 +343,7 @@ defineExpose({
     :hint="hint"
     :disabled="disabled"
     :hide-details="hideDetails"
-    prepend-icon="calendar-line"
+    prepend-icon="lu-calendar-days"
     :persistent-hint="persistentHint"
     variant="outlined"
     color="primary"
@@ -370,7 +370,7 @@ defineExpose({
             class="!p-1.5"
             v-bind="attrs"
           >
-            <RuiIcon name="earth-line" />
+            <RuiIcon name="lu-earth" />
           </RuiButton>
         </template>
 
@@ -393,7 +393,7 @@ defineExpose({
         class="!p-1.5"
         @click="setNow()"
       >
-        <RuiIcon name="map-pin-time-line" />
+        <RuiIcon name="lu-map-pin-check-inside" />
       </RuiButton>
     </template>
   </RuiTextField>

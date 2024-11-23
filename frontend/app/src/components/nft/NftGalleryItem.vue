@@ -125,7 +125,7 @@ const mediaStyle = computed<StyleValue>(() => {
             @click="showAllowDomainConfirmation()"
           >
             <RuiIcon
-              name="lock-unlock-line"
+              name="lu-lock-keyhole-open"
               size="16"
             />
           </RuiButton>

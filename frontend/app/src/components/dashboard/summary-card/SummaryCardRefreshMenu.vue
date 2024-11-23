@@ -50,7 +50,7 @@ const refresh = () => emit('refresh');
         >
           <RuiIcon
             size="16"
-            name="arrow-down-s-line"
+            name="lu-chevron-down"
           />
         </RuiButton>
       </template>

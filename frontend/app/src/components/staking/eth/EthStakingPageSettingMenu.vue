@@ -28,7 +28,7 @@ onBeforeMount(() => {
         class="!p-2"
         v-bind="attrs"
       >
-        <RuiIcon name="settings-4-line" />
+        <RuiIcon name="lu-settings" />
       </RuiButton>
     </template>
 

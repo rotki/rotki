@@ -85,7 +85,7 @@ defineExpose({
         @click="randomize()"
       >
         <template #prepend>
-          <RuiIcon name="shuffle-line" />
+          <RuiIcon name="lu-shuffle" />
         </template>
         {{ t('tag_creator.shuffle') }}
       </RuiButton>

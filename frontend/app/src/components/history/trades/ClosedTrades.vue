@@ -341,7 +341,7 @@ watch(loading, async (isLoading, wasLoading) => {
             @click="refreshTrades(true)"
           >
             <template #prepend>
-              <RuiIcon name="refresh-line" />
+              <RuiIcon name="lu-refresh-ccw" />
             </template>
             {{ t('common.refresh') }}
           </RuiButton>
@@ -354,7 +354,7 @@ watch(loading, async (isLoading, wasLoading) => {
         @click="newExternalTrade()"
       >
         <template #prepend>
-          <RuiIcon name="add-line" />
+          <RuiIcon name="lu-plus" />
         </template>
         {{ t('closed_trades.dialog.add.title') }}
       </RuiButton>
@@ -407,7 +407,7 @@ watch(loading, async (isLoading, wasLoading) => {
           :disabled="selected.length === 0"
           @click="massDelete()"
         >
-          <RuiIcon name="delete-bin-line" />
+          <RuiIcon name="lu-trash-2" />
         </RuiButton>
 
         <IgnoreButtons

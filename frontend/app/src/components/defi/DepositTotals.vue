@@ -33,7 +33,7 @@ const { t } = useI18n();
         {{ t('lending.effective_interest_rate') }}
         <RuiTooltip tooltip-class="max-w-[10rem]">
           <template #activator>
-            <RuiIcon name="information-line" />
+            <RuiIcon name="lu-info" />
           </template>
           {{ t('lending.effective_interest_rate_tooltip') }}
         </RuiTooltip>

@@ -92,7 +92,7 @@ defineExpose({
         }}
         <template #append>
           <RuiIcon
-            name="arrow-right-line"
+            name="lu-arrow-right"
             size="16"
           />
         </template>

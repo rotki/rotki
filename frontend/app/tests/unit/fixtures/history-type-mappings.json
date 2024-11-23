@@ -83,7 +83,7 @@
         "counterparty_mappings": {
           "default": {
             "label": "send",
-            "icon": "arrow-up-line"
+            "icon": "lu-arrow-up"
           }
         },
         "direction": "out"
@@ -92,7 +92,7 @@
         "counterparty_mappings": {
           "default": {
             "label": "receive",
-            "icon": "arrow-down-line",
+            "icon": "lu-arrow-down",
             "color": "success"
           }
         },
@@ -102,7 +102,7 @@
         "counterparty_mappings": {
           "default": {
             "label": "swap",
-            "icon": "arrow-go-forward-line"
+            "icon": "lu-redo-2"
           }
         },
         "direction": "out"
@@ -111,7 +111,7 @@
         "counterparty_mappings": {
           "default": {
             "label": "swap",
-            "icon": "arrow-go-back-line",
+            "icon": "lu-undo-2",
             "color": "success"
           }
         },
@@ -121,7 +121,7 @@
         "counterparty_mappings": {
           "default": {
             "label": "migrate",
-            "icon": "arrow-go-forward-line"
+            "icon": "lu-redo-2"
           }
         },
         "direction": "out"
@@ -130,7 +130,7 @@
         "counterparty_mappings": {
           "default": {
             "label": "migrate",
-            "icon": "arrow-go-back-line",
+            "icon": "lu-undo-2",
             "color": "success"
           }
         },
@@ -140,7 +140,7 @@
         "counterparty_mappings": {
           "default": {
             "label": "approval",
-            "icon": "lock-unlock-line"
+            "icon": "lu-lock-keyhole-open"
           }
         },
         "direction": "neutral"
@@ -149,7 +149,7 @@
         "counterparty_mappings": {
           "default": {
             "label": "deposit",
-            "icon": "upload-line",
+            "icon": "lu-upload",
             "color": "success"
           }
         },
@@ -159,7 +159,7 @@
         "counterparty_mappings": {
           "default": {
             "label": "withdraw",
-            "icon": "download-line"
+            "icon": "lu-download"
           }
         },
         "direction": "in"
@@ -168,7 +168,7 @@
         "counterparty_mappings": {
           "default": {
             "label": "airdrop",
-            "icon": "gift-line"
+            "icon": "lu-gift"
           }
         },
         "direction": "in"
@@ -177,7 +177,7 @@
         "counterparty_mappings": {
           "default": {
             "label": "borrow",
-            "icon": "hand-coin-line"
+            "icon": "lu-hand-coins"
           }
         },
         "direction": "in"
@@ -186,7 +186,7 @@
         "counterparty_mappings": {
           "default": {
             "label": "repay",
-            "icon": "history-line"
+            "icon": "lu-history"
           }
         },
         "direction": "out"
@@ -195,7 +195,7 @@
         "counterparty_mappings": {
           "default": {
             "label": "deploy",
-            "icon": "rocket-line"
+            "icon": "lu-rocket"
           }
         },
         "direction": "neutral"
@@ -204,7 +204,7 @@
         "counterparty_mappings": {
           "default": {
             "label": "deploy with spend",
-            "icon": "rocket-2-line"
+            "icon": "lu-rocket"
           }
         },
         "direction": "out"
@@ -213,7 +213,7 @@
         "counterparty_mappings": {
           "default": {
             "label": "bridge",
-            "icon": "upload-line",
+            "icon": "lu-upload",
             "color": "error"
           }
         },
@@ -223,7 +223,7 @@
         "counterparty_mappings": {
           "default": {
             "label": "bridge",
-            "icon": "download-line",
+            "icon": "lu-download",
             "color": "success"
           }
         },
@@ -233,7 +233,7 @@
         "counterparty_mappings": {
           "default": {
             "label": "governance",
-            "icon": "government-line"
+            "icon": "lu-scale"
           }
         },
         "direction": "neutral"
@@ -242,7 +242,7 @@
         "counterparty_mappings": {
           "default": {
             "label": "donate",
-            "icon": "hand-heart-line"
+            "icon": "lu-heart-handshake"
           }
         },
         "direction": "out"
@@ -251,7 +251,7 @@
         "counterparty_mappings": {
           "default": {
             "label": "receive donation",
-            "icon": "heart-2-line"
+            "icon": "lu-hand-heart"
           }
         },
         "direction": "in"
@@ -260,7 +260,7 @@
         "counterparty_mappings": {
           "default": {
             "label": "renew",
-            "icon": "loop-right-line"
+            "icon": "lu-refresh-cw"
           }
         },
         "direction": "out"
@@ -269,7 +269,7 @@
         "counterparty_mappings": {
           "default": {
             "label": "place order",
-            "icon": "briefcase-line"
+            "icon": "lu-briefcase"
           }
         },
         "direction": "neutral"
@@ -278,7 +278,7 @@
         "counterparty_mappings": {
           "default": {
             "label": "transfer",
-            "icon": "swap-box-line"
+            "icon": "lu-arrow-up-down"
           }
         },
         "direction": "neutral"
@@ -287,7 +287,7 @@
         "counterparty_mappings": {
           "default": {
             "label": "staking reward",
-            "icon": "trophy-line"
+            "icon": "lu-trophy"
           }
         },
         "direction": "in"
@@ -296,7 +296,7 @@
         "counterparty_mappings": {
           "default": {
             "label": "claim reward",
-            "icon": "gift-2-line"
+            "icon": "lu-gift"
           }
         },
         "direction": "in"
@@ -305,7 +305,7 @@
         "counterparty_mappings": {
           "default": {
             "label": "liquidation reward",
-            "icon": "drop-fill"
+            "icon": "lu-droplet-fill"
           }
         },
         "direction": "in"
@@ -314,7 +314,7 @@
         "counterparty_mappings": {
           "default": {
             "label": "liquidation loss",
-            "icon": "contrast-drop-fill"
+            "icon": "lu-droplet-half-fill"
           }
         },
         "direction": "out"
@@ -323,7 +323,7 @@
         "counterparty_mappings": {
           "default": {
             "label": "informational",
-            "icon": "information-line"
+            "icon": "lu-info"
           }
         },
         "direction": "neutral"
@@ -332,7 +332,7 @@
         "counterparty_mappings": {
           "default": {
             "label": "cancel order",
-            "icon": "file-close-line",
+            "icon": "lu-file-x",
             "color": "error"
           }
         },
@@ -342,7 +342,7 @@
         "counterparty_mappings": {
           "default": {
             "label": "refund",
-            "icon": "refund-2-line"
+            "icon": "lu-refund"
           }
         },
         "direction": "in"
@@ -351,11 +351,11 @@
         "counterparty_mappings": {
           "default": {
             "label": "fee",
-            "icon": "cash-line"
+            "icon": "lu-receipt-cent"
           },
           "gas": {
             "label": "gas fee",
-            "icon": "fire-line"
+            "icon": "lu-flame"
           }
         },
         "direction": "out"
@@ -364,7 +364,7 @@
         "counterparty_mappings": {
           "default": {
             "label": "mev",
-            "icon": "medal-line"
+            "icon": "lu-medal"
           }
         },
         "direction": "in"
@@ -373,7 +373,7 @@
         "counterparty_mappings": {
           "default": {
             "label": "new block",
-            "icon": "box-3-line"
+            "icon": "lu-box"
           }
         },
         "direction": "in"
@@ -382,7 +382,7 @@
         "counterparty_mappings": {
           "default": {
             "label": "new project",
-            "icon": "file-add-line"
+            "icon": "lu-file-plus"
           }
         },
         "direction": "neutral"
@@ -391,7 +391,7 @@
         "counterparty_mappings": {
           "default": {
             "label": "update project",
-            "icon": "file-edit-line"
+            "icon": "lu-square-pen"
           }
         },
         "direction": "neutral"
@@ -400,7 +400,7 @@
         "counterparty_mappings": {
           "default": {
             "label": "apply",
-            "icon": "share-circle-line"
+            "icon": "lu-circle-arrow-out-up-right"
           }
         },
         "direction": "neutral"
@@ -409,7 +409,7 @@
         "counterparty_mappings": {
           "default": {
             "label": "Stake",
-            "icon": "archive-stack-add-line"
+            "icon": "lu-layers-in"
           }
         },
         "direction": "out"
@@ -418,22 +418,22 @@
         "counterparty_mappings": {
           "default": {
             "label": "Unstake",
-            "icon": "archive-stack-reduce-line"
+            "icon": "lu-layers-out"
           }
         },
         "direction": "in"
       }
     },
     "accounting_events_icons": {
-      "trade": "swap-box-line",
-      "fee": "price-tag-line",
-      "asset movement": "token-swap-line",
-      "margin position": "percent-line",
-      "loan": "shake-hands-line",
-      "prefork acquisition": "git-branch-line",
-      "staking": "seedling-line",
-      "history event": "exchange-box-line",
-      "transaction event": "arrow-left-right-line"
+      "trade": "lu-send-to-back",
+      "fee": "lu-receipt-cent",
+      "asset movement": "lu-coins-exchange",
+      "margin position": "lu-percent",
+      "loan": "lu-handshake",
+      "prefork acquisition": "lu-git-branch",
+      "staking": "lu-layers",
+      "history event": "lu-file-clock",
+      "transaction event": "lu-arrow-left-right"
     }
   },
   "message": ""

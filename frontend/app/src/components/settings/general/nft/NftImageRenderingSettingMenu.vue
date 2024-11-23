@@ -21,7 +21,7 @@ const dialogOpen = ref(false);
         class="!p-2"
         v-bind="attrs"
       >
-        <RuiIcon name="file-settings-line" />
+        <RuiIcon name="lu-file-cog" />
       </RuiButton>
     </template>
     <div class="p-4">

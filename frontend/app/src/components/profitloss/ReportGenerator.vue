@@ -61,7 +61,7 @@ const accountSettingsRoute = Routes.SETTINGS_ACCOUNTING;
                 icon
                 color="primary"
               >
-                <RuiIcon name="settings-3-line" />
+                <RuiIcon name="lu-settings" />
               </RuiButton>
             </RouterLink>
           </template>
@@ -84,7 +84,7 @@ const accountSettingsRoute = Routes.SETTINGS_ACCOUNTING;
             @click="generate()"
           >
             <template #prepend>
-              <RuiIcon name="file-list-3-line" />
+              <RuiIcon name="lu-scroll-text" />
             </template>
             {{ t('common.actions.generate') }}
           </RuiButton>
@@ -107,7 +107,7 @@ const accountSettingsRoute = Routes.SETTINGS_ACCOUNTING;
                     v-bind="attrs"
                   >
                     <template #prepend>
-                      <RuiIcon name="bug-line" />
+                      <RuiIcon name="lu-bug" />
                     </template>
                     <span v-if="isDevelopment">
                       {{ t('profit_loss_reports.debug.title') }}
@@ -124,7 +124,7 @@ const accountSettingsRoute = Routes.SETTINGS_ACCOUNTING;
                 @click="exportReportData()"
               >
                 <template #prepend>
-                  <RuiIcon name="file-download-line" />
+                  <RuiIcon name="lu-file-down" />
                 </template>
                 {{ t('profit_loss_reports.debug.export_data') }}
               </RuiButton>
@@ -133,7 +133,7 @@ const accountSettingsRoute = Routes.SETTINGS_ACCOUNTING;
                 @click="importReportData()"
               >
                 <template #prepend>
-                  <RuiIcon name="file-upload-line" />
+                  <RuiIcon name="lu-file-up" />
                 </template>
                 {{ t('profit_loss_reports.debug.import_data') }}
               </RuiButton>

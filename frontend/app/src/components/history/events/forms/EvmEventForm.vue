@@ -423,7 +423,7 @@ const addressSuggestions = computed(() => getAddresses(Blockchain.ETH));
 
     <RuiTextArea
       v-model="notes"
-      prepend-icon="sticky-note-line"
+      prepend-icon="lu-sticky-note"
       data-cy="notes"
       variant="outlined"
       color="primary"

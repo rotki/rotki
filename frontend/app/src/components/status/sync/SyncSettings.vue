@@ -23,7 +23,7 @@ const { isMdAndUp } = useBreakpoint();
       >
         <RuiIcon
           size="20"
-          name="settings-4-line"
+          name="lu-settings"
         />
       </RuiButton>
     </template>

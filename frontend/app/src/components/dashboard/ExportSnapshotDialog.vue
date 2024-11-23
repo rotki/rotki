@@ -189,7 +189,7 @@ function showDeleteConfirmation() {
           @click="editMode = true"
         >
           <template #prepend>
-            <RuiIcon name="edit-line" />
+            <RuiIcon name="lu-pencil-line" />
           </template>
           {{ t('common.actions.edit') }}
         </RuiButton>
@@ -198,7 +198,7 @@ function showDeleteConfirmation() {
           @click="showDeleteConfirmation()"
         >
           <template #prepend>
-            <RuiIcon name="delete-bin-5-line" />
+            <RuiIcon name="lu-trash-2" />
           </template>
           {{ t('common.actions.delete') }}
         </RuiButton>
@@ -208,7 +208,7 @@ function showDeleteConfirmation() {
           @click="exportSnapshot()"
         >
           <template #prepend>
-            <RuiIcon name="file-download-line" />
+            <RuiIcon name="lu-file-down" />
           </template>
           {{ t('common.actions.download') }}
         </RuiButton>

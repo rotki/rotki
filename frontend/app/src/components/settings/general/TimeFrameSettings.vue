@@ -132,7 +132,7 @@ async function removeVisibleTimeframe(timeframe: TimeFrameSetting) {
           v-for="(timeframe, i) in invisibleTimeframes"
           :key="i"
           size="sm"
-          close-icon="add-circle-line"
+          close-icon="lu-circle-plus"
           closeable
           clickable
           :close="isTimeframesToggleable(timeframe)"

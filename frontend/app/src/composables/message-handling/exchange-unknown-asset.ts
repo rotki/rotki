@@ -23,7 +23,7 @@ export function useExchangeUnknownAssetHandler(t: ReturnType<typeof useI18n>['t'
             locationSymbol: identifier,
           },
         }),
-        icon: 'guide-line',
+        icon: 'lu-cable',
         label: t('notification_messages.unknown_asset_mapping.actions.add_mapping'),
       },
       display: true,

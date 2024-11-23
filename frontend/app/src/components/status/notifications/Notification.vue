@@ -39,9 +39,9 @@ const icon = computed<RuiIcons>(() => {
     case Severity.INFO:
       return 'lu-circle-alert';
     case Severity.WARNING:
-      return 'alarm-warning-line';
+      return 'lu-siren';
     case Severity.REMINDER:
-      return 'alarm-line';
+      return 'lu-alarm-clock';
     default:
       return 'lu-circle-alert';
   }
@@ -132,7 +132,7 @@ function buttonClicked() {
 }
 
 function getIcon(action: NotificationAction): RuiIcons {
-  return isRuiIcon(action.icon) ? action.icon : 'arrow-right-line';
+  return isRuiIcon(action.icon) ? action.icon : 'lu-arrow-right';
 }
 </script>
 
@@ -178,7 +178,7 @@ function getIcon(action: NotificationAction): RuiIcons {
         class="!p-2"
         @click="dismiss(notification.id)"
       >
-        <RuiIcon name="close-line" />
+        <RuiIcon name="lu-x" />
       </RuiButton>
     </div>
     <div
@@ -220,7 +220,7 @@ function getIcon(action: NotificationAction): RuiIcons {
           @click.stop="buttonClicked()"
         >
           <RuiIcon
-            :name="expanded ? 'arrow-up-s-line' : 'arrow-down-s-line'"
+            :name="expanded ? 'lu-chevron-up' : 'lu-chevron-down'"
             :class="{ 'invisible opacity-0 group-hover:translate-y-1': !expanded }"
             class="transition-all group-hover:visible group-hover:opacity-100 group-hover:-translate-y-1 text-rui-text-secondary"
             size="20"
@@ -255,7 +255,7 @@ function getIcon(action: NotificationAction): RuiIcons {
         {{ t('common.actions.copy') }}
         <template #append>
           <RuiIcon
-            name="file-copy-line"
+            name="lu-copy"
             size="16"
           />
         </template>

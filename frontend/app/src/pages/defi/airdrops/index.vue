@@ -197,7 +197,7 @@ watch([status, selectedAccounts], () => {
             @click="fetchAirdrops()"
           >
             <template #prepend>
-              <RuiIcon name="refresh-line" />
+              <RuiIcon name="lu-refresh-ccw" />
             </template>
             {{ t('common.refresh') }}
           </RuiButton>
@@ -311,7 +311,7 @@ watch([status, selectedAccounts], () => {
             >
               <RuiIcon
                 size="16"
-                name="external-link-line"
+                name="lu-external-link"
               />
             </RuiButton>
           </ExternalLink>

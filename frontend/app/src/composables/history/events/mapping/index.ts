@@ -137,7 +137,7 @@ export const useHistoryEventMappings = createSharedComposable(() => {
     return {
       color: 'error',
       direction: 'neutral',
-      icon: 'question-line',
+      icon: 'lu-circle-help',
       identifier: '',
       label,
     };
@@ -172,7 +172,7 @@ export const useHistoryEventMappings = createSharedComposable(() => {
     const typeVal = get(type);
     return (
       get(accountingEventsTypeData).find(({ identifier }) => identifier === typeVal) || {
-        icon: 'question-line',
+        icon: 'lu-circle-help',
         identifier: typeVal,
         label: toCapitalCase(typeVal),
       }
@@ -188,7 +188,7 @@ export const useHistoryEventMappings = createSharedComposable(() => {
         action: [
           {
             action: async (): Promise<void> => fetchMappings(),
-            icon: 'refresh-line',
+            icon: 'lu-refresh-ccw',
             label: t('actions.history_events.fetch_mapping.actions.fetch_again'),
           },
         ],

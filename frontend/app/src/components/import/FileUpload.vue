@@ -204,7 +204,7 @@ defineExpose({
         <div class="h-10 bg-rui-primary/[0.12] rounded-full flex items-center justify-center max-w-full overflow-hidden">
           <div class="w-10 h-10 min-w-[10] flex items-center justify-center">
             <RuiIcon
-              name="file-upload-line"
+              name="lu-file-up"
               color="primary"
             />
           </div>
@@ -232,7 +232,7 @@ defineExpose({
                 @click="removeFile()"
               >
                 <RuiIcon
-                  name="close-line"
+                  name="lu-x"
                   size="16"
                 />
               </RuiButton>

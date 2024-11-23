@@ -80,7 +80,7 @@ async function change() {
         color="primary"
         data-cy="new-password"
         :label="t('change_password.labels.new_password')"
-        prepend-icon="lock-line"
+        prepend-icon="lu-lock-keyhole"
         :error-messages="toMessages(v$.newPassword)"
         variant="outlined"
       />
@@ -89,7 +89,7 @@ async function change() {
         color="primary"
         data-cy="confirm-password"
         :label="t('change_password.labels.confirm_password')"
-        prepend-icon="repeat-2-line"
+        prepend-icon="lu-repeat"
         :error-messages="toMessages(v$.newPasswordConfirm)"
         variant="outlined"
       />

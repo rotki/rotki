@@ -146,7 +146,7 @@ function hideEventAction(item: HistoryEventEntry): boolean {
               >
                 <RuiIcon
                   size="16"
-                  name="information-line"
+                  name="lu-info"
                 />
               </RuiButton>
             </template>

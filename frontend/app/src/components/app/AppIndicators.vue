@@ -43,7 +43,7 @@ const { showHelpBar, showNotesSidebar, showNotificationBar, showPinned } = store
         class="!text-rui-text-secondary"
         icon
       >
-        <RuiIcon name="code-box-line" />
+        <RuiIcon name="lu-code-xml" />
       </RuiButton>
     </RouterLink>
     <AppUpdateIndicator />
@@ -63,11 +63,11 @@ const { showHelpBar, showNotesSidebar, showNotificationBar, showPinned } = store
       v-if="isSmAndUp"
       class="app__app-bar__button"
     />
-    <UserDropdown class="app__app-bar__button" />
     <HelpIndicator
       v-if="isSmAndUp"
       v-model:visible="showHelpBar"
     />
+    <UserDropdown class="app__app-bar__button" />
   </div>
 </template>
 

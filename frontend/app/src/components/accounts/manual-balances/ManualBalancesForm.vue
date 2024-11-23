@@ -186,9 +186,9 @@ defineExpose({
             @click="openCustomAssetForm()"
           >
             <div class="flex">
-              <RuiIcon name="server-line" />
+              <RuiIcon name="lu-server" />
               <RuiIcon
-                name="add-circle-line"
+                name="lu-circle-plus"
                 class="-mt-4 -ml-2"
               />
             </div>

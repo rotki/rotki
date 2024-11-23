@@ -71,7 +71,7 @@ const copyText = 'Copy Integration JSON Data';
           variant="text"
           icon
         >
-          <RuiIcon name="home-3-line" />
+          <RuiIcon name="lu-house" />
         </RuiButton>
       </RouterLink>
       <div class="grow" />
@@ -87,7 +87,7 @@ const copyText = 'Copy Integration JSON Data';
         @click="reset()"
       >
         <template #prepend>
-          <RuiIcon name="restart-line" />
+          <RuiIcon name="lu-rotate-ccw" />
         </template>
         {{ resetState }}
       </RuiButton>

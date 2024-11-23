@@ -217,7 +217,7 @@ function closePinnedSidebar() {
       >
         <RuiIcon
           class="text-white"
-          name="close-line"
+          name="lu-x"
         />
       </RuiButton>
       <RuiButton
@@ -229,7 +229,7 @@ function closePinnedSidebar() {
       >
         <RuiIcon
           class="text-white"
-          name="arrow-right-s-line"
+          name="lu-chevron-right"
           size="20"
         />
       </RuiButton>
@@ -265,12 +265,12 @@ function closePinnedSidebar() {
               v-if="isPinned"
               size="20"
               class="text-white"
-              name="unpin-line"
+              name="lu-pin-off"
             />
             <RuiIcon
               v-else
               class="text-white"
-              name="pushpin-line"
+              name="lu-pin"
             />
           </RuiButton>
         </template>

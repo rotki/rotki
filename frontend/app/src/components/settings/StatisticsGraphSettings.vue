@@ -27,7 +27,7 @@ const showMenu = ref<boolean>(false);
         custom-color
         v-bind="attrs"
       >
-        <RuiIcon name="settings-4-line" />
+        <RuiIcon name="lu-settings" />
       </MenuTooltipButton>
     </template>
 

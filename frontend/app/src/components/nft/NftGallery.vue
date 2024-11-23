@@ -264,7 +264,7 @@ const nftLimited = computed(() => get(error).includes('limit'));
     >
       <template #prepend>
         <RuiIcon
-          name="refresh-line"
+          name="lu-refresh-ccw"
           size="20"
         />
       </template>

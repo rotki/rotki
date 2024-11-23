@@ -56,7 +56,7 @@ const v$ = useVuelidate(
       :disabled="v$.$invalid"
       @click="saveData(modelValue)"
     >
-      <RuiIcon name="save-line" />
+      <RuiIcon name="lu-save" />
     </RuiButton>
   </div>
 </template>

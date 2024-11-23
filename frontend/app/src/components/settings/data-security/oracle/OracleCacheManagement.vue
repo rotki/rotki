@@ -210,7 +210,7 @@ function showDeleteConfirmation(entry: OracleCacheMeta) {
           >
             <template #prepend>
               <RuiIcon
-                name="add-line"
+                name="lu-plus"
                 size="16"
               />
             </template>
@@ -258,7 +258,7 @@ function showDeleteConfirmation(entry: OracleCacheMeta) {
           large
           @click="clearFilter()"
         >
-          <RuiIcon name="close-line" />
+          <RuiIcon name="lu-x" />
         </RuiButton>
       </div>
       <RuiDataTable
@@ -303,7 +303,7 @@ function showDeleteConfirmation(entry: OracleCacheMeta) {
               >
                 <RuiIcon
                   size="16"
-                  name="delete-bin-line"
+                  name="lu-trash-2"
                 />
               </RuiButton>
             </template>

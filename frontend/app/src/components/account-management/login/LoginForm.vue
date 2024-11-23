@@ -432,7 +432,7 @@ function abortLogin() {
                   >
                     <template #activator>
                       <RuiIcon
-                        name="question-line"
+                        name="lu-circle-help"
                         color="primary"
                       />
                     </template>
@@ -453,14 +453,14 @@ function abortLogin() {
                     @click="customBackendDisplay = !customBackendDisplay"
                   >
                     <RuiIcon
-                      name="server-line"
+                      name="lu-server"
                       :color="serverColor"
                     />
                     <template #append>
                       <RuiIcon
                         size="16"
                         class="-ml-2"
-                        :name="customBackendDisplay ? 'arrow-up-s-line' : 'arrow-down-s-line'"
+                        :name="customBackendDisplay ? 'lu-chevron-up' : 'lu-chevron-down'"
                       />
                     </template>
                   </RuiButton>
@@ -494,7 +494,7 @@ function abortLogin() {
                 >
                   <template #prepend>
                     <RuiIcon
-                      name="server-line"
+                      name="lu-server"
                       :color="serverColor"
                     />
                   </template>
@@ -509,7 +509,7 @@ function abortLogin() {
                       @click="saveCustomBackend()"
                     >
                       <RuiIcon
-                        name="save-2-fill"
+                        name="lu-save"
                         color="primary"
                         size="20"
                       />
@@ -523,7 +523,7 @@ function abortLogin() {
                       @click="clearCustomBackend()"
                     >
                       <RuiIcon
-                        name="delete-bin-fill"
+                        name="lu-trash-2"
                         color="primary"
                         size="20"
                       />

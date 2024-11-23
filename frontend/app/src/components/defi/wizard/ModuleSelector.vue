@@ -136,7 +136,7 @@ onMounted(async () => {
         clearable
         hide-details
         dense
-        prepend-icon="search-line"
+        prepend-icon="lu-search"
       />
       <div class="flex items-center gap-2">
         <RuiButton

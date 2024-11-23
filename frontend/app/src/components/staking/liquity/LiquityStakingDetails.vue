@@ -238,7 +238,7 @@ function refresh() {
               @click="refresh()"
             >
               <template #prepend>
-                <RuiIcon name="refresh-line" />
+                <RuiIcon name="lu-refresh-ccw" />
               </template>
               {{ t('common.refresh') }}
             </RuiButton>
@@ -270,7 +270,7 @@ function refresh() {
             icon
             v-bind="attrs"
           >
-            <RuiIcon name="information-line" />
+            <RuiIcon name="lu-info" />
           </RuiButton>
         </template>
         <div class="p-3 px-4">

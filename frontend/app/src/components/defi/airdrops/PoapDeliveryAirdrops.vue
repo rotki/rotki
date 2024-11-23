@@ -95,7 +95,7 @@ function getImage(event: string): string {
           >
             <RuiIcon
               size="16"
-              name="external-link-line"
+              name="lu-external-link"
             />
           </RuiButton>
         </ExternalLink>

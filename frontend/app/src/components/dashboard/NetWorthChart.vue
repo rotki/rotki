@@ -678,7 +678,7 @@ onBeforeUnmount(() => {
             >
               <RuiIcon
                 :class="$style.range__marker__limit__button__icon"
-                name="equal-line"
+                name="lu-equal"
               />
             </RuiButton>
           </div>
@@ -691,7 +691,7 @@ onBeforeUnmount(() => {
             >
               <RuiIcon
                 :class="$style.range__marker__limit__button__icon"
-                name="equal-line"
+                name="lu-equal"
               />
             </RuiButton>
           </div>
@@ -703,11 +703,7 @@ onBeforeUnmount(() => {
       />
 
       <div :class="$style.snapshot">
-        <SnapshotActionButton>
-          <template #button-icon>
-            <RuiIcon name="arrow-down-s-line" />
-          </template>
-        </SnapshotActionButton>
+        <SnapshotActionButton />
       </div>
     </div>
 

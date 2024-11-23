@@ -61,7 +61,7 @@ const label = computed(() => (appSession ? t('common.actions.export_csv') : t('c
     <template #prepend>
       <RuiIcon
         size="20"
-        name="file-download-line"
+        name="lu-file-down"
       />
     </template>
     {{ label }}

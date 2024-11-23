@@ -142,7 +142,7 @@ watchImmediate(route, (route) => {
         @click="account = createNewBlockchainAccount()"
       >
         <template #prepend>
-          <RuiIcon name="add-line" />
+          <RuiIcon name="lu-plus" />
         </template>
         {{ t('blockchain_balances.add_account') }}
       </RuiButton>
@@ -169,7 +169,7 @@ watchImmediate(route, (route) => {
               variant="outlined"
               color="primary"
               dense
-              prepend-icon="search-line"
+              prepend-icon="lu-search"
               :label="t('common.actions.search')"
               hide-details
               clearable

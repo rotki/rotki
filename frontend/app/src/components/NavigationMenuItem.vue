@@ -112,7 +112,7 @@ function expandParent() {
         :class="$style.toggle"
       >
         <RuiIcon
-          name="arrow-down-s-line"
+          name="lu-chevron-down"
           class="transition-all transform"
           :class="{ 'rotate-180': subMenuExpanded }"
         />
@@ -148,7 +148,7 @@ function expandParent() {
   }
 
   .toggle {
-    @apply text-rui-text-secondary;
+    @apply text-rui-grey-500;
   }
 
   &.active {

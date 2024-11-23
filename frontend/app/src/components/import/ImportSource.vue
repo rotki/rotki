@@ -171,7 +171,7 @@ const isRotkiCustomImport = computed(() => get(source).startsWith('rotki_'));
             class="!p-2"
             @click="formatHelp = true"
           >
-            <RuiIcon name="information-line" />
+            <RuiIcon name="lu-info" />
           </RuiButton>
         </template>
       </RuiTextField>

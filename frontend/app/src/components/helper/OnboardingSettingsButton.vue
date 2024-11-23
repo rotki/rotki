@@ -23,7 +23,7 @@ const { connected } = toRefs(useMainStore());
           rounded
           @click="visible = true"
         >
-          <RuiIcon name="settings-4-line" />
+          <RuiIcon name="lu-settings" />
         </RuiButton>
       </template>
     </RuiTooltip>

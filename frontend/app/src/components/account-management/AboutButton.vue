@@ -22,7 +22,7 @@ function show() {
         rounded
         @click="show()"
       >
-        <RuiIcon name="information-line" />
+        <RuiIcon name="lu-info" />
       </RuiButton>
     </template>
   </RuiTooltip>

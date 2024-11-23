@@ -258,7 +258,7 @@ const importFileDialog = ref<boolean>(false);
               @click="refresh()"
             >
               <template #prepend>
-                <RuiIcon name="refresh-line" />
+                <RuiIcon name="lu-refresh-ccw" />
               </template>
               {{ t('common.refresh') }}
             </RuiButton>
@@ -270,7 +270,7 @@ const importFileDialog = ref<boolean>(false);
           @click="add()"
         >
           <template #prepend>
-            <RuiIcon name="add-line" />
+            <RuiIcon name="lu-plus" />
           </template>
           {{ t('accounting_settings.rule.add') }}
         </RuiButton>
@@ -287,7 +287,7 @@ const importFileDialog = ref<boolean>(false);
               v-bind="attrs"
             >
               <RuiIcon
-                name="more-2-fill"
+                name="lu-ellipsis-vertical"
                 size="20"
               />
             </RuiButton>
@@ -299,7 +299,7 @@ const importFileDialog = ref<boolean>(false);
               @click="exportJSON()"
             >
               <template #prepend>
-                <RuiIcon name="file-download-line" />
+                <RuiIcon name="lu-file-down" />
               </template>
               {{ t('accounting_settings.rule.export') }}
             </RuiButton>
@@ -309,7 +309,7 @@ const importFileDialog = ref<boolean>(false);
               @click="importFileDialog = true"
             >
               <template #prepend>
-                <RuiIcon name="file-upload-line" />
+                <RuiIcon name="lu-file-up" />
               </template>
               {{ t('accounting_settings.rule.import') }}
             </RuiButton>
@@ -383,7 +383,7 @@ const importFileDialog = ref<boolean>(false);
                     <RuiIcon
                       class="shrink-0"
                       size="18"
-                      name="information-line"
+                      name="lu-info"
                     />
                     {{ t('accounting_settings.rule.labels.taxable') }}
                   </div>
@@ -403,7 +403,7 @@ const importFileDialog = ref<boolean>(false);
                     <RuiIcon
                       class="shrink-0"
                       size="18"
-                      name="information-line"
+                      name="lu-info"
                     />
                     {{ t('accounting_settings.rule.labels.count_entire_amount_spend') }}
                   </div>
@@ -423,7 +423,7 @@ const importFileDialog = ref<boolean>(false);
                     <RuiIcon
                       class="shrink-0"
                       size="18"
-                      name="information-line"
+                      name="lu-info"
                     />
                     {{ t('accounting_settings.rule.labels.count_cost_basis_pnl') }}
                   </div>

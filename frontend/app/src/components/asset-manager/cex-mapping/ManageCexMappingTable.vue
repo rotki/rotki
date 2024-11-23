@@ -119,7 +119,7 @@ function setPage(page: number) {
             >
               <div class="icon-bg">
                 <RuiIcon
-                  name="exchange-dollar-line"
+                  name="lu-building-2"
                   color="secondary"
                 />
               </div>

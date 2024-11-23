@@ -19,7 +19,7 @@ const notUsd = computed(() => get(currencySymbol) !== CURRENCY_USD);
     <template #activator>
       <RuiIcon
         size="20"
-        name="information-line"
+        name="lu-info"
       />
     </template>
     <span>{{ t('price_accuracy_hint.tooltip') }}</span>

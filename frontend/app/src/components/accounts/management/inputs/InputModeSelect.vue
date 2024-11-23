@@ -60,7 +60,7 @@ onUnmounted(() => {
         :disabled="loading"
       >
         <template #prepend>
-          <RuiIcon name="pencil-line" />
+          <RuiIcon name="lu-pencil" />
         </template>
         <span class="hidden md:block">
           {{ t('input_mode_select.manual_add.label') }}
@@ -73,7 +73,7 @@ onUnmounted(() => {
         :disabled="loading"
       >
         <template #prepend>
-          <RuiIcon name="key-line" />
+          <RuiIcon name="lu-key" />
         </template>
         <span class="hidden md:block">
           {{ t('input_mode_select.xpub_add.label') }}

@@ -45,7 +45,7 @@ const disabled = computed<boolean>(() => get(refreshing) || get(loadingData));
     @click="refresh()"
   >
     <template #prepend>
-      <RuiIcon name="refresh-line" />
+      <RuiIcon name="lu-refresh-ccw" />
     </template>
     {{ t('price_refresh.button') }}
   </RuiButton>

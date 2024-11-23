@@ -60,7 +60,7 @@ const { t } = useI18n();
         icon
         @click="update()"
       >
-        <RuiIcon name="arrow-up-circle-line" />
+        <RuiIcon name="lu-circle-arrow-up" />
       </RuiButton>
     </template>
     {{ t('update_indicator.version', { appVersion }) }}

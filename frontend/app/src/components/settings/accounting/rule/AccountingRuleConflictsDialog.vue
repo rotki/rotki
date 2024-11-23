@@ -282,7 +282,7 @@ async function save() {
                   <div class="flex items-center text-left gap-2">
                     <RuiIcon
                       class="shrink-0"
-                      name="information-line"
+                      name="lu-info"
                       size="18"
                     />
                     {{ t('accounting_settings.rule.labels.taxable') }}
@@ -302,7 +302,7 @@ async function save() {
                   <div class="flex items-center text-left gap-2">
                     <RuiIcon
                       class="shrink-0"
-                      name="information-line"
+                      name="lu-info"
                       size="18"
                     />
                     {{ t('accounting_settings.rule.labels.count_entire_amount_spend') }}
@@ -322,7 +322,7 @@ async function save() {
                   <div class="flex items-center text-left gap-2">
                     <RuiIcon
                       class="shrink-0"
-                      name="information-line"
+                      name="lu-info"
                       size="18"
                     />
                     {{ t('accounting_settings.rule.labels.count_cost_basis_pnl') }}

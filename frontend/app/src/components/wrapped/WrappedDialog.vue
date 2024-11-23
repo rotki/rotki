@@ -249,7 +249,7 @@ watch(refreshing, async (curr, old) => {
           >
             <template #append>
               <RuiIcon
-                name="external-link-line"
+                name="lu-external-link"
                 size="12"
               />
             </template>
@@ -383,7 +383,7 @@ watch(refreshing, async (curr, old) => {
         >
           <template #header-icon>
             <RuiIcon
-              name="exchange-line"
+              name="lu-coins-exchange"
               class="text-rui-primary"
               size="12"
             />
@@ -409,7 +409,7 @@ watch(refreshing, async (curr, old) => {
         >
           <template #header-icon>
             <RuiIcon
-              name="git-branch-line"
+              name="lu-git-branch"
               class="text-rui-primary"
               size="12"
             />
