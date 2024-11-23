@@ -430,7 +430,7 @@ class DBHandler:
                 'beacon_rpc_endpoint',
                 'ask_user_upon_size_discrepancy',
             ],
-    ) -> int | None | Timestamp | bool | AssetWithOracles | list['ExchangeLocationID'] | str:
+    ) -> int | Timestamp | bool | AssetWithOracles | list['ExchangeLocationID'] | str | None:
         deserializer, default_value = self.setting_to_default_type[name]
         cursor.execute(
             'SELECT value FROM settings WHERE name=?;', (name,),

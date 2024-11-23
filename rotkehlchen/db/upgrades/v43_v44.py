@@ -127,7 +127,7 @@ def upgrade_v43_to_v44(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
             return
 
         remove_keys, insert_entries = [], set()
-        supported_blockchains = re.compile('^(ETH|ETH2|BTC|BCH|KSM|AVAX|DOT|OPTIMISM|POLYGON_POS|ARBITRUM_ONE|BASE|GNOSIS|SCROLL|ZKSYNC_LITE)')  # noqa: E501  # supported blockchains at v1.35
+        supported_blockchains = re.compile(r'^(ETH|ETH2|BTC|BCH|KSM|AVAX|DOT|OPTIMISM|POLYGON_POS|ARBITRUM_ONE|BASE|GNOSIS|SCROLL|ZKSYNC_LITE)')  # noqa: E501  # supported blockchains at v1.35
         for (object_reference, tag_name) in object_references:
             new_object_reference, count = supported_blockchains.subn('', object_reference)
             if count != 0:

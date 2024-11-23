@@ -175,6 +175,7 @@ select = [
     "T",
     "UP",
     "YTT",
+    "ASYNC",
     # "ANN",  # flake8-annotations -- looks like mypy already covers this?
     "S",
     # "BLE",  # blind-except -- already pylint does this and we got ignores where needed
@@ -197,9 +198,9 @@ select = [
     "PYI",
     "COM",
     "DTZ",
-    "EXE",
     "INP",
     "PT",
+    "TC",
     "TCH",
     # "PTH",  # Should do it at some point. Many hits and no autofix. When enabled fully remove from extend-select
     "INT",
@@ -224,8 +225,6 @@ ignore = [
     "E402",  # module level import at file top. https://www.flake8rules.com/rules/E402.html
     "N818",  # error suffix in exception names
     "C901",  # function too complex
-    "RUF001",  # AmbiguousUnicodeCharacterString
-    "RUF002",  # AmbiguousUnicodeCharacterDocstring
     "RUF005",  # Unpacking over concatenation -> https://github.com/charliermarsh/ruff/issues/2054#issuecomment-1399617413
     "RET501",  # Explicitly returning None
     "RET504",  # Unnecessary variable assignment before `return
