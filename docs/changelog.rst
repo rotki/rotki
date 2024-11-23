@@ -12,7 +12,7 @@ Changelog
 * :bug:`-` Fix the issue where some asset values show zero in the edit snapshot form.
 * :bug:`-` Fix the issue where the pagination for the account table resets to the first page when the user expands the account.
 * :bug:`8892` rotki will now correctly fetch Starknet token prices before May 2024 from Cryptocompare, when the ticker changed from STARK to STRK.
-* :bug:`-` The airdrops directory should no longer appear under the user directory in certain cirsumstances
+* :bug:`-` The airdrops directory should no longer appear under the user directory in certain circumstances
 
 * :release:`1.36.0 <2024-11-06>`
 * :bug:`-` The exported file that overrides the file with the same name should have the latest modified time.
