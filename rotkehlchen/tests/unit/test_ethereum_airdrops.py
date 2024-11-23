@@ -375,7 +375,6 @@ def test_check_airdrops(
         data = check_airdrops(
             addresses=ethereum_accounts + [TEST_ADDR1, TEST_ADDR2, TEST_POAP1],
             database=database,
-            data_dir=data_dir,
             tolerance_for_amount_check=tolerance_for_amount_check,
         )
 
@@ -503,7 +502,6 @@ def test_check_airdrops(
         data = check_airdrops(
             addresses=[TEST_ADDR2],
             database=database,
-            data_dir=data_dir,
             tolerance_for_amount_check=tolerance_for_amount_check,
         )
         # diva CSV and aave JSON were queried again because their hashes were updated
@@ -529,16 +527,12 @@ def test_check_airdrops(
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_airdrop_fail(database, data_dir):
+def test_airdrop_fail(database):
     with (
         patch('rotkehlchen.chain.ethereum.airdrops.requests.get', side_effect=_mock_airdrop_list),
         pytest.raises(RemoteError),
     ):
-        check_airdrops(
-            addresses=[TEST_ADDR1],
-            database=database,
-            data_dir=data_dir,
-        )
+        check_airdrops(addresses=[TEST_ADDR1], database=database)
 
 
 @pytest.mark.parametrize('remote_etag', ['etag', 'updated_etag'])

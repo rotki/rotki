@@ -2416,7 +2416,6 @@ class RestAPI:
             data = check_airdrops(
                 addresses=self.rotkehlchen.chains_aggregator.accounts.eth,
                 database=self.rotkehlchen.data.db,
-                data_dir=self.rotkehlchen.data.data_directory,
                 tolerance_for_amount_check=AIRDROPS_TOLERANCE,
             )
         except RemoteError as e:
@@ -4792,7 +4791,7 @@ class RestAPI:
             filter_query: HistoryBaseEntryFilterQuery,
             directory_path: Path | None,
     ) -> dict[str, Any] | Response:
-        """Export or Download history events data to a CSV file."""
+        """Export history events data to a CSV file."""
         dbevents = DBHistoryEvents(self.rotkehlchen.data.db)
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
             history_events, _, _ = dbevents.get_history_events_and_limit_info(
@@ -4842,35 +4841,22 @@ class RestAPI:
             # maintain insertion order without storing extra info
             headers.update(dict.fromkeys(serialized_event))
 
-        if directory_path is None:  # on download
-            with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as temp_dir:  # needed on windows, see https://tinyurl.com/tmp-win-err  # noqa: E501
-                file_path = Path(temp_dir) / FILENAME_HISTORY_EVENTS_CSV
-                try:
-                    dict_to_csv_file(
-                        path=file_path,
-                        dictionary_list=serialized_history_events,
-                        csv_delimiter=settings.csv_export_delimiter,
-                        headers=headers.keys(),
-                    )
-                    register_post_download_cleanup(file_path)
-                    return send_file(
-                        path_or_file=file_path,
-                        mimetype='text/csv',
-                        as_attachment=True,
-                        download_name=FILENAME_HISTORY_EVENTS_CSV,
-                    )
-                except (CSVWriteError, PermissionError) as e:
-                    return wrap_in_fail_result(
-                        message=str(e),
-                        status_code=HTTPStatus.CONFLICT,
-                    )
-                except FileNotFoundError:
-                    return wrap_in_fail_result(
-                        message='No file was found',
-                        status_code=HTTPStatus.NOT_FOUND,
-                    )
+        try:
+            if directory_path is None:  # file will be downloaded later via download_history_events_csv endpoint  # noqa: E501
+                file_path = Path(tempfile.mkdtemp()) / FILENAME_HISTORY_EVENTS_CSV
+                dict_to_csv_file(
+                    path=file_path,
+                    dictionary_list=serialized_history_events,
+                    csv_delimiter=settings.csv_export_delimiter,
+                    headers=headers.keys(),
+                )
+                return {
+                    'result': {'file_path': str(file_path)},
+                    'message': '',
+                    'status_code': HTTPStatus.OK,
+                }
 
-        try:  # from here and below we do a direct export to filesystem
+            # else do a direct export to filesystem
             directory_path.mkdir(parents=True, exist_ok=True)
             file_path = directory_path / FILENAME_HISTORY_EVENTS_CSV
             dict_to_csv_file(
@@ -4883,6 +4869,16 @@ class RestAPI:
             return wrap_in_fail_result(message=str(e), status_code=HTTPStatus.CONFLICT)
 
         return OK_RESULT
+
+    def download_history_events_csv(self, file_path: str) -> Response:
+        """Download history events data CSV file."""
+        register_post_download_cleanup(Path(file_path))
+        return send_file(
+            path_or_file=file_path,
+            mimetype='text/csv',
+            as_attachment=True,
+            download_name=FILENAME_HISTORY_EVENTS_CSV,
+        )
 
     def _invalidate_cache_for_accounting_rule(
             self,

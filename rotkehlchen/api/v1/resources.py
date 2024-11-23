@@ -96,6 +96,7 @@ from rotkehlchen.api.v1.schemas import (
     ExchangesResourceAddSchema,
     ExchangesResourceEditSchema,
     ExchangesResourceRemoveSchema,
+    ExportHistoryDownloadSchema,
     ExportHistoryEventSchema,
     ExternalServicesResourceAddSchema,
     ExternalServicesResourceDeleteSchema,
@@ -3145,6 +3146,16 @@ class ExportHistoryEventResource(BaseMethodView):
     @use_kwargs(put_schema, location='json_and_query')
     def put(self, async_query: bool, filter_query: 'HistoryBaseEntryFilterQuery') -> Response | dict[str, Any]:  # noqa: E501
         return self.rest_api.export_history_events(filter_query=filter_query, directory_path=None, async_query=async_query)  # noqa: E501
+
+
+class ExportHistoryDownloadResource(BaseMethodView):
+
+    post_schema = ExportHistoryDownloadSchema()
+
+    @require_loggedin_user()
+    @use_kwargs(post_schema, location='json')
+    def post(self, file_path: str) -> Response:
+        return self.rest_api.download_history_events_csv(file_path=file_path)
 
 
 class AccountingRulesResource(BaseMethodView):

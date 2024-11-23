@@ -3434,6 +3434,11 @@ class ExportHistoryEventSchema(HistoryEventSchema, AsyncQueryArgumentSchema):
         return extra_fields
 
 
+class ExportHistoryDownloadSchema(Schema):
+    """Schema for downloading history events CSVs."""
+    file_path = fields.String(required=True)
+
+
 class AccountingRuleIdSchema(Schema):
     event_type = SerializableEnumField(enum_class=HistoryEventType, required=True)
     event_subtype = SerializableEnumField(enum_class=HistoryEventSubType, required=True)

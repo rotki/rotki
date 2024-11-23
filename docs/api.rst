@@ -5328,7 +5328,7 @@ Exporting History Events
    .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``
 
-   Doing a PUT on this endpoint with the given filter parameters will download a csv with all history events matching the filter. All arguments are optional. If no filter is used all the events will be downloaded.
+   Doing a PUT on this endpoint with the given filter parameters will export a csv with all history events matching the filters that can be downloaded later via the /history/events/export/download endpoint. All arguments are optional. If no filter is used all the events will be downloaded.
 
    .. _filter-request-args-label:
 
@@ -5371,13 +5371,54 @@ Exporting History Events
    .. sourcecode:: http
 
       HTTP/1.1 200 OK
-      Content-Type: text/csv
+      Content-Type: application/json
 
-   :statuscode 200: Events successfully downloaded
+      {
+          "result": true,
+          "message": ""
+      }
+
+   :statuscode 200: Events successfully exported
    :statuscode 400: Provided JSON is in some way malformed
    :statuscode 409: No user is logged in or failure at event download.
    :statuscode 500: Internal rotki error
    :statuscode 502: Couldn't fetch prices for all the events due to being rate limited.
+
+Downloading Exported History Events
+============================================
+
+.. http:post:: /api/(version)/history/events/export/download
+
+   Doing a POST on this endpoint will download the CSV exported in a previous call to the export endpoint and specified here with file_path.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      POST /api/1/history/events/export/download HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {
+          "file_path": "/tmp/tmprg88k0co/history_events.csv"
+      }
+
+   .. _history_download_schema_section:
+
+   :reqjson string file_path: The CSV file to be downloaded.
+
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: text/csv
+
+   :statuscode 200: CSV successfully downloaded
+   :statuscode 400: Provided JSON is in some way malformed
+   :statuscode 409: No user is logged in or failure.
+   :statuscode 500: Internal rotki error
 
 Querying online events
 ============================================

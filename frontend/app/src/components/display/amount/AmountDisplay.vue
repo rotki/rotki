@@ -154,7 +154,7 @@ const internalValue = computed<BigNumber>(() => {
 
   if (timestampVal > 0 && get(amount) && priceAssetVal) {
     const assetHistoricRate = get(historicPriceInCurrentCurrency(priceAssetVal, timestampVal));
-    if (assetHistoricRate.isPositive())
+    if (assetHistoricRate.gt(0))
       return get(amount).multipliedBy(assetHistoricRate);
   }
 

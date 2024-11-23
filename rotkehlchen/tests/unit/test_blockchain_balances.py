@@ -7,6 +7,7 @@ from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.balances import BlockchainBalances
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.chain.structures import EvmTokenDetectionData
 from rotkehlchen.constants.assets import A_BCH, A_BTC, A_ETH, A_LQTY, A_LUSD, A_POLYGON_POS_MATIC
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.factories import UNIT_BTC_ADDRESS1, make_evm_address
@@ -232,8 +233,24 @@ def test_native_token_balance(
     with (
         patch.object(blockchain.polygon_pos.node_inquirer, 'default_call_order', mock_default_call_order),  # noqa: E501
         patch(
-            'rotkehlchen.globaldb.handler.GlobalDBHandler.get_evm_tokens',
-            new=lambda *args, **kwargs: [pol, usdc, weth, usdt],
+            'rotkehlchen.globaldb.handler.GlobalDBHandler.get_token_detection_data',
+            new=lambda *args, **kwargs: [EvmTokenDetectionData(
+                identifier=pol.identifier,
+                address=pol.evm_address,
+                decimals=pol.decimals,  # type: ignore
+            ), EvmTokenDetectionData(
+                identifier=usdc.identifier,
+                address=usdc.evm_address,
+                decimals=usdc.decimals,  # type: ignore
+            ), EvmTokenDetectionData(
+                identifier=weth.identifier,
+                address=weth.evm_address,
+                decimals=weth.decimals,  # type: ignore
+            ), EvmTokenDetectionData(
+                identifier=usdt.identifier,
+                address=usdt.evm_address,
+                decimals=usdt.decimals,  # type: ignore
+            )],
         ),
     ):
         blockchain.polygon_pos.tokens.detect_tokens(

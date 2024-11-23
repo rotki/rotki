@@ -12,6 +12,7 @@ from rotkehlchen.data_migrations.migrations.migration_11 import data_migration_1
 from rotkehlchen.data_migrations.migrations.migrations_13 import data_migration_13
 from rotkehlchen.data_migrations.migrations.migrations_14 import data_migration_14
 from rotkehlchen.data_migrations.migrations.migrations_18 import data_migration_18
+from rotkehlchen.data_migrations.migrations.migrations_19 import data_migration_19
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
 from .constants import LAST_DATA_MIGRATION
@@ -39,6 +40,7 @@ MIGRATION_LIST = [  # remember to bump LAST_DATA_MIGRATION if editing this
     MigrationRecord(version=13, function=data_migration_13),
     MigrationRecord(version=14, function=data_migration_14),
     MigrationRecord(version=18, function=data_migration_18),
+    MigrationRecord(version=19, function=data_migration_19),
 ]
 
 

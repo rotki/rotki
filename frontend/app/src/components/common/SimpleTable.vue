@@ -45,7 +45,7 @@ const style = computed<StyleValue | undefined>(() => {
 
 <style module lang="scss">
 .table {
-  @apply w-full;
+  @apply w-full overflow-y-auto;
 
   table {
     @apply w-full;

@@ -45,7 +45,10 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <RuiAlert type="info">
+  <RuiAlert
+    type="info"
+    class="mt-4"
+  >
     {{ t('manage_user_assets.warning') }}
   </RuiAlert>
 

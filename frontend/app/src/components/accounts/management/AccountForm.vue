@@ -140,12 +140,8 @@ watch(inputMode, (mode) => {
   }
 });
 
-watch(chain, loadApiKeys);
-
-onMounted(async () => {
+onBeforeMount(async () => {
   await loadApiKeys();
-  if (!get(apiKey('etherscan', 'ethereum')))
-    set(chain, 'eth');
 });
 
 defineExpose({

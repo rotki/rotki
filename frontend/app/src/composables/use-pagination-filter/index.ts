@@ -1,3 +1,4 @@
+/* eslint-disable max-lines */
 import { Severity } from '@rotki/common';
 import { isEmpty, isEqual } from 'lodash-es';
 import { FilterBehaviour, type MatchedKeywordWithBehaviour, type SearchMatcher } from '@/types/filtering';
@@ -30,6 +31,7 @@ interface UsePaginationFiltersOptions<
   defaultParams?: ComputedRef<Params<TItem, TPayload>>;
   defaultSortBy?: DataTableSortData<TItem>;
   query?: Ref<LocationQuery>;
+  queryParamsOnly?: ComputedRef<RawLocationQuery>;
 }
 
 interface UsePaginationFilterReturn<
@@ -57,7 +59,7 @@ interface UsePaginationFilterReturn<
  * fetching when params change
  * @template T,U,V,S,W,X
  * @param {(payload: MaybeRef<U>) => Promise<Collection<V>>} requestData
- * @param {{onUpdateFilters?: (query: LocationQuery) => void, extraParams?: ComputedRef<LocationQuery>, customPageParams?: ComputedRef<Partial<U>>, defaultSortBy?: {pagination?: keyof T, pageParams?: (keyof T)[], pageParamsAsc?: boolean[]}}} options
+ * @param {{onUpdateFilters?: (query: LocationQuery) => void, extraParams?: ComputedRef<LocationQuery>, queryParamsOnly?: ComputedRef<LocationQuery>, customPageParams?: ComputedRef<Partial<U>>, defaultSortBy?: {pagination?: keyof T, pageParams?: (keyof T)[], pageParamsAsc?: boolean[]}}} options
  */
 export function usePaginationFilters<
   TItem extends NonNullable<unknown>,
@@ -81,6 +83,7 @@ export function usePaginationFilters<
     onUpdateFilters,
     // giving it a default value since it is watched, for cases where there are no extra params
     extraParams = computed<LocationQuery>(() => ({})),
+    queryParamsOnly = computed<LocationQuery>(() => ({})),
     requestParams,
     defaultParams,
     defaultSortBy,
@@ -177,6 +180,7 @@ export function usePaginationFilters<
       ...(get(defaultParams) ?? {}),
       ...selectedFilters,
       ...get(extraParams),
+      ...get(queryParamsOnly),
       ...nonEmptyProperties(get(requestParams) ?? {}),
     };
 
@@ -293,6 +297,10 @@ export function usePaginationFilters<
       Object.entries(get(extraParams)).map(([key, value]) => [key, value?.toString()]),
     );
 
+    const queryParamsOnlyConverted = Object.fromEntries(
+      Object.entries(get(queryParamsOnly)).map(([key, value]) => [key, value?.toString()]),
+    );
+
     const sortParams = isEqual(sorting, defaultSorting())
       ? undefined
       : {
@@ -306,6 +314,7 @@ export function usePaginationFilters<
       ...sortParams,
       ...selectedFilters,
       ...nonEmptyProperties(extraParamsConverted, true),
+      ...nonEmptyProperties(queryParamsOnlyConverted, true),
     };
   };
 
@@ -354,6 +363,13 @@ export function usePaginationFilters<
       return;
 
     setPage(1, !paramEquals);
+  });
+
+  watch(queryParamsOnly, (params, op) => {
+    if (isEqual(params, op))
+      return;
+
+    set(userAction, true);
   });
 
   watch(pageParams, async (params, op) => {

@@ -10,6 +10,7 @@ from rotkehlchen.assets.utils import _query_or_get_given_token_info, get_or_crea
 from rotkehlchen.chain.ethereum.tokens import EthereumTokens
 from rotkehlchen.chain.evm.tokens import generate_multicall_chunks
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.chain.structures import EvmTokenDetectionData
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_DAI, A_OMG, A_WETH
 from rotkehlchen.constants.resolver import evm_address_to_identifier
@@ -71,12 +72,25 @@ def test_detect_tokens_for_addresses(rotkehlchen_api_server, ethereum_accounts):
     tokens = rotki.chains_aggregator.ethereum.tokens
     tokens.evm_inquirer.multicall = MagicMock(side_effect=tokens.evm_inquirer.multicall)
     with patch(
-        'rotkehlchen.globaldb.handler.GlobalDBHandler.get_evm_tokens',
+        'rotkehlchen.globaldb.handler.GlobalDBHandler.get_token_detection_data',
         side_effect=lambda *args, **kwargs: [  # mock the returned list to avoid changing this test with every assets version  # noqa: E501
-            A_WETH.resolve_to_evm_token(),
-            A_LPT.resolve_to_evm_token(),
-            A_OMG.resolve_to_evm_token(),
-            A_DAI.resolve_to_evm_token(),
+            EvmTokenDetectionData(
+                identifier=A_WETH.identifier,
+                address=string_to_evm_address('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'),
+                decimals=18,
+            ), EvmTokenDetectionData(
+                identifier=A_LPT.identifier,
+                address=string_to_evm_address('0x58b6A8A3302369DAEc383334672404Ee733aB239'),
+                decimals=18,
+            ), EvmTokenDetectionData(
+                identifier=A_OMG.identifier,
+                address=string_to_evm_address('0xd26114cd6EE289AccF82350c8d8487fedB8A0C07'),
+                decimals=18,
+            ), EvmTokenDetectionData(
+                identifier=A_DAI.identifier,
+                address=string_to_evm_address('0x6B175474E89094C44Da98b954EedeAC495271d0F'),
+                decimals=18,
+            ),
         ],
     ):
         detection_result = tokens.detect_tokens(False, [addr1, addr2, addr3])
@@ -140,7 +154,7 @@ def test_last_queried_ts(tokens, freezer):
     """
     # We don't need to query the chain here, so mock tokens list
     evm_tokens_patch = patch(
-        'rotkehlchen.globaldb.handler.GlobalDBHandler.get_evm_tokens',
+        'rotkehlchen.globaldb.handler.GlobalDBHandler.get_token_detection_data',
         new=lambda chain_id=ChainID.ETHEREUM, exceptions=None, protocol=None: [],
     )
     beginning = ts_now()
@@ -382,8 +396,18 @@ def test_monerium_queries(
         evm_inquirer=gnosis_manager.node_inquirer,
     )
     with patch(
-        'rotkehlchen.globaldb.handler.GlobalDBHandler.get_evm_tokens',
-        new=lambda *args, **kwargs: [new_eure, A_GNOSIS_EURE.resolve_to_evm_token()],
+        'rotkehlchen.globaldb.handler.GlobalDBHandler.get_token_detection_data',
+        new=lambda *args, **kwargs: [
+            EvmTokenDetectionData(
+                identifier=new_eure.identifier,
+                address=new_eure.evm_address,
+                decimals=new_eure.decimals,  # type: ignore
+            ), EvmTokenDetectionData(
+                identifier=A_GNOSIS_EURE.identifier,
+                address=string_to_evm_address('0xcB444e90D8198415266c6a2724b7900fb12FC56E'),
+                decimals=18,
+            ),
+        ],
     ):
         tokens = gnosis_manager.tokens.detect_tokens(
             only_cache=False,

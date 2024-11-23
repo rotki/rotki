@@ -370,12 +370,7 @@ class CalendarReminderCreator(CustomizableDateMixin):
         with self.database.conn.read_ctx() as read_cursor:
             addresses = self.database.get_evm_accounts(read_cursor)
 
-        data = check_airdrops(
-            addresses=addresses,
-            database=self.database,
-            data_dir=self.database.user_data_dir,
-        )
-
+        data = check_airdrops(addresses=addresses, database=self.database)
         calendar_entries: list[int] = []
         for address, airdrops in data.items():
             for airdrop_name, airdrop_info in airdrops.items():

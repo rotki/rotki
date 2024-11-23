@@ -25,8 +25,8 @@ const { t } = useI18n();
 
 const { xpub, disabled, blockchain } = toRefs(props);
 
-const xpubKey = ref('');
-const derivationPath = ref('');
+const xpubKey = ref<string>('');
+const derivationPath = ref<string>('');
 const xpubKeyPrefix = ref<XpubPrefix>(XpubPrefix.XPUB);
 const advanced = ref(false);
 
@@ -102,8 +102,9 @@ watchImmediate(xpub, (xpub) => {
   if (prefix !== XpubPrefix.XPUB)
     set(xpubKeyPrefix, prefix);
 
-  if (get(derivationPath).replace(/'/g, '').replace(/\/$/, '') !== xpub?.derivationPath)
-    set(derivationPath, xpub?.derivationPath);
+  const derivation = get(derivationPath);
+  if (derivation && derivation.replace(/'/g, '').replace(/\/$/, '') !== xpub?.derivationPath)
+    set(derivationPath, xpub?.derivationPath || '');
 });
 
 watch(blockchain, () => {
