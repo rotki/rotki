@@ -63,7 +63,7 @@ def add_logging_level(
             self._log(level_num, message, args, **kwargs)  # pylint:disable=protected-access
 
     def log_to_root(message: str, *args: Any, **kwargs: Any) -> None:
-        logging.log(level_num, message, *args, **kwargs)
+        logging.log(level_num, message, *args, **kwargs)  # noqa: LOG015  # this logs to root on purpose
 
     logging.addLevelName(level_num, level_name)
     setattr(logging, level_name, level_num)

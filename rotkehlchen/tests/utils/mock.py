@@ -127,9 +127,9 @@ def patch_web3_request(given_web3, test_specific_mock_data):
     )
 
 
-ETHERSCAN_ACTION_RE = re.compile('.*action=(.*?)&(.*)')
-ETHERSCAN_ETH_CALL_RE = re.compile('&to=(.*)&data=(.*)&.*')
-ETHERSCAN_BLOCKNOBYTIME_RE = re.compile('&timestamp=(.*)&closest=(.*)&.*')
+ETHERSCAN_ACTION_RE = re.compile(r'.*action=(.*?)&(.*)')
+ETHERSCAN_ETH_CALL_RE = re.compile(r'&to=(.*)&data=(.*)&.*')
+ETHERSCAN_BLOCKNOBYTIME_RE = re.compile(r'&timestamp=(.*)&closest=(.*)&.*')
 
 
 def _mock_etherscan_eth_call(counter, url, eth_call_data):
@@ -203,9 +203,9 @@ def patch_etherscan_request(etherscan, mock_data: dict[str, Any]):
     )
 
 
-BEACONCHAIN_ETH1_CALL_RE = re.compile('https://beaconcha.in/api/v1/validator/eth1/(.*)')
-BEACONCHAIN_VALIDATOR_CALL_RE = re.compile('https://beaconcha.in/api/v1/validator/(.*)')
-BEACONCHAIN_OTHER_CALL_RE = re.compile('https://beaconcha.in/api/v1/validator/(.*)/(.*)')
+BEACONCHAIN_ETH1_CALL_RE = re.compile(r'https://beaconcha.in/api/v1/validator/eth1/(.*)')
+BEACONCHAIN_VALIDATOR_CALL_RE = re.compile(r'https://beaconcha.in/api/v1/validator/(.*)')
+BEACONCHAIN_OTHER_CALL_RE = re.compile(r'https://beaconcha.in/api/v1/validator/(.*)/(.*)')
 
 
 def patch_eth2_requests(eth2, mock_data):

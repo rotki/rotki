@@ -1654,7 +1654,7 @@ class LocationAssetMappingsFilterQuery(DBFilterQuery):
             cls: type['LocationAssetMappingsFilterQuery'],
             limit: int,
             offset: int,
-            location: Location | None | Literal['common'] = None,
+            location: Location | Literal['common'] | None = None,
             location_symbol: str | None = None,
             and_op: bool = True,
     ) -> 'LocationAssetMappingsFilterQuery':

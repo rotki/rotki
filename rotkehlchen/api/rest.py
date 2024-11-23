@@ -3186,7 +3186,7 @@ class RestAPI:
             f'{", ".join([asset.identifier for asset in assets])}',
         )
         # Type is list instead of tuple here because you can't serialize a tuple
-        assets_price: dict[Asset, list[Price | (int | None | bool)]] = {}
+        assets_price: dict[Asset, list[Price | (int | bool | None)]] = {}
         oracle: CurrentPriceOracle | None
         for asset in assets:
             if asset != target_asset:

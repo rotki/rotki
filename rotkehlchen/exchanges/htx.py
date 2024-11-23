@@ -180,7 +180,7 @@ class Htx(ExchangeInterface):
 
             for balance_info in balances:
                 if (balance_type := balance_info.get('type')) not in ('trade', 'frozen'):
-                    logging.debug(f'Ignored balance type: {balance_type}')
+                    log.debug(f'Ignored balance type: {balance_type}')
                     continue
 
                 if (amount_str := balance_info.get('balance')) is not None:

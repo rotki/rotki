@@ -10,7 +10,7 @@ class CompoundBalance(NamedTuple):
     balance: 'Balance'
     apy: 'FVal | None'
 
-    def serialize(self) -> dict[str, str | None | dict[str, str]]:
+    def serialize(self) -> dict[str, str | dict[str, str] | None]:
         return {
             'balance': self.balance.serialize(),
             'apy': self.apy.to_percentage(precision=2) if self.apy else None,
