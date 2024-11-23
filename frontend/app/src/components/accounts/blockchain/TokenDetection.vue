@@ -42,7 +42,7 @@ const { t } = useI18n();
           <RuiIcon
             v-else
             size="16"
-            name="restart-line"
+            name="lu-rotate-ccw"
           />
         </RuiButton>
       </template>

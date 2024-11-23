@@ -475,7 +475,7 @@ onMounted(setEditMode);
 
     <RuiTextArea
       v-model="notes"
-      prepend-icon="sticky-note-line"
+      prepend-icon="lu-sticky-note"
       variant="outlined"
       color="primary"
       min-rows="5"

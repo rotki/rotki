@@ -244,7 +244,7 @@ defineExpose({
           >
             <RuiIcon
               size="20"
-              :name="!editKeys ? 'pencil-line' : 'close-line'"
+              :name="!editKeys ? 'lu-pencil' : 'lu-x'"
             />
           </RuiButton>
         </template>

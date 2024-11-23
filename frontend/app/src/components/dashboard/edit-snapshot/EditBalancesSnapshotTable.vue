@@ -463,7 +463,7 @@ function confirmDelete() {
         >
           {{ t('common.actions.next') }}
           <template #append>
-            <RuiIcon name="arrow-right-line" />
+            <RuiIcon name="lu-arrow-right" />
           </template>
         </RuiButton>
       </div>

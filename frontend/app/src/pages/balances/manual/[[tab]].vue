@@ -83,7 +83,7 @@ onBeforeMount(async () => {
         @click="add()"
       >
         <template #prepend>
-          <RuiIcon name="add-line" />
+          <RuiIcon name="lu-plus" />
         </template>
         {{ t('manual_balances.add_manual_balance') }}
       </RuiButton>

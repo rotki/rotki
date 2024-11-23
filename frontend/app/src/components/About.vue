@@ -263,7 +263,7 @@ const { copy } = useClipboard({ source: versionText });
           <template #prepend>
             <RuiIcon
               size="20"
-              name="file-copy-line"
+              name="lu-copy"
             />
           </template>
           {{ t('about.copy_information_tooltip') }}

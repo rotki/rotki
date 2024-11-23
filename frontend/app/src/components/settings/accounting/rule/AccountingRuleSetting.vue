@@ -258,7 +258,7 @@ const importFileDialog = ref<boolean>(false);
               @click="refresh()"
             >
               <template #prepend>
-                <RuiIcon name="refresh-line" />
+                <RuiIcon name="lu-refresh-ccw" />
               </template>
               {{ t('common.refresh') }}
             </RuiButton>
@@ -270,7 +270,7 @@ const importFileDialog = ref<boolean>(false);
           @click="add()"
         >
           <template #prepend>
-            <RuiIcon name="add-line" />
+            <RuiIcon name="lu-plus" />
           </template>
           {{ t('accounting_settings.rule.add') }}
         </RuiButton>
@@ -327,7 +327,7 @@ const importFileDialog = ref<boolean>(false);
               @click="conflictsDialogOpen = true"
             >
               <template #prepend>
-                <RuiIcon name="error-warning-line" />
+                <RuiIcon name="lu-circle-alert" />
               </template>
               {{ t('accounting_settings.rule.conflicts.title') }}
               <template #append>

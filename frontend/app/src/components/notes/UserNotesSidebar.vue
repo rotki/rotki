@@ -103,7 +103,7 @@ watch(locationName, (locationName) => {
         icon
         @click="display = false"
       >
-        <RuiIcon name="close-line" />
+        <RuiIcon name="lu-x" />
       </RuiButton>
     </div>
 

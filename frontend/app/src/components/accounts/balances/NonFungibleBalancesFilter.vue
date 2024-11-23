@@ -69,7 +69,7 @@ const { t } = useI18n();
             v-bind="attrs"
           >
             <template #append>
-              <RuiIcon name="arrow-down-s-line" />
+              <RuiIcon name="lu-chevron-down" />
             </template>
             {{ t('common.actions.filter') }}
           </RuiButton>

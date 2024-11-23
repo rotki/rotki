@@ -14,7 +14,7 @@ const { message } = toRefs(props);
 
 const { t } = useI18n();
 
-const icon = computed<RuiIcons>(() => (get(props.message.success) ? 'checkbox-circle-line' : 'error-warning-line'));
+const icon = computed<RuiIcons>(() => (get(props.message.success) ? 'lu-circle-check' : 'lu-circle-alert'));
 </script>
 
 <template>

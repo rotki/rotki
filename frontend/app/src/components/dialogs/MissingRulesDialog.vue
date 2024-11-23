@@ -18,19 +18,19 @@ const { t } = useI18n();
 const options = computed(() => [
   {
     action: onRedecode,
-    icon: 'restart-line',
+    icon: 'lu-rotate-ccw',
     label: t('actions.history_events.missing_rule.re_decode'),
     show: isDefined(modelValue) ? isEvmEvent(get(modelValue)) : false,
   },
   {
     action: onEdit,
-    icon: 'pencil-line',
+    icon: 'lu-pencil',
     label: t('actions.history_events.missing_rule.edit'),
     show: true,
   },
   {
     action: onAddRule,
-    icon: 'add-line',
+    icon: 'lu-plus',
     label: t('actions.history_events.missing_rule.add_rule'),
     show: true,
   },

@@ -107,7 +107,7 @@ async function addToSavedFilter() {
         >
           <RuiIcon
             size="20"
-            name="play-list-add-line"
+            name="play-list-lu-plus"
           />
         </RuiButton>
       </template>
@@ -251,7 +251,7 @@ async function addToSavedFilter() {
             >
               <RuiIcon
                 size="16"
-                name="play-list-add-line"
+                name="play-list-lu-plus"
               />
             </RuiButton>
           </template>

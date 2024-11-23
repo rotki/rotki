@@ -232,7 +232,7 @@ defineExpose({
                 @click="removeFile()"
               >
                 <RuiIcon
-                  name="close-line"
+                  name="lu-x"
                   size="16"
                 />
               </RuiButton>

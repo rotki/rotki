@@ -15,7 +15,7 @@ defineOptions({
         icon
         v-bind="attrs"
       >
-        <RuiIcon name="question-line" />
+        <RuiIcon name="lu-circle-help" />
       </RuiButton>
     </template>
     <div class="p-4 py-3">

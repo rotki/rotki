@@ -186,7 +186,7 @@ defineExpose({
                   @click="handleBlockchainRefresh(undefined, true)"
                 >
                   <template #prepend>
-                    <RuiIcon name="refresh-line" />
+                    <RuiIcon name="lu-refresh-ccw" />
                   </template>
 
                   {{ t('account_balances.detect_tokens.tooltip.redetect') }}

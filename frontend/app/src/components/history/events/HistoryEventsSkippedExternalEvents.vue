@@ -188,7 +188,7 @@ async function reProcessSkippedEvents() {
           @click="reProcessSkippedEvents()"
         >
           <template #prepend>
-            <RuiIcon name="refresh-line" />
+            <RuiIcon name="lu-refresh-ccw" />
           </template>
           {{ t('transactions.events.skipped.reprocess.action') }}
         </RuiButton>

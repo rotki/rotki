@@ -59,7 +59,7 @@ function goToSelectedDate() {
         >
           <RuiIcon
             size="20"
-            name="arrow-down-s-line"
+            name="lu-chevron-down"
           />
         </RuiButton>
       </template>
