@@ -826,12 +826,11 @@ def mock_history_processing(
 
     if remote_errors:
         mock_function = check_result_of_history_creation_for_remote_errors
-    accountant_patch = patch.object(
+    return patch.object(
         rotki.accountant,
         'process_history',
         side_effect=mock_function,
     )
-    return accountant_patch
 
 
 def mock_etherscan_transaction_response(etherscan: Etherscan, remote_errors: bool):
@@ -952,14 +951,13 @@ def prepare_rotki_for_history_processing_test(
     kraken.random_trade_data = False
     kraken.random_ledgers_data = False
     kraken.remote_errors = remote_errors
-    setup = mock_history_processing_and_exchanges(
+    return mock_history_processing_and_exchanges(
         rotki=rotki,
         should_mock_history_processing=should_mock_history_processing,
         history_start_ts=history_start_ts,
         history_end_ts=history_end_ts,
         remote_errors=remote_errors,
     )
-    return setup
 
 
 def assert_binance_trades_result(

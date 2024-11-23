@@ -621,8 +621,7 @@ class Etherscan(ExternalServiceWithApiKey, ABC):
         - RemoteError due to self._query().
         """
         options = {'txhash': tx_hash.hex()}
-        transaction_data = self._query(module='proxy', action='eth_getTransactionByHash', options=options)  # noqa: E501
-        return transaction_data
+        return self._query(module='proxy', action='eth_getTransactionByHash', options=options)
 
     def get_code(self, account: ChecksumEvmAddress) -> str:
         """Gets the deployment bytecode at the given address
@@ -631,8 +630,7 @@ class Etherscan(ExternalServiceWithApiKey, ABC):
         - RemoteError if there are any problems with reaching Etherscan or if
         an unexpected response is returned
         """
-        result = self._query(module='proxy', action='eth_getCode', options={'address': account})
-        return result
+        return self._query(module='proxy', action='eth_getCode', options={'address': account})
 
     def get_transaction_receipt(self, tx_hash: EVMTxHash) -> dict[str, Any] | None:
         """Gets the receipt for the given transaction hash
@@ -640,12 +638,11 @@ class Etherscan(ExternalServiceWithApiKey, ABC):
         May raise:
         - RemoteError due to self._query().
         """
-        result = self._query(
+        return self._query(
             module='proxy',
             action='eth_getTransactionReceipt',
             options={'txhash': tx_hash.hex()},
         )
-        return result
 
     def eth_call(
             self,
@@ -659,12 +656,11 @@ class Etherscan(ExternalServiceWithApiKey, ABC):
         an unexpected response is returned
         """
         options = {'to': to_address, 'data': input_data}
-        result = self._query(
+        return self._query(
             module='proxy',
             action='eth_call',
             options=options,
         )
-        return result
 
     def get_logs(
             self,
@@ -687,13 +683,12 @@ class Etherscan(ExternalServiceWithApiKey, ABC):
                 options[f'topic{idx}_{idx + 1}opr'] = 'and'
 
         timeout_tuple = CachedSettings().get_timeout_tuple()
-        result = self._query(
+        return self._query(
             module='logs',
             action='getLogs',
             options=options,
             timeout=(timeout_tuple[0], timeout_tuple[1] * 2),
         )
-        return result
 
     def get_blocknumber_by_time(self, ts: Timestamp, closest: Literal['before', 'after'] = 'before') -> int:  # noqa: E501
         """Performs the etherscan api call to get the blocknumber by a specific timestamp

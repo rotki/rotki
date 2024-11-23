@@ -69,12 +69,11 @@ class Uniswap(AMMSwapPlatform, EthereumModule):
             if len(pool_balances) != 0:
                 address_mapping[address] = pool_balances
 
-        protocol_balance = UniswapV3ProtocolBalance(
+        return UniswapV3ProtocolBalance(
             address_balances=address_mapping,
             known_tokens=price_known_tokens,
             unknown_tokens=price_unknown_tokens,
         )
-        return protocol_balance
 
     def get_v3_balances(
             self,

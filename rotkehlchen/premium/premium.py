@@ -238,8 +238,7 @@ class Premium:
             log.error(msg)
             raise RemoteError(msg) from e
 
-        data = _process_dict_response(response)
-        return data
+        return _process_dict_response(response)
 
     def authenticate_device(self) -> None:
         """
@@ -298,8 +297,7 @@ class Premium:
         except requests.exceptions.RequestException as e:
             raise RemoteError(f'Failed to register device due to: {e}') from e
 
-        response_body = _process_dict_response(response)
-        return response_body
+        return _process_dict_response(response)
 
     def is_active(self, catch_connection_errors: bool = True) -> bool:
         if self.status == SubscriptionStatus.ACTIVE:

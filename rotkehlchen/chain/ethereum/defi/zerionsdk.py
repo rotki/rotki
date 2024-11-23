@@ -382,13 +382,12 @@ class ZerionSDK:
             usd_price = ZERO_PRICE
 
         usd_value = normalized_value * usd_price
-        defi_balance = DefiBalance(
+        return DefiBalance(
             token_address=token_address,
             token_name=token_name,
             token_symbol=token_symbol,
             balance=Balance(amount=normalized_value, usd_value=usd_value),
         )
-        return defi_balance
 
     def handle_protocols(
             self,

@@ -188,11 +188,10 @@ def patch_and_enter_before_unlock(
     # Mock the initial get settings to include the specified ethereum modules
     if should_mock_settings:
         def mock_get_settings(_cursor) -> DBSettings:
-            settings = DBSettings(
+            return DBSettings(
                 active_modules=ethereum_modules,
                 ksm_rpc_endpoint=ksm_rpc_endpoint,
             )
-            return settings
         settings_patch = patch.object(rotki, 'get_settings', side_effect=mock_get_settings)
         stack.enter_context(settings_patch)
 

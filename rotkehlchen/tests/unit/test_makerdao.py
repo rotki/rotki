@@ -117,13 +117,12 @@ def fixture_makerdao_vaults(
         premium = Premium(credentials=rotki_premium_credentials, username=username)
 
     with web3_patch:
-        makerdao_vaults = MakerdaoVaults(
+        return MakerdaoVaults(
             ethereum_inquirer=ethereum_inquirer,
             database=database,
             premium=premium,
             msg_aggregator=function_scope_messages_aggregator,
         )
-    return makerdao_vaults
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [2])

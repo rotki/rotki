@@ -53,8 +53,7 @@ def fixture_temp_etherscan(function_scope_messages_aggregator, tmpdir_factory, s
                 ExternalServiceApiCredentials(service=ExternalService.ETHERSCAN, api_key=api_key),
             ])
 
-    etherscan = EthereumEtherscan(database=db, msg_aggregator=function_scope_messages_aggregator)
-    return etherscan
+    return EthereumEtherscan(database=db, msg_aggregator=function_scope_messages_aggregator)
 
 
 def patch_etherscan(etherscan, response_msg):

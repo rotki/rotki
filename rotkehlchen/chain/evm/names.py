@@ -64,12 +64,11 @@ def find_ens_mappings(
         raise RemoteError(f'Error occurred while querying ens names: {e!s}') from e
 
     with dbens.db.user_write() as write_cursor:
-        ens_mappings = dbens.update_values(
+        return dbens.update_values(
             write_cursor=write_cursor,
             ens_lookup_results=query_results,
             mappings_to_send=ens_mappings,
         )
-    return ens_mappings
 
 
 def search_for_addresses_names(
@@ -83,12 +82,10 @@ def search_for_addresses_names(
     For now this works only for evm chains.
     TODO: support not only ChecksumEvmAddress, but other address formats too.
     """
-    prioritized_addresses = prioritizer.get_prioritized_names(
+    return prioritizer.get_prioritized_names(
         prioritized_name_source=CachedSettings().get_entry('address_name_priority'),  # type: ignore  # mypy doesn't detect correctly the type of the cached setting
         chain_addresses=chain_addresses,
     )
-
-    return prioritized_addresses
 
 
 FetcherFunc = Callable[[DBHandler, OptionalChainAddress], str | None]

@@ -299,13 +299,11 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
                 to_ts=end_ts,
                 location=self.location,
             )
-            trades = self.db.get_trades(
+            return self.db.get_trades(
                 cursor=cursor,
                 filter_query=filter_query,
                 has_premium=True,  # is okay since the returned trades don't make it to the user
             )
-
-        return trades
 
     def query_margin_history(
             self,
@@ -407,13 +405,11 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
             location=self.location,
         )
         with self.db.conn.read_ctx() as cursor:
-            asset_movements = self.db.get_asset_movements(
+            return self.db.get_asset_movements(
                 cursor=cursor,
                 filter_query=filter_query,
                 has_premium=True,  # is okay since the returned events don't make it to the user
             )
-
-        return asset_movements
 
     @protect_with_lock()
     def query_income_loss_expense(
@@ -459,8 +455,7 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
             location=self.location,
         )
         with self.db.conn.read_ctx() as cursor:
-            events = db.get_history_events(cursor, filter_query=filter_query, has_premium=True)
-        return events  # type: ignore[return-value]  # HistoryBaseEntry vs HistoryEvent
+            return db.get_history_events(cursor, filter_query=filter_query, has_premium=True)  # type: ignore[return-value]  # HistoryBaseEntry vs HistoryEvent
 
     def query_history_with_callbacks(
             self,

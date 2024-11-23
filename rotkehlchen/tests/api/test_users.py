@@ -62,8 +62,7 @@ def check_user_status(api_server: APIServer) -> dict[str, str]:
     response = requests.get(
         api_url_for(api_server, 'usersresource'),
     )
-    result = assert_proper_sync_response_with_result(response)
-    return result
+    return assert_proper_sync_response_with_result(response)
 
 
 def test_loggedin_user_querying(rotkehlchen_api_server: APIServer, username: str, data_dir: Path):

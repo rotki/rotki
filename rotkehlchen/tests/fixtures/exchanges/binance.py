@@ -16,9 +16,8 @@ def function_scope_binance(
         function_scope_messages_aggregator,
         binance_location,
 ):
-    binance = create_test_binance(
+    return create_test_binance(
         database=database,
         msg_aggregator=function_scope_messages_aggregator,
         location=binance_location,
     )
-    return binance

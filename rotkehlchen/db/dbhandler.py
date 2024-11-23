@@ -2791,13 +2791,11 @@ class DBHandler:
                 'SELECT timestamp, location, usd_value FROM timed_location_data WHERE '
                 'timestamp=(SELECT MAX(timestamp) FROM timed_location_data) AND usd_value!=0;',
             )
-            locations = [LocationData(
+            return [LocationData(
                 time=x[0],
                 location=x[1],
                 usd_value=x[2],
             ) for x in cursor]
-
-        return locations
 
     def get_latest_asset_value_distribution(self) -> list[DBAssetBalance]:
         """Gets the latest asset distribution data
@@ -3626,7 +3624,6 @@ class DBHandler:
         Given a list of nft identifiers, return a list of nft info (id, name, collection_name)
         for those identifiers.
         """
-        result = {}
         with self.conn.read_ctx() as cursor:
             cursor.execute(
                 f'SELECT identifier, name, collection_name, image_url FROM nfts WHERE '
@@ -3634,7 +3631,7 @@ class DBHandler:
                 identifiers,
             )
             serialized_nft_type = AssetType.NFT.serialize()
-            result = {
+            return {
                 entry[0]: {
                     'name': entry[1],
                     'asset_type': serialized_nft_type,
@@ -3642,8 +3639,6 @@ class DBHandler:
                     'image_url': entry[3],
                 } for entry in cursor
             }
-
-        return result
 
     def add_skipped_external_event(
             self,

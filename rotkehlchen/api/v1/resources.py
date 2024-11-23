@@ -293,8 +293,7 @@ def load_json_viewargs_data(request: Request, schema: Schema) -> dict[str, Any]:
     if data is missing:
         data = {}
 
-    data = _combine_parser_data(data, view_args, schema)
-    return data
+    return _combine_parser_data(data, view_args, schema)  # type: ignore  # MultiDictproxy is dict
 
 
 @parser.location_loader('json_and_query')
@@ -318,8 +317,7 @@ def load_json_query_viewargs_data(request: Request, schema: Schema) -> dict[str,
     if data is missing:
         return data
 
-    data = _combine_parser_data(data, view_args, schema)
-    return data
+    return _combine_parser_data(data, view_args, schema)  # type: ignore  # MultiDictproxy is dict
 
 
 @parser.location_loader('form_and_file')
@@ -327,8 +325,7 @@ def load_form_file_data(request: Request, schema: Schema) -> MultiDictProxy:
     """Load data from a request accepting form and file encoded data"""
     form_data = parser.load_form(request, schema)
     file_data = parser.load_files(request, schema)
-    data = _combine_parser_data(form_data, file_data, schema)
-    return data
+    return _combine_parser_data(form_data, file_data, schema)
 
 
 @parser.location_loader('view_args_and_file')
@@ -336,8 +333,7 @@ def load_view_args_file_data(request: Request, schema: Schema) -> MultiDictProxy
     """Load data from a request accepting view_args and file encoded data"""
     view_args_data = parser.load_view_args(request, schema)
     file_data = parser.load_files(request, schema)
-    data = _combine_parser_data(view_args_data, file_data, schema)
-    return data
+    return _combine_parser_data(view_args_data, file_data, schema)
 
 
 def allow_async_validation() -> Callable:
@@ -2414,9 +2410,7 @@ class AssetIconsResource(BaseMethodView):
             filename = file.filename or f'{asset.identifier}.png'
             filepath = Path(temp_directory) / filename
             file.save(str(filepath))
-            response = self.rest_api.upload_asset_icon(asset=asset, filepath=filepath)
-
-        return response
+            return self.rest_api.upload_asset_icon(asset=asset, filepath=filepath)
 
     @use_kwargs(patch_schema, location='json')
     def patch(self, asset: AssetWithOracles) -> Response:
@@ -2768,11 +2762,10 @@ class UserAssetsResource(BaseMethodView):
             suffix=file.filename or 'assets.zip',
         ) as temp_file:
             file.save(temp_file.name)
-            response = self.rest_api.import_user_assets(
+            return self.rest_api.import_user_assets(
                 async_query=async_query,
                 path=Path(temp_file.name),
             )
-        return response
 
 
 class DBSnapshotsResource(BaseMethodView):
@@ -2830,11 +2823,10 @@ class DBSnapshotsResource(BaseMethodView):
             location_data_snapshot_filepath = Path(temp_directory) / location_data_snapshot_filename  # noqa: E501
             balances_snapshot_file.save(balance_snapshot_filepath)
             location_data_snapshot_file.save(location_data_snapshot_filepath)
-            response = self.rest_api.import_user_snapshot(
+            return self.rest_api.import_user_snapshot(
                 balances_snapshot_file=balance_snapshot_filepath,
                 location_data_snapshot_file=location_data_snapshot_filepath,
             )
-        return response
 
     @require_loggedin_user()
     @use_kwargs(patch_schema, location='json_and_view_args')

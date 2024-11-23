@@ -106,8 +106,7 @@ def _handle_curvepool_price(
     just take the current price of BTC. Same for other assets.
     """
     virtual_price = contract.call(ethereum, 'get_virtual_price')
-    usd_value = (asset_price * FVal(virtual_price)) / (10 ** div_decimals)
-    return usd_value
+    return (asset_price * FVal(virtual_price)) / (10 ** div_decimals)
 
 
 def handle_underlying_price_yearn_vault(
@@ -116,8 +115,7 @@ def handle_underlying_price_yearn_vault(
         asset_price: Price,
 ) -> FVal:
     price_per_full_share = contract.call(ethereum, 'getPricePerFullShare')
-    usd_value = FVal(asset_price * price_per_full_share) / 10 ** DEFAULT_TOKEN_DECIMALS
-    return usd_value
+    return FVal(asset_price * price_per_full_share) / 10 ** DEFAULT_TOKEN_DECIMALS
 
 
 def handle_underlying_price_harvest_vault(
@@ -131,8 +129,7 @@ def handle_underlying_price_harvest_vault(
         method_name='getPricePerFullShare',
         arguments=[],
     )
-    usd_value = FVal(underlying_asset_price * price_per_full_share) / 10 ** token.get_decimals()
-    return usd_value
+    return FVal(underlying_asset_price * price_per_full_share) / 10 ** token.get_decimals()
 
 
 def handle_defi_price_query(

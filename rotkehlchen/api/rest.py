@@ -314,7 +314,7 @@ def api_response(
     else:
         data = json.dumps(result)
 
-    response = make_response(
+    return make_response(
         (
             data,
             status_code,
@@ -324,7 +324,6 @@ def api_response(
                 'rotki-log-result': log_result,  # popped by after request callback
             }),
     )
-    return response
 
 
 def make_response_from_dict(response_data: dict[str, Any]) -> Response:

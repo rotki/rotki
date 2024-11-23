@@ -554,7 +554,7 @@ class Kucoin(ExchangeInterface):
 
         fee_asset = asset_from_kucoin(fee_currency_symbol)
 
-        asset_movement = AssetMovement(
+        return AssetMovement(
             timestamp=timestamp,
             location=Location.KUCOIN,
             category=category,
@@ -566,7 +566,6 @@ class Kucoin(ExchangeInterface):
             fee=fee,
             link=link_id,
         )
-        return asset_movement
 
     @staticmethod
     def _deserialize_trade(
@@ -607,7 +606,7 @@ class Kucoin(ExchangeInterface):
         except KeyError as e:
             raise DeserializationError(f'Missing key: {e!s}.') from e
 
-        trade = Trade(
+        return Trade(
             timestamp=timestamp,
             location=Location.KUCOIN,
             base_asset=base_asset,
@@ -620,7 +619,6 @@ class Kucoin(ExchangeInterface):
             link=str(trade_id),
             notes='',
         )
-        return trade
 
     @overload
     def _process_unsuccessful_response(

@@ -580,8 +580,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
             request['ofs'] = offset
         if extra_dict is not None:
             request.update(extra_dict)
-        result = self.api_query(endpoint, request)
-        return result
+        return self.api_query(endpoint, request)
 
     def query_online_deposits_withdrawals(
             self,
@@ -756,7 +755,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
                 log.warning(f'Found historic trade entries with no counterpart {trade_parts}')
                 return None
 
-            trade = Trade(
+            return Trade(
                 timestamp=timestamp,
                 location=Location.KRAKEN,
                 base_asset=base_asset,
@@ -768,7 +767,6 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
                 fee_currency=None,
                 link=exchange_uuid,
             )
-            return trade
 
         if spend_part is None or receive_part is None:
             log.error(
@@ -820,7 +818,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
             fee = Fee(fee_part.balance.amount) if fee_part is not None else None
             fee_asset = fee_part.asset if fee_part is not None else None
 
-        trade = Trade(
+        return Trade(
             timestamp=timestamp,
             location=Location.KRAKEN,
             base_asset=base_asset,
@@ -832,7 +830,6 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
             fee_currency=fee_asset,
             link=exchange_uuid,
         )
-        return trade
 
     def process_kraken_trades(
             self,

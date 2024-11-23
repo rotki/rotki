@@ -23,13 +23,12 @@ def get_system_spec() -> dict[str, str]:
             platform.machine(),
         )
 
-    system_spec = {
+    return {
         'rotkehlchen': version('rotkehlchen'),
         'python_implementation': platform.python_implementation(),
         'python_version': platform.python_version(),
         'system': system_info,
     }
-    return system_spec
 
 
 class VersionCheckResult(NamedTuple):

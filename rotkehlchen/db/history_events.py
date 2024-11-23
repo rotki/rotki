@@ -778,8 +778,7 @@ class DBHistoryEvents:
             'AND 3=(SELECT COUNT(*) FROM history_events E2 WHERE '
             'E2.event_identifier=E.event_identifier)',
         )
-        result = [x[0] for x in cursor]
-        return result
+        return [x[0] for x in cursor]
 
     def edit_event_extra_data(self, write_cursor: 'DBCursor', event: EvmEvent, extra_data: dict[str, Any]) -> None:  # noqa: E501
         """Edit an event's extra data in the DB and save it. Does not turn it into

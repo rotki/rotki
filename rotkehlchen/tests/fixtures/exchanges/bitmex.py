@@ -15,11 +15,10 @@ def mock_bitmex(
         function_scope_messages_aggregator,
 ):
     # API key/secret from tests cases here: https://www.bitmex.com/app/apiKeysUsage
-    bitmex = create_test_bitmex(
+    return create_test_bitmex(
         database=database,
         msg_aggregator=function_scope_messages_aggregator,
     )
-    return bitmex
 
 
 @pytest.fixture

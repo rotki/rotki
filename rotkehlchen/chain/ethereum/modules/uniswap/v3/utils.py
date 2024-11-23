@@ -514,7 +514,7 @@ def _decode_uniswap_v3_result(
             user_balance=Balance(amount=asset_balance),
         ))
     # total_supply is None because Uniswap V3 LP does not represent positions as tokens.
-    pool = NFTLiquidityPool(
+    return NFTLiquidityPool(
         address=pool_token,
         price_range=(FVal(data[3][0]), FVal(data[3][1])),
         nft_id=nft_id,
@@ -522,7 +522,6 @@ def _decode_uniswap_v3_result(
         total_supply=None,
         user_balance=Balance(amount=ZERO),
     )
-    return pool
 
 
 def get_unknown_asset_price_chain(

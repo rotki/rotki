@@ -128,7 +128,7 @@ def test_uniswap_no_decimals(inquirer_defi: 'Inquirer'):
 
     def mocked_asset_getter(identifier, **kwargs):
         if identifier == resolved_weth.identifier:
-            fake_weth = EvmToken.initialize(
+            return EvmToken.initialize(
                 address=resolved_weth.evm_address,
                 chain_id=resolved_weth.chain_id,
                 token_kind=resolved_weth.token_kind,
@@ -142,7 +142,6 @@ def test_uniswap_no_decimals(inquirer_defi: 'Inquirer'):
                 cryptocompare=resolved_weth.cryptocompare,
                 protocol=resolved_weth.protocol,
             )
-            return fake_weth
 
         if len(kwargs) == 0:
             return original_getter(identifier, **kwargs)

@@ -26,8 +26,7 @@ def encrypt(key: bytes, source: bytes) -> bytes:
     padding = AES_BLOCK_SIZE - len(source) % AES_BLOCK_SIZE  # calculate needed padding
     source += bytes([padding]) * padding  # Python 2.x: source += chr(padding) * padding
     # store the iv at the beginning and encrypt
-    data = iv + (encryptor.update(source) + encryptor.finalize())
-    return data
+    return iv + (encryptor.update(source) + encryptor.finalize())
 
 
 def decrypt(key: bytes, source: bytes) -> bytes:

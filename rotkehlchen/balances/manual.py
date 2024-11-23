@@ -36,8 +36,7 @@ class ManuallyTrackedBalanceWithValue(NamedTuple):
     def serialize(self) -> dict[str, Any]:
         result = self._asdict()  # pylint: disable=no-member
         del result['value']
-        result = {**result, **self.value.serialize()}
-        return result
+        return {**result, **self.value.serialize()}
 
 
 def get_manually_tracked_balances(

@@ -810,7 +810,7 @@ def fixture_blockchain(
     if start_with_valid_premium:
         premium = Premium(credentials=rotki_premium_credentials, username=username)
 
-    chains_aggregator = ChainsAggregator(
+    return ChainsAggregator(
         blockchain_accounts=blockchain_accounts,
         ethereum_manager=ethereum_manager,
         optimism_manager=optimism_manager,
@@ -832,5 +832,3 @@ def fixture_blockchain(
         beaconchain=beaconchain,
         btc_derivation_gap_limit=btc_derivation_gap_limit,
     )
-
-    return chains_aggregator

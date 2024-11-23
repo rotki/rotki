@@ -227,7 +227,6 @@ ignore = [
     "C901",  # function too complex
     "RUF005",  # Unpacking over concatenation -> https://github.com/charliermarsh/ruff/issues/2054#issuecomment-1399617413
     "RET501",  # Explicitly returning None
-    "RET504",  # Unnecessary variable assignment before `return
     "RET505",  # https://github.com/charliermarsh/ruff/issues/1035
     "RET506",  # https://github.com/charliermarsh/ruff/issues/1035
     "RET507",  # https://github.com/charliermarsh/ruff/issues/1035
