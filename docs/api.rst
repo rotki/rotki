@@ -5387,15 +5387,15 @@ Exporting History Events
 Downloading Exported History Events
 ============================================
 
-.. http:post:: /api/(version)/history/events/export/download
+.. http:get:: /api/(version)/history/events/export/download
 
-   Doing a POST on this endpoint will download the CSV exported in a previous call to the export endpoint and specified here with file_path.
+   Doing a GET on this endpoint will download the CSV exported in a previous call to the export endpoint and specified here with file_path.
 
    **Example Request**:
 
    .. http:example:: curl wget httpie python-requests
 
-      POST /api/1/history/events/export/download HTTP/1.1
+      GET /api/1/history/events/export/download HTTP/1.1
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
@@ -9414,7 +9414,7 @@ Account operations by chain type
       This endpoint can also be queried asynchronously by using ``"async_query": true``
 
    Doing a PATCH on this endpoint with a list of accounts to edit will edit the label and tags for those accounts in all the chains of the same type where they are tracked.
- 
+
    **Example Request**:
 
    .. http:example:: curl wget httpie python-requests

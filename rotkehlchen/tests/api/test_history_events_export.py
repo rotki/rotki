@@ -139,7 +139,7 @@ def test_history_export_download_csv(
     file_path = outcome['result']['file_path']
 
     # download the csv exported in the last api call
-    response = requests.post(
+    response = requests.get(
         api_url_for(rotkehlchen_api_server_with_exchanges, 'exporthistorydownloadresource'),
         json={'file_path': file_path},
     )
