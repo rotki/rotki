@@ -265,7 +265,7 @@ onMounted(() => refresh());
         <template #prepend>
           <RuiIcon
             v-if="!allEventTaskLoading"
-            name="restart-line"
+            name="lu-rotate-ccw"
           />
           <RuiProgress
             v-else

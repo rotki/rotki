@@ -139,7 +139,7 @@ function resetForm() {
                 >
                   <RuiIcon
                     :size="20"
-                    name="question-line"
+                    name="lu-circle-help"
                   />
                 </RuiButton>
               </template>
@@ -155,7 +155,7 @@ function resetForm() {
         @click="addToken()"
       >
         <template #prepend>
-          <RuiIcon name="add-line" />
+          <RuiIcon name="lu-plus" />
         </template>
         {{ t('common.actions.add') }}
       </RuiButton>

@@ -185,7 +185,7 @@ const syncSettingMenuOpen = ref<boolean>(false);
               class="-mt-1 -mr-1"
               @click="clearUploadStatus()"
             >
-              <RuiIcon name="close-line" />
+              <RuiIcon name="lu-x" />
             </RuiButton>
           </div>
         </RuiAlert>

@@ -164,7 +164,7 @@ const getAssets = (assets: XswapAsset[]) => assets.map(({ asset }) => asset);
           icon
           class="ml-2"
         >
-          <RuiIcon name="arrow-right-s-line" />
+          <RuiIcon name="lu-chevron-right" />
         </RuiButton>
       </RouterLink>
     </template>

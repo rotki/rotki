@@ -67,22 +67,22 @@ export const useAppRoutes = createSharedComposable(() => {
   const { t } = useI18n();
   const appRoutes = computed(() => ({
     ACCOUNTS_BALANCES: {
-      icon: 'wallet-3-line' as const,
+      icon: 'lu-accounts-and-balances' as const,
       route: Routes.ACCOUNTS_BALANCES,
       text: t('navigation_menu.accounts_balances'),
     },
     ACCOUNTS_BALANCES_BLOCKCHAIN: {
-      icon: 'coins-line' as const,
+      icon: 'lu-blockchain-balances' as const,
       route: Routes.ACCOUNTS_BALANCES_BLOCKCHAIN,
       text: t('navigation_menu.accounts_balances_sub.blockchain_balances'),
     },
     ACCOUNTS_BALANCES_EXCHANGE: {
-      icon: 'exchange-line' as const,
+      icon: 'lu-exchange-balances' as const,
       route: Routes.ACCOUNTS_BALANCES_EXCHANGE,
       text: t('navigation_menu.accounts_balances_sub.exchange_balances'),
     },
     ACCOUNTS_BALANCES_MANUAL: {
-      icon: 'scales-line' as const,
+      icon: 'lu-manual-balances' as const,
       route: Routes.ACCOUNTS_BALANCES_MANUAL,
       text: t('navigation_menu.accounts_balances_sub.manual_balances'),
     },
@@ -92,12 +92,12 @@ export const useAppRoutes = createSharedComposable(() => {
       text: t('navigation_menu.accounts_balances_sub.non_fungible_balances'),
     },
     ADDRESS_BOOK_MANAGER: {
-      icon: 'book-2-line' as const,
+      icon: 'lu-book-text' as const,
       route: Routes.ADDRESS_BOOK_MANAGER,
       text: t('navigation_menu.manage_address_book'),
     },
     API_KEYS: {
-      icon: 'key-line' as const,
+      icon: 'lu-key' as const,
       route: Routes.API_KEYS,
       text: t('navigation_menu.api_keys'),
     },
@@ -112,12 +112,12 @@ export const useAppRoutes = createSharedComposable(() => {
       text: t('navigation_menu.api_keys_sub.external_services'),
     },
     API_KEYS_ROTKI_PREMIUM: {
-      icon: 'vip-crown-line' as const,
+      icon: 'lu-crown' as const,
       route: Routes.API_KEYS_ROTKI_PREMIUM,
       text: t('navigation_menu.api_keys_sub.premium'),
     },
     ASSET_MANAGER: {
-      icon: 'database-2-line' as const,
+      icon: 'lu-manage-assets' as const,
       route: Routes.ASSET_MANAGER,
       text: t('navigation_menu.manage_assets'),
     },
@@ -127,17 +127,17 @@ export const useAppRoutes = createSharedComposable(() => {
       text: t('navigation_menu.manage_assets_sub.cex_mapping'),
     },
     ASSET_MANAGER_CUSTOM: {
-      icon: 'database-line' as const,
+      icon: 'lu-custom-assets' as const,
       route: Routes.ASSET_MANAGER_CUSTOM,
       text: t('navigation_menu.manage_assets_sub.custom_assets'),
     },
     ASSET_MANAGER_MANAGED: {
-      icon: 'server-line' as const,
+      icon: 'lu-manage-assets' as const,
       route: Routes.ASSET_MANAGER_MANAGED,
       text: t('navigation_menu.manage_assets_sub.assets'),
     },
     ASSET_MANAGER_MORE: {
-      icon: 'expand-right-line' as const,
+      icon: 'lu-more-assets' as const,
       route: Routes.ASSET_MANAGER_MORE,
       text: t('navigation_menu.manage_assets_sub.more'),
     },
@@ -151,22 +151,22 @@ export const useAppRoutes = createSharedComposable(() => {
       text: t('common.assets'),
     },
     CALENDAR: {
-      icon: 'calendar-todo-line' as const,
+      icon: 'lu-calendar-days' as const,
       route: Routes.CALENDAR,
       text: t('navigation_menu.calendar'),
     },
     DASHBOARD: {
-      icon: 'dashboard-line' as const,
+      icon: 'lu-layout-dashboard' as const,
       route: Routes.DASHBOARD,
       text: t('navigation_menu.dashboard'),
     },
     DEFI: {
-      icon: 'line-chart-line' as const,
+      icon: 'lu-chart-line' as const,
       route: Routes.DEFI,
       text: t('navigation_menu.defi'),
     },
     DEFI_AIRDROPS: {
-      icon: 'gift-line' as const,
+      icon: 'lu-gift' as const,
       route: Routes.DEFI_AIRDROPS,
       text: t('navigation_menu.defi_sub.airdrops'),
     },
@@ -196,7 +196,7 @@ export const useAppRoutes = createSharedComposable(() => {
       text: t('navigation_menu.defi_sub.overview'),
     },
     HISTORY: {
-      icon: 'history-line' as const,
+      icon: 'lu-history' as const,
       route: Routes.HISTORY,
       text: t('navigation_menu.history'),
     },
@@ -216,7 +216,7 @@ export const useAppRoutes = createSharedComposable(() => {
       text: t('navigation_menu.history_sub.trades'),
     },
     IMPORT: {
-      icon: 'folder-received-line' as const,
+      icon: 'lu-folder-input' as const,
       route: Routes.IMPORT,
       text: t('navigation_menu.import_data'),
     },
@@ -225,32 +225,32 @@ export const useAppRoutes = createSharedComposable(() => {
       text: t('navigation_menu.locations'),
     },
     NFTS: {
-      icon: 'image-line' as const,
+      icon: 'lu-image' as const,
       route: Routes.NFTS,
       text: t('navigation_menu.nfts'),
     },
     PRICE_MANAGER: {
-      icon: 'file-chart-line' as const,
+      icon: 'lu-manage-prices' as const,
       route: Routes.PRICE_MANAGER,
       text: t('navigation_menu.manage_prices'),
     },
     PRICE_MANAGER_HISTORIC: {
-      icon: 'calendar-2-line' as const,
+      icon: 'lu-historic-prices' as const,
       route: Routes.PRICE_MANAGER_HISTORIC,
       text: t('navigation_menu.manage_prices_sub.historic_prices'),
     },
     PRICE_MANAGER_LATEST: {
-      icon: 'calendar-event-line' as const,
+      icon: 'lu-latest-prices' as const,
       route: Routes.PRICE_MANAGER_LATEST,
       text: t('navigation_menu.manage_prices_sub.latest_prices'),
     },
     PROFIT_LOSS_REPORT: {
-      icon: 'calculator-line' as const,
+      icon: 'lu-calculator' as const,
       route: Routes.PROFIT_LOSS_REPORT,
       text: t('navigation_menu.profit_loss_report'),
     },
     PROFIT_LOSS_REPORTS: {
-      icon: 'calculator-line' as const,
+      icon: 'lu-calculator' as const,
       route: Routes.PROFIT_LOSS_REPORTS,
       text: t('navigation_menu.profit_loss_report'),
     },
@@ -270,7 +270,7 @@ export const useAppRoutes = createSharedComposable(() => {
       text: t('navigation_menu.settings_sub.accounting'),
     },
     SETTINGS_DATABASE: {
-      icon: 'database-2-line' as const,
+      icon: 'lu-manage-assets' as const,
       route: Routes.SETTINGS_DATABASE,
       text: t('navigation_menu.settings_sub.database'),
     },
@@ -300,12 +300,12 @@ export const useAppRoutes = createSharedComposable(() => {
       text: t('navigation_menu.settings_sub.rpc_nodes'),
     },
     STAKING: {
-      icon: 'inbox-archive-line' as const,
+      icon: 'lu-layers' as const,
       route: Routes.STAKING,
       text: t('navigation_menu.staking'),
     },
     STATISTICS: {
-      icon: 'file-chart-line' as const,
+      icon: 'lu-file-chart-column' as const,
       route: Routes.STATISTICS,
       text: t('navigation_menu.statistics'),
     },

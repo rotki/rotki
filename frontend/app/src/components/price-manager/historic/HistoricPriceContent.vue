@@ -146,7 +146,7 @@ setPostSubmitFunc(() => refresh({ modified: true }));
             @click="refresh()"
           >
             <template #prepend>
-              <RuiIcon name="refresh-line" />
+              <RuiIcon name="lu-refresh-ccw" />
             </template>
             {{ t('common.refresh') }}
           </RuiButton>
@@ -158,7 +158,7 @@ setPostSubmitFunc(() => refresh({ modified: true }));
         @click="openForm()"
       >
         <template #prepend>
-          <RuiIcon name="add-line" />
+          <RuiIcon name="lu-plus" />
         </template>
         {{ t('price_management.dialog.add_title') }}
       </RuiButton>

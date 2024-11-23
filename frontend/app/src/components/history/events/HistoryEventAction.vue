@@ -58,7 +58,7 @@ function onEditRule() {
           <template #prepend>
             <RuiIcon
               class="text-rui-text-secondary"
-              name="pencil-line"
+              name="lu-pencil"
             />
           </template>
           {{ t('accounting_settings.rule.edit') }}

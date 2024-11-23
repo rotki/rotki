@@ -205,7 +205,7 @@ watch(shouldIncreasePage, (increasePage) => {
       color="primary"
       dense
       class="flex-1"
-      prepend-icon="search-line"
+      prepend-icon="lu-search"
       :label="t('notes_menu.search')"
       clearable
       hide-details
@@ -218,7 +218,7 @@ watch(shouldIncreasePage, (increasePage) => {
       @click="addNote()"
     >
       <template #prepend>
-        <RuiIcon name="add-line" />
+        <RuiIcon name="lu-plus" />
       </template>
     </RuiButton>
   </div>
@@ -325,7 +325,7 @@ watch(shouldIncreasePage, (increasePage) => {
                     <RuiIcon
                       size="16"
                       color="error"
-                      name="close-line"
+                      name="lu-x"
                     />
                   </RuiButton>
 
@@ -363,7 +363,7 @@ watch(shouldIncreasePage, (increasePage) => {
                   >
                     <RuiIcon
                       size="16"
-                      name="pencil-line"
+                      name="lu-pencil"
                     />
                   </RuiButton>
 
@@ -375,7 +375,7 @@ watch(shouldIncreasePage, (increasePage) => {
                   >
                     <RuiIcon
                       size="16"
-                      name="delete-bin-line"
+                      name="lu-trash-2"
                     />
                   </RuiButton>
                 </div>

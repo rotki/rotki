@@ -194,7 +194,7 @@ const { copy } = useCopy(identifier);
       >
         <template #prepend>
           <RuiIcon
-            name="file-copy-line"
+            name="lu-copy"
             size="16"
             class="!text-rui-grey-400"
           />

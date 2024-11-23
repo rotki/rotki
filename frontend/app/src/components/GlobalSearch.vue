@@ -417,7 +417,7 @@ onBeforeMount(async () => {
         "
         v-bind="attrs"
       >
-        <RuiIcon name="search-line" />
+        <RuiIcon name="lu-search" />
       </MenuTooltipButton>
     </template>
     <RuiCard
@@ -492,7 +492,7 @@ onBeforeMount(async () => {
                     <RuiIcon
                       class="d-inline mx-2"
                       size="16"
-                      name="arrow-right-s-line"
+                      name="lu-chevron-right"
                     />
                   </div>
                 </div>

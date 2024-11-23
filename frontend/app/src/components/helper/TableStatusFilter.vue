@@ -19,7 +19,7 @@ defineOptions({
         <template #append>
           <RuiIcon
             size="20"
-            name="arrow-down-s-line"
+            name="lu-chevron-down"
           />
         </template>
       </RuiButton>

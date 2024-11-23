@@ -75,7 +75,7 @@ watch([enabled, multiplier], setData);
         >
           <RuiIcon
             size="16"
-            name="arrow-down-s-line"
+            name="lu-chevron-down"
           />
         </RuiButton>
       </template>

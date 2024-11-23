@@ -75,7 +75,7 @@ function reset() {
           variant="text"
           @click="reset()"
         >
-          <RuiIcon name="close-line" />
+          <RuiIcon name="lu-x" />
         </RuiButton>
       </template>
       {{ t('account_balances.chain_filter.clear') }}

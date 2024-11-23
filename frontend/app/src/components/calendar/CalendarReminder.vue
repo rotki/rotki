@@ -258,7 +258,7 @@ defineExpose({
               v-if="length > 0"
               class="ml-2 transition"
               :class="{ 'transform -rotate-180': !showReminders }"
-              name="arrow-up-s-line"
+              name="lu-chevron-up"
             />
           </div>
         </RuiButton>

@@ -123,24 +123,24 @@ EVENT_CATEGORY_MAPPINGS = {  # possible combinations of types and subtypes mappe
 EVENT_CATEGORY_DETAILS = {
     EventCategory.SEND: {DEFAULT: EventCategoryDetails(
         label='send',
-        icon='arrow-up-line',
+        icon='lu-arrow-up',
     )}, EventCategory.RECEIVE: {DEFAULT: EventCategoryDetails(
         label='receive',
-        icon='arrow-down-line',
+        icon='lu-arrow-down',
         color='success',
     )}, EventCategory.SWAP_OUT: {DEFAULT: EventCategoryDetails(
         label='swap',
-        icon='arrow-go-forward-line',
+        icon='lu-redo-2',
     )}, EventCategory.SWAP_IN: {DEFAULT: EventCategoryDetails(
         label='swap',
-        icon='arrow-go-back-line',
+        icon='lu-undo-2',
         color='success',
     )}, EventCategory.MIGRATE_OUT: {DEFAULT: EventCategoryDetails(
         label='migrate',
-        icon='arrow-go-forward-line',
+        icon='lu-redo-2',
     )}, EventCategory.MIGRATE_IN: {DEFAULT: EventCategoryDetails(
         label='migrate',
-        icon='arrow-go-back-line',
+        icon='lu-undo-2',
         color='success',
     )}, EventCategory.APPROVAL: {DEFAULT: EventCategoryDetails(
         label='approval',
@@ -161,7 +161,7 @@ EVENT_CATEGORY_DETAILS = {
         icon='download-line',
     )}, EventCategory.AIRDROP: {DEFAULT: EventCategoryDetails(
         label='airdrop',
-        icon='gift-line',
+        icon='lu-gift',
     )}, EventCategory.BORROW: {DEFAULT: EventCategoryDetails(
         label='borrow',
         icon='hand-coin-line',
@@ -237,7 +237,7 @@ EVENT_CATEGORY_DETAILS = {
         icon='box-3-line',
     )}, EventCategory.CREATE_PROJECT: {DEFAULT: EventCategoryDetails(
         label='new project',
-        icon='file-add-line',
+        icon='lu-file-plus',
     )}, EventCategory.UPDATE_PROJECT: {DEFAULT: EventCategoryDetails(
         label='update project',
         icon='file-edit-line',
@@ -286,5 +286,5 @@ ACCOUNTING_EVENTS_ICONS = {
     AccountingEventType.PREFORK_ACQUISITION: 'git-branch-line',
     AccountingEventType.STAKING: 'seedling-line',
     AccountingEventType.HISTORY_EVENT: 'exchange-box-line',
-    AccountingEventType.TRANSACTION_EVENT: 'arrow-left-right-line',
+    AccountingEventType.TRANSACTION_EVENT: 'lu-arrow-left-right',
 }

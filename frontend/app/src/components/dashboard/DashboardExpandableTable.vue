@@ -16,7 +16,7 @@ const panel = computed<number>(() => (get(expanded) ? 0 : -1));
             icon
             @click="expanded = !expanded"
           >
-            <RuiIcon :name="expanded ? 'checkbox-indeterminate-line' : 'add-box-line'" />
+            <RuiIcon :name="expanded ? 'lu-square-minus' : 'lu-square-plus'" />
           </RuiButton>
           <slot name="title" />
         </CardTitle>

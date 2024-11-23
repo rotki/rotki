@@ -37,7 +37,7 @@ const errorText = computed(() => {
       <RuiIcon
         size="120"
         color="error"
-        name="error-warning-line"
+        name="lu-circle-alert"
       />
     </div>
     <div

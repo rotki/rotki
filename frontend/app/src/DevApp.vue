@@ -87,7 +87,7 @@ const copyText = 'Copy Integration JSON Data';
         @click="reset()"
       >
         <template #prepend>
-          <RuiIcon name="restart-line" />
+          <RuiIcon name="lu-rotate-ccw" />
         </template>
         {{ resetState }}
       </RuiButton>

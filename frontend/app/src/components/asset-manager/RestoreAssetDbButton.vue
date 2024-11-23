@@ -114,11 +114,11 @@ function showDoneConfirmation() {
         v-bind="{ ...attrs, id: 'reset-asset-activator' }"
       >
         <template #prepend>
-          <RuiIcon name="restart-line" />
+          <RuiIcon name="lu-rotate-ccw" />
         </template>
         {{ t('asset_update.restore.title') }}
         <template #append>
-          <RuiIcon name="arrow-down-s-line" />
+          <RuiIcon name="lu-chevron-down" />
         </template>
       </RuiButton>
     </template>

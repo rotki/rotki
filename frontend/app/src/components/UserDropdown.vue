@@ -51,10 +51,12 @@ const { darkModeEnabled } = useDarkMode();
       <template #activator="{ attrs }">
         <MenuTooltipButton
           tooltip="Account"
+          variant="default"
           data-cy="user-menu-button"
+          class-name="border border-rui-grey-300 dark:!bg-rui-grey-800 dark:border-rui-grey-700"
           v-bind="attrs"
         >
-          <RuiIcon name="account-circle-line" />
+          <RuiIcon name="lu-user" />
         </MenuTooltipButton>
       </template>
       <div
