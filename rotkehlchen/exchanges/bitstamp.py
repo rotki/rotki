@@ -690,7 +690,7 @@ class Bitstamp(ExchangeInterface):
                 f'Unexpected asset amount combination found in: {raw_movement}.',
             )
 
-        asset_movement = AssetMovement(
+        return AssetMovement(
             timestamp=timestamp,
             location=Location.BITSTAMP,
             category=category,
@@ -702,7 +702,6 @@ class Bitstamp(ExchangeInterface):
             fee=deserialize_fee(raw_movement['fee']),
             link=str(raw_movement['id']),
         )
-        return asset_movement
 
     @staticmethod
     def _deserialize_asset_movement_from_crypto_transaction(
@@ -768,7 +767,7 @@ class Bitstamp(ExchangeInterface):
                 )
             trade_type = TradeType.SELL
 
-        trade = Trade(
+        return Trade(
             timestamp=timestamp,
             location=Location.BITSTAMP,
             base_asset=trade_pair_data.base_asset,
@@ -781,7 +780,6 @@ class Bitstamp(ExchangeInterface):
             link=str(raw_trade['id']),
             notes='',
         )
-        return trade
 
     @staticmethod
     def _get_trade_pair_data_from_transaction(raw_result: dict[str, Any]) -> TradePairData:

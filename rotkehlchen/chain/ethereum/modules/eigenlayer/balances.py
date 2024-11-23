@@ -213,5 +213,4 @@ class EigenlayerBalances(ProtocolWithBalance):
         balances: BalancesSheetType = defaultdict(BalanceSheet)
         balances = self._query_lst_deposits(balances)
         balances = self._query_eigenpod_balances(balances)
-        balances = self._query_token_pending_withdrawals(balances)
-        return balances
+        return self._query_token_pending_withdrawals(balances)

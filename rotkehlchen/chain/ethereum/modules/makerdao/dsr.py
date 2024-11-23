@@ -163,9 +163,7 @@ class MakerdaoDsr(HasDSProxy):
             # Calculation is from here:
             # https://docs.makerdao.com/smart-contract-modules/rates-module#a-note-on-setting-rates
             current_dsr_percentage = ((FVal(current_dsr / RAY) ** 31622400) % 1) * 100
-            result = DSRCurrentBalances(balances=balances, current_dsr=current_dsr_percentage)
-
-        return result
+            return DSRCurrentBalances(balances=balances, current_dsr=current_dsr_percentage)
 
     def _get_vat_join_exit_at_transaction(
             self,

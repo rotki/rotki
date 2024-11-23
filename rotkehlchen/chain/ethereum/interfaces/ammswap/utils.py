@@ -76,13 +76,12 @@ def decode_result(userdb: 'DBHandler', data: tuple) -> LiquidityPool:
             user_balance=Balance(amount=token.amount),
         ))
 
-    pool = LiquidityPool(
+    return LiquidityPool(
         address=pool_token.address,
         assets=assets,
         total_supply=None,
         user_balance=Balance(amount=pool_token.amount),
     )
-    return pool
 
 
 def update_asset_price_in_lp_balances(

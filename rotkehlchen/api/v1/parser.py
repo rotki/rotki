@@ -141,9 +141,7 @@ class ResourceReadingParser(FlaskParser):
         The type ignore is due to the underlying original class having `Request` type there.
         """
         assert callable(argmap), 'Should only use this parser with a callable'
-        schema = argmap(resource_object)  # type: ignore
-
-        return schema
+        return argmap(resource_object)  # type: ignore
 
 
 class IgnoreKwargAfterPostLoadParser(FlaskParser):

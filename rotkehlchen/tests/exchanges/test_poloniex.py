@@ -298,11 +298,10 @@ def test_poloniex_deposits_withdrawal_unknown_asset(poloniex):
     is raised and a warning is generated. Same for unsupported assets"""
 
     def mock_api_return(url, **kwargs):  # pylint: disable=unused-argument
-        response = MockResponse(
+        return MockResponse(
             200,
             POLONIEX_MOCK_DEPOSIT_WITHDRAWALS_RESPONSE,
         )
-        return response
 
     with patch.object(poloniex.session, 'get', side_effect=mock_api_return):
         # Test that after querying the api only ETH and BTC assets are there
@@ -328,12 +327,11 @@ def test_poloniex_deposits_withdrawal_null_fee(poloniex):
     """
 
     def mock_api_return(url, **kwargs):  # pylint: disable=unused-argument
-        response = MockResponse(
+        return MockResponse(
             200,
             '{"withdrawals": [{"currency": "FAC", "timestamp": 1478994442, '
             '"amount": "100.5", "fee": null, "withdrawalRequestsId": 1, "address": "131rdg5Rzn6BFufnnQaHhVa5ZtRU1J2EZR", "status": "COMPLETED"}], "deposits": []}',  # noqa: E501
         )
-        return response
 
     with patch.object(poloniex.session, 'get', side_effect=mock_api_return):
         asset_movements = poloniex.query_online_deposits_withdrawals(

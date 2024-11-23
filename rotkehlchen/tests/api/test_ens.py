@@ -73,12 +73,11 @@ def mocked_find_ens_mappings(
         raise RemoteError(f'Error occurred while querying ens names: {e!s}') from e
 
     with dbens.db.user_write() as write_cursor:
-        ens_mappings = dbens.update_values(
+        return dbens.update_values(
             write_cursor=write_cursor,
             ens_lookup_results=query_results,
             mappings_to_send=ens_mappings,
         )
-    return ens_mappings
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])

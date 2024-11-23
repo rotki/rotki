@@ -586,16 +586,14 @@ def patch_binance_balances_query(binance: 'Binance') -> _patch:
             response = BINANCE_BALANCES_RESPONSE
         return MockResponse(200, response)
 
-    binance_patch = patch.object(binance.session, 'request', side_effect=mock_binance_asset_return)
-    return binance_patch
+    return patch.object(binance.session, 'request', side_effect=mock_binance_asset_return)
 
 
 def patch_poloniex_balances_query(poloniex: 'Poloniex') -> _patch:
     def mock_poloniex_asset_return(url, *args, **kwargs):  # pylint: disable=unused-argument
         return MockResponse(200, POLONIEX_BALANCES_RESPONSE)
 
-    poloniex_patch = patch.object(poloniex.session, 'get', side_effect=mock_poloniex_asset_return)
-    return poloniex_patch
+    return patch.object(poloniex.session, 'get', side_effect=mock_poloniex_asset_return)
 
 # # -- Test Exchange Objects creation --
 

@@ -32,7 +32,7 @@ def test_coinbase_query_balances(function_scope_coinbase):
     coinbase = function_scope_coinbase
 
     def mock_coinbase_accounts(url, timeout):  # pylint: disable=unused-argument
-        response = MockResponse(
+        return MockResponse(
             200,
             """
 {
@@ -96,7 +96,6 @@ def test_coinbase_query_balances(function_scope_coinbase):
 }
             """,
         )
-        return response
 
     with patch.object(coinbase.session, 'get', side_effect=mock_coinbase_accounts):
         balances, msg = coinbase.query_balances()

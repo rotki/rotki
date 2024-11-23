@@ -494,7 +494,7 @@ class Bitfinex(ExchangeInterface):
             address = str(raw_result[16])
             transaction_id = str(raw_result[20])
 
-        asset_movement = AssetMovement(
+        return AssetMovement(
             timestamp=Timestamp(int(raw_result[5] / 1000)),
             location=Location.BITFINEX,
             category=category,
@@ -506,7 +506,6 @@ class Bitfinex(ExchangeInterface):
             fee=Fee(abs(deserialize_fee(raw_result[13]))),
             link=str(raw_result[0]),
         )
-        return asset_movement
 
     def _deserialize_trade(self, raw_result: list[Any]) -> Trade:
         """Process a trade result from Bitfinex and deserialize it.
@@ -544,7 +543,7 @@ class Bitfinex(ExchangeInterface):
         quote_asset = asset_from_bitfinex(bitfinex_name=bfx_quote_asset_symbol)
         fee_asset = asset_from_bitfinex(bitfinex_name=raw_result[10])
 
-        trade = Trade(
+        return Trade(
             timestamp=Timestamp(int(raw_result[2] / 1000)),
             location=Location.BITFINEX,
             base_asset=base_asset,
@@ -557,7 +556,6 @@ class Bitfinex(ExchangeInterface):
             link=str(raw_result[0]),
             notes='',
         )
-        return trade
 
     @staticmethod
     def _get_error_response_data(response_list: list[Any]) -> ErrorResponseData:
@@ -578,9 +576,7 @@ class Bitfinex(ExchangeInterface):
     @staticmethod
     def _process_bfx_pair(raw_pair: str) -> str:
         bfx_pair = raw_pair.replace(':', '')
-        bfx_pair = bfx_pair.removeprefix('t')
-
-        return bfx_pair
+        return bfx_pair.removeprefix('t')
 
     def _query_currencies(self) -> CurrenciesResponse:
         """Query and return the list of all the currencies supported in

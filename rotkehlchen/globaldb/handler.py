@@ -1434,9 +1434,7 @@ class GlobalDBHandler:
                 'SELECT from_asset, to_asset FROM price_history WHERE source_type=? AND (from_asset=? OR to_asset=?)',  # noqa: E501
                 (HistoricalPriceOracle.MANUAL_CURRENT.serialize_for_db(), from_asset.identifier, from_asset.identifier),  # noqa: E501
             )
-            assets_to_invalidate = {Asset(asset) for entry in write_cursor for asset in entry}
-
-        return assets_to_invalidate
+            return {Asset(asset) for entry in write_cursor for asset in entry}
 
     @staticmethod
     def get_manual_current_price(asset: Asset) -> tuple[Asset, Price] | None:

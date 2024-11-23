@@ -31,7 +31,7 @@ def generate_expected_info(
         accept_docker_risk: bool = False,
         download_url: str | None = None,
 ):
-    result = {
+    return {
         'version': {
             'our_version': expected_version,
             'latest_version': latest_version,
@@ -46,7 +46,6 @@ def generate_expected_info(
             'sqlite_instructions': 5000,
         },
     }
-    return result
 
 
 def test_query_info_version_when_up_to_date(rotkehlchen_api_server):

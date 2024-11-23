@@ -179,11 +179,10 @@ class Liquity(HasDSProxy):
                         f'Ignoring Liquity trove information. '
                         f'Failed to decode contract information. {e!s}.',
                     )
-        final_result = GetPositionsResult(
+        return GetPositionsResult(
             balances=data,
             total_collateral_ratio=self._calculate_total_collateral_ratio(eth_price),
         )
-        return final_result
 
     def _query_deposits_and_rewards(
             self,

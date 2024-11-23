@@ -132,7 +132,7 @@ def _init_db_with_target_version(
         if target_version <= 25:
             stack.enter_context(mock_dbhandler_update_owned_assets())
             stack.enter_context(mock_dbhandler_sync_globaldb_assets())
-        db = DBHandler(
+        return DBHandler(
             user_data_dir=user_data_dir,
             password='123',
             msg_aggregator=msg_aggregator,
@@ -140,7 +140,6 @@ def _init_db_with_target_version(
             sql_vm_instructions_cb=DEFAULT_SQL_VM_INSTRUCTIONS_CB,
             resume_from_backup=resume_from_backup,
         )
-    return db
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])

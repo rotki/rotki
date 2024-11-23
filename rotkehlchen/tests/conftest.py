@@ -264,8 +264,7 @@ def find_closest_branch(target_branch: str) -> str:
     """Find the branch among develop and bugfixes that is closer to target_branch"""
     all_branches = ('develop', 'bugfixes', 'master')
     distances = {branch: get_branch_distance(branch, target_branch) for branch in all_branches}
-    closest_branch = min(distances, key=distances.get)  # type: ignore
-    return closest_branch
+    return min(distances, key=distances.get)  # type: ignore
 
 
 @pytest.fixture(scope='session', name='vcr_base_dir')

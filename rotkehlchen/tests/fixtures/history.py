@@ -98,11 +98,10 @@ def fixture_history_querying_manager(
         blockchain,
         exchange_manager,
 ):
-    historian = HistoryQueryingManager(
+    return HistoryQueryingManager(
         user_directory=data_dir,
         db=database,
         msg_aggregator=function_scope_messages_aggregator,
         exchange_manager=exchange_manager,
         chains_aggregator=blockchain,
     )
-    return historian

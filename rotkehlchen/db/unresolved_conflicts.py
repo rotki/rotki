@@ -110,13 +110,11 @@ class DBRemoteConflicts:
                 local_data['links'][entry[1]] = entry[2]
 
         # transform data from dict to serialized rules
-        result = [{
+        return [{
             'local_id': local_id,
             'local_data': _serialize_accounting_dict_to_rule(conflicts_cases['local_data']),
             'remote_data': _serialize_accounting_dict_to_rule(conflicts_cases['remote_data']),
         } for local_id, conflicts_cases in id_to_data.items()]
-
-        return result
 
     def solve_accounting_rule_conflicts(
             self,

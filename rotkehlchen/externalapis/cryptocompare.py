@@ -425,7 +425,7 @@ class Cryptocompare(
         except UnsupportedAsset as e:
             raise PriceQueryUnsupportedAsset(e.identifier) from e
 
-        result = self._api_query(
+        return self._api_query(
             path='v2/histohour',
             params={
                 'fsym': cc_from_asset_symbol,
@@ -434,7 +434,6 @@ class Cryptocompare(
                 'toTs': to_timestamp,
             },
         )
-        return result
 
     def query_current_price(
             self,

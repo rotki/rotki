@@ -61,8 +61,7 @@ class CompoundV2:
             log.error(f'Could not query cToken {address} for supply/borrow rate: {e!s}')
             return None
 
-        apy = ((FVal(rate) / ETH_MANTISSA * BLOCKS_PER_DAY) + 1) ** (DAYS_PER_YEAR - 1) - 1
-        return apy
+        return ((FVal(rate) / ETH_MANTISSA * BLOCKS_PER_DAY) + 1) ** (DAYS_PER_YEAR - 1) - 1
 
     def populate_v2_balances(
             self,

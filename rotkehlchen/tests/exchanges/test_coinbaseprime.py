@@ -31,7 +31,7 @@ def test_coinbase_query_balances(function_scope_coinbaseprime: Coinbaseprime):
     """Test that coinbase balance query works fine for the happy path"""
 
     def mock_coinbase_accounts(url, *args, **kwargs):  # pylint: disable=unused-argument
-        response = MockResponse(
+        return MockResponse(
             200,
             """
             {
@@ -82,7 +82,6 @@ def test_coinbase_query_balances(function_scope_coinbaseprime: Coinbaseprime):
             }
             """,
         )
-        return response
 
     coinbase = function_scope_coinbaseprime
     with (

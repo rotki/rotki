@@ -19,8 +19,7 @@ def db_password():
 
 @pytest.fixture
 def rest_api_port(port_generator):
-    port = next(port_generator)
-    return port
+    return next(port_generator)
 
 
 @pytest.fixture

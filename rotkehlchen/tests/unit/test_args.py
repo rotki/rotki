@@ -6,13 +6,12 @@ from rotkehlchen.constants.misc import DEFAULT_SQL_VM_INSTRUCTIONS_CB
 
 @pytest.fixture(name='argparser')
 def fixture_appargs():
-    arg_parser = app_args(
+    return app_args(
         prog='rotki',
         description=(
             'rotki, the portfolio tracker and accounting tool that respects your privacy'
         ),
     )
-    return arg_parser
 
 
 def test_arg_sql_vm_instructions_cb(argparser):

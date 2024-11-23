@@ -263,7 +263,7 @@ class ExchangeManager:
         elif credentials.location == Location.BINANCEUS:
             kwargs['uri'] = BINANCEUS_BASE_URL
 
-        exchange_obj = exchange_ctor(
+        return exchange_ctor(
             name=credentials.name,
             api_key=credentials.api_key,
             secret=credentials.api_secret,
@@ -272,7 +272,6 @@ class ExchangeManager:
             # remove all empty kwargs
             **{k: v for k, v in kwargs.items() if v is not None},
         )
-        return exchange_obj
 
     def initialize_exchanges(
             self,

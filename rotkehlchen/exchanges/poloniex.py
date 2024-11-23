@@ -294,8 +294,7 @@ class Poloniex(ExchangeInterface):
         return result
 
     def return_fee_info(self) -> dict:
-        response = self.api_query_dict('/feeinfo')
-        return response
+        return self.api_query_dict('/feeinfo')
 
     def return_trade_history(
             self,

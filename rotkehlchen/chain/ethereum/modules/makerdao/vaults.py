@@ -186,8 +186,7 @@ class MakerdaoVaults(HasDSProxy):
 
         result = self.makerdao_jug.call(self.ethereum, 'ilks', arguments=[ilk])
         # result[0] is the duty variable of the ilks in the contract
-        stability_fee = FVal(result[0] / RAY) ** (YEAR_IN_SECONDS) - 1
-        return stability_fee
+        return FVal(result[0] / RAY) ** (YEAR_IN_SECONDS) - 1
 
     def _query_vault_data(
             self,

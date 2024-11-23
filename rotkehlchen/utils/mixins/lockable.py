@@ -45,8 +45,7 @@ def protect_with_lock(arguments_matter: bool = False) -> Callable:
             with wrappingobj.query_locks_map_lock:
                 lock = wrappingobj.query_locks_map[lock_key]
             with lock:
-                result = f(wrappingobj, *args, **kwargs)
-                return result
+                return f(wrappingobj, *args, **kwargs)
 
         return wrapper
     return _protect_with_lock

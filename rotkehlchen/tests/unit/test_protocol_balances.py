@@ -347,8 +347,7 @@ def test_thegraph_balances_vested_arbitrum_one(
         def wrapper(*args, **kwargs):
             result = original_process_staking_events(self, *args, **kwargs)
             # Sort the result tuples in alphabetical order to keep it same each run
-            sorted_result = sorted(result)
-            return sorted_result
+            return sorted(result)
 
         return wrapper(events)
 

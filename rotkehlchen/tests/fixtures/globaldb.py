@@ -90,12 +90,11 @@ def create_globaldb(
     # is called make sure its instance is always starting from scratch
     GlobalDBHandler._GlobalDBHandler__instance = None  # type: ignore
 
-    handler = GlobalDBHandler(
+    return GlobalDBHandler(
         data_dir=data_directory,
         sql_vm_instructions_cb=sql_vm_instructions_cb,
         msg_aggregator=messages_aggregator,
     )
-    return handler
 
 
 def _initialize_fixture_globaldb(
