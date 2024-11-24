@@ -67,23 +67,11 @@ def _b32decode(inputs: str) -> list:
     return [_CHARSET.find(letter) for letter in inputs]
 
 
-def _b32encode(inputs: list) -> str:
-    out = ''
-    for char_code in inputs:
-        out += _CHARSET[char_code]
-    return out
-
-
 def _address_type(address_type: str, version: str | int) -> tuple[str, int, bool]:
     for mapping in _VERSION_MAP[address_type]:
         if version in (mapping[0], mapping[1]):
             return mapping
     raise ValueError('Invalid Address')
-
-
-def _calculate_checksum(prefix: str, payload: list[int]) -> list:
-    poly = _polymod(_prefix_expand(prefix) + payload + [0, 0, 0, 0, 0, 0, 0, 0])
-    return [(poly >> 5 * (7 - x)) & 0x1f for x in range(8)]
 
 
 def _code_list_to_string(code_list: list[int]) -> bytes:

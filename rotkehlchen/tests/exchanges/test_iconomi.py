@@ -7,6 +7,7 @@ from rotkehlchen.constants.assets import A_ETH, A_EUR, A_REP
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.exchanges.iconomi import Iconomi
 from rotkehlchen.fval import FVal
+from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.tests.utils.exchanges import get_exchange_asset_symbols
 from rotkehlchen.tests.utils.factories import make_api_key, make_api_secret
 from rotkehlchen.tests.utils.mock import MockResponse
@@ -109,8 +110,15 @@ def test_iconomi_assets_are_known(
         database=database,
         msg_aggregator=MessagesAggregator(),
     )
+    supported_tickers = []
+    resp = iconomi._api_query('get', 'assets', authenticated=False)
+    for asset_info in resp:
+        if not asset_info['supported']:
+            continue
+        if GlobalDBHandler.is_asset_symbol_unsupported(Location.ICONOMI, asset_info['ticker']):
+            continue
+        supported_tickers.append(asset_info['ticker'])
 
-    supported_tickers = iconomi.query_supported_tickers()
     for ticker in supported_tickers:
         try:
             _ = asset_from_iconomi(ticker)

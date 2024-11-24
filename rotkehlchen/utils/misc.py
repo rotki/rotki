@@ -175,13 +175,6 @@ def combine_dicts(
     return new_dict
 
 
-def _add_entries(a: dict[str, FVal], b: dict[str, FVal]) -> dict[str, FVal]:
-    return {
-        'amount': a['amount'] + b['amount'],
-        'usd_value': a['usd_value'] + b['usd_value'],
-    }
-
-
 def convert_to_int(
         val: FVal | (bytes | (str | float)),
         accept_only_exact: bool = True,

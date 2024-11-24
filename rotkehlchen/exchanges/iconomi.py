@@ -26,7 +26,6 @@ from rotkehlchen.exchanges.data_structures import (
     TradeType,
 )
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
-from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
@@ -359,22 +358,6 @@ class Iconomi(ExchangeInterface):
                     )
 
         return trades, (start_ts, end_ts)
-
-    def query_supported_tickers(
-            self,
-    ) -> list[str]:
-
-        tickers = []
-        resp = self._api_query('get', 'assets', authenticated=False)
-
-        for asset_info in resp:
-            if not asset_info['supported']:
-                continue
-            if GlobalDBHandler.is_asset_symbol_unsupported(Location.ICONOMI, asset_info['ticker']):
-                continue
-            tickers.append(asset_info['ticker'])
-
-        return tickers
 
     def query_online_deposits_withdrawals(
             self,
