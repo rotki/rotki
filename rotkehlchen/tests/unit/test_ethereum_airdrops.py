@@ -22,7 +22,7 @@ from rotkehlchen.chain.ethereum.airdrops import (
     fetch_airdrops_metadata,
 )
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants.assets import A_1INCH, A_GRAIN, A_SHU, A_UNI
+from rotkehlchen.constants.assets import A_1INCH, A_SHU, A_UNI
 from rotkehlchen.constants.misc import AIRDROPSDIR_NAME, AIRDROPSPOAPDIR_NAME, APPDIR_NAME
 from rotkehlchen.constants.timing import HOUR_IN_SECONDS
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -435,7 +435,7 @@ def test_check_airdrops(
     }
     assert data[TEST_ADDR2]['grain'] == {
         'amount': '16301.717650649890035791',
-        'asset': A_GRAIN,
+        'asset': Asset('eip155:1/erc20:0x6589fe1271A0F29346796C6bAf0cdF619e25e58e'),
         'link': 'https://claim.harvest.finance/',
         'icon': 'grain.png',
         'claimed': False,

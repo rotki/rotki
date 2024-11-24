@@ -39,15 +39,6 @@ SUBGRAPH_REMOTE_ERROR_MSG = (
 )
 
 
-def format_query_indentation(querystr: str) -> str:
-    """Format a triple quote and indented GraphQL query by:
-    - Removing returns
-    - Replacing multiple inner whitespaces with one
-    - Removing leading and trailing whitespaces
-    """
-    return RE_MULTIPLE_WHITESPACE.sub(' ', querystr).strip()
-
-
 class Graph(ExternalServiceWithApiKey):
 
     def __init__(
