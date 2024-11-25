@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-`  Fix the issue where the layout for the “Force Push” setting was misaligned on small screen.
 * :bug:`8916` Coinbase events (trades, deposits/withdrawals, earn etc.) will now be properly pulled after the initial sync. 
 * :bug:`-` Fix the issue where some asset values show zero in the edit snapshot form.
 * :bug:`-` Fix the issue where the pagination for the account table resets to the first page when the user expands the account.
