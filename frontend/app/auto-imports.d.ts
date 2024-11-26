@@ -885,7 +885,6 @@ declare global {
   export type { LogLevel } from './shared/log-level'
   import('./shared/log-level')
 }
-
 // for vue template auto import
 import { UnwrapRef } from 'vue'
 declare module 'vue' {
