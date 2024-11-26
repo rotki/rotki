@@ -7,6 +7,7 @@ CURRENCYCONVERTER_API_KEY: Final = 'e5a351268cc2e99e01d3'
 ZERO: Final = FVal(0)
 ONE: Final = FVal(1)
 EXP18: Final = FVal(1e18)
+EXP18_INT: Final = int(1e18)
 # Tolerance used when querying claims in the database since we need to cast
 # to float and we can loose precision in SQL. With lower tolerance the ens
 # airdrop fails to get detected.

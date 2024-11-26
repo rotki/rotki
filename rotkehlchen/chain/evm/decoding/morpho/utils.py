@@ -5,16 +5,13 @@ from typing import TYPE_CHECKING, Any, Final
 import requests
 
 from rotkehlchen.assets.asset import UnderlyingToken
-from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token, get_token
-from rotkehlchen.chain.ethereum.utils import token_normalized_value
+from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token
 from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS
 from rotkehlchen.chain.evm.decoding.morpho.constants import MORPHO_VAULT_ABI
-from rotkehlchen.chain.evm.decoding.utils import update_cached_vaults
+from rotkehlchen.chain.evm.decoding.utils import get_vault_price, update_cached_vaults
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants import ONE
-from rotkehlchen.constants.prices import ZERO_PRICE
+from rotkehlchen.constants import EXP18_INT, ONE
 from rotkehlchen.db.settings import CachedSettings
-from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.globaldb.cache import (
     globaldb_set_unique_cache_value,
 )
@@ -124,32 +121,13 @@ def get_morpho_vault_token_price(
         vault_token: 'EvmToken',
         evm_inquirer: 'EvmNodeInquirer',
 ) -> Price:
-    """Gets token price for a Morpho vault.
-    Multiplies the vault's price per share by the underlying token's USD price.
-    """
-    try:
-        price_per_share = evm_inquirer.call_contract(
-            contract_address=vault_token.evm_address,
-            abi=MORPHO_VAULT_ABI,
-            method_name='convertToAssets',
-            arguments=[int(1e18)],  # 1 share with 18 decimals
-        )
-    except RemoteError as e:
-        log.error(f'Failed to get price per share for Morpho vault {vault_token} on {evm_inquirer.chain_id.label()}: {e}')  # noqa: E501
-        return ZERO_PRICE
-
-    if (
-        len(vault_token.underlying_tokens) == 0 or
-        (underlying_token := get_token(
-            evm_address=vault_token.underlying_tokens[0].address,
-            chain_id=evm_inquirer.chain_id,
-        )) is None
-    ):
-        log.error(f'Failed to get underlying token for Morpho vault {vault_token} on {evm_inquirer.chain_id.label()}')  # noqa: E501
-        return ZERO_PRICE
-
-    formatted_pps = token_normalized_value(
-        token_amount=price_per_share,
-        token=underlying_token,
+    """Gets the token price for a Morpho vault."""
+    return get_vault_price(
+        inquirer=inquirer,
+        vault_token=vault_token,
+        evm_inquirer=evm_inquirer,
+        display_name='Morpho',
+        vault_abi=MORPHO_VAULT_ABI,
+        pps_method='convertToAssets',
+        pps_method_args=[EXP18_INT],  # 1 share with 18 decimals
     )
-    return Price(inquirer.find_usd_price(asset=underlying_token) * formatted_pps)

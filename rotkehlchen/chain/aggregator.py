@@ -57,6 +57,7 @@ from rotkehlchen.chain.ethereum.modules.thegraph.balances import ThegraphBalance
 from rotkehlchen.chain.evm.decoding.balancer.v1.balances import Balancerv1Balances
 from rotkehlchen.chain.evm.decoding.balancer.v2.balances import Balancerv2Balances
 from rotkehlchen.chain.evm.decoding.compound.v3.balances import Compoundv3Balances
+from rotkehlchen.chain.evm.decoding.curve_lend.balances import CurveLendBalances
 from rotkehlchen.chain.evm.decoding.hop.balances import HopBalances
 from rotkehlchen.chain.optimism.modules.extrafi.balances import (
     ExtrafiBalances as ExtrafiBalancesOp,
@@ -219,6 +220,7 @@ CHAIN_TO_BALANCE_PROTOCOLS = {
         AaveBalances,
         Balancerv1Balances,
         Balancerv2Balances,
+        CurveLendBalances,
     ),
     ChainID.OPTIMISM: (
         VelodromeBalances,
@@ -227,6 +229,7 @@ CHAIN_TO_BALANCE_PROTOCOLS = {
         ExtrafiBalancesOp,
         Balancerv2Balances,
         WalletconnectBalances,
+        CurveLendBalances,
     ),
     ChainID.BASE: (
         Compoundv3Balances,
@@ -244,6 +247,7 @@ CHAIN_TO_BALANCE_PROTOCOLS = {
         UmamiBalances,
         Balancerv1Balances,
         Balancerv2Balances,
+        CurveLendBalances,
     ),
     ChainID.POLYGON_POS: (Compoundv3Balances, HopBalances, Balancerv2Balances),
     ChainID.GNOSIS: (HopBalances, Balancerv1Balances, Balancerv2Balances),

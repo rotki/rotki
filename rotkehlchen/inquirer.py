@@ -28,6 +28,7 @@ from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.decoding.balancer.constants import CPT_BALANCER_V1, CPT_BALANCER_V2
 from rotkehlchen.chain.evm.decoding.balancer.utils import get_balancer_pool_price
 from rotkehlchen.chain.evm.decoding.curve.constants import CURVE_CHAIN_ID_TYPE, CURVE_CHAIN_IDS
+from rotkehlchen.chain.evm.decoding.curve_lend.utils import get_curve_lending_vault_token_price
 from rotkehlchen.chain.evm.decoding.gearbox.gearbox_cache import (
     ensure_gearbox_lp_underlying_tokens,
     read_gearbox_data_from_cache,
@@ -110,6 +111,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.oracles.structures import CurrentPriceOracle
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.types import (
+    CURVE_LENDING_VAULTS_PROTOCOL,
     CURVE_POOL_PROTOCOL,
     GEARBOX_PROTOCOL,
     HOP_PROTOCOL_LP,
@@ -220,6 +222,12 @@ def get_underlying_asset_price(token: EvmToken) -> tuple[Price | None, CurrentPr
         )
     elif token.protocol == MORPHO_VAULT_PROTOCOL:
         price = get_morpho_vault_token_price(
+            vault_token=token,
+            inquirer=Inquirer(),  # Initialize here to avoid a circular import
+            evm_inquirer=Inquirer.get_evm_manager(chain_id=token.chain_id).node_inquirer,
+        )
+    elif token.protocol == CURVE_LENDING_VAULTS_PROTOCOL:
+        price = get_curve_lending_vault_token_price(
             vault_token=token,
             inquirer=Inquirer(),  # Initialize here to avoid a circular import
             evm_inquirer=Inquirer.get_evm_manager(chain_id=token.chain_id).node_inquirer,

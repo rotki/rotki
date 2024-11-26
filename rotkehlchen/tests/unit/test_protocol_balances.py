@@ -42,6 +42,7 @@ from rotkehlchen.chain.evm.decoding.balancer.v1.balances import Balancerv1Balanc
 from rotkehlchen.chain.evm.decoding.balancer.v2.balances import Balancerv2Balances
 from rotkehlchen.chain.evm.decoding.compound.v3.balances import Compoundv3Balances
 from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE
+from rotkehlchen.chain.evm.decoding.curve_lend.balances import CurveLendBalances
 from rotkehlchen.chain.evm.decoding.extrafi.cache import (
     get_existing_reward_pools,
     query_extrafi_data,
@@ -65,12 +66,17 @@ from rotkehlchen.constants.assets import (
     A_GRT_ARB,
     A_STETH,
     A_USDC,
+    A_WETH_ARB,
 )
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.cache import globaldb_get_unique_cache_last_queried_ts_by_key
 from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.tests.unit.decoders.test_curve_lend import (
+    fixture_arbitrum_vault_token,  # noqa: F401
+    fixture_arbitrum_vault_underlying_token,  # noqa: F401
+)
 from rotkehlchen.tests.utils.arbitrum_one import get_arbitrum_allthatnode
 from rotkehlchen.tests.utils.balances import find_inheriting_classes
 from rotkehlchen.tests.utils.constants import CURRENT_PRICE_MOCK
@@ -1162,6 +1168,37 @@ def test_walletconnect_staked_balances(
     assert user_balance.assets[Asset(WCT_TOKEN_ID)] == Balance(
         amount=amount,
         usd_value=amount * FVal(1.5),
+    )
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+@pytest.mark.parametrize('arbitrum_one_accounts', [['0x706A70067BE19BdadBea3600Db0626859Ff25D74']])
+def test_curve_lend_balances(
+        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
+        arbitrum_one_accounts: list[ChecksumEvmAddress],
+        inquirer: 'Inquirer',  # pylint: disable=unused-argument
+        arbitrum_vault_token: 'EvmToken',
+) -> None:
+    """Check that Curve lending collateral and debt balances are properly detected."""
+    _, tx_decoder = get_decoded_events_of_transaction(
+        evm_inquirer=arbitrum_one_inquirer,
+        tx_hash=deserialize_evm_tx_hash('0x58e9068edee8897c5c2e2181cc897ba026efd936f74e14329b64355e82240ea5'),
+    )
+    protocol_balances_inquirer = CurveLendBalances(
+        evm_inquirer=arbitrum_one_inquirer,
+        tx_decoder=tx_decoder,
+    )
+    protocol_balances = protocol_balances_inquirer.query_balances()
+    user_balance = protocol_balances[arbitrum_one_accounts[0]]
+
+    assert user_balance.assets[A_WETH_ARB] == Balance(
+        amount=FVal('0.013968407653526627'),
+        usd_value=FVal('50.14490726724216773476'),
+    )
+    assert user_balance.liabilities[Asset('eip155:42161/erc20:0x498Bf2B1e120FeD3ad3D42EA2165E9b73f99C1e5')] == Balance(  # noqa: E501
+        amount=FVal('30.100455885544052449'),
+        usd_value=FVal('30.055997512201103883532827'),
     )
 
 
