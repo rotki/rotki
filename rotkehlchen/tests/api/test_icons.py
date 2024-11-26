@@ -64,7 +64,8 @@ def test_upload_custom_icon(
 
     result = assert_proper_sync_response_with_result(response)
     assert result == {'identifier': A_GNO.identifier}
-    uploaded_icon = data_dir / IMAGESDIR_NAME / ASSETIMAGESDIR_NAME / CUSTOMASSETIMAGESDIR_NAME / f'{gno_id_quoted}.svg'  # noqa: E501 assert uploaded_icon.is_file()
+    uploaded_icon = data_dir / IMAGESDIR_NAME / ASSETIMAGESDIR_NAME / CUSTOMASSETIMAGESDIR_NAME / f'{gno_id_quoted}.svg'  # noqa: E501
+    assert uploaded_icon.is_file()
     assert filecmp.cmp(uploaded_icon, filepath)
 
     # query the file using the endpoint
