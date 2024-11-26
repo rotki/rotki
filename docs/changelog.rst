@@ -3,6 +3,7 @@ Changelog
 =========
 
 
+* :feature:`7621` rotki will now support Curve lending, with related historical events properly decoded and correct prices and balances shown.
 * :feature:`8929` Blockchain aggregated balances will now display the percentage of the net value and can also be filtered by chain.
 * :feature:`-` WalletConnect airdrop claiming and staking transactions are now properly recognized. WCT staked balances will also be autodetected.
 * :feature:`-` Page for inputting external API keys has been revamped.

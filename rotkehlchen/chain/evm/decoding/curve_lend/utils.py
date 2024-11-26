@@ -6,7 +6,7 @@ import requests
 
 from rotkehlchen.assets.asset import UnderlyingToken
 from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token
-from rotkehlchen.chain.evm.decoding.utils import update_cached_vaults
+from rotkehlchen.chain.evm.decoding.utils import get_vault_price, update_cached_vaults
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE
 from rotkehlchen.db.settings import CachedSettings
@@ -21,10 +21,16 @@ from rotkehlchen.types import (
     CacheType,
     ChainID,
     EvmTokenKind,
+    Price,
 )
 
+from .constants import CURVE_VAULT_ABI
+
 if TYPE_CHECKING:
+    from rotkehlchen.assets.asset import EvmToken
+    from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.inquirer import Inquirer
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -104,4 +110,20 @@ def query_curve_lending_vaults(database: 'DBHandler') -> None:
         display_name='Curve lending',
         query_vault_api=_query_curve_lending_vaults_api,
         process_vault=_process_curve_lending_vault,
+    )
+
+
+def get_curve_lending_vault_token_price(
+        inquirer: 'Inquirer',
+        vault_token: 'EvmToken',
+        evm_inquirer: 'EvmNodeInquirer',
+) -> Price:
+    """Gets the token price for a Curve lending vault."""
+    return get_vault_price(
+        inquirer=inquirer,
+        vault_token=vault_token,
+        evm_inquirer=evm_inquirer,
+        vault_abi=CURVE_VAULT_ABI,
+        pps_method='pricePerShare',
+        display_name='Curve lending',
     )

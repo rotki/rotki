@@ -63,6 +63,10 @@ from rotkehlchen.inquirer import (
 )
 from rotkehlchen.interfaces import CurrentPriceOracleInterface
 from rotkehlchen.tests.conftest import TestEnvironment, requires_env
+from rotkehlchen.tests.unit.decoders.test_curve_lend import (
+    fixture_ethereum_vault_token,  # noqa: F401
+    fixture_ethereum_vault_underlying_token,  # noqa: F401
+)
 from rotkehlchen.tests.utils.constants import A_CNY, A_JPY
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.tests.utils.morpho import create_ethereum_morpho_vault_token
@@ -943,6 +947,18 @@ def test_find_morpho_vault_price(database: 'DBHandler', inquirer_defi: 'Inquirer
     usual_boosted_usdc_vault = create_ethereum_morpho_vault_token(database=database)
     price = inquirer_defi.find_usd_price(asset=usual_boosted_usdc_vault)
     assert price.is_close(FVal(1.02611), max_diff=1e-5)
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+def test_find_curve_lending_vault_price(
+        inquirer_defi: 'Inquirer',
+        ethereum_vault_token: 'EvmToken',
+) -> None:
+    """Test that we get the correct price for Curve lending vault tokens."""
+    price = inquirer_defi.find_usd_price(asset=ethereum_vault_token)
+    assert price.is_close(FVal(0.00102), max_diff=1e-5)
 
 
 @pytest.mark.vcr

@@ -2,9 +2,14 @@ import logging
 from collections.abc import Callable, Sequence
 from typing import TYPE_CHECKING, Any, Literal, Optional
 
+from eth_typing import ABI
+
 from rotkehlchen.assets.asset import AssetWithSymbol
+from rotkehlchen.assets.utils import get_token
+from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
-from rotkehlchen.errors.misc import NotERC20Conformant, NotERC721Conformant
+from rotkehlchen.constants.prices import ZERO_PRICE
+from rotkehlchen.errors.misc import NotERC20Conformant, NotERC721Conformant, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.cache import (
@@ -14,12 +19,15 @@ from rotkehlchen.globaldb.cache import (
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import CacheType, ChainID, ChecksumEvmAddress
+from rotkehlchen.types import CacheType, ChainID, ChecksumEvmAddress, Price
 
 if TYPE_CHECKING:
+    from rotkehlchen.assets.asset import EvmToken
+    from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
+    from rotkehlchen.inquirer import Inquirer
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -188,3 +196,50 @@ def update_cached_vaults(
                 f'Failed to store token information for {display_name} vault '
                 f'due to {error}. Vault: {vault}. Skipping...',
             )
+
+
+def get_vault_price(
+        inquirer: 'Inquirer',
+        vault_token: 'EvmToken',
+        evm_inquirer: 'EvmNodeInquirer',
+        display_name: str,
+        vault_abi: ABI,
+        pps_method: Literal['pricePerShare', 'convertToAssets'],
+        pps_method_args: list | None = None,
+) -> Price:
+    """Gets vault token price by multiplying price per share by the underlying token's USD price.
+    Price per share is retrieved from the vault contract using the specified pps_method.
+    Returns the vault token price or ZERO_PRICE on error.
+    """
+    try:
+        price_per_share = evm_inquirer.call_contract(
+            contract_address=vault_token.evm_address,
+            abi=vault_abi,
+            method_name=pps_method,
+            arguments=pps_method_args,
+        )
+    except RemoteError as e:
+        log.error(
+            f'Failed to get price per share for {display_name} '
+            f'vault {vault_token} on {evm_inquirer.chain_name}: {e}',
+        )
+        return ZERO_PRICE
+
+    if (
+        len(vault_token.underlying_tokens) == 0 or
+        (underlying_token := get_token(
+            evm_address=vault_token.underlying_tokens[0].address,
+            chain_id=evm_inquirer.chain_id,
+        )) is None
+    ):
+        log.error(
+            f'Failed to get underlying token for {display_name} '
+            f'vault {vault_token} on {evm_inquirer.chain_name}',
+        )
+        return ZERO_PRICE
+
+    formatted_pps = token_normalized_value(
+        token_amount=price_per_share,
+        token=underlying_token,
+    )
+    return Price(inquirer.find_usd_price(asset=underlying_token) * formatted_pps)

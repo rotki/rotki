@@ -2,7 +2,6 @@ import logging
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any, Final, Literal
 
-from eth_typing import ABI
 from eth_utils import to_checksum_address
 
 from rotkehlchen.chain.ethereum.utils import should_update_protocol_cache, token_normalized_value
@@ -32,6 +31,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import CURVE_LENDING_VAULTS_PROTOCOL, CacheType, ChecksumEvmAddress
 from rotkehlchen.utils.misc import bytes_to_address
 
+from .constants import CURVE_VAULT_ABI
 from .utils import query_curve_lending_vaults
 
 if TYPE_CHECKING:
@@ -51,7 +51,6 @@ BORROW_TOPIC: Final = b"\xe1\x97\x9f\xe4\xc3^\x0c\xef4/\xefVh\xe2\xc8\xe7\xa7\xe
 REPAY_TOPIC: Final = b'w\xc6\x87\x12\'\xe5\xd2\xde\xc8\xda\xddST\xf7\x84S >"\xe6i\xcd\x0e\xc4\xc1\x9d\x9a\x8c^\xdb1\xd0'  # noqa: E501
 REMOVE_COLLATERAL_TOPIC: Final = b'\xe2T\x10\xa4\x05\x96\x19\xc9YM\xc6\xf0"\xfe#\x1b\x02\xaa\xeas?h\x9ez\xb0\xcd!\xb3\xd4\xd0\xebT'  # noqa: E501
 LEVERAGE_ZAP_DEPOSIT_TOPIC: Final = b'\xf9C\xcf\x10\xefM\x1e29\xf4qm\xde\xcd\xf5F\xe8\xba\x8a\xb0\xe4\x1d\xea\xfd\x9aq\xa9\x996\x82~E'  # noqa: E501
-CURVE_VAULT_ABI: ABI = [{'stateMutability': 'view', 'type': 'function', 'name': 'borrowed_token', 'inputs': [], 'outputs': [{'name': '', 'type': 'address'}]}, {'stateMutability': 'view', 'type': 'function', 'name': 'collateral_token', 'inputs': [], 'outputs': [{'name': '', 'type': 'address'}]}, {'stateMutability': 'view', 'type': 'function', 'name': 'amm', 'inputs': [], 'outputs': [{'name': '', 'type': 'address'}]}, {'stateMutability': 'view', 'type': 'function', 'name': 'controller', 'inputs': [], 'outputs': [{'name': '', 'type': 'address'}]}]  # noqa: E501
 
 
 class CurveLendCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
@@ -386,7 +385,7 @@ class CurveLendCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
     def _decode_borrow_extended(self, context: DecoderContext) -> DecodingOutput:
         """Decode events associated with creating a leveraged Curve position."""
         if (tokens_and_amounts := self._get_controller_event_tokens_and_amounts(
-                controller_address=context.tx_log.address,
+                controller_address=(controller_address := context.tx_log.address),
                 context=context,
         )) is None:
             log.error(f'Failed to find tokens and amounts for Curve borrow transaction {context.transaction}')  # noqa: E501
@@ -430,6 +429,7 @@ class CurveLendCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
                 event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
                 event.notes = f'Deposit {event.balance.amount} {borrowed_token.symbol} into a leveraged Curve position'  # noqa: E501
                 event.counterparty = CPT_CURVE
+                event.extra_data = {'vault_controller': controller_address}
                 break
 
         return DecodingOutput(action_items=[ActionItem(
@@ -442,12 +442,13 @@ class CurveLendCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
             to_event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
             to_notes=f'Deposit {collateral_amount} {collateral_token.symbol} into a leveraged Curve position',  # noqa: E501
             to_counterparty=CPT_CURVE,
+            extra_data={'vault_controller': controller_address},
         )])
 
     def _decode_borrow(self, context: DecoderContext) -> DecodingOutput:
         """Decode events associated with getting a loan."""
         if (tokens_and_amounts := self._get_controller_event_tokens_and_amounts(
-                controller_address=context.tx_log.address,
+                controller_address=(controller_address := context.tx_log.address),
                 context=context,
         )) is None:
             log.error(f'Failed to find tokens and amounts for Curve borrow transaction {context.transaction}')  # noqa: E501
@@ -477,6 +478,7 @@ class CurveLendCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
                 event.event_subtype = HistoryEventSubType.GENERATE_DEBT
                 event.notes = f'Borrow {borrowed_amount} {borrowed_token.symbol} from Curve'
                 event.counterparty = CPT_CURVE
+                event.extra_data = {'vault_controller': controller_address}
                 in_event = event
 
                 if out_event is not None and in_event is not None:
@@ -508,6 +510,7 @@ class CurveLendCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
                 to_event_subtype=HistoryEventSubType.GENERATE_DEBT,
                 to_notes=f'Borrow {borrowed_amount} {borrowed_token.symbol} from Curve',
                 to_counterparty=CPT_CURVE,
+                extra_data={'vault_controller': controller_address},
             ),
         ])
 
