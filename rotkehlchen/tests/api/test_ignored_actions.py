@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
 
 
-def _populate_ignored_actions(rotkehlchen_api_server: 'APIServer') -> dict[str, list[str]]:
+def _populate_ignored_actions(rotkehlchen_api_server: 'APIServer') -> dict[str, set[str]]:
     data = [
         ('trade', ['1', '2', '3']),
         ('asset_movement', ['1', '4', '5', '7']),
