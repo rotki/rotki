@@ -1,4 +1,5 @@
 from http import HTTPStatus
+from typing import TYPE_CHECKING
 
 import pytest
 import requests
@@ -15,8 +16,11 @@ from rotkehlchen.tests.utils.api import (
 )
 from rotkehlchen.types import Location, TimestampMS
 
+if TYPE_CHECKING:
+    from rotkehlchen.api.server import APIServer
 
-def _populate_ignored_actions(rotkehlchen_api_server) -> dict[str, list[str]]:
+
+def _populate_ignored_actions(rotkehlchen_api_server: 'APIServer') -> dict[str, list[str]]:
     data = [
         ('trade', ['1', '2', '3']),
         ('asset_movement', ['1', '4', '5', '7']),
@@ -56,7 +60,7 @@ def _populate_ignored_actions(rotkehlchen_api_server) -> dict[str, list[str]]:
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
-def test_add_ignored_actions(rotkehlchen_api_server):
+def test_add_ignored_actions(rotkehlchen_api_server: 'APIServer') -> None:
     data = _populate_ignored_actions(rotkehlchen_api_server)
 
     # try to add at least one already existing id
@@ -81,7 +85,7 @@ def test_add_ignored_actions(rotkehlchen_api_server):
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
-def test_remove_ignored_actions(rotkehlchen_api_server):
+def test_remove_ignored_actions(rotkehlchen_api_server: 'APIServer') -> None:
     _populate_ignored_actions(rotkehlchen_api_server)
     # remove a few entries of one type
     response = requests.delete(
@@ -141,7 +145,7 @@ def test_remove_ignored_actions(rotkehlchen_api_server):
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
-def test_ignore_history_events_in_accountant(rotkehlchen_api_server):
+def test_ignore_history_events_in_accountant(rotkehlchen_api_server: 'APIServer') -> None:
     """Test that ignored history events are correctly ignored by the accountant"""
     accountant = rotkehlchen_api_server.rest_api.rotkehlchen.accountant
     events_list = [
