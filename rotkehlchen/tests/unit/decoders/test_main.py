@@ -46,6 +46,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'Aavev2',
         'Aavev3',
         'Airdrops',
+        'AuraFinance',
         'Balancerv1',
         'Balancerv2',
         'BaseBridge',
@@ -126,6 +127,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
     counterparty_ids = {counterparty.identifier for counterparty in ethereum_transaction_decoder.rules.all_counterparties}  # noqa: E501
     assert counterparty_ids == {
         '0x',
+        'aura_finance',
         'kyber',
         'kyber legacy',
         'element-finance',
