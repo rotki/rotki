@@ -4,7 +4,7 @@ import urllib.parse
 from typing import TYPE_CHECKING
 
 from rotkehlchen.constants import ALLASSETIMAGESDIR_NAME, ASSETIMAGESDIR_NAME, IMAGESDIR_NAME
-from rotkehlchen.constants.assets import A_COW, A_GNOSIS_COW
+from rotkehlchen.constants.assets import A_COW, A_GNOSIS_COW, A_LQTY
 from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
 from rotkehlchen.utils.progress import perform_userdb_upgrade_steps, progress_step
 
@@ -22,7 +22,7 @@ def upgrade_v45_to_v46(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
     """Upgrades the DB from v45 to v46. This was in v1.37 release.
 
     - Remove balancer module from settings
-    - Refresh Cowswap icon
+    - Refresh icons
     """
     @progress_step(description='Removing balancer module from user settings.')
     def _remove_balancer_module(write_cursor: 'DBCursor') -> None:
@@ -40,10 +40,11 @@ def upgrade_v45_to_v46(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
             (json.dumps([module for module in active_modules if module != 'balancer']),),
         )
 
-    @progress_step(description='Refreshing Cowswap icon.')
-    def _refresh_cowswap_icon(write_cursor: 'DBCursor') -> None:
+    @progress_step(description='Refreshing icons.')
+    def _refresh_icons(write_cursor: 'DBCursor') -> None:
         identifiers_to_delete = [
             A_COW.identifier,
+            A_LQTY.identifier,
             A_GNOSIS_COW.identifier,
             'eip155:42161/erc20:0xcb8b5CD20BdCaea9a010aC1F8d835824F5C87A04',  # Cowswap on Arbitrum
         ]
