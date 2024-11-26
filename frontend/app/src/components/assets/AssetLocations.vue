@@ -2,8 +2,8 @@
 import { type BigNumber, Blockchain } from '@rotki/common';
 import { CURRENCY_USD } from '@/types/currencies';
 import { isBlockchain } from '@/types/blockchain/chains';
-import type { AssetBreakdown, BlockchainAccount } from '@/types/blockchain/accounts';
-import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
+import type { AddressData, AssetBreakdown, BlockchainAccount } from '@/types/blockchain/accounts';
+import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 
 type AssetLocations = AssetLocation[];
 
@@ -23,13 +23,22 @@ const sort = ref<DataTableSortData<AssetLocation>>({
   direction: 'desc',
 });
 
+const pagination = ref({
+  page: 1,
+  itemsPerPage: 10,
+});
+
+const onlyTags = ref<string[]>([]);
+const locationFilter = ref<string>('');
+const selectedAccounts = ref<BlockchainAccount<AddressData>[]>([]);
+
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { getAccountByAddress } = useBlockchainStore();
 const { detailsLoading } = storeToRefs(useStatusStore());
 const { assetPriceInfo } = useAggregatedBalances();
 const { assetBreakdown } = useBalancesBreakdown();
-
-const onlyTags = ref<string[]>([]);
+const { addressNameSelector } = useAddressesNamesStore();
+const { getChainName, getChain } = useSupportedChains();
 
 const totalUsdValue = computed<BigNumber>(() => get(assetPriceInfo(identifier)).usdValue);
 
@@ -45,8 +54,6 @@ const assetLocations = computed<AssetLocations>(() => {
   });
 });
 
-const { addressNameSelector } = useAddressesNamesStore();
-
 const visibleAssetLocations = computed<AssetLocations>(() => {
   const locations = get(assetLocations).map(item => ({
     ...item,
@@ -56,12 +63,21 @@ const visibleAssetLocations = computed<AssetLocations>(() => {
       || item.address,
   }));
 
-  if (get(onlyTags).length === 0)
-    return locations;
+  const tagsFilter = get(onlyTags);
+  const location = get(locationFilter);
+  const accounts = get(selectedAccounts);
 
   return locations.filter((assetLocation) => {
     const tags = assetLocation.tags ?? [];
-    return get(onlyTags).every(tag => tags.includes(tag));
+    const includedInTags = tagsFilter.every(tag => tags.includes(tag));
+    const currentLocation = assetLocation.location;
+    const locationToCheck = get(getChainName(currentLocation));
+    const locationMatches = !location || locationToCheck === toSentenceCase(location);
+    const accountMatches = accounts.length === 0 || accounts.some(account =>
+      getAccountAddress(account) === assetLocation.address,
+    );
+
+    return includedInTags && locationMatches && accountMatches;
   });
 });
 
@@ -69,6 +85,24 @@ function getPercentage(usdValue: BigNumber): string {
   const percentage = get(totalUsdValue).isZero() ? 0 : usdValue.div(get(totalUsdValue)).multipliedBy(100);
 
   return percentage.toFixed(2);
+}
+
+function setTablePagination(event: TablePaginationData | undefined) {
+  if (!isDefined(event))
+    return;
+
+  const { page, limit } = event;
+  set(pagination, {
+    page,
+    itemsPerPage: limit,
+  });
+}
+
+function setPage(page: number) {
+  set(pagination, {
+    ...get(pagination),
+    page,
+  });
 }
 
 const headers = computed<DataTableColumn<AssetLocation>[]>(() => {
@@ -120,6 +154,22 @@ const headers = computed<DataTableColumn<AssetLocation>[]>(() => {
     },
   ];
 });
+
+watch(locationFilter, (location) => {
+  if (location && !getChain(location, null)) {
+    set(selectedAccounts, []);
+  }
+});
+
+watch(selectedAccounts, (accounts) => {
+  if (accounts.length > 0 && !getChain(get(locationFilter), null)) {
+    set(locationFilter, '');
+  }
+});
+
+watch([onlyTags, locationFilter, selectedAccounts], () => {
+  setPage(1);
+});
 </script>
 
 <template>
@@ -127,19 +177,45 @@ const headers = computed<DataTableColumn<AssetLocation>[]>(() => {
     <template #header>
       {{ t('asset_locations.title') }}
     </template>
-    <div class="flex justify-end">
-      <div class="w-full md:w-[30rem]">
+    <div class="flex flex-col md:flex-row justify-end gap-2">
+      <div class="w-full md:w-[20rem]">
+        <LocationSelector
+          v-model="locationFilter"
+          :label="t('common.location')"
+          dense
+          clearable
+          hide-details
+        />
+      </div>
+
+      <BlockchainAccountSelector
+        v-model="selectedAccounts"
+        class="w-full md:w-[20rem]"
+        variant="outlined"
+        dense
+        multichain
+        hide-chain-icon
+        unique
+      />
+
+      <div class="w-full md:w-[20rem]">
         <TagFilter v-model="onlyTags" />
       </div>
     </div>
     <RuiDataTable
       v-model:sort="sort"
+      :pagination="{
+        page: pagination.page,
+        limit: pagination.itemsPerPage,
+        total: visibleAssetLocations.length,
+      }"
       :cols="headers"
       :rows="visibleAssetLocations"
       outlined
       dense
       row-attr="location"
       :loading="detailsLoading"
+      @update:pagination="setTablePagination($event)"
     >
       <template #item.location="{ row }">
         <LocationDisplay

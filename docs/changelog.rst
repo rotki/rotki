@@ -2,8 +2,9 @@
 Changelog
 =========
 
+* :feature:`-` Add location and address filters for the asset breakdown table in the asset details page.
 * :bug:`-`  Fix the issue where the layout for the “Force Push” setting was misaligned on small screen.
-* :bug:`8916` Coinbase events (trades, deposits/withdrawals, earn etc.) will now be properly pulled after the initial sync. 
+* :bug:`8916` Coinbase events (trades, deposits/withdrawals, earn etc.) will now be properly pulled after the initial sync.
 * :bug:`-` Fix the issue where some asset values show zero in the edit snapshot form.
 * :bug:`-` Fix the issue where the pagination for the account table resets to the first page when the user expands the account.
 * :bug:`8892` rotki will now correctly fetch Starknet token prices before May 2024 from Cryptocompare, when the ticker changed from STARK to STRK.
