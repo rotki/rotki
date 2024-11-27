@@ -39,7 +39,6 @@ def test_upload_custom_icon(
     ) -> None:
     """Test that uploading custom icon works"""
     root_path = Path(__file__).resolve().parent.parent.parent.parent
-
     filepath = root_path / 'frontend' / 'app' / 'public' / 'assets' / 'images' / 'protocols' / 'kraken.svg'  # noqa: E501
     gno_id_quoted = urllib.parse.quote_plus(A_GNO.identifier)
 
@@ -115,8 +114,7 @@ def test_upload_custom_icon_errors(rotkehlchen_api_server: 'APIServer', file_upl
                 api_url_for(
                     rotkehlchen_api_server,
                     'asseticonsresource',
-                ),
-                json=json_data,
+                ), json=json_data,
             )
 
     assert_error_response(
