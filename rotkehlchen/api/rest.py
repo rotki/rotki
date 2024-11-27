@@ -37,7 +37,7 @@ from rotkehlchen.accounting.export.csv import (
     dict_to_csv_file,
 )
 from rotkehlchen.accounting.pot import AccountingPot
-from rotkehlchen.accounting.structures.balance import Balance, BalanceType
+from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet, BalanceType
 from rotkehlchen.accounting.structures.processed_event import AccountingEventExportType
 from rotkehlchen.accounting.structures.types import ActionType
 from rotkehlchen.api.v1.schemas import TradeSchema
@@ -732,7 +732,11 @@ class RestAPI:
             status_code = HTTPStatus.CONFLICT
         return api_response(_wrap_in_result(result, message), status_code=status_code)
 
-    def _query_all_exchange_balances(self, ignore_cache: bool) -> dict[str, Any]:
+    def _query_all_exchange_balances(
+            self,
+            ignore_cache: bool,
+            usd_value_threshold: FVal | None = None,
+    ) -> dict[str, Any]:
         final_balances = {}
         error_msg = ''
         for exchange_obj in self.rotkehlchen.exchange_manager.iterate_exchanges():
@@ -753,16 +757,34 @@ class RestAPI:
             result = None
             status_code = HTTPStatus.CONFLICT
         else:
-            result = final_balances
+            # Filter balances by threshold for each exchange
+            if usd_value_threshold is not None:
+                filtered_balances = {}
+                for location, balances in final_balances.items():
+                    filtered_balances[location] = {
+                        asset: balance for asset, balance in balances.items()
+                        if balance.usd_value > usd_value_threshold
+                    }
+                result = filtered_balances
+            else:
+                result = final_balances
             status_code = HTTPStatus.OK
 
         return {'result': result, 'message': error_msg, 'status_code': status_code}
 
     @async_api_call()
-    def query_exchange_balances(self, location: Location | None, ignore_cache: bool) -> dict[str, Any]:  # noqa: E501
+    def query_exchange_balances(
+            self,
+            location: Location | None,
+            ignore_cache: bool,
+            usd_value_threshold: FVal | None = None,
+    ) -> dict[str, Any]:
         if location is None:
             # Query all exchanges
-            return self._query_all_exchange_balances(ignore_cache=ignore_cache)
+            return self._query_all_exchange_balances(
+                ignore_cache=ignore_cache,
+                usd_value_threshold=usd_value_threshold,
+            )
 
         # else query only the specific exchange
         exchanges_list = self.rotkehlchen.exchange_manager.connected_exchanges.get(location)
@@ -783,6 +805,13 @@ class RestAPI:
                     'status_code': HTTPStatus.CONFLICT,
                 }
             balances = combine_dicts(balances, result)
+
+        # Filter balances by threshold for single exchange
+        if usd_value_threshold is not None:
+            balances = {
+                asset: balance for asset, balance in balances.items()
+                if balance.usd_value > usd_value_threshold
+            }
 
         return {
             'result': balances,
@@ -811,6 +840,7 @@ class RestAPI:
             self,
             blockchain: SupportedBlockchain | None,
             ignore_cache: bool,
+            usd_value_threshold: FVal | None = None,
     ) -> dict[str, Any]:
         msg = ''
         status_code = HTTPStatus.OK
@@ -820,14 +850,39 @@ class RestAPI:
                 blockchain=blockchain,
                 ignore_cache=ignore_cache,
             )
+
+            # Filter balances before serialization
+            if usd_value_threshold is not None:
+                for _, chain_balances in balances.per_account:
+                    filtered_balances = {}
+                    for account, account_data in chain_balances.items():
+                        if isinstance(account_data, BalanceSheet):
+                            filtered_assets = {
+                                asset: balance for asset, balance in account_data.assets.items()
+                                if balance.usd_value > usd_value_threshold
+                            }
+                            if len(filtered_assets) != 0:
+                                new_balance_sheet = BalanceSheet()
+                                new_balance_sheet.assets = defaultdict(Balance,
+                                filtered_assets)  # Convert to defaultdict
+                                filtered_balances[account] = new_balance_sheet
+                        elif isinstance(account_data, Balance):
+                            # For BTC and BCH, account_data is a single Balance object
+                            if account_data.usd_value > usd_value_threshold:
+                                filtered_balances[account] = BalanceSheet(assets=defaultdict(
+                                    Balance, {account: account_data}))  # Wrap in BalanceSheet
+
+                    chain_balances.clear()
+                    chain_balances.update(filtered_balances)
+
+            result = balances.serialize()
+
         except EthSyncError as e:
             msg = str(e)
             status_code = HTTPStatus.CONFLICT
         except RemoteError as e:
             msg = str(e)
             status_code = HTTPStatus.BAD_GATEWAY
-        else:
-            result = balances.serialize()
 
         return {'result': result, 'message': msg, 'status_code': status_code}
 
@@ -2048,19 +2103,25 @@ class RestAPI:
 
         return OK_RESULT
 
-    def _get_manually_tracked_balances(self) -> dict[str, Any]:
+    def _get_manually_tracked_balances(self, usd_value_threshold: FVal | None) -> dict[str, Any]:
         db_entries = get_manually_tracked_balances(db=self.rotkehlchen.data.db, balance_type=None)
+        # Filter balances if threshold is set
+        if usd_value_threshold is not None:
+            db_entries = [
+                entry for entry in db_entries
+                if entry.value.usd_value > usd_value_threshold
+            ]
+
         balances = process_result(
             {
                 'balances': db_entries,
             },
-
         )
         return _wrap_in_ok_result(balances)
 
     @async_api_call()
-    def get_manually_tracked_balances(self) -> dict[str, Any]:
-        return self._get_manually_tracked_balances()
+    def get_manually_tracked_balances(self, usd_value_threshold: FVal | None) -> dict[str, Any]:
+        return self._get_manually_tracked_balances(usd_value_threshold=usd_value_threshold)
 
     @overload
     def _modify_manually_tracked_balances(  # pylint: disable=unused-argument
@@ -2093,7 +2154,7 @@ class RestAPI:
         except TagConstraintError as e:
             return wrap_in_fail_result(str(e), status_code=HTTPStatus.CONFLICT)
 
-        return self._get_manually_tracked_balances()
+        return self._get_manually_tracked_balances(usd_value_threshold=None)
 
     @async_api_call()
     def add_manually_tracked_balances(

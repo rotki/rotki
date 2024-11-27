@@ -1831,7 +1831,7 @@ Querying the balances of exchanges
 
 .. http:get:: /api/(version)/exchanges/balances/(location)
 
-   Doing a GET on the appropriate exchanges balances endpoint will return the balances of all assets currently held in that exchange. If no name is provided then the balance of all exchanges is returned.
+   Doing a GET on the appropriate exchanges balances endpoint will return the balances of all assets currently held in that exchange. If no name is provided then the balance of all exchanges is returned. If a USD value threshold is provided, only balances with USD value greater than the threshold are returned.
 
    .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``. Passing it as a query argument here would be given as: ``?async_query=true``.
@@ -1843,13 +1843,14 @@ Querying the balances of exchanges
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/exchanges/balances/binance HTTP/1.1
+      GET /api/1/exchanges/balances/binance?usd_value_threshold=1000 HTTP/1.1
       Host: localhost:5042
 
    :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
    :reqjson bool ignore_cache: Boolean denoting whether to ignore the cache for this query or not.
    :param bool async_query: Boolean denoting whether this is an asynchronous query or not
    :param bool ignore_cache: Boolean denoting whether to ignore the cache for this query or not.
+   :query decimal usd_value_threshold: Optional. If provided, only returns balances with USD value greater than this threshold.
 
    **Example Response**:
 
@@ -1875,7 +1876,7 @@ Querying the balances of exchanges
 
 .. http:get:: /api/(version)/exchanges/balances/
 
-   Doing a GET on the exchanges balances endpoint will return the balances of all assets currently held in all exchanges.
+   Doing a GET on the exchanges balances endpoint will return the balances of all assets currently held in all exchanges. If a USD value threshold is provided, only balances with USD value greater than the threshold are returned.
 
    .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``
@@ -1884,11 +1885,12 @@ Querying the balances of exchanges
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/exchanges/balances HTTP/1.1
+      GET /api/1/exchanges/balances?usd_value_threshold=1000 HTTP/1.1
       Host: localhost:5042
 
    :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
    :param bool async_query: Boolean denoting whether this is an asynchronous query or not
+   :query decimal usd_value_threshold: Optional. If provided, only returns balances with USD value greater than this threshold.
 
    .. _balances_result:
 
@@ -2872,7 +2874,7 @@ Querying onchain balances
 
 .. http:get:: /api/(version)/balances/blockchains/(blockchain)/
 
-   Doing a GET on the blockchains balances endpoint will query on-chain balances for the accounts of the user. Doing a GET on a specific blockchain will query balances only for that chain. Available blockchain names are: ``BTC``, ``ETH``, ``ETH2``, ``KSM``, ``DOT`` and ``AVAX``.
+   Doing a GET on the blockchains balances endpoint will query on-chain balances for the accounts of the user. Doing a GET on a specific blockchain will query balances only for that chain. Available blockchain names are: ``BTC``, ``ETH``, ``ETH2``, ``KSM``, ``DOT`` and ``AVAX``. If a USD value threshold is provided, only balances with USD value greater than the threshold are returned.
 
    .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``. Passing it as a query argument here would be given as: ``?async_query=true``.
@@ -2884,13 +2886,14 @@ Querying onchain balances
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/balances/blockchains/ HTTP/1.1
+      GET /api/1/balances/blockchains/?usd_value_threshold=1000 HTTP/1.1
       Host: localhost:5042
 
    :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
    :reqjson bool ignore_cache: Boolean denoting whether to ignore the cache for this query or not.
    :param bool async_query: Boolean denoting whether this is an asynchronous query or not
    :param bool ignore_cache: Boolean denoting whether to ignore the cache for this query or not.
+   :query decimal usd_value_threshold: Optional. If provided, only returns balances with USD value greater than this threshold.
 
 .. _blockchain_balances_result:
 
@@ -9491,14 +9494,16 @@ Getting manually tracked balances
       This endpoint can also be queried asynchronously by using ``"async_query": true``
 
    Doing a GET on the manually tracked balances endpoint will return all the manually tracked balance accounts from the database.
+   If a USD value threshold is provided, only balances with USD value greater than the threshold are returned.
 
    **Example Request**:
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/balances/manual HTTP/1.1
+      GET /api/1/balances/manual?usd_value_threshold=1000 HTTP/1.1
       Host: localhost:5042
 
+   :query decimal usd_value_threshold: Optional. If provided, only returns balances with USD value greater than this threshold.
 
    **Example Response**:
 
