@@ -580,7 +580,6 @@ declare global {
   const useEventsQueryStatusStore: typeof import('./src/store/history/query-status/events-query-status')['useEventsQueryStatusStore']
   const useEvmNodesApi: typeof import('./src/composables/api/settings/evm-nodes-api')['useEvmNodesApi']
   const useExchangeApi: typeof import('./src/composables/api/balances/exchanges')['useExchangeApi']
-  const useExchangeApiKeysForm: typeof import('./src/composables/settings/api-keys/exchanges/form')['useExchangeApiKeysForm']
   const useExchangeBalancesStore: typeof import('./src/store/balances/exchanges')['useExchangeBalancesStore']
   const useExchangeUnknownAssetHandler: typeof import('./src/composables/message-handling/exchange-unknown-asset')['useExchangeUnknownAssetHandler']
   const useExchangesStore: typeof import('./src/store/exchanges/index')['useExchangesStore']
@@ -875,19 +874,12 @@ declare global {
   export type { Unit } from './src/utils/calculation'
   import('./src/utils/calculation')
   // @ts-ignore
-  export type { IndexedDb } from './src/utils/indexed-db'
-  import('./src/utils/indexed-db')
-  // @ts-ignore
-  export type { LimitedParallelizationQueue } from './src/utils/limited-parallelization-queue'
-  import('./src/utils/limited-parallelization-queue')
-  // @ts-ignore
   export type { XpubPrefix } from './src/utils/xpub'
   import('./src/utils/xpub')
   // @ts-ignore
   export type { LogLevel } from './shared/log-level'
   import('./shared/log-level')
 }
-
 // for vue template auto import
 import { UnwrapRef } from 'vue'
 declare module 'vue' {
@@ -1467,7 +1459,6 @@ declare module 'vue' {
     readonly useEventsQueryStatusStore: UnwrapRef<typeof import('./src/store/history/query-status/events-query-status')['useEventsQueryStatusStore']>
     readonly useEvmNodesApi: UnwrapRef<typeof import('./src/composables/api/settings/evm-nodes-api')['useEvmNodesApi']>
     readonly useExchangeApi: UnwrapRef<typeof import('./src/composables/api/balances/exchanges')['useExchangeApi']>
-    readonly useExchangeApiKeysForm: UnwrapRef<typeof import('./src/composables/settings/api-keys/exchanges/form')['useExchangeApiKeysForm']>
     readonly useExchangeBalancesStore: UnwrapRef<typeof import('./src/store/balances/exchanges')['useExchangeBalancesStore']>
     readonly useExchangeUnknownAssetHandler: UnwrapRef<typeof import('./src/composables/message-handling/exchange-unknown-asset')['useExchangeUnknownAssetHandler']>
     readonly useExchangesStore: UnwrapRef<typeof import('./src/store/exchanges/index')['useExchangesStore']>

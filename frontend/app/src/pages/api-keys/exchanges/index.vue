@@ -1,45 +1,33 @@
 <script setup lang="ts">
+import type { Exchange, ExchangeFormData } from '@/types/exchanges';
 import type { DataTableColumn, DataTableSortColumn } from '@rotki/ui-library';
-import type { Writeable } from '@rotki/common';
-import type { Exchange, ExchangePayload } from '@/types/exchanges';
-
-const { exchangesWithKey } = storeToRefs(useLocationStore());
-
-const placeholder: () => ExchangePayload = () => ({
-  location: get(exchangesWithKey)[0],
-  name: '',
-  newName: null,
-  apiKey: null,
-  apiSecret: null,
-  passphrase: null,
-  krakenAccountType: 'starter',
-  binanceMarkets: null,
-});
 
 const nonSyncingExchanges = ref<Exchange[]>([]);
-const exchange = ref<ExchangePayload>(placeholder());
-const editMode = ref<boolean>(false);
+const exchange = ref<ExchangeFormData>();
 const sort = ref<DataTableSortColumn<Exchange>>({
   column: 'name',
   direction: 'asc',
 });
 
+const { exchangesWithKey } = storeToRefs(useLocationStore());
 const store = useExchangesStore();
-const { setupExchange, removeExchange } = store;
+const { removeExchange } = store;
 const { connectedExchanges: rows } = storeToRefs(store);
-
 const { nonSyncingExchanges: current } = storeToRefs(useGeneralSettingsStore());
 const { update } = useSettingsStore();
+const { show } = useConfirmStore();
 
 const { t } = useI18n();
+const router = useRouter();
+const route = useRoute('/api-keys/exchanges/');
+const { exchangeName } = useLocations();
 
 const cols = computed<DataTableColumn<Exchange>[]>(() => [
   {
     label: t('common.location'),
     key: 'location',
-    width: '120px',
     align: 'center',
-    cellClass: 'py-0',
+    cellClass: 'py-0 w-32',
   },
   {
     label: t('common.name'),
@@ -48,14 +36,29 @@ const cols = computed<DataTableColumn<Exchange>[]>(() => [
   {
     label: t('exchange_settings.header.sync_enabled'),
     key: 'syncEnabled',
+    cellClass: 'w-32',
   },
   {
     label: t('common.actions_text'),
     key: 'actions',
-    width: '105px',
+    cellClass: 'w-32',
     align: 'center',
   },
 ]);
+
+function createNewExchange(): ExchangeFormData {
+  return {
+    mode: 'add',
+    location: get(exchangesWithKey)[0],
+    name: '',
+    newName: '',
+    apiKey: '',
+    apiSecret: '',
+    passphrase: '',
+    krakenAccountType: 'starter',
+    binanceMarkets: undefined,
+  };
+}
 
 function findNonSyncExchangeIndex(exchange: Exchange) {
   return get(nonSyncingExchanges).findIndex(
@@ -107,57 +110,26 @@ async function toggleSync(exchange: Exchange) {
   resetNonSyncingExchanges();
 }
 
-const { exchangeName } = useLocations();
-
-const { setOpenDialog, closeDialog, setSubmitFunc, setPostSubmitFunc } = useExchangeApiKeysForm();
-
 function addExchange() {
-  set(editMode, false);
-  setOpenDialog(true);
-  set(exchange, placeholder());
+  set(exchange, createNewExchange());
 }
 
 function editExchange(exchangePayload: Exchange) {
-  set(editMode, true);
-  setOpenDialog(true);
   set(exchange, {
-    ...placeholder(),
+    ...createNewExchange(),
     ...exchangePayload,
     newName: exchangePayload.name,
+    mode: 'edit',
   });
 }
 
 function resetForm() {
-  closeDialog();
-  set(exchange, placeholder());
+  set(exchange, createNewExchange());
 }
-
-setPostSubmitFunc(resetForm);
-
-async function setup(): Promise<boolean> {
-  const writeableExchange: Writeable<ExchangePayload> = { ...get(exchange) };
-  if (writeableExchange.name === writeableExchange.newName)
-    writeableExchange.newName = null;
-
-  return await setupExchange({
-    exchange: writeableExchange,
-    edit: get(editMode),
-  });
-}
-
-setSubmitFunc(setup);
 
 async function remove(item: Exchange) {
-  const success = await removeExchange(item);
-
-  if (success)
-    set(exchange, placeholder());
+  await removeExchange(item);
 }
-
-const router = useRouter();
-const route = useRoute('/api-keys/exchanges/');
-
-const { show } = useConfirmStore();
 
 function showRemoveConfirmation(item: Exchange) {
   show({
@@ -252,7 +224,6 @@ onMounted(async () => {
 
     <ExchangeKeysFormDialog
       v-model="exchange"
-      :edit-mode="editMode"
       @reset="resetForm()"
     />
   </TablePageLayout>
