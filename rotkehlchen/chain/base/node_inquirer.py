@@ -2,6 +2,7 @@ import logging
 from typing import TYPE_CHECKING, Literal, cast
 
 from rotkehlchen.chain.constants import DEFAULT_EVM_RPC_TIMEOUT
+from rotkehlchen.chain.evm.base_contracts import BALANCE_SCANNER
 from rotkehlchen.chain.evm.contracts import EvmContracts
 from rotkehlchen.chain.evm.l2_with_l1_fees.node_inquirer import L2WithL1FeesInquirer
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -52,7 +53,7 @@ class BaseInquirer(L2WithL1FeesInquirer):
             contracts=contracts,
             rpc_timeout=rpc_timeout,
             contract_multicall=contracts.contract(string_to_evm_address('0xeDF6D2a16e8081F777eB623EeB4411466556aF3d')),
-            contract_scan=contracts.contract(string_to_evm_address('0x54eCF3f6f61F63fdFE7c27Ee8A86e54899600C92')),
+            contract_scan=BALANCE_SCANNER,
             native_token=A_ETH.resolve_to_crypto_asset(),
             blockscout=Blockscout(
                 blockchain=SupportedBlockchain.BASE,

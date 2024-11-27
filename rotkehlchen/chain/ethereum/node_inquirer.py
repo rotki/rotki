@@ -18,6 +18,7 @@ from rotkehlchen.chain.ethereum.constants import (
     ETHEREUM_ETHERSCAN_NODE,
     PRUNED_NODE_CHECK_TX_HASH,
 )
+from rotkehlchen.chain.evm.base_contracts import BALANCE_SCANNER
 from rotkehlchen.chain.evm.contracts import EvmContracts
 from rotkehlchen.chain.evm.node_inquirer import (
     WEB3_LOGQUERY_BLOCK_RANGE,
@@ -76,7 +77,7 @@ class EthereumInquirer(DSProxyInquirerWithCacheData):
             contracts=contracts,
             rpc_timeout=rpc_timeout,
             contract_multicall=contracts.contract(string_to_evm_address('0x5BA1e12693Dc8F9c48aAD8770482f4739bEeD696')),
-            contract_scan=contracts.contract(string_to_evm_address('0x54eCF3f6f61F63fdFE7c27Ee8A86e54899600C92')),
+            contract_scan=BALANCE_SCANNER,
             dsproxy_registry=contracts.contract(string_to_evm_address('0x4678f0a6958e4D2Bc4F1BAF7Bc52E8F3564f3fE4')),
             native_token=A_ETH.resolve_to_crypto_asset(),
             blockscout=Blockscout(

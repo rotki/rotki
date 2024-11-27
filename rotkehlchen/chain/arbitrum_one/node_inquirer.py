@@ -2,6 +2,7 @@ import logging
 from typing import TYPE_CHECKING, Literal, cast
 
 from rotkehlchen.chain.constants import DEFAULT_EVM_RPC_TIMEOUT
+from rotkehlchen.chain.evm.base_contracts import BALANCE_SCANNER
 from rotkehlchen.chain.evm.contracts import EvmContracts
 from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -52,7 +53,7 @@ class ArbitrumOneInquirer(EvmNodeInquirer):
             contracts=contracts,
             rpc_timeout=rpc_timeout,
             contract_multicall=contracts.contract(string_to_evm_address('0xcA11bde05977b3631167028862bE2a173976CA11')),
-            contract_scan=contracts.contract(string_to_evm_address('0x54eCF3f6f61F63fdFE7c27Ee8A86e54899600C92')),
+            contract_scan=BALANCE_SCANNER,
             native_token=A_ETH.resolve_to_crypto_asset(),
             blockscout=Blockscout(
                 blockchain=SupportedBlockchain.ARBITRUM_ONE,
