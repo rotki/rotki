@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`-` Show the quote amount field in the trades section table.
 * :feature:`-` Add location and address filters for the asset breakdown table in the asset details page.
 * :bug:`-`  Fix the issue where the layout for the “Force Push” setting was misaligned on small screen.
 * :bug:`8916` Coinbase events (trades, deposits/withdrawals, earn etc.) will now be properly pulled after the initial sync.
