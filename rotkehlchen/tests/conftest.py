@@ -167,7 +167,7 @@ def requires_env(allowed_envs: list[TestEnvironment]):
 def get_cassette_dir(request: pytest.FixtureRequest) -> Path:
     """
     Directory structure for cassettes in each test file resembles the file's path
-    e.g. for tests in           `tests/unit/decoders/test_aave.py`
+    e.g. for tests in       `tests/unit/decoders/test_aave.py`
          cassettes are in   `cassettes/unit/decoders/test_aave/`
     """
     return Path(request.node.path).relative_to(TESTS_ROOT_DIR).with_suffix('')
