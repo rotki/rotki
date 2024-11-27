@@ -9,7 +9,7 @@ import {
 } from '@/services/utils';
 import {
   type Exchange,
-  type ExchangePayload,
+  type ExchangeFormData,
   ExchangeSavingsCollectionResponse,
   type ExchangeSavingsRequestPayload,
   Exchanges,
@@ -21,7 +21,7 @@ import type { PendingTask } from '@/types/task';
 interface UseExchangeApiReturn {
   queryRemoveExchange: ({ location, name }: Exchange) => Promise<boolean>;
   queryExchangeBalances: (location: string, ignoreCache?: boolean) => Promise<PendingTask>;
-  querySetupExchange: (payload: ExchangePayload, edit: boolean) => Promise<boolean>;
+  callSetupExchange: (payload: ExchangeFormData) => Promise<boolean>;
   getExchanges: () => Promise<Exchanges>;
   queryBinanceMarkets: (location: string) => Promise<string[]>;
   queryBinanceUserMarkets: (name: string, location: string) => Promise<string[]>;
@@ -55,22 +55,22 @@ export function useExchangeApi(): UseExchangeApiReturn {
     return handleResponse(response);
   };
 
-  const querySetupExchange = async (payload: ExchangePayload, edit: boolean): Promise<boolean> => {
+  const callSetupExchange = async ({ mode, ...payload }: ExchangeFormData): Promise<boolean> => {
     let response: AxiosResponse<ActionResult<boolean>>;
 
-    if (!edit) {
-      response = await api.instance.put<ActionResult<boolean>>(
+    if (mode === 'edit') {
+      response = await api.instance.patch<ActionResult<boolean>>(
         '/exchanges',
-        snakeCaseTransformer(nonEmptyProperties(payload)),
+        snakeCaseTransformer(nonEmptyProperties(payload, true)),
         {
           validateStatus: validStatus,
         },
       );
     }
     else {
-      response = await api.instance.patch<ActionResult<boolean>>(
+      response = await api.instance.put<ActionResult<boolean>>(
         '/exchanges',
-        snakeCaseTransformer(nonEmptyProperties(payload)),
+        snakeCaseTransformer(nonEmptyProperties(payload, true)),
         {
           validateStatus: validStatus,
         },
@@ -157,7 +157,7 @@ export function useExchangeApi(): UseExchangeApiReturn {
   return {
     queryRemoveExchange,
     queryExchangeBalances,
-    querySetupExchange,
+    callSetupExchange,
     getExchanges,
     queryBinanceMarkets,
     queryBinanceUserMarkets,

@@ -1,15 +1,28 @@
-from collections.abc import Sequence
-from typing import TYPE_CHECKING, Optional
+import logging
+from collections.abc import Callable, Sequence
+from typing import TYPE_CHECKING, Any, Literal, Optional
 
 from rotkehlchen.assets.asset import AssetWithSymbol
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
+from rotkehlchen.errors.misc import NotERC20Conformant, NotERC721Conformant
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
+from rotkehlchen.globaldb.cache import (
+    globaldb_get_unique_cache_value,
+    globaldb_set_unique_cache_value,
+)
+from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.types import ChainID, ChecksumEvmAddress
+from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.types import CacheType, ChainID, ChecksumEvmAddress
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
+    from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
+
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 
 def maybe_reshuffle_events(
@@ -108,3 +121,70 @@ def bridge_match_transfer(
         f'Bridge {amount} {asset.symbol} from {from_chain.label()}{from_label} to '
         f'{to_chain.label()}{to_label} via {counterparty.label} bridge'
     )
+
+
+def _update_cache_vault_count(
+        cache_type: Literal[CacheType.MORPHO_VAULTS, CacheType.CURVE_LENDING_VAULTS],
+        count: int | None = None,
+) -> None:
+    """Update the count for the specified cache type."""
+    with GlobalDBHandler().conn.write_ctx() as write_cursor:
+        globaldb_set_unique_cache_value(
+            write_cursor=write_cursor,
+            key_parts=[cache_type],
+            value=str(count) if count is not None else '0',
+        )
+
+
+def update_cached_vaults(
+        database: 'DBHandler',
+        cache_type: Literal[CacheType.MORPHO_VAULTS, CacheType.CURVE_LENDING_VAULTS],
+        display_name: str,
+        query_vault_api: Callable[..., list[dict[str, Any]] | None],
+        process_vault: Callable[['DBHandler', dict[str, Any]], None],
+) -> None:
+    """Update vaults in the cache using the specified query and processing functions.
+    Args:
+        database (DBHandler): Database to be used when processing vaults.
+        cache_type (CacheType): The CacheType to use when storing the vault count.
+        display_name (str): Name to use when logging errors.
+        query_vault_api (Callable): Function to use to get a new vault list from the API.
+            Takes no arguments and returns a list of vault data dicts or None on error
+        process_vault (Callable): Function to use to process the vaults.
+            Must accept the following arguments: a DBHandler and a vault data dict. Returns None.
+            May raise NotERC20Conformant, NotERC721Conformant, DeserializationError, and KeyError.
+    """
+    with GlobalDBHandler().conn.read_ctx() as cursor:
+        last_vault_count = globaldb_get_unique_cache_value(
+            cursor=cursor,
+            key_parts=(cache_type,),
+        )
+
+    if (vault_list := query_vault_api()) is None:
+        _update_cache_vault_count(cache_type=cache_type)  # Update cache timestamp to prevent repeated errors.  # noqa: E501
+        return
+
+    _update_cache_vault_count(cache_type=cache_type, count=(vault_count := len(vault_list)))
+    try:
+        if last_vault_count is not None and vault_count == int(last_vault_count):
+            log.debug(
+                f'Same number ({vault_count}) of {display_name} vaults returned '
+                'from API as previous query. Skipping vault processing.',
+            )
+            return
+    except ValueError:
+        log.error(
+            f'Failed to check last {display_name} vault count '
+            f'due to {last_vault_count} not being an int',
+        )
+        return
+
+    for vault in vault_list:
+        try:
+            process_vault(database, vault)
+        except (NotERC20Conformant, NotERC721Conformant, DeserializationError, KeyError) as e:
+            error = f'missing key {e!s}' if isinstance(e, KeyError) else f'{e!s}'
+            log.error(
+                f'Failed to store token information for {display_name} vault '
+                f'due to {error}. Vault: {vault}. Skipping...',
+            )

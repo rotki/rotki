@@ -58,7 +58,15 @@ export function useSimpleVModel<T, P extends { modelValue: T }, Name extends str
   });
 }
 
-export function useRefPropVModel<P extends object, K extends keyof P>(obj: Ref<P>, key: K): WritableComputedRef<P[K]> {
+export function useRefPropVModel<
+  P extends object,
+  K extends keyof P,
+>(obj: Ref<P>, key: K, options: {
+  transform?: (value: NonNullable<P[K]>) => NonNullable<P[K]>;
+} = {}): WritableComputedRef<P[K]> {
+  const {
+    transform = (value: P[K]): P[K] => value,
+  } = options;
   return computed<P[K]>({
     get() {
       return get(obj)[key];
@@ -66,7 +74,7 @@ export function useRefPropVModel<P extends object, K extends keyof P>(obj: Ref<P
     set(value?: P[K]) {
       set(obj, {
         ...get(obj),
-        [key]: value,
+        [key]: value ? transform(value) : value,
       });
     },
   });

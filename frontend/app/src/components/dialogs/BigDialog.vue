@@ -3,52 +3,47 @@ defineOptions({
   inheritAttrs: false,
 });
 
-const props = withDefaults(
-  defineProps<{
-    title: string;
-    subtitle?: string;
-    display: boolean;
-    loading?: boolean;
-    actionHidden?: boolean;
-    actionDisabled?: boolean;
-    primaryAction?: string;
-    secondaryAction?: string;
-    maxWidth?: string;
-    persistent?: boolean;
-    divide?: boolean;
-    autoHeight?: boolean;
-    promptOnClose?: boolean;
-  }>(),
-  {
-    subtitle: '',
-    loading: false,
-    actionHidden: false,
-    actionDisabled: false,
-    primaryAction: undefined,
-    secondaryAction: undefined,
-    maxWidth: '900px',
-    persistent: false,
-    divide: false,
-    autoHeight: false,
-    promptOnClose: false,
-  },
-);
+const props = withDefaults(defineProps<{
+  title: string;
+  subtitle?: string;
+  display: boolean;
+  loading?: boolean;
+  actionHidden?: boolean;
+  actionDisabled?: boolean;
+  primaryAction?: string;
+  secondaryAction?: string;
+  maxWidth?: string;
+  persistent?: boolean;
+  divide?: boolean;
+  autoHeight?: boolean;
+  promptOnClose?: boolean;
+}>(), {
+  subtitle: '',
+  loading: false,
+  actionHidden: false,
+  actionDisabled: false,
+  primaryAction: undefined,
+  secondaryAction: undefined,
+  maxWidth: '900px',
+  persistent: false,
+  divide: false,
+  autoHeight: false,
+  promptOnClose: false,
+});
 const emit = defineEmits<{
   (event: 'confirm'): void;
   (event: 'cancel'): void;
 }>();
 
-const { t } = useI18n();
-
 const { subtitle, primaryAction, secondaryAction, display, promptOnClose } = toRefs(props);
-const wrapper = ref<HTMLElement>();
+
+const wrapper = useTemplateRef('wrapper');
+
+const { show } = useConfirmStore();
+const { t } = useI18n();
 
 const primary = computed(() => get(primaryAction) || t('common.actions.confirm'));
 const secondary = computed(() => get(secondaryAction) || t('common.actions.cancel'));
-
-const confirm = () => emit('confirm');
-const cancel = () => emit('cancel');
-
 const displayModel = computed({
   get() {
     return get(display);
@@ -59,23 +54,26 @@ const displayModel = computed({
   },
 });
 
-const { show } = useConfirmStore();
+function confirm() {
+  return emit('confirm');
+}
+
+function cancel() {
+  return emit('cancel');
+}
 
 function promptClose() {
   if (!get(promptOnClose))
     return;
 
-  show(
-    {
-      title: 'You have unsave changes',
-      message: 'Are you sure you want to discard the changes?',
-      type: 'info',
-      primaryAction: 'Discard',
-    },
-    async () => {
-      set(displayModel, false);
-    },
-  );
+  show({
+    title: t('big_dialog.prompt_close.title'),
+    message: t('big_dialog.prompt_close.message'),
+    type: 'info',
+    primaryAction: t('big_dialog.prompt_close.actions.discard'),
+  }, async () => {
+    set(displayModel, false);
+  });
 }
 </script>
 

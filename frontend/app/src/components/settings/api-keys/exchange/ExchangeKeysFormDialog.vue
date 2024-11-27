@@ -1,39 +1,59 @@
 <script setup lang="ts">
-import type { ExchangePayload } from '@/types/exchanges';
+import type { ExchangeFormData } from '@/types/exchanges.ts';
+import type { ComponentExposed } from 'vue-component-type-helpers';
+import type ExchangeKeysForm from '@/components/settings/api-keys/exchange/ExchangeKeysForm.vue';
 
-const model = defineModel<ExchangePayload>({ required: true });
+const modelValue = defineModel<ExchangeFormData | undefined>({ required: true });
 
-defineProps<{
-  editMode: boolean;
-}>();
+const submitting = ref<boolean>(false);
+const stateUpdated = ref<boolean>(false);
+const form = useTemplateRef<ComponentExposed<typeof ExchangeKeysForm>>('form');
 
-const emit = defineEmits<{
-  (e: 'reset'): void;
-}>();
-
+const { setupExchange } = useExchangesStore();
 const { t } = useI18n();
 
-const { openDialog, submitting, trySubmit, stateUpdated } = useExchangeApiKeysForm();
+const title = computed<string>(() => {
+  if (!isDefined(modelValue)) {
+    return '';
+  }
+  const { mode } = get(modelValue);
+  return mode === 'edit' ? t('exchange_settings.dialog.edit.title') : t('exchange_settings.dialog.add.title');
+});
 
-function resetForm() {
-  emit('reset');
+async function save(): Promise<void> {
+  assert(isDefined(modelValue));
+  if (await get(form)?.validate() !== true) {
+    return;
+  }
+  set(submitting, true);
+  const exchange = get(modelValue);
+  const success = await setupExchange({
+    ...exchange,
+    newName: exchange.name === exchange.newName ? '' : exchange.newName,
+  });
+
+  set(submitting, false);
+  if (success)
+    set(modelValue, undefined);
 }
 </script>
 
 <template>
   <BigDialog
-    :display="openDialog"
-    :title="editMode ? t('exchange_settings.dialog.edit.title') : t('exchange_settings.dialog.add.title')"
+    :display="!!modelValue"
+    :title="title"
     :primary-action="t('common.actions.save')"
     :secondary-action="t('common.actions.cancel')"
     :loading="submitting"
     :prompt-on-close="stateUpdated"
-    @confirm="trySubmit()"
-    @cancel="resetForm()"
+    @confirm="save()"
+    @cancel="modelValue = undefined"
   >
     <ExchangeKeysForm
-      v-model="model"
-      :edit-mode="editMode"
+      v-if="!!modelValue"
+      ref="form"
+      v-model="modelValue"
+      v-model:state-updated="stateUpdated"
     />
   </BigDialog>
 </template>
