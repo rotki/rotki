@@ -1,4 +1,4 @@
-import type { EditExchange, Exchange, ExchangeSetupPayload } from '@/types/exchanges';
+import type { EditExchange, Exchange, ExchangeFormData } from '@/types/exchanges';
 
 export const useExchangesStore = defineStore('exchanges', () => {
   const exchangeBalancesStore = useExchangeBalancesStore();
@@ -8,7 +8,7 @@ export const useExchangesStore = defineStore('exchanges', () => {
   const { setConnectedExchanges } = sessionStore;
   const { connectedExchanges } = storeToRefs(sessionStore);
 
-  const { queryRemoveExchange, querySetupExchange } = useExchangeApi();
+  const { queryRemoveExchange, callSetupExchange } = useExchangeApi();
   const { setMessage } = useMessageStore();
 
   const { t } = useI18n();
@@ -82,28 +82,29 @@ export const useExchangesStore = defineStore('exchanges', () => {
     }
   };
 
-  const setupExchange = async ({ exchange, edit }: ExchangeSetupPayload): Promise<boolean> => {
+  const setupExchange = async (exchange: ExchangeFormData): Promise<boolean> => {
     try {
-      const success = await querySetupExchange(exchange, edit);
+      const success = await callSetupExchange(exchange);
+      const { mode, name, newName, location, krakenAccountType } = exchange;
       const exchangeEntry: Exchange = {
-        name: exchange.name,
-        location: exchange.location,
-        krakenAccountType: exchange.krakenAccountType ?? undefined,
+        name,
+        location,
+        krakenAccountType,
       };
 
-      if (!edit) {
+      if (mode !== 'edit') {
         addExchange(exchangeEntry);
       }
       else {
         editExchange({
           exchange: exchangeEntry,
-          newName: exchange.newName,
+          newName,
         });
       }
 
       startPromise(
         fetchExchangeBalances({
-          location: exchange.location,
+          location,
           ignoreCache: false,
         }),
       );

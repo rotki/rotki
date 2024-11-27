@@ -20,6 +20,15 @@
     "release_notes": "What's new",
     "user_agent": "User Agent:"
   },
+  "big_dialog": {
+    "prompt_close": {
+      "title": "You have unsaved changes",
+      "message": "Are you sure you want to discard the changes?",
+      "actions": {
+        "discard": "Discard"
+      }
+    }
+  },
   "eth_validator_combined_filter": {
     "status": "Filter by the status of the validator"
   },

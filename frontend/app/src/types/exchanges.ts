@@ -1,4 +1,4 @@
-import { AssetBalance, type BigNumber, type Nullable, NumericString } from '@rotki/common';
+import { AssetBalance, type BigNumber, NumericString } from '@rotki/common';
 import { z } from 'zod';
 import { type Collection, CollectionCommonFields } from '@/types/collection';
 import type { AssetBalances } from '@/types/balances';
@@ -30,7 +30,7 @@ export type ExchangeData = Record<string, AssetBalances>;
 
 export interface EditExchange {
   readonly exchange: Exchange;
-  readonly newName: Nullable<string>;
+  readonly newName?: string;
 }
 
 export interface ExchangeSetupPayload {
@@ -40,13 +40,17 @@ export interface ExchangeSetupPayload {
 
 export interface ExchangePayload {
   readonly name: string;
-  readonly newName: Nullable<string>;
   readonly location: string;
-  readonly apiKey: Nullable<string>;
-  readonly apiSecret: Nullable<string>;
-  readonly passphrase: Nullable<string>;
-  readonly krakenAccountType: Nullable<KrakenAccountType>;
-  readonly binanceMarkets: Nullable<string[]>;
+  readonly apiKey: string;
+  readonly apiSecret: string;
+  readonly passphrase: string;
+  readonly krakenAccountType?: KrakenAccountType;
+  readonly binanceMarkets?: string[];
+}
+
+export interface ExchangeFormData extends ExchangePayload {
+  readonly mode: 'edit' | 'add';
+  readonly newName: string;
 }
 
 const ExchangeSavingsEvent = AssetBalance.extend({

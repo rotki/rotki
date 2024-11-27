@@ -1,83 +1,36 @@
 <script setup lang="ts">
 import { helpers, requiredIf, requiredUnless } from '@vuelidate/validators';
-import { type ExchangePayload, KrakenAccountType } from '@/types/exchanges';
+import useVuelidate from '@vuelidate/core';
+import { type ExchangeFormData, KrakenAccountType } from '@/types/exchanges';
 import { toMessages } from '@/utils/validation';
-import type { Writeable } from '@rotki/common';
+import { useRefPropVModel } from '@/utils/model';
 
-const props = defineProps<{
-  modelValue: ExchangePayload;
-  editMode: boolean;
-}>();
+const modelValue = defineModel<ExchangeFormData>({ required: true });
 
-const emit = defineEmits<{
-  (e: 'update:model-value', value: ExchangePayload): void;
-}>();
+const stateUpdated = defineModel<boolean>('stateUpdated', { required: true });
 
-const { editMode, modelValue } = toRefs(props);
-const editKeys = ref(false);
+const editKeys = ref<boolean>(false);
 
-const name = computed({
-  get() {
-    return props.modelValue.name ?? '';
-  },
-  set(value?: string) {
-    updateModelValue({ ...props.modelValue, newName: value ?? null });
-  },
-});
-
-const apiKey = computed({
-  get() {
-    return props.modelValue.apiKey ?? '';
-  },
-  set(value?: string) {
-    updateModelValue({ ...props.modelValue, apiKey: value ?? null });
-  },
-});
-
-const apiSecret = computed({
-  get() {
-    return props.modelValue.apiSecret ?? '';
-  },
-  set(value?: string) {
-    updateModelValue({ ...props.modelValue, apiSecret: value ?? null });
-  },
-});
-
-const passphrase = computed({
-  get() {
-    return props.modelValue.passphrase ?? '';
-  },
-  set(value?: string) {
-    updateModelValue({ ...props.modelValue, passphrase: value ?? null });
-  },
-});
-
-const krakenAccountType = computed<KrakenAccountType | undefined>({
-  get() {
-    return props.modelValue.krakenAccountType ?? undefined;
-  },
-  set(value?: KrakenAccountType) {
-    updateModelValue({ ...props.modelValue, krakenAccountType: value ?? null });
-  },
-});
+const coinbaseApiKeyNameFormat = 'organizations/{org_id}/apiKeys/{key_id}';
+const coinbasePrivateKeyFormat = '-----BEGIN EC PRIVATE KEY-----\\n{KEY}\\n-----END EC PRIVATE KEY-----\\n';
 
 const { getExchangeNonce } = useExchangesStore();
 const { exchangesWithPassphrase, exchangesWithoutApiSecret } = storeToRefs(useLocationStore());
+const { getLocationData } = useLocations();
 const { t, te } = useI18n();
 
 const requiresApiSecret = computed(() => {
-  const { location } = props.modelValue;
-
+  const { location } = get(modelValue);
   return !get(exchangesWithoutApiSecret).includes(location);
 });
 
 const requiresPassphrase = computed(() => {
-  const { location } = props.modelValue;
+  const { location } = get(modelValue);
   return get(exchangesWithPassphrase).includes(location);
 });
 
 const isBinance = computed(() => {
-  const { location } = props.modelValue;
+  const { location } = get(modelValue);
   return ['binance', 'binanceus'].includes(location);
 });
 
@@ -86,7 +39,40 @@ const isCoinbase = computed(() => {
   return ['coinbase'].includes(location);
 });
 
-const { getLocationData } = useLocations();
+const editMode = computed<boolean>(() => get(modelValue).mode === 'edit');
+
+const nameProp = useRefPropVModel(modelValue, 'name');
+const newNameProp = useRefPropVModel(modelValue, 'newName');
+const apiKey = useRefPropVModel(modelValue, 'apiKey');
+const apiSecret = useRefPropVModel(modelValue, 'apiSecret', {
+  transform(value) {
+    return get(isCoinbase) ? value.replace(/\\n/g, '\n') : value;
+  },
+});
+const passphrase = useRefPropVModel(modelValue, 'passphrase');
+const krakenAccountType = useRefPropVModel(modelValue, 'krakenAccountType');
+
+const name = computed<string>({
+  get() {
+    return get(editMode) ? get(newNameProp) : get(nameProp);
+  },
+  set(value?: string) {
+    if (get(editMode)) {
+      set(newNameProp, value);
+    }
+    else {
+      set(nameProp, value);
+    }
+  },
+});
+
+useFormStateWatcher({
+  name,
+  apiKey,
+  apiSecret,
+  passphrase,
+  krakenAccountType,
+}, stateUpdated);
 
 const suggestedName = function (exchange: string): string {
   const location = getLocationData(exchange);
@@ -98,34 +84,13 @@ function toggleEdit() {
   set(editKeys, !get(editKeys));
 
   if (!get(editKeys)) {
-    updateModelValue({
-      ...props.modelValue,
-      apiSecret: null,
-      apiKey: null,
+    set(modelValue, {
+      ...get(modelValue),
+      apiSecret: '',
+      apiKey: '',
     });
   }
 }
-
-function updateModelValue(payload: ExchangePayload) {
-  const newPayload: Writeable<ExchangePayload> = {
-    ...payload,
-  };
-
-  if (get(isCoinbase) && payload.apiSecret)
-    newPayload.apiSecret = payload.apiSecret.replace(/\\n/g, '\n');
-
-  emit('update:model-value', newPayload);
-}
-
-onMounted(() => {
-  if (get(editMode))
-    return;
-
-  updateModelValue({
-    ...props.modelValue,
-    name: suggestedName(props.modelValue.location),
-  });
-});
 
 const krakenAccountTypes = KrakenAccountType.options.map((item) => {
   const translationKey = `backend_mappings.exchanges.kraken.type.${item}`;
@@ -137,17 +102,26 @@ const krakenAccountTypes = KrakenAccountType.options.map((item) => {
   };
 });
 
-const sensitiveFieldEditable = computed(() => !get(editMode) || get(editKeys));
+const sensitiveFieldEditable = logicOr(logicNot(editMode), editKeys);
 
-const rules = {
+const v$ = useVuelidate({
   name: {
-    required: helpers.withMessage(t('exchange_keys_form.name.non_empty'), requiredUnless(editMode)),
+    required: helpers.withMessage(
+      t('exchange_keys_form.name.non_empty'),
+      requiredUnless(editMode),
+    ),
   },
   newName: {
-    required: helpers.withMessage(t('exchange_keys_form.name.non_empty'), requiredIf(editMode)),
+    required: helpers.withMessage(
+      t('exchange_keys_form.name.non_empty'),
+      requiredIf(editMode),
+    ),
   },
   apiKey: {
-    required: helpers.withMessage(t('exchange_keys_form.api_key.non_empty'), requiredIf(sensitiveFieldEditable)),
+    required: helpers.withMessage(
+      t('exchange_keys_form.api_key.non_empty'),
+      requiredIf(sensitiveFieldEditable),
+    ),
   },
   apiSecret: {
     required: helpers.withMessage(
@@ -161,23 +135,20 @@ const rules = {
       requiredIf(logicAnd(sensitiveFieldEditable, requiresPassphrase)),
     ),
   },
-};
-
-const { setValidation } = useExchangeApiKeysForm();
-
-const v$ = setValidation(rules, modelValue, { $autoDirty: true });
+}, modelValue, { $autoDirty: true });
 
 function onExchangeChange(exchange?: string) {
   const name = exchange ?? '';
-  updateModelValue({
+  set(modelValue, {
+    mode: get(modelValue, 'mode'),
     name: suggestedName(name),
-    newName: null,
+    newName: '',
     location: name,
-    apiKey: null,
-    apiSecret: get(exchangesWithoutApiSecret).includes(name) ? '' : null,
-    passphrase: null,
-    krakenAccountType: name === 'kraken' ? 'starter' : null,
-    binanceMarkets: null,
+    apiKey: '',
+    apiSecret: '',
+    passphrase: '',
+    krakenAccountType: name === 'kraken' ? 'starter' : undefined,
+    binanceMarkets: undefined,
   });
 
   nextTick(() => {
@@ -185,8 +156,22 @@ function onExchangeChange(exchange?: string) {
   });
 }
 
-const coinbaseApiKeyNameFormat = 'organizations/{org_id}/apiKeys/{key_id}';
-const coinbasePrivateKeyFormat = '-----BEGIN EC PRIVATE KEY-----\\n{KEY}\\n-----END EC PRIVATE KEY-----\\n';
+onMounted(() => {
+  if (get(editMode)) {
+    set(newNameProp, get(nameProp));
+    return;
+  }
+
+  const model = get(modelValue);
+  set(modelValue, {
+    ...model,
+    name: suggestedName(model.location),
+  });
+});
+
+defineExpose({
+  validate: async (): Promise<boolean> => await get(v$).$validate(),
+});
 </script>
 
 <template>
@@ -205,24 +190,12 @@ const coinbasePrivateKeyFormat = '-----BEGIN EC PRIVATE KEY-----\\n{KEY}\\n-----
       />
 
       <RuiTextField
-        v-if="editMode"
         v-model="name"
         variant="outlined"
         color="primary"
-        :error-messages="toMessages(v$.newName)"
+        :error-messages="editMode ? toMessages(v$.newName) : toMessages(v$.name)"
         data-cy="name"
         :label="t('common.name')"
-      />
-
-      <RuiTextField
-        v-else
-        variant="outlined"
-        color="primary"
-        :model-value="modelValue.name"
-        :error-messages="toMessages(v$.name)"
-        data-cy="name"
-        :label="t('common.name')"
-        @update:model-value="updateModelValue({ ...modelValue, name: $event })"
       />
     </div>
 
@@ -306,7 +279,7 @@ const coinbasePrivateKeyFormat = '-----BEGIN EC PRIVATE KEY-----\\n{KEY}\\n-----
       v-if="isBinance"
       :name="modelValue.name"
       :location="modelValue.location"
-      @update:selection="updateModelValue({ ...modelValue, binanceMarkets: $event })"
+      @update:selection="modelValue = { ...modelValue, binanceMarkets: $event }"
     />
   </div>
 </template>
