@@ -37,7 +37,7 @@ from rotkehlchen.accounting.export.csv import (
     dict_to_csv_file,
 )
 from rotkehlchen.accounting.pot import AccountingPot
-from rotkehlchen.accounting.structures.balance import Balance, BalanceType
+from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet, BalanceType
 from rotkehlchen.accounting.structures.processed_event import AccountingEventExportType
 from rotkehlchen.accounting.structures.types import ActionType
 from rotkehlchen.api.v1.schemas import TradeSchema
@@ -851,23 +851,39 @@ class RestAPI:
                 blockchain=blockchain,
                 ignore_cache=ignore_cache,
             )
+
+            # Filter balances before serialization
+            if usd_value_threshold is not None:
+                for _, chain_balances in balances.per_account:
+                    filtered_balances = {}
+                    for account, account_data in chain_balances.items():
+                        if isinstance(account_data, BalanceSheet):
+                            filtered_assets = {
+                                asset: balance for asset, balance in account_data.assets.items()
+                                if balance.usd_value > usd_value_threshold
+                            }
+                            if len(filtered_assets) != 0:
+                                new_balance_sheet = BalanceSheet()
+                                new_balance_sheet.assets = defaultdict(Balance,
+                                filtered_assets)  # Convert to defaultdict
+                                filtered_balances[account] = new_balance_sheet
+                        elif isinstance(account_data, Balance):
+                            # For BTC and BCH, account_data is a single Balance object
+                            if account_data.usd_value > usd_value_threshold:
+                                filtered_balances[account] = BalanceSheet(assets=defaultdict(
+                                    Balance, {account: account_data}))  # Wrap in BalanceSheet
+
+                    chain_balances.clear()
+                    chain_balances.update(filtered_balances)
+
+            result = balances.serialize()
+
         except EthSyncError as e:
             msg = str(e)
             status_code = HTTPStatus.CONFLICT
         except RemoteError as e:
             msg = str(e)
             status_code = HTTPStatus.BAD_GATEWAY
-        else:
-            result = balances.serialize()
-            # Filter balances by threshold after serialization
-            if usd_value_threshold is not None and result is not None:
-                # Filter per chain balances
-                for chain, chain_balances in result.items():
-                    result[chain] = {
-                        asset: balance for asset, balance in chain_balances.items()
-                        if 'usd_value' in balance and FVal(balance['usd_value']) >
-                        usd_value_threshold
-                    }
 
         return {'result': result, 'message': msg, 'status_code': status_code}
 
@@ -2090,19 +2106,18 @@ class RestAPI:
 
     def _get_manually_tracked_balances(self, usd_value_threshold: FVal | None) -> dict[str, Any]:
         db_entries = get_manually_tracked_balances(db=self.rotkehlchen.data.db, balance_type=None)
+        # Filter balances if threshold is set
+        if usd_value_threshold is not None:
+            db_entries = [
+                entry for entry in db_entries
+                if entry.value.usd_value > usd_value_threshold
+            ]
+
         balances = process_result(
             {
                 'balances': db_entries,
             },
         )
-        # Filter balances if threshold is set
-        if usd_value_threshold is not None:
-            balances['balances'] = [
-                balance for balance in balances['balances']
-                if 'usd_value' in balance and FVal(balance['usd_value']) >
-                  usd_value_threshold
-            ]
-
         return _wrap_in_ok_result(balances)
 
     @async_api_call()

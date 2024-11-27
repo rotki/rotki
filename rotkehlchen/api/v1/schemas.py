@@ -178,9 +178,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 class AssetValueThresholdSchema(Schema):
-    usd_value_threshold = AmountField(
-        load_default=None,
-    )
+    usd_value_threshold = AmountField(load_default=None)
 
 
 class AsyncQueryArgumentSchema(Schema):

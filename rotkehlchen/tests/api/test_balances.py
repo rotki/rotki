@@ -1043,48 +1043,39 @@ def test_query_balances_with_threshold(
     with ExitStack() as stack:
         setup.enter_all_patches(stack)
 
-        # Test blockchain balances
-        response = requests.get(
-            api_url_for(
-                rotkehlchen_api_server_with_exchanges,
-                'blockchainbalancesresource',
-            ),
-            params={'usd_value_threshold': threshold},
-        )
-        blockchain_result = assert_proper_sync_response_with_result(response)
+        results = []
+        for endpoint in (
+            'blockchainbalancesresource',
+            'exchangebalancesresource',
+            'manuallytrackedbalancesresource',
+        ):
+            response = requests.get(
+                api_url_for(
+                    rotkehlchen_api_server_with_exchanges,
+                    endpoint,
+                ),
+               params={'usd_value_threshold': threshold},
+            )
+            results.append(assert_proper_sync_response_with_result(response))
 
-        # Test exchange balances
-        response = requests.get(
-            api_url_for(
-                rotkehlchen_api_server_with_exchanges,
-                'exchangebalancesresource',
-            ),
-            params={'usd_value_threshold': threshold},
-        )
-        exchange_result = assert_proper_sync_response_with_result(response)
-
-        # Test manual balances
-        response = requests.get(
-            api_url_for(
-                rotkehlchen_api_server_with_exchanges,
-                'manuallytrackedbalancesresource',
-            ),
-            params={'usd_value_threshold': threshold},
-        )
-        manual_result = assert_proper_sync_response_with_result(response)
+        blockchain_result, exchange_result, manual_result = results
 
         # Assert blockchain balances
-        for chain in blockchain_result['per_account']:
-            for account in blockchain_result['per_account'][chain]:
-                assets = blockchain_result['per_account'][chain][account]['assets']
-                for balance in assets.values():
-                    assert FVal(balance['usd_value']) > FVal(threshold)
+        if len(blockchain_result['per_account']) > 0:  # If any balances remain after filtering
+            for chain in blockchain_result['per_account']:
+                for account in blockchain_result['per_account'][chain]:
+                    assets = blockchain_result['per_account'][chain][account]['assets']
+                    for balance in assets.values():
+                        assert FVal(balance['usd_value']) > FVal(threshold)
 
         # Assert exchange balances
+        assert len(exchange_result) != 0
         for exchange in exchange_result:
+            assert len(exchange_result[exchange]) != 0
             for balance in exchange_result[exchange].values():
                 assert FVal(balance['usd_value']) > FVal(threshold)
 
         # Assert manual balances
+        assert len(manual_result['balances']) != 0
         for balance in manual_result['balances']:
             assert FVal(balance['usd_value']) > FVal(threshold)
