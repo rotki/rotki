@@ -101,7 +101,7 @@ const tableHeaders = computed<DataTableColumn<NonFungibleBalance>[]>(() => {
 });
 
 function percentageOfTotalNetValue(value: BigNumber) {
-  return calculatePercentage(value, get(totalNetWorthUsd) as BigNumber);
+  return calculatePercentage(value, get(totalNetWorthUsd));
 }
 
 function percentageOfCurrentGroup(value: BigNumber) {
@@ -139,23 +139,7 @@ watch(loading, async (isLoading, wasLoading) => {
       </RouterLink>
     </template>
     <template #details>
-      <RuiMenu
-        id="nft_balance_table__column-filter"
-        menu-class="max-w-[15rem]"
-        :popper="{ placement: 'bottom-end' }"
-      >
-        <template #activator="{ attrs }">
-          <MenuTooltipButton
-            :tooltip="t('dashboard_asset_table.select_visible_columns')"
-            class-name="nft_balance_table__column-filter__button"
-            custom-color
-            v-bind="attrs"
-          >
-            <RuiIcon name="more-2-fill" />
-          </MenuTooltipButton>
-        </template>
-        <VisibleColumnsSelector :group="group" />
-      </RuiMenu>
+      <VisibleColumnsSelector :group="group" />
     </template>
     <template #shortDetails>
       <AmountDisplay

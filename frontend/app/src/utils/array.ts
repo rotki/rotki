@@ -7,8 +7,11 @@
  * arrayify(['test']); // ['test']
  */
 export function arrayify<T>(item: T | T[]): T[] {
-  if (!Array.isArray(item))
-    return [item];
+  if (!Array.isArray(item)) {
+    if (item)
+      return [item];
+    return [];
+  }
 
   return item;
 }

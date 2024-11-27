@@ -7,6 +7,7 @@ import AccountBalances from '@/components/accounts/AccountBalances.vue';
 import EthStakingValidators from '@/components/accounts/EthStakingValidators.vue';
 import { Module } from '@/types/modules';
 import { NoteLocation } from '@/types/notes';
+import { DashboardTableType } from '@/types/settings/frontend-settings';
 import type { RouteLocationRaw } from 'vue-router';
 import type { ComponentExposed } from 'vue-component-type-helpers';
 
@@ -28,6 +29,7 @@ const { tab } = toRefs(props);
 const account = ref<AccountManageState>();
 const balances = ref<ComponentExposed<typeof AccountBalances>>();
 const search = ref('');
+const chainsFilter = ref<string[]>([]);
 
 const { t } = useI18n();
 const router = useRouter();
@@ -36,12 +38,14 @@ const route = useRoute('accounts-balances-blockchain');
 const { blockchainAssets } = useBlockchainAggregatedBalances();
 const { isBlockchainLoading } = useAccountLoading();
 const { isModuleEnabled } = useModules();
-
-const isEth2Enabled = isModuleEnabled(Module.ETH2);
-
-const { unifyAccountsTable } = storeToRefs(useFrontendSettingsStore());
+const { unifyAccountsTable, dashboardTablesVisibleColumns } = storeToRefs(useFrontendSettingsStore());
 const { supportedChains } = useSupportedChains();
 const { groups } = storeToRefs(useBlockchainStore());
+
+const tableType = DashboardTableType.BLOCKCHAIN_ASSET_BALANCES;
+
+const isEth2Enabled = isModuleEnabled(Module.ETH2);
+const aggregatedBalances = blockchainAssets(chainsFilter);
 
 const categories = computed(() => {
   if (get(unifyAccountsTable))
@@ -124,19 +128,36 @@ watchImmediate(route, (route) => {
 
     <div class="flex flex-col gap-8">
       <RuiCard>
-        <div class="pb-6 flex flex-wrap gap-3 items-center justify-between">
-          <CardTitle>{{ t('blockchain_balances.title') }}</CardTitle>
-          <RuiTextField
-            v-model="search"
-            variant="outlined"
-            color="primary"
-            dense
-            prepend-icon="search-line"
-            :label="t('common.actions.search')"
-            hide-details
-            clearable
-            class="w-[28rem]"
-            @click:clear="search = ''"
+        <div class="pb-6 flex flex-wrap lg:flex-nowrap justify-between gap-2 items-center">
+          <CardTitle class="order-0 whitespace-nowrap">
+            {{ t('blockchain_balances.title') }}
+          </CardTitle>
+          <div class="order-3 lg:order-1 flex flex-wrap md:flex-nowrap grow justify-end w-full lg:w-auto items-center gap-2 overflow-hidden pt-1.5 -mt-1 lg:pl-6">
+            <ChainSelect
+              v-model="chainsFilter"
+              class="w-full lg:w-[30rem]"
+              dense
+              hide-details
+              clearable
+              chips
+            />
+            <RuiTextField
+              v-model="search"
+              variant="outlined"
+              color="primary"
+              dense
+              prepend-icon="search-line"
+              :label="t('common.actions.search')"
+              hide-details
+              clearable
+              class="w-full lg:w-[16rem]"
+              @click:clear="search = ''"
+            />
+          </div>
+          <VisibleColumnsSelector
+            class="order-2"
+            :group="tableType"
+            :group-label="t('blockchain_balances.group_label')"
           />
         </div>
 
@@ -147,9 +168,12 @@ watchImmediate(route, (route) => {
         <AssetBalances
           data-cy="blockchain-asset-balances"
           :loading="isBlockchainLoading"
-          :title="t('blockchain_balances.per_asset.title')"
-          :balances="blockchainAssets"
+          :balances="aggregatedBalances"
           :search="search"
+          :details="{
+            chains: chainsFilter,
+          }"
+          :visible-columns="dashboardTablesVisibleColumns[tableType]"
           sticky-header
         />
       </RuiCard>
@@ -199,7 +223,6 @@ watchImmediate(route, (route) => {
           :key="tab"
           ref="balances"
           :category="tab"
-          :search="search"
           @edit="account = $event"
         />
 

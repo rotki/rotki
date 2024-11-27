@@ -87,7 +87,7 @@ const statistics = useStatisticsStore();
 const { totalNetWorthUsd } = storeToRefs(statistics);
 
 function percentageOfTotalNetValue(value: BigNumber) {
-  const netWorth = get(totalNetWorthUsd) as BigNumber;
+  const netWorth = get(totalNetWorthUsd);
   const total = netWorth.lt(0) ? get(totalInUsd) : netWorth;
   return calculatePercentage(value, total);
 }
@@ -149,26 +149,10 @@ const getAssets = (assets: XswapAsset[]) => assets.map(({ asset }) => asset);
       </RouterLink>
     </template>
     <template #details>
-      <RuiMenu
-        id="liquidity-provider-balance-table__column-filter"
-        menu-class="max-w-[15rem]"
-        :popper="{ placement: 'bottom-end' }"
-      >
-        <template #activator="{ attrs }">
-          <MenuTooltipButton
-            :tooltip="t('dashboard_asset_table.select_visible_columns')"
-            class-name="liquidity-provider-balance-table__column-filter__button"
-            custom-color
-            v-bind="attrs"
-          >
-            <RuiIcon name="more-2-fill" />
-          </MenuTooltipButton>
-        </template>
-        <VisibleColumnsSelector
-          :group="LIQUIDITY_POSITION"
-          :group-label="t('dashboard.liquidity_position.title')"
-        />
-      </RuiMenu>
+      <VisibleColumnsSelector
+        :group="LIQUIDITY_POSITION"
+        :group-label="t('dashboard.liquidity_position.title')"
+      />
     </template>
     <template #shortDetails>
       <AmountDisplay

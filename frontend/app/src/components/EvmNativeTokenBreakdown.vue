@@ -9,8 +9,8 @@ const props = withDefaults(
     identifier: string;
     assets: string[];
     details?: {
-      groupId: string;
-      chains: string[];
+      groupId?: string;
+      chains?: string[];
     };
     blockchainOnly?: boolean;
     showPercentage?: boolean;

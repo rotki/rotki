@@ -17,6 +17,8 @@ import type { Collection } from '@/types/collection';
 import type { BlockchainTotal } from '@/types/blockchain';
 import type { BlockchainBalances, BlockchainTotals } from '@/types/blockchain/balances';
 import type { AssetPrices } from '@/types/prices';
+import type { Ref } from 'vue';
+import type { AssetBalances } from '@/types/balances';
 
 export const useBlockchainStore = defineStore('blockchain', () => {
   const accounts = ref<Accounts>({});
@@ -38,6 +40,8 @@ export const useBlockchainStore = defineStore('blockchain', () => {
 
   const aggregatedTotals = aggregateTotals(balances);
   const aggregatedLiabilities = aggregateTotals(balances, 'liabilities');
+
+  const aggregatedTotalsWithFilter = (chains: MaybeRef<string[]>): Readonly<Ref<AssetBalances>> => aggregateTotals(balances, 'assets', chains);
 
   const groups = computed<BlockchainAccountGroupWithBalance[]>(() => {
     const accountData = objectOmit(get(accounts), [Blockchain.ETH2]);
@@ -352,6 +356,7 @@ export const useBlockchainStore = defineStore('blockchain', () => {
     groups,
     aggregatedTotals,
     aggregatedLiabilities,
+    aggregatedTotalsWithFilter,
     blockchainAccounts,
     blockchainAccountList,
     blockchainTotals,

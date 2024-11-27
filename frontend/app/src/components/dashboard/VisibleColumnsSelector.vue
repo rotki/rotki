@@ -59,28 +59,41 @@ function update(value: TableColumn) {
 </script>
 
 <template>
-  <div class="py-2">
-    <template
-      v-for="item in availableColumns"
-      :key="item.value"
-    >
-      <RuiButton
-        variant="list"
-        size="sm"
-        :model-value="item.value"
-        @click="update(item.value)"
+  <RuiMenu
+    menu-class="max-w-[15rem]"
+    :popper="{ placement: 'bottom-end' }"
+  >
+    <template #activator="{ attrs }">
+      <MenuTooltipButton
+        :tooltip="t('dashboard_asset_table.select_visible_columns')"
+        v-bind="attrs"
       >
-        <template #prepend>
-          <RuiCheckbox
-            class="-mr-2"
-            color="primary"
-            hide-details
-            :model-value="active(item.value)"
-            @update:model-value="update(item.value)"
-          />
-        </template>
-        {{ item.text }}
-      </RuiButton>
+        <RuiIcon name="more-2-fill" />
+      </MenuTooltipButton>
     </template>
-  </div>
+    <div class="py-2">
+      <template
+        v-for="item in availableColumns"
+        :key="item.value"
+      >
+        <RuiButton
+          variant="list"
+          size="sm"
+          :model-value="item.value"
+          @click="update(item.value)"
+        >
+          <template #prepend>
+            <RuiCheckbox
+              class="-mr-2"
+              color="primary"
+              hide-details
+              :model-value="active(item.value)"
+              @update:model-value="update(item.value)"
+            />
+          </template>
+          {{ item.text }}
+        </RuiButton>
+      </template>
+    </div>
+  </RuiMenu>
 </template>

@@ -1411,9 +1411,6 @@
       "edit_subtitle": "Modifier les détails du compte",
       "edit_title": "Modifier le compte blockchain"
     },
-    "per_asset": {
-      "title": "Solde blockchain par actif"
-    },
     "title": "Solde blockchain par actif"
   },
   "borrowing": {

@@ -52,7 +52,7 @@ const avatarSizeClasses = computed(() => {
         class="w-full h-full rounded-full"
       />
     </div>
-    <div class="flex-1 flex flex-col text-truncate">
+    <div class="flex-1 flex flex-col text-truncate leading-[1.25em]">
       <template v-if="loading">
         <RuiSkeletonLoader class="mt-[3px] mb-1.5 w-8" />
         <RuiSkeletonLoader class="w-16 mb-1 h-3" />
