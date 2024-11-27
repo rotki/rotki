@@ -128,7 +128,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
     counterparty_ids = {counterparty.identifier for counterparty in ethereum_transaction_decoder.rules.all_counterparties}  # noqa: E501
     assert counterparty_ids == {
         '0x',
-        'aura_finance',
+        'aura-finance',
         'kyber',
         'kyber legacy',
         'element-finance',

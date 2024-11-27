@@ -37,6 +37,7 @@ from rotkehlchen.chain.ethereum.modules.safe.constants import SAFE_TOKEN_ID
 from rotkehlchen.chain.ethereum.modules.thegraph.balances import ThegraphBalances
 from rotkehlchen.chain.ethereum.utils import should_update_protocol_cache
 from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE_V3
+from rotkehlchen.chain.evm.decoding.aura_finance.balances import AuraFinanceBalances
 from rotkehlchen.chain.evm.decoding.balancer.constants import CPT_BALANCER_V1
 from rotkehlchen.chain.evm.decoding.balancer.v1.balances import Balancerv1Balances
 from rotkehlchen.chain.evm.decoding.balancer.v2.balances import Balancerv2Balances
@@ -1135,6 +1136,30 @@ def test_balancer_v2_balances(
     protocol_balances = protocol_balances_inquirer.query_balances()
     user_balance = protocol_balances[gnosis_accounts[0]]
     assert user_balance.assets[Asset('eip155:100/erc20:0xaa56989Be5E6267fC579919576948DB3e1F10807')] == Balance(  # noqa: E501
+        amount=amount,
+        usd_value=usd_value,
+    )
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('base_accounts', [['0x19e4057A38a730be37c4DA690b103267AAE1d75d']])
+def test_aura_finance_balances(
+        base_inquirer: 'BaseInquirer',
+        base_accounts: list[ChecksumEvmAddress],
+        inquirer: 'Inquirer',  # pylint: disable=unused-argument
+) -> None:
+    amount, usd_value = FVal('14.162193866305452056'), FVal('21.2432907994581780840')
+    _, tx_decoder = get_decoded_events_of_transaction(
+        evm_inquirer=base_inquirer,
+        tx_hash=deserialize_evm_tx_hash('0x2653c4c5faf160cc66a867a749d4de6f97a8782b37e0b2ceb5e2133525e49a6f'),
+    )
+    protocol_balances_inquirer = AuraFinanceBalances(
+        evm_inquirer=base_inquirer,
+        tx_decoder=tx_decoder,
+    )
+    protocol_balances = protocol_balances_inquirer.query_balances()
+    user_balance = protocol_balances[base_accounts[0]]
+    assert user_balance.assets[Asset('eip155:8453/erc20:0x636fCa3ADC5D614E15F5C5a574fFd2CAEE578126')] == Balance(  # noqa: E501
         amount=amount,
         usd_value=usd_value,
     )
