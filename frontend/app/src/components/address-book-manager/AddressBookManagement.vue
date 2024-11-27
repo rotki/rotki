@@ -99,13 +99,12 @@ setPostSubmitFunc(fetchData);
     <RuiCard>
       <div class="flex flex-row flex-wrap items-center justify-end gap-2">
         <ChainSelect
-          :model-value="selectedChain"
+          v-model="selectedChain"
           hide-details
           class="flex-1 max-w-full md:max-w-[18rem]"
           clearable
           dense
           exclude-eth-staking
-          @update:model-value="selectedChain = $event"
         />
 
         <div class="w-[20rem] max-w-[30rem]">

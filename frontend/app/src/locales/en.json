@@ -1513,9 +1513,7 @@
       "edit_subtitle": "Modify account details",
       "edit_title": "Edit blockchain account"
     },
-    "per_asset": {
-      "title": "Blockchain Balances per Asset"
-    },
+    "group_label": "Blockchain balances",
     "title": "Blockchain Balances per asset",
     "unify_accounts_table": "Unify accounts table"
   },

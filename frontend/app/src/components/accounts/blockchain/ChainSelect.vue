@@ -1,12 +1,14 @@
-<script setup lang="ts">
+<script setup lang="ts" generic="T extends string | string[]">
 import { Blockchain } from '@rotki/common';
 import { Module } from '@/types/modules';
+import type { AutoCompleteProps } from '@rotki/ui-library';
+import type { ChainInfo } from '@/types/api/chains';
 
 defineOptions({
   inheritAttrs: false,
 });
 
-const model = defineModel<string | undefined>({ required: true });
+const model = defineModel<T extends Array<infer U> ? U[] : T | undefined>({ required: true });
 
 const props = withDefaults(
   defineProps<{
@@ -55,6 +57,10 @@ const mappedOptions = computed(() => {
   const filtered = get(filteredItems);
   return get(supportedChains).filter(item => filtered.includes(item.id));
 });
+
+const autoCompleteProps: AutoCompleteProps<string, ChainInfo> = {
+  keyAttr: 'id',
+};
 </script>
 
 <template>
@@ -67,10 +73,9 @@ const mappedOptions = computed(() => {
     data-cy="account-blockchain-field"
     variant="outlined"
     auto-select-first
-    key-attr="id"
     text-attr="name"
     :item-height="dense ? 48 : 56"
-    v-bind="$attrs"
+    v-bind="{ ...$attrs, ...autoCompleteProps }"
   >
     <template #selection="{ item }">
       <ChainDisplay

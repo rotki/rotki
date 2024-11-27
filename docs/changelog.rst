@@ -2,13 +2,14 @@
 Changelog
 =========
 
+* :feature:`8929` Blockchain aggregated balances will now display the percentage of the net value and can also be filtered by chain.
 * :feature:`-` WalletConnect airdrop claiming and staking transactions are now properly recognized.
 * :feature:`-` Page for inputting external API keys has been revamped.
 * :feature:`-` Added a confirmation dialog that appears when users attempt to discard changes on the form dialog, preventing accidental removal of changes.
 * :feature:`8618` rotki will now support Morpho vaults on Ethereum and Base, with related historical events properly decoded and correct prices shown for vault tokens.
 * :feature:`8620` rotki will now properly decode EFP (Ethereum Follow Protocol) transactions.
 * :feature:`8602` rotki will now properly decode Basenames transactions and add calendar reminders for name expiry.
-* :bug:`8916` Coinbase events (trades, deposits/withdrawals, earn etc.) will now be properly pulled after the initial sync. 
+* :bug:`8916` Coinbase events (trades, deposits/withdrawals, earn etc.) will now be properly pulled after the initial sync.
 * :bug:`-` Fix the issue where some asset values show zero in the edit snapshot form.
 * :bug:`-` Fix the issue where the pagination for the account table resets to the first page when the user expands the account.
 * :bug:`8892` rotki will now correctly fetch Starknet token prices before May 2024 from Cryptocompare, when the ticker changed from STARK to STRK.
