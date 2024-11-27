@@ -44,7 +44,7 @@ jobs:
           git fetch origin
           if [[ `git branch --all | grep remotes/origin/$SOURCE_BRANCH` ]]; then
             echo "Branch $SOURCE_BRANCH exists on origin. Checking it out..."
-            git checkout -b $SOURCE_BRANCH origin/$SOURCE_BRANCH
+            git checkout $SOURCE_BRANCH 2>/dev/null || git checkout -b $SOURCE_BRANCH origin/$SOURCE_BRANCH
           else
             echo "Branch $SOURCE_BRANCH does not exist on origin. Checking the $AUTHOR's fork..."
             git remote add author https://github.com/$AUTHOR/test-caching.git
