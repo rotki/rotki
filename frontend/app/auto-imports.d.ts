@@ -875,6 +875,12 @@ declare global {
   export type { Unit } from './src/utils/calculation'
   import('./src/utils/calculation')
   // @ts-ignore
+  export type { IndexedDb } from './src/utils/indexed-db'
+  import('./src/utils/indexed-db')
+  // @ts-ignore
+  export type { LimitedParallelizationQueue } from './src/utils/limited-parallelization-queue'
+  import('./src/utils/limited-parallelization-queue')
+  // @ts-ignore
   export type { XpubPrefix } from './src/utils/xpub'
   import('./src/utils/xpub')
   // @ts-ignore
