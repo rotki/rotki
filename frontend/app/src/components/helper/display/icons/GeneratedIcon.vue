@@ -50,7 +50,7 @@ const textStyle = computed<Style>(() => {
   const length = get(text).length;
   const { value } = get(dimensions);
 
-  const fontSize = (value - 2) / length;
+  const fontSize = (value - 2) / Math.max(2.5, length);
 
   return {
     fontSize: `${fontSize}px`,
@@ -61,8 +61,7 @@ const textStyle = computed<Style>(() => {
 <template>
   <span
     :style="{ ...wrapperStyle, ...textStyle }"
-    class="flex items-center justify-center border-rui-light-text-secondary rounded-full whitespace-nowrap tracking-normal text-rui-light-text bg-white font-bold"
-    :class="{ border: !flat }"
+    class="flex items-center justify-center rounded-full whitespace-nowrap tracking-normal font-semibold bg-rui-grey-200 dark:bg-rui-grey-800 text-rui-grey-600 dark:text-rui-grey-400 border border-rui-grey-300 dark:border-black/[0.1] uppercase"
   >
     <RuiIcon
       v-if="customAsset"
