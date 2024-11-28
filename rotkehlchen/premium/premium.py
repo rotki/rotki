@@ -525,7 +525,6 @@ def premium_create_and_verify(credentials: PremiumCredentials, username: str) ->
     - RemoteError if there are problems reaching the server
     """
     premium = Premium(credentials=credentials, username=username)
-
     if premium.is_active(catch_connection_errors=True):
         return premium
 

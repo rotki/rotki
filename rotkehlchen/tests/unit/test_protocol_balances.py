@@ -52,6 +52,8 @@ from rotkehlchen.chain.evm.tokens import TokenBalancesType
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.optimism.modules.extrafi.balances import ExtrafiBalances
 from rotkehlchen.chain.optimism.modules.velodrome.balances import VelodromeBalances
+from rotkehlchen.chain.optimism.modules.walletconnect.balances import WalletconnectBalances
+from rotkehlchen.chain.optimism.modules.walletconnect.constants import WCT_TOKEN_ID
 from rotkehlchen.constants.assets import (
     A_AAVE,
     A_ARB,
@@ -1135,6 +1137,32 @@ def test_balancer_v2_balances(
     assert user_balance.assets[Asset('eip155:100/erc20:0xaa56989Be5E6267fC579919576948DB3e1F10807')] == Balance(  # noqa: E501
         amount=amount,
         usd_value=usd_value,
+    )
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('optimism_accounts', [['0xc0d5dBe750bb5c001Ba8C499385143f566611679']])
+def test_walletconnect_staked_balances(
+        optimism_inquirer: 'OptimismInquirer',
+        optimism_accounts: list[ChecksumEvmAddress],
+        inquirer: 'Inquirer',  # pylint: disable=unused-argument
+) -> None:
+    """Check that staked balances of walletconnect are properly detected."""
+    tx_hex = deserialize_evm_tx_hash('0xcc691ea8eeb56fd5f5ceb98879e3571ee167a2ac4c5bad4c9463127262d096af')  # noqa: E501
+    amount = FVal('184.286559270201')
+    _, tx_decoder = get_decoded_events_of_transaction(
+        evm_inquirer=optimism_inquirer,
+        tx_hash=tx_hex,
+    )
+    protocol_balances_inquirer = WalletconnectBalances(
+        evm_inquirer=optimism_inquirer,
+        tx_decoder=tx_decoder,
+    )
+    protocol_balances = protocol_balances_inquirer.query_balances()
+    user_balance = protocol_balances[optimism_accounts[0]]
+    assert user_balance.assets[Asset(WCT_TOKEN_ID)] == Balance(
+        amount=amount,
+        usd_value=amount * FVal(1.5),
     )
 
 

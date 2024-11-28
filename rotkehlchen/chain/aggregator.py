@@ -65,6 +65,7 @@ from rotkehlchen.chain.optimism.modules.gearbox.balances import (
     GearboxBalances as GearboxBalancesOptimism,
 )
 from rotkehlchen.chain.optimism.modules.velodrome.balances import VelodromeBalances
+from rotkehlchen.chain.optimism.modules.walletconnect.balances import WalletconnectBalances
 from rotkehlchen.chain.substrate.manager import wait_until_a_node_is_available
 from rotkehlchen.chain.substrate.utils import SUBSTRATE_NODE_CONNECTION_TIMEOUT
 from rotkehlchen.constants import ONE, ZERO
@@ -225,6 +226,7 @@ CHAIN_TO_BALANCE_PROTOCOLS = {
         GearboxBalancesOptimism,
         ExtrafiBalancesOp,
         Balancerv2Balances,
+        WalletconnectBalances,
     ),
     ChainID.BASE: (
         Compoundv3Balances,
