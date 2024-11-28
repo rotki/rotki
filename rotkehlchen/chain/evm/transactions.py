@@ -158,7 +158,7 @@ class EvmTransactions(ABC):  # noqa: B024
                 start_ts=from_ts,
                 end_ts=to_ts,
             )
-        self.get_chain_specific_multiaddress_data(accounts, from_ts, to_ts)
+        self.get_chain_specific_multiaddress_data(accounts)
 
     def _query_and_save_transactions_for_range(
             self,
@@ -838,8 +838,6 @@ class EvmTransactions(ABC):  # noqa: B024
     def get_chain_specific_multiaddress_data(
             self,
             addresses: Sequence[ChecksumEvmAddress],  # pylint: disable=unused-argument
-            from_ts: Timestamp,  # pylint: disable=unused-argument
-            to_ts: Timestamp,  # pylint: disable=unused-argument
     ) -> None:
         """Can be implemented by each chain subclass to add chain-specific data queries
         for all tracked addresses at once"""

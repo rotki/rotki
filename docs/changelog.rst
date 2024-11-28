@@ -12,6 +12,7 @@ Changelog
 * :bug:`-` The airdrops directory should no longer appear under the user directory in certain circumstances.
 * :bug:`-` Fix an issue that caused the token detection to fail under some circumstances involving broken tokens.
 * :bug:`-` rotki won't try to query logs from slow nodes.
+* :bug:`-` Refreshing the transactions while tracking a gnosis address will be faster after the first query.
 
 * :release:`1.36.0 <2024-11-06>`
 * :bug:`-` The exported file that overrides the file with the same name should have the latest modified time.
