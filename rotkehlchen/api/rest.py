@@ -756,8 +756,7 @@ class RestAPI:
         if final_balances == {}:
             result = None
             status_code = HTTPStatus.CONFLICT
-        else:
-            # Filter balances by threshold for each exchange
+        else:  # Filter balances by threshold for each exchange
             if usd_value_threshold is not None:
                 filtered_balances = {}
                 for location, balances in final_balances.items():
@@ -806,7 +805,7 @@ class RestAPI:
                 }
             balances = combine_dicts(balances, result)
 
-        # Filter balances by threshold for single exchange
+        # Filter balances by threshold for a single exchange
         if usd_value_threshold is not None:
             balances = {
                 asset: balance for asset, balance in balances.items()
@@ -863,14 +862,12 @@ class RestAPI:
                             }
                             if len(filtered_assets) != 0:
                                 new_balance_sheet = BalanceSheet()
-                                new_balance_sheet.assets = defaultdict(Balance,
-                                filtered_assets)  # Convert to defaultdict
+                                new_balance_sheet.assets = defaultdict(Balance, filtered_assets)
                                 filtered_balances[account] = new_balance_sheet
                         elif isinstance(account_data, Balance):
                             # For BTC and BCH, account_data is a single Balance object
                             if account_data.usd_value > usd_value_threshold:
-                                filtered_balances[account] = BalanceSheet(assets=defaultdict(
-                                    Balance, {account: account_data}))  # Wrap in BalanceSheet
+                                filtered_balances[account] = BalanceSheet(assets=defaultdict(Balance, {account: account_data}))  # noqa: E501
 
                     chain_balances.clear()
                     chain_balances.update(filtered_balances)

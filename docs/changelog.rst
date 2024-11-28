@@ -3,7 +3,7 @@ Changelog
 =========
 
 * :feature:`8929` Blockchain aggregated balances will now display the percentage of the net value and can also be filtered by chain.
-* :feature:`-` WalletConnect airdrop claiming and staking transactions are now properly recognized.
+* :feature:`-` WalletConnect airdrop claiming and staking transactions are now properly recognized. WCT staked balances will also be autodetected.
 * :feature:`-` Page for inputting external API keys has been revamped.
 * :feature:`-` Added a confirmation dialog that appears when users attempt to discard changes on the form dialog, preventing accidental removal of changes.
 * :feature:`8618` rotki will now support Morpho vaults on Ethereum and Base, with related historical events properly decoded and correct prices shown for vault tokens.
