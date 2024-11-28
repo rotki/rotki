@@ -25,7 +25,7 @@ const props = withDefaults(
     noTooltip: false,
     circle: false,
     padding: '2px',
-    chainIconPadding: '1px',
+    chainIconPadding: '0.5px',
     enableAssociation: true,
     showChain: true,
     flat: false,
@@ -91,7 +91,6 @@ const url = reactify(getAssetImageUrl)(mappedIdentifier);
 
 const usedChainIconSize = computed(() => get(chainIconSize) || `${(Number.parseInt(get(size)) * 50) / 100}px`);
 const chainIconMargin = computed(() => `-${get(usedChainIconSize)}`);
-const chainIconPosition = computed(() => `${(Number.parseInt(get(usedChainIconSize)) * 50) / 100}px`);
 
 const placeholderStyle = computed(() => {
   const pad = get(padding);
@@ -104,6 +103,7 @@ const placeholderStyle = computed(() => {
 });
 
 watch([symbol, identifier], () => {
+  set(pending, true);
   set(error, false);
 });
 
@@ -139,14 +139,19 @@ const { copy } = useCopy(identifier);
 
         <div
           :style="styled"
-          class="flex items-center justify-center cursor-pointer h-full w-full icon-bg"
-          :class="{ [$style.circle]: circle }"
+          class="flex items-center justify-center cursor-pointer h-full w-full"
+          :class="{
+            [$style.circle]: circle,
+            'icon-bg': !(currency || error || pending),
+          }"
         >
-          <RuiIcon
+          <GeneratedIcon
             v-if="!currency && pending"
-            name="coin-line"
+            class="absolute"
+            :custom-asset="isCustomAsset"
+            :asset="displayAsset"
             :size="size"
-            class="text-rui-light-text-secondary text-black absolute"
+            :flat="flat"
           />
 
           <GeneratedIcon
@@ -159,6 +164,7 @@ const { copy } = useCopy(identifier);
 
           <AppImage
             v-else
+            v-show="!pending"
             contain
             :alt="displayAsset"
             :src="url"
@@ -203,11 +209,17 @@ const { copy } = useCopy(identifier);
 }
 
 .chain {
-  @apply border bg-white absolute z-[1] flex items-center justify-center;
+  @apply bg-white absolute z-[1] flex items-center justify-center rounded-lg shadow-sm;
+  @apply border border-rui-grey-200;
   margin-top: v-bind(chainIconMargin);
   margin-left: v-bind(chainIconMargin);
-  top: v-bind(chainIconPosition);
-  left: v-bind(chainIconPosition);
-  padding: v-bind(chainIconPadding);
+  bottom: -4px;
+  right: -4px;
+}
+
+:global(.dark) {
+  .chain {
+    @apply border-rui-grey-900;
+  }
 }
 </style>

@@ -210,7 +210,7 @@ watch(visibleAssets, () => {
     auto-select-first
     :loading="loading"
     :variant="outlined ? 'outlined' : 'default'"
-    :item-height="60"
+    :item-height="50"
     v-bind="$attrs"
     no-filter
   >

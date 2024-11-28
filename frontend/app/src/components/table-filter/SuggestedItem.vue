@@ -92,7 +92,6 @@ const displayValue = computed(() => {
           padding="1.5px"
           :size="chip ? '16px' : '18px'"
           :chain-icon-size="chip ? '9px' : '11px'"
-          chain-icon-padding="0.5px"
         />
         <span class="font-normal text-sm">
           {{ asset.symbol }}
