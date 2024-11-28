@@ -32,7 +32,10 @@ class WalletconnectBalances(ProtocolWithBalance):
             evm_inquirer=evm_inquirer,
             tx_decoder=tx_decoder,
             counterparty=CPT_WALLETCONNECT,
-            deposit_event_types={(HistoryEventType.STAKING, HistoryEventSubType.DEPOSIT_ASSET)},
+            deposit_event_types={  # TODO: we use deposit/remove to calculate balance so perhaps deposit_event_types should be renamed?  # noqa: E501
+                (HistoryEventType.STAKING, HistoryEventSubType.DEPOSIT_ASSET),
+                (HistoryEventType.STAKING, HistoryEventSubType.REMOVE_ASSET),
+            },
         )
 
     def query_balances(self) -> 'BalancesSheetType':
@@ -42,11 +45,13 @@ class WalletconnectBalances(ProtocolWithBalance):
         wct_price = Inquirer.find_usd_price(Asset(WCT_TOKEN_ID))
         for address, events in self.addresses_with_deposits(products=None).items():
             amount = ZERO
-            for event in events:  # we will need to also include staking withdrawals here
-                if event.event_type == HistoryEventType.STAKING and event.event_subtype == HistoryEventSubType.DEPOSIT_ASSET and event.asset == wct_token:  # noqa: E501
+            for event in events:
+                if event.event_subtype == HistoryEventSubType.DEPOSIT_ASSET and event.asset == wct_token:  # noqa: E501
                     amount += event.balance.amount
+                elif event.event_subtype == HistoryEventSubType.REMOVE_ASSET and event.asset == wct_token:  # noqa: E501
+                    amount -= event.balance.amount
 
-            if amount == ZERO:
+            if amount <= ZERO:
                 continue
 
             balance = Balance(amount=amount, usd_value=wct_price * amount)
