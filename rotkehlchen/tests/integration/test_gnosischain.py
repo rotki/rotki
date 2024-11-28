@@ -1,10 +1,11 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
 import pytest
 
 from rotkehlchen.accounting.accountant import RemoteError
 from rotkehlchen.chain.gnosis.constants import BRIDGE_QUERIED_ADDRESS_PREFIX
+from rotkehlchen.chain.gnosis.transactions import DEPLOYED_TS
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmTransactionsFilterQuery
 from rotkehlchen.types import ChainID, ChecksumEvmAddress, Timestamp, deserialize_evm_tx_hash
@@ -54,29 +55,16 @@ def test_gnosischain_specific_chain_data(
                 assert from_ts == start_ts
                 assert to_ts == now
 
-    get_logs_patch = patch.object(
-        gnosis_transactions.evm_inquirer,
-        '_get_logs',
-        wraps=gnosis_transactions.evm_inquirer._get_logs,
-    )
-
-    with get_logs_patch as fn:
-        gnosis_transactions.get_chain_specific_multiaddress_data(
-            addresses=gnosis_accounts,
-            from_ts=Timestamp(1711618437),
-            to_ts=now,
-        )
-        first_call_count = fn.call_count
-        check_db()
-
-        # call it again and make sure nothing happens and DB is unchanged
-        gnosis_transactions.get_chain_specific_multiaddress_data(
-            addresses=gnosis_accounts,
-            from_ts=Timestamp(1711618437),
-            to_ts=now,
-        )
-        assert fn.call_count == first_call_count, 'no log queries should happen'
-        check_db()
+    with database.user_write() as write_cursor:
+        for address in gnosis_accounts:
+            database.update_used_query_range(
+                write_cursor=write_cursor,
+                name=f'{BRIDGE_QUERIED_ADDRESS_PREFIX}{address}',
+                start_ts=Timestamp(0),
+                end_ts=Timestamp(1711618437),
+            )
+    gnosis_transactions.get_chain_specific_multiaddress_data(addresses=gnosis_accounts)
+    check_db()
 
 
 @pytest.mark.freeze_time('2023-10-25 22:50:45 GMT')
@@ -106,15 +94,82 @@ def test_gnosischain_specific_chain_data_failing_logic(
         'get_logs',
         wraps=mocked_etherscan_logs,
     ):
-        gnosis_transactions.get_chain_specific_multiaddress_data(
-            addresses=gnosis_accounts,
-            from_ts=Timestamp(0),
-            to_ts=ts_now(),
-        )
+        gnosis_transactions.get_chain_specific_multiaddress_data(addresses=gnosis_accounts)
 
         with database.conn.read_ctx() as cursor:
             for address in gnosis_accounts:
                 # check used query ranges are set
                 from_ts, to_ts = database.get_used_query_range(cursor, f'{BRIDGE_QUERIED_ADDRESS_PREFIX}{address}')  # type: ignore # noqa: E501
-                assert from_ts == Timestamp(0)
+                assert from_ts == DEPLOYED_TS
                 assert to_ts == Timestamp(1586609555)  # timestamp after processing the first subinterval  # noqa: E501
+
+
+@pytest.mark.freeze_time('2024-11-28 10:44:55 GMT')
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('gnosis_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65', '0x2449fE0bEA58e027f374e90b296e72Dfd7bCcBaE']])  # noqa: E501
+def test_gnosischain_specific_chain_data_ts_logic(
+        database: 'DBHandler',
+        gnosis_transactions: 'GnosisTransactions',
+        gnosis_accounts: list[ChecksumEvmAddress],
+) -> None:
+    """
+    This test ensures that the query range logic for gnosis logs works as expected.
+    The tests uses 2 addresses. 0xc37b40ABdB939635068d3c5f13E7faF686F03B65 gets a
+    range added to the db before the query to ensure that if addresses not queried before
+    are queried then we query everything again.
+
+    Then the logic is executed twice. We break the first execution after a few queries to
+    ensure that the range is saved and in the second query we start from where it was left.
+    """
+    with database.user_write() as write_cursor:
+        database.update_used_query_range(
+            write_cursor=write_cursor,
+            name=f'{BRIDGE_QUERIED_ADDRESS_PREFIX}{gnosis_accounts[0]}',
+            start_ts=Timestamp(0),
+            end_ts=ts_now(),
+        )
+
+    counter = 0
+
+    def get_logs_first_step(
+            contract_address: ChecksumEvmAddress,
+            topics: list[str],
+            from_block: int,
+            to_block: int | str = 'latest',
+    ) -> list[dict[str, Any]]:
+        nonlocal counter
+        counter += 1
+        if counter == 5:
+            raise RemoteError('Intended circuit breaker')
+        return []
+
+    gno_etherscan = gnosis_transactions.evm_inquirer.etherscan
+    with patch.object(gno_etherscan, 'get_logs', new=get_logs_first_step):
+        gnosis_transactions.get_chain_specific_multiaddress_data(
+            addresses=gnosis_accounts,
+        )
+
+    with database.conn.read_ctx() as cursor:
+        for address in gnosis_accounts:  # check that query ranges are correct
+            result = database.get_used_query_range(
+                cursor=cursor,
+                name=f'{BRIDGE_QUERIED_ADDRESS_PREFIX}{address}',
+            )
+            assert result is not None
+            from_ts, to_ts = result
+            assert from_ts == DEPLOYED_TS
+            assert to_ts == Timestamp(1591219000)
+
+    def get_logs_second_step(
+            contract_address: ChecksumEvmAddress,
+            topics: list[str],
+            from_block: int,
+            to_block: int | str = 'latest',
+    ) -> list[dict[str, Any]]:
+        assert from_block == 10253328  # matching the previous timestamp to ensure that we save the progress  # noqa: E501
+        raise RemoteError('Intended circuit breaker')
+
+    with patch.object(gno_etherscan, 'get_logs', new=get_logs_second_step):
+        gnosis_transactions.get_chain_specific_multiaddress_data(
+            addresses=gnosis_accounts,
+        )

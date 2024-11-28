@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 
 ADDED_RECEIVER_ABI: Final[ABI] = [{'anonymous': False, 'inputs': [{'indexed': False, 'name': 'amount', 'type': 'uint256'}, {'indexed': True, 'name': 'receiver', 'type': 'address'}, {'indexed': True, 'name': 'bridge', 'type': 'address'}], 'name': 'AddedReceiver', 'type': 'event'}]  # noqa: E501
 DEPLOYED_BLOCK: Final = 9053325
-DEPLOYED_TS: Final = 1539027985
+DEPLOYED_TS: Final = Timestamp(1539027985)
 NO_BLOCK_PROCESSED_VALUE = -1
 
 logger = logging.getLogger(__name__)
@@ -94,27 +94,33 @@ class GnosisTransactions(EvmTransactions):
     def get_chain_specific_multiaddress_data(
             self,
             addresses: Sequence[ChecksumEvmAddress],
-            from_ts: Timestamp,
-            to_ts: Timestamp,
     ) -> None:
         """Get Gnosis XDAI withdrawals in gnosis chain by querying log events"""
         if len(addresses) == 0:
             return  # do nothing for no addresses
 
-        max_start, min_end = None, None
+        # get the range to query. If a new address not tracked previously is added we query the
+        # whole range. If all the accounts were queried before we query the largest range possible
+        # [min(last ts queried), now]. Ranges in the db are always of the form
+        # [DEPLOYED_TS, last_ts_queried].
+        from_ts, min_last_query_ts = DEPLOYED_TS, None
         with self.database.conn.read_ctx() as cursor:
-            cursor.execute('SELECT MAX(start_ts), MIN(end_ts) FROM used_query_ranges WHERE name LIKE ?', (f'{BRIDGE_QUERIED_ADDRESS_PREFIX}%',))  # noqa: E501
-            result = cursor.fetchone()
-            if result is not None:
-                max_start, min_end = result
+            question_marks = ','.join('?' * len(addresses))
+            if cursor.execute(
+                f'SELECT COUNT(*) FROM used_query_ranges WHERE name IN ({question_marks})',
+                [f'{BRIDGE_QUERIED_ADDRESS_PREFIX}{address}' for address in addresses],
+            ).fetchone()[0] != len(addresses):
+                min_last_query_ts = DEPLOYED_TS
+            else:
+                cursor.execute(
+                    'SELECT MIN(end_ts) FROM used_query_ranges WHERE name LIKE ?',
+                    (f'{BRIDGE_QUERIED_ADDRESS_PREFIX}%',),
+                )
+                if (result := cursor.fetchone()) is not None:
+                    min_last_query_ts = result[0]
 
-        if max_start is not None:
-            if max_start <= from_ts and min_end >= to_ts:  # type: ignore # min_end not None
-                return  # no need to do anything
-
-            # else, adjust query
-            from_ts = min(max_start, from_ts)
-            to_ts = max(min_end, to_ts)  # type: ignore # min_end is not None
+        if min_last_query_ts is not None:
+            from_ts = min_last_query_ts
 
         if from_ts <= DEPLOYED_TS:
             from_block = DEPLOYED_BLOCK
@@ -143,4 +149,4 @@ class GnosisTransactions(EvmTransactions):
                 log_iteration_cb_arguments=callback_modifiable_params,
             )
         except (RemoteError, DeserializationError) as e:
-            log.error(f'Failed to query gnosis logs in full range from {from_ts} to {to_ts} for {addresses} due to {e}. Skipping for now')  # noqa: E501
+            log.error(f'Failed to query gnosis logs in full range from {from_ts} to now for {addresses} due to {e}. Skipping for now')  # noqa: E501
