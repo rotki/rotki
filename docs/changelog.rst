@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :release:`1.36.1 <2024-11-29>`
 * :bug:`-` Fix incorrect expired subscription notifications caused by network connectivity issues.
 * :feature:`-` Show the quote amount field in the trades section table.
 * :feature:`-` Add location and address filters for the asset breakdown table in the asset details page.
