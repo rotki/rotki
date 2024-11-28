@@ -33,6 +33,11 @@ class MockRotkiNotifier:
         self.messages = []
 
 
+@pytest.fixture(name='use_function_scope_msg_aggregator')
+def use_function_scope_msg_aggregator() -> bool:
+    return False
+
+
 @pytest.fixture(name='function_scope_initialize_mock_rotki_notifier')
 def fixture_function_scope_initialize_mock_rotki_notifier() -> bool:
     """

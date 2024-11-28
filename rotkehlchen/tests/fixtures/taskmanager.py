@@ -38,8 +38,11 @@ def fixture_task_manager(
         cryptocompare,
         exchange_manager,
         messages_aggregator,
+        use_function_scope_msg_aggregator,
+        function_scope_messages_aggregator,
         username,
 ) -> TaskManager:
+    msg_aggregator = function_scope_messages_aggregator if use_function_scope_msg_aggregator else messages_aggregator  # noqa: E501
     task_manager = TaskManager(
         max_tasks_num=max_tasks_num,
         greenlet_manager=greenlet_manager,
@@ -52,8 +55,8 @@ def fixture_task_manager(
         deactivate_premium=lambda: None,
         query_balances=lambda: None,
         activate_premium=lambda _: None,
-        msg_aggregator=messages_aggregator,
-        data_updater=RotkiDataUpdater(msg_aggregator=messages_aggregator, user_db=database),
+        msg_aggregator=msg_aggregator,
+        data_updater=RotkiDataUpdater(msg_aggregator=msg_aggregator, user_db=database),
         username=username,
     )
     task_manager.should_schedule = True
