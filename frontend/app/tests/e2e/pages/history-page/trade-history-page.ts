@@ -89,7 +89,7 @@ export class TradeHistoryPage {
 
     cy.get('@row')
       .find('td')
-      .eq(7)
+      .eq(8)
       .find('[data-cy=trade-quote]')
       .find('[data-cy=list-title]')
       .should('contain', trade.quote);
