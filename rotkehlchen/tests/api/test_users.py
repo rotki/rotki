@@ -284,7 +284,7 @@ def test_user_creation_with_invalid_premium_credentials(rotkehlchen_api_server, 
         response = requests.put(api_url_for(rotkehlchen_api_server, 'usersresource'), json=data)
 
     expected_msg = (
-        'Could not verify keys for the new account. rotki API key was rejected by server'
+        'Could not verify keys for the new account. Invalid API-KEY'
     )
     assert_error_response(
         response=response,
@@ -985,7 +985,7 @@ def test_user_set_premium_credentials_errors(rotkehlchen_api_server: APIServer, 
     )
     assert_error_response(
         response=response,
-        contained_in_msg='rotki API key was rejected by server',
+        contained_in_msg='Invalid API-KEY',
         status_code=HTTPStatus.FORBIDDEN,
     )
 

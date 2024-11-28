@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Fix incorrect expired subscription notifications caused by network connectivity issues.
 * :feature:`-` Show the quote amount field in the trades section table.
 * :feature:`-` Add location and address filters for the asset breakdown table in the asset details page.
 * :bug:`-`  Fix the issue where the layout for the “Force Push” setting was misaligned on small screen.
