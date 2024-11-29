@@ -54,6 +54,7 @@ from rotkehlchen.chain.ethereum.modules.gearbox.balances import GearboxBalances
 from rotkehlchen.chain.ethereum.modules.octant.balances import OctantBalances
 from rotkehlchen.chain.ethereum.modules.safe.balances import SafeBalances
 from rotkehlchen.chain.ethereum.modules.thegraph.balances import ThegraphBalances
+from rotkehlchen.chain.evm.decoding.aura_finance.balances import AuraFinanceBalances
 from rotkehlchen.chain.evm.decoding.balancer.v1.balances import Balancerv1Balances
 from rotkehlchen.chain.evm.decoding.balancer.v2.balances import Balancerv2Balances
 from rotkehlchen.chain.evm.decoding.compound.v3.balances import Compoundv3Balances
@@ -219,6 +220,7 @@ CHAIN_TO_BALANCE_PROTOCOLS = {
         AaveBalances,
         Balancerv1Balances,
         Balancerv2Balances,
+        AuraFinanceBalances,
     ),
     ChainID.OPTIMISM: (
         VelodromeBalances,
@@ -227,6 +229,7 @@ CHAIN_TO_BALANCE_PROTOCOLS = {
         ExtrafiBalancesOp,
         Balancerv2Balances,
         WalletconnectBalances,
+        AuraFinanceBalances,
     ),
     ChainID.BASE: (
         Compoundv3Balances,
@@ -234,6 +237,7 @@ CHAIN_TO_BALANCE_PROTOCOLS = {
         HopBalances,
         ExtrafiBalancesBase,
         Balancerv2Balances,
+        AuraFinanceBalances,
     ),
     ChainID.ARBITRUM_ONE: (
         Compoundv3Balances,
@@ -244,9 +248,10 @@ CHAIN_TO_BALANCE_PROTOCOLS = {
         UmamiBalances,
         Balancerv1Balances,
         Balancerv2Balances,
+        AuraFinanceBalances,
     ),
-    ChainID.POLYGON_POS: (Compoundv3Balances, HopBalances, Balancerv2Balances),
-    ChainID.GNOSIS: (HopBalances, Balancerv1Balances, Balancerv2Balances),
+    ChainID.POLYGON_POS: (Compoundv3Balances, HopBalances, Balancerv2Balances, AuraFinanceBalances),  # noqa: E501
+    ChainID.GNOSIS: (HopBalances, Balancerv1Balances, Balancerv2Balances, AuraFinanceBalances),
     ChainID.SCROLL: (Compoundv3Balances,),
 }
 

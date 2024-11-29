@@ -1160,6 +1160,7 @@ class CacheType(Enum):
     CURVE_LENDING_VAULT_AMM = auto()
     CURVE_LENDING_VAULT_COLLATERAL_TOKEN = auto()
     CURVE_LENDING_VAULT_BORROWED_TOKEN = auto()
+    AURA_POOLS = auto()  # stores the count of pools in db + chain
 
     def serialize(self) -> str:
         # Using custom serialize method instead of SerializableEnumMixin since mixin replaces
@@ -1198,6 +1199,7 @@ UniqueCacheType = Literal[
     CacheType.CURVE_LENDING_VAULT_AMM,
     CacheType.CURVE_LENDING_VAULT_COLLATERAL_TOKEN,
     CacheType.CURVE_LENDING_VAULT_BORROWED_TOKEN,
+    CacheType.AURA_POOLS,
 ]
 
 UNIQUE_CACHE_KEYS: tuple[UniqueCacheType, ...] = typing.get_args(UniqueCacheType)
