@@ -106,15 +106,16 @@ class GnosisTransactions(EvmTransactions):
         from_ts, min_last_query_ts = DEPLOYED_TS, None
         with self.database.conn.read_ctx() as cursor:
             question_marks = ','.join('?' * len(addresses))
+            addresses_bindings = [f'{BRIDGE_QUERIED_ADDRESS_PREFIX}{address}' for address in addresses]  # noqa: E501
             if cursor.execute(
                 f'SELECT COUNT(*) FROM used_query_ranges WHERE name IN ({question_marks})',
-                [f'{BRIDGE_QUERIED_ADDRESS_PREFIX}{address}' for address in addresses],
+                addresses_bindings,
             ).fetchone()[0] != len(addresses):
                 min_last_query_ts = DEPLOYED_TS
             else:
                 cursor.execute(
-                    'SELECT MIN(end_ts) FROM used_query_ranges WHERE name LIKE ?',
-                    (f'{BRIDGE_QUERIED_ADDRESS_PREFIX}%',),
+                    f'SELECT MIN(end_ts) FROM used_query_ranges WHERE name IN ({question_marks})',
+                    addresses_bindings,
                 )
                 if (result := cursor.fetchone()) is not None:
                     min_last_query_ts = result[0]

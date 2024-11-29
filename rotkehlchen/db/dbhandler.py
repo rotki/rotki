@@ -30,6 +30,7 @@ from rotkehlchen.chain.bitcoin.xpub import (
     deserialize_derivation_path_for_db,
 )
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode
+from rotkehlchen.chain.gnosis.constants import BRIDGE_QUERIED_ADDRESS_PREFIX
 from rotkehlchen.chain.substrate.types import SubstrateAddress
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_ETH, A_ETH2, A_USD
@@ -2175,6 +2176,11 @@ class DBHandler:
 
         dbtx = DBEvmTx(self)
         dbtx.delete_transactions(write_cursor=write_cursor, address=address, chain=blockchain)
+        if blockchain == SupportedBlockchain.GNOSIS:
+            write_cursor.execute(
+                'DELETE FROM used_query_ranges WHERE name=?',
+                (f'{BRIDGE_QUERIED_ADDRESS_PREFIX}{address}',),
+            )
 
     def delete_data_for_evmlike_address(
             self,
