@@ -41,7 +41,7 @@ DetectedTokensType = dict[
 # Etherscan has by far the fastest responding server if you use an API key
 # The chunk length for Etherscan is limited though to 120 addresses due to the URI length.
 # For all other nodes (ankr, cloudflare, flashbots) we have run some benchmarks
-# with them being queried randomly with different chunk lenghts.
+# with them being queried randomly with different chunk lengths.
 # - They are for a single account
 # - rotki knows of 5264 different ethereum tokens as of this writing
 # - The code used is available in https://github.com/rotki/rotki/pull/8951
