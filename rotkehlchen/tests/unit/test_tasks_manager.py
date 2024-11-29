@@ -24,11 +24,17 @@ from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings, ModifiableDBSettings
 from rotkehlchen.db.utils import LocationData
+from rotkehlchen.errors.api import PremiumAuthenticationError
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.premium.premium import Premium, PremiumCredentials, SubscriptionStatus
+from rotkehlchen.premium.premium import (
+    Premium,
+    PremiumCredentials,
+    RemoteMetadata,
+    SubscriptionStatus,
+)
 from rotkehlchen.serialization.deserialize import deserialize_timestamp
 from rotkehlchen.tasks.manager import PREMIUM_STATUS_CHECK, TaskManager
 from rotkehlchen.tasks.utils import should_run_periodic_task
@@ -247,6 +253,12 @@ def test_check_premium_status(rotkehlchen_api_server, username):
     task_manager.last_premium_status_check = ts_now() - 3601
 
     premium_credentials = PremiumCredentials(VALID_PREMIUM_KEY, VALID_PREMIUM_SECRET)
+    mock_remote_metadata = RemoteMetadata(
+        upload_ts=Timestamp(0),
+        last_modify_ts=ts_now(),
+        data_size=9494994,
+        data_hash='0x',
+    )
     premium = Premium(credentials=premium_credentials, username=username)
     premium.status = SubscriptionStatus.ACTIVE
 
@@ -261,14 +273,14 @@ def test_check_premium_status(rotkehlchen_api_server, username):
         assert premium.is_active() is True
         assert rotki.premium is not None
 
-        with patch('rotkehlchen.premium.premium.Premium.is_active', MagicMock(return_value=False)):
+        with patch('rotkehlchen.premium.premium.Premium.query_last_data_metadata', MagicMock(side_effect=PremiumAuthenticationError())):  # noqa: E501
             mock_check_premium_status()
             assert rotki.premium is None, (
                 'Premium object is not None and should be'
                 'deactivated after invalid premium credentials'
             )
 
-        with patch('rotkehlchen.premium.premium.Premium.is_active', MagicMock(return_value=True)):
+        with patch('rotkehlchen.premium.premium.Premium.query_last_data_metadata', MagicMock(return_value=mock_remote_metadata)):  # noqa: E501
             mock_check_premium_status()
             assert rotki.premium is not None, (
                 'Premium object is None and Periodic check'
@@ -276,7 +288,7 @@ def test_check_premium_status(rotkehlchen_api_server, username):
             )
 
         with patch(
-            'rotkehlchen.premium.premium.Premium.is_active',
+            'rotkehlchen.premium.premium.Premium.query_last_data_metadata',
             MagicMock(side_effect=RemoteError()),
         ):
             for check_trial in range(3):
@@ -286,9 +298,38 @@ def test_check_premium_status(rotkehlchen_api_server, username):
             mock_check_premium_status()
             assert rotki.premium is None, 'Premium object is not None and should be deactivated after the 4th periodic check'  # noqa: E501
 
-        with patch('rotkehlchen.premium.premium.Premium.is_active', MagicMock(return_value=True)):
+        with patch('rotkehlchen.premium.premium.Premium.query_last_data_metadata', MagicMock(return_value=mock_remote_metadata)):  # noqa: E501
             mock_check_premium_status()
             assert rotki.premium is not None, "Premium object is None and Periodic check didn't reactivate the premium status"  # noqa: E501
+
+
+@pytest.mark.parametrize('max_tasks_num', [1])
+@pytest.mark.parametrize('use_function_scope_msg_aggregator', [True])
+@pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])
+@pytest.mark.parametrize('error_case', [
+    (RemoteError(), False),
+    (PremiumAuthenticationError(), True),
+])
+def test_premium_status_error_conditions(
+        task_manager: TaskManager,
+        rotki_premium_credentials,
+        error_case: tuple[Exception, bool],
+) -> None:
+    """Test premium status updates for network and authentication errors.
+
+    Network errors should not mark subscription as expired.
+    Authentication errors should mark subscription as expired.
+    """
+    task_manager.database.set_rotkehlchen_premium(rotki_premium_credentials)
+    task_manager.potential_tasks = [task_manager._maybe_check_premium_status]
+    with patch('rotkehlchen.premium.premium.Premium.query_last_data_metadata', side_effect=error_case[0]):  # noqa: E501
+        task_manager.premium_check_retries = 3
+        task_manager.last_premium_status_check = Timestamp(ts_now() - Timestamp(PREMIUM_STATUS_CHECK))  # noqa: E501
+        task_manager.schedule()
+        gevent.joinall(task_manager.running_greenlets)
+
+        messages = task_manager.database.msg_aggregator.rotki_notifier.messages   # type: ignore[union-attr]  # rotki_notifier is MockRotkiNotifier
+        assert messages[0].data == {'is_premium_active': False, 'expired': error_case[1]}
 
 
 @pytest.mark.parametrize('max_tasks_num', [5])

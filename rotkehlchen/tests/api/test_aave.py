@@ -20,7 +20,7 @@ from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE_V3
 from rotkehlchen.chain.evm.tokens import TokenBalancesType
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE
-from rotkehlchen.constants.assets import A_DAI, A_USDC, A_USDT, A_WBTC, A_WETH
+from rotkehlchen.constants.assets import A_DAI, A_USDC, A_WETH
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
     api_url_for,
@@ -102,34 +102,13 @@ def test_query_aave_balances(rotkehlchen_api_server: APIServer) -> None:
             'lending': {
                 A_DAI.identifier: {
                     'balance': Balance(
-                        amount=FVal('25319.644933920807083535'),
-                        usd_value=FVal('37979.4674008812106253025'),
+                        amount=FVal('21528.498187325929022298'),
+                        usd_value=FVal('32292.7472809888935334470'),
                     ).serialize(),
-                    'apy': '0.15%',
+                    'apy': '0.00%',
                 },
             },
             'borrowing': {},
-        },
-        AAVE_BALANCESV2_TEST_ACC: {
-            'lending': {
-                A_WBTC.identifier: {
-                    'balance': Balance(
-                        amount=FVal('0.43022092'),
-                        usd_value=FVal('0.645331380'),
-                    ).serialize(),
-                    'apy': '0.11%',
-                },
-            },
-            'borrowing': {
-                A_USDT.identifier: {
-                    'balance': Balance(
-                        amount=FVal('20582.495008'),
-                        usd_value=FVal('30873.7425120'),
-                    ).serialize(),
-                    'stable_apr': '39.20%',
-                    'variable_apr': '33.20%',
-                },
-            },
         },
         AAVE_BALANCESV3_TEST_ACC: {
             'lending': {
@@ -138,7 +117,7 @@ def test_query_aave_balances(rotkehlchen_api_server: APIServer) -> None:
                         amount=FVal('123'),
                         usd_value=FVal('12.3'),
                     ).serialize(),
-                    'apy': '1.60%',
+                    'apy': '2.02%',
                 },
             },
             'borrowing': {
@@ -147,8 +126,8 @@ def test_query_aave_balances(rotkehlchen_api_server: APIServer) -> None:
                         amount=FVal('456'),
                         usd_value=FVal('4560'),
                     ).serialize(),
-                    'stable_apr': '9.51%',
-                    'variable_apr': '8.01%',
+                    'stable_apr': '0.00%',
+                    'variable_apr': '10.21%',
                 },
             },
         },

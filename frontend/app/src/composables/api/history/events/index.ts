@@ -25,7 +25,7 @@ import { type HistoryEventProductData, HistoryEventTypeData } from '@/types/hist
 import type { CollectionResponse } from '@/types/collection';
 import type { PendingTask } from '@/types/task';
 import type { ActionResult } from '@rotki/common';
-import type { ActionDataEntry } from '@/types/action';
+import type { ActionDataEntry, ActionStatus } from '@/types/action';
 
 interface UseHistoryEventsApiReturn {
   fetchTransactionsTask: (payload: TransactionRequestPayload, type?: TransactionChainType) => Promise<PendingTask>;
@@ -44,6 +44,7 @@ interface UseHistoryEventsApiReturn {
   fetchHistoryEvents: (payload: HistoryEventRequestPayload) => Promise<CollectionResponse<HistoryEventEntryWithMeta>>;
   queryOnlineHistoryEvents: (payload: OnlineHistoryEventsRequestPayload) => Promise<PendingTask>;
   exportHistoryEventsCSV: (filters: HistoryEventRequestPayload, directoryPath?: string) => Promise<PendingTask>;
+  downloadHistoryEventsCSV: (filePath: string) => Promise<ActionStatus>;
 }
 
 export function useHistoryEventsApi(): UseHistoryEventsApiReturn {
@@ -253,6 +254,18 @@ export function useHistoryEventsApi(): UseHistoryEventsApiReturn {
     return handleResponse(response);
   };
 
+  const downloadHistoryEventsCSV = async (filePath: string): Promise<ActionStatus> => {
+    try {
+      const fullUrl = api.instance.getUri({ url: '/history/events/export/download', params: snakeCaseTransformer({ filePath }) });
+
+      downloadFileByUrl(fullUrl, 'history_events.csv');
+      return { success: true };
+    }
+    catch (error: any) {
+      return { success: false, message: error.message };
+    }
+  };
+
   return {
     fetchTransactionsTask,
     deleteTransactions,
@@ -270,5 +283,6 @@ export function useHistoryEventsApi(): UseHistoryEventsApiReturn {
     fetchHistoryEvents,
     queryOnlineHistoryEvents,
     exportHistoryEventsCSV,
+    downloadHistoryEventsCSV,
   };
 }

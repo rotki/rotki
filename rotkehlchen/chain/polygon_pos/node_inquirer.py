@@ -2,6 +2,7 @@ import logging
 from typing import TYPE_CHECKING, Literal, cast
 
 from rotkehlchen.chain.constants import DEFAULT_EVM_RPC_TIMEOUT
+from rotkehlchen.chain.evm.base_contracts import BALANCE_SCANNER
 from rotkehlchen.chain.evm.contracts import EvmContracts
 from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -52,7 +53,7 @@ class PolygonPOSInquirer(EvmNodeInquirer):
             contracts=contracts,
             rpc_timeout=rpc_timeout,
             contract_multicall=contracts.contract(string_to_evm_address('0x275617327c958bD06b5D6b871E7f491D76113dd8')),
-            contract_scan=contracts.contract(string_to_evm_address('0x2aB513B211C801673758D1C32815605B5289ad29')),
+            contract_scan=BALANCE_SCANNER,
             native_token=A_POLYGON_POS_MATIC.resolve_to_crypto_asset(),
             blockscout=Blockscout(
                 blockchain=SupportedBlockchain.POLYGON_POS,

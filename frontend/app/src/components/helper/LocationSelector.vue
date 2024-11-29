@@ -12,10 +12,12 @@ const props = withDefaults(
   defineProps<{
     items?: string[];
     excludes?: string[];
+    dense?: boolean;
   }>(),
   {
     items: () => [],
     excludes: () => [],
+    dense: false,
   },
 );
 
@@ -53,7 +55,8 @@ watch([locations, model], ([locations, value], [prevLocations, prevValue]) => {
     :options="locations"
     key-attr="identifier"
     text-attr="name"
-    :item-height="52"
+    :item-height="dense ? 36 : 52"
+    :dense="dense"
     auto-select-first
     v-bind="$attrs"
   >

@@ -16,8 +16,8 @@ const imagePath = '/assets/images/protocols/';
     v-if="counterparty || event.address"
     class="[&_span]:!px-0"
     color="default"
-    offset-x="-4"
-    offset-y="4"
+    offset-x="-6"
+    offset-y="6"
   >
     <template #icon>
       <RuiTooltip
@@ -25,7 +25,7 @@ const imagePath = '/assets/images/protocols/';
         :open-delay="400"
       >
         <template #activator>
-          <div class="rounded-full overflow-hidden bg-white w-5 h-5 flex items-center justify-center">
+          <div class="rounded-full overflow-hidden bg-rui-grey-100 border-2 border-white dark:border-black size-6 flex items-center justify-center">
             <template v-if="counterparty">
               <RuiIcon
                 v-if="counterparty.icon"
@@ -37,7 +37,7 @@ const imagePath = '/assets/images/protocols/';
                 v-else-if="counterparty.image"
                 :src="`${imagePath}${counterparty.image}`"
                 contain
-                size="16px"
+                size="20px"
               />
 
               <EnsAvatar

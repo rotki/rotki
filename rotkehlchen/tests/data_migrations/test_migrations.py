@@ -10,6 +10,7 @@ import pytest
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.chain.gnosis.constants import BRIDGE_QUERIED_ADDRESS_PREFIX
 from rotkehlchen.chain.scroll.constants import SCROLL_ETHERSCAN_NODE
 from rotkehlchen.constants import APPDIR_NAME, ONE
 from rotkehlchen.constants.assets import A_BTC, A_ETH
@@ -37,6 +38,7 @@ from rotkehlchen.types import (
     ChecksumEvmAddress,
     Location,
     SupportedBlockchain,
+    Timestamp,
     TradeType,
     deserialize_evm_tx_hash,
 )
@@ -681,13 +683,38 @@ def test_last_data_migration_constant() -> None:
 @pytest.mark.parametrize('perform_upgrades_at_unlock', [True])
 @pytest.mark.parametrize('legacy_messages_via_websockets', [True])
 @pytest.mark.parametrize('network_mocking', [False])
-def test_migration_19(rotkehlchen_api_server: 'APIServer') -> None:
+@pytest.mark.parametrize('gnosis_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
+def test_migration_19(
+        rotkehlchen_api_server: 'APIServer',
+        gnosis_accounts: list[ChecksumEvmAddress],
+) -> None:
     """
     Test migration 19
 
     - Test that wrongly created folders get deleted
     """
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    database = rotki.data.db
+    with database.user_write() as write_cursor:
+        database.update_used_query_range(
+            write_cursor=write_cursor,
+            name=f'{BRIDGE_QUERIED_ADDRESS_PREFIX}{gnosis_accounts[0]}',
+            start_ts=Timestamp(0),
+            end_ts=Timestamp(1),
+        )
+        database.update_used_query_range(  # range for address not tracked
+            write_cursor=write_cursor,
+            name=f'{BRIDGE_QUERIED_ADDRESS_PREFIX}{"0x805aF152eebc7e280628A0Bb30Dd916b5B7716fb"}',
+            start_ts=Timestamp(0),
+            end_ts=Timestamp(1),
+        )
+        database.update_used_query_range(  # different range name
+            write_cursor=write_cursor,
+            name=f'transactions_{gnosis_accounts[0]}',
+            start_ts=Timestamp(0),
+            end_ts=Timestamp(1),
+        )
+
     bad_appdir_folder = rotki.data.db.user_data_dir / APPDIR_NAME
     bad_appdir_folder.mkdir()
     (bad_appdir_folder / 'myso.parquet').touch()
@@ -700,3 +727,11 @@ def test_migration_19(rotkehlchen_api_server: 'APIServer') -> None:
         DataMigrationManager(rotki).maybe_migrate_data()
 
     assert not bad_appdir_folder.exists()
+
+    with database.conn.read_ctx() as cursor:
+        entries = {row[0] for row in cursor.execute('SELECT name FROM used_query_ranges')}
+
+    assert entries == {
+        f'{BRIDGE_QUERIED_ADDRESS_PREFIX}{gnosis_accounts[0]}',
+        f'transactions_{gnosis_accounts[0]}',
+    }

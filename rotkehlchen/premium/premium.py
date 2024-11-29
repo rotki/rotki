@@ -299,7 +299,7 @@ class Premium:
 
         return _process_dict_response(response)
 
-    def is_active(self, catch_connection_errors: bool = True) -> bool:
+    def is_active(self) -> bool:
         if self.status == SubscriptionStatus.ACTIVE:
             return True
 
@@ -307,8 +307,6 @@ class Premium:
             self.query_last_data_metadata()
         except RemoteError:
             self.status = SubscriptionStatus.INACTIVE
-            if catch_connection_errors is False:
-                raise
             return False
         except PremiumAuthenticationError:
             self.status = SubscriptionStatus.INACTIVE
@@ -525,10 +523,8 @@ def premium_create_and_verify(credentials: PremiumCredentials, username: str) ->
     - RemoteError if there are problems reaching the server
     """
     premium = Premium(credentials=credentials, username=username)
-    if premium.is_active(catch_connection_errors=True):
-        return premium
-
-    raise PremiumAuthenticationError('rotki API key was rejected by server')
+    premium.query_last_data_metadata()
+    return premium
 
 
 def has_premium_check(premium: Premium | None) -> bool:

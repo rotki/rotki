@@ -156,49 +156,49 @@ def test_query_compound_v3_balances(
         ethereum_accounts[0]: {
             'lending': {
                 c_usdc_v3.identifier: {
-                    'apy': '6.42%',
+                    'apy': '9.90%',
                     'balance': get_balance('333349.851793'),
                 },
             }, 'rewards': {
                 A_COMP.identifier: {
                     'apy': None,
-                    'balance': get_balance('2.356445'),
+                    'balance': get_balance('12.012345'),
                 },
             },
         }, ethereum_accounts[1]: {
             'lending': {
                 c_usdc_v3.identifier: {
-                    'apy': '6.42%',
+                    'apy': '9.90%',
                     'balance': get_balance('0.32795'),
                 },
             }, 'rewards': {
                 A_COMP.identifier: {
                     'apy': None,
-                    'balance': get_balance('0'),
+                    'balance': get_balance('0.000016'),
                 },
             },
         }, ethereum_accounts[2]: {
             'borrowing': {
                 c_usdc_v3.identifier: {
-                    'apy': '8.63%',
-                    'balance': get_balance('166903.418564'),
+                    'apy': '11.57%',
+                    'balance': get_balance('20834.273226'),
                 },
             }, 'lending': {}, 'rewards': {
                 A_COMP.identifier: {
                     'apy': None,
-                    'balance': get_balance('0.22238'),
+                    'balance': get_balance('0.19064'),
                 },
             },
         }, ethereum_accounts[3]: {
             'borrowing': {
                 c_usdc_v3.identifier: {
-                    'apy': '8.63%',
-                    'balance': get_balance('257.564495'),
+                    'apy': '11.57%',
+                    'balance': get_balance('0'),
                 },
             }, 'rewards': {
                 A_COMP.identifier: {
                     'apy': None,
-                    'balance': get_balance('0.000038'),
+                    'balance': get_balance('0.000941'),
                 },
             },
         },

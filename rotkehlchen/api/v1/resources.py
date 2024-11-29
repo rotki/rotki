@@ -3163,11 +3163,11 @@ class ExportHistoryEventResource(BaseMethodView):
 
 class ExportHistoryDownloadResource(BaseMethodView):
 
-    post_schema = ExportHistoryDownloadSchema()
+    get_schema = ExportHistoryDownloadSchema()
 
     @require_loggedin_user()
-    @use_kwargs(post_schema, location='json')
-    def post(self, file_path: str) -> Response:
+    @use_kwargs(get_schema, location='json_and_query')
+    def get(self, file_path: str) -> Response:
         return self.rest_api.download_history_events_csv(file_path=file_path)
 
 

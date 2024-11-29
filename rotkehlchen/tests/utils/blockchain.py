@@ -9,6 +9,7 @@ from web3 import Web3
 
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.chain.ethereum.defi.zerionsdk import ZERION_ADAPTER_ADDRESS
+from rotkehlchen.chain.evm.base_contracts import BALANCE_SCANNER
 from rotkehlchen.chain.evm.types import NodeName, Web3Node, string_to_evm_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_BTC, A_ETH
@@ -215,7 +216,7 @@ def mock_etherscan_query(
         extra_flags: list[str] | None,
         original_requests_get,
 ):
-    eth_scan = ethereum.contracts.contract(string_to_evm_address('0x86F25b64e1Fe4C5162cDEeD5245575D32eC549db'))  # noqa: E501
+    eth_scan = BALANCE_SCANNER
     eth_multicall = ethereum.contracts.contract(string_to_evm_address('0x5BA1e12693Dc8F9c48aAD8770482f4739bEeD696'))  # noqa: E501
     original_queries = [] if original_queries is None else original_queries
     extra_flags = [] if extra_flags is None else extra_flags
@@ -341,12 +342,12 @@ def mock_etherscan_query(
                 multicall_purpose = 'compound_balances'
             elif '5f3b5dfeb7b28cdbd7faba78963ee202a494e2a2' in url:
                 multicall_purpose = 'vecrv'
-            elif '86f25b64e1fe4c5162cdeed5245575d32ec549db' in url:
+            elif '54ecf3f6f61f63fdfe7c27ee8a86e54899600c92' in url:
                 multicall_purpose = 'multibalance_query'
             else:
                 raise AssertionError('Unknown multicall in mocked tests')
 
-            if '86f25b64e1fe4c5162cdeed5245575d32ec549db' in url:
+            if '54ecf3f6f61f63fdfe7c27ee8a86e54899600c92' in url:
                 # can appear mixed with above so multibalance can trump the rest since actionable
                 multicall_purpose = 'multibalance_query'
 
@@ -369,7 +370,7 @@ def mock_etherscan_query(
                     # not really the given args, but we just want the fn abi
                     args = [next(iter(eth_map.keys())), list(eth_map.keys())]
                     scan_fn_abi = ethscan_contract._find_matching_fn_abi(
-                        'tokensBalance',
+                        'tokens_balance',
                         *args,
                     )
                     scan_input_types = get_abi_input_types(scan_fn_abi)
@@ -415,13 +416,13 @@ def mock_etherscan_query(
             web3 = Web3()
             contract = eth_scan
             ethscan_contract = web3.eth.contract(address=contract.address, abi=contract.abi)
-            if 'data=0xdbdbb51b' in url:  # Eth balance query
+            if 'data=0xee1806d2' in url:  # Eth balance query
                 data = url.split('data=')[1]
                 if '&apikey' in data:
                     data = data.split('&apikey')[0]
 
                 fn_abi = ethscan_contract._find_matching_fn_abi(
-                    'etherBalances',
+                    'ether_balances',
                     *[list(eth_map.keys())],
                 )
                 input_types = get_abi_input_types(fn_abi)
@@ -433,14 +434,14 @@ def mock_etherscan_query(
                     args.append(int(eth_map[account_address]['ETH']))
                 result = '0x' + web3.codec.encode(output_types, [args]).hex()
                 response = f'{{"jsonrpc":"2.0","id":1,"result":"{result}"}}'
-            elif 'data=0x06187b4f' in url:  # Multi token multiaddress balance query
+            elif 'data=0x665bb79e' in url:  # Multi token multiaddress balance query
                 data = url.split('data=')[1]
                 if '&apikey' in data:
                     data = data.split('&apikey')[0]
                 # not really the given args, but we just want the fn abi
                 args = [list(eth_map.keys()), list(eth_map.keys())]
                 fn_abi = ethscan_contract._find_matching_fn_abi(
-                    fn_identifier='tokensBalances',
+                    fn_identifier='tokens_balances',
                     args=args,
                 )
                 input_types = get_abi_input_types(fn_abi)
@@ -468,14 +469,14 @@ def mock_etherscan_query(
                 result = '0x' + web3.codec.encode(output_types, [args]).hex()
                 response = f'{{"jsonrpc":"2.0","id":1,"result":"{result}"}}'
 
-            elif 'data=0xe5da1b68' in url:  # Multi token balance query
+            elif 'data=0xb0d861b8' in url:  # Multi token balance query
                 data = url.split('data=')[1]
                 if '&apikey' in data:
                     data = data.split('&apikey')[0]
                 # not really the given args, but we just want the fn abi
                 args = ['str', list(eth_map.keys())]
                 fn_abi = ethscan_contract._find_matching_fn_abi(
-                    'tokensBalance',
+                    'tokens_balance',
                     *args,
                 )
                 input_types = get_abi_input_types(fn_abi)

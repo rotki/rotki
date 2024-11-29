@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { type NotificationPayload, type SemiPartial, Severity } from '@rotki/common';
 import { TaskType } from '@/types/task-type';
-import { jsonTransformer } from '@/services/axios-tranformers';
 import type { TaskMeta } from '@/types/task';
 import type { HistoryEventRequestPayload } from '@/types/history/events';
 
@@ -15,17 +14,16 @@ const { t } = useI18n();
 
 const { appSession, openDirectory } = useInterop();
 
-const { exportHistoryEventsCSV } = useHistoryEventsApi();
+const { exportHistoryEventsCSV, downloadHistoryEventsCSV } = useHistoryEventsApi();
 
 const { awaitTask, isTaskRunning } = useTaskStore();
 const { notify } = useNotificationsStore();
 
-async function createCsv(directoryPath?: string): Promise<{ result: boolean | object; message?: string } | null> {
+async function createCsv(directoryPath?: string): Promise<{ result: boolean | { filePath: string }; message?: string } | null> {
   try {
     const { taskId } = await exportHistoryEventsCSV(get(filters), directoryPath);
-    const { result } = await awaitTask<boolean | object, TaskMeta>(taskId, TaskType.EXPORT_HISTORY_EVENTS, {
+    const { result } = await awaitTask<boolean | { filePath: string }, TaskMeta>(taskId, TaskType.EXPORT_HISTORY_EVENTS, {
       title: t('actions.history_events_export.title'),
-      transformer: [jsonTransformer],
     });
 
     return {
@@ -72,8 +70,8 @@ async function exportCSV(): Promise<void> {
         display: true,
       };
     }
-    else {
-      downloadFileByTextContent(JSON.stringify(result, null, 2), 'history_events.json', 'application/json');
+    else if (result !== true && 'filePath' in result) {
+      await downloadHistoryEventsCSV(result.filePath);
     }
   }
   catch (error: any) {

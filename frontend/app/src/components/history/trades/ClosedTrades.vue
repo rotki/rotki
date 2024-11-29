@@ -50,8 +50,8 @@ const tableHeaders = computed<DataTableColumn<TradeEntry>[]>(() => {
       label: t('closed_trades.headers.action'),
       key: 'type',
       align: overview ? 'start' : 'center',
-      class: `text-no-wrap${overview ? ' !pl-0' : ''}`,
-      cellClass: overview ? '!pl-0' : 'py-1',
+      cellClass: '!px-0',
+      class: '!px-0',
       sortable: true,
     },
     {
@@ -63,16 +63,26 @@ const tableHeaders = computed<DataTableColumn<TradeEntry>[]>(() => {
     {
       label: t('closed_trades.headers.base'),
       key: 'baseAsset',
-      cellClass: '!py-1',
+      class: '!pl-0',
+      cellClass: '!py-1 !pl-0',
     },
     {
       label: '',
       key: 'description',
+      align: 'center',
+      cellClass: '!px-0',
+      class: '!px-0',
+    },
+    {
+      label: t('closed_trades.headers.quote_amount'),
+      key: 'quoteAmount',
+      align: 'end',
     },
     {
       label: t('closed_trades.headers.quote'),
       key: 'quoteAsset',
-      cellClass: '!py-1',
+      class: '!pl-0',
+      cellClass: '!py-1 !pl-0',
     },
     {
       label: t('closed_trades.headers.rate'),
@@ -455,6 +465,12 @@ watch(loading, async (isLoading, wasLoading) => {
               <AmountDisplay
                 class="closed-trades__trade__amount"
                 :value="row.amount"
+              />
+            </template>
+            <template #item.quoteAmount="{ row }">
+              <AmountDisplay
+                class="closed-trades__trade__quote_amount"
+                :value="row.amount.multipliedBy(row.rate)"
               />
             </template>
             <template #item.timestamp="{ row }">

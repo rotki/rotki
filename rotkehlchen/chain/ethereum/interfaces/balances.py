@@ -202,7 +202,7 @@ class ProtocolWithGauges(ProtocolWithBalance):
         )
         result = self.evm_inquirer.contract_scan.call(
             node_inquirer=self.evm_inquirer,
-            method_name='tokensBalance',
+            method_name='tokens_balance',
             arguments=[address, staking_addresses],
             call_order=call_order,
         )

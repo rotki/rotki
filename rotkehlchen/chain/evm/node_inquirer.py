@@ -85,6 +85,7 @@ def _connect_task_prefix(chain_name: str) -> str:
 
 
 WEB3_LOGQUERY_BLOCK_RANGE = 250000
+MAX_NODE_LOG_QUERY_CALLS = 500  # max queries for a node that can query logs from up to 1000/10_000 blocks  # noqa: E501
 
 
 def _query_web3_get_logs(
@@ -134,9 +135,17 @@ def _query_web3_get_logs(
 
             # errors from: https://infura.io/docs/ethereum/json-rpc/eth-getLogs
             if msg == 'query returned more than 10000 results':
+                if (until_block - start_block) // 10_000 > MAX_NODE_LOG_QUERY_CALLS:
+                    log.debug(f'Querying logs with a range of 10_000 from {web3} will take too much time. Stopping here')  # noqa: E501
+                    raise
+
                 block_range = initial_block_range = 9999  # ensure that block range doesn't get reset to a range bigger than what is allowed for this node  # noqa: E501
                 continue
             elif 'eth_getLogs is limited to a 1000 blocks range':  # seen in https://1rpc.io/gnosis  # noqa: E501
+                if (until_block - start_block) // 1_000 > MAX_NODE_LOG_QUERY_CALLS:
+                    log.debug(f'Querying logs with a range of 1000 from {web3} will take too much time. Stopping here')  # noqa: E501
+                    raise
+
                 block_range = initial_block_range = 999
                 continue
             elif msg == 'query timeout exceeded':
@@ -333,7 +342,7 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
         )
         result = self.contract_scan.call(
             node_inquirer=self,
-            method_name='etherBalances',
+            method_name='ether_balances',
             arguments=[accounts],
             call_order=call_order if call_order is not None else self.default_call_order(),
         )

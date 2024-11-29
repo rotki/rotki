@@ -2,6 +2,7 @@
 Changelog
 =========
 
+
 * :feature:`8929` Blockchain aggregated balances will now display the percentage of the net value and can also be filtered by chain.
 * :feature:`-` WalletConnect airdrop claiming and staking transactions are now properly recognized. WCT staked balances will also be autodetected.
 * :feature:`-` Page for inputting external API keys has been revamped.
@@ -9,11 +10,23 @@ Changelog
 * :feature:`8618` rotki will now support Morpho vaults on Ethereum and Base, with related historical events properly decoded and correct prices shown for vault tokens.
 * :feature:`8620` rotki will now properly decode EFP (Ethereum Follow Protocol) transactions.
 * :feature:`8602` rotki will now properly decode Basenames transactions and add calendar reminders for name expiry.
+
+* :release:`1.36.1 <2024-11-29>`
+* :bug:`-` Coinbase deposits that appeared as withdrawals should now appear as deposits again. Would need to purge and requery coinbase to fix this.
+* :bug:`-` Improve the appearance of the protocol icon in the history events section.
+* :bug:`-` Enhance the look of the asset icon placeholder in both light mode and dark mode.
+* :bug:`-` Fix incorrect expired subscription notifications caused by network connectivity issues.
+* :feature:`-` Show the quote amount field in the trades section table.
+* :feature:`-` Add location and address filters for the asset breakdown table in the asset details page.
+* :bug:`-`  Fix the issue where the layout for the “Force Push” setting was misaligned on small screen.
 * :bug:`8916` Coinbase events (trades, deposits/withdrawals, earn etc.) will now be properly pulled after the initial sync.
 * :bug:`-` Fix the issue where some asset values show zero in the edit snapshot form.
 * :bug:`-` Fix the issue where the pagination for the account table resets to the first page when the user expands the account.
 * :bug:`8892` rotki will now correctly fetch Starknet token prices before May 2024 from Cryptocompare, when the ticker changed from STARK to STRK.
-* :bug:`-` The airdrops directory should no longer appear under the user directory in certain circumstances
+* :bug:`-` The airdrops directory should no longer appear under the user directory in certain circumstances.
+* :bug:`-` Fix an issue that caused the token detection to fail under some circumstances involving broken tokens.
+* :bug:`-` rotki won't try to query logs from slow nodes.
+* :bug:`-` Refreshing the transactions while tracking a gnosis address will be faster after the first query.
 
 * :release:`1.36.0 <2024-11-06>`
 * :bug:`-` The exported file that overrides the file with the same name should have the latest modified time.

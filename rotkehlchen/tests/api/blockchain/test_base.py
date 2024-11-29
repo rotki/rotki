@@ -16,6 +16,7 @@ from rotkehlchen.chain.ethereum.defi.structures import (
     DefiProtocol,
     DefiProtocolBalances,
 )
+from rotkehlchen.chain.gnosis.constants import BRIDGE_QUERIED_ADDRESS_PREFIX
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_DAI, A_USDT
 from rotkehlchen.db.addressbook import DBAddressbook
@@ -46,7 +47,7 @@ from rotkehlchen.tests.utils.factories import (
     make_evm_address,
 )
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
-from rotkehlchen.types import ChainType, SupportedBlockchain
+from rotkehlchen.types import ChainType, SupportedBlockchain, Timestamp
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
@@ -1472,16 +1473,37 @@ def _remove_blockchain_accounts_test_start(
 @pytest.mark.parametrize('number_of_eth_accounts', [4])
 @pytest.mark.parametrize('btc_accounts', [[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]])
 @pytest.mark.parametrize('query_balances_before_first_modification', [True, False])
+@pytest.mark.parametrize('gnosis_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
 def test_remove_blockchain_accounts(
         rotkehlchen_api_server: 'APIServer',
         ethereum_accounts: list['ChecksumEvmAddress'],
+        gnosis_accounts: list['ChecksumEvmAddress'],
         btc_accounts: list['BTCAddress'],
         query_balances_before_first_modification: bool,
 ) -> None:
     """Test that the endpoint removing blockchain accounts works properly"""
-
     async_query = random.choice([False, True])
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    with rotki.data.db.conn.write_ctx() as write_cursor:
+        rotki.data.db.update_used_query_range(  # add range to see if it gets deleted
+            write_cursor=write_cursor,
+            name=f'{BRIDGE_QUERIED_ADDRESS_PREFIX}{gnosis_accounts[0]}',
+            start_ts=Timestamp(0),
+            end_ts=Timestamp(1),
+        )
+
+    response = requests.delete(api_url_for(
+        rotkehlchen_api_server,
+        'blockchainsaccountsresource',
+        blockchain=SupportedBlockchain.GNOSIS.value,
+    ), json={'accounts': gnosis_accounts})
+    assert_proper_sync_response_with_result(response)
+    with rotki.data.db.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM used_query_ranges WHERE name=?',
+            (f'{BRIDGE_QUERIED_ADDRESS_PREFIX}{gnosis_accounts[0]}',),
+        ).fetchone()[0] == 0
+
     (
         eth_accounts_after_removal,
         eth_balances_after_removal,
@@ -1505,6 +1527,7 @@ def test_remove_blockchain_accounts(
         token_balances=token_balances_after_removal,
         btc_balances=['3000000', '5000000'],
     )
+
     # remove the new BTC account
     with ExitStack() as stack:
         setup.enter_blockchain_patches(stack)

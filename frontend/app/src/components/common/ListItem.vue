@@ -55,12 +55,12 @@ const avatarSizeClasses = computed(() => {
     <div class="flex-1 flex flex-col text-truncate leading-[1.25em]">
       <template v-if="loading">
         <RuiSkeletonLoader class="mt-[3px] mb-1.5 w-8" />
-        <RuiSkeletonLoader class="w-16 mb-1 h-3" />
+        <RuiSkeletonLoader class="w-16 mb-0.5 h-3" />
       </template>
       <template v-else>
         <slot>
           <div
-            class="font-medium text-truncate"
+            class="font-medium text-truncate text-sm"
             :title="title"
             data-cy="list-title"
           >

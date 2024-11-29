@@ -37,34 +37,36 @@ DetectedTokensType = dict[
     tuple[list[EvmToken] | None, Timestamp | None],
 ]
 
-# 08/08/2020
-# Etherscan has by far the fastest responding server if you use a (free) API key
+# 27/11/2024
+# Etherscan has by far the fastest responding server if you use an API key
 # The chunk length for Etherscan is limited though to 120 addresses due to the URI length.
-# For all other nodes (mycrypto, avado cloud, blockscout) we have run some benchmarks
-# with them being queried randomly with different chunk lengths. They are all for an account with:
-# - 29 ethereum addresses
-# - rotki knows of 1010 different ethereum tokens as of this writing
-# Type        |  Chunk Length | Elapsed Seconds | Avg. secs per call
-# Open Nodes  |     300       |      105        |      2.379
-# Open Nodes  |     400       |      112        |      2.735
-# Open Nodes  |     450       |       90        |      2.287
-# Open Nodes  |     520       |       89        |      2.275
-# Open Nodes  |     575       |       75        |      1.982
-# Open Nodes  |     585       |       77        |      2.034
-# Open Nodes  |     590       |       74        |      1.931
-# Open Nodes  |     590       |       79        |      2.086
-# Open Nodes  |     600       |       80        |      2.068
-# Open Nodes  |     600       |       86        |      2.275
+# For all other nodes (ankr, cloudflare, flashbots) we have run some benchmarks
+# with them being queried randomly with different chunk lenghts.
+# - They are for a single account
+# - rotki knows of 5264 different ethereum tokens as of this writing
+# - The code used is available in https://github.com/rotki/rotki/pull/8951
+# chunk size, time, node, seed, comments
 #
-# Etherscan   |     120       |       112       |      2.218
-# Etherscan   |     120       |       99        |      1.957
-# Etherscan   |     120       |       102       |      2.026
+# 375, 5.452023983001709,  flashbots
+# 375, 5.356801986694336,  flashbots , 42
+# 375, 8.883646965026855,  cloudflare
+# 375, 10.064039945602417, cloudflare
+# 375, 6.45735502243042,   cloudflare
+# 375, 5.277329921722412,  cloudflare, 80
+# 375, 4.732897043228149,  ankr      , 90
+# 500, 4.8045032024383545, ankr + flashbots, 90,  ankr and cloudlare had a single call out of gas
+# 480, 5.05453896522522, ankr, 90, ankr had a single call out of gas. Cloudflare okey
+# 460, 3.771683931350708, ankr + cloudflare, 90, only 1 request to ankr failed
+# 460, 4.571718215942383, ankr + cloudflare, 90, only 1 request to ankr failed
+# 460, 6.436861991882324, flashbots, 42
+# 460, 3.726022243499756, flahbots + ankr, 80
+# 460, 7.433700084686279, cloudflare + ankr, 460
 #
-# With this we have settled on a 590 chunk length. When we surpass 1180 ethereum
-# tokens the benchmark will probably have to run again.
+# With this we have settled on a 460 chunk length since it was the highest round number that
+# didn't hit any issue executing the query in the open nodes.
 
 
-OTHER_MAX_TOKEN_CHUNK_LENGTH = 590
+OTHER_MAX_TOKEN_CHUNK_LENGTH = 460
 
 # maximum 32-bytes arguments in one call to a contract (either tokensBalance or multicall)
 ETHERSCAN_MAX_ARGUMENTS_TO_CONTRACT = 110
@@ -153,7 +155,7 @@ class EvmTokens(ABC):
         )
         result = self.evm_inquirer.contract_scan.call(
             node_inquirer=self.evm_inquirer,
-            method_name='tokensBalance',
+            method_name='tokens_balance',
             arguments=[address, [x.address for x in tokens]],
             call_order=call_order,
         )
@@ -199,7 +201,7 @@ class EvmTokens(ABC):
                 (
                     self.evm_inquirer.contract_scan.address,
                     self.evm_inquirer.contract_scan.encode(
-                        method_name='tokensBalance',
+                        method_name='tokens_balance',
                         arguments=[address, tokens_addrs],
                     ),
                 ),
@@ -212,7 +214,7 @@ class EvmTokens(ABC):
         for (address, tokens), result in zip(chunk, results, strict=True):
             decoded_result = self.evm_inquirer.contract_scan.decode(
                 result=result,
-                method_name='tokensBalance',
+                method_name='tokens_balance',
                 arguments=[address, [token.evm_address for token in tokens]],
             )[0]
             for token, token_balance in zip(tokens, decoded_result, strict=True):

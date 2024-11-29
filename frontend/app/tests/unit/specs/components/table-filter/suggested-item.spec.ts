@@ -75,7 +75,7 @@ describe('table-filter/SuggestedItem.vue', () => {
       wrapper = createWrapper({ suggestion });
 
       expect(wrapper.find('span > span:nth-child(1)').text()).toBe(key);
-      expect(wrapper.find('span > div span').text()).toBe(`${asset.symbol} (${toSentenceCase(asset.evmChain)})`);
+      expect(wrapper.find('span > div > span').text()).toBe(`${asset.symbol} (${toSentenceCase(asset.evmChain)})`);
     });
 
     it('asset = true, send only the id', () => {
@@ -89,7 +89,7 @@ describe('table-filter/SuggestedItem.vue', () => {
       wrapper = createWrapper({ suggestion });
 
       expect(wrapper.find('span > span:nth-child(1)').text()).toBe(key);
-      expect(wrapper.find('span > div span').text()).toBe('SYMBOL 2 (Ethereum)');
+      expect(wrapper.find('span > div > span').text()).toBe('SYMBOL 2 (Ethereum)');
     });
   });
 

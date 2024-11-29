@@ -914,7 +914,7 @@ class Coinbase(ExchangeInterface):
                 return None
 
             # Can't see the fee being charged from the "send" resource
-            amount_data = raw_data.get('amount', {})
+            amount_data = raw_data['amount']
             amount = deserialize_asset_amount_force_positive(amount_data['amount'])
             asset = asset_from_coinbase(amount_data['currency'], time=timestamp)
             # Fees dont appear in the docs but from an experiment of sending ETH
@@ -945,6 +945,9 @@ class Coinbase(ExchangeInterface):
                 return None  # Can ignore. https://github.com/rotki/rotki/issues/3901
 
             if 'from' in raw_data:
+                movement_category = AssetMovementCategory.DEPOSIT
+
+            if tx_type == 'send' and not amount_data['amount'].startswith('-'):
                 movement_category = AssetMovementCategory.DEPOSIT
 
         except UnknownAsset as e:
