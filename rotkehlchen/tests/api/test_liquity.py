@@ -1,6 +1,6 @@
 import random
 from typing import TYPE_CHECKING
-from unittest.mock import patch
+from unittest.mock import _patch, patch
 
 import pytest
 import requests
@@ -15,6 +15,7 @@ from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_proper_response_with_result,
@@ -26,7 +27,6 @@ from rotkehlchen.types import Location, TimestampMS
 
 if TYPE_CHECKING:
     from rotkehlchen.externalapis.etherscan import Etherscan
-
 
 LQTY_ADDR = string_to_evm_address('0x063c26fF1592688B73d8e2A18BA4C23654e2792E')
 LQTY_STAKING = string_to_evm_address('0x00000029fF545c86524Ade7cAF132527707948C4')
@@ -40,7 +40,7 @@ LIQUITY_POOL_DEPOSITOR = string_to_evm_address('0xFBcAFB005695afa660836BaC42567c
 @pytest.mark.parametrize('ethereum_accounts', [[LQTY_ADDR]])
 @pytest.mark.parametrize('ethereum_modules', [['liquity']])
 @pytest.mark.parametrize('should_mock_current_price_queries', [True])
-def test_trove_position(rotkehlchen_api_server, inquirer):  # pylint: disable=unused-argument
+def test_trove_position(rotkehlchen_api_server: APIServer, inquirer: Inquirer) -> None:  # pylint: disable=unused-argument
     """Test that we can get the status of the user's troves"""
     async_query = random.choice([False, True])
     response = requests.get(api_url_for(
@@ -99,7 +99,7 @@ def test_trove_position(rotkehlchen_api_server, inquirer):  # pylint: disable=un
 @pytest.mark.parametrize('ethereum_modules', [['liquity']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [True])
-def test_trove_staking(rotkehlchen_api_server, inquirer):  # pylint: disable=unused-argument
+def test_trove_staking(rotkehlchen_api_server: APIServer, inquirer: Inquirer) -> None:  # pylint: disable=unused-argument
     """Test that we can get the status of the staked lqty"""
     async_query = random.choice([False, True])
     response = requests.get(api_url_for(
@@ -141,7 +141,7 @@ def test_trove_staking(rotkehlchen_api_server, inquirer):  # pylint: disable=unu
 @pytest.mark.parametrize('ethereum_modules', [['liquity']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [True])
-def test_account_without_info(rotkehlchen_api_server, inquirer):  # pylint: disable=unused-argument
+def test_account_without_info(rotkehlchen_api_server: APIServer, inquirer: Inquirer) -> None:  # pylint: disable=unused-argument
     """Test that we can get the status of the trove and the staked lqty"""
     async_query = random.choice([False, True])
     response = requests.get(api_url_for(
@@ -169,7 +169,7 @@ def test_account_without_info(rotkehlchen_api_server, inquirer):  # pylint: disa
 @pytest.mark.parametrize('ethereum_modules', [['liquity']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [True])
-def test_account_with_proxy(rotkehlchen_api_server, inquirer):  # pylint: disable=unused-argument
+def test_account_with_proxy(rotkehlchen_api_server: APIServer, inquirer: Inquirer) -> None:  # pylint: disable=unused-argument
     """Test that we can get the status of a trove created using DSProxy"""
     async_query = random.choice([False, True])
     response = requests.get(api_url_for(
@@ -236,13 +236,13 @@ def test_account_with_proxy(rotkehlchen_api_server, inquirer):  # pylint: disabl
 @pytest.mark.parametrize('ethereum_modules', [['liquity']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [True])
-def test_stability_pool(rotkehlchen_api_server):
+def test_stability_pool(rotkehlchen_api_server: APIServer) -> None:
     """Test that we can get the status of the deposits in the stability pool"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     eth_multicall = rotki.chains_aggregator.ethereum.node_inquirer.contracts.contract(string_to_evm_address('0x5BA1e12693Dc8F9c48aAD8770482f4739bEeD696'))  # noqa: E501
 
-    def mock_etherscan_transaction_response(etherscan: 'Etherscan'):
-        def mocked_request_dict(url, *_args, **_kwargs):
+    def mock_etherscan_transaction_response(etherscan: 'Etherscan') -> _patch:
+        def mocked_request_dict(url: str, *_args, **_kwargs) -> MockResponse:
             # if '0xeefBa1e63905eF1D7ACbA5a8513c70307C1cE441' in url:
             if f'to={eth_multicall.address}' in url:
                 if 'data=0x252dba42' in url:  # aggregate
@@ -295,7 +295,7 @@ def test_stability_pool(rotkehlchen_api_server):
         '0xbB8311c7bAD518f0D8f907Cad26c5CcC85a06dC4',
     ],
 ])
-def test_staking_stats(rotkehlchen_api_server: APIServer, ethereum_accounts: list[str]):
+def test_staking_stats(rotkehlchen_api_server: APIServer, ethereum_accounts: list[str]) -> None:
     """
     Test that the stats generated by the liquity endpoint are correct using mocked events
     and that the stats combining all the data are consistent with the
@@ -428,7 +428,10 @@ def test_staking_stats(rotkehlchen_api_server: APIServer, ethereum_accounts: lis
 @pytest.mark.parametrize('ethereum_modules', [['liquity']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [True])
-def test_proxy_info_is_shown(rotkehlchen_api_server, ethereum_accounts):
+def test_proxy_info_is_shown(
+        rotkehlchen_api_server: APIServer,
+        ethereum_accounts: list[str],
+    ) -> None:
     """Check that information about proxies is added to the responses for liquity endpoints"""
     user_address = ethereum_accounts[0]
     response = requests.get(api_url_for(

@@ -1,5 +1,6 @@
 import { camelCase, isEmpty } from 'lodash-es';
 import { type MaybeRef, objectOmit } from '@vueuse/core';
+import type { Balance } from '@rotki/common';
 import type {
   BlockchainAssetBalances,
   BlockchainBalances,
@@ -18,7 +19,6 @@ import type {
   ValidatorData,
 } from '@/types/blockchain/accounts';
 import type { Collection } from '@/types/collection';
-import type { Balance } from '@rotki/common';
 import type { AssetBalances } from '@/types/balances';
 import type { Ref } from 'vue';
 
@@ -257,23 +257,26 @@ export function convertBtcBalances(
   };
 }
 
-export function* iterateAssets(balances: Balances, key: keyof EthBalance = 'assets'): Generator<[string, Balance]> {
-  for (const chainBalances of Object.values(balances)) {
-    for (const account of Object.values(chainBalances)) {
-      if (!account[key])
-        continue;
+export function* iterateAssets(balances: Balances, key: keyof EthBalance = 'assets', filterChains: string[] = []): Generator<[string, Balance]> {
+  for (const chain of Object.keys(balances)) {
+    const chainBalances = balances[chain];
+    if (filterChains.length === 0 || filterChains.includes(chain)) {
+      for (const account of Object.values(chainBalances)) {
+        if (!account[key])
+          continue;
 
-      for (const [identifier, balance] of Object.entries(account[key]))
-        yield [identifier, balance] as const;
+        for (const [identifier, balance] of Object.entries(account[key]))
+          yield [identifier, balance] as const;
+      }
     }
   }
 }
 
-export function aggregateTotals(balances: MaybeRef<Balances>, key: keyof EthBalance = 'assets'): Readonly<Ref<AssetBalances>> {
+export function aggregateTotals(balances: MaybeRef<Balances>, key: keyof EthBalance = 'assets', filterChains: MaybeRef<string[]> = []): Readonly<Ref<AssetBalances>> {
   return computed<AssetBalances>(() => {
     const aggregated: AssetBalances = {};
 
-    for (const [identifier, balance] of iterateAssets(get(balances), key)) {
+    for (const [identifier, balance] of iterateAssets(get(balances), key, get(filterChains))) {
       if (!aggregated[identifier])
         aggregated[identifier] = balance;
       else

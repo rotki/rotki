@@ -55,6 +55,7 @@ export enum DashboardTableType {
   LIABILITIES = 'LIABILITIES',
   NFT = 'NFT',
   LIQUIDITY_POSITION = 'LIQUIDITY_POSITION',
+  BLOCKCHAIN_ASSET_BALANCES = 'BLOCKCHAIN_ASSET_BALANCES',
 }
 
 const DashboardTablesVisibleColumns = z.object({
@@ -62,6 +63,7 @@ const DashboardTablesVisibleColumns = z.object({
   [DashboardTableType.LIABILITIES]: TableColumnEnum.default(Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS),
   [DashboardTableType.NFT]: TableColumnEnum.default(Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS),
   [DashboardTableType.LIQUIDITY_POSITION]: TableColumnEnum.default(Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS),
+  [DashboardTableType.BLOCKCHAIN_ASSET_BALANCES]: TableColumnEnum.default(Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS),
 });
 
 export type DashboardTablesVisibleColumns = z.infer<typeof DashboardTablesVisibleColumns>;

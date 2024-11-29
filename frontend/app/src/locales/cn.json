@@ -1259,9 +1259,6 @@
       "edit_subtitle": "修改账户信息",
       "edit_title": "编辑区块链账户"
     },
-    "per_asset": {
-      "title": "每项资产的区块链余额"
-    },
     "title": "每项资产的区块链余额"
   },
   "borrowing": {

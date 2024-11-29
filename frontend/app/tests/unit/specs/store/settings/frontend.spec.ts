@@ -73,6 +73,7 @@ describe('settings:frontend', () => {
               [DashboardTableType.LIABILITIES]: Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS,
               [DashboardTableType.NFT]: Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS,
               [DashboardTableType.LIQUIDITY_POSITION]: Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS,
+              [DashboardTableType.BLOCKCHAIN_ASSET_BALANCES]: Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS,
             },
             dateInputFormat: DateFormat.DateMonthYearHourMinuteSecond,
             versionUpdateCheckFrequency: Defaults.DEFAULT_VERSION_UPDATE_CHECK_FREQUENCY,
@@ -149,6 +150,7 @@ describe('settings:frontend', () => {
         [DashboardTableType.LIABILITIES]: [TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE],
         [DashboardTableType.NFT]: [TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE],
         [DashboardTableType.LIQUIDITY_POSITION]: [TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE],
+        [DashboardTableType.BLOCKCHAIN_ASSET_BALANCES]: [TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE],
       },
       dateInputFormat: DateFormat.DateMonthYearHourMinuteSecond,
       versionUpdateCheckFrequency: 24,
@@ -213,6 +215,7 @@ describe('settings:frontend', () => {
       [DashboardTableType.LIABILITIES]: [TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE],
       [DashboardTableType.NFT]: [TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE],
       [DashboardTableType.LIQUIDITY_POSITION]: [TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE],
+      [DashboardTableType.BLOCKCHAIN_ASSET_BALANCES]: [TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE],
     });
     expect(store.dateInputFormat).toBe(DateFormat.DateMonthYearHourMinuteSecond);
     expect(store.versionUpdateCheckFrequency).toBe(24);

@@ -1231,9 +1231,6 @@
       "edit_subtitle": "Modify account details",
       "edit_title": "Edit blockchain account"
     },
-    "per_asset": {
-      "title": "Blockchain Balances per Asset"
-    },
     "title": "Blockchain Balances per asset"
   },
   "borrowing": {
