@@ -3,6 +3,8 @@ Changelog
 =========
 
 * :release:`1.36.1 <2024-11-29>`
+* :bug:`-` Improve the appearance of the protocol icon in the history events section.
+* :bug:`-` Enhance the look of the asset icon placeholder in both light mode and dark mode.
 * :bug:`-` Fix incorrect expired subscription notifications caused by network connectivity issues.
 * :feature:`-` Show the quote amount field in the trades section table.
 * :feature:`-` Add location and address filters for the asset breakdown table in the asset details page.
