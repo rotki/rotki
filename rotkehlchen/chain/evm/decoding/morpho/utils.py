@@ -12,10 +12,6 @@ from rotkehlchen.chain.evm.decoding.utils import get_vault_price, update_cached_
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import EXP18_INT, ONE
 from rotkehlchen.db.settings import CachedSettings
-from rotkehlchen.globaldb.cache import (
-    globaldb_set_unique_cache_value,
-)
-from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_int
 from rotkehlchen.types import (
@@ -38,15 +34,6 @@ log = RotkehlchenLogsAdapter(logger)
 MORPHO_BLUE_API: Final = 'https://blue-api.morpho.org/graphql'
 VAULT_QUERY_PAGE_SIZE: Final = 200
 VAULT_QUERY: Final = 'items {address symbol name asset {address symbol name decimals} chain {id}}'
-
-
-def _update_cache_timestamp(count: int | None = None) -> None:
-    with GlobalDBHandler().conn.write_ctx() as write_cursor:
-        globaldb_set_unique_cache_value(
-            write_cursor=write_cursor,
-            key_parts=[CacheType.MORPHO_VAULTS],
-            value=str(count) if count is not None else '0',
-        )
 
 
 def _query_morpho_vaults_api() -> list[dict[str, Any]] | None:
@@ -109,9 +96,9 @@ def query_morpho_vaults(database: 'DBHandler') -> None:
     """Query list of Morpho vaults and add the vault tokens to the global database."""
     update_cached_vaults(
         database=database,
-        cache_type=CacheType.MORPHO_VAULTS,
+        cache_key=(CacheType.MORPHO_VAULTS,),
         display_name='Morpho',
-        query_vault_api=_query_morpho_vaults_api,
+        query_vaults=_query_morpho_vaults_api,
         process_vault=_process_morpho_vault,
     )
 

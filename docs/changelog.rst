@@ -3,6 +3,8 @@ Changelog
 =========
 
 
+* :feature:`7406` rotki will now support Aura Finance staking for Balancer pools on Gnosis Chain and all supported EVM chains.
+* :feature:`7405` rotki will now support Balancer pools on Gnosis Chain and all supported EVM chains.
 * :feature:`7621` rotki will now support Curve lending, with related historical events properly decoded and correct prices and balances shown.
 * :feature:`8929` Blockchain aggregated balances will now display the percentage of the net value and can also be filtered by chain.
 * :feature:`-` WalletConnect airdrop claiming and staking transactions are now properly recognized. WCT staked balances will also be autodetected.
