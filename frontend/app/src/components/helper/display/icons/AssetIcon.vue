@@ -139,10 +139,9 @@ const { copy } = useCopy(identifier);
 
         <div
           :style="styled"
-          class="flex items-center justify-center cursor-pointer h-full w-full"
+          class="flex items-center justify-center cursor-pointer h-full w-full icon-bg"
           :class="{
             [$style.circle]: circle,
-            'icon-bg': !(currency || error || pending),
           }"
         >
           <GeneratedIcon

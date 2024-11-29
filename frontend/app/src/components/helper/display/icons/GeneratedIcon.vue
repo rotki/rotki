@@ -61,7 +61,7 @@ const textStyle = computed<Style>(() => {
 <template>
   <span
     :style="{ ...wrapperStyle, ...textStyle }"
-    class="flex items-center justify-center rounded-full whitespace-nowrap tracking-normal font-semibold bg-rui-grey-200 dark:bg-rui-grey-800 text-rui-grey-600 dark:text-rui-grey-400 border border-rui-grey-300 dark:border-black/[0.1] uppercase"
+    class="flex items-center justify-center rounded-full whitespace-nowrap tracking-normal font-semibold bg-rui-grey-200 dark:bg-rui-grey-300 text-rui-grey-600 dark:text-rui-grey-700 border border-rui-grey-300 dark:border-rui-grey-400 uppercase"
   >
     <RuiIcon
       v-if="customAsset"
