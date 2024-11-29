@@ -1,3 +1,4 @@
+import { startPromise } from '@shared/utils';
 import type { MaybeRef } from '@vueuse/core';
 import type { ComputedRef, Ref } from 'vue';
 

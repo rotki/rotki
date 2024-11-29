@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { externalLinks } from '@shared/external-links';
 import { Routes } from '@/router/routes';
 
 const { t } = useI18n();

@@ -1,3 +1,5 @@
+import { blockscoutLinks, etherscanLinks } from '@shared/external-links';
+
 type EtherscanKey = keyof typeof etherscanLinks;
 
 type BlockscoutKey = keyof typeof blockscoutLinks;

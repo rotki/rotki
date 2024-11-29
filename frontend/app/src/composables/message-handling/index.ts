@@ -1,4 +1,5 @@
 import { type Notification, Priority, Severity } from '@rotki/common';
+import { backoff } from '@shared/utils';
 import {
   type BalanceSnapshotError,
   type DbUploadResult,

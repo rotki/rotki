@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { externalLinks } from '@shared/external-links';
+
 const downloadReady = ref(false);
 const downloading = ref(false);
 const restarting = ref(false);

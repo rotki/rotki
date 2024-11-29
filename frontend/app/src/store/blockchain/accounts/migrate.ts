@@ -1,5 +1,6 @@
 import { type Notification, NotificationCategory, Severity } from '@rotki/common';
 import { type MaybeRef, useSessionStorage } from '@vueuse/core';
+import { startPromise } from '@shared/utils';
 import { useLoggedUserIdentifier } from '@/composables/user/account';
 import type { MigratedAddresses } from '@/types/websocket-messages';
 

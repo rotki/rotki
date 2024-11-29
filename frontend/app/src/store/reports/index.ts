@@ -1,4 +1,5 @@
 import { Blockchain, type Message } from '@rotki/common';
+import { startPromise } from '@shared/utils';
 import { CURRENCY_USD } from '@/types/currencies';
 import { TaskType } from '@/types/task-type';
 import { isBlockchain } from '@/types/blockchain/chains';

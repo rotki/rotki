@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { startPromise } from '@shared/utils';
 import { TaskType } from '@/types/task-type';
 import type { DataTableColumn } from '@rotki/ui-library';
 import type { Filters, Matcher } from '@/composables/filters/accounting-rule';

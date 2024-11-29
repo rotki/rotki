@@ -1,6 +1,7 @@
 import { Blockchain } from '@rotki/common';
 import { computed } from 'vue';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { startPromise } from '@shared/utils';
 import { Section } from '@/types/status';
 import { useBlockchainStore } from '@/store/blockchain';
 import type { EvmChainInfo, SupportedChains } from '@/types/api/chains';

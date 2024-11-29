@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi, vitest } from 'vitest';
 import flushPromises from 'flush-promises';
+import { wait } from '@shared/utils';
 import { LimitedParallelizationQueue } from '@/utils/limited-parallelization-queue';
 
 describe('limitedParallelizationQueue', () => {

@@ -1,4 +1,5 @@
 import { Blockchain } from '@rotki/common';
+import { startPromise } from '@shared/utils';
 import { Section, Status } from '@/types/status';
 
 interface UseDataLoaderReturn { load: () => void }

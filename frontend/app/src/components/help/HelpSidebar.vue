@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { TWITTER_URL, externalLinks } from '@shared/external-links';
 import { IndexedDb } from '@/utils/indexed-db';
 import type { RuiIcons } from '@rotki/ui-library';
 

@@ -1,4 +1,5 @@
 import { camelCase } from 'lodash-es';
+import { etherscanLinks, externalLinks } from '@shared/external-links';
 import { pslSuffixes } from '@/data/psl';
 import { isEtherscanKey } from '@/types/external';
 import type { RouteLocationRaw } from 'vue-router';

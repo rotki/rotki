@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { checkIfDevelopment } from '@shared/utils';
 import { Routes } from '@/router/routes';
 import type { ProfitLossReportPeriod } from '@/types/reports';
 

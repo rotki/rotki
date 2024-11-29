@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { externalLinks } from '@shared/external-links';
+
 const { t } = useI18n();
 </script>
 

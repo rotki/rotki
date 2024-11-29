@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { camelCase } from 'lodash-es';
+import { blockscoutLinks } from '@shared/external-links';
 import { isBlockscoutKey } from '@/types/external';
 
 const props = defineProps<{ evmChain: string; chainName: string }>();

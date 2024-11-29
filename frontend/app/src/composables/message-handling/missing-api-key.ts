@@ -1,4 +1,5 @@
 import { type Blockchain, type Notification, type NotificationAction, Priority, Severity } from '@rotki/common';
+import { externalLinks } from '@shared/external-links';
 import type { CommonMessageHandler, MissingApiKey } from '@/types/websocket-messages';
 
 export function useMissingApiKeyHandler(t: ReturnType<typeof useI18n>['t']): CommonMessageHandler<MissingApiKey> {
