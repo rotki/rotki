@@ -1,3 +1,4 @@
+import { externalLinks } from '@shared/external-links';
 import type { MaybeRef } from '@vueuse/core';
 import type { ComputedRef } from 'vue';
 

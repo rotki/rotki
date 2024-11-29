@@ -2,6 +2,7 @@
 import { isEqual } from 'lodash-es';
 import { not } from '@vueuse/math';
 import { type Account, type Blockchain, HistoryEventEntryType, type Writeable } from '@rotki/common';
+import { startPromise } from '@shared/utils';
 import { RouterAccountsSchema } from '@/types/route';
 import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';

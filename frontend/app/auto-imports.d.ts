@@ -9,14 +9,11 @@ declare global {
   const AaveBalances: typeof import('@rotki/common')['AaveBalances']
   const AaveHistory: typeof import('@rotki/common')['AaveHistory']
   const AccountExternalFilterSchema: typeof import('./src/composables/filters/blockchain-account')['AccountExternalFilterSchema']
-  const ActiveLogLevel: typeof import('./shared/ipc')['ActiveLogLevel']
   const AssetBalance: typeof import('@rotki/common')['AssetBalance']
   const AssetBalanceWithPriceBeforeBreakdown: typeof import('@rotki/common')['AssetBalanceWithPriceBeforeBreakdown']
   const AssetEntry: typeof import('@rotki/common')['AssetEntry']
   const AssetInfo: typeof import('@rotki/common')['AssetInfo']
   const AssetInfoWithTransformer: typeof import('@rotki/common')['AssetInfoWithTransformer']
-  const BackendCode: typeof import('./shared/ipc')['BackendCode']
-  const BackendOptions: typeof import('./shared/ipc')['BackendOptions']
   const Balance: typeof import('@rotki/common')['Balance']
   const BaseAsset: typeof import('@rotki/common')['BaseAsset']
   const BigNumber: typeof import('@rotki/common')['BigNumber']
@@ -47,7 +44,6 @@ declare global {
   const LiquityStatisticDetails: typeof import('@rotki/common')['LiquityStatisticDetails']
   const LiquityStatistics: typeof import('@rotki/common')['LiquityStatistics']
   const LocationData: typeof import('@rotki/common')['LocationData']
-  const LogLevel: typeof import('./shared/log-level')['LogLevel']
   const LpType: typeof import('@rotki/common')['LpType']
   const ManualBalancesFilterSchema: typeof import('./src/composables/filters/manual-balances')['ManualBalancesFilterSchema']
   const NetValue: typeof import('@rotki/common')['NetValue']
@@ -68,7 +64,6 @@ declare global {
   const StoreTrackPlugin: typeof import('./src/store/plugins')['StoreTrackPlugin']
   const SupportedAsset: typeof import('@rotki/common')['SupportedAsset']
   const TIMEFRAME_CUSTOM: typeof import('@rotki/common')['TIMEFRAME_CUSTOM']
-  const TWITTER_URL: typeof import('./shared/external-links')['TWITTER_URL']
   const Theme: typeof import('@rotki/common')['Theme']
   const ThemeColors: typeof import('@rotki/common')['ThemeColors']
   const ThemeEnum: typeof import('@rotki/common')['ThemeEnum']
@@ -103,18 +98,15 @@ declare global {
   const attemptPolyfillResizeObserver: typeof import('./src/utils/cypress')['attemptPolyfillResizeObserver']
   const autoResetRef: typeof import('@vueuse/core')['autoResetRef']
   const awaitParallelExecution: typeof import('./src/utils/await-parallel-execution')['awaitParallelExecution']
-  const backoff: typeof import('./shared/utils')['backoff']
   const balanceSum: typeof import('./src/utils/calculation')['balanceSum']
   const balanceUsdValueSum: typeof import('./src/utils/balances')['balanceUsdValueSum']
   const bigNumberSum: typeof import('./src/utils/calculation')['bigNumberSum']
   const bigNumberify: typeof import('@rotki/common')['bigNumberify']
   const bigNumberifyFromRef: typeof import('./src/utils/bignumbers')['bigNumberifyFromRef']
-  const blockscoutLinks: typeof import('./shared/external-links')['blockscoutLinks']
   const calculatePercentage: typeof import('./src/utils/calculation')['calculatePercentage']
   const calculateTotalProfitLoss: typeof import('./src/utils/report')['calculateTotalProfitLoss']
   const changeDateFormat: typeof import('./src/utils/date')['changeDateFormat']
   const checkBeforeSubmission: typeof import('./src/utils/validation')['checkBeforeSubmission']
-  const checkIfDevelopment: typeof import('./shared/utils')['checkIfDevelopment']
   const chunkArray: typeof import('./src/utils/data')['chunkArray']
   const compareTextByKeyword: typeof import('./src/utils/assets')['compareTextByKeyword']
   const computed: typeof import('vue')['computed']
@@ -167,9 +159,7 @@ declare global {
   const eagerComputed: typeof import('@vueuse/core')['eagerComputed']
   const editBlockchainAccount: typeof import('./src/composables/accounts/blockchain/use-account-manage')['editBlockchainAccount']
   const effectScope: typeof import('vue')['effectScope']
-  const etherscanLinks: typeof import('./shared/external-links')['etherscanLinks']
   const extendRef: typeof import('@vueuse/core')['extendRef']
-  const externalLinks: typeof import('./shared/external-links')['externalLinks']
   const fetchDataAsync: typeof import('./src/utils/fetch-async')['fetchDataAsync']
   const filterAddresses: typeof import('./src/utils/addresses')['filterAddresses']
   const filterAddressesFromWords: typeof import('./src/utils/history/index')['filterAddressesFromWords']
@@ -370,7 +360,6 @@ declare global {
   const sortBy: typeof import('./src/utils/blockchain/accounts/common')['sortBy']
   const sortDesc: typeof import('./src/utils/bignumbers')['sortDesc']
   const splitSearch: typeof import('./src/utils/search')['splitSearch']
-  const startPromise: typeof import('./shared/utils')['startPromise']
   const storeToRefs: typeof import('pinia')['storeToRefs']
   const sum: typeof import('./src/utils/balances')['sum']
   const sumAssetBalances: typeof import('./src/utils/balances')['sumAssetBalances']
@@ -843,7 +832,6 @@ declare global {
   const useWindowSize: typeof import('@vueuse/core')['useWindowSize']
   const useYearnApi: typeof import('./src/composables/api/defi/yearn')['useYearnApi']
   const useYearnStore: typeof import('./src/store/defi/yearn/index')['useYearnStore']
-  const wait: typeof import('./shared/utils')['wait']
   const watch: typeof import('vue')['watch']
   const watchArray: typeof import('@vueuse/core')['watchArray']
   const watchAtMost: typeof import('@vueuse/core')['watchAtMost']
@@ -874,12 +862,16 @@ declare global {
   export type { Unit } from './src/utils/calculation'
   import('./src/utils/calculation')
   // @ts-ignore
+  export type { IndexedDb } from './src/utils/indexed-db'
+  import('./src/utils/indexed-db')
+  // @ts-ignore
+  export type { LimitedParallelizationQueue } from './src/utils/limited-parallelization-queue'
+  import('./src/utils/limited-parallelization-queue')
+  // @ts-ignore
   export type { XpubPrefix } from './src/utils/xpub'
   import('./src/utils/xpub')
-  // @ts-ignore
-  export type { LogLevel } from './shared/log-level'
-  import('./shared/log-level')
 }
+
 // for vue template auto import
 import { UnwrapRef } from 'vue'
 declare module 'vue' {
@@ -888,14 +880,11 @@ declare module 'vue' {
     readonly AaveBalances: UnwrapRef<typeof import('@rotki/common')['AaveBalances']>
     readonly AaveHistory: UnwrapRef<typeof import('@rotki/common')['AaveHistory']>
     readonly AccountExternalFilterSchema: UnwrapRef<typeof import('./src/composables/filters/blockchain-account')['AccountExternalFilterSchema']>
-    readonly ActiveLogLevel: UnwrapRef<typeof import('./shared/ipc')['ActiveLogLevel']>
     readonly AssetBalance: UnwrapRef<typeof import('@rotki/common')['AssetBalance']>
     readonly AssetBalanceWithPriceBeforeBreakdown: UnwrapRef<typeof import('@rotki/common')['AssetBalanceWithPriceBeforeBreakdown']>
     readonly AssetEntry: UnwrapRef<typeof import('@rotki/common')['AssetEntry']>
     readonly AssetInfo: UnwrapRef<typeof import('@rotki/common')['AssetInfo']>
     readonly AssetInfoWithTransformer: UnwrapRef<typeof import('@rotki/common')['AssetInfoWithTransformer']>
-    readonly BackendCode: UnwrapRef<typeof import('./shared/ipc')['BackendCode']>
-    readonly BackendOptions: UnwrapRef<typeof import('./shared/ipc')['BackendOptions']>
     readonly Balance: UnwrapRef<typeof import('@rotki/common')['Balance']>
     readonly BaseAsset: UnwrapRef<typeof import('@rotki/common')['BaseAsset']>
     readonly BigNumber: UnwrapRef<typeof import('@rotki/common')['BigNumber']>
@@ -926,7 +915,6 @@ declare module 'vue' {
     readonly LiquityStatisticDetails: UnwrapRef<typeof import('@rotki/common')['LiquityStatisticDetails']>
     readonly LiquityStatistics: UnwrapRef<typeof import('@rotki/common')['LiquityStatistics']>
     readonly LocationData: UnwrapRef<typeof import('@rotki/common')['LocationData']>
-    readonly LogLevel: UnwrapRef<typeof import('./shared/log-level')['LogLevel']>
     readonly LpType: UnwrapRef<typeof import('@rotki/common')['LpType']>
     readonly ManualBalancesFilterSchema: UnwrapRef<typeof import('./src/composables/filters/manual-balances')['ManualBalancesFilterSchema']>
     readonly NetValue: UnwrapRef<typeof import('@rotki/common')['NetValue']>
@@ -947,7 +935,6 @@ declare module 'vue' {
     readonly StoreTrackPlugin: UnwrapRef<typeof import('./src/store/plugins')['StoreTrackPlugin']>
     readonly SupportedAsset: UnwrapRef<typeof import('@rotki/common')['SupportedAsset']>
     readonly TIMEFRAME_CUSTOM: UnwrapRef<typeof import('@rotki/common')['TIMEFRAME_CUSTOM']>
-    readonly TWITTER_URL: UnwrapRef<typeof import('./shared/external-links')['TWITTER_URL']>
     readonly Theme: UnwrapRef<typeof import('@rotki/common')['Theme']>
     readonly ThemeColors: UnwrapRef<typeof import('@rotki/common')['ThemeColors']>
     readonly ThemeEnum: UnwrapRef<typeof import('@rotki/common')['ThemeEnum']>
@@ -982,18 +969,15 @@ declare module 'vue' {
     readonly attemptPolyfillResizeObserver: UnwrapRef<typeof import('./src/utils/cypress')['attemptPolyfillResizeObserver']>
     readonly autoResetRef: UnwrapRef<typeof import('@vueuse/core')['autoResetRef']>
     readonly awaitParallelExecution: UnwrapRef<typeof import('./src/utils/await-parallel-execution')['awaitParallelExecution']>
-    readonly backoff: UnwrapRef<typeof import('./shared/utils')['backoff']>
     readonly balanceSum: UnwrapRef<typeof import('./src/utils/calculation')['balanceSum']>
     readonly balanceUsdValueSum: UnwrapRef<typeof import('./src/utils/balances')['balanceUsdValueSum']>
     readonly bigNumberSum: UnwrapRef<typeof import('./src/utils/calculation')['bigNumberSum']>
     readonly bigNumberify: UnwrapRef<typeof import('@rotki/common')['bigNumberify']>
     readonly bigNumberifyFromRef: UnwrapRef<typeof import('./src/utils/bignumbers')['bigNumberifyFromRef']>
-    readonly blockscoutLinks: UnwrapRef<typeof import('./shared/external-links')['blockscoutLinks']>
     readonly calculatePercentage: UnwrapRef<typeof import('./src/utils/calculation')['calculatePercentage']>
     readonly calculateTotalProfitLoss: UnwrapRef<typeof import('./src/utils/report')['calculateTotalProfitLoss']>
     readonly changeDateFormat: UnwrapRef<typeof import('./src/utils/date')['changeDateFormat']>
     readonly checkBeforeSubmission: UnwrapRef<typeof import('./src/utils/validation')['checkBeforeSubmission']>
-    readonly checkIfDevelopment: UnwrapRef<typeof import('./shared/utils')['checkIfDevelopment']>
     readonly chunkArray: UnwrapRef<typeof import('./src/utils/data')['chunkArray']>
     readonly compareTextByKeyword: UnwrapRef<typeof import('./src/utils/assets')['compareTextByKeyword']>
     readonly computed: UnwrapRef<typeof import('vue')['computed']>
@@ -1046,9 +1030,7 @@ declare module 'vue' {
     readonly eagerComputed: UnwrapRef<typeof import('@vueuse/core')['eagerComputed']>
     readonly editBlockchainAccount: UnwrapRef<typeof import('./src/composables/accounts/blockchain/use-account-manage')['editBlockchainAccount']>
     readonly effectScope: UnwrapRef<typeof import('vue')['effectScope']>
-    readonly etherscanLinks: UnwrapRef<typeof import('./shared/external-links')['etherscanLinks']>
     readonly extendRef: UnwrapRef<typeof import('@vueuse/core')['extendRef']>
-    readonly externalLinks: UnwrapRef<typeof import('./shared/external-links')['externalLinks']>
     readonly fetchDataAsync: UnwrapRef<typeof import('./src/utils/fetch-async')['fetchDataAsync']>
     readonly filterAddresses: UnwrapRef<typeof import('./src/utils/addresses')['filterAddresses']>
     readonly filterAddressesFromWords: UnwrapRef<typeof import('./src/utils/history/index')['filterAddressesFromWords']>
@@ -1249,7 +1231,6 @@ declare module 'vue' {
     readonly sortBy: UnwrapRef<typeof import('./src/utils/blockchain/accounts/common')['sortBy']>
     readonly sortDesc: UnwrapRef<typeof import('./src/utils/bignumbers')['sortDesc']>
     readonly splitSearch: UnwrapRef<typeof import('./src/utils/search')['splitSearch']>
-    readonly startPromise: UnwrapRef<typeof import('./shared/utils')['startPromise']>
     readonly storeToRefs: UnwrapRef<typeof import('pinia')['storeToRefs']>
     readonly sum: UnwrapRef<typeof import('./src/utils/balances')['sum']>
     readonly sumAssetBalances: UnwrapRef<typeof import('./src/utils/balances')['sumAssetBalances']>
@@ -1722,7 +1703,6 @@ declare module 'vue' {
     readonly useWindowSize: UnwrapRef<typeof import('@vueuse/core')['useWindowSize']>
     readonly useYearnApi: UnwrapRef<typeof import('./src/composables/api/defi/yearn')['useYearnApi']>
     readonly useYearnStore: UnwrapRef<typeof import('./src/store/defi/yearn/index')['useYearnStore']>
-    readonly wait: UnwrapRef<typeof import('./shared/utils')['wait']>
     readonly watch: UnwrapRef<typeof import('vue')['watch']>
     readonly watchArray: UnwrapRef<typeof import('@vueuse/core')['watchArray']>
     readonly watchAtMost: UnwrapRef<typeof import('@vueuse/core')['watchAtMost']>

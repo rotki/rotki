@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { startPromise } from '@shared/utils';
 import { useAppRoutes } from '@/router/routes';
 import type { RuiIcons } from '@rotki/ui-library';
 import type { AssetBalanceWithPrice, BigNumber } from '@rotki/common';

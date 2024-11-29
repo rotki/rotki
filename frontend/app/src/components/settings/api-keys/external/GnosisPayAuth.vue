@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { externalLinks } from '@shared/external-links';
 import type ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
 
 const { t } = useI18n();

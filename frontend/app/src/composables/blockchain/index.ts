@@ -1,4 +1,5 @@
 import { type Account, Blockchain, Severity } from '@rotki/common';
+import { startPromise } from '@shared/utils';
 import { TaskType } from '@/types/task-type';
 import { isBlockchain } from '@/types/blockchain/chains';
 import { Section } from '@/types/status';

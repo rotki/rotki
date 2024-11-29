@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { externalLinks } from '@shared/external-links';
 import { AssetAmountAndValueOverTime } from '@/premium/premium';
 import { EVM_TOKEN } from '@/types/asset';
 import { NoteLocation } from '@/types/notes';
@@ -28,10 +29,7 @@ const { t } = useI18n();
 const router = useRouter();
 const route = useRoute();
 
-const {
-  coingeckoAsset,
-  cryptocompareAsset,
-} = externalLinks;
+const { coingeckoAsset, cryptocompareAsset } = externalLinks;
 
 const { isAssetIgnored, ignoreAsset, unignoreAsset } = useIgnoredAssetsStore();
 const { isAssetWhitelisted, whitelistAsset, unWhitelistAsset } = useWhitelistedAssetsStore();

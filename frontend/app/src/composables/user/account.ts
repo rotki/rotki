@@ -1,3 +1,4 @@
+import { wait } from '@shared/utils';
 import type { CreateAccountPayload, LoginCredentials } from '@/types/login';
 import type { Ref } from 'vue';
 

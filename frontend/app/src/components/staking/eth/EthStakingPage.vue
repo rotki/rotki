@@ -10,6 +10,7 @@ import {
 import { objectOmit } from '@vueuse/core';
 import { isEmpty } from 'lodash-es';
 import dayjs from 'dayjs';
+import { startPromise } from '@shared/utils';
 import { EthStaking } from '@/premium/premium';
 import { Module } from '@/types/modules';
 import { Section } from '@/types/status';

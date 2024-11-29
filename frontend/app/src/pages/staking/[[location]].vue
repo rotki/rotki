@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { startPromise } from '@shared/utils';
 import { NoteLocation } from '@/types/notes';
 import type { RouteLocationRaw } from 'vue-router';
 

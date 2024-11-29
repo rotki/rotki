@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import useVuelidate from '@vuelidate/core';
 import { helpers, required, requiredIf } from '@vuelidate/validators';
+import { externalLinks } from '@shared/external-links';
 import { toMessages } from '@/utils/validation';
 import type { LoginCredentials, SyncApproval } from '@/types/login';
 

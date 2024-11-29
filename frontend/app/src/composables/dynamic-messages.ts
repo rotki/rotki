@@ -1,4 +1,5 @@
 import { AxiosError, type AxiosResponse } from 'axios';
+import { checkIfDevelopment } from '@shared/utils';
 import { api } from '@/services/rotkehlchen-api';
 import { DashboardSchema, type VisibilityPeriod, WelcomeSchema } from '@/types/dynamic-messages';
 import { camelCaseTransformer } from '@/services/axios-tranformers';

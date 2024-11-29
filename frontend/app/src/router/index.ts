@@ -3,6 +3,7 @@
 import { setupLayouts } from 'virtual:generated-layouts';
 import { type RouteLocationRaw, createRouter, createWebHashHistory } from 'vue-router';
 import { handleHotUpdate, routes } from 'vue-router/auto-routes';
+import { startPromise } from '@shared/utils';
 
 const base = import.meta.env.VITE_PUBLIC_PATH ? window.location.pathname : '/';
 

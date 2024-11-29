@@ -1,4 +1,5 @@
 import { NotificationCategory, type NotificationPayload, Severity } from '@rotki/common';
+import { startPromise } from '@shared/utils';
 import type { HistoricalPrice, HistoricalPriceFormPayload, ManualPricePayload } from '@/types/prices';
 import type { Ref } from 'vue';
 

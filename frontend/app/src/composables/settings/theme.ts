@@ -1,4 +1,5 @@
 import { ThemeColors } from '@rotki/common';
+import { startPromise } from '@shared/utils';
 import { CURRENT_DEFAULT_THEME_VERSION, DARK_COLORS, DEFAULT_THEME_HISTORIES, LIGHT_COLORS } from '@/plugins/theme';
 
 interface UseThemeMigrationReturn { checkDefaultThemeVersion: () => void }

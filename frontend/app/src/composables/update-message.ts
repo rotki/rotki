@@ -1,3 +1,5 @@
+import { externalLinks } from '@shared/external-links';
+
 export const useUpdateMessage = createSharedComposable(() => {
   const lastUsedVersion = useLocalStorage<string>('rotki.last_version', null);
   const showReleaseNotes = ref(false);

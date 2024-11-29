@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { helpers, required, requiredIf } from '@vuelidate/validators';
 import { omit } from 'lodash-es';
+import { externalLinks } from '@shared/external-links';
 import { evmTokenKindsData } from '@/types/blockchain/chains';
 import { CUSTOM_ASSET, EVM_TOKEN } from '@/types/asset';
 import { ApiValidationError } from '@/types/api/errors';

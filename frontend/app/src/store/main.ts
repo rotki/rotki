@@ -1,3 +1,4 @@
+import { checkIfDevelopment, startPromise } from '@shared/utils';
 import { api } from '@/services/rotkehlchen-api';
 import type { Nullable } from '@rotki/common';
 import type { LogLevel } from '@shared/log-level';

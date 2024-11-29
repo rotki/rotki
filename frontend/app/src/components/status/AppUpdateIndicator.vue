@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { startPromise } from '@shared/utils';
+
 const mainStore = useMainStore();
 const { version, updateNeeded } = storeToRefs(mainStore);
 const { getVersion } = mainStore;
@@ -22,13 +24,9 @@ function update() {
 
 const period = get(versionUpdateCheckFrequency) * 60 * 60 * 1000;
 
-const { pause, resume, isActive } = useIntervalFn(
-  () => {
-    startPromise(getVersion());
-  },
-  period,
-  { immediate: false },
-);
+const { pause, resume, isActive } = useIntervalFn(() => {
+  startPromise(getVersion());
+}, period, { immediate: false });
 
 function setVersionUpdateCheckInterval() {
   if (isActive)

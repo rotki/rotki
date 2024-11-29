@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { startPromise } from '@shared/utils';
 import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
 import { BalanceType } from '@/types/balances';
 import { NoteLocation } from '@/types/notes';

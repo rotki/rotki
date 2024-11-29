@@ -1,3 +1,4 @@
+import { startPromise } from '@shared/utils';
 import { CURRENCY_USD } from '@/types/currencies';
 import { Section, Status } from '@/types/status';
 import { TaskType } from '@/types/task-type';

@@ -1,3 +1,4 @@
+import { externalLinks } from '@shared/external-links';
 import type { BackendOptions, Listeners, SystemVersion, TrayUpdate } from '@shared/ipc';
 import type { WebVersion } from '@/types';
 

@@ -1,3 +1,4 @@
+import { checkIfDevelopment } from '@shared/utils';
 import { app } from '@/main';
 import { setupPremium } from '@/premium/setup-premium';
 import type { Component } from 'vue';

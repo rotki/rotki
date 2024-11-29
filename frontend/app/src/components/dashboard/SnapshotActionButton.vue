@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { startPromise } from '@shared/utils';
 import SnapshotImportDialog from '@/components/dashboard/SnapshotImportDialog.vue';
 import type { Writeable } from '@rotki/common';
 import type { AllBalancePayload } from '@/types/blockchain/accounts';
