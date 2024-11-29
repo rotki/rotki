@@ -67,6 +67,8 @@ from rotkehlchen.types import (
 )
 from rotkehlchen.utils.misc import ts_now
 
+from ..chain.evm.decoding.aura_finance.constants import CHAIN_ID_TO_BOOSTER_ADDRESSES
+from ..chain.evm.decoding.aura_finance.utils import query_aura_pools
 from .events import process_events
 
 if TYPE_CHECKING:
@@ -143,6 +145,7 @@ class TaskManager:
         self.query_balances = query_balances
         self.query_yearn_vaults = query_yearn_vaults
         self.query_morpho_vaults = query_morpho_vaults
+        self.query_aura_pools = query_aura_pools
         self.last_premium_status_check = ts_now()
         self.last_calendar_reminder_check = Timestamp(0)
         self.msg_aggregator = msg_aggregator
@@ -164,6 +167,7 @@ class TaskManager:
             self._maybe_update_snapshot_balances,
             self._maybe_update_yearn_vaults,
             self._maybe_update_morpho_vaults,
+            self._maybe_update_aura_pools,
             self._maybe_detect_evm_accounts,
             self._maybe_update_ilk_cache,
             self._maybe_query_produced_blocks,
@@ -706,6 +710,29 @@ class TaskManager:
             )]
 
         return None
+
+    def _maybe_update_aura_pools(self) -> Optional[list[gevent.Greenlet]]:
+        with self.database.conn.read_ctx() as cursor:
+            if (
+                len(self.database.get_single_blockchain_addresses(cursor, SupportedBlockchain.ETHEREUM)) == 0 and  # noqa: E501
+                len(self.database.get_single_blockchain_addresses(cursor, SupportedBlockchain.BASE)) == 0 and  # noqa: E501
+                len(self.database.get_single_blockchain_addresses(cursor, SupportedBlockchain.OPTIMISM)) == 0 and  # noqa: E501
+                len(self.database.get_single_blockchain_addresses(cursor, SupportedBlockchain.POLYGON_POS)) == 0 and  # noqa: E501
+                len(self.database.get_single_blockchain_addresses(cursor, SupportedBlockchain.ARBITRUM_ONE)) == 0 and  # noqa: E501
+                len(self.database.get_single_blockchain_addresses(cursor, SupportedBlockchain.GNOSIS)) == 0  # noqa: E501
+            ):
+                return None
+
+        return [self.greenlet_manager.spawn_and_track(
+                after_seconds=None,
+                task_name=f'Update Aura pools for {chain.to_name()}',
+                exception_is_error=False,
+                method=self.query_aura_pools,
+                evm_inquirer=self.chains_aggregator.get_evm_manager(chain).node_inquirer,  # type: ignore[arg-type]  # chain id is valid
+            )
+            for chain in CHAIN_ID_TO_BOOSTER_ADDRESSES
+            if should_update_protocol_cache(CacheType.AURA_POOLS, (str(chain.value),)) is True
+        ]
 
     def _maybe_check_data_updates(self) -> Optional[list[gevent.Greenlet]]:
         """
