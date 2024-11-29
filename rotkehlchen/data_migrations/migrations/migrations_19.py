@@ -45,12 +45,17 @@ def data_migration_19(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgress
             )]
 
         expected_ranges = {f'{BRIDGE_QUERIED_ADDRESS_PREFIX}{address}' for address in addresses}
-        with db.conn.write_ctx() as write_cursor:
+        with db.user_write() as write_cursor:
             for entry_name in db_query_ranges:
                 if entry_name not in expected_ranges:
                     write_cursor.execute(
                         'DELETE FROM used_query_ranges where name=?',
                         (entry_name,),
                     )
+
+    @progress_step(description='Refresh coinbase queries')
+    def _refresh_coinbase_queries(rotki: 'Rotkehlchen') -> None:
+        with rotki.data.db.user_write() as write_cursor:
+            write_cursor.execute("DELETE FROM key_value_cache WHERE name LIKE 'coinbase_%_last_query_ts'")  # noqa: E501
 
     perform_userdb_migration_steps(rotki, progress_handler, should_vacuum=True)
