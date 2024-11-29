@@ -101,6 +101,11 @@ module = [
     "rotkehlchen.tests.api.test_exchange_rates_query",
     "rotkehlchen.tests.api.test_exchanges",
     "rotkehlchen.tests.api.test_external_services",
+    "rotkehlchen.tests.api.test_icons",
+    "rotkehlchen.tests.api.test_ignored_actions",
+    "rotkehlchen.tests.api.test_liquidy",
+    "rotkehlchen.tests.api.test_location_asset_mappings",
+    "rotkehlchen.tests.api.test_locations",
 ]
 check_untyped_defs = true
 disallow_untyped_defs = true
