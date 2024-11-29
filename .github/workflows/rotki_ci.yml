@@ -55,7 +55,7 @@ jobs:
 
   code-analyze-frontend:
     name: 'Code analyze frontend'
-    needs: ['check-changes']
+    needs: ['check-changes', 'check-typos']
     permissions:
       actions: read
       contents: read
@@ -78,7 +78,7 @@ jobs:
 
   lint-frontend:
     name: 'Frontend lint'
-    needs: ['check-changes']
+    needs: ['check-changes', 'check-typos']
     if: ${{ needs.check-changes.outputs.frontend_tasks }}
     runs-on: ubuntu-latest
     steps:
@@ -143,7 +143,7 @@ jobs:
 
   docs:
     name: 'Documentation build'
-    needs: [ 'check-changes']
+    needs: ['check-changes', 'check-typos']
     if: ${{ github.event_name != 'push' && needs.check-changes.outputs.documentation_tasks }}
     runs-on: ubuntu-latest
     steps:
@@ -169,7 +169,7 @@ jobs:
 
   code-analyze-backend:
     name: 'Code analyze backend'
-    needs: ['check-changes']
+    needs: ['check-changes', 'check-typos']
     permissions:
       actions: read
       contents: read
@@ -192,7 +192,7 @@ jobs:
 
   lint-backend:
     name: 'Backend lint'
-    needs: ['check-changes']
+    needs: ['check-changes', 'check-typos']
     if: ${{ github.event_name != 'push' && needs.check-changes.outputs.backend_tasks }}
     runs-on: ubuntu-latest
     steps:
