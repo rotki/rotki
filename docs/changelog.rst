@@ -5,6 +5,7 @@ Changelog
 * :bug:`8982` Fix the issue where Cmd / Alt + Arrow Left / Arrow Right forces navigation, as it should interact with user selection in text input.
 * :bug:`8983` The asset amount will be shown if only one asset is detected in an account.
 * :feature:`8991` Add direct navigation to asset details when clicking on small asset icons in the blockchain balances table.
+* :feature:`8981` rotki will now resolve any non .eth domains supported by ENS to addresses.
 
 * :release:`1.36.1 <2024-11-29>`
 * :bug:`-` Coinbase deposits that appeared as withdrawals should now appear as deposits again. Would need to purge and requery coinbase to fix this.
