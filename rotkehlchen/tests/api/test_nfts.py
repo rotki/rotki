@@ -1,5 +1,5 @@
 import warnings as test_warnings
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
 import pytest
@@ -11,7 +11,7 @@ from rotkehlchen.chain.ethereum.interfaces.ammswap.types import LiquidityPoolAss
 from rotkehlchen.chain.ethereum.modules.nft.constants import FREE_NFT_LIMIT
 from rotkehlchen.chain.ethereum.modules.nft.structures import NftLpHandling
 from rotkehlchen.chain.evm.decoding.uniswap.v3.types import NFTLiquidityPool
-from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.chain.evm.types import ChecksumEvmAddress, string_to_evm_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.db.queried_addresses import QueriedAddresses
@@ -26,6 +26,9 @@ from rotkehlchen.tests.utils.api import (
 )
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import Price
+
+if TYPE_CHECKING:
+    from rotkehlchen.api.server import APIServer
 
 TEST_ACC1 = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'  # lefteris.eth
 TEST_ACC2 = '0x3Ba6eB0e4327B96aDe6D4f3b578724208a590CEF'
@@ -87,7 +90,7 @@ TEST_NFT_YABIR_ETH = NFT(
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ACC1]])
 @pytest.mark.parametrize('start_with_valid_premium', [True, False])
 @pytest.mark.parametrize('ethereum_modules', [['nfts']])
-def test_nft_query(rotkehlchen_api_server, start_with_valid_premium):
+def test_nft_query(rotkehlchen_api_server: 'APIServer', start_with_valid_premium: bool) -> None:
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
         'nftsresource',
@@ -136,7 +139,7 @@ def test_nft_query(rotkehlchen_api_server, start_with_valid_premium):
 @pytest.mark.parametrize('ethereum_accounts', [[]])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('ethereum_modules', [['nfts']])
-def test_nft_query_after_account_add(rotkehlchen_api_server):
+def test_nft_query_after_account_add(rotkehlchen_api_server: 'APIServer') -> None:
     """Test for https://github.com/rotki/rotki/issues/3590"""
     # add account 1
     data = {'accounts': [{'address': TEST_ACC1}]}
@@ -180,7 +183,7 @@ def test_nft_query_after_account_add(rotkehlchen_api_server):
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ACC2, TEST_ACC3]])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('ethereum_modules', [['nfts']])
-def test_nft_ids_are_unique(rotkehlchen_api_server):
+def test_nft_ids_are_unique(rotkehlchen_api_server: 'APIServer') -> None:
     """Check that if two accounts hold the same semi-fungible token we don't have duplicate ids"""
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
@@ -205,7 +208,7 @@ def test_nft_ids_are_unique(rotkehlchen_api_server):
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ACC4, TEST_ACC5, TEST_ACC6]])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('ethereum_modules', [['nfts', 'uniswap']])
-def test_nft_balances_and_prices(rotkehlchen_api_server):
+def test_nft_balances_and_prices(rotkehlchen_api_server: 'APIServer') -> None:
     """Check that nfts balances return the expected fields. Also check nft prices"""
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
@@ -384,7 +387,7 @@ def test_nft_balances_and_prices(rotkehlchen_api_server):
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ACC4, TEST_ACC5]])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('ethereum_modules', [['nfts']])
-def test_edit_delete_nft(rotkehlchen_api_server):
+def test_edit_delete_nft(rotkehlchen_api_server: 'APIServer') -> None:
     """Check that ignoring NFTs work as expected"""
     db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
     nft_map = {
@@ -392,7 +395,10 @@ def test_edit_delete_nft(rotkehlchen_api_server):
         TEST_ACC5: [TEST_NFT_NEBOLAX_ETH],
     }
 
-    def mock_get_all_nft_data(addresses, **kwargs):  # pylint: disable=unused-argument
+    def mock_get_all_nft_data(
+            addresses: list[ChecksumEvmAddress],
+            **kwargs,
+        ) -> tuple[dict[str, list[NFT]], int]:  # pylint: disable=unused-argument
         return nft_map, sum(len(x) for x in nft_map.values())
 
     get_all_nft_data_patch = patch(
@@ -493,9 +499,12 @@ def test_edit_delete_nft(rotkehlchen_api_server):
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('ethereum_modules', [['nfts']])
 @pytest.mark.parametrize('endpoint', ['nftsbalanceresource', 'nftsresource'])
-def test_nfts_ignoring_works(rotkehlchen_api_server, endpoint):
+def test_nfts_ignoring_works(rotkehlchen_api_server: 'APIServer', endpoint: str):
     """Check that ignoring NFTs work as expected"""
-    def mock_get_all_nft_data(addresses, **kwargs):  # pylint: disable=unused-argument
+    def mock_get_all_nft_data(
+            addresses: list[ChecksumEvmAddress],
+            **kwargs,
+        ) -> tuple[dict[str, list[NFT]], int]:  # pylint: disable=unused-argument
         nft_map = {
             '0xc37b40ABdB939635068d3c5f13E7faF686F03B65': [TEST_NFT_YABIR_ETH],
         }
@@ -567,12 +576,13 @@ def test_nfts_ignoring_works(rotkehlchen_api_server, endpoint):
 @pytest.mark.parametrize('ethereum_accounts', [['0x7277F7849966426d345D8F6B9AFD1d3d89183083']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('ethereum_modules', [['nfts']])
-def test_nft_no_price(rotkehlchen_api_server):
+def test_nft_no_price(rotkehlchen_api_server: 'APIServer') -> None:
     """Test for nft with no price and that query works fine"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     nft_module = rotki.chains_aggregator.get_module('nfts')
+    assert nft_module is not None
 
-    def mock_session_get(url, params, timeout):  # pylint: disable=unused-argument
+    def mock_session_get(url: str, params: Any, timeout: int) -> MockResponse:  # pylint: disable=unused-argument
         if '/nfts' in url:
             response = """
             {
@@ -650,11 +660,14 @@ def test_nft_no_price(rotkehlchen_api_server):
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ACC4, TEST_ACC5, TEST_ACC6]])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('ethereum_modules', [['nfts', 'uniswap']])
-def test_lp_nfts_filtering(rotkehlchen_api_server):
+def test_lp_nfts_filtering(rotkehlchen_api_server: 'APIServer') -> None:
     """Assert that filtering by the lp property for NFTs works properly on all the endpoints that
     allow it
     """
-    def mock_get_all_nft_data(_addresses, **_kwargs) -> tuple[dict[str, Any], int]:
+    def mock_get_all_nft_data(
+            _addresses: list[ChecksumEvmAddress],
+            **_kwargs,
+         ) -> tuple[dict[str, Any], int]:
         data = {
             '0x4bBa290826C253BD854121346c370a9886d1bC26': [TEST_NFT_NEBOLAX_ETH],
             '0xc37b40ABdB939635068d3c5f13E7faF686F03B65': [TEST_NFT_YABIR_ETH],
@@ -699,7 +712,7 @@ def test_lp_nfts_filtering(rotkehlchen_api_server):
         }
         return data, 4
 
-    def mock_uniswap_v3_balances(*_args, **_kwargs) -> dict[str, Any]:
+    def mock_uniswap_v3_balances(*_args, **_kwargs) -> dict[str, list[NFTLiquidityPool]]:
         return {
             '0x3e649c5Eac6BBEE8a4F2A2945b50d8e582faB3bf': [
                 NFTLiquidityPool(
@@ -844,13 +857,16 @@ def test_lp_nfts_filtering(rotkehlchen_api_server):
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ACC4, TEST_ACC5]])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('ethereum_modules', [['nfts']])
-def test_customized_queried_addresses(rotkehlchen_api_server):
+def test_customized_queried_addresses(rotkehlchen_api_server: 'APIServer') -> None:
     """
     Test that if queried addresses are customized for nfts module, then from /nfts/balances only
     NFTs of those addresses are returned"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
 
-    def mock_get_all_nft_data(_addresses, **_kwargs) -> tuple[dict[str, Any], int]:
+    def mock_get_all_nft_data(
+            _addresses: list[ChecksumEvmAddress],
+            **_kwargs,
+        ) -> tuple[dict[str, Any], int]:
         data = {
             TEST_ACC5: [TEST_NFT_NEBOLAX_ETH],
             TEST_ACC4: [TEST_NFT_YABIR_ETH],
@@ -873,7 +889,7 @@ def test_customized_queried_addresses(rotkehlchen_api_server):
     # Make NFTs queried for only one of the addresses
     QueriedAddresses(rotki.data.db).add_queried_address_for_module(
         module='nfts',
-        address=TEST_ACC5,
+        address=string_to_evm_address(TEST_ACC5),
     )
     response = requests.get(  # Now we should get the NFTs only for TEST_ACC5 address
         api_url_for(
@@ -890,7 +906,7 @@ def test_customized_queried_addresses(rotkehlchen_api_server):
 @pytest.mark.parametrize('ethereum_accounts', [['0xF73e7772113Cf4a6a8749dF5e4e32b27B449B85D']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('ethereum_modules', [['nfts', 'uniswap']])
-def test_uniswap_v3_exited_positions(rotkehlchen_api_server):
+def test_uniswap_v3_exited_positions(rotkehlchen_api_server: 'APIServer') -> None:
     """Test for https://github.com/rotki/rotki/issues/8137
     Ensure that positions that have been exited in uniswap v3 don't end up in the nft balances
     """
