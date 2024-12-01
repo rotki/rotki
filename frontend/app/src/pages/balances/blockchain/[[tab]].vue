@@ -147,7 +147,6 @@ watchImmediate(route, (route) => {
         <AssetBalances
           data-cy="blockchain-asset-balances"
           :loading="isBlockchainLoading"
-          :title="t('blockchain_balances.per_asset.title')"
           :balances="blockchainAssets"
           :search="search"
           sticky-header
