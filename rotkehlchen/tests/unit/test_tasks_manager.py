@@ -978,7 +978,7 @@ def test_deadlock_logout(
         globaldb: GlobalDBHandler,  # pylint: disable=unused-argument
 ):
     """Test that we don't leave locks acquired by a greenlet that has been killed during logout"""
-    task_manager = cast(TaskManager, rotkehlchen_instance.task_manager)
+    task_manager = cast('TaskManager', rotkehlchen_instance.task_manager)
     task_manager.max_tasks_num = 10
     task_runs = 0
 
@@ -1027,7 +1027,7 @@ def test_snapshots_dont_happen_always(rotkehlchen_api_server: 'APIServer') -> No
     creating a snapshot for each run of the background task.
     """
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    task_manager = cast(TaskManager, rotki.task_manager)
+    task_manager = cast('TaskManager', rotki.task_manager)
 
     task_manager.potential_tasks = [task_manager._maybe_update_snapshot_balances]
     task_manager.should_schedule = True

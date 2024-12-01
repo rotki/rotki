@@ -452,7 +452,7 @@ def process_airdrop_with_api_data(
             continue
 
         try:
-            amount = deserialize_int(cast(int, token_num))
+            amount = deserialize_int(cast('int', token_num))
         except DeserializationError as e:
             log.error(f'Failed to read amount from {protocol_name} API: {e}. Skipping')
             continue

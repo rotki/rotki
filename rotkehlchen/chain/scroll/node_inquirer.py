@@ -55,7 +55,7 @@ class ScrollInquirer(L2WithL1FeesInquirer):
             contract_scan=BALANCE_SCANNER,
             native_token=A_ETH.resolve_to_crypto_asset(),
         )
-        self.etherscan = cast(ScrollEtherscan, self.etherscan)
+        self.etherscan = cast('ScrollEtherscan', self.etherscan)
 
     # -- Implementation of EvmNodeInquirer base methods --
 

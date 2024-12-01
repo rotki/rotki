@@ -90,7 +90,7 @@ class CowswapCommonDecoder(DecoderInterface, abc.ABC):
         self.native_asset_flow_address = NATIVE_ASSET_FLOW_ADDRESS
         self.cowswap_api = CowswapAPI(
             database=self.evm_inquirer.database,
-            chain=cast(SUPPORTED_COWSWAP_BLOCKCHAIN, self.evm_inquirer.blockchain),
+            chain=cast('SUPPORTED_COWSWAP_BLOCKCHAIN', self.evm_inquirer.blockchain),
         )
 
     def _decode_native_asset_orders(self, context: DecoderContext) -> DecodingOutput:

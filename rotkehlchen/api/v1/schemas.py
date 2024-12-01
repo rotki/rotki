@@ -2866,7 +2866,7 @@ class AddressWithOptionalBlockchainSchema(Schema):
     ) -> OptionalChainAddress:
         if (
             data['blockchain'] is not None and
-            cast(SupportedBlockchain, data['blockchain']).get_chain_type() == ChainType.EVM
+            cast('SupportedBlockchain', data['blockchain']).get_chain_type() == ChainType.EVM
         ):
             try:
                 address = to_checksum_address(data['address'])
@@ -2897,7 +2897,7 @@ class AddressWithOptionalBlockchainSchema(Schema):
         if data['blockchain'] is None:
             return
 
-        blockchain = cast(SupportedBlockchain, data['blockchain'])
+        blockchain = cast('SupportedBlockchain', data['blockchain'])
         if ((
             blockchain == SupportedBlockchain.BITCOIN and
             is_valid_btc_address(data['address']) is False

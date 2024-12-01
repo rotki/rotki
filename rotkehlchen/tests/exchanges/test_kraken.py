@@ -1023,7 +1023,7 @@ def test_kraken_staking(rotkehlchen_api_server_with_exchanges, start_with_valid_
 def test_kraken_informational_fees(rotkehlchen_api_server_with_exchanges: 'APIServer'):
     """Test that we correctly ignore fees in events that we currently ignore as margin trades"""
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
-    kraken = cast(MockKraken, try_get_first_exchange(rotki.exchange_manager, Location.KRAKEN))
+    kraken = cast('MockKraken', try_get_first_exchange(rotki.exchange_manager, Location.KRAKEN))
     input_ledger = """
     {
         "ledger":{

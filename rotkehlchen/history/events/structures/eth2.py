@@ -163,7 +163,7 @@ class EthWithdrawalEvent(EthStakingEvent):
 
     @classmethod
     def deserialize_from_db(cls: type['EthWithdrawalEvent'], entry: tuple) -> 'EthWithdrawalEvent':
-        entry = cast(ETH_STAKING_EVENT_DB_TUPLE_READ, entry)
+        entry = cast('ETH_STAKING_EVENT_DB_TUPLE_READ', entry)
         amount = deserialize_fval(entry[5], 'amount', 'eth withdrawal event')
         usd_value = deserialize_fval(entry[6], 'usd_value', 'eth withdrawal event')
         return cls(
@@ -290,7 +290,7 @@ class EthBlockEvent(EthStakingEvent):
 
     @classmethod
     def deserialize_from_db(cls: type['EthBlockEvent'], entry: tuple) -> 'EthBlockEvent':
-        entry = cast(ETH_STAKING_EVENT_DB_TUPLE_READ, entry)
+        entry = cast('ETH_STAKING_EVENT_DB_TUPLE_READ', entry)
         amount = deserialize_fval(entry[5], 'amount', 'eth block event')
         usd_value = deserialize_fval(entry[6], 'usd_value', 'eth block event')
         return cls(
@@ -431,7 +431,7 @@ class EthDepositEvent(EvmEvent, EthStakingEvent):  # noqa: PLW1641  # hash in su
 
     @classmethod
     def deserialize_from_db(cls: type['EthDepositEvent'], entry: tuple) -> 'EthDepositEvent':
-        entry = cast(EVM_DEPOSIT_EVENT_DB_TUPLE_READ, entry)
+        entry = cast('EVM_DEPOSIT_EVENT_DB_TUPLE_READ', entry)
         amount = deserialize_fval(entry[5], 'amount', 'eth deposit event')
         usd_value = deserialize_fval(entry[6], 'usd_value', 'eth deposit event')
         return cls(

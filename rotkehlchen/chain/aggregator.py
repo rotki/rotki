@@ -24,7 +24,6 @@ from rotkehlchen.chain.arbitrum_one.modules.thegraph.balances import (
     ThegraphBalances as ThegraphBalancesArbitrumOne,
 )
 from rotkehlchen.chain.arbitrum_one.modules.umami.balances import UmamiBalances
-from rotkehlchen.chain.avalanche.manager import AvalancheManager
 from rotkehlchen.chain.base.modules.aerodrome.balances import AerodromeBalances
 from rotkehlchen.chain.base.modules.extrafi.balances import (
     ExtrafiBalances as ExtrafiBalancesBase,
@@ -119,6 +118,7 @@ from .balances import BlockchainBalances, BlockchainBalancesUpdate
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.arbitrum_one.manager import ArbitrumOneManager
+    from rotkehlchen.chain.avalanche.manager import AvalancheManager
     from rotkehlchen.chain.base.manager import BaseManager
     from rotkehlchen.chain.ethereum.interfaces.balances import ProtocolWithBalance
     from rotkehlchen.chain.ethereum.manager import EthereumManager
@@ -1491,7 +1491,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             chain_manager: EvmManager = self.get_chain_manager(chain)
             try:
                 if chain == SupportedBlockchain.AVALANCHE:
-                    avax_manager = cast(AvalancheManager, chain_manager)
+                    avax_manager = cast('AvalancheManager', chain_manager)
                     try:
                         # just check balance and nonce in avalanche
                         has_activity = (

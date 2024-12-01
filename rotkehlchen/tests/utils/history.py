@@ -30,12 +30,12 @@ from rotkehlchen.tests.utils.constants import (
     TX_HASH_STR3,
 )
 from rotkehlchen.tests.utils.exchanges import POLONIEX_MOCK_DEPOSIT_WITHDRAWALS_RESPONSE
-from rotkehlchen.tests.utils.kraken import MockKraken
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import AssetMovementCategory, Fee, Location, Timestamp
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import Asset
+    from rotkehlchen.tests.utils.kraken import MockKraken
 
 TEST_END_TS = 1559427707
 
@@ -947,7 +947,7 @@ def prepare_rotki_for_history_processing_test(
     Makes sure blockchain accounts are loaded, kraken does not generate random trades
     and that all mocks are ready.
     """
-    kraken = cast(MockKraken, rotki.exchange_manager.connected_exchanges.get(Location.KRAKEN)[0])  # type: ignore
+    kraken = cast('MockKraken', rotki.exchange_manager.connected_exchanges.get(Location.KRAKEN)[0])  # type: ignore
     kraken.random_trade_data = False
     kraken.random_ledgers_data = False
     kraken.remote_errors = remote_errors

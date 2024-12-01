@@ -61,7 +61,7 @@ class PolygonPOSInquirer(EvmNodeInquirer):
                 msg_aggregator=database.msg_aggregator,
             ),
         )
-        self.etherscan = cast(PolygonPOSEtherscan, self.etherscan)
+        self.etherscan = cast('PolygonPOSEtherscan', self.etherscan)
 
     # -- Implementation of EvmNodeInquirer base methods --
 

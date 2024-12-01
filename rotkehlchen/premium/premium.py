@@ -258,7 +258,7 @@ class Premium:
         device_id = machineid.hashed_id(self.username)
 
         for device in device_data['devices']:
-            device = cast(dict[str, str], device)
+            device = cast('dict[str, str]', device)
             if (remote_id := device.get('device_identifier')) == device_id:
                 break
             if remote_id is None:

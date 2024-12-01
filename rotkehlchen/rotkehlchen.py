@@ -915,9 +915,9 @@ class Rotkehlchen:
         )
         with contextlib.ExitStack() as stack:
             if blockchain in EVM_CHAINS_WITH_TRANSACTIONS:
-                blockchain = cast(EVM_CHAINS_WITH_TRANSACTIONS_TYPE, blockchain)  # by default mypy doesn't narrow the type  # noqa: E501
+                blockchain = cast('EVM_CHAINS_WITH_TRANSACTIONS_TYPE', blockchain)  # by default mypy doesn't narrow the type  # noqa: E501
                 evm_manager = self.chains_aggregator.get_chain_manager(blockchain)
-                evm_addresses: list[ChecksumEvmAddress] = cast(list[ChecksumEvmAddress], accounts)
+                evm_addresses: list[ChecksumEvmAddress] = cast('list[ChecksumEvmAddress]', accounts)  # noqa: E501
                 self.maybe_kill_running_tx_query_tasks(blockchain, evm_addresses)
                 stack.enter_context(evm_manager.transactions.wait_until_no_query_for(evm_addresses))
                 stack.enter_context(evm_manager.transactions.missing_receipts_lock)
@@ -1005,7 +1005,7 @@ class Rotkehlchen:
             else:
                 location_str = str(exchange.location)
                 if location_str not in balances:  # need to widen type at assignment here
-                    balances[location_str] = cast(dict[Asset, Balance], exchange_balances)
+                    balances[location_str] = cast('dict[Asset, Balance]', exchange_balances)
                 else:  # multiple exchange of same type. Combine balances
                     balances[location_str] = combine_dicts(
                         balances[location_str],

@@ -11,6 +11,7 @@ from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
+from rotkehlchen.db.utils import str_to_bool
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
 logger = logging.getLogger(__name__)
@@ -63,7 +64,7 @@ class GoogleService:
         self.drive_service = _login('drive', 'v3', DRIVE_SCOPES, credentials_path)
         self.sheets_service = _login('sheets', 'v4', SHEETS_SCOPES, credentials_path)
         self.user_email = os.environ.get('GOOGLE_EMAIL', None)
-        self.send_email = os.environ.get('SEND_GOOGLE_SHARE_EMAIL', False)
+        self.send_email = str_to_bool(os.environ.get('SEND_GOOGLE_SHARE_EMAIL', 'False'))
         if isinstance(self.send_email, str):
             self.send_email = self.send_email.lower() == 'true'
 

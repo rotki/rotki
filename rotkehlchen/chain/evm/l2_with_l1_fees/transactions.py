@@ -3,13 +3,13 @@ from abc import ABC
 from typing import TYPE_CHECKING, Any, Optional, cast
 
 from rotkehlchen.chain.evm.l2_with_l1_fees.node_inquirer import L2WithL1FeesInquirer
-from rotkehlchen.chain.evm.l2_with_l1_fees.types import L2WithL1FeesTransaction
 from rotkehlchen.chain.evm.transactions import EvmTransactions
 from rotkehlchen.db.filtering import EvmTransactionsFilterQuery
 from rotkehlchen.db.l2withl1feestx import DBL2WithL1FeesTx
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.evm.l2_with_l1_fees.types import L2WithL1FeesTransaction
     from rotkehlchen.chain.evm.structures import EvmTxReceipt
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
@@ -61,7 +61,7 @@ class L2WithL1FeesTransactions(EvmTransactions, ABC):
             return tx_data, tx_receipt  # all good, l1_fee is in the database
 
         transaction, _ = self.evm_inquirer.get_transaction_by_hash(tx_hash=tx_hash)
-        transaction = cast(L2WithL1FeesTransaction, transaction)
+        transaction = cast('L2WithL1FeesTransaction', transaction)
         tx_id = cursor.execute(
             'SELECT identifier FROM evm_transactions WHERE tx_hash = ?',
             (tx_hash,),

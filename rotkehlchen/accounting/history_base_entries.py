@@ -102,11 +102,11 @@ class EventsAccountant:
                     f'event for {event} is not there',
                 )
                 return 1
-            in_event = cast(HistoryBaseEntry, next(events_iterator))  # guaranteed by the if check
 
+            in_event = cast('HistoryBaseEntry', next(events_iterator))  # guaranteed by the if check  # noqa: E501
             next_event = events_iterator.peek(None)
             if next_event and isinstance(next_event, HistoryBaseEntry) and next_event.event_identifier == event.event_identifier and next_event.event_subtype == HistoryEventSubType.FEE:  # noqa: E501
-                fee_event = cast(HistoryBaseEntry, next(events_iterator))  # guaranteed by if check
+                fee_event = cast('HistoryBaseEntry', next(events_iterator))  # guaranteed by if check  # noqa: E501
 
             return self._process_swap(
                 timestamp=timestamp,
