@@ -61,7 +61,7 @@ class ArbitrumOneInquirer(EvmNodeInquirer):
                 msg_aggregator=database.msg_aggregator,
             ),
         )
-        self.etherscan = cast(ArbitrumOneEtherscan, self.etherscan)
+        self.etherscan = cast('ArbitrumOneEtherscan', self.etherscan)
 
     # -- Implementation of EvmNodeInquirer base methods --
 

@@ -64,7 +64,7 @@ class OptimismInquirer(DSProxyL2WithL1FeesInquirerWithCacheData):
                 msg_aggregator=database.msg_aggregator,
             ),
         )
-        self.etherscan = cast(OptimismEtherscan, self.etherscan)
+        self.etherscan = cast('OptimismEtherscan', self.etherscan)
 
     # -- Implementation of EvmNodeInquirer base methods --
 

@@ -61,7 +61,7 @@ class GnosisInquirer(EvmNodeInquirer):
                 msg_aggregator=database.msg_aggregator,
             ),
         )
-        self.etherscan = cast(GnosisEtherscan, self.etherscan)
+        self.etherscan = cast('GnosisEtherscan', self.etherscan)
 
     # -- Implementation of EvmNodeInquirer base methods --
 

@@ -150,7 +150,7 @@ def _blockchain_address_to_name(
     if chain_address.blockchain is None:
         return None
 
-    chain_address = cast(ChainAddress, chain_address)
+    chain_address = cast('ChainAddress', chain_address)
     return DBAddressbook(db).get_addressbook_entry_name(AddressbookType.PRIVATE, chain_address)
 
 

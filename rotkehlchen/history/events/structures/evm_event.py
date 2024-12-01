@@ -189,7 +189,7 @@ class EvmEvent(HistoryBaseEntry):  # hash in superclass
 
     @classmethod
     def deserialize_from_db(cls: type['EvmEvent'], entry: tuple) -> 'EvmEvent':
-        entry = cast(EVM_EVENT_DB_TUPLE_READ, entry)
+        entry = cast('EVM_EVENT_DB_TUPLE_READ', entry)
         extra_data = None
         if entry[16] is not None:
             try:

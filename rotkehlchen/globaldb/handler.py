@@ -314,19 +314,19 @@ class GlobalDBHandler:
                 if asset.asset_type == AssetType.CUSTOM_ASSET:
                     write_cursor.execute(
                         'INSERT INTO custom_assets(identifier, type, notes) VALUES(?, ?, ?)',
-                        cast(CustomAsset, asset).serialize_for_db(),
+                        cast('CustomAsset', asset).serialize_for_db(),
                     )
                     return
 
                 # since the asset is not a custom asset it can only be an asset with oracles
-                asset = cast(AssetWithOracles, asset)
+                asset = cast('AssetWithOracles', asset)
                 forked, started, swapped_for = None, None, None
                 if asset.is_crypto():
                     if asset.is_evm_token():
-                        asset = cast(EvmToken, asset)
+                        asset = cast('EvmToken', asset)
                         GlobalDBHandler.add_evm_token_data(write_cursor, asset)
                     else:
-                        asset = cast(CryptoAsset, asset)
+                        asset = cast('CryptoAsset', asset)
 
                     forked = asset.forked.identifier if asset.forked else None
                     started = asset.started
@@ -1152,7 +1152,7 @@ class GlobalDBHandler:
         details_update_query = 'UPDATE common_asset_details SET symbol=?, coingecko=?, cryptocompare=?'  # noqa: E501
         details_update_bindings: tuple = (asset.symbol, asset.coingecko, asset.cryptocompare)
         if asset.is_crypto():
-            asset = cast(CryptoAsset, asset)
+            asset = cast('CryptoAsset', asset)
             details_update_query += ', forked=?, started=?, swapped_for=?'
             details_update_bindings += (
                 asset.forked.identifier if asset.forked else None,
@@ -1934,9 +1934,9 @@ class GlobalDBHandler:
             self.add_asset(asset)
         elif asset.asset_type == AssetType.EVM_TOKEN:
             # in this case the asset exists and needs to be updated
-            self.edit_evm_token(cast(EvmToken, asset))
+            self.edit_evm_token(cast('EvmToken', asset))
         else:
-            self.edit_user_asset(cast(CryptoAsset, asset))
+            self.edit_user_asset(cast('CryptoAsset', asset))
 
         return asset
 

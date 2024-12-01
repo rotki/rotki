@@ -8,7 +8,6 @@ import pytest
 
 from rotkehlchen.accounting.accountant import Accountant
 from rotkehlchen.accounting.cost_basis import AssetAcquisitionEvent
-from rotkehlchen.accounting.cost_basis.base import AverageCostBasisMethod
 from rotkehlchen.accounting.export.csv import FILENAME_ALL_CSV, CSVExporter
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.pnl import PNL, PnlTotals
@@ -40,6 +39,7 @@ from rotkehlchen.types import (
 )
 
 if TYPE_CHECKING:
+    from rotkehlchen.accounting.cost_basis.base import AverageCostBasisMethod
     from rotkehlchen.db.dbhandler import DBHandler
 
 
@@ -889,7 +889,7 @@ def test_accounting_average_cost_basis(accountant: Accountant):
     pot = accountant.pots[0]
     events = pot.processed_events
     cost_basis = pot.cost_basis
-    manager = cast(AverageCostBasisMethod, cost_basis.get_events(A_ETH).acquisitions_manager)
+    manager = cast('AverageCostBasisMethod', cost_basis.get_events(A_ETH).acquisitions_manager)
 
     # Step 1. Add an acquisition
     add_in_event(pot, amount=FVal(2), price=Price(FVal(10)))  # Buy 2 ETH for $10  total acb: $20

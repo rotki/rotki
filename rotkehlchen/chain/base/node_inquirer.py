@@ -61,7 +61,7 @@ class BaseInquirer(L2WithL1FeesInquirer):
                 msg_aggregator=database.msg_aggregator,
             ),
         )
-        self.etherscan = cast(BaseEtherscan, self.etherscan)
+        self.etherscan = cast('BaseEtherscan', self.etherscan)
 
     # -- Implementation of EvmNodeInquirer base methods --
 

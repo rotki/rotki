@@ -90,7 +90,6 @@ from rotkehlchen.chain.evm.decoding.velodrome.velodrome_cache import (
 from rotkehlchen.chain.evm.names import find_ens_mappings, search_for_addresses_names
 from rotkehlchen.chain.evm.types import EvmlikeAccount, WeightedNode
 from rotkehlchen.chain.gnosis.modules.gnosis_pay.constants import CPT_GNOSIS_PAY
-from rotkehlchen.chain.gnosis.modules.gnosis_pay.decoder import GnosisPayDecoder
 from rotkehlchen.chain.zksync_lite.constants import ZKL_IDENTIFIER
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_USD
@@ -272,6 +271,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.bitcoin.xpub import XpubData
     from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings
     from rotkehlchen.chain.evm.manager import EvmManager
+    from rotkehlchen.chain.gnosis.modules.gnosis_pay.decoder import GnosisPayDecoder
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
     from rotkehlchen.exchanges.kraken import KrakenAccountType
@@ -645,7 +645,7 @@ class RestAPI:
         if (
                 updates_gnosispay and
                 (gnosispay_decoder := cast(
-                    GnosisPayDecoder,
+                    'GnosisPayDecoder',
                     self.rotkehlchen.chains_aggregator.get_evm_manager(ChainID.GNOSIS).transactions_decoder.decoders.get('GnosisPay'),
                 )) is not None
         ):

@@ -31,7 +31,6 @@ from rotkehlchen.chain.evm.decoding.gearbox.gearbox_cache import (
     query_gearbox_data,
     read_gearbox_data_from_cache,
 )
-from rotkehlchen.chain.evm.decoding.interfaces import ReloadableDecoderMixin
 from rotkehlchen.chain.evm.decoding.velodrome.constants import CPT_VELODROME
 from rotkehlchen.chain.evm.decoding.velodrome.velodrome_cache import (
     query_velodrome_like_data,
@@ -54,6 +53,7 @@ from rotkehlchen.types import (
 )
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.evm.decoding.interfaces import ReloadableDecoderMixin
     from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
 
 
@@ -473,7 +473,7 @@ def test_reload_cache_timestamps(blockchain: ChainsAggregator, freezer):
     ) is True
 
     curve = cast(
-        ReloadableDecoderMixin,
+        'ReloadableDecoderMixin',
         blockchain.ethereum.transactions_decoder.decoders['Curve'],
     )
     with patch(

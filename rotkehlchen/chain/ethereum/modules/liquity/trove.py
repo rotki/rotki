@@ -62,7 +62,7 @@ class GetPositionsResult (TypedDict):
 
 
 def default_balance_with_proxy_factory() -> LiquityBalanceWithProxy:
-    return cast(LiquityBalanceWithProxy, {'proxies': None, 'balances': None})
+    return cast('LiquityBalanceWithProxy', {'proxies': None, 'balances': None})
 
 
 class Liquity(HasDSProxy):

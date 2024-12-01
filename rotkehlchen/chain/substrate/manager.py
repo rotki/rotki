@@ -505,7 +505,7 @@ class SubstrateManager:
         node_attributes_map = self.available_node_attributes_map.copy()
         own_node_attributes = node_attributes_map.pop(own_node, None)
         available_nodes_call_order = sorted(
-            cast(Iterable, node_attributes_map.items()),
+            cast('Iterable', node_attributes_map.items()),
             key=lambda item: -item[1].weight_block,
         )
         if own_node_attributes is not None:

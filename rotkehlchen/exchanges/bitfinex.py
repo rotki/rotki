@@ -322,7 +322,7 @@ class Bitfinex(ExchangeInterface):
                 raw_results=response_list,
                 processed_result_ids=processed_result_ids,
             )
-            results.extend(cast(Iterable, results_))
+            results.extend(cast('Iterable', results_))
             # NB: Copying the set before updating it prevents losing the call args values
             processed_result_ids = processed_result_ids.copy()
             # type ignore is due to always having a trade link for bitfinex trades

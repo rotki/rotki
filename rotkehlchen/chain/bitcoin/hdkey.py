@@ -280,8 +280,8 @@ class HDKey:
         """
         xpub = bytearray()
 
-        xpub.extend(b58decode(cast(str, self.xpub))[0:4])  # prefix
-        xpub.extend([cast(int, self.depth) + 1])               # depth
+        xpub.extend(b58decode(cast('str', self.xpub))[0:4])  # prefix
+        xpub.extend([cast('int', self.depth) + 1])               # depth
         xpub.extend(self.fingerprint)                          # fingerprint
         xpub.extend(index.to_bytes(4, byteorder='big'))        # index
         xpub.extend(chain_code)                                # chain_code

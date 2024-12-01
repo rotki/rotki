@@ -386,7 +386,7 @@ class BeaconChain(ExternalServiceWithApiKey):
         if exit_ts is not None and last_known_timestamp > exit_ts:
             return []  # nothing new to add
 
-        data = cast(list[dict[str, Any]], self._query(
+        data = cast('list[dict[str, Any]]', self._query(
             module='validator',
             endpoint='stats',
             encoded_args=str(validator_index),

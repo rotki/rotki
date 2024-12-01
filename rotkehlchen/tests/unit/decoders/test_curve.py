@@ -1,4 +1,4 @@
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
 import pytest
 
@@ -12,7 +12,6 @@ from rotkehlchen.chain.ethereum.modules.curve.constants import (
     GAUGE_BRIBE_V2,
     VOTING_ESCROW,
 )
-from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE, DEPOSIT_AND_STAKE_ZAP
@@ -51,6 +50,9 @@ from rotkehlchen.types import (
 )
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 from rotkehlchen.utils.misc import timestamp_to_date
+
+if TYPE_CHECKING:
+    from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 
 
 @pytest.mark.parametrize('load_global_caches', [[CPT_CURVE]])
@@ -823,7 +825,7 @@ def test_gauge_vote(ethereum_accounts, ethereum_transaction_decoder) -> None:
     user_address = ethereum_accounts[0]
     timestamp = TimestampMS(1685562071000)
     events, _ = get_decoded_events_of_transaction(
-        evm_inquirer=cast(EthereumInquirer, ethereum_transaction_decoder.evm_inquirer),
+        evm_inquirer=cast('EthereumInquirer', ethereum_transaction_decoder.evm_inquirer),
         tx_hash=tx_hex,
     )
     expected_events = [
@@ -872,7 +874,7 @@ def test_gauge_deposit(
     evmhash = deserialize_evm_tx_hash(tx_hex)
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(
-        evm_inquirer=cast(EthereumInquirer, ethereum_transaction_decoder.evm_inquirer),
+        evm_inquirer=cast('EthereumInquirer', ethereum_transaction_decoder.evm_inquirer),
         tx_hash=tx_hex,
         load_global_caches=load_global_caches,
     )
