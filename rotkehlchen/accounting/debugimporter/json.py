@@ -51,6 +51,8 @@ class DebugHistoryImporter:
         events: list[AccountingEventMixin] = []
         try:
             for event in debug_data['events']:
+                if 'extra_data' not in event:  # May be missing for non EVM events in old debug data  # noqa: E501
+                    event['extra_data'] = None
                 event_type = AccountingEventType.deserialize(event['accounting_event_type'])
                 match event_type:
                     case AccountingEventType.TRADE:

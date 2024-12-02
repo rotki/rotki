@@ -1,4 +1,3 @@
-import json
 import logging
 from enum import auto
 from typing import TYPE_CHECKING, Any, Final, cast
@@ -76,9 +75,6 @@ class EvmEvent(HistoryBaseEntry):  # hash in superclass
     be the address of the contract. This would help to filter by older versions or limit searches
     to certain subsets of contracts. For example this would help filtering interactions with
     curve gauges.
-
-    4. extra_data: Optional[dict[str, Any]] -- Contains event specific extra data. Optional, only
-    for events that need to keep extra information such as the CDP ID of a makerdao vault etc.
     """
 
     # need explicitly define due to also changing eq: https://stackoverflow.com/a/53519136/110395
@@ -120,12 +116,12 @@ class EvmEvent(HistoryBaseEntry):  # hash in superclass
             location_label=location_label,
             notes=notes,
             identifier=identifier,
+            extra_data=extra_data,
         )
         self.address = address
         self.tx_hash = tx_hash
         self.counterparty = counterparty
         self.product = product
-        self.extra_data = extra_data
 
     @property
     def entry_type(self) -> HistoryBaseEntryType:
@@ -140,15 +136,14 @@ class EvmEvent(HistoryBaseEntry):  # hash in superclass
             (
                 (
                     'evm_events_info(identifier, tx_hash, counterparty, product,'
-                    'address, extra_data) VALUES (?, ?, ?, ?, ?, ?)'
+                    'address) VALUES (?, ?, ?, ?, ?)'
                 ), (
-                    'UPDATE evm_events_info SET tx_hash=?, counterparty=?, product=?, address=?, extra_data=?'  # noqa: E501
+                    'UPDATE evm_events_info SET tx_hash=?, counterparty=?, product=?, address=?'
                 ), (
                     self.tx_hash,
                     self.counterparty,
                     self.product.serialize() if self.product is not None else None,
                     self.address,
-                    json.dumps(self.extra_data) if self.extra_data else None,
                 ),
             ),
         )
@@ -165,7 +160,6 @@ class EvmEvent(HistoryBaseEntry):  # hash in superclass
             'counterparty': self.counterparty,
             'product': self.product.serialize() if self.product is not None else None,
             'address': self.address,
-            'extra_data': self.extra_data,
         }
 
     def serialize_for_api(
@@ -190,16 +184,6 @@ class EvmEvent(HistoryBaseEntry):  # hash in superclass
     @classmethod
     def deserialize_from_db(cls: type['EvmEvent'], entry: tuple) -> 'EvmEvent':
         entry = cast('EVM_EVENT_DB_TUPLE_READ', entry)
-        extra_data = None
-        if entry[16] is not None:
-            try:
-                extra_data = json.loads(entry[16])
-            except json.JSONDecodeError as e:
-                log.debug(
-                    f'Failed to read extra_data when reading EvmEvent entry '
-                    f'{entry} from the DB due to {e!s}. Setting it to null',
-                )
-
         amount = deserialize_fval(entry[7], 'amount', 'evm event')
         usd_value = deserialize_fval(entry[8], 'usd_value', 'evm event')
         return cls(
@@ -214,11 +198,11 @@ class EvmEvent(HistoryBaseEntry):  # hash in superclass
             notes=entry[9],
             event_type=HistoryEventType.deserialize(entry[10]),
             event_subtype=HistoryEventSubType.deserialize(entry[11]),
-            tx_hash=deserialize_evm_tx_hash(entry[12]),
-            counterparty=entry[13],
-            product=EvmProduct.deserialize(entry[14]) if entry[14] is not None else None,
-            address=deserialize_optional(input_val=entry[15], fn=string_to_evm_address),
-            extra_data=extra_data,
+            extra_data=cls.deserialize_extra_data(entry=entry, extra_data=entry[12]),
+            tx_hash=deserialize_evm_tx_hash(entry[13]),
+            counterparty=entry[14],
+            product=EvmProduct.deserialize(entry[15]) if entry[15] is not None else None,
+            address=deserialize_optional(input_val=entry[16], fn=string_to_evm_address),
         )
 
     def has_details(self) -> bool:
@@ -264,8 +248,7 @@ class EvmEvent(HistoryBaseEntry):  # hash in superclass
             self.counterparty == other.counterparty and  # type: ignore
             self.tx_hash == other.tx_hash and  # type: ignore
             self.product == other.product and  # type: ignore
-            self.address == other.address and  # type: ignore
-            self.extra_data == other.extra_data  # type: ignore
+            self.address == other.address  # type: ignore
         )
 
     def __repr__(self) -> str:
@@ -274,7 +257,6 @@ class EvmEvent(HistoryBaseEntry):  # hash in superclass
             f'{self.counterparty=}',
             f'{self.product=}',
             f'{self.address=}',
-            f'{self.extra_data=}',
         ]
         return f'EvmEvent({", ".join(fields)})'
 

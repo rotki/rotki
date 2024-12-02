@@ -8,7 +8,6 @@ EVM_EVENT_FIELDS = tuple[
     str | None,  # counterparty
     str | None,  # product
     str | None,  # address
-    str | None,  # extra_data
 ]
 
 
@@ -25,11 +24,11 @@ EVM_EVENT_DB_TUPLE_READ = tuple[
     str | None,  # notes
     str,            # type
     str,            # subtype
+    str | None,     # extra_data
     bytes,          # tx_hash
     str,            # address
     str | None,  # counterparty
     str | None,  # product
-    str | None,  # extra_data
 ]
 
 
