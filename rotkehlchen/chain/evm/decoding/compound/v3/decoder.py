@@ -188,7 +188,9 @@ class Compoundv3CommonDecoder(DecoderInterface):
             )
             return DEFAULT_DECODING_OUTPUT
 
-        action_items = []  # also create an action item for the receive of the cTokens
+        # create an action item for the receive of the cTokens. It's possible that
+        # there is no cToken received if you just supply collateral to the COMET contract
+        action_items = []
         if paired_event is not None and action_from_event_type is not None:
             action_items.append(ActionItem(
                 action='transform',

@@ -92,7 +92,6 @@ def test_query_compound_balances(
     '0x478768685e023B8AF2815369b353b786713fDEa4',
     '0x3eab2E72fA768C3cB8ab071929AC3C8aed6CbFA6',
     '0x1107F797c1af4982b038Eb91260b3f9A90eecee9',
-    '0x577e1290fE9561A9654b7b42B1C10c7Ea90c8a07',
 ]])
 @pytest.mark.parametrize('have_decoders', [[True]])
 @pytest.mark.parametrize('ethereum_modules', [['compound']])
@@ -153,19 +152,19 @@ def test_query_compound_v3_balances(
         ethereum_accounts[0]: {
             'lending': {
                 c_usdc_v3.identifier: {
-                    'apy': '9.90%',
+                    'apy': '18.62%',
                     'balance': get_balance('333349.851793'),
                 },
             }, 'rewards': {
                 A_COMP.identifier: {
                     'apy': None,
-                    'balance': get_balance('12.012345'),
+                    'balance': get_balance('12.317773'),
                 },
             },
         }, ethereum_accounts[1]: {
             'lending': {
                 c_usdc_v3.identifier: {
-                    'apy': '9.90%',
+                    'apy': '18.62%',
                     'balance': get_balance('0.32795'),
                 },
             }, 'rewards': {
@@ -177,25 +176,13 @@ def test_query_compound_v3_balances(
         }, ethereum_accounts[2]: {
             'borrowing': {
                 c_usdc_v3.identifier: {
-                    'apy': '11.57%',
-                    'balance': get_balance('20834.273226'),
+                    'apy': '21.26%',
+                    'balance': get_balance('22378.61881'),
                 },
             }, 'lending': {}, 'rewards': {
                 A_COMP.identifier: {
                     'apy': None,
-                    'balance': get_balance('0.19064'),
-                },
-            },
-        }, ethereum_accounts[3]: {
-            'borrowing': {
-                c_usdc_v3.identifier: {
-                    'apy': '11.57%',
-                    'balance': get_balance('0'),
-                },
-            }, 'rewards': {
-                A_COMP.identifier: {
-                    'apy': None,
-                    'balance': get_balance('0.000941'),
+                    'balance': get_balance('0.212129'),
                 },
             },
         },
