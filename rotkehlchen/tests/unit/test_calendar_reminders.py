@@ -298,14 +298,12 @@ def test_airdrop_claim_calendar_reminders_wrong_chain(
     """Test that no calendar entries are created if the airdrop is for a chain
     that the given address is not configured to track.
     """
-    calendar_db = DBCalendar(database)
-    user_address = arbitrum_one_accounts[0]
     reminder_creator = CalendarReminderCreator(database=database, current_ts=ts_now())
 
-    with patch('rotkehlchen.chain.ethereum.airdrops.requests.get', side_effect=get_airdrop_request_mock(user_address)):  # noqa: E501
+    with patch('rotkehlchen.chain.ethereum.airdrops.requests.get', side_effect=get_airdrop_request_mock(arbitrum_one_accounts[0])):  # noqa: E501
         reminder_creator.maybe_create_airdrop_claim_reminder()
 
-    new_calendar_entries = calendar_db.query_calendar_entry(CalendarFilterQuery.make())
+    new_calendar_entries = DBCalendar(database).query_calendar_entry(CalendarFilterQuery.make())
     assert new_calendar_entries['entries_found'] == 0
 
 

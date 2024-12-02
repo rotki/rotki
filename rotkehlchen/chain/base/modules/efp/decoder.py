@@ -56,8 +56,7 @@ class EfpDecoder(EfpCommonDecoder):
         if context.tx_log.topics[0] != UPDATE_ACCOUNT_METADATA:
             return DEFAULT_DECODING_OUTPUT
 
-        key = context.tx_log.data[96:128].rstrip(b'\x00').decode()
-        if key != 'primary-list':
+        if (context.tx_log.data[96:128].rstrip(b'\x00').decode()) != 'primary-list':
             return DEFAULT_DECODING_OUTPUT
 
         return DecodingOutput(event=self.base.make_event_from_transaction(

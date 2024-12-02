@@ -1146,20 +1146,20 @@ class DBHandler:
             account_data: list[BlockchainAccountData],
     ) -> None:
         # Insert the blockchain account addresses and labels to the DB
-        blockchain_accounts_query, bindings_to_update = [], []
+        blockchain_accounts_query, bindings_to_insert = [], []
         for entry in account_data:
             blockchain_accounts_query.append((entry.chain.value, entry.address))
             if entry.label:
-                bindings_to_update.append((entry.address, entry.chain.value, entry.label))
+                bindings_to_insert.append((entry.address, entry.chain.value, entry.label))
         try:
             write_cursor.executemany(
                 'INSERT INTO blockchain_accounts(blockchain, account) VALUES (?, ?)',
                 blockchain_accounts_query,
             )
-            if len(bindings_to_update) > 0:
+            if len(bindings_to_insert) > 0:
                 write_cursor.executemany(
                     'INSERT OR REPLACE INTO address_book(address, blockchain, name) VALUES (?, ?, ?)',  # noqa: E501
-                    bindings_to_update,
+                    bindings_to_insert,
                 )
         except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
             raise InputError(
@@ -1202,11 +1202,18 @@ class DBHandler:
             )
             deleted_count += write_cursor.rowcount
 
-        if modified_count != len(bindings_to_update) or deleted_count != len(bindings_to_delete):
+        if modified_count != len(bindings_to_update):
             msg = (
-                f'When updating blockchain accounts expected {len(bindings_to_update)}'
-                f'modified and {len(bindings_to_delete)} deleted, but instead there were'
-                f'{modified_count} modified and {deleted_count} deleted. Should not happen.'
+                f'When updating blockchain accounts expected {len(bindings_to_update)} '
+                f'modified, but instead there were {modified_count}. Should not happen.'
+            )
+            log.error(msg)
+            raise InputError(msg)
+
+        if deleted_count != len(bindings_to_delete):
+            msg = (
+                f'When updating blockchain accounts expected {len(bindings_to_delete)} '
+                f'deleted, but instead there were {deleted_count}. Should not happen.'
             )
             log.error(msg)
             raise InputError(msg)
