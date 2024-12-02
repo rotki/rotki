@@ -4,6 +4,7 @@ import { Section, Status } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import { Module } from '@/types/modules';
 import { AccountAssetBalances, type AssetBalances } from '@/types/balances';
+import { BalanceSource } from '@/types/settings/frontend-settings';
 import type { BlockchainMetadata, TaskMeta } from '@/types/task';
 import type { BlockchainAccount, BlockchainBalancePayload } from '@/types/blockchain/accounts';
 
@@ -29,6 +30,7 @@ export function useBlockchainBalances(): UseBlockchainbalancesReturn {
   const { activeModules } = storeToRefs(useGeneralSettingsStore());
   const { queryLoopringBalances } = useBlockchainBalancesApi();
   const { getAssociatedAssetIdentifier } = useAssetInfoRetrieval();
+  const usdValueThreshold = useUsdValueThreshold(BalanceSource.BLOCKCHAIN);
 
   const handleFetch = async (blockchain: string, ignoreCache = false): Promise<void> => {
     try {
@@ -36,8 +38,10 @@ export function useBlockchainBalances(): UseBlockchainbalancesReturn {
 
       const account = get(accounts)[blockchain];
 
+      const threshold = get(usdValueThreshold);
+
       if (account && account.length > 0) {
-        const { taskId } = await queryBlockchainBalances(ignoreCache, blockchain);
+        const { taskId } = await queryBlockchainBalances(ignoreCache, blockchain, threshold);
         const taskType = TaskType.QUERY_BLOCKCHAIN_BALANCES;
         const { result } = await awaitTask<BlockchainBalances, BlockchainMetadata>(
           taskId,

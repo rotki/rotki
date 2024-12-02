@@ -15,7 +15,6 @@ declare global {
   const AssetInfo: typeof import('@rotki/common')['AssetInfo']
   const AssetInfoWithTransformer: typeof import('@rotki/common')['AssetInfoWithTransformer']
   const Balance: typeof import('@rotki/common')['Balance']
-  const BalancerBalances: typeof import('@rotki/common')['BalancerBalances']
   const BaseAsset: typeof import('@rotki/common')['BaseAsset']
   const BigNumber: typeof import('@rotki/common')['BigNumber']
   const Blockchain: typeof import('@rotki/common')['Blockchain']
@@ -809,6 +808,7 @@ declare global {
   const useUniswapStore: typeof import('./src/store/defi/uniswap/index')['useUniswapStore']
   const useUpdateMessage: typeof import('./src/composables/update-message')['useUpdateMessage']
   const useUrlSearchParams: typeof import('@vueuse/core')['useUrlSearchParams']
+  const useUsdValueThreshold: typeof import('./src/composables/usd-value-threshold')['useUsdValueThreshold']
   const useUserMedia: typeof import('@vueuse/core')['useUserMedia']
   const useUserNotesApi: typeof import('./src/composables/api/session/user-notes')['useUserNotesApi']
   const useUserNotesForm: typeof import('./src/composables/notes/form')['useUserNotesForm']
@@ -1680,6 +1680,7 @@ declare module 'vue' {
     readonly useUniswapStore: UnwrapRef<typeof import('./src/store/defi/uniswap/index')['useUniswapStore']>
     readonly useUpdateMessage: UnwrapRef<typeof import('./src/composables/update-message')['useUpdateMessage']>
     readonly useUrlSearchParams: UnwrapRef<typeof import('@vueuse/core')['useUrlSearchParams']>
+    readonly useUsdValueThreshold: UnwrapRef<typeof import('./src/composables/usd-value-threshold')['useUsdValueThreshold']>
     readonly useUserMedia: UnwrapRef<typeof import('@vueuse/core')['useUserMedia']>
     readonly useUserNotesApi: UnwrapRef<typeof import('./src/composables/api/session/user-notes')['useUserNotesApi']>
     readonly useUserNotesForm: UnwrapRef<typeof import('./src/composables/notes/form')['useUserNotesForm']>

@@ -7,6 +7,7 @@ import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { CurrencyLocation } from '@/types/currency-location';
 import { DateFormat } from '@/types/date-format';
 import {
+  BalanceSource,
   BlockchainRefreshButtonBehaviour,
   DashboardTableType,
   type FrontendSettings,
@@ -82,6 +83,11 @@ describe('settings:frontend', () => {
             shouldRefreshValidatorDailyStats: false,
             unifyAccountsTable: false,
             savedFilters: {},
+            balanceUsdValueThreshold: {
+              [BalanceSource.BLOCKCHAIN]: '0',
+              [BalanceSource.EXCHANGES]: '0',
+              [BalanceSource.MANUAL]: '0',
+            },
           }),
         ),
       }),
@@ -159,6 +165,11 @@ describe('settings:frontend', () => {
       shouldRefreshValidatorDailyStats: false,
       unifyAccountsTable: false,
       savedFilters: {},
+      balanceUsdValueThreshold: {
+        [BalanceSource.EXCHANGES]: '0',
+        [BalanceSource.BLOCKCHAIN]: '0',
+        [BalanceSource.MANUAL]: '0',
+      },
     };
 
     store.update(state);

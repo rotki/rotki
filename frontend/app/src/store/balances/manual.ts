@@ -10,6 +10,7 @@ import {
 import { Section, Status } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
+import { BalanceSource } from '@/types/settings/frontend-settings';
 import type { BigNumber } from '@rotki/common';
 import type { MaybeRef } from '@vueuse/core';
 import type { AssetPrices } from '@/types/prices';
@@ -125,6 +126,7 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
   });
 
   const { getStatus, setStatus, resetStatus, fetchDisabled } = useStatusUpdater(Section.MANUAL_BALANCES);
+  const usdValueThreshold = useUsdValueThreshold(BalanceSource.MANUAL);
 
   const fetchManualBalances = async (userInitiated = false): Promise<void> => {
     if (fetchDisabled(userInitiated)) {
@@ -136,9 +138,11 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
     const newStatus = currentStatus === Status.LOADED ? Status.REFRESHING : Status.LOADING;
     setStatus(newStatus);
 
+    const threshold = get(usdValueThreshold);
+
     try {
       const taskType = TaskType.MANUAL_BALANCES;
-      const { taskId } = await queryManualBalances();
+      const { taskId } = await queryManualBalances(threshold);
       const { result } = await awaitTask<ManualBalances, TaskMeta>(taskId, taskType, {
         title: t('actions.manual_balances.fetch.task.title'),
       });

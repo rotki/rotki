@@ -90,6 +90,18 @@ const BlockchainRefreshButtonBehaviourEnum = z.nativeEnum(BlockchainRefreshButto
 
 const SavedFilterLocationEnum = z.nativeEnum(SavedFilterLocation);
 
+export enum BalanceSource {
+  BLOCKCHAIN = 'BLOCKCHAIN',
+  EXCHANGES = 'EXCHANGES',
+  MANUAL = 'MANUAL',
+}
+
+const BalanceUsdValueThresholdRecord = z.object({
+  [BalanceSource.BLOCKCHAIN]: z.string().default('0'),
+  [BalanceSource.EXCHANGES]: z.string().default('0'),
+  [BalanceSource.MANUAL]: z.string().default('0'),
+});
+
 export const FrontendSettings = z.object({
   defiSetupDone: z.boolean().default(false),
   language: SupportedLanguageEnum.default(SupportedLanguage.EN),
@@ -148,6 +160,7 @@ export const FrontendSettings = z.object({
     .default({})
     // eslint-disable-next-line unicorn/prefer-top-level-await
     .catch({}),
+  balanceUsdValueThreshold: BalanceUsdValueThresholdRecord.default({}),
 });
 
 export type FrontendSettings = z.infer<typeof FrontendSettings>;

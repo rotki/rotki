@@ -85,7 +85,7 @@ watch(open, (open) => {
         v-bind="attrs"
       >
         <RuiIcon
-          name="expand-up-down-line"
+          name="lu-chevrons-up-down"
           color="primary"
           class="size-4"
         />

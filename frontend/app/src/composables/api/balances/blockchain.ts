@@ -12,7 +12,7 @@ import type { PendingTask } from '@/types/task';
 import type { PurgeableModule } from '@/types/modules';
 
 interface UseBlockchainBalancesApiReturn {
-  queryBlockchainBalances: (ignoreCache?: boolean, blockchain?: string) => Promise<PendingTask>;
+  queryBlockchainBalances: (ignoreCache?: boolean, blockchain?: string, usdValueThreshold?: string) => Promise<PendingTask>;
   queryLoopringBalances: () => Promise<PendingTask>;
   fetchDetectedTokens: (chain: string, addresses: string[] | null) => Promise<EvmTokensRecord>;
   fetchDetectedTokensTask: (chain: string, addresses: string[]) => Promise<PendingTask>;
@@ -28,7 +28,7 @@ export function useBlockchainBalancesApi(): UseBlockchainBalancesApiReturn {
     return handleResponse(response);
   };
 
-  const queryBlockchainBalances = async (ignoreCache = false, blockchain?: string): Promise<PendingTask> => {
+  const queryBlockchainBalances = async (ignoreCache = false, blockchain?: string, usdValueThreshold?: string): Promise<PendingTask> => {
     let url = '/balances/blockchains';
     if (blockchain)
       url += `/${blockchain}`;
@@ -37,6 +37,7 @@ export function useBlockchainBalancesApi(): UseBlockchainBalancesApiReturn {
       params: snakeCaseTransformer({
         asyncQuery: true,
         ignoreCache: ignoreCache ? true : undefined,
+        usdValueThreshold,
       }),
       validateStatus: validWithParamsSessionAndExternalService,
     });

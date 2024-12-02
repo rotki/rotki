@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Defaults } from '@/data/defaults';
 import { DARK_COLORS, LIGHT_COLORS } from '@/plugins/theme';
 import {
+  BalanceSource,
   BlockchainRefreshButtonBehaviour,
   FrontendSettings,
   Quarter,
@@ -59,6 +60,11 @@ describe('settings:utils', () => {
       shouldRefreshValidatorDailyStats: false,
       unifyAccountsTable: false,
       savedFilters: {},
+      balanceUsdValueThreshold: {
+        [BalanceSource.EXCHANGES]: '0',
+        [BalanceSource.BLOCKCHAIN]: '0',
+        [BalanceSource.MANUAL]: '0',
+      },
     });
   });
 });

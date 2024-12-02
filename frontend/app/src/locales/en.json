@@ -3022,6 +3022,14 @@
       "tooltip": "Refresh {title} data"
     }
   },
+  "hide_small_balances": {
+    "apply_changes": "Apply Changes",
+    "apply_to_all": "Apply changes to other balances",
+    "apply_to_all_hint": "Apply changes to Blockchain, Exchange, and Manual balances",
+    "hide": "Hide small balances",
+    "hide_under": "Hide assets under",
+    "lt": "<"
+  },
   "ignore": {
     "failed": {
       "ignore_message": "{length} asset(s) could not be added to ignored assets: {message}",

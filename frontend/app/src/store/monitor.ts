@@ -1,4 +1,6 @@
 import { startPromise } from '@shared/utils';
+import { isEqual } from 'lodash-es';
+import { BalanceSource } from '@/types/settings/frontend-settings';
 
 const PERIODIC = 'periodic';
 const TASK = 'task';
@@ -13,9 +15,15 @@ export const useMonitorStore = defineStore('monitor', () => {
   const { consume } = useMessageHandling();
   const { fetchWatchers } = useWatchersStore();
   const { monitor } = useTaskStore();
-  const { autoRefresh } = useBalances();
+  const { autoRefresh, refreshPrices } = useBalances();
+  const { fetchManualBalances } = useManualBalancesStore();
+  const { fetchConnectedExchangeBalances } = useExchangeBalancesStore();
+  const { fetchBlockchainBalances } = useBlockchainBalances();
+  const { logged } = storeToRefs(useSessionAuthStore());
+  const { currency } = storeToRefs(useGeneralSettingsStore());
 
-  const { queryPeriod, refreshPeriod } = storeToRefs(useFrontendSettingsStore());
+  const frontendStore = useFrontendSettingsStore();
+  const { queryPeriod, refreshPeriod, balanceUsdValueThreshold } = storeToRefs(frontendStore);
 
   const ws = useWebsocketStore();
   const { connected } = storeToRefs(ws);
@@ -113,6 +121,37 @@ export const useMonitorStore = defineStore('monitor', () => {
     stop();
     start(true);
   };
+
+  watch(balanceUsdValueThreshold, (current, old) => {
+    if (!isEqual(current[BalanceSource.MANUAL], old[BalanceSource.MANUAL])) {
+      startPromise(fetchManualBalances(true));
+    }
+
+    if (!isEqual(current[BalanceSource.EXCHANGES], old[BalanceSource.EXCHANGES])) {
+      startPromise(fetchConnectedExchangeBalances(false));
+    }
+
+    if (!isEqual(current[BalanceSource.BLOCKCHAIN], old[BalanceSource.BLOCKCHAIN])) {
+      startPromise(fetchBlockchainBalances());
+    }
+  });
+
+  watch(currency, async () => {
+    if (!get(logged))
+      return;
+
+    // TODO: This is temporary fix for double conversion issue. Future solutions should try to eliminate this part.
+    startPromise(refreshPrices(true));
+
+    // Clear hide small balances state, if the currency is changed
+    startPromise(frontendStore.updateSetting({
+      balanceUsdValueThreshold: {
+        [BalanceSource.EXCHANGES]: '0',
+        [BalanceSource.BLOCKCHAIN]: '0',
+        [BalanceSource.MANUAL]: '0',
+      },
+    }));
+  });
 
   return {
     start,

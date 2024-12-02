@@ -3,6 +3,7 @@ import { startPromise } from '@shared/utils';
 import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
 import { BalanceType } from '@/types/balances';
 import { NoteLocation } from '@/types/notes';
+import { BalanceSource } from '@/types/settings/frontend-settings';
 import type { ManualBalance, RawManualBalance } from '@/types/manual-balances';
 
 definePage({
@@ -70,7 +71,6 @@ onBeforeMount(async () => {
     <template #buttons>
       <PriceRefresh />
       <RuiButton
-        v-blur
         color="primary"
         data-cy="manual-balances-add-button"
         @click="add()"
@@ -80,6 +80,7 @@ onBeforeMount(async () => {
         </template>
         {{ t('manual_balances.add_manual_balance') }}
       </RuiButton>
+      <HideSmallBalances :source="BalanceSource.MANUAL" />
     </template>
 
     <div>
