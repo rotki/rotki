@@ -4,6 +4,7 @@ from unittest.mock import patch
 import pytest
 import requests
 
+from rotkehlchen.api.server import APIServer
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
@@ -15,7 +16,7 @@ from rotkehlchen.tests.utils.premium import create_patched_requests_get_for_prem
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
-def test_upload_db(rotkehlchen_api_server):
+def test_upload_db(rotkehlchen_api_server: APIServer) -> None:
     """Just a smoke test that the api works fine. Would have prevented:
     https://github.com/rotki/rotki/issues/6524.
 
@@ -23,6 +24,7 @@ def test_upload_db(rotkehlchen_api_server):
     tests/integration/test_premium.py
     """
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    assert rotki.premium is not None
     patches = [patch.object(
         rotki.premium.session,
         verb,
@@ -55,12 +57,13 @@ def test_upload_db(rotkehlchen_api_server):
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
-def test_pull_db(rotkehlchen_api_server):
+def test_pull_db(rotkehlchen_api_server: APIServer) -> None:
     """Just a smoke test that the api works fine for this endpoint.
 
     Actual functionality tested in tests/integration/test_premium.py
     """
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    assert rotki.premium is not None
     patches = [patch.object(
         rotki.premium.session,
         verb,

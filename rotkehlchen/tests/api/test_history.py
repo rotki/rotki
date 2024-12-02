@@ -2,13 +2,16 @@ import random
 from contextlib import ExitStack
 from http import HTTPStatus
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from unittest.mock import MagicMock, patch
 
 import pytest
 import requests
 
-from rotkehlchen.accounting.constants import FREE_PNL_EVENTS_LIMIT, FREE_REPORTS_LOOKUP_LIMIT
+from rotkehlchen.accounting.constants import (
+    FREE_PNL_EVENTS_LIMIT,
+    FREE_REPORTS_LOOKUP_LIMIT,
+)
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.types import ActionType
@@ -23,9 +26,13 @@ from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.externalapis.defillama import Defillama
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryEvent
-from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.history.events.structures.types import (
+    HistoryEventSubType,
+    HistoryEventType,
+)
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.history.types import HistoricalPriceOracle
+from rotkehlchen.tests.fixtures.websockets import WebsocketReader
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
@@ -44,7 +51,15 @@ from rotkehlchen.tests.utils.history import (
 )
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.tests.utils.pnl_report import query_api_create_and_get_report
-from rotkehlchen.types import AssetAmount, Fee, Location, Price, Timestamp, TimestampMS, TradeType
+from rotkehlchen.types import (
+    AssetAmount,
+    Fee,
+    Location,
+    Price,
+    Timestamp,
+    TimestampMS,
+    TradeType,
+)
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
@@ -68,7 +83,7 @@ if TYPE_CHECKING:
 ])
 @pytest.mark.parametrize('initialize_accounting_rules', [True])
 @pytest.mark.parametrize('legacy_messages_via_websockets', [True])
-def test_query_history(rotkehlchen_api_server_with_exchanges, start_ts, end_ts, websocket_connection):  # noqa: E501
+def test_query_history(rotkehlchen_api_server_with_exchanges: 'APIServer', start_ts: Timestamp, end_ts: Timestamp, websocket_connection: WebsocketReader) -> None:   # noqa: E501
     """Test that the history processing REST API endpoint works. Similar to test_history.py
 
     Both a test for full and limited time range.
@@ -166,7 +181,7 @@ def test_query_history(rotkehlchen_api_server_with_exchanges, start_ts, end_ts, 
 )
 @pytest.mark.parametrize('ethereum_accounts', [[ETH_ADDRESS1, ETH_ADDRESS2, ETH_ADDRESS3]])
 @pytest.mark.parametrize('mocked_price_queries', [prices])
-def test_query_history_remote_errors(rotkehlchen_api_server_with_exchanges):
+def test_query_history_remote_errors(rotkehlchen_api_server_with_exchanges: 'APIServer') -> None:
     """Test that the history processing REST API endpoint works. Similar to test_history.py"""
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
     setup = prepare_rotki_for_history_processing_test(
@@ -178,8 +193,6 @@ def test_query_history_remote_errors(rotkehlchen_api_server_with_exchanges):
     # Query history processing to start the history processing
     with ExitStack() as stack:
         for manager in setup:
-            if manager is None:
-                continue
             stack.enter_context(manager)
         response = requests.get(
             api_url_for(rotkehlchen_api_server_with_exchanges, 'historyprocessingresource'),
@@ -206,7 +219,7 @@ def test_query_history_remote_errors(rotkehlchen_api_server_with_exchanges):
 @pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize('ethereum_accounts', [[ETH_ADDRESS1]])
 @pytest.mark.parametrize('mocked_price_queries', [prices])
-def test_fatal_error_during_query_history(rotkehlchen_api_server: 'APIServer'):
+def test_fatal_error_during_query_history(rotkehlchen_api_server: 'APIServer') -> None:
     """Test that an accounting error is propagated correctly to the api"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     error_patch = patch(
@@ -239,7 +252,7 @@ def test_fatal_error_during_query_history(rotkehlchen_api_server: 'APIServer'):
 
 
 @pytest.mark.parametrize('have_decoders', [True])
-def test_query_history_errors(rotkehlchen_api_server):
+def test_query_history_errors(rotkehlchen_api_server: 'APIServer') -> None:
     """Test that errors in the history query REST API endpoint are handled properly"""
     # invalid from timestamp value
     response = requests.get(
@@ -280,10 +293,10 @@ def test_query_history_errors(rotkehlchen_api_server):
 @pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize('ethereum_accounts', [[]])
 @pytest.mark.parametrize('mocked_price_queries', [prices])
-def test_query_history_external_exchanges(rotkehlchen_api_server):
+def test_query_history_external_exchanges(rotkehlchen_api_server: 'APIServer') -> None:
     """Test that history is processed for external exchanges too"""
-    start_ts = 0
-    end_ts = 1631455982
+    start_ts = Timestamp(0)
+    end_ts = Timestamp(1631455982)
 
     # import blockfi trades
     dir_path = Path(__file__).resolve().parent.parent
@@ -318,12 +331,12 @@ def test_query_history_external_exchanges(rotkehlchen_api_server):
 @pytest.mark.parametrize('ascending_timestamp', [False, True])
 @pytest.mark.parametrize('initialize_accounting_rules', [True])
 def test_query_pnl_report_events_pagination_filtering(
-        rotkehlchen_api_server_with_exchanges,
-        ascending_timestamp,
-):
+        rotkehlchen_api_server_with_exchanges: 'APIServer',
+        ascending_timestamp: bool,
+) -> None:
     """Test that for PnL reports pagination, filtering and order work fine"""
-    start_ts = 0
-    end_ts = 1601040361
+    start_ts = Timestamp(0)
+    end_ts = Timestamp(1601040361)
     report_id, _, _ = query_api_create_and_get_report(
         server=rotkehlchen_api_server_with_exchanges,
         start_ts=start_ts,
@@ -414,7 +427,7 @@ def test_history_debug_export(rotkehlchen_api_server: 'APIServer') -> None:
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
-def test_history_debug_import(rotkehlchen_api_server):
+def test_history_debug_import(rotkehlchen_api_server: 'APIServer') -> None:
     method = random.choice(['PATCH', 'PUT'])
     async_query = random.choice([True, False])
     filepath = Path(__file__).resolve().parent.parent / 'data' / 'pnl_debug.json'
@@ -459,7 +472,7 @@ def test_history_debug_import(rotkehlchen_api_server):
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('should_mock_price_queries', [False])
 @pytest.mark.parametrize('initialize_accounting_rules', [True])
-def test_missing_prices_in_pnl_report(rotkehlchen_api_server):
+def test_missing_prices_in_pnl_report(rotkehlchen_api_server: 'APIServer') -> None:
     """
     Test missing prices propagated during the PNL report
     """
@@ -505,7 +518,7 @@ def test_missing_prices_in_pnl_report(rotkehlchen_api_server):
     price_historian.set_oracles_order([HistoricalPriceOracle.COINGECKO])
     coingecko_api_calls = 0
 
-    def mock_coingecko_return(url, *args, **kwargs):  # pylint: disable=unused-argument
+    def mock_coingecko_return(url: str, *args: Any, **kwargs: Any) -> MockResponse:  # pylint: disable=unused-argument
         nonlocal coingecko_api_calls
         coingecko_api_calls += 1
         return MockResponse(HTTPStatus.TOO_MANY_REQUESTS, '{}')

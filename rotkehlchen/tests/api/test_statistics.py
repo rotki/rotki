@@ -1,13 +1,13 @@
 import contextlib
 from contextlib import ExitStack
 from http import HTTPStatus
+from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
 import pytest
 import requests
 
 from rotkehlchen.accounting.structures.balance import BalanceType
-from rotkehlchen.api.server import APIServer
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_ETH2, A_EUR
 from rotkehlchen.fval import FVal
@@ -22,18 +22,21 @@ from rotkehlchen.tests.utils.constants import A_RDN
 from rotkehlchen.tests.utils.factories import UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
-from rotkehlchen.types import Location
+from rotkehlchen.types import BTCAddress, ChecksumEvmAddress, Location
 from rotkehlchen.utils.misc import ts_now
+
+if TYPE_CHECKING:
+    from rotkehlchen.api.server import APIServer
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
 @pytest.mark.parametrize('btc_accounts', [[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]])
 @pytest.mark.parametrize('added_exchanges', [(Location.BINANCE, Location.POLONIEX)])
 def test_query_statistics_netvalue(
-        rotkehlchen_api_server_with_exchanges,
-        ethereum_accounts,
-        btc_accounts,
-):
+        rotkehlchen_api_server_with_exchanges: 'APIServer',
+        ethereum_accounts: list[ChecksumEvmAddress],
+        btc_accounts: list[BTCAddress],
+) -> None:
     """Test that using the statistics netvalue over time endpoint works"""
     # Disable caching of query results
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
@@ -70,11 +73,11 @@ def test_query_statistics_netvalue(
 @pytest.mark.parametrize('added_exchanges', [(Location.BINANCE, Location.POLONIEX)])
 @pytest.mark.parametrize('start_with_valid_premium', [True, False])
 def test_query_statistics_asset_balance(
-        rotkehlchen_api_server_with_exchanges,
-        ethereum_accounts,
-        btc_accounts,
-        start_with_valid_premium,
-):
+        rotkehlchen_api_server_with_exchanges: 'APIServer',
+        ethereum_accounts: list[ChecksumEvmAddress],
+        btc_accounts: list[BTCAddress],
+        start_with_valid_premium: bool,
+) -> None:
     """Test that using the statistics asset balance over time endpoint works"""
     start_time = ts_now()
     # Disable caching of query results
@@ -159,7 +162,7 @@ def test_query_statistics_asset_balance(
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
-def test_query_statistics_asset_balance_errors(rotkehlchen_api_server: APIServer):
+def test_query_statistics_asset_balance_errors(rotkehlchen_api_server: 'APIServer') -> None:
     """Test that errors at the statistics asset balance over time endpoint are handled properly"""
     start_time = ts_now()
 
@@ -221,18 +224,18 @@ def test_query_statistics_asset_balance_errors(rotkehlchen_api_server: APIServer
 @pytest.mark.parametrize('start_with_valid_premium', [True, False])
 @pytest.mark.parametrize('db_settings', [{'treat_eth2_as_eth': True}, {'treat_eth2_as_eth': False}])  # noqa: E501
 def test_query_statistics_value_distribution(
-        rotkehlchen_api_server_with_exchanges,
-        ethereum_accounts,
-        btc_accounts,
-        start_with_valid_premium,
-        db_settings,
-):
+        rotkehlchen_api_server_with_exchanges: 'APIServer',
+        ethereum_accounts: list[ChecksumEvmAddress],
+        btc_accounts: list[BTCAddress],
+        start_with_valid_premium: bool,
+        db_settings: dict[str, bool],
+) -> None:
     """Test that using the statistics value distribution endpoint works"""
     start_time = ts_now()
     # Disable caching of query results
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
     rotki.chains_aggregator.cache_ttl_secs = 0
-    token_balances = {A_RDN: ['111000', '4000000']}
+    token_balances = {A_RDN.resolve_to_evm_token(): ['111000', '4000000']}
     setup = setup_balances(
         rotki=rotki,
         ethereum_accounts=ethereum_accounts,
@@ -268,7 +271,7 @@ def test_query_statistics_value_distribution(
         )
     assert_proper_response(response)
 
-    def assert_okay_by_location(response):
+    def assert_okay_by_location(response: requests.Response) -> None:
         """Helper function to run next query and its assertion twice"""
         if start_with_valid_premium:
             result = assert_proper_sync_response_with_result(response)
@@ -360,7 +363,7 @@ def test_query_statistics_value_distribution(
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
-def test_query_statistics_value_distribution_errors(rotkehlchen_api_server):
+def test_query_statistics_value_distribution_errors(rotkehlchen_api_server: 'APIServer') -> None:
     """Test that the statistics value distribution endpoint handles errors properly"""
     # Test omitting the distribution_by argument
     response = requests.get(
@@ -390,12 +393,15 @@ def test_query_statistics_value_distribution_errors(rotkehlchen_api_server):
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True, False])
-def test_query_statistics_renderer(rotkehlchen_api_server, start_with_valid_premium):
+def test_query_statistics_renderer(
+        rotkehlchen_api_server: 'APIServer',
+        start_with_valid_premium: bool,
+    ) -> None:
     """Test that the statistics renderer endpoint works when properly queried"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
 
     if start_with_valid_premium:
-        def mock_premium_get(url, *_args, **_kwargs):
+        def mock_premium_get(url: str, *_args: Any, **_kwargs: Any) -> MockResponse:
             if 'last_data_metadata' in url:
                 response = (
                     '{"upload_ts": 0, "last_modify_ts": 0, "data_hash": "0x0", "data_size": 0}'
@@ -403,7 +409,9 @@ def test_query_statistics_renderer(rotkehlchen_api_server, start_with_valid_prem
             else:
                 response = '{"data": "codegoeshere"}'
             return MockResponse(200, response)
-        premium_patch = patch.object(rotki.premium.session, 'get', mock_premium_get)
+
+        assert rotki.premium is not None
+        premium_patch: Any = patch.object(rotki.premium.session, 'get', mock_premium_get)
     else:
         premium_patch = contextlib.nullcontext()
 

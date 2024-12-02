@@ -1,11 +1,11 @@
 import random
 from http import HTTPStatus
+from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import pytest
 import requests
 
-from rotkehlchen.api.server import APIServer
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE
 from rotkehlchen.inquirer import Inquirer
@@ -17,16 +17,21 @@ from rotkehlchen.tests.utils.api import (
     assert_proper_sync_response_with_result,
     wait_for_async_task,
 )
-from rotkehlchen.tests.utils.ethereum import INFURA_ETH_NODE, get_decoded_events_of_transaction
+from rotkehlchen.tests.utils.ethereum import (
+    INFURA_ETH_NODE,
+    get_decoded_events_of_transaction,
+)
 from rotkehlchen.types import ChecksumEvmAddress, deserialize_evm_tx_hash
 
+if TYPE_CHECKING:
+    from rotkehlchen.api.server import APIServer
 SWAP_ADDRESS = string_to_evm_address('0x63BC843b9640c4D79d6aE0105bc39F773172d121')
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[SWAP_ADDRESS]])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('ethereum_modules', [['compound']])
-def test_get_balances_module_not_activated(rotkehlchen_api_server):
+def test_get_balances_module_not_activated(rotkehlchen_api_server: 'APIServer') -> None:
     response = requests.get(
         api_url_for(rotkehlchen_api_server, 'evmmodulebalancesresource', module='sushiswap'),
     )
@@ -43,11 +48,11 @@ def test_get_balances_module_not_activated(rotkehlchen_api_server):
 @pytest.mark.parametrize('network_mocking', [False])
 @pytest.mark.parametrize('ethereum_manager_connect_at_start', [(INFURA_ETH_NODE,)])
 def test_get_balances(
-        rotkehlchen_api_server: APIServer,
+        rotkehlchen_api_server: 'APIServer',
         start_with_valid_premium: bool,
         inquirer: Inquirer,  # pylint: disable=unused-argument
         ethereum_accounts: list[ChecksumEvmAddress],
-):
+) -> None:
     """Check querying the sushiswap balances endpoint works. Uses real data. Needs the deposit
     event in uniswap to trigger the logic based on events to query pool balances.
     """
@@ -119,7 +124,7 @@ TEST_EVENTS_ADDRESS_1 = '0x91E6A718d9A4CB67bDA0e4bf96C6C8154b7F4120'
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('should_mock_price_queries', [True])
 @pytest.mark.parametrize('default_mock_price_value', [ONE])
-def test_get_events_history_filtering_by_timestamp(rotkehlchen_api_server: 'APIServer'):
+def test_get_events_history_filtering_by_timestamp(rotkehlchen_api_server: 'APIServer') -> None:
     """
     Test the events balances from 1627401169 to 1627401170 (both included). Needs the event
     to return a non empty response.

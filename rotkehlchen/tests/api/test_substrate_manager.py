@@ -1,14 +1,18 @@
 import pytest
 import requests
 
+from rotkehlchen.api.server import APIServer
 from rotkehlchen.chain.substrate.types import KusamaNodeName
-from rotkehlchen.tests.utils.api import api_url_for, assert_proper_sync_response_with_result
+from rotkehlchen.tests.utils.api import (
+    api_url_for,
+    assert_proper_sync_response_with_result,
+)
 from rotkehlchen.tests.utils.substrate import KUSAMA_TEST_RPC_ENDPOINT
 
 
 @pytest.mark.vcr
 @pytest.mark.freeze_time('2023-10-12 09:00:00 GMT')
-def test_set_unset_own_rpc_endpoint(rotkehlchen_api_server):
+def test_set_unset_own_rpc_endpoint(rotkehlchen_api_server: APIServer) -> None:
     """Test that successfully setting/unsetting an own node (via `ksm_rpc_endpoint` setting)
     updates the `available_node_attributes_map`, sorts `available_nodes_call_order`,
     and sets the `own_rpc_endpoint` property.
@@ -20,7 +24,7 @@ def test_set_unset_own_rpc_endpoint(rotkehlchen_api_server):
 
     # No nodes connected
     assert kusama_manager.own_rpc_endpoint is None  # from `ksm_rpc_endpoint` fixture
-    assert len(kusama_manager.available_node_attributes_map) == 0
+    assert len(kusama_manager.available_node_attributes_map) == 0  # type: ignore
     assert len(kusama_manager.available_nodes_call_order) == 0
 
     # Set ksm_rpc_endpoint with a reliable endpoint (e.g. NOT Parity)

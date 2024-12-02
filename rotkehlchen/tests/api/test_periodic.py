@@ -1,6 +1,7 @@
 import pytest
 import requests
 
+from rotkehlchen.api.server import APIServer
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.tests.utils.api import (
     api_url_for,
@@ -14,12 +15,13 @@ from rotkehlchen.utils.misc import ts_now
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('added_exchanges', [(Location.BINANCE, Location.POLONIEX)])
-def test_query_periodic(rotkehlchen_api_server_with_exchanges):
+def test_query_periodic(rotkehlchen_api_server_with_exchanges: APIServer) -> None:
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
     rotki.chains_aggregator.cache_ttl_secs = 0
     setup = setup_balances(rotki, ethereum_accounts=[], btc_accounts=[])
     start_ts = ts_now()
-
+    assert setup.binance_patch is not None
+    assert setup.poloniex_patch is not None
     # Query trades of an exchange to get them saved in the DB
     with setup.binance_patch, setup.poloniex_patch:
         response = requests.get(
