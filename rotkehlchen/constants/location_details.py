@@ -97,3 +97,13 @@ for key, value in LOCATION_DETAILS.items():
                 value['exchange_details']['is_exchange_without_api_secret'] = True
             continue
         value['is_exchange'] = True
+
+
+def get_formatted_location_name(location: Location) -> str:
+    """Get a properly formatted location name either from the location details mapping,
+    or by simply capitalizing the location name.
+    """
+    if location in LOCATION_DETAILS and 'label' in LOCATION_DETAILS[location]:
+        return LOCATION_DETAILS[location]['label']
+
+    return str(location).capitalize()

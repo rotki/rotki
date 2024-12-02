@@ -67,6 +67,7 @@ class HistoryBaseEntryType(DBIntEnumMixIn):
     ETH_WITHDRAWAL_EVENT = auto()
     ETH_BLOCK_EVENT = auto()
     ETH_DEPOSIT_EVENT = auto()
+    ASSET_MOVEMENT_EVENT = auto()
 
 
 class HistoryBaseEntryData(TypedDict):

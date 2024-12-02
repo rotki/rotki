@@ -36,6 +36,7 @@ from rotkehlchen.db.filtering import (
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.base import (
     HistoryBaseEntry,
     HistoryBaseEntryType,
@@ -468,7 +469,7 @@ class DBHistoryEvents:
         for entry in cursor:
             entry_type = HistoryBaseEntryType(entry[type_idx])
             try:
-                deserialized_event: HistoryEvent | (EvmEvent | (EthWithdrawalEvent | EthBlockEvent))  # noqa: E501
+                deserialized_event: HistoryEvent | AssetMovement | (EvmEvent | (EthWithdrawalEvent | EthBlockEvent))  # noqa: E501
                 # Deserialize event depending on its type
                 if entry_type == HistoryBaseEntryType.EVM_EVENT:
                     data = (
@@ -502,6 +503,9 @@ class DBHistoryEvents:
                     )
                     deserialized_event = EthDepositEvent.deserialize_from_db(data)
 
+                elif entry_type == HistoryBaseEntryType.ASSET_MOVEMENT_EVENT:
+                    data = entry[data_start_idx:]
+                    deserialized_event = AssetMovement.deserialize_from_db(data)
                 else:
                     data = entry[data_start_idx:]
                     deserialized_event = HistoryEvent.deserialize_from_db(data)
