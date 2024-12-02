@@ -1,5 +1,5 @@
 import warnings as test_warnings
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Final
 from unittest.mock import patch
 
 import pytest
@@ -30,12 +30,12 @@ from rotkehlchen.types import Price
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
 
-TEST_ACC1 = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'  # lefteris.eth
-TEST_ACC2 = '0x3Ba6eB0e4327B96aDe6D4f3b578724208a590CEF'
-TEST_ACC3 = '0xC21A5ee89D306353e065a6dd5779470DE395DBaC'
-TEST_ACC4 = '0xc37b40ABdB939635068d3c5f13E7faF686F03B65'  # yabir.eth, gashawk nft
-TEST_ACC5 = '0x4bBa290826C253BD854121346c370a9886d1bC26'  # nebolax.eth
-TEST_ACC6 = '0x3e649c5Eac6BBEE8a4F2A2945b50d8e582faB3bf'  # contains uniswap-v3 nft
+TEST_ACC1: Final = string_to_evm_address('0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12')  # lefteris.eth # noqa: E501
+TEST_ACC2: Final = string_to_evm_address('0x3Ba6eB0e4327B96aDe6D4f3b578724208a590CEF')
+TEST_ACC3: Final = string_to_evm_address('0xC21A5ee89D306353e065a6dd5779470DE395DBaC')
+TEST_ACC4: Final = string_to_evm_address('0xc37b40ABdB939635068d3c5f13E7faF686F03B65')  # yabir.eth, gashawk nft # noqa: E501
+TEST_ACC5: Final = string_to_evm_address('0x4bBa290826C253BD854121346c370a9886d1bC26')  # nebolax.eth # noqa: E501
+TEST_ACC6: Final = string_to_evm_address('0x3e649c5Eac6BBEE8a4F2A2945b50d8e582faB3bf')  # contains uniswap-v3 nft # noqa: E501
 NFT_ID_FOR_TEST_ACC4 = '_nft_0x57f1887a8BF19b14fC0dF6Fd9B2acc9Af147eA85_26612040215479394739615825115912800930061094786769410446114278812336794170041'  # noqa: E501
 NFT_ID_FOR_TEST_ACC4_2 = '_nft_0xfd9d8036F899ed5a9fD8cac7968E5F24D3db2A64_1_0xc37b40ABdB939635068d3c5f13E7faF686F03B65'  # noqa: E501
 NFT_ID_FOR_TEST_ACC5 = '_nft_0x57f1887a8BF19b14fC0dF6Fd9B2acc9Af147eA85_73552724610198397480670284492690114609730214421511097849210414928326607694469'  # noqa: E501
@@ -398,7 +398,7 @@ def test_edit_delete_nft(rotkehlchen_api_server: 'APIServer') -> None:
     def mock_get_all_nft_data(
             addresses: list[ChecksumEvmAddress],
             **kwargs,
-        ) -> tuple[dict[str, list[NFT]], int]:  # pylint: disable=unused-argument
+        ) -> tuple[dict[ChecksumEvmAddress, list[NFT]], int]:  # pylint: disable=unused-argument
         return nft_map, sum(len(x) for x in nft_map.values())
 
     get_all_nft_data_patch = patch(
@@ -866,7 +866,7 @@ def test_customized_queried_addresses(rotkehlchen_api_server: 'APIServer') -> No
     def mock_get_all_nft_data(
             _addresses: list[ChecksumEvmAddress],
             **_kwargs,
-        ) -> tuple[dict[str, Any], int]:
+        ) -> tuple[dict[ChecksumEvmAddress, Any], int]:
         data = {
             TEST_ACC5: [TEST_NFT_NEBOLAX_ETH],
             TEST_ACC4: [TEST_NFT_YABIR_ETH],
@@ -889,7 +889,7 @@ def test_customized_queried_addresses(rotkehlchen_api_server: 'APIServer') -> No
     # Make NFTs queried for only one of the addresses
     QueriedAddresses(rotki.data.db).add_queried_address_for_module(
         module='nfts',
-        address=string_to_evm_address(TEST_ACC5),
+        address=TEST_ACC5,
     )
     response = requests.get(  # Now we should get the NFTs only for TEST_ACC5 address
         api_url_for(
