@@ -71,17 +71,42 @@ async function onReady(): Promise<void> {
 
   getWindow().webContents.on('before-input-event', (event, input) => {
     const win = getWindow();
-    if (isMac ? input.meta : input.control) {
-      if (['ArrowLeft', '['].includes(input.key) && win.webContents.canGoBack()) {
-        win.webContents.goBack();
-        event.preventDefault();
-      }
 
-      if (['ArrowRight', ']'].includes(input.key) && win.webContents.canGoForward()) {
-        win.webContents.goForward();
-        event.preventDefault();
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises
+    win.webContents.executeJavaScript(`
+    (function() {
+      const activeElement = document.activeElement;
+      
+      // Check for text input elements
+      const isTextInput = 
+        activeElement.tagName === 'INPUT' ||
+        activeElement.tagName === 'TEXTAREA' ||
+        activeElement.isContentEditable ||
+        activeElement.role === 'textbox' ||
+        activeElement.closest('[contenteditable]'); // Check for nested contenteditable
+      
+      // Return early
+      if (isTextInput) return true;
+      
+      // Check for any text selection
+      const selection = window.getSelection();
+      const hasTextSelection = selection.toString().length > 0;
+      
+      return hasTextSelection;
+    })()
+  `).then((shouldPreventNavigation) => {
+      if (isMac ? input.meta : input.alt) {
+        if (win.webContents.navigationHistory.canGoBack() && (input.key === '[' || (!shouldPreventNavigation && input.key === 'ArrowLeft'))) {
+          win.webContents.navigationHistory.goBack();
+          event.preventDefault();
+        }
+
+        if (win.webContents.navigationHistory.canGoForward() && (input.key === ']' || (!shouldPreventNavigation && input.key === 'ArrowRight'))) {
+          win.webContents.navigationHistory.goForward();
+          event.preventDefault();
+        }
       }
-    }
+    });
   });
 }
 
