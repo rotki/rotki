@@ -1,7 +1,9 @@
 =========
 Changelog
 =========
-* :feature:`-`  Add direct navigation to asset details when clicking on small asset icons (IconTokenDisplay).
+
+* :bug:`8983` The asset amount will be shown if only one asset is detected in an account.
+* :feature:`8991` Add direct navigation to asset details when clicking on small asset icons in the blockchain balances table.
 
 * :release:`1.36.1 <2024-11-29>`
 * :bug:`-` Coinbase deposits that appeared as withdrawals should now appear as deposits again. Would need to purge and requery coinbase to fix this.
