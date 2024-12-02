@@ -15,8 +15,17 @@ const props = withDefaults(defineProps<{
 });
 
 const { assets, visible } = toRefs(props);
-
 const showMore = computed<number>(() => get(assets).length - get(visible));
+const router = useRouter();
+
+async function navigateToAsset(asset: AssetBalance) {
+  await router.push({
+    name: '/assets/[identifier]',
+    params: {
+      identifier: asset.asset,
+    },
+  });
+}
 </script>
 
 <template>
@@ -33,6 +42,7 @@ const showMore = computed<number>(() => get(assets).length - get(visible));
           <div
             data-cy="top-asset"
             class="rounded-full size-8 flex items-center justify-center border-2 border-white dark:border-rui-grey-700 -ml-2 cursor-pointer"
+            @click="navigateToAsset(asset)"
           >
             <AssetIcon
               no-tooltip
