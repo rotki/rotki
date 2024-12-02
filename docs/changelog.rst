@@ -1,6 +1,7 @@
 =========
 Changelog
 =========
+* :feature:`-`  Add direct navigation to asset details when clicking on small asset icons (IconTokenDisplay).
 
 * :release:`1.36.1 <2024-11-29>`
 * :bug:`-` Coinbase deposits that appeared as withdrawals should now appear as deposits again. Would need to purge and requery coinbase to fix this.
