@@ -1,9 +1,10 @@
 <script lang="ts" setup>
 import type { AssetBalance } from '@rotki/common';
+import type { BlockchainAccountBalance } from '@/types/blockchain/accounts';
 
 const props = defineProps<{
   chains: string[];
-  address: string;
+  row: BlockchainAccountBalance;
   loading: boolean;
 }>();
 
@@ -11,9 +12,20 @@ const { getAccountDetails } = useBlockchainStore();
 const { assetInfo } = useAssetInfoRetrieval();
 
 const assets = computed<AssetBalance[]>(() => {
-  const assets: Record<string, AssetBalance> = {};
-  const address = props.address;
+  const row = props.row;
+  const address = getAccountAddress(row);
 
+  if (row.data.type === 'xpub' && row.nativeAsset) {
+    return [
+      {
+        asset: row.nativeAsset,
+        amount: row.amount || Zero,
+        usdValue: row.usdValue,
+      },
+    ];
+  }
+
+  const assets: Record<string, AssetBalance> = {};
   props.chains.forEach((chain) => {
     const details = getAccountDetails(chain, address);
     details.assets.forEach((item) => {
@@ -35,11 +47,38 @@ const assets = computed<AssetBalance[]>(() => {
 
   return Object.values(assets).sort((a, b) => sortDesc(a.usdValue, b.usdValue));
 });
+
+const router = useRouter();
+
+async function navigateToAsset(asset: AssetBalance) {
+  await router.push({
+    name: '/assets/[identifier]',
+    params: {
+      identifier: asset.asset,
+    },
+  });
+}
 </script>
 
 <template>
   <IconTokenDisplay
+    v-if="assets.length > 1"
     :assets="assets"
     :loading="loading"
   />
+  <div
+    v-else-if="assets.length === 1"
+    class="flex items-center gap-3 justify-end"
+  >
+    <AmountDisplay :value="assets[0].amount" />
+    <AssetIcon
+      flat
+      :identifier="assets[0].asset"
+      :resolution-options="{ collectionParent: false }"
+      size="30px"
+      padding="1px"
+      class="[&_.icon-bg]:!rounded-full [&_.icon-bg]:!overflow-hidden"
+      @click="navigateToAsset(assets[0])"
+    />
+  </div>
 </template>

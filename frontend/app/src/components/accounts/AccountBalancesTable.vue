@@ -268,7 +268,7 @@ defineExpose({
     <template #item.assets="{ row }">
       <AccountTopTokens
         :chains="getChains(row)"
-        :address="getAccountAddress(row)"
+        :row="row"
         :loading="isRowLoading(row)"
       />
     </template>
@@ -287,6 +287,7 @@ defineExpose({
           /
         </div>
         <AmountDisplay
+          data-cy="usd-value"
           class="font-medium"
           fiat-currency="USD"
           :value="row.usdValue"
