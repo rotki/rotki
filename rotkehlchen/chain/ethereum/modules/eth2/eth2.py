@@ -661,9 +661,8 @@ class Eth2(EthereumModule):
         pubkey_to_data: dict[Eth2PubKey, tuple[int, str]] = {}
         with self.database.conn.read_ctx() as cursor:
             cursor.execute(
-                'SELECT H.identifier, H.amount, E.extra_data from history_events H LEFT JOIN eth_staking_events_info S '  # noqa: E501
-                'ON H.identifier=S.identifier LEFT JOIN evm_events_info E '
-                'ON E.identifier=H.identifier WHERE S.validator_index=?',
+                'SELECT H.identifier, H.amount, H.extra_data from history_events H LEFT JOIN eth_staking_events_info S '  # noqa: E501
+                'ON H.identifier=S.identifier WHERE S.validator_index=?',
                 (UNKNOWN_VALIDATOR_INDEX,),
             )
             for entry in cursor:
@@ -706,12 +705,8 @@ class Eth2(EthereumModule):
                 staking_changes,
             )
             write_cursor.executemany(
-                'UPDATE history_events SET notes=? WHERE identifier=?',
+                'UPDATE history_events SET extra_data=null, notes=? WHERE identifier=?',
                 history_changes,
-            )
-            write_cursor.executemany(
-                'UPDATE evm_events_info SET extra_data=null WHERE identifier=?',
-                [(x[1],) for x in staking_changes],
             )
             write_cursor.executemany(
                 'INSERT OR IGNORE INTO eth2_validators(validator_index, public_key, ownership_proportion) VALUES(?, ?, ?)',  # noqa: E501

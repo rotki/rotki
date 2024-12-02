@@ -789,7 +789,7 @@ class DBHistoryEvents:
         """
         assert event.identifier is not None, 'event should have identifier populated'
         write_cursor.execute(
-            'UPDATE evm_events_info SET extra_data=? WHERE identifier=?',
+            'UPDATE history_events SET extra_data=? WHERE identifier=?',
             (json.dumps(extra_data), event.identifier),
         )
         event.extra_data = extra_data

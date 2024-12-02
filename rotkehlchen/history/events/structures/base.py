@@ -1,3 +1,4 @@
+import json
 import logging
 from abc import ABC, abstractmethod
 from enum import auto
@@ -52,6 +53,7 @@ HISTORY_EVENT_DB_TUPLE_WRITE = tuple[
     str | None,     # notes
     str,            # type
     str,            # subtype
+    str | None,     # extra_data
 ]
 
 
@@ -79,6 +81,7 @@ class HistoryBaseEntryData(TypedDict):
     location_label: str | None
     notes: str | None
     identifier: int | None
+    extra_data: dict[str, Any] | None
 
 
 T = TypeVar('T', bound='HistoryBaseEntry')
@@ -103,6 +106,7 @@ class HistoryBaseEntry(AccountingEventMixin, ABC):
             location_label: str | None = None,
             notes: str | None = None,
             identifier: int | None = None,
+            extra_data: dict[str, Any] | None = None,
     ) -> None:
         """
         - `event_identifier`: the identifier shared between related events
@@ -110,6 +114,8 @@ class HistoryBaseEntry(AccountingEventMixin, ABC):
         - `location_label`: a string field that allows to provide more information about
            the location. When we use this structure in blockchains, it is used to specify
            user address. For exchange events it's the exchange name assigned by the user
+        - `extra_data`: Contains event specific extra data. Optional, only for events that
+           need to keep extra information such as the CDP ID of a makerdao vault etc.
         """
         self.event_identifier = event_identifier
         self.sequence_index = sequence_index
@@ -122,6 +128,7 @@ class HistoryBaseEntry(AccountingEventMixin, ABC):
         self.location_label = location_label
         self.notes = notes
         self.identifier = identifier
+        self.extra_data = extra_data
 
         # Check that the received event type and subtype is a valid combination
         if __debug__:  # noqa: SIM102
@@ -154,7 +161,8 @@ class HistoryBaseEntry(AccountingEventMixin, ABC):
             self.balance == other.balance and  # type: ignore
             self.location_label == other.location_label and  # type: ignore
             self.notes == other.notes and  # type: ignore
-            self.identifier == other.identifier  # type: ignore
+            self.identifier == other.identifier and  # type: ignore
+            self.extra_data == other.extra_data  # type: ignore
         )
 
     def _history_base_entry_repr_fields(self) -> list[str]:
@@ -171,6 +179,7 @@ class HistoryBaseEntry(AccountingEventMixin, ABC):
             f'{self.location_label=}',
             f'{self.notes=}',
             f'{self.identifier=}',
+            f'{self.extra_data=}',
         ]
 
     def _serialize_base_tuple_for_db(self) -> tuple[str, str, HISTORY_EVENT_DB_TUPLE_WRITE]:
@@ -178,11 +187,11 @@ class HistoryBaseEntry(AccountingEventMixin, ABC):
             (
                 'history_events(entry_type, event_identifier, sequence_index,'
                 'timestamp, location, location_label, asset, amount, usd_value, notes,'
-                'type, subtype) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+                'type, subtype, extra_data) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
             ), (
                 'UPDATE history_events SET entry_type=?, event_identifier=?, '
                 'sequence_index=?, timestamp=?, location=?, location_label=?, asset=?, '
-                'amount=?, usd_value=?, notes=?, type=?, subtype=?'
+                'amount=?, usd_value=?, notes=?, type=?, subtype=?, extra_data=?'
             ), (
                 self.entry_type.value,
                 self.event_identifier,
@@ -196,7 +205,27 @@ class HistoryBaseEntry(AccountingEventMixin, ABC):
                 self.notes,
                 self.event_type.serialize(),
                 self.event_subtype.serialize(),
+                json.dumps(self.extra_data) if self.extra_data else None,
             ))
+
+    @staticmethod
+    def deserialize_extra_data(entry: tuple, extra_data: str | None) -> dict[str, Any] | None:
+        """Deserialize a history event's extra_data json from the db.
+        Args:
+            entry (tuple): event entry from the db to be logged on error
+            extra_data (str | None): extra data to be deserialized
+        Returns the extra data in a dict or None on error."""
+        if extra_data is None:
+            return None
+
+        try:
+            return json.loads(extra_data)
+        except json.JSONDecodeError as e:
+            log.error(
+                f'Failed to read extra_data when reading history entry '
+                f'{entry} from the DB due to {e!s}. Setting it to null',
+            )
+            return None
 
     @abstractmethod
     def serialize_for_db(self) -> tuple:
@@ -244,6 +273,7 @@ class HistoryBaseEntry(AccountingEventMixin, ABC):
             'event_subtype': self.event_subtype.serialize_or_none(),
             'location_label': self.location_label,
             'notes': self.notes,
+            'extra_data': self.extra_data,
         }
         if self.location == Location.KRAKEN and not self.notes:
             if self.event_type == HistoryEventType.TRADE:
@@ -363,6 +393,7 @@ class HistoryBaseEntry(AccountingEventMixin, ABC):
                         location='history base entry',
                     ),
                 ),
+                extra_data=data['extra_data'],
             )
         except KeyError as e:
             raise DeserializationError(f'Did not find key {e!s} in event data') from e
@@ -425,6 +456,7 @@ class HistoryEvent(HistoryBaseEntry):
             location_label: str | None = None,
             notes: str | None = None,
             identifier: int | None = None,
+            extra_data: dict[str, Any] | None = None,
     ) -> None:
         super().__init__(
             event_identifier=event_identifier,
@@ -438,6 +470,7 @@ class HistoryEvent(HistoryBaseEntry):
             location_label=location_label,
             notes=notes,
             identifier=identifier,
+            extra_data=extra_data,
         )
 
     @property
@@ -474,6 +507,7 @@ class HistoryEvent(HistoryBaseEntry):
             notes=entry[9],
             event_type=HistoryEventType.deserialize(entry[10]),
             event_subtype=HistoryEventSubType.deserialize(entry[11]),
+            extra_data=cls.deserialize_extra_data(entry=entry, extra_data=entry[12]),
         )
 
     @classmethod

@@ -59,6 +59,7 @@ def test_serialize_with_invalid_type_subtype():
             'event_identifier': '1',
             'event_subtype': 'spend',
             'event_type': 'transfer',
+            'extra_data': None,
             'identifier': None,
             'location': 'kraken',
             'location_label': None,

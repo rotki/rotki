@@ -53,4 +53,14 @@ def upgrade_v45_to_v46(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
             icon_path = icons_dir / f'{urllib.parse.quote_plus(identifier)}_small.png'
             icon_path.unlink(missing_ok=True)
 
+    @progress_step(description='Moving EVM event extra data to the history_events table.')
+    def _move_extra_data(write_cursor: 'DBCursor') -> None:
+        write_cursor.execute('ALTER TABLE history_events ADD COLUMN extra_data TEXT;')
+        write_cursor.execute(
+            'UPDATE history_events SET extra_data = '
+            '(SELECT extra_data FROM evm_events_info '
+            'WHERE evm_events_info.identifier = history_events.identifier);',
+        )
+        write_cursor.execute('ALTER TABLE evm_events_info DROP COLUMN extra_data;')
+
     perform_userdb_upgrade_steps(db=db, progress_handler=progress_handler, should_vacuum=True)

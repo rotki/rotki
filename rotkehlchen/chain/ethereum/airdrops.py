@@ -354,11 +354,9 @@ def calculate_claimed_airdrops(
             half_range = airdrop_info.tolerance.tolerance / 2
 
             for address, db_extra_data, in cursor.execute(
-                'SELECT events.location_label,evm_events.extra_data FROM history_events '
-                'AS events LEFT JOIN evm_events_info AS evm_events ON '
-                'events.identifier=evm_events.identifier WHERE(events.type=? AND events.subtype=? '
-                'AND events.location_label=? AND events.asset=? AND CAST(events.amount AS REAL) '
-                'BETWEEN ? AND ?);',
+                'SELECT location_label, extra_data FROM history_events '
+                'WHERE(type=? AND subtype=? AND location_label=? '
+                'AND asset=? AND CAST(amount AS REAL) BETWEEN ? AND ?);',
                 (
                     airdrop_info.event_type.serialize(),
                     airdrop_info.event_subtype.serialize(),

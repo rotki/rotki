@@ -593,6 +593,7 @@ CREATE TABLE IF NOT EXISTS history_events (
     notes TEXT,
     type TEXT NOT NULL,
     subtype TEXT NOT NULL,
+    extra_data TEXT,
     FOREIGN KEY(asset) REFERENCES assets(identifier) ON UPDATE CASCADE,
     UNIQUE(event_identifier, sequence_index)
 );
@@ -607,7 +608,6 @@ CREATE TABLE IF NOT EXISTS evm_events_info(
     counterparty TEXT,
     product TEXT,
     address TEXT,
-    extra_data TEXT,
     FOREIGN KEY(identifier) REFERENCES history_events(identifier) ON UPDATE CASCADE ON DELETE CASCADE
 );
 """  # noqa: E501

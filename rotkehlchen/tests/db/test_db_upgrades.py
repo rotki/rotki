@@ -10,7 +10,7 @@ import pytest
 from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.chain.evm.accounting.structures import TxEventSettings
-from rotkehlchen.constants.assets import A_COW
+from rotkehlchen.constants.assets import A_COW, A_ETH
 from rotkehlchen.constants.misc import (
     AIRDROPSDIR_NAME,
     ALLASSETIMAGESDIR_NAME,
@@ -37,6 +37,8 @@ from rotkehlchen.db.upgrades.v39_v40 import PREFIX
 from rotkehlchen.db.utils import table_exists
 from rotkehlchen.errors.api import RotkehlchenPermissionError
 from rotkehlchen.errors.misc import DBUpgradeError
+from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.oracles.structures import CurrentPriceOracle
 from rotkehlchen.tests.utils.database import (
     _use_prepared_db,
@@ -2604,13 +2606,13 @@ def test_upgrade_db_44_to_45(user_data_dir, messages_aggregator):
 def test_upgrade_db_45_to_46(user_data_dir: 'Path', messages_aggregator):
     """Test upgrading the DB from version 45 to version 46"""
     _use_prepared_db(user_data_dir, 'v45_rotkehlchen.db')
-    db_v5 = _init_db_with_target_version(
+    db_v45 = _init_db_with_target_version(
         target_version=45,
         user_data_dir=user_data_dir,
         msg_aggregator=messages_aggregator,
         resume_from_backup=False,
     )
-    with db_v5.conn.read_ctx() as cursor:
+    with db_v45.conn.read_ctx() as cursor:
         cursor.execute("SELECT value FROM settings where name='active_modules'")
         old_active_modules = json.loads(cursor.fetchone()[0])
         assert 'balancer' in old_active_modules
@@ -2619,6 +2621,31 @@ def test_upgrade_db_45_to_46(user_data_dir: 'Path', messages_aggregator):
         icons_dir.mkdir(parents=True, exist_ok=True)
         icon_path = icons_dir / f'{urllib.parse.quote_plus(A_COW.identifier)}_small.png'
         icon_path.write_bytes(b'0x0x')
+
+        assert cursor.execute(
+            "SELECT COUNT(*) FROM pragma_table_info('history_events') WHERE name='extra_data'",
+        ).fetchone()[0] == 0
+        assert cursor.execute(
+            "SELECT COUNT(*) FROM pragma_table_info('evm_events_info') WHERE name='extra_data'",
+        ).fetchone()[0] == 1
+        events_with_extra_data = [row[0] for row in cursor.execute(
+            "SELECT identifier FROM evm_events_info WHERE extra_data != '';",
+        )]
+        existing_evm_event = cursor.execute('SELECT * FROM history_events WHERE identifier = "35"').fetchone()  # noqa: E501
+        existing_evm_event_extra_data = cursor.execute('SELECT extra_data FROM evm_events_info WHERE identifier = "35"').fetchone()[0]  # noqa: E501
+        assert existing_evm_event_extra_data == '{"airdrop_identifier": "elfi"}'
+
+    # Add a plain history event to the db to be checked after upgrade that it wasn't modified
+    # Note that it has to be manually inserted here since the functions for creating
+    # history events now expect there to be an extra_data column in history_events
+    history_event_bindings = [HistoryBaseEntryType.HISTORY_EVENT.value, 'TEST1', 0, 1, Location.KRAKEN.serialize_for_db(), 'Somewhere', A_ETH.identifier, 1, 3000, 'Just a test event', HistoryEventType.INFORMATIONAL.value, HistoryEventSubType.NONE.value]  # noqa: E501
+    with db_v45.conn.write_ctx() as write_cursor:
+        write_cursor.execute(
+            'INSERT INTO history_events(entry_type, event_identifier, sequence_index, '
+            'timestamp, location, location_label, asset, amount, usd_value, notes, '
+            'type, subtype) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            history_event_bindings,
+        )
 
     # Execute upgrade
     db = _init_db_with_target_version(
@@ -2633,6 +2660,29 @@ def test_upgrade_db_45_to_46(user_data_dir: 'Path', messages_aggregator):
         new_active_modules = json.loads(cursor.fetchone()[0])
         assert old_active_modules != new_active_modules
         assert [i for i in old_active_modules if i != 'balancer'] == new_active_modules
+
+        assert cursor.execute(
+            "SELECT COUNT(*) FROM pragma_table_info('history_events') WHERE name='extra_data'",
+        ).fetchone()[0] == 1
+        assert cursor.execute(
+            "SELECT COUNT(*) FROM pragma_table_info('evm_events_info') WHERE name='extra_data'",
+        ).fetchone()[0] == 0
+        assert events_with_extra_data == [row[0] for row in cursor.execute(
+            "SELECT identifier FROM history_events WHERE extra_data != '';",
+        )]
+
+        # Confirm an evm event with extra data has been migrated correctly
+        assert (*existing_evm_event, existing_evm_event_extra_data) == cursor.execute(
+            'SELECT * FROM history_events WHERE identifier = "35"',
+        ).fetchone()
+
+        # Confirm a plain history event has not been modified and has null extra_data
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM history_events WHERE entry_type=? AND event_identifier=? AND '
+            'sequence_index=? AND timestamp=? AND location=? AND location_label=? AND asset=? AND '
+            'amount=? AND usd_value=? AND notes=? AND type=? AND subtype=? AND extra_data IS NULL',
+            history_event_bindings,
+        ).fetchone()[0] == 1
 
     db.logout()
 
