@@ -236,5 +236,5 @@ class AuraFinanceCommonDecoder(DecoderInterface):
         return (CounterpartyDetails(
             identifier=CPT_AURA_FINANCE,
             label='Aura Finance',
-            image='aura_finance.svg'),
+            image='aura.png'),
         )

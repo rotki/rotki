@@ -194,7 +194,7 @@ def _query_balancer_pools(chain: 'ChainID', version: Literal[1, 2]) -> list[dict
             },
         )
         try:
-            all_pools.extend(pools_chunk := data['data']['poolGetPools'])
+            all_pools.extend(pools_chunk := data['poolGetPools'])
         except KeyError as e:
             raise RemoteError(f'Balancer v{version} pools query for {chain} failed due to missing key {e!s}') from e  # noqa: E501
 
