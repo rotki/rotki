@@ -1,6 +1,7 @@
 import { AssetBalances } from '@/types/balances';
 import { Section, Status } from '@/types/status';
 import { TaskType } from '@/types/task-type';
+import { BalanceSource } from '@/types/settings/frontend-settings';
 import type { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
 import type { MaybeRef } from '@vueuse/core';
 import type {
@@ -27,6 +28,7 @@ export const useExchangeBalancesStore = defineStore('balances/exchanges', () => 
   const { assetPrice } = useBalancePricesStore();
   const { queryExchangeBalances, getExchangeSavings, getExchangeSavingsTask } = useExchangeApi();
   const { toSortedAssetBalanceWithPrice } = useBalanceSorting();
+  const balanceUsdValueThreshold = useUsdValueThreshold(BalanceSource.EXCHANGES);
 
   const exchanges = computed<ExchangeInfo[]>(() => {
     const balances = get(exchangeBalances);
@@ -109,6 +111,8 @@ export const useExchangeBalancesStore = defineStore('balances/exchanges', () => 
     const taskType = TaskType.QUERY_EXCHANGE_BALANCES;
     const meta = metadata<ExchangeMeta>(taskType);
 
+    const threshold = get(balanceUsdValueThreshold);
+
     if (get(isTaskRunning(taskType)) && meta?.location === location)
       return;
 
@@ -118,7 +122,7 @@ export const useExchangeBalancesStore = defineStore('balances/exchanges', () => 
     setStatus(newStatus);
 
     try {
-      const { taskId } = await queryExchangeBalances(location, ignoreCache);
+      const { taskId } = await queryExchangeBalances(location, ignoreCache, threshold);
       const meta: ExchangeMeta = {
         location,
         title: t('actions.balances.exchange_balances.task.title', {

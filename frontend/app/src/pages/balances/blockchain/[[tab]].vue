@@ -8,7 +8,7 @@ import AccountBalances from '@/components/accounts/AccountBalances.vue';
 import EthStakingValidators from '@/components/accounts/EthStakingValidators.vue';
 import { Module } from '@/types/modules';
 import { NoteLocation } from '@/types/notes';
-import { DashboardTableType } from '@/types/settings/frontend-settings';
+import { BalanceSource, DashboardTableType } from '@/types/settings/frontend-settings';
 import type { RouteLocationRaw } from 'vue-router';
 import type { ComponentExposed } from 'vue-component-type-helpers';
 
@@ -115,7 +115,6 @@ watchImmediate(route, (route) => {
     <template #buttons>
       <PriceRefresh />
       <RuiButton
-        v-blur
         data-cy="add-blockchain-balance"
         color="primary"
         @click="account = createNewBlockchainAccount()"
@@ -125,6 +124,7 @@ watchImmediate(route, (route) => {
         </template>
         {{ t('blockchain_balances.add_account') }}
       </RuiButton>
+      <HideSmallBalances :source="BalanceSource.BLOCKCHAIN" />
     </template>
 
     <div class="flex flex-col gap-8">

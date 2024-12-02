@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { BigNumber, Blockchain, Theme, TimeFramePeriod } from '@rotki/common';
 import { CurrencyLocation } from '@/types/currency-location';
 import {
+  BalanceSource,
   BlockchainRefreshButtonBehaviour,
   DashboardTableType,
   type FrontendSettings,
@@ -78,6 +79,11 @@ describe('types/user', () => {
       shouldRefreshValidatorDailyStats: false,
       unifyAccountsTable: false,
       savedFilters: {},
+      balanceUsdValueThreshold: {
+        [BalanceSource.EXCHANGES]: '0',
+        [BalanceSource.BLOCKCHAIN]: '0',
+        [BalanceSource.MANUAL]: '0',
+      },
     };
 
     const raw = {

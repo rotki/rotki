@@ -2,6 +2,8 @@
 import { Routes } from '@/router/routes';
 import { TaskType } from '@/types/task-type';
 import { NoteLocation } from '@/types/notes';
+import HideSmallBalances from '@/components/settings/HideSmallBalances.vue';
+import { BalanceSource } from '@/types/settings/frontend-settings';
 import type { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
 
 definePage({
@@ -143,7 +145,6 @@ function isBinance(exchange?: string): exchange is 'binance' | 'binanceus' {
         {{ t('exchange_balances.refresh_tooltip') }}
       </RuiTooltip>
       <RuiButton
-        v-blur
         color="primary"
         @click="navigate()"
       >
@@ -152,6 +153,7 @@ function isBinance(exchange?: string): exchange is 'binance' | 'binanceus' {
         </template>
         {{ t('exchange_balances.add_exchange') }}
       </RuiButton>
+      <HideSmallBalances :source="BalanceSource.EXCHANGES" />
     </template>
     <RuiCard class="exchange-balances">
       <div

@@ -32,7 +32,7 @@ export class ApiKeysPage {
     ).as('exchangeAdd');
 
     const waitForBalances = mockRequest({
-      url: `/api/1/exchanges/balances/${exchange}?async_query=true`,
+      url: `/api/1/exchanges/balances/${exchange}?async_query=true&usd_value_threshold=0`,
       method: 'GET',
     });
 

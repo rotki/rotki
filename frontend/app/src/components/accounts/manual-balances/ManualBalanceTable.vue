@@ -19,13 +19,14 @@ const emit = defineEmits<{
 const { t } = useI18n();
 
 const tags = ref<string[]>([]);
-const refreshing = ref(false);
 
 const store = useManualBalancesStore();
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { manualBalances, manualLiabilities } = storeToRefs(store);
 const { fetchLiabilities, fetchBalances, fetchManualBalances, deleteManualBalance } = store;
 const { isLoading } = useStatusStore();
+
+const refreshing = isLoading(Section.MANUAL_BALANCES);
 
 const dataSource = computed(() => (props.type === 'liabilities' ? get(manualLiabilities) : get(manualBalances)));
 
@@ -71,9 +72,7 @@ const {
 );
 
 async function refresh() {
-  set(refreshing, true);
   await fetchManualBalances(true);
-  set(refreshing, false);
 }
 
 function edit(balance: ManualBalanceWithPrice) {
