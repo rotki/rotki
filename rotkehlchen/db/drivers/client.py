@@ -465,6 +465,7 @@ class DBConnection:
 
     def __del__(self) -> None:
         self._conn.close()
+        self.close()
         self.zmq_connection.close()
 
     @contextmanager
