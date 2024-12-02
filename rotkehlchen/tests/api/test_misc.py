@@ -1,7 +1,7 @@
 import os
 from http import HTTPStatus
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
 import pytest
@@ -23,6 +23,9 @@ from rotkehlchen.tests.utils.api import (
 from rotkehlchen.types import ChainID, Location, SupportedBlockchain
 from rotkehlchen.utils.misc import get_system_spec
 
+if TYPE_CHECKING:
+    from rotkehlchen.api.server import APIServer
+
 
 def generate_expected_info(
         expected_version: str,
@@ -30,7 +33,7 @@ def generate_expected_info(
         latest_version: str | None = None,
         accept_docker_risk: bool = False,
         download_url: str | None = None,
-):
+) -> dict[str, Any]:
     return {
         'version': {
             'our_version': expected_version,
@@ -48,7 +51,7 @@ def generate_expected_info(
     }
 
 
-def test_query_info_version_when_up_to_date(rotkehlchen_api_server):
+def test_query_info_version_when_up_to_date(rotkehlchen_api_server: 'APIServer') -> None:
     """Test that endpoint to query the rotki version works if no new version is available"""
     expected_version = '1.1.0'
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
@@ -56,7 +59,7 @@ def test_query_info_version_when_up_to_date(rotkehlchen_api_server):
     def patched_get_system_spec() -> dict[str, Any]:
         return {'rotkehlchen': f'v{expected_version}'}
 
-    def patched_get_latest_release(_klass):
+    def patched_get_latest_release(_klass: Any) -> tuple[str, str]:
         return expected_version, f'https://github.com/rotki/rotki/releases/tag/{expected_version}'
     release_patch = patch(
         'rotkehlchen.externalapis.github.Github.get_latest_release',
@@ -108,7 +111,7 @@ def test_query_info_version_when_up_to_date(rotkehlchen_api_server):
     )
 
 
-def test_query_ping(rotkehlchen_api_server):
+def test_query_ping(rotkehlchen_api_server: 'APIServer') -> None:
     """Test that the ping endpoint works"""
     expected_result = True
     expected_message = ''
@@ -121,14 +124,14 @@ def test_query_ping(rotkehlchen_api_server):
     assert response_json['message'] == expected_message
 
 
-def test_query_version_when_update_required(rotkehlchen_api_server):
+def test_query_version_when_update_required(rotkehlchen_api_server: 'APIServer') -> None:
     """
     Test that endpoint to query app version and available updates works
     when a new version is available.
     """
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
 
-    def patched_get_latest_release(_klass):
+    def patched_get_latest_release(_klass: Any) -> tuple[str, str]:
         new_latest = 'v99.99.99'
         return new_latest, f'https://github.com/rotki/rotki/releases/tag/{new_latest}'
 
@@ -158,7 +161,7 @@ def test_query_version_when_update_required(rotkehlchen_api_server):
 
 
 @pytest.mark.parametrize('ethereum_manager_connect_at_start', ['DEFAULT'])
-def test_manage_nodes(rotkehlchen_api_server):
+def test_manage_nodes(rotkehlchen_api_server: 'APIServer') -> None:
     """Test that list of nodes can be correctly updated and queried"""
     database = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
     blockchain = SupportedBlockchain.ETHEREUM
@@ -416,7 +419,7 @@ def test_manage_nodes(rotkehlchen_api_server):
 
 
 @pytest.mark.parametrize('max_size_in_mb_all_logs', [659])
-def test_configuration(rotkehlchen_api_server):
+def test_configuration(rotkehlchen_api_server: 'APIServer') -> None:
     """Test that the configuration endpoint returns the expected information"""
     response = requests.get(api_url_for(rotkehlchen_api_server, 'configurationsresource'))
     result = assert_proper_sync_response_with_result(response)
@@ -428,7 +431,7 @@ def test_configuration(rotkehlchen_api_server):
     assert result['sqlite_instructions']['value'] == DEFAULT_SQL_VM_INSTRUCTIONS_CB
 
 
-def test_query_all_chain_ids(rotkehlchen_api_server):
+def test_query_all_chain_ids(rotkehlchen_api_server: 'APIServer') -> None:
     response = requests.get(api_url_for(rotkehlchen_api_server, 'allevmchainsresource'))
     result = assert_proper_sync_response_with_result(response)
     for chain in ChainID:
@@ -439,7 +442,7 @@ def test_query_all_chain_ids(rotkehlchen_api_server):
 
 @pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize('added_exchanges', [(Location.KRAKEN, Location.BINANCE)])
-def test_events_mappings(rotkehlchen_api_server_with_exchanges):
+def test_events_mappings(rotkehlchen_api_server_with_exchanges: 'APIServer') -> None:
     """
     Test different mappings and information that we provide for rendering events information
     - Test that the structure for types mappings is correctly generated
@@ -498,7 +501,7 @@ def test_events_mappings(rotkehlchen_api_server_with_exchanges):
 
 
 @pytest.mark.parametrize('have_decoders', [True])
-def test_counterparties(rotkehlchen_api_server_with_exchanges):
+def test_counterparties(rotkehlchen_api_server_with_exchanges: 'APIServer') -> None:
     """Test serialization of the counterparties"""
     response = requests.get(
         api_url_for(

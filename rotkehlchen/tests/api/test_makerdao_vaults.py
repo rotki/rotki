@@ -2,13 +2,16 @@
 
 import random
 from http import HTTPStatus
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import pytest
 import requests
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.chain.ethereum.modules.makerdao.vaults import MakerdaoVault
+from rotkehlchen.chain.ethereum.modules.makerdao.vaults import (
+    MakerdaoVault,
+)
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_DAI, A_USDC, A_WBTC
 from rotkehlchen.fval import FVal
@@ -25,7 +28,7 @@ from rotkehlchen.tests.utils.checks import (
     assert_serialized_dicts_equal,
     assert_serialized_lists_equal,
 )
-from rotkehlchen.types import SupportedBlockchain
+from rotkehlchen.types import ChecksumEvmAddress, SupportedBlockchain
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
@@ -102,7 +105,7 @@ VAULT_8015 = {
     'stability_fee': '0.00%',
 }
 
-VAULT_8015_DETAILS = {
+VAULT_8015_DETAILS: Any = {
     'identifier': 8015,
     'collateral_asset': 'ETH',
     'creation_ts': 1586785858,
@@ -183,14 +186,17 @@ TEST_ADDRESS_2 = '0xd8c54aa5fFBb5Ba441f601daeaB0F022BB296647'
 TEST_ADDRESS_3 = '0xB747ea3B7c5c03ac272822B29Ab3eF8663551627'
 
 
-def _check_vaults_values(vaults, owner):
+def _check_vaults_values(vaults: list[MakerdaoVault], owner: ChecksumEvmAddress) -> None:
     expected_vault = VAULT_8015.copy()
     expected_vault['owner'] = owner
     expected_vaults = [expected_vault]
     assert_serialized_lists_equal(expected_vaults, vaults[:1], ignore_keys=VAULT_IGNORE_KEYS)  # Check only the first vault so that if the user adds more vaults, the test still runs normally  # noqa: E501
 
 
-def _check_vault_details_values(details, total_interest_owed_list: list[FVal | None]):
+def _check_vault_details_values(
+        details: list[Any],
+        total_interest_owed_list: list[FVal | None],
+    ) -> None:
     expected_details = [VAULT_8015_DETAILS]
     assert_serialized_lists_equal(
         expected_details,
@@ -215,7 +221,10 @@ def _check_vault_details_values(details, total_interest_owed_list: list[FVal | N
 @pytest.mark.parametrize('mocked_proxies', [{
     TEST_ADDRESS_1: '0x689D4C2229717f877A644A0aAd742D67E5D0a2FB',
 }])
-def test_query_vaults(rotkehlchen_api_server, ethereum_accounts):
+def test_query_vaults(
+        rotkehlchen_api_server: 'APIServer',
+        ethereum_accounts: list[ChecksumEvmAddress],
+     ) -> None:
     """Check querying the vaults endpoint works. Uses real vault data"""
     async_query = random.choice([False, True])
     response = requests.get(api_url_for(
@@ -256,7 +265,10 @@ def test_query_vaults(rotkehlchen_api_server, ethereum_accounts):
 @pytest.mark.parametrize('mocked_proxies', [{
     TEST_ADDRESS_1: '0x689D4C2229717f877A644A0aAd742D67E5D0a2FB',
 }])
-def test_query_only_details_and_not_vaults(rotkehlchen_api_server, ethereum_accounts):
+def test_query_only_details_and_not_vaults(
+        rotkehlchen_api_server: 'APIServer',
+        ethereum_accounts: list[ChecksumEvmAddress],
+    ) -> None:
     """Check querying the vaults details endpoint works before even querying vaults"""
     # Query the details first
     response = requests.get(api_url_for(
@@ -279,7 +291,7 @@ def test_query_only_details_and_not_vaults(rotkehlchen_api_server, ethereum_acco
 
 @pytest.mark.parametrize('number_of_eth_accounts', [1])
 @pytest.mark.parametrize('ethereum_modules', [['makerdao_vaults']])
-def test_query_vaults_details_non_premium(rotkehlchen_api_server):
+def test_query_vaults_details_non_premium(rotkehlchen_api_server: 'APIServer') -> None:
     """Check querying the vaults details endpoint without premium does not work"""
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
@@ -304,7 +316,10 @@ def test_query_vaults_details_non_premium(rotkehlchen_api_server):
     TEST_ADDRESS_1: '0x689D4C2229717f877A644A0aAd742D67E5D0a2FB',
     TEST_ADDRESS_3: '0x420F88De6dadA0a77Db7b9EdBe3A0C614346031E',
 }])
-def test_query_vaults_details_liquidation(rotkehlchen_api_server, ethereum_accounts):
+def test_query_vaults_details_liquidation(
+        rotkehlchen_api_server: 'APIServer',
+        ethereum_accounts: list[ChecksumEvmAddress],
+    ) -> None:
     """Check vault details of a vault with liquidations
 
     Also use three accounts, two of which have vaults associated with them to test
@@ -437,7 +452,10 @@ def test_query_vaults_details_liquidation(rotkehlchen_api_server, ethereum_accou
 @pytest.mark.parametrize('mocked_proxies', [{
     TEST_ADDRESS_1: '0x9684e6C1c7B79868839b27F88bA6d5A176367075',
 }])
-def test_query_vaults_wbtc(rotkehlchen_api_server, ethereum_accounts):
+def test_query_vaults_wbtc(
+        rotkehlchen_api_server: 'APIServer',
+        ethereum_accounts: list[ChecksumEvmAddress],
+    ) -> None:
     """Check vault info and details for a vault with WBTC as collateral"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     response = requests.get(api_url_for(
@@ -450,8 +468,8 @@ def test_query_vaults_wbtc(rotkehlchen_api_server, ethereum_accounts):
         identifier=8913,
         owner=ethereum_accounts[0],
         collateral_type='WBTC-A',
-        urn='0x37f7B3C82A9Edc13FdCcE66E7d500b3698A13294',
-        collateral_asset=A_WBTC,
+        urn=string_to_evm_address('0x37f7B3C82A9Edc13FdCcE66E7d500b3698A13294'),
+        collateral_asset=A_WBTC.resolve_to_crypto_asset(),
         collateral=Balance(ZERO, ZERO),
         debt=Balance(ZERO, ZERO),
         collateralization_ratio=None,
@@ -463,6 +481,7 @@ def test_query_vaults_wbtc(rotkehlchen_api_server, ethereum_accounts):
     assert_serialized_lists_equal(expected_vaults, vaults, ignore_keys=['stability_fee'])
     # And also make sure that the internal mapping will only query details of 8913
     makerdao_vaults = rotki.chains_aggregator.get_module('makerdao_vaults')
+    assert makerdao_vaults is not None
     makerdao_vaults.vault_mappings = {ethereum_accounts[0]: [vault_8913]}
 
     response = requests.get(api_url_for(
@@ -531,7 +550,10 @@ def test_query_vaults_wbtc(rotkehlchen_api_server, ethereum_accounts):
 @pytest.mark.parametrize('mocked_proxies', [{
     TEST_ADDRESS_1: '0xBE79958661741079679aFf75DbEd713cE71a979d',
 }])
-def test_query_vaults_usdc(rotkehlchen_api_server, ethereum_accounts):
+def test_query_vaults_usdc(
+        rotkehlchen_api_server: 'APIServer',
+        ethereum_accounts: list[ChecksumEvmAddress],
+    ) -> None:
     """Check vault info and details for a vault with USDC as collateral"""
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
@@ -540,15 +562,15 @@ def test_query_vaults_usdc(rotkehlchen_api_server, ethereum_accounts):
     vaults = assert_proper_sync_response_with_result(response)
     vault_7588 = MakerdaoVault(
         identifier=7588,
-        owner=ethereum_accounts[0],
         collateral_type='USDC-A',
-        urn='0x56D88244073B2fC17af5B1E6088936D5bAaDc37B',
-        collateral_asset=A_USDC,
+        owner=ethereum_accounts[0],
+        collateral_asset=A_USDC.resolve_to_crypto_asset(),
         collateral=Balance(ZERO, ZERO),
         debt=Balance(ZERO, ZERO),
         collateralization_ratio=None,
         liquidation_ratio=FVal('1.03'),
         liquidation_price=None,
+        urn=string_to_evm_address('0x56D88244073B2fC17af5B1E6088936D5bAaDc37B'),
         stability_fee=FVal('0.04'),
     )
     expected_vaults = [vault_7588.serialize()]
@@ -625,7 +647,10 @@ def test_query_vaults_usdc(rotkehlchen_api_server, ethereum_accounts):
 @pytest.mark.parametrize('mocked_proxies', [{
     TEST_ADDRESS_1: '0xAe9996b76bdAa003ace6D66328A6942565f5768d',
 }])
-def test_two_vaults_same_account_same_collateral(rotkehlchen_api_server, ethereum_accounts):
+def test_two_vaults_same_account_same_collateral(
+        rotkehlchen_api_server: 'APIServer',
+        ethereum_accounts: list[ChecksumEvmAddress],
+    ) -> None:
     """Check that no events are duplicated between vaults for same collateral by same account
 
     Test for vaults side of https://github.com/rotki/rotki/issues/1032
@@ -805,7 +830,10 @@ def test_two_vaults_same_account_same_collateral(rotkehlchen_api_server, ethereu
 @pytest.mark.parametrize('mocked_proxies', [{
     TEST_ADDRESS_1: '0x15fEaFd4358b8C03c889D6661b0CA1Be3389792F',
 }])
-def test_query_vaults_usdc_strange(rotkehlchen_api_server, ethereum_accounts):
+def test_query_vaults_usdc_strange(
+        rotkehlchen_api_server: 'APIServer',
+        ethereum_accounts: list[ChecksumEvmAddress],
+        ) -> None:
     """Strange case of a USDC vault that is not queried correctly
 
     https://oasis.app/borrow/7538?network=mainnet
@@ -821,18 +849,20 @@ def test_query_vaults_usdc_strange(rotkehlchen_api_server, ethereum_accounts):
         identifier=7538,
         owner=ethereum_accounts[0],
         collateral_type='USDC-A',
-        urn='0x70E58566C7baB6faaFE03fbA69DF45Ef4f48223B',
-        collateral_asset=A_USDC,
+        urn=string_to_evm_address('0x70E58566C7baB6faaFE03fbA69DF45Ef4f48223B'),
+        collateral_asset=A_USDC.resolve_to_crypto_asset(),
         collateral=Balance(ZERO, ZERO),
         debt=Balance(ZERO, ZERO),
         collateralization_ratio=None,
         liquidation_ratio=FVal(1.1),
         liquidation_price=None,
+        stability_fee=ZERO,
     )
     expected_vaults = [vault_7538.serialize()]
     assert_serialized_lists_equal(expected_vaults, vaults)
     # And also make sure that the internal mapping will only query details of 7538
     makerdao_vaults = rotki.chains_aggregator.get_module('makerdao_vaults')
+    assert makerdao_vaults is not None
     makerdao_vaults.vault_mappings = {ethereum_accounts[0]: [vault_7538]}
 
     response = requests.get(api_url_for(
@@ -895,7 +925,7 @@ def test_query_vaults_usdc_strange(rotkehlchen_api_server, ethereum_accounts):
 }])
 @pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize('should_mock_price_queries', [True])
-def test_delete_vault_owner(rotkehlchen_api_server: 'APIServer'):
+def test_delete_vault_owner(rotkehlchen_api_server: 'APIServer') -> None:
     """Check that deleting owner of a makerdao vault doesnt break balance queries"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     response = requests.get(

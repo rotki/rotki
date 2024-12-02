@@ -3,7 +3,7 @@ from contextlib import ExitStack
 from copy import deepcopy
 from http import HTTPStatus
 from operator import itemgetter
-from typing import Any
+from typing import TYPE_CHECKING, Any, Literal
 
 import pytest
 import requests
@@ -22,10 +22,14 @@ from rotkehlchen.tests.utils.api import (
 )
 from rotkehlchen.tests.utils.constants import A_RDN
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
+from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import ts_now
 
+if TYPE_CHECKING:
+    from rotkehlchen.api.server import APIServer
 
-def _populate_tags(api_server):
+
+def _populate_tags(api_server: 'APIServer') -> None:
     tag1 = {
         'name': 'Public',
         'description': 'My public accounts',
@@ -94,7 +98,7 @@ def assert_balances_match(
             assert expected_balances[idx][key] == val, msg
 
 
-def _populate_initial_balances(api_server) -> list[dict[str, Any]]:
+def _populate_initial_balances(api_server: 'APIServer') -> list[dict[str, Any]]:
     # Now add some balances
     balances: list[dict[str, Any]] = [{
         'asset': 'XMR',
@@ -158,9 +162,9 @@ def _populate_initial_balances(api_server) -> list[dict[str, Any]]:
 
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
 def test_add_and_query_manually_tracked_balances(
-        rotkehlchen_api_server,
-        ethereum_accounts,
-):
+        rotkehlchen_api_server: 'APIServer',
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
     """Test that adding and querying manually tracked balances via the API works fine"""
     async_query = random.choice([False, True])
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
@@ -243,14 +247,14 @@ A_CYFM = Asset('eip155:1/erc20:0x3f06B5D78406cD97bdf10f5C420B241D32759c80')
 
 
 @pytest.mark.parametrize('mocked_current_prices', [{A_CYFM.identifier: ZERO}])
-def test_add_manually_tracked_balances_no_price(rotkehlchen_api_server):
+def test_add_manually_tracked_balances_no_price(rotkehlchen_api_server: 'APIServer') -> None:
     """Test that adding a manually tracked balance of an asset for which we cant
     query a price is handled properly both in the adding and querying part
 
     Regression test for https://github.com/rotki/rotki/issues/896"""
     async_query = random.choice([False, True])
     _populate_tags(rotkehlchen_api_server)
-    balances = [{
+    balances: list[dict[str, Any]] = [{
         'asset': A_CYFM.identifier,
         'label': 'CYFM account',
         'amount': '50.315',
@@ -300,7 +304,7 @@ def test_add_manually_tracked_balances_no_price(rotkehlchen_api_server):
     )
 
 
-def test_edit_manually_tracked_balances(rotkehlchen_api_server):
+def test_edit_manually_tracked_balances(rotkehlchen_api_server: 'APIServer') -> None:
     """Test that editing manually tracked balances via the API works fine"""
     async_query = random.choice([False, True])
     _populate_tags(rotkehlchen_api_server)
@@ -353,13 +357,13 @@ def test_edit_manually_tracked_balances(rotkehlchen_api_server):
 
 @pytest.mark.parametrize('verb', ['PUT', 'PATCH'])
 def test_add_edit_manually_tracked_balances_errors(
-        rotkehlchen_api_server,
-        verb,
-):
+        rotkehlchen_api_server: 'APIServer',
+        verb: Literal['PUT', 'PATCH'],
+) -> None:
     """Test that errors in input data while adding/editing manually tracked balances
     are handled properly"""
     _populate_tags(rotkehlchen_api_server)
-    balances = {'balances': [{
+    balances: dict[str, list[dict[str, Any]]] = {'balances': [{
         'asset': 'XMR',
         'label': 'My monero wallet',
         'amount': '50.315',
@@ -621,7 +625,7 @@ def test_add_edit_manually_tracked_balances_errors(
     )
 
 
-def test_add_edit_unknown_tags(rotkehlchen_api_server):
+def test_add_edit_unknown_tags(rotkehlchen_api_server: 'APIServer') -> None:
     """Test that using unknown tags in manually tracked balances is handled properly"""
     _populate_tags(rotkehlchen_api_server)
     initial_balances = _populate_initial_balances(rotkehlchen_api_server)
@@ -663,7 +667,7 @@ def test_add_edit_unknown_tags(rotkehlchen_api_server):
     )
 
 
-def test_delete_manually_tracked_balances(rotkehlchen_api_server):
+def test_delete_manually_tracked_balances(rotkehlchen_api_server: 'APIServer') -> None:
     """Test that deleting manually tracked balances via the API works fine"""
     async_query = random.choice([False, True])
     _populate_tags(rotkehlchen_api_server)
@@ -707,7 +711,7 @@ def test_delete_manually_tracked_balances(rotkehlchen_api_server):
     )
 
 
-def test_delete_manually_tracked_balances_errors(rotkehlchen_api_server):
+def test_delete_manually_tracked_balances_errors(rotkehlchen_api_server: 'APIServer') -> None:
     """Test that errors at deleting manually tracked balances in the API are handled"""
     _populate_tags(rotkehlchen_api_server)
     _populate_initial_balances(rotkehlchen_api_server)
@@ -778,7 +782,7 @@ def test_delete_manually_tracked_balances_errors(rotkehlchen_api_server):
     )
 
 
-def test_update_manual_balance_label(rotkehlchen_api_server):
+def test_update_manual_balance_label(rotkehlchen_api_server: 'APIServer') -> None:
     _populate_tags(rotkehlchen_api_server)
     balances = _populate_initial_balances(rotkehlchen_api_server)
     balances.sort(key=itemgetter('identifier'))
