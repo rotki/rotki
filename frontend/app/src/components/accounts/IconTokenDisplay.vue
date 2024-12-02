@@ -15,6 +15,7 @@ const props = withDefaults(defineProps<{
 });
 
 const { assets, visible } = toRefs(props);
+const { shouldShowAmount } = storeToRefs(useSessionSettingsStore());
 const showMore = computed<number>(() => get(assets).length - get(visible));
 const router = useRouter();
 
@@ -35,6 +36,7 @@ async function navigateToAsset(asset: AssetBalance) {
       :key="asset.asset"
     >
       <RuiTooltip
+        :disabled="!shouldShowAmount"
         :close-delay="0"
         tooltip-class="!-ml-1"
       >
