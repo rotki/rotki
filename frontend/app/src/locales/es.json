@@ -1907,12 +1907,6 @@
     "title": "Balances en exchanges"
   },
   "exchange_keys_form": {
-    "api_key": {
-      "non_empty": "The api key field cannot be empty."
-    },
-    "api_secret": {
-      "non_empty": "The api secret field cannot be empty."
-    },
     "edit": {
       "activate_tooltip": "Edit the api keys for the exchange.",
       "deactivate_tooltip": "Cancel the edit of the api keys for the exchange."
@@ -1920,9 +1914,6 @@
     "exchange": "Exchange",
     "name": {
       "non_empty": "The name field cannot be empty."
-    },
-    "passphrase": {
-      "non_empty": "The passphrase field cannot be empty."
     }
   },
   "exchange_settings": {

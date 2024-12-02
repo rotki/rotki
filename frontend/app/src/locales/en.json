@@ -2342,12 +2342,6 @@
     "title": "Exchange Balances"
   },
   "exchange_keys_form": {
-    "api_key": {
-      "non_empty": "The api key field cannot be empty."
-    },
-    "api_secret": {
-      "non_empty": "The api secret field cannot be empty."
-    },
     "edit": {
       "activate_tooltip": "Edit the api keys for the exchange.",
       "deactivate_tooltip": "Cancel the edit of the api keys for the exchange."
@@ -2356,9 +2350,10 @@
     "name": {
       "non_empty": "The name field cannot be empty."
     },
-    "passphrase": {
-      "non_empty": "The passphrase field cannot be empty."
-    }
+    "validation": {
+      "non_empty": "This field cannot be empty."
+    },
+    "waiting_time_warning": "If you have just created an API key from this exchange for use in rotki keep in mind that it may take up to few hours for the key to be active."
   },
   "exchange_settings": {
     "confirmation": {
@@ -2383,13 +2378,15 @@
       "sync_enabled": "Sync Enabled"
     },
     "inputs": {
+      "access_key": "Access Key",
       "api_key": "API Key",
       "api_key_name": "API Key Name",
       "api_secret": "API Secret",
       "format": "Format",
       "kraken_account": "Select the type of your Kraken account",
       "passphrase": "Passphrase",
-      "private_key": "Private Key"
+      "private_key": "Private Key",
+      "signing_key": "Signing Key"
     },
     "keys": "Keys",
     "subtitle": "rotki can connect to supported exchanges and automatically pull your trades and balances from them. See the {0} for more information.",
