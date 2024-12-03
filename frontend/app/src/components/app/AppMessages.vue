@@ -20,9 +20,8 @@ const { globalPayload } = useAddressBookForm();
     root
   />
   <MessageDialog
-    :title="message.title"
-    :message="message.description"
-    :success="message.success"
+    v-if="message"
+    :message="message"
     @dismiss="dismissMessage()"
   />
   <ConfirmDialog
