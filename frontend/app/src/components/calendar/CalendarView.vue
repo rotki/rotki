@@ -14,6 +14,8 @@ const visibleDate = ref<Dayjs>(dayjs());
 
 const today = ref<Dayjs>(dayjs());
 const range = ref<[number, number]>([0, 0]);
+const selectedDateEvents = ref<CalendarEvent[]>([]);
+const upcomingEvents = ref<CalendarEvent[]>([]);
 
 const { fetchCalendarEvents, deleteCalendarEvent } = useCalendarApi();
 const accounts = ref<BlockchainAccount<AddressData>[]>([]);
@@ -34,6 +36,7 @@ const {
   state: events,
   isLoading,
   fetchData,
+  pagination,
 } = usePaginationFilters<
   CalendarEvent,
   CalendarEventRequestPayload
@@ -74,7 +77,34 @@ const {
 });
 
 onMounted(() => {
+  set(pagination, {
+    ...get(pagination),
+    limit: -1,
+  });
   fetchData();
+});
+
+watch([events, today], async ([events, today]) => {
+  // console.log(events, today);
+
+  const upcomingEventsData = events.data.filter((item) => {
+    const date = dayjs(item.timestamp * 1000);
+    return date.isAfter(today);
+  });
+
+  if (upcomingEventsData.length >= 5) {
+    set(upcomingEvents, upcomingEventsData.slice(0, 5));
+  }
+  else {
+    const data = await fetchCalendarEvents({
+      fromTimestamp: today.add(1, 'day').startOf('day').unix().toString(),
+      limit: 5,
+      offset: 0,
+      ascending: [true],
+      orderByAttributes: ['timestamp'],
+    });
+    set(upcomingEvents, data.data);
+  }
 });
 
 const dateFormat = 'YYYY-MM-DD';
@@ -141,8 +171,6 @@ function deleteEvent() {
 }
 
 setPostSubmitFunc(fetchData);
-
-const selectedDateEvents = ref<CalendarEvent[]>([]);
 
 watch(selectedDate, (selected) => {
   set(visibleDate, selected);
@@ -245,7 +273,7 @@ onMounted(async () => {
         </template>
         <div
           v-if="selectedDateEvents.length > 0"
-          class="flex flex-col gap-4 pb-2"
+          class="flex flex-col gap-4"
         >
           <CalendarEventList
             v-for="event in selectedDateEvents"
@@ -255,6 +283,10 @@ onMounted(async () => {
             :event="event"
             @edit="edit(event)"
           />
+
+          <pre>
+          {{ upcomingEvents }}
+          </pre>
         </div>
         <div
           v-else
