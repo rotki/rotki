@@ -42,6 +42,7 @@ from rotkehlchen.constants.assets import (
     A_USDC,
     A_USDT,
     A_WETH_ARB,
+    A_XDAI,
     A_YV1_DAI,
     A_YV1_USDC,
     A_YV1_WETH,
@@ -67,6 +68,7 @@ from rotkehlchen.tests.unit.decoders.test_curve_lend import (
     fixture_ethereum_vault_token,  # noqa: F401
     fixture_ethereum_vault_underlying_token,  # noqa: F401
 )
+from rotkehlchen.tests.unit.test_cost_basis import ONE_PRICE
 from rotkehlchen.tests.utils.constants import A_CNY, A_JPY
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.tests.utils.morpho import create_ethereum_morpho_vault_token
@@ -975,6 +977,25 @@ def test_fiat_to_fiat(inquirer):
             base=A_USD.resolve_to_fiat_asset(),
             quote=A_EUR.resolve_to_fiat_asset(),
         )
+
+
+@pytest.mark.vcr
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+def test_price_of_assets_in_collection(inquirer):
+    """
+    Test that the inquirer can correctly find the USD price of the main asset and
+    secondary assets in a collection.
+
+    Checks that:
+    - The price of the main asset (DAI) is close to the expected price of 1 USD.
+    - The price of the secondary asset (xDAI) is the same as the main asset price.
+    """
+    dai_price = inquirer.find_usd_price(A_DAI)
+    assert dai_price.is_close(ONE_PRICE, max_diff='0.01')
+
+    xdai_price = inquirer.find_usd_price(A_XDAI)
+    assert xdai_price == dai_price
 
 
 @pytest.mark.vcr

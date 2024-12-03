@@ -104,13 +104,22 @@ def _force_remote_asset(cursor: DBCursor, local_asset: Asset, full_insert: str) 
         'WHERE identifier=? OR parent_token_entry=?;',
         (local_asset.identifier, local_asset.identifier),
     ).fetchall()
+    collection = cursor.execute(
+        'SELECT id, name, symbol, main_asset FROM asset_collections WHERE main_asset=?;',
+        (local_asset.identifier,),
+    ).fetchone()
     cursor.execute(
         'DELETE FROM assets WHERE identifier=?;',
         (local_asset.identifier,),
     )
+
     # Insert new entry. Since identifiers are the same, no foreign key constrains should break
     executeall(cursor, full_insert)
-
+    if collection:
+        cursor.execute(  # reinsert the collection since it was cascade-deleted
+            'INSERT INTO asset_collections (id, name, symbol, main_asset) VALUES (?, ?, ?, ?);',
+            collection,
+        )
     # now add the old mappings back into the db
     if len(multiasset_mappings) > 0:
         cursor.executemany(  # add the old multiasset mappings
@@ -157,7 +166,7 @@ class AssetsUpdater:
         self.assets_re = re.compile(r'.*INSERT +INTO +assets\( *identifier *, *name *, *type *\) *VALUES\(([^,]*?),([^,]*?),([^,]*?)\).*?')  # noqa: E501
         self.evm_tokens_re = re.compile(r'.*INSERT +INTO +evm_tokens\( *identifier *, *token_kind *, *chain *, *address *, *decimals *, *protocol *\) *VALUES\(([^,]*?),([^,]*?),([^,]*?),([^,]*?),([^,]*?),([^,]*?)\).*')  # noqa: E501
         self.common_asset_details_re = re.compile(r'.*INSERT +INTO +common_asset_details\( *identifier *, *symbol *, *coingecko *, *cryptocompare *, *forked *, *started *, *swapped_for *\) *VALUES\((.*?),(.*?),(.*?),(.*?),(.*?),([^,]*?),([^,]*?)\).*')  # noqa: E501
-        self.assets_collection_re = re.compile(r'.*INSERT +INTO +asset_collections\( *id *, *name *, *symbol *\) *VALUES +\(([^,]*?),([^,]*?),([^,]*?)\).*?')  # noqa: E501
+        self.assets_collection_re = re.compile(r'.*INSERT +INTO +asset_collections\( *id *, *name *, *symbol, *main_asset *\) *VALUES +\(([^,]*?),([^,]*?),([^,]*?),([^,]*?)\).*?')  # noqa: E501
         self.multiasset_mappings_re = re.compile(r'.*INSERT +INTO +multiasset_mappings\( *collection_id *, *asset *\) *VALUES +\(([^,]*?), *([\'"])([^,]+?)\2\).*?')  # noqa: E501
         self.string_re = re.compile(r'.*([\'"])(.*?)\1.*')
         self.double_quotes_re = re.compile(r'\"(.*?)\"')
@@ -375,7 +384,7 @@ class AssetsUpdater:
             )
 
         groups = collection_match.groups()
-        if len(groups) != 3:
+        if len(groups) != 4:
             log.error(f'Asset collection {full_insert} does not have the expected elements')
             raise DeserializationError(
                 f'At asset DB update could not parse asset collection data out of {action}',

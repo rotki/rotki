@@ -55,7 +55,6 @@ from rotkehlchen.constants.assets import (
     A_DAI,
     A_ETH,
     A_ETH2,
-    A_EUR,
     A_FARM_CRVRENWBTC,
     A_FARM_DAI,
     A_FARM_RENBTC,
@@ -656,15 +655,8 @@ class Inquirer:
         if from_asset == to_asset:
             return Price(ONE), CurrentPriceOracle.MANUALCURRENT, False
 
-        if GlobalDBHandler.asset_in_collection(collection_id=240, asset_id=from_asset.identifier):  # part of the EURe collection # noqa: E501  # todo: Super hacky. Figure out a way to generalize
-            return Inquirer._find_price(
-                from_asset=A_EUR,
-                to_asset=to_asset,
-                ignore_cache=ignore_cache,
-                skip_onchain=skip_onchain,
-                coming_from_latest_price=coming_from_latest_price,
-                match_main_currency=match_main_currency,
-            )
+        if (collection_main_asset := GlobalDBHandler.get_collection_main_asset(from_asset.identifier)) is not None:  # noqa: E501
+            from_asset = Asset(collection_main_asset).resolve_to_asset_with_oracles()
 
         if to_asset == A_USD:
             price, oracle, used_main_currency = Inquirer.find_usd_price_and_oracle(

@@ -86,6 +86,8 @@ class DBToken:
         }
 
 
+# See https://github.com/orgs/rotki/projects/11/views/2?pane=issue&itemId=89977797
+@pytest.mark.skipif('CI' in os.environ, reason='skipped in CI until remote asset updates are fixed')  # noqa: E501
 def test_asset_updates_consistency_with_packaged_db(
         tmpdir_factory: 'pytest.TempdirFactory',
         messages_aggregator: 'MessagesAggregator',

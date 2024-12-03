@@ -34,6 +34,7 @@ from rotkehlchen.constants.assets import (
     A_ETH,
     A_LUSD,
     A_PICKLE,
+    A_REP,
     A_USD,
 )
 from rotkehlchen.constants.misc import GLOBALDB_NAME, GLOBALDIR_NAME, NFT_DIRECTIVE
@@ -736,14 +737,15 @@ def test_global_db_reset(globaldb, database):
 
         # Create a new collection
         cursor.execute(
-            'INSERT INTO asset_collections (name, symbol) VALUES (?, ?)',
-            ('New collection', 'NEWCOLLECTION'),
+            'INSERT INTO asset_collections (name, symbol, main_asset) VALUES (?, ?, ?)',
+            ('New collection', 'NEWCOLLECTION', A_REP.identifier),
         )
         new_collection_id = cursor.lastrowid
         cursor.executemany(
             'INSERT INTO multiasset_mappings(collection_id, asset) VALUES (?, ?)',
             (
                 (new_collection_id, A_CRV.identifier),  # put some assets into the new collection
+                (new_collection_id, A_REP.identifier),  # put some assets into the new collection
                 (new_collection_id, A_LUSD.identifier),
             ),
         )
@@ -820,7 +822,7 @@ def test_global_db_reset(globaldb, database):
         'SELECT asset FROM multiasset_mappings WHERE collection_id=? ORDER BY asset DESC',
         (new_collection_id,),
     ).fetchall()
-    assert new_collection_assets == [(A_CRV.identifier,), (A_LUSD.identifier,)]
+    assert new_collection_assets == [(A_CRV.identifier,), (A_LUSD.identifier,), (A_REP.identifier,)]  # noqa: E501
 
     # Check that extra underlying token was deleted
     ydai_underlying_tokens_after_upgrade = cursor.execute(
