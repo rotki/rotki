@@ -4876,7 +4876,7 @@
     "install_failed": {
       "message": "An error occurred while installing the application update: {message}"
     },
-    "messages": "A new version of rotki is available. See {releaseNotes}.",
+    "messages": "A new version of rotki is available. See the {releaseNotes}.",
     "release_notes": "release notes",
     "restart": "rotki will restart in a moment to apply the update."
   },
