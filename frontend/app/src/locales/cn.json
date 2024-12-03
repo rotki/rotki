@@ -1963,12 +1963,6 @@
     "title": "外汇余额"
   },
   "exchange_keys_form": {
-    "api_key": {
-      "non_empty": "api 键字段不能为空。"
-    },
-    "api_secret": {
-      "non_empty": "api secret 字段不能为空。"
-    },
     "edit": {
       "activate_tooltip": "编辑交易所的 api 密钥。",
       "deactivate_tooltip": "取消对交易所 api 密钥的编辑。"
@@ -1976,9 +1970,6 @@
     "exchange": "交换",
     "name": {
       "non_empty": "名称字段不能为空。"
-    },
-    "passphrase": {
-      "non_empty": "密码字段不能为空。"
     }
   },
   "exchange_settings": {

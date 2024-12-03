@@ -2,6 +2,7 @@
 import { helpers, requiredIf, requiredUnless } from '@vuelidate/validators';
 import { type ExchangePayload, KrakenAccountType } from '@/types/exchanges';
 import { toMessages } from '@/utils/validation';
+import ExchangeKeysFormStructure from '@/components/settings/api-keys/exchange/ExchangeKeysFormStructure.vue';
 import type { Writeable } from '@rotki/common';
 
 const props = defineProps<{
@@ -81,10 +82,22 @@ const isBinance = computed(() => {
   return ['binance', 'binanceus'].includes(location);
 });
 
+const isKraken = computed(() => {
+  const { location } = props.modelValue;
+  return ['kraken'].includes(location);
+});
+
 const isCoinbase = computed(() => {
   const { location } = get(modelValue);
   return ['coinbase'].includes(location);
 });
+
+const isCoinbasePro = computed(() => {
+  const { location } = get(modelValue);
+  return ['coinbaseprime'].includes(location);
+});
+
+const showKeyWaitingTimeWarning = logicOr(isKraken, isCoinbase, isCoinbasePro);
 
 const { getLocationData } = useLocations();
 
@@ -147,17 +160,17 @@ const rules = {
     required: helpers.withMessage(t('exchange_keys_form.name.non_empty'), requiredIf(editMode)),
   },
   apiKey: {
-    required: helpers.withMessage(t('exchange_keys_form.api_key.non_empty'), requiredIf(sensitiveFieldEditable)),
+    required: helpers.withMessage(t('exchange_keys_form.validation.non_empty'), requiredIf(sensitiveFieldEditable)),
   },
   apiSecret: {
     required: helpers.withMessage(
-      t('exchange_keys_form.api_secret.non_empty'),
+      t('exchange_keys_form.validation.non_empty'),
       requiredIf(logicAnd(sensitiveFieldEditable, requiresApiSecret)),
     ),
   },
   passphrase: {
     required: helpers.withMessage(
-      t('exchange_keys_form.passphrase.non_empty'),
+      t('exchange_keys_form.validation.non_empty'),
       requiredIf(logicAnd(sensitiveFieldEditable, requiresPassphrase)),
     ),
   },
@@ -184,9 +197,6 @@ function onExchangeChange(exchange?: string) {
     get(v$).$reset();
   });
 }
-
-const coinbaseApiKeyNameFormat = 'organizations/{org_id}/apiKeys/{key_id}';
-const coinbasePrivateKeyFormat = '-----BEGIN EC PRIVATE KEY-----\\n{KEY}\\n-----END EC PRIVATE KEY-----\\n';
 </script>
 
 <template>
@@ -227,7 +237,7 @@ const coinbasePrivateKeyFormat = '-----BEGIN EC PRIVATE KEY-----\\n{KEY}\\n-----
     </div>
 
     <RuiMenuSelect
-      v-if="modelValue.location === 'kraken'"
+      v-if="isKraken"
       v-model="krakenAccountType"
       data-cy="account-type"
       :options="krakenAccountTypes"
@@ -265,42 +275,54 @@ const coinbasePrivateKeyFormat = '-----BEGIN EC PRIVATE KEY-----\\n{KEY}\\n-----
       </RuiTooltip>
     </div>
 
-    <RuiRevealableTextField
-      v-model.trim="apiKey"
-      variant="outlined"
-      color="primary"
-      :disabled="editMode && !editKeys"
-      :error-messages="toMessages(v$.apiKey)"
-      data-cy="api-key"
-      prepend-icon="key-line"
-      :label="isCoinbase ? t('exchange_settings.inputs.api_key_name') : t('exchange_settings.inputs.api_key')"
-      :hint="isCoinbase ? `${t('exchange_settings.inputs.format')}: ${coinbaseApiKeyNameFormat}` : ''"
-    />
+    <ExchangeKeysFormStructure :location="modelValue.location">
+      <template #apiKey="{ label, hint, className }">
+        <RuiRevealableTextField
+          v-model.trim="apiKey"
+          variant="outlined"
+          color="primary"
+          :disabled="editMode && !editKeys"
+          :error-messages="toMessages(v$.apiKey)"
+          data-cy="api-key"
+          prepend-icon="key-line"
+          :label="label"
+          :hint="hint"
+          :class="className"
+        />
+      </template>
 
-    <RuiRevealableTextField
-      v-if="requiresApiSecret"
-      v-model.trim="apiSecret"
-      variant="outlined"
-      color="primary"
-      :disabled="editMode && !editKeys"
-      :error-messages="toMessages(v$.apiSecret)"
-      data-cy="api-secret"
-      prepend-icon="lock-line"
-      :label="isCoinbase ? t('exchange_settings.inputs.private_key') : t('exchange_settings.inputs.api_secret')"
-      :hint="isCoinbase ? `${t('exchange_settings.inputs.format')}: ${coinbasePrivateKeyFormat}` : ''"
-    />
+      <template #apiSecret="{ label, hint, className }">
+        <RuiRevealableTextField
+          v-if="requiresApiSecret"
+          v-model.trim="apiSecret"
+          variant="outlined"
+          color="primary"
+          :disabled="editMode && !editKeys"
+          :error-messages="toMessages(v$.apiSecret)"
+          data-cy="api-secret"
+          prepend-icon="lock-line"
+          :label="label"
+          :hint="hint"
+          :class="className"
+        />
+      </template>
 
-    <RuiRevealableTextField
-      v-if="requiresPassphrase"
-      v-model.trim="passphrase"
-      :disabled="editMode && !editKeys"
-      variant="outlined"
-      color="primary"
-      :error-messages="toMessages(v$.passphrase)"
-      prepend-icon="key-line"
-      data-cy="passphrase"
-      :label="t('exchange_settings.inputs.passphrase')"
-    />
+      <template #passphrase="{ label, hint, className }">
+        <RuiRevealableTextField
+          v-if="requiresPassphrase"
+          v-model.trim="passphrase"
+          :disabled="editMode && !editKeys"
+          variant="outlined"
+          color="primary"
+          :error-messages="toMessages(v$.passphrase)"
+          prepend-icon="key-line"
+          data-cy="passphrase"
+          :label="label"
+          :hint="hint"
+          :class="className"
+        />
+      </template>
+    </ExchangeKeysFormStructure>
 
     <BinancePairsSelector
       v-if="isBinance"
@@ -309,4 +331,12 @@ const coinbasePrivateKeyFormat = '-----BEGIN EC PRIVATE KEY-----\\n{KEY}\\n-----
       @update:selection="updateModelValue({ ...modelValue, binanceMarkets: $event })"
     />
   </div>
+
+  <RuiAlert
+    v-if="showKeyWaitingTimeWarning"
+    class="mt-4"
+    type="info"
+  >
+    {{ t('exchange_keys_form.waiting_time_warning') }}
+  </RuiAlert>
 </template>
