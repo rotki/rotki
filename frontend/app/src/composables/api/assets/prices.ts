@@ -12,6 +12,7 @@ import {
   ManualPrices,
   NftPriceArray,
 } from '@/types/prices';
+import { nonEmptyProperties } from '@/utils/data';
 import type { ActionResult } from '@rotki/common';
 
 interface UseAssetPriceApiReturn {

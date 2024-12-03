@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import { getCollectionData } from '@/utils/collection';
 import type {
   AccountingRuleConflict,
   AccountingRuleConflictRequestPayload,

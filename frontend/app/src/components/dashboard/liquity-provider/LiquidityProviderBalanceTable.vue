@@ -5,6 +5,7 @@ import { Routes } from '@/router/routes';
 import { DashboardTableType, type DashboardTablesVisibleColumns } from '@/types/settings/frontend-settings';
 import { Section } from '@/types/status';
 import { TableColumn } from '@/types/table-column';
+import { calculatePercentage } from '@/utils/calculation';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 
 const { t } = useI18n();

@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common';
+import { uniqueStrings } from '@/utils/data';
+import { arrayify } from '@/utils/array';
 import type { NewDetectedToken } from '@/types/websocket-messages';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common';
+import { isEthBlockEventRef, isEthDepositEventRef, isEvmEventRef, isWithdrawalEventRef } from '@/utils/history/events';
 import type { HistoryEventEntry } from '@/types/history/events';
 
 const props = defineProps<{

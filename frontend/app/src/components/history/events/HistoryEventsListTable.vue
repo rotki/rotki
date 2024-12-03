@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { HistoryEventEntryType } from '@rotki/common';
 import { objectPick } from '@vueuse/shared';
-import { isEventAccountingRuleProcessed, isEventMissingAccountingRule } from '@/utils/history/events';
+import { isEventAccountingRuleProcessed, isEventMissingAccountingRule, isEvmEvent } from '@/utils/history/events';
 import type { HistoryEventEntry } from '@/types/history/events';
 
 interface DeleteEvent {

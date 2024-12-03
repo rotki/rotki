@@ -1,3 +1,5 @@
+import { appendAssetBalance, mergeAssociatedAssets } from '@/utils/balances';
+import { bigNumberSum } from '@/utils/calculation';
 import type { AssetBalance, AssetBalanceWithPrice, BigNumber } from '@rotki/common';
 import type { AssetBalances } from '@/types/balances';
 import type { ComputedRef } from 'vue';

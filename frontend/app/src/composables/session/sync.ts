@@ -2,6 +2,7 @@ import { Severity } from '@rotki/common';
 import { api } from '@/services/rotkehlchen-api';
 import { TaskType } from '@/types/task-type';
 import { SYNC_DOWNLOAD, SYNC_UPLOAD, type SyncAction } from '@/types/session/sync';
+import { isTaskCancelled } from '@/utils';
 import type { TaskMeta } from '@/types/task';
 import type { DbUploadResult } from '@/types/websocket-messages';
 

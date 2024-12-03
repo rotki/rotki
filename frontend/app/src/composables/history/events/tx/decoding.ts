@@ -10,6 +10,9 @@ import {
   TransactionChainType,
 } from '@/types/history/events';
 import { EvmUndecodedTransactionResponse } from '@/types/websocket-messages';
+import { isTaskCancelled } from '@/utils';
+import { awaitParallelExecution } from '@/utils/await-parallel-execution';
+import { logger } from '@/utils/logging';
 import type { TaskMeta } from '@/types/task';
 
 export const useHistoryTransactionDecoding = createSharedComposable(() => {

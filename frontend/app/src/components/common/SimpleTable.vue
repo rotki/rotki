@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { toRem } from '@/utils/data';
 import type { StyleValue } from 'vue';
 
 defineOptions({

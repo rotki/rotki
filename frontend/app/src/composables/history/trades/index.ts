@@ -1,6 +1,10 @@
 import { Section, Status } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
+import { mapCollectionEntriesWithMeta } from '@/utils/history';
+import { mapCollectionResponse } from '@/utils/collection';
+import { logger } from '@/utils/logging';
+import { isTaskCancelled } from '@/utils';
 import type { MaybeRef } from '@vueuse/core';
 import type { Collection, CollectionResponse } from '@/types/collection';
 import type { EntryWithMeta } from '@/types/history/meta';

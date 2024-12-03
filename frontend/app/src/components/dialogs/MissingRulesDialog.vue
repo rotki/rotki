@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { toEvmChainAndTxHash } from '@/utils/history';
+import { isEvmEvent } from '@/utils/history/events';
 import type { AccountingRuleEntry } from '@/types/settings/accounting';
 import type { EvmChainAndTxHash, HistoryEventEntry } from '@/types/history/events';
 

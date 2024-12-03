@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { truncateAddress } from '@/utils/truncate';
+
 defineOptions({
   inheritAttrs: false,
 });

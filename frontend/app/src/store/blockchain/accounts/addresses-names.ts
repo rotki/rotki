@@ -1,6 +1,10 @@
 import { Blockchain } from '@rotki/common';
 import { TaskType } from '@/types/task-type';
 import { isBlockchain, isBtcChain } from '@/types/blockchain/chains';
+import { defaultCollectionState } from '@/utils/collection';
+import { isTaskCancelled } from '@/utils';
+import { uniqueStrings } from '@/utils/data';
+import { logger } from '@/utils/logging';
 import type { MaybeRef } from '@vueuse/core';
 import type {
   AddressBookEntries,

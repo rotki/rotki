@@ -5,33 +5,30 @@ import { isBlockchain } from '@/types/blockchain/chains';
 import type { StyleValue } from 'vue';
 import type { AssetResolutionOptions } from '@/composables/assets/retrieval';
 
-const props = withDefaults(
-  defineProps<{
-    identifier: string;
-    size: string;
-    styled?: StyleValue;
-    noTooltip?: boolean;
-    circle?: boolean;
-    padding?: string;
-    chainIconPadding?: string;
-    enableAssociation?: boolean;
-    showChain?: boolean;
-    flat?: boolean;
-    resolutionOptions?: AssetResolutionOptions;
-    chainIconSize?: string;
-  }>(),
-  {
-    styled: undefined,
-    noTooltip: false,
-    circle: false,
-    padding: '2px',
-    chainIconPadding: '0.5px',
-    enableAssociation: true,
-    showChain: true,
-    flat: false,
-    resolutionOptions: () => ({}),
-  },
-);
+const props = withDefaults(defineProps<{
+  identifier: string;
+  size: string;
+  styled?: StyleValue;
+  noTooltip?: boolean;
+  circle?: boolean;
+  padding?: string;
+  chainIconPadding?: string;
+  enableAssociation?: boolean;
+  showChain?: boolean;
+  flat?: boolean;
+  resolutionOptions?: AssetResolutionOptions;
+  chainIconSize?: string;
+}>(), {
+  styled: undefined,
+  noTooltip: false,
+  circle: false,
+  padding: '2px',
+  chainIconPadding: '0.5px',
+  enableAssociation: true,
+  showChain: true,
+  flat: false,
+  resolutionOptions: () => ({}),
+});
 
 const emit = defineEmits<{ (e: 'click'): void }>();
 

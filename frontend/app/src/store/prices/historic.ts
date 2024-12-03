@@ -1,5 +1,6 @@
 import { HistoricPrices } from '@/types/prices';
 import { TaskType } from '@/types/task-type';
+import { isTaskCancelled } from '@/utils';
 import type { BigNumber } from '@rotki/common';
 import type { TaskMeta } from '@/types/task';
 

@@ -9,6 +9,9 @@ import {
 import { DefiProtocol, Module } from '@/types/modules';
 import { Section, Status } from '@/types/status';
 import { TaskType } from '@/types/task-type';
+import { logger } from '@/utils/logging';
+import { getProtocolAddresses } from '@/utils/addresses';
+import { isTaskCancelled } from '@/utils';
 import type { TaskMeta } from '@/types/task';
 
 function convertMakerDAOVaults(vaults: ApiMakerDAOVault[]): MakerDAOVault[] {

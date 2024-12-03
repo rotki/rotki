@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { Severity } from '@rotki/common';
+import { getFilepath } from '@/utils/backups';
+import { logger } from '@/utils/logging';
 import type { DatabaseInfo, UserDbBackup, UserDbBackupWithId } from '@/types/backup';
 
 const { t } = useI18n();

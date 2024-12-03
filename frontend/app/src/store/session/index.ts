@@ -9,6 +9,8 @@ import {
 import { TaskType } from '@/types/task-type';
 import { UserAccount, type UserSettingsModel } from '@/types/user';
 import { api } from '@/services/rotkehlchen-api';
+import { logger } from '@/utils/logging';
+import { lastLogin } from '@/utils/account-management';
 import type { Exchange } from '@/types/exchanges';
 import type { SupportedLanguage } from '@/types/settings/frontend-settings';
 import type { TaskMeta } from '@/types/task';

@@ -2,6 +2,7 @@
 import { helpers, required } from '@vuelidate/validators';
 import useVuelidate from '@vuelidate/core';
 import { toMessages } from '@/utils/validation';
+import { useSimplePropVModel } from '@/utils/model';
 import ManualBalancesPriceForm from '@/components/accounts/manual-balances/ManualBalancesPriceForm.vue';
 import type { ManualBalance, RawManualBalance } from '@/types/manual-balances';
 import type { ValidationErrors } from '@/types/api/errors';

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { logger } from '@/utils/logging';
 import type { DataTableColumn } from '@rotki/ui-library';
 import type { Message } from '@rotki/common';
 import type { SkippedHistoryEventsSummary } from '@/types/history/events';

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { uniqueStrings } from '@/utils/data';
+import { getDomain } from '@/utils/url';
 import type { StyleValue } from 'vue';
 
 const props = withDefaults(

@@ -4,6 +4,10 @@ import { CURRENCY_USD } from '@/types/currencies';
 import { TaskType } from '@/types/task-type';
 import { isBlockchain } from '@/types/blockchain/chains';
 import { jsonTransformer } from '@/services/axios-tranformers';
+import { getEthAddressesFromText } from '@/utils/history';
+import { isTaskCancelled } from '@/utils';
+import { isTransactionEvent } from '@/utils/report';
+import { logger } from '@/utils/logging';
 import type {
   ProfitLossReportDebugPayload,
   ProfitLossReportPeriod,

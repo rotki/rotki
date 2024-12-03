@@ -101,7 +101,7 @@ export default defineConfig({
         },
       ],
       dts: './auto-imports.d.ts',
-      dirs: ['src/composables/**', 'src/api/**', 'src/store/**', 'src/utils/**'],
+      dirs: ['src/composables/**', 'src/store/**'],
       vueTemplate: true,
       injectAtEnd: true,
     }),

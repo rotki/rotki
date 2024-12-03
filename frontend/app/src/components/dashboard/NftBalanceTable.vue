@@ -3,6 +3,8 @@ import { Routes } from '@/router/routes';
 import { DashboardTableType } from '@/types/settings/frontend-settings';
 import { Section } from '@/types/status';
 import { TableColumn } from '@/types/table-column';
+import { getCollectionData } from '@/utils/collection';
+import { calculatePercentage } from '@/utils/calculation';
 import type { BigNumber } from '@rotki/common';
 import type { DataTableColumn } from '@rotki/ui-library';
 import type { IgnoredAssetsHandlingType } from '@/types/asset';

@@ -1,13 +1,13 @@
 import { NumericString } from '@rotki/common';
 import { z } from 'zod';
 import { Constraints } from '@/data/constraints';
+import { camelCaseTransformer } from '@/services/axios-tranformers';
 import { AddressNamePriorityEnum } from '@/types/settings/address-name-priorities';
 import { useCurrencies } from '@/types/currencies';
 import { Exchange, KrakenAccountType } from '@/types/exchanges';
 import { FrontendSettings } from '@/types/settings/frontend-settings';
 import { ModuleEnum } from '@/types/modules';
 import { PriceOracleEnum } from '@/types/settings/price-oracle';
-import { camelCaseTransformer } from '@/services/axios-tranformers';
 import type { ToSnakeCase } from '@/types/common';
 
 export const OtherSettings = z.object({

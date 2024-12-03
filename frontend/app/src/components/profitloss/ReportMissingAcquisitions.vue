@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Routes } from '@/router/routes';
+import { bigNumberSum } from '@/utils/calculation';
 import type { BigNumber } from '@rotki/common';
 import type { MissingAcquisition, SelectedReport } from '@/types/reports';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';

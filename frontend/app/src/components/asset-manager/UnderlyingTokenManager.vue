@@ -4,6 +4,7 @@ import useVuelidate from '@vuelidate/core';
 import { between, helpers, numeric, required } from '@vuelidate/validators';
 import { evmTokenKindsData } from '@/types/blockchain/chains';
 import { toMessages } from '@/utils/validation';
+import { useSimpleVModel } from '@/utils/model';
 
 const props = defineProps<{
   modelValue: UnderlyingToken[];

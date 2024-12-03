@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { logger } from '@/utils/logging';
+import { compareTextByKeyword } from '@/utils/assets';
+import { splitSearch } from '@/utils/search';
 import type { AssetInfo } from '@rotki/common';
 import type {
   MatchedKeyword,

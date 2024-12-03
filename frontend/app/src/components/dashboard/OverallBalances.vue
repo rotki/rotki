@@ -2,6 +2,7 @@
 import { TimeFramePeriod, TimeFramePersist, type TimeFrameSetting, TimeUnit, timeframes } from '@rotki/common';
 import dayjs from 'dayjs';
 import { Section } from '@/types/status';
+import { isPeriodAllowed } from '@/utils/settings';
 
 const { t } = useI18n();
 const { currencySymbol, floatingPrecision } = storeToRefs(useGeneralSettingsStore());

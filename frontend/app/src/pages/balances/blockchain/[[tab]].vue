@@ -9,6 +9,7 @@ import EthStakingValidators from '@/components/accounts/EthStakingValidators.vue
 import { Module } from '@/types/modules';
 import { NoteLocation } from '@/types/notes';
 import { BalanceSource, DashboardTableType } from '@/types/settings/frontend-settings';
+import { uniqueStrings } from '@/utils/data';
 import type { RouteLocationRaw } from 'vue-router';
 import type { ComponentExposed } from 'vue-component-type-helpers';
 

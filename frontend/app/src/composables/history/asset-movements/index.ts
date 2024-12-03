@@ -1,5 +1,9 @@
 import { Section, Status } from '@/types/status';
 import { TaskType } from '@/types/task-type';
+import { mapCollectionResponse } from '@/utils/collection';
+import { mapCollectionEntriesWithMeta } from '@/utils/history';
+import { logger } from '@/utils/logging';
+import { isTaskCancelled } from '@/utils';
 import type { MaybeRef } from '@vueuse/core';
 import type { Collection, CollectionResponse } from '@/types/collection';
 import type { EntryWithMeta } from '@/types/history/meta';

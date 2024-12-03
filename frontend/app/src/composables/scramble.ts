@@ -1,3 +1,4 @@
+import { findAddressKnownPrefix } from '@/utils/truncate';
 import type { ComputedRef } from 'vue';
 
 interface UseScrambleReturn {

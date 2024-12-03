@@ -22,6 +22,8 @@ import {
   type TransactionRequestPayload,
 } from '@/types/history/events';
 import { type HistoryEventProductData, HistoryEventTypeData } from '@/types/history/events/event-type';
+import { nonEmptyProperties } from '@/utils/data';
+import { downloadFileByUrl } from '@/utils/download';
 import type { CollectionResponse } from '@/types/collection';
 import type { PendingTask } from '@/types/task';
 import type { ActionResult } from '@rotki/common';

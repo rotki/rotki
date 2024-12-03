@@ -1,6 +1,10 @@
 import { Blockchain } from '@rotki/common';
 import { type MaybeRef, objectPick } from '@vueuse/core';
 import { Module } from '@/types/modules';
+import { createValidatorAccount } from '@/utils/blockchain/accounts/create';
+import { logger } from '@/utils/logging';
+import { sortAndFilterValidators } from '@/utils/blockchain/accounts/validator';
+import { isAccountWithBalanceValidator } from '@/utils/blockchain/accounts';
 import type { EthereumValidator, EthereumValidatorRequestPayload } from '@/types/blockchain/accounts';
 import type { Collection } from '@/types/collection';
 

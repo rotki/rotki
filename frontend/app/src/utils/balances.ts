@@ -1,3 +1,6 @@
+import { balanceSum, bigNumberSum } from '@/utils/calculation';
+import { sortDesc, zeroBalance } from '@/utils/bignumbers';
+import { getSortItems } from '@/utils/assets';
 import type {
   AssetBalance,
   AssetBalanceWithPrice,
@@ -11,16 +14,6 @@ import type { AssetBreakdown } from '@/types/blockchain/accounts';
 import type { ComputedRef } from 'vue';
 import type { DataTableSortData } from '@rotki/ui-library';
 import type { AssetInfoReturn } from '@/composables/assets/retrieval';
-
-export function removeZeroAssets(entries: AssetBalances): AssetBalances {
-  const balances = { ...entries };
-  for (const asset in entries) {
-    if (balances[asset].amount.isZero())
-      delete balances[asset];
-  }
-
-  return balances;
-}
 
 export function mergeAssociatedAssets(
   totals: MaybeRef<AssetBalances>,

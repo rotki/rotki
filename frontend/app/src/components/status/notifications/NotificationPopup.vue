@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { createNotification } from '@/utils/notifications';
+
 const { t } = useI18n();
 
 const visibleNotification = ref(createNotification());

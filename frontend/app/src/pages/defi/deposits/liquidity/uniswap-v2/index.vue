@@ -3,6 +3,7 @@ import { Blockchain, LpType, type XswapBalance } from '@rotki/common';
 import { UniswapDetails } from '@/premium/premium';
 import { Module } from '@/types/modules';
 import { Section } from '@/types/status';
+import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 
 const modules = [Module.UNISWAP];

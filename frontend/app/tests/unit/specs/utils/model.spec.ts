@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { usePropVModel, useRefPropVModel, useSimplePropVModel, useSimpleVModel } from '@/utils/model';
 
 describe('model utilities', () => {
   describe('useSimplePropVModel', () => {

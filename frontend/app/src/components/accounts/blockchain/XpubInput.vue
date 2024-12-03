@@ -3,8 +3,9 @@ import { Blockchain } from '@rotki/common';
 import { helpers, required } from '@vuelidate/validators';
 import { isEmpty } from 'lodash-es';
 import useVuelidate from '@vuelidate/core';
-import { XpubPrefix, type XpubType } from '@/utils/xpub';
+import { XpubPrefix, type XpubType, getKeyType, getPrefix, isPrefixed, keyType } from '@/utils/xpub';
 import { toMessages } from '@/utils/validation';
+import { trimOnPaste } from '@/utils/event';
 import type { ValidationErrors } from '@/types/api/errors';
 import type { BtcChains } from '@/types/blockchain/chains';
 import type { XpubPayload } from '@/types/blockchain/accounts';
@@ -33,8 +34,6 @@ const advanced = ref(false);
 function updateXpub(event?: XpubPayload) {
   emit('update:xpub', event);
 }
-
-const isPrefixed = (value: string) => value.match(/([x-z]pub)(.*)/);
 
 function setXpubKeyType(value: string) {
   const match = isPrefixed(value);

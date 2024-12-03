@@ -6,8 +6,8 @@ import { Blockchain } from '@rotki/common';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import ExternalServices from '@/pages/api-keys/external/index.vue';
 import EvmChainIcon from '@/components/helper/display/icons/EvmChainIcon.vue';
+import ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
 import { createCustomPinia } from '../../../../utils/create-pinia';
-import ServiceKey from '../../../../../../src/components/settings/api-keys/ServiceKey.vue';
 import type { ExternalServiceKeys } from '@/types/user';
 import type { EvmChainInfo } from '@/types/api/chains';
 

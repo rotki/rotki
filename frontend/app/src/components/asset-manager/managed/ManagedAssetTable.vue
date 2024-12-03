@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { some } from 'lodash-es';
 import { CUSTOM_ASSET, EVM_TOKEN, IgnoredAssetHandlingType, type IgnoredAssetsHandlingType } from '@/types/asset';
+import { uniqueStrings } from '@/utils/data';
 import type { Collection } from '@/types/collection';
 import type { Filters, Matcher } from '@/composables/filters/assets';
 import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';

@@ -8,6 +8,7 @@ import {
 import { api } from '@/services/rotkehlchen-api';
 import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { handleResponse } from '@/services/utils';
+import { mapCollectionResponse } from '@/utils/collection';
 import type { Collection } from '@/types/collection';
 import type { MaybeRef } from '@vueuse/core';
 import type { ActionResult } from '@rotki/common';

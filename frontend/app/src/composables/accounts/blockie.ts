@@ -1,3 +1,6 @@
+import { createBlockie } from '@/utils/blockie';
+import { logger } from '@/utils/logging';
+
 const CACHE_SIZE = 100;
 
 interface UseBlockieReturn {

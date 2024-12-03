@@ -14,6 +14,7 @@ import {
   type ExchangeSavingsRequestPayload,
   Exchanges,
 } from '@/types/exchanges';
+import { nonEmptyProperties } from '@/utils/data';
 import type { AxiosResponse } from 'axios';
 import type { ActionResult } from '@rotki/common';
 import type { PendingTask } from '@/types/task';

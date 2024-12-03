@@ -11,6 +11,10 @@ import { TaskType } from '@/types/task-type';
 import { BackendCancelledTaskError, type TaskMeta } from '@/types/task';
 import { Module } from '@/types/modules';
 import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
+import { isTaskCancelled } from '@/utils';
+import { awaitParallelExecution } from '@/utils/await-parallel-execution';
+import { logger } from '@/utils/logging';
+import { LimitedParallelizationQueue } from '@/utils/limited-parallelization-queue';
 import type { ActionStatus } from '@/types/action';
 import type { Blockchain } from '@rotki/common';
 

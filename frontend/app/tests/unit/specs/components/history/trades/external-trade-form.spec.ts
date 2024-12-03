@@ -4,6 +4,7 @@ import { type Pinia, createPinia, setActivePinia } from 'pinia';
 import { RuiAutoComplete } from '@rotki/ui-library';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import ExternalTradeForm from '@/components/history/trades/ExternalTradeForm.vue';
+import { setupDayjs } from '@/utils/date';
 import type { AssetMap } from '@/types/asset';
 import type { Trade } from '@/types/history/trade';
 

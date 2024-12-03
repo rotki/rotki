@@ -1,4 +1,7 @@
 <script lang="ts" setup>
+import { sortDesc } from '@/utils/bignumbers';
+import { balanceSum } from '@/utils/calculation';
+import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
 import type { AssetBalance } from '@rotki/common';
 import type { BlockchainAccountBalance } from '@/types/blockchain/accounts';
 

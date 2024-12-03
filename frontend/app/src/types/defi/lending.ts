@@ -1,5 +1,5 @@
 import type { AaveBorrowingRates, AaveHistoryTotal, Balance, BigNumber } from '@rotki/common';
-import type { Collateral, CollateralizedLoan } from '@/types/defi';
+import type { Collateral, CollateralizedLoan } from '@/types/defi/index';
 import type { DefiProtocol } from '@/types/modules';
 
 export interface LoanSummary {

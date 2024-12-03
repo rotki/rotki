@@ -1,4 +1,5 @@
 <script setup lang="ts" generic="T extends object">
+import { getCollectionData, setupEntryLimit } from '@/utils/collection';
 import type { Collection } from '@/types/collection';
 
 const props = defineProps<{

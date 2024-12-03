@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { SavedFilterLocation } from '@/types/filtering';
 import { AccountExternalFilterSchema, type Filters, type Matcher } from '@/composables/filters/blockchain-account';
+import { getAccountAddress, getGroupId } from '@/utils/blockchain/accounts/utils';
+import { fromUriEncoded, toUriEncoded } from '@/utils/route-uri';
 import AccountBalancesTable from '@/components/accounts/AccountBalancesTable.vue';
 import AccountGroupDetailsTable from '@/components/accounts/AccountGroupDetailsTable.vue';
 import DetectTokenChainsSelection from '@/components/accounts/balances/DetectTokenChainsSelection.vue';

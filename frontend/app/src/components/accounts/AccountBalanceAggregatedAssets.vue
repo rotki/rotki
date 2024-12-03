@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import { balanceSum } from '@/utils/calculation';
 import type { AssetBalance, AssetBalanceWithPrice } from '@rotki/common';
 
 const props = defineProps<{

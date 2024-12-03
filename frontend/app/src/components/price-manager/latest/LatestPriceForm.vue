@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { helpers, required } from '@vuelidate/validators';
 import { toMessages } from '@/utils/validation';
+import { bigNumberifyFromRef } from '@/utils/bignumbers';
+import { useSimplePropVModel } from '@/utils/model';
 import type { ManualPriceFormPayload } from '@/types/prices';
 
 const props = withDefaults(

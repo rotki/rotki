@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import { checkIfDevelopment } from '@shared/utils';
 import { type MatchedKeywordWithBehaviour, SavedFilterLocation, type SearchMatcher } from '@/types/filtering';
+import { useRefPropVModel } from '@/utils/model';
 import type { HistoryEventRequestPayload } from '@/types/history/events';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 

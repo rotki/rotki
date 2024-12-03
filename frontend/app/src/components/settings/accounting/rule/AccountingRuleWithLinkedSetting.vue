@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useSimplePropVModel } from '@/utils/model';
 import type { AccountingRuleWithLinkedProperty } from '@/types/settings/accounting';
 
 const props = defineProps<{

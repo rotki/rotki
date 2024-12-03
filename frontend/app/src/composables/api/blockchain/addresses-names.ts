@@ -11,6 +11,7 @@ import {
   type AddressBookSimplePayload,
   EthNames,
 } from '@/types/eth-names';
+import { mapCollectionResponse } from '@/utils/collection';
 import type { ActionResult } from '@rotki/common';
 import type { PendingTask } from '@/types/task';
 import type { Collection, CollectionResponse } from '@/types/collection';

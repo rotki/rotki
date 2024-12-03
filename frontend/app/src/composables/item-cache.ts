@@ -1,4 +1,5 @@
 import { startPromise } from '@shared/utils';
+import { logger } from '@/utils/logging';
 import type { MaybeRef } from '@vueuse/core';
 import type { ComputedRef, Ref } from 'vue';
 

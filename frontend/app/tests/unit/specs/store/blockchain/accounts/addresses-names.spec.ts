@@ -2,6 +2,7 @@ import { Blockchain } from '@rotki/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import flushPromises from 'flush-promises';
 import { FrontendSettings } from '@/types/settings/frontend-settings';
+import { defaultCollectionState } from '@/utils/collection';
 import type { AddressBookEntry, AddressBookSimplePayload } from '@/types/eth-names';
 import type { Collection } from '@/types/collection';
 

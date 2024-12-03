@@ -9,6 +9,7 @@ import {
   dateValidator,
 } from '@/types/filtering';
 import { TradeType } from '@/types/history/trade';
+import { getDateInputISOFormat } from '@/utils/date';
 import type { FilterSchema } from '@/composables/use-pagination-filter/types';
 
 enum TradeFilterKeys {

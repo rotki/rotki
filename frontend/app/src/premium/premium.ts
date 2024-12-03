@@ -1,5 +1,6 @@
 import { checkIfDevelopment } from '@shared/utils';
 import { app } from '@/main';
+import { logger } from '@/utils/logging';
 import { setupPremium } from '@/premium/setup-premium';
 import type { Component } from 'vue';
 import type * as Chart from 'chart.js';

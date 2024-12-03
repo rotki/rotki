@@ -9,6 +9,9 @@ import {
 } from '@/types/defi/airdrops';
 import { TaskType } from '@/types/task-type';
 import AirdropDisplay from '@/components/defi/airdrops/AirdropDisplay.vue';
+import { isTaskCancelled } from '@/utils';
+import { logger } from '@/utils/logging';
+import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 import type { DataTableColumn, TablePaginationData } from '@rotki/ui-library';
 import type { TaskMeta } from '@/types/task';

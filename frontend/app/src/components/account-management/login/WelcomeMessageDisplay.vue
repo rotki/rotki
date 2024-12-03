@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { checkIfDevelopment } from '@shared/utils';
 import { api } from '@/services/rotkehlchen-api';
+import { logger } from '@/utils/logging';
 import type { WelcomeMessage } from '@/types/dynamic-messages';
 
 const props = defineProps<{

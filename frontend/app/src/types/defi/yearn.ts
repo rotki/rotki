@@ -2,12 +2,6 @@ import { Balance } from '@rotki/common';
 import { z } from 'zod';
 import { ProtocolVersion } from '@/types/defi/index';
 
-export interface YearnVaultProfitLoss {
-  readonly value: Balance;
-  readonly asset: string;
-  readonly vault: string;
-}
-
 const YearnVaultBalance = z.object({
   underlyingToken: z.string(),
   vaultToken: z.string(),

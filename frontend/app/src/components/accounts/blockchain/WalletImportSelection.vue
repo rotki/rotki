@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { getAddressesFromWallet, getAllBrowserWalletProviders } from '@/utils/metamask';
 import type { EIP1193Provider, EIP6963ProviderDetail } from '@/types';
 
 const emit = defineEmits<{

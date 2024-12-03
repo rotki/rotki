@@ -5,6 +5,7 @@ import {
   FrontendSettings,
   type FrontendSettingsPayload,
 } from '@/types/settings/frontend-settings';
+import { logger } from '@/utils/logging';
 import type { ActionStatus } from '@/types/action';
 
 export const useFrontendSettingsStore = defineStore('settings/frontend', () => {

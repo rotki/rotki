@@ -2,6 +2,7 @@
 import { helpers, required, requiredIf } from '@vuelidate/validators';
 import { objectOmit } from '@vueuse/core';
 import { toMessages } from '@/utils/validation';
+import { useRefPropVModel } from '@/utils/model';
 import type { CexMapping } from '@/types/asset';
 
 const props = withDefaults(

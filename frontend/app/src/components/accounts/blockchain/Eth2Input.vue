@@ -3,6 +3,7 @@ import { helpers, requiredUnless } from '@vuelidate/validators';
 import { isEmpty } from 'lodash-es';
 import useVuelidate from '@vuelidate/core';
 import { toMessages } from '@/utils/validation';
+import { refOptional, useRefPropVModel } from '@/utils/model';
 import type { Eth2Validator } from '@/types/balances';
 import type { ValidationErrors } from '@/types/api/errors';
 

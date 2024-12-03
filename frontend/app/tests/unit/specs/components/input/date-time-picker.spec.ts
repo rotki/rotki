@@ -3,6 +3,7 @@ import { type Pinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
 import { DateFormat } from '@/types/date-format';
+import { setupDayjs } from '@/utils/date';
 import { createCustomPinia } from '../../../utils/create-pinia';
 
 vi.mock('@/composables/api/settings/settings-api', () => ({

@@ -1,5 +1,7 @@
 import { Blockchain } from '@rotki/common';
 import { BlockchainRefreshButtonBehaviour } from '@/types/settings/frontend-settings';
+import { awaitParallelExecution } from '@/utils/await-parallel-execution';
+import { arrayify } from '@/utils/array';
 import type { MaybeRef } from '@vueuse/core';
 
 export const useRefresh = createSharedComposable(() => {

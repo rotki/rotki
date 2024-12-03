@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Section } from '@/types/status';
+import { uniqueStrings } from '@/utils/data';
 import type { DataTableColumn } from '@rotki/ui-library';
 import type { ActionStatus } from '@/types/action';
 import type { IgnoredAssetsHandlingType } from '@/types/asset';

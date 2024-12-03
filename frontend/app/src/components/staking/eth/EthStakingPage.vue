@@ -16,6 +16,8 @@ import { Module } from '@/types/modules';
 import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import { OnlineHistoryEventsQueryType } from '@/types/history/events';
+import { logger } from '@/utils/logging';
+import { nonEmptyProperties } from '@/utils/data';
 
 const module = Module.ETH2;
 const performanceSection = Section.STAKING_ETH2;

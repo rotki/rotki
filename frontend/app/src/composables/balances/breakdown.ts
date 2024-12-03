@@ -1,4 +1,5 @@
 import { TRADE_LOCATION_BLOCKCHAIN } from '@/data/defaults';
+import { groupAssetBreakdown, mergeAssetBalances } from '@/utils/balances';
 import type { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
 import type { MaybeRef } from '@vueuse/core';
 import type { AssetBreakdown } from '@/types/blockchain/accounts';

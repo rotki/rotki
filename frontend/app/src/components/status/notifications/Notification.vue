@@ -2,6 +2,7 @@
 import { type NotificationAction, type NotificationData, Severity } from '@rotki/common';
 import dayjs from 'dayjs';
 import { type RuiIcons, isRuiIcon } from '@rotki/ui-library';
+import { arrayify } from '@/utils/array';
 
 const props = withDefaults(
   defineProps<{

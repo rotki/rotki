@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { size } from '../../utils/data';
+import { size } from '@/utils/data';
 import type { ImportSourceType } from '@/types/upload-types';
 
 const file = defineModel<File | undefined>({ required: true });

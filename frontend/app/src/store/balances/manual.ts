@@ -10,6 +10,11 @@ import {
 import { Section, Status } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
+import { isTaskCancelled } from '@/utils';
+import { sortAndFilterManualBalance } from '@/utils/balances/manual/manual-balances';
+import { logger } from '@/utils/logging';
+import { appendAssetBalance } from '@/utils/balances';
+import { sortDesc } from '@/utils/bignumbers';
 import { BalanceSource } from '@/types/settings/frontend-settings';
 import type { BigNumber } from '@rotki/common';
 import type { MaybeRef } from '@vueuse/core';
@@ -253,7 +258,9 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
     set(manualBalancesData, newManualBalancesData);
   };
 
-  const resolvers = {
+  const resolvers: {
+    resolveAssetPrice: (asset: string) => BigNumber | undefined;
+  } = {
     /**
      * Resolves the asset price in the selected currency.
      * We use this to make sure that total is not affected by double conversion problems.

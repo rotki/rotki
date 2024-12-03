@@ -2,6 +2,7 @@ import { type AssetInfo, NotificationGroup, Severity } from '@rotki/common';
 import { isCancel } from 'axios';
 import { type AssetsWithId, CUSTOM_ASSET } from '@/types/asset';
 import { TaskType } from '@/types/task-type';
+import { isTaskCancelled } from '@/utils';
 import type { MaybeRef } from '@vueuse/core';
 import type { ERC20Token } from '@/types/blockchain/accounts';
 import type { TaskMeta } from '@/types/task';

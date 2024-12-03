@@ -1,4 +1,5 @@
 import { type BigNumber, Blockchain } from '@rotki/common';
+import { uniqueStrings } from '@/utils/data';
 import type { MaybeRef } from '@vueuse/core';
 import type { ComputedRef } from 'vue';
 

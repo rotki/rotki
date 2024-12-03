@@ -1,3 +1,5 @@
+import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
+import { getAccountBalance } from '@/utils/blockchain/accounts/index';
 import type { Eth2ValidatorEntry } from '@rotki/common';
 import type {
   AccountExtraParams,

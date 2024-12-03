@@ -3,6 +3,7 @@ import { Blockchain, HistoryEventEntryType, LpType, type XswapBalance } from '@r
 import { Module } from '@/types/modules';
 import { Section } from '@/types/status';
 import Uniswap3PoolBalances from '@/components/defi/uniswap/Uniswap3PoolBalances.vue';
+import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 
 const uniswap = Module.UNISWAP;

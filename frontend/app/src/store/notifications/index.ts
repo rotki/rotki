@@ -8,6 +8,7 @@ import {
 } from '@rotki/common';
 import { useSessionStorage } from '@vueuse/core';
 import { orderBy } from 'lodash-es';
+import { createNotification } from '@/utils/notifications';
 
 function notificationDefaults(): NotificationPayload {
   return {

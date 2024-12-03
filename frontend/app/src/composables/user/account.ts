@@ -1,4 +1,5 @@
 import { wait } from '@shared/utils';
+import { setLastLogin } from '@/utils/account-management';
 import type { CreateAccountPayload, LoginCredentials } from '@/types/login';
 import type { Ref } from 'vue';
 

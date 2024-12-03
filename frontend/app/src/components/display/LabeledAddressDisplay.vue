@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { findAddressKnownPrefix, truncateAddress } from '@/utils/truncate';
+import { getAccountAddress, getAccountLabel, getChain } from '@/utils/blockchain/accounts/utils';
 import type {
   BlockchainAccount,
   BlockchainAccountBalance,

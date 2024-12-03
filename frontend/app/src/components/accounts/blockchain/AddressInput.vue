@@ -3,6 +3,7 @@ import { helpers, requiredIf } from '@vuelidate/validators';
 import { isEmpty } from 'lodash-es';
 import useVuelidate from '@vuelidate/core';
 import { toMessages } from '@/utils/validation';
+import { trimOnPaste } from '@/utils/event';
 import WalletAddressesImport from '@/components/accounts/blockchain/WalletAddressesImport.vue';
 import type { ValidationErrors } from '@/types/api/errors';
 

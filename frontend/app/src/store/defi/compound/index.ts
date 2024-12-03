@@ -2,6 +2,10 @@ import { CompoundBalances, CompoundStats } from '@/types/defi/compound';
 import { Module } from '@/types/modules';
 import { Section, Status } from '@/types/status';
 import { TaskType } from '@/types/task-type';
+import { logger } from '@/utils/logging';
+import { getProtocolAddresses } from '@/utils/addresses';
+import { isTaskCancelled } from '@/utils';
+import { toProfitLossModel } from '@/utils/defi';
 import type { TaskMeta } from '@/types/task';
 
 function defaultCompoundStats(): CompoundStats {

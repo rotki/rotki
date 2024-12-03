@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { helpers, required } from '@vuelidate/validators';
 import { toMessages } from '@/utils/validation';
+import { usePropVModel } from '@/utils/model';
 import type { LocationDataSnapshotPayload } from '@/types/snapshots';
 
 const props = withDefaults(

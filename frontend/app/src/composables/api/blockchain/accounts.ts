@@ -20,6 +20,7 @@ import {
   type XpubAccountPayload,
 } from '@/types/blockchain/accounts';
 import { type BtcChains, isBtcChain } from '@/types/blockchain/chains';
+import { nonEmptyProperties } from '@/utils/data';
 import type { Eth2Validator } from '@/types/balances';
 import type { PendingTask } from '@/types/task';
 

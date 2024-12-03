@@ -3,6 +3,8 @@ import { BigNumber, Blockchain } from '@rotki/common';
 import { type TablePaginationData, useBreakpoint } from '@rotki/ui-library';
 import { keyBy } from 'lodash-es';
 import { Routes } from '@/router/routes';
+import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
+import { uniqueStrings } from '@/utils/data';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 import type { Module } from '@/types/modules';
 import type { GalleryNft, Nft, Nfts } from '@/types/nfts';

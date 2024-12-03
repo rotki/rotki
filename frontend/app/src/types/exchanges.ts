@@ -33,11 +33,6 @@ export interface EditExchange {
   readonly newName?: string;
 }
 
-export interface ExchangeSetupPayload {
-  readonly edit: boolean;
-  readonly exchange: ExchangePayload;
-}
-
 export interface ExchangePayload {
   readonly name: string;
   readonly location: string;

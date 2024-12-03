@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { generateRandomScrambleMultiplier } from '@/utils/session';
+
 const { scrambleData: enabled, scrambleMultiplier: multiplier } = storeToRefs(useSessionSettingsStore());
 
 const scrambleData = ref<boolean>(false);

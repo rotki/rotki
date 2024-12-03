@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { totalCollateral } from '@/utils/total-collateral';
 import type { CompoundLoan } from '@/types/defi/compound';
 
 const props = defineProps<{

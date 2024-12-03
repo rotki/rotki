@@ -3,6 +3,10 @@ import { Module } from '@/types/modules';
 import { Section, Status } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import { ProtocolVersion } from '@/types/defi';
+import { isTaskCancelled } from '@/utils';
+import { getProtocolAddresses } from '@/utils/addresses';
+import { balanceSum } from '@/utils/calculation';
+import { zeroBalance } from '@/utils/bignumbers';
 import type { TaskMeta } from '@/types/task';
 
 export const useYearnStore = defineStore('defi/yearn', () => {

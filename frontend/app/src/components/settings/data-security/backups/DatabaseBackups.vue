@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { displayDateFormatter } from '@/data/date-formatter';
 import { size } from '@/utils/data';
+import { getFilepath } from '@/utils/backups';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { UserDbBackup, UserDbBackupWithId } from '@/types/backup';
 

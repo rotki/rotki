@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { helpers, required } from '@vuelidate/validators';
-import { convertToTimestamp } from '@/utils/date';
+import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 import { toMessages } from '@/utils/validation';
+import { useSimplePropVModel } from '@/utils/model';
+import { bigNumberifyFromRef } from '@/utils/bignumbers';
 import type { HistoricalPriceFormPayload } from '@/types/prices';
 
 const props = defineProps<{

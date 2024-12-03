@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { helpers, required } from '@vuelidate/validators';
 import { toMessages } from '@/utils/validation';
+import { refOptional, useRefPropVModel } from '@/utils/model';
 import type { UserNote } from '@/types/notes';
 
 const modelValue = defineModel<Partial<UserNote>>({ required: true });

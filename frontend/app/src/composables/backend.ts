@@ -1,4 +1,6 @@
 import { BackendOptions } from '@shared/ipc';
+import { getDefaultLogLevel, logger, setLevel } from '@/utils/logging';
+import { deleteBackendUrl, getBackendUrl } from '@/utils/account-management';
 import type { Writeable } from '@rotki/common';
 import type { LogLevel } from '@shared/log-level';
 import type { ComputedRef, Ref } from 'vue';

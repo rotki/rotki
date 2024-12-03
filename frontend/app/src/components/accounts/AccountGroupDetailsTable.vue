@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { type LocationQuery, RouterExpandedIdsSchema } from '@/types/route';
+import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
 import type { AccountManageState } from '@/composables/accounts/blockchain/use-account-manage';
 import type {
   BlockchainAccountGroupRequestPayload,

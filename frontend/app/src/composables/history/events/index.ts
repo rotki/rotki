@@ -1,6 +1,9 @@
 import { omit } from 'lodash-es';
 import { startPromise } from '@shared/utils';
 import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
+import { logger } from '@/utils/logging';
+import { defaultCollectionState, mapCollectionResponse } from '@/utils/collection';
+import { getEthAddressesFromText } from '@/utils/history';
 import type { MaybeRef } from '@vueuse/core';
 import type { Collection } from '@/types/collection';
 import type {

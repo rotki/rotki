@@ -5,6 +5,7 @@ import { objectOmit } from '@vueuse/core';
 import { type AccountingRuleEntry, AccountingTreatment } from '@/types/settings/accounting';
 import { toMessages } from '@/utils/validation';
 import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
+import { getPlaceholderRule } from '@/utils/settings';
 
 const props = withDefaults(
   defineProps<{

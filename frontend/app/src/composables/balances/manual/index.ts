@@ -1,3 +1,4 @@
+import { balanceSum } from '@/utils/calculation';
 import type { Balance } from '@rotki/common';
 import type { AssetBalances } from '@/types/balances';
 import type { ManualBalanceWithValue } from '@/types/manual-balances';
