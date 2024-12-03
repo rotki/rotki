@@ -2,6 +2,7 @@
 import { helpers, requiredIf, requiredUnless } from '@vuelidate/validators';
 import { type ExchangePayload, KrakenAccountType } from '@/types/exchanges';
 import { toMessages } from '@/utils/validation';
+import ExchangeKeysFormStructure from '@/components/settings/api-keys/exchange/ExchangeKeysFormStructure.vue';
 import type { Writeable } from '@rotki/common';
 
 const props = defineProps<{
@@ -196,20 +197,6 @@ function onExchangeChange(exchange?: string) {
     get(v$).$reset();
   });
 }
-
-const ApiKeyStructure = computed(() => {
-  const { location } = get(modelValue);
-
-  if (location === 'coinbase') {
-    return markRaw(defineAsyncComponent(() => import('@/components/settings/api-keys/exchange/CoinbaseKeyForm.vue')));
-  }
-
-  if (location === 'coinbaseprime') {
-    return markRaw(defineAsyncComponent(() => import('@/components/settings/api-keys/exchange/CoinbaseProKeyForm.vue')));
-  }
-
-  return markRaw(defineAsyncComponent(() => import('@/components/settings/api-keys/exchange/RegularKeyForm.vue')));
-});
 </script>
 
 <template>
@@ -288,8 +275,8 @@ const ApiKeyStructure = computed(() => {
       </RuiTooltip>
     </div>
 
-    <ApiKeyStructure>
-      <template #apiKey="{ label, hint }">
+    <ExchangeKeysFormStructure :location="modelValue.location">
+      <template #apiKey="{ label, hint, className }">
         <RuiRevealableTextField
           v-model.trim="apiKey"
           variant="outlined"
@@ -300,10 +287,11 @@ const ApiKeyStructure = computed(() => {
           prepend-icon="key-line"
           :label="label"
           :hint="hint"
+          :class="className"
         />
       </template>
 
-      <template #apiSecret="{ label, hint }">
+      <template #apiSecret="{ label, hint, className }">
         <RuiRevealableTextField
           v-if="requiresApiSecret"
           v-model.trim="apiSecret"
@@ -315,10 +303,11 @@ const ApiKeyStructure = computed(() => {
           prepend-icon="lock-line"
           :label="label"
           :hint="hint"
+          :class="className"
         />
       </template>
 
-      <template #passphrase>
+      <template #passphrase="{ label, hint, className }">
         <RuiRevealableTextField
           v-if="requiresPassphrase"
           v-model.trim="passphrase"
@@ -328,10 +317,12 @@ const ApiKeyStructure = computed(() => {
           :error-messages="toMessages(v$.passphrase)"
           prepend-icon="key-line"
           data-cy="passphrase"
-          :label="t('exchange_settings.inputs.passphrase')"
+          :label="label"
+          :hint="hint"
+          :class="className"
         />
       </template>
-    </ApiKeyStructure>
+    </ExchangeKeysFormStructure>
 
     <BinancePairsSelector
       v-if="isBinance"
@@ -343,6 +334,7 @@ const ApiKeyStructure = computed(() => {
 
   <RuiAlert
     v-if="showKeyWaitingTimeWarning"
+    class="mt-4"
     type="info"
   >
     {{ t('exchange_keys_form.waiting_time_warning') }}
