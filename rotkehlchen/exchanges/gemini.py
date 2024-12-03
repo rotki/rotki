@@ -28,18 +28,20 @@ from rotkehlchen.exchanges.utils import (
     pair_symbol_to_base_quote,
 )
 from rotkehlchen.history.deserialization import deserialize_price
+from rotkehlchen.history.events.structures.base import HistoryEvent
+from rotkehlchen.history.events.structures.types import HistoryEventType
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
     deserialize_asset_amount_force_positive,
-    deserialize_asset_movement_category,
     deserialize_fee,
     deserialize_timestamp,
 )
 from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
+    AssetMovementCategory,
     ExchangeAuthCredentials,
     Fee,
     Location,
@@ -56,7 +58,6 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.history.events.structures.base import HistoryEvent
 
 
 logger = logging.getLogger(__name__)
@@ -432,6 +433,37 @@ class Gemini(ExchangeInterface):
             return []
         return trades
 
+    def _deserialize_asset_movement_category(
+            self,
+            value: str | HistoryEventType,
+    ) -> AssetMovementCategory:
+        """Takes a string and determines whether to accept it as an asset movement category
+
+        Can throw DeserializationError if value is not as expected
+        """
+        if isinstance(value, str):
+            if value.lower() in {'deposit', 'reward'}:
+                return AssetMovementCategory.DEPOSIT
+            if value.lower() in {'withdraw', 'withdrawal'}:
+                return AssetMovementCategory.WITHDRAWAL
+            raise DeserializationError(
+                f'Failed to deserialize asset movement category symbol. Unknown {value}',
+            )
+
+        if isinstance(value, HistoryEventType):
+            if value == HistoryEventType.DEPOSIT:
+                return AssetMovementCategory.DEPOSIT
+            if value == HistoryEventType.WITHDRAWAL:
+                return AssetMovementCategory.WITHDRAWAL
+            raise DeserializationError(
+                f'Failed to deserialize asset movement category from '
+                f'HistoryEventType and {value} entry',
+            )
+
+        raise DeserializationError(
+            f'Failed to deserialize asset movement category from {type(value)} entry',
+        )
+
     def query_online_trade_history(
             self,
             start_ts: Timestamp,
@@ -512,10 +544,10 @@ class Gemini(ExchangeInterface):
                 timestamp = deserialize_timestamp(entry['timestampms'])
                 timestamp = Timestamp(int(timestamp / 1000))
                 asset = asset_from_gemini(entry['currency'])
-
+                category = self._deserialize_asset_movement_category(entry['type'])
                 movement = AssetMovement(
                     location=Location.GEMINI,
-                    category=deserialize_asset_movement_category(entry['type']),
+                    category=category,
                     address=deserialize_asset_movement_address(entry, 'destination', asset),
                     transaction_id=get_key_if_has_val(entry, 'txHash'),
                     timestamp=timestamp,
