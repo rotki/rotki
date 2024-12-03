@@ -3733,6 +3733,7 @@ class QueryCalendarSchema(
         load_default=None,
     )
     identifiers = fields.List(fields.Integer, load_default=None)
+    to_timestamp = TimestampField(load_default=None)
 
     def __init__(self, chain_aggregator: 'ChainsAggregator') -> None:
         super().__init__()
