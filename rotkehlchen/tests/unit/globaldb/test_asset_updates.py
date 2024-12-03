@@ -22,7 +22,7 @@ VALID_ASSET_MAPPINGS = """INSERT INTO multiasset_mappings(collection_id, asset) 
     INSERT INTO multiasset_mappings(collection_id, asset) VALUES (5, "BTC");
     *
 """
-VALID_ASSET_COLLECTIONS = """INSERT INTO asset_collections(id, name, symbol) VALUES (99999999, "My custom ETH", "ETHS")
+VALID_ASSET_COLLECTIONS = """INSERT INTO asset_collections(id, name, symbol, main_asset) VALUES (99999999, "My custom ETH", "ETHS", "ETHS")
     *
 """  # noqa: E501
 VALID_ASSETS = """INSERT INTO assets(identifier, name, type) VALUES("MYBONK", "Bonk", "Y"); INSERT INTO common_asset_details(identifier, symbol, coingecko, cryptocompare, forked, started, swapped_for) VALUES("MYBONK", "BONK", "bonk", "BONK", NULL, 1672279200, NULL);
@@ -492,7 +492,7 @@ def test_asset_update(
 
         cursor.execute('SELECT * FROM asset_collections WHERE id = 99999999')
         assert cursor.fetchall() == ([
-            (99999999, 'My custom ETH', 'ETHS'),
+            (99999999, 'My custom ETH', 'ETHS', 'ETHS'),
         ] if update_collections else [])
 
         cursor.execute('SELECT * FROM multiasset_mappings WHERE collection_id = 5')

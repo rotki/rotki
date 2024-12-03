@@ -87,7 +87,7 @@ INSERT INTO assets(identifier, name, type) VALUES('EUR', 'Ευρώ', 'A'); INSER
     """  # noqa: E501
     # The update_4_assets has an extra newline which is put there on purpose to see
     # that the consuming logic can handle trailing newlines
-    update_4_collections = """INSERT INTO asset_collections(id, name, symbol) VALUES (99999999, 'My custom ETH', 'ETHS')
+    update_4_collections = """INSERT INTO asset_collections(id, name, symbol, main_asset) VALUES (99999999, 'My custom ETH', 'ETHS', 'ETHS')
     *
     UPDATE asset_collections SET name='updated collection' WHERE id=33
     *
@@ -234,7 +234,7 @@ INSERT INTO assets(identifier, name, type) VALUES('EUR', 'Ευρώ', 'A'); INSER
 
         with globaldb.conn.read_ctx() as cursor:
             cursor.execute('SELECT * FROM asset_collections WHERE id = 99999999')
-            assert cursor.fetchall() == [(99999999, 'My custom ETH', 'ETHS')]
+            assert cursor.fetchall() == [(99999999, 'My custom ETH', 'ETHS', 'ETHS')]
             cursor.execute('SELECT * FROM multiasset_mappings WHERE collection_id = 99999999')
             assert cursor.fetchall() == [(99999999, 'ETH'), (99999999, 'eip155:1/erc20:0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84')]  # noqa: E501
             assert cursor.execute(

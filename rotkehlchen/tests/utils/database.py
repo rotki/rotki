@@ -3,7 +3,7 @@ import random
 from dataclasses import asdict
 from pathlib import Path
 from shutil import copyfile
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from unittest.mock import _patch, patch
 
 from pysqlcipher3 import dbapi2 as sqlcipher
@@ -24,6 +24,9 @@ from rotkehlchen.types import (
     ExternalServiceApiCredentials,
     SupportedBlockchain,
 )
+
+if TYPE_CHECKING:
+    from rotkehlchen.db.drivers.gevent import DBCursor
 
 
 def maybe_include_etherscan_key(db: DBHandler, include_etherscan_key: bool) -> None:
@@ -231,3 +234,8 @@ def clean_ignored_assets(database: DBHandler):
     from the global DB sync or elsewhere so they start clean"""
     with database.user_write() as write_cursor:
         write_cursor.execute('DELETE FROM multisettings WHERE name=?', ('ignored_asset',))
+
+
+def column_exists(cursor: 'DBCursor', table_name: str, column_name: str) -> bool:
+    columns = [row[1] for row in cursor.execute(f'PRAGMA table_info({table_name})')]
+    return column_name in columns

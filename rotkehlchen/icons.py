@@ -224,9 +224,6 @@ class IconManager:
         asset_to_query_icon = asset
 
         if collection_main_asset_id is not None:
-            # get the group asset but with some exceptions ...
-            if collection_main_asset_id == 'XDAI':
-                collection_main_asset_id = 'eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F'  # DAI # noqa: E501
             asset_to_query_icon = AssetWithNameAndType(collection_main_asset_id)
 
         needed_path = self.iconfile_path(asset_to_query_icon)

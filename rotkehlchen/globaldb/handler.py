@@ -1990,15 +1990,18 @@ class GlobalDBHandler:
 
     @staticmethod
     def get_collection_main_asset(identifier: str) -> str | None:
-        """
-        TODO: Adjust this. We need a better approach. When you do remove the exceptions
-        where this is called.: https://github.com/rotki/rotki/issues/8639
+        """Return the main asset in a collection for a given asset identifier.
 
-        Given an asset identifier return id of the asset in the collection with the lowest
-        lexicographical order.
+        TODO: There's still a need for hierarchical collections
+        https://github.com/rotki/rotki/issues/8639
         """
         with GlobalDBHandler().conn.read_ctx() as cursor:
-            cursor.execute('SELECT A.asset FROM multiasset_mappings AS A JOIN multiasset_mappings AS B ON A.collection_id=B.collection_id WHERE B.asset=? ORDER BY A.asset LIMIT 1', (identifier,))  # noqa: E501
+            cursor.execute(
+               'SELECT ac.main_asset FROM asset_collections AS ac '
+               'INNER JOIN multiasset_mappings AS mm ON mm.collection_id = ac.id '
+               'WHERE mm.asset = ?',
+               (identifier,),
+            )
             result = cursor.fetchone()
 
         return result[0] if result is not None else None

@@ -183,7 +183,9 @@ CREATE TABLE IF NOT EXISTS asset_collections(
     id INTEGER PRIMARY KEY,
     name TEXT NOT NULL,
     symbol TEXT NOT NULL,
-    UNIQUE (name, symbol)
+    main_asset TEXT NOT NULL UNIQUE,
+    FOREIGN KEY(main_asset) REFERENCES assets(identifier) ON UPDATE CASCADE ON DELETE CASCADE,
+    UNIQUE(name, symbol)
 );
 """
 

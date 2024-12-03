@@ -17,6 +17,7 @@ from .v2_v3 import migrate_to_v3
 from .v3_v4 import migrate_to_v4
 from .v4_v5 import migrate_to_v5
 from .v5_v6 import migrate_to_v6
+from .v9_v10 import migrate_to_v10
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -54,6 +55,10 @@ UPGRADES_LIST = [
     UpgradeRecord(
         from_version=8,
         function=migrate_to_v9,
+    ),
+    UpgradeRecord(
+        from_version=9,
+        function=migrate_to_v10,
     ),
 ]
 

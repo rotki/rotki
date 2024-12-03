@@ -23,7 +23,6 @@ from rotkehlchen.globaldb.cache import (
 )
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.globaldb.schema import (
-    DB_CREATE_ASSET_COLLECTIONS,
     DB_CREATE_LOCATION_ASSET_MAPPINGS,
     DB_CREATE_LOCATION_UNSUPPORTED_ASSETS,
 )
@@ -41,6 +40,7 @@ from rotkehlchen.globaldb.upgrades.v3_v4 import (
 from rotkehlchen.globaldb.upgrades.v5_v6 import V5_V6_UPGRADE_UNIQUE_CACHE_KEYS
 from rotkehlchen.globaldb.utils import GLOBAL_DB_VERSION
 from rotkehlchen.tests.fixtures.globaldb import create_globaldb
+from rotkehlchen.tests.utils.database import column_exists
 from rotkehlchen.tests.utils.globaldb import patch_for_globaldb_upgrade_to
 from rotkehlchen.types import (
     ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE,
@@ -712,7 +712,12 @@ def test_upgrade_v7_v8(globaldb: GlobalDBHandler, messages_aggregator):
         assert table_exists(
             cursor=cursor,
             name='asset_collections',
-            schema=DB_CREATE_ASSET_COLLECTIONS,
+            schema="""CREATE TABLE IF NOT EXISTS asset_collections (
+                id INTEGER PRIMARY KEY,
+                name TEXT NOT NULL,
+                symbol TEXT NOT NULL,
+                UNIQUE(name, symbol))
+            """,
         ) is True
 
         for collection_id, name, symbol in (
@@ -854,6 +859,58 @@ def test_upgrade_v8_v9(globaldb: GlobalDBHandler, messages_aggregator):
         assert cursor.execute(
             'SELECT COUNT(*) FROM underlying_tokens_list WHERE identifier=parent_token_entry',
         ).fetchone()[0] == 0
+
+
+@pytest.mark.parametrize('custom_globaldb', ['v9_global.db'])
+@pytest.mark.parametrize('target_globaldb_version', [9])
+@pytest.mark.parametrize('reload_user_assets', [False])
+def test_upgrade_v9_v10(globaldb: GlobalDBHandler, messages_aggregator):
+    """Test upgrade from v9 to v10 which adds main_asset column to asset_collections"""
+    with globaldb.conn.read_ctx() as cursor:
+        assert not column_exists(
+            cursor=cursor,
+            table_name='asset_collections',
+            column_name='main_asset',
+        )
+        # get all collection groups and their first assets before upgrade
+        pre_upgrade_groups = cursor.execute("""
+            SELECT collection_id, MIN(asset) as first_asset
+            FROM multiasset_mappings
+            GROUP BY collection_id
+            ORDER BY collection_id
+        """).fetchall()
+
+        mappings_count = cursor.execute('SELECT COUNT(*) FROM multiasset_mappings').fetchone()[0]
+
+    with ExitStack() as stack:
+        patch_for_globaldb_upgrade_to(stack, 10)
+        maybe_upgrade_globaldb(
+            connection=globaldb.conn,
+            global_dir=globaldb._data_directory / GLOBALDIR_NAME,  # type: ignore
+            db_filename=GLOBALDB_NAME,
+            msg_aggregator=messages_aggregator,
+        )
+
+    assert globaldb.get_setting_value('version', 0) == 10
+
+    with globaldb.conn.read_ctx() as cursor:
+        assert column_exists(
+            cursor=cursor,
+            table_name='asset_collections',
+            column_name='main_asset',
+        )
+
+        # verify number of mappings hasn't changed
+        assert cursor.execute('SELECT COUNT(*) FROM multiasset_mappings').fetchone()[0] == mappings_count  # noqa: E501
+
+        # verify each collection has its main asset properly set in asset_collections
+        for collection_id, first_asset in pre_upgrade_groups:
+            cursor.execute('SELECT main_asset FROM asset_collections WHERE id=?', (collection_id,))
+            result = cursor.fetchone()
+            if collection_id == 23:  # DAI special case
+                assert result[0] == 'eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F'
+            else:
+                assert result[0] == first_asset
 
 
 @pytest.mark.parametrize('custom_globaldb', ['v2_global.db'])

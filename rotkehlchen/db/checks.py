@@ -33,7 +33,7 @@ def db_script_normalizer(text: str) -> str:
         # else
         return s
 
-    return WHITESPACE_RE.sub(replacer, text).replace(' ', '').replace('\n', '').replace('"', "'").lower()  # noqa: E501
+    return WHITESPACE_RE.sub(replacer, text).replace(' ', '').replace('\n', '').replace('"', "'").replace('\t', '').lower()  # noqa: E501
 
 
 def sanity_check_impl(
