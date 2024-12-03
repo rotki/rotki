@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Fix the issue where clicking the link to input the Etherscan key doesn't open the correct tab.
 * :bug:`8982` Fix the issue where Cmd / Alt + Arrow Left / Arrow Right forces navigation, as it should interact with user selection in text input.
 * :bug:`8983` The asset amount will be shown if only one asset is detected in an account.
 * :feature:`8991` Add direct navigation to asset details when clicking on small asset icons in the blockchain balances table.
