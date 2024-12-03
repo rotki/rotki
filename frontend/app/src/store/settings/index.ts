@@ -1,4 +1,6 @@
 import { ApiValidationError } from '@/types/api/errors';
+import { uniqueStrings } from '@/utils/data';
+import { logger } from '@/utils/logging';
 import type { KrakenAccountType } from '@/types/exchanges';
 import type { Module } from '@/types/modules';
 import type { SettingsUpdate } from '@/types/user';

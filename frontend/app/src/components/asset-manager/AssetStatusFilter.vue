@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { IgnoredAssetHandlingType, type IgnoredAssetsHandlingType } from '@/types/asset';
+import { useSimplePropVModel } from '@/utils/model';
 
 interface Model {
   onlyShowOwned: boolean;

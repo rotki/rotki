@@ -1,5 +1,7 @@
 import { Section, Status } from '@/types/status';
 import { TaskType } from '@/types/task-type';
+import { logger } from '@/utils/logging';
+import { balanceSum } from '@/utils/calculation';
 import type { KrakenStakingEvents, KrakenStakingPagination, ReceivedAmount } from '@/types/staking';
 import type { TaskMeta } from '@/types/task';
 

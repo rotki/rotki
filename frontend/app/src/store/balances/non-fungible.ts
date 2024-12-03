@@ -1,6 +1,9 @@
 import { Module } from '@/types/modules';
 import { Section, Status } from '@/types/status';
 import { TaskType } from '@/types/task-type';
+import { isTaskCancelled } from '@/utils';
+import { logger } from '@/utils/logging';
+import { mapCollectionResponse } from '@/utils/collection';
 import type { BigNumber } from '@rotki/common';
 import type { MaybeRef } from '@vueuse/core';
 import type { Collection } from '@/types/collection';

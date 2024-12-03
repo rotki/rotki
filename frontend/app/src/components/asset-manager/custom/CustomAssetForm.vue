@@ -3,6 +3,7 @@ import { helpers, required } from '@vuelidate/validators';
 import { omit } from 'lodash-es';
 import AssetIconForm from '@/components/asset-manager/AssetIconForm.vue';
 import { toMessages } from '@/utils/validation';
+import { useRefPropVModel } from '@/utils/model';
 import type { CustomAsset } from '@/types/asset';
 
 const props = withDefaults(

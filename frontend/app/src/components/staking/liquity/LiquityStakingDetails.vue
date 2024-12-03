@@ -11,6 +11,10 @@ import {
   type LiquityStatisticDetails,
 } from '@rotki/common';
 import { Section } from '@/types/status';
+import { zeroBalance } from '@/utils/bignumbers';
+import { uniqueStrings } from '@/utils/data';
+import { balanceSum } from '@/utils/calculation';
+import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 
 const emit = defineEmits<{

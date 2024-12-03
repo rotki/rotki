@@ -1,4 +1,6 @@
 <script lang="ts" setup>
+import { uniqueStrings } from '@/utils/data';
+
 type Row = ({ chain: string } | { chains: string[] }) & { id: string };
 
 const chainFilter = defineModel<Record<string, string[]>>('chainFilter', { required: true });

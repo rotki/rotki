@@ -4,6 +4,7 @@ import { DefiProtocol, Module, isDefiProtocol } from '@/types/modules';
 import { Section } from '@/types/status';
 import { ProtocolVersion } from '@/types/defi';
 import { AaveEarnedDetails, CompoundLendingDetails } from '@/premium/premium';
+import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 
 const section = Section.DEFI_LENDING;

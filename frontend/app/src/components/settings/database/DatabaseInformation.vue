@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { logger } from '@/utils/logging';
+import { size } from '@/utils/data';
 import type { DatabaseInfo } from '@/types/backup';
 
 interface UserDbInfo {

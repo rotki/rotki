@@ -1,17 +1,19 @@
 /* istanbul ignore file */
 import { createPinia } from 'pinia';
-import 'roboto-fontface/css/roboto/roboto-fontface.css';
-import 'typeface-roboto-mono';
-import 'flag-icons/css/flag-icons.min.css';
 import { checkIfDevelopment } from '@shared/utils';
+import { setupFormatter } from '@/utils/setup-formatter';
+import { setupDayjs } from '@/utils/date';
 import { usePremiumApi } from '@/premium/setup-interface';
 import App from '@/App.vue';
 import { attemptPolyfillResizeObserver } from '@/utils/cypress';
 import { registerDevtools } from '@/plugins/devtools';
-import { i18n } from './i18n';
-import { router } from './router';
-import { createRuiPlugin } from './plugins/rui';
-import '@/main.scss';
+import { i18n } from '@/i18n';
+import { router } from '@/router';
+import { createRuiPlugin } from '@/plugins/rui';
+import './main.scss';
+import 'roboto-fontface/css/roboto/roboto-fontface.css';
+import 'typeface-roboto-mono';
+import 'flag-icons/css/flag-icons.min.css';
 
 const isDevelopment = checkIfDevelopment() && !import.meta.env.VITE_TEST;
 const IS_CLIENT = typeof window !== 'undefined';

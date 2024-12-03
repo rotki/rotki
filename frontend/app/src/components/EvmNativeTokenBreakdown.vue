@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { type AssetBalance, type BigNumber, Blockchain } from '@rotki/common';
 import { CURRENCY_USD } from '@/types/currencies';
+import { calculatePercentage } from '@/utils/calculation';
+import { groupAssetBreakdown } from '@/utils/balances';
 import type { AssetBreakdown } from '@/types/blockchain/accounts';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 

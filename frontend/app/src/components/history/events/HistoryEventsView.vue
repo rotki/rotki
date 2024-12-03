@@ -6,6 +6,9 @@ import { startPromise } from '@shared/utils';
 import { RouterAccountsSchema } from '@/types/route';
 import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
+import { isEvmEvent, isEvmEventType, isOnlineHistoryEventType } from '@/utils/history/events';
+import { toEvmChainAndTxHash } from '@/utils/history';
+import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
 import type {
   HistoryEvent,
   HistoryEventEntry,

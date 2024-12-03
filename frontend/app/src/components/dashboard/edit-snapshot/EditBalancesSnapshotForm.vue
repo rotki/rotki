@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { helpers, required } from '@vuelidate/validators';
 import { toMessages } from '@/utils/validation';
+import { isNft } from '@/utils/nft';
+import { usePropVModel } from '@/utils/model';
 import type { BigNumber } from '@rotki/common';
 import type { BalanceSnapshotPayload } from '@/types/snapshots';
 import type EditBalancesSnapshotAssetPriceForm
-  from '@/components/dashboard/edit-snapshot/EditBalancesSnapshotAssetPriceForm.vue';
+  from './EditBalancesSnapshotAssetPriceForm.vue';
 
 interface BalanceSnapshotPayloadAndLocation extends BalanceSnapshotPayload {
   location: string;

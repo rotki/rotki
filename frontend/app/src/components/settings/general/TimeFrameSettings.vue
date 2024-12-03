@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { TimeFramePeriod, TimeFramePersist, type TimeFrameSetting } from '@rotki/common';
+import { isPeriodAllowed } from '@/utils/settings';
 
 const props = defineProps<{
   message: { error: string; success: string };

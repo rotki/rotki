@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { TWITTER_URL, externalLinks } from '@shared/external-links';
 import { IndexedDb } from '@/utils/indexed-db';
+import { downloadFileByTextContent } from '@/utils/download';
 import type { RuiIcons } from '@rotki/ui-library';
 
 const display = defineModel<boolean>({ required: true });

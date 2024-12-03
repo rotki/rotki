@@ -1,6 +1,7 @@
 import { NotificationCategory, type NotificationPayload, Severity } from '@rotki/common';
 import { Section } from '@/types/status';
 import { CURRENCY_USD } from '@/types/currencies';
+import { isNft } from '@/utils/nft';
 import type { ManualPrice, ManualPriceFormPayload, ManualPriceWithUsd } from '@/types/prices';
 import type { ComputedRef, Ref } from 'vue';
 

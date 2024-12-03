@@ -2,6 +2,7 @@
 import { groupBy } from 'lodash-es';
 import { IgnoreActionType } from '@/types/history/ignored';
 import { Section } from '@/types/status';
+import { isTaskCancelled } from '@/utils';
 import type {
   EvmChainAndTxHash,
   HistoryEventEntry,

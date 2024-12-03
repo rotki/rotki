@@ -2,6 +2,7 @@
 import { CURRENCY_USD } from '@/types/currencies';
 import { isNft } from '@/utils/nft';
 import { BalanceType } from '@/types/balances';
+import { bigNumberSum } from '@/utils/calculation';
 import type { BigNumber } from '@rotki/common';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { BalanceSnapshot, BalanceSnapshotPayload, Snapshot } from '@/types/snapshots';

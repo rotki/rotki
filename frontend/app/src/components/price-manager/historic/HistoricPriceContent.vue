@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useRefPropVModel } from '@/utils/model';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { HistoricalPrice, HistoricalPriceFormPayload } from '@/types/prices';
 

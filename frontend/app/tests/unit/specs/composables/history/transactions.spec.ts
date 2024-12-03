@@ -8,6 +8,7 @@ import {
   OnlineHistoryEventsQueryType,
 } from '@/types/history/events';
 import { camelCaseTransformer } from '@/services/axios-tranformers';
+import { isOfEventType } from '@/utils/history/events';
 import historyEvents from '../../../fixtures/history-events.json';
 import type { EvmChainInfo } from '@/types/api/chains';
 

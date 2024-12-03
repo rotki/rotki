@@ -7,6 +7,7 @@ import {
 import { Module } from '@/types/modules';
 import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
+import { fetchDataAsync } from '@/utils/fetch-async';
 import type { TaskMeta } from '@/types/task';
 import type { OnError } from '@/types/fetch';
 

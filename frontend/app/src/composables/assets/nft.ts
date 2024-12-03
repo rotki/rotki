@@ -1,5 +1,6 @@
 import { NftResponse } from '@/types/nfts';
 import { TaskType } from '@/types/task-type';
+import { getDomain } from '@/utils/url';
 import type { ActionResult } from '@rotki/common';
 import type { TaskMeta } from '@/types/task';
 

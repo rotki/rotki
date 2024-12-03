@@ -5,8 +5,10 @@ import { helpers, required } from '@vuelidate/validators';
 import { isEmpty } from 'lodash-es';
 import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
 import { toMessages } from '@/utils/validation';
-import HistoryEventAssetPriceForm from '@/components/history/events/forms/HistoryEventAssetPriceForm.vue';
 import { DateFormat } from '@/types/date-format';
+import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
+import { bigNumberifyFromRef } from '@/utils/bignumbers';
+import HistoryEventAssetPriceForm from '@/components/history/events/forms/HistoryEventAssetPriceForm.vue';
 import type { NewOnlineHistoryEventPayload, OnlineHistoryEvent } from '@/types/history/events';
 
 const props = withDefaults(

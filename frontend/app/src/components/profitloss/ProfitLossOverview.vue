@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { calculateTotalProfitLoss } from '@/utils/report';
 import type { ProfitLossOverviewItem, Report, SelectedReport } from '@/types/reports';
 
 const props = withDefaults(

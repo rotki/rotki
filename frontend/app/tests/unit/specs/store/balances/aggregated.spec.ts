@@ -1,6 +1,7 @@
 import { type AssetBalanceWithPrice, Blockchain } from '@rotki/common';
 import { sortBy } from 'lodash-es';
 import { beforeEach, describe, expect, it } from 'vitest';
+import { convertBtcAccounts, convertBtcBalances } from '@/utils/blockchain/accounts';
 import { TRADE_LOCATION_BANKS } from '@/data/defaults';
 import { useCurrencies } from '@/types/currencies';
 import { BalanceType } from '@/types/balances';

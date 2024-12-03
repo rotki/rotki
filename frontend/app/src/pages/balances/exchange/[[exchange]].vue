@@ -4,6 +4,7 @@ import { TaskType } from '@/types/task-type';
 import { NoteLocation } from '@/types/notes';
 import HideSmallBalances from '@/components/settings/HideSmallBalances.vue';
 import { BalanceSource } from '@/types/settings/frontend-settings';
+import { uniqueStrings } from '@/utils/data';
 import type { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
 
 definePage({

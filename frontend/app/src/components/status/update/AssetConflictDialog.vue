@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { uniqueObjects, uniqueStrings } from '@/utils/data';
 import type { SupportedAsset, Writeable } from '@rotki/common';
 import type { DataTableColumn } from '@rotki/ui-library';
 import type { AssetUpdateConflictResult, ConflictResolution } from '@/types/asset';

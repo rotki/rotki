@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { type NotificationPayload, type SemiPartial, Severity } from '@rotki/common';
 import { TaskType } from '@/types/task-type';
+import { isTaskCancelled } from '@/utils';
 import type { TaskMeta } from '@/types/task';
 import type { HistoryEventRequestPayload } from '@/types/history/events';
 

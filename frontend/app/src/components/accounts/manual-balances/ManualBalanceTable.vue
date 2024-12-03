@@ -2,6 +2,7 @@
 import { objectOmit } from '@vueuse/shared';
 import { isEqual } from 'lodash-es';
 import { Section } from '@/types/status';
+import { uniqueStrings } from '@/utils/data';
 import type { Filters, Matcher } from '@/composables/filters/manual-balances';
 import type { ManualBalance, ManualBalanceRequestPayload, ManualBalanceWithPrice } from '@/types/manual-balances';
 import type { DataTableColumn } from '@rotki/ui-library';

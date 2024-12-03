@@ -2,6 +2,7 @@
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
 import { toMessages } from '@/utils/validation';
+import { usePropVModel } from '@/utils/model';
 import type { Tag, TagEvent } from '@/types/tags';
 
 const props = defineProps<{

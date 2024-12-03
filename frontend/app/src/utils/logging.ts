@@ -1,4 +1,4 @@
-import consola, { type ConsolaInstance, type LogLevel as ConsolaLogLevel, LogLevels, type LogObject } from 'consola';
+import consola, { type LogLevel as ConsolaLogLevel, LogLevels, type LogObject } from 'consola';
 import { LogLevel } from '@shared/log-level';
 import { checkIfDevelopment, startPromise } from '@shared/utils';
 import { IndexedDb } from '@/utils/indexed-db';
@@ -67,8 +67,4 @@ function setLevel(level?: LogLevel): void {
   consola.level = mapToFrontendLogLevel(level);
 }
 
-function loggerWithTag(tag: string): ConsolaInstance {
-  return consola.withTag(tag);
-}
-
-export { consola as logger, loggerWithTag, setLevel };
+export { consola as logger, setLevel };

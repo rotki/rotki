@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { getDomain } from '@/utils/url';
 
 describe('utils/url', () => {
   it('default', () => {

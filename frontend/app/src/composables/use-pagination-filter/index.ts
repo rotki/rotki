@@ -2,6 +2,9 @@
 import { Severity } from '@rotki/common';
 import { isEmpty, isEqual } from 'lodash-es';
 import { FilterBehaviour, type MatchedKeywordWithBehaviour, type SearchMatcher } from '@/types/filtering';
+import { defaultCollectionState } from '@/utils/collection';
+import { logger } from '@/utils/logging';
+import { nonEmptyProperties } from '@/utils/data';
 import type { LocationQuery, RawLocationQuery } from '@/types/route';
 import type { DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import type { MaybeRef } from '@vueuse/core';

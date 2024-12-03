@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import { arrayify } from '@/utils/array';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 
 defineOptions({

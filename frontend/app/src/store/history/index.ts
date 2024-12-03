@@ -1,4 +1,5 @@
 import { TaskType } from '@/types/task-type';
+import { logger } from '@/utils/logging';
 import type { EvmUnDecodedTransactionsData, ProtocolCacheUpdatesData } from '@/types/websocket-messages';
 
 export const useHistoryStore = defineStore('history', () => {

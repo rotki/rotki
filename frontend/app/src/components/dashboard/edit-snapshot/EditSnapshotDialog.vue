@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { sortDesc } from '@/utils/bignumbers';
 import type { BalanceSnapshot, LocationDataSnapshot, Snapshot, SnapshotPayload } from '@/types/snapshots';
 
 const props = defineProps<{

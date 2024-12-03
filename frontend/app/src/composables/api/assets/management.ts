@@ -15,6 +15,7 @@ import {
   CustomAssets,
   SupportedAssets,
 } from '@/types/asset';
+import { mapCollectionResponse } from '@/utils/collection';
 import type { Collection } from '@/types/collection';
 import type { MaybeRef } from '@vueuse/core';
 

@@ -1,3 +1,4 @@
+import { logger } from '@/utils/logging';
 import type { Tag, Tags } from '@/types/tags';
 import type { ActionStatus } from '@/types/action';
 

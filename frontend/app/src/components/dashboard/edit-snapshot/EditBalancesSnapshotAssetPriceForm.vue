@@ -4,6 +4,7 @@ import useVuelidate from '@vuelidate/core';
 import { toMessages } from '@/utils/validation';
 import { CURRENCY_USD } from '@/types/currencies';
 import { TaskType } from '@/types/task-type';
+import { bigNumberifyFromRef } from '@/utils/bignumbers';
 import type { BigNumber } from '@rotki/common';
 import type { HistoricalPriceFormPayload } from '@/types/prices';
 

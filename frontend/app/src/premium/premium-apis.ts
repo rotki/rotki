@@ -1,4 +1,19 @@
-import type { AssetsApi, BalancesApi, CompoundApi, LocationData, OwnedAssets, ProfitLossModel, StatisticsApi, SushiApi, TimedAssetBalances, TimedBalances, UserSettingsApi, UtilsApi } from '@rotki/common';
+import { isNft } from '@/utils/nft';
+import { truncateAddress } from '@/utils/truncate';
+import type {
+  AssetsApi,
+  BalancesApi,
+  CompoundApi,
+  LocationData,
+  OwnedAssets,
+  ProfitLossModel,
+  StatisticsApi,
+  SushiApi,
+  TimedAssetBalances,
+  TimedBalances,
+  UserSettingsApi,
+  UtilsApi,
+} from '@rotki/common';
 import type { MaybeRef } from '@vueuse/core';
 
 export function assetsApi(): AssetsApi {
@@ -6,13 +21,12 @@ export function assetsApi(): AssetsApi {
 
   return {
     assetInfo,
-    assetSymbol: (identifier: MaybeRef<string>) =>
-      computed(() => {
-        if (isNft(get(identifier)))
-          return get(assetName(identifier));
+    assetSymbol: (identifier: MaybeRef<string>) => computed(() => {
+      if (isNft(get(identifier)))
+        return get(assetName(identifier));
 
-        return get(assetSymbol(identifier));
-      }),
+      return get(assetSymbol(identifier));
+    }),
     tokenAddress: (identifier: MaybeRef<string>) => tokenAddress(identifier),
   };
 }
@@ -20,8 +34,11 @@ export function assetsApi(): AssetsApi {
 export function statisticsApi(): StatisticsApi {
   const { isAssetIgnored } = useIgnoredAssetsStore();
   const { fetchNetValue, getNetValue } = useStatisticsStore();
-  const { queryLatestAssetValueDistribution, queryLatestLocationValueDistribution, queryTimedBalancesData }
-    = useStatisticsApi();
+  const {
+    queryLatestAssetValueDistribution,
+    queryLatestLocationValueDistribution,
+    queryTimedBalancesData,
+  } = useStatisticsApi();
   const { queryOwnedAssets } = useAssetManagementApi();
 
   return {
@@ -46,11 +63,20 @@ export function statisticsApi(): StatisticsApi {
 }
 
 export function userSettings(): UserSettingsApi {
-  const { privacyMode, scrambleData, shouldShowAmount, shouldShowPercentage, scrambleMultiplier }
-    = storeToRefs(useSessionSettingsStore());
+  const {
+    privacyMode,
+    scrambleData,
+    shouldShowAmount,
+    shouldShowPercentage,
+    scrambleMultiplier,
+  } = storeToRefs(useSessionSettingsStore());
+  const {
+    selectedTheme,
+    dateInputFormat,
+    graphZeroBased,
+    showGraphRangeSelector,
+  } = storeToRefs(useFrontendSettingsStore());
   const { floatingPrecision, currencySymbol } = storeToRefs(useGeneralSettingsStore());
-  const { selectedTheme, dateInputFormat, graphZeroBased, showGraphRangeSelector }
-    = storeToRefs(useFrontendSettingsStore());
 
   return {
     floatingPrecision,

@@ -5,6 +5,8 @@ import { displayDateFormatter } from '@/data/date-formatter';
 import FileUpload from '@/components/import/FileUpload.vue';
 import { NoteLocation } from '@/types/notes';
 import { Routes } from '@/router/routes';
+import { downloadFileByTextContent } from '@/utils/download';
+import { isTaskCancelled } from '@/utils';
 import type { ProfitLossReportDebugPayload, ProfitLossReportPeriod } from '@/types/reports';
 import type { TaskMeta } from '@/types/task';
 

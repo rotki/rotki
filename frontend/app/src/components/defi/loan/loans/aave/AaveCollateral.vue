@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { totalCollateral } from '@/utils/total-collateral';
 import type { AaveLoan } from '@/types/defi/lending';
 
 const props = defineProps<{

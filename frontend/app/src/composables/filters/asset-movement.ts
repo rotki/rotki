@@ -9,6 +9,7 @@ import {
   dateValidator,
 } from '@/types/filtering';
 import { MovementCategory } from '@/types/history/asset-movements';
+import { getDateInputISOFormat } from '@/utils/date';
 import type { FilterSchema } from '@/composables/use-pagination-filter/types';
 
 enum AssetMovementFilterKeys {

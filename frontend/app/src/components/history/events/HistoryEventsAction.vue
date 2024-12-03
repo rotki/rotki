@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { toEvmChainAndTxHash } from '@/utils/history';
 import { TaskType } from '@/types/task-type';
+import { isEvmEventRef } from '@/utils/history/events';
 import type { EvmChainAndTxHash, EvmHistoryEvent, HistoryEventEntry } from '@/types/history/events';
 
 const props = defineProps<{

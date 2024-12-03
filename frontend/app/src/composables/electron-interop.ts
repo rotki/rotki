@@ -1,4 +1,5 @@
 import { externalLinks } from '@shared/external-links';
+import { getBackendUrl } from '@/utils/account-management';
 import type { BackendOptions, Listeners, SystemVersion, TrayUpdate } from '@shared/ipc';
 import type { WebVersion } from '@/types';
 
@@ -44,7 +45,7 @@ function isAppSession(): boolean {
   return electronApp && !url;
 }
 
-const interop = {
+const interop: UseInteropReturn = {
   get isPackaged(): boolean {
     return electronApp;
   },

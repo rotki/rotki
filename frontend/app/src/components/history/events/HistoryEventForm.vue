@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { HistoryEventEntryType } from '@rotki/common';
+import { isOfEventType } from '@/utils/history/events';
 import type { HistoryEvent } from '@/types/history/events';
 
 const props = withDefaults(

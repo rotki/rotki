@@ -1,4 +1,6 @@
 import { samePriceAssets } from '@/types/blockchain';
+import { uniqueStrings } from '@/utils/data';
+import { sumAssetBalances } from '@/utils/balances';
 import type { AssetBalanceWithPrice } from '@rotki/common';
 import type { MaybeRef } from '@vueuse/core';
 import type { AssetPriceInfo } from '@/types/prices';

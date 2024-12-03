@@ -1,4 +1,5 @@
 import { promiseTimeout } from '@vueuse/core';
+import { logger } from '@/utils/logging';
 import type { FrontendSettingsPayload } from '@/types/settings/frontend-settings';
 import type { BaseMessage } from '@/types/messages';
 import type { SettingsUpdate } from '@/types/user';

@@ -2,7 +2,9 @@ import { Blockchain } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
 import { isBtcChain } from '@/types/blockchain/chains';
-import { XpubPrefix } from '@/utils/xpub';
+import { XpubPrefix, getKeyType, isPrefixed } from '@/utils/xpub';
+import { getAccountAddress, getChain } from '@/utils/blockchain/accounts/utils';
+import { logger } from '@/utils/logging';
 import type { Module } from '@/types/modules';
 import type {
   AccountPayload,

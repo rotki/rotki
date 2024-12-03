@@ -1,6 +1,8 @@
 import { Severity } from '@rotki/common';
 import { Section, Status } from '@/types/status';
 import { TaskType } from '@/types/task-type';
+import { logger } from '@/utils/logging';
+import { isTaskCancelled } from '@/utils/index';
 import type { TaskMeta } from '@/types/task';
 import type { FetchData } from '@/types/fetch';
 import type { Ref } from 'vue';

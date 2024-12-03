@@ -1,13 +1,21 @@
 import { camelCase, isEmpty } from 'lodash-es';
 import { type AssetBalance, type Balance, Blockchain } from '@rotki/common';
 import { type MaybeRef, objectOmit } from '@vueuse/core';
+import { aggregateTotals, getAccountBalance, hasAccountAddress, hasTokens, sortAndFilterAccounts } from '@/utils/blockchain/accounts';
+import { mergeAssociatedAssets, sum } from '@/utils/balances';
+import { updateBlockchainAssetBalances } from '@/utils/prices';
+import { removeTags } from '@/utils/tags';
+import { sortDesc } from '@/utils/bignumbers';
+import { createAccountWithBalance } from '@/utils/blockchain/accounts/create';
+import { getAccountAddress, getAccountLabel } from '@/utils/blockchain/accounts/utils';
+import { assetSum } from '@/utils/calculation';
+import { uniqueStrings } from '@/utils/data';
 import type {
   AccountPayload,
   Accounts,
   AssetBreakdown,
   Balances,
   BlockchainAccount,
-  BlockchainAccountData,
   BlockchainAccountGroupRequestPayload,
   BlockchainAccountGroupWithBalance,
   BlockchainAccountRequestPayload,
@@ -160,7 +168,7 @@ export const useBlockchainStore = defineStore('blockchain', () => {
     const { address, label, tags } = data;
 
     for (const chain in allAccounts) {
-      const accounts: BlockchainAccount<BlockchainAccountData>[] = [];
+      const accounts: BlockchainAccount[] = [];
       for (const account of allAccounts[chain]) {
         if (getAccountAddress(account) !== address) {
           accounts.push(account);

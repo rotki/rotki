@@ -4,6 +4,7 @@ import { HistoryEventEntryType } from '@rotki/common';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import flushPromises from 'flush-promises';
 import HistoryEventForm from '@/components/history/events/HistoryEventForm.vue';
+import { setupDayjs } from '@/utils/date';
 
 vi.mock('@/store/balances/prices', () => ({
   useBalancePricesStore: vi.fn().mockReturnValue({

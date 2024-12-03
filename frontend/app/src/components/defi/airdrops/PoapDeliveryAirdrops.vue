@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import images from './poap.json';
+import images from '@/components/defi/airdrops/poap.json';
 import type { DataTableColumn } from '@rotki/ui-library';
 import type { PoapDeliveryDetails } from '@/types/defi/airdrops';
 

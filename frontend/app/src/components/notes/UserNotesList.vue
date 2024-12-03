@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { logger } from '@/utils/logging';
+import { getCollectionData, setupEntryLimit } from '@/utils/collection';
 import UserNotesFormDialog from '@/components/notes/UserNotesFormDialog.vue';
 import type { UserNote, UserNotesRequestPayload } from '@/types/notes';
 

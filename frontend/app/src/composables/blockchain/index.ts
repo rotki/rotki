@@ -3,6 +3,9 @@ import { startPromise } from '@shared/utils';
 import { TaskType } from '@/types/task-type';
 import { isBlockchain } from '@/types/blockchain/chains';
 import { Section } from '@/types/status';
+import { logger } from '@/utils/logging';
+import { isTaskCancelled } from '@/utils';
+import { awaitParallelExecution } from '@/utils/await-parallel-execution';
 import type { MaybeRef } from '@vueuse/core';
 import type { AccountPayload, AddAccountsPayload, XpubAccountPayload } from '@/types/blockchain/accounts';
 import type { TaskMeta } from '@/types/task';
@@ -167,7 +170,7 @@ export function useBlockchains(): UseBlockchainsReturn {
 
         usedChains.forEach((chain) => {
           if (!isBlockchain(chain)) {
-            logger.error(`${chain} was not a valid blockchain`);
+            logger.error(`${chain.toString()} was not a valid blockchain`);
             return;
           }
 

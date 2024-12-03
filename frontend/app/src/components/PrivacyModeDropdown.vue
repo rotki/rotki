@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { generateRandomScrambleMultiplier } from '@/utils/session';
+
 const { t } = useI18n();
 
 const labels = [

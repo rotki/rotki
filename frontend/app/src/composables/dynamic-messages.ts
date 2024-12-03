@@ -3,6 +3,7 @@ import { checkIfDevelopment } from '@shared/utils';
 import { api } from '@/services/rotkehlchen-api';
 import { DashboardSchema, type VisibilityPeriod, WelcomeSchema } from '@/types/dynamic-messages';
 import { camelCaseTransformer } from '@/services/axios-tranformers';
+import { logger } from '@/utils/logging';
 
 export const serializer = {
   read: (v: any): any => (v ? JSON.parse(v) : null),

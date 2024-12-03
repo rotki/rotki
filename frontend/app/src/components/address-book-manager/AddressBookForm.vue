@@ -3,6 +3,7 @@ import { each } from 'lodash-es';
 import { Blockchain } from '@rotki/common';
 import { helpers, required, requiredIf } from '@vuelidate/validators';
 import { toMessages } from '@/utils/validation';
+import { nullDefined, useSimplePropVModel } from '@/utils/model';
 import type { SelectOptions } from '@/types/common';
 import type { AddressBookLocation, AddressBookPayload } from '@/types/eth-names';
 

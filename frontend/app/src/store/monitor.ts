@@ -1,5 +1,6 @@
 import { startPromise } from '@shared/utils';
 import { isEqual } from 'lodash-es';
+import { logger } from '@/utils/logging';
 import { BalanceSource } from '@/types/settings/frontend-settings';
 
 const PERIODIC = 'periodic';

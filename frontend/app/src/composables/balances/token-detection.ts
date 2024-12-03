@@ -1,4 +1,5 @@
 import { TaskType } from '@/types/task-type';
+import { awaitParallelExecution } from '@/utils/await-parallel-execution';
 import type { MaybeRef } from '@vueuse/core';
 import type { EthDetectedTokensInfo } from '@/types/balances';
 import type { ComputedRef } from 'vue';

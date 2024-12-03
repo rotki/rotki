@@ -8,6 +8,7 @@ import {
 import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
 import { handleResponse, validWithSessionAndExternalService } from '@/services/utils';
+import { nonEmptyProperties } from '@/utils/data';
 import type { PendingTask } from '@/types/task';
 
 interface UseEth2ApiReturn {

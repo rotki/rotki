@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Blockchain, type Eth2ValidatorEntry, type EthStakingFilter } from '@rotki/common';
+import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 
 defineProps<{

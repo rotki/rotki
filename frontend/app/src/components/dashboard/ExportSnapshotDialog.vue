@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import dayjs from 'dayjs';
+import { downloadFileByBlobResponse } from '@/utils/download';
+import { bigNumberifyFromRef } from '@/utils/bignumbers';
 import type { BigNumber, Message } from '@rotki/common';
 
 const display = defineModel<boolean>({ required: true, default: false });

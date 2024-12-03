@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { isBtcChain } from '@/types/blockchain/chains';
 import { InputMode } from '@/types/input-mode';
+import { isOfEnum } from '@/utils';
 
 const props = defineProps<{
   blockchain: string;

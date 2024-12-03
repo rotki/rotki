@@ -1,5 +1,5 @@
-import { Defaults } from '@/data/defaults';
 import { type AccountingSettings, CostBasisMethod, type GeneralSettings } from '@/types/user';
+import { Defaults } from '@/data/defaults';
 import type { Currency } from '@/types/currencies';
 
 export function defaultGeneralSettings(mainCurrency: Currency): GeneralSettings {

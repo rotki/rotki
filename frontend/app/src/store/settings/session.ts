@@ -1,5 +1,6 @@
 import { TimeFramePeriod } from '@rotki/common';
 import { PrivacyMode, type SessionSettings } from '@/types/session';
+import { generateRandomScrambleMultiplier } from '@/utils/session';
 import type { ActionStatus } from '@/types/action';
 import type { Exchange } from '@/types/exchanges';
 

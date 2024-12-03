@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { logger } from '@/utils/logging';
 import type { Tag } from '@/types/tags';
 
 const modelValue = defineModel<string[]>({ required: true });

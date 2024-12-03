@@ -3,6 +3,7 @@ import { between, required, requiredIf } from '@vuelidate/validators';
 import { isEmpty } from 'lodash-es';
 import useVuelidate from '@vuelidate/core';
 import { toMessages } from '@/utils/validation';
+import { useRefPropVModel, useSimplePropVModel } from '@/utils/model';
 import type { ValidationErrors } from '@/types/api/errors';
 import type { EvmRpcNodeManageState } from '@/types/settings/rpc';
 

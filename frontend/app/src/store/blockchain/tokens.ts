@@ -1,5 +1,8 @@
 import { isEqual } from 'lodash-es';
 import { TaskType } from '@/types/task-type';
+import { awaitParallelExecution } from '@/utils/await-parallel-execution';
+import { logger } from '@/utils/logging';
+import { isTaskCancelled } from '@/utils';
 import type { MaybeRef } from '@vueuse/core';
 import type { TaskMeta } from '@/types/task';
 import type { EthDetectedTokensInfo, EvmTokensRecord } from '@/types/balances';

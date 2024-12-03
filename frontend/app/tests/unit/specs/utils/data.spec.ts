@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { nonEmptyProperties, toRem } from '@/utils/data';
 
 describe('utils/data', () => {
   it('returns a partial object without the null properties', () => {

@@ -2,6 +2,7 @@ import { camelCase } from 'lodash-es';
 import { etherscanLinks, externalLinks } from '@shared/external-links';
 import { pslSuffixes } from '@/data/psl';
 import { isEtherscanKey } from '@/types/external';
+import { logger } from '@/utils/logging';
 import type { RouteLocationRaw } from 'vue-router';
 
 export function getDomain(str: string): string {

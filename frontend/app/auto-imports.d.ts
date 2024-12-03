@@ -26,11 +26,7 @@ declare global {
   const EvmTokenKind: typeof import('@rotki/common')['EvmTokenKind']
   const EvmTokenKindEnum: typeof import('@rotki/common')['EvmTokenKindEnum']
   const HistoryEventEntryType: typeof import('@rotki/common')['HistoryEventEntryType']
-  const IndexedDb: typeof import('./src/utils/indexed-db')['IndexedDb']
-  const KEY_BACKEND_URL: typeof import('./src/utils/account-management')['KEY_BACKEND_URL']
-  const KEY_BACKEND_URL_SESSION_ONLY: typeof import('./src/utils/account-management')['KEY_BACKEND_URL_SESSION_ONLY']
   const LIGHT_THEME: typeof import('@rotki/common')['LIGHT_THEME']
-  const LimitedParallelizationQueue: typeof import('./src/utils/limited-parallelization-queue')['LimitedParallelizationQueue']
   const LiquityBalances: typeof import('@rotki/common')['LiquityBalances']
   const LiquityBalancesWithCollateralInfo: typeof import('@rotki/common')['LiquityBalancesWithCollateralInfo']
   const LiquityPoolDetail: typeof import('@rotki/common')['LiquityPoolDetail']
@@ -75,8 +71,6 @@ declare global {
   const TimedAssetBalances: typeof import('@rotki/common')['TimedAssetBalances']
   const TimedBalances: typeof import('@rotki/common')['TimedBalances']
   const UnderlyingToken: typeof import('@rotki/common')['UnderlyingToken']
-  const Unit: typeof import('./src/utils/calculation')['Unit']
-  const XpubPrefix: typeof import('./src/utils/xpub')['XpubPrefix']
   const XswapAsset: typeof import('@rotki/common')['XswapAsset']
   const XswapBalance: typeof import('@rotki/common')['XswapBalance']
   const XswapBalances: typeof import('@rotki/common')['XswapBalances']
@@ -84,31 +78,13 @@ declare global {
   const XswapPool: typeof import('@rotki/common')['XswapPool']
   const Zero: typeof import('@rotki/common')['Zero']
   const acceptHMRUpdate: typeof import('pinia')['acceptHMRUpdate']
-  const aggregateTotal: typeof import('./src/utils/calculation')['aggregateTotal']
-  const aggregateTotals: typeof import('./src/utils/blockchain/accounts/index')['aggregateTotals']
-  const appendAssetBalance: typeof import('./src/utils/balances')['appendAssetBalance']
   const applyPaginationDefaults: typeof import('./src/composables/use-pagination-filter/utils')['applyPaginationDefaults']
   const applySortingDefaults: typeof import('./src/composables/use-pagination-filter/utils')['applySortingDefaults']
-  const arrayify: typeof import('./src/utils/array')['arrayify']
   const assert: typeof import('@rotki/common')['assert']
-  const assetFilterByKeyword: typeof import('./src/utils/assets')['assetFilterByKeyword']
-  const assetSum: typeof import('./src/utils/calculation')['assetSum']
   const assetSymbolToIdentifierMap: typeof import('@rotki/common')['assetSymbolToIdentifierMap']
   const asyncComputed: typeof import('@vueuse/core')['asyncComputed']
-  const attemptPolyfillResizeObserver: typeof import('./src/utils/cypress')['attemptPolyfillResizeObserver']
   const autoResetRef: typeof import('@vueuse/core')['autoResetRef']
-  const awaitParallelExecution: typeof import('./src/utils/await-parallel-execution')['awaitParallelExecution']
-  const balanceSum: typeof import('./src/utils/calculation')['balanceSum']
-  const balanceUsdValueSum: typeof import('./src/utils/balances')['balanceUsdValueSum']
-  const bigNumberSum: typeof import('./src/utils/calculation')['bigNumberSum']
   const bigNumberify: typeof import('@rotki/common')['bigNumberify']
-  const bigNumberifyFromRef: typeof import('./src/utils/bignumbers')['bigNumberifyFromRef']
-  const calculatePercentage: typeof import('./src/utils/calculation')['calculatePercentage']
-  const calculateTotalProfitLoss: typeof import('./src/utils/report')['calculateTotalProfitLoss']
-  const changeDateFormat: typeof import('./src/utils/date')['changeDateFormat']
-  const checkBeforeSubmission: typeof import('./src/utils/validation')['checkBeforeSubmission']
-  const chunkArray: typeof import('./src/utils/data')['chunkArray']
-  const compareTextByKeyword: typeof import('./src/utils/assets')['compareTextByKeyword']
   const computed: typeof import('vue')['computed']
   const computedAsync: typeof import('@vueuse/core')['computedAsync']
   const computedEager: typeof import('@vueuse/core')['computedEager']
@@ -118,22 +94,13 @@ declare global {
   const contextColors: typeof import('@rotki/ui-library')['contextColors']
   const controlledComputed: typeof import('@vueuse/core')['controlledComputed']
   const controlledRef: typeof import('@vueuse/core')['controlledRef']
-  const convertBtcAccounts: typeof import('./src/utils/blockchain/accounts/index')['convertBtcAccounts']
-  const convertBtcBalances: typeof import('./src/utils/blockchain/accounts/index')['convertBtcBalances']
-  const convertDateByTimezone: typeof import('./src/utils/date')['convertDateByTimezone']
-  const convertFromTimestamp: typeof import('./src/utils/date')['convertFromTimestamp']
-  const convertToTimestamp: typeof import('./src/utils/date')['convertToTimestamp']
-  const createAccount: typeof import('./src/utils/blockchain/accounts/create')['createAccount']
-  const createAccountWithBalance: typeof import('./src/utils/blockchain/accounts/create')['createAccountWithBalance']
   const createApp: typeof import('vue')['createApp']
-  const createBlockie: typeof import('./src/utils/blockie')['createBlockie']
   const createEventHook: typeof import('@vueuse/core')['createEventHook']
   const createEvmIdentifierFromAddress: typeof import('@rotki/common')['createEvmIdentifierFromAddress']
   const createGenericProjection: typeof import('@vueuse/math')['createGenericProjection']
   const createGlobalState: typeof import('@vueuse/core')['createGlobalState']
   const createInjectionState: typeof import('@vueuse/core')['createInjectionState']
   const createNewBlockchainAccount: typeof import('./src/composables/accounts/blockchain/use-account-manage')['createNewBlockchainAccount']
-  const createNotification: typeof import('./src/utils/notifications')['createNotification']
   const createPinia: typeof import('pinia')['createPinia']
   const createProjection: typeof import('@vueuse/math')['createProjection']
   const createReactiveFn: typeof import('@vueuse/core')['createReactiveFn']
@@ -141,150 +108,58 @@ declare global {
   const createSharedComposable: typeof import('@vueuse/core')['createSharedComposable']
   const createTemplatePromise: typeof import('@vueuse/core')['createTemplatePromise']
   const createUnrefFn: typeof import('@vueuse/core')['createUnrefFn']
-  const createValidatorAccount: typeof import('./src/utils/blockchain/accounts/create')['createValidatorAccount']
-  const createXpubAccount: typeof import('./src/utils/blockchain/accounts/create')['createXpubAccount']
   const customRef: typeof import('vue')['customRef']
   const customTimeframe: typeof import('@rotki/common')['customTimeframe']
   const debouncedRef: typeof import('@vueuse/core')['debouncedRef']
   const debouncedWatch: typeof import('@vueuse/core')['debouncedWatch']
   const decodeHtmlEntities: typeof import('@rotki/common')['decodeHtmlEntities']
-  const defaultCollectionState: typeof import('./src/utils/collection')['defaultCollectionState']
   const defineAsyncComponent: typeof import('vue')['defineAsyncComponent']
   const defineComponent: typeof import('vue')['defineComponent']
   const defineStore: typeof import('pinia')['defineStore']
-  const deleteBackendUrl: typeof import('./src/utils/account-management')['deleteBackendUrl']
-  const downloadFileByBlobResponse: typeof import('./src/utils/download')['downloadFileByBlobResponse']
-  const downloadFileByTextContent: typeof import('./src/utils/download')['downloadFileByTextContent']
-  const downloadFileByUrl: typeof import('./src/utils/download')['downloadFileByUrl']
   const eagerComputed: typeof import('@vueuse/core')['eagerComputed']
   const editBlockchainAccount: typeof import('./src/composables/accounts/blockchain/use-account-manage')['editBlockchainAccount']
   const effectScope: typeof import('vue')['effectScope']
   const extendRef: typeof import('@vueuse/core')['extendRef']
-  const fetchDataAsync: typeof import('./src/utils/fetch-async')['fetchDataAsync']
-  const filterAddresses: typeof import('./src/utils/addresses')['filterAddresses']
-  const filterAddressesFromWords: typeof import('./src/utils/history/index')['filterAddressesFromWords']
-  const findAddressKnownPrefix: typeof import('./src/utils/truncate')['findAddressKnownPrefix']
-  const fromUriEncoded: typeof import('./src/utils/route-uri')['fromUriEncoded']
-  const generateRandomScrambleMultiplier: typeof import('./src/utils/session')['generateRandomScrambleMultiplier']
   const get: typeof import('@vueuse/shared')['get']
-  const getAccountAddress: typeof import('./src/utils/blockchain/accounts/utils')['getAccountAddress']
-  const getAccountBalance: typeof import('./src/utils/blockchain/accounts/index')['getAccountBalance']
-  const getAccountId: typeof import('./src/utils/blockchain/accounts/utils')['getAccountId']
-  const getAccountLabel: typeof import('./src/utils/blockchain/accounts/utils')['getAccountLabel']
   const getActivePinia: typeof import('pinia')['getActivePinia']
   const getAddressFromEvmIdentifier: typeof import('@rotki/common')['getAddressFromEvmIdentifier']
-  const getAddressesFromWallet: typeof import('./src/utils/metamask')['getAddressesFromWallet']
-  const getAllBrowserWalletProviders: typeof import('./src/utils/metamask')['getAllBrowserWalletProviders']
   const getApiSortingParams: typeof import('./src/composables/use-pagination-filter/utils')['getApiSortingParams']
-  const getBackendUrl: typeof import('./src/utils/account-management')['getBackendUrl']
-  const getBalances: typeof import('./src/utils/defi/xswap')['getBalances']
-  const getChain: typeof import('./src/utils/blockchain/accounts/utils')['getChain']
-  const getCollectionData: typeof import('./src/utils/collection')['getCollectionData']
   const getCurrentInstance: typeof import('vue')['getCurrentInstance']
   const getCurrentScope: typeof import('vue')['getCurrentScope']
-  const getDateInputISOFormat: typeof import('./src/utils/date')['getDateInputISOFormat']
-  const getDayNames: typeof import('./src/utils/date')['getDayNames']
-  const getDefaultFrontendLogLevel: typeof import('./src/utils/logging')['getDefaultFrontendLogLevel']
-  const getDefaultLogLevel: typeof import('./src/utils/logging')['getDefaultLogLevel']
-  const getDomain: typeof import('./src/utils/url')['getDomain']
-  const getEthAddressesFromText: typeof import('./src/utils/history/index')['getEthAddressesFromText']
-  const getEtherScanRegisterUrl: typeof import('./src/utils/url')['getEtherScanRegisterUrl']
-  const getFilepath: typeof import('./src/utils/backups')['getFilepath']
-  const getGroupId: typeof import('./src/utils/blockchain/accounts/utils')['getGroupId']
   const getIdentifierFromSymbolMap: typeof import('@rotki/common')['getIdentifierFromSymbolMap']
-  const getKeyType: typeof import('./src/utils/xpub')['getKeyType']
-  const getNonRootAttrs: typeof import('./src/utils/attrs')['getNonRootAttrs']
-  const getPlaceholderRule: typeof import('./src/utils/settings')['getPlaceholderRule']
-  const getPoolProfit: typeof import('./src/utils/defi/xswap')['getPoolProfit']
-  const getPools: typeof import('./src/utils/defi/xswap')['getPools']
-  const getPrefix: typeof import('./src/utils/xpub')['getPrefix']
-  const getProtocolAddresses: typeof import('./src/utils/addresses')['getProtocolAddresses']
-  const getRootAttrs: typeof import('./src/utils/attrs')['getRootAttrs']
-  const getRootKeys: typeof import('./src/utils/attrs')['getRootKeys']
-  const getServiceRegisterUrl: typeof import('./src/utils/url')['getServiceRegisterUrl']
-  const getSortItems: typeof import('./src/utils/assets')['getSortItems']
-  const getTags: typeof import('./src/utils/tags')['getTags']
   const getTextToken: typeof import('@rotki/common')['getTextToken']
-  const getTheGraphRegisterUrl: typeof import('./src/utils/url')['getTheGraphRegisterUrl']
   const getTimeframeByRange: typeof import('@rotki/common')['getTimeframeByRange']
   const getValidSelectorFromEvmAddress: typeof import('@rotki/common')['getValidSelectorFromEvmAddress']
-  const groupAssetBreakdown: typeof import('./src/utils/balances')['groupAssetBreakdown']
-  const groupConsecutiveNumbers: typeof import('./src/utils/text')['groupConsecutiveNumbers']
-  const guessTimezone: typeof import('./src/utils/date')['guessTimezone']
   const h: typeof import('vue')['h']
-  const hasAccountAddress: typeof import('./src/utils/blockchain/accounts/index')['hasAccountAddress']
-  const hasTokens: typeof import('./src/utils/blockchain/accounts/index')['hasTokens']
   const hexToRgbPoints: typeof import('@rotki/common')['hexToRgbPoints']
   const ignorableWatch: typeof import('@vueuse/core')['ignorableWatch']
-  const includes: typeof import('./src/utils/blockchain/accounts/common')['includes']
   const initGraph: typeof import('./src/composables/graphs')['initGraph']
   const inject: typeof import('vue')['inject']
   const injectLocal: typeof import('@vueuse/core')['injectLocal']
   const invertColor: typeof import('@rotki/common')['invertColor']
-  const isAccountWithBalanceValidator: typeof import('./src/utils/blockchain/accounts/index')['isAccountWithBalanceValidator']
-  const isAccountingRuleProcessed: typeof import('./src/utils/history/events')['isAccountingRuleProcessed']
   const isDefined: typeof import('@vueuse/core')['isDefined']
-  const isEthBlockEvent: typeof import('./src/utils/history/events')['isEthBlockEvent']
-  const isEthBlockEventRef: typeof import('./src/utils/history/events')['isEthBlockEventRef']
-  const isEthBlockEventType: typeof import('./src/utils/history/events')['isEthBlockEventType']
-  const isEthDepositEvent: typeof import('./src/utils/history/events')['isEthDepositEvent']
-  const isEthDepositEventRef: typeof import('./src/utils/history/events')['isEthDepositEventRef']
-  const isEthDepositEventType: typeof import('./src/utils/history/events')['isEthDepositEventType']
-  const isEventAccountingRuleProcessed: typeof import('./src/utils/history/events')['isEventAccountingRuleProcessed']
-  const isEventMissingAccountingRule: typeof import('./src/utils/history/events')['isEventMissingAccountingRule']
-  const isEvmEvent: typeof import('./src/utils/history/events')['isEvmEvent']
-  const isEvmEventRef: typeof import('./src/utils/history/events')['isEvmEventRef']
-  const isEvmEventType: typeof import('./src/utils/history/events')['isEvmEventType']
   const isEvmIdentifier: typeof import('@rotki/common')['isEvmIdentifier']
-  const isFilterEnabled: typeof import('./src/utils/blockchain/accounts/common')['isFilterEnabled']
-  const isMissingAccountingRule: typeof import('./src/utils/history/events')['isMissingAccountingRule']
-  const isNft: typeof import('./src/utils/nft')['isNft']
-  const isOfEnum: typeof import('./src/utils/index')['isOfEnum']
-  const isOfEventType: typeof import('./src/utils/history/events')['isOfEventType']
-  const isOnlineHistoryEvent: typeof import('./src/utils/history/events')['isOnlineHistoryEvent']
-  const isOnlineHistoryEventRef: typeof import('./src/utils/history/events')['isOnlineHistoryEventRef']
-  const isOnlineHistoryEventType: typeof import('./src/utils/history/events')['isOnlineHistoryEventType']
-  const isPeriodAllowed: typeof import('./src/utils/settings')['isPeriodAllowed']
-  const isPrefixed: typeof import('./src/utils/xpub')['isPrefixed']
   const isProxy: typeof import('vue')['isProxy']
   const isReactive: typeof import('vue')['isReactive']
   const isReadonly: typeof import('vue')['isReadonly']
   const isRef: typeof import('vue')['isRef']
-  const isTaskCancelled: typeof import('./src/utils/index')['isTaskCancelled']
-  const isTransactionEvent: typeof import('./src/utils/report')['isTransactionEvent']
   const isValidBchAddress: typeof import('@rotki/common')['isValidBchAddress']
   const isValidBtcAddress: typeof import('@rotki/common')['isValidBtcAddress']
-  const isValidDate: typeof import('./src/utils/date')['isValidDate']
   const isValidEthAddress: typeof import('@rotki/common')['isValidEthAddress']
   const isValidTxHash: typeof import('@rotki/common')['isValidTxHash']
   const isValidUrl: typeof import('@rotki/common')['isValidUrl']
-  const isWithdrawalEvent: typeof import('./src/utils/history/events')['isWithdrawalEvent']
-  const isWithdrawalEventRef: typeof import('./src/utils/history/events')['isWithdrawalEventRef']
-  const isWithdrawalEventType: typeof import('./src/utils/history/events')['isWithdrawalEventType']
-  const iterateAssets: typeof import('./src/utils/blockchain/accounts/index')['iterateAssets']
-  const keyType: typeof import('./src/utils/xpub')['keyType']
-  const lastLogin: typeof import('./src/utils/account-management')['lastLogin']
   const loadUserOptions: typeof import('./src/composables/backend')['loadUserOptions']
-  const logger: typeof import('./src/utils/logging')['logger']
-  const loggerWithTag: typeof import('./src/utils/logging')['loggerWithTag']
   const logicAnd: typeof import('@vueuse/math')['logicAnd']
   const logicNot: typeof import('@vueuse/math')['logicNot']
   const logicOr: typeof import('@vueuse/math')['logicOr']
   const makeDestructurable: typeof import('@vueuse/core')['makeDestructurable']
   const mapActions: typeof import('pinia')['mapActions']
-  const mapCollectionEntriesWithMeta: typeof import('./src/utils/history/index')['mapCollectionEntriesWithMeta']
-  const mapCollectionResponse: typeof import('./src/utils/collection')['mapCollectionResponse']
   const mapGetters: typeof import('pinia')['mapGetters']
   const mapState: typeof import('pinia')['mapState']
   const mapStores: typeof import('pinia')['mapStores']
-  const mapToFrontendLogLevel: typeof import('./src/utils/logging')['mapToFrontendLogLevel']
   const mapWritableState: typeof import('pinia')['mapWritableState']
   const markRaw: typeof import('vue')['markRaw']
-  const mergeAssetBalances: typeof import('./src/utils/balances')['mergeAssetBalances']
-  const mergeAssociatedAssets: typeof import('./src/utils/balances')['mergeAssociatedAssets']
   const nextTick: typeof import('vue')['nextTick']
-  const nonEmptyProperties: typeof import('./src/utils/data')['nonEmptyProperties']
-  const nullDefined: typeof import('./src/utils/model/index')['nullDefined']
   const onActivated: typeof import('vue')['onActivated']
   const onBeforeMount: typeof import('vue')['onBeforeMount']
   const onBeforeRouteLeave: typeof import('vue-router')['onBeforeRouteLeave']
@@ -326,43 +201,23 @@ declare global {
   const refDebounced: typeof import('@vueuse/core')['refDebounced']
   const refDefault: typeof import('@vueuse/core')['refDefault']
   const refIsTruthy: typeof import('./src/composables/ref')['refIsTruthy']
-  const refOptional: typeof import('./src/utils/model/index')['refOptional']
   const refThrottled: typeof import('@vueuse/core')['refThrottled']
   const refWithControl: typeof import('@vueuse/core')['refWithControl']
-  const removeKey: typeof import('./src/utils/data')['removeKey']
-  const removeTags: typeof import('./src/utils/tags')['removeTags']
-  const removeZeroAssets: typeof import('./src/utils/balances')['removeZeroAssets']
   const resetState: typeof import('./src/store/plugins')['resetState']
   const resolveComponent: typeof import('vue')['resolveComponent']
   const resolveRef: typeof import('@vueuse/core')['resolveRef']
   const resolveUnref: typeof import('@vueuse/core')['resolveUnref']
   const rgbPointsToHex: typeof import('@rotki/common')['rgbPointsToHex']
   const sanitizeAddress: typeof import('@rotki/common')['sanitizeAddress']
-  const saveBackendUrl: typeof import('./src/utils/account-management')['saveBackendUrl']
   const saveUserOptions: typeof import('./src/composables/backend')['saveUserOptions']
   const serializer: typeof import('./src/composables/dynamic-messages')['serializer']
   const set: typeof import('@vueuse/shared')['set']
   const setActivePinia: typeof import('pinia')['setActivePinia']
-  const setLastLogin: typeof import('./src/utils/account-management')['setLastLogin']
-  const setLevel: typeof import('./src/utils/logging')['setLevel']
   const setMapStoreSuffix: typeof import('pinia')['setMapStoreSuffix']
-  const setupDayjs: typeof import('./src/utils/date')['setupDayjs']
-  const setupEntryLimit: typeof import('./src/utils/collection')['setupEntryLimit']
-  const setupFormatter: typeof import('./src/utils/setup-formatter')['setupFormatter']
   const shallowReactive: typeof import('vue')['shallowReactive']
   const shallowReadonly: typeof import('vue')['shallowReadonly']
   const shallowRef: typeof import('vue')['shallowRef']
-  const size: typeof import('./src/utils/data')['size']
-  const sortAndFilterAccounts: typeof import('./src/utils/blockchain/accounts/index')['sortAndFilterAccounts']
-  const sortAndFilterManualBalance: typeof import('./src/utils/balances/manual/manual-balances')['sortAndFilterManualBalance']
-  const sortAndFilterValidators: typeof import('./src/utils/blockchain/accounts/validator')['sortAndFilterValidators']
-  const sortAssetBalances: typeof import('./src/utils/balances')['sortAssetBalances']
-  const sortBy: typeof import('./src/utils/blockchain/accounts/common')['sortBy']
-  const sortDesc: typeof import('./src/utils/bignumbers')['sortDesc']
-  const splitSearch: typeof import('./src/utils/search')['splitSearch']
   const storeToRefs: typeof import('pinia')['storeToRefs']
-  const sum: typeof import('./src/utils/balances')['sum']
-  const sumAssetBalances: typeof import('./src/utils/balances')['sumAssetBalances']
   const syncRef: typeof import('@vueuse/core')['syncRef']
   const syncRefs: typeof import('@vueuse/core')['syncRefs']
   const templateRef: typeof import('@vueuse/core')['templateRef']
@@ -370,42 +225,24 @@ declare global {
   const throttledWatch: typeof import('@vueuse/core')['throttledWatch']
   const timeframes: typeof import('@rotki/common')['timeframes']
   const toCapitalCase: typeof import('@rotki/common')['toCapitalCase']
-  const toEvmChainAndTxHash: typeof import('./src/utils/history/index')['toEvmChainAndTxHash']
   const toHumanReadable: typeof import('@rotki/common')['toHumanReadable']
-  const toMessages: typeof import('./src/utils/validation')['toMessages']
-  const toProfitLossModel: typeof import('./src/utils/defi/index')['toProfitLossModel']
   const toRaw: typeof import('vue')['toRaw']
   const toReactive: typeof import('@vueuse/core')['toReactive']
   const toRef: typeof import('vue')['toRef']
   const toRefs: typeof import('vue')['toRefs']
-  const toRem: typeof import('./src/utils/data')['toRem']
   const toSentenceCase: typeof import('@rotki/common')['toSentenceCase']
   const toSnakeCase: typeof import('@rotki/common')['toSnakeCase']
-  const toUnit: typeof import('./src/utils/calculation')['toUnit']
-  const toUriEncoded: typeof import('./src/utils/route-uri')['toUriEncoded']
   const toValue: typeof import('vue')['toValue']
-  const totalCollateral: typeof import('./src/utils/total-collateral')['totalCollateral']
   const transformCase: typeof import('@rotki/common')['transformCase']
-  const transformEntryWithMeta: typeof import('./src/utils/history/index')['transformEntryWithMeta']
   const triggerRef: typeof import('vue')['triggerRef']
-  const trimOnPaste: typeof import('./src/utils/event')['trimOnPaste']
-  const truncateAddress: typeof import('./src/utils/truncate')['truncateAddress']
-  const truncationPoints: typeof import('./src/utils/truncate')['truncationPoints']
   const tryOnBeforeMount: typeof import('@vueuse/core')['tryOnBeforeMount']
   const tryOnBeforeUnmount: typeof import('@vueuse/core')['tryOnBeforeUnmount']
   const tryOnMounted: typeof import('@vueuse/core')['tryOnMounted']
   const tryOnScopeDispose: typeof import('@vueuse/core')['tryOnScopeDispose']
   const tryOnUnmounted: typeof import('@vueuse/core')['tryOnUnmounted']
-  const uniqueObjects: typeof import('./src/utils/data')['uniqueObjects']
-  const uniqueStrings: typeof import('./src/utils/data')['uniqueStrings']
   const unref: typeof import('vue')['unref']
   const unrefElement: typeof import('@vueuse/core')['unrefElement']
   const until: typeof import('@vueuse/core')['until']
-  const updateAssetBalances: typeof import('./src/utils/prices')['updateAssetBalances']
-  const updateBalancesPrices: typeof import('./src/utils/prices')['updateBalancesPrices']
-  const updateBlockchainAssetBalances: typeof import('./src/utils/prices')['updateBlockchainAssetBalances']
-  const updateBtcPrices: typeof import('./src/utils/prices')['updateBtcPrices']
-  const updateTotalsPrices: typeof import('./src/utils/prices')['updateTotalsPrices']
   const useAaveApi: typeof import('./src/composables/api/defi/aave')['useAaveApi']
   const useAaveStore: typeof import('./src/store/defi/aave/index')['useAaveStore']
   const useAbs: typeof import('@vueuse/math')['useAbs']
@@ -707,7 +544,6 @@ declare global {
   const usePriceApi: typeof import('./src/composables/api/balances/price')['usePriceApi']
   const usePrivacyMode: typeof import('./src/composables/privacy')['usePrivacyMode']
   const useProjection: typeof import('@vueuse/math')['useProjection']
-  const usePropVModel: typeof import('./src/utils/model/index')['usePropVModel']
   const useQueriedAddressApi: typeof import('./src/composables/api/session/queried-addresses')['useQueriedAddressApi']
   const useQueriedAddressesStore: typeof import('./src/store/session/queried-addresses')['useQueriedAddressesStore']
   const useQueryStatus: typeof import('./src/composables/history/events/query-status/index')['useQueryStatus']
@@ -716,7 +552,6 @@ declare global {
   const useRandomStepper: typeof import('./src/composables/random-stepper')['useRandomStepper']
   const useRefHistory: typeof import('@vueuse/core')['useRefHistory']
   const useRefMap: typeof import('./src/composables/utils/useRefMap/index')['useRefMap']
-  const useRefPropVModel: typeof import('./src/utils/model/index')['useRefPropVModel']
   const useRefresh: typeof import('./src/composables/balances/refresh')['useRefresh']
   const useReportsApi: typeof import('./src/composables/api/reports/index')['useReportsApi']
   const useReportsStore: typeof import('./src/store/reports/index')['useReportsStore']
@@ -746,8 +581,6 @@ declare global {
   const useSettingsApi: typeof import('./src/composables/api/settings/settings-api')['useSettingsApi']
   const useSettingsStore: typeof import('./src/store/settings/index')['useSettingsStore']
   const useShare: typeof import('@vueuse/core')['useShare']
-  const useSimplePropVModel: typeof import('./src/utils/model/index')['useSimplePropVModel']
-  const useSimpleVModel: typeof import('./src/utils/model/index')['useSimpleVModel']
   const useSkippedHistoryEventsApi: typeof import('./src/composables/api/history/events/skipped')['useSkippedHistoryEventsApi']
   const useSlots: typeof import('vue')['useSlots']
   const useSnapshotApi: typeof import('./src/composables/api/settings/snapshot-api')['useSnapshotApi']
@@ -849,7 +682,6 @@ declare global {
   const watchTriggerable: typeof import('@vueuse/core')['watchTriggerable']
   const watchWithFilter: typeof import('@vueuse/core')['watchWithFilter']
   const whenever: typeof import('@vueuse/core')['whenever']
-  const zeroBalance: typeof import('./src/utils/bignumbers')['zeroBalance']
 }
 // for type re-export
 declare global {
@@ -859,18 +691,6 @@ declare global {
   // @ts-ignore
   export type { SettingLocation } from './src/composables/settings/index'
   import('./src/composables/settings/index')
-  // @ts-ignore
-  export type { Unit } from './src/utils/calculation'
-  import('./src/utils/calculation')
-  // @ts-ignore
-  export type { IndexedDb } from './src/utils/indexed-db'
-  import('./src/utils/indexed-db')
-  // @ts-ignore
-  export type { LimitedParallelizationQueue } from './src/utils/limited-parallelization-queue'
-  import('./src/utils/limited-parallelization-queue')
-  // @ts-ignore
-  export type { XpubPrefix } from './src/utils/xpub'
-  import('./src/utils/xpub')
 }
 
 // for vue template auto import
@@ -898,11 +718,7 @@ declare module 'vue' {
     readonly EvmTokenKind: UnwrapRef<typeof import('@rotki/common')['EvmTokenKind']>
     readonly EvmTokenKindEnum: UnwrapRef<typeof import('@rotki/common')['EvmTokenKindEnum']>
     readonly HistoryEventEntryType: UnwrapRef<typeof import('@rotki/common')['HistoryEventEntryType']>
-    readonly IndexedDb: UnwrapRef<typeof import('./src/utils/indexed-db')['IndexedDb']>
-    readonly KEY_BACKEND_URL: UnwrapRef<typeof import('./src/utils/account-management')['KEY_BACKEND_URL']>
-    readonly KEY_BACKEND_URL_SESSION_ONLY: UnwrapRef<typeof import('./src/utils/account-management')['KEY_BACKEND_URL_SESSION_ONLY']>
     readonly LIGHT_THEME: UnwrapRef<typeof import('@rotki/common')['LIGHT_THEME']>
-    readonly LimitedParallelizationQueue: UnwrapRef<typeof import('./src/utils/limited-parallelization-queue')['LimitedParallelizationQueue']>
     readonly LiquityBalances: UnwrapRef<typeof import('@rotki/common')['LiquityBalances']>
     readonly LiquityBalancesWithCollateralInfo: UnwrapRef<typeof import('@rotki/common')['LiquityBalancesWithCollateralInfo']>
     readonly LiquityPoolDetail: UnwrapRef<typeof import('@rotki/common')['LiquityPoolDetail']>
@@ -947,8 +763,6 @@ declare module 'vue' {
     readonly TimedAssetBalances: UnwrapRef<typeof import('@rotki/common')['TimedAssetBalances']>
     readonly TimedBalances: UnwrapRef<typeof import('@rotki/common')['TimedBalances']>
     readonly UnderlyingToken: UnwrapRef<typeof import('@rotki/common')['UnderlyingToken']>
-    readonly Unit: UnwrapRef<typeof import('./src/utils/calculation')['Unit']>
-    readonly XpubPrefix: UnwrapRef<typeof import('./src/utils/xpub')['XpubPrefix']>
     readonly XswapAsset: UnwrapRef<typeof import('@rotki/common')['XswapAsset']>
     readonly XswapBalance: UnwrapRef<typeof import('@rotki/common')['XswapBalance']>
     readonly XswapBalances: UnwrapRef<typeof import('@rotki/common')['XswapBalances']>
@@ -956,31 +770,13 @@ declare module 'vue' {
     readonly XswapPool: UnwrapRef<typeof import('@rotki/common')['XswapPool']>
     readonly Zero: UnwrapRef<typeof import('@rotki/common')['Zero']>
     readonly acceptHMRUpdate: UnwrapRef<typeof import('pinia')['acceptHMRUpdate']>
-    readonly aggregateTotal: UnwrapRef<typeof import('./src/utils/calculation')['aggregateTotal']>
-    readonly aggregateTotals: UnwrapRef<typeof import('./src/utils/blockchain/accounts/index')['aggregateTotals']>
-    readonly appendAssetBalance: UnwrapRef<typeof import('./src/utils/balances')['appendAssetBalance']>
     readonly applyPaginationDefaults: UnwrapRef<typeof import('./src/composables/use-pagination-filter/utils')['applyPaginationDefaults']>
     readonly applySortingDefaults: UnwrapRef<typeof import('./src/composables/use-pagination-filter/utils')['applySortingDefaults']>
-    readonly arrayify: UnwrapRef<typeof import('./src/utils/array')['arrayify']>
     readonly assert: UnwrapRef<typeof import('@rotki/common')['assert']>
-    readonly assetFilterByKeyword: UnwrapRef<typeof import('./src/utils/assets')['assetFilterByKeyword']>
-    readonly assetSum: UnwrapRef<typeof import('./src/utils/calculation')['assetSum']>
     readonly assetSymbolToIdentifierMap: UnwrapRef<typeof import('@rotki/common')['assetSymbolToIdentifierMap']>
     readonly asyncComputed: UnwrapRef<typeof import('@vueuse/core')['asyncComputed']>
-    readonly attemptPolyfillResizeObserver: UnwrapRef<typeof import('./src/utils/cypress')['attemptPolyfillResizeObserver']>
     readonly autoResetRef: UnwrapRef<typeof import('@vueuse/core')['autoResetRef']>
-    readonly awaitParallelExecution: UnwrapRef<typeof import('./src/utils/await-parallel-execution')['awaitParallelExecution']>
-    readonly balanceSum: UnwrapRef<typeof import('./src/utils/calculation')['balanceSum']>
-    readonly balanceUsdValueSum: UnwrapRef<typeof import('./src/utils/balances')['balanceUsdValueSum']>
-    readonly bigNumberSum: UnwrapRef<typeof import('./src/utils/calculation')['bigNumberSum']>
     readonly bigNumberify: UnwrapRef<typeof import('@rotki/common')['bigNumberify']>
-    readonly bigNumberifyFromRef: UnwrapRef<typeof import('./src/utils/bignumbers')['bigNumberifyFromRef']>
-    readonly calculatePercentage: UnwrapRef<typeof import('./src/utils/calculation')['calculatePercentage']>
-    readonly calculateTotalProfitLoss: UnwrapRef<typeof import('./src/utils/report')['calculateTotalProfitLoss']>
-    readonly changeDateFormat: UnwrapRef<typeof import('./src/utils/date')['changeDateFormat']>
-    readonly checkBeforeSubmission: UnwrapRef<typeof import('./src/utils/validation')['checkBeforeSubmission']>
-    readonly chunkArray: UnwrapRef<typeof import('./src/utils/data')['chunkArray']>
-    readonly compareTextByKeyword: UnwrapRef<typeof import('./src/utils/assets')['compareTextByKeyword']>
     readonly computed: UnwrapRef<typeof import('vue')['computed']>
     readonly computedAsync: UnwrapRef<typeof import('@vueuse/core')['computedAsync']>
     readonly computedEager: UnwrapRef<typeof import('@vueuse/core')['computedEager']>
@@ -990,22 +786,13 @@ declare module 'vue' {
     readonly contextColors: UnwrapRef<typeof import('@rotki/ui-library')['contextColors']>
     readonly controlledComputed: UnwrapRef<typeof import('@vueuse/core')['controlledComputed']>
     readonly controlledRef: UnwrapRef<typeof import('@vueuse/core')['controlledRef']>
-    readonly convertBtcAccounts: UnwrapRef<typeof import('./src/utils/blockchain/accounts/index')['convertBtcAccounts']>
-    readonly convertBtcBalances: UnwrapRef<typeof import('./src/utils/blockchain/accounts/index')['convertBtcBalances']>
-    readonly convertDateByTimezone: UnwrapRef<typeof import('./src/utils/date')['convertDateByTimezone']>
-    readonly convertFromTimestamp: UnwrapRef<typeof import('./src/utils/date')['convertFromTimestamp']>
-    readonly convertToTimestamp: UnwrapRef<typeof import('./src/utils/date')['convertToTimestamp']>
-    readonly createAccount: UnwrapRef<typeof import('./src/utils/blockchain/accounts/create')['createAccount']>
-    readonly createAccountWithBalance: UnwrapRef<typeof import('./src/utils/blockchain/accounts/create')['createAccountWithBalance']>
     readonly createApp: UnwrapRef<typeof import('vue')['createApp']>
-    readonly createBlockie: UnwrapRef<typeof import('./src/utils/blockie')['createBlockie']>
     readonly createEventHook: UnwrapRef<typeof import('@vueuse/core')['createEventHook']>
     readonly createEvmIdentifierFromAddress: UnwrapRef<typeof import('@rotki/common')['createEvmIdentifierFromAddress']>
     readonly createGenericProjection: UnwrapRef<typeof import('@vueuse/math')['createGenericProjection']>
     readonly createGlobalState: UnwrapRef<typeof import('@vueuse/core')['createGlobalState']>
     readonly createInjectionState: UnwrapRef<typeof import('@vueuse/core')['createInjectionState']>
     readonly createNewBlockchainAccount: UnwrapRef<typeof import('./src/composables/accounts/blockchain/use-account-manage')['createNewBlockchainAccount']>
-    readonly createNotification: UnwrapRef<typeof import('./src/utils/notifications')['createNotification']>
     readonly createPinia: UnwrapRef<typeof import('pinia')['createPinia']>
     readonly createProjection: UnwrapRef<typeof import('@vueuse/math')['createProjection']>
     readonly createReactiveFn: UnwrapRef<typeof import('@vueuse/core')['createReactiveFn']>
@@ -1013,150 +800,58 @@ declare module 'vue' {
     readonly createSharedComposable: UnwrapRef<typeof import('@vueuse/core')['createSharedComposable']>
     readonly createTemplatePromise: UnwrapRef<typeof import('@vueuse/core')['createTemplatePromise']>
     readonly createUnrefFn: UnwrapRef<typeof import('@vueuse/core')['createUnrefFn']>
-    readonly createValidatorAccount: UnwrapRef<typeof import('./src/utils/blockchain/accounts/create')['createValidatorAccount']>
-    readonly createXpubAccount: UnwrapRef<typeof import('./src/utils/blockchain/accounts/create')['createXpubAccount']>
     readonly customRef: UnwrapRef<typeof import('vue')['customRef']>
     readonly customTimeframe: UnwrapRef<typeof import('@rotki/common')['customTimeframe']>
     readonly debouncedRef: UnwrapRef<typeof import('@vueuse/core')['debouncedRef']>
     readonly debouncedWatch: UnwrapRef<typeof import('@vueuse/core')['debouncedWatch']>
     readonly decodeHtmlEntities: UnwrapRef<typeof import('@rotki/common')['decodeHtmlEntities']>
-    readonly defaultCollectionState: UnwrapRef<typeof import('./src/utils/collection')['defaultCollectionState']>
     readonly defineAsyncComponent: UnwrapRef<typeof import('vue')['defineAsyncComponent']>
     readonly defineComponent: UnwrapRef<typeof import('vue')['defineComponent']>
     readonly defineStore: UnwrapRef<typeof import('pinia')['defineStore']>
-    readonly deleteBackendUrl: UnwrapRef<typeof import('./src/utils/account-management')['deleteBackendUrl']>
-    readonly downloadFileByBlobResponse: UnwrapRef<typeof import('./src/utils/download')['downloadFileByBlobResponse']>
-    readonly downloadFileByTextContent: UnwrapRef<typeof import('./src/utils/download')['downloadFileByTextContent']>
-    readonly downloadFileByUrl: UnwrapRef<typeof import('./src/utils/download')['downloadFileByUrl']>
     readonly eagerComputed: UnwrapRef<typeof import('@vueuse/core')['eagerComputed']>
     readonly editBlockchainAccount: UnwrapRef<typeof import('./src/composables/accounts/blockchain/use-account-manage')['editBlockchainAccount']>
     readonly effectScope: UnwrapRef<typeof import('vue')['effectScope']>
     readonly extendRef: UnwrapRef<typeof import('@vueuse/core')['extendRef']>
-    readonly fetchDataAsync: UnwrapRef<typeof import('./src/utils/fetch-async')['fetchDataAsync']>
-    readonly filterAddresses: UnwrapRef<typeof import('./src/utils/addresses')['filterAddresses']>
-    readonly filterAddressesFromWords: UnwrapRef<typeof import('./src/utils/history/index')['filterAddressesFromWords']>
-    readonly findAddressKnownPrefix: UnwrapRef<typeof import('./src/utils/truncate')['findAddressKnownPrefix']>
-    readonly fromUriEncoded: UnwrapRef<typeof import('./src/utils/route-uri')['fromUriEncoded']>
-    readonly generateRandomScrambleMultiplier: UnwrapRef<typeof import('./src/utils/session')['generateRandomScrambleMultiplier']>
     readonly get: UnwrapRef<typeof import('@vueuse/shared')['get']>
-    readonly getAccountAddress: UnwrapRef<typeof import('./src/utils/blockchain/accounts/utils')['getAccountAddress']>
-    readonly getAccountBalance: UnwrapRef<typeof import('./src/utils/blockchain/accounts/index')['getAccountBalance']>
-    readonly getAccountId: UnwrapRef<typeof import('./src/utils/blockchain/accounts/utils')['getAccountId']>
-    readonly getAccountLabel: UnwrapRef<typeof import('./src/utils/blockchain/accounts/utils')['getAccountLabel']>
     readonly getActivePinia: UnwrapRef<typeof import('pinia')['getActivePinia']>
     readonly getAddressFromEvmIdentifier: UnwrapRef<typeof import('@rotki/common')['getAddressFromEvmIdentifier']>
-    readonly getAddressesFromWallet: UnwrapRef<typeof import('./src/utils/metamask')['getAddressesFromWallet']>
-    readonly getAllBrowserWalletProviders: UnwrapRef<typeof import('./src/utils/metamask')['getAllBrowserWalletProviders']>
     readonly getApiSortingParams: UnwrapRef<typeof import('./src/composables/use-pagination-filter/utils')['getApiSortingParams']>
-    readonly getBackendUrl: UnwrapRef<typeof import('./src/utils/account-management')['getBackendUrl']>
-    readonly getBalances: UnwrapRef<typeof import('./src/utils/defi/xswap')['getBalances']>
-    readonly getChain: UnwrapRef<typeof import('./src/utils/blockchain/accounts/utils')['getChain']>
-    readonly getCollectionData: UnwrapRef<typeof import('./src/utils/collection')['getCollectionData']>
     readonly getCurrentInstance: UnwrapRef<typeof import('vue')['getCurrentInstance']>
     readonly getCurrentScope: UnwrapRef<typeof import('vue')['getCurrentScope']>
-    readonly getDateInputISOFormat: UnwrapRef<typeof import('./src/utils/date')['getDateInputISOFormat']>
-    readonly getDayNames: UnwrapRef<typeof import('./src/utils/date')['getDayNames']>
-    readonly getDefaultFrontendLogLevel: UnwrapRef<typeof import('./src/utils/logging')['getDefaultFrontendLogLevel']>
-    readonly getDefaultLogLevel: UnwrapRef<typeof import('./src/utils/logging')['getDefaultLogLevel']>
-    readonly getDomain: UnwrapRef<typeof import('./src/utils/url')['getDomain']>
-    readonly getEthAddressesFromText: UnwrapRef<typeof import('./src/utils/history/index')['getEthAddressesFromText']>
-    readonly getEtherScanRegisterUrl: UnwrapRef<typeof import('./src/utils/url')['getEtherScanRegisterUrl']>
-    readonly getFilepath: UnwrapRef<typeof import('./src/utils/backups')['getFilepath']>
-    readonly getGroupId: UnwrapRef<typeof import('./src/utils/blockchain/accounts/utils')['getGroupId']>
     readonly getIdentifierFromSymbolMap: UnwrapRef<typeof import('@rotki/common')['getIdentifierFromSymbolMap']>
-    readonly getKeyType: UnwrapRef<typeof import('./src/utils/xpub')['getKeyType']>
-    readonly getNonRootAttrs: UnwrapRef<typeof import('./src/utils/attrs')['getNonRootAttrs']>
-    readonly getPlaceholderRule: UnwrapRef<typeof import('./src/utils/settings')['getPlaceholderRule']>
-    readonly getPoolProfit: UnwrapRef<typeof import('./src/utils/defi/xswap')['getPoolProfit']>
-    readonly getPools: UnwrapRef<typeof import('./src/utils/defi/xswap')['getPools']>
-    readonly getPrefix: UnwrapRef<typeof import('./src/utils/xpub')['getPrefix']>
-    readonly getProtocolAddresses: UnwrapRef<typeof import('./src/utils/addresses')['getProtocolAddresses']>
-    readonly getRootAttrs: UnwrapRef<typeof import('./src/utils/attrs')['getRootAttrs']>
-    readonly getRootKeys: UnwrapRef<typeof import('./src/utils/attrs')['getRootKeys']>
-    readonly getServiceRegisterUrl: UnwrapRef<typeof import('./src/utils/url')['getServiceRegisterUrl']>
-    readonly getSortItems: UnwrapRef<typeof import('./src/utils/assets')['getSortItems']>
-    readonly getTags: UnwrapRef<typeof import('./src/utils/tags')['getTags']>
     readonly getTextToken: UnwrapRef<typeof import('@rotki/common')['getTextToken']>
-    readonly getTheGraphRegisterUrl: UnwrapRef<typeof import('./src/utils/url')['getTheGraphRegisterUrl']>
     readonly getTimeframeByRange: UnwrapRef<typeof import('@rotki/common')['getTimeframeByRange']>
     readonly getValidSelectorFromEvmAddress: UnwrapRef<typeof import('@rotki/common')['getValidSelectorFromEvmAddress']>
-    readonly groupAssetBreakdown: UnwrapRef<typeof import('./src/utils/balances')['groupAssetBreakdown']>
-    readonly groupConsecutiveNumbers: UnwrapRef<typeof import('./src/utils/text')['groupConsecutiveNumbers']>
-    readonly guessTimezone: UnwrapRef<typeof import('./src/utils/date')['guessTimezone']>
     readonly h: UnwrapRef<typeof import('vue')['h']>
-    readonly hasAccountAddress: UnwrapRef<typeof import('./src/utils/blockchain/accounts/index')['hasAccountAddress']>
-    readonly hasTokens: UnwrapRef<typeof import('./src/utils/blockchain/accounts/index')['hasTokens']>
     readonly hexToRgbPoints: UnwrapRef<typeof import('@rotki/common')['hexToRgbPoints']>
     readonly ignorableWatch: UnwrapRef<typeof import('@vueuse/core')['ignorableWatch']>
-    readonly includes: UnwrapRef<typeof import('./src/utils/blockchain/accounts/common')['includes']>
     readonly initGraph: UnwrapRef<typeof import('./src/composables/graphs')['initGraph']>
     readonly inject: UnwrapRef<typeof import('vue')['inject']>
     readonly injectLocal: UnwrapRef<typeof import('@vueuse/core')['injectLocal']>
     readonly invertColor: UnwrapRef<typeof import('@rotki/common')['invertColor']>
-    readonly isAccountWithBalanceValidator: UnwrapRef<typeof import('./src/utils/blockchain/accounts/index')['isAccountWithBalanceValidator']>
-    readonly isAccountingRuleProcessed: UnwrapRef<typeof import('./src/utils/history/events')['isAccountingRuleProcessed']>
     readonly isDefined: UnwrapRef<typeof import('@vueuse/core')['isDefined']>
-    readonly isEthBlockEvent: UnwrapRef<typeof import('./src/utils/history/events')['isEthBlockEvent']>
-    readonly isEthBlockEventRef: UnwrapRef<typeof import('./src/utils/history/events')['isEthBlockEventRef']>
-    readonly isEthBlockEventType: UnwrapRef<typeof import('./src/utils/history/events')['isEthBlockEventType']>
-    readonly isEthDepositEvent: UnwrapRef<typeof import('./src/utils/history/events')['isEthDepositEvent']>
-    readonly isEthDepositEventRef: UnwrapRef<typeof import('./src/utils/history/events')['isEthDepositEventRef']>
-    readonly isEthDepositEventType: UnwrapRef<typeof import('./src/utils/history/events')['isEthDepositEventType']>
-    readonly isEventAccountingRuleProcessed: UnwrapRef<typeof import('./src/utils/history/events')['isEventAccountingRuleProcessed']>
-    readonly isEventMissingAccountingRule: UnwrapRef<typeof import('./src/utils/history/events')['isEventMissingAccountingRule']>
-    readonly isEvmEvent: UnwrapRef<typeof import('./src/utils/history/events')['isEvmEvent']>
-    readonly isEvmEventRef: UnwrapRef<typeof import('./src/utils/history/events')['isEvmEventRef']>
-    readonly isEvmEventType: UnwrapRef<typeof import('./src/utils/history/events')['isEvmEventType']>
     readonly isEvmIdentifier: UnwrapRef<typeof import('@rotki/common')['isEvmIdentifier']>
-    readonly isFilterEnabled: UnwrapRef<typeof import('./src/utils/blockchain/accounts/common')['isFilterEnabled']>
-    readonly isMissingAccountingRule: UnwrapRef<typeof import('./src/utils/history/events')['isMissingAccountingRule']>
-    readonly isNft: UnwrapRef<typeof import('./src/utils/nft')['isNft']>
-    readonly isOfEnum: UnwrapRef<typeof import('./src/utils/index')['isOfEnum']>
-    readonly isOfEventType: UnwrapRef<typeof import('./src/utils/history/events')['isOfEventType']>
-    readonly isOnlineHistoryEvent: UnwrapRef<typeof import('./src/utils/history/events')['isOnlineHistoryEvent']>
-    readonly isOnlineHistoryEventRef: UnwrapRef<typeof import('./src/utils/history/events')['isOnlineHistoryEventRef']>
-    readonly isOnlineHistoryEventType: UnwrapRef<typeof import('./src/utils/history/events')['isOnlineHistoryEventType']>
-    readonly isPeriodAllowed: UnwrapRef<typeof import('./src/utils/settings')['isPeriodAllowed']>
-    readonly isPrefixed: UnwrapRef<typeof import('./src/utils/xpub')['isPrefixed']>
     readonly isProxy: UnwrapRef<typeof import('vue')['isProxy']>
     readonly isReactive: UnwrapRef<typeof import('vue')['isReactive']>
     readonly isReadonly: UnwrapRef<typeof import('vue')['isReadonly']>
     readonly isRef: UnwrapRef<typeof import('vue')['isRef']>
-    readonly isTaskCancelled: UnwrapRef<typeof import('./src/utils/index')['isTaskCancelled']>
-    readonly isTransactionEvent: UnwrapRef<typeof import('./src/utils/report')['isTransactionEvent']>
     readonly isValidBchAddress: UnwrapRef<typeof import('@rotki/common')['isValidBchAddress']>
     readonly isValidBtcAddress: UnwrapRef<typeof import('@rotki/common')['isValidBtcAddress']>
-    readonly isValidDate: UnwrapRef<typeof import('./src/utils/date')['isValidDate']>
     readonly isValidEthAddress: UnwrapRef<typeof import('@rotki/common')['isValidEthAddress']>
     readonly isValidTxHash: UnwrapRef<typeof import('@rotki/common')['isValidTxHash']>
     readonly isValidUrl: UnwrapRef<typeof import('@rotki/common')['isValidUrl']>
-    readonly isWithdrawalEvent: UnwrapRef<typeof import('./src/utils/history/events')['isWithdrawalEvent']>
-    readonly isWithdrawalEventRef: UnwrapRef<typeof import('./src/utils/history/events')['isWithdrawalEventRef']>
-    readonly isWithdrawalEventType: UnwrapRef<typeof import('./src/utils/history/events')['isWithdrawalEventType']>
-    readonly iterateAssets: UnwrapRef<typeof import('./src/utils/blockchain/accounts/index')['iterateAssets']>
-    readonly keyType: UnwrapRef<typeof import('./src/utils/xpub')['keyType']>
-    readonly lastLogin: UnwrapRef<typeof import('./src/utils/account-management')['lastLogin']>
     readonly loadUserOptions: UnwrapRef<typeof import('./src/composables/backend')['loadUserOptions']>
-    readonly logger: UnwrapRef<typeof import('./src/utils/logging')['logger']>
-    readonly loggerWithTag: UnwrapRef<typeof import('./src/utils/logging')['loggerWithTag']>
     readonly logicAnd: UnwrapRef<typeof import('@vueuse/math')['logicAnd']>
     readonly logicNot: UnwrapRef<typeof import('@vueuse/math')['logicNot']>
     readonly logicOr: UnwrapRef<typeof import('@vueuse/math')['logicOr']>
     readonly makeDestructurable: UnwrapRef<typeof import('@vueuse/core')['makeDestructurable']>
     readonly mapActions: UnwrapRef<typeof import('pinia')['mapActions']>
-    readonly mapCollectionEntriesWithMeta: UnwrapRef<typeof import('./src/utils/history/index')['mapCollectionEntriesWithMeta']>
-    readonly mapCollectionResponse: UnwrapRef<typeof import('./src/utils/collection')['mapCollectionResponse']>
     readonly mapGetters: UnwrapRef<typeof import('pinia')['mapGetters']>
     readonly mapState: UnwrapRef<typeof import('pinia')['mapState']>
     readonly mapStores: UnwrapRef<typeof import('pinia')['mapStores']>
-    readonly mapToFrontendLogLevel: UnwrapRef<typeof import('./src/utils/logging')['mapToFrontendLogLevel']>
     readonly mapWritableState: UnwrapRef<typeof import('pinia')['mapWritableState']>
     readonly markRaw: UnwrapRef<typeof import('vue')['markRaw']>
-    readonly mergeAssetBalances: UnwrapRef<typeof import('./src/utils/balances')['mergeAssetBalances']>
-    readonly mergeAssociatedAssets: UnwrapRef<typeof import('./src/utils/balances')['mergeAssociatedAssets']>
     readonly nextTick: UnwrapRef<typeof import('vue')['nextTick']>
-    readonly nonEmptyProperties: UnwrapRef<typeof import('./src/utils/data')['nonEmptyProperties']>
-    readonly nullDefined: UnwrapRef<typeof import('./src/utils/model/index')['nullDefined']>
     readonly onActivated: UnwrapRef<typeof import('vue')['onActivated']>
     readonly onBeforeMount: UnwrapRef<typeof import('vue')['onBeforeMount']>
     readonly onBeforeRouteLeave: UnwrapRef<typeof import('vue-router')['onBeforeRouteLeave']>
@@ -1198,43 +893,23 @@ declare module 'vue' {
     readonly refDebounced: UnwrapRef<typeof import('@vueuse/core')['refDebounced']>
     readonly refDefault: UnwrapRef<typeof import('@vueuse/core')['refDefault']>
     readonly refIsTruthy: UnwrapRef<typeof import('./src/composables/ref')['refIsTruthy']>
-    readonly refOptional: UnwrapRef<typeof import('./src/utils/model/index')['refOptional']>
     readonly refThrottled: UnwrapRef<typeof import('@vueuse/core')['refThrottled']>
     readonly refWithControl: UnwrapRef<typeof import('@vueuse/core')['refWithControl']>
-    readonly removeKey: UnwrapRef<typeof import('./src/utils/data')['removeKey']>
-    readonly removeTags: UnwrapRef<typeof import('./src/utils/tags')['removeTags']>
-    readonly removeZeroAssets: UnwrapRef<typeof import('./src/utils/balances')['removeZeroAssets']>
     readonly resetState: UnwrapRef<typeof import('./src/store/plugins')['resetState']>
     readonly resolveComponent: UnwrapRef<typeof import('vue')['resolveComponent']>
     readonly resolveRef: UnwrapRef<typeof import('@vueuse/core')['resolveRef']>
     readonly resolveUnref: UnwrapRef<typeof import('@vueuse/core')['resolveUnref']>
     readonly rgbPointsToHex: UnwrapRef<typeof import('@rotki/common')['rgbPointsToHex']>
     readonly sanitizeAddress: UnwrapRef<typeof import('@rotki/common')['sanitizeAddress']>
-    readonly saveBackendUrl: UnwrapRef<typeof import('./src/utils/account-management')['saveBackendUrl']>
     readonly saveUserOptions: UnwrapRef<typeof import('./src/composables/backend')['saveUserOptions']>
     readonly serializer: UnwrapRef<typeof import('./src/composables/dynamic-messages')['serializer']>
     readonly set: UnwrapRef<typeof import('@vueuse/shared')['set']>
     readonly setActivePinia: UnwrapRef<typeof import('pinia')['setActivePinia']>
-    readonly setLastLogin: UnwrapRef<typeof import('./src/utils/account-management')['setLastLogin']>
-    readonly setLevel: UnwrapRef<typeof import('./src/utils/logging')['setLevel']>
     readonly setMapStoreSuffix: UnwrapRef<typeof import('pinia')['setMapStoreSuffix']>
-    readonly setupDayjs: UnwrapRef<typeof import('./src/utils/date')['setupDayjs']>
-    readonly setupEntryLimit: UnwrapRef<typeof import('./src/utils/collection')['setupEntryLimit']>
-    readonly setupFormatter: UnwrapRef<typeof import('./src/utils/setup-formatter')['setupFormatter']>
     readonly shallowReactive: UnwrapRef<typeof import('vue')['shallowReactive']>
     readonly shallowReadonly: UnwrapRef<typeof import('vue')['shallowReadonly']>
     readonly shallowRef: UnwrapRef<typeof import('vue')['shallowRef']>
-    readonly size: UnwrapRef<typeof import('./src/utils/data')['size']>
-    readonly sortAndFilterAccounts: UnwrapRef<typeof import('./src/utils/blockchain/accounts/index')['sortAndFilterAccounts']>
-    readonly sortAndFilterManualBalance: UnwrapRef<typeof import('./src/utils/balances/manual/manual-balances')['sortAndFilterManualBalance']>
-    readonly sortAndFilterValidators: UnwrapRef<typeof import('./src/utils/blockchain/accounts/validator')['sortAndFilterValidators']>
-    readonly sortAssetBalances: UnwrapRef<typeof import('./src/utils/balances')['sortAssetBalances']>
-    readonly sortBy: UnwrapRef<typeof import('./src/utils/blockchain/accounts/common')['sortBy']>
-    readonly sortDesc: UnwrapRef<typeof import('./src/utils/bignumbers')['sortDesc']>
-    readonly splitSearch: UnwrapRef<typeof import('./src/utils/search')['splitSearch']>
     readonly storeToRefs: UnwrapRef<typeof import('pinia')['storeToRefs']>
-    readonly sum: UnwrapRef<typeof import('./src/utils/balances')['sum']>
-    readonly sumAssetBalances: UnwrapRef<typeof import('./src/utils/balances')['sumAssetBalances']>
     readonly syncRef: UnwrapRef<typeof import('@vueuse/core')['syncRef']>
     readonly syncRefs: UnwrapRef<typeof import('@vueuse/core')['syncRefs']>
     readonly templateRef: UnwrapRef<typeof import('@vueuse/core')['templateRef']>
@@ -1242,42 +917,24 @@ declare module 'vue' {
     readonly throttledWatch: UnwrapRef<typeof import('@vueuse/core')['throttledWatch']>
     readonly timeframes: UnwrapRef<typeof import('@rotki/common')['timeframes']>
     readonly toCapitalCase: UnwrapRef<typeof import('@rotki/common')['toCapitalCase']>
-    readonly toEvmChainAndTxHash: UnwrapRef<typeof import('./src/utils/history/index')['toEvmChainAndTxHash']>
     readonly toHumanReadable: UnwrapRef<typeof import('@rotki/common')['toHumanReadable']>
-    readonly toMessages: UnwrapRef<typeof import('./src/utils/validation')['toMessages']>
-    readonly toProfitLossModel: UnwrapRef<typeof import('./src/utils/defi/index')['toProfitLossModel']>
     readonly toRaw: UnwrapRef<typeof import('vue')['toRaw']>
     readonly toReactive: UnwrapRef<typeof import('@vueuse/core')['toReactive']>
     readonly toRef: UnwrapRef<typeof import('vue')['toRef']>
     readonly toRefs: UnwrapRef<typeof import('vue')['toRefs']>
-    readonly toRem: UnwrapRef<typeof import('./src/utils/data')['toRem']>
     readonly toSentenceCase: UnwrapRef<typeof import('@rotki/common')['toSentenceCase']>
     readonly toSnakeCase: UnwrapRef<typeof import('@rotki/common')['toSnakeCase']>
-    readonly toUnit: UnwrapRef<typeof import('./src/utils/calculation')['toUnit']>
-    readonly toUriEncoded: UnwrapRef<typeof import('./src/utils/route-uri')['toUriEncoded']>
     readonly toValue: UnwrapRef<typeof import('vue')['toValue']>
-    readonly totalCollateral: UnwrapRef<typeof import('./src/utils/total-collateral')['totalCollateral']>
     readonly transformCase: UnwrapRef<typeof import('@rotki/common')['transformCase']>
-    readonly transformEntryWithMeta: UnwrapRef<typeof import('./src/utils/history/index')['transformEntryWithMeta']>
     readonly triggerRef: UnwrapRef<typeof import('vue')['triggerRef']>
-    readonly trimOnPaste: UnwrapRef<typeof import('./src/utils/event')['trimOnPaste']>
-    readonly truncateAddress: UnwrapRef<typeof import('./src/utils/truncate')['truncateAddress']>
-    readonly truncationPoints: UnwrapRef<typeof import('./src/utils/truncate')['truncationPoints']>
     readonly tryOnBeforeMount: UnwrapRef<typeof import('@vueuse/core')['tryOnBeforeMount']>
     readonly tryOnBeforeUnmount: UnwrapRef<typeof import('@vueuse/core')['tryOnBeforeUnmount']>
     readonly tryOnMounted: UnwrapRef<typeof import('@vueuse/core')['tryOnMounted']>
     readonly tryOnScopeDispose: UnwrapRef<typeof import('@vueuse/core')['tryOnScopeDispose']>
     readonly tryOnUnmounted: UnwrapRef<typeof import('@vueuse/core')['tryOnUnmounted']>
-    readonly uniqueObjects: UnwrapRef<typeof import('./src/utils/data')['uniqueObjects']>
-    readonly uniqueStrings: UnwrapRef<typeof import('./src/utils/data')['uniqueStrings']>
     readonly unref: UnwrapRef<typeof import('vue')['unref']>
     readonly unrefElement: UnwrapRef<typeof import('@vueuse/core')['unrefElement']>
     readonly until: UnwrapRef<typeof import('@vueuse/core')['until']>
-    readonly updateAssetBalances: UnwrapRef<typeof import('./src/utils/prices')['updateAssetBalances']>
-    readonly updateBalancesPrices: UnwrapRef<typeof import('./src/utils/prices')['updateBalancesPrices']>
-    readonly updateBlockchainAssetBalances: UnwrapRef<typeof import('./src/utils/prices')['updateBlockchainAssetBalances']>
-    readonly updateBtcPrices: UnwrapRef<typeof import('./src/utils/prices')['updateBtcPrices']>
-    readonly updateTotalsPrices: UnwrapRef<typeof import('./src/utils/prices')['updateTotalsPrices']>
     readonly useAaveApi: UnwrapRef<typeof import('./src/composables/api/defi/aave')['useAaveApi']>
     readonly useAaveStore: UnwrapRef<typeof import('./src/store/defi/aave/index')['useAaveStore']>
     readonly useAbs: UnwrapRef<typeof import('@vueuse/math')['useAbs']>
@@ -1579,7 +1236,6 @@ declare module 'vue' {
     readonly usePriceApi: UnwrapRef<typeof import('./src/composables/api/balances/price')['usePriceApi']>
     readonly usePrivacyMode: UnwrapRef<typeof import('./src/composables/privacy')['usePrivacyMode']>
     readonly useProjection: UnwrapRef<typeof import('@vueuse/math')['useProjection']>
-    readonly usePropVModel: UnwrapRef<typeof import('./src/utils/model/index')['usePropVModel']>
     readonly useQueriedAddressApi: UnwrapRef<typeof import('./src/composables/api/session/queried-addresses')['useQueriedAddressApi']>
     readonly useQueriedAddressesStore: UnwrapRef<typeof import('./src/store/session/queried-addresses')['useQueriedAddressesStore']>
     readonly useQueryStatus: UnwrapRef<typeof import('./src/composables/history/events/query-status/index')['useQueryStatus']>
@@ -1588,7 +1244,6 @@ declare module 'vue' {
     readonly useRandomStepper: UnwrapRef<typeof import('./src/composables/random-stepper')['useRandomStepper']>
     readonly useRefHistory: UnwrapRef<typeof import('@vueuse/core')['useRefHistory']>
     readonly useRefMap: UnwrapRef<typeof import('./src/composables/utils/useRefMap/index')['useRefMap']>
-    readonly useRefPropVModel: UnwrapRef<typeof import('./src/utils/model/index')['useRefPropVModel']>
     readonly useRefresh: UnwrapRef<typeof import('./src/composables/balances/refresh')['useRefresh']>
     readonly useReportsApi: UnwrapRef<typeof import('./src/composables/api/reports/index')['useReportsApi']>
     readonly useReportsStore: UnwrapRef<typeof import('./src/store/reports/index')['useReportsStore']>
@@ -1618,8 +1273,6 @@ declare module 'vue' {
     readonly useSettingsApi: UnwrapRef<typeof import('./src/composables/api/settings/settings-api')['useSettingsApi']>
     readonly useSettingsStore: UnwrapRef<typeof import('./src/store/settings/index')['useSettingsStore']>
     readonly useShare: UnwrapRef<typeof import('@vueuse/core')['useShare']>
-    readonly useSimplePropVModel: UnwrapRef<typeof import('./src/utils/model/index')['useSimplePropVModel']>
-    readonly useSimpleVModel: UnwrapRef<typeof import('./src/utils/model/index')['useSimpleVModel']>
     readonly useSkippedHistoryEventsApi: UnwrapRef<typeof import('./src/composables/api/history/events/skipped')['useSkippedHistoryEventsApi']>
     readonly useSlots: UnwrapRef<typeof import('vue')['useSlots']>
     readonly useSnapshotApi: UnwrapRef<typeof import('./src/composables/api/settings/snapshot-api')['useSnapshotApi']>
@@ -1721,6 +1374,5 @@ declare module 'vue' {
     readonly watchTriggerable: UnwrapRef<typeof import('@vueuse/core')['watchTriggerable']>
     readonly watchWithFilter: UnwrapRef<typeof import('@vueuse/core')['watchWithFilter']>
     readonly whenever: UnwrapRef<typeof import('@vueuse/core')['whenever']>
-    readonly zeroBalance: UnwrapRef<typeof import('./src/utils/bignumbers')['zeroBalance']>
   }
 }

@@ -1,9 +1,6 @@
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common';
 import { InputMode } from '@/types/input-mode';
-import AddressAccountForm from '@/components/accounts/management/types/AddressAccountForm.vue';
-import ValidatorAccountForm from '@/components/accounts/management/types/ValidatorAccountForm.vue';
-import XpubAccountForm from '@/components/accounts/management/types/XpubAccountForm.vue';
 import {
   type AccountManageState,
   type StakingValidatorManage,
@@ -12,6 +9,11 @@ import {
 } from '@/composables/accounts/blockchain/use-account-manage';
 import { isBtcChain } from '@/types/blockchain/chains';
 import { XpubKeyType } from '@/types/blockchain/accounts';
+import { useRefPropVModel } from '@/utils/model';
+import { logger } from '@/utils/logging';
+import AddressAccountForm from '@/components/accounts/management/types/AddressAccountForm.vue';
+import ValidatorAccountForm from '@/components/accounts/management/types/ValidatorAccountForm.vue';
+import XpubAccountForm from '@/components/accounts/management/types/XpubAccountForm.vue';
 import type { ValidationErrors } from '@/types/api/errors';
 
 const modelValue = defineModel<AccountManageState>({ required: true });

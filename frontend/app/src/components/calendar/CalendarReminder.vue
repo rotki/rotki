@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { logger } from '@/utils/logging';
 import type { CalendarEvent } from '@/types/history/calendar';
 import type { CalendarReminderTemporaryPayload, CalenderReminderPayload } from '@/types/history/calendar/reminder';
 

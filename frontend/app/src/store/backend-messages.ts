@@ -1,5 +1,6 @@
 import { BackendCode } from '@shared/ipc';
 import { checkIfDevelopment, startPromise } from '@shared/utils';
+import { logger } from '@/utils/logging';
 
 export const useBackendMessagesStore = defineStore('backendMessages', () => {
   const startupErrorMessage = ref('');

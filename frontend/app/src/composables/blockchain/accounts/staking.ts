@@ -3,6 +3,8 @@ import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
 import { TaskType } from '@/types/task-type';
 import { Section } from '@/types/status';
 import { Module } from '@/types/modules';
+import { isTaskCancelled } from '@/utils';
+import { logger } from '@/utils/logging';
 import type { BlockchainAccount, ValidatorData } from '@/types/blockchain/accounts';
 import type { Eth2Validator } from '@/types/balances';
 import type { ActionStatus } from '@/types/action';

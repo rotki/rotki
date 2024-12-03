@@ -3,6 +3,9 @@ import { uniqBy } from 'lodash-es';
 import { type Account, Blockchain } from '@rotki/common';
 import { objectOmit } from '@vueuse/core';
 import { getNonRootAttrs, getRootAttrs } from '@/utils/attrs';
+import { getAccountAddress, getAccountId } from '@/utils/blockchain/accounts/utils';
+import { createAccount } from '@/utils/blockchain/accounts/create';
+import { hasAccountAddress } from '@/utils/blockchain/accounts';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 
 type AccountWithAddressData = BlockchainAccount<AddressData>;

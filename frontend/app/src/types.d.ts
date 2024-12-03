@@ -1,4 +1,4 @@
-import type { Interop } from '@/electron-main/ipc';
+import type { Interop } from '@shared/ipc';
 
 interface Request {
   readonly method: string;

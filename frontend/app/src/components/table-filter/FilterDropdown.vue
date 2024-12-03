@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { compareTextByKeyword } from '@/utils/assets';
+import { logger } from '@/utils/logging';
+import { splitSearch } from '@/utils/search';
 import type { BaseSuggestion, MatchedKeywordWithBehaviour, SearchMatcher, Suggestion } from '@/types/filtering';
 
 const props = defineProps<{

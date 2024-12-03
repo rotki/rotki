@@ -5,6 +5,8 @@ import { Section, Status } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import { type DefiAccount, ProtocolVersion } from '@/types/defi';
 import { Purgeable } from '@/types/session/purge';
+import { isTaskCancelled } from '@/utils';
+import { logger } from '@/utils/logging';
 import type { TaskMeta } from '@/types/task';
 
 type ResetStateParams = Module | typeof Purgeable.DEFI_MODULES | typeof Purgeable.DECENTRALIZED_EXCHANGES;

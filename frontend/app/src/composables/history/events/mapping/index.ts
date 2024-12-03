@@ -1,6 +1,7 @@
 import { cloneDeep } from 'lodash-es';
 import { HistoryEventEntryType } from '@rotki/common';
 import { startPromise } from '@shared/utils';
+import { uniqueStrings } from '@/utils/data';
 import type { MaybeRef } from '@vueuse/core';
 import type {
   HistoryEventCategoryDetailWithId,

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { getSortItems } from '@/utils/assets';
 import type { AssetBalance, BigNumber } from '@rotki/common';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 

@@ -1,6 +1,7 @@
 import { Purgeable } from '@/types/session/purge';
 import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
+import { isTaskCancelled } from '@/utils';
 import type { Module } from '@/types/modules';
 import type { TaskMeta } from '@/types/task';
 

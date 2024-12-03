@@ -48,6 +48,7 @@ import LpPoolHeader from '@/components/display/defi/LpPoolHeader.vue';
 import RowAppend from '@/components/helper/RowAppend.vue';
 import UniswapPoolAssetBalance from '@/components/defi/uniswap/UniswapPoolAssetBalance.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
+import { logger } from '@/utils/logging';
 import type { App } from 'vue';
 
 function ruiRegister(app: App): void {

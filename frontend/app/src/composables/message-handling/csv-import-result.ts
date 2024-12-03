@@ -1,4 +1,5 @@
 import { type Notification, Priority, Severity } from '@rotki/common';
+import { groupConsecutiveNumbers } from '@/utils/text';
 import type { CommonMessageHandler, CsvImportResult } from '@/types/websocket-messages';
 
 export function useCsvImportResultHandler(t: ReturnType<typeof useI18n>['t']): CommonMessageHandler<CsvImportResult> {

@@ -5,6 +5,9 @@ EthStakingPerformance, type
 EthStakingPerformanceResponse } from '@rotki/common';
 import { Section, Status } from '@/types/status';
 import { TaskType } from '@/types/task-type';
+import { logger } from '@/utils/logging';
+import { isAccountWithBalanceValidator } from '@/utils/blockchain/accounts';
+import { isTaskCancelled } from '@/utils';
 import type { TaskMeta } from '@/types/task';
 import type { ComputedRef, Ref } from 'vue';
 

@@ -3,6 +3,7 @@ import dayjs, { type Dayjs } from 'dayjs';
 import { isEqual } from 'lodash-es';
 import { RouterAccountsSchema } from '@/types/route';
 import { isBlockchain } from '@/types/blockchain/chains';
+import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
 import CalendarGrid from '@/components/calendar/CalendarGrid.vue';
 import CalendarUpcomingEventList from '@/components/calendar/CalendarUpcomingEventList.vue';
 import type { CalendarEvent, CalendarEventRequestPayload } from '@/types/history/calendar';

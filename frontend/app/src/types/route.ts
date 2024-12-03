@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { type Account, Blockchain } from '@rotki/common';
+import { arrayify } from '@/utils/array';
 import type { LocationQueryValue, LocationQueryValueRaw } from 'vue-router';
 
 export type LocationQuery = Record<string, LocationQueryValue | LocationQueryValue[]>;

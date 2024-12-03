@@ -2,6 +2,8 @@
 import { helpers, required } from '@vuelidate/validators';
 import { CURRENCY_USD } from '@/types/currencies';
 import { toMessages } from '@/utils/validation';
+import { bigNumberSum } from '@/utils/calculation';
+import { isNft } from '@/utils/nft';
 import type { BalanceSnapshot, LocationDataSnapshot } from '@/types/snapshots';
 import type { BigNumber } from '@rotki/common';
 

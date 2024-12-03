@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { CommaSeparatedStringSchema, RouterExpandedIdsSchema } from '@/types/route';
+import { arrayify } from '@/utils/array';
 import type { MaybeRef } from '@vueuse/core';
 import type { MatchedKeywordWithBehaviour, SearchMatcher } from '@/types/filtering';
 import type { FilterSchema } from '@/composables/use-pagination-filter/types';

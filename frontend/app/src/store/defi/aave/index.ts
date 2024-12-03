@@ -2,6 +2,10 @@ import { AaveBalances, AaveHistory, type ProfitLossModel } from '@rotki/common';
 import { Module } from '@/types/modules';
 import { Section, Status } from '@/types/status';
 import { TaskType } from '@/types/task-type';
+import { logger } from '@/utils/logging';
+import { getProtocolAddresses } from '@/utils/addresses';
+import { isTaskCancelled } from '@/utils';
+import { balanceSum } from '@/utils/calculation';
 import type { TaskMeta } from '@/types/task';
 
 export const useAaveStore = defineStore('defi/aave', () => {

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { CanceledError } from 'axios';
+import { uniqueObjects } from '@/utils/data';
 import type { AssetInfoWithId } from '@/types/asset';
 import type { NftAsset } from '@/types/nfts';
 
