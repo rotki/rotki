@@ -1,34 +1,25 @@
 <script setup lang="ts">
 import type { RuiIcons } from '@rotki/ui-library';
+import type { Message } from '@rotki/common';
 
-const props = withDefaults(defineProps<{
-  title: string;
-  message: string;
-  success?: boolean;
-}>(), {
-  success: false,
-});
+const props = defineProps<{
+  message: Message;
+}>();
 
 const emit = defineEmits<{
   dismiss: [];
 }>();
 
-const { message, success } = toRefs(props);
+const { message } = toRefs(props);
 
 const { t } = useI18n();
 
-const visible = ref<boolean>(false);
-
-const icon = computed<RuiIcons>(() => (get(success) ? 'checkbox-circle-line' : 'error-warning-line'));
-
-watch(message, (message) => {
-  set(visible, message.length > 0);
-});
+const icon = computed<RuiIcons>(() => (get(props.message.success) ? 'checkbox-circle-line' : 'error-warning-line'));
 </script>
 
 <template>
   <RuiDialog
-    :model-value="visible"
+    :model-value="true"
     max-width="500"
     persistent
     z-index="10000"
@@ -39,10 +30,10 @@ watch(message, (message) => {
     <RuiCard>
       <template #header>
         <h5
-          :class="success ? 'text-rui-success' : 'text-rui-error'"
+          :class="message.success ? 'text-rui-success' : 'text-rui-error'"
           class="text-h5"
         >
-          {{ title }}
+          {{ message.title }}
         </h5>
       </template>
 
@@ -51,7 +42,7 @@ watch(message, (message) => {
           <RuiIcon
             size="40"
             :name="icon"
-            :class="success ? 'text-rui-success' : 'text-rui-error'"
+            :class="message.success ? 'text-rui-success' : 'text-rui-error'"
           />
         </div>
         <div
@@ -66,7 +57,7 @@ watch(message, (message) => {
         <div class="grow" />
         <RuiButton
           data-cy="message-dialog__ok"
-          :color="success ? 'success' : 'error'"
+          :color="message.success ? 'success' : 'error'"
           @click="emit('dismiss')"
         >
           {{ t('common.actions.ok') }}
