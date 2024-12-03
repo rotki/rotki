@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`-` Show upcoming events on the right side of the calendar view.
 * :bug:`-` Fix the issue where clicking the link to input the Etherscan key doesn't open the correct tab.
 * :bug:`8982` Fix the issue where Cmd / Alt + Arrow Left / Arrow Right forces navigation, as it should interact with user selection in text input.
 * :bug:`-` Some of the Compound v3 supplied collateral that was not detected by rotki will now be properly seen as balance.
