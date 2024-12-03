@@ -181,7 +181,7 @@ def test_set_settings(rotkehlchen_api_server: 'APIServer') -> None:
     for setting, raw_value in original_settings.items():
         if setting in unmodifiable_settings:
             continue
-        value: Any = None
+        value: str | list[str | dict] | int | None = None
         if setting == 'date_display_format':
             value = '%d/%m/%Y-%H:%M:%S'
         elif setting == 'main_currency':

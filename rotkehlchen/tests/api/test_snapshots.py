@@ -440,7 +440,7 @@ def test_export_snapshot(
         _populate_db_with_location_data(cursor, db, ts)
         db.set_settings(cursor, ModifiableDBSettings(
             main_currency=A_EUR.resolve_to_asset_with_oracles()),
-            )
+        )
         response = requests.get(
             api_url_for(
                 rotkehlchen_api_server,
@@ -460,7 +460,7 @@ def test_export_snapshot(
 
         db.set_settings(cursor, ModifiableDBSettings(
             main_currency=A_ETH.resolve_to_asset_with_oracles()),
-            )
+        )
         response = requests.get(
             api_url_for(
                 rotkehlchen_api_server,
@@ -480,7 +480,7 @@ def test_export_snapshot(
 
         db.set_settings(cursor, ModifiableDBSettings(
             main_currency=A_USD.resolve_to_asset_with_oracles()),
-            )
+        )
         response = requests.get(
             api_url_for(
                 rotkehlchen_api_server,
@@ -508,7 +508,7 @@ def test_export_snapshot_unknown_asset(
         _populate_db_with_location_data(cursor, db, ts)
         db.set_settings(cursor, ModifiableDBSettings(
             main_currency=A_EUR.resolve_to_asset_with_oracles()),
-            )
+        )
         response = requests.get(
             api_url_for(
                 rotkehlchen_api_server,
@@ -539,7 +539,7 @@ def test_download_snapshot(rotkehlchen_api_server: 'APIServer') -> None:
         _populate_db_with_location_data(cursor, db, ts)
         db.set_settings(cursor, ModifiableDBSettings(
             main_currency=A_EUR.resolve_to_asset_with_oracles()),
-            )
+        )
 
     response = requests.get(
         api_url_for(
@@ -575,7 +575,7 @@ def test_import_snapshot(
         _populate_db_with_location_data(cursor, db, ts)
         db.set_settings(cursor, ModifiableDBSettings(
             main_currency=A_EUR.resolve_to_asset_with_oracles()),
-            )
+        )
 
     # check that importing a valid snapshot passes using PUT
     csv_dir = str(tmpdir_factory.mktemp('test_csv_dir'))
@@ -708,7 +708,7 @@ def test_delete_snapshot(rotkehlchen_api_server: 'APIServer') -> None:
         _populate_db_with_location_data(cursor, db, ts)
         db.set_settings(cursor, ModifiableDBSettings(
             main_currency=A_EUR.resolve_to_asset_with_oracles()),
-            )
+        )
 
     response = requests.delete(
         api_url_for(
