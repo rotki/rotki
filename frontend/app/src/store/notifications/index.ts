@@ -1,10 +1,12 @@
 import {
   NotificationCategory,
   type NotificationData,
+  NotificationGroup,
   type NotificationPayload,
   Priority,
   type SemiPartial,
   Severity,
+  assert,
 } from '@rotki/common';
 import { useSessionStorage } from '@vueuse/core';
 import { orderBy } from 'lodash-es';
@@ -23,6 +25,8 @@ function notificationDefaults(): NotificationPayload {
 export const useNotificationsStore = defineStore('notifications', () => {
   const data = ref<NotificationData[]>([]);
   const lastDisplay: Ref<Record<string, number>> = useSessionStorage('rotki.notification.last_display', {});
+
+  const { t } = useI18n();
 
   const prioritized = computed<NotificationData[]>(() => {
     const byDate = orderBy(get(data), n => n.date, 'desc');
@@ -69,6 +73,39 @@ export const useNotificationsStore = defineStore('notifications', () => {
         .map(notification => notification.message);
 
       if (messages.includes(newData.message)) {
+        return;
+      }
+
+      const deserializationErrorPrefix = 'Could not deserialize';
+
+      if (newData.message.startsWith(deserializationErrorPrefix)) {
+        const index = dataList.findIndex(notification => notification.group === NotificationGroup.DESERIALIZATION_ERROR);
+        if (index >= 0) {
+          const existing = dataList[index];
+          assert(
+            existing.groupCount !== undefined,
+            'groupCount should be defined when group is set',
+          );
+          const groupCount = existing.groupCount + 1;
+          dataList[index] = {
+            ...existing,
+            message: t('notification_messages.deserialization_error', { count: groupCount }),
+            groupCount,
+            date: new Date(),
+          };
+
+          set(data, dataList);
+        }
+        else {
+          update([
+            createNotification(get(nextId), Object.assign(notificationDefaults(), {
+              ...newData,
+              message: t('notification_messages.deserialization_error', { count: 1 }),
+              group: NotificationGroup.DESERIALIZATION_ERROR,
+              groupCount: 1,
+            })),
+          ]);
+        }
         return;
       }
     }

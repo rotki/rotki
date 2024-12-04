@@ -3708,6 +3708,7 @@
     "backend": {
       "title": "Backend"
     },
+    "deserialization_error": "We could not deserialize {count} assets for your accounts, please check the application logs for more information.",
     "missing_api_key": {
       "action": "Enter key",
       "get_key": "Get API key",

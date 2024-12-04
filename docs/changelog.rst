@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` The application will now only show a single notification for multiple asset deserialization errors.
 * :feature:`-` Makes the tag manager accessible from left sidebar menu.
 * :feature:`7498` Adds the option for users to hide assets where the balance is smaller than a threshold amount.
 * :feature:`7406` rotki will now support Aura Finance staking for Balancer pools on Gnosis Chain and all supported EVM chains.
