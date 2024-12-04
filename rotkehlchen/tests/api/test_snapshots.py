@@ -35,6 +35,7 @@ from rotkehlchen.types import Location, Timestamp
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
+    from rotkehlchen.api.server import APIServer
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
 
@@ -46,7 +47,7 @@ LOCATION_DATA_IMPORT_INVALID_HEADERS = ['timestamp', 'location', 'value']
 NFT_TOKEN_ID = '_nft_0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85_11'
 
 
-def _populate_db_with_balances(write_cursor: 'DBCursor', db: 'DBHandler', ts: Timestamp):
+def _populate_db_with_balances(write_cursor: 'DBCursor', db: 'DBHandler', ts: Timestamp) -> None:
     db.add_multiple_balances(
         write_cursor=write_cursor,
         balances=[
@@ -67,7 +68,7 @@ def _populate_db_with_balances(write_cursor: 'DBCursor', db: 'DBHandler', ts: Ti
         ])
 
 
-def _populate_db_with_balances_unknown_asset(write_cursor: 'DBCursor', ts: Timestamp):
+def _populate_db_with_balances_unknown_asset(write_cursor: 'DBCursor', ts: Timestamp) -> None:
     write_cursor.execute('INSERT INTO assets(identifier) VALUES (?)', ('YABIRXROTKI',))
     serialized_balances = [
         (ts, 'BTC', '1.00', '178.44', BalanceType.ASSET.serialize_for_db()),
@@ -81,7 +82,11 @@ def _populate_db_with_balances_unknown_asset(write_cursor: 'DBCursor', ts: Times
     )
 
 
-def _populate_db_with_location_data(write_cursor: 'DBCursor', db: 'DBHandler', ts: Timestamp):
+def _populate_db_with_location_data(
+        write_cursor: 'DBCursor',
+        db: 'DBHandler',
+        ts: Timestamp,
+    ) -> None:
     db.add_multiple_location_data(
         write_cursor=write_cursor,
         location_data=[
@@ -287,7 +292,7 @@ def validate_timestamp(
         expected_utc_timestamp: Timestamp,
         display_date_in_localtime: bool,
         is_for_import: bool,
-):
+) -> None:
     """Validate exported timestamp.
 
     If is_for_import is True, then the timestamp should be a utc timestamp in seconds.
@@ -313,13 +318,13 @@ def validate_timestamp(
 
 
 def assert_csv_export_response(
-        response,
-        csv_dir,
+        response: requests.Response,
+        csv_dir: str,
         main_currency: AssetWithOracles,
-        is_download=False,
-        expected_entries=2,
+        is_download: bool = False,
+        expected_entries: int = 2,
         timestamp_validation_data: tuple[Timestamp, bool] | None = None,
-):
+) -> None:
     if is_download:
         assert response.status_code == HTTPStatus.OK
     else:
@@ -419,7 +424,10 @@ def assert_csv_export_response(
     {'display_date_in_localtime': False},
 ])
 @freeze_time('2023-05-16 19:00:00', tz_offset=6)  # Set timezone to something different than UTC
-def test_export_snapshot(rotkehlchen_api_server, tmpdir_factory):
+def test_export_snapshot(
+        rotkehlchen_api_server: 'APIServer',
+        tmpdir_factory: pytest.TempdirFactory,
+    ) -> None:
     db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
     with db.conn.read_ctx() as cursor:
         display_date_in_localtime = db.get_settings(cursor).display_date_in_localtime
@@ -430,7 +438,9 @@ def test_export_snapshot(rotkehlchen_api_server, tmpdir_factory):
     with db.user_write() as cursor:
         _populate_db_with_balances(cursor, db, ts)
         _populate_db_with_location_data(cursor, db, ts)
-        db.set_settings(cursor, ModifiableDBSettings(main_currency=A_EUR))
+        db.set_settings(cursor, ModifiableDBSettings(
+            main_currency=A_EUR.resolve_to_asset_with_oracles()),
+        )
         response = requests.get(
             api_url_for(
                 rotkehlchen_api_server,
@@ -448,7 +458,9 @@ def test_export_snapshot(rotkehlchen_api_server, tmpdir_factory):
             timestamp_validation_data=(ts, display_date_in_localtime),
         )
 
-        db.set_settings(cursor, ModifiableDBSettings(main_currency=A_ETH))
+        db.set_settings(cursor, ModifiableDBSettings(
+            main_currency=A_ETH.resolve_to_asset_with_oracles()),
+        )
         response = requests.get(
             api_url_for(
                 rotkehlchen_api_server,
@@ -466,7 +478,9 @@ def test_export_snapshot(rotkehlchen_api_server, tmpdir_factory):
             timestamp_validation_data=(ts, display_date_in_localtime),
         )
 
-        db.set_settings(cursor, ModifiableDBSettings(main_currency=A_USD))
+        db.set_settings(cursor, ModifiableDBSettings(
+            main_currency=A_USD.resolve_to_asset_with_oracles()),
+        )
         response = requests.get(
             api_url_for(
                 rotkehlchen_api_server,
@@ -482,14 +496,19 @@ def test_export_snapshot(rotkehlchen_api_server, tmpdir_factory):
 
 
 @pytest.mark.parametrize('default_mock_price_value', [ONE])
-def test_export_snapshot_unknown_asset(rotkehlchen_api_server, tmpdir_factory):
+def test_export_snapshot_unknown_asset(
+        rotkehlchen_api_server: 'APIServer',
+        tmpdir_factory: pytest.TempdirFactory,
+    ) -> None:
     db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
     ts = ts_now()
     csv_dir = str(tmpdir_factory.mktemp('test_csv_dir'))
     with db.user_write() as cursor:
         _populate_db_with_balances_unknown_asset(cursor, ts)
         _populate_db_with_location_data(cursor, db, ts)
-        db.set_settings(cursor, ModifiableDBSettings(main_currency=A_EUR))
+        db.set_settings(cursor, ModifiableDBSettings(
+            main_currency=A_EUR.resolve_to_asset_with_oracles()),
+        )
         response = requests.get(
             api_url_for(
                 rotkehlchen_api_server,
@@ -512,13 +531,15 @@ def test_export_snapshot_unknown_asset(rotkehlchen_api_server, tmpdir_factory):
 
 
 @pytest.mark.parametrize('default_mock_price_value', [ONE])
-def test_download_snapshot(rotkehlchen_api_server):
+def test_download_snapshot(rotkehlchen_api_server: 'APIServer') -> None:
     db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
     ts = ts_now()
     with db.user_write() as cursor:
         _populate_db_with_balances(cursor, db, ts)
         _populate_db_with_location_data(cursor, db, ts)
-        db.set_settings(cursor, ModifiableDBSettings(main_currency=A_EUR))
+        db.set_settings(cursor, ModifiableDBSettings(
+            main_currency=A_EUR.resolve_to_asset_with_oracles()),
+        )
 
     response = requests.get(
         api_url_for(
@@ -536,20 +557,25 @@ def test_download_snapshot(rotkehlchen_api_server):
             zip_ref.extractall(extractdir)
         assert_csv_export_response(
             response=response,
-            csv_dir=extractdir,
+            csv_dir=str(extractdir),
             main_currency=A_EUR.resolve_to_asset_with_oracles(),
             is_download=True,
         )
 
 
 @pytest.mark.parametrize('default_mock_price_value', [ONE])
-def test_import_snapshot(rotkehlchen_api_server, tmpdir_factory):
+def test_import_snapshot(
+        rotkehlchen_api_server: 'APIServer',
+        tmpdir_factory: pytest.TempdirFactory,
+    ) -> None:
     db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
     ts = ts_now()
     with db.user_write() as cursor:
         _populate_db_with_balances(cursor, db, ts)
         _populate_db_with_location_data(cursor, db, ts)
-        db.set_settings(cursor, ModifiableDBSettings(main_currency=A_EUR))
+        db.set_settings(cursor, ModifiableDBSettings(
+            main_currency=A_EUR.resolve_to_asset_with_oracles()),
+        )
 
     # check that importing a valid snapshot passes using PUT
     csv_dir = str(tmpdir_factory.mktemp('test_csv_dir'))
@@ -674,13 +700,15 @@ def test_import_snapshot(rotkehlchen_api_server, tmpdir_factory):
 
 
 @pytest.mark.parametrize('default_mock_price_value', [ONE])
-def test_delete_snapshot(rotkehlchen_api_server):
+def test_delete_snapshot(rotkehlchen_api_server: 'APIServer') -> None:
     db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
     ts = ts_now()
     with db.user_write() as cursor:
         _populate_db_with_balances(cursor, db, ts)
         _populate_db_with_location_data(cursor, db, ts)
-        db.set_settings(cursor, ModifiableDBSettings(main_currency=A_EUR))
+        db.set_settings(cursor, ModifiableDBSettings(
+            main_currency=A_EUR.resolve_to_asset_with_oracles()),
+        )
 
     response = requests.delete(
         api_url_for(
@@ -709,7 +737,7 @@ def test_delete_snapshot(rotkehlchen_api_server):
     )
 
 
-def test_get_snapshot_json(rotkehlchen_api_server):
+def test_get_snapshot_json(rotkehlchen_api_server: 'APIServer') -> None:
     db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
     ts = ts_now()
     with db.user_write() as cursor:
@@ -742,7 +770,7 @@ def test_get_snapshot_json(rotkehlchen_api_server):
     )
 
 
-def test_edit_snapshot(rotkehlchen_api_server):
+def test_edit_snapshot(rotkehlchen_api_server: 'APIServer') -> None:
     db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
     ts = ts_now()
     with db.user_write() as cursor:

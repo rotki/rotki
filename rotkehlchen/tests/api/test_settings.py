@@ -1,6 +1,7 @@
 import dataclasses
 from dataclasses import fields
 from http import HTTPStatus
+from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
 import pytest
@@ -35,9 +36,16 @@ from rotkehlchen.types import (
     SupportedBlockchain,
 )
 
+if TYPE_CHECKING:
+    from rotkehlchen.api.server import APIServer
+
 
 @pytest.mark.parametrize('should_mock_settings', [False])
-def test_cached_settings(rotkehlchen_api_server, username, db_password):
+def test_cached_settings(
+        rotkehlchen_api_server: 'APIServer',
+        username: str,
+        db_password: str,
+    ) -> None:
     """Make sure that querying cached settings works"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
 
@@ -56,7 +64,7 @@ def test_cached_settings(rotkehlchen_api_server, username, db_password):
     assert CachedSettings().get_timeout_tuple() == (DEFAULT_CONNECT_TIMEOUT, DEFAULT_READ_TIMEOUT)
 
     # update a few settings
-    data = {
+    data: dict[str, Any] = {
         'settings': {
             'query_retry_limit': 3,
             'connect_timeout': 45,
@@ -101,7 +109,7 @@ def test_cached_settings(rotkehlchen_api_server, username, db_password):
     assert rotki.user_is_logged_in is True
 
     # Cached settings and DBSettings match
-    with rotki.data.db.conn.read_ctx() as cursor:
+    with rotki.data.db.conn.read_ctx() as cursor:  # type: ignore
         db_settings = rotki.data.db.get_settings(cursor)
 
     cached_settings = CachedSettings().get_settings()
@@ -121,7 +129,7 @@ def test_cached_settings(rotkehlchen_api_server, username, db_password):
     assert json_data['result']['submit_usage_analytics'] is True
 
 
-def test_querying_settings(rotkehlchen_api_server, username):
+def test_querying_settings(rotkehlchen_api_server: 'APIServer', username: str) -> None:
     """Make sure that querying settings works for logged in user"""
     response = requests.get(api_url_for(rotkehlchen_api_server, 'settingsresource'))
     assert_proper_response(response)
@@ -150,7 +158,7 @@ def test_querying_settings(rotkehlchen_api_server, username):
     )
 
 
-def test_set_settings(rotkehlchen_api_server):
+def test_set_settings(rotkehlchen_api_server: 'APIServer') -> None:
     """Happy case settings modification test"""
     # Get the starting settings
     response = requests.get(api_url_for(rotkehlchen_api_server, 'settingsresource'))
@@ -173,7 +181,7 @@ def test_set_settings(rotkehlchen_api_server):
     for setting, raw_value in original_settings.items():
         if setting in unmodifiable_settings:
             continue
-
+        value: str | list[str | dict] | int | None = None
         if setting == 'date_display_format':
             value = '%d/%m/%Y-%H:%M:%S'
         elif setting == 'main_currency':
@@ -250,10 +258,10 @@ def test_set_settings(rotkehlchen_api_server):
     ),
 ])
 def test_set_rpc_endpoint_fail_not_set_others(
-        rotkehlchen_api_server,
-        rpc_setting,
-        error_msg,
-):
+        rotkehlchen_api_server: 'APIServer',
+        rpc_setting: tuple[str, str],
+        error_msg: str,
+) -> None:
     """Test that setting a non-existing eth rpc along with other settings does not modify them"""
     rpc_endpoint = 'http://working.nodes.com:8545'
     main_currency = A_JPY
@@ -280,7 +288,7 @@ def test_set_rpc_endpoint_fail_not_set_others(
 
 
 @pytest.mark.parametrize('rpc_setting', ['ksm_rpc_endpoint'])
-def test_unset_rpc_endpoint(rotkehlchen_api_server, rpc_setting):
+def test_unset_rpc_endpoint(rotkehlchen_api_server: 'APIServer', rpc_setting: list[str]) -> None:
     """Test the rpc endpoint can be unset"""
     response = requests.get(api_url_for(rotkehlchen_api_server, 'settingsresource'))
     assert_proper_response(response)
@@ -300,7 +308,7 @@ def test_unset_rpc_endpoint(rotkehlchen_api_server, rpc_setting):
     assert result[rpc_setting] == ''
 
 
-def test_disable_taxfree_after_period(rotkehlchen_api_server):
+def test_disable_taxfree_after_period(rotkehlchen_api_server: 'APIServer') -> None:
     """Test that providing -1 for the taxfree_after_period setting disables it """
     data = {
         'settings': {'taxfree_after_period': -1},
@@ -332,7 +340,7 @@ def test_disable_taxfree_after_period(rotkehlchen_api_server):
     )
 
 
-def test_set_unknown_settings(rotkehlchen_api_server):
+def test_set_unknown_settings(rotkehlchen_api_server: 'APIServer') -> None:
     """Test that setting an unknown setting results in an error
 
     This is the only test for unknown arguments in marshmallow schemas after
@@ -349,14 +357,14 @@ def test_set_unknown_settings(rotkehlchen_api_server):
     )
 
 
-def test_set_settings_errors(rotkehlchen_api_server):
+def test_set_settings_errors(rotkehlchen_api_server: 'APIServer') -> None:
     """set settings errors and edge cases test"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     # set timeout to 1 second to timeout faster
-    rotki.chains_aggregator.ethereum.rpc_timeout = 1
+    rotki.chains_aggregator.ethereum.node_inquirer.rpc_timeout = 1
 
     # Invalid type for premium_should_sync
-    data = {
+    data: dict[str, Any] = {
         'settings': {'premium_should_sync': 444},
     }
     response = requests.put(api_url_for(rotkehlchen_api_server, 'settingsresource'), json=data)
@@ -541,7 +549,7 @@ def assert_queried_addresses_match(
         assert set(value) == set(result[key])
 
 
-def test_queried_addresses_per_protocol(rotkehlchen_api_server):
+def test_queried_addresses_per_protocol(rotkehlchen_api_server: 'APIServer') -> None:
     # First add some queried addresses per protocol
     address1 = make_evm_address()
     data = {'module': 'aave', 'address': address1}
@@ -626,7 +634,7 @@ def test_queried_addresses_per_protocol(rotkehlchen_api_server):
     })
 
 
-def test_excluded_exchanges_settings(rotkehlchen_api_server):
+def test_excluded_exchanges_settings(rotkehlchen_api_server: 'APIServer') -> None:
     exchanges_input = {
         'settings': {
             'non_syncing_exchanges': [

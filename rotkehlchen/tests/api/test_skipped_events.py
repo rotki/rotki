@@ -1,6 +1,7 @@
 import csv
 import string
 from pathlib import Path
+from typing import TYPE_CHECKING, cast
 from unittest.mock import patch
 
 import pytest
@@ -10,19 +11,27 @@ from rotkehlchen.accounting.export.csv import FILENAME_SKIPPED_EXTERNAL_EVENTS_C
 from rotkehlchen.assets.asset import CryptoAsset
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.constants import ONE
+from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_proper_sync_response_with_result,
     assert_simple_ok_response,
 )
 from rotkehlchen.tests.utils.exchanges import try_get_first_exchange
-from rotkehlchen.tests.utils.kraken import KRAKEN_GENERAL_LEDGER_RESPONSE
-from rotkehlchen.types import Location
+from rotkehlchen.tests.utils.kraken import KRAKEN_GENERAL_LEDGER_RESPONSE, MockKraken
+from rotkehlchen.types import Location, Timestamp
+
+if TYPE_CHECKING:
+    from rotkehlchen.api.server import APIServer
 
 
 @pytest.mark.parametrize('default_mock_price_value', [ONE])
 @pytest.mark.parametrize('added_exchanges', [(Location.KRAKEN,)])
-def test_skipped_external_events(rotkehlchen_api_server_with_exchanges, globaldb, tmpdir_factory):
+def test_skipped_external_events(
+        rotkehlchen_api_server_with_exchanges: 'APIServer',
+        globaldb: GlobalDBHandler,
+        tmpdir_factory: pytest.TempdirFactory,
+    ) -> None:
     server = rotkehlchen_api_server_with_exchanges
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
     # The input has extra information to test that the filters work correctly.
@@ -102,7 +111,10 @@ def test_skipped_external_events(rotkehlchen_api_server_with_exchanges, globaldb
     with rotki.data.db.user_write() as write_cursor:
         rotki.data.db.purge_exchange_data(write_cursor, Location.KRAKEN)
     target = 'rotkehlchen.tests.utils.kraken.KRAKEN_GENERAL_LEDGER_RESPONSE'
-    kraken = try_get_first_exchange(rotki.exchange_manager, Location.KRAKEN)
+    kraken: MockKraken = cast('MockKraken', try_get_first_exchange(
+        rotki.exchange_manager, Location.KRAKEN,
+        ))
+    assert kraken is not None
     kraken.random_ledgers_data = False
     with patch(target, new=input_ledger), rotki.data.db.conn.read_ctx() as cursor:
         kraken.query_kraken_ledgers(
@@ -164,7 +176,7 @@ def test_skipped_external_events(rotkehlchen_api_server_with_exchanges, globaldb
         asset_type=AssetType.OWN_CHAIN,
         name='NEWASSET_NAME',
         symbol='NEWASSET',
-        started=0,
+        started=Timestamp(0),
     ))
     with rotki.data.db.user_write() as write_cursor:
         rotki.data.db.add_asset_identifiers(write_cursor=write_cursor, asset_identifiers=['NEWASSET'])  # noqa: E501

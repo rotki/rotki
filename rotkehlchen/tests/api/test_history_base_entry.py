@@ -17,7 +17,10 @@ from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.eth2 import EthWithdrawalEvent
 from rotkehlchen.history.events.structures.evm_event import SUB_SWAPS_DETAILS, EvmEvent
-from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.history.events.structures.types import (
+    HistoryEventSubType,
+    HistoryEventType,
+)
 from rotkehlchen.tests.utils.accounting import toggle_ignore_an_asset
 from rotkehlchen.tests.utils.api import (
     api_url_for,
@@ -56,11 +59,11 @@ def assert_editing_works(
         sequence_index: int,
         autoedited: dict[str, Any] | None = None,
         also_redecode: bool = False,
-):
+) -> None:
     """A function to assert editing works per entry type. If autoedited is given
     then we check that some fields, given in autoedited, were automatically edited
     and their value derived from other fields"""
-    def edit_entry(attr: str, value: Any):
+    def edit_entry(attr: str, value: Any) -> None:
         if attr in KEYS_IN_ENTRY_TYPE[entry.entry_type]:
             if attr == 'is_mev_reward' and value is True:  # special handling
                 entry.sequence_index = 1
@@ -70,7 +73,7 @@ def assert_editing_works(
             assert hasattr(entry, attr), f'No {attr} in entry'
             setattr(entry, attr, value)
 
-    def assert_event_got_edited(entry: 'HistoryBaseEntry'):
+    def assert_event_got_edited(entry: 'HistoryBaseEntry') -> None:
         with events_db.db.conn.read_ctx() as cursor:
             events = events_db.get_history_events(
                 cursor=cursor,
@@ -132,7 +135,7 @@ def assert_editing_works(
 
 @pytest.mark.parametrize('have_decoders', [True])  # so we can run redecode after add/edit/delete
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
-def test_add_edit_delete_entries(rotkehlchen_api_server: 'APIServer'):
+def test_add_edit_delete_entries(rotkehlchen_api_server: 'APIServer') -> None:
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     db = DBHistoryEvents(rotki.data.db)
     entries = predefined_events_to_insert()
@@ -287,7 +290,7 @@ def test_add_edit_delete_entries(rotkehlchen_api_server: 'APIServer'):
         assert saved_events == [entries[0], entries[2], entries[4], entries[5], entries[6], entries[7], entries[8]]  # noqa: E501
 
 
-def test_event_with_details(rotkehlchen_api_server: 'APIServer'):
+def test_event_with_details(rotkehlchen_api_server: 'APIServer') -> None:
     """Checks that if some events have details this is handled correctly."""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     db = rotki.data.db
@@ -396,7 +399,7 @@ def test_event_with_details(rotkehlchen_api_server: 'APIServer'):
 
 
 @pytest.mark.parametrize('initialize_accounting_rules', [True])
-def test_get_events(rotkehlchen_api_server: 'APIServer'):
+def test_get_events(rotkehlchen_api_server: 'APIServer') -> None:
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     entries = add_entries(events_db=DBHistoryEvents(rotki.data.db))
     expected_entries = [x.serialize() for x in entries]
@@ -575,7 +578,7 @@ def test_get_events(rotkehlchen_api_server: 'APIServer'):
             ) == (total, found)
 
     # test query an event with an unknown asset
-    def mock_check_asset_existence(identifier: str, query_packaged_db: bool = True):
+    def mock_check_asset_existence(identifier: str, query_packaged_db: bool = True) -> Exception:
         raise UnknownAsset(identifier)
 
     with patch(
@@ -597,7 +600,7 @@ def test_get_events(rotkehlchen_api_server: 'APIServer'):
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('added_exchanges', [(Location.KRAKEN,)])
-def test_query_new_events(rotkehlchen_api_server_with_exchanges: 'APIServer'):
+def test_query_new_events(rotkehlchen_api_server_with_exchanges: 'APIServer') -> None:
     """Test that the endpoint for querying new events works correctly both sync and async"""
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
     db = DBHistoryEvents(rotki.data.db)

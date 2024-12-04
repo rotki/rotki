@@ -5,9 +5,11 @@ from typing import Any
 import pytest
 import requests
 
+from rotkehlchen.api.server import APIServer
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_CRV, A_USD
 from rotkehlchen.fval import FVal
+from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
@@ -15,6 +17,7 @@ from rotkehlchen.tests.utils.api import (
     assert_proper_sync_response_with_result,
     assert_simple_ok_response,
 )
+from rotkehlchen.types import Timestamp
 
 
 @pytest.mark.parametrize('mocked_price_queries', [{
@@ -33,7 +36,7 @@ from rotkehlchen.tests.utils.api import (
     },
     'XRP': {'USD': {1611166335: FVal('0')}},
 }])
-def test_get_historical_assets_price(rotkehlchen_api_server):
+def test_get_historical_assets_price(rotkehlchen_api_server: APIServer) -> None:
     """Test given a list of asset-timestamp tuples it returns the asset price
     at the given timestamp.
     """
@@ -106,7 +109,10 @@ def _assert_expected_prices(
     assert data == expected_data
 
 
-def test_manual_historical_price(rotkehlchen_api_server, globaldb):
+def test_manual_historical_price(
+        rotkehlchen_api_server: APIServer,
+        globaldb: GlobalDBHandler,
+    ) -> None:
     # Test normal price
     response = requests.put(
         api_url_for(
@@ -124,9 +130,10 @@ def test_manual_historical_price(rotkehlchen_api_server, globaldb):
     historical_price = globaldb.get_historical_price(
         from_asset=A_CRV,
         to_asset=A_USD,
-        timestamp=1611166335,
+        timestamp=Timestamp(1611166335),
         max_seconds_distance=10,
     )
+    assert historical_price is not None
     assert historical_price.price == FVal(1.2)
     assert historical_price.from_asset == A_CRV.identifier
     assert historical_price.to_asset == A_USD
@@ -147,9 +154,10 @@ def test_manual_historical_price(rotkehlchen_api_server, globaldb):
     historical_price = globaldb.get_historical_price(
         from_asset=A_CRV,
         to_asset=A_USD,
-        timestamp=1631166335,
+        timestamp=Timestamp(1631166335),
         max_seconds_distance=10,
     )
+    assert historical_price is not None
     assert historical_price.price == ZERO
     assert historical_price.from_asset == A_CRV.identifier
     assert historical_price.to_asset == A_USD
