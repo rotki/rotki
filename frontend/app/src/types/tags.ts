@@ -12,8 +12,6 @@ export const Tag = z.object({
   description: z.string(),
   backgroundColor: z.string(),
   foregroundColor: z.string(),
-  readOnly: z.boolean().default(false).optional(),
-  icon: z.string().default('').optional(),
 });
 
 export type Tag = z.infer<typeof Tag>;

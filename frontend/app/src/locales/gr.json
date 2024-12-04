@@ -1346,7 +1346,6 @@
       "pull": "Pull",
       "push": "Push",
       "save": "Αποθήκευση",
-      "save_continue": "Αποθήκευση & συνέχιση",
       "search": "Search",
       "skip": "Skip",
       "terminate": "Terminate",
@@ -3519,7 +3518,6 @@
       "background": "Background",
       "foreground": "Foreground"
     },
-    "refresh_tooltip": "Creates a random color combination",
     "validation": {
       "empty_name": "Please provide a tag name"
     }
@@ -3532,8 +3530,6 @@
       "message": "Are you sure you want to delete {tagToDelete}? This will also remove all mappings of this tag.",
       "title": "Confirm tag deletion"
     },
-    "my_tags": "My Tags",
-    "subtitle": "Create new tags or modify existing",
     "title": "Tag Manager"
   },
   "task_manager": {

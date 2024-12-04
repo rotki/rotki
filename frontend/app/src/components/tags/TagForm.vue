@@ -1,0 +1,135 @@
+<script setup lang="ts">
+import { helpers, required } from '@vuelidate/validators';
+import useVuelidate from '@vuelidate/core';
+import { toMessages } from '@/utils/validation.ts';
+import { useRefPropVModel } from '@/utils/model';
+import type { Tag } from '@/types/tags.ts';
+
+const modelValue = defineModel<Tag>({ required: true });
+
+const stateUpdated = defineModel<boolean>('stateUpdated', { required: true });
+
+defineProps<{
+  editMode: boolean;
+}>();
+
+const { t } = useI18n();
+
+const name = useRefPropVModel(modelValue, 'name');
+const description = useRefPropVModel(modelValue, 'description');
+const backgroundColor = useRefPropVModel(modelValue, 'backgroundColor');
+const foregroundColor = useRefPropVModel(modelValue, 'foregroundColor');
+
+useFormStateWatcher({
+  name,
+  description,
+  backgroundColor,
+  foregroundColor,
+}, stateUpdated);
+
+const rules = {
+  name: {
+    required: helpers.withMessage(t('tag_creator.validation.empty_name'), required),
+  },
+  description: {
+    optional: () => true,
+  },
+};
+
+const v$ = useVuelidate(
+  rules,
+  {
+    name,
+    description,
+  },
+  { $autoDirty: true },
+);
+
+function randomize() {
+  const newBgColor = randomColor();
+  const newFgColor = invertColor(newBgColor);
+  set(modelValue, {
+    ...get(modelValue),
+    backgroundColor: newBgColor,
+    foregroundColor: newFgColor,
+  });
+}
+
+defineExpose({
+  validate: async (): Promise<boolean> => await get(v$).$validate(),
+});
+</script>
+
+<template>
+  <div class="flex flex-col gap-2 py-2">
+    <RuiCard
+      variant="outlined"
+      class="overflow-hidden mb-2"
+      content-class="flex justify-between items-center"
+    >
+      <template #custom-header>
+        <div class="bg-rui-grey-100 dark:bg-rui-grey-800 text-rui-text-secondary px-4 py-2 font-medium text-sm">
+          {{ t('tag_creator.tag_view') }}
+        </div>
+      </template>
+      <TagIcon
+        class="min-w-[7rem] min-h-8"
+        :tag="modelValue"
+      />
+      <RuiButton
+        size="sm"
+        variant="text"
+        color="primary"
+        @click="randomize()"
+      >
+        <template #prepend>
+          <RuiIcon name="shuffle-line" />
+        </template>
+        {{ t('tag_creator.shuffle') }}
+      </RuiButton>
+    </RuiCard>
+    <RuiTextField
+      v-model="name"
+      variant="outlined"
+      color="primary"
+      class="tag_creator__name"
+      data-cy="tag-creator-name"
+      :label="t('common.name')"
+      :error-messages="toMessages(v$.name)"
+      :disabled="editMode"
+    />
+    <RuiTextField
+      v-model="description"
+      variant="outlined"
+      color="primary"
+      class="tag_creator__description"
+      data-cy="tag-creator-description"
+      :label="t('common.description')"
+    />
+
+    <RuiDivider class="mb-4" />
+
+    <div class="grid md:grid-cols-2 gap-4">
+      <RuiCard class="flex flex-col items-center">
+        <template #header>
+          {{ t('tag_creator.labels.foreground') }}
+        </template>
+        <RuiColorPicker
+          v-model="foregroundColor"
+          class="w-full"
+          data-cy="tag-creator__color-picker__foreground"
+        />
+      </RuiCard>
+      <RuiCard class="flex flex-col items-center">
+        <template #header>
+          {{ t('tag_creator.labels.background') }}
+        </template>
+        <RuiColorPicker
+          v-model="backgroundColor"
+          class="w-full"
+          data-cy="tag-creator__color-picker__background"
+        />
+      </RuiCard>
+    </div>
+  </div>
+</template>

@@ -2,7 +2,7 @@ import { hexToRgbPoints } from '@rotki/common';
 
 export class TagManager {
   addTag(parent: string, name: string, description: string, background?: string, foreground?: string) {
-    cy.get(`${parent} [data-cy=manage-tags-button]`).click();
+    cy.get(`${parent} [data-cy=add-tag-button]`).click();
     cy.get('[data-cy=tag-creator-name]').type(name);
     cy.get('[data-cy=tag-creator-description]').type(description);
     if (background && foreground) {
@@ -22,6 +22,6 @@ export class TagManager {
         `rgb(${hexToRgbPoints(foreground).join(', ')})`,
       );
     }
-    cy.get('[data-cy=tag-creator__buttons__save]').click();
+    cy.get('[data-cy=bottom-dialog] [data-cy=confirm]').last().click();
   }
 }

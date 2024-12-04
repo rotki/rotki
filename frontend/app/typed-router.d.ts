@@ -73,6 +73,7 @@ declare module 'vue-router/auto-routes' {
     '/settings/rpc/': RouteRecordInfo<'/settings/rpc/', '/settings/rpc', Record<never, never>, Record<never, never>>,
     '/staking/[[location]]': RouteRecordInfo<'/staking/[[location]]', '/staking/:location?', { location?: ParamValueZeroOrOne<true> }, { location?: ParamValueZeroOrOne<false> }>,
     'statistics': RouteRecordInfo<'statistics', '/statistics', Record<never, never>, Record<never, never>>,
+    'tag_manager': RouteRecordInfo<'tag_manager', '/tag-manager', Record<never, never>, Record<never, never>>,
     '/user/': RouteRecordInfo<'/user/', '/user', Record<never, never>, Record<never, never>>,
     '/user/create/': RouteRecordInfo<'/user/create/', '/user/create', Record<never, never>, Record<never, never>>,
     '/user/login/': RouteRecordInfo<'/user/login/', '/user/login', Record<never, never>, Record<never, never>>,

@@ -34,24 +34,20 @@ const availableTagsList = computed<Tag[]>(() => {
     key-attr="name"
     text-attr="name"
     variant="outlined"
-    :item-height="40"
+    :item-height="37"
     clearable
     dense
     :hide-details="hideDetails"
   >
     <template #selection="{ item, chipAttrs }">
-      <RuiChip
-        tile
-        size="sm"
-        class="font-medium !leading-4"
-        :bg-color="`#${item.backgroundColor}`"
-        :text-color="`#${item.foregroundColor}`"
+      <TagIcon
+        :tag="item"
+        small
+        class="!leading-4"
         closeable
         clickable
         v-bind="chipAttrs"
-      >
-        {{ item.name }}
-      </RuiChip>
+      />
     </template>
     <template #item="{ item }">
       <TagIcon

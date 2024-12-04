@@ -145,6 +145,11 @@ const navItems: MenuItem[] = [
     type: 'divider',
   },
   {
+    type: 'item',
+    class: 'tag-manager',
+    ...Routes.TAG_MANAGER,
+  },
+  {
     type: 'group',
     class: 'asset-manager',
     ...Routes.ASSET_MANAGER,

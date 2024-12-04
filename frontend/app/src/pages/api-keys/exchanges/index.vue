@@ -125,10 +125,6 @@ function editExchange(exchangePayload: Exchange) {
   });
 }
 
-function resetForm() {
-  set(exchange, createNewExchange());
-}
-
 async function remove(item: Exchange) {
   await removeExchange(item);
 }
@@ -224,9 +220,6 @@ onMounted(async () => {
       </RuiDataTable>
     </RuiCard>
 
-    <ExchangeKeysFormDialog
-      v-model="exchange"
-      @reset="resetForm()"
-    />
+    <ExchangeKeysFormDialog v-model="exchange" />
   </TablePageLayout>
 </template>

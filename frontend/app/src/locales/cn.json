@@ -1366,7 +1366,6 @@
       "pull": "拉",
       "push": "推",
       "save": "保存",
-      "save_continue": "保存并继续",
       "search": "搜索",
       "skip": "跳过",
       "terminate": "终止",
@@ -3631,7 +3630,6 @@
       "background": "背景",
       "foreground": "前景"
     },
-    "refresh_tooltip": "创建随机颜色组合",
     "validation": {
       "empty_name": "请提供标签名称"
     }
@@ -3644,8 +3642,6 @@
       "message": "您确定要删除 {tagToDelete} 吗？这也会删除该标签的所有映射。",
       "title": "确认标签删除"
     },
-    "my_tags": "我的标签",
-    "subtitle": "创建新标签或修改现有标签",
     "title": "标签管理器"
   },
   "task_manager": {

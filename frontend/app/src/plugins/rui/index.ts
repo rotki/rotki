@@ -1,5 +1,6 @@
 /* eslint-disable max-lines */
 import {
+  LuTagManager,
   RiAccountCircleLine,
   RiAddBoxLine,
   RiAddCircleLine,
@@ -421,6 +422,7 @@ export function createRuiPlugin(defaults: Partial<RuiOptions['defaults']>): RuiP
         RiInputField,
         RiGuideLine,
         RiMacbookLine,
+        LuTagManager,
       ],
     },
     defaults,

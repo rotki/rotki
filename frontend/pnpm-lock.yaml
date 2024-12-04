@@ -21,7 +21,7 @@ importers:
         version: 3.1.0(eslint@9.16.0(jiti@1.21.6))
       '@rotki/eslint-config':
         specifier: 3.6.0
-        version: 3.6.0(@intlify/eslint-plugin-vue-i18n@3.1.0(eslint@9.16.0(jiti@1.21.6)))(@rotki/eslint-plugin@0.5.0(eslint@9.16.0(jiti@1.21.6))(typescript@5.6.3))(@types/eslint@9.6.1)(@typescript-eslint/utils@8.16.0(eslint@9.16.0(jiti@1.21.6))(typescript@5.6.3))(@vue/compiler-sfc@3.5.13)(eslint-plugin-cypress@4.1.0(eslint@9.16.0(jiti@1.21.6)))(eslint@9.16.0(jiti@1.21.6))(typescript@5.6.3)(vitest@2.1.8)
+        version: 3.6.0(@intlify/eslint-plugin-vue-i18n@3.1.0(eslint@9.16.0(jiti@1.21.6)))(@rotki/eslint-plugin@0.5.0(eslint@9.16.0(jiti@1.21.6))(typescript@5.6.3))(@types/eslint@9.6.1)(@typescript-eslint/utils@8.16.0(eslint@9.16.0(jiti@1.21.6))(typescript@5.6.3))(@vue/compiler-sfc@3.5.13)(eslint-plugin-cypress@4.1.0(eslint@9.16.0(jiti@1.21.6)))(eslint@9.16.0(jiti@1.21.6))(typescript@5.6.3)(vitest@2.1.8(jiti@1.21.6)(jsdom@25.0.1))
       '@rotki/eslint-plugin':
         specifier: 0.5.0
         version: 0.5.0(eslint@9.16.0(jiti@1.21.6))(typescript@5.6.3)
@@ -71,8 +71,8 @@ importers:
         specifier: workspace:*
         version: link:../common
       '@rotki/ui-library':
-        specifier: 1.8.1
-        version: 1.8.1(@vueuse/core@12.0.0(typescript@5.6.3))(@vueuse/shared@12.0.0(typescript@5.6.3))(vue@3.5.13(typescript@5.6.3))
+        specifier: 1.8.2
+        version: 1.8.2(@vueuse/core@12.0.0(typescript@5.6.3))(@vueuse/shared@12.0.0(typescript@5.6.3))(vue@3.5.13(typescript@5.6.3))
       '@types/jsdom':
         specifier: 21.1.7
         version: 21.1.7
@@ -197,7 +197,7 @@ importers:
         version: 5.2.1(vite@6.0.2(@types/node@20.17.9)(jiti@1.21.6)(sass@1.82.0)(terser@5.36.0)(tsx@4.19.2)(yaml@2.6.1))(vue@3.5.13(typescript@5.6.3))
       '@vitest/coverage-v8':
         specifier: 2.1.8
-        version: 2.1.8(vitest@2.1.8)
+        version: 2.1.8(vitest@2.1.8(@types/node@20.17.9)(@vitest/ui@2.1.8)(jiti@1.21.6)(jsdom@25.0.1)(msw@2.6.6(@types/node@20.17.9)(typescript@5.6.3))(sass@1.82.0)(terser@5.36.0)(tsx@4.19.2)(yaml@2.6.1))
       '@vitest/ui':
         specifier: 2.1.8
         version: 2.1.8(vitest@2.1.8)
@@ -233,7 +233,7 @@ importers:
         version: 33.2.1
       electron-builder:
         specifier: 25.1.8
-        version: 25.1.8(electron-builder-squirrel-windows@25.1.8)
+        version: 25.1.8(electron-builder-squirrel-windows@25.1.8(dmg-builder@25.1.8))
       electron-store:
         specifier: 8.2.0
         version: 8.2.0
@@ -1958,8 +1958,8 @@ packages:
     peerDependencies:
       eslint: ^9.0.0
 
-  '@rotki/ui-library@1.8.1':
-    resolution: {integrity: sha512-aVjFnfjIz3fAsny5YTnkQnNDPtSpqVE3Is/UCBtxiKOc1VUGzR+m7hXICd+PG9y5ChfAAcK4p0A108LW6baYlg==}
+  '@rotki/ui-library@1.8.2':
+    resolution: {integrity: sha512-iXr9PCt6NdggMPzYwmW9txjR++/Q7HYUoaMwAlORebyVhqKn+hGdJnqINFFiAeIK2y63uDWcqKbLW63CQW99tQ==}
     engines: {node: '>=20 <21', pnpm: '>=9 <10'}
     peerDependencies:
       '@vueuse/core': '>11.0.0'
@@ -9175,7 +9175,7 @@ snapshots:
   '@rollup/rollup-win32-x64-msvc@4.27.3':
     optional: true
 
-  '@rotki/eslint-config@3.6.0(@intlify/eslint-plugin-vue-i18n@3.1.0(eslint@9.16.0(jiti@1.21.6)))(@rotki/eslint-plugin@0.5.0(eslint@9.16.0(jiti@1.21.6))(typescript@5.6.3))(@types/eslint@9.6.1)(@typescript-eslint/utils@8.16.0(eslint@9.16.0(jiti@1.21.6))(typescript@5.6.3))(@vue/compiler-sfc@3.5.13)(eslint-plugin-cypress@4.1.0(eslint@9.16.0(jiti@1.21.6)))(eslint@9.16.0(jiti@1.21.6))(typescript@5.6.3)(vitest@2.1.8)':
+  '@rotki/eslint-config@3.6.0(@intlify/eslint-plugin-vue-i18n@3.1.0(eslint@9.16.0(jiti@1.21.6)))(@rotki/eslint-plugin@0.5.0(eslint@9.16.0(jiti@1.21.6))(typescript@5.6.3))(@types/eslint@9.6.1)(@typescript-eslint/utils@8.16.0(eslint@9.16.0(jiti@1.21.6))(typescript@5.6.3))(@vue/compiler-sfc@3.5.13)(eslint-plugin-cypress@4.1.0(eslint@9.16.0(jiti@1.21.6)))(eslint@9.16.0(jiti@1.21.6))(typescript@5.6.3)(vitest@2.1.8(jiti@1.21.6)(jsdom@25.0.1))':
     dependencies:
       '@antfu/eslint-define-config': 1.23.0-2
       '@antfu/install-pkg': 0.4.1
@@ -9187,7 +9187,7 @@ snapshots:
       '@stylistic/eslint-plugin': 2.11.0(eslint@9.16.0(jiti@1.21.6))(typescript@5.6.3)
       '@typescript-eslint/eslint-plugin': 8.16.0(@typescript-eslint/parser@8.16.0(eslint@9.16.0(jiti@1.21.6))(typescript@5.6.3))(eslint@9.16.0(jiti@1.21.6))(typescript@5.6.3)
       '@typescript-eslint/parser': 8.16.0(eslint@9.16.0(jiti@1.21.6))(typescript@5.6.3)
-      '@vitest/eslint-plugin': 1.1.10(@typescript-eslint/utils@8.16.0(eslint@9.16.0(jiti@1.21.6))(typescript@5.6.3))(eslint@9.16.0(jiti@1.21.6))(typescript@5.6.3)(vitest@2.1.8)
+      '@vitest/eslint-plugin': 1.1.10(@typescript-eslint/utils@8.16.0(eslint@9.16.0(jiti@1.21.6))(typescript@5.6.3))(eslint@9.16.0(jiti@1.21.6))(typescript@5.6.3)(vitest@2.1.8(jiti@1.21.6)(jsdom@25.0.1))
       eslint: 9.16.0(jiti@1.21.6)
       eslint-config-flat-gitignore: 0.3.0(eslint@9.16.0(jiti@1.21.6))
       eslint-config-prettier: 9.1.0(eslint@9.16.0(jiti@1.21.6))
@@ -9240,7 +9240,7 @@ snapshots:
       - supports-color
       - typescript
 
-  '@rotki/ui-library@1.8.1(@vueuse/core@12.0.0(typescript@5.6.3))(@vueuse/shared@12.0.0(typescript@5.6.3))(vue@3.5.13(typescript@5.6.3))':
+  '@rotki/ui-library@1.8.2(@vueuse/core@12.0.0(typescript@5.6.3))(@vueuse/shared@12.0.0(typescript@5.6.3))(vue@3.5.13(typescript@5.6.3))':
     dependencies:
       '@vueuse/core': 12.0.0(typescript@5.6.3)
       '@vueuse/shared': 12.0.0(typescript@5.6.3)
@@ -9602,7 +9602,7 @@ snapshots:
       vite: 6.0.2(@types/node@20.17.9)(jiti@1.21.6)(sass@1.82.0)(terser@5.36.0)(tsx@4.19.2)(yaml@2.6.1)
       vue: 3.5.13(typescript@5.6.3)
 
-  '@vitest/coverage-v8@2.1.8(vitest@2.1.8)':
+  '@vitest/coverage-v8@2.1.8(vitest@2.1.8(@types/node@20.17.9)(@vitest/ui@2.1.8)(jiti@1.21.6)(jsdom@25.0.1)(msw@2.6.6(@types/node@20.17.9)(typescript@5.6.3))(sass@1.82.0)(terser@5.36.0)(tsx@4.19.2)(yaml@2.6.1))':
     dependencies:
       '@ampproject/remapping': 2.3.0
       '@bcoe/v8-coverage': 0.2.3
@@ -9620,7 +9620,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@vitest/eslint-plugin@1.1.10(@typescript-eslint/utils@8.16.0(eslint@9.16.0(jiti@1.21.6))(typescript@5.6.3))(eslint@9.16.0(jiti@1.21.6))(typescript@5.6.3)(vitest@2.1.8)':
+  '@vitest/eslint-plugin@1.1.10(@typescript-eslint/utils@8.16.0(eslint@9.16.0(jiti@1.21.6))(typescript@5.6.3))(eslint@9.16.0(jiti@1.21.6))(typescript@5.6.3)(vitest@2.1.8(jiti@1.21.6)(jsdom@25.0.1))':
     dependencies:
       '@typescript-eslint/utils': 8.16.0(eslint@9.16.0(jiti@1.21.6))(typescript@5.6.3)
       eslint: 9.16.0(jiti@1.21.6)
@@ -10077,7 +10077,7 @@ snapshots:
 
   app-builder-bin@5.0.0-alpha.10: {}
 
-  app-builder-lib@25.1.8(dmg-builder@25.1.8)(electron-builder-squirrel-windows@25.1.8):
+  app-builder-lib@25.1.8(dmg-builder@25.1.8(electron-builder-squirrel-windows@25.1.8))(electron-builder-squirrel-windows@25.1.8(dmg-builder@25.1.8)):
     dependencies:
       '@develar/schema-utils': 2.6.5
       '@electron/notarize': 2.5.0
@@ -10970,7 +10970,7 @@ snapshots:
 
   dmg-builder@25.1.8(electron-builder-squirrel-windows@25.1.8):
     dependencies:
-      app-builder-lib: 25.1.8(dmg-builder@25.1.8)(electron-builder-squirrel-windows@25.1.8)
+      app-builder-lib: 25.1.8(dmg-builder@25.1.8(electron-builder-squirrel-windows@25.1.8))(electron-builder-squirrel-windows@25.1.8(dmg-builder@25.1.8))
       builder-util: 25.1.7
       builder-util-runtime: 9.2.10
       fs-extra: 10.1.0
@@ -11059,7 +11059,7 @@ snapshots:
 
   electron-builder-squirrel-windows@25.1.8(dmg-builder@25.1.8):
     dependencies:
-      app-builder-lib: 25.1.8(dmg-builder@25.1.8)(electron-builder-squirrel-windows@25.1.8)
+      app-builder-lib: 25.1.8(dmg-builder@25.1.8(electron-builder-squirrel-windows@25.1.8))(electron-builder-squirrel-windows@25.1.8(dmg-builder@25.1.8))
       archiver: 5.3.2
       builder-util: 25.1.7
       fs-extra: 10.1.0
@@ -11068,9 +11068,9 @@ snapshots:
       - dmg-builder
       - supports-color
 
-  electron-builder@25.1.8(electron-builder-squirrel-windows@25.1.8):
+  electron-builder@25.1.8(electron-builder-squirrel-windows@25.1.8(dmg-builder@25.1.8)):
     dependencies:
-      app-builder-lib: 25.1.8(dmg-builder@25.1.8)(electron-builder-squirrel-windows@25.1.8)
+      app-builder-lib: 25.1.8(dmg-builder@25.1.8(electron-builder-squirrel-windows@25.1.8))(electron-builder-squirrel-windows@25.1.8(dmg-builder@25.1.8))
       builder-util: 25.1.7
       builder-util-runtime: 9.2.10
       chalk: 4.1.2
