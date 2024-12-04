@@ -1706,7 +1706,6 @@
       "proceed": "Proceed",
       "push": "Push",
       "save": "Save",
-      "save_continue": "Save & continue",
       "search": "Search",
       "skip": "Skip",
       "terminate": "Terminate",
@@ -3616,7 +3615,8 @@
       "rpc_nodes": "RPC Nodes"
     },
     "staking": "Staking",
-    "statistics": "Statistics"
+    "statistics": "Statistics",
+    "tag_manager": "Tag Manager"
   },
   "net_worth_chart": {
     "current_balance": "Current balance"
@@ -4471,7 +4471,8 @@
       "background": "Background",
       "foreground": "Foreground"
     },
-    "refresh_tooltip": "Creates a random color combination",
+    "shuffle": "Shuffle",
+    "tag_view": "Tag view",
     "validation": {
       "empty_name": "Please provide a tag name"
     }
@@ -4484,9 +4485,15 @@
       "message": "Are you sure you want to delete {tagToDelete}? This will also remove all mappings of this tag.",
       "title": "Confirm tag deletion"
     },
-    "my_tags": "My Tags",
-    "subtitle": "Create new tags or modify existing",
-    "title": "Tag Manager"
+    "title": "Tag Manager",
+    "create_tag": {
+      "title": "Create Tag",
+      "subtitle": "Create a new tag and tailor it to fit your preferences."
+    },
+    "edit_tag": {
+      "title": "Edit Tag",
+      "subtitle": "Edit tag and tailor it to fit your preferences."
+    }
   },
   "task_manager": {
     "error": "An error occurred while processing task [{taskId}] '{title}': {error}"

@@ -1519,7 +1519,6 @@
       "pull": "Tirer",
       "push": "Pousser",
       "save": "Enregistrer",
-      "save_continue": "Sauvegarder et continuer",
       "search": "Rechercher",
       "skip": "Sauter",
       "terminate": "Terminer",
@@ -3908,7 +3907,6 @@
       "background": "Arrière-plan",
       "foreground": "Premier plan"
     },
-    "refresh_tooltip": "Crée une combinaison de couleurs aléatoire",
     "validation": {
       "empty_name": "Veuillez fournir un nom à l'étiquette"
     }
@@ -3921,8 +3919,6 @@
       "message": "Voulez-vous vraiment supprimer {tagToDelete} ? Cela supprimera également toutes les correspondances de cette étiquette.",
       "title": "Confirmer la suppression d'étiquette"
     },
-    "my_tags": "Mes étiquettes",
-    "subtitle": "Créer de nouvelles étiquettes ou modifier les existantes",
     "title": "Gestionnaire d'étiquettes"
   },
   "task_manager": {

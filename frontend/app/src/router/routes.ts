@@ -33,6 +33,7 @@ export const Routes = {
   STAKING: ensureRoute('/staking/:location*'),
   PROFIT_LOSS_REPORTS: ensureRoute('/reports/'),
   PROFIT_LOSS_REPORT: ensureRoute(`/reports/:id`),
+  TAG_MANAGER: ensureRoute('/tag-manager'),
   ASSET_MANAGER: ensureRoute('/asset-manager'),
   ASSET_MANAGER_MANAGED: ensureRoute('/asset-manager/managed'),
   ASSET_MANAGER_CUSTOM: ensureRoute('/asset-manager/custom'),
@@ -174,6 +175,11 @@ export const useAppRoutes = createSharedComposable(() => {
       route: Routes.PROFIT_LOSS_REPORT,
       icon: 'calculator-line' as const,
       text: t('navigation_menu.profit_loss_report'),
+    },
+    TAG_MANAGER: {
+      route: Routes.TAG_MANAGER,
+      icon: 'lu-tag-manager' as const,
+      text: t('navigation_menu.tag_manager'),
     },
     ASSET_MANAGER: {
       route: Routes.ASSET_MANAGER,

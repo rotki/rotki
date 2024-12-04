@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { logger } from '@/utils/logging';
-import type { Tag } from '@/types/tags';
+import { logger } from '@/utils/logging.ts';
+import { type Tag, defaultTag } from '@/types/tags';
 
 const modelValue = defineModel<string[]>({ required: true });
 
@@ -18,8 +18,9 @@ const { t } = useI18n();
 const store = useTagStore();
 const { tags } = storeToRefs(store);
 
-const manageTags = ref<boolean>(false);
 const search = ref<string>('');
+
+const newTag = ref<Tag | undefined>(undefined);
 
 function randomScheme() {
   const backgroundColor = randomColor();
@@ -85,14 +86,18 @@ function onUpdateModelValue(_value: ({ name: string } | string | Tag)[]) {
   set(modelValue, tags);
 }
 
+function handleCreateNewTag() {
+  set(newTag, defaultTag());
+}
+
 watch(search, (keyword: string | null, previous: string | null) => {
   if (keyword && !previous)
     set(colorScheme, randomScheme());
 });
 
-const newTagBackground = computed<string>(() => `#${get(colorScheme).backgroundColor}`);
+const newTagBackground = computed<string>(() => get(colorScheme).backgroundColor);
 
-const newTagForeground = computed<string>(() => `#${get(colorScheme).foregroundColor}`);
+const newTagForeground = computed<string>(() => get(colorScheme).foregroundColor);
 
 const filteredValue = computed<Tag[]>(() => get(tags).filter(({ name }) => get(modelValue).includes(name)));
 
@@ -127,33 +132,31 @@ watch(tags, () => {
           @click="onUpdateModelValue([...filteredValue, search])"
         >
           <template #title>
-            <span>{{ t('common.actions.create') }}</span>
-            <RuiChip
-              class="ml-3"
-              :bg-color="newTagBackground"
-              :text-color="newTagForeground"
-              tile
-              size="sm"
-            >
-              {{ search }}
-            </RuiChip>
+            <div class="flex items-center gap-4">
+              <span>{{ t('common.actions.create') }}</span>
+
+              <TagIcon
+                small
+                :tag="{
+                  name: search,
+                  backgroundColor: newTagBackground,
+                  foregroundColor: newTagForeground,
+                  description: '',
+                }"
+              />
+            </div>
           </template>
         </ListItem>
       </template>
       <template #selection="{ item, chipAttrs }">
-        <RuiChip
-          tile
-          class="font-medium m-0.5"
-          :bg-color="`#${item.backgroundColor}`"
-          :text-color="`#${item.foregroundColor}`"
+        <TagIcon
+          small
+          :tag="item"
+          v-bind="chipAttrs"
           closeable
           :disabled="disabled"
           clickable
-          size="sm"
-          v-bind="chipAttrs"
-        >
-          {{ item.name }}
-        </RuiChip>
+        />
       </template>
       <template #item="{ item }">
         <TagIcon
@@ -164,26 +167,18 @@ watch(tags, () => {
       </template>
     </RuiAutoComplete>
     <RuiButton
-      class="tag-input__manage-tags mt-1"
-      data-cy="manage-tags-button"
+      class="mt-1"
+      data-cy="add-tag-button"
       icon
       variant="text"
       color="primary"
       type="button"
       :disabled="disabled"
-      @click="manageTags = true"
+      @click="handleCreateNewTag()"
     >
-      <RuiIcon name="pencil-line" />
+      <RuiIcon name="add-line" />
     </RuiButton>
-    <RuiDialog
-      v-model="manageTags"
-      max-width="800"
-      class="tag-input__tag-manager"
-    >
-      <TagManager
-        dialog
-        @close="manageTags = false"
-      />
-    </RuiDialog>
+
+    <TagFormDialog v-model="newTag" />
   </div>
 </template>

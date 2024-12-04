@@ -130,6 +130,7 @@ function getRoutes(keyword: string): SearchItemWithoutValue[] {
     { ...Routes.STATISTICS },
     { ...Routes.STAKING },
     { ...Routes.PROFIT_LOSS_REPORTS },
+    { ...Routes.TAG_MANAGER },
     {
       ...Routes.ASSET_MANAGER_MANAGED,
       texts: [Routes.ASSET_MANAGER.text, Routes.ASSET_MANAGER_MANAGED.text],

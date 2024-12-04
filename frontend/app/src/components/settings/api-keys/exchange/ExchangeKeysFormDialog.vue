@@ -22,7 +22,7 @@ const title = computed<string>(() => {
 
 async function save(): Promise<void> {
   assert(isDefined(modelValue));
-  if (await get(form)?.validate() !== true) {
+  if (!await get(form)?.validate()) {
     return;
   }
   set(submitting, true);
@@ -50,7 +50,7 @@ async function save(): Promise<void> {
     @cancel="modelValue = undefined"
   >
     <ExchangeKeysForm
-      v-if="!!modelValue"
+      v-if="modelValue"
       ref="form"
       v-model="modelValue"
       v-model:state-updated="stateUpdated"
