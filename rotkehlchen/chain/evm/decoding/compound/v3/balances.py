@@ -276,5 +276,4 @@ class Compoundv3Balances(ProtocolWithBalance):
 
     def query_balances(self) -> 'BalancesSheetType':
         balances = self.query_liabilities()
-        balances = self.query_collateral(balances)
-        return balances
+        return self.query_collateral(balances)
