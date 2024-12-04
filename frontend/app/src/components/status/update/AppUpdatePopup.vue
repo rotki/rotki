@@ -65,33 +65,35 @@ onMounted(async () => {
     v-if="isPackaged"
     :model-value="showUpdatePopup"
     :timeout="-1"
-    class="top-[3.5rem] text-rui-text"
+    class="top-[3.5rem] text-rui-text !bg-transparent"
     width="380px"
   >
-    <div class="p-2">
+    <RuiCard rounded="md">
       <div
         v-if="!restarting"
         class="flex items-center gap-4"
       >
-        <RuiIcon
-          v-if="error"
-          size="40"
-          color="error"
-          name="error-warning-line"
-        />
-        <RuiIcon
-          v-else-if="!downloadReady && !downloading"
-          size="40"
-          color="primary"
-          name="arrow-up-circle-line"
-        />
-        <RuiIcon
-          v-else
-          size="40"
-          color="primary"
-          name="arrow-down-circle-line"
-        />
-        <div class="text-body-1">
+        <div class="w-10 h-10">
+          <RuiIcon
+            v-if="error"
+            size="40"
+            color="error"
+            name="error-warning-line"
+          />
+          <RuiIcon
+            v-else-if="!downloadReady && !downloading"
+            size="40"
+            color="primary"
+            name="arrow-up-circle-line"
+          />
+          <RuiIcon
+            v-else
+            size="40"
+            color="primary"
+            name="arrow-down-circle-line"
+          />
+        </div>
+        <div class="text-body-2">
           <span
             v-if="error"
             class="text-rui-error"
@@ -177,6 +179,6 @@ onMounted(async () => {
           </RuiButton>
         </div>
       </div>
-    </div>
+    </RuiCard>
   </RuiNotification>
 </template>

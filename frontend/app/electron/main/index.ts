@@ -42,6 +42,42 @@ async function onActivate(): Promise<void> {
   else win?.show();
 }
 
+// Helper function to check if an input field is focused
+async function isInputFieldFocused(win: BrowserWindow) {
+  return win.webContents.executeJavaScript(`
+      (function() {
+        const activeElement = document.activeElement;
+        
+        // Check for text input elements
+        const isTextInput = 
+          activeElement.tagName === 'INPUT' ||
+          activeElement.tagName === 'TEXTAREA' ||
+          activeElement.isContentEditable ||
+          activeElement.role === 'textbox' ||
+          activeElement.closest('[contenteditable]'); // Check for nested contenteditable
+        
+        // Return early
+        if (isTextInput) return true;
+        
+        // Check for any text selection
+        const selection = window.getSelection();
+        const hasTextSelection = selection.toString().length > 0;
+        
+        return hasTextSelection;
+      })()
+    `).catch(() => false);
+}
+
+function handleNavigateBack(event: { preventDefault: () => void }, win: BrowserWindow) {
+  win.webContents.navigationHistory.goBack();
+  event.preventDefault();
+}
+
+function handleNavigateForward(event: { preventDefault: () => void }, win: BrowserWindow) {
+  win.webContents.navigationHistory.goForward();
+  event.preventDefault();
+}
+
 // Some APIs can only be used after this event occurs.
 async function onReady(): Promise<void> {
   const getWindow = () => {
@@ -71,15 +107,43 @@ async function onReady(): Promise<void> {
 
   getWindow().webContents.on('before-input-event', (event, input) => {
     const win = getWindow();
-    if (isMac ? input.meta : input.control) {
-      if (['ArrowLeft', '['].includes(input.key) && win.webContents.canGoBack()) {
-        win.webContents.goBack();
-        event.preventDefault();
-      }
 
-      if (['ArrowRight', ']'].includes(input.key) && win.webContents.canGoForward()) {
-        win.webContents.goForward();
-        event.preventDefault();
+    const isModifierPressed = isMac ? input.meta : input.alt;
+
+    if (!isModifierPressed || !win.webContents.isFocused())
+      return;
+
+    if (win.webContents.navigationHistory.canGoBack()) {
+      if (input.key === '[') {
+        handleNavigateBack(event, win);
+      }
+      else if (input.key === 'ArrowLeft') {
+        isInputFieldFocused(win)
+          .then((isFocused) => {
+            if (!isFocused) {
+              handleNavigateBack(event, win);
+            }
+          })
+          .catch((error) => {
+            console.error(error);
+          });
+      }
+    }
+
+    if (win.webContents.navigationHistory.canGoForward()) {
+      if (input.key === ']') {
+        handleNavigateForward(event, win);
+      }
+      else if (input.key === 'ArrowRight') {
+        isInputFieldFocused(win)
+          .then((isFocused) => {
+            if (!isFocused) {
+              handleNavigateForward(event, win);
+            }
+          })
+          .catch((error) => {
+            console.error(error);
+          });
       }
     }
   });

@@ -95,6 +95,7 @@ const truncatedLabelDisplayed = computed(() => {
     color="primary"
   >
     <RuiTooltip
+      :disabled="!shouldShowAmount"
       :popper="{ placement: 'top' }"
       :open-delay="400"
       class="flex-1"

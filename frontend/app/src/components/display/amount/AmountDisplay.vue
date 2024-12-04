@@ -368,6 +368,7 @@ const [DefineSymbol, ReuseSymbol] = createReusableTemplate<{ name: string }>();
         />
 
         <CopyTooltip
+          :disabled="!shouldShowAmount"
           :copied="copied"
           :tooltip="tooltip"
           data-cy="display-amount"

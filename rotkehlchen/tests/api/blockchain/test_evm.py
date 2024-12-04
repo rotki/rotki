@@ -538,7 +538,7 @@ def test_evm_address_async(rotkehlchen_api_server: 'APIServer') -> None:
         outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
         assert outcome['result'] is None
         assert outcome['status_code'] == HTTPStatus.BAD_REQUEST
-        assert 'Given value rotki.ethe is not an evm address' in outcome['message']
+        assert 'Given ENS address rotki.ethe could not be resolved for Ethereum' in outcome['message']  # noqa: E501
 
         # add an address that should be correctly added
         label = 'rotki account'
@@ -557,3 +557,26 @@ def test_evm_address_async(rotkehlchen_api_server: 'APIServer') -> None:
         task_id = assert_ok_async_response(response)
         outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
         assert outcome['result']['added'][common_account] == ['all']
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('have_decoders', [True])
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
+def test_argent_names(rotkehlchen_api_server: 'APIServer') -> None:
+    name, address = 'mysticryuujin.argent.xyz', '0xeA6457DeA80349063cA9eBEfa450E8C4637e33A2'
+    response = requests.put(api_url_for(
+        rotkehlchen_api_server,
+        'blockchainsaccountsresource',
+        blockchain='ETH',
+    ), json={'accounts': [{'address': name}]})
+
+    result = assert_proper_sync_response_with_result(response)
+    assert result == [address]
+
+    response = requests.delete(api_url_for(
+        rotkehlchen_api_server,
+        'blockchainsaccountsresource',
+        blockchain='ETH',
+    ), json={'accounts': [name]})
+    assert_proper_response(response)
+    assert rotkehlchen_api_server.rest_api.rotkehlchen.chains_aggregator.accounts.eth == ()

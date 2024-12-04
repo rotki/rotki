@@ -63,7 +63,7 @@ const etherscanApiKeyAlert = computed(() => {
 });
 
 function navigateToApiKeySettings(chainName: string) {
-  router.push(`/api-keys/external#${chainName}`);
+  router.push({ path: '/api-keys/external', hash: `#${chainName}` });
 }
 
 async function validate(): Promise<boolean> {

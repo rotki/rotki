@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import dayjs, { type Dayjs } from 'dayjs';
+import { isEqual } from 'lodash-es';
 import { RouterAccountsSchema } from '@/types/route';
 import { isBlockchain } from '@/types/blockchain/chains';
 import CalendarGrid from '@/components/calendar/CalendarGrid.vue';
+import CalendarUpcomingEventList from '@/components/calendar/CalendarUpcomingEventList.vue';
 import type { CalendarEvent, CalendarEventRequestPayload } from '@/types/history/calendar';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 import type { Writeable } from '@rotki/common';
@@ -14,6 +16,8 @@ const visibleDate = ref<Dayjs>(dayjs());
 
 const today = ref<Dayjs>(dayjs());
 const range = ref<[number, number]>([0, 0]);
+const selectedDateEvents = ref<CalendarEvent[]>([]);
+const upcomingEvents = ref<CalendarEvent[]>([]);
 
 const { fetchCalendarEvents, deleteCalendarEvent } = useCalendarApi();
 const accounts = ref<BlockchainAccount<AddressData>[]>([]);
@@ -34,6 +38,7 @@ const {
   state: events,
   isLoading,
   fetchData,
+  pagination,
 } = usePaginationFilters<
   CalendarEvent,
   CalendarEventRequestPayload
@@ -74,7 +79,35 @@ const {
 });
 
 onMounted(() => {
+  set(pagination, {
+    ...get(pagination),
+    limit: -1,
+  });
   fetchData();
+});
+
+watch([events, today], async ([events, today], [oldEvents, oldToday]) => {
+  if (isEqual(events, oldEvents) && isEqual(today, oldToday))
+    return;
+
+  const upcomingEventsData = events.data.filter((item) => {
+    const date = dayjs(item.timestamp * 1000);
+    return date.isAfter(today);
+  });
+
+  if (upcomingEventsData.length >= 5) {
+    set(upcomingEvents, upcomingEventsData.slice(0, 5));
+  }
+  else {
+    const data = await fetchCalendarEvents({
+      fromTimestamp: today.add(1, 'day').startOf('day').unix(),
+      limit: 5,
+      offset: 0,
+      ascending: [true],
+      orderByAttributes: ['timestamp'],
+    });
+    set(upcomingEvents, data.data);
+  }
 });
 
 const dateFormat = 'YYYY-MM-DD';
@@ -141,8 +174,6 @@ function deleteEvent() {
 }
 
 setPostSubmitFunc(fetchData);
-
-const selectedDateEvents = ref<CalendarEvent[]>([]);
 
 watch(selectedDate, (selected) => {
   set(visibleDate, selected);
@@ -229,40 +260,53 @@ onMounted(async () => {
           @delete="deleteEvent()"
         />
       </RuiCard>
-      <RuiCard class="h-auto">
-        <template #header>
-          <div v-if="today.isSame(selectedDate, 'day')">
-            {{ t('calendar.today_events') }}
-          </div>
-          <div v-else>
-            <DateDisplay
-              :timestamp="selectedDate.unix()"
-              no-time
-              hide-tooltip
+      <div class="flex flex-col gap-4 h-auto">
+        <RuiCard class="[&>div:last-child]:!pt-2">
+          <template #header>
+            <div v-if="today.isSame(selectedDate, 'day')">
+              {{ t('calendar.today_events') }}
+            </div>
+            <div v-else>
+              <DateDisplay
+                :timestamp="selectedDate.unix()"
+                no-time
+                hide-tooltip
+              />
+              {{ t('common.events') }}
+            </div>
+          </template>
+          <div
+            v-if="selectedDateEvents.length > 0"
+            class="flex flex-col gap-4"
+          >
+            <CalendarEventList
+              v-for="event in selectedDateEvents"
+              :key="event.identifier"
+              v-model:selected-date="selectedDate"
+              :visible-date="visibleDate"
+              :event="event"
+              @edit="edit(event)"
             />
-            {{ t('common.events') }}
           </div>
-        </template>
-        <div
-          v-if="selectedDateEvents.length > 0"
-          class="flex flex-col gap-4 pb-2"
-        >
-          <CalendarEventList
-            v-for="event in selectedDateEvents"
-            :key="event.identifier"
+          <div
+            v-else
+            class="text-body-2 pb-2"
+          >
+            {{ t('calendar.no_events') }}
+          </div>
+        </RuiCard>
+        <RuiCard class="[&>div:last-child]:!pt-2">
+          <template #header>
+            {{ t('calendar.upcoming_events') }}
+          </template>
+          <CalendarUpcomingEventList
             v-model:selected-date="selectedDate"
+            :events="upcomingEvents"
             :visible-date="visibleDate"
-            :event="event"
-            @edit="edit(event)"
+            @edit="edit($event)"
           />
-        </div>
-        <div
-          v-else
-          class="text-body-2 pb-2"
-        >
-          {{ t('calendar.no_events') }}
-        </div>
-      </RuiCard>
+        </RuiCard>
+      </div>
     </div>
   </TablePageLayout>
 </template>

@@ -13,6 +13,13 @@ Changelog
 * :feature:`8618` rotki will now support Morpho vaults on Ethereum and Base, with related historical events properly decoded and correct prices shown for vault tokens.
 * :feature:`8620` rotki will now properly decode EFP (Ethereum Follow Protocol) transactions.
 * :feature:`8602` rotki will now properly decode Basenames transactions and add calendar reminders for name expiry.
+* :feature:`-` Show upcoming events on the right side of the calendar view.
+* :bug:`-` Fix the issue where clicking the link to input the Etherscan key doesn't open the correct tab.
+* :bug:`8982` Fix the issue where Cmd / Alt + Arrow Left / Arrow Right forces navigation, as it should interact with user selection in text input.
+* :bug:`-` Some of the Compound v3 supplied collateral that was not detected by rotki will now be properly seen as balance.
+* :bug:`8983` The asset amount will be shown if only one asset is detected in an account.
+* :feature:`8991` Add direct navigation to asset details when clicking on small asset icons in the blockchain balances table.
+* :feature:`8981` rotki will now resolve any non .eth domains supported by ENS to addresses.
 
 * :release:`1.36.1 <2024-11-29>`
 * :bug:`-` Coinbase deposits that appeared as withdrawals should now appear as deposits again. Would need to purge and requery coinbase to fix this.

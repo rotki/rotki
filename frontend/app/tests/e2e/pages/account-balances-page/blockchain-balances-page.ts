@@ -121,7 +121,7 @@ export class BlockchainBalancesPage {
         .find('tbody')
         .find('tr[class^="_tr_"]:not(tr[class*="_group_"]')
         .each((row) => {
-          const value = row.find('[data-cy=display-amount]').text();
+          const value = row.find('[data-cy=usd-value] [data-cy=display-amount]').text();
           const asset = row.find('.account-chain').eq(0).attr('data-chain');
 
           if (!value || !asset)

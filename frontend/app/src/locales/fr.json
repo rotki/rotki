@@ -2125,12 +2125,6 @@
     "title": "Soldes des plateformes d'échange"
   },
   "exchange_keys_form": {
-    "api_key": {
-      "non_empty": "Le champ Clé API ne peut être vide."
-    },
-    "api_secret": {
-      "non_empty": "Le champ Secret API ne peut être vide."
-    },
     "edit": {
       "activate_tooltip": "Modifier les clés API pour la plateforme d'échange.",
       "deactivate_tooltip": "Annuler la modification des clés API pour la plateforme d'échange."
@@ -2138,9 +2132,6 @@
     "exchange": "Plateforme d'Échange",
     "name": {
       "non_empty": "Le champ Nom ne peut être vide."
-    },
-    "passphrase": {
-      "non_empty": "Le champ Phrase d'Authentification ne peut être vide."
     }
   },
   "exchange_settings": {

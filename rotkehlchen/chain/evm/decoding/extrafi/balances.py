@@ -274,6 +274,9 @@ class ExtrafiCommonBalances(ProtocolWithBalance):
 
         reserve_to_balance: dict[EvmToken, FVal] = defaultdict(FVal)
         for idx, result in enumerate(raw_balances):
+            if result[-1] <= 0:
+                continue
+
             try:
                 reserve_token = self._maybe_query_reserve_idx_to_underlying(
                     reserve_idx=reserves[idx],
