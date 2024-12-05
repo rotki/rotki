@@ -8,10 +8,10 @@ export interface TagEvent {
 }
 
 export const Tag = z.object({
-  name: z.string(),
-  description: z.string(),
   backgroundColor: z.string(),
+  description: z.string(),
   foregroundColor: z.string(),
+  name: z.string(),
 });
 
 export type Tag = z.infer<typeof Tag>;
@@ -22,9 +22,9 @@ export type Tags = z.infer<typeof Tags>;
 
 export function defaultTag(): Tag {
   return {
-    name: '',
+    backgroundColor: 'E3E3E3',
     description: '',
     foregroundColor: '000000',
-    backgroundColor: 'E3E3E3',
+    name: '',
   };
 }

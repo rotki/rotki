@@ -67,8 +67,8 @@ function scrollToElement(navId?: string) {
   const parent = get(parentScroller);
   if (element && parent) {
     parent.scrollTo({
-      top: element.offsetTop - parent.offsetTop,
       behavior: 'smooth',
+      top: element.offsetTop - parent.offsetTop,
     });
   }
 }

@@ -9,6 +9,8 @@ import {
   PRIVATE_ADDRESSBOOK_PRIO_LIST_ITEM,
   type PrioritizedListId,
 } from '@/types/settings/prioritized-list-id';
+import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 
 const currentAddressNamePriorities = ref<PrioritizedListId[]>([]);
 const { addressNamePriority } = storeToRefs(useGeneralSettingsStore());

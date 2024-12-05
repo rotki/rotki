@@ -23,13 +23,13 @@ export const useAreaVisibilityStore = defineStore('session/visibility', () => {
   const isMini = logicAnd(logicNot(isXlAndDown), logicNot(showDrawer));
 
   return {
-    showAbout,
-    showHelpBar,
-    showNotificationBar,
-    showNotesSidebar,
     isMini,
-    showDrawer,
     pinned,
+    showAbout,
+    showDrawer,
+    showHelpBar,
+    showNotesSidebar,
+    showNotificationBar,
     showPinned,
     toggleDrawer,
   };

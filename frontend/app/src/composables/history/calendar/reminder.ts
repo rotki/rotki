@@ -57,9 +57,9 @@ export function useCalendarReminderApi(): UseCalendarReminderApi {
   };
 
   return {
-    fetchCalendarReminders,
     addCalendarReminder,
-    editCalendarReminder,
     deleteCalendarReminder,
+    editCalendarReminder,
+    fetchCalendarReminders,
   };
 }

@@ -8,6 +8,9 @@ import { TaskType } from '@/types/task-type';
 import { logger } from '@/utils/logging';
 import { isAccountWithBalanceValidator } from '@/utils/blockchain/accounts';
 import { isTaskCancelled } from '@/utils';
+import { useNotificationsStore } from '@/store/notifications';
+import { useBlockchainStore } from '@/store/blockchain';
+import { useTaskStore } from '@/store/tasks';
 import type { TaskMeta } from '@/types/task';
 import type { ComputedRef, Ref } from 'vue';
 
@@ -42,7 +45,7 @@ export function useEth2Staking(): UseEthStakingReturn {
 
     const taskType = TaskType.STAKING_ETH2;
 
-    const { setStatus, resetStatus, fetchDisabled } = useStatusUpdater(Section.STAKING_ETH2);
+    const { fetchDisabled, resetStatus, setStatus } = useStatusUpdater(Section.STAKING_ETH2);
 
     if (fetchDisabled(userInitiated))
       return false;
@@ -66,11 +69,11 @@ export function useEth2Staking(): UseEthStakingReturn {
       if (!isTaskCancelled(error)) {
         logger.error(error);
         notify({
-          title: t('actions.staking.eth2.error.title'),
+          display: true,
           message: t('actions.staking.eth2.error.description', {
             error: error.message,
           }),
-          display: true,
+          title: t('actions.staking.eth2.error.title'),
         });
       }
       resetStatus();
@@ -86,24 +89,24 @@ export function useEth2Staking(): UseEthStakingReturn {
   };
 
   const {
-    state,
     execute,
     isLoading: performanceLoading,
+    state,
   } = useAsyncState<EthStakingPerformanceResponse, MaybeRef<EthStakingPayload>[]>(
     fetchStakingPerformance,
     {
-      validators: {},
       entriesFound: 0,
       entriesTotal: 0,
       sums: {},
+      validators: {},
     } satisfies EthStakingPerformanceResponse,
     {
-      immediate: false,
-      resetOnExecute: false,
       delay: 0,
+      immediate: false,
       onError: (error) => {
         logger.error(error);
       },
+      resetOnExecute: false,
     },
   );
 
@@ -145,10 +148,10 @@ export function useEth2Staking(): UseEthStakingReturn {
   watch(pagination, async pagination => fetchPerformance(pagination));
 
   return {
-    performance,
-    pagination,
-    performanceLoading,
     fetchPerformance,
+    pagination,
+    performance,
+    performanceLoading,
     refreshPerformance,
   };
 }

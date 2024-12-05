@@ -1,5 +1,8 @@
 import { TaskType } from '@/types/task-type';
 import { Section } from '@/types/status';
+import { useStatusStore } from '@/store/status';
+import { useBlockchainTokensStore } from '@/store/blockchain/tokens';
+import { useTaskStore } from '@/store/tasks';
 import type { ComputedRef } from 'vue';
 
 interface UseBlockchainAccountLoadingReturn {
@@ -36,8 +39,8 @@ export function useBlockchainAccountLoading(refresh: () => Promise<void>): UseBl
   );
 
   return {
+    deleteDisabled,
     isDetectingTokens,
     refreshDisabled,
-    deleteDisabled,
   };
 }

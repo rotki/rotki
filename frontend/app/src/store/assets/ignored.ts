@@ -1,5 +1,6 @@
 import { uniqueStrings } from '@/utils/data';
 import { arrayify } from '@/utils/array';
+import { useNotificationsStore } from '@/store/notifications';
 import type { MaybeRef } from '@vueuse/core';
 import type { ActionStatus } from '@/types/action';
 
@@ -8,7 +9,7 @@ export const useIgnoredAssetsStore = defineStore('assets/ignored', () => {
   const { notify } = useNotificationsStore();
   const { t } = useI18n();
 
-  const { getIgnoredAssets, addIgnoredAssets, removeIgnoredAssets } = useAssetIgnoreApi();
+  const { addIgnoredAssets, getIgnoredAssets, removeIgnoredAssets } = useAssetIgnoreApi();
 
   const fetchIgnoredAssets = async (): Promise<void> => {
     try {
@@ -21,35 +22,35 @@ export const useIgnoredAssetsStore = defineStore('assets/ignored', () => {
         error: error.message,
       });
       notify({
-        title,
-        message,
         display: true,
+        message,
+        title,
       });
     }
   };
 
   const ignoreAsset = async (assets: string[] | string): Promise<ActionStatus> => {
     try {
-      const { successful, noAction } = await addIgnoredAssets(arrayify(assets));
+      const { noAction, successful } = await addIgnoredAssets(arrayify(assets));
       set(ignoredAssets, [...get(ignoredAssets), ...successful, ...noAction].filter(uniqueStrings));
       return { success: true };
     }
     catch (error: any) {
       notify({
-        title: t('ignore.failed.ignore_title'),
+        display: true,
         message: t('ignore.failed.ignore_message', {
           length: Array.isArray(assets) ? assets.length : 1,
           message: error.message,
         }),
-        display: true,
+        title: t('ignore.failed.ignore_title'),
       });
-      return { success: false, message: error.message };
+      return { message: error.message, success: false };
     }
   };
 
   const unignoreAsset = async (assets: string[] | string): Promise<ActionStatus> => {
     try {
-      const { successful, noAction } = await removeIgnoredAssets(arrayify(assets));
+      const { noAction, successful } = await removeIgnoredAssets(arrayify(assets));
       set(
         ignoredAssets,
         get(ignoredAssets).filter(asset => ![...successful, ...noAction].includes(asset)),
@@ -58,14 +59,14 @@ export const useIgnoredAssetsStore = defineStore('assets/ignored', () => {
     }
     catch (error: any) {
       notify({
-        title: t('ignore.failed.unignore_title'),
+        display: true,
         message: t('ignore.failed.unignore_message', {
           length: Array.isArray(assets) ? assets.length : 1,
           message: error.message,
         }),
-        display: true,
+        title: t('ignore.failed.unignore_title'),
       });
-      return { success: false, message: error.message };
+      return { message: error.message, success: false };
     }
   };
 
@@ -81,12 +82,12 @@ export const useIgnoredAssetsStore = defineStore('assets/ignored', () => {
   };
 
   return {
-    ignoredAssets,
+    addIgnoredAsset,
     fetchIgnoredAssets,
     ignoreAsset,
-    unignoreAsset,
+    ignoredAssets,
     isAssetIgnored,
-    addIgnoredAsset,
+    unignoreAsset,
   };
 });
 

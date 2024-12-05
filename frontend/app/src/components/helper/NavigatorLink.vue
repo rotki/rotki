@@ -12,8 +12,8 @@ const props = withDefaults(
     to: RouteLocationRaw | undefined;
   }>(),
   {
-    tag: 'span',
     enabled: true,
+    tag: 'span',
   },
 );
 

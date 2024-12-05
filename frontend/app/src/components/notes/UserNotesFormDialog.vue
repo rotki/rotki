@@ -15,7 +15,7 @@ function resetForm() {
   emit('reset');
 }
 
-const { openDialog, submitting, trySubmit, stateUpdated } = useUserNotesForm();
+const { openDialog, stateUpdated, submitting, trySubmit } = useUserNotesForm();
 
 const { t } = useI18n();
 </script>

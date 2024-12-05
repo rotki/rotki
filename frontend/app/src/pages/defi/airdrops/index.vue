@@ -12,6 +12,8 @@ import AirdropDisplay from '@/components/defi/airdrops/AirdropDisplay.vue';
 import { isTaskCancelled } from '@/utils';
 import { logger } from '@/utils/logging';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
+import { useTaskStore } from '@/store/tasks';
+import { useNotificationsStore } from '@/store/notifications';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 import type { DataTableColumn, TablePaginationData } from '@rotki/ui-library';
 import type { TaskMeta } from '@/types/task';
@@ -83,22 +85,22 @@ const rows = computed<AirdropWithIndex[]>(() => {
 
 const cols = computed<DataTableColumn<AirdropWithIndex>[]>(() => [
   {
-    label: t('airdrops.headers.source'),
     key: 'source',
+    label: t('airdrops.headers.source'),
     width: '200px',
   },
   {
-    label: t('common.address'),
     key: 'address',
+    label: t('common.address'),
   },
   {
-    label: t('common.amount'),
-    key: 'amount',
     align: 'end',
+    key: 'amount',
+    label: t('common.amount'),
   },
   {
-    label: t('common.status'),
     key: 'claimed',
+    label: t('common.status'),
   },
 ]);
 
@@ -115,10 +117,10 @@ function filterByAddress(data: Airdrops, addresses: string[]): Airdrop[] {
         const details = element as PoapDelivery[];
         result.push({
           address,
-          source,
           details: details.map(detail => ({
             ...detail,
           })),
+          source,
         });
       }
       else {
@@ -146,11 +148,11 @@ async function fetchAirdrops() {
     if (!isTaskCancelled(error)) {
       logger.error(error);
       notify({
-        title: t('actions.defi.airdrops.error.title'),
+        display: true,
         message: t('actions.defi.airdrops.error.description', {
           error: error.message,
         }),
-        display: true,
+        title: t('actions.defi.airdrops.error.title'),
       });
     }
   }

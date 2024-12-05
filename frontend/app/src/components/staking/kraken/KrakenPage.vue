@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import { Section } from '@/types/status';
 import { Routes } from '@/router/routes';
+import { useExchangesStore } from '@/store/exchanges';
+import { useKrakenStakingStore } from '@/store/staking/kraken';
+import { useStatusStore } from '@/store/status';
 import type { RouteLocationRaw } from 'vue-router';
 
-const { shouldShowLoadingScreen, isLoading } = useStatusStore();
-const { load, $reset } = useKrakenStakingStore();
+const { isLoading, shouldShowLoadingScreen } = useStatusStore();
+const { $reset, load } = useKrakenStakingStore();
 
 const { connectedExchanges } = storeToRefs(useExchangesStore());
 const isKrakenConnected = computed(() => {

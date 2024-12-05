@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ThemeChecker } from '@/premium/premium';
+import { useAreaVisibilityStore } from '@/store/session/visibility';
 
 const { showAbout } = storeToRefs(useAreaVisibilityStore());
 const premium = usePremium();

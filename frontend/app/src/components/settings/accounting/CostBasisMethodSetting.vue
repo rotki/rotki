@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { CostBasisMethod } from '@/types/user';
+import { useAccountingSettingsStore } from '@/store/settings/accounting';
 
 const costBasisMethod = ref<CostBasisMethod>(CostBasisMethod.FIFO);
 const { costBasisMethod: method } = storeToRefs(useAccountingSettingsStore());

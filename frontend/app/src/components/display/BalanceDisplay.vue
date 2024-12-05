@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useBalancePricesStore } from '@/store/balances/prices';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 import type { Balance } from '@rotki/common';
 
 const props = withDefaults(
@@ -16,21 +18,21 @@ const props = withDefaults(
     calculateValue?: boolean;
   }>(),
   {
+    align: 'end',
     asset: '',
-    value: null,
+    assetPadding: 0,
+    calculateValue: false,
+    iconSize: '24px',
+    loading: false,
+    mode: '',
     noIcon: false,
     noJustify: false,
-    align: 'end',
-    mode: '',
-    assetPadding: 0,
     ticker: true,
-    loading: false,
-    iconSize: '24px',
-    calculateValue: false,
+    value: null,
   },
 );
 
-const { asset, value, calculateValue } = toRefs(props);
+const { asset, calculateValue, value } = toRefs(props);
 
 const amount = useValueOrDefault(
   useRefMap(value, value => value?.amount),

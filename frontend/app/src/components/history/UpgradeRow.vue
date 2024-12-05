@@ -12,11 +12,11 @@ withDefaults(
     entriesFoundTotal?: number;
   }>(),
   {
-    events: false,
-    timeStart: 0,
-    timeEnd: 0,
-    found: undefined,
     entriesFoundTotal: undefined,
+    events: false,
+    found: undefined,
+    timeEnd: 0,
+    timeStart: 0,
   },
 );
 

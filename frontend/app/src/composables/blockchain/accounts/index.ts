@@ -5,6 +5,10 @@ import { convertBtcAccounts } from '@/utils/blockchain/accounts';
 import { createAccount } from '@/utils/blockchain/accounts/create';
 import { logger } from '@/utils/logging';
 import { isTaskCancelled } from '@/utils';
+import { useNotificationsStore } from '@/store/notifications';
+import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
+import { useTaskStore } from '@/store/tasks';
+import { useBlockchainStore } from '@/store/blockchain';
 import type {
   AccountPayload,
   BlockchainAccount,
@@ -31,18 +35,18 @@ interface UseBlockchainAccountsReturn {
 export function useBlockchainAccounts(): UseBlockchainAccountsReturn {
   const {
     addBlockchainAccount,
-    removeBlockchainAccount,
-    removeAgnosticBlockchainAccount,
-    editBlockchainAccount,
+    addEvmAccount: addEvmAccountCaller,
     editAgnosticBlockchainAccount,
+    editBlockchainAccount,
     editBtcAccount,
     queryAccounts,
     queryBtcAccounts,
-    addEvmAccount: addEvmAccountCaller,
+    removeAgnosticBlockchainAccount,
+    removeBlockchainAccount,
   } = useBlockchainAccountsApi();
   const { deleteXpub: deleteXpubCaller } = useBlockchainAccountsApi();
   const { fetchEthStakingValidators } = useEthStaking();
-  const { updateAccounts, removeTag } = useBlockchainStore();
+  const { removeTag, updateAccounts } = useBlockchainStore();
 
   const { awaitTask, isTaskRunning } = useTaskStore();
   const { notify } = useNotificationsStore();
@@ -60,9 +64,9 @@ export function useBlockchainAccounts(): UseBlockchainAccountsReturn {
       taskId,
       taskType,
       {
-        title: t('actions.balances.blockchain_accounts_add.task.title', { blockchain: chain }),
-        description: t('actions.balances.blockchain_accounts_add.task.description', { address }),
         blockchain: chain,
+        description: t('actions.balances.blockchain_accounts_add.task.description', { address }),
+        title: t('actions.balances.blockchain_accounts_add.task.title', { blockchain: chain }),
       },
       true,
     );
@@ -84,10 +88,10 @@ export function useBlockchainAccounts(): UseBlockchainAccountsReturn {
         taskId,
         taskType,
         {
+          description: t('actions.balances.blockchain_accounts_add.task.description', { address }),
           title: t('actions.balances.blockchain_accounts_add.task.title', {
             blockchain,
           }),
-          description: t('actions.balances.blockchain_accounts_add.task.description', { address }),
         },
         true,
       );
@@ -135,8 +139,8 @@ export function useBlockchainAccounts(): UseBlockchainAccountsReturn {
     resetAddressesData(chain, payload);
 
     const chainInfo = {
-      nativeAsset: getNativeAsset(chain),
       chain,
+      nativeAsset: getNativeAsset(chain),
     };
 
     return result.map(account => createAccount(account, chainInfo));
@@ -154,27 +158,27 @@ export function useBlockchainAccounts(): UseBlockchainAccountsReturn {
     try {
       const taskType = TaskType.REMOVE_ACCOUNT;
       await awaitTask<BlockchainBalances, BlockchainMetadata>(taskId, taskType, {
+        blockchain: chain,
+        description: t('actions.balances.blockchain_account_removal.task.description', { count: accounts.length }),
         title: t('actions.balances.blockchain_account_removal.task.title', {
           blockchain: chain,
         }),
-        description: t('actions.balances.blockchain_account_removal.task.description', { count: accounts.length }),
-        blockchain: chain,
       });
     }
     catch (error: any) {
       if (!isTaskCancelled(error)) {
         logger.error(error);
         const title = t('actions.balances.blockchain_account_removal.error.title', {
-          count: accounts.length,
           blockchain: chain,
+          count: accounts.length,
         });
         const description = t('actions.balances.blockchain_account_removal.error.description', {
           error: error.message,
         });
         notify({
-          title,
-          message: description,
           display: true,
+          message: description,
+          title,
         });
       }
     }
@@ -185,8 +189,8 @@ export function useBlockchainAccounts(): UseBlockchainAccountsReturn {
     try {
       const taskType = TaskType.REMOVE_ACCOUNT;
       await awaitTask<BlockchainBalances, BlockchainMetadata>(taskId, taskType, {
-        title: t('actions.balances.blockchain_account_removal.agnostic.task.title'),
         description: t('actions.balances.blockchain_account_removal.agnostic.task.description', { address }),
+        title: t('actions.balances.blockchain_account_removal.agnostic.task.title'),
       });
     }
     catch (error: any) {
@@ -199,9 +203,9 @@ export function useBlockchainAccounts(): UseBlockchainAccountsReturn {
           error: error.message,
         });
         notify({
-          title,
-          message: description,
           display: true,
+          message: description,
+          title,
         });
       }
     }
@@ -211,8 +215,8 @@ export function useBlockchainAccounts(): UseBlockchainAccountsReturn {
     try {
       const accounts = await queryAccounts(chain);
       const chainInfo = {
-        nativeAsset: getNativeAsset(chain),
         chain,
+        nativeAsset: getNativeAsset(chain),
       };
 
       updateAccounts(
@@ -224,12 +228,12 @@ export function useBlockchainAccounts(): UseBlockchainAccountsReturn {
     catch (error: any) {
       logger.error(error);
       notify({
-        title: t('actions.get_accounts.error.title'),
+        display: true,
         message: t('actions.get_accounts.error.description', {
           blockchain: chain.toUpperCase(),
           message: error.message,
         }),
-        display: true,
+        title: t('actions.get_accounts.error.title'),
       });
       return null;
     }
@@ -244,12 +248,12 @@ export function useBlockchainAccounts(): UseBlockchainAccountsReturn {
     catch (error: any) {
       logger.error(error);
       notify({
-        title: t('actions.get_accounts.error.title'),
+        display: true,
         message: t('actions.get_accounts.error.description', {
           blockchain: chain.toUpperCase(),
           message: error.message,
         }),
-        display: true,
+        title: t('actions.get_accounts.error.title'),
       });
       return false;
     }
@@ -263,11 +267,11 @@ export function useBlockchainAccounts(): UseBlockchainAccountsReturn {
 
       const { taskId } = await deleteXpubCaller(params);
       await awaitTask<boolean, BlockchainMetadata>(taskId, taskType, {
-        title: t('actions.balances.xpub_removal.task.title'),
+        blockchain: params.chain,
         description: t('actions.balances.xpub_removal.task.description', {
           xpub: params.xpub,
         }),
-        blockchain: params.chain,
+        title: t('actions.balances.xpub_removal.task.title'),
       });
     }
     catch (error: any) {
@@ -275,13 +279,13 @@ export function useBlockchainAccounts(): UseBlockchainAccountsReturn {
         logger.error(error);
         const title = t('actions.balances.xpub_removal.error.title');
         const description = t('actions.balances.xpub_removal.error.description', {
-          xpub: params.xpub,
           error: error.message,
+          xpub: params.xpub,
         });
         notify({
-          title,
-          message: description,
           display: true,
+          message: description,
+          title,
         });
       }
     }
@@ -299,12 +303,12 @@ export function useBlockchainAccounts(): UseBlockchainAccountsReturn {
   return {
     addAccount,
     addEvmAccount,
+    deleteXpub,
     editAccount,
     editAgnosticAccount,
+    fetch,
     removeAccount,
     removeAgnosticAccount,
-    fetch,
-    deleteXpub,
     removeTag,
   };
 }

@@ -23,8 +23,8 @@ const isHttps = (value: string) => !value || value.startsWith('https');
 
 const rules = {
   url: {
-    urlValidator,
     https: helpers.withMessage(t('explorer_input.validation.https'), isHttps),
+    urlValidator,
   },
 };
 

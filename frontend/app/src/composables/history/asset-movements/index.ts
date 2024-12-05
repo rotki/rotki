@@ -4,6 +4,9 @@ import { mapCollectionResponse } from '@/utils/collection';
 import { mapCollectionEntriesWithMeta } from '@/utils/history';
 import { logger } from '@/utils/logging';
 import { isTaskCancelled } from '@/utils';
+import { useTaskStore } from '@/store/tasks';
+import { useNotificationsStore } from '@/store/notifications';
+import { useHistoryStore } from '@/store/history';
 import type { MaybeRef } from '@vueuse/core';
 import type { Collection, CollectionResponse } from '@/types/collection';
 import type { EntryWithMeta } from '@/types/history/meta';
@@ -30,22 +33,22 @@ export function useAssetMovements(): UseAssetMovementsReturn {
     const taskType = TaskType.MOVEMENTS;
 
     const defaults: AssetMovementRequestPayload = {
-      limit: 0,
-      offset: 0,
       ascending: [false],
-      orderByAttributes: ['timestamp'],
-      onlyCache: false,
+      limit: 0,
       location,
+      offset: 0,
+      onlyCache: false,
+      orderByAttributes: ['timestamp'],
     };
 
     const { taskId } = await getAssetMovementsTask(defaults);
     const exchange = exchangeName(location);
     const taskMeta = {
-      title: t('actions.asset_movements.task.title'),
       description: t('actions.asset_movements.task.description', {
         exchange,
       }),
       location,
+      title: t('actions.asset_movements.task.title'),
     };
 
     try {
@@ -54,14 +57,14 @@ export function useAssetMovements(): UseAssetMovementsReturn {
     catch (error: any) {
       if (!isTaskCancelled(error)) {
         notify({
+          display: true,
+          message: t('actions.asset_movements.error.description', {
+            error: error.message,
+            exchange,
+          }),
           title: t('actions.asset_movements.error.title', {
             exchange,
           }),
-          message: t('actions.asset_movements.error.description', {
-            exchange,
-            error: error.message,
-          }),
-          display: true,
         });
       }
     }
@@ -70,7 +73,7 @@ export function useAssetMovements(): UseAssetMovementsReturn {
   };
 
   const refreshAssetMovements = async (userInitiated = false, location?: string): Promise<void> => {
-    const { setStatus, isFirstLoad, resetStatus, fetchDisabled } = useStatusUpdater(Section.ASSET_MOVEMENT);
+    const { fetchDisabled, isFirstLoad, resetStatus, setStatus } = useStatusUpdater(Section.ASSET_MOVEMENT);
 
     if (fetchDisabled(userInitiated)) {
       logger.info('skipping asset movement refresh');
@@ -103,7 +106,7 @@ export function useAssetMovements(): UseAssetMovementsReturn {
   };
 
   return {
-    refreshAssetMovements,
     fetchAssetMovements,
+    refreshAssetMovements,
   };
 }

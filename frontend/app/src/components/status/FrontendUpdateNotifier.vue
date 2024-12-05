@@ -14,19 +14,19 @@ onMounted(async () => {
       updateSW,
       registerSW({
         immediate: true,
-        onRegistered: (registration?: ServiceWorkerRegistration) => {
-          setInterval(async () => {
-            await registration?.update();
-          }, 1000 * 60);
-          logger.info('Service worker has been registered.');
+        onNeedRefresh: () => {
+          set(needRefresh, true);
+          logger.info('New content is available, please refresh.');
         },
         onOfflineReady: () => {
           set(offlineReady, true);
           logger.info('Offline ready');
         },
-        onNeedRefresh: () => {
-          set(needRefresh, true);
-          logger.info('New content is available, please refresh.');
+        onRegistered: (registration?: ServiceWorkerRegistration) => {
+          setInterval(async () => {
+            await registration?.update();
+          }, 1000 * 60);
+          logger.info('Service worker has been registered.');
         },
         onRegisterError: (error: any) => {
           logger.error('Error during service worker registration:', error);

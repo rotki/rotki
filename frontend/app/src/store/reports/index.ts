@@ -8,6 +8,11 @@ import { getEthAddressesFromText } from '@/utils/history';
 import { isTaskCancelled } from '@/utils';
 import { isTransactionEvent } from '@/utils/report';
 import { logger } from '@/utils/logging';
+import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
+import { useTaskStore } from '@/store/tasks';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useMessageStore } from '@/store/message';
+import { useNotificationsStore } from '@/store/notifications';
 import type {
   ProfitLossReportDebugPayload,
   ProfitLossReportPeriod,
@@ -24,9 +29,9 @@ function notify(info: { title: string; message: (value: { message: string }) => 
   const message = info.error?.message ?? info.error ?? '';
   const { notify } = useNotificationsStore();
   notify({
-    title: info.title,
-    message: info.message({ message }),
     display: true,
+    message: info.message({ message }),
+    title: info.title,
   });
 }
 
@@ -39,33 +44,33 @@ function emptyError(): ReportError {
 
 function defaultReport(): SelectedReport {
   return {
-    entries: [],
-    entriesLimit: 0,
-    entriesFound: 0,
-    start: 0,
     end: 0,
+    entries: [],
+    entriesFound: 0,
+    entriesLimit: 0,
     firstProcessedTimestamp: 0,
     lastProcessedTimestamp: 0,
-    processedActions: 0,
-    totalActions: 0,
     overview: {},
+    processedActions: 0,
     settings: {
-      taxfreeAfterPeriod: 0,
-      calculatePastCostBasis: false,
       accountForAssetsMovements: false,
-      includeGasCosts: false,
+      calculatePastCostBasis: false,
       includeCrypto2crypto: false,
       includeFeesInCostBasis: true,
+      includeGasCosts: false,
       profitCurrency: CURRENCY_USD,
+      taxfreeAfterPeriod: 0,
     },
+    start: 0,
+    totalActions: 0,
   };
 }
 
 function defaultReports(): Reports {
   return {
     entries: [],
-    entriesLimit: 0,
     entriesFound: 0,
+    entriesLimit: 0,
   };
 }
 
@@ -100,13 +105,13 @@ export const useReportsStore = defineStore('reports', () => {
   const { fetchEnsNames } = useAddressesNamesStore();
 
   const {
-    exportReportCSV,
     deleteReport: deleteReportCaller,
-    fetchReportEvents,
+    exportReportCSV,
+    exportReportData: exportReportDataCaller,
     fetchActionableItems,
+    fetchReportEvents,
     fetchReports: fetchReportsCaller,
     generateReport: generateReportCaller,
-    exportReportData: exportReportDataCaller,
   } = useReportsApi();
 
   const { getProgress } = useHistoryApi();
@@ -130,18 +135,18 @@ export const useReportsStore = defineStore('reports', () => {
     try {
       const success = await exportReportCSV(path);
       message = {
-        title: t('actions.reports.csv_export.title'),
         description: success
           ? t('actions.reports.csv_export.message.success')
           : t('actions.reports.csv_export.message.failure'),
         success,
+        title: t('actions.reports.csv_export.title'),
       };
     }
     catch (error: any) {
       message = {
-        title: t('actions.reports.csv_export.title'),
         description: error.message,
         success: false,
+        title: t('actions.reports.csv_export.title'),
       };
     }
     setMessage(message);
@@ -153,9 +158,9 @@ export const useReportsStore = defineStore('reports', () => {
     }
     catch (error: any) {
       notify({
-        title: t('actions.reports.fetch.error.title'),
-        message: value => t('actions.reports.fetch.error.description', value),
         error,
+        message: value => t('actions.reports.fetch.error.description', value),
+        title: t('actions.reports.fetch.error.title'),
       });
     }
   };
@@ -167,9 +172,9 @@ export const useReportsStore = defineStore('reports', () => {
     }
     catch (error: any) {
       notify({
-        title: t('actions.reports.delete.error.title'),
-        message: values => t('actions.reports.delete.error.description', values),
         error,
+        message: values => t('actions.reports.delete.error.description', values),
+        title: t('actions.reports.delete.error.title'),
       });
     }
   };
@@ -187,14 +192,14 @@ export const useReportsStore = defineStore('reports', () => {
       const reportEntries = await fetchReportEvents(reportId, currentPage);
       set(report, {
         ...reportEntries,
-        overview: selectedReport.overview,
-        settings: selectedReport.settings,
-        start: selectedReport.startTs,
         end: selectedReport.endTs,
         firstProcessedTimestamp: selectedReport.firstProcessedTimestamp,
         lastProcessedTimestamp: selectedReport.lastProcessedTimestamp,
-        totalActions: selectedReport.totalActions,
+        overview: selectedReport.overview,
         processedActions: selectedReport.processedActions,
+        settings: selectedReport.settings,
+        start: selectedReport.startTs,
+        totalActions: selectedReport.totalActions,
       });
 
       if (isLatestReport(reportId)) {
@@ -225,9 +230,9 @@ export const useReportsStore = defineStore('reports', () => {
     }
     catch (error: any) {
       notify({
-        title: t('actions.reports.fetch.error.title'),
-        message: value => t('actions.reports.fetch.error.description', value),
         error,
+        message: value => t('actions.reports.fetch.error.description', value),
+        title: t('actions.reports.fetch.error.title'),
       });
       return false;
     }
@@ -341,22 +346,22 @@ export const useReportsStore = defineStore('reports', () => {
   };
 
   return {
-    reports,
-    report,
-    loaded,
-    progress,
-    processingState,
-    reportError,
     actionableItems,
-    exportReportData,
+    clearError,
+    clearReport,
     createCsv,
-    generateReport,
     deleteReport,
+    exportReportData,
     fetchReport,
     fetchReports,
-    clearReport,
-    clearError,
+    generateReport,
     isLatestReport,
+    loaded,
+    processingState,
+    progress,
+    report,
+    reportError,
+    reports,
     reset,
   };
 });

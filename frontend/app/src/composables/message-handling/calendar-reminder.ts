@@ -1,5 +1,6 @@
 import dayjs from 'dayjs';
 import { type Notification, Severity } from '@rotki/common';
+import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import type { CalendarEventPayload } from '@/types/history/calendar';
 import type { CommonMessageHandler } from '@/types/websocket-messages';
 
@@ -33,20 +34,20 @@ export function useCalendarReminderHandler(t: ReturnType<typeof useI18n>['t']): 
       message += data.description;
 
     return {
-      title,
-      message,
-      display: true,
-      severity: Severity.REMINDER,
       action: {
-        label: t('notification_messages.reminder.open_calendar'),
-        persist: true,
         action: async (): Promise<void> => {
           await router.push({
             path: '/calendar',
             query: { timestamp: timestamp.toString() },
           });
         },
+        label: t('notification_messages.reminder.open_calendar'),
+        persist: true,
       },
+      display: true,
+      message,
+      severity: Severity.REMINDER,
+      title,
     };
   };
 

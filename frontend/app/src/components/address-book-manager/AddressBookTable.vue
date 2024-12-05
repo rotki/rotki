@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { NotificationCategory, type NotificationPayload, Severity } from '@rotki/common';
+import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
+import { useNotificationsStore } from '@/store/notifications';
+import { useConfirmStore } from '@/store/confirm';
 import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import type { AddressBookEntry, AddressBookLocation } from '@/types/eth-names';
 import type { Collection } from '@/types/collection';
@@ -25,18 +28,18 @@ const { t } = useI18n();
 
 const cols = computed<DataTableColumn<AddressBookEntry>[]>(() => [
   {
-    label: t('common.address'),
     key: 'address',
+    label: t('common.address'),
     sortable: true,
   },
   {
-    label: t('common.name'),
     key: 'name',
+    label: t('common.name'),
     sortable: true,
   },
   {
-    label: '',
     key: 'actions',
+    label: '',
   },
 ]);
 
@@ -67,15 +70,15 @@ function addressBookDeletion(location: Ref<AddressBookLocation>) {
     }
     catch (error: any) {
       const notification: NotificationPayload = {
-        title: t('address_book.actions.delete.error.title'),
-        message: t('address_book.actions.delete.error.description', {
-          chain: blockchain || t('common.multi_chain'),
-          address,
-          message: error.message,
-        }),
         category: NotificationCategory.DEFAULT,
         display: true,
+        message: t('address_book.actions.delete.error.description', {
+          address,
+          chain: blockchain || t('common.multi_chain'),
+          message: error.message,
+        }),
         severity: Severity.ERROR,
+        title: t('address_book.actions.delete.error.title'),
       };
       notify(notification);
     }
@@ -84,11 +87,11 @@ function addressBookDeletion(location: Ref<AddressBookLocation>) {
   const showDeleteConfirmation = (item: AddressBookEntry) => {
     show(
       {
-        title: t('address_book.actions.delete.dialog.title'),
         message: t('address_book.actions.delete.dialog.message', {
-          chain: item.blockchain || t('common.multi_chain'),
           address: item.address,
+          chain: item.blockchain || t('common.multi_chain'),
         }),
+        title: t('address_book.actions.delete.dialog.title'),
       },
       () => deleteAddressBook(item.address, item.blockchain),
     );

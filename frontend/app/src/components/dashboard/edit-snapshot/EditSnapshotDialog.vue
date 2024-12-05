@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { sortDesc } from '@/utils/bignumbers';
+import { useMessageStore } from '@/store/message';
+import { useNotificationsStore } from '@/store/notifications';
+import { useStatisticsStore } from '@/store/statistics';
 import type { BalanceSnapshot, LocationDataSnapshot, Snapshot, SnapshotPayload } from '@/types/snapshots';
 
 const props = defineProps<{
@@ -89,11 +92,11 @@ async function save(): Promise<boolean> {
 
   const notifyError = (e?: any) => {
     notify({
-      title: t('dashboard.snapshot.edit.dialog.message.title'),
+      display: true,
       message: t('dashboard.snapshot.edit.dialog.message.error', {
         message: e,
       }),
-      display: true,
+      title: t('dashboard.snapshot.edit.dialog.message.title'),
     });
   };
 
@@ -120,9 +123,9 @@ async function finish() {
 
   if (success) {
     setMessage({
-      title: t('dashboard.snapshot.edit.dialog.message.title'),
       description: t('dashboard.snapshot.edit.dialog.message.success'),
       success: true,
+      title: t('dashboard.snapshot.edit.dialog.message.title'),
     });
     await fetchNetValue();
     emit('finish');

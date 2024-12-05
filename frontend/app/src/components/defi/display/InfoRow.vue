@@ -9,9 +9,9 @@ withDefaults(
     fiat?: boolean;
   }>(),
   {
+    fiat: false,
     loading: false,
     value: () => Zero,
-    fiat: false,
   },
 );
 </script>

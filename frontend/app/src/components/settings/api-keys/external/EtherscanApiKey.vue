@@ -2,6 +2,7 @@
 import { camelCase } from 'lodash-es';
 import { etherscanLinks } from '@shared/external-links';
 import { isEtherscanKey } from '@/types/external';
+import { useNotificationsStore } from '@/store/notifications';
 
 const props = defineProps<{ evmChain: string; chainName: string }>();
 const { evmChain } = toRefs(props);
@@ -9,13 +10,13 @@ const { evmChain } = toRefs(props);
 const name = 'etherscan';
 const { t } = useI18n();
 
-const { loading, apiKey, actionStatus, save, confirmDelete, getName } = useExternalApiKeys(t);
+const { actionStatus, apiKey, confirmDelete, getName, loading, save } = useExternalApiKeys(t);
 
 const key = apiKey(name, evmChain);
 const status = actionStatus(name, evmChain);
 const identifier = computed(() => getName(name, get(evmChain)));
 
-const { remove: removeNotification, prioritized } = useNotificationsStore();
+const { prioritized, remove: removeNotification } = useNotificationsStore();
 
 /**
  * After an api key is added, remove the etherscan notification for that location

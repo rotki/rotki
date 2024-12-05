@@ -30,27 +30,27 @@ export function useEthValidatorAccountFilter(t: ReturnType<typeof useI18n>['t'])
 
   const matchers = computed<Matcher[]>(() => [
     {
+      description: t('common.validator_index'),
       key: EthValidatorAccountFilterKeys.INDEX,
       keyValue: EthValidatorAccountFilterValueKeys.INDEX,
-      description: t('common.validator_index'),
       multiple: true,
       string: true,
       suggestions: (): string[] => [],
       validate: (): boolean => true,
     },
     {
+      description: t('eth2_input.public_key'),
       key: EthValidatorAccountFilterKeys.PUBLIC_KEY,
       keyValue: EthValidatorAccountFilterValueKeys.PUBLIC_KEY,
-      description: t('eth2_input.public_key'),
       multiple: true,
       string: true,
       suggestions: (): string[] => [],
       validate: (): true => true,
     },
     {
+      description: t('eth_validator_combined_filter.status'),
       key: EthValidatorAccountFilterKeys.STATUS,
       keyValue: EthValidatorAccountFilterValueKeys.STATUS,
-      description: t('eth_validator_combined_filter.status'),
       multiple: true,
       string: true,
       suggestions: (): ('exited' | 'active')[] => validStatuses.filter(x => x !== 'all'),
@@ -71,8 +71,8 @@ export function useEthValidatorAccountFilter(t: ReturnType<typeof useI18n>['t'])
   });
 
   return {
-    matchers,
     filters,
+    matchers,
     RouteFilterSchema,
   };
 }

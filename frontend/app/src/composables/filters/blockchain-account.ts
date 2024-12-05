@@ -38,26 +38,26 @@ export function useBlockchainAccountFilter(t: ReturnType<typeof useI18n>['t'], c
   const filterableChains = [...get(chainIds), 'loopring'];
   const matchers = computed<Matcher[]>(() => [
     {
+      description: t('common.address'),
       key: BlockchainAccountFilterKeys.ADDRESS,
       keyValue: BlockchainAccountFilterValueKeys.ADDRESS,
-      description: t('common.address'),
       string: true,
       suggestions: (): string[] => [],
       validate: (): true => true,
     },
     {
+      description: t('common.chain'),
       key: BlockchainAccountFilterKeys.CHAIN,
       keyValue: BlockchainAccountFilterValueKeys.CHAIN,
-      description: t('common.chain'),
       multiple: true,
       string: true,
       suggestions: (): string[] => filterableChains,
       validate: (id: string): boolean => filterableChains.some(chainId => chainId.toLocaleLowerCase() === id.toLocaleLowerCase()),
     },
     {
+      description: t('common.label'),
       key: BlockchainAccountFilterKeys.LABEL,
       keyValue: BlockchainAccountFilterValueKeys.LABEL,
-      description: t('common.label'),
       string: true,
       suggestions: (): string[] => [],
       validate: (): boolean => true,
@@ -77,14 +77,14 @@ export function useBlockchainAccountFilter(t: ReturnType<typeof useI18n>['t'], c
   });
 
   return {
-    matchers,
     filters,
+    matchers,
     RouteFilterSchema,
   };
 }
 
 export const AccountExternalFilterSchema = z.object({
-  tags: CommaSeparatedStringSchema,
-  tab: z.coerce.number().optional(),
   q: z.string().optional(),
+  tab: z.coerce.number().optional(),
+  tags: CommaSeparatedStringSchema,
 }).merge(RouterExpandedIdsSchema);

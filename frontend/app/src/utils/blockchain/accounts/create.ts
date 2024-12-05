@@ -16,12 +16,12 @@ import type { BlockchainAssetBalances } from '@/types/blockchain/balances';
 export function createXpubAccount(data: BitcoinXpubAccount, extra: AccountExtraParams): BlockchainAccount<XpubData> {
   return {
     data: {
+      derivationPath: data.derivationPath ?? undefined,
       type: 'xpub',
       xpub: data.xpub,
-      derivationPath: data.derivationPath ?? undefined,
     },
-    tags: data.tags ?? undefined,
     label: data.label ?? undefined,
+    tags: data.tags ?? undefined,
     ...extra,
   };
 }
@@ -42,11 +42,11 @@ export function createValidatorAccount(
 export function createAccount(data: BasicBlockchainAccount, extra: AccountExtraParams): BlockchainAccount<AddressData> {
   return {
     data: {
-      type: 'address',
       address: data.address,
+      type: 'address',
     },
-    tags: data.tags ?? undefined,
     label: data.label ?? undefined,
+    tags: data.tags ?? undefined,
     ...extra,
   };
 }
@@ -59,8 +59,8 @@ export function createAccountWithBalance(
   const address = getAccountAddress(account);
 
   return {
-    type: 'account',
     groupId: address,
+    type: 'account',
     ...account,
     ...balance,
     expansion,

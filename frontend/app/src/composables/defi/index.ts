@@ -1,6 +1,8 @@
 import { type BigNumber, LpType, type XSwapLiquidityBalance } from '@rotki/common';
 import { bigNumberSum } from '@/utils/calculation';
 import { sortDesc } from '@/utils/bignumbers';
+import { useUniswapStore } from '@/store/defi/uniswap';
+import { useSushiswapStore } from '@/store/defi/sushiswap';
 import type { ComputedRef } from 'vue';
 
 interface UseLiquidityPositionReturn {
@@ -18,33 +20,33 @@ export function useLiquidityPosition(): UseLiquidityPositionReturn {
     includeNft = true,
   ): ComputedRef<XSwapLiquidityBalance[]> => computed<XSwapLiquidityBalance[]>(() => {
     const mappedUniswapV3Balances = get(uniswapV3Balances([])).map((item, index) => ({
-      id: index,
-      assets: item.assets,
-      usdValue: item.userBalance.usdValue,
       asset: item.nftId || '',
+      assets: item.assets,
+      id: index,
+      lpType: LpType.UNISWAP_V3,
       premiumOnly: true,
       type: 'nft',
-      lpType: LpType.UNISWAP_V3,
+      usdValue: item.userBalance.usdValue,
     }) satisfies XSwapLiquidityBalance);
 
     const mappedUniswapV2Balances = get(uniswapV2Balances([])).map((item, index) => ({
-      id: index,
-      assets: item.assets,
-      usdValue: item.userBalance.usdValue,
       asset: createEvmIdentifierFromAddress(item.address),
+      assets: item.assets,
+      id: index,
+      lpType: LpType.UNISWAP_V2,
       premiumOnly: false,
       type: 'token',
-      lpType: LpType.UNISWAP_V2,
+      usdValue: item.userBalance.usdValue,
     }) satisfies XSwapLiquidityBalance);
 
     const mappedSushiswapBalances = get(sushiswapBalances([])).map((item, index) => ({
-      id: index,
-      assets: item.assets,
-      usdValue: item.userBalance.usdValue,
       asset: createEvmIdentifierFromAddress(item.address),
+      assets: item.assets,
+      id: index,
+      lpType: LpType.SUSHISWAP,
       premiumOnly: true,
       type: 'token',
-      lpType: LpType.SUSHISWAP,
+      usdValue: item.userBalance.usdValue,
     }) satisfies XSwapLiquidityBalance);
 
     return [
@@ -80,8 +82,8 @@ export function useLiquidityPosition(): UseLiquidityPositionReturn {
   };
 
   return {
+    getPoolName,
     lpAggregatedBalances,
     lpTotal,
-    getPoolName,
   };
 }

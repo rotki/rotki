@@ -11,14 +11,14 @@ const props = withDefaults(
     align?: 'start' | 'center' | 'end';
   }>(),
   {
+    align: 'start',
+    deleteDisabled: false,
+    deleteTooltip: '',
     disabled: false,
     editDisabled: false,
     editTooltip: '',
-    noEdit: false,
-    deleteDisabled: false,
-    deleteTooltip: '',
     noDelete: false,
-    align: 'start',
+    noEdit: false,
   },
 );
 
@@ -31,15 +31,15 @@ const editClick = () => emit('edit-click');
 const deleteClick = () => emit('delete-click');
 
 const tooltipProps = {
-  popper: { placement: 'top' as const, offsetDistance: 0 },
   openDelay: 400,
+  popper: { offsetDistance: 0, placement: 'top' as const },
 };
 
 const justify = computed(() => {
   const justify = {
-    start: 'justify-start',
     center: 'justify-center',
     end: 'justify-end',
+    start: 'justify-start',
   } as const;
   return justify[props.align];
 });

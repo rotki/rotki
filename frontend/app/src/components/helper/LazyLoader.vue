@@ -5,12 +5,12 @@ const props = withDefaults(
     initialAppear?: boolean;
   }>(),
   {
-    minHeight: '16px',
     initialAppear: false,
+    minHeight: '16px',
   },
 );
 
-const { minHeight, initialAppear } = toRefs(props);
+const { initialAppear, minHeight } = toRefs(props);
 
 const wrapper = ref();
 const appear = ref<boolean>(get(initialAppear));

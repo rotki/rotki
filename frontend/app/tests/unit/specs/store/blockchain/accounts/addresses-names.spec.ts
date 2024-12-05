@@ -2,21 +2,25 @@ import { Blockchain } from '@rotki/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import flushPromises from 'flush-promises';
 import { FrontendSettings } from '@/types/settings/frontend-settings';
-import { defaultCollectionState } from '@/utils/collection';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import type { AddressBookEntry, AddressBookSimplePayload } from '@/types/eth-names';
 import type { Collection } from '@/types/collection';
 
-vi.mock('@/composables/api/blockchain/addresses-names', () => ({
-  useAddressesNamesApi: vi.fn().mockReturnValue({
-    getEnsNamesTask: vi.fn().mockResolvedValue({ taskId: 1 }),
-    getEnsNames: vi.fn().mockResolvedValue({}),
-    fetchAddressBook: vi.fn().mockResolvedValue(defaultCollectionState()),
-    addAddressBook: vi.fn().mockResolvedValue(true),
-    updateAddressBook: vi.fn().mockResolvedValue(true),
-    deleteAddressBook: vi.fn().mockResolvedValue(true),
-    getAddressesNames: vi.fn().mockResolvedValue([]),
-  }),
-}));
+vi.mock('@/composables/api/blockchain/addresses-names', async () => {
+  const { defaultCollectionState } = await import('@/utils/collection');
+  return ({
+    useAddressesNamesApi: vi.fn().mockReturnValue({
+      getEnsNamesTask: vi.fn().mockResolvedValue({ taskId: 1 }),
+      getEnsNames: vi.fn().mockResolvedValue({}),
+      fetchAddressBook: vi.fn().mockResolvedValue(defaultCollectionState()),
+      addAddressBook: vi.fn().mockResolvedValue(true),
+      updateAddressBook: vi.fn().mockResolvedValue(true),
+      deleteAddressBook: vi.fn().mockResolvedValue(true),
+      getAddressesNames: vi.fn().mockResolvedValue([]),
+    }),
+  });
+});
 
 vi.mock('@/store/tasks', () => ({
   useTaskStore: vi.fn().mockReturnValue({
@@ -24,16 +28,19 @@ vi.mock('@/store/tasks', () => ({
   }),
 }));
 
-vi.mock('@/composables/info/chains', () => ({
-  useSupportedChains: vi.fn().mockReturnValue({
-    isEvm: vi.fn().mockReturnValue(ref(true)),
-  }),
-}));
+vi.mock('@/composables/info/chains', async () => {
+  const { ref } = await import('vue');
+  return ({
+    useSupportedChains: vi.fn().mockReturnValue({
+      isEvm: vi.fn().mockReturnValue(ref(true)),
+    }),
+  });
+});
 
 describe('store::blockchain/accounts/addresses-names', () => {
-  setActivePinia(createPinia());
   let store: ReturnType<typeof useAddressesNamesStore>;
   let api: ReturnType<typeof useAddressesNamesApi>;
+  setActivePinia(createPinia());
 
   beforeEach(() => {
     vi.useFakeTimers();

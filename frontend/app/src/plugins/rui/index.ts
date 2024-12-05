@@ -213,8 +213,8 @@ interface RuiPlugin {
 
 export function createRuiPlugin(defaults: Partial<RuiOptions['defaults']>): RuiPlugin {
   return createRui({
+    defaults,
     theme: {
-      mode: ThemeMode.light,
       icons: [
         RiDashboardLine,
         RiWallet3Line,
@@ -424,7 +424,7 @@ export function createRuiPlugin(defaults: Partial<RuiOptions['defaults']>): RuiP
         RiMacbookLine,
         LuTagManager,
       ],
+      mode: ThemeMode.light,
     },
-    defaults,
   });
 }

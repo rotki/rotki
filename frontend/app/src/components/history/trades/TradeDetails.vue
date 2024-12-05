@@ -7,7 +7,7 @@ const { item } = toRefs(props);
 const { t } = useI18n();
 
 const link = computed(() => get(item).link || '');
-const { href, hasLink, onLinkClick } = useLinks(link);
+const { hasLink, href, onLinkClick } = useLinks(link);
 </script>
 
 <template>

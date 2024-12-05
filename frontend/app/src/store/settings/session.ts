@@ -9,11 +9,11 @@ const isAnimationEnabledSetting = useSharedLocalStorage('rotki.animations_enable
 
 function defaultSessionSettings(): SessionSettings {
   return {
+    animationsEnabled: get(isAnimationEnabledSetting),
     privacyMode: PrivacyMode.NORMAL,
     scrambleData: false,
     scrambleMultiplier: generateRandomScrambleMultiplier(),
     timeframe: TimeFramePeriod.ALL,
-    animationsEnabled: get(isAnimationEnabledSetting),
   };
 }
 
@@ -52,17 +52,17 @@ export const useSessionSettingsStore = defineStore('settings/session', () => {
   };
 
   return {
+    animationsEnabled,
+    connectedExchanges,
     privacyMode,
     scrambleData,
-    timeframe,
-    animationsEnabled,
-    shouldShowAmount,
-    shouldShowPercentage,
     scrambleMultiplier,
-    connectedExchanges,
-    settings,
     setAnimationsEnabled,
     setConnectedExchanges,
+    settings,
+    shouldShowAmount,
+    shouldShowPercentage,
+    timeframe,
     update,
   };
 });

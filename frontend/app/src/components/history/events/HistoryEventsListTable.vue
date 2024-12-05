@@ -44,8 +44,8 @@ const editEvent = (item: HistoryEventEntry) => emit('edit-event', item);
 
 function deleteEvent(item: HistoryEventEntry) {
   return emit('delete-event', {
-    item,
     canDelete: isEvmEvent(item) ? props.events.length > 1 : true,
+    item,
   });
 }
 
@@ -68,11 +68,11 @@ function getEventNoteAttrs(event: HistoryEventEntry) {
     data.counterparty = event.counterparty;
 
   // todo: validate optional or nullable state of schema
-  const { notes, asset } = objectPick(event, ['notes', 'asset']);
+  const { asset, notes } = objectPick(event, ['notes', 'asset']);
 
   return {
-    notes: notes || undefined,
     asset,
+    notes: notes || undefined,
     ...data,
   };
 }

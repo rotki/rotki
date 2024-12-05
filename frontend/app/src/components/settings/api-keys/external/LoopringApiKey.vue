@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Module } from '@/types/modules';
 import { Routes } from '@/router/routes';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 import type ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
 
 const name = 'loopring';
@@ -10,8 +11,8 @@ const router = useRouter();
 
 const { activeModules } = storeToRefs(useGeneralSettingsStore());
 const { fetchLoopringBalances } = useBlockchainBalances();
-const { loading, apiKey, actionStatus, save, confirmDelete } = useExternalApiKeys(t);
-const { serviceKeyRef, saveHandler } = useServiceKeyHandler<InstanceType<typeof ServiceKey>>();
+const { actionStatus, apiKey, confirmDelete, loading, save } = useExternalApiKeys(t);
+const { saveHandler, serviceKeyRef } = useServiceKeyHandler<InstanceType<typeof ServiceKey>>();
 
 const key = apiKey(name);
 const status = actionStatus(name);

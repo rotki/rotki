@@ -37,7 +37,7 @@ export function useKrakenApi(): UseKrakenApiReturn {
   };
 
   return {
-    refreshKrakenStaking,
     fetchKrakenStakingEvents,
+    refreshKrakenStaking,
   };
 }

@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { omit } from 'lodash-es';
+import { useMessageStore } from '@/store/message';
+import { useConfirmStore } from '@/store/confirm';
 import type { CexMapping, CexMappingRequestPayload } from '@/types/asset';
 
 const { t } = useI18n();
 const router = useRouter();
 const route = useRoute();
 
-const { fetchAllCexMapping, deleteCexMapping } = useAssetCexMappingApi();
+const { deleteCexMapping, fetchAllCexMapping } = useAssetCexMappingApi();
 
 const selectedLocation = ref<string>('');
 const selectedSymbol = ref<string>('');
@@ -26,20 +28,20 @@ const extraParams = computed(() => {
 });
 
 const {
-  state,
-  isLoading: loading,
   fetchData,
+  isLoading: loading,
   pagination,
+  state,
 } = usePaginationFilters<
   CexMapping,
   CexMappingRequestPayload
 >(fetchAllCexMapping, {
+  extraParams,
   history: 'router',
   onUpdateFilters(query) {
     set(selectedLocation, query.location || '');
     set(selectedSymbol, query.locationSymbol || '');
   },
-  extraParams,
 });
 
 onMounted(async () => {
@@ -91,11 +93,11 @@ async function confirmDelete(mapping: CexMapping) {
 function showDeleteConfirmation(item: CexMapping) {
   show(
     {
-      title: t('asset_management.cex_mapping.confirm_delete.title'),
       message: t('asset_management.cex_mapping.confirm_delete.message', {
         asset: item.locationSymbol,
         location: item.location || t('asset_management.cex_mapping.all_exchanges'),
       }),
+      title: t('asset_management.cex_mapping.confirm_delete.title'),
     },
     async () => await confirmDelete(item),
   );

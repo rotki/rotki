@@ -3,14 +3,14 @@ import { CollectionCommonFields } from '@/types/collection';
 import type { PaginationRequestPayload } from '@/types/common';
 
 export const CalendarEventPayload = z.object({
-  name: z.string(),
-  description: z.string(),
-  counterparty: z.string().optional(),
-  timestamp: z.number(),
   address: z.string().optional(),
+  autoDelete: z.boolean(),
   blockchain: z.string().optional(),
   color: z.string().optional(),
-  autoDelete: z.boolean(),
+  counterparty: z.string().optional(),
+  description: z.string(),
+  name: z.string(),
+  timestamp: z.number(),
 });
 
 export type CalendarEventPayload = z.infer<typeof CalendarEventPayload>;

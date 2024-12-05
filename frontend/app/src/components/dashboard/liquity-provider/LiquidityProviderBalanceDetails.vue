@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useBalancePricesStore } from '@/store/balances/prices';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 import type { AssetBalanceWithPrice, XswapAsset } from '@rotki/common';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 
@@ -17,30 +19,30 @@ const { t } = useI18n();
 
 const tableHeaders = computed<DataTableColumn<AssetBalanceWithPrice>[]>(() => [
   {
-    label: t('common.asset'),
-    key: 'asset',
     cellClass: 'text-no-wrap',
+    key: 'asset',
+    label: t('common.asset'),
   },
   {
+    align: 'end',
+    class: 'text-no-wrap',
+    key: 'usdPrice',
     label: t('common.price', {
       symbol: get(currencySymbol),
     }),
-    key: 'usdPrice',
+  },
+  {
+    align: 'end',
+    key: 'amount',
+    label: t('common.amount'),
+  },
+  {
     align: 'end',
     class: 'text-no-wrap',
-  },
-  {
-    label: t('common.amount'),
-    key: 'amount',
-    align: 'end',
-  },
-  {
+    key: 'usdValue',
     label: t('common.value_in_symbol', {
       symbol: get(currencySymbol),
     }),
-    key: 'usdValue',
-    align: 'end',
-    class: 'text-no-wrap',
   },
 ]);
 
@@ -50,9 +52,9 @@ const { assetPrice } = useBalancePricesStore();
 
 function transformAssets(assets: XswapAsset[]): AssetBalanceWithPrice[] {
   return assets.map(item => ({
+    amount: item.userBalance.amount,
     asset: item.asset,
     usdPrice: item.usdPrice ?? get(assetPrice(item.asset)) ?? Zero,
-    amount: item.userBalance.amount,
     usdValue: item.userBalance.usdValue,
   }));
 }

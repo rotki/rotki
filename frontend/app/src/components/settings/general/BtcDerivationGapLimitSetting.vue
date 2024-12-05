@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Defaults } from '@/data/defaults';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 
 const DEFAULT = Defaults.BTC_DERIVATION_GAP_LIMIT;
 

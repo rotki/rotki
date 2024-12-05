@@ -83,8 +83,8 @@ export function useBlockchainAccountsApi(): UseBlockchainAccountsApiReturn {
   const removeBlockchainAccount = async (blockchain: string, accounts: string[]): Promise<PendingTask> => {
     const response = await api.instance.delete<ActionResult<PendingTask>>(`/blockchains/${blockchain}/accounts`, {
       data: snakeCaseTransformer({
-        asyncQuery: true,
         accounts,
+        asyncQuery: true,
       }),
       validateStatus: validWithParamsSessionAndExternalService,
     });
@@ -95,8 +95,8 @@ export function useBlockchainAccountsApi(): UseBlockchainAccountsApiReturn {
   const removeAgnosticBlockchainAccount = async (chainType: string, accounts: string[]): Promise<PendingTask> => {
     const response = await api.instance.delete<ActionResult<PendingTask>>(`/blockchains/type/${chainType}/accounts`, {
       data: snakeCaseTransformer({
-        asyncQuery: true,
         accounts,
+        asyncQuery: true,
       }),
       validateStatus: validWithParamsSessionAndExternalService,
     });
@@ -122,10 +122,10 @@ export function useBlockchainAccountsApi(): UseBlockchainAccountsApiReturn {
     if ('xpub' in payload) {
       const { derivationPath, xpub } = payload.xpub;
       data = {
-        xpub,
         derivationPath: onlyIfTruthy(derivationPath),
         label: label || null,
         tags,
+        xpub,
       };
     }
     else {
@@ -191,9 +191,9 @@ export function useBlockchainAccountsApi(): UseBlockchainAccountsApiReturn {
   const deleteXpub = async ({ chain, derivationPath, xpub }: DeleteXpubParams): Promise<PendingTask> => {
     const response = await api.instance.delete<ActionResult<PendingTask>>(`/blockchains/${chain}/xpub`, {
       data: snakeCaseTransformer({
-        xpub,
-        derivationPath: derivationPath || undefined,
         asyncQuery: true,
+        derivationPath: derivationPath || undefined,
+        xpub,
       }),
       validateStatus: validWithParamsSessionAndExternalService,
     });
@@ -204,8 +204,8 @@ export function useBlockchainAccountsApi(): UseBlockchainAccountsApiReturn {
   const getEth2Validators = async (payload: EthValidatorFilter = {}): Promise<Eth2Validators> => {
     const response = await api.instance.get<ActionResult<Eth2Validators>>('/blockchains/eth2/validators', {
       params: snakeCaseTransformer(nonEmptyProperties(payload)),
-      validateStatus: validWithSessionStatus,
       paramsSerializer,
+      validateStatus: validWithSessionStatus,
     });
     const result = handleResponse(response);
     return Eth2Validators.parse(result);
@@ -264,19 +264,19 @@ export function useBlockchainAccountsApi(): UseBlockchainAccountsApiReturn {
 
   return {
     addBlockchainAccount,
+    addEth2Validator,
     addEvmAccount,
+    deleteEth2Validators,
+    deleteXpub,
     detectEvmAccounts,
-    removeAgnosticBlockchainAccount,
-    removeBlockchainAccount,
-    editBlockchainAccount,
     editAgnosticBlockchainAccount,
+    editBlockchainAccount,
     editBtcAccount,
+    editEth2Validator,
+    getEth2Validators,
     queryAccounts,
     queryBtcAccounts,
-    deleteXpub,
-    getEth2Validators,
-    addEth2Validator,
-    editEth2Validator,
-    deleteEth2Validators,
+    removeAgnosticBlockchainAccount,
+    removeBlockchainAccount,
   };
 }

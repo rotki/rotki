@@ -5,6 +5,11 @@ import { Section } from '@/types/status';
 import { TableColumn } from '@/types/table-column';
 import { getCollectionData } from '@/utils/collection';
 import { calculatePercentage } from '@/utils/calculation';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useStatusStore } from '@/store/status';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useNonFungibleBalancesStore } from '@/store/balances/non-fungible';
+import { useStatisticsStore } from '@/store/statistics';
 import type { BigNumber } from '@rotki/common';
 import type { DataTableColumn } from '@rotki/ui-library';
 import type { IgnoredAssetsHandlingType } from '@/types/asset';
@@ -26,21 +31,21 @@ const { t } = useI18n();
 const group = DashboardTableType.NFT;
 
 const {
-  state: balances,
-  isLoading,
   fetchData,
-  setPage,
+  isLoading,
   pagination,
+  setPage,
   sort,
+  state: balances,
 } = usePaginationFilters<
   NonFungibleBalance,
   NonFungibleBalancesRequestPayload
 >(fetchNonFungibleBalances, {
-  extraParams,
   defaultSortBy: [{
     column: 'usdPrice',
     direction: 'desc',
   }],
+  extraParams,
 });
 
 const { isLoading: isSectionLoading } = useStatusStore();
@@ -52,50 +57,50 @@ const tableHeaders = computed<DataTableColumn<NonFungibleBalance>[]>(() => {
 
   const headers: DataTableColumn<NonFungibleBalance>[] = [
     {
-      label: t('common.name'),
-      key: 'name',
-      class: 'text-no-wrap w-full',
       cellClass: 'py-0',
+      class: 'text-no-wrap w-full',
+      key: 'name',
+      label: t('common.name'),
       sortable: true,
     },
     {
-      label: t('nft_balance_table.column.price_in_asset'),
-      key: 'priceInAsset',
       align: 'end',
-      class: 'text-no-wrap',
       cellClass: 'py-0',
+      class: 'text-no-wrap',
+      key: 'priceInAsset',
+      label: t('nft_balance_table.column.price_in_asset'),
     },
     {
+      align: 'end',
+      cellClass: 'py-0',
+      class: 'text-no-wrap',
+      key: 'usdPrice',
       label: t('common.price_in_symbol', {
         symbol: get(currencySymbol),
       }),
-      key: 'usdPrice',
-      align: 'end',
-      class: 'text-no-wrap',
-      cellClass: 'py-0',
       sortable: true,
     },
   ];
 
   if (visibleColumns.includes(TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE)) {
     headers.push({
-      label: t('nft_balance_table.column.percentage'),
-      key: 'percentageOfTotalNetValue',
       align: 'end',
-      class: 'text-no-wrap',
       cellClass: 'py-0',
+      class: 'text-no-wrap',
+      key: 'percentageOfTotalNetValue',
+      label: t('nft_balance_table.column.percentage'),
     });
   }
 
   if (visibleColumns.includes(TableColumn.PERCENTAGE_OF_TOTAL_CURRENT_GROUP)) {
     headers.push({
+      align: 'end',
+      cellClass: 'py-0',
+      class: 'text-no-wrap',
+      key: 'percentageOfTotalCurrentGroup',
       label: t('dashboard_asset_table.headers.percentage_of_total_current_group', {
         group,
       }),
-      key: 'percentageOfTotalCurrentGroup',
-      align: 'end',
-      class: 'text-no-wrap',
-      cellClass: 'py-0',
     });
   }
 

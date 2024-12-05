@@ -1,3 +1,4 @@
+import { useConfirmStore } from '@/store/confirm';
 import type { BaseMessage } from '@/types/messages';
 import type { Ref } from 'vue';
 
@@ -34,8 +35,8 @@ export function useCacheClear<T>(
       set(pending, true);
       await clearHandle(source);
       set(status, {
-        success: message(text(source)).success,
         error: '',
+        success: message(text(source)).success,
       });
       setTimeout(() => set(status, null), 5000);
     }
@@ -57,8 +58,8 @@ export function useCacheClear<T>(
   };
 
   return {
-    status,
     pending,
     showConfirmation,
+    status,
   };
 }

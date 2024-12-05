@@ -9,10 +9,10 @@ export const samePriceAssets: Record<string, string[]> = {
 
 export const SupportedSubBlockchainProtocolData: ActionDataEntry[] = [
   {
-    identifier: L2_LOOPRING,
-    label: 'Loopring',
-    image: './assets/images/protocols/loopring.svg',
     detailPath: Routes.ACCOUNTS_BALANCES_BLOCKCHAIN.toString(),
+    identifier: L2_LOOPRING,
+    image: './assets/images/protocols/loopring.svg',
+    label: 'Loopring',
   },
 ];
 

@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { type Currency, useCurrencies } from '@/types/currencies';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useSettingsStore } from '@/store/settings';
 
 const { update } = useSettingsStore();
 const { currency } = storeToRefs(useGeneralSettingsStore());
@@ -31,7 +33,7 @@ async function onSelected(newCurrency: Currency) {
   await update({ mainCurrency: newCurrency.tickerSymbol });
 }
 
-const { start, stop, isPending } = useTimeoutFn(
+const { isPending, start, stop } = useTimeoutFn(
   () => {
     set(filter, '');
   },

@@ -6,6 +6,8 @@ import { logger } from '@/utils/logging';
 import { getProtocolAddresses } from '@/utils/addresses';
 import { isTaskCancelled } from '@/utils';
 import { balanceSum } from '@/utils/calculation';
+import { useNotificationsStore } from '@/store/notifications';
+import { useTaskStore } from '@/store/tasks';
 import type { TaskMeta } from '@/types/task';
 
 export const useAaveStore = defineStore('defi/aave', () => {
@@ -20,7 +22,7 @@ export const useAaveStore = defineStore('defi/aave', () => {
 
   const { fetchAaveBalances, fetchAaveHistory } = useAaveApi();
 
-  const { resetStatus, setStatus, fetchDisabled } = useStatusUpdater(Section.DEFI_AAVE_BALANCES);
+  const { fetchDisabled, resetStatus, setStatus } = useStatusUpdater(Section.DEFI_AAVE_BALANCES);
 
   const aaveTotalEarned = (addresses: string[]): ComputedRef<ProfitLossModel[]> => computed<ProfitLossModel[]>(() => {
     const earned: ProfitLossModel[] = [];
@@ -76,9 +78,9 @@ export const useAaveStore = defineStore('defi/aave', () => {
         });
         const title = t('actions.defi.aave_balances.error.title');
         notify({
-          title,
-          message,
           display: true,
+          message,
+          title,
         });
       }
     }
@@ -117,9 +119,9 @@ export const useAaveStore = defineStore('defi/aave', () => {
         const title = t('actions.defi.aave_history.error.title');
 
         notify({
-          title,
-          message,
           display: true,
+          message,
+          title,
         });
       }
     }
@@ -137,12 +139,12 @@ export const useAaveStore = defineStore('defi/aave', () => {
   const addresses = computed<string[]>(() => getProtocolAddresses(get(balances), get(history)));
 
   return {
-    balances,
-    history,
-    addresses,
     aaveTotalEarned,
+    addresses,
+    balances,
     fetchBalances,
     fetchHistory,
+    history,
     reset,
   };
 });

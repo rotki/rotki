@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { api } from '@/services/rotkehlchen-api';
 import { BackendCancelledTaskError, type TaskMeta, type TaskResultResponse, type TaskStatus } from '@/types/task';
 import { TaskType } from '@/types/task-type';
+import { useTaskStore } from '@/store/tasks';
 import { server } from '../../../setup-files/server';
 import { createCustomPinia } from '../../../utils/create-pinia';
 import type { ActionResult } from '@rotki/common';

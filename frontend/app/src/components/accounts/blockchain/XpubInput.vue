@@ -24,7 +24,7 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 
-const { xpub, disabled, blockchain } = toRefs(props);
+const { blockchain, disabled, xpub } = toRefs(props);
 
 const xpubKey = ref<string>('');
 const derivationPath = ref<string>('');
@@ -65,24 +65,24 @@ const keyTypeListData = computed<XpubType[]>(() => {
 });
 
 const rules = {
-  xpub: {
-    required: helpers.withMessage(t('account_form.validation.xpub_non_empty'), required),
-  },
   derivationPath: {
     basic: () => true,
+  },
+  xpub: {
+    required: helpers.withMessage(t('account_form.validation.xpub_non_empty'), required),
   },
 };
 
 const v$ = useVuelidate(
   rules,
   {
-    xpub,
     derivationPath,
+    xpub,
   },
   {
     $autoDirty: true,
-    $stopPropagation: true,
     $externalResults: errors,
+    $stopPropagation: true,
   },
 );
 
@@ -117,8 +117,8 @@ watch([xpubKeyPrefix, xpubKey, derivationPath], ([prefix, xpub, path]) => {
   let payload: XpubPayload | undefined;
   if (xpub) {
     payload = {
-      xpub: xpub.trim(),
       derivationPath: path?.replace(/'/g, '').replace(/\/$/, '') ?? undefined,
+      xpub: xpub.trim(),
       xpubType: getKeyType(prefix as XpubPrefix),
     };
   }

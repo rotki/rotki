@@ -29,7 +29,7 @@ const chains = [Blockchain.ETH];
 const page = ref(1);
 const itemsPerPage = ref(8);
 
-const { isSmAndDown, isSm, isMd, is2xl } = useBreakpoint();
+const { is2xl, isMd, isSm, isSmAndDown } = useBreakpoint();
 
 const firstLimit = computed(() => {
   if (get(isSmAndDown))
@@ -78,7 +78,7 @@ const nfts = computed<GalleryNft[]>(() => {
 
       if (price?.manuallyInput) {
         const { priceAsset, priceInAsset, usdPrice: priceUsd } = price;
-        allNfts.push({ ...nft, priceAsset, priceInAsset, priceUsd, address });
+        allNfts.push({ ...nft, address, priceAsset, priceInAsset, priceUsd });
       }
       else {
         allNfts.push({ ...nft, address });
@@ -110,10 +110,10 @@ const items = computed(() => {
 const paginationData = computed({
   get() {
     return {
-      page: get(page),
-      total: get(items).length,
       limit: get(itemsPerPage),
       limits: get(limits),
+      page: get(page),
+      total: get(items).length,
     };
   },
   set(value: TablePaginationData) {

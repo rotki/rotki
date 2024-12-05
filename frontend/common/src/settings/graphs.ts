@@ -45,23 +45,23 @@ type TimeframeDefaults = Pick<Timeframe, 'xAxisLabelDisplayFormat' | 'tooltipTim
 function unitDefaults(timeUnit: TimeUnit): TimeframeDefaults {
   if (timeUnit === TimeUnit.DAY) {
     return {
-      xAxisTimeUnit: timeUnit,
-      xAxisLabelDisplayFormat: 'ddd',
       tooltipTimeFormat: 'ddd',
+      xAxisLabelDisplayFormat: 'ddd',
+      xAxisTimeUnit: timeUnit,
     };
   }
   if (timeUnit === TimeUnit.WEEK) {
     return {
-      xAxisTimeUnit: timeUnit,
-      xAxisLabelDisplayFormat: 'MMM D',
       tooltipTimeFormat: 'MMM D',
+      xAxisLabelDisplayFormat: 'MMM D',
+      xAxisTimeUnit: timeUnit,
     };
   }
   if (timeUnit === TimeUnit.MONTH) {
     return {
-      xAxisTimeUnit: timeUnit,
-      xAxisLabelDisplayFormat: 'MMM YYYY',
       tooltipTimeFormat: 'MMM D, YYYY',
+      xAxisLabelDisplayFormat: 'MMM YYYY',
+      xAxisTimeUnit: timeUnit,
     };
   }
   throw new Error(`Invalid time unit selected: ${timeUnit}`);
@@ -102,11 +102,11 @@ function createTimeframe(
     start = (): number => startingDate(startUnit, amount);
   }
   return {
-    text: frame,
     startingDate: start,
+    text: frame,
     ...unitDefaults(displayUnit),
-    xAxisStepSize: 1,
     timestampRange,
+    xAxisStepSize: 1,
   };
 }
 
@@ -114,13 +114,13 @@ type StartingDateCalculator = (unit: TimeUnit, amount: number) => number;
 
 export const timeframes: (startingDate: StartingDateCalculator) => Timeframes = startingDate => ({
   [TimeFramePeriod.ALL]: createTimeframe(startingDate, TimeFramePeriod.ALL, TimeUnit.MONTH),
-  [TimeFramePeriod.TWO_YEARS]: createTimeframe(startingDate, TimeFramePeriod.TWO_YEARS, TimeUnit.MONTH, 2),
-  [TimeFramePeriod.YEAR]: createTimeframe(startingDate, TimeFramePeriod.YEAR, TimeUnit.MONTH),
+  [TimeFramePeriod.MONTH]: createTimeframe(startingDate, TimeFramePeriod.MONTH, TimeUnit.WEEK),
   [TimeFramePeriod.SIX_MONTHS]: createTimeframe(startingDate, TimeFramePeriod.SIX_MONTHS, TimeUnit.MONTH, 6),
   [TimeFramePeriod.THREE_MONTHS]: createTimeframe(startingDate, TimeFramePeriod.THREE_MONTHS, TimeUnit.WEEK, 3),
-  [TimeFramePeriod.MONTH]: createTimeframe(startingDate, TimeFramePeriod.MONTH, TimeUnit.WEEK),
   [TimeFramePeriod.TWO_WEEKS]: createTimeframe(startingDate, TimeFramePeriod.TWO_WEEKS, TimeUnit.DAY, 2),
+  [TimeFramePeriod.TWO_YEARS]: createTimeframe(startingDate, TimeFramePeriod.TWO_YEARS, TimeUnit.MONTH, 2),
   [TimeFramePeriod.WEEK]: createTimeframe(startingDate, TimeFramePeriod.WEEK, TimeUnit.DAY),
+  [TimeFramePeriod.YEAR]: createTimeframe(startingDate, TimeFramePeriod.YEAR, TimeUnit.MONTH),
 });
 
 export const TIMEFRAME_CUSTOM = 'CUSTOM';
@@ -128,11 +128,11 @@ export const TIMEFRAME_CUSTOM = 'CUSTOM';
 export type CustomizableTimeframe = TimeFramePeriod | typeof TIMEFRAME_CUSTOM;
 
 export const customTimeframe: Timeframe = {
-  text: TIMEFRAME_CUSTOM,
   startingDate: () => -1,
+  text: TIMEFRAME_CUSTOM,
   ...unitDefaults(TimeUnit.MONTH),
-  xAxisStepSize: 1,
   timestampRange: -1,
+  xAxisStepSize: 1,
 };
 
 const definedTimeframes = timeframes(() => 0);
@@ -165,8 +165,8 @@ export function getTimeframeByRange(startDate: number, endDate: number): Timefra
   if (usedTimeframe.xAxisTimeUnit === TimeUnit.DAY && !current) {
     return {
       ...usedTimeframe,
-      xAxisLabelDisplayFormat: 'MMM D',
       tooltipTimeFormat: 'MMM D',
+      xAxisLabelDisplayFormat: 'MMM D',
     };
   }
 

@@ -2,6 +2,8 @@
 import useVuelidate from '@vuelidate/core';
 import { helpers, minValue, required } from '@vuelidate/validators';
 import { toMessages } from '@/utils/validation';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useMonitorStore } from '@/store/monitor';
 
 const props = withDefaults(defineProps<{
   setting: 'queryRetryLimit' | 'connectTimeout' | 'readTimeout';
@@ -12,19 +14,19 @@ const props = withDefaults(defineProps<{
   hint?: string;
   defaultValue: number;
 }>(), {
-  min: 1,
-  label: '',
   hint: '',
+  label: '',
+  min: 1,
 });
 
-const { min, setting, requiredMessage, minValueMessage } = toRefs(props);
+const { min, minValueMessage, requiredMessage, setting } = toRefs(props);
 
 const inputValue = ref<string>('');
 
 const rules = {
   inputValue: {
-    required: helpers.withMessage(get(requiredMessage), required),
     min: helpers.withMessage(get(minValueMessage)(get(min)), minValue(get(min))),
+    required: helpers.withMessage(get(requiredMessage), required),
   },
 };
 

@@ -1,20 +1,21 @@
-import { BigNumber, Blockchain, Theme, TimeFramePeriod, TimeFramePersist } from '@rotki/common';
+import { BigNumber, Blockchain, Theme, TimeFramePeriod, TimeFramePersist, assert } from '@rotki/common';
 import { type Pinia, createPinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Defaults } from '@/data/defaults';
 import { DARK_COLORS, LIGHT_COLORS } from '@/plugins/theme';
-import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { CurrencyLocation } from '@/types/currency-location';
 import { DateFormat } from '@/types/date-format';
 import {
   BalanceSource,
   BlockchainRefreshButtonBehaviour,
   DashboardTableType,
-  type FrontendSettings,
+  FrontendSettings,
   Quarter,
   SupportedLanguage,
 } from '@/types/settings/frontend-settings';
 import { TableColumn } from '@/types/table-column';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { camelCaseTransformer } from '@/services/axios-tranformers';
 
 vi.mock('@/composables/api/settings/settings-api', () => ({
   useSettingsApi: vi.fn().mockReturnValue({
@@ -32,66 +33,65 @@ describe('settings:frontend', () => {
   });
 
   it('updates settings on valid payload', async () => {
-    expect.assertions(1);
+    expect.assertions(2);
     const store = useFrontendSettingsStore(pinia);
-    await store.updateSetting({ defiSetupDone: true });
+    await store.updateSetting({ defiSetupDone: true, language: SupportedLanguage.GR });
 
-    expect(api.setSettings).toHaveBeenCalledWith(
-      expect.objectContaining({
-        frontendSettings: JSON.stringify(
-          snakeCaseTransformer({
-            defiSetupDone: true,
-            language: SupportedLanguage.EN,
-            timeframeSetting: TimeFramePersist.REMEMBER,
-            visibleTimeframes: Defaults.DEFAULT_VISIBLE_TIMEFRAMES,
-            lastKnownTimeframe: TimeFramePeriod.ALL,
-            queryPeriod: 5,
-            profitLossReportPeriod: {
-              year: new Date().getFullYear().toString(),
-              quarter: Quarter.ALL,
-            },
-            thousandSeparator: Defaults.DEFAULT_THOUSAND_SEPARATOR,
-            decimalSeparator: Defaults.DEFAULT_DECIMAL_SEPARATOR,
-            currencyLocation: Defaults.DEFAULT_CURRENCY_LOCATION,
-            abbreviateNumber: false,
-            minimumDigitToBeAbbreviated: 4,
-            refreshPeriod: -1,
-            explorers: {},
-            itemsPerPage: 10,
-            amountRoundingMode: BigNumber.ROUND_UP,
-            valueRoundingMode: BigNumber.ROUND_DOWN,
-            selectedTheme: Theme.AUTO,
-            lightTheme: LIGHT_COLORS,
-            darkTheme: DARK_COLORS,
-            defaultThemeVersion: 1,
-            graphZeroBased: false,
-            showGraphRangeSelector: true,
-            nftsInNetValue: true,
-            renderAllNftImages: true,
-            whitelistedDomainsForNftImages: [],
-            dashboardTablesVisibleColumns: {
-              [DashboardTableType.ASSETS]: Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS,
-              [DashboardTableType.LIABILITIES]: Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS,
-              [DashboardTableType.NFT]: Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS,
-              [DashboardTableType.LIQUIDITY_POSITION]: Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS,
-              [DashboardTableType.BLOCKCHAIN_ASSET_BALANCES]: Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS,
-            },
-            dateInputFormat: DateFormat.DateMonthYearHourMinuteSecond,
-            versionUpdateCheckFrequency: Defaults.DEFAULT_VERSION_UPDATE_CHECK_FREQUENCY,
-            enableAliasNames: true,
-            blockchainRefreshButtonBehaviour: BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES,
-            shouldRefreshValidatorDailyStats: false,
-            unifyAccountsTable: false,
-            savedFilters: {},
-            balanceUsdValueThreshold: {
-              [BalanceSource.BLOCKCHAIN]: '0',
-              [BalanceSource.EXCHANGES]: '0',
-              [BalanceSource.MANUAL]: '0',
-            },
-          }),
-        ),
-      }),
-    );
+    expect(api.setSettings).toHaveBeenCalledOnce();
+    const payload = vi.mocked(api.setSettings).mock.calls[0][0];
+    assert(payload.frontendSettings);
+    const parsedSettings = FrontendSettings.parse(camelCaseTransformer(JSON.parse(payload.frontendSettings)));
+
+    expect(parsedSettings).toMatchObject({
+      defiSetupDone: true,
+      language: SupportedLanguage.GR,
+      timeframeSetting: TimeFramePersist.REMEMBER,
+      visibleTimeframes: Defaults.DEFAULT_VISIBLE_TIMEFRAMES,
+      lastKnownTimeframe: TimeFramePeriod.ALL,
+      queryPeriod: 5,
+      profitLossReportPeriod: {
+        year: new Date().getFullYear().toString(),
+        quarter: Quarter.ALL,
+      },
+      thousandSeparator: Defaults.DEFAULT_THOUSAND_SEPARATOR,
+      decimalSeparator: Defaults.DEFAULT_DECIMAL_SEPARATOR,
+      currencyLocation: Defaults.DEFAULT_CURRENCY_LOCATION,
+      abbreviateNumber: false,
+      minimumDigitToBeAbbreviated: 4,
+      refreshPeriod: -1,
+      explorers: {},
+      itemsPerPage: 10,
+      amountRoundingMode: BigNumber.ROUND_UP,
+      valueRoundingMode: BigNumber.ROUND_DOWN,
+      selectedTheme: Theme.AUTO,
+      lightTheme: LIGHT_COLORS,
+      darkTheme: DARK_COLORS,
+      defaultThemeVersion: 1,
+      graphZeroBased: false,
+      showGraphRangeSelector: true,
+      nftsInNetValue: true,
+      renderAllNftImages: true,
+      whitelistedDomainsForNftImages: [],
+      dashboardTablesVisibleColumns: {
+        [DashboardTableType.ASSETS]: Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS,
+        [DashboardTableType.LIABILITIES]: Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS,
+        [DashboardTableType.NFT]: Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS,
+        [DashboardTableType.LIQUIDITY_POSITION]: Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS,
+        [DashboardTableType.BLOCKCHAIN_ASSET_BALANCES]: Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS,
+      },
+      dateInputFormat: DateFormat.DateMonthYearHourMinuteSecond,
+      versionUpdateCheckFrequency: Defaults.DEFAULT_VERSION_UPDATE_CHECK_FREQUENCY,
+      enableAliasNames: true,
+      blockchainRefreshButtonBehaviour: BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES,
+      shouldRefreshValidatorDailyStats: false,
+      unifyAccountsTable: false,
+      savedFilters: {},
+      balanceUsdValueThreshold: {
+        [BalanceSource.BLOCKCHAIN]: '0',
+        [BalanceSource.EXCHANGES]: '0',
+        [BalanceSource.MANUAL]: '0',
+      },
+    });
   });
 
   it('does not update settings on missing payload', async () => {

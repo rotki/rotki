@@ -2,6 +2,8 @@
 import useVuelidate from '@vuelidate/core';
 import { helpers, required, sameAs } from '@vuelidate/validators';
 import { toMessages } from '@/utils/validation';
+import { usePremiumStore } from '@/store/session/premium';
+import { useSessionStore } from '@/store/session';
 
 const currentPassword = ref('');
 const newPassword = ref('');

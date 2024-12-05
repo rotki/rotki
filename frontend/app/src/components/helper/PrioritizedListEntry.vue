@@ -19,8 +19,6 @@ const { data } = toRefs(props);
 const { t } = useI18n();
 
 const labels: { [keys in PrioritizedListId]: string } = {
-  [PriceOracle.UNISWAP2]: t('oracles.uniswap_v2'),
-  [PriceOracle.UNISWAP3]: t('oracles.uniswap_v3'),
   [AddressNamePriority.BLOCKCHAIN_ACCOUNT]: t('address_book.hint.priority.list.blockchain_account_labels'),
   [AddressNamePriority.ENS_NAMES]: t('address_book.hint.priority.list.ens_names'),
   [AddressNamePriority.ETHEREUM_TOKENS]: t('address_book.hint.priority.list.ethereum_tokens'),
@@ -30,11 +28,13 @@ const labels: { [keys in PrioritizedListId]: string } = {
   blockchain: '',
   coingecko: '',
   cryptocompare: '',
-  fiat: '',
-  manualcurrent: '',
-  manual: '',
   defillama: '',
   empty_list_id: '',
+  fiat: '',
+  manual: '',
+  manualcurrent: '',
+  [PriceOracle.UNISWAP2]: t('oracles.uniswap_v2'),
+  [PriceOracle.UNISWAP3]: t('oracles.uniswap_v3'),
 };
 </script>
 

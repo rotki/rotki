@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { HistoryEventEntryType } from '@rotki/common';
 import EthWithdrawalEventForm from '@/components/history/events/forms/EthWithdrawalEventForm.vue';
 import { setupDayjs } from '@/utils/date';
+import { useBalancePricesStore } from '@/store/balances/prices';
 import type { AssetMap } from '@/types/asset';
 import type { EthWithdrawalEvent } from '@/types/history/events';
 

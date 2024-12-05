@@ -1,6 +1,10 @@
 import { BackendCode } from '@shared/ipc';
 import { checkIfDevelopment, startPromise } from '@shared/utils';
 import { logger } from '@/utils/logging';
+import { useAreaVisibilityStore } from '@/store/session/visibility';
+import { useSessionAuthStore } from '@/store/session/auth';
+import { useMainStore } from '@/store/main';
+import { useMonitorStore } from '@/store/monitor';
 
 export const useBackendMessagesStore = defineStore('backendMessages', () => {
   const startupErrorMessage = ref('');
@@ -18,6 +22,7 @@ export const useBackendMessagesStore = defineStore('backendMessages', () => {
 
   onBeforeMount(() => {
     setupListeners({
+      onAbout: () => set(showAbout, true),
       onError: (backendOutput: string | Error, code: BackendCode) => {
         logger.error(backendOutput, code);
         if (code === BackendCode.TERMINATED) {
@@ -31,11 +36,6 @@ export const useBackendMessagesStore = defineStore('backendMessages', () => {
           set(isWinVersionUnsupported, true);
         }
       },
-      onAbout: () => set(showAbout, true),
-      onRestart: () => {
-        set(startupErrorMessage, '');
-        startPromise(restartBackend());
-      },
       onProcessDetected: (pids) => {
         set(
           startupErrorMessage,
@@ -43,6 +43,10 @@ export const useBackendMessagesStore = defineStore('backendMessages', () => {
             pids: pids.join(', '),
           }),
         );
+      },
+      onRestart: () => {
+        set(startupErrorMessage, '');
+        startPromise(restartBackend());
       },
     });
 
@@ -57,9 +61,9 @@ export const useBackendMessagesStore = defineStore('backendMessages', () => {
   });
 
   return {
-    startupErrorMessage,
     isMacOsVersionUnsupported,
     isWinVersionUnsupported,
+    startupErrorMessage,
   };
 });
 

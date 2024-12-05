@@ -1,24 +1,25 @@
 <script setup lang="ts">
 import { generateRandomScrambleMultiplier } from '@/utils/session';
+import { useSessionSettingsStore } from '@/store/settings/session';
 
 const { t } = useI18n();
 
 const labels = [
   {
-    title: t('user_dropdown.change_privacy_mode.normal_mode.label'),
     description: t('user_dropdown.change_privacy_mode.normal_mode.description'),
+    title: t('user_dropdown.change_privacy_mode.normal_mode.label'),
   },
   {
-    title: t('user_dropdown.change_privacy_mode.semi_private_mode.label'),
     description: t('user_dropdown.change_privacy_mode.semi_private_mode.description'),
+    title: t('user_dropdown.change_privacy_mode.semi_private_mode.label'),
   },
   {
-    title: t('user_dropdown.change_privacy_mode.private_mode.label'),
     description: t('user_dropdown.change_privacy_mode.private_mode.description'),
+    title: t('user_dropdown.change_privacy_mode.private_mode.label'),
   },
 ];
 
-const { privacyModeIcon, privacyMode, togglePrivacyMode, changePrivacyMode } = usePrivacyMode();
+const { changePrivacyMode, privacyMode, privacyModeIcon, togglePrivacyMode } = usePrivacyMode();
 
 const { scrambleData: enabled, scrambleMultiplier: multiplier } = storeToRefs(useSessionSettingsStore());
 

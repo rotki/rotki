@@ -4,6 +4,9 @@ import { downloadFileByTextContent } from '@/utils/download';
 import { isTaskCancelled } from '@/utils';
 import { defaultCollectionState, mapCollectionResponse } from '@/utils/collection';
 import { logger } from '@/utils/logging';
+import { useMessageStore } from '@/store/message';
+import { useTaskStore } from '@/store/tasks';
+import { useNotificationsStore } from '@/store/notifications';
 import type { MaybeRef } from '@vueuse/core';
 import type {
   AccountingRuleConflict,
@@ -28,12 +31,12 @@ interface UseAccountingSettingReturn {
 
 export function useAccountingSettings(): UseAccountingSettingReturn {
   const {
-    fetchAccountingRule,
-    fetchAccountingRules,
-    fetchAccountingRuleConflicts,
-    resolveAccountingRuleConflicts: resolveAccountingRuleConflictsCaller,
     exportAccountingRules,
+    fetchAccountingRule,
+    fetchAccountingRuleConflicts,
+    fetchAccountingRules,
     importAccountingRulesData,
+    resolveAccountingRuleConflicts: resolveAccountingRuleConflictsCaller,
     uploadAccountingRulesData,
   } = useAccountingApi();
 
@@ -53,11 +56,11 @@ export function useAccountingSettings(): UseAccountingSettingReturn {
       const message = error?.message ?? error ?? '';
 
       notify({
-        title: t('accounting_settings.rule.fetch_error.title'),
+        display: true,
         message: t('accounting_settings.rule.fetch_error.message', {
           message,
         }),
-        display: true,
+        title: t('accounting_settings.rule.fetch_error.title'),
       });
 
       return undefined;
@@ -77,11 +80,11 @@ export function useAccountingSettings(): UseAccountingSettingReturn {
       const message = error?.message ?? error ?? '';
 
       notify({
-        title: t('accounting_settings.rule.fetch_error.title'),
+        display: true,
         message: t('accounting_settings.rule.fetch_error.message', {
           message,
         }),
-        display: true,
+        title: t('accounting_settings.rule.fetch_error.title'),
       });
 
       return defaultCollectionState();
@@ -101,11 +104,11 @@ export function useAccountingSettings(): UseAccountingSettingReturn {
       const message = error?.message ?? error ?? '';
 
       notify({
-        title: t('accounting_settings.rule.conflicts.fetch_error.title'),
+        display: true,
         message: t('accounting_settings.rule.conflicts.fetch_error.message', {
           message,
         }),
-        display: true,
+        title: t('accounting_settings.rule.conflicts.fetch_error.title'),
       });
 
       return defaultCollectionState();
@@ -120,7 +123,7 @@ export function useAccountingSettings(): UseAccountingSettingReturn {
     }
     catch (error: any) {
       logger.error(error);
-      return { success: false, message: error.message };
+      return { message: error.message, success: false };
     }
   };
 
@@ -146,8 +149,8 @@ export function useAccountingSettings(): UseAccountingSettingReturn {
         return null;
 
       return {
-        result: false,
         message: error.message,
+        result: false,
       };
     }
   };
@@ -169,17 +172,17 @@ export function useAccountingSettings(): UseAccountingSettingReturn {
       if (response === null)
         return;
 
-      const { result, message: taskMessage } = response;
+      const { message: taskMessage, result } = response;
 
       if (appSession) {
         message = {
-          title: t('actions.accounting_rules.export.title'),
           description: result
             ? t('actions.accounting_rules.export.message.success')
             : t('actions.accounting_rules.export.message.failure', {
               description: taskMessage,
             }),
           success: !!result,
+          title: t('actions.accounting_rules.export.title'),
         };
       }
       else {
@@ -188,11 +191,11 @@ export function useAccountingSettings(): UseAccountingSettingReturn {
     }
     catch (error: any) {
       message = {
-        title: t('actions.accounting_rules.export.title'),
         description: t('actions.accounting_rules.export.message.failure', {
           description: error.message,
         }),
         success: false,
+        title: t('actions.accounting_rules.export.title'),
       };
     }
 
@@ -225,15 +228,15 @@ export function useAccountingSettings(): UseAccountingSettingReturn {
       success = false;
     }
 
-    return { success, message };
+    return { message, success };
   }
 
   return {
+    exportJSON,
     getAccountingRule,
     getAccountingRules,
     getAccountingRulesConflicts,
-    resolveAccountingRuleConflicts,
-    exportJSON,
     importJSON,
+    resolveAccountingRuleConflicts,
   };
 }

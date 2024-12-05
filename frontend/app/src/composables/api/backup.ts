@@ -46,9 +46,9 @@ export function useBackupApi(): UseBackupApiReturn {
     return `${api.instance.defaults.baseURL}/database/backups?file=${file}`;
   }
   return {
-    info,
     createBackup,
     deleteBackup,
     fileUrl,
+    info,
   };
 }

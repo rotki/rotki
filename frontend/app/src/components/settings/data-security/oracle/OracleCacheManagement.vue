@@ -3,6 +3,10 @@ import { Severity } from '@rotki/common';
 import { PriceOracle } from '@/types/settings/price-oracle';
 import { CRYPTOCOMPARE_PRIO_LIST_ITEM } from '@/types/settings/prioritized-list-id';
 import { TaskType } from '@/types/task-type';
+import { useNotificationsStore } from '@/store/notifications';
+import { useConfirmStore } from '@/store/confirm';
+import { useBalancePricesStore } from '@/store/balances/prices';
+import { useTaskStore } from '@/store/tasks';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { PrioritizedListItemData } from '@/types/settings/prioritized-list-data';
 import type { OracleCacheMeta } from '@/types/prices';
@@ -15,33 +19,33 @@ const sort = ref<DataTableSortData<OracleCacheEntry>>([]);
 
 const columns = computed<DataTableColumn<OracleCacheEntry>[]>(() => [
   {
-    label: t('oracle_cache_management.headers.from'),
     key: 'fromAsset',
+    label: t('oracle_cache_management.headers.from'),
     sortable: true,
   },
   {
-    label: t('oracle_cache_management.headers.to'),
     key: 'toAsset',
+    label: t('oracle_cache_management.headers.to'),
     sortable: true,
   },
   {
-    label: t('oracle_cache_management.headers.from_date'),
     key: 'fromTimestamp',
+    label: t('oracle_cache_management.headers.from_date'),
     sortable: true,
   },
   {
-    label: t('oracle_cache_management.headers.to_date'),
     key: 'toTimestamp',
+    label: t('oracle_cache_management.headers.to_date'),
     sortable: true,
   },
   {
-    label: '',
     key: 'actions',
+    label: '',
   },
 ]);
 
 const { isTaskRunning } = useTaskStore();
-const { createOracleCache, getPriceCache, deletePriceCache } = useBalancePricesStore();
+const { createOracleCache, deletePriceCache, getPriceCache } = useBalancePricesStore();
 
 const oracles: PrioritizedListItemData<PriceOracle>[] = [CRYPTOCOMPARE_PRIO_LIST_ITEM];
 
@@ -98,16 +102,16 @@ async function clearCache(entry: OracleCacheMeta) {
     const title = t('oracle_cache_management.notification.title');
 
     const message = t('oracle_cache_management.clear_error', {
+      error: error.message,
       fromAsset: get(assetSymbol(fromAsset)),
       toAsset: get(assetSymbol(toAsset)),
-      error: error.message,
     });
 
     notify({
-      title,
+      display: true,
       message,
       severity: Severity.ERROR,
-      display: true,
+      title,
     });
   }
 }
@@ -118,10 +122,10 @@ async function fetchPrices() {
   const source = get(selection);
 
   const status = await createOracleCache({
-    purgeOld: false,
     fromAsset: fromAssetVal,
-    toAsset: toAssetVal,
+    purgeOld: false,
     source,
+    toAsset: toAssetVal,
   });
 
   if (!('message' in status))
@@ -132,22 +136,22 @@ async function fetchPrices() {
   const message = status.success
     ? t('oracle_cache_management.notification.success', {
       fromAsset: from,
-      toAsset: to,
       source,
+      toAsset: to,
     })
     : t('oracle_cache_management.notification.error', {
-      fromAsset: from,
-      toAsset: to,
-      source,
       error: status.message,
+      fromAsset: from,
+      source,
+      toAsset: to,
     });
   const title = t('oracle_cache_management.notification.title');
 
   notify({
-    title,
+    display: true,
     message: message.toString(),
     severity: status.success ? Severity.INFO : Severity.ERROR,
-    display: true,
+    title,
   });
 }
 
@@ -164,12 +168,12 @@ function showDeleteConfirmation(entry: OracleCacheMeta) {
 
   show(
     {
-      title: t('oracle_cache_management.delete_confirmation.title'),
       message: t('oracle_cache_management.delete_confirmation.message', {
-        selection: get(selection),
         fromAsset: deleteFromAsset,
+        selection: get(selection),
         toAsset: deleteToAsset,
       }),
+      title: t('oracle_cache_management.delete_confirmation.title'),
     },
     () => clearCache(entry),
   );

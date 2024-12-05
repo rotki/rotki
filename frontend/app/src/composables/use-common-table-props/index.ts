@@ -18,11 +18,11 @@ export function useCommonTableProps<V extends NonNullable<unknown>>(): UseCommon
   const expanded = ref<V[]>([]) as Ref<V[]>;
 
   return {
-    selected,
-    openDialog,
-    editableItem,
-    itemsToDelete,
     confirmationMessage,
+    editableItem,
     expanded,
+    itemsToDelete,
+    openDialog,
+    selected,
   };
 }

@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { Priority, Severity } from '@rotki/common';
 import { Routes } from '@/router/routes';
+import { useTaskStore } from '@/store/tasks';
+import { useNotificationsStore } from '@/store/notifications';
+import { useConfirmStore } from '@/store/confirm';
 
 const display = defineModel<boolean>({ required: true });
 
@@ -26,8 +29,8 @@ function clear() {
 function showConfirmation() {
   show(
     {
-      title: t('notification_sidebar.confirmation.title'),
       message: t('notification_sidebar.confirmation.message'),
+      title: t('notification_sidebar.confirmation.title'),
       type: 'info',
     },
     clear,
@@ -44,10 +47,10 @@ enum TabCategory {
 }
 
 const tabCategoriesLabel = computed(() => ({
-  [TabCategory.VIEW_ALL]: t('notification_sidebar.tabs.view_all'),
+  [TabCategory.ERROR]: t('notification_sidebar.tabs.error'),
   [TabCategory.NEEDS_ACTION]: t('notification_sidebar.tabs.needs_action'),
   [TabCategory.REMINDER]: t('notification_sidebar.tabs.reminder'),
-  [TabCategory.ERROR]: t('notification_sidebar.tabs.error'),
+  [TabCategory.VIEW_ALL]: t('notification_sidebar.tabs.view_all'),
 }));
 
 const selectedTab = ref<TabCategory>(TabCategory.VIEW_ALL);

@@ -5,6 +5,8 @@ import { isBtcChain } from '@/types/blockchain/chains';
 import { XpubPrefix, getKeyType, isPrefixed } from '@/utils/xpub';
 import { getAccountAddress, getChain } from '@/utils/blockchain/accounts/utils';
 import { logger } from '@/utils/logging';
+import { useBlockchainStore } from '@/store/blockchain';
+import { useMessageStore } from '@/store/message';
 import type { Module } from '@/types/modules';
 import type {
   AccountPayload,
@@ -66,31 +68,31 @@ export type AccountManageState = AccountManage | StakingValidatorManage | XpubMa
 
 export function createNewBlockchainAccount(): AccountManageAdd {
   return {
-    mode: 'add',
-    type: 'account',
     chain: Blockchain.ETH,
-    evm: true,
     data: [
       {
         address: '',
         tags: null,
       },
     ],
+    evm: true,
+    mode: 'add',
+    type: 'account',
   };
 }
 
 export function editBlockchainAccount(account: BlockchainAccountBalance): AccountManageState {
   if ('publicKey' in account.data) {
-    const { ownershipPercentage = '100', publicKey, index } = account.data;
+    const { index, ownershipPercentage = '100', publicKey } = account.data;
     return {
-      mode: 'edit',
-      type: 'validator',
       chain: Blockchain.ETH2,
       data: {
         ownershipPercentage: ownershipPercentage || '100',
         publicKey,
         validatorIndex: index.toString(),
       },
+      mode: 'edit',
+      type: 'validator',
     } satisfies StakingValidatorManage;
   }
   else if ('xpub' in account.data) {
@@ -99,33 +101,33 @@ export function editBlockchainAccount(account: BlockchainAccountBalance): Accoun
     const match = isPrefixed(account.data.xpub);
     const prefix = match?.[1] ?? XpubPrefix.XPUB;
     return {
-      mode: 'edit',
-      type: 'xpub',
       chain,
       data: {
-        tags: account.tags ?? null,
         label: account.label,
+        tags: account.tags ?? null,
         xpub: {
-          xpub: account.data.xpub,
           derivationPath: account.data.derivationPath ?? '',
+          xpub: account.data.xpub,
           xpubType: getKeyType(prefix as XpubPrefix),
         },
       },
+      mode: 'edit',
+      type: 'xpub',
     } satisfies XpubManage;
   }
   else if (account.type === 'group' && account.chains.length > 1) {
     assert(account.category);
     const address = getAccountAddress(account);
     return {
-      mode: 'edit',
-      type: 'group',
       category: account.category,
       chain: undefined,
       data: {
-        tags: account.tags ?? null,
-        label: account.label === address ? undefined : account.label,
         address,
+        label: account.label === address ? undefined : account.label,
+        tags: account.tags ?? null,
       },
+      mode: 'edit',
+      type: 'group',
     } satisfies AccountAgnosticManage;
   }
   else {
@@ -133,14 +135,14 @@ export function editBlockchainAccount(account: BlockchainAccountBalance): Accoun
     assert(chain);
     const address = getAccountAddress(account);
     return {
-      mode: 'edit',
-      type: 'account',
       chain,
       data: {
-        tags: account.tags ?? null,
-        label: account.label === address ? undefined : account.label,
         address,
+        label: account.label === address ? undefined : account.label,
+        tags: account.tags ?? null,
       },
+      mode: 'edit',
+      type: 'account',
     } satisfies AccountManageEdit;
   }
 }
@@ -160,7 +162,7 @@ export function useAccountManage(): UseAccountManageReturn {
   const { addAccounts, addEvmAccounts, fetchAccounts, refreshAccounts } = useBlockchains();
   const { addEth2Validator, editEth2Validator, updateEthStakingOwnership } = useEthStaking();
   const { editAccount, editAgnosticAccount } = useBlockchainAccounts();
-  const { updateAccounts, updateAccountData } = useBlockchainStore();
+  const { updateAccountData, updateAccounts } = useBlockchainStore();
   const { setMessage } = useMessageStore();
 
   function handleErrors(error: any, props: Record<string, any> = {}): void {
@@ -173,8 +175,8 @@ export function useAccountManage(): UseAccountManageReturn {
     if (typeof errors === 'string') {
       setMessage({
         description: t('account_form.error.description', { error: errors }),
-        title: t('account_form.error.title'),
         success: false,
+        title: t('account_form.error.title'),
       });
     }
     else {
@@ -194,14 +196,14 @@ export function useAccountManage(): UseAccountManageReturn {
       else {
         if (state.evm) {
           await addEvmAccounts({
-            payload: state.data,
             modules: state.modules,
+            payload: state.data,
           });
         }
         else {
           await addAccounts(state.chain, {
-            payload: state.data,
             modules: isEth ? state.modules : undefined,
+            payload: state.data,
           });
         }
       }
@@ -248,8 +250,8 @@ export function useAccountManage(): UseAccountManageReturn {
     }
     catch (error: any) {
       handleErrors(error, {
-        xpub: '',
         derivationPath: '',
+        xpub: '',
       });
       return false;
     }
@@ -298,8 +300,8 @@ export function useAccountManage(): UseAccountManageReturn {
 
       setMessage({
         description,
-        title,
         success: false,
+        title,
       });
     }
     else {
@@ -324,8 +326,8 @@ export function useAccountManage(): UseAccountManageReturn {
   };
 
   return {
-    pending,
     errorMessages,
+    pending,
     save,
   };
 }

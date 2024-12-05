@@ -47,7 +47,7 @@ export function getEtherScanRegisterUrl(location: string): ExternalUrl | undefin
     const data = etherscanLinks[camelCaseLocation];
     return {
       external: data,
-      route: { path: '/api-keys/external', hash: `#${location}` },
+      route: { hash: `#${location}`, path: '/api-keys/external' },
     };
   }
 
@@ -58,7 +58,7 @@ export function getEtherScanRegisterUrl(location: string): ExternalUrl | undefin
 export function getTheGraphRegisterUrl(): ExternalUrl {
   return {
     external: externalLinks.applyTheGraphApiKey,
-    route: { path: '/api-keys/external', hash: `#thegraph` },
+    route: { hash: `#thegraph`, path: '/api-keys/external' },
   };
 }
 

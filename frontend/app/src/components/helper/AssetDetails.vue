@@ -15,12 +15,12 @@ const props = withDefaults(
   }>(),
   {
     assetStyled: undefined,
-    opensDetails: false,
-    hideName: false,
     dense: false,
     enableAssociation: true,
+    hideName: false,
     isCollectionParent: false,
     link: false,
+    opensDetails: false,
   },
 );
 

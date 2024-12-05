@@ -4,12 +4,12 @@ import { BalanceType } from '@/types/balances';
 import type { PaginationRequestPayload } from '@/types/common';
 
 const RawManualBalance = z.object({
-  asset: z.string(),
-  label: z.string(),
   amount: NumericString,
+  asset: z.string(),
+  balanceType: z.nativeEnum(BalanceType),
+  label: z.string(),
   location: z.string(),
   tags: z.array(z.string()).nullable(),
-  balanceType: z.nativeEnum(BalanceType),
 });
 
 export type RawManualBalance = z.infer<typeof RawManualBalance>;

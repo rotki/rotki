@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useConfirmStore } from '@/store/confirm';
+import { useTaskStore } from '@/store/tasks';
 import type { Task, TaskMeta } from '@/types/task';
 
 const expanded = ref(false);
@@ -7,7 +9,7 @@ const { t } = useI18n();
 const store = useTaskStore();
 const { hasRunningTasks, tasks } = storeToRefs(store);
 const { cancelTask, isTaskRunning } = store;
-const { show, dismiss } = useConfirmStore();
+const { dismiss, show } = useConfirmStore();
 
 const debounceDismiss = useDebounceFn((running: boolean) => !running && dismiss(), 1000);
 
@@ -17,10 +19,10 @@ function showConfirmation(task: Task<TaskMeta>) {
 
   show(
     {
-      title: t('collapsed_pending_tasks.cancel_task'),
       message: t('collapsed_pending_tasks.cancel_task_info', {
         title: task.meta.title,
       }),
+      title: t('collapsed_pending_tasks.cancel_task'),
       type: 'warning',
     },
     () => {

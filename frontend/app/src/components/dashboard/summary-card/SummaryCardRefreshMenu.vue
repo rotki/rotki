@@ -6,8 +6,8 @@ withDefaults(
     disabled?: boolean;
   }>(),
   {
-    loading: false,
     disabled: false,
+    loading: false,
   },
 );
 

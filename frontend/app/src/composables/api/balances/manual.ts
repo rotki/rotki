@@ -32,7 +32,7 @@ export function useManualBalancesApi(): UseManualBalancesApiReturn {
   const addManualBalances = async (balances: RawManualBalance[]): Promise<PendingTask> => {
     const response = await api.instance.put<ActionResult<PendingTask>>(
       'balances/manual',
-      snakeCaseTransformer(nonEmptyProperties({ balances, asyncQuery: true })),
+      snakeCaseTransformer(nonEmptyProperties({ asyncQuery: true, balances })),
       {
         validateStatus: validWithParamsSessionAndExternalService,
       },
@@ -43,7 +43,7 @@ export function useManualBalancesApi(): UseManualBalancesApiReturn {
   const editManualBalances = async (balances: ManualBalance[]): Promise<PendingTask> => {
     const response = await api.instance.patch<ActionResult<PendingTask>>(
       'balances/manual',
-      snakeCaseTransformer(nonEmptyProperties({ balances, asyncQuery: true })),
+      snakeCaseTransformer(nonEmptyProperties({ asyncQuery: true, balances })),
       {
         validateStatus: validWithParamsSessionAndExternalService,
       },
@@ -61,8 +61,8 @@ export function useManualBalancesApi(): UseManualBalancesApiReturn {
 
   return {
     addManualBalances,
-    editManualBalances,
     deleteManualBalances,
+    editManualBalances,
     queryManualBalances,
   };
 }

@@ -19,6 +19,12 @@ import { useCalendarReminderHandler } from '@/composables/message-handling/calen
 import { useCsvImportResultHandler } from '@/composables/message-handling/csv-import-result';
 import { useNewTokenDetectedHandler } from '@/composables/message-handling/new-token-detected';
 import { useExchangeUnknownAssetHandler } from '@/composables/message-handling/exchange-unknown-asset';
+import { useHistoryStore } from '@/store/history';
+import { useAccountMigrationStore } from '@/store/blockchain/accounts/migrate';
+import { useNotificationsStore } from '@/store/notifications';
+import { useSessionAuthStore } from '@/store/session/auth';
+import { useEventsQueryStatusStore } from '@/store/history/query-status/events-query-status';
+import { useTxQueryStatusStore } from '@/store/history/query-status/tx-query-status';
 
 interface UseMessageHandling {
   handleMessage: (data: string) => Promise<void>;
@@ -36,7 +42,7 @@ export function useMessageHandling(): UseMessageHandling {
   const { t } = useI18n();
   const { consumeMessages } = useSessionApi();
   const { uploadStatus, uploadStatusAlreadyHandled } = useSync();
-  const { setUndecodedTransactionsStatus, setProtocolCacheStatus } = useHistoryStore();
+  const { setProtocolCacheStatus, setUndecodedTransactionsStatus } = useHistoryStore();
   const { handle: handleMissingApiKeyMessage } = useMissingApiKeyHandler(t);
   const { handle: handleAccountingRuleConflictMessage } = useAccountingRuleConflictMessageHandler(t);
   const { handle: handleCalendarReminder } = useCalendarReminderHandler(t);
@@ -47,41 +53,41 @@ export function useMessageHandling(): UseMessageHandling {
   let isRunning = false;
 
   const handleSnapshotError = (data: BalanceSnapshotError): Notification => ({
-    title: t('notification_messages.snapshot_failed.title'),
-    message: t('notification_messages.snapshot_failed.message', data),
     display: true,
+    message: t('notification_messages.snapshot_failed.message', data),
+    title: t('notification_messages.snapshot_failed.title'),
   });
 
   const handleLegacyMessage = (message: string, isWarning: boolean): Notification => ({
-    title: t('notification_messages.backend.title'),
-    message,
     display: !isWarning,
-    severity: isWarning ? Severity.WARNING : Severity.ERROR,
+    message,
     priority: Priority.BULK,
+    severity: isWarning ? Severity.WARNING : Severity.ERROR,
+    title: t('notification_messages.backend.title'),
   });
 
   const handlePremiumStatusUpdate = (data: PremiumStatusUpdateData): Notification | null => {
-    const { isPremiumActive: active, expired } = data;
+    const { expired, isPremiumActive: active } = data;
     const premium = usePremium();
     const isPremium = get(premium);
 
     set(premium, active);
     if (active && !isPremium) {
       return {
-        title: t('notification_messages.premium.active.title'),
-        message: t('notification_messages.premium.active.message'),
         display: true,
+        message: t('notification_messages.premium.active.message'),
         severity: Severity.INFO,
+        title: t('notification_messages.premium.active.title'),
       };
     }
     else if (!active && isPremium) {
       return {
-        title: t('notification_messages.premium.inactive.title'),
+        display: true,
         message: expired
           ? t('notification_messages.premium.inactive.expired_message')
           : t('notification_messages.premium.inactive.network_problem_message'),
-        display: true,
         severity: Severity.ERROR,
+        title: t('notification_messages.premium.inactive.title'),
       };
     }
 
@@ -231,9 +237,9 @@ export function useMessageHandling(): UseMessageHandling {
     catch (error: any) {
       const message = error.message || error;
       notify({
-        title,
-        message,
         display: true,
+        message,
+        title,
       });
     }
     finally {
@@ -242,7 +248,7 @@ export function useMessageHandling(): UseMessageHandling {
   };
 
   return {
-    handleMessage,
     consume,
+    handleMessage,
   };
 }

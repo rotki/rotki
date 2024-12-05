@@ -5,6 +5,8 @@ import { type ExchangeFormData, KrakenAccountType } from '@/types/exchanges';
 import { toMessages } from '@/utils/validation';
 import ExchangeKeysFormStructure from '@/components/settings/api-keys/exchange/ExchangeKeysFormStructure.vue';
 import { useRefPropVModel } from '@/utils/model';
+import { useExchangesStore } from '@/store/exchanges';
+import { useLocationStore } from '@/store/locations';
 
 const modelValue = defineModel<ExchangeFormData>({ required: true });
 
@@ -13,7 +15,7 @@ const stateUpdated = defineModel<boolean>('stateUpdated', { required: true });
 const editKeys = ref<boolean>(false);
 
 const { getExchangeNonce } = useExchangesStore();
-const { exchangesWithPassphrase, exchangesWithoutApiSecret } = storeToRefs(useLocationStore());
+const { exchangesWithoutApiSecret, exchangesWithPassphrase } = storeToRefs(useLocationStore());
 const { getLocationData } = useLocations();
 const { t, te } = useI18n();
 
@@ -77,11 +79,11 @@ const name = computed<string>({
 });
 
 useFormStateWatcher({
-  name,
   apiKey,
   apiSecret,
-  passphrase,
   krakenAccountType,
+  name,
+  passphrase,
 }, stateUpdated);
 
 const suggestedName = function (exchange: string): string {
@@ -96,8 +98,8 @@ function toggleEdit() {
   if (!get(editKeys)) {
     set(modelValue, {
       ...get(modelValue),
-      apiSecret: '',
       apiKey: '',
+      apiSecret: '',
     });
   }
 }
@@ -115,18 +117,6 @@ const krakenAccountTypes = KrakenAccountType.options.map((item) => {
 const sensitiveFieldEditable = logicOr(logicNot(editMode), editKeys);
 
 const v$ = useVuelidate({
-  name: {
-    required: helpers.withMessage(
-      t('exchange_keys_form.name.non_empty'),
-      requiredUnless(editMode),
-    ),
-  },
-  newName: {
-    required: helpers.withMessage(
-      t('exchange_keys_form.name.non_empty'),
-      requiredIf(editMode),
-    ),
-  },
   apiKey: {
     required: helpers.withMessage(
       t('exchange_keys_form.validation.non_empty'),
@@ -137,6 +127,18 @@ const v$ = useVuelidate({
     required: helpers.withMessage(
       t('exchange_keys_form.validation.non_empty'),
       requiredIf(logicAnd(sensitiveFieldEditable, requiresApiSecret)),
+    ),
+  },
+  name: {
+    required: helpers.withMessage(
+      t('exchange_keys_form.name.non_empty'),
+      requiredUnless(editMode),
+    ),
+  },
+  newName: {
+    required: helpers.withMessage(
+      t('exchange_keys_form.name.non_empty'),
+      requiredIf(editMode),
     ),
   },
   passphrase: {
@@ -150,15 +152,15 @@ const v$ = useVuelidate({
 function onExchangeChange(exchange?: string) {
   const name = exchange ?? '';
   set(modelValue, {
+    apiKey: '',
+    apiSecret: '',
+    binanceMarkets: undefined,
+    krakenAccountType: name === 'kraken' ? 'starter' : undefined,
+    location: name,
     mode: get(modelValue, 'mode'),
     name: suggestedName(name),
     newName: '',
-    location: name,
-    apiKey: '',
-    apiSecret: '',
     passphrase: '',
-    krakenAccountType: name === 'kraken' ? 'starter' : undefined,
-    binanceMarkets: undefined,
   });
 
   nextTick(() => {

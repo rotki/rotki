@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { type XswapAsset, type XswapBalance, Zero } from '@rotki/common';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 
 defineProps<{
   balance: XswapBalance;

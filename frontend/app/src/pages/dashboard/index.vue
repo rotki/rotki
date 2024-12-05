@@ -4,12 +4,16 @@ import { Routes } from '@/router/routes';
 import { Module } from '@/types/modules';
 import { DashboardTableType } from '@/types/settings/frontend-settings';
 import { NoteLocation } from '@/types/notes';
+import { useManualBalancesStore } from '@/store/balances/manual';
+import { useExchangeBalancesStore } from '@/store/balances/exchanges';
+import { useBlockchainStore } from '@/store/blockchain';
+import { useTaskStore } from '@/store/tasks';
 
 definePage({
-  name: 'dashboard',
   meta: {
     noteLocation: NoteLocation.DASHBOARD,
   },
+  name: 'dashboard',
 });
 
 const { t } = useI18n();

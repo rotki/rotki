@@ -8,6 +8,8 @@ import { DateFormat } from '@/types/date-format';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 import { bigNumberifyFromRef } from '@/utils/bignumbers';
 import HistoryEventAssetPriceForm from '@/components/history/events/forms/HistoryEventAssetPriceForm.vue';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useBlockchainStore } from '@/store/blockchain';
 import type { EthWithdrawalEvent, NewEthWithdrawalEventPayload } from '@/types/history/events';
 
 const props = withDefaults(
@@ -39,6 +41,9 @@ const isExit = ref<boolean>(false);
 const errorMessages = ref<Record<string, string[]>>({});
 
 const rules = {
+  amount: {
+    required: helpers.withMessage(t('transactions.events.form.amount.validation.non_empty'), required),
+  },
   eventIdentifier: {
     required: helpers.withMessage(
       t('transactions.events.form.event_identifier.validation.non_empty'),
@@ -46,9 +51,6 @@ const rules = {
     ),
   },
   timestamp: { externalServerValidation: () => true },
-  amount: {
-    required: helpers.withMessage(t('transactions.events.form.amount.validation.non_empty'), required),
-  },
   usdValue: {
     required: helpers.withMessage(
       t('transactions.events.form.fiat_value.validation.non_empty', {
@@ -61,23 +63,23 @@ const rules = {
     required: helpers.withMessage(t('transactions.events.form.validator_index.validation.non_empty'), required),
   },
   withdrawalAddress: {
-    required: helpers.withMessage(t('transactions.events.form.withdrawal_address.validation.non_empty'), required),
     isValid: helpers.withMessage(t('transactions.events.form.withdrawal_address.validation.valid'), (value: string) =>
       isValidEthAddress(value)),
+    required: helpers.withMessage(t('transactions.events.form.withdrawal_address.validation.non_empty'), required),
   },
 };
 
 const numericAmount = bigNumberifyFromRef(amount);
 const numericUsdValue = bigNumberifyFromRef(usdValue);
 
-const { setValidation, setSubmitFunc, saveHistoryEventHandler } = useHistoryEventsForm();
+const { saveHistoryEventHandler, setSubmitFunc, setValidation } = useHistoryEventsForm();
 
 const v$ = setValidation(
   rules,
   {
+    amount,
     eventIdentifier,
     timestamp: datetime,
-    amount,
     usdValue,
     validatorIndex,
     withdrawalAddress,
@@ -128,16 +130,16 @@ async function save(): Promise<boolean> {
   const timestamp = convertToTimestamp(get(datetime), DateFormat.DateMonthYearHourMinuteSecond, true);
 
   const payload: NewEthWithdrawalEventPayload = {
-    eventIdentifier: get(eventIdentifier),
-    entryType: HistoryEventEntryType.ETH_WITHDRAWAL_EVENT,
-    timestamp,
     balance: {
       amount: get(numericAmount).isNaN() ? Zero : get(numericAmount),
       usdValue: get(numericUsdValue).isNaN() ? Zero : get(numericUsdValue),
     },
+    entryType: HistoryEventEntryType.ETH_WITHDRAWAL_EVENT,
+    eventIdentifier: get(eventIdentifier),
+    isExit: get(isExit),
+    timestamp,
     validatorIndex: parseInt(get(validatorIndex)),
     withdrawalAddress: get(withdrawalAddress),
-    isExit: get(isExit),
   };
 
   const edit = get(editableItem);

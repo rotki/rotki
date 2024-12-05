@@ -2,6 +2,8 @@
 import { Section } from '@/types/status';
 import { CURRENCY_USD } from '@/types/currencies';
 import { bigNumberSum } from '@/utils/calculation';
+import { useBalancePricesStore } from '@/store/balances/prices';
+import { useStatusStore } from '@/store/status';
 import type { AssetBalance, Balance, BigNumber, LiquityPoolDetailEntry, LiquityStatisticDetails } from '@rotki/common';
 
 const props = withDefaults(
@@ -10,12 +12,12 @@ const props = withDefaults(
     pool?: LiquityPoolDetailEntry | null;
   }>(),
   {
-    statistic: null,
     pool: null,
+    statistic: null,
   },
 );
 
-const { statistic, pool } = toRefs(props);
+const { pool, statistic } = toRefs(props);
 const { assetPrice } = useBalancePricesStore();
 const LUSD_ID = 'eip155:1/erc20:0x5f98805A4E8be255a32880FDeC7F6728C6568bA0';
 const lusdPrice = assetPrice(LUSD_ID);
@@ -60,12 +62,12 @@ const statisticWithAdjustedPrice = computed<LiquityStatisticDetails | null>(() =
 
   return {
     ...statisticVal,
+    stabilityPoolGains,
+    stakingGains,
+    totalDepositedStabilityPoolUsdValue: statisticVal.totalDepositedStabilityPool.multipliedBy(get(lusdPrice) ?? One),
     totalUsdGainsStabilityPool,
     totalUsdGainsStaking,
-    totalDepositedStabilityPoolUsdValue: statisticVal.totalDepositedStabilityPool.multipliedBy(get(lusdPrice) ?? One),
     totalWithdrawnStabilityPoolUsdValue: statisticVal.totalWithdrawnStabilityPool.multipliedBy(get(lusdPrice) ?? One),
-    stakingGains,
-    stabilityPoolGains,
   };
 });
 

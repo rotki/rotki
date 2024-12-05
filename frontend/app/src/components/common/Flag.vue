@@ -6,8 +6,8 @@ const props = withDefaults(
     squared?: boolean;
   }>(),
   {
-    title: '',
     squared: false,
+    title: '',
   },
 );
 

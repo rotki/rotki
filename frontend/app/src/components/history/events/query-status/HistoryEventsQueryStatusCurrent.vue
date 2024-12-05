@@ -12,7 +12,7 @@ const { locations } = toRefs(props);
 
 const { t } = useI18n();
 
-const { queryingLength, length, isAllFinished } = useEventsQueryStatus(locations);
+const { isAllFinished, length, queryingLength } = useEventsQueryStatus(locations);
 </script>
 
 <template>

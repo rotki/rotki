@@ -8,7 +8,7 @@ withDefaults(
   },
 );
 
-const { openDialog, submitting, closeDialog, trySubmit, stateUpdated } = useHistoryTransactionsForm();
+const { closeDialog, openDialog, stateUpdated, submitting, trySubmit } = useHistoryTransactionsForm();
 
 const { t } = useI18n();
 </script>

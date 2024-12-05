@@ -7,6 +7,7 @@ import {
   dateValidator,
 } from '@/types/filtering';
 import { getDateInputISOFormat } from '@/utils/date';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import type { EthStakingCombinedFilter } from '@rotki/common';
 
 const props = withDefaults(
@@ -55,35 +56,35 @@ const matchers = computed<Matcher[]>(
   () =>
     [
       {
+        description: t('common.filter.start_date'),
+        deserializer: dateDeserializer(dateInputFormat),
+        hint: t('common.filter.date_hint', {
+          format: getDateInputISOFormat(get(dateInputFormat)),
+        }),
         key: Eth2StakingFilterKeys.START,
         keyValue: Eth2StakingFilterValueKeys.START,
-        description: t('common.filter.start_date'),
+        serializer: dateSerializer(dateInputFormat),
         string: true,
         suggestions: () => [],
+        validate: dateValidator(dateInputFormat),
+      },
+      {
+        description: t('common.filter.end_date'),
+        deserializer: dateDeserializer(dateInputFormat),
         hint: t('common.filter.date_hint', {
           format: getDateInputISOFormat(get(dateInputFormat)),
         }),
-        validate: dateValidator(dateInputFormat),
-        serializer: dateSerializer(dateInputFormat),
-        deserializer: dateDeserializer(dateInputFormat),
-      },
-      {
         key: Eth2StakingFilterKeys.END,
         keyValue: Eth2StakingFilterValueKeys.END,
-        description: t('common.filter.end_date'),
+        serializer: dateSerializer(dateInputFormat),
         string: true,
         suggestions: () => [],
-        hint: t('common.filter.date_hint', {
-          format: getDateInputISOFormat(get(dateInputFormat)),
-        }),
         validate: dateValidator(dateInputFormat),
-        serializer: dateSerializer(dateInputFormat),
-        deserializer: dateDeserializer(dateInputFormat),
       },
       {
+        description: t('eth_validator_combined_filter.status'),
         key: Eth2StakingFilterKeys.STATUS,
         keyValue: Eth2StakingFilterValueKeys.STATUS,
-        description: t('eth_validator_combined_filter.status'),
         string: true,
         suggestions: () => validStatuses.filter(x => x !== 'all'),
         validate: (status: string) => isValidStatus(status),
@@ -93,7 +94,7 @@ const matchers = computed<Matcher[]>(
 
 function updateFilters(updatedFilters: Filters) {
   set(filters, updatedFilters);
-  const { fromTimestamp, toTimestamp, status } = updatedFilters;
+  const { fromTimestamp, status, toTimestamp } = updatedFilters;
 
   assert(typeof fromTimestamp === 'string' || fromTimestamp === undefined);
   assert(typeof toTimestamp === 'string' || toTimestamp === undefined);
@@ -101,8 +102,8 @@ function updateFilters(updatedFilters: Filters) {
 
   emit('update:filter', {
     fromTimestamp: fromTimestamp ? parseInt(fromTimestamp) : undefined,
-    toTimestamp: toTimestamp ? parseInt(toTimestamp) : undefined,
     status,
+    toTimestamp: toTimestamp ? parseInt(toTimestamp) : undefined,
   });
 }
 

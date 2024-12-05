@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { checkIfDevelopment } from '@shared/utils';
+import { useSessionStore } from '@/store/session';
+import { useSessionSettingsStore } from '@/store/settings/session';
 
 const DevApp = defineAsyncComponent(() => import('@/DevApp.vue'));
 

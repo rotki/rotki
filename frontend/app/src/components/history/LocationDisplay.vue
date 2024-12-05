@@ -11,15 +11,15 @@ const props = withDefaults(
     horizontal?: boolean;
   }>(),
   {
-    icon: false,
-    size: '24px',
-    openDetails: true,
     detailPath: '',
     horizontal: false,
+    icon: false,
+    openDetails: true,
+    size: '24px',
   },
 );
 
-const { identifier, detailPath } = toRefs(props);
+const { detailPath, identifier } = toRefs(props);
 
 const { locationData } = useLocations();
 const location = locationData(identifier);
@@ -32,8 +32,8 @@ const route = computed<RouteLocationRaw>(() => {
   }
   else if (tradeLocation?.detailPath) {
     return {
-      path: tradeLocation.detailPath,
       hash: '#accounts-section',
+      path: tradeLocation.detailPath,
     };
   }
   else if (tradeLocation) {

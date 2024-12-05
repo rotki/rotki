@@ -1,4 +1,5 @@
 import { beforeAll, describe, expect, it } from 'vitest';
+import { useSushiswapStore } from '@/store/defi/sushiswap';
 import type { XswapBalance, XswapPool } from '@rotki/common';
 
 export function setSushiswapBalances() {

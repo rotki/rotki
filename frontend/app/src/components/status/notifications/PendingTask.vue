@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import dayjs from 'dayjs';
 import { TaskType } from '@/types/task-type';
+import { useReportsStore } from '@/store/reports';
 import type { Task, TaskMeta } from '@/types/task';
 
 const props = defineProps<{ task: Task<TaskMeta> }>();

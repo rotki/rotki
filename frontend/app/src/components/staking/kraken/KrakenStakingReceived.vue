@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useBalancePricesStore } from '@/store/balances/prices';
 import type { Balance } from '@rotki/common';
 import type { ReceivedAmount } from '@/types/staking';
 

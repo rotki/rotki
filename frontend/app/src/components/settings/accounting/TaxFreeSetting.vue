@@ -2,6 +2,7 @@
 import useVuelidate from '@vuelidate/core';
 import { helpers, minValue, requiredIf } from '@vuelidate/validators';
 import { toMessages } from '@/utils/validation';
+import { useAccountingSettingsStore } from '@/store/settings/accounting';
 
 const taxFreeAfterPeriod = ref<string>('');
 const taxFreePeriod = ref(false);
@@ -12,8 +13,8 @@ const { taxfreeAfterPeriod: period } = storeToRefs(useAccountingSettingsStore())
 
 const rules = {
   taxFreeAfterPeriod: {
-    required: helpers.withMessage(t('account_settings.validation.tax_free_days'), requiredIf(taxFreePeriod)),
     minValue: helpers.withMessage(t('account_settings.validation.tax_free_days_gt_zero'), minValue(1)),
+    required: helpers.withMessage(t('account_settings.validation.tax_free_days'), requiredIf(taxFreePeriod)),
   },
 };
 

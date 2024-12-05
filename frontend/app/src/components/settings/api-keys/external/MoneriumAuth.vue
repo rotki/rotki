@@ -7,8 +7,8 @@ const understand = ref<boolean>(false);
 
 const name = 'monerium';
 
-const { loading, credential, actionStatus, save, confirmDelete } = useExternalApiKeys(t);
-const { serviceKeyRef, saveHandler } = useServiceKeyHandler<InstanceType<typeof ServiceWithAuth>>();
+const { actionStatus, confirmDelete, credential, loading, save } = useExternalApiKeys(t);
+const { saveHandler, serviceKeyRef } = useServiceKeyHandler<InstanceType<typeof ServiceWithAuth>>();
 
 const credentialData = credential(name);
 const status = actionStatus(name);

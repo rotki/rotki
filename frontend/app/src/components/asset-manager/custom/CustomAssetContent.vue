@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useConfirmStore } from '@/store/confirm';
+import { useMessageStore } from '@/store/message';
 import type { Nullable } from '@rotki/common';
 import type { Filters, Matcher } from '@/composables/filters/custom-assets';
 import type { CustomAsset, CustomAssetRequestPayload } from '@/types/asset';
@@ -22,9 +24,9 @@ const route = useRoute();
 
 const { setMessage } = useMessageStore();
 const { show } = useConfirmStore();
-const { deleteCustomAsset, queryAllCustomAssets, getCustomAssetTypes } = useAssetManagementApi();
+const { deleteCustomAsset, getCustomAssetTypes, queryAllCustomAssets } = useAssetManagementApi();
 const { setOpenDialog, setPostSubmitFunc } = useCustomAssetForm();
-const { expanded, editableItem } = useCommonTableProps<CustomAsset>();
+const { editableItem, expanded } = useCommonTableProps<CustomAsset>();
 
 async function deleteAsset(assetId: string) {
   try {
@@ -43,25 +45,25 @@ async function deleteAsset(assetId: string) {
 }
 
 const {
-  state,
-  filters,
-  matchers,
   fetchData,
+  filters,
   isLoading: loading,
+  matchers,
   pagination,
   sort,
+  state,
 } = usePaginationFilters<
   CustomAsset,
   CustomAssetRequestPayload,
   Filters,
   Matcher
 >(queryAllCustomAssets, {
-  history: get(mainPage) ? 'router' : false,
-  filterSchema: () => useCustomAssetFilter(types),
   defaultSortBy: [{
     column: 'name',
     direction: 'desc',
   }],
+  filterSchema: () => useCustomAssetFilter(types),
+  history: get(mainPage) ? 'router' : false,
 });
 
 const dialogTitle = computed<string>(() =>
@@ -99,10 +101,10 @@ setPostSubmitFunc(refresh);
 function showDeleteConfirmation(item: CustomAsset) {
   show(
     {
-      title: t('asset_management.confirm_delete.title'),
       message: t('asset_management.confirm_delete.message', {
         asset: item?.name ?? '',
       }),
+      title: t('asset_management.confirm_delete.title'),
     },
     async () => await deleteAsset(item.identifier),
   );

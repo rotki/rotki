@@ -2,6 +2,8 @@ import { TaskType } from '@/types/task-type';
 import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
 import { logger } from '@/utils/logging';
 import { isTaskCancelled } from '@/utils';
+import { useTaskStore } from '@/store/tasks';
+import { useNotificationsStore } from '@/store/notifications';
 import type {
   ApplyUpdateResult,
   AssetDBVersion,
@@ -28,10 +30,10 @@ export function useAssets(): UseAssetsReturn {
   const { appSession, getPath, openDirectory } = useInterop();
   const {
     checkForAssetUpdate,
-    performUpdate,
-    mergeAssets: mergeAssetsCaller,
-    importCustom,
     exportCustom,
+    importCustom,
+    mergeAssets: mergeAssetsCaller,
+    performUpdate,
     restoreAssetsDatabase: restoreAssetsDatabaseCaller,
   } = useAssetsApi();
 
@@ -58,9 +60,9 @@ export function useAssets(): UseAssetsReturn {
         }).toString();
 
         notify({
-          title,
-          message: description,
           display: true,
+          message: description,
+          title,
         });
       }
       return {
@@ -69,7 +71,7 @@ export function useAssets(): UseAssetsReturn {
     }
   };
 
-  const applyUpdates = async ({ version, resolution }: AssetUpdatePayload): Promise<ApplyUpdateResult> => {
+  const applyUpdates = async ({ resolution, version }: AssetUpdatePayload): Promise<ApplyUpdateResult> => {
     try {
       const { taskId } = await performUpdate(version, resolution);
       const { result } = await awaitTask<AssetUpdateResult, TaskMeta>(taskId, TaskType.ASSET_UPDATE_PERFORM, {
@@ -82,8 +84,8 @@ export function useAssets(): UseAssetsReturn {
         };
       }
       return {
-        done: false,
         conflicts: result,
+        done: false,
       };
     }
     catch (error: any) {
@@ -93,9 +95,9 @@ export function useAssets(): UseAssetsReturn {
           message: error.message,
         }).toString();
         notify({
-          title,
-          message: description,
           display: true,
+          message: description,
+          title,
         });
       }
       return {
@@ -120,8 +122,8 @@ export function useAssets(): UseAssetsReturn {
         message = error.getValidationErrors({ sourceIdentifier, targetIdentifier });
 
       return {
-        success: false,
         message,
+        success: false,
       };
     }
   };
@@ -143,8 +145,8 @@ export function useAssets(): UseAssetsReturn {
         logger.error(error);
 
       return {
-        success: false,
         message: error.message,
+        success: false,
       };
     }
   };
@@ -156,8 +158,8 @@ export function useAssets(): UseAssetsReturn {
         const directory = await openDirectory(t('common.select_directory').toString());
         if (!directory) {
           return {
-            success: false,
             message: t('assets.backup.missing_directory'),
+            success: false,
           };
         }
         file = directory;
@@ -166,8 +168,8 @@ export function useAssets(): UseAssetsReturn {
     }
     catch (error: any) {
       return {
-        success: false,
         message: error.message,
+        success: false,
       };
     }
   };
@@ -188,18 +190,18 @@ export function useAssets(): UseAssetsReturn {
         logger.error(error);
 
       return {
-        success: false,
         message: error.message,
+        success: false,
       };
     }
   };
 
   return {
-    checkForUpdate,
     applyUpdates,
-    mergeAssets,
-    importCustomAssets,
+    checkForUpdate,
     exportCustomAssets,
+    importCustomAssets,
+    mergeAssets,
     restoreAssetsDatabase,
   };
 }

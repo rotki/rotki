@@ -105,10 +105,10 @@ export const useDynamicMessages = createSharedComposable(() => {
   };
 
   return {
+    activeDashboardMessages,
+    activeWelcomeMessages,
     fetchMessages,
     welcomeHeader,
     welcomeMessage,
-    activeWelcomeMessages,
-    activeDashboardMessages,
   };
 });

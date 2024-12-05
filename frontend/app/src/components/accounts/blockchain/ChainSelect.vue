@@ -19,8 +19,8 @@ const props = withDefaults(
     items?: string[];
   }>(),
   {
-    disabled: false,
     dense: false,
+    disabled: false,
     evmOnly: false,
     excludeEthStaking: false,
     items: () => [],

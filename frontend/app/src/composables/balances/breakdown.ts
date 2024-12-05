@@ -1,5 +1,10 @@
 import { TRADE_LOCATION_BLOCKCHAIN } from '@/data/defaults';
 import { groupAssetBreakdown, mergeAssetBalances } from '@/utils/balances';
+import { useIgnoredAssetsStore } from '@/store/assets/ignored';
+import { useBalancePricesStore } from '@/store/balances/prices';
+import { useBlockchainStore } from '@/store/blockchain';
+import { useExchangeBalancesStore } from '@/store/balances/exchanges';
+import { useManualBalancesStore } from '@/store/balances/manual';
 import type { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
 import type { MaybeRef } from '@vueuse/core';
 import type { AssetBreakdown } from '@/types/blockchain/accounts';
@@ -15,15 +20,15 @@ interface UseBalancesBreakdownReturn {
 export function useBalancesBreakdown(): UseBalancesBreakdownReturn {
   const manualStore = useManualBalancesStore();
   const { manualBalanceByLocation } = storeToRefs(manualStore);
-  const { assetBreakdown: manualAssetBreakdown, liabilityBreakdown: manualLiabilityBreakdown, getLocationBreakdown: getManualLocationBreakdown } = manualStore;
+  const { assetBreakdown: manualAssetBreakdown, getLocationBreakdown: getManualLocationBreakdown, liabilityBreakdown: manualLiabilityBreakdown } = manualStore;
   const {
     getBreakdown: getExchangeBreakdown,
-    getLocationBreakdown: getExchangesLocationBreakdown,
     getByLocationBalances: getExchangesByLocationBalances,
+    getLocationBreakdown: getExchangesLocationBreakdown,
   } = useExchangeBalancesStore();
   const { assetBreakdown: blockchainAssetBreakdown, liabilityBreakdown: blockchainLiabilityBreakdown } = useBlockchainStore();
-  const { locationBreakdown: blockchainLocationBreakdown, blockchainTotal } = useBlockchainAggregatedBalances();
-  const { toSelectedCurrency, assetPrice } = useBalancePricesStore();
+  const { blockchainTotal, locationBreakdown: blockchainLocationBreakdown } = useBlockchainAggregatedBalances();
+  const { assetPrice, toSelectedCurrency } = useBalancePricesStore();
   const { isAssetIgnored } = useIgnoredAssetsStore();
   const { toSortedAssetBalanceWithPrice } = useBalanceSorting();
 
@@ -78,8 +83,8 @@ export function useBalancesBreakdown(): UseBalancesBreakdownReturn {
 
   return {
     assetBreakdown,
+    balancesByLocation,
     liabilityBreakdown,
     locationBreakdown,
-    balancesByLocation,
   };
 }

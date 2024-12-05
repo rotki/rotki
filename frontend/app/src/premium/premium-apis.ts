@@ -1,5 +1,13 @@
 import { isNft } from '@/utils/nft';
 import { truncateAddress } from '@/utils/truncate';
+import { useSushiswapStore } from '@/store/defi/sushiswap';
+import { useCompoundStore } from '@/store/defi/compound';
+import { useBalancePricesStore } from '@/store/balances/prices';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useSessionSettingsStore } from '@/store/settings/session';
+import { useStatisticsStore } from '@/store/statistics';
+import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import type {
   AssetsApi,
   BalancesApi,
@@ -17,7 +25,7 @@ import type {
 import type { MaybeRef } from '@vueuse/core';
 
 export function assetsApi(): AssetsApi {
-  const { assetInfo, assetSymbol, assetName, tokenAddress } = useAssetInfoRetrieval();
+  const { assetInfo, assetName, assetSymbol, tokenAddress } = useAssetInfoRetrieval();
 
   return {
     assetInfo,
@@ -45,9 +53,13 @@ export function statisticsApi(): StatisticsApi {
     async assetValueDistribution(): Promise<TimedAssetBalances> {
       return queryLatestAssetValueDistribution();
     },
+    async fetchNetValue(): Promise<void> {
+      await fetchNetValue();
+    },
     async locationValueDistribution(): Promise<LocationData> {
       return queryLatestLocationValueDistribution();
     },
+    netValue: startingDate => getNetValue(startingDate),
     async ownedAssets(): Promise<OwnedAssets> {
       const owned = await queryOwnedAssets();
       return owned.filter(asset => !get(isAssetIgnored(asset)));
@@ -55,10 +67,6 @@ export function statisticsApi(): StatisticsApi {
     async timedBalances(asset: string, start: number, end: number, collectionId?: number): Promise<TimedBalances> {
       return queryTimedBalancesData(asset, start, end, collectionId);
     },
-    async fetchNetValue(): Promise<void> {
-      await fetchNetValue();
-    },
-    netValue: startingDate => getNetValue(startingDate),
   };
 }
 
@@ -66,30 +74,30 @@ export function userSettings(): UserSettingsApi {
   const {
     privacyMode,
     scrambleData,
+    scrambleMultiplier,
     shouldShowAmount,
     shouldShowPercentage,
-    scrambleMultiplier,
   } = storeToRefs(useSessionSettingsStore());
   const {
-    selectedTheme,
     dateInputFormat,
     graphZeroBased,
+    selectedTheme,
     showGraphRangeSelector,
   } = storeToRefs(useFrontendSettingsStore());
-  const { floatingPrecision, currencySymbol } = storeToRefs(useGeneralSettingsStore());
+  const { currencySymbol, floatingPrecision } = storeToRefs(useGeneralSettingsStore());
 
   return {
-    floatingPrecision,
     currencySymbol,
-    selectedTheme,
     dateInputFormat,
+    floatingPrecision,
     graphZeroBased,
-    showGraphRangeSelector,
     privacyMode,
-    scrambleMultiplier,
     scrambleData,
+    scrambleMultiplier,
+    selectedTheme,
     shouldShowAmount,
     shouldShowPercentage,
+    showGraphRangeSelector,
   };
 }
 
@@ -98,10 +106,10 @@ export function balancesApi(): BalancesApi {
   const { balancesByLocation } = useBalancesBreakdown();
   const { balances } = useAggregatedBalances();
   return {
-    byLocation: balancesByLocation,
     // TODO: deprecate on the next major components version (it's only here for backwards compat)
     aggregatedBalances: balances(false, false),
     balances: (groupMultiChain = false) => balances(false, groupMultiChain),
+    byLocation: balancesByLocation,
     exchangeRate: (currency: string) => computed(() => get(exchangeRate(currency)) ?? One),
   };
 }
@@ -109,13 +117,13 @@ export function balancesApi(): BalancesApi {
 type ProfitLossRef = ComputedRef<ProfitLossModel[]>;
 
 export function compoundApi(): CompoundApi {
-  const { rewards, debtLoss, interestProfit, liquidationProfit } = storeToRefs(useCompoundStore());
+  const { debtLoss, interestProfit, liquidationProfit, rewards } = storeToRefs(useCompoundStore());
 
   return {
-    compoundRewards: rewards as ProfitLossRef,
     compoundDebtLoss: debtLoss as ProfitLossRef,
-    compoundLiquidationProfit: liquidationProfit as ProfitLossRef,
     compoundInterestProfit: interestProfit as ProfitLossRef,
+    compoundLiquidationProfit: liquidationProfit as ProfitLossRef,
+    compoundRewards: rewards as ProfitLossRef,
   };
 }
 
@@ -127,17 +135,17 @@ export function sushiApi(): SushiApi {
 
   return {
     addresses,
-    pools,
     balances: balanceList,
-    poolProfit,
-    fetchEvents,
     fetchBalances,
+    fetchEvents,
+    poolProfit,
+    pools,
   };
 }
 
 export function utilsApi(): UtilsApi {
   return {
-    truncate: truncateAddress,
     getPoolName: useLiquidityPosition().getPoolName,
+    truncate: truncateAddress,
   };
 }

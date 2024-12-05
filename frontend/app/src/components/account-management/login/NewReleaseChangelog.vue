@@ -1,7 +1,7 @@
 <script setup lang="ts">
 const { t } = useI18n();
 
-const { version, link } = useUpdateMessage();
+const { link, version } = useUpdateMessage();
 </script>
 
 <template>

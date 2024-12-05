@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { NoteLocation } from '@/types/notes';
+import { useReportsStore } from '@/store/reports';
 import type { SelectedReport } from '@/types/reports';
 
 definePage({
@@ -18,7 +19,7 @@ const refreshing = ref(false);
 const reportsStore = useReportsStore();
 const { report, reports } = storeToRefs(reportsStore);
 
-const { fetchReports, fetchReport, clearReport, isLatestReport } = reportsStore;
+const { clearReport, fetchReport, fetchReports, isLatestReport } = reportsStore;
 const router = useRouter();
 const route = useRoute<'/reports/[id]'>();
 let firstPage = true;
@@ -66,13 +67,13 @@ async function onPage({ limit, offset, reportId }: { reportId: number; limit: nu
 }
 
 async function regenerateReport() {
-  const { start, end } = get(report);
+  const { end, start } = get(report);
   await router.push({
     path: '/reports',
     query: {
+      end: end.toString(),
       regenerate: 'true',
       start: start.toString(),
-      end: end.toString(),
     },
   });
 }

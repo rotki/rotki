@@ -2,6 +2,7 @@
 import { Section } from '@/types/status';
 import { IgnoreActionType } from '@/types/history/ignored';
 import { SavedFilterLocation } from '@/types/filtering';
+import { useStatusStore } from '@/store/status';
 import type { AssetMovementEntry, AssetMovementRequestPayload } from '@/types/history/asset-movements';
 import type { Filters, Matcher } from '@/composables/filters/asset-movement';
 import type { Writeable } from '@rotki/common';
@@ -28,47 +29,47 @@ const tableHeaders = computed<DataTableColumn<AssetMovementEntry>[]>(() => {
   const overview = !get(mainPage);
   const headers: DataTableColumn<AssetMovementEntry>[] = [
     {
-      label: '',
-      key: 'ignoredInAccounting',
-      class: !overview ? '!p-0' : '',
       cellClass: !overview ? '!p-0' : '!w-0 !max-w-[4rem]',
+      class: !overview ? '!p-0' : '',
+      key: 'ignoredInAccounting',
+      label: '',
     },
     {
-      label: t('common.location'),
-      key: 'location',
-      class: '!w-[7.5rem]',
-      cellClass: '!py-1',
       align: 'center',
+      cellClass: '!py-1',
+      class: '!w-[7.5rem]',
+      key: 'location',
+      label: t('common.location'),
       sortable: true,
     },
     {
-      label: t('deposits_withdrawals.headers.action'),
-      key: 'category',
       align: overview ? 'start' : 'center',
-      class: `text-no-wrap${overview ? ' !pl-0' : ''}`,
       cellClass: overview ? '!pl-0' : 'py-1',
+      class: `text-no-wrap${overview ? ' !pl-0' : ''}`,
+      key: 'category',
+      label: t('deposits_withdrawals.headers.action'),
       sortable: true,
     },
     {
-      label: t('common.asset'),
       cellClass: '!py-1',
       key: 'asset',
+      label: t('common.asset'),
     },
     {
-      label: t('common.amount'),
+      align: 'end',
       key: 'amount',
-      align: 'end',
+      label: t('common.amount'),
       sortable: true,
     },
     {
-      label: t('deposits_withdrawals.headers.fee'),
+      align: 'end',
       key: 'fee',
-      align: 'end',
+      label: t('deposits_withdrawals.headers.fee'),
       sortable: true,
     },
     {
-      label: t('common.datetime'),
       key: 'timestamp',
+      label: t('common.datetime'),
       sortable: true,
     },
   ];
@@ -84,26 +85,27 @@ const extraParams = computed(() => ({
 }));
 
 const { fetchAssetMovements, refreshAssetMovements } = useAssetMovements();
-const { selected, expanded } = useCommonTableProps<AssetMovementEntry>();
+const { expanded, selected } = useCommonTableProps<AssetMovementEntry>();
 
 const {
-  isLoading,
-  state: assetMovements,
+  fetchData,
   filters,
+  isLoading,
   matchers,
+  pagination,
   setPage,
   sort,
-  pagination,
-  fetchData,
+  state: assetMovements,
 } = usePaginationFilters<
   AssetMovementEntry,
   AssetMovementRequestPayload,
   Filters,
   Matcher
 >(fetchAssetMovements, {
+  extraParams,
+  filterSchema: useAssetMovementFilters,
   history: get(mainPage) ? 'router' : false,
   locationOverview,
-  filterSchema: useAssetMovementFilters,
   onUpdateFilters(query) {
     set(showIgnoredAssets, query.excludeIgnoredAssets === 'false');
   },
@@ -116,7 +118,6 @@ const {
 
     return params;
   }),
-  extraParams,
 });
 
 useHistoryAutoRefresh(fetchData);

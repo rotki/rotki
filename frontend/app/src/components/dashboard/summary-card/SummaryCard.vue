@@ -9,8 +9,8 @@ withDefaults(
     navigatesTo?: RouteLocationRaw;
   }>(),
   {
-    isLoading: false,
     canRefresh: false,
+    isLoading: false,
     navigatesTo: undefined,
   },
 );

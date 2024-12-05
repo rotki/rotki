@@ -7,7 +7,7 @@ type Entries = 'entries' | 'entriesFound' | 'entriesLimit' | 'entriesTotal';
 export function mapCollectionResponse<T, C extends CollectionResponse<T>>(
   response: C,
 ): Collection<T> & Omit<C, Entries> {
-  const { entries, entriesLimit, entriesFound, entriesTotal, ...rest } = response;
+  const { entries, entriesFound, entriesLimit, entriesTotal, ...rest } = response;
   return {
     data: entries,
     found: entriesFound,
@@ -19,9 +19,9 @@ export function mapCollectionResponse<T, C extends CollectionResponse<T>>(
 
 export function defaultCollectionState<T>(): Collection<T> {
   return {
+    data: [],
     found: 0,
     limit: 0,
-    data: [],
     total: 0,
     totalUsdValue: Zero,
   };
@@ -46,10 +46,10 @@ export function getCollectionData<T>(collection: Ref<Collection<T>>): {
 
   return {
     data,
-    limit,
-    found,
-    total,
     entriesFoundTotal,
+    found,
+    limit,
+    total,
     totalUsdValue,
   };
 }

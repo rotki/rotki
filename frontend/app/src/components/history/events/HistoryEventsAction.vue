@@ -2,6 +2,7 @@
 import { toEvmChainAndTxHash } from '@/utils/history';
 import { TaskType } from '@/types/task-type';
 import { isEvmEventRef } from '@/utils/history/events';
+import { useTaskStore } from '@/store/tasks';
 import type { EvmChainAndTxHash, EvmHistoryEvent, HistoryEventEntry } from '@/types/history/events';
 
 const props = defineProps<{
@@ -30,8 +31,8 @@ const addEvent = (event: HistoryEventEntry) => emit('add-event', event);
 const toggleIgnore = (event: HistoryEventEntry) => emit('toggle-ignore', event);
 const redecode = (data: EvmChainAndTxHash) => emit('redecode', data);
 
-function deleteTxAndEvents({ txHash, location }: EvmHistoryEvent) {
-  return emit('delete-tx', { txHash, evmChain: getChain(location) });
+function deleteTxAndEvents({ location, txHash }: EvmHistoryEvent) {
+  return emit('delete-tx', { evmChain: getChain(location), txHash });
 }
 </script>
 

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Routes } from '@/router/routes';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 import type { BigNumber } from '@rotki/common';
 
 const props = defineProps<{

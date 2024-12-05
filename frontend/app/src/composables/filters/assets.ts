@@ -28,35 +28,35 @@ export function useAssetFilter(): FilterSchema<Filters, Matcher> {
 
   const matchers = computed<Matcher[]>(() => [
     {
-      key: AssetFilterKeys.SYMBOL,
-      keyValue: AssetFilterValueKeys.SYMBOL,
       description: t('assets.filter.symbol'),
       hint: t('assets.filter.symbol_hint'),
+      key: AssetFilterKeys.SYMBOL,
+      keyValue: AssetFilterValueKeys.SYMBOL,
       string: true,
       suggestions: (): string[] => [],
       validate: (): true => true,
     },
     {
-      key: AssetFilterKeys.NAME,
-      keyValue: AssetFilterValueKeys.NAME,
       description: t('assets.filter.name'),
       hint: t('assets.filter.name_hint'),
+      key: AssetFilterKeys.NAME,
+      keyValue: AssetFilterValueKeys.NAME,
       string: true,
       suggestions: (): string[] => [],
       validate: (): true => true,
     },
     {
+      description: t('assets.filter.chain'),
       key: AssetFilterKeys.EVM_CHAIN,
       keyValue: AssetFilterValueKeys.EVM_CHAIN,
-      description: t('assets.filter.chain'),
       string: true,
       suggestions: (): string[] => get(allEvmChains).map(x => x.name),
       validate: (chain: string): boolean => !!chain,
     },
     {
+      description: t('assets.filter.address'),
       key: AssetFilterKeys.ADDRESS,
       keyValue: AssetFilterValueKeys.ADDRESS,
-      description: t('assets.filter.address'),
       string: true,
       suggestions: (): string[] => [],
       validate: (address: string): boolean => isValidEthAddress(address),
@@ -65,10 +65,10 @@ export function useAssetFilter(): FilterSchema<Filters, Matcher> {
 
   const OptionalString = z.string().optional();
   const RouteFilterSchema = z.object({
-    [AssetFilterValueKeys.SYMBOL]: OptionalString,
-    [AssetFilterValueKeys.NAME]: OptionalString,
-    [AssetFilterValueKeys.EVM_CHAIN]: OptionalString,
     [AssetFilterValueKeys.ADDRESS]: OptionalString,
+    [AssetFilterValueKeys.EVM_CHAIN]: OptionalString,
+    [AssetFilterValueKeys.NAME]: OptionalString,
+    [AssetFilterValueKeys.SYMBOL]: OptionalString,
   });
 
   return {

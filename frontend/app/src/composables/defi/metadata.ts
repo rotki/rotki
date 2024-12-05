@@ -1,4 +1,5 @@
 import { camelCase } from 'lodash-es';
+import { useMainStore } from '@/store/main';
 import type { MaybeRef } from '@vueuse/core';
 import type { ProtocolMetadata } from '@/types/defi';
 
@@ -45,11 +46,11 @@ export const useDefiMetadata = createSharedComposable(() => {
     );
 
   return {
-    metadata,
     getDefiData,
-    getDefiName,
-    getDefiImage,
     getDefiIdentifierByName,
+    getDefiImage,
+    getDefiName,
     loading,
+    metadata,
   };
 });

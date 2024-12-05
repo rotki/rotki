@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useAreaVisibilityStore } from '@/store/session/visibility';
+
 const ReportActionableCard = defineAsyncComponent(() => import('@/components/profitloss/ReportActionableCard.vue'));
 
 const { pinned, showPinned } = storeToRefs(useAreaVisibilityStore());

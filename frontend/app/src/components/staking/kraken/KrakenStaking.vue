@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { HistoryEventEntryType } from '@rotki/common';
+import { useKrakenStakingStore } from '@/store/staking/kraken';
 
 const { events } = toRefs(useKrakenStakingStore());
 </script>

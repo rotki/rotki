@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { BalanceSource } from '@/types/settings/frontend-settings';
 import { TaskType } from '@/types/task-type';
+import { useTaskStore } from '@/store/tasks';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 
 const props = defineProps<{
   source: BalanceSource;
@@ -24,9 +27,9 @@ const isQueryingBlockchain = isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES);
 
 const loading = computed(() => {
   const loadingStates = {
-    [BalanceSource.MANUAL]: get(isManualBalancesLoading),
-    [BalanceSource.EXCHANGES]: get(isExchangeLoading),
     [BalanceSource.BLOCKCHAIN]: get(isQueryingBlockchain),
+    [BalanceSource.EXCHANGES]: get(isExchangeLoading),
+    [BalanceSource.MANUAL]: get(isManualBalancesLoading),
   };
 
   return get(applyToAllBalances)

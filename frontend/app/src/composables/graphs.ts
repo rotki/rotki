@@ -53,13 +53,13 @@ export function useGraph(canvasId: string): UseGraphReturn {
   const gridColor = computed(() => (get(isDark) ? '#555' : '#ddd'));
 
   return {
-    getCanvasCtx,
-    baseColor,
-    gradient,
-    secondaryColor,
     backgroundColor,
+    baseColor,
     fontColor,
+    getCanvasCtx,
+    gradient,
     gridColor,
+    secondaryColor,
   };
 }
 
@@ -77,12 +77,12 @@ interface UseTooltipReturn {
 
 export function useTooltip(id: string): UseTooltipReturn {
   const getDefaultTooltipDisplayOption = (): TooltipDisplayOption => ({
-    visible: false,
+    id,
     left: 0,
     top: 0,
+    visible: false,
     xAlign: 'left',
     yAlign: 'center',
-    id,
   });
 
   const getDefaultTooltipContent = (): TooltipContent => ({
@@ -114,17 +114,17 @@ export function useTooltip(id: string): UseTooltipReturn {
       y += tooltipModel.height - elemHeight;
 
     return {
-      xAlign,
-      yAlign,
       left: x,
       top: y,
       visible: true,
+      xAlign,
+      yAlign,
     };
   };
 
   return {
-    tooltipDisplayOption,
-    tooltipContent,
     calculateTooltipPosition,
+    tooltipContent,
+    tooltipDisplayOption,
   };
 }

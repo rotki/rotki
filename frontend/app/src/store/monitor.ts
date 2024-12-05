@@ -2,6 +2,15 @@ import { startPromise } from '@shared/utils';
 import { isEqual } from 'lodash-es';
 import { logger } from '@/utils/logging';
 import { BalanceSource } from '@/types/settings/frontend-settings';
+import { useExchangeBalancesStore } from '@/store/balances/exchanges';
+import { useManualBalancesStore } from '@/store/balances/manual';
+import { useWatchersStore } from '@/store/session/watchers';
+import { usePeriodicStore } from '@/store/session/periodic';
+import { useSessionAuthStore } from '@/store/session/auth';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useWebsocketStore } from '@/store/websocket';
+import { useTaskStore } from '@/store/tasks';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 
 const PERIODIC = 'periodic';
 const TASK = 'task';
@@ -24,7 +33,7 @@ export const useMonitorStore = defineStore('monitor', () => {
   const { currency } = storeToRefs(useGeneralSettingsStore());
 
   const frontendStore = useFrontendSettingsStore();
-  const { queryPeriod, refreshPeriod, balanceUsdValueThreshold } = storeToRefs(frontendStore);
+  const { balanceUsdValueThreshold, queryPeriod, refreshPeriod } = storeToRefs(frontendStore);
 
   const ws = useWebsocketStore();
   const { connected } = storeToRefs(ws);
@@ -147,17 +156,17 @@ export const useMonitorStore = defineStore('monitor', () => {
     // Clear hide small balances state, if the currency is changed
     startPromise(frontendStore.updateSetting({
       balanceUsdValueThreshold: {
-        [BalanceSource.EXCHANGES]: '0',
         [BalanceSource.BLOCKCHAIN]: '0',
+        [BalanceSource.EXCHANGES]: '0',
         [BalanceSource.MANUAL]: '0',
       },
     }));
   });
 
   return {
+    restart,
     start,
     stop,
-    restart,
   };
 });
 

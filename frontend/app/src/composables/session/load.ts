@@ -2,6 +2,13 @@ import { Blockchain } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { Section, Status } from '@/types/status';
 import { logger } from '@/utils/logging';
+import { useStatisticsStore } from '@/store/statistics';
+import { useLocationStore } from '@/store/locations';
+import { useWhitelistedAssetsStore } from '@/store/assets/whitelisted';
+import { useIgnoredAssetsStore } from '@/store/assets/ignored';
+import { useTagStore } from '@/store/session/tags';
+import { useWatchersStore } from '@/store/session/watchers';
+import { useSessionAuthStore } from '@/store/session/auth';
 
 interface UseDataLoaderReturn { load: () => void }
 

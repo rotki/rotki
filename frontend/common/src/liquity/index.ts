@@ -3,11 +3,11 @@ import { AssetBalance } from '../balances';
 import { NumericString } from '../numbers';
 
 const LiquityBalance = z.object({
-  collateral: AssetBalance,
-  debt: AssetBalance,
-  collateralizationRatio: NumericString.nullable(),
-  liquidationPrice: NumericString.nullable(),
   active: z.boolean(),
+  collateral: AssetBalance,
+  collateralizationRatio: NumericString.nullable(),
+  debt: AssetBalance,
+  liquidationPrice: NumericString.nullable(),
   troveId: z.number(),
 });
 
@@ -46,9 +46,9 @@ export const LiquityStakingDetails = z.record(LiquityStakingDetail);
 export type LiquityStakingDetails = z.infer<typeof LiquityStakingDetails>;
 
 export const LiquityPoolDetailEntry = z.object({
+  deposited: AssetBalance,
   gains: AssetBalance,
   rewards: AssetBalance,
-  deposited: AssetBalance,
 });
 
 export type LiquityPoolDetailEntry = z.infer<typeof LiquityPoolDetailEntry>;
@@ -67,21 +67,21 @@ export const LiquityPoolDetails = z.record(LiquityPoolDetail);
 export type LiquityPoolDetails = z.infer<typeof LiquityPoolDetails>;
 
 export const LiquityStatisticDetails = z.object({
+  stabilityPoolGains: z.array(AssetBalance),
+  stakingGains: z.array(AssetBalance),
+  totalDepositedStabilityPool: NumericString,
+  totalDepositedStabilityPoolUsdValue: NumericString,
   totalUsdGainsStabilityPool: NumericString,
   totalUsdGainsStaking: NumericString,
-  totalDepositedStabilityPool: NumericString,
   totalWithdrawnStabilityPool: NumericString,
-  totalDepositedStabilityPoolUsdValue: NumericString,
   totalWithdrawnStabilityPoolUsdValue: NumericString,
-  stakingGains: z.array(AssetBalance),
-  stabilityPoolGains: z.array(AssetBalance),
 });
 
 export type LiquityStatisticDetails = z.infer<typeof LiquityStatisticDetails>;
 
 export const LiquityStatistics = z.object({
-  globalStats: LiquityStatisticDetails.optional(),
   byAddress: z.record(z.string(), LiquityStatisticDetails).optional(),
+  globalStats: LiquityStatisticDetails.optional(),
 });
 
 export type LiquityStatistics = z.infer<typeof LiquityStatistics>;

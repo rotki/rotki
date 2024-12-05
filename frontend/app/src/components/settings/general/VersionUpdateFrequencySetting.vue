@@ -3,6 +3,7 @@ import useVuelidate from '@vuelidate/core';
 import { between, helpers, requiredIf } from '@vuelidate/validators';
 import { Constraints } from '@/data/constraints';
 import { toMessages } from '@/utils/validation';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
 const versionUpdateCheckFrequency = ref<string>('');
 const versionUpdateCheckEnabled = ref<boolean>(false);
@@ -12,16 +13,16 @@ const { t } = useI18n();
 
 const rules = {
   versionUpdateCheckFrequency: {
+    between: helpers.withMessage(
+      t('general_settings.version_update_check.validation.invalid_frequency', {
+        end: maxVersionUpdateCheckFrequency,
+        start: 1,
+      }),
+      between(1, Constraints.MAX_HOURS_DELAY),
+    ),
     required: helpers.withMessage(
       t('general_settings.version_update_check.validation.non_empty'),
       requiredIf(versionUpdateCheckEnabled),
-    ),
-    between: helpers.withMessage(
-      t('general_settings.version_update_check.validation.invalid_frequency', {
-        start: 1,
-        end: maxVersionUpdateCheckFrequency,
-      }),
-      between(1, Constraints.MAX_HOURS_DELAY),
     ),
   },
 };

@@ -1,5 +1,6 @@
 import { Blockchain } from '@rotki/common';
 import { isBlockchain } from '@/types/blockchain/chains';
+import { useMainStore } from '@/store/main';
 import type { MaybeRef } from '@vueuse/core';
 import type {
   ChainInfo,
@@ -23,7 +24,7 @@ function isEvmLikeChain(info: ChainInfo): info is EvmLikeChainInfo {
 }
 
 export const useSupportedChains = createSharedComposable(() => {
-  const { fetchSupportedChains, fetchAllEvmChains } = useSupportedChainsApi();
+  const { fetchAllEvmChains, fetchSupportedChains } = useSupportedChainsApi();
 
   const { connected } = toRefs(useMainStore());
 
@@ -162,24 +163,24 @@ export const useSupportedChains = createSharedComposable(() => {
 
   return {
     allEvmChains,
-    supportedChains,
+    evmChainNames,
     evmChains,
     evmChainsData,
-    evmChainNames,
     evmLikeChainsData,
-    txEvmChains,
-    txChains,
-    getNativeAsset,
-    getEvmChainName,
     getChain,
+    getChainAccountType,
+    getChainImageUrl,
     getChainInfoById,
     getChainInfoByName,
     getChainName,
-    getChainImageUrl,
-    getChainAccountType,
+    getEvmChainName,
+    getNativeAsset,
     isEvm,
-    supportsTransactions,
     isEvmLikeChains,
+    supportedChains,
+    supportsTransactions,
+    txChains,
     txChainsToLocation,
+    txEvmChains,
   };
 });

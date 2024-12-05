@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useExchangesStore } from '@/store/exchanges';
 import type { ExchangeFormData } from '@/types/exchanges';
 import type { ComponentExposed } from 'vue-component-type-helpers';
 import type ExchangeKeysForm from '@/components/settings/api-keys/exchange/ExchangeKeysForm.vue';

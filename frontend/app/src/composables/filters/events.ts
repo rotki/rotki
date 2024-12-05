@@ -14,6 +14,8 @@ import { uniqueStrings } from '@/utils/data';
 import { arrayify } from '@/utils/array';
 import { isEthBlockEventType, isEthDepositEventType, isEvmEventType, isOnlineHistoryEventType, isWithdrawalEventType } from '@/utils/history/events';
 import { getDateInputISOFormat } from '@/utils/date';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useHistoryStore } from '@/store/history';
 import type { MaybeRef } from '@vueuse/core';
 import type { FilterSchema } from '@/composables/use-pagination-filter/types';
 
@@ -66,10 +68,10 @@ export function useHistoryEventFilter(
   const filters = ref<Filters>({});
 
   const { dateInputFormat } = storeToRefs(useFrontendSettingsStore());
-  const { historyEventTypes, historyEventTypeGlobalMapping } = useHistoryEventMappings();
+  const { historyEventTypeGlobalMapping, historyEventTypes } = useHistoryEventMappings();
   const { historyEventProducts } = useHistoryEventProductMappings();
   const { counterparties } = useHistoryEventCounterpartyMappings();
-  const { assetSearch, assetInfo } = useAssetInfoRetrieval();
+  const { assetInfo, assetSearch } = useAssetInfoRetrieval();
   const { associatedLocations } = storeToRefs(useHistoryStore());
   const { t } = useI18n();
 
@@ -82,39 +84,39 @@ export function useHistoryEventFilter(
         ? []
         : ([
             {
+              description: t('transactions.filter.start_date'),
+              deserializer: dateDeserializer(dateInputFormat),
+              hint: t('transactions.filter.date_hint', {
+                format: getDateInputISOFormat(get(dateInputFormat)),
+              }),
               key: HistoryEventFilterKeys.START,
               keyValue: HistoryEventFilterValueKeys.START,
-              description: t('transactions.filter.start_date'),
+              serializer: dateSerializer(dateInputFormat),
               string: true,
-              hint: t('transactions.filter.date_hint', {
-                format: getDateInputISOFormat(get(dateInputFormat)),
-              }),
               suggestions: () => [],
               validate: dateValidator(dateInputFormat),
-              serializer: dateSerializer(dateInputFormat),
-              deserializer: dateDeserializer(dateInputFormat),
             },
             {
-              key: HistoryEventFilterKeys.END,
-              keyValue: HistoryEventFilterValueKeys.END,
               description: t('transactions.filter.end_date'),
-              string: true,
+              deserializer: dateDeserializer(dateInputFormat),
               hint: t('transactions.filter.date_hint', {
                 format: getDateInputISOFormat(get(dateInputFormat)),
               }),
+              key: HistoryEventFilterKeys.END,
+              keyValue: HistoryEventFilterValueKeys.END,
+              serializer: dateSerializer(dateInputFormat),
+              string: true,
               suggestions: () => [],
               validate: dateValidator(dateInputFormat),
-              serializer: dateSerializer(dateInputFormat),
-              deserializer: dateDeserializer(dateInputFormat),
             },
           ] satisfies Matcher[])),
       {
+        asset: true,
+        description: t('transactions.filter.asset'),
+        deserializer: assetDeserializer(assetInfo),
         key: HistoryEventFilterKeys.ASSET,
         keyValue: HistoryEventFilterValueKeys.ASSET,
-        description: t('transactions.filter.asset'),
-        asset: true,
         suggestions: assetSuggestions(assetSearch, selectedLocation?.toString()),
-        deserializer: assetDeserializer(assetInfo),
       },
     ];
 
@@ -134,9 +136,9 @@ export function useHistoryEventFilter(
     if (!disabled?.protocols && evmOrEthDepositEventsIncluded) {
       const counterpartiesVal = get(counterparties);
       data.push({
+        description: t('transactions.filter.protocol'),
         key: HistoryEventFilterKeys.PROTOCOL,
         keyValue: HistoryEventFilterValueKeys.PROTOCOL,
-        description: t('transactions.filter.protocol'),
         multiple: true,
         string: true,
         suggestions: () => counterpartiesVal,
@@ -146,9 +148,9 @@ export function useHistoryEventFilter(
 
     if (!disabled?.locations) {
       data.push({
+        description: t('transactions.filter.location'),
         key: HistoryEventFilterKeys.LOCATION,
         keyValue: HistoryEventFilterValueKeys.LOCATION,
-        description: t('transactions.filter.location'),
         string: true,
         suggestions: () => get(associatedLocations),
         validate: location => !!location,
@@ -158,9 +160,9 @@ export function useHistoryEventFilter(
     if (!disabled?.products && evmOrEthDepositEventsIncluded) {
       const products = get(historyEventProducts);
       data.push({
+        description: t('transactions.filter.product'),
         key: HistoryEventFilterKeys.PRODUCT,
         keyValue: HistoryEventFilterValueKeys.PRODUCT,
-        description: t('transactions.filter.product'),
         string: true,
         suggestions: () => products,
         validate: product => !!product,
@@ -169,26 +171,26 @@ export function useHistoryEventFilter(
 
     if (!entryTypesVal || entryTypesVal.length > 1) {
       data.push({
-        key: HistoryEventFilterKeys.ENTRY_TYPE,
-        keyValue: HistoryEventFilterValueKeys.ENTRY_TYPE,
-        description: t('transactions.filter.entry_type'),
-        string: true,
-        multiple: true,
-        suggestions: () => entryTypesVal ?? Object.values(HistoryEventEntryType),
-        validate: (type: string) => !!type,
         allowExclusion: true,
         behaviourRequired: true,
+        description: t('transactions.filter.entry_type'),
+        key: HistoryEventFilterKeys.ENTRY_TYPE,
+        keyValue: HistoryEventFilterValueKeys.ENTRY_TYPE,
+        multiple: true,
+        string: true,
+        suggestions: () => entryTypesVal ?? Object.values(HistoryEventEntryType),
+        validate: (type: string) => !!type,
       });
     }
 
     if (evmOrOnlineEventsIncluded) {
       if (!disabled.eventTypes) {
         data.push({
+          description: t('transactions.filter.event_type'),
           key: HistoryEventFilterKeys.EVENT_TYPE,
           keyValue: HistoryEventFilterValueKeys.EVENT_TYPE,
-          description: t('transactions.filter.event_type'),
-          string: true,
           multiple: true,
+          string: true,
           suggestions: () => get(historyEventTypes),
           validate: (type: string) => !!type,
         });
@@ -230,11 +232,11 @@ export function useHistoryEventFilter(
         }
 
         data.push({
+          description: t('transactions.filter.event_subtype'),
           key: HistoryEventFilterKeys.EVENT_SUBTYPE,
           keyValue: HistoryEventFilterValueKeys.EVENT_SUBTYPE,
-          description: t('transactions.filter.event_subtype'),
-          string: true,
           multiple: true,
+          string: true,
           suggestions: () => globalMappingKeys.filter(uniqueStrings),
           validate: (type: string) => globalMappingKeys.includes(type),
         });
@@ -244,20 +246,20 @@ export function useHistoryEventFilter(
     if (evmOrEthDepositEventsIncluded) {
       data.push(
         {
+          description: t('transactions.filter.tx_hash'),
           key: HistoryEventFilterKeys.TX_HASHES,
           keyValue: HistoryEventFilterValueKeys.TX_HASHES,
-          description: t('transactions.filter.tx_hash'),
-          string: true,
           multiple: true,
+          string: true,
           suggestions: () => [],
           validate: (txHash: string) => isValidTxHash(txHash),
         },
         {
+          description: t('transactions.filter.address'),
           key: HistoryEventFilterKeys.ADDRESSES,
           keyValue: HistoryEventFilterValueKeys.ADDRESSES,
-          description: t('transactions.filter.address'),
-          string: true,
           multiple: true,
+          string: true,
           suggestions: () => [],
           validate: (address: string) => isValidEthAddress(address),
         },
@@ -266,11 +268,11 @@ export function useHistoryEventFilter(
 
     if (eventsWithValidatorIndexIncluded && !disabled?.validators) {
       data.push({
+        description: t('transactions.filter.validator_index'),
         key: HistoryEventFilterKeys.VALIDATOR_INDICES,
         keyValue: HistoryEventFilterValueKeys.VALIDATOR_INDICES,
-        description: t('transactions.filter.validator_index'),
-        string: true,
         multiple: true,
+        string: true,
         suggestions: () => [],
         validate: (validatorIndex: string) => !!validatorIndex,
       });
@@ -287,23 +289,23 @@ export function useHistoryEventFilter(
     .optional();
 
   const RouteFilterSchema = z.object({
-    [HistoryEventFilterValueKeys.START]: OptionalString,
-    [HistoryEventFilterValueKeys.END]: OptionalString,
-    [HistoryEventFilterValueKeys.ASSET]: OptionalString,
-    [HistoryEventFilterValueKeys.PROTOCOL]: OptionalMultipleString,
-    [HistoryEventFilterValueKeys.PRODUCT]: OptionalMultipleString,
-    [HistoryEventFilterValueKeys.LOCATION]: OptionalString,
-    [HistoryEventFilterValueKeys.ENTRY_TYPE]: OptionalMultipleString,
-    [HistoryEventFilterValueKeys.EVENT_TYPE]: OptionalMultipleString,
-    [HistoryEventFilterValueKeys.EVENT_SUBTYPE]: OptionalMultipleString,
-    [HistoryEventFilterValueKeys.TX_HASHES]: OptionalMultipleString,
     [HistoryEventFilterValueKeys.ADDRESSES]: OptionalMultipleString,
+    [HistoryEventFilterValueKeys.ASSET]: OptionalString,
+    [HistoryEventFilterValueKeys.END]: OptionalString,
+    [HistoryEventFilterValueKeys.ENTRY_TYPE]: OptionalMultipleString,
+    [HistoryEventFilterValueKeys.EVENT_SUBTYPE]: OptionalMultipleString,
+    [HistoryEventFilterValueKeys.EVENT_TYPE]: OptionalMultipleString,
+    [HistoryEventFilterValueKeys.LOCATION]: OptionalString,
+    [HistoryEventFilterValueKeys.PRODUCT]: OptionalMultipleString,
+    [HistoryEventFilterValueKeys.PROTOCOL]: OptionalMultipleString,
+    [HistoryEventFilterValueKeys.START]: OptionalString,
+    [HistoryEventFilterValueKeys.TX_HASHES]: OptionalMultipleString,
     [HistoryEventFilterValueKeys.VALIDATOR_INDICES]: OptionalMultipleString,
   });
 
   return {
-    matchers,
     filters,
+    matchers,
     RouteFilterSchema,
   };
 }

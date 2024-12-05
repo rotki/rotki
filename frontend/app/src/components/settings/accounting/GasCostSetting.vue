@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useAccountingSettingsStore } from '@/store/settings/accounting';
+
 const gasCosts = ref(false);
 const { includeGasCosts } = storeToRefs(useAccountingSettingsStore());
 

@@ -14,7 +14,7 @@ const props = withDefaults(
 
 const { editableItem } = toRefs(props);
 
-const { openDialog, submitting, closeDialog, trySubmit, stateUpdated } = useTradesForm();
+const { closeDialog, openDialog, stateUpdated, submitting, trySubmit } = useTradesForm();
 
 const { t } = useI18n();
 

@@ -1,5 +1,8 @@
 import { promiseTimeout } from '@vueuse/core';
 import { logger } from '@/utils/logging';
+import { useSessionSettingsStore } from '@/store/settings/session';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useSettingsStore } from '@/store/settings';
 import type { FrontendSettingsPayload } from '@/types/settings/frontend-settings';
 import type { BaseMessage } from '@/types/messages';
 import type { SettingsUpdate } from '@/types/user';
@@ -69,8 +72,8 @@ export function useSettings(): UseSettingsReturn {
     const payload = { [settingKey]: settingValue };
 
     const updateMethods: Record<SettingLocation, () => Promise<ActionStatus>> = {
-      [SettingLocation.GENERAL]: async () => updateSettings(payload),
       [SettingLocation.FRONTEND]: async () => updateFrontendSettings(payload),
+      [SettingLocation.GENERAL]: async () => updateSettings(payload),
       [SettingLocation.SESSION]: async () => Promise.resolve(updateSessionSettings(payload)),
     };
 
@@ -132,12 +135,12 @@ export function useClearableMessages(): UseClearableMessagesReturn {
   });
 
   return {
-    error,
-    success,
-    setSuccess,
-    setError,
-    wait,
-    stop,
     clearAll,
+    error,
+    setError,
+    setSuccess,
+    stop,
+    success,
+    wait,
   };
 }

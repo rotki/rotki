@@ -59,9 +59,9 @@ export function useCalendarApi(): UseCalendarApiReturn {
   };
 
   return {
-    fetchCalendarEvents,
     addCalendarEvent,
-    editCalendarEvent,
     deleteCalendarEvent,
+    editCalendarEvent,
+    fetchCalendarEvents,
   };
 }

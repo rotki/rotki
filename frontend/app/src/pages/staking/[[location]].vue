@@ -26,8 +26,8 @@ const imageSize = '64px';
 
 const pages = {
   eth2: defineAsyncComponent(() => import('@/components/staking/eth/EthStakingPage.vue')),
-  liquity: defineAsyncComponent(() => import('@/components/staking/liquity/LiquityPage.vue')),
   kraken: defineAsyncComponent(() => import('@/components/staking/kraken/KrakenPage.vue')),
+  liquity: defineAsyncComponent(() => import('@/components/staking/liquity/LiquityPage.vue')),
 };
 
 const { t } = useI18n();

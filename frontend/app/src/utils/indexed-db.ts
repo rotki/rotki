@@ -35,8 +35,8 @@ export class IndexedDb {
         const db = (e.target as any).result;
         if (!db.objectStoreNames.contains(this.store)) {
           db.createObjectStore(this.store, {
-            keyPath: 'id',
             autoIncrement: true,
+            keyPath: 'id',
           });
         }
       };

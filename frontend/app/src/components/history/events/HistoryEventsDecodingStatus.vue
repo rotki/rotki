@@ -1,5 +1,7 @@
 <script lang="ts" setup>
 import { TaskType } from '@/types/task-type';
+import { useHistoryStore } from '@/store/history';
+import { useTaskStore } from '@/store/tasks';
 import type { EvmUnDecodedTransactionsData, ProtocolCacheUpdatesData } from '@/types/websocket-messages';
 import type { DataTableColumn } from '@rotki/ui-library';
 
@@ -37,7 +39,7 @@ const { t } = useI18n();
 
 const { checkMissingEventsAndRedecode } = useHistoryTransactionDecoding();
 
-const { receivingProtocolCacheStatus, protocolCacheStatus } = storeToRefs(useHistoryStore());
+const { protocolCacheStatus, receivingProtocolCacheStatus } = storeToRefs(useHistoryStore());
 
 function refresh() {
   if (props.decodingStatus.length === 0)
@@ -46,22 +48,22 @@ function refresh() {
 
 const headers: DataTableColumn<LocationData>[] = [
   {
-    label: t('common.location'),
-    key: 'chain',
     align: 'center',
     cellClass: 'py-3',
+    key: 'chain',
+    label: t('common.location'),
   },
   {
-    label: t('transactions.events_decoding.undecoded_transactions'),
-    key: 'number',
     align: 'end',
     cellClass: '!pr-12',
     class: '!pr-12',
+    key: 'number',
+    label: t('transactions.events_decoding.undecoded_transactions'),
   },
   {
-    label: t('transactions.events_decoding.progress'),
-    key: 'progress',
     align: 'center',
+    key: 'progress',
+    label: t('transactions.events_decoding.progress'),
   },
 ];
 
@@ -95,9 +97,9 @@ const combinedDecodingStatus = computed(() => {
   return [
     {
       chain: last.chain,
-      total: 0,
       processed: 0,
       protocolCacheRefreshStatus: last,
+      total: 0,
     },
     ...data,
   ];

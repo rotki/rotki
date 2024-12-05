@@ -30,7 +30,7 @@ export function usePremiumCredentialsApi(): UsePremiumCredentialsApiReturn {
   };
 
   return {
-    setPremiumCredentials,
     deletePremiumCredentials,
+    setPremiumCredentials,
   };
 }

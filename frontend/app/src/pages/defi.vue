@@ -1,5 +1,12 @@
 <script setup lang="ts">
 import { NoteLocation } from '@/types/notes';
+import { useStatusStore } from '@/store/status';
+import { useMakerDaoStore } from '@/store/defi/makerdao';
+import { useCompoundStore } from '@/store/defi/compound';
+import { useAaveStore } from '@/store/defi/aave';
+import { useYearnStore } from '@/store/defi/yearn';
+import { useDefiStore } from '@/store/defi';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
 definePage({
   meta: {

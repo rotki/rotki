@@ -7,6 +7,12 @@ import { NoteLocation } from '@/types/notes';
 import { Routes } from '@/router/routes';
 import { downloadFileByTextContent } from '@/utils/download';
 import { isTaskCancelled } from '@/utils';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useMessageStore } from '@/store/message';
+import { useNotificationsStore } from '@/store/notifications';
+import { useAreaVisibilityStore } from '@/store/session/visibility';
+import { useReportsStore } from '@/store/reports';
+import { useTaskStore } from '@/store/tasks';
 import type { ProfitLossReportDebugPayload, ProfitLossReportPeriod } from '@/types/reports';
 import type { TaskMeta } from '@/types/task';
 
@@ -16,10 +22,10 @@ definePage({
   },
 });
 
-const { isTaskRunning, awaitTask } = useTaskStore();
+const { awaitTask, isTaskRunning } = useTaskStore();
 const reportsStore = useReportsStore();
 const { reportError } = storeToRefs(reportsStore);
-const { generateReport, clearError, exportReportData, fetchReports } = reportsStore;
+const { clearError, exportReportData, fetchReports, generateReport } = reportsStore;
 const isRunning = isTaskRunning(TaskType.TRADE_HISTORY);
 const importDataDialog = ref<boolean>(false);
 const reportDebugData = ref<File>();
@@ -40,8 +46,8 @@ onMounted(async () => {
 
     if (start && end) {
       const period = {
-        start: Number.parseInt(start),
         end: Number.parseInt(end),
+        start: Number.parseInt(start),
       };
 
       await router.replace({ query: {} });
@@ -83,25 +89,25 @@ async function generate(period: ProfitLossReportPeriod) {
       return;
     }
     notify({
-      title: t('profit_loss_reports.notification.title'),
-      message: t('profit_loss_reports.notification.message', {
-        start: formatDate(period.start),
-        end: formatDate(period.end),
-      }),
-      display: true,
-      severity: Severity.INFO,
-      priority: Priority.ACTION,
       action: {
-        label: t('profit_loss_reports.notification.action'),
         action,
+        label: t('profit_loss_reports.notification.action'),
       },
+      display: true,
+      message: t('profit_loss_reports.notification.message', {
+        end: formatDate(period.end),
+        start: formatDate(period.start),
+      }),
+      priority: Priority.ACTION,
+      severity: Severity.INFO,
+      title: t('profit_loss_reports.notification.title'),
     });
   }
 }
 
 const { setMessage } = useMessageStore();
 
-async function exportData({ start, end }: ProfitLossReportPeriod) {
+async function exportData({ end, start }: ProfitLossReportPeriod) {
   const payload: ProfitLossReportDebugPayload = {
     fromTimestamp: start,
     toTimestamp: end,
@@ -122,11 +128,11 @@ async function exportData({ start, end }: ProfitLossReportPeriod) {
 
     if (appSession) {
       message = {
-        title: t('profit_loss_reports.debug.export_message.title'),
         description: result
           ? t('profit_loss_reports.debug.export_message.success')
           : t('profit_loss_reports.debug.export_message.failure'),
         success: !!result,
+        title: t('profit_loss_reports.debug.export_message.title'),
       };
     }
     else {
@@ -135,9 +141,9 @@ async function exportData({ start, end }: ProfitLossReportPeriod) {
   }
   catch (error: any) {
     message = {
-      title: t('profit_loss_reports.debug.export_message.title'),
       description: error.message,
       success: false,
+      title: t('profit_loss_reports.debug.export_message.title'),
     };
   }
 
@@ -181,17 +187,17 @@ async function importData() {
 
   if (!success) {
     setMessage({
-      title: t('profit_loss_reports.debug.import_message.title'),
       description: t('profit_loss_reports.debug.import_message.failure', {
         message,
       }),
+      title: t('profit_loss_reports.debug.import_message.title'),
     });
   }
   else {
     setMessage({
-      title: t('profit_loss_reports.debug.import_message.title'),
       description: t('profit_loss_reports.debug.import_message.success'),
       success: true,
+      title: t('profit_loss_reports.debug.import_message.title'),
     });
     await fetchReports();
   }

@@ -42,14 +42,14 @@ export function attemptPolyfillResizeObserver(): void {
       // remove previous invocations of "self"
       queue = queue.filter(x => x.cb !== this.callback);
       // put a new one
-      queue.push({ cb: this.callback, args: entries });
+      queue.push({ args: entries, cb: this.callback });
       // trigger update
       if (!queueFlushTimeout) {
         queueFlushTimeout = requestAnimationFrame(() => {
           queueFlushTimeout = undefined;
           const q = queue;
           queue = [];
-          q.forEach(({ cb, args }) => cb(args, this.observer));
+          q.forEach(({ args, cb }) => cb(args, this.observer));
         });
       }
     }

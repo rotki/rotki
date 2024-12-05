@@ -2,6 +2,7 @@
 import { Blockchain } from '@rotki/common';
 import { Routes } from '@/router/routes';
 import { type BlockchainTotal, SupportedSubBlockchainProtocolData } from '@/types/blockchain';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import type { RouteLocationRaw } from 'vue-router';
 import type { ActionDataEntry } from '@/types/action';
 
@@ -11,7 +12,7 @@ const props = defineProps<{
 
 const { total } = toRefs(props);
 
-const { getChainName, getChainAccountType } = useSupportedChains();
+const { getChainAccountType, getChainName } = useSupportedChains();
 
 const amount = useRefMap(total, ({ usdValue }) => usdValue);
 const loading = useRefMap(total, ({ loading }) => loading);
@@ -34,8 +35,8 @@ const navTarget = computed<RouteLocationRaw>(() => {
   }
 
   return {
-    path: `${Routes.ACCOUNTS_BALANCES_BLOCKCHAIN}/${target}`,
     hash: '#accounts-section',
+    path: `${Routes.ACCOUNTS_BALANCES_BLOCKCHAIN}/${target}`,
   };
 });
 

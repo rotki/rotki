@@ -12,11 +12,11 @@ const props = withDefaults(
     padding?: string;
   }>(),
   {
-    tag: 'div',
-    height: 'auto',
-    width: 'auto',
     circle: false,
+    height: 'auto',
     padding: '2px',
+    tag: 'div',
+    width: 'auto',
   },
 );
 

@@ -4,8 +4,8 @@ import { BaseAccountingSettings } from '@/types/user';
 import type { Quarter } from '@/types/settings/frontend-settings';
 
 export const ProfitLossOverviewItem = z.object({
-  taxable: NumericString,
   free: NumericString,
+  taxable: NumericString,
 });
 
 export type ProfitLossOverviewItem = z.infer<typeof ProfitLossOverviewItem>;
@@ -25,8 +25,8 @@ export type MatchedAcquisitionsEvent = z.infer<typeof MatchedAcquisitionsEvent>;
 
 export const MatchedAcquisitions = z.object({
   amount: NumericString,
-  taxable: z.boolean(),
   event: MatchedAcquisitionsEvent,
+  taxable: z.boolean(),
 });
 
 export type MatchedAcquisitions = z.infer<typeof MatchedAcquisitions>;
@@ -42,6 +42,7 @@ export const ProfitLossEvent = z.object({
   assetIdentifier: z.string(),
   costBasis: CostBasis.nullable(),
   freeAmount: NumericString,
+  groupId: z.string().nullish(),
   location: z.string(),
   notes: z.string(),
   pnlFree: NumericString,
@@ -50,22 +51,21 @@ export const ProfitLossEvent = z.object({
   taxableAmount: NumericString,
   timestamp: z.number(),
   type: z.string(),
-  groupId: z.string().nullish(),
 });
 
 export type ProfitLossEvent = z.infer<typeof ProfitLossEvent>;
 
 export const Report = z.object({
-  identifier: z.number(),
-  firstProcessedTimestamp: z.number(),
-  lastProcessedTimestamp: z.number(),
-  processedActions: z.number(),
-  totalActions: z.number(),
-  startTs: z.number(),
   endTs: z.number(),
-  timestamp: z.number(),
-  settings: BaseAccountingSettings,
+  firstProcessedTimestamp: z.number(),
+  identifier: z.number(),
+  lastProcessedTimestamp: z.number(),
   overview: ProfitLossOverview,
+  processedActions: z.number(),
+  settings: BaseAccountingSettings,
+  startTs: z.number(),
+  timestamp: z.number(),
+  totalActions: z.number(),
 });
 
 export type Report = z.infer<typeof Report>;
@@ -137,9 +137,9 @@ export interface ProfitLossReportDebugPayload {
 
 export const MissingAcquisition = z.object({
   asset: z.string(),
-  originatingEventId: z.number().optional(),
   foundAmount: NumericString,
   missingAmount: NumericString,
+  originatingEventId: z.number().optional(),
   time: z.number(),
 });
 
@@ -147,9 +147,9 @@ export type MissingAcquisition = z.infer<typeof MissingAcquisition>;
 
 export const MissingPrice = z.object({
   fromAsset: z.string(),
-  toAsset: z.string(),
-  time: z.number(),
   rateLimited: z.boolean(),
+  time: z.number(),
+  toAsset: z.string(),
 });
 
 export type MissingPrice = z.infer<typeof MissingPrice>;

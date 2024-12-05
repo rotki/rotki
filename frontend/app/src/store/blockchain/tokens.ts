@@ -3,6 +3,10 @@ import { TaskType } from '@/types/task-type';
 import { awaitParallelExecution } from '@/utils/await-parallel-execution';
 import { logger } from '@/utils/logging';
 import { isTaskCancelled } from '@/utils';
+import { useNotificationsStore } from '@/store/notifications';
+import { useTaskStore } from '@/store/tasks';
+import { useIgnoredAssetsStore } from '@/store/assets/ignored';
+import { useBlockchainStore } from '@/store/blockchain/index';
 import type { MaybeRef } from '@vueuse/core';
 import type { TaskMeta } from '@/types/task';
 import type { EthDetectedTokensInfo, EvmTokensRecord } from '@/types/balances';
@@ -10,9 +14,9 @@ import type { BlockchainAssetBalances } from '@/types/blockchain/balances';
 
 function noTokens(): EthDetectedTokensInfo {
   return {
+    timestamp: null,
     tokens: [],
     total: 0,
-    timestamp: null,
   };
 }
 
@@ -26,7 +30,7 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
   const { isAssetIgnored } = useIgnoredAssetsStore();
   const { t } = useI18n();
   const { addresses, balances } = storeToRefs(useBlockchainStore());
-  const { fetchDetectedTokensTask, fetchDetectedTokens: fetchDetectedTokensCaller } = useBlockchainBalancesApi();
+  const { fetchDetectedTokens: fetchDetectedTokensCaller, fetchDetectedTokensTask } = useBlockchainBalancesApi();
   const { getChainName, supportsTransactions, txEvmChains } = useSupportedChains();
   const { notify } = useNotificationsStore();
 
@@ -55,13 +59,13 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
         const { taskId } = await fetchDetectedTokensTask(chain, [address]);
 
         const taskMeta = {
-          title: t('actions.balances.detect_tokens.task.title'),
+          address,
+          chain,
           description: t('actions.balances.detect_tokens.task.description', {
             address,
             chain: get(getChainName(chain)),
           }),
-          address,
-          chain,
+          title: t('actions.balances.detect_tokens.task.title'),
         };
 
         const { result } = await awaitTask<EvmTokensRecord, TaskMeta>(taskId, taskType, taskMeta, true);
@@ -78,13 +82,13 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
         logger.error(error);
 
         notify({
-          title: t('actions.balances.detect_tokens.task.title'),
+          display: true,
           message: t('actions.balances.detect_tokens.error.message', {
             address,
             chain: get(getChainName(chain)),
             error: error.message,
           }),
-          display: true,
+          title: t('actions.balances.detect_tokens.task.title'),
         });
       }
     }
@@ -125,9 +129,9 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
 
     const tokens: string[] = getTokens(get(balances)[blockchain], addr);
     return {
+      timestamp: info.lastUpdateTimestamp || null,
       tokens,
       total: tokens.length,
-      timestamp: info.lastUpdateTimestamp || null,
     };
   });
 
@@ -180,10 +184,10 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
   });
 
   return {
-    massDetecting,
     fetchDetected,
     fetchDetectedTokens,
     getEthDetectedTokensInfo,
+    massDetecting,
   };
 });
 

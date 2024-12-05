@@ -8,16 +8,16 @@ const props = defineProps<{
 
 const data = [
   {
+    icon: './assets/images/protocols/uniswap.svg',
     identifier: LpType.UNISWAP_V2,
-    icon: './assets/images/protocols/uniswap.svg',
   },
   {
+    icon: './assets/images/protocols/uniswap.svg',
     identifier: LpType.UNISWAP_V3,
-    icon: './assets/images/protocols/uniswap.svg',
   },
   {
-    identifier: LpType.SUSHISWAP,
     icon: './assets/images/protocols/sushiswap.svg',
+    identifier: LpType.SUSHISWAP,
   },
 ];
 

@@ -14,7 +14,7 @@ const props = withDefaults(
 
 const { editableItem } = toRefs(props);
 
-const { openDialog, submitting, closeDialog, trySubmit, stateUpdated } = useAccountingRuleForm();
+const { closeDialog, openDialog, stateUpdated, submitting, trySubmit } = useAccountingRuleForm();
 
 const { t } = useI18n();
 

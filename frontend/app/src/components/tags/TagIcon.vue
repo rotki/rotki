@@ -12,8 +12,8 @@ withDefaults(
     showDescription?: boolean;
   }>(),
   {
-    small: false,
     showDescription: false,
+    small: false,
   },
 );
 </script>

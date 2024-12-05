@@ -27,8 +27,8 @@ export function useQueryStatusStore<T>(isStatusFinished: (item: T) => boolean, c
   };
 
   return {
-    queryStatus,
     isAllFinished,
+    queryStatus,
     removeQueryStatus,
     resetQueryStatus,
   };

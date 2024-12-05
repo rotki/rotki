@@ -28,8 +28,8 @@ export enum BalanceType {
 }
 
 export const EvmTokens = z.object({
-  tokens: z.array(z.string()).nullish(),
   lastUpdateTimestamp: z.number().nullish(),
+  tokens: z.array(z.string()).nullish(),
 });
 
 export const EvmTokensRecord = z.record(EvmTokens);

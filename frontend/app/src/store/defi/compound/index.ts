@@ -6,14 +6,16 @@ import { logger } from '@/utils/logging';
 import { getProtocolAddresses } from '@/utils/addresses';
 import { isTaskCancelled } from '@/utils';
 import { toProfitLossModel } from '@/utils/defi';
+import { useTaskStore } from '@/store/tasks';
+import { useNotificationsStore } from '@/store/notifications';
 import type { TaskMeta } from '@/types/task';
 
 function defaultCompoundStats(): CompoundStats {
   return {
     debtLoss: {},
     interestProfit: {},
-    rewards: {},
     liquidationProfit: {},
+    rewards: {},
   };
 }
 
@@ -28,7 +30,7 @@ export const useCompoundStore = defineStore('defi/compound', () => {
   const { t } = useI18n();
   const { fetchCompoundBalances, fetchCompoundStats } = useCompoundApi();
 
-  const { resetStatus, setStatus, fetchDisabled } = useStatusUpdater(Section.DEFI_COMPOUND_BALANCES);
+  const { fetchDisabled, resetStatus, setStatus } = useStatusUpdater(Section.DEFI_COMPOUND_BALANCES);
 
   const rewards = computed(() => toProfitLossModel(get(history).rewards));
   const interestProfit = computed(() => toProfitLossModel(get(history).interestProfit));
@@ -56,11 +58,11 @@ export const useCompoundStore = defineStore('defi/compound', () => {
     catch (error: any) {
       if (!isTaskCancelled(error)) {
         notify({
-          title: t('actions.defi.compound.error.title'),
+          display: true,
           message: t('actions.defi.compound.error.description', {
             error: error.message,
           }),
-          display: true,
+          title: t('actions.defi.compound.error.title'),
         });
       }
     }
@@ -92,11 +94,11 @@ export const useCompoundStore = defineStore('defi/compound', () => {
       if (!isTaskCancelled(error)) {
         logger.error(error);
         notify({
-          title: t('actions.defi.compound_history.error.title'),
+          display: true,
           message: t('actions.defi.compound_history.error.description', {
             error: error.message,
           }),
-          display: true,
+          title: t('actions.defi.compound_history.error.title'),
         });
       }
     }
@@ -113,16 +115,16 @@ export const useCompoundStore = defineStore('defi/compound', () => {
   const addresses = computed<string[]>(() => getProtocolAddresses(get(balances), get(history)));
 
   return {
-    balances,
-    history,
-    rewards,
-    interestProfit,
-    debtLoss,
-    liquidationProfit,
     addresses,
+    balances,
+    debtLoss,
     fetchBalances,
     fetchStats,
+    history,
+    interestProfit,
+    liquidationProfit,
     reset,
+    rewards,
   };
 });
 

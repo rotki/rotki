@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Module } from '@/types/modules';
+import { useMessageStore } from '@/store/message';
+import { useQueriedAddressesStore } from '@/store/session/queried-addresses';
 import type { QueriedAddressPayload, QueriedAddresses } from '@/types/session';
 
 describe('session:queried addresses store', () => {

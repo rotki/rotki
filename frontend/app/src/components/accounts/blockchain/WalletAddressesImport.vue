@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useMessageStore } from '@/store/message';
+
 defineProps<{
   disabled: boolean;
 }>();
@@ -20,9 +22,9 @@ async function importAddresses() {
   }
   catch (error: any) {
     setMessage({
-      title: t('input_mode_select.import_from_wallet.label'),
       description: error.message,
       success: false,
+      title: t('input_mode_select.import_from_wallet.label'),
     });
   }
 }

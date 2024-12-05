@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import type {
   AddressBookEntry,
   AddressBookLocation,
@@ -17,8 +18,8 @@ const { t } = useI18n();
 const location = computed<AddressBookLocation>(() => locations[get(tab)]);
 
 const emptyForm: () => Partial<AddressBookPayload> = () => ({
-  location: get(location),
   blockchain: get(selectedChain) ?? null,
+  location: get(location),
 });
 
 const { setOpenDialog, setPostSubmitFunc } = useAddressBookForm();
@@ -29,28 +30,28 @@ const formPayload = ref<Partial<AddressBookPayload>>(emptyForm());
 const { getAddressBook } = useAddressesNamesStore();
 
 const {
-  filters,
-  matchers,
-  state,
-  isLoading,
   fetchData,
-  sort,
+  filters,
+  isLoading,
+  matchers,
   pagination,
+  sort,
+  state,
 } = usePaginationFilters<
   AddressBookEntry,
   AddressBookRequestPayload,
   Filters,
   Matcher
 >(filter => getAddressBook(get(location), filter), {
-  history: 'router',
-  filterSchema: useAddressBookFilter,
-  extraParams: computed(() => ({
-    blockchain: get(selectedChain),
-  })),
   defaultSortBy: [{
     column: 'name',
     direction: 'asc',
   }],
+  extraParams: computed(() => ({
+    blockchain: get(selectedChain),
+  })),
+  filterSchema: useAddressBookFilter,
+  history: 'router',
 });
 
 function openForm(item: AddressBookEntry | null = null) {

@@ -2,33 +2,33 @@ import { SupportedLanguage } from '@/types/settings/frontend-settings';
 
 export const supportedLanguages = [
   {
+    countries: ['gb', 'us'],
     identifier: SupportedLanguage.EN,
     label: 'English',
-    countries: ['gb', 'us'],
   },
   {
+    countries: ['es'],
     identifier: SupportedLanguage.ES,
     label: 'Spanish (Español)',
-    countries: ['es'],
   },
   {
+    countries: ['gr'],
     identifier: SupportedLanguage.GR,
     label: 'Greek (Ελληνικά)',
-    countries: ['gr'],
   },
   {
+    countries: ['de'],
     identifier: SupportedLanguage.DE,
     label: 'German (Deutsch)',
-    countries: ['de'],
   },
   {
+    countries: ['cn'],
     identifier: SupportedLanguage.CN,
     label: 'Chinese (中文)',
-    countries: ['cn'],
   },
   {
+    countries: ['fr'],
     identifier: SupportedLanguage.FR,
     label: 'French (Français)',
-    countries: ['fr'],
   },
 ];

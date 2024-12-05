@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { CURRENCY_USD } from '@/types/currencies';
+import { useConfirmStore } from '@/store/confirm';
+import { useBalancePricesStore } from '@/store/balances/prices';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 import type { BigNumber } from '@rotki/common';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { LocationDataSnapshot, LocationDataSnapshotPayload } from '@/types/snapshots';
@@ -18,7 +21,7 @@ const { t } = useI18n();
 
 type IndexedLocationDataSnapshot = LocationDataSnapshot & { index: number };
 
-const { openDialog, setOpenDialog, closeDialog, submitting, setSubmitFunc, trySubmit, stateUpdated } = useEditLocationsSnapshotForm();
+const { closeDialog, openDialog, setOpenDialog, setSubmitFunc, stateUpdated, submitting, trySubmit } = useEditLocationsSnapshotForm();
 
 const { timestamp } = toRefs(props);
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
@@ -33,24 +36,24 @@ const sort = ref<DataTableSortData<LocationDataSnapshot>>({
 
 const tableHeaders = computed<DataTableColumn<IndexedLocationDataSnapshot>[]>(() => [
   {
-    label: t('common.location'),
-    key: 'location',
-    class: 'w-[12.5rem]',
-    cellClass: 'py-2',
     align: 'center',
-    sortable: true,
-  },
-  {
-    label: t('common.value_in_symbol', { symbol: get(currencySymbol) }),
-    key: 'usdValue',
-    align: 'end',
-    sortable: true,
-  },
-  {
-    label: '',
-    key: 'action',
-    class: 'w-[6.25rem]',
     cellClass: 'py-2',
+    class: 'w-[12.5rem]',
+    key: 'location',
+    label: t('common.location'),
+    sortable: true,
+  },
+  {
+    align: 'end',
+    key: 'usdValue',
+    label: t('common.value_in_symbol', { symbol: get(currencySymbol) }),
+    sortable: true,
+  },
+  {
+    cellClass: 'py-2',
+    class: 'w-[6.25rem]',
+    key: 'action',
+    label: '',
   },
 ]);
 
@@ -93,8 +96,8 @@ function editClick(item: IndexedLocationDataSnapshot) {
 function add() {
   set(editedIndex, null);
   set(form, {
-    timestamp: get(timestamp),
     location: '',
+    timestamp: get(timestamp),
     usdValue: '',
   });
   set(
@@ -121,8 +124,8 @@ function save() {
 
   const newValue = [...val];
   const payload = {
-    timestamp: timestampVal,
     location: formVal.location,
+    timestamp: timestampVal,
     usdValue: convertedUsdValue,
   };
 
@@ -173,8 +176,8 @@ const { show } = useConfirmStore();
 function showDeleteConfirmation(item: IndexedLocationDataSnapshot) {
   show(
     {
-      title: t('dashboard.snapshot.edit.dialog.location_data.delete_title'),
       message: t('dashboard.snapshot.edit.dialog.location_data.delete_confirmation'),
+      title: t('dashboard.snapshot.edit.dialog.location_data.delete_title'),
     },
     () => confirmDelete(item.index),
   );

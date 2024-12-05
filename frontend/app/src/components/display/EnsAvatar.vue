@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import { Blockchain } from '@rotki/common';
+import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 
 defineOptions({
   inheritAttrs: false,
@@ -13,8 +14,8 @@ const props = withDefaults(
     size?: string | number;
   }>(),
   {
-    blockchain: Blockchain.ETH,
     avatar: false,
+    blockchain: Blockchain.ETH,
     size: '24px',
   },
 );
@@ -34,8 +35,8 @@ const avatarUrl = computed<string | null>(() => {
 const { getBlockie } = useBlockie();
 
 const style = computed(() => ({
-  width: props.size,
   height: props.size,
+  width: props.size,
 }));
 </script>
 

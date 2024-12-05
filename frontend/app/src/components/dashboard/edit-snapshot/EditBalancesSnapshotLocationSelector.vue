@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { BigNumber } from '@rotki/common';
 
-const model = defineModel<string>({ required: true, default: '' });
+const model = defineModel<string>({ default: '', required: true });
 
 withDefaults(
   defineProps<{
@@ -11,8 +11,8 @@ withDefaults(
   }>(),
   {
     locations: () => [],
-    previewLocationBalance: null,
     optionalShowExisting: false,
+    previewLocationBalance: null,
   },
 );
 

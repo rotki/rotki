@@ -1,11 +1,15 @@
 <script setup lang="ts">
+import { useConfirmStore } from '@/store/confirm';
+import { useSessionAuthStore } from '@/store/session/auth';
+import { useSessionStore } from '@/store/session';
+
 const { t } = useI18n();
 
 const KEY_REMEMBER_PASSWORD = 'rotki.remember_password';
 
 const { logout } = useSessionStore();
 const { username } = storeToRefs(useSessionAuthStore());
-const { isPackaged, clearPassword } = useInterop();
+const { clearPassword, isPackaged } = useInterop();
 const { privacyModeIcon, togglePrivacyMode } = usePrivacyMode();
 const { isXs } = useBreakpoint();
 
@@ -16,8 +20,8 @@ const { show } = useConfirmStore();
 function showConfirmation() {
   show(
     {
-      title: t('user_dropdown.confirmation.title'),
       message: t('user_dropdown.confirmation.message'),
+      title: t('user_dropdown.confirmation.title'),
       type: 'info',
     },
     async () => {

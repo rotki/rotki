@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { startPromise } from '@shared/utils';
 import SnapshotImportDialog from '@/components/dashboard/SnapshotImportDialog.vue';
+import { useMessageStore } from '@/store/message';
+import { useStatisticsStore } from '@/store/statistics';
+import { usePeriodicStore } from '@/store/session/periodic';
+import { useSessionStore } from '@/store/session';
 import type { Writeable } from '@rotki/common';
 import type { AllBalancePayload } from '@/types/blockchain/accounts';
 
@@ -62,19 +66,19 @@ async function importSnapshot() {
 
   if (!success) {
     setMessage({
-      title: t('snapshot_action_button.messages.title'),
       description: t('snapshot_action_button.messages.failed_description', {
         message,
       }),
+      title: t('snapshot_action_button.messages.title'),
     });
   }
   else {
     setMessage({
-      title: t('snapshot_action_button.messages.title'),
       description: t('snapshot_action_button.messages.success_description', {
         message,
       }),
       success: true,
+      title: t('snapshot_action_button.messages.title'),
     });
 
     setTimeout(() => {

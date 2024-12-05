@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { type Module, SUPPORTED_MODULES } from '@/types/modules';
+import { useQueriedAddressesStore } from '@/store/session/queried-addresses';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 import type { CamelCase } from '@/types/common';
 
 const emit = defineEmits(['update:selection']);

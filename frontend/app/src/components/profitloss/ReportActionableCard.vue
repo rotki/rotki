@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { useConfirmStore } from '@/store/confirm';
+import { useReportsStore } from '@/store/reports';
+import { useAreaVisibilityStore } from '@/store/session/visibility';
 import type { Nullable } from '@rotki/common';
 import type { EditableMissingPrice, MissingAcquisition, MissingPrice, SelectedReport } from '@/types/reports';
 import type { Pinned } from '@/types/session';
@@ -25,7 +28,7 @@ const ReportMissingAcquisitions = defineAsyncComponent(
 const ReportMissingPrices = defineAsyncComponent(() => import('@/components/profitloss/ReportMissingPrices.vue'));
 
 const { t } = useI18n();
-const { report, isPinned } = toRefs(props);
+const { isPinned, report } = toRefs(props);
 const { pinned, showPinned } = storeToRefs(useAreaVisibilityStore());
 
 function setDialog(dialog: boolean) {
@@ -68,8 +71,8 @@ function pinSection() {
   const pinned: Pinned = {
     name: 'report-actionable-card',
     props: {
-      report: get(report),
       isPinned: true,
+      report: get(report),
     },
   };
 
@@ -92,26 +95,26 @@ const stepperContents = computed<
 
   if (missingAcquisitionsLength > 0) {
     contents.push({
+      hint: t('profit_loss_report.actionable.missing_acquisitions.hint'),
+      items: get(actionableItems).missingAcquisitions,
       key: 'missingAcquisitions',
+      selector: ReportMissingAcquisitions,
       title: t('profit_loss_report.actionable.missing_acquisitions.title', {
         total: missingAcquisitionsLength,
       }),
-      hint: t('profit_loss_report.actionable.missing_acquisitions.hint'),
-      selector: ReportMissingAcquisitions,
-      items: get(actionableItems).missingAcquisitions,
     });
   }
 
   const missingPricesLength = get(actionableItemsLength).missingPricesLength;
   if (missingPricesLength >= 0) {
     contents.push({
+      hint: t('profit_loss_report.actionable.missing_prices.hint'),
+      items: get(actionableItems).missingPrices,
       key: 'missingPrices',
+      selector: ReportMissingPrices,
       title: t('profit_loss_report.actionable.missing_prices.title', {
         total: missingPricesLength,
       }),
-      hint: t('profit_loss_report.actionable.missing_prices.hint'),
-      selector: ReportMissingPrices,
-      items: get(actionableItems).missingPrices,
     });
   }
 
@@ -153,10 +156,10 @@ function showFinishDialog() {
 
   show(
     {
-      type,
-      title,
       message,
       primaryAction,
+      title,
+      type,
     },
     () => {
       if (filledMissingPricesVal)

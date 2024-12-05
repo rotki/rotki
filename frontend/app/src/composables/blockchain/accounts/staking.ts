@@ -5,6 +5,11 @@ import { Section } from '@/types/status';
 import { Module } from '@/types/modules';
 import { isTaskCancelled } from '@/utils';
 import { logger } from '@/utils/logging';
+import { useTaskStore } from '@/store/tasks';
+import { useMessageStore } from '@/store/message';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useBlockchainValidatorsStore } from '@/store/blockchain/validators';
+import { useBlockchainStore } from '@/store/blockchain';
 import type { BlockchainAccount, ValidatorData } from '@/types/blockchain/accounts';
 import type { Eth2Validator } from '@/types/balances';
 import type { ActionStatus } from '@/types/action';
@@ -23,15 +28,15 @@ interface UseEthStakingReturn {
 export function useEthStaking(): UseEthStakingReturn {
   const {
     addEth2Validator: addEth2ValidatorCaller,
-    editEth2Validator: editEth2ValidatorCaller,
     deleteEth2Validators: deleteEth2ValidatorsCaller,
+    editEth2Validator: editEth2ValidatorCaller,
   } = useBlockchainAccountsApi();
   const blockchainStore = useBlockchainStore();
-  const { updateAccounts, getAccounts, updateBalances } = blockchainStore;
+  const { getAccounts, updateAccounts, updateBalances } = blockchainStore;
   const { balances } = storeToRefs(blockchainStore);
 
   const blockchainValidatorsStore = useBlockchainValidatorsStore();
-  const { stakingValidatorsLimits, ethStakingValidators } = storeToRefs(blockchainValidatorsStore);
+  const { ethStakingValidators, stakingValidatorsLimits } = storeToRefs(blockchainValidatorsStore);
   const { fetchEthStakingValidators } = blockchainValidatorsStore;
   const { activeModules } = storeToRefs(useGeneralSettingsStore());
   const premium = usePremium();
@@ -45,8 +50,8 @@ export function useEthStaking(): UseEthStakingReturn {
   const addEth2Validator = async (payload: Eth2Validator): Promise<ActionStatus<ValidationErrors | string>> => {
     if (!isEth2Enabled()) {
       return {
-        success: false,
         message: '',
+        success: false,
       };
     }
     const id = payload.publicKey || payload.validatorIndex;
@@ -54,10 +59,10 @@ export function useEthStaking(): UseEthStakingReturn {
       const taskType = TaskType.ADD_ETH2_VALIDATOR;
       const { taskId } = await addEth2ValidatorCaller(payload);
       const { result } = await awaitTask<boolean, TaskMeta>(taskId, taskType, {
-        title: t('actions.add_eth2_validator.task.title'),
         description: t('actions.add_eth2_validator.task.description', {
           id,
         }),
+        title: t('actions.add_eth2_validator.task.title'),
       });
       if (result) {
         resetStatus();
@@ -66,8 +71,8 @@ export function useEthStaking(): UseEthStakingReturn {
       }
 
       return {
-        success: result,
         message: '',
+        success: result,
       };
     }
     catch (error: any) {
@@ -79,19 +84,19 @@ export function useEthStaking(): UseEthStakingReturn {
         message = error.getValidationErrors(payload);
 
       return {
-        success: false,
         message,
+        success: false,
       };
     }
   };
 
   const editEth2Validator = async (payload: Eth2Validator): Promise<ActionStatus<ValidationErrors | string>> => {
     if (!isEth2Enabled())
-      return { success: false, message: '' };
+      return { message: '', success: false };
 
     try {
       const success = await editEth2ValidatorCaller(payload);
-      return { success, message: '' };
+      return { message: '', success };
     }
     catch (error: any) {
       logger.error(error);
@@ -100,8 +105,8 @@ export function useEthStaking(): UseEthStakingReturn {
         message = error.getValidationErrors(payload);
 
       return {
-        success: false,
         message,
+        success: false,
       };
     }
   };
@@ -129,8 +134,8 @@ export function useEthStaking(): UseEthStakingReturn {
         description: t('actions.delete_eth2_validator.error.description', {
           message: error.message,
         }),
-        title: t('actions.delete_eth2_validator.error.title'),
         success: false,
+        title: t('actions.delete_eth2_validator.error.title'),
       });
       return false;
     }
@@ -207,26 +212,26 @@ export function useEthStaking(): UseEthStakingReturn {
     const limits = get(stakingValidatorsLimits);
     if (!limits) {
       return {
+        limit: 0,
         showWarning: false,
         total: 0,
-        limit: 0,
       };
     }
 
     const { limit, total } = limits;
     return {
+      limit,
       showWarning: limit > 0 && limit <= total,
       total,
-      limit,
     };
   });
 
   return {
-    validatorsLimitInfo,
-    fetchEthStakingValidators,
     addEth2Validator,
-    editEth2Validator,
     deleteEth2Validators,
+    editEth2Validator,
+    fetchEthStakingValidators,
     updateEthStakingOwnership,
+    validatorsLimitInfo,
   };
 }

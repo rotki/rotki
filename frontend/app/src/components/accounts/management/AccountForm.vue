@@ -54,9 +54,9 @@ const etherscanApiKeyAlert = computed(() => {
     const displayChain = toHumanReadable(selectedChain, 'sentence');
     if (!get(apiKey('etherscan', chainName))) {
       return {
-        message: t('external_services.etherscan.api_key_message', { chain: displayChain }),
         action: t('notification_messages.missing_api_key.action'),
         chainName,
+        message: t('external_services.etherscan.api_key_message', { chain: displayChain }),
       };
     }
   }
@@ -65,7 +65,7 @@ const etherscanApiKeyAlert = computed(() => {
 });
 
 function navigateToApiKeySettings(chainName: string) {
-  router.push({ path: '/api-keys/external', hash: `#${chainName}` });
+  router.push({ hash: `#${chainName}`, path: '/api-keys/external' });
 }
 
 async function validate(): Promise<boolean> {
@@ -91,10 +91,10 @@ watch(chain, (chain) => {
 
   if (chain === Blockchain.ETH2) {
     set(modelValue, {
-      mode: 'add',
-      type: 'validator',
       chain: Blockchain.ETH2,
       data: {},
+      mode: 'add',
+      type: 'validator',
     } satisfies StakingValidatorManage);
   }
   else {
@@ -117,17 +117,17 @@ watch(inputMode, (mode) => {
   if (mode === InputMode.XPUB_ADD) {
     assert(isBtcChain(selectedChain));
     set(modelValue, {
-      mode: 'add',
-      type: 'xpub',
       chain: selectedChain,
       data: {
         tags: null,
         xpub: {
-          xpub: '',
           derivationPath: '',
+          xpub: '',
           xpubType: XpubKeyType.XPUB,
         },
       },
+      mode: 'add',
+      type: 'xpub',
     } satisfies XpubManage);
   }
   else {

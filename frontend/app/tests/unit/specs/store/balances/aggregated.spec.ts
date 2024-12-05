@@ -5,6 +5,11 @@ import { convertBtcAccounts, convertBtcBalances } from '@/utils/blockchain/accou
 import { TRADE_LOCATION_BANKS } from '@/data/defaults';
 import { useCurrencies } from '@/types/currencies';
 import { BalanceType } from '@/types/balances';
+import { useManualBalancesStore } from '@/store/balances/manual';
+import { useBlockchainStore } from '@/store/blockchain';
+import { useBalancePricesStore } from '@/store/balances/prices';
+import { useExchangesStore } from '@/store/exchanges';
+import { useExchangeBalancesStore } from '@/store/balances/exchanges';
 import { updateGeneralSettings } from '../../../utils/general-settings';
 import type { BlockchainTotals, BtcBalances } from '@/types/blockchain/balances';
 import type { BitcoinAccounts, BlockchainAccountGroupWithBalance } from '@/types/blockchain/accounts';

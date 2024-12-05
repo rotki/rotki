@@ -77,7 +77,6 @@ const maxAmountAllowed = computed<number>(() => {
 
 const rules = {
   amount: {
-    required: helpers.withMessage(t('calendar.reminder.validation.amount.non_empty'), required),
     max: helpers.withMessage(
       () =>
         t('calendar.reminder.validation.amount.max_value', {
@@ -87,6 +86,7 @@ const rules = {
       maxValue(maxAmountAllowed),
     ),
     min: helpers.withMessage(() => t('calendar.reminder.validation.amount.min_value'), minValue(1)),
+    required: helpers.withMessage(t('calendar.reminder.validation.amount.non_empty'), required),
   },
   unit: {
     required: helpers.withMessage(t('calendar.reminder.validation.unit.non_empty'), required),
@@ -131,8 +131,8 @@ function calculateAmountAndUnit(seconds: number) {
   });
 
   return {
-    unit,
     amount,
+    unit,
   };
 }
 
@@ -141,7 +141,7 @@ watchImmediate(vModel, (value) => {
   const seconds = value.secsBefore;
 
   if (seconds !== currentSeconds) {
-    const { unit: tempUnit, amount: tempAmount } = calculateAmountAndUnit(seconds);
+    const { amount: tempAmount, unit: tempUnit } = calculateAmountAndUnit(seconds);
 
     set(unit, tempUnit);
     set(amount, tempAmount.toString());

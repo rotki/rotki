@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import { useAssetIconStore } from '@/store/assets/icon';
+import { useMessageStore } from '@/store/message';
+import { useNotificationsStore } from '@/store/notifications';
+
 const props = withDefaults(
   defineProps<{
     identifier: string;
@@ -35,12 +39,12 @@ async function refreshIcon() {
   }
   catch (error: any) {
     notify({
-      title: t('asset_form.fetch_latest_icon.title'),
+      display: true,
       message: t('asset_form.fetch_latest_icon.description', {
         identifier: identifierVal,
         message: error.message,
       }),
-      display: true,
+      title: t('asset_form.fetch_latest_icon.title'),
     });
   }
   set(refreshIconLoading, false);
@@ -65,10 +69,10 @@ async function saveIcon(identifier: string) {
     const message = error.message;
 
     setMessage({
-      title: t('asset_form.icon_upload.title'),
       description: t('asset_form.icon_upload.description', {
         message,
       }),
+      title: t('asset_form.icon_upload.title'),
     });
   }
 }

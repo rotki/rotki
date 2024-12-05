@@ -9,12 +9,12 @@ const props = withDefaults(
     loading?: boolean;
   }>(),
   {
-    size: 'sm',
-    title: '',
-    subtitle: '',
-    noPadding: false,
-    noHover: false,
     loading: false,
+    noHover: false,
+    noPadding: false,
+    size: 'sm',
+    subtitle: '',
+    title: '',
   },
 );
 

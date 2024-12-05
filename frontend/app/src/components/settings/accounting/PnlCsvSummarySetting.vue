@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useAccountingSettingsStore } from '@/store/settings/accounting';
+
 const haveCSVSummary = ref(false);
 const { pnlCsvHaveSummary } = storeToRefs(useAccountingSettingsStore());
 

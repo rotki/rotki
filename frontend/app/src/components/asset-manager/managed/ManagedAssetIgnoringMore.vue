@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useWhitelistedAssetsStore } from '@/store/assets/whitelisted';
+
 const props = withDefaults(
   defineProps<{
     identifier: string;

@@ -1,11 +1,13 @@
 <script setup lang="ts">
+import { useGeneralSettingsStore } from '@/store/settings/general';
+
 const { t } = useI18n();
 
 const showMenu = ref(false);
 const autoDelete = ref(true);
 const autoCreateReminders = ref(true);
 
-const { autoDeleteCalendarEntries, autoCreateCalendarReminders } = storeToRefs(useGeneralSettingsStore());
+const { autoCreateCalendarReminders, autoDeleteCalendarEntries } = storeToRefs(useGeneralSettingsStore());
 
 function setAutoDelete() {
   set(autoDelete, get(autoDeleteCalendarEntries));

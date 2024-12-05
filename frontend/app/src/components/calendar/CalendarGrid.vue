@@ -28,7 +28,7 @@ function add() {
   emit('add');
 }
 
-const { today, selectedDate, visibleDate, eventsWithDate } = toRefs(props);
+const { eventsWithDate, selectedDate, today, visibleDate } = toRefs(props);
 
 const month = computed(() => Number(get(visibleDate).format('M')));
 const year = computed(() => Number(get(visibleDate).format('YYYY')));

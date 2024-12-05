@@ -1,6 +1,13 @@
 <script setup lang="ts">
 import { Section } from '@/types/status';
 import { uniqueStrings } from '@/utils/data';
+import { useConfirmStore } from '@/store/confirm';
+import { useIgnoredAssetsStore } from '@/store/assets/ignored';
+import { useMessageStore } from '@/store/message';
+import { useStatusStore } from '@/store/status';
+import { useNotificationsStore } from '@/store/notifications';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useNonFungibleBalancesStore } from '@/store/balances/non-fungible';
 import type { DataTableColumn } from '@rotki/ui-library';
 import type { ActionStatus } from '@/types/action';
 import type { IgnoredAssetsHandlingType } from '@/types/asset';
@@ -28,42 +35,42 @@ const extraParams = computed(() => ({
 
 const tableHeaders = computed<DataTableColumn<NonFungibleBalance>[]>(() => [
   {
-    label: t('common.name'),
-    key: 'name',
     cellClass: 'text-no-wrap',
+    key: 'name',
+    label: t('common.name'),
     sortable: true,
   },
   {
-    label: t('non_fungible_balances.ignore'),
+    align: 'center',
     key: 'ignored',
-    align: 'center',
+    label: t('non_fungible_balances.ignore'),
     sortable: false,
   },
   {
-    label: t('non_fungible_balances.column.price_in_asset'),
+    align: 'end',
+    class: 'text-no-wrap',
     key: 'priceInAsset',
-    align: 'end',
-    width: '75%',
-    class: 'text-no-wrap',
+    label: t('non_fungible_balances.column.price_in_asset'),
     sortable: false,
+    width: '75%',
   },
   {
-    label: t('common.price_in_symbol', { symbol: get(currencySymbol) }),
-    key: 'usdPrice',
     align: 'end',
     class: 'text-no-wrap',
+    key: 'usdPrice',
+    label: t('common.price_in_symbol', { symbol: get(currencySymbol) }),
     sortable: true,
   },
   {
-    label: t('non_fungible_balances.column.custom_price'),
-    key: 'manuallyInput',
     class: 'text-no-wrap',
+    key: 'manuallyInput',
+    label: t('non_fungible_balances.column.custom_price'),
     sortable: false,
   },
   {
-    label: t('common.actions_text'),
-    key: 'actions',
     align: 'center',
+    key: 'actions',
+    label: t('common.actions_text'),
     sortable: false,
     width: '50',
   },
@@ -73,31 +80,31 @@ const { isLoading: isSectionLoading } = useStatusStore();
 const loading = isSectionLoading(Section.NON_FUNGIBLE_BALANCES);
 
 const { setMessage } = useMessageStore();
-const { isAssetIgnored, ignoreAsset, unignoreAsset } = useIgnoredAssetsStore();
+const { ignoreAsset, isAssetIgnored, unignoreAsset } = useIgnoredAssetsStore();
 
 const {
-  state: balances,
-  isLoading,
   fetchData,
-  sort,
-  setPage,
+  isLoading,
   pagination,
+  setPage,
+  sort,
+  state: balances,
 } = usePaginationFilters<
   NonFungibleBalance,
   NonFungibleBalancesRequestPayload
 >(fetchNonFungibleBalances, {
-  history: 'router',
-  onUpdateFilters(query) {
-    set(ignoredAssetsHandling, query.ignoredAssetsHandling || 'exclude');
-  },
-  extraParams,
   defaultSortBy: [{
     column: 'usdPrice',
     direction: 'desc',
   }],
+  extraParams,
+  history: 'router',
+  onUpdateFilters(query) {
+    set(ignoredAssetsHandling, query.ignoredAssetsHandling || 'exclude');
+  },
 });
 
-const { setPostSubmitFunc, setOpenDialog } = useLatestPriceForm();
+const { setOpenDialog, setPostSubmitFunc } = useLatestPriceForm();
 const { show } = useConfirmStore();
 
 const isIgnored = (identifier: string) => isAssetIgnored(identifier);
@@ -130,9 +137,9 @@ async function massIgnore(ignored: boolean) {
   if (ids.length === 0) {
     const choice = ignored ? 1 : 2;
     setMessage({
+      description: t('ignore.no_items.description', choice),
       success: false,
       title: t('ignore.no_items.title', choice),
-      description: t('ignore.no_items.description', choice),
     });
     return;
   }
@@ -155,11 +162,11 @@ async function deletePrice(toDeletePrice: NonFungibleBalance) {
   }
   catch {
     notify({
-      title: t('assets.custom_price.delete.error.title'),
+      display: true,
       message: t('assets.custom_price.delete.error.message', {
         asset: toDeletePrice.name ?? toDeletePrice.id,
       }),
-      display: true,
+      title: t('assets.custom_price.delete.error.title'),
     });
   }
 }
@@ -168,18 +175,18 @@ function setPriceForm(item: NonFungibleBalance) {
   setOpenDialog(true);
   set(customPrice, {
     fromAsset: item.id,
-    toAsset: item.priceAsset,
     price: item.priceInAsset.toFixed(),
+    toAsset: item.priceAsset,
   });
 }
 
 function showDeleteConfirmation(item: NonFungibleBalance) {
   show(
     {
-      title: t('assets.custom_price.delete.tooltip'),
       message: t('assets.custom_price.delete.message', {
         asset: !item ? '' : item.name ?? item.id,
       }),
+      title: t('assets.custom_price.delete.tooltip'),
     },
     () => deletePrice(item),
   );

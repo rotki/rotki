@@ -2,6 +2,9 @@
 import { some } from 'lodash-es';
 import { CUSTOM_ASSET, EVM_TOKEN, IgnoredAssetHandlingType, type IgnoredAssetsHandlingType } from '@/types/asset';
 import { uniqueStrings } from '@/utils/data';
+import { useIgnoredAssetsStore } from '@/store/assets/ignored';
+import { useWhitelistedAssetsStore } from '@/store/assets/whitelisted';
+import { useMessageStore } from '@/store/message';
 import type { Collection } from '@/types/collection';
 import type { Filters, Matcher } from '@/composables/filters/assets';
 import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
@@ -47,40 +50,40 @@ const { t } = useI18n();
 
 const cols = computed<DataTableColumn<SupportedAsset>[]>(() => [
   {
-    label: t('common.asset'),
-    key: 'symbol',
-    sortable: true,
+    cellClass: 'py-0',
     class: 'w-full',
-    cellClass: 'py-0',
+    key: 'symbol',
+    label: t('common.asset'),
+    sortable: true,
   },
   {
-    label: t('common.type'),
-    key: 'type',
-    sortable: true,
     cellClass: '!text-nowrap py-0',
+    key: 'type',
+    label: t('common.type'),
+    sortable: true,
   },
   {
-    label: t('common.address'),
-    key: 'address',
-    sortable: true,
+    cellClass: 'py-0',
     class: 'min-w-[11.375rem]',
-    cellClass: 'py-0',
-  },
-  {
-    label: t('asset_table.headers.started'),
-    key: 'started',
+    key: 'address',
+    label: t('common.address'),
     sortable: true,
+  },
+  {
+    cellClass: 'py-0',
     class: 'min-w-[10rem]',
-    cellClass: 'py-0',
+    key: 'started',
+    label: t('asset_table.headers.started'),
+    sortable: true,
   },
   {
-    label: t('assets.ignore'),
+    cellClass: 'py-0',
     key: 'ignored',
-    cellClass: 'py-0',
+    label: t('assets.ignore'),
   },
   {
-    label: '',
     key: 'actions',
+    label: '',
   },
 ]);
 
@@ -108,17 +111,17 @@ function getAsset(item: SupportedAsset) {
     ?? (isEvmIdentifier(item.identifier) ? getAddressFromEvmIdentifier(item.identifier) : item.identifier);
 
   return {
-    name,
-    symbol: item.symbol ?? '',
+    customAssetType: item.customAssetType ?? '',
     identifier: item.identifier,
     isCustomAsset: item.assetType === CUSTOM_ASSET,
-    customAssetType: item.customAssetType ?? '',
+    name,
+    symbol: item.symbol ?? '',
   };
 }
 
 const { setMessage } = useMessageStore();
-const { isAssetIgnored, ignoreAsset, unignoreAsset, fetchIgnoredAssets } = useIgnoredAssetsStore();
-const { isAssetWhitelisted, whitelistAsset, unWhitelistAsset } = useWhitelistedAssetsStore();
+const { fetchIgnoredAssets, ignoreAsset, isAssetIgnored, unignoreAsset } = useIgnoredAssetsStore();
+const { isAssetWhitelisted, unWhitelistAsset, whitelistAsset } = useWhitelistedAssetsStore();
 
 const { markAssetsAsSpam, removeAssetFromSpamList } = useSpamAsset();
 
@@ -170,9 +173,9 @@ async function massIgnore(ignored: boolean) {
   if (ids.length === 0) {
     const choice = ignored ? 1 : 2;
     setMessage({
+      description: t('ignore.no_items.description', choice),
       success: false,
       title: t('ignore.no_items.title', choice),
-      description: t('ignore.no_items.description', choice),
     });
     return;
   }

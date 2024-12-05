@@ -6,34 +6,34 @@ const Action = z.object({
 });
 
 const VisibilityPeriod = z.object({
-  start: z.number().positive(),
   end: z.number().positive(),
+  start: z.number().positive(),
 });
 
 export type VisibilityPeriod = z.infer<typeof VisibilityPeriod>;
 
 const WelcomeMessage = z.object({
+  action: Action.optional(),
   header: z.string().optional(),
   icon: z.string().optional(),
-  text: z.string(),
-  action: Action.optional(),
   period: VisibilityPeriod,
+  text: z.string(),
 });
 
 export type WelcomeMessage = z.infer<typeof WelcomeMessage>;
 
 export const WelcomeSchema = z.object({
   header: z.string().optional(),
-  text: z.string().optional(),
   messages: z.array(WelcomeMessage),
+  text: z.string().optional(),
 });
 
 export type WelcomeSchema = z.infer<typeof WelcomeSchema>;
 
 const DashboardMessage = z.object({
+  action: Action.optional(),
   message: z.string(),
   messageHighlight: z.string().optional(),
-  action: Action.optional(),
   period: VisibilityPeriod,
 });
 

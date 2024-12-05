@@ -2,6 +2,7 @@
 import useVuelidate from '@vuelidate/core';
 import { helpers, minValue } from '@vuelidate/validators';
 import { toMessages } from '@/utils/validation';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 
 const emit = defineEmits<{
   (e: 'updated'): void;
@@ -13,7 +14,7 @@ const updated = () => emit('updated');
 
 const multiplier = ref<string>('0');
 
-const { ssfGraphMultiplier: multiplierSetting, balanceSaveFrequency } = storeToRefs(useGeneralSettingsStore());
+const { balanceSaveFrequency, ssfGraphMultiplier: multiplierSetting } = storeToRefs(useGeneralSettingsStore());
 
 const rules = {
   multiplier: {

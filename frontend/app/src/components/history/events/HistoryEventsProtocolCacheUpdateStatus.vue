@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { TaskType } from '@/types/task-type';
+import { useTaskStore } from '@/store/tasks';
+import { useHistoryStore } from '@/store/history';
 import type { ProtocolCacheUpdatesData } from '@/types/websocket-messages';
 import type { DataTableColumn } from '@rotki/ui-library';
 
@@ -25,32 +27,32 @@ const { t } = useI18n();
 
 const headers: DataTableColumn<Data>[] = [
   {
-    label: t('common.chain'),
+    align: 'center',
+    cellClass: 'py-3',
     key: 'chain',
-    align: 'center',
-    cellClass: 'py-3',
+    label: t('common.chain'),
   },
   {
-    label: t('common.protocol'),
+    align: 'center',
+    cellClass: 'py-3',
     key: 'protocol',
-    align: 'center',
-    cellClass: 'py-3',
+    label: t('common.protocol'),
   },
   {
-    label: t('transactions.protocol_cache_updates.outdated_data'),
-    key: 'number',
     align: 'end',
     cellClass: '!pr-12',
     class: '!pr-12',
+    key: 'number',
+    label: t('transactions.protocol_cache_updates.outdated_data'),
   },
   {
-    label: t('transactions.events_decoding.progress'),
-    key: 'progress',
     align: 'center',
+    key: 'progress',
+    label: t('transactions.events_decoding.progress'),
   },
 ];
 
-const { getDefiName, getDefiImage, loading: metadataLoading } = useDefiMetadata();
+const { getDefiImage, getDefiName, loading: metadataLoading } = useDefiMetadata();
 
 const dataWithInfo = computed<Data[]>(() =>
   get(protocolCacheStatus).map((item) => {

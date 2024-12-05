@@ -31,31 +31,31 @@ export const PRIVATE_ADDRESSBOOK_PRIO_LIST_ITEM: PrioritizedListItemData<Address
 };
 
 export const CRYPTOCOMPARE_PRIO_LIST_ITEM: PrioritizedListItemData<PriceOracle> = {
-  identifier: PriceOracle.CRYPTOCOMPARE,
   icon: './assets/images/services/cryptocompare.svg',
+  identifier: PriceOracle.CRYPTOCOMPARE,
 };
 
 export const COINGECKO_PRIO_LIST_ITEM: PrioritizedListItemData<PriceOracle> = {
-  identifier: PriceOracle.COINGECKO,
   icon: './assets/images/services/coingecko.svg',
+  identifier: PriceOracle.COINGECKO,
 };
 
 export const DEFILAMA_PRIO_LIST_ITEM: PrioritizedListItemData<PriceOracle> = {
-  identifier: PriceOracle.DEFILLAMA,
   icon: './assets/images/services/defillama.svg',
+  identifier: PriceOracle.DEFILLAMA,
 };
 
 export const UNISWAP2_PRIO_LIST_ITEM: PrioritizedListItemData<PriceOracle> = {
-  identifier: PriceOracle.UNISWAP2,
   icon: './assets/images/protocols/uniswap.svg',
+  identifier: PriceOracle.UNISWAP2,
 };
 
 export const UNISWAP3_PRIO_LIST_ITEM: PrioritizedListItemData<PriceOracle> = {
-  identifier: PriceOracle.UNISWAP3,
   icon: './assets/images/protocols/uniswap.svg',
+  identifier: PriceOracle.UNISWAP3,
 };
 
 export const MANUAL_PRIO_LIST_ITEM: PrioritizedListItemData<PriceOracle> = {
-  identifier: PriceOracle.MANUAL,
   icon: './assets/images/oracles/book.svg',
+  identifier: PriceOracle.MANUAL,
 };

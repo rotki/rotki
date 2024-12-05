@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { Routes } from '@/router/routes';
+import { useMainStore } from '@/store/main';
+import { useAreaVisibilityStore } from '@/store/session/visibility';
 
 const { isMini, showDrawer } = storeToRefs(useAreaVisibilityStore());
 const { appVersion } = storeToRefs(useMainStore());

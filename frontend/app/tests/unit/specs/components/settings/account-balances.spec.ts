@@ -5,6 +5,9 @@ import { setActivePinia } from 'pinia';
 import AccountBalances from '@/components/accounts/AccountBalances.vue';
 import { Section, Status } from '@/types/status';
 import { TaskType } from '@/types/task-type';
+import { useTaskStore } from '@/store/tasks';
+import { useStatusStore } from '@/store/status';
+import { useSessionStore } from '@/store/session';
 import { createCustomPinia } from '../../../utils/create-pinia';
 import { libraryDefaults } from '../../../utils/provide-defaults';
 

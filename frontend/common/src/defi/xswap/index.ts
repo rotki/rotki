@@ -14,11 +14,11 @@ export type XswapAsset = z.infer<typeof XswapAsset>;
 
 export const XswapBalance = z.object({
   account: z.string().nullish(),
-  assets: z.array(XswapAsset),
   address: z.string(),
-  totalSupply: NumericString.nullish(),
+  assets: z.array(XswapAsset),
   nftId: z.string().nullish(),
   priceRange: z.array(NumericString).nullish(),
+  totalSupply: NumericString.nullish(),
   userBalance: Balance,
 });
 

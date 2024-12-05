@@ -10,17 +10,17 @@ const props = withDefaults(
     selectedLocation?: string;
   }>(),
   {
-    subtitle: '',
     editMode: false,
     form: null,
     selectedLocation: undefined,
+    subtitle: '',
   },
 );
 
 const { form } = toRefs(props);
 const { t } = useI18n();
 
-const { openDialog, submitting, closeDialog, trySubmit, stateUpdated } = useCexMappingForm();
+const { closeDialog, openDialog, stateUpdated, submitting, trySubmit } = useCexMappingForm();
 </script>
 
 <template>

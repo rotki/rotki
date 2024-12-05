@@ -3,10 +3,10 @@ import { Module } from '@/types/modules';
 import { NoteLocation } from '@/types/notes';
 
 definePage({
-  name: 'accounts-balances-non-fungible',
   meta: {
     noteLocation: NoteLocation.ACCOUNTS_BALANCES_NON_FUNGIBLE,
   },
+  name: 'accounts-balances-non-fungible',
 });
 
 const { isModuleEnabled } = useModules();

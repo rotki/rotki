@@ -8,7 +8,7 @@ import type { ValidationErrors } from '@/types/api/errors';
 import type { EvmRpcNodeManageState } from '@/types/settings/rpc';
 
 const errors = defineModel<ValidationErrors>('errorMessages', { required: true });
-const stateUpdated = defineModel<boolean>('stateUpdated', { required: false, default: false });
+const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
 
 const props = defineProps<{
   modelValue: EvmRpcNodeManageState;
@@ -50,17 +50,17 @@ const isEtherscan = computed<boolean>(() => {
 });
 
 const rules = {
-  name: { required },
   endpoint: { required: requiredIf(logicNot(isEtherscan)) },
-  weight: { required, between: between(0, 100) },
+  name: { required },
+  weight: { between: between(0, 100), required },
 };
 
 const states = {
-  name,
-  endpoint,
-  weight,
   active,
+  endpoint,
+  name,
   owned,
+  weight,
 };
 
 const v$ = useVuelidate(

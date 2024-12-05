@@ -23,35 +23,35 @@ const ownershipPercentage = refOptional(useRefPropVModel(modelValue, 'ownershipP
 const { t } = useI18n();
 
 const rules = {
-  validatorIndex: {
-    requiredUnlessKey: requiredUnless(logicAnd(publicKey)),
-    consistOfNumbers: helpers.withMessage(
-      t('eth2_input.validator_index.validation'),
-      (value: string) => !value || consistOfNumbers(value),
-    ),
-  },
-  publicKey: {
-    requiredUnlessIndex: requiredUnless(logicAnd(validatorIndex)),
-  },
   ownershipPercentage: {
     percentage: helpers.withMessage(
       t('eth2_input.ownership.validation'),
       (value: string) => !value || (Number(value) > 0 && Number(value) <= 100),
     ),
   },
+  publicKey: {
+    requiredUnlessIndex: requiredUnless(logicAnd(validatorIndex)),
+  },
+  validatorIndex: {
+    consistOfNumbers: helpers.withMessage(
+      t('eth2_input.validator_index.validation'),
+      (value: string) => !value || consistOfNumbers(value),
+    ),
+    requiredUnlessKey: requiredUnless(logicAnd(publicKey)),
+  },
 };
 
 const v$ = useVuelidate(
   rules,
   {
-    validatorIndex,
-    publicKey,
     ownershipPercentage,
+    publicKey,
+    validatorIndex,
   },
   {
     $autoDirty: true,
-    $stopPropagation: true,
     $externalResults: errorMessages,
+    $stopPropagation: true,
   },
 );
 

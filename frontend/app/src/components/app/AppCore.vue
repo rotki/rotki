@@ -1,13 +1,17 @@
 <script setup lang="ts">
+import { useSessionAuthStore } from '@/store/session/auth';
+import { useStatisticsStore } from '@/store/statistics';
+import { useAreaVisibilityStore } from '@/store/session/visibility';
+
 const visibilityStore = useAreaVisibilityStore();
-const { showDrawer, isMini, showPinned } = storeToRefs(visibilityStore);
+const { isMini, showDrawer, showPinned } = storeToRefs(visibilityStore);
 const { overall } = storeToRefs(useStatisticsStore());
 const { logged } = storeToRefs(useSessionAuthStore());
 const toggleDrawer = visibilityStore.toggleDrawer;
 
 const { isXlAndDown } = useBreakpoint();
 const { updateTray } = useInterop();
-const { shouldShowScrollToTopButton, scrollToTop } = useCoreScroll();
+const { scrollToTop, shouldShowScrollToTopButton } = useCoreScroll();
 
 const expanded = logicAnd(showDrawer, logicNot(isXlAndDown));
 

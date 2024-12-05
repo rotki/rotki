@@ -2,6 +2,11 @@
 import { Severity } from '@rotki/common';
 import { DialogType } from '@/types/dialogs';
 import { TaskType } from '@/types/task-type';
+import { useTaskStore } from '@/store/tasks';
+import { useConfirmStore } from '@/store/confirm';
+import { useSessionStore } from '@/store/session';
+import { useMainStore } from '@/store/main';
+import { useNotificationsStore } from '@/store/notifications';
 
 withDefaults(
   defineProps<{
@@ -40,10 +45,10 @@ async function restoreAssets(resetType: ResetType) {
       showDoubleConfirmation(resetType);
 
     notify({
-      title,
+      display: true,
       message,
       severity: Severity.ERROR,
-      display: true,
+      title,
     });
   }
 }
@@ -60,11 +65,11 @@ const { show } = useConfirmStore();
 function showRestoreConfirmation(type: ResetType) {
   show(
     {
-      title: t('asset_update.restore.delete_confirmation.title'),
       message:
         type === 'soft'
           ? t('asset_update.restore.delete_confirmation.soft_reset_message')
           : t('asset_update.restore.delete_confirmation.hard_reset_message'),
+      title: t('asset_update.restore.delete_confirmation.title'),
     },
     () => restoreAssets(type),
   );
@@ -73,8 +78,8 @@ function showRestoreConfirmation(type: ResetType) {
 function showDoubleConfirmation(type: ResetType) {
   show(
     {
-      title: t('asset_update.restore.hard_restore_confirmation.title'),
       message: t('asset_update.restore.hard_restore_confirmation.message'),
+      title: t('asset_update.restore.hard_restore_confirmation.title'),
     },
     () => restoreAssets(type),
   );
@@ -83,10 +88,10 @@ function showDoubleConfirmation(type: ResetType) {
 function showDoneConfirmation() {
   show(
     {
-      title: t('asset_update.restore.success.title'),
       message: t('asset_update.restore.success.description'),
       primaryAction: t('common.actions.ok'),
       singleAction: true,
+      title: t('asset_update.restore.success.title'),
       type: DialogType.SUCCESS,
     },
     updateComplete,

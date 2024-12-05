@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { getSortItems } from '@/utils/assets';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useBalancePricesStore } from '@/store/balances/prices';
 import type { AssetBalance, BigNumber } from '@rotki/common';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 
@@ -48,38 +50,38 @@ const sorted = computed<AssetWithPrice[]>(() => {
 
 const headers = computed<DataTableColumn<AssetWithPrice>[]>(() => [
   {
-    label: t('common.asset'),
-    class: 'text-no-wrap w-full',
     cellClass: 'py-1',
+    class: 'text-no-wrap w-full',
     key: 'asset',
+    label: t('common.asset'),
     sortable: true,
   },
   {
+    align: 'end',
+    cellClass: 'py-1',
+    class: 'text-no-wrap',
+    key: 'price',
     label: t('common.price_in_symbol', {
       symbol: get(currencySymbol),
     }),
-    class: 'text-no-wrap',
-    cellClass: 'py-1',
-    align: 'end',
-    key: 'price',
     sortable: true,
   },
   {
-    label: t('common.amount'),
+    align: 'end',
+    cellClass: 'py-1',
+    class: 'text-no-wrap',
     key: 'amount',
-    class: 'text-no-wrap',
-    cellClass: 'py-1',
-    align: 'end',
+    label: t('common.amount'),
     sortable: true,
   },
   {
+    align: 'end',
+    cellClass: 'py-1',
+    class: 'text-no-wrap',
+    key: 'usdValue',
     label: t('common.value_in_symbol', {
       symbol: get(currencySymbol),
     }),
-    key: 'usdValue',
-    align: 'end',
-    class: 'text-no-wrap',
-    cellClass: 'py-1',
     sortable: true,
   },
 ]);

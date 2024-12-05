@@ -2,10 +2,10 @@
 import { NoteLocation } from '@/types/notes';
 
 definePage({
-  name: 'trades',
   meta: {
     noteLocation: NoteLocation.HISTORY_TRADES,
   },
+  name: 'trades',
 });
 </script>
 

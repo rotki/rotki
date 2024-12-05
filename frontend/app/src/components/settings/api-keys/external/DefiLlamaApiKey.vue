@@ -6,8 +6,8 @@ const name = 'defillama';
 
 const { t } = useI18n();
 
-const { loading, apiKey, actionStatus, save, confirmDelete } = useExternalApiKeys(t);
-const { serviceKeyRef, saveHandler } = useServiceKeyHandler<InstanceType<typeof ServiceKey>>();
+const { actionStatus, apiKey, confirmDelete, loading, save } = useExternalApiKeys(t);
+const { saveHandler, serviceKeyRef } = useServiceKeyHandler<InstanceType<typeof ServiceKey>>();
 
 const key = apiKey(name);
 const status = actionStatus(name);

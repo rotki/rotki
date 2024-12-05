@@ -4,7 +4,7 @@ const props = defineProps<{
   remoteVersion: number;
 }>();
 
-const { status, remoteVersion } = toRefs(props);
+const { remoteVersion, status } = toRefs(props);
 
 const { t } = useI18n();
 

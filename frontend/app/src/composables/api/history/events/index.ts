@@ -63,8 +63,8 @@ export function useHistoryEventsApi(): UseHistoryEventsApiReturn {
       `/blockchains/${type}/transactions`,
       snakeCaseTransformer(
         nonEmptyProperties({
-          asyncQuery,
           accounts,
+          asyncQuery,
         }),
       ),
       {
@@ -83,8 +83,8 @@ export function useHistoryEventsApi(): UseHistoryEventsApiReturn {
 
   const deleteTransactions = async (chain: string, txHash?: string): Promise<boolean> => {
     const response = await api.instance.delete<ActionResult<boolean>>('/blockchains/transactions', {
-      validateStatus: validStatus,
       data: chain ? snakeCaseTransformer({ chain, txHash }) : null,
+      validateStatus: validStatus,
     });
 
     return handleResponse(response);
@@ -158,7 +158,7 @@ export function useHistoryEventsApi(): UseHistoryEventsApiReturn {
 
   const deleteHistoryEvent = async (identifiers: number[], forceDelete = false): Promise<boolean> => {
     const response = await api.instance.delete<ActionResult<boolean>>('/history/events', {
-      data: snakeCaseTransformer({ identifiers, forceDelete }),
+      data: snakeCaseTransformer({ forceDelete, identifiers }),
       validateStatus: validStatus,
     });
 
@@ -244,8 +244,8 @@ export function useHistoryEventsApi(): UseHistoryEventsApiReturn {
     const response = await func(
       '/history/events/export',
       snakeCaseTransformer({
-        directoryPath,
         asyncQuery: true,
+        directoryPath,
         ...omit(filters, ['accounts']),
       }),
       {
@@ -258,33 +258,33 @@ export function useHistoryEventsApi(): UseHistoryEventsApiReturn {
 
   const downloadHistoryEventsCSV = async (filePath: string): Promise<ActionStatus> => {
     try {
-      const fullUrl = api.instance.getUri({ url: '/history/events/export/download', params: snakeCaseTransformer({ filePath }) });
+      const fullUrl = api.instance.getUri({ params: snakeCaseTransformer({ filePath }), url: '/history/events/export/download' });
 
       downloadFileByUrl(fullUrl, 'history_events.csv');
       return { success: true };
     }
     catch (error: any) {
-      return { success: false, message: error.message };
+      return { message: error.message, success: false };
     }
   };
 
   return {
-    fetchTransactionsTask,
-    deleteTransactions,
-    pullAndRecodeTransactionRequest,
-    getUndecodedTransactionsBreakdown,
-    decodeTransactions,
     addHistoryEvent,
-    editHistoryEvent,
-    deleteHistoryEvent,
-    getEventDetails,
     addTransactionHash,
-    getTransactionTypeMappings,
+    decodeTransactions,
+    deleteHistoryEvent,
+    deleteTransactions,
+    downloadHistoryEventsCSV,
+    editHistoryEvent,
+    exportHistoryEventsCSV,
+    fetchHistoryEvents,
+    fetchTransactionsTask,
+    getEventDetails,
     getHistoryEventCounterpartiesData,
     getHistoryEventProductsData,
-    fetchHistoryEvents,
+    getTransactionTypeMappings,
+    getUndecodedTransactionsBreakdown,
+    pullAndRecodeTransactionRequest,
     queryOnlineHistoryEvents,
-    exportHistoryEventsCSV,
-    downloadHistoryEventsCSV,
   };
 }

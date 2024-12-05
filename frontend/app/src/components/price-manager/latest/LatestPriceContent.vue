@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { objectOmit } from '@vueuse/core';
 import { isNft } from '@/utils/nft';
+import { useConfirmStore } from '@/store/confirm';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { ManualPriceFormPayload, ManualPriceWithUsd } from '@/types/prices';
 
@@ -16,52 +18,52 @@ const sort = ref<DataTableSortData<ManualPriceWithUsd>>([]);
 
 const headers = computed<DataTableColumn<ManualPriceWithUsd>[]>(() => [
   {
-    label: t('price_table.headers.from_asset'),
     key: 'fromAsset',
+    label: t('price_table.headers.from_asset'),
     sortable: true,
   },
   {
-    label: '',
-    key: 'isWorth',
     cellClass: '!text-xs !text-rui-text-secondary',
-  },
-  {
-    label: t('common.price'),
-    key: 'price',
-    align: 'end',
-    sortable: true,
-  },
-  {
-    label: t('price_table.headers.to_asset'),
-    key: 'toAsset',
-    sortable: true,
-  },
-  {
-    label: t('common.price_in_symbol', { symbol: get(currencySymbol) }),
-    key: 'usdPrice',
-    align: 'end',
-    sortable: true,
-  },
-  {
+    key: 'isWorth',
     label: '',
-    key: 'actions',
-    class: 'w-[3rem]',
+  },
+  {
     align: 'end',
+    key: 'price',
+    label: t('common.price'),
+    sortable: true,
+  },
+  {
+    key: 'toAsset',
+    label: t('price_table.headers.to_asset'),
+    sortable: true,
+  },
+  {
+    align: 'end',
+    key: 'usdPrice',
+    label: t('common.price_in_symbol', { symbol: get(currencySymbol) }),
+    sortable: true,
+  },
+  {
+    align: 'end',
+    class: 'w-[3rem]',
+    key: 'actions',
+    label: '',
   },
 ]);
 
 const router = useRouter();
 const route = useRoute();
-const { items, loading, refreshing, deletePrice, refreshCurrentPrices } = useLatestPrices(t, filter);
+const { deletePrice, items, loading, refreshCurrentPrices, refreshing } = useLatestPrices(t, filter);
 
-const { setPostSubmitFunc, setOpenDialog } = useLatestPriceForm();
+const { setOpenDialog, setPostSubmitFunc } = useLatestPriceForm();
 const { show } = useConfirmStore();
 
 function showDeleteConfirmation(item: ManualPriceWithUsd) {
   show(
     {
-      title: t('price_table.delete.dialog.title'),
       message: t('price_table.delete.dialog.message'),
+      title: t('price_table.delete.dialog.title'),
     },
     () => deletePrice(item),
   );

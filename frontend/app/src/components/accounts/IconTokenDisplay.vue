@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import { useSessionSettingsStore } from '@/store/settings/session';
 import type { AssetBalance } from '@rotki/common';
 import type { AssetResolutionOptions } from '@/composables/assets/retrieval';
 
@@ -9,9 +10,9 @@ const props = withDefaults(defineProps<{
   resolutionOptions?: AssetResolutionOptions;
   showChain?: boolean;
 }>(), {
-  visible: 3,
   resolutionOptions: () => ({ collectionParent: false }),
   showChain: false,
+  visible: 3,
 });
 
 const { assets, visible } = toRefs(props);

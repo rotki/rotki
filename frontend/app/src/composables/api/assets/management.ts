@@ -135,16 +135,16 @@ export function useAssetManagementApi(): UseAssetManagementApiReturn {
   };
 
   return {
+    addAsset,
+    addCustomAsset,
+    deleteAsset,
+    deleteCustomAsset,
+    editAsset,
+    editCustomAsset,
+    getAssetTypes,
+    getCustomAssetTypes,
     queryAllAssets,
     queryAllCustomAssets,
     queryOwnedAssets,
-    addAsset,
-    editAsset,
-    deleteAsset,
-    getAssetTypes,
-    getCustomAssetTypes,
-    addCustomAsset,
-    editCustomAsset,
-    deleteCustomAsset,
   };
 }

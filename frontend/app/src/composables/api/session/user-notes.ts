@@ -47,9 +47,9 @@ export function useUserNotesApi(): UseUserNotesApiReturn {
   };
 
   return {
-    fetchUserNotes,
     addUserNote,
-    updateUserNote,
     deleteUserNote,
+    fetchUserNotes,
+    updateUserNote,
   };
 }

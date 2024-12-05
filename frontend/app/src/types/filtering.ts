@@ -62,17 +62,17 @@ export type MatchedKeywordWithBehaviour<T extends string> = {
 };
 
 export const BaseSuggestion = z.object({
+  exclude: z.boolean().optional(),
   key: z.string(),
   value: AssetInfoWithId.or(z.string()).or(z.boolean()),
-  exclude: z.boolean().optional(),
 });
 
 export type BaseSuggestion = z.infer<typeof BaseSuggestion>;
 
 export const Suggestion = BaseSuggestion.extend({
+  asset: z.boolean(),
   index: z.number(),
   total: z.number(),
-  asset: z.boolean(),
 });
 
 export type Suggestion = z.infer<typeof Suggestion>;
@@ -105,11 +105,11 @@ export function assetSuggestions(assetSearch: (params: AssetSearchParams) => Pro
     }
 
     const result = await assetSearch({
-      value: keyword,
       address,
-      limit: 10,
       evmChain,
+      limit: 10,
       signal: pending.signal,
+      value: keyword,
     });
     pending = null;
     return result;

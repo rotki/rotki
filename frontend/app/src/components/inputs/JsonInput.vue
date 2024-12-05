@@ -31,7 +31,6 @@ onMounted(() => {
   assert(isDefined(jsonEditorContainer));
 
   const newJsonEditor = createJSONEditor({
-    target: get(jsonEditorContainer),
     props: {
       content: {
         json: get(modelValue),
@@ -39,6 +38,7 @@ onMounted(() => {
       navigationBar: false,
       onChange,
     },
+    target: get(jsonEditorContainer),
   });
 
   set(jsonEditor, newJsonEditor);

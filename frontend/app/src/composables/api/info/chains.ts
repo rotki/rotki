@@ -20,7 +20,7 @@ export function useSupportedChainsApi(): UseSupportedChainsApiReturn {
   };
 
   return {
-    fetchSupportedChains,
     fetchAllEvmChains,
+    fetchSupportedChains,
   };
 }

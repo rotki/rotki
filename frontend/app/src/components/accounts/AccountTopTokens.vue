@@ -2,6 +2,7 @@
 import { sortDesc } from '@/utils/bignumbers';
 import { balanceSum } from '@/utils/calculation';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
+import { useBlockchainStore } from '@/store/blockchain';
 import type { AssetBalance } from '@rotki/common';
 import type { BlockchainAccountBalance } from '@/types/blockchain/accounts';
 
@@ -21,8 +22,8 @@ const assets = computed<AssetBalance[]>(() => {
   if (row.data.type === 'xpub' && row.nativeAsset) {
     return [
       {
-        asset: row.nativeAsset,
         amount: row.amount || Zero,
+        asset: row.nativeAsset,
         usdValue: row.usdValue,
       },
     ];

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useAssetCacheStore } from '@/store/assets/asset-cache';
 import type { StyleValue } from 'vue';
 import type { NftAsset } from '@/types/nfts';
 
@@ -20,17 +21,17 @@ const props = withDefaults(
   }>(),
   {
     assetStyled: undefined,
-    opensDetails: false,
     changeable: false,
-    hideName: false,
     dense: false,
     enableAssociation: true,
-    showChain: true,
+    hideName: false,
     isCollectionParent: false,
+    opensDetails: false,
+    showChain: true,
   },
 );
 
-const { asset, opensDetails, isCollectionParent } = toRefs(props);
+const { asset, isCollectionParent, opensDetails } = toRefs(props);
 
 const symbol = computed<string>(() => get(asset).symbol ?? '');
 const name = computed<string>(() => get(asset).name ?? '');

@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { createNotification } from '@/utils/notifications';
+import { useAreaVisibilityStore } from '@/store/session/visibility';
+import { useNotificationsStore } from '@/store/notifications';
 
 const { t } = useI18n();
 

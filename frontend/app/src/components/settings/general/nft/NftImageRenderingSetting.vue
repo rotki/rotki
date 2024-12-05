@@ -2,6 +2,8 @@
 import { isEqual } from 'lodash-es';
 import { uniqueStrings } from '@/utils/data';
 import { getDomain } from '@/utils/url';
+import { useConfirmStore } from '@/store/confirm';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
 const emit = defineEmits<{ (e: 'dialog-open', value: boolean): void }>();
 
@@ -39,8 +41,8 @@ function updateRenderingSetting(value: string, update: (value: any) => void) {
 
   show(
     {
-      title: t('general_settings.nft_setting.allow_all_confirmation.title'),
       message: t('general_settings.nft_setting.allow_all_confirmation.message'),
+      title: t('general_settings.nft_setting.allow_all_confirmation.title'),
       type: 'info',
     },
     () => {

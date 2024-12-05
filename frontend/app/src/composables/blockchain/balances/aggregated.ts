@@ -1,5 +1,8 @@
 import { appendAssetBalance, mergeAssociatedAssets } from '@/utils/balances';
 import { bigNumberSum } from '@/utils/calculation';
+import { useBlockchainStore } from '@/store/blockchain';
+import { useBalancePricesStore } from '@/store/balances/prices';
+import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import type { AssetBalance, AssetBalanceWithPrice, BigNumber } from '@rotki/common';
 import type { AssetBalances } from '@/types/balances';
 import type { ComputedRef } from 'vue';
@@ -15,7 +18,7 @@ export function useBlockchainAggregatedBalances(): UseBlockchainAggregatedBalanc
   const { isAssetIgnored } = useIgnoredAssetsStore();
   const { getAssociatedAssetIdentifier } = useAssetInfoRetrieval();
   const { assetPrice } = useBalancePricesStore();
-  const { toSortedAssetBalanceWithPrice, toSortedAssetBalanceArray } = useBalanceSorting();
+  const { toSortedAssetBalanceArray, toSortedAssetBalanceWithPrice } = useBalanceSorting();
   const blockchainStore = useBlockchainStore();
   const { aggregatedTotalsWithFilter } = blockchainStore;
   const { aggregatedTotals } = storeToRefs(blockchainStore);
@@ -40,8 +43,8 @@ export function useBlockchainAggregatedBalances(): UseBlockchainAggregatedBalanc
   });
 
   return {
-    blockchainTotal,
     blockchainAssets,
+    blockchainTotal,
     locationBreakdown,
   };
 }

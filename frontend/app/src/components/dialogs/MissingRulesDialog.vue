@@ -17,20 +17,20 @@ const { t } = useI18n();
 
 const options = computed(() => [
   {
-    icon: 'restart-line',
     action: onRedecode,
+    icon: 'restart-line',
     label: t('actions.history_events.missing_rule.re_decode'),
     show: isDefined(modelValue) ? isEvmEvent(get(modelValue)) : false,
   },
   {
-    icon: 'pencil-line',
     action: onEdit,
+    icon: 'pencil-line',
     label: t('actions.history_events.missing_rule.edit'),
     show: true,
   },
   {
-    icon: 'add-line',
     action: onAddRule,
+    icon: 'add-line',
     label: t('actions.history_events.missing_rule.add_rule'),
     show: true,
   },
@@ -51,12 +51,12 @@ function onEdit(event: HistoryEventEntry) {
 }
 
 function onAddRule(event: HistoryEventEntry) {
-  const { eventType, eventSubtype } = event;
+  const { eventSubtype, eventType } = event;
 
   emit('add', {
+    counterparty: 'counterparty' in event ? event.counterparty : null,
     eventSubtype,
     eventType,
-    counterparty: 'counterparty' in event ? event.counterparty : null,
   });
   close();
 }

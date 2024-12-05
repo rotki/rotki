@@ -18,8 +18,8 @@ export const useHistoryEventProductMappings = createSharedComposable(() => {
   const historyEventProducts = useRefMap(historyEventProductsData, ({ products }) => products);
 
   return {
+    historyEventProducts,
     historyEventProductsData,
     historyEventProductsMapping,
-    historyEventProducts,
   };
 });

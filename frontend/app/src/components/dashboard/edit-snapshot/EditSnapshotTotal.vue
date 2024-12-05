@@ -4,6 +4,8 @@ import { CURRENCY_USD } from '@/types/currencies';
 import { toMessages } from '@/utils/validation';
 import { bigNumberSum } from '@/utils/calculation';
 import { isNft } from '@/utils/nft';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useHistoricCachePriceStore } from '@/store/prices/historic';
 import type { BalanceSnapshot, LocationDataSnapshot } from '@/types/snapshots';
 import type { BigNumber } from '@rotki/common';
 
@@ -20,7 +22,7 @@ const emit = defineEmits<{
 
 const { balancesSnapshot, timestamp } = toRefs(props);
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-const { historicPriceInCurrentCurrency, isPending, createKey } = useHistoricCachePriceStore();
+const { createKey, historicPriceInCurrentCurrency, isPending } = useHistoricCachePriceStore();
 
 const total = ref<string>('');
 const { t } = useI18n();
@@ -126,7 +128,7 @@ function setTotal(number?: BigNumber) {
   set(total, convertedFiatValue);
 }
 
-const { setValidation, setSubmitFunc, trySubmit } = useEditTotalSnapshotForm();
+const { setSubmitFunc, setValidation, trySubmit } = useEditTotalSnapshotForm();
 
 function save() {
   const val = props.modelValue;
@@ -156,13 +158,13 @@ const v$ = setValidation(
 );
 
 const suggestionsLabel = computed(() => ({
-  total: t('dashboard.snapshot.edit.dialog.total.use_calculated_total'),
   asset: t('dashboard.snapshot.edit.dialog.total.use_calculated_asset', {
     length: get(balancesSnapshot).length,
   }),
   location: t('dashboard.snapshot.edit.dialog.total.use_calculated_location', {
     length: props.modelValue.length,
   }),
+  total: t('dashboard.snapshot.edit.dialog.total.use_calculated_total'),
 }));
 </script>
 

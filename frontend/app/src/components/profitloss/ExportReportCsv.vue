@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { useMessageStore } from '@/store/message';
+import { useReportsStore } from '@/store/reports';
+
 withDefaults(
   defineProps<{
     list?: boolean;
@@ -18,9 +21,9 @@ const { downloadReportCSV } = useReportsApi();
 
 function showMessage(description: string) {
   setMessage({
-    title: t('profit_loss_report.csv_export_error'),
     description,
     success: false,
+    title: t('profit_loss_report.csv_export_error'),
   });
 }
 

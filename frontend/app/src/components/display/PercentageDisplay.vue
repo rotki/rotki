@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useSessionSettingsStore } from '@/store/settings/session';
+
 const props = withDefaults(
   defineProps<{
     value?: string;
@@ -6,9 +8,9 @@ const props = withDefaults(
     assetPadding?: number;
   }>(),
   {
-    value: undefined,
-    justify: 'end',
     assetPadding: 0,
+    justify: 'end',
+    value: undefined,
   },
 );
 
@@ -32,8 +34,8 @@ const assetStyle = computed<Record<string, string | undefined>>(() => {
     };
   }
   return {
-    'width': `${get(assetPadding) + 1}ch`,
     'text-align': 'start',
+    'width': `${get(assetPadding) + 1}ch`,
   };
 });
 

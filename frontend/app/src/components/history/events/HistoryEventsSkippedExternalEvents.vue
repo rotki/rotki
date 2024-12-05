@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { logger } from '@/utils/logging';
+import { useMessageStore } from '@/store/message';
 import type { DataTableColumn } from '@rotki/ui-library';
 import type { Message } from '@rotki/common';
 import type { SkippedHistoryEventsSummary } from '@/types/history/events';
@@ -11,16 +12,16 @@ interface Location {
 
 const { getSkippedEventsSummary } = useSkippedHistoryEventsApi();
 
-const { state: skippedEvents, execute: refreshSkippedEvents } = useAsyncState<SkippedHistoryEventsSummary>(
+const { execute: refreshSkippedEvents, state: skippedEvents } = useAsyncState<SkippedHistoryEventsSummary>(
   getSkippedEventsSummary,
   {
     locations: {},
     total: 0,
   },
   {
+    delay: 0,
     immediate: true,
     resetOnExecute: false,
-    delay: 0,
   },
 );
 
@@ -28,17 +29,17 @@ const { t } = useI18n();
 
 const headers: DataTableColumn<Location>[] = [
   {
-    label: t('common.location'),
-    key: 'location',
     align: 'center',
     cellClass: 'py-3',
+    key: 'location',
+    label: t('common.location'),
   },
   {
-    label: t('transactions.events.skipped.headers.number'),
-    key: 'number',
     align: 'end',
     cellClass: '!pr-12',
     class: '!pr-12',
+    key: 'number',
+    label: t('transactions.events.skipped.headers.number'),
   },
 ];
 
@@ -57,9 +58,9 @@ const { setMessage } = useMessageStore();
 
 function showExportCSVError(description: string) {
   setMessage({
-    title: t('transactions.events.skipped.csv_export_error'),
     description,
     success: false,
+    title: t('transactions.events.skipped.csv_export_error'),
   });
 }
 
@@ -68,18 +69,18 @@ async function createCsv(path: string): Promise<void> {
   try {
     const success = await exportSkippedEventsCSV(path);
     message = {
-      title: t('actions.online_events.skipped.csv_export.title'),
       description: success
         ? t('actions.online_events.skipped.csv_export.message.success')
         : t('actions.online_events.skipped.csv_export.message.failure'),
       success,
+      title: t('actions.online_events.skipped.csv_export.title'),
     };
   }
   catch (error: any) {
     message = {
-      title: t('actions.online_events.skipped.csv_export.title'),
       description: error.message,
       success: false,
+      title: t('actions.online_events.skipped.csv_export.title'),
     };
   }
   setMessage(message);
@@ -113,34 +114,34 @@ async function reProcessSkippedEvents() {
   set(loading, true);
   let message: Message;
   try {
-    const { total, successful } = await reProcessSkippedEventsCaller();
+    const { successful, total } = await reProcessSkippedEventsCaller();
     if (successful === 0) {
       message = {
-        title: t('transactions.events.skipped.reprocess.failed.title'),
         description: t('transactions.events.skipped.reprocess.failed.no_processed_events'),
         success: false,
+        title: t('transactions.events.skipped.reprocess.failed.title'),
       };
     }
     else {
       message = {
-        title: t('transactions.events.skipped.reprocess.success.title'),
         description:
           successful < total
             ? t('transactions.events.skipped.reprocess.success.some', {
-              total,
               successful,
+              total,
             })
             : t('transactions.events.skipped.reprocess.success.all'),
         success: true,
+        title: t('transactions.events.skipped.reprocess.success.title'),
       };
     }
   }
   catch (error: any) {
     logger.error(error);
     message = {
-      title: t('transactions.events.skipped.reprocess.failed.title'),
       description: error.message,
       success: false,
+      title: t('transactions.events.skipped.reprocess.failed.title'),
     };
   }
   finally {

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useSessionAuthStore } from '@/store/session/auth';
+
 const emit = defineEmits<{ (e: 'proceed', approval: 'yes' | 'no'): void }>();
 
 const { t } = useI18n();
@@ -11,8 +13,8 @@ const lastModified = useRefMap(syncConflict, (conflict) => {
 
   const { localLastModified, remoteLastModified } = conflict.payload;
   return {
-    remote: remoteLastModified,
     local: localLastModified,
+    remote: remoteLastModified,
   };
 });
 </script>

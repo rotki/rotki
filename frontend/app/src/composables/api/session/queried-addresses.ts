@@ -36,8 +36,8 @@ export function useQueriedAddressApi(): UseQueriedAddressApiReturn {
   };
 
   return {
-    queriedAddresses,
     addQueriedAddress,
     deleteQueriedAddress,
+    queriedAddresses,
   };
 }

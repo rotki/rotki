@@ -55,7 +55,7 @@ watch(suggested, (value) => {
   }
   else {
     set(lastSuggestion, null);
-    emit('suggest', { key: '', index: 0, total: 0 } as Suggestion);
+    emit('suggest', { index: 0, key: '', total: 0 } as Suggestion);
   }
 });
 
@@ -75,9 +75,9 @@ watch([keyword, selectedMatcher], async ([keyword, selectedMatcher]) => {
   if ('string' in selectedMatcher) {
     exclude = !!selectedMatcher.allowExclusion && !!search.exclude;
     suggestedItems = selectedMatcher.suggestions().map(item => ({
+      exclude,
       key: suggestedFilter,
       value: item,
-      exclude,
     }));
   }
   else if ('asset' in selectedMatcher) {
@@ -87,9 +87,9 @@ watch([keyword, selectedMatcher], async ([keyword, selectedMatcher]) => {
         const suggestions = await selectedMatcher.suggestions(searchString);
         if (suggestions) {
           suggestedItems = suggestions.map(asset => ({
+            exclude,
             key: suggestedFilter,
             value: asset,
-            exclude,
           }));
         }
       }
@@ -102,9 +102,9 @@ watch([keyword, selectedMatcher], async ([keyword, selectedMatcher]) => {
   else if ('boolean' in selectedMatcher) {
     suggestedItems = [
       {
+        exclude: false,
         key: suggestedFilter,
         value: true,
-        exclude: false,
       },
     ];
   }
@@ -119,12 +119,12 @@ watch([keyword, selectedMatcher], async ([keyword, selectedMatcher]) => {
     .sort((a, b) => compareTextByKeyword(getItemText(a), getItemText(b), searchString))
     .slice(0, asset ? 10 : 5)
     .map((a, index) => ({
+      asset: typeof a.value !== 'string',
+      exclude,
       index,
       key: a.key,
-      value: a.value,
-      asset: typeof a.value !== 'string',
       total: suggestedItems.length,
-      exclude,
+      value: a.value,
     })));
 }, { immediate: true });
 

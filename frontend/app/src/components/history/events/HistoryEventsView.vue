@@ -9,6 +9,13 @@ import { TaskType } from '@/types/task-type';
 import { isEvmEvent, isEvmEventType, isOnlineHistoryEventType } from '@/utils/history/events';
 import { toEvmChainAndTxHash } from '@/utils/history';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
+import { useEventsQueryStatusStore } from '@/store/history/query-status/events-query-status';
+import { useStatusStore } from '@/store/status';
+import { useTxQueryStatusStore } from '@/store/history/query-status/tx-query-status';
+import { useBlockchainStore } from '@/store/blockchain';
+import { useHistoryStore } from '@/store/history';
+import { useConfirmStore } from '@/store/confirm';
+import { useTaskStore } from '@/store/tasks';
 import type {
   HistoryEvent,
   HistoryEventEntry,
@@ -34,18 +41,18 @@ const props = withDefaults(defineProps<{
   mainPage?: boolean;
   onlyChains?: Blockchain[];
 }>(), {
-  location: undefined,
-  protocols: () => [],
-  eventTypes: () => [],
-  eventSubTypes: () => [],
   entryTypes: undefined,
-  period: undefined,
-  validators: undefined,
+  eventSubTypes: () => [],
+  eventTypes: () => [],
   externalAccountFilter: () => [],
-  useExternalAccountFilter: undefined,
-  sectionTitle: '',
+  location: undefined,
   mainPage: false,
   onlyChains: () => [],
+  period: undefined,
+  protocols: () => [],
+  sectionTitle: '',
+  useExternalAccountFilter: undefined,
+  validators: undefined,
 });
 
 const { t } = useI18n();
@@ -53,18 +60,18 @@ const router = useRouter();
 const route = useRoute();
 
 const {
-  location,
-  protocols,
   entryTypes,
-  period,
-  validators,
-  useExternalAccountFilter,
-  externalAccountFilter,
-  sectionTitle,
-  eventTypes,
   eventSubTypes,
+  eventTypes,
+  externalAccountFilter,
+  location,
   mainPage,
   onlyChains,
+  period,
+  protocols,
+  sectionTitle,
+  useExternalAccountFilter,
+  validators,
 } = toRefs(props);
 
 const nextSequence = ref<string>();
@@ -93,7 +100,7 @@ const { isLoading: isSectionLoading } = useStatusStore();
 const { fetchHistoryEvents } = useHistoryEvents();
 
 const { refreshTransactions } = useHistoryTransactions();
-const { pullAndRedecodeTransactions, fetchUndecodedTransactionsStatus, redecodeTransactions } = useHistoryTransactionDecoding();
+const { fetchUndecodedTransactionsStatus, pullAndRedecodeTransactions, redecodeTransactions } = useHistoryTransactionDecoding();
 const historyEventMappings = useHistoryEventMappings();
 
 const sectionLoading = isSectionLoading(Section.HISTORY_EVENT);
@@ -137,46 +144,23 @@ const identifiers = computed<string[] | undefined>(() => {
 const { editableItem } = useCommonTableProps<HistoryEventEntry>();
 
 const {
-  isLoading: groupLoading,
-  userAction,
-  state: groups,
-  filters,
-  matchers,
-  setPage,
-  updateFilter,
   fetchData,
+  filters,
+  isLoading: groupLoading,
+  matchers,
   pageParams,
   pagination,
+  setPage,
   sort,
+  state: groups,
+  updateFilter,
+  userAction,
 } = usePaginationFilters<
   HistoryEventEntry,
   HistoryEventRequestPayload,
   Filters,
   Matcher
 >(fetchHistoryEvents, {
-  history: get(mainPage) ? 'router' : false,
-  filterSchema: () => useHistoryEventFilter({
-    protocols: get(protocols).length > 0,
-    locations: !!get(location),
-    period: !!get(period),
-    validators: !!get(validators),
-    eventTypes: get(eventTypes).length > 0,
-    eventSubtypes: get(eventSubTypes).length > 0,
-  }, entryTypes),
-  onUpdateFilters(query) {
-    const parsedAccounts = RouterAccountsSchema.parse(query);
-    const accountsParsed = parsedAccounts.accounts;
-    if (!accountsParsed || accountsParsed.length === 0)
-      set(accounts, []);
-    else
-      set(accounts, accountsParsed.map(({ address, chain }) => getAccountByAddress(address, chain)));
-  },
-  extraParams: computed(() => ({
-    accounts: get(usedAccounts).map(account => `${account.address}#${account.chain}`),
-    customizedEventsOnly: get(toggles, 'customizedEventsOnly'),
-    excludeIgnoredAssets: !get(toggles, 'showIgnoredAssets'),
-    identifiers: get(identifiers),
-  })),
   defaultParams: computed(() => {
     if (isDefined(entryTypes)) {
       return {
@@ -187,11 +171,34 @@ const {
     }
     return {};
   }),
+  extraParams: computed(() => ({
+    accounts: get(usedAccounts).map(account => `${account.address}#${account.chain}`),
+    customizedEventsOnly: get(toggles, 'customizedEventsOnly'),
+    excludeIgnoredAssets: !get(toggles, 'showIgnoredAssets'),
+    identifiers: get(identifiers),
+  })),
+  filterSchema: () => useHistoryEventFilter({
+    eventSubtypes: get(eventSubTypes).length > 0,
+    eventTypes: get(eventTypes).length > 0,
+    locations: !!get(location),
+    period: !!get(period),
+    protocols: get(protocols).length > 0,
+    validators: !!get(validators),
+  }, entryTypes),
+  history: get(mainPage) ? 'router' : false,
+  onUpdateFilters(query) {
+    const parsedAccounts = RouterAccountsSchema.parse(query);
+    const accountsParsed = parsedAccounts.accounts;
+    if (!accountsParsed || accountsParsed.length === 0)
+      set(accounts, []);
+    else
+      set(accounts, accountsParsed.map(({ address, chain }) => getAccountByAddress(address, chain)));
+  },
   requestParams: computed<Partial<HistoryEventRequestPayload>>(() => {
     const params: Writeable<Partial<HistoryEventRequestPayload>> = {
       counterparties: get(protocols),
-      eventTypes: get(eventTypes),
       eventSubtypes: get(eventSubTypes),
+      eventTypes: get(eventTypes),
       groupByEventIds: true,
     };
 
@@ -243,8 +250,8 @@ function onFilterAccountsChanged(acc: BlockchainAccount<AddressData>[]): void {
 function redecodeAllEvents(): void {
   set(decodingStatusDialogPersistent, true);
   show({
-    title: t('transactions.events_decoding.redecode_all'),
     message: t('transactions.events_decoding.confirmation'),
+    title: t('transactions.events_decoding.redecode_all'),
   }, () => redecodeAllEventsHandler(), () => {
     set(decodingStatusDialogPersistent, false);
   });
@@ -273,9 +280,9 @@ setPostSubmitFunc(() => {
 function showForm(payload: ShowEventHistoryForm): void {
   if (payload.type === 'event') {
     const {
+      event,
       group,
       nextSequenceId,
-      event,
     } = payload.data;
 
     set(selectedGroup, group);
@@ -290,7 +297,7 @@ function showForm(payload: ShowEventHistoryForm): void {
   }
 }
 
-const { pause, resume, isActive } = useIntervalFn(() => {
+const { isActive, pause, resume } = useIntervalFn(() => {
   startPromise(fetchDataAndLocations());
 }, 20000);
 
@@ -305,7 +312,7 @@ function editMissingRulesEntry(event: HistoryEventEntry): void {
   const group = get(selectedGroup);
 
   startPromise(nextTick(() => {
-    showForm({ type: 'event', data: { event, group } });
+    showForm({ data: { event, group }, type: 'event' });
   }));
 }
 

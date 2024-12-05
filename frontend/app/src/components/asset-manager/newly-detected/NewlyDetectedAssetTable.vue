@@ -2,6 +2,7 @@
 import { Blockchain } from '@rotki/common';
 import { uniqueStrings } from '@/utils/data';
 import { arrayify } from '@/utils/array';
+import { useAssetCacheStore } from '@/store/assets/asset-cache';
 import type { NewDetectedToken } from '@/types/websocket-messages';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 
@@ -15,7 +16,7 @@ const { t } = useI18n();
 const selected = ref<string[]>([]);
 const sort = ref<DataTableSortData<NewDetectedToken>>();
 
-const { tokens, removeNewDetectedTokens } = useNewlyDetectedTokens();
+const { removeNewDetectedTokens, tokens } = useNewlyDetectedTokens();
 const { cache } = storeToRefs(useAssetCacheStore());
 const { getChain } = useSupportedChains();
 const { markAssetsAsSpam } = useSpamAsset();
@@ -33,31 +34,31 @@ const rows = computed<Token[]>(() => get(tokens).map((data) => {
 
 const cols = computed<DataTableColumn<Token>[]>(() => [
   {
-    label: t('common.asset'),
+    cellClass: 'py-0',
+    class: 'py-0',
     key: 'tokenIdentifier',
+    label: t('common.asset'),
     sortable: true,
-    cellClass: 'py-0',
-    class: 'py-0',
   },
   {
-    label: t('common.address'),
+    cellClass: 'py-0',
+    class: 'py-0',
     key: 'address',
+    label: t('common.address'),
     sortable: true,
-    cellClass: 'py-0',
-    class: 'py-0',
   },
   {
-    label: t('asset_table.newly_detected.seen_during'),
+    cellClass: 'py-0',
+    class: 'py-0',
     key: 'description',
-    cellClass: 'py-0',
-    class: 'py-0',
+    label: t('asset_table.newly_detected.seen_during'),
   },
   {
-    label: t('common.actions_text'),
-    key: 'actions',
     align: 'center',
     cellClass: 'py-0',
     class: 'py-0',
+    key: 'actions',
+    label: t('common.actions_text'),
   },
 ]);
 

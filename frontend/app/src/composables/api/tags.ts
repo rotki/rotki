@@ -52,9 +52,9 @@ export function useTagsApi(): UseTagsApiReturn {
   };
 
   return {
-    queryTags,
     queryAddTag,
-    queryEditTag,
     queryDeleteTag,
+    queryEditTag,
+    queryTags,
   };
 }

@@ -16,6 +16,11 @@ import { logger } from '@/utils/logging';
 import { appendAssetBalance } from '@/utils/balances';
 import { sortDesc } from '@/utils/bignumbers';
 import { BalanceSource } from '@/types/settings/frontend-settings';
+import { useTaskStore } from '@/store/tasks';
+import { useMessageStore } from '@/store/message';
+import { useNotificationsStore } from '@/store/notifications';
+import { useBalancePricesStore } from '@/store/balances/prices';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 import type { BigNumber } from '@rotki/common';
 import type { MaybeRef } from '@vueuse/core';
 import type { AssetPrices } from '@/types/prices';
@@ -31,8 +36,8 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
   const { notify } = useNotificationsStore();
   const { setMessage } = useMessageStore();
   const { awaitTask } = useTaskStore();
-  const { exchangeRate, assetPrice, isAssetPriceInCurrentCurrency } = useBalancePricesStore();
-  const { queryManualBalances, addManualBalances, editManualBalances, deleteManualBalances } = useManualBalancesApi();
+  const { assetPrice, exchangeRate, isAssetPriceInCurrentCurrency } = useBalancePricesStore();
+  const { addManualBalances, deleteManualBalances, editManualBalances, queryManualBalances } = useManualBalancesApi();
   const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
   const { getAssociatedAssetIdentifier } = useAssetInfoRetrieval();
 
@@ -106,10 +111,10 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
 
       breakdown.push({
         address: '',
-        location: balance.location,
         amount: balance.amount,
-        usdValue: balance.usdValue,
+        location: balance.location,
         tags: balance.tags ?? undefined,
+        usdValue: balance.usdValue,
       });
     }
     return breakdown;
@@ -130,7 +135,7 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
     return assets;
   });
 
-  const { getStatus, setStatus, resetStatus, fetchDisabled } = useStatusUpdater(Section.MANUAL_BALANCES);
+  const { fetchDisabled, getStatus, resetStatus, setStatus } = useStatusUpdater(Section.MANUAL_BALANCES);
   const usdValueThreshold = useUsdValueThreshold(BalanceSource.MANUAL);
 
   const fetchManualBalances = async (userInitiated = false): Promise<void> => {
@@ -160,11 +165,11 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
       if (!isTaskCancelled(error)) {
         logger.error(error);
         notify({
-          title: t('actions.balances.manual_balances.error.title'),
+          display: true,
           message: t('actions.balances.manual_balances.error.message', {
             message: error.message,
           }),
-          display: true,
+          title: t('actions.balances.manual_balances.error.title'),
         });
       }
       resetStatus();
@@ -193,8 +198,8 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
         messages = error.getValidationErrors(balance);
 
       return {
-        success: false,
         message: messages,
+        success: false,
       };
     }
   };
@@ -221,8 +226,8 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
         message = error.getValidationErrors(balance);
 
       return {
-        success: false,
         message,
+        success: false,
       };
     }
   };
@@ -237,8 +242,8 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
     }
     catch (error: any) {
       setMessage({
-        title: t('actions.balances.manual_delete.error.title'),
         description: error.message,
+        title: t('actions.balances.manual_delete.error.title'),
       });
     }
   };
@@ -294,22 +299,22 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
     Promise.resolve(sortAndFilterManualBalance(get(manualBalances), get(payload), resolvers));
 
   return {
-    manualBalancesData,
-    manualBalances,
-    manualLiabilities,
-    manualLabels,
-    manualBalanceByLocation,
-    assetBreakdown,
-    liabilityBreakdown,
-    getLocationBreakdown,
-    fetchManualBalances,
     addManualBalance,
-    editManualBalance,
+    assetBreakdown,
     deleteManualBalance,
-    updatePrices,
-    fetchLiabilities,
+    editManualBalance,
     fetchBalances,
+    fetchLiabilities,
+    fetchManualBalances,
+    getLocationBreakdown,
+    liabilityBreakdown,
+    manualBalanceByLocation,
+    manualBalances,
+    manualBalancesData,
+    manualLabels,
+    manualLiabilities,
     save,
+    updatePrices,
   };
 });
 

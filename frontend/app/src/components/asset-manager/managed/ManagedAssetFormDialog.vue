@@ -8,15 +8,15 @@ const props = withDefaults(
     editableItem?: SupportedAsset | null;
   }>(),
   {
-    subtitle: '',
     editableItem: null,
+    subtitle: '',
   },
 );
 
 const { editableItem } = toRefs(props);
 const { t } = useI18n();
 
-const { openDialog, submitting, closeDialog, trySubmit, stateUpdated } = useManagedAssetForm();
+const { closeDialog, openDialog, stateUpdated, submitting, trySubmit } = useManagedAssetForm();
 </script>
 
 <template>

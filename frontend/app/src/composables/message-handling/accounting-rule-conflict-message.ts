@@ -8,20 +8,20 @@ export function useAccountingRuleConflictMessageHandler(t: ReturnType<typeof use
     const { numOfConflicts } = data;
 
     return {
-      title: t('notification_messages.accounting_rule_conflict.title'),
-      message: t('notification_messages.accounting_rule_conflict.message', { conflicts: numOfConflicts }),
-      display: true,
-      severity: Severity.WARNING,
-      priority: Priority.ACTION,
       action: {
-        label: t('notification_messages.accounting_rule_conflict.action'),
         action: async (): Promise<void> => {
           await router.push({
             path: '/settings/accounting',
             query: { resolveConflicts: 'true' },
           });
         },
+        label: t('notification_messages.accounting_rule_conflict.action'),
       },
+      display: true,
+      message: t('notification_messages.accounting_rule_conflict.message', { conflicts: numOfConflicts }),
+      priority: Priority.ACTION,
+      severity: Severity.WARNING,
+      title: t('notification_messages.accounting_rule_conflict.title'),
     };
   };
 

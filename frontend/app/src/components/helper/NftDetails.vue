@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { uniqueStrings } from '@/utils/data';
 import { getDomain } from '@/utils/url';
+import { useAssetCacheStore } from '@/store/assets/asset-cache';
+import { useConfirmStore } from '@/store/confirm';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import type { StyleValue } from 'vue';
 
 const props = withDefaults(
@@ -10,8 +13,8 @@ const props = withDefaults(
     size?: string;
   }>(),
   {
-    styled: undefined,
     size: '50px',
+    styled: undefined,
   },
 );
 
@@ -29,7 +32,7 @@ const { t } = useI18n();
 
 const imageUrlSource = computed<string | null>(() => get(balanceData)?.imageUrl || null);
 
-const { shouldRender, isVideo, renderedMedia } = useNftImage(imageUrlSource);
+const { isVideo, renderedMedia, shouldRender } = useNftImage(imageUrlSource);
 
 const domain = computed<string | null>(() => getDomain(get(imageUrlSource) || ''));
 
@@ -38,7 +41,6 @@ const { show } = useConfirmStore();
 function showAllowDomainConfirmation() {
   show(
     {
-      title: t('general_settings.nft_setting.update_whitelist_confirmation.title'),
       message: t(
         'general_settings.nft_setting.update_whitelist_confirmation.message',
         {
@@ -46,6 +48,7 @@ function showAllowDomainConfirmation() {
         },
         2,
       ),
+      title: t('general_settings.nft_setting.update_whitelist_confirmation.title'),
     },
     allowDomain,
   );

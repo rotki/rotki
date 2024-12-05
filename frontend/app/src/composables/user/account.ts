@@ -1,5 +1,9 @@
 import { wait } from '@shared/utils';
 import { setLastLogin } from '@/utils/account-management';
+import { useMainStore } from '@/store/main';
+import { useSessionAuthStore } from '@/store/session/auth';
+import { useWebsocketStore } from '@/store/websocket';
+import { useSessionStore } from '@/store/session';
 import type { CreateAccountPayload, LoginCredentials } from '@/types/login';
 import type { Ref } from 'vue';
 
@@ -10,7 +14,7 @@ interface UseAccountManagementReturn {
   error: Ref<string>;
   errors: Ref<string[]>;
   createNewAccount: (payload: CreateAccountPayload) => Promise<void>;
-  userLogin: ({ username, password, syncApproval, resumeFromBackup }: LoginCredentials) => Promise<void>;
+  userLogin: ({ password, resumeFromBackup, syncApproval, username }: LoginCredentials) => Promise<void>;
 }
 
 export function useAccountManagement(): UseAccountManagementReturn {
@@ -26,7 +30,7 @@ export function useAccountManagement(): UseAccountManagementReturn {
   const { createAccount, login } = sessionStore;
   const { connect } = useWebsocketStore();
   const authStore = useSessionAuthStore();
-  const { logged, canRequestData, upgradeVisible } = storeToRefs(authStore);
+  const { canRequestData, logged, upgradeVisible } = storeToRefs(authStore);
   const { clearUpgradeMessages } = authStore;
   const { isDevelop } = storeToRefs(useMainStore());
   const loggedUserIdentifier = useLoggedUserIdentifier();
@@ -61,17 +65,17 @@ export function useAccountManagement(): UseAccountManagementReturn {
     set(loading, false);
   };
 
-  const userLogin = async ({ username, password, syncApproval, resumeFromBackup }: LoginCredentials): Promise<void> => {
+  const userLogin = async ({ password, resumeFromBackup, syncApproval, username }: LoginCredentials): Promise<void> => {
     set(loading, true);
     const userIdentifier = `${username}${get(isDevelop) ? '.dev' : ''}`;
     set(loggedUserIdentifier, userIdentifier);
     await connect();
 
     const result = await login({
-      username,
       password,
-      syncApproval: syncApproval || 'unknown',
       resumeFromBackup: resumeFromBackup || false,
+      syncApproval: syncApproval || 'unknown',
+      username,
     });
 
     if (!result.success && result.message)
@@ -87,10 +91,10 @@ export function useAccountManagement(): UseAccountManagementReturn {
   };
 
   return {
-    loading,
+    createNewAccount,
     error,
     errors,
-    createNewAccount,
+    loading,
     userLogin,
   };
 }
@@ -104,7 +108,7 @@ export function useAutoLogin(): UseAutoLoginReturn {
   const { checkForAssetUpdate } = storeToRefs(sessionStore);
   const { login } = sessionStore;
   const { connected } = storeToRefs(useMainStore());
-  const { logged, canRequestData } = storeToRefs(useSessionAuthStore());
+  const { canRequestData, logged } = storeToRefs(useSessionAuthStore());
   const { resetSessionBackend } = useBackendManagement();
   const { showGetPremiumButton } = usePremiumReminder();
 
@@ -116,7 +120,7 @@ export function useAutoLogin(): UseAutoLoginReturn {
 
     set(autolog, true);
 
-    await login({ username: '', password: '' });
+    await login({ password: '', username: '' });
 
     if (get(logged)) {
       showGetPremiumButton();

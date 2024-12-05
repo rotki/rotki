@@ -5,25 +5,25 @@ export const AIRDROP_POAP = 'poap';
 
 const PoapDeliveryDetails = z.object({
   assets: z.array(z.number()),
+  event: z.string(),
   link: z.string(),
   name: z.string(),
-  event: z.string(),
 });
 
 export type PoapDeliveryDetails = z.infer<typeof PoapDeliveryDetails>;
 
 const Airdrop = z.object({
   address: z.string(),
-  source: z.string(),
   amount: NumericString.optional(),
-  link: z.string().optional(),
   asset: z.string().optional(),
   claimed: z.boolean().optional(),
-  details: z.array(PoapDeliveryDetails).optional(),
   cutoffTime: z.number().optional(),
+  details: z.array(PoapDeliveryDetails).optional(),
   hasDecoder: z.boolean().optional(),
   icon: z.string().optional(),
   iconUrl: z.string().optional(),
+  link: z.string().optional(),
+  source: z.string(),
 });
 
 export type Airdrop = z.infer<typeof Airdrop>;
@@ -34,9 +34,9 @@ const AirdropDetail = z.object({
   claimed: z.boolean(),
   cutoffTime: z.number().optional(),
   hasDecoder: z.boolean().optional(),
-  link: z.string(),
   icon: z.string().optional(),
   iconUrl: z.string().optional(),
+  link: z.string(),
 });
 
 const PoapDelivery = PoapDeliveryDetails.extend({

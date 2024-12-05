@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useBlockchainStore } from '@/store/blockchain';
+
 const props = defineProps<{
   chain: string;
   address: string;

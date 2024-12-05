@@ -5,6 +5,10 @@ import { toMessages } from '@/utils/validation';
 import { CURRENCY_USD } from '@/types/currencies';
 import { TaskType } from '@/types/task-type';
 import { bigNumberifyFromRef } from '@/utils/bignumbers';
+import { useTaskStore } from '@/store/tasks';
+import { useBalancePricesStore } from '@/store/balances/prices';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useHistoricCachePriceStore } from '@/store/prices/historic';
 import type { BigNumber } from '@rotki/common';
 import type { HistoricalPriceFormPayload } from '@/types/prices';
 
@@ -12,7 +16,7 @@ const amount = defineModel<string>('amount', { required: true });
 
 const usdValue = defineModel<string>('usdValue', { required: true });
 
-const asset = defineModel<string>('asset', { required: false, default: '' });
+const asset = defineModel<string>('asset', { default: '', required: false });
 
 const props = withDefaults(
   defineProps<{
@@ -26,7 +30,7 @@ const props = withDefaults(
   },
 );
 
-const { timestamp, disableAsset } = toRefs(props);
+const { disableAsset, timestamp } = toRefs(props);
 
 const { t } = useI18n();
 
@@ -56,11 +60,11 @@ const numericAmount = bigNumberifyFromRef(amount);
 const numericUsdValue = bigNumberifyFromRef(usdValue);
 
 const rules = {
-  asset: {
-    required: helpers.withMessage(t('dashboard.snapshot.edit.dialog.balances.rules.asset'), required),
-  },
   amount: {
     required: helpers.withMessage(t('dashboard.snapshot.edit.dialog.balances.rules.amount'), required),
+  },
+  asset: {
+    required: helpers.withMessage(t('dashboard.snapshot.edit.dialog.balances.rules.asset'), required),
   },
   usdValue: {
     required: helpers.withMessage(t('dashboard.snapshot.edit.dialog.balances.rules.value'), required),
@@ -70,8 +74,8 @@ const rules = {
 const v$ = useVuelidate(
   rules,
   {
-    asset,
     amount,
+    asset,
     usdValue,
   },
   {
@@ -115,8 +119,8 @@ async function fetchHistoricPrices() {
   }
   else {
     const price: BigNumber = await getHistoricPrice({
-      timestamp: timestampVal,
       fromAsset: assetVal,
+      timestamp: timestampVal,
       toAsset: CURRENCY_USD,
     });
 
@@ -133,8 +137,8 @@ async function fetchHistoricPrices() {
     }
 
     const price = await getHistoricPrice({
-      timestamp: timestampVal,
       fromAsset: assetVal,
+      timestamp: timestampVal,
       toAsset: currentCurrency,
     });
 
@@ -154,18 +158,18 @@ async function submitPrice(): Promise<void> {
     if (get(assetToUsdPrice) !== get(fetchedAssetToUsdPrice)) {
       await savePrice({
         fromAsset: assetVal,
-        toAsset: CURRENCY_USD,
-        timestamp: timestampVal,
         price: get(assetToUsdPrice),
+        timestamp: timestampVal,
+        toAsset: CURRENCY_USD,
       });
     }
   }
   else if (get(assetToFiatPrice) !== get(fetchedAssetToFiatPrice)) {
     await savePrice({
       fromAsset: assetVal,
-      toAsset: get(currencySymbol),
-      timestamp: timestampVal,
       price: get(assetToFiatPrice),
+      timestamp: timestampVal,
+      toAsset: get(currencySymbol),
     });
   }
 }
@@ -224,8 +228,8 @@ watchImmediate(amount, () => {
 });
 
 defineExpose({
-  submitPrice,
   reset,
+  submitPrice,
 });
 </script>
 

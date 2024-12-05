@@ -5,6 +5,8 @@ import { externalLinks } from '@shared/external-links';
 import { toMessages } from '@/utils/validation';
 import { deleteBackendUrl, getBackendUrl, saveBackendUrl } from '@/utils/account-management';
 import { compareTextByKeyword } from '@/utils/assets';
+import { useSessionAuthStore } from '@/store/session/auth';
+import { useSessionStore } from '@/store/session';
 import type { LoginCredentials, SyncApproval } from '@/types/login';
 
 const props = withDefaults(
@@ -33,7 +35,7 @@ const { errors, isDocker } = toRefs(props);
 const usersApi = useUsersApi();
 const authStore = useSessionAuthStore();
 const { conflictExist } = storeToRefs(authStore);
-const { resetSyncConflict, resetIncompleteUpgradeConflict } = authStore;
+const { resetIncompleteUpgradeConflict, resetSyncConflict } = authStore;
 
 const touched = () => emit('touched');
 const newAccount = () => emit('new-account');
@@ -58,34 +60,34 @@ const passwordRef: Ref = ref();
 const savedRememberUsername = useLocalStorage('rotki.remember_username', null);
 const savedRememberPassword = useLocalStorage('rotki.remember_password', null);
 const savedUsername = useLocalStorage('rotki.username', '');
-const { welcomeMessage, activeWelcomeMessages } = useDynamicMessages();
+const { activeWelcomeMessages, welcomeMessage } = useDynamicMessages();
 
 const rules = {
-  username: {
-    required: helpers.withMessage(t('login.validation.non_empty_username'), required),
-    isValidUsername: helpers.withMessage(
-      t('login.validation.valid_username'),
-      (v: string): boolean => !!(v && /^[\w.-]+$/.test(v)),
-    ),
-  },
-  password: {
-    required: helpers.withMessage(t('login.validation.non_empty_password'), required),
-  },
   customBackendUrl: {
-    required: helpers.withMessage(t('login.custom_backend.validation.non_empty'), requiredIf(customBackendDisplay)),
     isValidUrl: helpers.withMessage(
       t('login.custom_backend.validation.url'),
       (v: string): boolean => !get(customBackendDisplay) || (v.length < 300 && isValidUrl(v)),
     ),
+    required: helpers.withMessage(t('login.custom_backend.validation.non_empty'), requiredIf(customBackendDisplay)),
+  },
+  password: {
+    required: helpers.withMessage(t('login.validation.non_empty_password'), required),
+  },
+  username: {
+    isValidUsername: helpers.withMessage(
+      t('login.validation.valid_username'),
+      (v: string): boolean => !!(v && /^[\w.-]+$/.test(v)),
+    ),
+    required: helpers.withMessage(t('login.validation.non_empty_username'), required),
   },
 };
 
 const v$ = useVuelidate(
   rules,
   {
-    username,
-    password,
     customBackendUrl,
+    password,
+    username,
   },
   {
     $autoDirty: true,
@@ -171,8 +173,8 @@ function updateFocus() {
 
 function saveCustomBackend() {
   saveBackendUrl({
-    url: get(customBackendUrl),
     sessionOnly: get(customBackendSessionOnly),
+    url: get(customBackendUrl),
   });
   backendChanged(get(customBackendUrl));
   set(customBackendSaved, true);
@@ -260,8 +262,8 @@ watch(rememberPassword, async (remember: boolean, previous: boolean) => {
 
 async function login(actions?: { syncApproval?: SyncApproval; resumeFromBackup?: boolean }) {
   const credentials: LoginCredentials = {
-    username: get(username),
     password: get(password),
+    username: get(username),
     ...actions,
   };
   emit('login', credentials);

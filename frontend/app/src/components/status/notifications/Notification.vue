@@ -82,13 +82,13 @@ const circleBgClass = computed(() => {
 const date = computed(() => dayjs(get(notification).date).format('LLL'));
 
 async function copy() {
-  const { message, i18nParam } = get(notification);
+  const { i18nParam, message } = get(notification);
   let messageText = message;
 
   if (i18nParam) {
     messageText = t(i18nParam.message, {
-      service: i18nParam.props.service,
       location: i18nParam.props.location,
+      service: i18nParam.props.service,
       url: i18nParam.props.url,
     });
   }

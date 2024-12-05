@@ -7,6 +7,15 @@ import { type DefiAccount, ProtocolVersion } from '@/types/defi';
 import { Purgeable } from '@/types/session/purge';
 import { isTaskCancelled } from '@/utils';
 import { logger } from '@/utils/logging';
+import { useNotificationsStore } from '@/store/notifications';
+import { useTaskStore } from '@/store/tasks';
+import { useSushiswapStore } from '@/store/defi/sushiswap';
+import { useUniswapStore } from '@/store/defi/uniswap';
+import { useMakerDaoStore } from '@/store/defi/makerdao';
+import { useCompoundStore } from '@/store/defi/compound';
+import { useAaveStore } from '@/store/defi/aave';
+import { useYearnStore } from '@/store/defi/yearn';
+import { useLiquityStore } from '@/store/defi/liquity';
 import type { TaskMeta } from '@/types/task';
 
 type ResetStateParams = Module | typeof Purgeable.DEFI_MODULES | typeof Purgeable.DECENTRALIZED_EXCHANGES;
@@ -43,9 +52,9 @@ export const useDefiStore = defineStore('defi', () => {
     const addresses: {
       [key in DefiProtocols]: string[];
     } = {
-      [DefiProtocol.MAKERDAO_DSR]: [],
       [DefiProtocol.AAVE]: [],
       [DefiProtocol.COMPOUND]: [],
+      [DefiProtocol.MAKERDAO_DSR]: [],
       [DefiProtocol.YEARN_VAULTS]: [],
       [DefiProtocol.YEARN_VAULTS_V2]: [],
     };
@@ -77,13 +86,13 @@ export const useDefiStore = defineStore('defi', () => {
         }
         else {
           accounts[address] = {
-            data: {
-              type: 'address',
-              address,
-            },
             chain: Blockchain.ETH,
-            protocols: [selectedProtocol],
+            data: {
+              address,
+              type: 'address',
+            },
             nativeAsset: Blockchain.ETH.toUpperCase(),
+            protocols: [selectedProtocol],
           };
         }
       }
@@ -92,7 +101,7 @@ export const useDefiStore = defineStore('defi', () => {
     return Object.values(accounts);
   });
 
-  const { setStatus, fetchDisabled } = useStatusUpdater(Section.DEFI_BALANCES);
+  const { fetchDisabled, setStatus } = useStatusUpdater(Section.DEFI_BALANCES);
 
   const fetchDefiBalances = async (refresh: boolean): Promise<void> => {
     if (fetchDisabled(refresh))
@@ -115,9 +124,9 @@ export const useDefiStore = defineStore('defi', () => {
           error: error.message,
         });
         notify({
-          title,
-          message,
           display: true,
+          message,
+          title,
         });
       }
     }
@@ -155,15 +164,15 @@ export const useDefiStore = defineStore('defi', () => {
   }
 
   const modules: Record<string, () => void> = {
-    [Module.MAKERDAO_DSR]: () => makerDaoStore.reset(Module.MAKERDAO_DSR),
-    [Module.MAKERDAO_VAULTS]: () => makerDaoStore.reset(Module.MAKERDAO_VAULTS),
     [Module.AAVE]: () => aaveStore.reset(),
     [Module.COMPOUND]: () => compoundStore.reset(),
+    [Module.LIQUITY]: () => liquityStore.reset(),
+    [Module.MAKERDAO_DSR]: () => makerDaoStore.reset(Module.MAKERDAO_DSR),
+    [Module.MAKERDAO_VAULTS]: () => makerDaoStore.reset(Module.MAKERDAO_VAULTS),
+    [Module.SUSHISWAP]: () => sushiswapStore.reset(),
+    [Module.UNISWAP]: () => uniswapStore.reset(),
     [Module.YEARN]: () => yearnStore.reset(ProtocolVersion.V1),
     [Module.YEARN_V2]: () => yearnStore.reset(ProtocolVersion.V2),
-    [Module.UNISWAP]: () => uniswapStore.reset(),
-    [Module.SUSHISWAP]: () => sushiswapStore.reset(),
-    [Module.LIQUITY]: () => liquityStore.reset(),
   };
 
   const resetState = (module: ResetStateParams): void => {
@@ -195,10 +204,10 @@ export const useDefiStore = defineStore('defi', () => {
   return {
     allProtocols,
     defiAccounts,
-    fetchDefiBalances,
     fetchAllDefi,
-    resetState,
+    fetchDefiBalances,
     reset,
+    resetState,
   };
 });
 

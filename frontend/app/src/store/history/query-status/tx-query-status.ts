@@ -1,4 +1,5 @@
 import { type EvmTransactionQueryData, EvmTransactionsQueryStatus } from '@/types/websocket-messages';
+import { useQueryStatusStore } from '@/store/history/query-status/index';
 
 export const useTxQueryStatusStore = defineStore('history/transaction-query-status', () => {
   const createKey = ({ address, evmChain }: { address: string; evmChain: string }): string => address + evmChain;
@@ -7,8 +8,8 @@ export const useTxQueryStatusStore = defineStore('history/transaction-query-stat
     item.status === EvmTransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED;
 
   const {
-    queryStatus,
     isAllFinished,
+    queryStatus,
     removeQueryStatus: remove,
     resetQueryStatus,
   } = useQueryStatusStore<EvmTransactionQueryData>(isStatusFinished, createKey);
@@ -38,12 +39,12 @@ export const useTxQueryStatusStore = defineStore('history/transaction-query-stat
   };
 
   return {
-    queryStatus,
     isAllFinished,
     isStatusFinished,
-    setQueryStatus,
+    queryStatus,
     removeQueryStatus,
     resetQueryStatus,
+    setQueryStatus,
   };
 });
 

@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { checkIfDevelopment } from '@shared/utils';
+import { useAreaVisibilityStore } from '@/store/session/visibility';
 
 const isDevelopment = checkIfDevelopment();
 
 const { isSmAndUp } = useBreakpoint();
 
 const { darkModeEnabled } = useDarkMode();
-const { showPinned, showNotesSidebar, showNotificationBar, showHelpBar } = storeToRefs(useAreaVisibilityStore());
+const { showHelpBar, showNotesSidebar, showNotificationBar, showPinned } = storeToRefs(useAreaVisibilityStore());
 </script>
 
 <template>

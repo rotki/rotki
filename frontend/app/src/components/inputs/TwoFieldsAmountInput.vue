@@ -19,10 +19,10 @@ const props = withDefaults(
     disabled?: boolean;
   }>(),
   {
-    label: () => ({}),
-    errorMessages: () => ({}),
-    loading: false,
     disabled: false,
+    errorMessages: () => ({}),
+    label: () => ({}),
+    loading: false,
   },
 );
 

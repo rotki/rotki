@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import { getCollectionData } from '@/utils/collection';
+import { useMessageStore } from '@/store/message';
 import type {
   AccountingRuleConflict,
   AccountingRuleConflictRequestPayload,
@@ -21,7 +22,7 @@ const { getAccountingRulesConflicts, resolveAccountingRuleConflicts } = useAccou
 
 const { t } = useI18n();
 
-const { state, isLoading, fetchData, setPage, pagination } = usePaginationFilters<
+const { fetchData, isLoading, pagination, setPage, state } = usePaginationFilters<
   AccountingRuleConflict,
   AccountingRuleConflictRequestPayload
 >(getAccountingRulesConflicts, {
@@ -34,60 +35,60 @@ onMounted(() => {
 
 const tableHeaders = computed<DataTableColumn<AccountingRuleConflict>[]>(() => [
   {
+    class: 'whitespace-pre-line !text-sm',
+    key: 'eventTypeAndSubtype',
     label: `${t('accounting_settings.rule.labels.event_type')} - \n${t(
       'accounting_settings.rule.labels.event_subtype',
     )}`,
-    key: 'eventTypeAndSubtype',
-    class: 'whitespace-pre-line !text-sm',
   },
   {
-    label: t('transactions.events.form.resulting_combination.label'),
-    key: 'resultingCombination',
     class: '!text-sm',
+    key: 'resultingCombination',
+    label: t('transactions.events.form.resulting_combination.label'),
   },
   {
-    label: t('common.counterparty'),
-    key: 'counterparty',
-    class: 'border-r border-default !text-sm',
     cellClass: 'border-r border-default',
+    class: 'border-r border-default !text-sm',
+    key: 'counterparty',
+    label: t('common.counterparty'),
   },
   {
-    label: t('accounting_settings.rule.labels.taxable'),
+    cellClass: '!p-0',
+    class: 'p-0 max-w-[7.5rem] whitespace-normal font-medium !text-sm',
     key: 'taxable',
-    class: 'p-0 max-w-[7.5rem] whitespace-normal font-medium !text-sm',
-    cellClass: '!p-0',
+    label: t('accounting_settings.rule.labels.taxable'),
   },
   {
-    label: t('accounting_settings.rule.labels.count_entire_amount_spend'),
+    align: 'center',
+    cellClass: '!p-0',
+    class: 'p-0 max-w-[7.5rem] whitespace-normal font-medium !text-sm',
     key: 'countEntireAmountSpend',
-    class: 'p-0 max-w-[7.5rem] whitespace-normal font-medium !text-sm',
-    align: 'center',
-    cellClass: '!p-0',
+    label: t('accounting_settings.rule.labels.count_entire_amount_spend'),
   },
   {
-    label: t('accounting_settings.rule.labels.count_cost_basis_pnl'),
+    align: 'center',
+    cellClass: '!p-0',
+    class: 'p-0 max-w-[7.5rem] whitespace-normal font-medium !text-sm',
     key: 'countCostBasisPnl',
-    class: 'p-0 max-w-[7.5rem] whitespace-normal font-medium !text-sm',
-    align: 'center',
-    cellClass: '!p-0',
+    label: t('accounting_settings.rule.labels.count_cost_basis_pnl'),
   },
   {
-    label: t('accounting_settings.rule.labels.accounting_treatment'),
+    align: 'center',
+    cellClass: '!p-0',
+    class: 'p-0 max-w-[7.5rem] whitespace-normal font-medium !text-sm',
     key: 'accountingTreatment',
-    class: 'p-0 max-w-[7.5rem] whitespace-normal font-medium !text-sm',
-    cellClass: '!p-0',
-    align: 'center',
+    label: t('accounting_settings.rule.labels.accounting_treatment'),
   },
   {
-    label: t('accounting_settings.rule.conflicts.labels.choose_version'),
-    key: 'actions',
-    class: '!text-sm w-px',
-    cellClass: 'pl-0',
     align: 'center',
+    cellClass: 'pl-0',
+    class: '!text-sm w-px',
+    key: 'actions',
+    label: t('accounting_settings.rule.conflicts.labels.choose_version'),
   },
 ]);
 
-const { historyEventTypesData, historyEventSubTypesData, getEventTypeData } = useHistoryEventMappings();
+const { getEventTypeData, historyEventSubTypesData, historyEventTypesData } = useHistoryEventMappings();
 
 function getHistoryEventTypeName(eventType: string): string {
   return get(historyEventTypesData).find(item => item.identifier === eventType)?.label ?? toSentenceCase(eventType);
@@ -103,8 +104,8 @@ function getHistoryEventSubTypeName(eventSubtype: string): string {
 function getType(eventType: string, eventSubtype: string) {
   return get(
     getEventTypeData({
-      eventType,
       eventSubtype,
+      eventType,
     }),
   );
 }
@@ -163,11 +164,11 @@ async function save() {
   }
   else {
     setMessage({
-      title: t('accounting_settings.rule.conflicts.error.title'),
       description: t('accounting_settings.rule.conflicts.error.description', {
         error: result.message,
       }),
       success: false,
+      title: t('accounting_settings.rule.conflicts.error.title'),
     });
   }
 

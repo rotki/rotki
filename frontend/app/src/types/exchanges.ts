@@ -9,9 +9,9 @@ export const KrakenAccountType = z.enum(['starter', 'intermediate', 'pro']);
 export type KrakenAccountType = z.infer<typeof KrakenAccountType>;
 
 export const Exchange = z.object({
+  krakenAccountType: KrakenAccountType.optional(),
   location: z.string(),
   name: z.string(),
-  krakenAccountType: KrakenAccountType.optional(),
 });
 
 export type Exchange = z.infer<typeof Exchange>;
@@ -49,17 +49,17 @@ export interface ExchangeFormData extends ExchangePayload {
 }
 
 const ExchangeSavingsEvent = AssetBalance.extend({
-  timestamp: z.number(),
   location: z.string(),
+  timestamp: z.number(),
 });
 
 export type ExchangeSavingsEvent = z.infer<typeof ExchangeSavingsEvent>;
 
 export const ExchangeSavingsCollectionResponse = CollectionCommonFields.extend({
-  entries: z.array(ExchangeSavingsEvent),
-  totalUsdValue: NumericString,
   assets: z.array(z.string()),
+  entries: z.array(ExchangeSavingsEvent),
   received: z.array(AssetBalance),
+  totalUsdValue: NumericString,
 });
 
 export type ExchangeSavingsCollectionResponse = z.infer<typeof ExchangeSavingsCollectionResponse>;

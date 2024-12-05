@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { type DefiProtocol, type Module, isDefiProtocol } from '@/types/modules';
 import { Section } from '@/types/status';
+import { useStatusStore } from '@/store/status';
 
 defineProps<{
   modules: Module[];
@@ -12,7 +13,7 @@ const defiLending = useDefiLending();
 const route = useRoute();
 const { t } = useI18n();
 
-const { shouldShowLoadingScreen, isLoading } = useStatusStore();
+const { isLoading, shouldShowLoadingScreen } = useStatusStore();
 
 const loading = shouldShowLoadingScreen(Section.DEFI_BORROWING);
 

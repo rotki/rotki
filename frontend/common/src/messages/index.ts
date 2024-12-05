@@ -21,8 +21,8 @@ export enum NotificationGroup {
 }
 
 export const NotificationCategory = {
-  DEFAULT: 'default',
   ADDRESS_MIGRATION: 'address_migration',
+  DEFAULT: 'default',
 } as const;
 
 export type NotificationCategory = (typeof NotificationCategory)[keyof typeof NotificationCategory];

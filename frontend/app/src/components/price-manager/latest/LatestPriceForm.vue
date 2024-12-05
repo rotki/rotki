@@ -37,11 +37,11 @@ const rules = {
   fromAsset: {
     required: helpers.withMessage(t('price_form.from_non_empty'), required),
   },
-  toAsset: {
-    required: helpers.withMessage(t('price_form.to_non_empty'), required),
-  },
   price: {
     required: helpers.withMessage(t('price_form.price_non_empty'), required),
+  },
+  toAsset: {
+    required: helpers.withMessage(t('price_form.to_non_empty'), required),
   },
 };
 
@@ -51,8 +51,8 @@ const v$ = setValidation(
   rules,
   {
     fromAsset,
-    toAsset,
     price,
+    toAsset,
   },
   { $autoDirty: true },
 );

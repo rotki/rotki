@@ -69,8 +69,8 @@ export function useEth2Api(): UseEth2ApiReturn {
 
   return {
     fetchStakingPerformance,
+    fetchStakingStats,
     refreshStakingPerformance,
     refreshStakingStats,
-    fetchStakingStats,
   };
 }

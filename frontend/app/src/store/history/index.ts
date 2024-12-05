@@ -1,5 +1,7 @@
 import { TaskType } from '@/types/task-type';
 import { logger } from '@/utils/logging';
+import { useNotificationsStore } from '@/store/notifications';
+import { useTaskStore } from '@/store/tasks';
 import type { EvmUnDecodedTransactionsData, ProtocolCacheUpdatesData } from '@/types/websocket-messages';
 
 export const useHistoryStore = defineStore('history', () => {
@@ -77,9 +79,9 @@ export const useHistoryStore = defineStore('history', () => {
       logger.error(error);
       const message = error?.message ?? error ?? '';
       notify({
-        title: t('actions.history.fetch_associated_locations.error.title'),
-        message: t('actions.history.fetch_associated_locations.error.message', { message }),
         display: true,
+        message: t('actions.history.fetch_associated_locations.error.message', { message }),
+        title: t('actions.history.fetch_associated_locations.error.title'),
       });
     }
   };
@@ -94,15 +96,15 @@ export const useHistoryStore = defineStore('history', () => {
   return {
     associatedLocations,
     decodingStatus,
-    protocolCacheStatus,
-    undecodedTransactionsStatus,
-    receivingProtocolCacheStatus,
-    setUndecodedTransactionsStatus,
-    getUndecodedTransactionStatus,
-    updateUndecodedTransactionsStatus,
-    resetUndecodedTransactionsStatus,
     fetchAssociatedLocations,
-    setProtocolCacheStatus,
+    getUndecodedTransactionStatus,
+    protocolCacheStatus,
+    receivingProtocolCacheStatus,
     resetProtocolCacheUpdatesStatus,
+    resetUndecodedTransactionsStatus,
+    setProtocolCacheStatus,
+    setUndecodedTransactionsStatus,
+    undecodedTransactionsStatus,
+    updateUndecodedTransactionsStatus,
   };
 });

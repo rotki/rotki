@@ -1,4 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { useTaskStore } from '@/store/tasks';
+import { useNotificationsStore } from '@/store/notifications';
 import type { AssetMergePayload, AssetUpdatePayload } from '@/types/asset';
 
 vi.mock('@/composables/api/assets/index', () => ({

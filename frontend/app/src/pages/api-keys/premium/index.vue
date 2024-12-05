@@ -2,12 +2,16 @@
 import { required } from '@vuelidate/validators';
 import useVuelidate from '@vuelidate/core';
 import { toMessages } from '@/utils/validation';
+import { usePremiumStore } from '@/store/session/premium';
+import { useConfirmStore } from '@/store/confirm';
+import { useSettingsStore } from '@/store/settings';
+import { useSessionAuthStore } from '@/store/session/auth';
 
 const { username } = storeToRefs(useSessionAuthStore());
 const { update } = useSettingsStore();
 const store = usePremiumStore();
 const { premium, premiumSync } = storeToRefs(store);
-const { setup, deletePremium } = store;
+const { deletePremium, setup } = store;
 
 const { t } = useI18n();
 
@@ -71,9 +75,9 @@ async function setupPremium() {
     return;
 
   const result = await setup({
-    username: get(username),
     apiKey: get(apiKey),
     apiSecret: get(apiSecret),
+    username: get(username),
   });
 
   if (!result.success) {
@@ -119,10 +123,10 @@ const { show } = useConfirmStore();
 function showDeleteConfirmation() {
   show(
     {
-      title: t('premium_settings.delete_confirmation.title'),
       message: t('premium_settings.delete_confirmation.message'),
       primaryAction: t('common.actions.delete'),
       secondaryAction: t('common.actions.cancel'),
+      title: t('premium_settings.delete_confirmation.title'),
     },
     remove,
   );

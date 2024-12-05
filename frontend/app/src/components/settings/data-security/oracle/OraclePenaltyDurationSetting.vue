@@ -2,6 +2,7 @@
 import useVuelidate from '@vuelidate/core';
 import { helpers, minValue, required } from '@vuelidate/validators';
 import { toMessages } from '@/utils/validation';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 
 const oraclePenaltyDuration = ref<string>('0');
 
@@ -12,13 +13,13 @@ const { t } = useI18n();
 const min = 1;
 const rules = {
   oraclePenaltyDuration: {
-    required: helpers.withMessage(
-      t('oracle_cache_management.penalty.validation.oracle_penalty_duration.non_empty'),
-      required,
-    ),
     min: helpers.withMessage(
       t('oracle_cache_management.penalty.validation.oracle_penalty_duration.invalid_period', { min }),
       minValue(min),
+    ),
+    required: helpers.withMessage(
+      t('oracle_cache_management.penalty.validation.oracle_penalty_duration.non_empty'),
+      required,
     ),
   },
 };

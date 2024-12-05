@@ -12,13 +12,13 @@ withDefaults(
     actionDisabled?: boolean;
   }>(),
   {
-    subtitle: '',
-    needPremium: false,
-    roundedIcon: false,
-    keySet: false,
-    hideAction: false,
-    primaryAction: '',
     actionDisabled: false,
+    hideAction: false,
+    keySet: false,
+    needPremium: false,
+    primaryAction: '',
+    roundedIcon: false,
+    subtitle: '',
   },
 );
 

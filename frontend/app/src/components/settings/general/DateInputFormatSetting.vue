@@ -3,6 +3,7 @@ import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
 import { displayDateFormatter } from '@/data/date-formatter';
 import { toMessages } from '@/utils/validation';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
 const dateInputFormat = ref<string>('');
 const { dateInputFormat: inputFormat } = storeToRefs(useFrontendSettingsStore());
@@ -15,11 +16,11 @@ function containsValidDirectives(v: string) {
 
 const rules = {
   dateInputFormat: {
-    required: helpers.withMessage(t('general_settings.date_display.validation.empty'), required),
     containsValidDirectives: helpers.withMessage(
       t('general_settings.date_display.validation.invalid'),
       containsValidDirectives,
     ),
+    required: helpers.withMessage(t('general_settings.date_display.validation.empty'), required),
   },
 };
 

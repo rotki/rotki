@@ -2,6 +2,8 @@
 import { displayDateFormatter } from '@/data/date-formatter';
 import { size } from '@/utils/data';
 import { getFilepath } from '@/utils/backups';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useConfirmStore } from '@/store/confirm';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { UserDbBackup, UserDbBackupWithId } from '@/types/backup';
 
@@ -56,20 +58,20 @@ const tableHeaders = computed<DataTableColumn<UserDbBackupWithId>[]>(() => [
     sortable: true,
   },
   {
-    key: 'size',
     align: 'end',
+    key: 'size',
     label: t('database_backups.column.size'),
     sortable: true,
   },
   {
-    key: 'actions',
     align: 'end',
-    sortable: false,
+    key: 'actions',
     label: '',
+    sortable: false,
   },
 ]);
 
-const { items, directory } = toRefs(props);
+const { directory, items } = toRefs(props);
 const { dateDisplayFormat } = storeToRefs(useGeneralSettingsStore());
 
 const totalSize = computed(() => size(get(items).reduce((sum, db) => sum + db.size, 0)));
@@ -83,21 +85,21 @@ function showDeleteConfirmation(item: UserDbBackupWithId) {
   const messageInfo = () => {
     if (item) {
       return {
-        size: size(item.size),
         date: displayDateFormatter.format(new Date(item.time * 1000), get(dateDisplayFormat)),
+        size: size(item.size),
       };
     }
 
     return {
-      size: 0,
       date: 0,
+      size: 0,
     };
   };
 
   show(
     {
-      title: t('database_backups.confirm.title'),
       message: t('database_backups.confirm.message', { ...messageInfo() }),
+      title: t('database_backups.confirm.title'),
     },
     () => emit('remove', item),
   );

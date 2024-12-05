@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { useSessionAuthStore } from '@/store/session/auth';
+import { useMainStore } from '@/store/main';
+
 definePage({
   meta: {
     layout: 'auth',
@@ -16,16 +19,16 @@ const { t } = useI18n();
 const step = ref<number>(1);
 const steps = [
   {
-    title: t('create_account.steps.step_1.title'),
     description: t('create_account.steps.step_1.description'),
+    title: t('create_account.steps.step_1.title'),
   },
   {
-    title: t('create_account.steps.step_2.title'),
     description: t('create_account.steps.step_2.description'),
+    title: t('create_account.steps.step_2.title'),
   },
   {
-    title: t('create_account.steps.step_3.title'),
     description: t('create_account.steps.step_3.description'),
+    title: t('create_account.steps.step_3.title'),
   },
   {
     title: t('create_account.steps.step_4.title'),

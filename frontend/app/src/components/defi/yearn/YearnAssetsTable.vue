@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ProtocolVersion } from '@/types/defi';
+import { useYearnStore } from '@/store/defi/yearn';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { YearnVaultAsset } from '@/types/defi/yearn';
 import type { BigNumber } from '@rotki/common';
@@ -30,28 +31,28 @@ const { yearnVaultsAssets } = useYearnStore();
 const { t } = useI18n();
 
 const columns: DataTableColumn<VaultAssets>[] = [
-  { label: t('yearn_asset_table.headers.vault'), key: 'vault' },
+  { key: 'vault', label: t('yearn_asset_table.headers.vault') },
   {
-    label: t('yearn_asset_table.headers.version'),
-    key: 'version',
     cellClass: 'w-8',
+    key: 'version',
+    label: t('yearn_asset_table.headers.version'),
   },
   {
-    label: t('yearn_asset_table.headers.underlying_asset'),
+    align: 'end',
     key: 'underlyingUsdValue',
-    align: 'end',
+    label: t('yearn_asset_table.headers.underlying_asset'),
     sortable: true,
   },
   {
-    label: t('yearn_asset_table.headers.vault_asset'),
+    align: 'end',
     key: 'vaultUsdValue',
-    align: 'end',
+    label: t('yearn_asset_table.headers.vault_asset'),
     sortable: true,
   },
   {
-    label: t('yearn_asset_table.headers.roi'),
-    key: 'roi',
     align: 'end',
+    key: 'roi',
+    label: t('yearn_asset_table.headers.roi'),
     sortable: true,
   },
 ];

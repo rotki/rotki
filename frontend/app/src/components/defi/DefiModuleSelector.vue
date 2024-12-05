@@ -24,13 +24,13 @@ const modules = computed<PurgeableModuleEntry[]>(() => {
   const items = props.items;
 
   const modules: PurgeableModuleEntry[] = [...SUPPORTED_MODULES, {
+    icon: './assets/images/protocols/cowswap.jpg',
     identifier: PurgeableOnlyModule.COWSWAP,
     name: 'Cowswap',
-    icon: './assets/images/protocols/cowswap.jpg',
   }, {
+    icon: './assets/images/protocols/gnosis_pay.png',
     identifier: PurgeableOnlyModule.GNOSIS_PAY,
     name: 'Gnosis Pay',
-    icon: './assets/images/protocols/gnosis_pay.png',
   }];
 
   return modules.filter(item => (items && items.length > 0 ? items.includes(item.identifier) : true));

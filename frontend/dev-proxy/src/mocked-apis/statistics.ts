@@ -25,8 +25,8 @@ export function statistics(server: Application, componentsDir: string): void {
     consola.info(`Serving renderer from ${latestFile}`);
 
     res.jsonp({
-      result,
       message: '',
+      result,
     });
   });
 }

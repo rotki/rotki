@@ -3,10 +3,10 @@ import { z } from 'zod';
 import { BalanceType } from '@/types/balances';
 
 export const BalanceSnapshot = z.object({
-  timestamp: z.number(),
-  category: z.nativeEnum(BalanceType),
-  assetIdentifier: z.string(),
   amount: NumericString,
+  assetIdentifier: z.string(),
+  category: z.nativeEnum(BalanceType),
+  timestamp: z.number(),
   usdValue: NumericString,
 });
 
@@ -21,8 +21,8 @@ export interface BalanceSnapshotPayload {
 }
 
 export const LocationDataSnapshot = z.object({
-  timestamp: z.number(),
   location: z.string(),
+  timestamp: z.number(),
   usdValue: NumericString,
 });
 

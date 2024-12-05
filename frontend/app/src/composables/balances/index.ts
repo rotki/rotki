@@ -4,22 +4,30 @@ import { Section, Status } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import { uniqueStrings } from '@/utils/data';
 import { isTaskCancelled } from '@/utils';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useStatisticsStore } from '@/store/statistics';
+import { useTaskStore } from '@/store/tasks';
+import { useNotificationsStore } from '@/store/notifications';
+import { useBalancePricesStore } from '@/store/balances/prices';
+import { useExchangeBalancesStore } from '@/store/balances/exchanges';
+import { useBlockchainStore } from '@/store/blockchain';
+import { useManualBalancesStore } from '@/store/balances/manual';
 import type { AssetPrices } from '@/types/prices';
 import type { MaybeRef } from '@vueuse/core';
 import type { AllBalancePayload } from '@/types/blockchain/accounts';
 
 export const useBalances = createSharedComposable(() => {
-  const { updatePrices: updateManualPrices, fetchManualBalances } = useManualBalancesStore();
+  const { fetchManualBalances, updatePrices: updateManualPrices } = useManualBalancesStore();
   const { updatePrices: updateChainPrices } = useBlockchainStore();
-  const { updatePrices: updateExchangePrices, fetchConnectedExchangeBalances } = useExchangeBalancesStore();
+  const { fetchConnectedExchangeBalances, updatePrices: updateExchangePrices } = useExchangeBalancesStore();
   const { refreshAccounts } = useBlockchains();
   const { assets } = useAggregatedBalances();
   const { queryBalancesAsync } = useBalancesApi();
   const priceStore = useBalancePricesStore();
   const { prices } = storeToRefs(priceStore);
-  const { assetPrice, fetchPrices, fetchExchangeRates, exchangeRate } = priceStore;
+  const { assetPrice, exchangeRate, fetchExchangeRates, fetchPrices } = priceStore;
   const { notify } = useNotificationsStore();
-  const { isTaskRunning, awaitTask } = useTaskStore();
+  const { awaitTask, isTaskRunning } = useTaskStore();
   const { t } = useI18n();
   const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
   const { fetchNetValue } = useStatisticsStore();
@@ -95,11 +103,11 @@ export const useBalances = createSharedComposable(() => {
     catch (error: any) {
       if (!isTaskCancelled(error)) {
         notify({
-          title: t('actions.balances.all_balances.error.title'),
+          display: true,
           message: t('actions.balances.all_balances.error.message', {
             message: error.message,
           }),
-          display: true,
+          title: t('actions.balances.all_balances.error.title'),
         });
       }
     }
@@ -123,10 +131,10 @@ export const useBalances = createSharedComposable(() => {
   };
 
   return {
-    autoRefresh,
-    refreshPrices,
-    fetchBalances,
     adjustPrices,
+    autoRefresh,
     fetch,
+    fetchBalances,
+    refreshPrices,
   };
 });

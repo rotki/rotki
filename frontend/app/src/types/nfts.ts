@@ -15,24 +15,24 @@ export interface NftAsset extends AssetInfoWithId {
 const NftCollectionInfo = z.object({
   bannerImage: z.string().nullable(),
   description: z.string().nullable(),
-  name: z.string().nullable(),
   largeImage: z.string().nullable(),
+  name: z.string().nullable(),
 });
 
 const Nft = z.object({
-  tokenIdentifier: z.string().min(1),
-  name: z.string().nullable(),
-  collection: NftCollectionInfo,
   backgroundColor: z.string().nullable(),
-  imageUrl: z.string().nullable(),
+  collection: NftCollectionInfo,
   externalLink: z
     .string()
     .nullable()
     .transform(item => item || undefined),
+  imageUrl: z.string().nullable(),
+  name: z.string().nullable(),
   permalink: z.string().nullable(),
-  priceUsd: NumericString,
-  priceInAsset: NumericString,
   priceAsset: z.string(),
+  priceInAsset: NumericString,
+  priceUsd: NumericString,
+  tokenIdentifier: z.string().min(1),
 });
 
 export type Nft = z.infer<typeof Nft>;

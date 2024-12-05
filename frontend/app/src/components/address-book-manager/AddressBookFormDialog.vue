@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { ApiValidationError } from '@/types/api/errors';
+import { useMessageStore } from '@/store/message';
+import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import type { AddressBookPayload } from '@/types/eth-names';
 
-const enableForAllChains = defineModel<boolean>('enableForAllChains', { required: false, default: false });
+const enableForAllChains = defineModel<boolean>('enableForAllChains', { default: false, required: false });
 
 const props = withDefaults(
   defineProps<{
@@ -22,21 +24,21 @@ const emit = defineEmits<{
 
 const { editMode, payload: passedPayload } = toRefs(props);
 
-const { openDialog, submitting, trySubmit, stateUpdated } = useAddressBookForm();
+const { openDialog, stateUpdated, submitting, trySubmit } = useAddressBookForm();
 
 const { t } = useI18n();
 
 const emptyForm: () => AddressBookPayload = () => ({
-  location: 'private',
-  blockchain: null,
   address: '',
+  blockchain: null,
+  location: 'private',
   name: '',
 });
 
 const formPayload = ref<AddressBookPayload>(emptyForm());
 const errorMessages = ref<{ address?: string[]; name?: string[] }>({});
 
-const { setSubmitFunc, closeDialog } = useAddressBookForm();
+const { closeDialog, setSubmitFunc } = useAddressBookForm();
 const { addAddressBook, updateAddressBook } = useAddressesNamesStore();
 const { setMessage } = useMessageStore();
 
@@ -49,11 +51,11 @@ const resetForm = function () {
 
 async function save() {
   try {
-    const { blockchain, address, name, location } = get(formPayload);
+    const { address, blockchain, location, name } = get(formPayload);
     const payload = {
       address: address.trim(),
-      name: name.trim(),
       blockchain: get(enableForAllChains) ? null : blockchain,
+      name: name.trim(),
     };
     if (get(editMode))
       await updateAddressBook(location, [payload]);
@@ -79,9 +81,9 @@ async function save() {
         ? t('address_book.actions.edit.error.description', values)
         : t('address_book.actions.add.error.description', values);
       setMessage({
-        title,
         description,
         success: false,
+        title,
       });
     }
     else {

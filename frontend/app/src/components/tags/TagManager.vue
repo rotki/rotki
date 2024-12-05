@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { type Tag, defaultTag } from '@/types/tags';
+import { useConfirmStore } from '@/store/confirm';
+import { useTagStore } from '@/store/session/tags';
 import type { DataTableColumn } from '@rotki/ui-library';
 
 const store = useTagStore();
@@ -15,22 +17,22 @@ const { t } = useI18n();
 
 const headers = computed<DataTableColumn<Tag>[]>(() => [
   {
-    label: t('common.name'),
     key: 'name',
+    label: t('common.name'),
   },
   {
-    label: t('common.description'),
-    key: 'description',
     cellClass: 'w-3/5 !text-sm !text-rui-text-secondary',
+    key: 'description',
+    label: t('common.description'),
   },
   {
-    label: t('tag_creator.tag_view'),
     key: 'tagView',
+    label: t('tag_creator.tag_view'),
   },
   {
-    label: t('common.actions_text'),
-    key: 'action',
     cellClass: 'w-20',
+    key: 'action',
+    label: t('common.actions_text'),
     sortable: false,
   },
 ]);
@@ -43,10 +45,10 @@ function editItem(newTag: Tag) {
 function showDeleteConfirmation(selectedTag: Tag) {
   show(
     {
-      title: t('tag_manager.confirmation.title'),
       message: t('tag_manager.confirmation.message', {
         tagToDelete: selectedTag.name,
       }),
+      title: t('tag_manager.confirmation.title'),
     },
     () => deleteTag(selectedTag.name),
   );

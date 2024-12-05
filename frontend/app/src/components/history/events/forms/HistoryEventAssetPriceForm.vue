@@ -6,6 +6,10 @@ import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
 import { DateFormat } from '@/types/date-format';
 import { bigNumberifyFromRef } from '@/utils/bignumbers';
 import { convertToTimestamp } from '@/utils/date';
+import { useHistoricCachePriceStore } from '@/store/prices/historic';
+import { useBalancePricesStore } from '@/store/balances/prices';
+import { useTaskStore } from '@/store/tasks';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 import type { Validation } from '@vuelidate/core';
 import type { BigNumber } from '@rotki/common';
 import type { HistoricalPriceFormPayload } from '@/types/prices';
@@ -34,7 +38,7 @@ const emit = defineEmits<{
   (e: 'update:asset', asset: string): void;
 }>();
 
-const { datetime, asset, disableAsset, hidePriceFields } = toRefs(props);
+const { asset, datetime, disableAsset, hidePriceFields } = toRefs(props);
 
 const assetModel = computed({
   get() {
@@ -117,8 +121,8 @@ async function fetchHistoricPrices() {
   }
   else {
     const price: BigNumber = await getHistoricPrice({
-      timestamp,
       fromAsset: assetVal,
+      timestamp,
       toAsset: CURRENCY_USD,
     });
 
@@ -135,8 +139,8 @@ async function fetchHistoricPrices() {
     }
 
     const price = await getHistoricPrice({
-      timestamp,
       fromAsset: assetVal,
+      timestamp,
       toAsset: currentCurrency,
     });
 
@@ -202,18 +206,18 @@ async function submitPrice(payload: NewHistoryEventPayload): Promise<ActionStatu
       if (get(assetToUsdPrice) !== get(fetchedAssetToUsdPrice)) {
         await savePrice({
           fromAsset: assetVal,
-          toAsset: CURRENCY_USD,
-          timestamp,
           price: get(assetToUsdPrice),
+          timestamp,
+          toAsset: CURRENCY_USD,
         });
       }
     }
     else if (get(assetToFiatPrice) !== get(fetchedAssetToFiatPrice)) {
       await savePrice({
         fromAsset: assetVal,
-        toAsset: get(currencySymbol),
-        timestamp,
         price: get(assetToFiatPrice),
+        timestamp,
+        toAsset: get(currencySymbol),
       });
     }
 
@@ -224,7 +228,7 @@ async function submitPrice(payload: NewHistoryEventPayload): Promise<ActionStatu
     if (error instanceof ApiValidationError)
       message = error.getValidationErrors(payload);
 
-    return { success: false, message };
+    return { message, success: false };
   }
 }
 
@@ -238,8 +242,8 @@ function reset() {
 }
 
 defineExpose({
-  submitPrice,
   reset,
+  submitPrice,
 });
 </script>
 

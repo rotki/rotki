@@ -43,9 +43,9 @@ export function useEvmNodesApi(chain: Ref<Blockchain> = ref(Blockchain.ETH)): Us
   };
 
   return {
-    fetchEvmNodes,
     addEvmNode,
-    editEvmNode,
     deleteEvmNode,
+    editEvmNode,
+    fetchEvmNodes,
   };
 }

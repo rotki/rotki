@@ -9,23 +9,23 @@ const CompoundReward = z.object({
 const CompoundRewards = z.record(CompoundReward);
 
 const CompoundLending = z.object({
-  balance: Balance,
   apy: z.string().nullable(),
+  balance: Balance,
 });
 
 const CompoundLendingEntries = z.record(CompoundLending);
 
 const CompoundBorrowing = z.object({
-  balance: Balance,
   apy: z.string().nullable(),
+  balance: Balance,
 });
 
 const CompoundBorrowingEntries = z.record(CompoundBorrowing);
 
 const CompoundBalance = z.object({
-  rewards: CompoundRewards.optional().default({}),
-  lending: CompoundLendingEntries.optional().default({}),
   borrowing: CompoundBorrowingEntries.optional().default({}),
+  lending: CompoundLendingEntries.optional().default({}),
+  rewards: CompoundRewards.optional().default({}),
 });
 
 export const CompoundBalances = z.record(CompoundBalance);
@@ -39,10 +39,10 @@ const CompoundProfitAndLoss = z.record(CompoundAssetProfitAndLoss);
 export type CompoundProfitAndLoss = z.infer<typeof CompoundProfitAndLoss>;
 
 export const CompoundStats = z.object({
-  interestProfit: CompoundProfitAndLoss,
   debtLoss: CompoundProfitAndLoss,
-  rewards: CompoundProfitAndLoss,
+  interestProfit: CompoundProfitAndLoss,
   liquidationProfit: CompoundProfitAndLoss,
+  rewards: CompoundProfitAndLoss,
 });
 
 export type CompoundStats = z.infer<typeof CompoundStats>;

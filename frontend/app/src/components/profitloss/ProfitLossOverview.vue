@@ -10,9 +10,9 @@ const props = withDefaults(
     loading?: boolean;
   }>(),
   {
-    symbol: null,
     flat: false,
     loading: false,
+    symbol: null,
   },
 );
 

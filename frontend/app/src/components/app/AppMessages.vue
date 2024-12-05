@@ -1,5 +1,9 @@
 <script setup lang="ts">
-const { startupErrorMessage, isMacOsVersionUnsupported, isWinVersionUnsupported }
+import { useConfirmStore } from '@/store/confirm';
+import { useMessageStore } from '@/store/message';
+import { useBackendMessagesStore } from '@/store/backend-messages';
+
+const { isMacOsVersionUnsupported, isWinVersionUnsupported, startupErrorMessage }
   = storeToRefs(useBackendMessagesStore());
 const store = useMessageStore();
 const { message } = storeToRefs(store);
@@ -7,7 +11,7 @@ const { setMessage } = store;
 const dismissMessage = () => setMessage();
 
 const confirmStore = useConfirmStore();
-const { dismiss, confirm } = confirmStore;
+const { confirm, dismiss } = confirmStore;
 const { confirmation, visible } = storeToRefs(confirmStore);
 
 const { globalPayload } = useAddressBookForm();

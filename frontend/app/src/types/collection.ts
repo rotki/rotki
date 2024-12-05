@@ -3,9 +3,9 @@ import { z } from 'zod';
 
 export const CollectionCommonFields = z.object({
   entriesFound: z.number(),
+  entriesFoundTotal: z.number().optional(),
   entriesLimit: z.number().default(-1),
   entriesTotal: z.number(),
-  entriesFoundTotal: z.number().optional(),
   totalUsdValue: NumericString.nullish(),
 });
 

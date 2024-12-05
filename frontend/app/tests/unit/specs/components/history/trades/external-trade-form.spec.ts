@@ -5,6 +5,7 @@ import { RuiAutoComplete } from '@rotki/ui-library';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import ExternalTradeForm from '@/components/history/trades/ExternalTradeForm.vue';
 import { setupDayjs } from '@/utils/date';
+import { useBalancePricesStore } from '@/store/balances/prices';
 import type { AssetMap } from '@/types/asset';
 import type { Trade } from '@/types/history/trade';
 

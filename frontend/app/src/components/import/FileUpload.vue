@@ -13,10 +13,10 @@ const props = withDefaults(
     errorMessage?: string;
   }>(),
   {
-    loading: false,
-    fileFilter: '.csv',
-    uploaded: false,
     errorMessage: '',
+    fileFilter: '.csv',
+    loading: false,
+    uploaded: false,
   },
 );
 
@@ -24,7 +24,7 @@ const emit = defineEmits<{
   (e: 'update:uploaded', uploaded: boolean): void;
   (e: 'update:error-message', message: string): void;
 }>();
-const { source, fileFilter, uploaded, errorMessage } = toRefs(props);
+const { errorMessage, fileFilter, source, uploaded } = toRefs(props);
 
 const wrapper = ref<HTMLDivElement>();
 

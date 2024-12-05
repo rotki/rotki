@@ -5,6 +5,7 @@ import {
   IgnoreActionType,
   type IgnorePayload,
 } from '@/types/history/ignored';
+import { useMessageStore } from '@/store/message';
 import type { EntryMeta } from '@/types/history/meta';
 import type { ActionStatus } from '@/types/action';
 import type { Ref } from 'vue';
@@ -61,11 +62,11 @@ export function useIgnore<T extends EntryMeta>(
         }).toString();
       }
       setMessage({
+        description,
         success: false,
         title,
-        description,
       });
-      return { success: false, message: 'failed' };
+      return { message: 'failed', success: false };
     }
 
     return { success: true };
@@ -87,14 +88,14 @@ export function useIgnore<T extends EntryMeta>(
 
     if (actionType === IgnoreActionType.EVM_TRANSACTIONS) {
       payload = {
-        data: data.map(toData),
         actionType,
+        data: data.map(toData),
       } satisfies EvmTxIgnorePayload;
     }
     else {
       payload = {
-        data: data.map(toData),
         actionType,
+        data: data.map(toData),
       } satisfies CommonIgnorePayload;
     }
 
@@ -103,9 +104,9 @@ export function useIgnore<T extends EntryMeta>(
     if (data.length === 0) {
       const choice = ignored ? 1 : 2;
       setMessage({
+        description: t('ignore.no_items.description', choice),
         success: false,
         title: t('ignore.no_items.title', choice),
-        description: t('ignore.no_items.description', choice),
       });
       return;
     }

@@ -1,4 +1,5 @@
 import { logger } from '@/utils/logging';
+import { useMessageStore } from '@/store/message';
 import type { Tag, Tags } from '@/types/tags';
 import type { ActionStatus } from '@/types/action';
 
@@ -10,7 +11,7 @@ export const useTagStore = defineStore('session/tags', () => {
   const { removeTag } = useBlockchainAccounts();
   const { setMessage } = useMessageStore();
   const { t } = useI18n();
-  const { queryAddTag, queryTags, queryEditTag, queryDeleteTag } = useTagsApi();
+  const { queryAddTag, queryDeleteTag, queryEditTag, queryTags } = useTagsApi();
 
   const addTag = async (tag: Tag): Promise<ActionStatus> => {
     try {
@@ -19,12 +20,12 @@ export const useTagStore = defineStore('session/tags', () => {
     }
     catch (error: any) {
       setMessage({
-        title: t('actions.session.tag_add.error.title'),
         description: error.message,
+        title: t('actions.session.tag_add.error.title'),
       });
       return {
-        success: false,
         message: error.message,
+        success: false,
       };
     }
   };
@@ -36,12 +37,12 @@ export const useTagStore = defineStore('session/tags', () => {
     }
     catch (error: any) {
       setMessage({
-        title: t('actions.session.tag_edit.error.title'),
         description: error.message,
+        title: t('actions.session.tag_edit.error.title'),
       });
       return {
-        success: false,
         message: error.message,
+        success: false,
       };
     }
   };
@@ -53,8 +54,8 @@ export const useTagStore = defineStore('session/tags', () => {
     }
     catch (error: any) {
       setMessage({
-        title: t('actions.session.tag_delete.error.title'),
         description: error.message,
+        title: t('actions.session.tag_delete.error.title'),
       });
     }
   };
@@ -69,12 +70,12 @@ export const useTagStore = defineStore('session/tags', () => {
   };
 
   return {
-    allTags,
-    tags,
-    fetchTags,
     addTag,
-    editTag,
+    allTags,
     deleteTag,
+    editTag,
+    fetchTags,
+    tags,
   };
 });
 

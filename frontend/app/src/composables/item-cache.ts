@@ -32,8 +32,8 @@ interface UseItemCacheReturn<T> {
 export function useItemCache<T>(
   fetch: CacheFetch<T>,
   options: CacheOptions = {
-    size: CACHE_SIZE,
     expiry: CACHE_EXPIRY,
+    size: CACHE_SIZE,
   },
 ): UseItemCacheReturn<T> {
   const recent: Map<string, number> = new Map();
@@ -173,12 +173,12 @@ export function useItemCache<T>(
 
   return {
     cache,
-    unknown,
-    isPending,
-    retrieve,
-    reset,
-    refresh,
     deleteCacheKey,
+    isPending,
     queueIdentifier,
+    refresh,
+    reset,
+    retrieve,
+    unknown,
   };
 }

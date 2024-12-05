@@ -36,8 +36,8 @@ export function useHistoryApi(): UseHistoryApiReturn {
   };
 
   return {
-    getProgress,
-    fetchAssociatedLocations,
     fetchAllLocations,
+    fetchAssociatedLocations,
+    getProgress,
   };
 }

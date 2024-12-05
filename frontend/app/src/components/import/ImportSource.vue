@@ -6,6 +6,7 @@ import { DateFormat } from '@/types/date-format';
 import { TaskType } from '@/types/task-type';
 import { toMessages } from '@/utils/validation';
 import { isTaskCancelled } from '@/utils';
+import { useTaskStore } from '@/store/tasks';
 import type { TaskMeta } from '@/types/task';
 import type { ImportSourceType } from '@/types/upload-types';
 
@@ -62,8 +63,8 @@ async function uploadPackaged(file: string) {
     const { taskId } = await importDataFrom(sourceVal, file, get(dateInputFormat) || null);
 
     const taskMeta = {
-      title: t('file_upload.task.title', { source: sourceVal }),
       source: sourceVal,
+      title: t('file_upload.task.title', { source: sourceVal }),
     };
 
     const { result } = await awaitTask<boolean, TaskMeta>(taskId, taskType, taskMeta, true);
@@ -96,8 +97,8 @@ async function uploadFile() {
       try {
         const { taskId } = await importFile(formData);
         const taskMeta = {
-          title: t('file_upload.task.title', { source: get(source) }),
           source: get(source),
+          title: t('file_upload.task.title', { source: get(source) }),
         };
         const { result } = await awaitTask<boolean, TaskMeta>(taskId, taskType, taskMeta);
 

@@ -43,8 +43,8 @@ export function useSnapshotApi(): UseSnapshotApiReturn {
   const exportSnapshotCSV = async ({ path, timestamp }: { path: string; timestamp: number }): Promise<boolean> => {
     const response = await api.instance.get<ActionResult<boolean>>(`/snapshots/${timestamp}`, {
       params: snakeCaseTransformer({
-        path,
         action: 'export',
+        path,
       }),
       validateStatus: validWithoutSessionStatus,
     });
@@ -55,8 +55,8 @@ export function useSnapshotApi(): UseSnapshotApiReturn {
   const downloadSnapshot = async (timestamp: number): Promise<any> =>
     api.instance.get<any>(`/snapshots/${timestamp}`, {
       params: snakeCaseTransformer({ action: 'download' }),
-      validateStatus: validWithoutSessionStatus,
       responseType: 'blob',
+      validateStatus: validWithoutSessionStatus,
     });
 
   const deleteSnapshot = async (payload: { timestamp: number }): Promise<boolean> => {
@@ -102,12 +102,12 @@ export function useSnapshotApi(): UseSnapshotApiReturn {
   };
 
   return {
-    getSnapshotData,
-    updateSnapshotData,
-    exportSnapshotCSV,
-    downloadSnapshot,
     deleteSnapshot,
+    downloadSnapshot,
+    exportSnapshotCSV,
+    getSnapshotData,
     importBalancesSnapshot,
+    updateSnapshotData,
     uploadBalancesSnapshot,
   };
 }

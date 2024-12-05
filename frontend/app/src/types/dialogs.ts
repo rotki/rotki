@@ -1,9 +1,9 @@
 import type { ContextColorsType, RuiIcons } from '@rotki/ui-library';
 
 export const DialogType = {
+  INFO: 'info',
   SUCCESS: 'success',
   WARNING: 'warning',
-  INFO: 'info',
 } as const;
 
 export type DialogType = (typeof DialogType)[keyof typeof DialogType];
@@ -16,7 +16,7 @@ export interface DialogTheme {
 export type DialogThemes = { [type in DialogType]: DialogTheme };
 
 export const themes: DialogThemes = {
-  info: { icon: 'information-line', color: 'primary' },
-  warning: { icon: 'error-warning-line', color: 'error' },
-  success: { icon: 'checkbox-circle-line', color: 'success' },
+  info: { color: 'primary', icon: 'information-line' },
+  success: { color: 'success', icon: 'checkbox-circle-line' },
+  warning: { color: 'error', icon: 'error-warning-line' },
 } as const;

@@ -7,29 +7,29 @@ export function useExchangeUnknownAssetHandler(t: ReturnType<typeof useI18n>['t'
 
   const handle = (data: ExchangeUnknownAssetData): Notification => {
     const {
-      location,
-      name,
       details,
       identifier,
+      location,
+      name,
     } = data;
 
     return {
-      title: t('notification_messages.unknown_asset_mapping.title', { location }),
-      message: t('notification_messages.unknown_asset_mapping.message', { location, identifier, name, details }),
-      display: true,
-      severity: Severity.WARNING,
       action: {
-        label: t('notification_messages.unknown_asset_mapping.actions.add_mapping'),
-        icon: 'guide-line',
         action: async () => router.push({
           path: Routes.ASSET_MANAGER_CEX_MAPPING.toString(),
           query: {
             add: 'true',
-            locationSymbol: identifier,
             location,
+            locationSymbol: identifier,
           },
         }),
+        icon: 'guide-line',
+        label: t('notification_messages.unknown_asset_mapping.actions.add_mapping'),
       },
+      display: true,
+      message: t('notification_messages.unknown_asset_mapping.message', { details, identifier, location, name }),
+      severity: Severity.WARNING,
+      title: t('notification_messages.unknown_asset_mapping.title', { location }),
     };
   };
 

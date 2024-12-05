@@ -1,19 +1,23 @@
 <script setup lang="ts">
 import { TaskType } from '@/types/task-type';
 import { SYNC_DOWNLOAD, SYNC_UPLOAD, type SyncAction } from '@/types/session/sync';
+import { useTaskStore } from '@/store/tasks';
+import { usePremiumStore } from '@/store/session/premium';
+import { usePeriodicStore } from '@/store/session/periodic';
+import { useSessionStore } from '@/store/session';
 
 const { t } = useI18n();
 const { logout } = useSessionStore();
 const { lastDataUpload } = storeToRefs(usePeriodicStore());
 const {
+  cancelSync,
+  clearUploadStatus,
   confirmChecked,
   displaySyncConfirmation,
-  syncAction,
-  uploadStatus,
-  cancelSync,
   forceSync,
   showSyncConfirmation,
-  clearUploadStatus,
+  syncAction,
+  uploadStatus,
 } = useSync();
 const { href, onLinkClick } = useLinks();
 
@@ -30,9 +34,9 @@ const message = computed<string>(() =>
     : t('sync_indicator.upload_confirmation.message_download'),
 );
 
-const { resume, pause, counter } = useInterval(600, {
-  immediate: false,
+const { counter, pause, resume } = useInterval(600, {
   controls: true,
+  immediate: false,
 });
 
 const icon = computed(() => {

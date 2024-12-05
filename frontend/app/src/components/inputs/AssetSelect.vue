@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { CanceledError } from 'axios';
 import { uniqueObjects } from '@/utils/data';
+import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import type { AssetInfoWithId } from '@/types/asset';
 import type { NftAsset } from '@/types/nfts';
 
@@ -28,26 +29,26 @@ const props = withDefaults(
     asset?: AssetInfoWithId | NftAsset;
   }>(),
   {
-    items: () => [],
-    excludes: () => [],
-    hint: '',
-    successMessages: '',
-    errorMessages: () => [],
-    label: 'Asset',
-    disabled: false,
-    outlined: false,
+    asset: undefined,
     clearable: false,
+    disabled: false,
+    errorMessages: () => [],
+    excludes: () => [],
+    hideDetails: false,
+    hint: '',
+    includeNfts: false,
+    items: () => [],
+    label: 'Asset',
+    outlined: false,
     required: false,
     showIgnored: false,
-    hideDetails: false,
-    includeNfts: false,
-    asset: undefined,
+    successMessages: '',
   },
 );
 
 const emit = defineEmits<{ (e: 'update:asset', value?: AssetInfoWithId | NftAsset): void }>();
 
-const { items, showIgnored, excludes, errorMessages, includeNfts } = toRefs(props);
+const { errorMessages, excludes, includeNfts, items, showIgnored } = toRefs(props);
 const { isAssetIgnored } = useIgnoredAssetsStore();
 
 const search = ref<string>('');
@@ -56,7 +57,7 @@ const error = ref('');
 const loading = ref(false);
 let pending: AbortController | null = null;
 
-const { assetSearch, assetMapping } = useAssetInfoApi();
+const { assetMapping, assetSearch } = useAssetInfoApi();
 const { t } = useI18n();
 
 const errors = computed(() => {
@@ -94,10 +95,10 @@ async function searchAssets(keyword: string, signal: AbortSignal): Promise<void>
   set(loading, true);
   try {
     const fetchedAssets = await assetSearch({
-      value: keyword,
       limit: 50,
       searchNfts: get(includeNfts),
       signal,
+      value: keyword,
     });
     if (get(modelValue))
       await retainSelectedValueInOptions(fetchedAssets);

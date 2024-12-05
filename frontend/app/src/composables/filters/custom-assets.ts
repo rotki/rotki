@@ -23,27 +23,27 @@ export function useCustomAssetFilter(suggestions: MaybeRef<string[]>): FilterSch
   const { t } = useI18n();
 
   const matchers = computed<Matcher[]>(() => [{
+    description: t('assets.filter.name'),
+    hint: t('assets.filter.name_hint'),
     key: CustomAssetFilterKeys.NAME,
     keyValue: CustomAssetFilterValueKeys.NAME,
-    description: t('assets.filter.name'),
     string: true,
     suggestions: (): string[] => [],
-    hint: t('assets.filter.name_hint'),
     validate: (): boolean => true,
   }, {
+    description: t('assets.filter.type'),
+    hint: t('assets.filter.type_hint'),
     key: CustomAssetFilterKeys.CUSTOM_ASSET_TYPE,
     keyValue: CustomAssetFilterValueKeys.CUSTOM_ASSET_TYPE,
-    description: t('assets.filter.type'),
     string: true,
     suggestions: (): string[] => get(suggestions),
-    hint: t('assets.filter.type_hint'),
     validate: (value: string): boolean => get(suggestions).includes(value),
   }]);
 
   const OptionalString = z.string().optional();
   const RouteFilterSchema = z.object({
-    [CustomAssetFilterValueKeys.NAME]: OptionalString,
     [CustomAssetFilterValueKeys.CUSTOM_ASSET_TYPE]: OptionalString,
+    [CustomAssetFilterValueKeys.NAME]: OptionalString,
   });
 
   return {

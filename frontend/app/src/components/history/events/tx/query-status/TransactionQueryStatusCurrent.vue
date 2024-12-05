@@ -14,7 +14,7 @@ const { onlyChains } = toRefs(props);
 
 const { t } = useI18n();
 
-const { queryingLength, length, isAllFinished } = useTransactionQueryStatus(onlyChains);
+const { isAllFinished, length, queryingLength } = useTransactionQueryStatus(onlyChains);
 </script>
 
 <template>

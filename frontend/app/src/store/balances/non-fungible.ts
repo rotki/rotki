@@ -4,6 +4,9 @@ import { TaskType } from '@/types/task-type';
 import { isTaskCancelled } from '@/utils';
 import { logger } from '@/utils/logging';
 import { mapCollectionResponse } from '@/utils/collection';
+import { useTaskStore } from '@/store/tasks';
+import { useNotificationsStore } from '@/store/notifications';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 import type { BigNumber } from '@rotki/common';
 import type { MaybeRef } from '@vueuse/core';
 import type { Collection } from '@/types/collection';
@@ -45,11 +48,11 @@ export const useNonFungibleBalancesStore = defineStore('balances/non-fungible', 
       return;
 
     const defaults: NonFungibleBalancesRequestPayload = {
+      ascending: [true],
+      ignoreCache: true,
       limit: 0,
       offset: 0,
-      ascending: [true],
       orderByAttributes: ['name'],
-      ignoreCache: true,
     };
 
     const { taskId } = await fetchNfBalancesTask(defaults);
@@ -62,11 +65,11 @@ export const useNonFungibleBalancesStore = defineStore('balances/non-fungible', 
     catch (error: any) {
       if (!isTaskCancelled(error)) {
         notify({
-          title: t('actions.nft_balances.error.title'),
+          display: true,
           message: t('actions.nft_balances.error.message', {
             message: error.message,
           }),
-          display: true,
+          title: t('actions.nft_balances.error.title'),
         });
         throw error;
       }
@@ -77,7 +80,7 @@ export const useNonFungibleBalancesStore = defineStore('balances/non-fungible', 
     if (!get(activeModules).includes(Module.NFTS))
       return;
 
-    const { setStatus, isFirstLoad, resetStatus, fetchDisabled } = useStatusUpdater(Section.NON_FUNGIBLE_BALANCES);
+    const { fetchDisabled, isFirstLoad, resetStatus, setStatus } = useStatusUpdater(Section.NON_FUNGIBLE_BALANCES);
 
     if (fetchDisabled(userInitiated)) {
       logger.info('skipping non fungible balances refresh');
@@ -96,8 +99,8 @@ export const useNonFungibleBalancesStore = defineStore('balances/non-fungible', 
   };
 
   return {
-    nonFungibleTotalValue,
     fetchNonFungibleBalances,
+    nonFungibleTotalValue,
     refreshNonFungibleBalances,
   };
 });

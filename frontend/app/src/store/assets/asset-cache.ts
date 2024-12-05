@@ -1,3 +1,4 @@
+import { useNotificationsStore } from '@/store/notifications';
 import type { AssetInfo } from '@rotki/common';
 import type { AssetMap } from '@/types/asset';
 
@@ -14,11 +15,11 @@ export const useAssetCacheStore = defineStore('assets/cache', () => {
     }
     catch (error: any) {
       notify({
-        title: t('asset_search.error.title'),
+        display: true,
         message: t('asset_search.error.message', {
           message: error.message,
         }),
-        display: true,
+        title: t('asset_search.error.title'),
       });
       return {
         assetCollections: {},
@@ -27,7 +28,7 @@ export const useAssetCacheStore = defineStore('assets/cache', () => {
     }
   };
 
-  const { cache, isPending, retrieve, reset, deleteCacheKey, queueIdentifier } = useItemCache<AssetInfo>(
+  const { cache, deleteCacheKey, isPending, queueIdentifier, reset, retrieve } = useItemCache<AssetInfo>(
     async (keys: string[]) => {
       const response = await getAssetMappingHandler(keys);
       return function* (): Generator<{ item: AssetInfo; key: string }, void> {
@@ -47,12 +48,12 @@ export const useAssetCacheStore = defineStore('assets/cache', () => {
 
   return {
     cache,
+    deleteCacheKey,
     fetchedAssetCollections,
     isPending,
-    retrieve,
-    reset,
-    deleteCacheKey,
     queueIdentifier,
+    reset,
+    retrieve,
   };
 });
 

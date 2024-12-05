@@ -34,10 +34,10 @@ export function useRandomStepper(steps: number, interval: number = 10000): UseRa
   });
 
   return {
-    step,
-    steps,
     onNavigate,
     onPause: pause,
     onResume: resume,
+    step,
+    steps,
   };
 }

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useAreaVisibilityStore } from '@/store/session/visibility';
+
 const props = defineProps<{ visible: boolean }>();
 
 const emit = defineEmits<{ (e: 'update:visible', visible: boolean): void }>();

@@ -16,8 +16,8 @@ export const useLastLanguage = createSharedComposable(() => {
   };
 
   return {
-    lastLanguage,
-    forceUpdateMachineLanguage,
     checkMachineLanguage,
+    forceUpdateMachineLanguage,
+    lastLanguage,
   };
 });

@@ -13,79 +13,79 @@ export type AssetExplorerUrls = {
 };
 
 export const explorerUrls: AssetExplorerUrls = {
+  [Blockchain.ARBITRUM_ONE]: {
+    address: 'https://arbiscan.io/address/',
+    block: 'https://arbiscan.io/block/',
+    transaction: 'https://arbiscan.io/tx/',
+  },
+  [Blockchain.AVAX]: {
+    address: 'https://avascan.info/blockchain/c/address/',
+    block: 'https://avascan.info/blockchain/c/block/',
+    transaction: 'https://avascan.info/blockchain/c/tx/',
+  },
+  [Blockchain.BASE]: {
+    address: 'https://basescan.org/address/',
+    block: 'https://basescan.org/block/',
+    transaction: 'https://basescan.org/tx/',
+  },
+  [Blockchain.BCH]: {
+    address: 'https://www.blockchain.com/explorer/addresses/bch/',
+    block: 'https://www.blockchain.com/explorer/blocks/bch/',
+    transaction: 'https://www.blockchain.com/explorer/transactions/bch/',
+  },
+  [Blockchain.BTC]: {
+    address: 'https://www.blockchain.com/explorer/addresses/btc/',
+    block: 'https://www.blockchain.com/explorer/blocks/btc/',
+    transaction: 'https://www.blockchain.com/explorer/transactions/btc/',
+  },
+  [Blockchain.DOT]: {
+    address: 'https://explorer.polkascan.io/polkadot/account/',
+    block: 'https://explorer.polkascan.io/polkadot/block/',
+    transaction: 'https://explorer.polkascan.io/polkadot/transaction/',
+  },
   [Blockchain.ETH]: {
     address: 'https://etherscan.io/address/',
-    transaction: 'https://etherscan.io/tx/',
     block: 'https://etherscan.io/block/',
+    transaction: 'https://etherscan.io/tx/',
   },
   [Blockchain.ETH2]: {
     address: 'https://beaconcha.in/validator/',
     block: 'https://beaconcha.in/block/',
   },
-  [Blockchain.BTC]: {
-    address: 'https://www.blockchain.com/explorer/addresses/btc/',
-    transaction: 'https://www.blockchain.com/explorer/transactions/btc/',
-    block: 'https://www.blockchain.com/explorer/blocks/btc/',
-  },
-  [Blockchain.BCH]: {
-    address: 'https://www.blockchain.com/explorer/addresses/bch/',
-    transaction: 'https://www.blockchain.com/explorer/transactions/bch/',
-    block: 'https://www.blockchain.com/explorer/blocks/bch/',
-  },
-  ETC: {
-    address: 'https://blockscout.com/etc/mainnet/address/',
-    transaction: 'https://blockscout.com/etc/mainnet/tx/',
-    block: 'https://blockscout.com/etc/mainnet/block',
+  [Blockchain.GNOSIS]: {
+    address: 'https://gnosisscan.io/address/',
+    block: 'https://gnosisscan.io/block/',
+    transaction: 'https://gnosisscan.io/tx/',
   },
   [Blockchain.KSM]: {
     address: 'https://explorer.polkascan.io/kusama/account/',
-    transaction: 'https://explorer.polkascan.io/kusama/transaction/',
     block: 'https://explorer.polkascan.io/kusama/block/',
-  },
-  [Blockchain.AVAX]: {
-    address: 'https://avascan.info/blockchain/c/address/',
-    transaction: 'https://avascan.info/blockchain/c/tx/',
-    block: 'https://avascan.info/blockchain/c/block/',
-  },
-  [Blockchain.DOT]: {
-    address: 'https://explorer.polkascan.io/polkadot/account/',
-    transaction: 'https://explorer.polkascan.io/polkadot/transaction/',
-    block: 'https://explorer.polkascan.io/polkadot/block/',
+    transaction: 'https://explorer.polkascan.io/kusama/transaction/',
   },
   [Blockchain.OPTIMISM]: {
     address: 'https://optimistic.etherscan.io/address/',
-    transaction: 'https://optimistic.etherscan.io/tx/',
     block: 'https://optimistic.etherscan.io/block/',
+    transaction: 'https://optimistic.etherscan.io/tx/',
   },
   [Blockchain.POLYGON_POS]: {
     address: 'https://polygonscan.com/address/',
-    transaction: 'https://polygonscan.com/tx/',
     block: 'https://polygonscan.com/block/',
-  },
-  [Blockchain.ARBITRUM_ONE]: {
-    address: 'https://arbiscan.io/address/',
-    transaction: 'https://arbiscan.io/tx/',
-    block: 'https://arbiscan.io/block/',
-  },
-  [Blockchain.BASE]: {
-    address: 'https://basescan.org/address/',
-    transaction: 'https://basescan.org/tx/',
-    block: 'https://basescan.org/block/',
-  },
-  [Blockchain.GNOSIS]: {
-    address: 'https://gnosisscan.io/address/',
-    transaction: 'https://gnosisscan.io/tx/',
-    block: 'https://gnosisscan.io/block/',
+    transaction: 'https://polygonscan.com/tx/',
   },
   [Blockchain.SCROLL]: {
     address: 'https://scrollscan.com/address/',
-    transaction: 'https://scrollscan.com/tx/',
     block: 'https://scrollscan.com/block/',
+    transaction: 'https://scrollscan.com/tx/',
   },
   [Blockchain.ZKSYNC_LITE]: {
     address: 'https://zkscan.io/explorer/accounts/',
-    transaction: 'https://zkscan.io/explorer/transactions/',
     block: 'https://zkscan.io/explorer/blocks/',
+    transaction: 'https://zkscan.io/explorer/transactions/',
+  },
+  ETC: {
+    address: 'https://blockscout.com/etc/mainnet/address/',
+    block: 'https://blockscout.com/etc/mainnet/block',
+    transaction: 'https://blockscout.com/etc/mainnet/tx/',
   },
 };
 

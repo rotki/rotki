@@ -4,6 +4,8 @@ import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
 import { logger } from '@/utils/logging';
 import { defaultCollectionState, mapCollectionResponse } from '@/utils/collection';
 import { getEthAddressesFromText } from '@/utils/history';
+import { useNotificationsStore } from '@/store/notifications';
+import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import type { MaybeRef } from '@vueuse/core';
 import type { Collection } from '@/types/collection';
 import type {
@@ -29,10 +31,10 @@ export function useHistoryEvents(): UseHistoryEventsReturn {
   const { notify } = useNotificationsStore();
 
   const {
-    fetchHistoryEvents: fetchHistoryEventsCaller,
-    deleteHistoryEvent: deleteHistoryEventCaller,
     addHistoryEvent: addHistoryEventCaller,
+    deleteHistoryEvent: deleteHistoryEventCaller,
     editHistoryEvent: editHistoryEventCaller,
+    fetchHistoryEvents: fetchHistoryEventsCaller,
   } = useHistoryEventsApi();
 
   const { fetchEnsNames } = useAddressesNamesStore();
@@ -80,11 +82,11 @@ export function useHistoryEvents(): UseHistoryEventsReturn {
     catch (error: any) {
       logger.error(error);
       notify({
-        title: t('actions.history_events.error.title'),
+        display: true,
         message: t('actions.history_events.error.description', {
           error,
         }).toString(),
-        display: true,
+        title: t('actions.history_events.error.title'),
       });
       return defaultCollectionState();
     }
@@ -103,7 +105,7 @@ export function useHistoryEvents(): UseHistoryEventsReturn {
         message = error.getValidationErrors(event);
     }
 
-    return { success, message };
+    return { message, success };
   };
 
   const editHistoryEvent = async (event: EditHistoryEventPayload): Promise<ActionStatus<ValidationErrors | string>> => {
@@ -119,7 +121,7 @@ export function useHistoryEvents(): UseHistoryEventsReturn {
         message = error.getValidationErrors(event);
     }
 
-    return { success, message };
+    return { message, success };
   };
 
   const deleteHistoryEvent = async (eventIds: number[], forceDelete = false): Promise<ActionStatus> => {
@@ -132,13 +134,13 @@ export function useHistoryEvents(): UseHistoryEventsReturn {
       message = error.message;
     }
 
-    return { success, message };
+    return { message, success };
   };
 
   return {
-    fetchHistoryEvents,
     addHistoryEvent,
-    editHistoryEvent,
     deleteHistoryEvent,
+    editHistoryEvent,
+    fetchHistoryEvents,
   };
 }

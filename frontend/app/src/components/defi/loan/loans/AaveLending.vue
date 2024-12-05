@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { AaveBorrowingDetails } from '@/premium/premium';
 import { Section } from '@/types/status';
+import { useStatusStore } from '@/store/status';
 import type { AaveLoan } from '@/types/defi/lending';
 
 const props = defineProps<{ loan: AaveLoan }>();

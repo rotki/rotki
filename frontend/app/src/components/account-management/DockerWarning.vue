@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { externalLinks } from '@shared/external-links';
+import { useMainStore } from '@/store/main';
 
 const { dockerRiskAccepted } = storeToRefs(useMainStore());
 const { t } = useI18n();

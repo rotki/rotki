@@ -14,10 +14,10 @@ export function useImportDataApi(): UseImportDataApiReturn {
     const response = await api.instance.put<ActionResult<PendingTask>>(
       '/import',
       snakeCaseTransformer({
-        source,
-        file,
-        timestampFormat,
         asyncQuery: true,
+        file,
+        source,
+        timestampFormat,
       }),
       {
         validateStatus: validStatus,
@@ -29,10 +29,10 @@ export function useImportDataApi(): UseImportDataApiReturn {
 
   const importFile = async (data: FormData): Promise<PendingTask> => {
     const response = await api.instance.post<ActionResult<PendingTask>>('/import', data, {
-      validateStatus: validStatus,
       headers: {
         'Content-Type': 'multipart/form-data',
       },
+      validateStatus: validStatus,
     });
 
     return handleResponse(response);

@@ -41,8 +41,8 @@ export function useAssetWhitelistApi(): UseAssetWhitelistApiReturn {
   };
 
   return {
-    getWhitelistedAssets,
     addAssetToWhitelist,
+    getWhitelistedAssets,
     removeAssetFromWhitelist,
   };
 }

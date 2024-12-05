@@ -13,13 +13,13 @@ const props = withDefaults(defineProps<{
   loading?: boolean;
   maxWidth?: string;
 }>(), {
-  primaryAction: null,
-  secondaryAction: null,
   confirmType: DialogType.INFO,
   disabled: false,
-  singleAction: false,
   loading: false,
   maxWidth: '500',
+  primaryAction: null,
+  secondaryAction: null,
+  singleAction: false,
 });
 
 const emit = defineEmits<{

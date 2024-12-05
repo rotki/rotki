@@ -52,9 +52,9 @@ export function useBlockchainBalancesApi(): UseBlockchainBalancesApiReturn {
     const response = await api.instance.post<ActionResult<T>>(
       `/blockchains/${chain}/tokens/detect`,
       snakeCaseTransformer({
+        addresses,
         asyncQuery,
         onlyCache: !asyncQuery,
-        addresses,
       }),
       {
         validateStatus: validWithParamsSessionAndExternalService,
@@ -83,10 +83,10 @@ export function useBlockchainBalancesApi(): UseBlockchainBalancesApiReturn {
   };
 
   return {
-    queryBlockchainBalances,
-    queryLoopringBalances,
+    deleteModuleData,
     fetchDetectedTokens,
     fetchDetectedTokensTask,
-    deleteModuleData,
+    queryBlockchainBalances,
+    queryLoopringBalances,
   };
 }

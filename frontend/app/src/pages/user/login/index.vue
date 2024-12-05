@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useSessionStore } from '@/store/session';
+import { useSessionAuthStore } from '@/store/session/auth';
 import type { LoginCredentials } from '@/types/login';
 
 definePage({
@@ -8,17 +10,17 @@ definePage({
 });
 
 const { t } = useI18n();
-const { navigateToUserCreation, navigateToDashboard } = useAppNavigation();
-const { upgradeVisible, canRequestData } = storeToRefs(useSessionAuthStore());
+const { navigateToDashboard, navigateToUserCreation } = useAppNavigation();
+const { canRequestData, upgradeVisible } = storeToRefs(useSessionAuthStore());
 const { backendChanged } = useBackendManagement();
-const { userLogin, errors, loading } = useAccountManagement();
+const { errors, loading, userLogin } = useAccountManagement();
 const { checkForAssetUpdate } = storeToRefs(useSessionStore());
 
 const showUpgradeProgress = computed<boolean>(() => get(upgradeVisible) && get(errors).length === 0);
 
 const isDocker = import.meta.env.VITE_DOCKER;
 
-const { fetchMessages, welcomeHeader, welcomeMessage, activeWelcomeMessages } = useDynamicMessages();
+const { activeWelcomeMessages, fetchMessages, welcomeHeader, welcomeMessage } = useDynamicMessages();
 const { showReleaseNotes } = useUpdateMessage();
 
 const header = computed(() => {

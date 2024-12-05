@@ -27,40 +27,40 @@ const sort = ref<DataTableSortData<Acquisition>>({
 
 const cols = computed<DataTableColumn<Acquisition>[]>(() => [
   {
-    label: t('cost_basis_table.headers.amount'),
+    align: 'end',
     key: 'amount',
-    align: 'end',
+    label: t('cost_basis_table.headers.amount'),
     sortable: true,
   },
   {
-    label: t('cost_basis_table.headers.full_amount'),
+    align: 'end',
     key: 'fullAmount',
-    align: 'end',
+    label: t('cost_basis_table.headers.full_amount'),
     sortable: true,
   },
   {
-    label: t('cost_basis_table.headers.remaining_amount'),
+    align: 'end',
     key: 'remainingAmount',
-    align: 'end',
+    label: t('cost_basis_table.headers.remaining_amount'),
     sortable: true,
   },
   {
+    align: 'end',
+    key: 'rate',
     label: t('cost_basis_table.headers.rate', {
       currency: get(currency),
     }),
-    key: 'rate',
-    align: 'end',
     sortable: true,
   },
   {
-    label: t('common.datetime'),
+    align: 'end',
     key: 'timestamp',
-    align: 'end',
+    label: t('common.datetime'),
     sortable: true,
   },
   {
-    label: t('cost_basis_table.headers.taxable'),
     key: 'taxable',
+    label: t('cost_basis_table.headers.taxable'),
     sortable: true,
   },
 ]);

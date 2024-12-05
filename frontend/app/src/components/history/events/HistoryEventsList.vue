@@ -28,7 +28,7 @@ const emit = defineEmits<{
 const PER_BATCH = 6;
 const currentLimit = ref<number>(PER_BATCH);
 const { t } = useI18n();
-const { eventGroup, allEvents } = toRefs(props);
+const { allEvents, eventGroup } = toRefs(props);
 
 const events = computed<HistoryEventEntry[]>(() => {
   const all = get(allEvents);

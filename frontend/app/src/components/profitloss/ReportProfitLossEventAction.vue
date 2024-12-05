@@ -3,6 +3,8 @@ import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
 import { toMessages } from '@/utils/validation';
 import { convertFromTimestamp } from '@/utils/date';
+import { useBalancePricesStore } from '@/store/balances/prices';
+import { useMessageStore } from '@/store/message';
 import type { ProfitLossEvent } from '@/types/reports';
 import type { HistoricalPriceFormPayload } from '@/types/prices';
 
@@ -11,7 +13,7 @@ const props = defineProps<{
   currency: string;
 }>();
 
-const { event, currency } = toRefs(props);
+const { currency, event } = toRefs(props);
 
 const { getHistoricPrice } = useBalancePricesStore();
 const { addHistoricalPrice } = useAssetPricesApi();
@@ -26,8 +28,8 @@ async function openEditHistoricPriceDialog() {
   const { assetIdentifier, timestamp } = get(event);
   const historicPrice = await getHistoricPrice({
     fromAsset: assetIdentifier,
-    toAsset: get(currency),
     timestamp,
+    toAsset: get(currency),
   });
   set(price, historicPrice.isPositive() ? historicPrice.toFixed() : '0');
   set(fetchingPrice, false);
@@ -56,9 +58,9 @@ const { setMessage } = useMessageStore();
 async function updatePrice() {
   const payload: HistoricalPriceFormPayload = {
     fromAsset: get(event).assetIdentifier,
-    toAsset: get(currency),
-    timestamp: get(event).timestamp,
     price: get(price),
+    timestamp: get(event).timestamp,
+    toAsset: get(currency),
   };
 
   try {
@@ -70,9 +72,9 @@ async function updatePrice() {
     const title = t('price_management.add.error.title');
     const description = t('price_management.add.error.description', values);
     setMessage({
-      title,
       description,
       success: false,
+      title,
     });
   }
 }

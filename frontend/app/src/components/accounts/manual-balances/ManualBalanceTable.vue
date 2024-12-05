@@ -3,6 +3,10 @@ import { objectOmit } from '@vueuse/shared';
 import { isEqual } from 'lodash-es';
 import { Section } from '@/types/status';
 import { uniqueStrings } from '@/utils/data';
+import { useStatusStore } from '@/store/status';
+import { useConfirmStore } from '@/store/confirm';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useManualBalancesStore } from '@/store/balances/manual';
 import type { Filters, Matcher } from '@/composables/filters/manual-balances';
 import type { ManualBalance, ManualBalanceRequestPayload, ManualBalanceWithPrice } from '@/types/manual-balances';
 import type { DataTableColumn } from '@rotki/ui-library';
@@ -24,7 +28,7 @@ const tags = ref<string[]>([]);
 const store = useManualBalancesStore();
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { manualBalances, manualLiabilities } = storeToRefs(store);
-const { fetchLiabilities, fetchBalances, fetchManualBalances, deleteManualBalance } = store;
+const { deleteManualBalance, fetchBalances, fetchLiabilities, fetchManualBalances } = store;
 const { isLoading } = useStatusStore();
 
 const refreshing = isLoading(Section.MANUAL_BALANCES);
@@ -38,13 +42,13 @@ const locations = computed(() =>
 );
 
 const {
-  isLoading: loading,
-  filters,
-  matchers,
-  state,
   fetchData,
+  filters,
+  isLoading: loading,
+  matchers,
   pagination,
   sort,
+  state,
 } = usePaginationFilters<
   ManualBalanceWithPrice,
   ManualBalanceRequestPayload,
@@ -53,17 +57,17 @@ const {
 >(
   payload => (props.type === 'liabilities' ? fetchLiabilities(payload) : fetchBalances(payload)),
   {
-    history: 'router',
-    filterSchema: () => useManualBalanceFilter(locations),
-    extraParams: computed(() => ({
-      tags: get(tags),
-    })),
     defaultSortBy: [
       {
         column: 'usdValue',
         direction: 'desc',
       },
     ],
+    extraParams: computed(() => ({
+      tags: get(tags),
+    })),
+    filterSchema: () => useManualBalanceFilter(locations),
+    history: 'router',
     onUpdateFilters(query) {
       const schema = ManualBalancesFilterSchema.parse(query);
       if (schema.tags)
@@ -86,51 +90,51 @@ function getRowClass(item: ManualBalance) {
 
 const cols = computed<DataTableColumn<ManualBalanceWithPrice>[]>(() => [
   {
-    label: t('common.location'),
-    key: 'location',
     align: 'center',
-    class: 'w-[120px]',
     cellClass: 'py-2 w-[120px]',
+    class: 'w-[120px]',
+    key: 'location',
+    label: t('common.location'),
   },
   {
-    label: t('common.label'),
     key: 'label',
+    label: t('common.label'),
     sortable: true,
   },
   {
-    label: t('common.asset'),
-    key: 'asset',
-    sortable: true,
     class: 'w-[12rem] xl:w-[16rem] 2xl:w-[20rem]',
+    key: 'asset',
+    label: t('common.asset'),
+    sortable: true,
   },
   {
+    align: 'end',
+    key: 'usdPrice',
     label: t('common.price_in_symbol', {
       symbol: get(currencySymbol),
     }),
-    key: 'usdPrice',
     sortable: true,
-    align: 'end',
   },
   {
-    label: t('common.amount'),
+    align: 'end',
     key: 'amount',
+    label: t('common.amount'),
     sortable: true,
-    align: 'end',
   },
   {
+    align: 'end',
+    key: 'usdValue',
     label: t('common.value_in_symbol', {
       symbol: get(currencySymbol),
     }),
-    key: 'usdValue',
     sortable: true,
-    align: 'end',
   },
   {
-    label: t('common.actions_text'),
-    key: 'actions',
     align: 'end',
-    class: 'w-[120px]',
     cellClass: 'w-[120px]',
+    class: 'w-[120px]',
+    key: 'actions',
+    label: t('common.actions_text'),
   },
 ]);
 
@@ -139,8 +143,8 @@ const { show } = useConfirmStore();
 function showDeleteConfirmation(id: number) {
   show(
     {
-      title: t('manual_balances_table.delete_dialog.title'),
       message: t('manual_balances_table.delete_dialog.message'),
+      title: t('manual_balances_table.delete_dialog.title'),
     },
     () => deleteManualBalance(id),
   );

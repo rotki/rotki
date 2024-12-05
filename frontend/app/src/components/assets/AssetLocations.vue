@@ -3,6 +3,10 @@ import { type BigNumber, Blockchain } from '@rotki/common';
 import { CURRENCY_USD } from '@/types/currencies';
 import { isBlockchain } from '@/types/blockchain/chains';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
+import { useStatusStore } from '@/store/status';
+import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
+import { useBlockchainStore } from '@/store/blockchain';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 import type { AddressData, AssetBreakdown, BlockchainAccount } from '@/types/blockchain/accounts';
 import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 
@@ -25,8 +29,8 @@ const sort = ref<DataTableSortData<AssetLocation>>({
 });
 
 const pagination = ref({
-  page: 1,
   itemsPerPage: 10,
+  page: 1,
 });
 
 const onlyTags = ref<string[]>([]);
@@ -39,7 +43,7 @@ const { detailsLoading } = storeToRefs(useStatusStore());
 const { assetPriceInfo } = useAggregatedBalances();
 const { assetBreakdown } = useBalancesBreakdown();
 const { addressNameSelector } = useAddressesNamesStore();
-const { getChainName, getChain } = useSupportedChains();
+const { getChain, getChainName } = useSupportedChains();
 
 const totalUsdValue = computed<BigNumber>(() => get(assetPriceInfo(identifier)).usdValue);
 
@@ -92,10 +96,10 @@ function setTablePagination(event: TablePaginationData | undefined) {
   if (!isDefined(event))
     return;
 
-  const { page, limit } = event;
+  const { limit, page } = event;
   set(pagination, {
-    page,
     itemsPerPage: limit,
+    page,
   });
 }
 
@@ -122,36 +126,36 @@ const headers = computed<DataTableColumn<AssetLocation>[]>(() => {
 
   return [
     {
-      label: t('common.location'),
-      key: 'location',
       align: 'center',
       cellClass: 'w-36',
+      key: 'location',
+      label: t('common.location'),
       sortable: true,
     },
     {
-      label,
       key: 'label',
+      label,
       sortable: true,
     },
     {
-      label: t('common.amount'),
-      key: 'amount',
       align: 'end',
+      key: 'amount',
+      label: t('common.amount'),
       sortable: true,
     },
     {
+      align: 'end',
+      key: 'usdValue',
       label: t('asset_locations.header.value', {
         symbol: get(currencySymbol) ?? CURRENCY_USD,
       }),
-      key: 'usdValue',
-      align: 'end',
       sortable: true,
     },
     {
-      label: t('asset_locations.header.percentage'),
-      key: 'percentage',
-      sortable: false,
       align: 'end',
+      key: 'percentage',
+      label: t('asset_locations.header.percentage'),
+      sortable: false,
     },
   ];
 });

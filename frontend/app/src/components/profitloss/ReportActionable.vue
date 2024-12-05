@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useReportsStore } from '@/store/reports';
 import type { SelectedReport } from '@/types/reports';
 
 const props = withDefaults(

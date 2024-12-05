@@ -19,10 +19,10 @@ const defaultFunc: Func = () => {};
 
 function defaultMessage(): ConfirmationMessage {
   return {
-    title: '',
     message: '',
-    type: 'warning',
     singleAction: false,
+    title: '',
+    type: 'warning',
   };
 }
 
@@ -70,11 +70,11 @@ export const useConfirmStore = defineStore('confirm', () => {
   };
 
   return {
-    visible,
-    confirmation,
     confirm,
-    show,
+    confirmation,
     dismiss,
+    show,
+    visible,
   };
 });
 

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { cloneDeep } from 'lodash-es';
 import { type Watcher, type WatcherOpTypes, WatcherType } from '@/types/session';
+import { useWatchersStore } from '@/store/session/watchers';
 import type { RuiIcons } from '@rotki/ui-library';
 
 interface WatcherOperation {
@@ -20,16 +21,16 @@ const props = withDefaults(
     existingWatchers?: Watcher[];
   }>(),
   {
-    watcherValueLabel: 'Watcher Value',
-    watcherContentId: undefined,
-    preselectWatcherType: undefined,
     existingWatchers: () => [],
+    preselectWatcherType: undefined,
+    watcherContentId: undefined,
+    watcherValueLabel: 'Watcher Value',
   },
 );
 
 const emit = defineEmits<{ (e: 'cancel'): void }>();
 
-const { display, preselectWatcherType, existingWatchers, watcherContentId } = toRefs(props);
+const { display, existingWatchers, preselectWatcherType, watcherContentId } = toRefs(props);
 const watcherType = ref<typeof WatcherType>();
 const watcherOperation = ref<WatcherOpTypes>();
 const watcherValue = ref<string>('');
@@ -41,7 +42,7 @@ const { t } = useI18n();
 
 const store = useWatchersStore();
 const { watchers } = storeToRefs(store);
-const { addWatchers, editWatchers, deleteWatchers } = store;
+const { addWatchers, deleteWatchers, editWatchers } = store;
 
 const loadedWatchers = computed<Watcher[]>(() => {
   const id = get(watcherContentId)?.toString();
@@ -60,23 +61,23 @@ const watcherOperations = computed<{ [WatcherType]: WatcherOperation[] }>(() => 
   makervault_collateralization_ratio: [
     {
       op: 'gt',
-      value: 'gt',
       text: t('watcher_dialog.ratio.gt'),
+      value: 'gt',
     },
     {
       op: 'ge',
-      value: 'ge',
       text: t('watcher_dialog.ratio.ge'),
+      value: 'ge',
     },
     {
       op: 'lt',
-      value: 'lt',
       text: t('watcher_dialog.ratio.lt'),
+      value: 'lt',
     },
     {
       op: 'le',
-      value: 'le',
       text: t('watcher_dialog.ratio.le'),
+      value: 'le',
     },
   ],
 }));
@@ -125,12 +126,12 @@ async function addWatcher() {
     return;
 
   const watcherData: Omit<Watcher, 'identifier'> = {
-    type,
     args: {
-      ratio: value,
       op: operation,
+      ratio: value,
       vaultId: contentId.toString(),
     },
+    type,
   };
 
   try {

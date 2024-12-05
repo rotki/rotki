@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { TimeFramePeriod, TimeFramePersist, type TimeFrameSetting } from '@rotki/common';
 import { isPeriodAllowed } from '@/utils/settings';
+import { useSessionSettingsStore } from '@/store/settings/session';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
 const props = defineProps<{
   message: { error: string; success: string };
@@ -14,7 +16,7 @@ const emit = defineEmits<{
   (e: 'visible-timeframes-change', timeframes: TimeFrameSetting[]): void;
 }>();
 
-const { message, visibleTimeframes, value, currentSessionTimeframe } = toRefs(props);
+const { currentSessionTimeframe, message, value, visibleTimeframes } = toRefs(props);
 
 const timeframes = Object.values(TimeFramePeriod);
 const { t } = useI18n();
@@ -29,7 +31,7 @@ const selectableTimeframes = computed(() =>
 );
 
 const text = computed<string>(() => {
-  const { success, error } = get(message);
+  const { error, success } = get(message);
   return success || error;
 });
 

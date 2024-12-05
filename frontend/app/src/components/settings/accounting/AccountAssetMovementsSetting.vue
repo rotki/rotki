@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useAccountingSettingsStore } from '@/store/settings/accounting';
+
 const accountForAssetsMovements = ref(false);
 const { accountForAssetsMovements: enabled } = storeToRefs(useAccountingSettingsStore());
 

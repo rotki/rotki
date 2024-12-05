@@ -98,14 +98,14 @@ export const useStatusStore = defineStore('status', () => {
   );
 
   return {
-    status,
     detailsLoading,
-    isLoading,
-    shouldShowLoadingScreen,
-    resetDefiStatus,
-    setStatus,
     getStatus,
+    isLoading,
+    resetDefiStatus,
     resetStatus,
+    setStatus,
+    shouldShowLoadingScreen,
+    status,
   };
 });
 

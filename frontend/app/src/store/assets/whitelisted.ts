@@ -1,4 +1,5 @@
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
+import { useNotificationsStore } from '@/store/notifications';
 import type { MaybeRef } from '@vueuse/core';
 import type { ActionStatus } from '@/types/action';
 
@@ -7,7 +8,7 @@ export const useWhitelistedAssetsStore = defineStore('assets/whitelisted', () =>
   const { notify } = useNotificationsStore();
   const { t } = useI18n();
 
-  const { getWhitelistedAssets, addAssetToWhitelist, removeAssetFromWhitelist } = useAssetWhitelistApi();
+  const { addAssetToWhitelist, getWhitelistedAssets, removeAssetFromWhitelist } = useAssetWhitelistApi();
 
   const { fetchIgnoredAssets } = useIgnoredAssetsStore();
 
@@ -22,9 +23,9 @@ export const useWhitelistedAssetsStore = defineStore('assets/whitelisted', () =>
         error: error.message,
       });
       notify({
-        title,
-        message,
         display: true,
+        message,
+        title,
       });
     }
   };
@@ -38,13 +39,13 @@ export const useWhitelistedAssetsStore = defineStore('assets/whitelisted', () =>
     }
     catch (error: any) {
       notify({
-        title: t('ignore.whitelist.failed.whitelist_title'),
+        display: true,
         message: t('ignore.whitelist.failed.whitelist_message', {
           message: error.message,
         }),
-        display: true,
+        title: t('ignore.whitelist.failed.whitelist_title'),
       });
-      return { success: false, message: error.message };
+      return { message: error.message, success: false };
     }
   };
 
@@ -57,13 +58,13 @@ export const useWhitelistedAssetsStore = defineStore('assets/whitelisted', () =>
     }
     catch (error: any) {
       notify({
-        title: t('ignore.whitelist.failed.unwhitelist_title'),
+        display: true,
         message: t('ignore.whitelist.failed.unwhitelist_message', {
           message: error.message,
         }),
-        display: true,
+        title: t('ignore.whitelist.failed.unwhitelist_title'),
       });
-      return { success: false, message: error.message };
+      return { message: error.message, success: false };
     }
   };
 
@@ -73,10 +74,10 @@ export const useWhitelistedAssetsStore = defineStore('assets/whitelisted', () =>
   });
 
   return {
-    whitelistedAssets,
     fetchWhitelistedAssets,
-    whitelistAsset,
-    unWhitelistAsset,
     isAssetWhitelisted,
+    unWhitelistAsset,
+    whitelistAsset,
+    whitelistedAssets,
   };
 });

@@ -3,6 +3,8 @@ import { externalLinks } from '@shared/external-links';
 import { AssetAmountAndValueOverTime } from '@/premium/premium';
 import { EVM_TOKEN } from '@/types/asset';
 import { NoteLocation } from '@/types/notes';
+import { useIgnoredAssetsStore } from '@/store/assets/ignored';
+import { useWhitelistedAssetsStore } from '@/store/assets/whitelisted';
 import type { RouteLocationRaw } from 'vue-router';
 import type { AssetBalanceWithPrice } from '@rotki/common';
 import type { AssetResolutionOptions } from '@/composables/assets/retrieval';
@@ -31,10 +33,10 @@ const route = useRoute();
 
 const { coingeckoAsset, cryptocompareAsset } = externalLinks;
 
-const { isAssetIgnored, ignoreAsset, unignoreAsset } = useIgnoredAssetsStore();
-const { isAssetWhitelisted, whitelistAsset, unWhitelistAsset } = useWhitelistedAssetsStore();
+const { ignoreAsset, isAssetIgnored, unignoreAsset } = useIgnoredAssetsStore();
+const { isAssetWhitelisted, unWhitelistAsset, whitelistAsset } = useWhitelistedAssetsStore();
 const { markAssetsAsSpam, removeAssetFromSpamList } = useSpamAsset();
-const { assetName, assetSymbol, assetInfo, tokenAddress, refetchAssetInfo } = useAssetInfoRetrieval();
+const { assetInfo, assetName, assetSymbol, refetchAssetInfo, tokenAddress } = useAssetInfoRetrieval();
 const { getChain } = useSupportedChains();
 const premium = usePremium();
 const { balances } = useAggregatedBalances();

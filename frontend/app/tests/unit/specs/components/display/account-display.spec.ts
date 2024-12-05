@@ -4,6 +4,7 @@ import { type Pinia, createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import AccountDisplay from '@/components/display/AccountDisplay.vue';
 import { PrivacyMode } from '@/types/session';
+import { useSessionSettingsStore } from '@/store/settings/session';
 
 vi.mock('@/composables/api/assets/icon', () => ({
   useAssetIconApi: () => ({

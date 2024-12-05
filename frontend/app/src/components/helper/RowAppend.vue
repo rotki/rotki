@@ -10,11 +10,11 @@ const props = withDefaults(
   }>(),
   {
     className: '',
+    isMobile: false,
     label: '',
     labelColspan: 1,
     leftPatchColspan: 0,
     rightPatchColspan: 0,
-    isMobile: false,
   },
 );
 

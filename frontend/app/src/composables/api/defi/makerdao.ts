@@ -33,7 +33,7 @@ export function useMakerDaoApi(): UseMakerDaoApiReturn {
   return {
     fetchDsrBalances,
     fetchDsrHistories,
-    fetchMakerDAOVaults,
     fetchMakerDAOVaultDetails,
+    fetchMakerDAOVaults,
   };
 }

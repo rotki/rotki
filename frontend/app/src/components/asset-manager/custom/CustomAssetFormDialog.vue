@@ -9,16 +9,16 @@ const props = withDefaults(
     editableItem?: CustomAsset | null;
   }>(),
   {
+    editableItem: null,
     subtitle: '',
     types: () => [],
-    editableItem: null,
   },
 );
 
 const { editableItem } = toRefs(props);
 const { t } = useI18n();
 
-const { openDialog, submitting, closeDialog, trySubmit, stateUpdated } = useCustomAssetForm();
+const { closeDialog, openDialog, stateUpdated, submitting, trySubmit } = useCustomAssetForm();
 </script>
 
 <template>

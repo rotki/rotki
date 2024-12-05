@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { startPromise } from '@shared/utils';
 import { useAppRoutes } from '@/router/routes';
+import { useExchangesStore } from '@/store/exchanges';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 import type { RuiIcons } from '@rotki/ui-library';
 import type { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
 import type { Exchange } from '@/types/exchanges';
@@ -224,32 +226,32 @@ function getExchanges(keyword: string): SearchItemWithoutValue[] {
 function getActions(keyword: string): SearchItemWithoutValue[] {
   const actionItems: SearchItemWithoutValue[] = [
     {
-      text: t('exchange_settings.dialog.add.title'),
       route: `${Routes.API_KEYS_EXCHANGES.route}?add=true`,
+      text: t('exchange_settings.dialog.add.title'),
     },
     {
-      text: t('blockchain_balances.form_dialog.add_title'),
       route: `${Routes.ACCOUNTS_BALANCES_BLOCKCHAIN.route}?add=true`,
+      text: t('blockchain_balances.form_dialog.add_title'),
     },
     {
-      text: t('manual_balances.dialog.add.title'),
       route: `${Routes.ACCOUNTS_BALANCES_MANUAL.route}?add=true`,
+      text: t('manual_balances.dialog.add.title'),
     },
     {
-      text: t('closed_trades.dialog.add.title'),
       route: `${Routes.HISTORY_TRADES.route}?add=true`,
+      text: t('closed_trades.dialog.add.title'),
     },
     {
-      text: t('asset_management.add_title'),
       route: `${Routes.ASSET_MANAGER.route}?add=true`,
+      text: t('asset_management.add_title'),
     },
     {
-      text: t('price_management.latest.add_title'),
       route: `${Routes.PRICE_MANAGER_LATEST.route}?add=true`,
+      text: t('price_management.latest.add_title'),
     },
     {
-      text: t('price_management.historic.add_title'),
       route: `${Routes.PRICE_MANAGER_HISTORIC.route}?add=true`,
+      text: t('price_management.historic.add_title'),
     },
   ].map(item => ({ ...item, icon: 'add-circle-line' }));
 
@@ -258,8 +260,8 @@ function getActions(keyword: string): SearchItemWithoutValue[] {
 
 async function getAssets(keyword: string): Promise<SearchItemWithoutValue[]> {
   const matches = await assetSearch({
-    value: keyword,
     limit: 5,
+    value: keyword,
   });
   const assetBalances = get(balances()) as AssetBalanceWithPrice[];
   const map: Record<string, string> = {};
@@ -274,6 +276,8 @@ async function getAssets(keyword: string): Promise<SearchItemWithoutValue[]> {
       const asset = balance.asset;
 
       return {
+        asset,
+        price,
         route: {
           name: '/assets/[identifier]',
           params: {
@@ -281,8 +285,6 @@ async function getAssets(keyword: string): Promise<SearchItemWithoutValue[]> {
           },
         },
         texts: [t('common.asset'), map[asset] ?? ''],
-        price,
-        asset,
       };
     });
 }
@@ -297,6 +299,7 @@ function* transformLocations(): IterableIterator<SearchItemWithoutValue> {
 
     const total = locationBalances[identifier];
     yield {
+      location,
       route: {
         name: '/locations/[identifier]',
         params: {
@@ -304,7 +307,6 @@ function* transformLocations(): IterableIterator<SearchItemWithoutValue> {
         },
       },
       texts: [t('common.location'), location.name],
-      location,
       total,
     } satisfies SearchItemWithoutValue;
   }
@@ -335,8 +337,8 @@ watchDebounced(
       visibleItems,
       [...staticData, ...(await getAssets(search))].map((item, index) => ({
         ...item,
-        value: index,
         text: getItemText(item),
+        value: index,
       })),
     );
 

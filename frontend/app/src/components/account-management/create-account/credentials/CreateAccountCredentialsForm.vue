@@ -35,22 +35,22 @@ function input(newInput: Partial<LoginCredentials>) {
 const { t } = useI18n();
 
 const rules = {
-  username: {
-    required: helpers.withMessage(t('create_account.credentials.validation.non_empty_username'), required),
-    isValidUsername: helpers.withMessage(
-      t('create_account.credentials.validation.valid_username'),
-      (v: string): boolean => !!(v && /^[\w.-]+$/.test(v)),
-    ),
-  },
   password: {
     required: helpers.withMessage(t('create_account.credentials.validation.non_empty_password'), required),
   },
   passwordConfirm: {
-    required: helpers.withMessage(t('create_account.credentials.validation.non_empty_password_confirmation'), required),
     isMatch: helpers.withMessage(
       t('create_account.credentials.validation.password_confirmation_mismatch'),
       sameAs(computed(() => get(form).password)),
     ),
+    required: helpers.withMessage(t('create_account.credentials.validation.non_empty_password_confirmation'), required),
+  },
+  username: {
+    isValidUsername: helpers.withMessage(
+      t('create_account.credentials.validation.valid_username'),
+      (v: string): boolean => !!(v && /^[\w.-]+$/.test(v)),
+    ),
+    required: helpers.withMessage(t('create_account.credentials.validation.non_empty_username'), required),
   },
   userPrompted: {
     required: helpers.withMessage(t('create_account.credentials.validation.check_prompt'), sameAs(true)),
@@ -60,9 +60,9 @@ const rules = {
 const v$ = useVuelidate(
   rules,
   {
-    username: computed(() => get(form).username),
     password: computed(() => get(form).password),
     passwordConfirm,
+    username: computed(() => get(form).username),
     userPrompted,
   },
   {

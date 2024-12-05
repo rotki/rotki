@@ -9,6 +9,8 @@ import {
   UNISWAP2_PRIO_LIST_ITEM,
   UNISWAP3_PRIO_LIST_ITEM,
 } from '@/types/settings/prioritized-list-id';
+import { useHistoricCachePriceStore } from '@/store/prices/historic';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 
 const currentOracles = ref<PrioritizedListId[]>([]);
 const historicOracles = ref<PrioritizedListId[]>([]);

@@ -23,8 +23,8 @@ export function guessTimezone(): string {
 
 export function getDateInputISOFormat(format: DateFormat): string {
   return {
-    [DateFormat.DateMonthYearHourMinuteSecondTimezone]: 'DD/MM/YYYY',
     [DateFormat.DateMonthYearHourMinuteSecond]: 'DD/MM/YYYY',
+    [DateFormat.DateMonthYearHourMinuteSecondTimezone]: 'DD/MM/YYYY',
     [DateFormat.MonthDateYearHourMinuteSecond]: 'MM/DD/YYYY',
     [DateFormat.YearMonthDateHourMinuteSecond]: 'YYYY/MM/DD',
   }[format];
@@ -145,7 +145,7 @@ export function isValidDate(date: string, dateFormat: string): boolean {
 }
 
 export function getDayNames(locale = 'en'): string[] {
-  const format = new Intl.DateTimeFormat(locale, { weekday: 'short', timeZone: 'UTC' });
+  const format = new Intl.DateTimeFormat(locale, { timeZone: 'UTC', weekday: 'short' });
   const days = [];
   for (let day = 1; day <= 7; day++) {
     const date = new Date(Date.UTC(2022, 0, day + 2)); // +2 because 2022-01-02 is a Sunday

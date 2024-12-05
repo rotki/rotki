@@ -10,6 +10,8 @@ import {
 } from '@/types/filtering';
 import { TradeType } from '@/types/history/trade';
 import { getDateInputISOFormat } from '@/utils/date';
+import { useHistoryStore } from '@/store/history';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import type { FilterSchema } from '@/composables/use-pagination-filter/types';
 
 enum TradeFilterKeys {
@@ -39,64 +41,64 @@ export function useTradeFilters(): FilterSchema<Filters, Matcher> {
 
   const { associatedLocations } = storeToRefs(useHistoryStore());
   const { dateInputFormat } = storeToRefs(useFrontendSettingsStore());
-  const { assetSearch, assetInfo } = useAssetInfoRetrieval();
+  const { assetInfo, assetSearch } = useAssetInfoRetrieval();
   const { t } = useI18n();
 
   const matchers = computed<Matcher[]>(() => [
     {
+      asset: true,
+      description: t('closed_trades.filter.base_asset'),
+      deserializer: assetDeserializer(assetInfo),
       key: TradeFilterKeys.BASE,
       keyValue: TradeFilterValueKeys.BASE,
-      description: t('closed_trades.filter.base_asset'),
-      asset: true,
       suggestions: assetSuggestions(assetSearch),
-      deserializer: assetDeserializer(assetInfo),
     },
     {
+      asset: true,
+      description: t('closed_trades.filter.quote_asset'),
+      deserializer: assetDeserializer(assetInfo),
       key: TradeFilterKeys.QUOTE,
       keyValue: TradeFilterValueKeys.QUOTE,
-      description: t('closed_trades.filter.quote_asset'),
-      asset: true,
       suggestions: assetSuggestions(assetSearch),
-      deserializer: assetDeserializer(assetInfo),
     },
     {
+      description: t('closed_trades.filter.trade_type'),
       key: TradeFilterKeys.ACTION,
       keyValue: TradeFilterValueKeys.ACTION,
-      description: t('closed_trades.filter.trade_type'),
       string: true,
       suggestions: (): TradeType[] => TradeType.options,
       validate: (type): boolean => (TradeType.options as string[]).includes(type),
     },
     {
+      description: t('closed_trades.filter.start_date'),
+      deserializer: dateDeserializer(dateInputFormat),
+      hint: t('closed_trades.filter.date_hint', {
+        format: getDateInputISOFormat(get(dateInputFormat)),
+      }),
       key: TradeFilterKeys.START,
       keyValue: TradeFilterValueKeys.START,
-      description: t('closed_trades.filter.start_date'),
+      serializer: dateSerializer(dateInputFormat),
       string: true,
       suggestions: (): string[] => [],
+      validate: dateValidator(dateInputFormat),
+    },
+    {
+      description: t('closed_trades.filter.end_date'),
+      deserializer: dateDeserializer(dateInputFormat),
       hint: t('closed_trades.filter.date_hint', {
         format: getDateInputISOFormat(get(dateInputFormat)),
       }),
-      validate: dateValidator(dateInputFormat),
-      serializer: dateSerializer(dateInputFormat),
-      deserializer: dateDeserializer(dateInputFormat),
-    },
-    {
       key: TradeFilterKeys.END,
       keyValue: TradeFilterValueKeys.END,
-      description: t('closed_trades.filter.end_date'),
+      serializer: dateSerializer(dateInputFormat),
       string: true,
       suggestions: (): string[] => [],
-      hint: t('closed_trades.filter.date_hint', {
-        format: getDateInputISOFormat(get(dateInputFormat)),
-      }),
       validate: dateValidator(dateInputFormat),
-      serializer: dateSerializer(dateInputFormat),
-      deserializer: dateDeserializer(dateInputFormat),
     },
     {
+      description: t('closed_trades.filter.location'),
       key: TradeFilterKeys.LOCATION,
       keyValue: TradeFilterValueKeys.LOCATION,
-      description: t('closed_trades.filter.location'),
       string: true,
       suggestions: (): string[] => get(associatedLocations),
       validate: (location): boolean => get(associatedLocations).includes(location),
@@ -105,12 +107,12 @@ export function useTradeFilters(): FilterSchema<Filters, Matcher> {
 
   const OptionalString = z.string().optional();
   const RouteFilterSchema = z.object({
-    [TradeFilterValueKeys.BASE]: OptionalString,
-    [TradeFilterValueKeys.QUOTE]: OptionalString,
     [TradeFilterValueKeys.ACTION]: OptionalString,
-    [TradeFilterValueKeys.START]: OptionalString,
+    [TradeFilterValueKeys.BASE]: OptionalString,
     [TradeFilterValueKeys.END]: OptionalString,
     [TradeFilterValueKeys.LOCATION]: OptionalString,
+    [TradeFilterValueKeys.QUOTE]: OptionalString,
+    [TradeFilterValueKeys.START]: OptionalString,
   });
 
   return {

@@ -6,6 +6,13 @@ import { DashboardTableType, type DashboardTablesVisibleColumns } from '@/types/
 import { Section } from '@/types/status';
 import { TableColumn } from '@/types/table-column';
 import { calculatePercentage } from '@/utils/calculation';
+import { useStatisticsStore } from '@/store/statistics';
+import { useBlockchainStore } from '@/store/blockchain';
+import { useStatusStore } from '@/store/status';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useSushiswapStore } from '@/store/defi/sushiswap';
+import { useUniswapStore } from '@/store/defi/uniswap';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 
 const { t } = useI18n();
@@ -22,37 +29,37 @@ function createTableHeaders(currency: Ref<string>, dashboardTablesVisibleColumns
 
     const headers: DataTableColumn<XSwapLiquidityBalance>[] = [
       {
-        label: t('common.name'),
-        key: 'name',
         cellClass: 'text-no-wrap',
+        key: 'name',
+        label: t('common.name'),
       },
       {
+        align: 'end',
+        class: 'text-no-wrap',
+        key: 'usdValue',
         label: t('common.value_in_symbol', {
           symbol: get(currency),
         }),
-        key: 'usdValue',
-        align: 'end',
-        class: 'text-no-wrap',
       },
     ];
 
     if (visibleColumns.includes(TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE)) {
       headers.push({
-        label: t('dashboard_asset_table.headers.percentage_of_total_net_value'),
-        key: 'percentageOfTotalNetValue',
         align: 'end',
         class: 'text-no-wrap',
+        key: 'percentageOfTotalNetValue',
+        label: t('dashboard_asset_table.headers.percentage_of_total_net_value'),
       });
     }
 
     if (visibleColumns.includes(TableColumn.PERCENTAGE_OF_TOTAL_CURRENT_GROUP)) {
       headers.push({
+        align: 'end',
+        class: 'text-no-wrap',
+        key: 'percentageOfTotalCurrentGroup',
         label: t('dashboard_asset_table.headers.percentage_of_total_current_group', {
           group: t('dashboard.liquidity_position.title'),
         }),
-        key: 'percentageOfTotalCurrentGroup',
-        align: 'end',
-        class: 'text-no-wrap',
       });
     }
 
@@ -67,7 +74,7 @@ const { fetchV2Balances: fetchUniswapV2Balances, fetchV3Balances: fetchUniswapV3
 
 const { fetchBalances: fetchSushiswapBalances } = useSushiswapStore();
 
-const { lpAggregatedBalances, lpTotal, getPoolName } = useLiquidityPosition();
+const { getPoolName, lpAggregatedBalances, lpTotal } = useLiquidityPosition();
 const balances = lpAggregatedBalances(true);
 const totalInUsd = lpTotal(true);
 

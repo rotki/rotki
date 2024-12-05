@@ -8,16 +8,16 @@ export function useMissingApiKeyHandler(t: ReturnType<typeof useI18n>['t']): Com
   const router = useRouter();
 
   const handle = (data: MissingApiKey): Notification => {
-    const { service, location } = data;
-    const { route, external } = getServiceRegisterUrl(service, location) ?? { route: undefined, external: undefined };
+    const { location, service } = data;
+    const { external, route } = getServiceRegisterUrl(service, location) ?? { external: undefined, route: undefined };
     const locationName = get(getChainName(location as Blockchain));
 
     const actions: NotificationAction[] = [];
 
     if (route) {
       actions.push({
-        label: t('notification_messages.missing_api_key.action'),
         action: async () => router.push(route),
+        label: t('notification_messages.missing_api_key.action'),
         persist: true,
       });
     }
@@ -26,30 +26,27 @@ export function useMissingApiKeyHandler(t: ReturnType<typeof useI18n>['t']): Com
       const { openUrl } = useInterop();
 
       actions.push({
-        label: t('notification_messages.missing_api_key.get_key'),
-        icon: 'external-link-line',
         action: () => openUrl(external),
+        icon: 'external-link-line',
+        label: t('notification_messages.missing_api_key.get_key'),
         persist: true,
       });
     }
 
     const metadata = {
-      service: toHumanReadable(service, 'capitalize'),
       location: toHumanReadable(locationName, 'capitalize'),
+      service: toHumanReadable(service, 'capitalize'),
     };
 
     const theGraphWarning = service === 'thegraph';
 
     return {
-      title: theGraphWarning
-        ? t('notification_messages.missing_api_key.thegraph.title', metadata)
-        : t('notification_messages.missing_api_key.etherscan.title', metadata),
-      message: '',
+      action: actions,
       i18nParam: {
+        choice: 0,
         message: theGraphWarning
           ? 'notification_messages.missing_api_key.thegraph.message'
           : 'notification_messages.missing_api_key.etherscan.message',
-        choice: 0,
         props: {
           ...metadata,
           key: location,
@@ -57,9 +54,12 @@ export function useMissingApiKeyHandler(t: ReturnType<typeof useI18n>['t']): Com
           ...(theGraphWarning && { docsUrl: externalLinks.usageGuideSection.theGraphApiKey }),
         },
       },
-      severity: Severity.WARNING,
+      message: '',
       priority: Priority.ACTION,
-      action: actions,
+      severity: Severity.WARNING,
+      title: theGraphWarning
+        ? t('notification_messages.missing_api_key.thegraph.title', metadata)
+        : t('notification_messages.missing_api_key.etherscan.title', metadata),
     };
   };
 

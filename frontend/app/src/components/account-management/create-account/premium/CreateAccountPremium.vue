@@ -14,15 +14,15 @@ const emit = defineEmits<{
   (e: 'update:premium-enabled', enabled: boolean): void;
 }>();
 
-const { premiumEnabled, form } = toRefs(props);
+const { form, premiumEnabled } = toRefs(props);
 
 const { t } = useI18n();
 
 const valid = ref<boolean>(false);
 
 const premiumSelectionButtons = computed(() => [
-  { value: false, text: t('common.actions.no') },
-  { value: true, text: t('create_account.premium.button_premium_approve') },
+  { text: t('common.actions.no'), value: false },
+  { text: t('create_account.premium.button_premium_approve'), value: true },
 ]);
 </script>
 

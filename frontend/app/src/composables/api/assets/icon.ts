@@ -34,8 +34,8 @@ export function useAssetIconApi(): UseAsetIconApiReturn {
 
   const setIcon = async (asset: string, file: string): Promise<boolean> => {
     const response = await api.instance.put<ActionResult<boolean>>(`/assets/icon/modify`, {
-      file,
       asset,
+      file,
     });
     return handleResponse(response);
   };
@@ -61,9 +61,9 @@ export function useAssetIconApi(): UseAsetIconApiReturn {
 
   return {
     assetImageUrl,
-    uploadIcon,
-    setIcon,
-    refreshIcon,
     clearIconCache,
+    refreshIcon,
+    setIcon,
+    uploadIcon,
   };
 }

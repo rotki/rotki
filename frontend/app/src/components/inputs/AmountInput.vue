@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import IMask, { type InputMask } from 'imask';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
 defineOptions({
   inheritAttrs: false,
@@ -13,13 +14,13 @@ const props = withDefaults(
     hideDetails?: boolean;
   }>(),
   {
-    integer: false,
     hideDetails: false,
+    integer: false,
   },
 );
 
 const { integer } = toRefs(props);
-const { thousandSeparator, decimalSeparator } = storeToRefs(useFrontendSettingsStore());
+const { decimalSeparator, thousandSeparator } = storeToRefs(useFrontendSettingsStore());
 
 const textInput = ref<any>(null);
 const imask = ref<InputMask<any> | null>(null);
@@ -31,9 +32,9 @@ onMounted(() => {
 
   const newImask = IMask(input, {
     mask: Number,
-    thousandsSeparator: get(thousandSeparator),
     radix: get(decimalSeparator),
     scale: get(integer) ? 0 : 100,
+    thousandsSeparator: get(thousandSeparator),
   });
 
   newImask.on('accept', () => {

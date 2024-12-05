@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useAccountingSettingsStore } from '@/store/settings/accounting';
+
 const ethStakingTaxableAfterWithdrawalEnabled = ref(false);
 const { ethStakingTaxableAfterWithdrawalEnabled: enabled } = storeToRefs(useAccountingSettingsStore());
 

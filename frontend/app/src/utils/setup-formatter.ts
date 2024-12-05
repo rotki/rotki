@@ -8,13 +8,13 @@ export function setupFormatter(): void {
   // @ts-expect-error object does not exist in window
   window.devtoolsFormatters = [
     {
+      hasBody: (): boolean => false,
       header: (obj: any): unknown[] | null => {
         if (!(obj instanceof BigNumber))
           return null;
 
         return ['div', {}, obj.toString()];
       },
-      hasBody: (): boolean => false,
     },
   ];
 }

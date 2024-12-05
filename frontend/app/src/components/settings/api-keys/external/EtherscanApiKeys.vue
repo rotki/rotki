@@ -14,9 +14,9 @@ const supportedChains = computed(() => {
   return Object.keys(etherscanApiKeys).map((chain) => {
     const id = transformCase(chain);
     return ({
+      evmChainName: id,
       id,
       name: get(getChainName(id)),
-      evmChainName: id,
     });
   });
 });

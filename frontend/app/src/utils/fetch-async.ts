@@ -3,6 +3,8 @@ import { Section, Status } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import { logger } from '@/utils/logging';
 import { isTaskCancelled } from '@/utils/index';
+import { useTaskStore } from '@/store/tasks';
+import { useNotificationsStore } from '@/store/notifications';
 import type { TaskMeta } from '@/types/task';
 import type { FetchData } from '@/types/fetch';
 import type { Ref } from 'vue';
@@ -37,10 +39,10 @@ export async function fetchDataAsync<T extends TaskMeta, R>(data: FetchData<T, R
       logger.error(`action failure for task ${TaskType[task.type]}:`, error);
       const { notify } = useNotificationsStore();
       notify({
-        title: task.onError.title,
+        display: true,
         message: task.onError.error(error.message),
         severity: Severity.ERROR,
-        display: true,
+        title: task.onError.title,
       });
     }
   }

@@ -11,7 +11,7 @@ const { t } = useI18n();
 const loading = ref<boolean>(true);
 const providers = ref<EIP6963ProviderDetail[]>([]);
 
-const { error, success, clearAll, stop, setSuccess, setError } = useClearableMessages();
+const { clearAll, error, setError, setSuccess, stop, success } = useClearableMessages();
 
 async function importAddressesWithProvider(provider: EIP1193Provider) {
   stop();

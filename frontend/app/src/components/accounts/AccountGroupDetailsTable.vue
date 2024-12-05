@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import { type LocationQuery, RouterExpandedIdsSchema } from '@/types/route';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
+import { useBlockchainStore } from '@/store/blockchain';
 import type { AccountManageState } from '@/composables/accounts/blockchain/use-account-manage';
 import type {
   BlockchainAccountGroupRequestPayload,
   BlockchainAccountWithBalance,
 } from '@/types/blockchain/accounts';
 
-const query = defineModel<LocationQuery>('query', { required: false, default: () => ({}) });
+const query = defineModel<LocationQuery>('query', { default: () => ({}), required: false });
 
 const props = defineProps<{
   groupId: string;
@@ -25,29 +26,29 @@ const expanded = ref<string[]>([]);
 const { fetchGroupAccounts } = useBlockchainStore();
 
 const {
-  state: accounts,
   fetchData,
   pagination,
   sort,
+  state: accounts,
 } = usePaginationFilters<BlockchainAccountWithBalance, BlockchainAccountGroupRequestPayload>(fetchGroupAccounts, {
-  history: 'external',
-  extraParams: computed(() => ({
-    expanded: get(expanded).join(','),
-  })),
-  onUpdateFilters(query) {
-    const { expanded: expandedIds } = RouterExpandedIdsSchema.parse(query);
-    set(expanded, expandedIds);
-  },
-  requestParams: computed(() => ({
-    groupId: props.groupId,
-    chain: props.chains,
-    tags: props.tags,
-  })),
   defaultSortBy: {
     column: 'usdValue',
     direction: 'desc',
   },
+  extraParams: computed(() => ({
+    expanded: get(expanded).join(','),
+  })),
+  history: 'external',
+  onUpdateFilters(query) {
+    const { expanded: expandedIds } = RouterExpandedIdsSchema.parse(query);
+    set(expanded, expandedIds);
+  },
   query,
+  requestParams: computed(() => ({
+    chain: props.chains,
+    groupId: props.groupId,
+    tags: props.tags,
+  })),
 });
 
 useBlockchainAccountLoading(fetchData);

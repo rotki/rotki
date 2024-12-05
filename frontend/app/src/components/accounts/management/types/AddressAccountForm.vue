@@ -95,8 +95,8 @@ const addresses = computed<string[]>({
         ...model,
         data: addresses.map(address => ({
           address,
-          tags: accountTags.length > 0 ? accountTags : null,
           label: accountLabel,
+          tags: accountTags.length > 0 ? accountTags : null,
         })),
       });
     }

@@ -10,18 +10,18 @@ export const TradeType = z.enum(['buy', 'sell', 'settlement buy', 'settlement se
 export type TradeType = z.infer<typeof TradeType>;
 
 export const Trade = z.object({
-  tradeId: z.string(),
-  timestamp: z.number(),
-  location: z.string(),
-  baseAsset: z.string(),
-  quoteAsset: z.string(),
-  tradeType: TradeType,
   amount: NumericString,
-  rate: NumericString,
+  baseAsset: z.string(),
   fee: NumericString.nullable(),
   feeCurrency: z.string().nullable(),
   link: z.string().nullable(),
+  location: z.string(),
   notes: z.string().nullable(),
+  quoteAsset: z.string(),
+  rate: NumericString,
+  timestamp: z.number(),
+  tradeId: z.string(),
+  tradeType: TradeType,
 });
 
 export type Trade = z.infer<typeof Trade>;

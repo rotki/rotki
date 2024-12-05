@@ -4,6 +4,7 @@ import flushPromises from 'flush-promises';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiValidationError } from '@/types/api/errors';
 import EvmChainsToIgnoreSettings from '@/components/settings/general/EvmChainsToIgnoreSettings.vue';
+import { useMainStore } from '@/store/main';
 import { libraryDefaults } from '../../../utils/provide-defaults';
 import type { SettingsUpdate } from '@/types/user';
 

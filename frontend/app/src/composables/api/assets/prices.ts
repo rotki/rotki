@@ -95,10 +95,10 @@ export function useAssetPricesApi(): UseAssetPriceApiReturn {
 
   const deleteLatestPrice = async (asset: string): Promise<boolean> => {
     const response = await api.instance.delete<ActionResult<boolean>>('/assets/prices/latest', {
-      validateStatus: validStatus,
       data: {
         asset,
       },
+      validateStatus: validStatus,
     });
 
     return handleResponse(response);
@@ -113,13 +113,13 @@ export function useAssetPricesApi(): UseAssetPriceApiReturn {
   };
 
   return {
-    fetchHistoricalPrices,
     addHistoricalPrice,
-    editHistoricalPrice,
-    deleteHistoricalPrice,
-    fetchLatestPrices,
     addLatestPrice,
+    deleteHistoricalPrice,
     deleteLatestPrice,
+    editHistoricalPrice,
+    fetchHistoricalPrices,
+    fetchLatestPrices,
     fetchNftsPrices,
   };
 }

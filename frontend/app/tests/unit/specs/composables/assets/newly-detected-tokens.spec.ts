@@ -1,5 +1,6 @@
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import flushPromises from 'flush-promises';
+import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 
 describe('composables::/assets/newly-detected-tokens', () => {
   let composable: ReturnType<typeof useNewlyDetectedTokens>;

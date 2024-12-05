@@ -54,19 +54,19 @@ export function useUsersApi(): UseUserApiReturn {
   };
 
   const createAccount = async (payload: CreateAccountPayload): Promise<PendingTask> => {
-    const { credentials, premiumSetup, initialSettings } = payload;
-    const { username, password } = credentials;
+    const { credentials, initialSettings, premiumSetup } = payload;
+    const { password, username } = credentials;
 
     const response = await api.instance.put<ActionResult<PendingTask>>(
       '/users',
       snakeCaseTransformer({
+        asyncQuery: true,
+        initialSettings,
         name: username,
         password,
         premiumApiKey: premiumSetup?.apiKey,
         premiumApiSecret: premiumSetup?.apiSecret,
-        initialSettings,
         syncDatabase: premiumSetup?.syncDatabase,
-        asyncQuery: true,
       }),
       {
         validateStatus: validStatus,
@@ -95,8 +95,8 @@ export function useUsersApi(): UseUserApiReturn {
     const response = await api.instance.patch<ActionResult<true>>(
       `/users/${username}/password`,
       {
-        name: username,
         current_password: currentPassword,
+        name: username,
         new_password: newPassword,
       },
       {
@@ -108,12 +108,12 @@ export function useUsersApi(): UseUserApiReturn {
   };
 
   return {
-    createAccount,
-    login,
-    checkIfLogged,
-    loggedUsers,
-    getUserProfiles,
-    logout,
     changeUserPassword,
+    checkIfLogged,
+    createAccount,
+    getUserProfiles,
+    loggedUsers,
+    login,
+    logout,
   };
 }

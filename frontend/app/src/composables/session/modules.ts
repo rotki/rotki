@@ -1,3 +1,4 @@
+import { useGeneralSettingsStore } from '@/store/settings/general';
 import type { Module } from '@/types/modules';
 import type { ComputedRef } from 'vue';
 
@@ -19,8 +20,8 @@ export function useModules(): UseModulesReturn {
   });
 
   return {
+    activeModules,
     isAnyModuleEnabled,
     isModuleEnabled,
-    activeModules,
   };
 }

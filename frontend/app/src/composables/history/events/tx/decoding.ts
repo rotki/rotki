@@ -13,6 +13,9 @@ import { EvmUndecodedTransactionResponse } from '@/types/websocket-messages';
 import { isTaskCancelled } from '@/utils';
 import { awaitParallelExecution } from '@/utils/await-parallel-execution';
 import { logger } from '@/utils/logging';
+import { useTaskStore } from '@/store/tasks';
+import { useHistoryStore } from '@/store/history';
+import { useNotificationsStore } from '@/store/notifications';
 import type { TaskMeta } from '@/types/task';
 
 export const useHistoryTransactionDecoding = createSharedComposable(() => {
@@ -23,10 +26,10 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
     = useHistoryEventsApi();
 
   const { awaitTask, isTaskRunning } = useTaskStore();
-  const { updateUndecodedTransactionsStatus, getUndecodedTransactionStatus, resetUndecodedTransactionsStatus }
+  const { getUndecodedTransactionStatus, resetUndecodedTransactionsStatus, updateUndecodedTransactionsStatus }
     = useHistoryStore();
 
-  const { txChains, getChain, isEvmLikeChains, getChainName, getEvmChainName } = useSupportedChains();
+  const { getChain, getChainName, getEvmChainName, isEvmLikeChains, txChains } = useSupportedChains();
 
   const { resetStatus } = useStatusUpdater(Section.HISTORY_EVENT);
 
@@ -41,8 +44,8 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
     const title = t('actions.history.fetch_undecoded_transactions.task.title');
 
     const taskMeta = {
-      title,
       isEvm,
+      title,
     };
 
     try {
@@ -60,8 +63,8 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
             // which in this case is the total of all transactions.
             {
               chain,
-              total: entry.undecoded,
               processed: 0,
+              total: entry.undecoded,
             },
           ]),
         ),
@@ -75,9 +78,9 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
         message: error.message,
       });
       notify({
-        title,
-        message: description,
         display: true,
+        message: description,
+        title,
       });
     }
   };
@@ -107,10 +110,10 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
       const { taskId } = await decodeTransactions([chain], type, ignoreCache);
 
       const taskMeta = {
-        title: t('actions.transactions_redecode_by_chain.task.title'),
-        description: t('actions.transactions_redecode_by_chain.task.description', { chain: get(getChainName(chain)) }),
-        chain,
         all: false,
+        chain,
+        description: t('actions.transactions_redecode_by_chain.task.description', { chain: get(getChainName(chain)) }),
+        title: t('actions.transactions_redecode_by_chain.task.title'),
       };
 
       await awaitTask(taskId, taskType, taskMeta, true);
@@ -120,12 +123,12 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
       if (!isTaskCancelled(error)) {
         logger.error(error);
         notify({
-          title: t('actions.transactions_redecode_by_chain.error.title'),
-          message: t('actions.transactions_redecode_by_chain.error.description', {
-            error,
-            chain: get(getChainName(chain)),
-          }),
           display: true,
+          message: t('actions.transactions_redecode_by_chain.error.description', {
+            chain: get(getChainName(chain)),
+            error,
+          }),
+          title: t('actions.transactions_redecode_by_chain.error.title'),
         });
       }
     }
@@ -134,7 +137,7 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
   const checkMissingEventsAndRedecodeHandler = async (type: TransactionChainType): Promise<void> => {
     const isEvmType = type === TransactionChainType.EVM;
     const chains = getUndecodedTransactionStatus()
-      .filter(({ total, processed, chain }) => {
+      .filter(({ chain, processed, total }) => {
         const blockchain = getChain(chain);
         const isEvmLike = isEvmLikeChains(blockchain);
         return processed < total && isEvmType === !isEvmLike;
@@ -164,14 +167,14 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
       .map((chain) => {
         if (isEvmLikeChains(chain)) {
           return {
-            type: TransactionChainType.EVMLIKE,
             chain,
+            type: TransactionChainType.EVMLIKE,
           };
         }
 
         return {
-          type: TransactionChainType.EVM,
           chain: getEvmChainName(chain) || '',
+          type: TransactionChainType.EVM,
         };
       })
       .filter(item => item.chain);
@@ -190,20 +193,20 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
       const { taskId } = await pullAndRecodeTransactionRequest(payload, type);
 
       let taskMeta = {
-        title: t('actions.transactions_redecode.task.title'),
         description: t('actions.transactions_redecode.task.single_description', {
           number: payload.transactions.length,
         }),
+        title: t('actions.transactions_redecode.task.title'),
       };
 
       if (payload.transactions.length === 1) {
         const data = payload.transactions[0];
         taskMeta = {
-          title: t('actions.transactions_redecode.task.title'),
           description: t('actions.transactions_redecode.task.description', {
-            tx: data.txHash,
             chain: 'chain' in data ? data.chain : getChain(data.evmChain),
+            tx: data.txHash,
           }),
+          title: t('actions.transactions_redecode.task.title'),
         };
       }
 
@@ -216,17 +219,17 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
       if (!isTaskCancelled(error)) {
         logger.error(error);
         notify({
-          title: t('actions.transactions_redecode.error.title'),
+          display: true,
           message: t('actions.transactions_redecode.error.description', {
             error,
           }),
-          display: true,
+          title: t('actions.transactions_redecode.error.title'),
         });
       }
     }
   };
 
-  const pullAndRedecodeTransactions = async ({ transactions, deleteCustom }: PullEvmTransactionPayload): Promise<void> => {
+  const pullAndRedecodeTransactions = async ({ deleteCustom, transactions }: PullEvmTransactionPayload): Promise<void> => {
     resetUndecodedTransactionsStatus();
 
     const grouped = groupBy(transactions, 'evmChain');
@@ -234,8 +237,8 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
       updateUndecodedTransactionsStatus({
         [chain]: {
           chain,
-          total: transactions.length,
           processed: 0,
+          total: transactions.length,
         },
       });
     });
@@ -266,17 +269,17 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
     });
 
     if (evmChainsPayload.length > 0) {
-      await pullAndRecodeTransactionsByType({ transactions: evmChainsPayload, deleteCustom }, TransactionChainType.EVM);
+      await pullAndRecodeTransactionsByType({ deleteCustom, transactions: evmChainsPayload }, TransactionChainType.EVM);
     }
 
     if (evmLikeChainsPayload.length > 0) {
-      await pullAndRecodeTransactionsByType({ transactions: evmLikeChainsPayload, deleteCustom }, TransactionChainType.EVMLIKE);
+      await pullAndRecodeTransactionsByType({ deleteCustom, transactions: evmLikeChainsPayload }, TransactionChainType.EVMLIKE);
     }
   };
 
   return {
-    decodeTransactionsTask,
     checkMissingEventsAndRedecode,
+    decodeTransactionsTask,
     fetchUndecodedTransactionsBreakdown,
     fetchUndecodedTransactionsStatus,
     pullAndRedecodeTransactions,

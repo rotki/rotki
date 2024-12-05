@@ -2,6 +2,7 @@
 import { getAddressFromEvmIdentifier, getIdentifierFromSymbolMap, isEvmIdentifier } from '@rotki/common';
 import { useCurrencies } from '@/types/currencies';
 import { isBlockchain } from '@/types/blockchain/chains';
+import { useAssetIconStore } from '@/store/assets/icon';
 import type { StyleValue } from 'vue';
 import type { AssetResolutionOptions } from '@/composables/assets/retrieval';
 
@@ -19,22 +20,22 @@ const props = withDefaults(defineProps<{
   resolutionOptions?: AssetResolutionOptions;
   chainIconSize?: string;
 }>(), {
-  styled: undefined,
-  noTooltip: false,
-  circle: false,
-  padding: '2px',
   chainIconPadding: '0.5px',
+  circle: false,
   enableAssociation: true,
-  showChain: true,
   flat: false,
+  noTooltip: false,
+  padding: '2px',
   resolutionOptions: () => ({}),
+  showChain: true,
+  styled: undefined,
 });
 
 const emit = defineEmits<{ (e: 'click'): void }>();
 
 const { t } = useI18n();
 
-const { identifier, padding, size, resolutionOptions, showChain, chainIconSize } = toRefs(props);
+const { chainIconSize, identifier, padding, resolutionOptions, showChain, size } = toRefs(props);
 
 const error = ref<boolean>(false);
 const pending = ref<boolean>(true);
@@ -73,14 +74,14 @@ const displayAsset = computed<string>(() => {
 const tooltip = computed(() => {
   if (get(isCustomAsset)) {
     return {
-      symbol: get(name),
       name: '',
+      symbol: get(name),
     };
   }
 
   return {
-    symbol: get(symbol),
     name: get(name),
+    symbol: get(symbol),
   };
 });
 
@@ -94,8 +95,8 @@ const placeholderStyle = computed(() => {
   const width = get(size);
   const prop = `calc(${pad} + ${pad} + ${width})`;
   return {
-    width: prop,
     height: prop,
+    width: prop,
   };
 });
 

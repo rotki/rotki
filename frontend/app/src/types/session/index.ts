@@ -4,16 +4,16 @@ import type { Module } from '@/types/modules';
 import type { CamelCase } from '@/types/common';
 
 export const PeriodicClientQueryResult = z.object({
+  connectedNodes: z.record(z.array(z.string())),
   lastBalanceSave: z.number(),
   lastDataUploadTs: z.number(),
-  connectedNodes: z.record(z.array(z.string())),
 });
 
 export type PeriodicClientQueryResult = z.infer<typeof PeriodicClientQueryResult>;
 
 export const Messages = z.object({
-  warnings: z.array(z.string()),
   errors: z.array(z.string()),
+  warnings: z.array(z.string()),
 });
 
 export type Messages = z.infer<typeof Messages>;
@@ -59,14 +59,14 @@ export const BaseWatcher = z.object({
 });
 
 export const MakerVaultCollateralizationRatioArgs = z.object({
-  ratio: z.string(),
   op: WatcherOpTypes,
+  ratio: z.string(),
   vaultId: z.string(),
 });
 
 export const MakerVaultCollateralizationRatioWatcher = BaseWatcher.extend({
-  type: z.literal(WatcherType),
   args: MakerVaultCollateralizationRatioArgs,
+  type: z.literal(WatcherType),
 });
 
 export const Watcher = MakerVaultCollateralizationRatioWatcher;

@@ -20,20 +20,20 @@ const { conflicts } = toRefs(props);
 
 const tableHeaders = computed<DataTableColumn<AssetUpdateConflictResult>[]>(() => [
   {
-    label: t('conflict_dialog.table.headers.local'),
+    class: 'py-4',
     key: 'local',
-    class: 'py-4',
+    label: t('conflict_dialog.table.headers.local'),
   },
   {
-    label: t('conflict_dialog.table.headers.remote'),
+    class: 'py-4',
     key: 'remote',
-    class: 'py-4',
+    label: t('conflict_dialog.table.headers.remote'),
   },
   {
-    label: t('conflict_dialog.table.headers.keep'),
-    key: 'keep',
     align: 'center',
     class: 'py-4',
+    key: 'keep',
+    label: t('conflict_dialog.table.headers.keep'),
   },
 ]);
 

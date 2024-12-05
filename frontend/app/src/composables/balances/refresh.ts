@@ -2,6 +2,9 @@ import { Blockchain } from '@rotki/common';
 import { BlockchainRefreshButtonBehaviour } from '@/types/settings/frontend-settings';
 import { awaitParallelExecution } from '@/utils/await-parallel-execution';
 import { arrayify } from '@/utils/array';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useBlockchainTokensStore } from '@/store/blockchain/tokens';
+import { useExchangeBalancesStore } from '@/store/balances/exchanges';
 import type { MaybeRef } from '@vueuse/core';
 
 export const useRefresh = createSharedComposable(() => {
@@ -15,8 +18,8 @@ export const useRefresh = createSharedComposable(() => {
     const chain = get(blockchain);
     const pending: Promise<any>[] = [
       fetchBlockchainBalances({
-        ignoreCache: true,
         blockchain: chain,
+        ignoreCache: true,
       }),
     ];
 
@@ -58,9 +61,9 @@ export const useRefresh = createSharedComposable(() => {
   };
 
   return {
-    massDetectTokens,
-    refreshBlockchainBalances,
     handleBlockchainRefresh,
+    massDetectTokens,
     refreshBalance,
+    refreshBlockchainBalances,
   };
 });
