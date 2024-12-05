@@ -18,6 +18,7 @@ EVENT_CATEGORY_MAPPINGS = {  # possible combinations of types and subtypes mappe
     HistoryEventType.INFORMATIONAL: {
         HistoryEventSubType.NONE: {DEFAULT: EventCategory.INFORMATIONAL},
         HistoryEventSubType.GOVERNANCE: {DEFAULT: EventCategory.GOVERNANCE},
+        HistoryEventSubType.DEPOSIT_ASSET: {DEFAULT: EventCategory.INFORMATIONAL},
         HistoryEventSubType.REMOVE_ASSET: {DEFAULT: EventCategory.INFORMATIONAL},
         HistoryEventSubType.PLACE_ORDER: {DEFAULT: EventCategory.PLACE_ORDER},
         HistoryEventSubType.CREATE: {DEFAULT: EventCategory.CREATE_PROJECT},
