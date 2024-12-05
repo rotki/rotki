@@ -28,6 +28,7 @@ if TYPE_CHECKING:
     from vcr import VCR
 
 
+os.environ['POLARS_ALLOW_FORKING_THREAD'] = '1'
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
