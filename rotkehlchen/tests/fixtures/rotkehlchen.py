@@ -41,7 +41,12 @@ from rotkehlchen.tests.utils.history import maybe_mock_historical_price_queries
 from rotkehlchen.tests.utils.inquirer import inquirer_inject_ethereum_set_order
 from rotkehlchen.tests.utils.mock import mock_proxies
 from rotkehlchen.tests.utils.substrate import wait_until_all_substrate_nodes_connected
-from rotkehlchen.types import AVAILABLE_MODULES_MAP, Location, SupportedBlockchain, Timestamp
+from rotkehlchen.types import (
+    AVAILABLE_MODULES_MAP,
+    Location,
+    SupportedBlockchain,
+    Timestamp,
+)
 
 if TYPE_CHECKING:
     from rotkehlchen.exchanges.exchange import ExchangeInterface
@@ -224,7 +229,7 @@ def patch_and_enter_before_unlock(
         stack.enter_context(upgrades_patch)
 
 
-def patch_no_op_unlock(rotki, stack, should_mock_settings=True):
+def patch_no_op_unlock(rotki, stack, should_mock_settings=True) -> None:
     patch_and_enter_before_unlock(
         rotki=rotki,
         stack=stack,
