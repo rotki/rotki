@@ -56,7 +56,7 @@ export function useBlockchainAccounts(): UseBlockchainAccountsReturn {
 
   const { resetAddressNamesData } = useAddressesNamesStore();
   const { t } = useI18n();
-  const { getNativeAsset } = useSupportedChains();
+  const { getChainName, getNativeAsset } = useSupportedChains();
 
   const addAccount = async (chain: string, payload: AccountPayload[] | XpubAccountPayload): Promise<string> => {
     const taskType = TaskType.ADD_ACCOUNT;
@@ -69,7 +69,7 @@ export function useBlockchainAccounts(): UseBlockchainAccountsReturn {
       {
         blockchain: chain,
         description: t('actions.balances.blockchain_accounts_add.task.description', { address }),
-        title: t('actions.balances.blockchain_accounts_add.task.title', { blockchain: chain }),
+        title: t('actions.balances.blockchain_accounts_add.task.title', { blockchain: get(getChainName(chain)) }),
       },
       true,
     );

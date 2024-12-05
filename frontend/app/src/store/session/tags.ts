@@ -71,9 +71,40 @@ export const useTagStore = defineStore('session/tags', () => {
     }
   };
 
+  function tagExists(tagName: string): boolean {
+    return get(tags)
+      .map(({ name }) => name)
+      .includes(tagName);
+  }
+
+  async function attemptTagCreation(tag: string, backgroundColor?: string): Promise<boolean> {
+    if (tagExists(tag))
+      return true;
+
+    const bgColor = backgroundColor || randomColor();
+    const fgColor = invertColor(bgColor);
+
+    const newTag: Tag = {
+      backgroundColor: bgColor,
+      description: '',
+      foregroundColor: fgColor,
+      name: tag,
+    };
+
+    try {
+      const { success } = await addTag(newTag);
+      return success;
+    }
+    catch (error) {
+      logger.error(error);
+      return false;
+    }
+  };
+
   return {
     addTag,
     allTags,
+    attemptTagCreation,
     deleteTag,
     editTag,
     fetchTags,

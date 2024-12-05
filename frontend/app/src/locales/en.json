@@ -1508,6 +1508,13 @@
       "title": "Detect EVM accounts",
       "tooltip": "Detect activities of all registered EVM accounts in other EVM chains, and register them."
     },
+    "export_blockchain_accounts": "Export blockchain accounts",
+    "import_blockchain_accounts": "Import blockchain accounts",
+    "import_csv_example": "See the CSV example {here}",
+    "import_error": {
+      "message": "Error importing blockchain accounts: {error}",
+      "invalid_format": "Invalid CSV format. Must contain \"chain\" and \"address\" columns."
+    },
     "form_dialog": {
       "add_title": "Add blockchain account",
       "edit_subtitle": "Modify account details",
