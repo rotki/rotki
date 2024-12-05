@@ -3208,13 +3208,6 @@
     }
   },
   "kraken_staking_events": {
-    "filter": {
-      "asset": "filter by the staked asset",
-      "date_hint": "format {format} HH:mm:ss (time/seconds are optional)",
-      "end_date": "filter by the end date of the staking events",
-      "start_date": "filter by the start date of the staking events",
-      "type": "filter by the type of the staking events"
-    },
     "refresh_tooltip": "Refresh your Kraken staking events",
     "types": {
       "receive_staked_asset": "receive staked asset",

@@ -23,8 +23,6 @@ const ProfitLossTimeframe = z.object({
   year: z.string(),
 });
 
-export type ProfitLossTimeframe = z.infer<typeof ProfitLossTimeframe>;
-
 const ExplorerEndpoints = z.object({
   address: z.string().optional(),
   block: z.string().optional(),
@@ -32,8 +30,6 @@ const ExplorerEndpoints = z.object({
 });
 
 const ExplorersSettings = z.record(z.string(), ExplorerEndpoints.optional());
-
-export type ExplorersSettings = z.infer<typeof ExplorersSettings>;
 
 const RoundingMode = z
   .number()
@@ -45,8 +41,6 @@ const RoundingMode = z
 export type RoundingMode = z.infer<typeof RoundingMode>;
 
 const RefreshPeriod = z.number().min(-1).max(Constraints.MAX_MINUTES_DELAY).int();
-
-export type RefreshPeriod = z.infer<typeof RefreshPeriod>;
 
 const QueryPeriod = z.number().int().max(Constraints.MAX_SECONDS_DELAY).nonnegative();
 

@@ -10,8 +10,6 @@ const TokenInfo = z.object({
   tokenSymbol: z.string(),
 });
 
-export type TokenInfo = z.infer<typeof TokenInfo>;
-
 const DefiAsset = z.object({
   balance: Balance,
   tokenAddress: z.string(),

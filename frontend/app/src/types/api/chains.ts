@@ -49,8 +49,6 @@ export const EvmChainEntry = z.object({
   name: z.string(),
 });
 
-export type EvmChainEntry = z.infer<typeof EvmChainEntry>;
-
 export const EvmChainEntries = z.array(EvmChainEntry);
 
 export type EvmChainEntries = z.infer<typeof EvmChainEntries>;

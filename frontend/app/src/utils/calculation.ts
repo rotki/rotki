@@ -12,19 +12,6 @@ export function assetSum(balances: Record<string, Balance>): BigNumber {
   }, Zero);
 }
 
-export enum Unit {
-  GWEI,
-  ETH,
-}
-
-export function toUnit(value: BigNumber, unit: Unit = Unit.ETH): BigNumber {
-  if (value.isZero())
-    return value;
-
-  const pow = unit === Unit.ETH ? 18 : 9;
-  return value.div(bigNumberify('10').pow(pow));
-}
-
 export function balanceSum(sum: Balance, { amount, usdValue }: Balance): Balance {
   return {
     amount: sum.amount.plus(amount),

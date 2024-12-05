@@ -2515,13 +2515,6 @@
     }
   },
   "kraken_staking_events": {
-    "filter": {
-      "asset": "按质押资产过滤",
-      "date_hint": "format {format} HH:mm:ss(时间/秒可选）",
-      "end_date": "按质押事件的结束日期过滤",
-      "start_date": "按质押事件的开始日期筛选",
-      "type": "按质押事件的类型过滤"
-    },
     "refresh_tooltip": "刷新您的 Kraken 质押事件",
     "types": {
       "receive_staked_asset": "接收质押资产",

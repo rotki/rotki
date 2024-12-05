@@ -1,12 +1,5 @@
 import { z } from 'zod';
 
-export interface TagEvent {
-  readonly name?: string;
-  readonly description?: string;
-  readonly foregroundColor?: string;
-  readonly backgroundColor?: string;
-}
-
 export const Tag = z.object({
   backgroundColor: z.string(),
   description: z.string(),
