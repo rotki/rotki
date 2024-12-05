@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { SettingLocation, useClearableMessages, useSettings } from '@/composables/settings';
 import type { MaybeRef } from '@vueuse/core';
 import type { FrontendSettingsPayload } from '@/types/settings/frontend-settings';
 import type { SettingsUpdate } from '@/types/user';

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useLinks } from '@/composables/links';
+
 const props = withDefaults(
   defineProps<{
     text?: string;

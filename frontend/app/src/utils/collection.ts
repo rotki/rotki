@@ -1,3 +1,4 @@
+import { usePremium } from '@/composables/premium';
 import type { BigNumber } from '@rotki/common';
 import type { Collection, CollectionResponse } from '@/types/collection';
 import type { ComputedRef, Ref } from 'vue';

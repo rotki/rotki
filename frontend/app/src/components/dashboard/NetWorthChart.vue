@@ -10,6 +10,7 @@ import { Chart, type ChartConfiguration, type ChartOptions, type TooltipOptions 
 import dayjs from 'dayjs';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useGraph, useTooltip } from '@/composables/graphs';
 import type { ValueOverTime } from '@/types/graphs';
 
 type ActiveRangeButton = 'start' | 'end' | 'both';

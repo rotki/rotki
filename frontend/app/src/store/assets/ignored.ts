@@ -1,6 +1,7 @@
 import { uniqueStrings } from '@/utils/data';
 import { arrayify } from '@/utils/array';
 import { useNotificationsStore } from '@/store/notifications';
+import { useAssetIgnoreApi } from '@/composables/api/assets/ignore';
 import type { MaybeRef } from '@vueuse/core';
 import type { ActionStatus } from '@/types/action';
 

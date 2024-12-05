@@ -13,6 +13,7 @@ import {
 } from '@/premium/premium-apis';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useGraph } from '@/composables/graphs';
 import type { DataUtilities, DateUtilities, PremiumInterface, SettingsApi, Themes, TimeUnit } from '@rotki/common';
 import type { DateFormat } from '@/types/date-format';
 import type { FrontendSettingsPayload } from '@/types/settings/frontend-settings';

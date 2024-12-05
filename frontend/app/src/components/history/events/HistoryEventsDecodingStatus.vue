@@ -2,6 +2,7 @@
 import { TaskType } from '@/types/task-type';
 import { useHistoryStore } from '@/store/history';
 import { useTaskStore } from '@/store/tasks';
+import { useHistoryTransactionDecoding } from '@/composables/history/events/tx/decoding';
 import type { EvmUnDecodedTransactionsData, ProtocolCacheUpdatesData } from '@/types/websocket-messages';
 import type { DataTableColumn } from '@rotki/ui-library';
 

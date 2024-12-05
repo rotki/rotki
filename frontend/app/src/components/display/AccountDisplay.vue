@@ -2,6 +2,7 @@
 import { type Account, Blockchain } from '@rotki/common';
 import { truncateAddress } from '@/utils/truncate';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
+import { useScramble } from '@/composables/scramble';
 
 const props = withDefaults(defineProps<{
   account: Account;

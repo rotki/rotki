@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useSupportedChains } from '@/composables/info/chains';
+
 const props = withDefaults(
   defineProps<{
     chain: string;

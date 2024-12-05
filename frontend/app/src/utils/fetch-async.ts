@@ -5,6 +5,7 @@ import { logger } from '@/utils/logging';
 import { isTaskCancelled } from '@/utils/index';
 import { useTaskStore } from '@/store/tasks';
 import { useNotificationsStore } from '@/store/notifications';
+import { useStatusUpdater } from '@/composables/status';
 import type { TaskMeta } from '@/types/task';
 import type { FetchData } from '@/types/fetch';
 import type { Ref } from 'vue';

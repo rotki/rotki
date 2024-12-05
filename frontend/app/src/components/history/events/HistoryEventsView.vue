@@ -16,6 +16,14 @@ import { useBlockchainStore } from '@/store/blockchain';
 import { useHistoryStore } from '@/store/history';
 import { useConfirmStore } from '@/store/confirm';
 import { useTaskStore } from '@/store/tasks';
+import { type Filters, type Matcher, useHistoryEventFilter } from '@/composables/filters/events';
+import { useHistoryEventsForm } from '@/composables/history/events/form';
+import { usePaginationFilters } from '@/composables/use-pagination-filter';
+import { useCommonTableProps } from '@/composables/use-common-table-props';
+import { useHistoryEventMappings } from '@/composables/history/events/mapping';
+import { useHistoryTransactionDecoding } from '@/composables/history/events/tx/decoding';
+import { useHistoryTransactions } from '@/composables/history/events/tx';
+import { useHistoryEvents } from '@/composables/history/events';
 import type {
   HistoryEvent,
   HistoryEventEntry,
@@ -25,7 +33,6 @@ import type {
 } from '@/types/history/events';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 import type { AccountingRuleEntry } from '@/types/settings/accounting';
-import type { Filters, Matcher } from '@/composables/filters/events';
 
 const props = withDefaults(defineProps<{
   location?: string;

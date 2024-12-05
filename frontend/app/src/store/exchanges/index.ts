@@ -2,6 +2,7 @@ import { startPromise } from '@shared/utils';
 import { useMessageStore } from '@/store/message';
 import { useSessionSettingsStore } from '@/store/settings/session';
 import { useExchangeBalancesStore } from '@/store/balances/exchanges';
+import { useExchangeApi } from '@/composables/api/balances/exchanges';
 import type { EditExchange, Exchange, ExchangeFormData } from '@/types/exchanges';
 
 export const useExchangesStore = defineStore('exchanges', () => {

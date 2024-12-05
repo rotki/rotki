@@ -8,6 +8,12 @@ import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useSessionSettingsStore } from '@/store/settings/session';
 import { useStatisticsStore } from '@/store/statistics';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
+import { useAggregatedBalances } from '@/composables/balances/aggregated';
+import { useLiquidityPosition } from '@/composables/defi';
+import { useBalancesBreakdown } from '@/composables/balances/breakdown';
+import { useAssetManagementApi } from '@/composables/api/assets/management';
+import { useStatisticsApi } from '@/composables/api/statistics/statistics-api';
+import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import type {
   AssetsApi,
   BalancesApi,

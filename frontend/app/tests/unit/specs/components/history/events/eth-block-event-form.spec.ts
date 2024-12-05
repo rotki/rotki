@@ -5,6 +5,7 @@ import { HistoryEventEntryType } from '@rotki/common';
 import EthBlockEventForm from '@/components/history/events/forms/EthBlockEventForm.vue';
 import { setupDayjs } from '@/utils/date';
 import { useBalancePricesStore } from '@/store/balances/prices';
+import { useAssetInfoApi } from '@/composables/api/assets/info';
 import type { AssetMap } from '@/types/asset';
 import type { EthBlockEvent } from '@/types/history/events';
 

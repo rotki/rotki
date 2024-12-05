@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useAppRoutes } from '@/router/routes';
 import { NoteLocation } from '@/types/notes';
+import { useUserNotesForm } from '@/composables/notes/form';
 
 const display = defineModel<boolean>({ required: true });
 

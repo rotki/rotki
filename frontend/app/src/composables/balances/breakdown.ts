@@ -5,6 +5,8 @@ import { useBalancePricesStore } from '@/store/balances/prices';
 import { useBlockchainStore } from '@/store/blockchain';
 import { useExchangeBalancesStore } from '@/store/balances/exchanges';
 import { useManualBalancesStore } from '@/store/balances/manual';
+import { useBlockchainAggregatedBalances } from '@/composables/blockchain/balances/aggregated';
+import { useBalanceSorting } from '@/composables/balances/sorting';
 import type { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
 import type { MaybeRef } from '@vueuse/core';
 import type { AssetBreakdown } from '@/types/blockchain/accounts';

@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { CompoundBorrowingDetails } from '@/premium/premium';
+import { useRefMap } from '@/composables/utils/useRefMap';
+import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import { usePremium } from '@/composables/premium';
 import type { CompoundLoan } from '@/types/defi/compound';
 
 const props = defineProps<{ loan: CompoundLoan }>();

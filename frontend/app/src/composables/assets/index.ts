@@ -4,6 +4,8 @@ import { logger } from '@/utils/logging';
 import { isTaskCancelled } from '@/utils';
 import { useTaskStore } from '@/store/tasks';
 import { useNotificationsStore } from '@/store/notifications';
+import { useInterop } from '@/composables/electron-interop';
+import { useAssetsApi } from '@/composables/api/assets';
 import type {
   ApplyUpdateResult,
   AssetDBVersion,

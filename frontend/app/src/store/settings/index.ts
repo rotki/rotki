@@ -6,6 +6,7 @@ import { useQueriedAddressesStore } from '@/store/session/queried-addresses';
 import { useMessageStore } from '@/store/message';
 import { useAccountingSettingsStore } from '@/store/settings/accounting';
 import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useSettingsApi } from '@/composables/api/settings/settings-api';
 import type { KrakenAccountType } from '@/types/exchanges';
 import type { Module } from '@/types/modules';
 import type { SettingsUpdate } from '@/types/user';

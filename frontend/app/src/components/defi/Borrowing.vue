@@ -2,6 +2,7 @@
 import { type DefiProtocol, type Module, isDefiProtocol } from '@/types/modules';
 import { Section } from '@/types/status';
 import { useStatusStore } from '@/store/status';
+import { useDefiLending } from '@/composables/defi/lending';
 
 defineProps<{
   modules: Module[];

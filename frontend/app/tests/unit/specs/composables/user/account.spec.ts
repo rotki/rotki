@@ -1,5 +1,6 @@
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { useSessionStore } from '@/store/session';
+import { useAccountManagement } from '@/composables/user/account';
 
 vi.mock('vue-router', () => ({
   useRoute: vi.fn(),

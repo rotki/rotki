@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useAssetPricesApi } from '@/composables/api/assets/prices';
 import type { BigNumber } from '@rotki/common';
 
 const props = withDefaults(

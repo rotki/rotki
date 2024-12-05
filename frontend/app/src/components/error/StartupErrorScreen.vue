@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useInterop } from '@/composables/electron-interop';
+
 defineProps<{
   message: string;
 }>();

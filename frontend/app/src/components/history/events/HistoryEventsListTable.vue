@@ -2,6 +2,7 @@
 import { HistoryEventEntryType } from '@rotki/common';
 import { objectPick } from '@vueuse/shared';
 import { isEventAccountingRuleProcessed, isEventMissingAccountingRule, isEvmEvent } from '@/utils/history/events';
+import { useSupportedChains } from '@/composables/info/chains';
 import type { HistoryEventEntry } from '@/types/history/events';
 
 interface DeleteEvent {

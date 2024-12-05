@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useExternalApiKeys, useServiceKeyHandler } from '@/composables/settings/api-keys/external';
 import type ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
 import type ServiceKeyCard from '@/components/settings/api-keys/ServiceKeyCard.vue';
 

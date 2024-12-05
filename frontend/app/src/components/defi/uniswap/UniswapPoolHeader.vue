@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useLiquidityPosition } from '@/composables/defi';
 import type { LpType, XswapBalance } from '@rotki/common';
 
 const props = defineProps<{

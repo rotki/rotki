@@ -4,6 +4,9 @@ import { useMainStore } from '@/store/main';
 import { useSessionAuthStore } from '@/store/session/auth';
 import { useWebsocketStore } from '@/store/websocket';
 import { useSessionStore } from '@/store/session';
+import { useBackendManagement } from '@/composables/backend';
+import { usePremiumReminder } from '@/composables/premium';
+import { useAppNavigation } from '@/composables/navigation';
 import type { CreateAccountPayload, LoginCredentials } from '@/types/login';
 import type { Ref } from 'vue';
 

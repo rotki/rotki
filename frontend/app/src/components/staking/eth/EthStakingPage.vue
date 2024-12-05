@@ -23,6 +23,14 @@ import { useBlockchainValidatorsStore } from '@/store/blockchain/validators';
 import { useStatusStore } from '@/store/status';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useSessionAuthStore } from '@/store/session/auth';
+import { useBlockchainBalances } from '@/composables/blockchain/balances';
+import { usePremium } from '@/composables/premium';
+import { useEthStaking } from '@/composables/blockchain/accounts/staking';
+import { useBlockchainAccountsApi } from '@/composables/api/blockchain/accounts';
+import { useStatusUpdater } from '@/composables/status';
+import { useEth2DailyStats } from '@/composables/staking/eth2/daily-stats';
+import { useModules } from '@/composables/session/modules';
+import { useEth2Staking } from '@/composables/staking/eth2/eth2';
 
 const module = Module.ETH2;
 const performanceSection = Section.STAKING_ETH2;

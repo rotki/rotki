@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { type BigNumber, assetSymbolToIdentifierMap } from '@rotki/common';
+import { usePremium } from '@/composables/premium';
 
 const props = defineProps<{
   totalInterestOwed: BigNumber;

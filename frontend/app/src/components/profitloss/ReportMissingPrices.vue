@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ApiValidationError } from '@/types/api/errors';
 import { useBalancePricesStore } from '@/store/balances/prices';
+import { useAssetPricesApi } from '@/composables/api/assets/prices';
 import type { BigNumber } from '@rotki/common';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { EditableMissingPrice, MissingPrice } from '@/types/reports';

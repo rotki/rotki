@@ -3,6 +3,8 @@ import { Blockchain } from '@rotki/common';
 import { Routes } from '@/router/routes';
 import { type BlockchainTotal, SupportedSubBlockchainProtocolData } from '@/types/blockchain';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useSupportedChains } from '@/composables/info/chains';
+import { useRefMap } from '@/composables/utils/useRefMap';
 import type { RouteLocationRaw } from 'vue-router';
 import type { ActionDataEntry } from '@/types/action';
 

@@ -6,9 +6,16 @@ import { SavedFilterLocation } from '@/types/filtering';
 import { useConfirmStore } from '@/store/confirm';
 import { useStatusStore } from '@/store/status';
 import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useTradesForm } from '@/composables/history/trades/form';
+import { useIgnore } from '@/composables/history';
+import { useHistoryAutoRefresh } from '@/composables/history/auto-refresh';
+import { usePaginationFilters } from '@/composables/use-pagination-filter';
+import { useCommonTableProps } from '@/composables/use-common-table-props';
+import { useTrades } from '@/composables/history/trades';
+import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import { type Filters, type Matcher, useTradeFilters } from '@/composables/filters/trades';
 import type { Writeable } from '@rotki/common';
 import type { TradeEntry, TradeRequestPayload } from '@/types/history/trade';
-import type { Filters, Matcher } from '@/composables/filters/trades';
 import type { DataTableColumn } from '@rotki/ui-library';
 
 const props = withDefaults(

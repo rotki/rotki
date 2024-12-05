@@ -1,6 +1,7 @@
 import { checkIfDevelopment, startPromise } from '@shared/utils';
 import { api } from '@/services/rotkehlchen-api';
 import { getDefaultLogLevel, logger, setLevel } from '@/utils/logging';
+import { useInfoApi } from '@/composables/api/info';
 import type { Nullable } from '@rotki/common';
 import type { LogLevel } from '@shared/log-level';
 import type { Version } from '@/types/action';

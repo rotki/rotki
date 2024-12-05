@@ -8,8 +8,10 @@ import { useHistoricCachePriceStore } from '@/store/prices/historic';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useSessionSettingsStore } from '@/store/settings/session';
 import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useNumberScrambler } from '@/composables/utils/useNumberScrambler';
+import { useCopy } from '@/composables/copy';
+import { type AssetResolutionOptions, useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import type { RoundingMode } from '@/types/settings/frontend-settings';
-import type { AssetResolutionOptions } from '@/composables/assets/retrieval';
 
 const props = withDefaults(
   defineProps<{

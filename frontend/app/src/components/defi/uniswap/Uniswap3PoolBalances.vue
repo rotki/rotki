@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import UniswapPoolHeader from '@/components/defi/uniswap/UniswapPoolHeader.vue';
+import { usePremium } from '@/composables/premium';
 import type { LpType, XswapBalance } from '@rotki/common';
 
 defineProps<{

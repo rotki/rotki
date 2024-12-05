@@ -3,6 +3,7 @@ import { uniqueStrings } from '@/utils/data';
 import { getDomain } from '@/utils/url';
 import { useConfirmStore } from '@/store/confirm';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useNftImage } from '@/composables/nft-image';
 import type { StyleValue } from 'vue';
 import type { GalleryNft } from '@/types/nfts';
 

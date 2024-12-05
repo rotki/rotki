@@ -7,6 +7,8 @@ import ExchangeKeysFormStructure from '@/components/settings/api-keys/exchange/E
 import { useRefPropVModel } from '@/utils/model';
 import { useExchangesStore } from '@/store/exchanges';
 import { useLocationStore } from '@/store/locations';
+import { useLocations } from '@/composables/locations';
+import { useFormStateWatcher } from '@/composables/form';
 
 const modelValue = defineModel<ExchangeFormData>({ required: true });
 

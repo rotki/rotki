@@ -2,6 +2,9 @@
 import { useConfirmStore } from '@/store/confirm';
 import { useSessionAuthStore } from '@/store/session/auth';
 import { useSessionStore } from '@/store/session';
+import { usePrivacyMode } from '@/composables/privacy';
+import { useDarkMode } from '@/composables/dark-mode';
+import { useInterop } from '@/composables/electron-interop';
 
 const { t } = useI18n();
 

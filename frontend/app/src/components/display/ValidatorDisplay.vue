@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { truncateAddress } from '@/utils/truncate';
+import { useScramble } from '@/composables/scramble';
 import type { Eth2ValidatorEntry } from '@rotki/common';
 
 const props = withDefaults(

@@ -4,6 +4,7 @@ import { between, helpers, required } from '@vuelidate/validators';
 import { toMessages } from '@/utils/validation';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useMonitorStore } from '@/store/monitor';
+import { useValidation } from '@/composables/validation';
 
 const queryPeriod = ref<string>('5');
 const minQueryPeriod = 5;

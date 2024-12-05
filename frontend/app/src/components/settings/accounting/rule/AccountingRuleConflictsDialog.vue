@@ -1,6 +1,9 @@
 <script lang="ts" setup>
 import { getCollectionData } from '@/utils/collection';
 import { useMessageStore } from '@/store/message';
+import { useHistoryEventMappings } from '@/composables/history/events/mapping';
+import { usePaginationFilters } from '@/composables/use-pagination-filter';
+import { useAccountingSettings } from '@/composables/settings/accounting';
 import type {
   AccountingRuleConflict,
   AccountingRuleConflictRequestPayload,

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { generateRandomScrambleMultiplier } from '@/utils/session';
 import { useSessionSettingsStore } from '@/store/settings/session';
+import { usePrivacyMode } from '@/composables/privacy';
 
 const { t } = useI18n();
 

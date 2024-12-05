@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { useSessionAuthStore } from '@/store/session/auth';
 import { useMainStore } from '@/store/main';
+import { useAccountManagement } from '@/composables/user/account';
+import { useAppNavigation } from '@/composables/navigation';
 
 definePage({
   meta: {

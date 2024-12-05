@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useCexMappingForm } from '@/composables/assets/forms/cex-mapping-form';
 import type { CexMapping } from '@/types/asset';
 
 const props = withDefaults(

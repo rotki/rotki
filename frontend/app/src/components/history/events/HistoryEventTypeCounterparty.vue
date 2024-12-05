@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useHistoryEventCounterpartyMappings } from '@/composables/history/events/mapping/counterparty';
+
 const props = defineProps<{
   event: { counterparty: string | null; address?: string | null };
 }>();

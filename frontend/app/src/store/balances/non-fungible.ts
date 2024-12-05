@@ -7,6 +7,8 @@ import { mapCollectionResponse } from '@/utils/collection';
 import { useTaskStore } from '@/store/tasks';
 import { useNotificationsStore } from '@/store/notifications';
 import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useNftBalancesApi } from '@/composables/api/balances/nft';
+import { useStatusUpdater } from '@/composables/status';
 import type { BigNumber } from '@rotki/common';
 import type { MaybeRef } from '@vueuse/core';
 import type { Collection } from '@/types/collection';

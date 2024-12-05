@@ -20,6 +20,11 @@ import { useHistoryStore } from '@/store/history';
 import { useTaskStore } from '@/store/tasks';
 import { useBlockchainStore } from '@/store/blockchain';
 import { useNotificationsStore } from '@/store/notifications';
+import { useModules } from '@/composables/session/modules';
+import { useStatusUpdater } from '@/composables/status';
+import { useSupportedChains } from '@/composables/info/chains';
+import { useHistoryEventsApi } from '@/composables/api/history/events';
+import { useHistoryTransactionDecoding } from '@/composables/history/events/tx/decoding';
 import type { ActionStatus } from '@/types/action';
 import type { Blockchain } from '@rotki/common';
 

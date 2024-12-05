@@ -1,5 +1,7 @@
 import { startPromise } from '@shared/utils';
 import { useNotificationsStore } from '@/store/notifications';
+import { useScramble } from '@/composables/scramble';
+import { useHistoryEventsApi } from '@/composables/api/history/events';
 import type { ActionDataEntry } from '@/types/action';
 import type { MaybeRef } from '@vueuse/core';
 

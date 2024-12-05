@@ -5,6 +5,7 @@ import { toMessages } from '@/utils/validation';
 import { convertFromTimestamp } from '@/utils/date';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useMessageStore } from '@/store/message';
+import { useAssetPricesApi } from '@/composables/api/assets/prices';
 import type { ProfitLossEvent } from '@/types/reports';
 import type { HistoricalPriceFormPayload } from '@/types/prices';
 

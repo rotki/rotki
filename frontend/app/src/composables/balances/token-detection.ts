@@ -3,6 +3,7 @@ import { awaitParallelExecution } from '@/utils/await-parallel-execution';
 import { useBlockchainStore } from '@/store/blockchain';
 import { useBlockchainTokensStore } from '@/store/blockchain/tokens';
 import { useTaskStore } from '@/store/tasks';
+import { useSupportedChains } from '@/composables/info/chains';
 import type { MaybeRef } from '@vueuse/core';
 import type { EthDetectedTokensInfo } from '@/types/balances';
 import type { ComputedRef } from 'vue';

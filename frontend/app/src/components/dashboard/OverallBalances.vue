@@ -9,6 +9,7 @@ import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useStatisticsStore } from '@/store/statistics';
 import { useSessionSettingsStore } from '@/store/settings/session';
 import { useGeneralSettingsStore } from '@/store/settings/general';
+import { usePremium } from '@/composables/premium';
 
 const { t } = useI18n();
 const { currencySymbol, floatingPrecision } = storeToRefs(useGeneralSettingsStore());

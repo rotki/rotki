@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useLocations } from '@/composables/locations';
+
 const props = withDefaults(
   defineProps<{
     item: string;

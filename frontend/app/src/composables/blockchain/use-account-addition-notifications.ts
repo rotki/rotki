@@ -1,5 +1,6 @@
 import { Severity } from '@rotki/common';
 import { useNotificationsStore } from '@/store/notifications';
+import { useSupportedChains } from '@/composables/info/chains';
 import type { EvmAccountsResult } from '@/types/api/accounts';
 import type { AccountPayload } from '@/types/blockchain/accounts';
 

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useTransactionQueryStatus } from '@/composables/history/events/query-status/tx-query-status';
 import type { Blockchain } from '@rotki/common';
 
 const props = withDefaults(

@@ -6,6 +6,7 @@ import { usePremiumStore } from '@/store/session/premium';
 import { useConfirmStore } from '@/store/confirm';
 import { useSettingsStore } from '@/store/settings';
 import { useSessionAuthStore } from '@/store/session/auth';
+import { useInterop } from '@/composables/electron-interop';
 
 const { username } = storeToRefs(useSessionAuthStore());
 const { update } = useSettingsStore();

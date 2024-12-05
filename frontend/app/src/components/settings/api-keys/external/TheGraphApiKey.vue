@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { externalLinks } from '@shared/external-links';
 import { useNotificationsStore } from '@/store/notifications';
+import { useExternalApiKeys, useServiceKeyHandler } from '@/composables/settings/api-keys/external';
 import type ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
 
 const name = 'thegraph';

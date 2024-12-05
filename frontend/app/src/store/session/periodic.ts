@@ -1,5 +1,6 @@
 import { backoff } from '@shared/utils';
 import { useNotificationsStore } from '@/store/notifications';
+import { useSessionApi } from '@/composables/api/session';
 
 export const usePeriodicStore = defineStore('session/periodic', () => {
   const lastBalanceSave = ref(0);

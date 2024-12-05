@@ -9,6 +9,10 @@ import CalendarUpcomingEventList from '@/components/calendar/CalendarUpcomingEve
 import { useConfirmStore } from '@/store/confirm';
 import { useMessageStore } from '@/store/message';
 import { useBlockchainStore } from '@/store/blockchain';
+import { usePaginationFilters } from '@/composables/use-pagination-filter';
+import { useCalendarEventForm } from '@/composables/calendar/form';
+import { useCommonTableProps } from '@/composables/use-common-table-props';
+import { useCalendarApi } from '@/composables/history/calendar';
 import type { CalendarEvent, CalendarEventRequestPayload } from '@/types/history/calendar';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 import type { Writeable } from '@rotki/common';

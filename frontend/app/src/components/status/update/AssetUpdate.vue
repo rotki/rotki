@@ -3,6 +3,9 @@ import { useConfirmStore } from '@/store/confirm';
 import { useMessageStore } from '@/store/message';
 import { useMainStore } from '@/store/main';
 import { useSessionStore } from '@/store/session';
+import { useBackendManagement } from '@/composables/backend';
+import { useRestartingStatus } from '@/composables/user/account';
+import { useAssets } from '@/composables/assets';
 import type { AssetUpdateConflictResult, AssetVersionUpdate, ConflictResolution } from '@/types/asset';
 
 const props = withDefaults(defineProps<{ headless?: boolean }>(), {

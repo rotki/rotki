@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useLatestPrices } from '@/composables/price-manager/latest';
+import { useLatestPriceForm } from '@/composables/price-manager/latest/form';
 import type { ManualPriceFormPayload } from '@/types/prices';
 
 const props = withDefaults(

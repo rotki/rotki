@@ -5,9 +5,13 @@ import { EVM_TOKEN } from '@/types/asset';
 import { NoteLocation } from '@/types/notes';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useWhitelistedAssetsStore } from '@/store/assets/whitelisted';
+import { usePremium } from '@/composables/premium';
+import { useAggregatedBalances } from '@/composables/balances/aggregated';
+import { useSupportedChains } from '@/composables/info/chains';
+import { type AssetResolutionOptions, useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import { useSpamAsset } from '@/composables/assets/spam';
 import type { RouteLocationRaw } from 'vue-router';
 import type { AssetBalanceWithPrice } from '@rotki/common';
-import type { AssetResolutionOptions } from '@/composables/assets/retrieval';
 
 definePage({
   meta: {

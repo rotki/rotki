@@ -1,5 +1,6 @@
 import { logger } from '@/utils/logging';
 import { useConfirmStore } from '@/store/confirm';
+import { useExternalServicesApi } from '@/composables/api/settings/external-services-api';
 import type { Auth, ExternalServiceKey, ExternalServiceKeys, ExternalServiceName } from '@/types/user';
 import type { MaybeRef } from '@vueuse/core';
 import type { ComputedRef, Ref } from 'vue';

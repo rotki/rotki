@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useRandomStepper } from '@/composables/random-stepper';
 import type { DashboardMessage } from '@/types/dynamic-messages';
 
 const props = defineProps<{

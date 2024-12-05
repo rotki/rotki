@@ -1,5 +1,6 @@
 import { LpType, type XSwapLiquidityBalance } from '@rotki/common';
 import { beforeAll, describe, expect, it } from 'vitest';
+import { useLiquidityPosition } from '@/composables/defi';
 import { setSushiswapBalances } from '../store/defi/sushiswap.spec';
 import { setUniswapV2Balances, setUniswapV3Balances } from '../store/defi/uniswap.spec';
 

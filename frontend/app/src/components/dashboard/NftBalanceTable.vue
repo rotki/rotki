@@ -10,6 +10,7 @@ import { useStatusStore } from '@/store/status';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useNonFungibleBalancesStore } from '@/store/balances/non-fungible';
 import { useStatisticsStore } from '@/store/statistics';
+import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import type { BigNumber } from '@rotki/common';
 import type { DataTableColumn } from '@rotki/ui-library';
 import type { IgnoredAssetsHandlingType } from '@/types/asset';

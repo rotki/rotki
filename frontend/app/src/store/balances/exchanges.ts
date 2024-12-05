@@ -15,6 +15,11 @@ import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useNotificationsStore } from '@/store/notifications';
 import { useTaskStore } from '@/store/tasks';
 import { useBalancePricesStore } from '@/store/balances/prices';
+import { useUsdValueThreshold } from '@/composables/usd-value-threshold';
+import { useStatusUpdater } from '@/composables/status';
+import { useBalanceSorting } from '@/composables/balances/sorting';
+import { useExchangeApi } from '@/composables/api/balances/exchanges';
+import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import type { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
 import type { MaybeRef } from '@vueuse/core';
 import type {

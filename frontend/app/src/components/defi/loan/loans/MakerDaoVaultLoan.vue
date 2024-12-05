@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { type BigNumber, Blockchain, HistoryEventEntryType } from '@rotki/common';
+import { useScramble } from '@/composables/scramble';
+import { usePremium } from '@/composables/premium';
 import type { MakerDAOVaultModel } from '@/types/defi/maker';
 
 const props = defineProps<{

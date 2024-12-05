@@ -7,6 +7,7 @@ import { useNotificationsStore } from '@/store/notifications';
 import { useConfirmStore } from '@/store/confirm';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useTaskStore } from '@/store/tasks';
+import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { PrioritizedListItemData } from '@/types/settings/prioritized-list-data';
 import type { OracleCacheMeta } from '@/types/prices';

@@ -8,6 +8,7 @@ import { uniqueStrings } from '@/utils/data';
 import { useExchangeBalancesStore } from '@/store/balances/exchanges';
 import { useExchangesStore } from '@/store/exchanges';
 import { useTaskStore } from '@/store/tasks';
+import { useRefresh } from '@/composables/balances/refresh';
 import type { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
 
 definePage({

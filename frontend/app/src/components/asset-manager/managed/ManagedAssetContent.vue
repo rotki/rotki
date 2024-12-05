@@ -4,9 +4,13 @@ import { useAssetCacheStore } from '@/store/assets/asset-cache';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useConfirmStore } from '@/store/confirm';
 import { useMessageStore } from '@/store/message';
+import { useManagedAssetForm } from '@/composables/assets/forms/managed-asset-form';
+import { usePaginationFilters } from '@/composables/use-pagination-filter';
+import { useAssetManagementApi } from '@/composables/api/assets/management';
+import { useCommonTableProps } from '@/composables/use-common-table-props';
+import { type Filters, type Matcher, useAssetFilter } from '@/composables/filters/assets';
 import type { Nullable, SupportedAsset } from '@rotki/common';
 import type { AssetRequestPayload, IgnoredAssetsHandlingType } from '@/types/asset';
-import type { Filters, Matcher } from '@/composables/filters/assets';
 
 const props = withDefaults(
   defineProps<{

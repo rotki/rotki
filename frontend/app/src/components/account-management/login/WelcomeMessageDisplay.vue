@@ -2,6 +2,7 @@
 import { checkIfDevelopment } from '@shared/utils';
 import { api } from '@/services/rotkehlchen-api';
 import { logger } from '@/utils/logging';
+import { useRandomStepper } from '@/composables/random-stepper';
 import type { WelcomeMessage } from '@/types/dynamic-messages';
 
 const props = defineProps<{

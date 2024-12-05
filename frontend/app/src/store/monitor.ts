@@ -11,6 +11,9 @@ import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useWebsocketStore } from '@/store/websocket';
 import { useTaskStore } from '@/store/tasks';
 import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useBalances } from '@/composables/balances';
+import { useBlockchainBalances } from '@/composables/blockchain/balances';
+import { useMessageHandling } from '@/composables/message-handling';
 
 const PERIODIC = 'periodic';
 const TASK = 'task';

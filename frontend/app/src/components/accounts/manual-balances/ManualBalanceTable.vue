@@ -7,7 +7,8 @@ import { useStatusStore } from '@/store/status';
 import { useConfirmStore } from '@/store/confirm';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useManualBalancesStore } from '@/store/balances/manual';
-import type { Filters, Matcher } from '@/composables/filters/manual-balances';
+import { type Filters, ManualBalancesFilterSchema, type Matcher, useManualBalanceFilter } from '@/composables/filters/manual-balances';
+import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import type { ManualBalance, ManualBalanceRequestPayload, ManualBalanceWithPrice } from '@/types/manual-balances';
 import type { DataTableColumn } from '@rotki/ui-library';
 

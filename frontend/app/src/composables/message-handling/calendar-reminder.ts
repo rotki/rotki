@@ -1,6 +1,7 @@
 import dayjs from 'dayjs';
 import { type Notification, Severity } from '@rotki/common';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
+import { useSupportedChains } from '@/composables/info/chains';
 import type { CalendarEventPayload } from '@/types/history/calendar';
 import type { CommonMessageHandler } from '@/types/websocket-messages';
 

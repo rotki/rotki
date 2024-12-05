@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useAssets } from '@/composables/assets';
+
 const zip = ref<File>();
 const importError = ref('');
 const exportError = ref('');

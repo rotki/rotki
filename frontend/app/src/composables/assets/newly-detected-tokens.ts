@@ -1,4 +1,5 @@
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
+import { useLoggedUserIdentifier } from '@/composables/user/account';
 import type { NewDetectedToken } from '@/types/websocket-messages';
 
 const MAX_SIZE = 500;

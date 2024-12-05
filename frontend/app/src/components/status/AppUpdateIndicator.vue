@@ -3,6 +3,7 @@ import { startPromise } from '@shared/utils';
 import { useSessionStore } from '@/store/session';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useMainStore } from '@/store/main';
+import { useInterop } from '@/composables/electron-interop';
 
 const mainStore = useMainStore();
 const { updateNeeded, version } = storeToRefs(mainStore);

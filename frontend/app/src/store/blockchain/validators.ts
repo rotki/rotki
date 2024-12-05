@@ -8,6 +8,10 @@ import { isAccountWithBalanceValidator } from '@/utils/blockchain/accounts';
 import { useNotificationsStore } from '@/store/notifications';
 import { useBlockchainStore } from '@/store/blockchain/index';
 import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useSupportedChains } from '@/composables/info/chains';
+import { usePremium } from '@/composables/premium';
+import { useBlockchainAccountsApi } from '@/composables/api/blockchain/accounts';
+import { useBlockchainBalances } from '@/composables/blockchain/balances';
 import type { EthereumValidator, EthereumValidatorRequestPayload } from '@/types/blockchain/accounts';
 import type { Collection } from '@/types/collection';
 

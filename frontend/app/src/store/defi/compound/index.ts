@@ -8,6 +8,10 @@ import { isTaskCancelled } from '@/utils';
 import { toProfitLossModel } from '@/utils/defi';
 import { useTaskStore } from '@/store/tasks';
 import { useNotificationsStore } from '@/store/notifications';
+import { useCompoundApi } from '@/composables/api/defi/compound';
+import { useStatusUpdater } from '@/composables/status';
+import { usePremium } from '@/composables/premium';
+import { useModules } from '@/composables/session/modules';
 import type { TaskMeta } from '@/types/task';
 
 function defaultCompoundStats(): CompoundStats {

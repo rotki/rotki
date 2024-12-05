@@ -3,6 +3,7 @@ import { toEvmChainAndTxHash } from '@/utils/history';
 import { TaskType } from '@/types/task-type';
 import { isEvmEventRef } from '@/utils/history/events';
 import { useTaskStore } from '@/store/tasks';
+import { useSupportedChains } from '@/composables/info/chains';
 import type { EvmChainAndTxHash, EvmHistoryEvent, HistoryEventEntry } from '@/types/history/events';
 
 const props = defineProps<{

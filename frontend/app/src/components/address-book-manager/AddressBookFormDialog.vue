@@ -2,6 +2,7 @@
 import { ApiValidationError } from '@/types/api/errors';
 import { useMessageStore } from '@/store/message';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
+import { useAddressBookForm } from '@/composables/address-book/form';
 import type { AddressBookPayload } from '@/types/eth-names';
 
 const enableForAllChains = defineModel<boolean>('enableForAllChains', { default: false, required: false });

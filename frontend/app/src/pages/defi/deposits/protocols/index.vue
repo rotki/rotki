@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Module } from '@/types/modules';
+import { useModules } from '@/composables/session/modules';
 
 definePage({
   name: 'defi-deposits-protocols',

@@ -5,6 +5,8 @@ import { SYNC_DOWNLOAD, SYNC_UPLOAD, type SyncAction } from '@/types/session/syn
 import { isTaskCancelled } from '@/utils';
 import { useTaskStore } from '@/store/tasks';
 import { useNotificationsStore } from '@/store/notifications';
+import { serializer } from '@/composables/dynamic-messages';
+import { useSyncApi } from '@/composables/api/session/sync';
 import type { TaskMeta } from '@/types/task';
 import type { DbUploadResult } from '@/types/websocket-messages';
 

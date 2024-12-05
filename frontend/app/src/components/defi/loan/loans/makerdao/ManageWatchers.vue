@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useWatchersStore } from '@/store/session/watchers';
+import { usePremium } from '@/composables/premium';
 import type { MakerDAOVaultModel } from '@/types/defi/maker';
 
 const props = defineProps<{

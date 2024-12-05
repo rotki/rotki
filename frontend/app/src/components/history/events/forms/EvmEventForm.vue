@@ -11,6 +11,10 @@ import { bigNumberifyFromRef } from '@/utils/bignumbers';
 import HistoryEventAssetPriceForm from '@/components/history/events/forms/HistoryEventAssetPriceForm.vue';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useBlockchainStore } from '@/store/blockchain';
+import { useHistoryEventsForm } from '@/composables/history/events/form';
+import { useSupportedChains } from '@/composables/info/chains';
+import { useHistoryEventCounterpartyMappings } from '@/composables/history/events/mapping/counterparty';
+import { useHistoryEventProductMappings } from '@/composables/history/events/mapping/product';
 import type { EvmHistoryEvent, NewEvmHistoryEventPayload } from '@/types/history/events';
 
 const props = withDefaults(

@@ -1,4 +1,6 @@
 import { useNotificationsStore } from '@/store/notifications';
+import { useItemCache } from '@/composables/item-cache';
+import { useAssetInfoApi } from '@/composables/api/assets/info';
 import type { AssetInfo } from '@rotki/common';
 import type { AssetMap } from '@/types/asset';
 

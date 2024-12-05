@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import { isEqual } from 'lodash-es';
 import { useMessageStore } from '@/store/message';
+import { useSavedFilter } from '@/composables/filters/saved';
 import type { SavedFilterLocation, SearchMatcher, Suggestion } from '@/types/filtering';
 
 const props = defineProps<{

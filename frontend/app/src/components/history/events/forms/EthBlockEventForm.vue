@@ -10,6 +10,7 @@ import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 import { bigNumberifyFromRef } from '@/utils/bignumbers';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useBlockchainStore } from '@/store/blockchain';
+import { useHistoryEventsForm } from '@/composables/history/events/form';
 import type { EthBlockEvent, NewEthBlockEventPayload } from '@/types/history/events';
 
 const props = withDefaults(

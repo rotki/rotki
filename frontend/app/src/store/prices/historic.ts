@@ -4,6 +4,8 @@ import { isTaskCancelled } from '@/utils';
 import { useTaskStore } from '@/store/tasks';
 import { useNotificationsStore } from '@/store/notifications';
 import { useGeneralSettingsStore } from '@/store/settings/general';
+import { usePriceApi } from '@/composables/api/balances/price';
+import { useItemCache } from '@/composables/item-cache';
 import type { BigNumber } from '@rotki/common';
 import type { TaskMeta } from '@/types/task';
 

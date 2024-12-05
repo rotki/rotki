@@ -11,6 +11,8 @@ import { getAccountAddress, getAccountLabel } from '@/utils/blockchain/accounts/
 import { assetSum } from '@/utils/calculation';
 import { uniqueStrings } from '@/utils/data';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
+import { useSupportedChains } from '@/composables/info/chains';
+import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import type {
   AccountPayload,
   Accounts,

@@ -7,6 +7,8 @@ import { useConfirmStore } from '@/store/confirm';
 import { useSessionStore } from '@/store/session';
 import { useMainStore } from '@/store/main';
 import { useNotificationsStore } from '@/store/notifications';
+import { useAssets } from '@/composables/assets';
+import { useBackendManagement } from '@/composables/backend';
 
 withDefaults(
   defineProps<{

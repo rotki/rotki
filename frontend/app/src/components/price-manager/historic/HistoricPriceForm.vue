@@ -4,6 +4,8 @@ import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 import { toMessages } from '@/utils/validation';
 import { useSimplePropVModel } from '@/utils/model';
 import { bigNumberifyFromRef } from '@/utils/bignumbers';
+import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import { useHistoricPriceForm } from '@/composables/price-manager/historic/form';
 import type { HistoricalPriceFormPayload } from '@/types/prices';
 
 const props = defineProps<{

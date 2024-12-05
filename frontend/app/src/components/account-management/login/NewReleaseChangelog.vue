@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useUpdateMessage } from '@/composables/update-message';
+
 const { t } = useI18n();
 
 const { link, version } = useUpdateMessage();

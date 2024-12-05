@@ -8,6 +8,10 @@ import { isTaskCancelled } from '@/utils';
 import { balanceSum } from '@/utils/calculation';
 import { useNotificationsStore } from '@/store/notifications';
 import { useTaskStore } from '@/store/tasks';
+import { useAaveApi } from '@/composables/api/defi/aave';
+import { useStatusUpdater } from '@/composables/status';
+import { usePremium } from '@/composables/premium';
+import { useModules } from '@/composables/session/modules';
 import type { TaskMeta } from '@/types/task';
 
 export const useAaveStore = defineStore('defi/aave', () => {

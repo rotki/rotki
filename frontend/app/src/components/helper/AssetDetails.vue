@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import type { StyleValue } from 'vue';
 import type { AssetInfoWithId } from '@/types/asset';
 

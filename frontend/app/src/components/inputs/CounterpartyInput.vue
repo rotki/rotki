@@ -1,4 +1,6 @@
 <script lang="ts" setup>
+import { useHistoryEventCounterpartyMappings } from '@/composables/history/events/mapping/counterparty';
+
 defineOptions({
   inheritAttrs: false,
 });

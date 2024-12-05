@@ -1,6 +1,8 @@
 import { type MatchedKeyword, type SearchMatcher, assetSuggestions } from '@/types/filtering';
 import { convertToTimestamp, getDateInputISOFormat } from '@/utils/date';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import { useKrakenStakingEventTypes } from '@/composables/staking/kraken-events';
 import type { FilterSchema } from '@/composables/use-pagination-filter/types';
 
 enum KrakenStakingKeys {

@@ -5,6 +5,7 @@ import { useNonFungibleBalancesStore } from '@/store/balances/non-fungible';
 import { useSettingsStore } from '@/store/settings';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useQueriedAddressesStore } from '@/store/session/queried-addresses';
+import { useStatusUpdater } from '@/composables/status';
 import type { DataTableColumn } from '@rotki/ui-library';
 import type { CamelCase } from '@/types/common';
 

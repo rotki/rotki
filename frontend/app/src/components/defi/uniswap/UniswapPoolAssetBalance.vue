@@ -1,4 +1,6 @@
 <script lang="ts" setup>
+import { useRefMap } from '@/composables/utils/useRefMap';
+import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import type { XswapAsset } from '@rotki/common';
 
 const props = defineProps<{ asset: XswapAsset }>();

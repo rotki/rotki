@@ -16,6 +16,10 @@ import { isEthBlockEventType, isEthDepositEventType, isEvmEventType, isOnlineHis
 import { getDateInputISOFormat } from '@/utils/date';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useHistoryStore } from '@/store/history';
+import { useHistoryEventCounterpartyMappings } from '@/composables/history/events/mapping/counterparty';
+import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import { useHistoryEventProductMappings } from '@/composables/history/events/mapping/product';
+import { useHistoryEventMappings } from '@/composables/history/events/mapping';
 import type { MaybeRef } from '@vueuse/core';
 import type { FilterSchema } from '@/composables/use-pagination-filter/types';
 

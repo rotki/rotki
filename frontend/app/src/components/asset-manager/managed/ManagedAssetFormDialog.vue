@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useManagedAssetForm } from '@/composables/assets/forms/managed-asset-form';
 import type { SupportedAsset } from '@rotki/common';
 
 const props = withDefaults(

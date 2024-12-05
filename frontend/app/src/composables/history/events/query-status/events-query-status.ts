@@ -1,4 +1,5 @@
 import { useEventsQueryStatusStore } from '@/store/history/query-status/events-query-status';
+import { useQueryStatus } from '@/composables/history/events/query-status/index';
 import type { MaybeRef } from '@vueuse/core';
 import type { HistoryEventsQueryData } from '@/types/websocket-messages';
 import type { ComputedRef, Ref } from 'vue';

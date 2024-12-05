@@ -3,6 +3,7 @@ import { TWITTER_URL, externalLinks } from '@shared/external-links';
 import { IndexedDb } from '@/utils/indexed-db';
 import { downloadFileByTextContent } from '@/utils/download';
 import { useNotificationsStore } from '@/store/notifications';
+import { useInterop } from '@/composables/electron-interop';
 import type { RuiIcons } from '@rotki/ui-library';
 
 const display = defineModel<boolean>({ required: true });

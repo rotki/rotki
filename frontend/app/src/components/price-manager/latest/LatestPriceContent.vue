@@ -3,6 +3,8 @@ import { objectOmit } from '@vueuse/core';
 import { isNft } from '@/utils/nft';
 import { useConfirmStore } from '@/store/confirm';
 import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useLatestPrices } from '@/composables/price-manager/latest';
+import { useLatestPriceForm } from '@/composables/price-manager/latest/form';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { ManualPriceFormPayload, ManualPriceWithUsd } from '@/types/prices';
 

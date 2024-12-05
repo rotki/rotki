@@ -3,6 +3,9 @@ import { RefreshableCache } from '@/types/session/purge';
 import { TaskType } from '@/types/task-type';
 import { useTaskStore } from '@/store/tasks';
 import { useHistoryStore } from '@/store/history';
+import { useCacheClear } from '@/composables/session/cache-clear';
+import { useSupportedChains } from '@/composables/info/chains';
+import { useSessionPurge } from '@/composables/session/purge';
 
 const { t } = useI18n();
 

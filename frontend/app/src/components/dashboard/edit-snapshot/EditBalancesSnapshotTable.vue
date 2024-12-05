@@ -5,6 +5,7 @@ import { BalanceType } from '@/types/balances';
 import { bigNumberSum } from '@/utils/calculation';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useBalancePricesStore } from '@/store/balances/prices';
+import { useEditBalancesSnapshotForm } from '@/composables/snapshots/edit-balance/form';
 import type { BigNumber } from '@rotki/common';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { BalanceSnapshot, BalanceSnapshotPayload, Snapshot } from '@/types/snapshots';

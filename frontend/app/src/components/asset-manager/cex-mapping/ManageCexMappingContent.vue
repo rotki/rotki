@@ -2,6 +2,10 @@
 import { omit } from 'lodash-es';
 import { useMessageStore } from '@/store/message';
 import { useConfirmStore } from '@/store/confirm';
+import { usePaginationFilters } from '@/composables/use-pagination-filter';
+import { useCexMappingForm } from '@/composables/assets/forms/cex-mapping-form';
+import { useCommonTableProps } from '@/composables/use-common-table-props';
+import { useAssetCexMappingApi } from '@/composables/api/assets/cex-mapping';
 import type { CexMapping, CexMappingRequestPayload } from '@/types/asset';
 
 const { t } = useI18n();

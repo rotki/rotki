@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useSessionAuthStore } from '@/store/session/auth';
+import { useNewlyDetectedTokens } from '@/composables/assets/newly-detected-tokens';
 import type { CurrentDbUpgradeProgress } from '@/types/login';
 
 const { dataMigrationStatus, dbUpgradeStatus } = storeToRefs(useSessionAuthStore());

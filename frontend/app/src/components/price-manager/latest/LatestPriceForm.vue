@@ -3,6 +3,8 @@ import { helpers, required } from '@vuelidate/validators';
 import { toMessages } from '@/utils/validation';
 import { bigNumberifyFromRef } from '@/utils/bignumbers';
 import { useSimplePropVModel } from '@/utils/model';
+import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import { useLatestPriceForm } from '@/composables/price-manager/latest/form';
 import type { ManualPriceFormPayload } from '@/types/prices';
 
 const props = withDefaults(

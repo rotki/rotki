@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useSupportedChains } from '@/composables/info/chains';
+import { useExternalApiKeys } from '@/composables/settings/api-keys/external';
 import type ServiceKeyCard from '@/components/settings/api-keys/ServiceKeyCard.vue';
 
 const { t } = useI18n();

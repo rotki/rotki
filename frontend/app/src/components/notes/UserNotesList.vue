@@ -3,6 +3,10 @@ import { logger } from '@/utils/logging';
 import { getCollectionData, setupEntryLimit } from '@/utils/collection';
 import UserNotesFormDialog from '@/components/notes/UserNotesFormDialog.vue';
 import { useSessionAuthStore } from '@/store/session/auth';
+import { useUserNotesForm } from '@/composables/notes/form';
+import { usePremium } from '@/composables/premium';
+import { usePaginationFilters } from '@/composables/use-pagination-filter';
+import { useUserNotesApi } from '@/composables/api/session/user-notes';
 import type { UserNote, UserNotesRequestPayload } from '@/types/notes';
 
 const props = withDefaults(defineProps<{ location?: string }>(), {

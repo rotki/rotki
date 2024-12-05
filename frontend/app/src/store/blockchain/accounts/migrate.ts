@@ -4,6 +4,9 @@ import { startPromise } from '@shared/utils';
 import { useLoggedUserIdentifier } from '@/composables/user/account';
 import { useSessionAuthStore } from '@/store/session/auth';
 import { useNotificationsStore } from '@/store/notifications';
+import { useBlockchains } from '@/composables/blockchain';
+import { useTokenDetection } from '@/composables/balances/token-detection';
+import { useSupportedChains } from '@/composables/info/chains';
 import type { MigratedAddresses } from '@/types/websocket-messages';
 
 function setupMigrationSessionCache(identifier: string): Ref<MigratedAddresses> {

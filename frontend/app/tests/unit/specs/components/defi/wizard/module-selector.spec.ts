@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import ModuleSelector from '@/components/defi/wizard/ModuleSelector.vue';
 import { Module } from '@/types/modules';
 import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useSettingsApi } from '@/composables/api/settings/settings-api';
 import { setModules } from '../../../../utils/general-settings';
 import { libraryDefaults } from '../../../../utils/provide-defaults';
 

@@ -2,6 +2,8 @@
 import { TaskType } from '@/types/task-type';
 import { useTaskStore } from '@/store/tasks';
 import { useHistoryStore } from '@/store/history';
+import { useTransactionQueryStatus } from '@/composables/history/events/query-status/tx-query-status';
+import { useEventsQueryStatus } from '@/composables/history/events/query-status/events-query-status';
 import type {
   EvmTransactionQueryData,
   HistoryEventsQueryData,

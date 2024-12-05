@@ -1,13 +1,17 @@
 import flushPromises from 'flush-promises';
 import { afterEach, assertType, beforeAll, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
+import { usePaginationFilters } from '@/composables/use-pagination-filter';
+import { useTrades } from '@/composables/history/trades';
+import { type Filters, type Matcher, useTradeFilters } from '@/composables/filters/trades';
 import type * as Vue from 'vue';
 import type { MaybeRef } from '@vueuse/core';
 import type { Collection } from '@/types/collection';
 import type { LocationQuery } from '@/types/route';
-import type { Filters, Matcher } from '@/composables/filters/trades';
 import type { TradeEntry, TradeRequestPayload } from '@/types/history/trade';
 
-vi.mock('vue-router', () => {
+vi.mock('vue-router', async () => {
+  const { ref } = await import('vue');
+  const { set } = await import('@vueuse/core');
   const route = ref({
     query: ref({}),
   });

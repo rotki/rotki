@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useUserNotesForm } from '@/composables/notes/form';
 import type { UserNote } from '@/types/notes';
 
 const model = defineModel<Partial<UserNote>>({ required: true });

@@ -6,6 +6,7 @@ import {
   type IgnorePayload,
 } from '@/types/history/ignored';
 import { useMessageStore } from '@/store/message';
+import { useHistoryIgnoringApi } from '@/composables/api/history/ignore';
 import type { EntryMeta } from '@/types/history/meta';
 import type { ActionStatus } from '@/types/action';
 import type { Ref } from 'vue';

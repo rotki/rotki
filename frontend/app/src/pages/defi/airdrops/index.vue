@@ -14,6 +14,7 @@ import { logger } from '@/utils/logging';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
 import { useTaskStore } from '@/store/tasks';
 import { useNotificationsStore } from '@/store/notifications';
+import { useDefiApi } from '@/composables/api/defi';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 import type { DataTableColumn, TablePaginationData } from '@rotki/ui-library';
 import type { TaskMeta } from '@/types/task';

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useMainStore } from '@/store/main';
+import { useAutoLogin, useRestartingStatus } from '@/composables/user/account';
 
 const { autolog } = useAutoLogin();
 const { restarting } = useRestartingStatus();

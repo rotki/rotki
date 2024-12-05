@@ -9,6 +9,8 @@ import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useTagStore } from '@/store/session/tags';
 import { useWatchersStore } from '@/store/session/watchers';
 import { useSessionAuthStore } from '@/store/session/auth';
+import { useBalances } from '@/composables/balances';
+import { useStatusUpdater } from '@/composables/status';
 
 interface UseDataLoaderReturn { load: () => void }
 

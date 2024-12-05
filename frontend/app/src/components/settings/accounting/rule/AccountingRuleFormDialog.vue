@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import { useAccountingRuleForm } from '@/composables/settings/accounting/form';
 import type { AccountingRuleEntry } from '@/types/settings/accounting';
 
 const props = withDefaults(

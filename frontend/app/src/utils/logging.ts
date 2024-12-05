@@ -2,6 +2,7 @@ import consola, { type LogLevel as ConsolaLogLevel, LogLevels, type LogObject } 
 import { LogLevel } from '@shared/log-level';
 import { checkIfDevelopment, startPromise } from '@shared/utils';
 import { IndexedDb } from '@/utils/indexed-db';
+import { useInterop } from '@/composables/electron-interop';
 
 const isDevelopment = checkIfDevelopment();
 

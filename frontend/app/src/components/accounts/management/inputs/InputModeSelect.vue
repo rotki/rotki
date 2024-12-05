@@ -2,6 +2,7 @@
 import { isBtcChain } from '@/types/blockchain/chains';
 import { InputMode } from '@/types/input-mode';
 import { isOfEnum } from '@/utils';
+import { useAccountLoading } from '@/composables/accounts/loading';
 
 const props = defineProps<{
   blockchain: string;

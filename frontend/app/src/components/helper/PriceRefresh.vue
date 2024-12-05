@@ -3,6 +3,8 @@ import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import { useStatusStore } from '@/store/status';
 import { useTaskStore } from '@/store/tasks';
+import { useBalances } from '@/composables/balances';
+import { useAggregatedBalances } from '@/composables/balances/aggregated';
 
 const emit = defineEmits<{
   (e: 'click'): void;

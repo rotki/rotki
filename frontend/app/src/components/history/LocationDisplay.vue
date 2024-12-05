@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useLocations } from '@/composables/locations';
 import type { RouteLocationRaw } from 'vue-router';
 
 const props = withDefaults(

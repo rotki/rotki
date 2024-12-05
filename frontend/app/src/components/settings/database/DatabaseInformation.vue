@@ -2,6 +2,7 @@
 import { logger } from '@/utils/logging';
 import { size } from '@/utils/data';
 import { useNotificationsStore } from '@/store/notifications';
+import { useBackupApi } from '@/composables/api/backup';
 import type { DatabaseInfo } from '@/types/backup';
 
 interface UserDbInfo {

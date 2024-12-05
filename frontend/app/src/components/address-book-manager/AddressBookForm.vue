@@ -6,6 +6,8 @@ import { toMessages } from '@/utils/validation';
 import { nullDefined, useSimplePropVModel } from '@/utils/model';
 import { useBlockchainStore } from '@/store/blockchain';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
+import { useAddressBookForm } from '@/composables/address-book/form';
+import { useBlockie } from '@/composables/accounts/blockie';
 import type { SelectOptions } from '@/types/common';
 import type { AddressBookLocation, AddressBookPayload } from '@/types/eth-names';
 

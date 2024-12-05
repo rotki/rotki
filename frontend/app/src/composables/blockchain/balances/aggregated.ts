@@ -3,6 +3,8 @@ import { bigNumberSum } from '@/utils/calculation';
 import { useBlockchainStore } from '@/store/blockchain';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
+import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import { useBalanceSorting } from '@/composables/balances/sorting';
 import type { AssetBalance, AssetBalanceWithPrice, BigNumber } from '@rotki/common';
 import type { AssetBalances } from '@/types/balances';
 import type { ComputedRef } from 'vue';

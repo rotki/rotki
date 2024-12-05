@@ -6,6 +6,9 @@ import { isTaskCancelled } from '@/utils';
 import { useConfirmStore } from '@/store/confirm';
 import { useStatusStore } from '@/store/status';
 import { useNotificationsStore } from '@/store/notifications';
+import { useHistoryEvents } from '@/composables/history/events';
+import { useIgnore } from '@/composables/history';
+import { useHistoryEventsApi } from '@/composables/api/history/events';
 import type {
   EvmChainAndTxHash,
   HistoryEventEntry,

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { type BigNumber, Blockchain } from '@rotki/common';
-import { type NoteFormat, NoteType } from '@/composables/history/events/notes';
+import { type NoteFormat, NoteType, useHistoryEventNote } from '@/composables/history/events/notes';
 import type { ExplorerUrls } from '@/types/asset/asset-urls';
 
 defineOptions({

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useGeneralSettingsStore } from '@/store/settings/general';
+import { usePremium } from '@/composables/premium';
 import type { AssetBalanceWithPrice, XswapAsset } from '@rotki/common';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 

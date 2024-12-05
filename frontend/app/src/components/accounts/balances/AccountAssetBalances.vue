@@ -2,6 +2,7 @@
 import { getSortItems } from '@/utils/assets';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useBalancePricesStore } from '@/store/balances/prices';
+import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import type { AssetBalance, BigNumber } from '@rotki/common';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 

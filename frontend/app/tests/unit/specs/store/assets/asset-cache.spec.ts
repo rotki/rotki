@@ -1,6 +1,7 @@
 import flushPromises from 'flush-promises';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAssetCacheStore } from '@/store/assets/asset-cache';
+import { useAssetInfoApi } from '@/composables/api/assets/info';
 import type { AssetInfo } from '@rotki/common';
 import type { AssetMap } from '@/types/asset';
 

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useLiquidityPosition } from '@/composables/defi';
 import type { LpType, XswapPool } from '@rotki/common';
 
 const model = defineModel<string[]>({ required: true });

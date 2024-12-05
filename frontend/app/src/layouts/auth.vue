@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { useAreaVisibilityStore } from '@/store/session/visibility';
+import { useDarkMode } from '@/composables/dark-mode';
+import { useInterop } from '@/composables/electron-interop';
 
 const { showAbout } = storeToRefs(useAreaVisibilityStore());
 const { isPackaged } = useInterop();

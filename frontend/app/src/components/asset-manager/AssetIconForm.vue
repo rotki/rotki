@@ -2,6 +2,8 @@
 import { useAssetIconStore } from '@/store/assets/icon';
 import { useMessageStore } from '@/store/message';
 import { useNotificationsStore } from '@/store/notifications';
+import { useInterop } from '@/composables/electron-interop';
+import { useAssetIconApi } from '@/composables/api/assets/icon';
 
 const props = withDefaults(
   defineProps<{

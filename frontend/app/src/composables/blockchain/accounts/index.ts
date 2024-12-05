@@ -9,6 +9,9 @@ import { useNotificationsStore } from '@/store/notifications';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import { useTaskStore } from '@/store/tasks';
 import { useBlockchainStore } from '@/store/blockchain';
+import { useSupportedChains } from '@/composables/info/chains';
+import { useBlockchainAccountsApi } from '@/composables/api/blockchain/accounts';
+import { useEthStaking } from '@/composables/blockchain/accounts/staking';
 import type {
   AccountPayload,
   BlockchainAccount,

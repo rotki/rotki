@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useAirdropsMetadata } from '@/composables/defi/airdrops/metadata';
+
 const props = defineProps<{
   source: string;
   iconUrl?: string;

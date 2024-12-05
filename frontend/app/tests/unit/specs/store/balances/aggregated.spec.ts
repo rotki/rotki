@@ -10,6 +10,8 @@ import { useBlockchainStore } from '@/store/blockchain';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useExchangesStore } from '@/store/exchanges';
 import { useExchangeBalancesStore } from '@/store/balances/exchanges';
+import { useAggregatedBalances } from '@/composables/balances/aggregated';
+import { useBalances } from '@/composables/balances';
 import { updateGeneralSettings } from '../../../utils/general-settings';
 import type { BlockchainTotals, BtcBalances } from '@/types/blockchain/balances';
 import type { BitcoinAccounts, BlockchainAccountGroupWithBalance } from '@/types/blockchain/accounts';

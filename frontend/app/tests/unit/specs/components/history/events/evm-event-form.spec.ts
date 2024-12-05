@@ -6,6 +6,10 @@ import { HistoryEventEntryType } from '@rotki/common';
 import EvmEventForm from '@/components/history/events/forms/EvmEventForm.vue';
 import { setupDayjs } from '@/utils/date';
 import { useBalancePricesStore } from '@/store/balances/prices';
+import { useHistoryEventCounterpartyMappings } from '@/composables/history/events/mapping/counterparty';
+import { useHistoryEventProductMappings } from '@/composables/history/events/mapping/product';
+import { useHistoryEventMappings } from '@/composables/history/events/mapping';
+import { useAssetInfoApi } from '@/composables/api/assets/info';
 import type { AssetMap } from '@/types/asset';
 import type { EvmHistoryEvent } from '@/types/history/events';
 

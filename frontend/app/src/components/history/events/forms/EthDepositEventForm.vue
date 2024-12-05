@@ -10,6 +10,7 @@ import { bigNumberifyFromRef } from '@/utils/bignumbers';
 import HistoryEventAssetPriceForm from '@/components/history/events/forms/HistoryEventAssetPriceForm.vue';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useBlockchainStore } from '@/store/blockchain';
+import { useHistoryEventsForm } from '@/composables/history/events/form';
 import type { EthDepositEvent, NewEthDepositEventPayload } from '@/types/history/events';
 
 const props = withDefaults(

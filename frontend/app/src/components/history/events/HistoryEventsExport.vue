@@ -5,6 +5,8 @@ import { isTaskCancelled } from '@/utils';
 import { useNotificationsStore } from '@/store/notifications';
 import { useConfirmStore } from '@/store/confirm';
 import { useTaskStore } from '@/store/tasks';
+import { useInterop } from '@/composables/electron-interop';
+import { useHistoryEventsApi } from '@/composables/api/history/events';
 import type { TaskMeta } from '@/types/task';
 import type { HistoryEventRequestPayload } from '@/types/history/events';
 

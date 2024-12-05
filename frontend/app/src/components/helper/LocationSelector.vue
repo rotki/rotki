@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { isEqual } from 'lodash-es';
+import { useLocations } from '@/composables/locations';
 import type { TradeLocationData } from '@/types/history/trade/location';
 
 defineOptions({

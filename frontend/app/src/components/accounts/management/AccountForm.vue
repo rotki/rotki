@@ -14,6 +14,8 @@ import { logger } from '@/utils/logging';
 import AddressAccountForm from '@/components/accounts/management/types/AddressAccountForm.vue';
 import ValidatorAccountForm from '@/components/accounts/management/types/ValidatorAccountForm.vue';
 import XpubAccountForm from '@/components/accounts/management/types/XpubAccountForm.vue';
+import { useSupportedChains } from '@/composables/info/chains';
+import { useExternalApiKeys } from '@/composables/settings/api-keys/external';
 import type { ValidationErrors } from '@/types/api/errors';
 
 const modelValue = defineModel<AccountManageState>({ required: true });

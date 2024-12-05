@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { usePremium } from '@/composables/premium';
+
 const { t } = useI18n();
 const premium = usePremium();
 const { isLgAndDown } = useBreakpoint();

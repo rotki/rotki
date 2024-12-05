@@ -3,6 +3,7 @@ import useVuelidate from '@vuelidate/core';
 import { helpers, not, numeric, required, sameAs } from '@vuelidate/validators';
 import { toMessages } from '@/utils/validation';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useValidation } from '@/composables/validation';
 
 const thousandSeparator = ref<string>('');
 const decimalSeparator = ref<string>('');

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { checkIfDevelopment } from '@shared/utils';
 import { useAreaVisibilityStore } from '@/store/session/visibility';
+import { useDarkMode } from '@/composables/dark-mode';
 
 const isDevelopment = checkIfDevelopment();
 

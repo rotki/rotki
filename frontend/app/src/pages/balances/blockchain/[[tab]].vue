@@ -12,6 +12,10 @@ import { BalanceSource, DashboardTableType } from '@/types/settings/frontend-set
 import { uniqueStrings } from '@/utils/data';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useBlockchainStore } from '@/store/blockchain';
+import { useModules } from '@/composables/session/modules';
+import { useSupportedChains } from '@/composables/info/chains';
+import { useAccountLoading } from '@/composables/accounts/loading';
+import { useBlockchainAggregatedBalances } from '@/composables/blockchain/balances/aggregated';
 import type { RouteLocationRaw } from 'vue-router';
 import type { ComponentExposed } from 'vue-component-type-helpers';
 

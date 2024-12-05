@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import { useTradesForm } from '@/composables/history/trades/form';
 import type { Trade } from '@/types/history/trade';
 
 const props = withDefaults(

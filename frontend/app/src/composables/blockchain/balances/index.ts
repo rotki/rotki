@@ -15,6 +15,11 @@ import { useStatusStore } from '@/store/status';
 import { useBlockchainStore } from '@/store/blockchain';
 import { useNotificationsStore } from '@/store/notifications';
 import { useTaskStore } from '@/store/tasks';
+import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import { useUsdValueThreshold } from '@/composables/usd-value-threshold';
+import { useStatusUpdater } from '@/composables/status';
+import { useSupportedChains } from '@/composables/info/chains';
+import { useBlockchainBalancesApi } from '@/composables/api/balances/blockchain';
 import type { BlockchainMetadata, TaskMeta } from '@/types/task';
 import type { BlockchainAccount, BlockchainBalancePayload } from '@/types/blockchain/accounts';
 
