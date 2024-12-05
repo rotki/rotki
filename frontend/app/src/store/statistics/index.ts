@@ -7,6 +7,9 @@ import { useNonFungibleBalancesStore } from '@/store/balances/non-fungible';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useNotificationsStore } from '@/store/notifications';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useLiquidityPosition } from '@/composables/defi';
+import { useAggregatedBalances } from '@/composables/balances/aggregated';
+import { useStatisticsApi } from '@/composables/api/statistics/statistics-api';
 
 function defaultNetValue(): NetValue {
   return {

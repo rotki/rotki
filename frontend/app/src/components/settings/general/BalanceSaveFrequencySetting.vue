@@ -5,6 +5,7 @@ import { Constraints } from '@/data/constraints';
 import { toMessages } from '@/utils/validation';
 import { Defaults } from '@/data/defaults';
 import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useValidation } from '@/composables/validation';
 
 const DEFAULT_FREQUENCY = Defaults.BALANCE_SAVE_FREQUENCY;
 

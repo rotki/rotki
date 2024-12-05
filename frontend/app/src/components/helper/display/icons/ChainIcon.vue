@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useSupportedChains } from '@/composables/info/chains';
+
 interface Props {
   size?: string;
   chain: string;

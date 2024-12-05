@@ -9,6 +9,10 @@ import { balanceSum } from '@/utils/calculation';
 import { zeroBalance } from '@/utils/bignumbers';
 import { useTaskStore } from '@/store/tasks';
 import { useNotificationsStore } from '@/store/notifications';
+import { useYearnApi } from '@/composables/api/defi/yearn';
+import { useStatusUpdater } from '@/composables/status';
+import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import { useModules } from '@/composables/session/modules';
 import type { TaskMeta } from '@/types/task';
 
 export const useYearnStore = defineStore('defi/yearn', () => {

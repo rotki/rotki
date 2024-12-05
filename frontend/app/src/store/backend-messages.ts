@@ -5,6 +5,8 @@ import { useAreaVisibilityStore } from '@/store/session/visibility';
 import { useSessionAuthStore } from '@/store/session/auth';
 import { useMainStore } from '@/store/main';
 import { useMonitorStore } from '@/store/monitor';
+import { useInterop } from '@/composables/electron-interop';
+import { useBackendManagement } from '@/composables/backend';
 
 export const useBackendMessagesStore = defineStore('backendMessages', () => {
   const startupErrorMessage = ref('');

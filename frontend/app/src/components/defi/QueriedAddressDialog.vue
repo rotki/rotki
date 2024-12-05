@@ -4,6 +4,7 @@ import { type Module, SUPPORTED_MODULES } from '@/types/modules';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
 import { useQueriedAddressesStore } from '@/store/session/queried-addresses';
 import { useBlockchainStore } from '@/store/blockchain';
+import { useRefMap } from '@/composables/utils/useRefMap';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 import type { CamelCase } from '@/types/common';
 

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useEventsQueryStatus } from '@/composables/history/events/query-status/events-query-status';
 import type { HistoryEventsQueryData } from '@/types/websocket-messages';
 
 defineProps<{ item: HistoryEventsQueryData }>();

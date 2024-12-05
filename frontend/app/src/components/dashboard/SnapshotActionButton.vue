@@ -5,6 +5,10 @@ import { useMessageStore } from '@/store/message';
 import { useStatisticsStore } from '@/store/statistics';
 import { usePeriodicStore } from '@/store/session/periodic';
 import { useSessionStore } from '@/store/session';
+import { useInterop } from '@/composables/electron-interop';
+import { useSnapshotApi } from '@/composables/api/settings/snapshot-api';
+import { useBalances } from '@/composables/balances';
+import { usePremium } from '@/composables/premium';
 import type { Writeable } from '@rotki/common';
 import type { AllBalancePayload } from '@/types/blockchain/accounts';
 

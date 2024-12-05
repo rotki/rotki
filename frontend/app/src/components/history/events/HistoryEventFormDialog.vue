@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import { useHistoryEventsForm } from '@/composables/history/events/form';
 import type { HistoryEvent, HistoryEventEntry } from '@/types/history/events';
 
 const props = withDefaults(

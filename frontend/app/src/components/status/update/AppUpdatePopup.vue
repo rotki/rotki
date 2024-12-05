@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { externalLinks } from '@shared/external-links';
 import { useSessionStore } from '@/store/session';
+import { useInterop } from '@/composables/electron-interop';
 
 const downloadReady = ref(false);
 const downloading = ref(false);

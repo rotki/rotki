@@ -1,4 +1,5 @@
 import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
+import { usePremiumCredentialsApi } from '@/composables/api/session/premium-credentials';
 import type { PremiumCredentialsPayload } from '@/types/session';
 import type { ActionStatus } from '@/types/action';
 

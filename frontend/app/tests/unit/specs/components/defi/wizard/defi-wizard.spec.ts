@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import DefiWizard from '@/components/defi/wizard/DefiWizard.vue';
 import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { FrontendSettings } from '@/types/settings/frontend-settings';
+import { useSettingsApi } from '@/composables/api/settings/settings-api';
 
 vi.mock('@/composables/api/settings/settings-api', () => ({
   useSettingsApi: vi.fn().mockReturnValue({

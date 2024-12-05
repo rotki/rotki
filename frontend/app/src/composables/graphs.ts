@@ -1,5 +1,6 @@
 import { Chart, type TooltipModel, registerables } from 'chart.js';
 import zoomPlugin from 'chartjs-plugin-zoom';
+import { useDarkMode } from '@/composables/dark-mode';
 import type { BigNumber, TooltipDisplayOption } from '@rotki/common';
 import type { ComputedRef, Ref } from 'vue';
 

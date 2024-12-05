@@ -9,6 +9,7 @@ import { useTaskStore } from '@/store/tasks';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useHistoricCachePriceStore } from '@/store/prices/historic';
+import { useAssetPricesApi } from '@/composables/api/assets/prices';
 import type { BigNumber } from '@rotki/common';
 import type { HistoricalPriceFormPayload } from '@/types/prices';
 

@@ -5,6 +5,9 @@ import { toMessages } from '@/utils/validation';
 import { useSimplePropVModel } from '@/utils/model';
 import ManualBalancesPriceForm from '@/components/accounts/manual-balances/ManualBalancesPriceForm.vue';
 import { useManualBalancesStore } from '@/store/balances/manual';
+import { useCustomAssetForm } from '@/composables/assets/forms/custom-asset-form';
+import { useAssetManagementApi } from '@/composables/api/assets/management';
+import { useFormStateWatcher } from '@/composables/form';
 import type { ManualBalance, RawManualBalance } from '@/types/manual-balances';
 import type { ValidationErrors } from '@/types/api/errors';
 

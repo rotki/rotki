@@ -1,6 +1,11 @@
 <script setup lang="ts">
 import { useSessionStore } from '@/store/session';
 import { useSessionAuthStore } from '@/store/session/auth';
+import { useUpdateMessage } from '@/composables/update-message';
+import { useDynamicMessages } from '@/composables/dynamic-messages';
+import { useAccountManagement } from '@/composables/user/account';
+import { useBackendManagement } from '@/composables/backend';
+import { useAppNavigation } from '@/composables/navigation';
 import type { LoginCredentials } from '@/types/login';
 
 definePage({

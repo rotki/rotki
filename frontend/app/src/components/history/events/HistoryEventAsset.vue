@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { CURRENCY_USD } from '@/types/currencies';
+import { useAssetPageNavigation } from '@/composables/assets/navigation';
+import { useRefMap } from '@/composables/utils/useRefMap';
+import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import type { HistoryEventEntry } from '@/types/history/events';
 
 const props = defineProps<{

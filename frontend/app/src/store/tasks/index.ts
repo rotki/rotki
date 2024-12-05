@@ -13,6 +13,7 @@ import {
 } from '@/types/task';
 import { removeKey } from '@/utils/data';
 import { logger } from '@/utils/logging';
+import { useTaskApi } from '@/composables/api/task';
 import type { ActionResult } from '@rotki/common';
 
 const USER_CANCELLED_TASK = 'task_cancelled_by_user';

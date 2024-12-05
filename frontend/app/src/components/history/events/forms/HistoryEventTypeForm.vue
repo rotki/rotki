@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { toMessages } from '@/utils/validation';
+import { useHistoryEventMappings } from '@/composables/history/events/mapping';
 import type { Validation } from '@vuelidate/core';
 import type { ActionDataEntry } from '@/types/action';
 

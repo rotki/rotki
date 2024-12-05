@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useSessionAuthStore } from '@/store/session/auth';
+import { useRefMap } from '@/composables/utils/useRefMap';
 
 const emit = defineEmits<{ (e: 'proceed', approval: 'yes' | 'no'): void }>();
 

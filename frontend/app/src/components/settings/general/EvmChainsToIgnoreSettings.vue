@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useSupportedChains } from '@/composables/info/chains';
 
 const { t } = useI18n();
 const { evmchainsToSkipDetection } = storeToRefs(useGeneralSettingsStore());

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useExternalApiKeys } from '@/composables/settings/api-keys/external';
+
 const { t } = useI18n();
 
 const search = ref<string>('');

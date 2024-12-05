@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { useRefMap } from '@/composables/utils/useRefMap';
+import { useHistoryEventMappings } from '@/composables/history/events/mapping';
+
 const props = defineProps<{
   type: string;
 }>();

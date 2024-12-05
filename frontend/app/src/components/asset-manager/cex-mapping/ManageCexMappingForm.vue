@@ -4,6 +4,8 @@ import { objectOmit } from '@vueuse/core';
 import { toMessages } from '@/utils/validation';
 import { useRefPropVModel } from '@/utils/model';
 import { useMessageStore } from '@/store/message';
+import { useCexMappingForm } from '@/composables/assets/forms/cex-mapping-form';
+import { useAssetCexMappingApi } from '@/composables/api/assets/cex-mapping';
 import type { CexMapping } from '@/types/asset';
 
 const props = withDefaults(

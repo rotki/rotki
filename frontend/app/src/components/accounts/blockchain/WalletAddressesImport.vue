@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useMessageStore } from '@/store/message';
+import { useInterop } from '@/composables/electron-interop';
 
 defineProps<{
   disabled: boolean;

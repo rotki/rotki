@@ -4,6 +4,7 @@ import { startPromise } from '@shared/utils';
 import ManualBalancesForm from '@/components/accounts/manual-balances/ManualBalancesForm.vue';
 import { useMessageStore } from '@/store/message';
 import { useManualBalancesStore } from '@/store/balances/manual';
+import { useBalances } from '@/composables/balances';
 import type { ManualBalance, RawManualBalance } from '@/types/manual-balances';
 
 const modelValue = defineModel<ManualBalance | RawManualBalance | undefined>({ required: true });

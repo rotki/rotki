@@ -5,6 +5,10 @@ import { type ExplorerUrls, explorerUrls, isChains } from '@/types/asset/asset-u
 import { useBlockchainStore } from '@/store/blockchain';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useLinks } from '@/composables/links';
+import { useAddressBookForm } from '@/composables/address-book/form';
+import { useSupportedChains } from '@/composables/info/chains';
+import { useScramble } from '@/composables/scramble';
 
 defineOptions({
   inheritAttrs: false,

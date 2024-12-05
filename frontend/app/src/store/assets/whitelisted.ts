@@ -1,5 +1,6 @@
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useNotificationsStore } from '@/store/notifications';
+import { useAssetWhitelistApi } from '@/composables/api/assets/whitelist';
 import type { MaybeRef } from '@vueuse/core';
 import type { ActionStatus } from '@/types/action';
 

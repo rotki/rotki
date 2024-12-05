@@ -13,6 +13,8 @@ import { useNotificationsStore } from '@/store/notifications';
 import { useAreaVisibilityStore } from '@/store/session/visibility';
 import { useReportsStore } from '@/store/reports';
 import { useTaskStore } from '@/store/tasks';
+import { useInterop } from '@/composables/electron-interop';
+import { useReportsApi } from '@/composables/api/reports';
 import type { ProfitLossReportDebugPayload, ProfitLossReportPeriod } from '@/types/reports';
 import type { TaskMeta } from '@/types/task';
 

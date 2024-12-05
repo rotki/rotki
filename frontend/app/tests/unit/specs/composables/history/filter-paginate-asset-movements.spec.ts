@@ -1,12 +1,16 @@
 import flushPromises from 'flush-promises';
 import { afterEach, assertType, beforeAll, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
+import { usePaginationFilters } from '@/composables/use-pagination-filter';
+import { useAssetMovements } from '@/composables/history/asset-movements';
+import { type Filters, type Matcher, useAssetMovementFilters } from '@/composables/filters/asset-movement';
 import type * as Vue from 'vue';
-import type { Filters, Matcher } from '@/composables/filters/asset-movement';
 import type { Collection } from '@/types/collection';
 import type { AssetMovementEntry, AssetMovementRequestPayload } from '@/types/history/asset-movements';
 import type { MaybeRef } from '@vueuse/core';
 
-vi.mock('vue-router', () => {
+vi.mock('vue-router', async () => {
+  const { ref } = await import('vue');
+  const { set } = await import('@vueuse/core');
   const route = ref({
     query: {},
   });

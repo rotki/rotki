@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import { uniqueStrings } from '@/utils/data';
+import { useSupportedChains } from '@/composables/info/chains';
 
 type Row = ({ chain: string } | { chains: string[] }) & { id: string };
 

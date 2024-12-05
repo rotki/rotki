@@ -1,13 +1,16 @@
 import flushPromises from 'flush-promises';
 import { afterEach, assertType, beforeAll, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
 import { useNonFungibleBalancesStore } from '@/store/balances/non-fungible';
+import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import type * as Vue from 'vue';
 import type { MaybeRef } from '@vueuse/core';
 import type { Collection } from '@/types/collection';
 import type { NonFungibleBalance, NonFungibleBalancesRequestPayload } from '@/types/nfbalances';
 import type { LocationQuery } from '@/types/route';
 
-vi.mock('vue-router', () => {
+vi.mock('vue-router', async () => {
+  const { ref } = await import('vue');
+  const { set } = await import('@vueuse/core');
   const route = ref({
     query: {},
   });

@@ -1,8 +1,12 @@
 <script setup lang="ts">
 import { useConfirmStore } from '@/store/confirm';
 import { useMessageStore } from '@/store/message';
+import { type Filters, type Matcher, useCustomAssetFilter } from '@/composables/filters/custom-assets';
+import { usePaginationFilters } from '@/composables/use-pagination-filter';
+import { useCommonTableProps } from '@/composables/use-common-table-props';
+import { useCustomAssetForm } from '@/composables/assets/forms/custom-asset-form';
+import { useAssetManagementApi } from '@/composables/api/assets/management';
 import type { Nullable } from '@rotki/common';
-import type { Filters, Matcher } from '@/composables/filters/custom-assets';
 import type { CustomAsset, CustomAssetRequestPayload } from '@/types/asset';
 
 const props = withDefaults(

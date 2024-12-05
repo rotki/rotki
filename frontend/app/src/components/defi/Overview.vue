@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useRefMap } from '@/composables/utils/useRefMap';
+import { useDefiMetadata } from '@/composables/defi/metadata';
 import type { DefiProtocolSummary } from '@/types/defi/overview';
 
 const props = defineProps<{

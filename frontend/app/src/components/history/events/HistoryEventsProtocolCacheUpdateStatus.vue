@@ -2,6 +2,7 @@
 import { TaskType } from '@/types/task-type';
 import { useTaskStore } from '@/store/tasks';
 import { useHistoryStore } from '@/store/history';
+import { useDefiMetadata } from '@/composables/defi/metadata';
 import type { ProtocolCacheUpdatesData } from '@/types/websocket-messages';
 import type { DataTableColumn } from '@rotki/ui-library';
 

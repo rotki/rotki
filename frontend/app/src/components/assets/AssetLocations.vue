@@ -7,6 +7,9 @@ import { useStatusStore } from '@/store/status';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import { useBlockchainStore } from '@/store/blockchain';
 import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useBalancesBreakdown } from '@/composables/balances/breakdown';
+import { useSupportedChains } from '@/composables/info/chains';
+import { useAggregatedBalances } from '@/composables/balances/aggregated';
 import type { AddressData, AssetBreakdown, BlockchainAccount } from '@/types/blockchain/accounts';
 import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 

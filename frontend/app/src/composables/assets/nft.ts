@@ -3,6 +3,7 @@ import { TaskType } from '@/types/task-type';
 import { getDomain } from '@/utils/url';
 import { useTaskStore } from '@/store/tasks';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useAssetsApi } from '@/composables/api/assets';
 import type { ActionResult } from '@rotki/common';
 import type { TaskMeta } from '@/types/task';
 

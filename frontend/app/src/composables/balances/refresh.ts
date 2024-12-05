@@ -5,6 +5,9 @@ import { arrayify } from '@/utils/array';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useBlockchainTokensStore } from '@/store/blockchain/tokens';
 import { useExchangeBalancesStore } from '@/store/balances/exchanges';
+import { useBlockchainBalances } from '@/composables/blockchain/balances';
+import { useTokenDetection } from '@/composables/balances/token-detection';
+import { useSupportedChains } from '@/composables/info/chains';
 import type { MaybeRef } from '@vueuse/core';
 
 export const useRefresh = createSharedComposable(() => {

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Module } from '@/types/modules';
 import { NoteLocation } from '@/types/notes';
+import { useModules } from '@/composables/session/modules';
 
 definePage({
   meta: {

@@ -6,6 +6,10 @@ import {
   type FrontendSettingsPayload,
 } from '@/types/settings/frontend-settings';
 import { logger } from '@/utils/logging';
+import { useSettingsApi } from '@/composables/api/settings/settings-api';
+import { useLastLanguage } from '@/composables/session/language';
+import { useItemsPerPage } from '@/composables/session/settings';
+import { useComputedRef } from '@/composables/utils/useComputedRef';
 import type { ActionStatus } from '@/types/action';
 
 export const useFrontendSettingsStore = defineStore('settings/frontend', () => {

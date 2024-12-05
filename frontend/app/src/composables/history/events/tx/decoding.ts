@@ -16,6 +16,9 @@ import { logger } from '@/utils/logging';
 import { useTaskStore } from '@/store/tasks';
 import { useHistoryStore } from '@/store/history';
 import { useNotificationsStore } from '@/store/notifications';
+import { useSupportedChains } from '@/composables/info/chains';
+import { useStatusUpdater } from '@/composables/status';
+import { useHistoryEventsApi } from '@/composables/api/history/events';
 import type { TaskMeta } from '@/types/task';
 
 export const useHistoryTransactionDecoding = createSharedComposable(() => {

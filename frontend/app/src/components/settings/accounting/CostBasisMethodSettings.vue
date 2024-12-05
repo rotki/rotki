@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useCostBasisMethod } from '@/composables/reports';
 import type { CostBasisMethod } from '@/types/user';
 
 defineOptions({

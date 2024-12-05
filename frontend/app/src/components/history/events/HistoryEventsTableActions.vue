@@ -2,6 +2,7 @@
 import { checkIfDevelopment } from '@shared/utils';
 import { type MatchedKeywordWithBehaviour, SavedFilterLocation, type SearchMatcher } from '@/types/filtering';
 import { useRefPropVModel } from '@/utils/model';
+import { useSupportedChains } from '@/composables/info/chains';
 import type { HistoryEventRequestPayload } from '@/types/history/events';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 

@@ -6,6 +6,8 @@ import Uniswap3PoolBalances from '@/components/defi/uniswap/Uniswap3PoolBalances
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
 import { useUniswapStore } from '@/store/defi/uniswap';
 import { useStatusStore } from '@/store/status';
+import { useModules } from '@/composables/session/modules';
+import { usePremium } from '@/composables/premium';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 
 const uniswap = Module.UNISWAP;

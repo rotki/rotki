@@ -1,4 +1,5 @@
 import { useMessageStore } from '@/store/message';
+import { useQueriedAddressApi } from '@/composables/api/session/queried-addresses';
 import type { QueriedAddressPayload, QueriedAddresses } from '@/types/session';
 
 export const useQueriedAddressesStore = defineStore('session/queried-addresses', () => {

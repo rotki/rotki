@@ -8,6 +8,8 @@ import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
 import { useDefiStore } from '@/store/defi';
 import { useAaveStore } from '@/store/defi/aave';
 import { useStatusStore } from '@/store/status';
+import { usePremium } from '@/composables/premium';
+import { useDefiLending } from '@/composables/defi/lending';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 
 const section = Section.DEFI_LENDING;

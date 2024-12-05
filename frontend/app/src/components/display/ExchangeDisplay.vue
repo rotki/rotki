@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { useRefMap } from '@/composables/utils/useRefMap';
+import { useLocations } from '@/composables/locations';
+
 const props = withDefaults(
   defineProps<{
     exchange: string;

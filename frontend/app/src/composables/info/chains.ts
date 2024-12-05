@@ -1,6 +1,8 @@
 import { Blockchain } from '@rotki/common';
 import { isBlockchain } from '@/types/blockchain/chains';
 import { useMainStore } from '@/store/main';
+import { useSupportedChainsApi } from '@/composables/api/info/chains';
+import { useArrayInclude } from '@/composables/array';
 import type { MaybeRef } from '@vueuse/core';
 import type {
   ChainInfo,

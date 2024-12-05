@@ -3,6 +3,7 @@ import { startPromise } from '@shared/utils';
 import { useNotificationsStore } from '@/store/notifications';
 import { useMessageStore } from '@/store/message';
 import { useHistoricCachePriceStore } from '@/store/prices/historic';
+import { useAssetPricesApi } from '@/composables/api/assets/prices';
 import type { HistoricalPrice, HistoricalPriceFormPayload, ManualPricePayload } from '@/types/prices';
 import type { Ref } from 'vue';
 

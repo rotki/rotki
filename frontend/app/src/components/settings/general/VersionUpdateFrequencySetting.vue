@@ -4,6 +4,7 @@ import { between, helpers, requiredIf } from '@vuelidate/validators';
 import { Constraints } from '@/data/constraints';
 import { toMessages } from '@/utils/validation';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useValidation } from '@/composables/validation';
 
 const versionUpdateCheckFrequency = ref<string>('');
 const versionUpdateCheckEnabled = ref<boolean>(false);

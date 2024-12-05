@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { truncateAddress } from '@/utils/truncate';
+import { useSupportedChains } from '@/composables/info/chains';
+import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import type { Suggestion } from '@/types/filtering';
 
 const props = withDefaults(

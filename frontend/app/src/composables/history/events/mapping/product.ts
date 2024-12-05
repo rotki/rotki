@@ -1,3 +1,5 @@
+import { useRefMap } from '@/composables/utils/useRefMap';
+import { useHistoryEventsApi } from '@/composables/api/history/events';
 import type { HistoryEventProductData } from '@/types/history/events/event-type';
 
 export const useHistoryEventProductMappings = createSharedComposable(() => {

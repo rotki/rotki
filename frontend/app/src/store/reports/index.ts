@@ -13,6 +13,8 @@ import { useTaskStore } from '@/store/tasks';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useMessageStore } from '@/store/message';
 import { useNotificationsStore } from '@/store/notifications';
+import { useReportsApi } from '@/composables/api/reports';
+import { useHistoryApi } from '@/composables/api/history';
 import type {
   ProfitLossReportDebugPayload,
   ProfitLossReportPeriod,

@@ -3,6 +3,7 @@ import { sortDesc } from '@/utils/bignumbers';
 import { balanceSum } from '@/utils/calculation';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
 import { useBlockchainStore } from '@/store/blockchain';
+import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import type { AssetBalance } from '@rotki/common';
 import type { BlockchainAccountBalance } from '@/types/blockchain/accounts';
 

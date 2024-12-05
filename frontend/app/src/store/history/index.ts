@@ -2,6 +2,7 @@ import { TaskType } from '@/types/task-type';
 import { logger } from '@/utils/logging';
 import { useNotificationsStore } from '@/store/notifications';
 import { useTaskStore } from '@/store/tasks';
+import { useHistoryApi } from '@/composables/api/history';
 import type { EvmUnDecodedTransactionsData, ProtocolCacheUpdatesData } from '@/types/websocket-messages';
 
 export const useHistoryStore = defineStore('history', () => {

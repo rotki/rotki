@@ -1,9 +1,11 @@
-import { Blockchain } from '@rotki/common';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
+import { Blockchain } from '@rotki/common';
 import { SocketMessageType } from '@/types/websocket-messages';
 import { useNotificationsStore } from '@/store/notifications';
 import { useSessionAuthStore } from '@/store/session/auth';
+import { useMessageHandling } from '@/composables/message-handling';
+import { useTokenDetection } from '@/composables/balances/token-detection';
 import type { EvmChainInfo } from '@/types/api/chains';
 
 vi.mock('vue-router', () => ({
@@ -42,34 +44,34 @@ vi.mock('@/composables/blockchain/accounts', () => ({
   }),
 }));
 
-vi.mock('@/composables/info/chains', () => ({
-  useSupportedChains: vi.fn().mockReturnValue({
-    txEvmChains: computed(() => [
-      {
+vi.mock('@/composables/info/chains', async () => {
+  const { computed } = await import('vue');
+  const { Blockchain } = await import('@rotki/common');
+  return {
+    useSupportedChains: vi.fn().mockReturnValue({
+      txEvmChains: computed(() => [{
         evmChainName: 'optimism',
         id: Blockchain.OPTIMISM,
         type: 'evm',
         image: '',
         name: 'Optimism',
         nativeToken: 'ETH',
-      } satisfies EvmChainInfo,
-    ]),
-    txChains: computed(() => [
-      {
+      } satisfies EvmChainInfo]),
+      txChains: computed(() => [{
         evmChainName: 'optimism',
         id: Blockchain.OPTIMISM,
         type: 'evm',
         name: 'Optimism',
         image: '',
         nativeToken: 'ETH',
-      } satisfies EvmChainInfo,
-    ]),
-    getChain: () => Blockchain.OPTIMISM,
-    getChainName: () => Blockchain.OPTIMISM,
-    getNativeAsset: (chain: Blockchain) => chain,
-    isEvm: (_chain: Blockchain) => true,
-  }),
-}));
+      } satisfies EvmChainInfo]),
+      getChain: () => Blockchain.OPTIMISM,
+      getChainName: () => Blockchain.OPTIMISM,
+      getNativeAsset: (chain: Blockchain) => chain,
+      isEvm: (_chain: Blockchain) => true,
+    }),
+  };
+});
 
 describe('composables::message-handling', () => {
   beforeAll(() => {

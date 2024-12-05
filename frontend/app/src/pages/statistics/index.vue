@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { PremiumStatistics } from '@/premium/premium';
 import { NoteLocation } from '@/types/notes';
+import { usePremium } from '@/composables/premium';
 
 definePage({
   meta: {

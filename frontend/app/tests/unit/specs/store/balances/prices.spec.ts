@@ -3,6 +3,7 @@ import { CURRENCY_USD, useCurrencies } from '@/types/currencies';
 import { PriceOracle } from '@/types/settings/price-oracle';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useTaskStore } from '@/store/tasks';
+import { usePriceApi } from '@/composables/api/balances/price';
 import { updateGeneralSettings } from '../../../utils/general-settings';
 
 vi.mock('@/store/tasks', () => ({

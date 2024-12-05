@@ -3,6 +3,7 @@ import { helpers, required } from '@vuelidate/validators';
 import useVuelidate from '@vuelidate/core';
 import { toMessages } from '@/utils/validation';
 import { useRefPropVModel } from '@/utils/model';
+import { useFormStateWatcher } from '@/composables/form';
 import type { Tag } from '@/types/tags';
 
 const modelValue = defineModel<Tag>({ required: true });

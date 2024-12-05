@@ -3,8 +3,9 @@ import { getAddressFromEvmIdentifier, getIdentifierFromSymbolMap, isEvmIdentifie
 import { useCurrencies } from '@/types/currencies';
 import { isBlockchain } from '@/types/blockchain/chains';
 import { useAssetIconStore } from '@/store/assets/icon';
+import { type AssetResolutionOptions, useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import { useCopy } from '@/composables/copy';
 import type { StyleValue } from 'vue';
-import type { AssetResolutionOptions } from '@/composables/assets/retrieval';
 
 const props = withDefaults(defineProps<{
   identifier: string;

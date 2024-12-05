@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { usePremium } from '@/composables/premium';
+
 withDefaults(
   defineProps<{
     title: string;

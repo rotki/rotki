@@ -6,6 +6,8 @@ import { useStatisticsStore } from '@/store/statistics';
 import { useConfirmStore } from '@/store/confirm';
 import { useMessageStore } from '@/store/message';
 import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useSnapshotApi } from '@/composables/api/settings/snapshot-api';
+import { useInterop } from '@/composables/electron-interop';
 import type { BigNumber, Message } from '@rotki/common';
 
 const display = defineModel<boolean>({ default: false, required: true });

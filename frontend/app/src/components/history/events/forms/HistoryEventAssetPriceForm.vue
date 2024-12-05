@@ -10,6 +10,7 @@ import { useHistoricCachePriceStore } from '@/store/prices/historic';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useTaskStore } from '@/store/tasks';
 import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useAssetPricesApi } from '@/composables/api/assets/prices';
 import type { Validation } from '@vuelidate/core';
 import type { BigNumber } from '@rotki/common';
 import type { HistoricalPriceFormPayload } from '@/types/prices';

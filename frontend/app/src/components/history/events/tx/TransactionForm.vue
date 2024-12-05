@@ -3,6 +3,9 @@ import { helpers, required } from '@vuelidate/validators';
 import { toMessages } from '@/utils/validation';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
 import { useMessageStore } from '@/store/message';
+import { useSupportedChains } from '@/composables/info/chains';
+import { useHistoryTransactions } from '@/composables/history/events/tx';
+import { useHistoryTransactionsForm } from '@/composables/history/events/tx/form';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 import type { AddTransactionHashPayload, EvmChainAndTxHash } from '@/types/history/events';
 

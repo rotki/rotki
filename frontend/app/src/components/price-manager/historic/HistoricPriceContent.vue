@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { useRefPropVModel } from '@/utils/model';
 import { useConfirmStore } from '@/store/confirm';
+import { useHistoricPriceForm } from '@/composables/price-manager/historic/form';
+import { useHistoricPrices } from '@/composables/price-manager/historic';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { HistoricalPrice, HistoricalPriceFormPayload } from '@/types/prices';
 

@@ -8,6 +8,10 @@ import { Module } from '@/types/modules';
 import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import { fetchDataAsync } from '@/utils/fetch-async';
+import { useLiquityApi } from '@/composables/api/defi/liquity';
+import { useStatusUpdater } from '@/composables/status';
+import { useModules } from '@/composables/session/modules';
+import { usePremium } from '@/composables/premium';
 import type { TaskMeta } from '@/types/task';
 import type { OnError } from '@/types/fetch';
 

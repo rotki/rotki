@@ -1,6 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useTaskStore } from '@/store/tasks';
 import { useNotificationsStore } from '@/store/notifications';
+import { useAssetsApi } from '@/composables/api/assets';
+import { useInterop } from '@/composables/electron-interop';
+import { useAssets } from '@/composables/assets';
 import type { AssetMergePayload, AssetUpdatePayload } from '@/types/asset';
 
 vi.mock('@/composables/api/assets/index', () => ({

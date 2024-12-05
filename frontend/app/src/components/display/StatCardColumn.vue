@@ -1,4 +1,6 @@
 <script lang="ts" setup>
+import { usePremium } from '@/composables/premium';
+
 withDefaults(
   defineProps<{
     premiumOnly?: boolean;

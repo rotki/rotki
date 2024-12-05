@@ -3,6 +3,7 @@ import { CURRENCY_USD } from '@/types/currencies';
 import { useConfirmStore } from '@/store/confirm';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useEditLocationsSnapshotForm } from '@/composables/snapshots/edit-location/form';
 import type { BigNumber } from '@rotki/common';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { LocationDataSnapshot, LocationDataSnapshotPayload } from '@/types/snapshots';

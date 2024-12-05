@@ -3,6 +3,8 @@ import { CUSTOM_ASSET } from '@/types/asset';
 import { useNotificationsStore } from '@/store/notifications';
 import { useTaskStore } from '@/store/tasks';
 import { useAssetCacheStore } from '@/store/assets/asset-cache';
+import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import { useAssetInfoApi } from '@/composables/api/assets/info';
 import { updateGeneralSettings } from '../../../utils/general-settings';
 import type { ERC20Token } from '@/types/blockchain/accounts';
 

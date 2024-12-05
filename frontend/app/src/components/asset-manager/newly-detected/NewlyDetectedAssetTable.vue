@@ -3,6 +3,9 @@ import { Blockchain } from '@rotki/common';
 import { uniqueStrings } from '@/utils/data';
 import { arrayify } from '@/utils/array';
 import { useAssetCacheStore } from '@/store/assets/asset-cache';
+import { useSupportedChains } from '@/composables/info/chains';
+import { useSpamAsset } from '@/composables/assets/spam';
+import { useNewlyDetectedTokens } from '@/composables/assets/newly-detected-tokens';
 import type { NewDetectedToken } from '@/types/websocket-messages';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 

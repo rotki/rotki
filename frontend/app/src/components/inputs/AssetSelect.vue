@@ -2,6 +2,7 @@
 import { CanceledError } from 'axios';
 import { uniqueObjects } from '@/utils/data';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
+import { useAssetInfoApi } from '@/composables/api/assets/info';
 import type { AssetInfoWithId } from '@/types/asset';
 import type { NftAsset } from '@/types/nfts';
 

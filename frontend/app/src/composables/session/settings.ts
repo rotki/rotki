@@ -5,6 +5,7 @@ import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useAccountingSettingsStore } from '@/store/settings/accounting';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { usePremiumStore } from '@/store/session/premium';
+import { useThemeMigration } from '@/composables/settings/theme';
 import type { Exchange } from '@/types/exchanges';
 import type { UserSettingsModel } from '@/types/user';
 

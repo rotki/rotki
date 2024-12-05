@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common';
 import { isOfEnum } from '@/utils';
+import { useSupportedChains } from '@/composables/info/chains';
 import type { Component } from 'vue';
 import type EvmRpcNodeManager from '@/components/settings/general/rpc/EvmRpcNodeManager.vue';
 

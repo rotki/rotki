@@ -2,6 +2,7 @@ import flushPromises from 'flush-promises';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useTaskStore } from '@/store/tasks';
 import { useHistoricCachePriceStore } from '@/store/prices/historic';
+import { usePriceApi } from '@/composables/api/balances/price';
 import type { BigNumber } from '@rotki/common';
 
 vi.mock('@/store/tasks', () => ({

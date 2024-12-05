@@ -1,5 +1,7 @@
 import { type EvmTransactionQueryData, EvmTransactionsQueryStatus } from '@/types/websocket-messages';
 import { useTxQueryStatusStore } from '@/store/history/query-status/tx-query-status';
+import { useSupportedChains } from '@/composables/info/chains';
+import { useQueryStatus } from '@/composables/history/events/query-status/index';
 import type { Blockchain } from '@rotki/common';
 import type { MaybeRef } from '@vueuse/core';
 import type { ComputedRef, Ref } from 'vue';

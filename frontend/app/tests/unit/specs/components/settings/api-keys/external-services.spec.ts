@@ -9,6 +9,7 @@ import EvmChainIcon from '@/components/helper/display/icons/EvmChainIcon.vue';
 import ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
 import { useSessionStore } from '@/store/session';
 import { useConfirmStore } from '@/store/confirm';
+import { useExternalServicesApi } from '@/composables/api/settings/external-services-api';
 import { createCustomPinia } from '../../../../utils/create-pinia';
 import type { ExternalServiceKeys } from '@/types/user';
 import type { EvmChainInfo } from '@/types/api/chains';

@@ -1,4 +1,6 @@
 <script lang="ts" setup>
+import { useHistoryTransactionsForm } from '@/composables/history/events/tx/form';
+
 withDefaults(
   defineProps<{
     loading?: boolean;

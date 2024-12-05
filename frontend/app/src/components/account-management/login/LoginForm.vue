@@ -7,6 +7,9 @@ import { deleteBackendUrl, getBackendUrl, saveBackendUrl } from '@/utils/account
 import { compareTextByKeyword } from '@/utils/assets';
 import { useSessionAuthStore } from '@/store/session/auth';
 import { useSessionStore } from '@/store/session';
+import { useDynamicMessages } from '@/composables/dynamic-messages';
+import { useInterop } from '@/composables/electron-interop';
+import { useUsersApi } from '@/composables/api/session/users';
 import type { LoginCredentials, SyncApproval } from '@/types/login';
 
 const props = withDefaults(

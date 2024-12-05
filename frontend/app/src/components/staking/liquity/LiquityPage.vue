@@ -4,6 +4,8 @@ import { Section } from '@/types/status';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useStatusStore } from '@/store/status';
 import { useLiquityStore } from '@/store/defi/liquity';
+import { useModules } from '@/composables/session/modules';
+import { usePremium } from '@/composables/premium';
 
 const modules = [Module.LIQUITY];
 const { isModuleEnabled } = useModules();

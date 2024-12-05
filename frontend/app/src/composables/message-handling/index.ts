@@ -25,6 +25,10 @@ import { useNotificationsStore } from '@/store/notifications';
 import { useSessionAuthStore } from '@/store/session/auth';
 import { useEventsQueryStatusStore } from '@/store/history/query-status/events-query-status';
 import { useTxQueryStatusStore } from '@/store/history/query-status/tx-query-status';
+import { useSync } from '@/composables/session/sync';
+import { usePremium } from '@/composables/premium';
+import { useSessionApi } from '@/composables/api/session';
+import { useBlockchainBalances } from '@/composables/blockchain/balances';
 
 interface UseMessageHandling {
   handleMessage: (data: string) => Promise<void>;

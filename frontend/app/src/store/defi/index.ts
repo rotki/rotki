@@ -16,6 +16,9 @@ import { useCompoundStore } from '@/store/defi/compound';
 import { useAaveStore } from '@/store/defi/aave';
 import { useYearnStore } from '@/store/defi/yearn';
 import { useLiquityStore } from '@/store/defi/liquity';
+import { useDefiApi } from '@/composables/api/defi';
+import { useStatusUpdater } from '@/composables/status';
+import { usePremium } from '@/composables/premium';
 import type { TaskMeta } from '@/types/task';
 
 type ResetStateParams = Module | typeof Purgeable.DEFI_MODULES | typeof Purgeable.DECENTRALIZED_EXCHANGES;

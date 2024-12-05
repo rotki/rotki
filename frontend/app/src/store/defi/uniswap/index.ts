@@ -6,6 +6,9 @@ import { uniqueStrings } from '@/utils/data';
 import { getBalances, getPoolProfit, getPools } from '@/utils/defi/xswap';
 import { fetchDataAsync } from '@/utils/fetch-async';
 import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useUniswapApi } from '@/composables/api/defi/uniswap';
+import { useStatusUpdater } from '@/composables/status';
+import { usePremium } from '@/composables/premium';
 import type { TaskMeta } from '@/types/task';
 import type { OnError } from '@/types/fetch';
 

@@ -1,6 +1,7 @@
 import { Routes } from '@/router/routes';
 import { isBlockchain } from '@/types/blockchain/chains';
 import { useLocationStore } from '@/store/locations';
+import { useSupportedChains } from '@/composables/info/chains';
 import type { MaybeRef } from '@vueuse/core';
 import type { TradeLocationData } from '@/types/history/trade/location';
 

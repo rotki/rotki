@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useRefMap } from '@/composables/utils/useRefMap';
+import { useValueOrDefault } from '@/composables/utils/useValueOrDefault';
 import type { Balance } from '@rotki/common';
 
 const props = withDefaults(

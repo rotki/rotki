@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useCustomAssetForm } from '@/composables/assets/forms/custom-asset-form';
 import type { CustomAsset } from '@/types/asset';
 
 const props = withDefaults(

@@ -5,6 +5,10 @@ import { TaskType } from '@/types/task-type';
 import { uniqueStrings } from '@/utils/data';
 import { getBalances, getPoolProfit, getPools } from '@/utils/defi/xswap';
 import { fetchDataAsync } from '@/utils/fetch-async';
+import { useSushiswapApi } from '@/composables/api/defi/sushiswap';
+import { useStatusUpdater } from '@/composables/status';
+import { useModules } from '@/composables/session/modules';
+import { usePremium } from '@/composables/premium';
 import type { TaskMeta } from '@/types/task';
 import type { OnError } from '@/types/fetch';
 

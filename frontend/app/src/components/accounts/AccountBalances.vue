@@ -1,12 +1,16 @@
 <script setup lang="ts">
 import { SavedFilterLocation } from '@/types/filtering';
-import { AccountExternalFilterSchema, type Filters, type Matcher } from '@/composables/filters/blockchain-account';
+import { AccountExternalFilterSchema, type Filters, type Matcher, useBlockchainAccountFilter } from '@/composables/filters/blockchain-account';
 import { getAccountAddress, getGroupId } from '@/utils/blockchain/accounts/utils';
 import { fromUriEncoded, toUriEncoded } from '@/utils/route-uri';
 import AccountBalancesTable from '@/components/accounts/AccountBalancesTable.vue';
 import AccountGroupDetailsTable from '@/components/accounts/AccountGroupDetailsTable.vue';
 import DetectTokenChainsSelection from '@/components/accounts/balances/DetectTokenChainsSelection.vue';
 import { useBlockchainStore } from '@/store/blockchain';
+import { useBlockchainAccountLoading } from '@/composables/accounts/blockchain/use-account-loading';
+import { usePaginationFilters } from '@/composables/use-pagination-filter';
+import { useBlockchains } from '@/composables/blockchain';
+import { useRefresh } from '@/composables/balances/refresh';
 import type { AccountManageState } from '@/composables/accounts/blockchain/use-account-manage';
 import type {
   BlockchainAccountGroupWithBalance,

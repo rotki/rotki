@@ -4,6 +4,8 @@ import { getFilepath } from '@/utils/backups';
 import { logger } from '@/utils/logging';
 import { useNotificationsStore } from '@/store/notifications';
 import { useConfirmStore } from '@/store/confirm';
+import { useRefMap } from '@/composables/utils/useRefMap';
+import { useBackupApi } from '@/composables/api/backup';
 import type { DatabaseInfo, UserDbBackup, UserDbBackupWithId } from '@/types/backup';
 
 const { t } = useI18n();

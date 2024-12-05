@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { truncateAddress } from '@/utils/truncate';
+import { useLinks } from '@/composables/links';
+import { useInterop } from '@/composables/electron-interop';
 
 defineOptions({
   inheritAttrs: false,

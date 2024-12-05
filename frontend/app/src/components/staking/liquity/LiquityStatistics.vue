@@ -4,6 +4,7 @@ import { CURRENCY_USD } from '@/types/currencies';
 import { bigNumberSum } from '@/utils/calculation';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useStatusStore } from '@/store/status';
+import { useRefMap } from '@/composables/utils/useRefMap';
 import type { AssetBalance, Balance, BigNumber, LiquityPoolDetailEntry, LiquityStatisticDetails } from '@rotki/common';
 
 const props = withDefaults(

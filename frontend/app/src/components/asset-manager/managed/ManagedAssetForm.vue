@@ -10,6 +10,10 @@ import { toMessages } from '@/utils/validation';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 import { useMessageStore } from '@/store/message';
 import { useAssetCacheStore } from '@/store/assets/asset-cache';
+import { useAssetManagementApi } from '@/composables/api/assets/management';
+import { useManagedAssetForm } from '@/composables/assets/forms/managed-asset-form';
+import { useSupportedChains } from '@/composables/info/chains';
+import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import type { SelectOption, SelectOptions } from '@/types/common';
 import type { EvmTokenKind, SupportedAsset, UnderlyingToken } from '@rotki/common';
 

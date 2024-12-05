@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
+import { type Filters, type Matcher, useAddressBookFilter } from '@/composables/filters/address-book';
+import { usePaginationFilters } from '@/composables/use-pagination-filter';
+import { useAddressBookForm } from '@/composables/address-book/form';
 import type {
   AddressBookEntry,
   AddressBookLocation,
   AddressBookPayload,
   AddressBookRequestPayload,
 } from '@/types/eth-names';
-import type { Filters, Matcher } from '@/composables/filters/address-book';
 
 const selectedChain = ref<string>();
 const enableForAllChains = ref<boolean>(false);

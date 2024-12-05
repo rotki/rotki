@@ -7,6 +7,9 @@ import { getAccountAddress, getChain } from '@/utils/blockchain/accounts/utils';
 import { logger } from '@/utils/logging';
 import { useBlockchainStore } from '@/store/blockchain';
 import { useMessageStore } from '@/store/message';
+import { useEthStaking } from '@/composables/blockchain/accounts/staking';
+import { useBlockchainAccounts } from '@/composables/blockchain/accounts';
+import { useBlockchains } from '@/composables/blockchain';
 import type { Module } from '@/types/modules';
 import type {
   AccountPayload,

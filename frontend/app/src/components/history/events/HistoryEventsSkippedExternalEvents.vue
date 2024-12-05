@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { logger } from '@/utils/logging';
 import { useMessageStore } from '@/store/message';
+import { useInterop } from '@/composables/electron-interop';
+import { useSkippedHistoryEventsApi } from '@/composables/api/history/events/skipped';
 import type { DataTableColumn } from '@rotki/ui-library';
 import type { Message } from '@rotki/common';
 import type { SkippedHistoryEventsSummary } from '@/types/history/events';

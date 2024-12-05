@@ -12,6 +12,7 @@ import { TradeType } from '@/types/history/trade';
 import { getDateInputISOFormat } from '@/utils/date';
 import { useHistoryStore } from '@/store/history';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import type { FilterSchema } from '@/composables/use-pagination-filter/types';
 
 enum TradeFilterKeys {

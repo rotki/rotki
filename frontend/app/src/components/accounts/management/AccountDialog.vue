@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { isEqual } from 'lodash-es';
+import { useAccountLoading } from '@/composables/accounts/loading';
+import { type AccountManageState, useAccountManage } from '@/composables/accounts/blockchain/use-account-manage';
 import type AccountForm from '@/components/accounts/management/AccountForm.vue';
-import type { AccountManageState } from '@/composables/accounts/blockchain/use-account-manage';
 
 const model = defineModel<AccountManageState | undefined>({ required: true });
 

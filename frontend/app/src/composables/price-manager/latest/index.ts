@@ -5,6 +5,9 @@ import { isNft } from '@/utils/nft';
 import { useNotificationsStore } from '@/store/notifications';
 import { useMessageStore } from '@/store/message';
 import { useBalancePricesStore } from '@/store/balances/prices';
+import { useBalances } from '@/composables/balances';
+import { useStatusUpdater } from '@/composables/status';
+import { useAssetPricesApi } from '@/composables/api/assets/prices';
 import type { ManualPrice, ManualPriceFormPayload, ManualPriceWithUsd } from '@/types/prices';
 import type { ComputedRef, Ref } from 'vue';
 

@@ -3,6 +3,7 @@ import { bigNumberSum } from '@/utils/calculation';
 import { sortDesc } from '@/utils/bignumbers';
 import { useUniswapStore } from '@/store/defi/uniswap';
 import { useSushiswapStore } from '@/store/defi/sushiswap';
+import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import type { ComputedRef } from 'vue';
 
 interface UseLiquidityPositionReturn {

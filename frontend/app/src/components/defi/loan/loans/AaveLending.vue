@@ -2,6 +2,9 @@
 import { AaveBorrowingDetails } from '@/premium/premium';
 import { Section } from '@/types/status';
 import { useStatusStore } from '@/store/status';
+import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import { useRefMap } from '@/composables/utils/useRefMap';
+import { usePremium } from '@/composables/premium';
 import type { AaveLoan } from '@/types/defi/lending';
 
 const props = defineProps<{ loan: AaveLoan }>();

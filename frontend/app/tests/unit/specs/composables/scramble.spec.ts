@@ -1,5 +1,6 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { useSessionSettingsStore } from '@/store/settings/session';
+import { useScramble } from '@/composables/scramble';
 
 describe('composables::message-handling', () => {
   let store: ReturnType<typeof useSessionSettingsStore>;

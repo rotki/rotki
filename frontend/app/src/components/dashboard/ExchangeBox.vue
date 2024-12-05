@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Routes } from '@/router/routes';
+import { useLocations } from '@/composables/locations';
 import type { BigNumber } from '@rotki/common';
 
 const props = defineProps<{

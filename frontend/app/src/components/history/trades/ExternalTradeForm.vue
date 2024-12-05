@@ -8,6 +8,10 @@ import { bigNumberifyFromRef } from '@/utils/bignumbers';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useMessageStore } from '@/store/message';
 import { useTaskStore } from '@/store/tasks';
+import { useTradesForm } from '@/composables/history/trades/form';
+import { useTrades } from '@/composables/history/trades';
+import { refIsTruthy } from '@/composables/ref';
+import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import type { Writeable } from '@rotki/common';
 import type { NewTrade, Trade, TradeType } from '@/types/history/trade';
 

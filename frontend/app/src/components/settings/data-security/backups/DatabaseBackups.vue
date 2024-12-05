@@ -4,6 +4,7 @@ import { size } from '@/utils/data';
 import { getFilepath } from '@/utils/backups';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useConfirmStore } from '@/store/confirm';
+import { useBackupApi } from '@/composables/api/backup';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { UserDbBackup, UserDbBackupWithId } from '@/types/backup';
 

@@ -2,6 +2,9 @@ import { sortBy } from 'lodash-es';
 import { Section, Status } from '@/types/status';
 import { DefiProtocol, isDefiProtocol } from '@/types/modules';
 import { useDefiStore } from '@/store/defi/index';
+import { useDefiLending } from '@/composables/defi/lending';
+import { useDefiMetadata } from '@/composables/defi/metadata';
+import { useStatusUpdater } from '@/composables/status';
 import type { DefiProtocolSummary } from '@/types/defi/overview';
 
 export const useDefiOverviewStore = defineStore('defi/store', () => {

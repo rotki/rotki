@@ -1,13 +1,16 @@
 import flushPromises from 'flush-promises';
 import { afterEach, assertType, beforeAll, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
 import { useExchangeBalancesStore } from '@/store/balances/exchanges';
+import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import type * as Vue from 'vue';
 import type { MaybeRef } from '@vueuse/core';
 import type { ExchangeSavingsCollection, ExchangeSavingsEvent, ExchangeSavingsRequestPayload } from '@/types/exchanges';
 import type { Collection } from '@/types/collection';
 import type { AssetBalance } from '@rotki/common';
 
-vi.mock('vue-router', () => {
+vi.mock('vue-router', async () => {
+  const { ref } = await import('vue');
+  const { set } = await import('@vueuse/core');
   const route = ref({
     query: {},
   });

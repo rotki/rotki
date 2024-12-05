@@ -1,6 +1,8 @@
 <script setup lang="ts" generic="T extends string | string[]">
 import { Blockchain } from '@rotki/common';
 import { Module } from '@/types/modules';
+import { useSupportedChains } from '@/composables/info/chains';
+import { useModules } from '@/composables/session/modules';
 import type { AutoCompleteProps } from '@rotki/ui-library';
 import type { ChainInfo } from '@/types/api/chains';
 

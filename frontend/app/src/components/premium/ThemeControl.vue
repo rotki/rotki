@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ThemeSwitch } from '@/premium/premium';
+import { usePremium } from '@/composables/premium';
 
 withDefaults(
   defineProps<{

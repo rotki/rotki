@@ -4,14 +4,18 @@ import { afterEach, assertType, beforeAll, beforeEach, describe, expect, expectT
 import { type LocationQuery, RouterAccountsSchema } from '@/types/route';
 import { useMainStore } from '@/store/main';
 import { FilterBehaviour } from '@/types/filtering';
+import { usePaginationFilters } from '@/composables/use-pagination-filter';
+import { type Filters, type Matcher, useHistoryEventFilter } from '@/composables/filters/events';
+import { useHistoryEvents } from '@/composables/history/events';
 import type * as Vue from 'vue';
-import type { Filters, Matcher } from '@/composables/filters/events';
 import type { Collection } from '@/types/collection';
 import type { HistoryEvent, HistoryEventRequestPayload } from '@/types/history/events';
 import type { Account } from '@rotki/common/src/account';
 import type { MaybeRef } from '@vueuse/core';
 
-vi.mock('vue-router', () => {
+vi.mock('vue-router', async () => {
+  const { ref } = await import('vue');
+  const { set } = await import('@vueuse/core');
   const route = ref({
     query: {},
   });

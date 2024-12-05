@@ -4,6 +4,8 @@ import { getDomain } from '@/utils/url';
 import { useAssetCacheStore } from '@/store/assets/asset-cache';
 import { useConfirmStore } from '@/store/confirm';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import { useNftImage } from '@/composables/nft-image';
 import type { StyleValue } from 'vue';
 
 const props = withDefaults(

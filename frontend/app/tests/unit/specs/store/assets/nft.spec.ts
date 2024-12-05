@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useTaskStore } from '@/store/tasks';
+import { useAssetsApi } from '@/composables/api/assets';
+import { useNfts } from '@/composables/assets/nft';
 import type { NftResponse } from '@/types/nfts';
 
 vi.mock('@/composables/api/assets/index', () => ({

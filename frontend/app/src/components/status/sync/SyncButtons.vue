@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { SYNC_DOWNLOAD, SYNC_UPLOAD, type SyncAction } from '@/types/session/sync';
+import { useSync } from '@/composables/session/sync';
+import { usePremium } from '@/composables/premium';
 
 defineProps<{ pending: boolean }>();
 

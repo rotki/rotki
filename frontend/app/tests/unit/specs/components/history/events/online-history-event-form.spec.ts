@@ -6,6 +6,8 @@ import { HistoryEventEntryType } from '@rotki/common';
 import OnlineHistoryEventForm from '@/components/history/events/forms/OnlineHistoryEventForm.vue';
 import { setupDayjs } from '@/utils/date';
 import { useBalancePricesStore } from '@/store/balances/prices';
+import { useAssetInfoApi } from '@/composables/api/assets/info';
+import { useHistoryEventMappings } from '@/composables/history/events/mapping';
 import type { AssetMap } from '@/types/asset';
 import type { OnlineHistoryEvent } from '@/types/history/events';
 

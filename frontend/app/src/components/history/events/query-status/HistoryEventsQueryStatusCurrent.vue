@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useEventsQueryStatus } from '@/composables/history/events/query-status/events-query-status';
+
 const props = withDefaults(
   defineProps<{
     locations?: string[];

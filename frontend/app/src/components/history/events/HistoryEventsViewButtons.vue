@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useHistoryTransactionsForm } from '@/composables/history/events/tx/form';
 import type { EvmChainAndTxHash, ShowEventForm } from '@/types/history/events';
 
 const openDecodingDialog = defineModel<boolean>('openDecodingDialog', { required: true });

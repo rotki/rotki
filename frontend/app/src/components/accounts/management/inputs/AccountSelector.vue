@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { isBtcChain } from '@/types/blockchain/chains';
+import { useAccountLoading } from '@/composables/accounts/loading';
 import type { InputMode } from '@/types/input-mode';
 
 const props = defineProps<{

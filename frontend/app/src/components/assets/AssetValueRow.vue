@@ -2,6 +2,10 @@
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useConfirmStore } from '@/store/confirm';
 import { useBalancePricesStore } from '@/store/balances/prices';
+import { useLatestPriceForm } from '@/composables/price-manager/latest/form';
+import { useLatestPrices } from '@/composables/price-manager/latest';
+import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import { useAggregatedBalances } from '@/composables/balances/aggregated';
 import type { AssetPriceInfo, ManualPriceFormPayload } from '@/types/prices';
 
 const props = withDefaults(

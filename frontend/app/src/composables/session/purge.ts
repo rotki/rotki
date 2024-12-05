@@ -7,6 +7,7 @@ import { useHistoryStore } from '@/store/history';
 import { useTaskStore } from '@/store/tasks';
 import { useStatusStore } from '@/store/status';
 import { useDefiStore } from '@/store/defi';
+import { useSessionApi } from '@/composables/api/session';
 import type { Module } from '@/types/modules';
 import type { TaskMeta } from '@/types/task';
 

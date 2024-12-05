@@ -1,6 +1,7 @@
 import { startPromise } from '@shared/utils';
 import { api } from '@/services/rotkehlchen-api';
 import { logger } from '@/utils/logging';
+import { useMessageHandling } from '@/composables/message-handling';
 import type { Nullable } from '@rotki/common';
 
 export const useWebsocketStore = defineStore('websocket', () => {

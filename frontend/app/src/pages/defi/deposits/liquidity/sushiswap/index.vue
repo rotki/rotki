@@ -4,6 +4,8 @@ import { Module } from '@/types/modules';
 import { Section } from '@/types/status';
 import { useSushiswapStore } from '@/store/defi/sushiswap';
 import { useStatusStore } from '@/store/status';
+import { useModules } from '@/composables/session/modules';
+import { usePremium } from '@/composables/premium';
 
 const section = Section.DEFI_SUSHISWAP_BALANCES;
 const secondSection = Section.DEFI_SUSHISWAP_EVENTS;

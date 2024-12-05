@@ -8,6 +8,10 @@ import { useManualBalancesStore } from '@/store/balances/manual';
 import { useExchangeBalancesStore } from '@/store/balances/exchanges';
 import { useBlockchainStore } from '@/store/blockchain';
 import { useTaskStore } from '@/store/tasks';
+import { useModules } from '@/composables/session/modules';
+import { useDynamicMessages } from '@/composables/dynamic-messages';
+import { useRefresh } from '@/composables/balances/refresh';
+import { useAggregatedBalances } from '@/composables/balances/aggregated';
 
 definePage({
   meta: {

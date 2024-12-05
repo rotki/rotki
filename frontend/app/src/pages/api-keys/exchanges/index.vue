@@ -7,6 +7,7 @@ import { useSettingsStore } from '@/store/settings';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useExchangesStore } from '@/store/exchanges';
 import { useLocationStore } from '@/store/locations';
+import { useLocations } from '@/composables/locations';
 import type { Exchange, ExchangeFormData } from '@/types/exchanges';
 import type { DataTableColumn, DataTableSortColumn } from '@rotki/ui-library';
 

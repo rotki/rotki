@@ -5,6 +5,8 @@ import { calculatePercentage } from '@/utils/calculation';
 import { groupAssetBreakdown } from '@/utils/balances';
 import { useBlockchainStore } from '@/store/blockchain';
 import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useBalancesBreakdown } from '@/composables/balances/breakdown';
+import { useSupportedChains } from '@/composables/info/chains';
 import type { AssetBreakdown } from '@/types/blockchain/accounts';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 

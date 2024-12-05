@@ -2,6 +2,7 @@
 import { useConfirmStore } from '@/store/confirm';
 import { useMessageStore } from '@/store/message';
 import { useBackendMessagesStore } from '@/store/backend-messages';
+import { useAddressBookForm } from '@/composables/address-book/form';
 
 const { isMacOsVersionUnsupported, isWinVersionUnsupported, startupErrorMessage }
   = storeToRefs(useBackendMessagesStore());

@@ -4,6 +4,7 @@ import { helpers, minValue, required } from '@vuelidate/validators';
 import { toMessages } from '@/utils/validation';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useMonitorStore } from '@/store/monitor';
+import { useValidation } from '@/composables/validation';
 
 const props = withDefaults(defineProps<{
   setting: 'queryRetryLimit' | 'connectTimeout' | 'readTimeout';

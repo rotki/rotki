@@ -2,6 +2,8 @@
 import { displayDateFormatter } from '@/data/date-formatter';
 import { useSessionSettingsStore } from '@/store/settings/session';
 import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useScramble } from '@/composables/scramble';
+import { useCopy } from '@/composables/copy';
 
 const props = withDefaults(
   defineProps<{

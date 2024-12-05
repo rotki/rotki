@@ -7,6 +7,9 @@ import { TaskType } from '@/types/task-type';
 import { toMessages } from '@/utils/validation';
 import { isTaskCancelled } from '@/utils';
 import { useTaskStore } from '@/store/tasks';
+import { refIsTruthy } from '@/composables/ref';
+import { useImportDataApi } from '@/composables/api/import';
+import { useInterop } from '@/composables/electron-interop';
 import type { TaskMeta } from '@/types/task';
 import type { ImportSourceType } from '@/types/upload-types';
 

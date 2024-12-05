@@ -2,6 +2,9 @@
 import { useSessionAuthStore } from '@/store/session/auth';
 import { useStatisticsStore } from '@/store/statistics';
 import { useAreaVisibilityStore } from '@/store/session/visibility';
+import { useCoreScroll } from '@/composables/use-core-scroll';
+import { initGraph } from '@/composables/graphs';
+import { useInterop } from '@/composables/electron-interop';
 
 const visibilityStore = useAreaVisibilityStore();
 const { isMini, showDrawer, showPinned } = storeToRefs(visibilityStore);

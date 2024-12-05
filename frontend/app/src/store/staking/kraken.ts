@@ -5,6 +5,9 @@ import { balanceSum } from '@/utils/calculation';
 import { useTaskStore } from '@/store/tasks';
 import { useNotificationsStore } from '@/store/notifications';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import { useStatusUpdater } from '@/composables/status';
+import { useKrakenApi } from '@/composables/api/staking/kraken';
 import type { KrakenStakingEvents, KrakenStakingPagination, ReceivedAmount } from '@/types/staking';
 import type { TaskMeta } from '@/types/task';
 

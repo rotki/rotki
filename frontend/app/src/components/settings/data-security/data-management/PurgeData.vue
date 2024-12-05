@@ -2,6 +2,12 @@
 import { DECENTRALIZED_EXCHANGES, Module, PurgeableOnlyModule } from '@/types/modules';
 import { Purgeable } from '@/types/session/purge';
 import { useLocationStore } from '@/store/locations';
+import { useExchangeApi } from '@/composables/api/balances/exchanges';
+import { useCacheClear } from '@/composables/session/cache-clear';
+import { useHistoryEventsApi } from '@/composables/api/history/events';
+import { useBlockchainBalancesApi } from '@/composables/api/balances/blockchain';
+import { useSessionPurge } from '@/composables/session/purge';
+import { useSupportedChains } from '@/composables/info/chains';
 
 const purgeableOnlyModules = Object.values(PurgeableOnlyModule);
 const purgeableModules = [...Object.values(Module), ...purgeableOnlyModules];

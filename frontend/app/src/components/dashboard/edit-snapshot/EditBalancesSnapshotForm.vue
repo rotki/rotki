@@ -3,6 +3,7 @@ import { helpers, required } from '@vuelidate/validators';
 import { toMessages } from '@/utils/validation';
 import { isNft } from '@/utils/nft';
 import { usePropVModel } from '@/utils/model';
+import { useEditBalancesSnapshotForm } from '@/composables/snapshots/edit-balance/form';
 import type { BigNumber } from '@rotki/common';
 import type { BalanceSnapshotPayload } from '@/types/snapshots';
 import type EditBalancesSnapshotAssetPriceForm

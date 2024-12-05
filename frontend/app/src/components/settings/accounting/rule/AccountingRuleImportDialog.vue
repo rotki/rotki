@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import FileUpload from '@/components/import/FileUpload.vue';
 import { useMessageStore } from '@/store/message';
+import { useAccountingSettings } from '@/composables/settings/accounting';
 
 const model = defineModel<boolean>({ required: true });
 

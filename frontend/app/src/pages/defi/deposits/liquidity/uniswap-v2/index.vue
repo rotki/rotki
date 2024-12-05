@@ -6,6 +6,8 @@ import { Section } from '@/types/status';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
 import { useUniswapStore } from '@/store/defi/uniswap';
 import { useStatusStore } from '@/store/status';
+import { useModules } from '@/composables/session/modules';
+import { usePremium } from '@/composables/premium';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 
 const modules = [Module.UNISWAP];

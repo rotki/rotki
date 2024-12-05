@@ -6,6 +6,8 @@ import { defaultCollectionState, mapCollectionResponse } from '@/utils/collectio
 import { getEthAddressesFromText } from '@/utils/history';
 import { useNotificationsStore } from '@/store/notifications';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
+import { useHistoryEventsApi } from '@/composables/api/history/events';
+import { useSupportedChains } from '@/composables/info/chains';
 import type { MaybeRef } from '@vueuse/core';
 import type { Collection } from '@/types/collection';
 import type {

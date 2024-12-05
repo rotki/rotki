@@ -4,6 +4,7 @@ import { Section } from '@/types/status';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useExchangeBalancesStore } from '@/store/balances/exchanges';
 import { useStatusStore } from '@/store/status';
+import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import type { AssetBalance } from '@rotki/common';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { ExchangeSavingsEvent, ExchangeSavingsRequestPayload } from '@/types/exchanges';

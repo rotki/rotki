@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { useMainStore } from '@/store/main';
+import { usePremium } from '@/composables/premium';
+import { useInterop } from '@/composables/electron-interop';
 import type { SystemVersion } from '@shared/ipc';
 import type { WebVersion } from '@/types';
 

@@ -5,6 +5,8 @@ import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
 import { isBlockchain } from '@/types/blockchain/chains';
 import EvmRpcNodeForm from '@/components/settings/general/rpc/EvmRpcNodeForm.vue';
 import { useMessageStore } from '@/store/message';
+import { useSupportedChains } from '@/composables/info/chains';
+import { useEvmNodesApi } from '@/composables/api/settings/evm-nodes-api';
 import type { EvmRpcNodeManageState } from '@/types/settings/rpc';
 
 const model = defineModel<EvmRpcNodeManageState | undefined>({ required: true });

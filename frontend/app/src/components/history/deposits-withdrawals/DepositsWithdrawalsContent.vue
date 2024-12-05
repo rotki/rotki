@@ -3,8 +3,13 @@ import { Section } from '@/types/status';
 import { IgnoreActionType } from '@/types/history/ignored';
 import { SavedFilterLocation } from '@/types/filtering';
 import { useStatusStore } from '@/store/status';
+import { useHistoryAutoRefresh } from '@/composables/history/auto-refresh';
+import { useIgnore } from '@/composables/history';
+import { usePaginationFilters } from '@/composables/use-pagination-filter';
+import { useCommonTableProps } from '@/composables/use-common-table-props';
+import { useAssetMovements } from '@/composables/history/asset-movements';
+import { type Filters, type Matcher, useAssetMovementFilters } from '@/composables/filters/asset-movement';
 import type { AssetMovementEntry, AssetMovementRequestPayload } from '@/types/history/asset-movements';
-import type { Filters, Matcher } from '@/composables/filters/asset-movement';
 import type { Writeable } from '@rotki/common';
 import type { DataTableColumn } from '@rotki/ui-library';
 

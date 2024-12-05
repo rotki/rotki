@@ -1,5 +1,3 @@
-import { computed } from 'vue';
-import { Blockchain } from '@rotki/common';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import {
   type EditEvmHistoryEventPayload,
@@ -7,52 +5,66 @@ import {
   type HistoryEventEntry,
   OnlineHistoryEventsQueryType,
 } from '@/types/history/events';
-import { camelCaseTransformer } from '@/services/axios-tranformers';
 import { isOfEventType } from '@/utils/history/events';
-import historyEvents from '../../../fixtures/history-events.json';
+import { useHistoryTransactions } from '@/composables/history/events/tx';
+import { useHistoryTransactionDecoding } from '@/composables/history/events/tx/decoding';
+import { useHistoryEventsApi } from '@/composables/api/history/events';
+import { useHistoryEvents } from '@/composables/history/events';
 import type { EvmChainInfo } from '@/types/api/chains';
+import type { Blockchain } from '@rotki/common';
 
-vi.mock('@/store/tasks', () => ({
-  useTaskStore: vi.fn().mockReturnValue({
-    isTaskRunning: vi.fn().mockImplementation(() => ref(false)),
-    awaitTask: vi.fn().mockResolvedValue({}),
-  }),
-}));
+vi.mock('@/store/tasks', async () => {
+  const { ref } = await import('vue');
+  return {
+    useTaskStore: vi.fn().mockReturnValue({
+      isTaskRunning: vi.fn().mockImplementation(() => ref(false)),
+      awaitTask: vi.fn().mockResolvedValue({}),
+    }),
+  };
+});
 
-vi.mock('@/composables/api/history/events', () => ({
-  useHistoryEventsApi: vi.fn().mockReturnValue({
-    addTransactionHash: vi.fn(),
-    fetchTransactionsTask: vi.fn().mockResolvedValue({}),
-    deleteHistoryEvent: vi.fn(),
-    decodeTransactions: vi.fn().mockResolvedValue({}),
-    redecodeMissingEvents: vi.fn(),
-    addHistoryEvent: vi.fn(),
-    editHistoryEvent: vi.fn(),
-    queryOnlineHistoryEvents: vi.fn().mockResolvedValue({}),
-    fetchHistoryEvents: vi.fn().mockResolvedValue(camelCaseTransformer(historyEvents.result)),
-  }),
-}));
+vi.mock('@/composables/api/history/events', async () => {
+  const { camelCaseTransformer } = await import('@/services/axios-tranformers');
+  const historyEvents = await import('../../../fixtures/history-events.json');
+  return {
+    useHistoryEventsApi: vi.fn().mockReturnValue({
+      addTransactionHash: vi.fn(),
+      fetchTransactionsTask: vi.fn().mockResolvedValue({}),
+      deleteHistoryEvent: vi.fn(),
+      decodeTransactions: vi.fn().mockResolvedValue({}),
+      redecodeMissingEvents: vi.fn(),
+      addHistoryEvent: vi.fn(),
+      editHistoryEvent: vi.fn(),
+      queryOnlineHistoryEvents: vi.fn().mockResolvedValue({}),
+      fetchHistoryEvents: vi.fn().mockResolvedValue(camelCaseTransformer(historyEvents.result)),
+    }),
+  };
+});
 
-vi.mock('@/composables/info/chains', () => ({
-  useSupportedChains: vi.fn().mockReturnValue({
-    txChains: computed(() => [
-      {
-        evmChainName: 'ethereum',
-        id: Blockchain.ETH,
-        type: 'evm',
-        name: 'Ethereum',
-        image: '',
-        nativeToken: 'ETH',
-      } satisfies EvmChainInfo,
-    ]),
-    getChain: () => Blockchain.ETH,
-    getChainName: () => 'Ethereum',
-    getEvmChainName: (_chain: string) => 'ethereum',
-    getNativeAsset: (chain: Blockchain) => chain,
-    getChainImageUrl: (chain: Blockchain) => `${chain}.png`,
-    isEvmLikeChains: (_chain: string) => false,
-  }),
-}));
+vi.mock('@/composables/info/chains', async () => {
+  const { computed } = await import('vue');
+  const { Blockchain } = await import('@rotki/common');
+  return {
+    useSupportedChains: vi.fn().mockReturnValue({
+      txChains: computed(() => [
+        {
+          evmChainName: 'ethereum',
+          id: Blockchain.ETH,
+          type: 'evm',
+          name: 'Ethereum',
+          image: '',
+          nativeToken: 'ETH',
+        } satisfies EvmChainInfo,
+      ]),
+      getChain: () => Blockchain.ETH,
+      getChainName: () => 'Ethereum',
+      getEvmChainName: (_chain: string) => 'ethereum',
+      getNativeAsset: (chain: Blockchain) => chain,
+      getChainImageUrl: (chain: Blockchain) => `${chain}.png`,
+      isEvmLikeChains: (_chain: string) => false,
+    }),
+  };
+});
 
 describe('composables::history/events/tx', () => {
   let events: HistoryEventEntry[];

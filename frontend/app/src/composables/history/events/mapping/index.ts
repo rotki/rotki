@@ -4,6 +4,8 @@ import { startPromise } from '@shared/utils';
 import { uniqueStrings } from '@/utils/data';
 import { useLocationStore } from '@/store/locations';
 import { useNotificationsStore } from '@/store/notifications';
+import { useHistoryEventsApi } from '@/composables/api/history/events';
+import { useRefMap } from '@/composables/utils/useRefMap';
 import type { MaybeRef } from '@vueuse/core';
 import type {
   HistoryEventCategoryDetailWithId,

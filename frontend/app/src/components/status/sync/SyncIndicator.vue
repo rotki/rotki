@@ -5,6 +5,8 @@ import { useTaskStore } from '@/store/tasks';
 import { usePremiumStore } from '@/store/session/premium';
 import { usePeriodicStore } from '@/store/session/periodic';
 import { useSessionStore } from '@/store/session';
+import { useSync } from '@/composables/session/sync';
+import { useLinks } from '@/composables/links';
 
 const { t } = useI18n();
 const { logout } = useSessionStore();

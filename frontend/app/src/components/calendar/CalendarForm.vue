@@ -9,6 +9,8 @@ import { hasAccountAddress } from '@/utils/blockchain/accounts';
 import { useBlockchainStore } from '@/store/blockchain';
 import { useMessageStore } from '@/store/message';
 import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useCalendarEventForm } from '@/composables/calendar/form';
+import { useCalendarApi } from '@/composables/history/calendar';
 import type { CalendarEvent, CalendarEventPayload } from '@/types/history/calendar';
 import type { Writeable } from '@rotki/common';
 import type { Dayjs } from 'dayjs';

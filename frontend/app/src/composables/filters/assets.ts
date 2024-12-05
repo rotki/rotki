@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { useSupportedChains } from '@/composables/info/chains';
 import type { MatchedKeyword, SearchMatcher } from '@/types/filtering';
 import type { FilterSchema } from '@/composables/use-pagination-filter/types';
 

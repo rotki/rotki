@@ -8,6 +8,9 @@ import { logger } from '@/utils/logging';
 import { useTaskStore } from '@/store/tasks';
 import { useNotificationsStore } from '@/store/notifications';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useAddressesNamesApi } from '@/composables/api/blockchain/addresses-names';
+import { useItemCache } from '@/composables/item-cache';
+import { useSupportedChains } from '@/composables/info/chains';
 import type { MaybeRef } from '@vueuse/core';
 import type {
   AddressBookEntries,

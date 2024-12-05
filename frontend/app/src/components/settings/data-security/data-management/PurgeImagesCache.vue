@@ -2,6 +2,9 @@
 import { PurgeableImageCache } from '@/types/session/purge';
 import { useAssetIconStore } from '@/store/assets/icon';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
+import { useAddressesNamesApi } from '@/composables/api/blockchain/addresses-names';
+import { useCacheClear } from '@/composables/session/cache-clear';
+import { useAssetIconApi } from '@/composables/api/assets/icon';
 
 const { t } = useI18n();
 

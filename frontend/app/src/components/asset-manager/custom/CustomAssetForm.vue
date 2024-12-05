@@ -5,6 +5,8 @@ import AssetIconForm from '@/components/asset-manager/AssetIconForm.vue';
 import { toMessages } from '@/utils/validation';
 import { useRefPropVModel } from '@/utils/model';
 import { useMessageStore } from '@/store/message';
+import { useCustomAssetForm } from '@/composables/assets/forms/custom-asset-form';
+import { useAssetManagementApi } from '@/composables/api/assets/management';
 import type { CustomAsset } from '@/types/asset';
 
 const props = withDefaults(

@@ -7,11 +7,12 @@ import { useNotificationsStore } from '@/store/notifications';
 import { useTaskStore } from '@/store/tasks';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useAssetCacheStore } from '@/store/assets/asset-cache';
+import { type AssetSearchParams, useAssetInfoApi } from '@/composables/api/assets/info';
+import { useSupportedChains } from '@/composables/info/chains';
 import type { MaybeRef } from '@vueuse/core';
 import type { ERC20Token } from '@/types/blockchain/accounts';
 import type { TaskMeta } from '@/types/task';
 import type { EvmChainAddress } from '@/types/history/events';
-import type { AssetSearchParams } from '@/composables/api/assets/info';
 import type { ComputedRef } from 'vue';
 
 export interface AssetResolutionOptions {

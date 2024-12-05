@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { some } from 'lodash-es';
 import { isTransactionEvent } from '@/utils/report';
+import { usePremium } from '@/composables/premium';
+import { useSupportedChains } from '@/composables/info/chains';
 import type { DataTableColumn, DataTableOptions, DataTableSortData } from '@rotki/ui-library';
 import type { ProfitLossEvent, ProfitLossEvents, SelectedReport } from '@/types/reports';
 

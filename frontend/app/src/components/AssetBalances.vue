@@ -7,6 +7,7 @@ import { sortAssetBalances } from '@/utils/balances';
 import { assetFilterByKeyword } from '@/utils/assets';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useStatisticsStore } from '@/store/statistics';
+import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import type { AssetBalance, AssetBalanceWithPrice, BigNumber, Nullable } from '@rotki/common';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 

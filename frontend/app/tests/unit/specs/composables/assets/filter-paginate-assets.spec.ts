@@ -1,25 +1,30 @@
 import flushPromises from 'flush-promises';
 import { afterEach, assertType, beforeAll, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
+import { type Filters, type Matcher, useAssetFilter } from '@/composables/filters/assets';
+import { usePaginationFilters } from '@/composables/use-pagination-filter';
+import { useAssetManagementApi } from '@/composables/api/assets/management';
 import type * as Vue from 'vue';
-import type { Filters, Matcher } from '@/composables/filters/assets';
 import type { Collection } from '@/types/collection';
 import type { SupportedAsset } from '@rotki/common';
 import type { MaybeRef } from '@vueuse/core';
 import type { AssetRequestPayload } from '@/types/asset';
 
-vi.mock('vue-router', () => ({
-  useRoute: vi.fn().mockReturnValue(
-    reactive({
-      query: {},
+vi.mock('vue-router', async () => {
+  const { reactive } = await import('vue');
+  return ({
+    useRoute: vi.fn().mockReturnValue(
+      reactive({
+        query: {},
+      }),
+    ),
+    useRouter: vi.fn().mockReturnValue({
+      push: vi.fn(({ query }) => {
+        useRoute().query = query;
+        return true;
+      }),
     }),
-  ),
-  useRouter: vi.fn().mockReturnValue({
-    push: vi.fn(({ query }) => {
-      useRoute().query = query;
-      return true;
-    }),
-  }),
-}));
+  });
+});
 
 vi.mock('vue', async () => {
   const mod = await vi.importActual<typeof Vue>('vue');

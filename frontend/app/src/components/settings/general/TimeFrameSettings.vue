@@ -3,6 +3,7 @@ import { TimeFramePeriod, TimeFramePersist, type TimeFrameSetting } from '@rotki
 import { isPeriodAllowed } from '@/utils/settings';
 import { useSessionSettingsStore } from '@/store/settings/session';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { usePremium } from '@/composables/premium';
 
 const props = defineProps<{
   message: { error: string; success: string };

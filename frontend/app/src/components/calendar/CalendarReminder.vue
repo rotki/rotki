@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { logger } from '@/utils/logging';
 import { useNotificationsStore } from '@/store/notifications';
+import { useCalendarReminderApi } from '@/composables/history/calendar/reminder';
 import type { CalendarEvent } from '@/types/history/calendar';
 import type { CalendarReminderTemporaryPayload, CalenderReminderPayload } from '@/types/history/calendar/reminder';
 

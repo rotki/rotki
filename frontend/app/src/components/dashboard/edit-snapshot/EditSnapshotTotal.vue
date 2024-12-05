@@ -6,6 +6,7 @@ import { bigNumberSum } from '@/utils/calculation';
 import { isNft } from '@/utils/nft';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useHistoricCachePriceStore } from '@/store/prices/historic';
+import { useEditTotalSnapshotForm } from '@/composables/snapshots/edit-total/form';
 import type { BalanceSnapshot, LocationDataSnapshot } from '@/types/snapshots';
 import type { BigNumber } from '@rotki/common';
 

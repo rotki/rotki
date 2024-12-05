@@ -4,6 +4,7 @@ import flushPromises from 'flush-promises';
 import { FrontendSettings } from '@/types/settings/frontend-settings';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
+import { useAddressesNamesApi } from '@/composables/api/blockchain/addresses-names';
 import type { AddressBookEntry, AddressBookSimplePayload } from '@/types/eth-names';
 import type { Collection } from '@/types/collection';
 

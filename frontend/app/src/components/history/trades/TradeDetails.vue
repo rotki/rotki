@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useLinks } from '@/composables/links';
 import type { TradeEntry } from '@/types/history/trade';
 
 const props = defineProps<{ item: TradeEntry }>();

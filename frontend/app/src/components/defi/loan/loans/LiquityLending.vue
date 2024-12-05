@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { type AssetBalance, type BigNumber, Blockchain, HistoryEventEntryType } from '@rotki/common';
+import { useScramble } from '@/composables/scramble';
+import { usePremium } from '@/composables/premium';
 import type { LiquityLoan } from '@/types/defi/liquity';
 
 const props = defineProps<{

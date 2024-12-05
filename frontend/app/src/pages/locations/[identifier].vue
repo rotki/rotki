@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { NoteLocation } from '@/types/notes';
+import { useLocations } from '@/composables/locations';
 
 definePage({
   meta: {

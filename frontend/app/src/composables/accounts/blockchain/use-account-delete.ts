@@ -4,6 +4,9 @@ import { awaitParallelExecution } from '@/utils/await-parallel-execution';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
 import { useBlockchainStore } from '@/store/blockchain';
 import { useConfirmStore } from '@/store/confirm';
+import { useBlockchainAccounts } from '@/composables/blockchain/accounts';
+import { useSupportedChains } from '@/composables/info/chains';
+import { useEthStaking } from '@/composables/blockchain/accounts/staking';
 import type {
   BlockchainAccountBalance,
   EthereumValidator,

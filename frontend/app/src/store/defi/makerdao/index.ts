@@ -14,6 +14,10 @@ import { getProtocolAddresses } from '@/utils/addresses';
 import { isTaskCancelled } from '@/utils';
 import { useTaskStore } from '@/store/tasks';
 import { useNotificationsStore } from '@/store/notifications';
+import { useMakerDaoApi } from '@/composables/api/defi/makerdao';
+import { useStatusUpdater } from '@/composables/status';
+import { usePremium } from '@/composables/premium';
+import { useModules } from '@/composables/session/modules';
 import type { TaskMeta } from '@/types/task';
 
 function convertMakerDAOVaults(vaults: ApiMakerDAOVault[]): MakerDAOVault[] {

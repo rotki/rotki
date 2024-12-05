@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { ThemeChecker } from '@/premium/premium';
 import { useAreaVisibilityStore } from '@/store/session/visibility';
+import { useDataLoader } from '@/composables/session/load';
+import { useDarkMode } from '@/composables/dark-mode';
+import { useInterop } from '@/composables/electron-interop';
+import { usePremium } from '@/composables/premium';
 
 const { showAbout } = storeToRefs(useAreaVisibilityStore());
 const premium = usePremium();

@@ -2,6 +2,7 @@
 import { TimeFramePeriod, TimeFramePersist, type TimeFrameSetting } from '@rotki/common';
 import { isPeriodAllowed } from '@/utils/settings';
 import { isOfEnum } from '@/utils';
+import { usePremium } from '@/composables/premium';
 
 const props = defineProps<{
   modelValue: TimeFrameSetting;

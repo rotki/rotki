@@ -10,6 +10,8 @@ import { useConfirmStore } from '@/store/confirm';
 import { usePeriodicStore } from '@/store/session/periodic';
 import { useMessageStore } from '@/store/message';
 import { useNotificationsStore } from '@/store/notifications';
+import { useEvmNodesApi } from '@/composables/api/settings/evm-nodes-api';
+import { useSupportedChains } from '@/composables/info/chains';
 import type { Blockchain } from '@rotki/common';
 
 const props = defineProps<{

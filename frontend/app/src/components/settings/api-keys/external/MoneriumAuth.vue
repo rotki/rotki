@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useExternalApiKeys, useServiceKeyHandler } from '@/composables/settings/api-keys/external';
 import type ServiceWithAuth from '@/components/settings/api-keys/ServiceWithAuth.vue';
 
 const { t } = useI18n();
