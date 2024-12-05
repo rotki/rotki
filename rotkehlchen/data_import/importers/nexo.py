@@ -5,8 +5,6 @@ from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.converters import asset_from_nexo
-from rotkehlchen.constants import ZERO
-from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.data_import.utils import (
     BaseExchangeImporter,
     SkippedCSVEntry,
@@ -17,7 +15,7 @@ from rotkehlchen.db.drivers.gevent import DBCursor
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.exchanges.data_structures import AssetMovement
+from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -26,7 +24,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount_force_positive,
     deserialize_timestamp_from_date,
 )
-from rotkehlchen.types import AssetMovementCategory, Fee, Location
+from rotkehlchen.types import Location
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
@@ -88,47 +86,33 @@ class NexoImporter(BaseExchangeImporter):
                 'will be ignored since not enough information is provided about the trade.',
             )
         if entry_type in {'Deposit', 'ExchangeDepositedOn'}:
-            asset_movement = AssetMovement(
-                location=Location.NEXO,
-                category=AssetMovementCategory.DEPOSIT,
-                address=None,
-                transaction_id=None,
-                timestamp=timestamp,
-                asset=asset,
-                amount=amount,
-                fee=Fee(ZERO),
-                fee_asset=A_USD,
-                link=transaction,
-            )
-            self.add_asset_movement(write_cursor, asset_movement)
-        elif entry_type in {'Withdrawal', 'WithdrawExchanged'}:
-            asset_movement = AssetMovement(
-                location=Location.NEXO,
-                category=AssetMovementCategory.WITHDRAWAL,
-                address=None,
-                transaction_id=None,
-                timestamp=timestamp,
-                asset=asset,
-                amount=amount,
-                fee=Fee(ZERO),
-                fee_asset=A_USD,
-                link=transaction,
-            )
-            self.add_asset_movement(write_cursor, asset_movement)
-        elif entry_type == 'Withdrawal Fee':
-            event = HistoryEvent(
-                event_identifier=f'{NEXO_PREFIX}{hash_csv_row(csv_row)}',
-                sequence_index=0,
+            self.add_history_events(write_cursor, [AssetMovement(
                 timestamp=ts_sec_to_ms(timestamp),
                 location=Location.NEXO,
-                event_type=HistoryEventType.SPEND,
-                event_subtype=HistoryEventSubType.FEE,
-                balance=Balance(amount=amount),
+                event_type=HistoryEventType.DEPOSIT,
                 asset=asset,
-                location_label=transaction,
-                notes=f'{entry_type} from Nexo',
-            )
-            self.add_history_events(write_cursor, [event])
+                balance=Balance(amount),
+                unique_id=transaction,
+            )])
+        elif entry_type in {'Withdrawal', 'WithdrawExchanged'}:
+            self.add_history_events(write_cursor, [AssetMovement(
+                timestamp=ts_sec_to_ms(timestamp),
+                location=Location.NEXO,
+                event_type=HistoryEventType.WITHDRAWAL,
+                asset=asset,
+                balance=Balance(amount),
+                unique_id=transaction,
+            )])
+        elif entry_type == 'Withdrawal Fee':
+            self.add_history_events(write_cursor, [AssetMovement(
+                timestamp=ts_sec_to_ms(timestamp),
+                location=Location.NEXO,
+                event_type=HistoryEventType.WITHDRAWAL,
+                asset=asset,
+                balance=Balance(amount),
+                unique_id=transaction,
+                is_fee=True,
+            )])
         elif entry_type in {'Interest', 'Bonus', 'Dividend', 'FixedTermInterest', 'Cashback', 'ReferralBonus'}:  # noqa: E501
             # A user shared a CSV file where some entries marked as interest had negative amounts.
             # we couldn't find information about this since they seem internal transactions made

@@ -15,7 +15,8 @@ from rotkehlchen.db.drivers.gevent import DBCursor
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
+from rotkehlchen.exchanges.data_structures import Trade
+from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.serialization.deserialize import (
@@ -23,7 +24,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_fee,
     deserialize_timestamp_from_date,
 )
-from rotkehlchen.types import AssetMovementCategory, Fee, Location, Price, TradeType
+from rotkehlchen.types import Fee, Location, Price, TradeType
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
@@ -109,23 +110,29 @@ class BlockpitImporter(BaseExchangeImporter):
         elif transaction_type in {'Deposit', 'Withdrawal', 'NonTaxableIn', 'NonTaxableOut'}:
             if transaction_type in {'Deposit', 'NonTaxableIn'}:
                 direction = 'Incoming'
-                category = AssetMovementCategory.DEPOSIT
+                event_type = HistoryEventType.DEPOSIT
             else:
                 direction = 'Outgoing'
-                category = AssetMovementCategory.WITHDRAWAL
-            asset_movement = AssetMovement(
+                event_type = HistoryEventType.WITHDRAWAL
+
+            events = [AssetMovement(
                 location=location,
-                category=category,
-                address=None,
-                transaction_id=None,
-                timestamp=timestamp,
+                event_type=event_type,  # type: ignore[arg-type]  # will only be deposit or withdrawal
+                timestamp=ts_sec_to_ms(timestamp),
                 asset=asset_resolver(csv_row[f'{direction} Asset']),
-                amount=deserialize_asset_amount(csv_row[f'{direction} Amount']),
-                fee=fee_amount,
-                fee_asset=fee_currency,
-                link='',
-            )
-            self.add_asset_movement(write_cursor, asset_movement)
+                balance=Balance(deserialize_asset_amount(csv_row[f'{direction} Amount'])),
+            )]
+            if fee_amount != ZERO:
+                events.append(AssetMovement(
+                    event_identifier=events[0].event_identifier,
+                    location=location,
+                    event_type=event_type,  # type: ignore[arg-type]  # will only be deposit or withdrawal
+                    timestamp=ts_sec_to_ms(timestamp),
+                    asset=fee_currency,
+                    balance=Balance(fee_amount),
+                    is_fee=True,
+                ))
+            self.add_history_events(write_cursor, events)
 
         elif transaction_type in {
             'Airdrop',
