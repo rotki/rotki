@@ -5,9 +5,18 @@ import pytest
 import requests
 
 from rotkehlchen.accounting.structures.types import ActionType
+from rotkehlchen.api.server import APIServer
 from rotkehlchen.api.v1.schemas import TradeSchema
 from rotkehlchen.constants import ONE, ZERO
-from rotkehlchen.constants.assets import A_AAVE, A_BTC, A_DAI, A_ETH, A_EUR, A_GUSD, A_WETH
+from rotkehlchen.constants.assets import (
+    A_AAVE,
+    A_BTC,
+    A_DAI,
+    A_ETH,
+    A_EUR,
+    A_GUSD,
+    A_WETH,
+)
 from rotkehlchen.constants.limits import FREE_TRADES_LIMIT
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
@@ -31,7 +40,10 @@ from rotkehlchen.utils.misc import ts_now
 
 @pytest.mark.parametrize('added_exchanges', [(Location.BINANCE, Location.POLONIEX)])
 @pytest.mark.parametrize('start_with_valid_premium', [False, True])
-def test_query_trades(rotkehlchen_api_server_with_exchanges, start_with_valid_premium):
+def test_query_trades(
+        rotkehlchen_api_server_with_exchanges: 'APIServer',
+        start_with_valid_premium: bool,
+    ) -> None:
     """Test that querying the trades endpoint works as expected
 
     Many similarities with test_exchanges.py::test_exchange_query_trades since
@@ -70,7 +82,7 @@ def test_query_trades(rotkehlchen_api_server_with_exchanges, start_with_valid_pr
         result = rotki.data.db.get_ignored_action_ids(cursor, None)
     assert result[ActionType.TRADE] == set(binance_ids)
 
-    def assert_okay(response):
+    def assert_okay(response: requests.Response) -> None:
         """Helper function to run next query and its assertion twice"""
         result = assert_proper_sync_response_with_result(response)['entries']
         assert len(result) == 2  # only 2 binance trades
@@ -151,7 +163,7 @@ def test_query_trades(rotkehlchen_api_server_with_exchanges, start_with_valid_pr
         trades_to_check=(1,),
     )
 
-    def assert_order_by(order_by: str):
+    def assert_order_by(order_by: str) -> tuple[list[dict], list[dict]]:
         """A helper to keep things DRY in the test"""
         data = {'order_by_attributes': [order_by], 'ascending': [False], 'only_cache': True}
         response = requests.get(
@@ -223,7 +235,7 @@ def test_query_trades(rotkehlchen_api_server_with_exchanges, start_with_valid_pr
             assert FVal(x['entry']['fee']) <= FVal(asc_result[idx + 1]['entry']['fee'])
 
 
-def test_query_trades_errors(rotkehlchen_api_server_with_exchanges):
+def test_query_trades_errors(rotkehlchen_api_server_with_exchanges: 'APIServer') -> None:
     """Test that the trades endpoint handles invalid get requests properly"""
     # Test that invalid value for from_timestamp is handled
     response = requests.get(
@@ -277,7 +289,10 @@ def test_query_trades_errors(rotkehlchen_api_server_with_exchanges):
 
 @pytest.mark.parametrize('start_with_valid_premium', [False, True])
 @pytest.mark.parametrize('added_exchanges', [(Location.BINANCE, Location.POLONIEX)])
-def test_query_trades_over_limit(rotkehlchen_api_server_with_exchanges, start_with_valid_premium):
+def test_query_trades_over_limit(
+        rotkehlchen_api_server_with_exchanges: 'APIServer',
+        start_with_valid_premium: bool,
+) -> None:
     """
     Test querying the trades endpoint with trades over the limit limits the result if non premium
     """
@@ -285,14 +300,14 @@ def test_query_trades_over_limit(rotkehlchen_api_server_with_exchanges, start_wi
     setup = mock_history_processing_and_exchanges(rotki)
 
     spam_trades = [Trade(
-        timestamp=x,
+        timestamp=Timestamp(x),
         location=Location.EXTERNAL,
         base_asset=A_BTC,
         quote_asset=A_EUR,
         trade_type=TradeType.BUY,
-        amount=FVal(x + 1),
-        rate=ONE,
-        fee=ZERO,
+        amount=AssetAmount(FVal(x + 1)),
+        rate=Price(ONE),
+        fee=Fee(ZERO),
         fee_currency=A_EUR,
         link='',
         notes='') for x in range(FREE_TRADES_LIMIT + 50)
@@ -322,7 +337,7 @@ def test_query_trades_over_limit(rotkehlchen_api_server_with_exchanges, start_wi
             assert result['entries_found'] == all_trades_num
 
 
-def test_add_trades(rotkehlchen_api_server):
+def test_add_trades(rotkehlchen_api_server: 'APIServer') -> None:
     """Test that adding trades to the trades endpoint works as expected"""
     new_trades = [{  # own chain to fiat
         'timestamp': 1575640208,
@@ -356,7 +371,7 @@ def test_add_trades(rotkehlchen_api_server):
         'rate': '22.1',
     }]
     # add multiple trades
-    all_expected_trades = []
+    all_expected_trades: list[str | dict] = []
     for new_trade in new_trades:
         response = requests.put(
             api_url_for(
@@ -516,7 +531,10 @@ def test_add_trades(rotkehlchen_api_server):
     )
 
 
-def assert_all_missing_fields_are_handled(correct_trade, server):
+def assert_all_missing_fields_are_handled(
+        correct_trade: dict[str, Any],
+        server: APIServer,
+) -> None:
     fields = correct_trade.keys()
 
     for field in fields:
@@ -539,7 +557,7 @@ def assert_all_missing_fields_are_handled(correct_trade, server):
         )
 
 
-def test_add_trades_errors(rotkehlchen_api_server):
+def test_add_trades_errors(rotkehlchen_api_server: 'APIServer') -> None:
     """Test that adding trades with erroneous data is handled properly
 
     This test also covers the trade editing errors, since they are handled by
@@ -803,7 +821,7 @@ def test_add_trades_errors(rotkehlchen_api_server):
     )
 
 
-def _check_trade_is_edited(original_trade: dict[str, Any], result_trade: dict[str, Any]) -> None:
+def _check_trade_is_edited(original_trade: dict[str, str], result_trade: dict[str, str]) -> None:
     for key, value in result_trade.items():
         if key == 'trade_id':
             assert value != original_trade[key]
@@ -816,7 +834,7 @@ def _check_trade_is_edited(original_trade: dict[str, Any], result_trade: dict[st
 
 
 @pytest.mark.parametrize('added_exchanges', [(Location.BINANCE, Location.POLONIEX)])
-def test_edit_trades(rotkehlchen_api_server_with_exchanges):
+def test_edit_trades(rotkehlchen_api_server_with_exchanges: 'APIServer') -> None:
     """Test that editing a trade via the trades endpoint works as expected"""
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
     setup = mock_history_processing_and_exchanges(rotki)
@@ -897,7 +915,7 @@ def test_edit_trades(rotkehlchen_api_server_with_exchanges):
         _check_trade_is_edited(original_trade=original_binance_trades[idx], result_trade=trade['entry'])  # noqa: E501
 
 
-def test_edit_trades_errors(rotkehlchen_api_server):
+def test_edit_trades_errors(rotkehlchen_api_server: 'APIServer') -> None:
     """Test that editing a trade with non-existing or invalid id is handled properly"""
     trade = {
         'timestamp': 1575640208,
@@ -953,7 +971,7 @@ def test_edit_trades_errors(rotkehlchen_api_server):
 
 
 @pytest.mark.parametrize('added_exchanges', [(Location.BINANCE, Location.POLONIEX)])
-def test_delete_trades(rotkehlchen_api_server_with_exchanges):
+def test_delete_trades(rotkehlchen_api_server_with_exchanges: 'APIServer') -> None:
     """Test that deleting a trade via the trades endpoint works as expected"""
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
     setup = mock_history_processing_and_exchanges(rotki)
@@ -994,7 +1012,7 @@ def test_delete_trades(rotkehlchen_api_server_with_exchanges):
     assert len(trades) == 0
 
 
-def test_delete_trades_trades_errors(rotkehlchen_api_server):
+def test_delete_trades_trades_errors(rotkehlchen_api_server: 'APIServer') -> None:
     """Test that errors at the deleting a trade endpoint are handled properly"""
     # Check that omitting the trade id is handled
     response = requests.delete(
@@ -1036,7 +1054,9 @@ def test_delete_trades_trades_errors(rotkehlchen_api_server):
 
 
 @pytest.mark.parametrize('added_exchanges', [(Location.BINANCE, Location.POLONIEX)])
-def test_query_trades_associated_locations(rotkehlchen_api_server_with_exchanges):
+def test_query_trades_associated_locations(
+        rotkehlchen_api_server_with_exchanges: 'APIServer',
+) -> None:
     """Test that querying the trades endpoint works as expected when we have associated
     locations including associated exchanges and imported locations.
     """
@@ -1149,7 +1169,7 @@ def test_query_trades_associated_locations(rotkehlchen_api_server_with_exchanges
     assert len(result) == 0
 
 
-def test_ignoring_trades(rotkehlchen_api_server):
+def test_ignoring_trades(rotkehlchen_api_server: 'APIServer') -> None:
     """Check that ignoring trades and ignoring assets filter works as expected."""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     trades = make_random_trades(3)
@@ -1173,8 +1193,8 @@ def test_ignoring_trades(rotkehlchen_api_server):
     )
     assert_simple_ok_response(response)
     with rotki.data.db.conn.read_ctx() as cursor:
-        result = rotki.data.db.get_ignored_action_ids(cursor, None)
-    assert result[ActionType.TRADE] == {trade_to_ignore}
+        result_1 = rotki.data.db.get_ignored_action_ids(cursor, None)
+    assert result_1[ActionType.TRADE] == {trade_to_ignore}
 
     # now fetch trades and check for the behaviour of the `include_ignored_trades` filter
     response = requests.get(
@@ -1224,7 +1244,7 @@ def test_ignoring_trades(rotkehlchen_api_server):
     assert trade_with_asset_ignored in {entry['entry']['trade_id'] for entry in result['entries']}
 
 
-def test_ignoring_trades_with_pagination(rotkehlchen_api_server):
+def test_ignoring_trades_with_pagination(rotkehlchen_api_server: 'APIServer') -> None:
     """Check that pagination is respected when `include_ignored_trades` is True."""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     trades = make_random_trades(5, base_asset=A_ETH)
@@ -1245,8 +1265,8 @@ def test_ignoring_trades_with_pagination(rotkehlchen_api_server):
     )
     assert_simple_ok_response(response)
     with rotki.data.db.conn.read_ctx() as cursor:
-        result = rotki.data.db.get_ignored_action_ids(cursor, None)
-    assert result[ActionType.TRADE] == set(trades_to_ignore)
+        result_1 = rotki.data.db.get_ignored_action_ids(cursor, None)
+    assert result_1[ActionType.TRADE] == set(trades_to_ignore)
 
     # now fetch trades with pagination and `include_ignored_trades` is False
     response = requests.get(

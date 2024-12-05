@@ -1,4 +1,5 @@
 from http import HTTPStatus
+from typing import TYPE_CHECKING
 
 import pytest
 import requests
@@ -12,10 +13,16 @@ from rotkehlchen.tests.utils.api import (
     assert_proper_sync_response_with_result,
     assert_simple_ok_response,
 )
-from rotkehlchen.tests.utils.factories import make_random_user_notes, make_user_notes_entries
+from rotkehlchen.tests.utils.factories import (
+    make_random_user_notes,
+    make_user_notes_entries,
+)
+
+if TYPE_CHECKING:
+    from rotkehlchen.api.server import APIServer
 
 
-def test_add_get_user_notes(rotkehlchen_api_server):
+def test_add_get_user_notes(rotkehlchen_api_server: 'APIServer') -> None:
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
@@ -114,7 +121,7 @@ def test_add_get_user_notes(rotkehlchen_api_server):
     assert result['entries'][2]['title'] == '#2'
 
 
-def test_edit_user_notes(rotkehlchen_api_server):
+def test_edit_user_notes(rotkehlchen_api_server: 'APIServer') -> None:
     generated_entries = make_user_notes_entries()
     for entry in generated_entries:
         rotkehlchen_api_server.rest_api.rotkehlchen.data.db.add_user_note(
@@ -177,7 +184,7 @@ def test_edit_user_notes(rotkehlchen_api_server):
     )
 
 
-def test_delete_user_notes(rotkehlchen_api_server):
+def test_delete_user_notes(rotkehlchen_api_server: 'APIServer') -> None:
     generated_entries = make_user_notes_entries()
     for entry in generated_entries:
         rotkehlchen_api_server.rest_api.rotkehlchen.data.db.add_user_note(
@@ -226,7 +233,10 @@ def test_delete_user_notes(rotkehlchen_api_server):
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True, False])
-def test_premium_limits(rotkehlchen_api_server, start_with_valid_premium):
+def test_premium_limits(
+        rotkehlchen_api_server: 'APIServer',
+        start_with_valid_premium: bool,
+) -> None:
     """Test that premium limits are set correctly"""
     generated_entries = make_random_user_notes(20)
     for entry in generated_entries:

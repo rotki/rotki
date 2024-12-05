@@ -121,6 +121,14 @@ module = [
     "rotkehlchen.tests.api.test_substrate_manager",
     "rotkehlchen.tests.api.test_sushiswap",
     "rotkehlchen.tests.data_migrations.test_migrations",
+    "rotkehlchen.tests.api.test_tags",
+    "rotkehlchen.tests.api.test_trades",
+    "rotkehlchen.tests.api.test_uniswap",
+    "rotkehlchen.tests.api.test_user_assets",
+    "rotkehlchen.tests.api.test_user_evm_tokens",
+    "rotkehlchen.tests.api.test_user_notes",
+    "rotkehlchen.tests.api.test_users",
+    "rotkehlchen.tests.api.test_yearn_vaults",
 ]
 check_untyped_defs = true
 disallow_untyped_defs = true
