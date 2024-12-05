@@ -220,10 +220,16 @@ const getAssets = (assets: XswapAsset[]) => assets.map(({ asset }) => asset);
         />
       </template>
       <template #item.percentageOfTotalNetValue="{ row }">
-        <PercentageDisplay :value="percentageOfTotalNetValue(row.usdValue)" />
+        <PercentageDisplay
+          :value="percentageOfTotalNetValue(row.usdValue)"
+          :asset-padding="0.1"
+        />
       </template>
       <template #item.percentageOfTotalCurrentGroup="{ row }">
-        <PercentageDisplay :value="percentageOfCurrentGroup(row.usdValue)" />
+        <PercentageDisplay
+          :value="percentageOfCurrentGroup(row.usdValue)"
+          :asset-padding="0.1"
+        />
       </template>
       <template #expanded-item="{ row }">
         <LiquidityProviderBalanceDetails

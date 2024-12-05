@@ -242,7 +242,10 @@ watchImmediate(ethStakingValidators, async () => {
         />
       </template>
       <template #item.ownershipPercentage="{ row }">
-        <PercentageDisplay :value="getOwnershipPercentage(row)" />
+        <PercentageDisplay
+          :value="getOwnershipPercentage(row)"
+          :asset-padding="0.1"
+        />
       </template>
       <template #item.actions="{ row }">
         <div class="flex justify-end mr-2">
