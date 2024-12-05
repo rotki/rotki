@@ -237,6 +237,7 @@ from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
     AssetAmount,
+    BlockchainAddress,
     BTCAddress,
     CacheType,
     ChainType,
@@ -853,7 +854,7 @@ class RestAPI:
             # Filter balances before serialization
             if usd_value_threshold is not None:
                 for _, chain_balances in balances.per_account:
-                    filtered_balances = {}
+                    filtered_balances: dict[BlockchainAddress, BalanceSheet | Balance] = {}
                     for account, account_data in chain_balances.items():
                         if isinstance(account_data, BalanceSheet):
                             filtered_assets = {
@@ -867,7 +868,7 @@ class RestAPI:
                         elif isinstance(account_data, Balance):
                             # For BTC and BCH, account_data is a single Balance object
                             if account_data.usd_value > usd_value_threshold:
-                                filtered_balances[account] = BalanceSheet(assets=defaultdict(Balance, {account: account_data}))  # noqa: E501
+                                filtered_balances[account] = account_data
 
                     chain_balances.clear()
                     chain_balances.update(filtered_balances)

@@ -1036,10 +1036,10 @@ def test_query_balances_with_threshold(
             A_DAI.resolve_to_evm_token(): ['5000000000000000000', '0'],  # 5 DAI and 0 DAI
             A_USDC.resolve_to_evm_token(): ['1000000', '2000000'],  # 1 USDC and 2 USDC
         },
+        btc_balances=['1000000000000', '1'],
     )
 
-    threshold = 10  # Set threshold to 10 USD
-
+    threshold = FVal(10)  # Set threshold to 10 USD
     with ExitStack() as stack:
         setup.enter_all_patches(stack)
 
@@ -1054,7 +1054,7 @@ def test_query_balances_with_threshold(
                     rotkehlchen_api_server_with_exchanges,
                     endpoint,
                 ),
-               params={'usd_value_threshold': threshold},
+               params={'usd_value_threshold': threshold.to_int(exact=True)},
             )
             results.append(assert_proper_sync_response_with_result(response))
 
@@ -1063,19 +1063,23 @@ def test_query_balances_with_threshold(
         # Assert blockchain balances
         if len(blockchain_result['per_account']) > 0:  # If any balances remain after filtering
             for chain in blockchain_result['per_account']:
-                for account in blockchain_result['per_account'][chain]:
-                    assets = blockchain_result['per_account'][chain][account]['assets']
-                    for balance in assets.values():
-                        assert FVal(balance['usd_value']) > FVal(threshold)
+                for balances in blockchain_result['per_account'][chain].values():
+                    if chain == 'btc':
+                        for balance in balances.values():
+                            assert FVal(balance['usd_value']) > threshold
+                    else:
+                        assets = balances['assets']
+                        for balance in assets.values():
+                            assert FVal(balance['usd_value']) > threshold
 
         # Assert exchange balances
         assert len(exchange_result) != 0
         for exchange in exchange_result:
             assert len(exchange_result[exchange]) != 0
             for balance in exchange_result[exchange].values():
-                assert FVal(balance['usd_value']) > FVal(threshold)
+                assert FVal(balance['usd_value']) > threshold
 
         # Assert manual balances
         assert len(manual_result['balances']) != 0
         for balance in manual_result['balances']:
-            assert FVal(balance['usd_value']) > FVal(threshold)
+            assert FVal(balance['usd_value']) > threshold
