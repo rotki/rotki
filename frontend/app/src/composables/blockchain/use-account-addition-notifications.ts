@@ -41,7 +41,7 @@ export function useAccountAdditionNotifications(): UseAccountAdditionNotificatio
   };
 
   const notifyFailedToAddAddress = (accounts: AccountPayload[], address: number, blockchain: string = 'EVM'): void => {
-    const title = t('actions.balances.blockchain_accounts_add.task.title', { blockchain });
+    const title = t('actions.balances.blockchain_accounts_add.task.title', { blockchain: blockchain === 'EVM' ? blockchain : get(getChainName(blockchain)) });
     const message = t('actions.balances.blockchain_accounts_add.error.failed_list_description', {
       address,
       blockchain,
@@ -82,6 +82,7 @@ export function useAccountAdditionNotifications(): UseAccountAdditionNotificatio
         address: account.address,
         list: listOfFailureText.join('\n'),
       }),
+      severity: Severity.INFO,
       title: t('actions.balances.blockchain_accounts_add.task.title', { blockchain: 'EVM' }),
     });
   }

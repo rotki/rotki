@@ -48,9 +48,13 @@ interface AccountAdditionFailure {
   account: AccountPayload | XpubAccountPayload;
 }
 
+interface AddAccountsOption {
+  wait: boolean;
+}
+
 interface UseBlockchainsReturn {
-  addAccounts: (chain: string, data: AddAccountsPayload | XpubAccountPayload) => Promise<void>;
-  addEvmAccounts: (payload: AddAccountsPayload) => Promise<void>;
+  addAccounts: (chain: string, data: AddAccountsPayload | XpubAccountPayload, options?: AddAccountsOption) => Promise<void>;
+  addEvmAccounts: (payload: AddAccountsPayload, options?: AddAccountsOption) => Promise<void>;
   detectEvmAccounts: () => Promise<void>;
   fetchAccounts: (blockchain?: string, refreshEns?: boolean) => Promise<void>;
   refreshAccounts: (blockchain?: MaybeRef<string>, periodic?: boolean) => Promise<void>;
@@ -238,7 +242,7 @@ export function useBlockchains(): UseBlockchainsReturn {
     startPromise(completeAccountAddition({ addedAccounts, modulesToEnable: payload.modules }));
   };
 
-  const addEvmAccounts = async (payload: AddAccountsPayload): Promise<void> => {
+  const addEvmAccounts = async (payload: AddAccountsPayload, options?: AddAccountsOption): Promise<void> => {
     if (payload.payload.length === 1) {
       const addResult = await addSingleEvmAddress(payload.payload[0]);
       if (addResult.type === 'error')
@@ -247,7 +251,10 @@ export function useBlockchains(): UseBlockchainsReturn {
       startPromise(completeAccountAddition({ addedAccounts: addResult.accounts, modulesToEnable: payload.modules }));
     }
     else {
-      startPromise(addMultipleEvmAccounts(payload));
+      if (options?.wait)
+        await addMultipleEvmAccounts(payload);
+      else
+        startPromise(addMultipleEvmAccounts(payload));
     }
   };
 
@@ -299,7 +306,7 @@ export function useBlockchains(): UseBlockchainsReturn {
     startPromise(completeAccountAddition({ addedAccounts, chain, modulesToEnable: modules }));
   };
 
-  const addAccounts = async (chain: string, payload: AddAccountsPayload | XpubAccountPayload): Promise<void> => {
+  const addAccounts = async (chain: string, payload: AddAccountsPayload | XpubAccountPayload, options?: AddAccountsOption): Promise<void> => {
     const taskType = TaskType.ADD_ACCOUNT;
     if (get(isTaskRunning(taskType))) {
       logger.debug(`${TaskType[taskType]} is already running.`);
@@ -337,7 +344,10 @@ export function useBlockchains(): UseBlockchainsReturn {
       }));
     }
     else {
-      startPromise(addMultipleAccounts(filteredPayload, chain, modules));
+      if (options?.wait)
+        await addMultipleAccounts(filteredPayload, chain, modules);
+      else
+        startPromise(addMultipleAccounts(filteredPayload, chain, modules));
     }
   };
 

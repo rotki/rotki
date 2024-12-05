@@ -37,6 +37,7 @@ export const externalLinks = {
     addingAnExchange: `${USAGE_GUIDE_URL}importing-data#adding-an-exchange`,
     theGraphApiKey: `${USAGE_GUIDE_URL}importing-data#the-graph`,
     gnosisPayKey: `${USAGE_GUIDE_URL}importing-data#gnosis-pay`,
+    importBlockchainAccounts: `${USAGE_GUIDE_URL}importing-data#import-blockchain-accounts`,
   },
   coingeckoAsset: `https://www.coingecko.com/en/coins/$symbol`,
   cryptocompareAsset: `https://www.cryptocompare.com/coins/$symbol/overview`,

@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { logger } from '@/utils/logging';
 import { type Tag, defaultTag } from '@/types/tags';
 import { useTagStore } from '@/store/session/tags';
 import TagFormDialog from '@/components/tags/TagFormDialog.vue';
@@ -26,32 +25,7 @@ const search = ref<string>('');
 
 const newTag = ref<Tag | undefined>(undefined);
 
-function randomScheme() {
-  const backgroundColor = randomColor();
-  return {
-    backgroundColor,
-    foregroundColor: invertColor(backgroundColor),
-  };
-}
-
-const colorScheme = ref(randomScheme());
-
-function tagExists(tagName: string): boolean {
-  return get(tags)
-    .map(({ name }) => name)
-    .includes(tagName);
-}
-
-async function createTag(name: string) {
-  const { backgroundColor, foregroundColor } = get(colorScheme);
-  const tag: Tag = {
-    backgroundColor,
-    description: '',
-    foregroundColor,
-    name,
-  };
-  return await store.addTag(tag);
-}
+const newTagBackground = ref(randomColor());
 
 function remove(tag: string) {
   const tags = get(modelValue);
@@ -60,15 +34,11 @@ function remove(tag: string) {
 }
 
 function attemptTagCreation(element: string) {
-  if (tagExists(element))
-    return;
-
-  createTag(element)
-    .then(({ success }) => {
+  store.attemptTagCreation(element, get(newTagBackground))
+    .then((success) => {
       if (!success)
         remove(element);
-    })
-    .catch(error => logger.error(error));
+    });
 }
 
 function onUpdateModelValue(_value: ({ name: string } | string | Tag)[]) {
@@ -96,12 +66,10 @@ function handleCreateNewTag() {
 
 watch(search, (keyword: string | null, previous: string | null) => {
   if (keyword && !previous)
-    set(colorScheme, randomScheme());
+    set(newTagBackground, randomColor());
 });
 
-const newTagBackground = computed<string>(() => get(colorScheme).backgroundColor);
-
-const newTagForeground = computed<string>(() => get(colorScheme).foregroundColor);
+const newTagForeground = computed<string>(() => invertColor(get(newTagBackground)));
 
 const filteredValue = computed<Tag[]>(() => get(tags).filter(({ name }) => get(modelValue).includes(name)));
 
