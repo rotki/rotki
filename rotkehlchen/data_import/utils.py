@@ -1,7 +1,7 @@
 import hashlib
 import logging
 from abc import ABC, abstractmethod
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
@@ -12,7 +12,7 @@ from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.drivers.gevent import DBCursor
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.misc import InputError
-from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
+from rotkehlchen.exchanges.data_structures import MarginPosition, Trade
 from rotkehlchen.history.events.structures.base import HistoryBaseEntry
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -33,7 +33,6 @@ class BaseExchangeImporter(ABC):
         self.history_db = DBHistoryEvents(self.db)
         self._trades: list[Trade] = []
         self._margin_trades: list[MarginPosition] = []
-        self._asset_movements: list[AssetMovement] = []
         self._history_events: list[HistoryBaseEntry] = []
         self.name = name
         self.reset()
@@ -95,26 +94,20 @@ class BaseExchangeImporter(ABC):
         self._margin_trades.append(margin_trade)
         self.maybe_flush_all(write_cursor)
 
-    def add_asset_movement(self, write_cursor: DBCursor, asset_movement: AssetMovement) -> None:
-        self._asset_movements.append(asset_movement)
-        self.maybe_flush_all(write_cursor)
-
-    def add_history_events(self, write_cursor: DBCursor, history_events: list[HistoryBaseEntry]) -> None:  # noqa: E501
+    def add_history_events(self, write_cursor: DBCursor, history_events: Sequence[HistoryBaseEntry]) -> None:  # noqa: E501
         self._history_events.extend(history_events)
         self.maybe_flush_all(write_cursor)
 
     def maybe_flush_all(self, cursor: DBCursor) -> None:
-        if len(self._trades) + len(self._margin_trades) + len(self._asset_movements) + len(self._history_events) >= ITEMS_PER_DB_WRITE:  # noqa: E501
+        if len(self._trades) + len(self._margin_trades) + len(self._history_events) >= ITEMS_PER_DB_WRITE:  # noqa: E501
             self.flush_all(cursor)
 
     def flush_all(self, write_cursor: DBCursor) -> None:
         self.db.add_trades(write_cursor, trades=self._trades)
         self.db.add_margin_positions(write_cursor, margin_positions=self._margin_trades)
-        self.db.add_asset_movements(write_cursor, asset_movements=self._asset_movements)
         self.history_db.add_history_events(write_cursor, history=self._history_events)
         self._trades = []
         self._margin_trades = []
-        self._asset_movements = []
         self._history_events = []
 
     def append_msg(self, row_index: int, msg: str, is_error: bool) -> None:
@@ -216,3 +209,20 @@ def detect_duplicate_event(
              event_type.serialize(), event_subtype.serialize()),
         )
         return read_cursor.fetchone()[0] != 0
+
+
+def maybe_set_transaction_extra_data(
+        address: str | None,
+        transaction_id: str | None,
+        extra_data: dict[str, Any] | None = None,
+) -> dict[str, Any] | None:
+    """Add address and transaction id (if present) to extra_data from the provided csv_row.
+    Returns extra_data or None if nothing was added."""
+    if extra_data is None:
+        extra_data = {}
+    if address is not None:
+        extra_data['address'] = address
+    if transaction_id is not None:
+        extra_data['transaction_id'] = transaction_id
+
+    return extra_data or None

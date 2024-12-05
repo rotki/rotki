@@ -20,7 +20,8 @@ from rotkehlchen.db.drivers.gevent import DBCursor
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
+from rotkehlchen.exchanges.data_structures import Trade
+from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -31,7 +32,6 @@ from rotkehlchen.serialization.deserialize import (
 )
 from rotkehlchen.types import (
     AssetAmount,
-    AssetMovementCategory,
     Fee,
     Location,
     Price,
@@ -154,26 +154,20 @@ class CryptocomImporter(BaseExchangeImporter):
             'viban_card_top_up',
         }:
             if row_type in {'crypto_withdrawal', 'viban_deposit', 'viban_card_top_up'}:
-                category = AssetMovementCategory.WITHDRAWAL
+                event_type = HistoryEventType.WITHDRAWAL
                 amount = deserialize_asset_amount_force_positive(csv_row['Amount'])
             else:
-                category = AssetMovementCategory.DEPOSIT
+                event_type = HistoryEventType.DEPOSIT
                 amount = deserialize_asset_amount(csv_row['Amount'])
 
             asset = asset_from_cryptocom(csv_row['Currency'])
-            asset_movement = AssetMovement(
+            self.add_history_events(write_cursor, [AssetMovement(
                 location=Location.CRYPTOCOM,
-                category=category,
-                address=None,
-                transaction_id=None,
-                timestamp=timestamp,
+                event_type=event_type,  # type: ignore[arg-type]  # will only be deposit or withdrawal
+                timestamp=ts_sec_to_ms(timestamp),
                 asset=asset,
-                amount=amount,
-                fee=fee,
-                fee_asset=asset,
-                link='',
-            )
-            self.add_asset_movement(write_cursor, asset_movement)
+                balance=Balance(amount),
+            )])
         elif row_type in {
             'airdrop_to_exchange_transfer',
             'mco_stake_reward',
@@ -221,36 +215,24 @@ class CryptocomImporter(BaseExchangeImporter):
             self.add_history_events(write_cursor, [event])
         elif row_type == 'invest_deposit':
             asset = asset_from_cryptocom(csv_row['Currency'])
-            amount = deserialize_asset_amount(csv_row['Amount'])
-            asset_movement = AssetMovement(
+            amount = abs(deserialize_asset_amount(csv_row['Amount']))
+            self.add_history_events(write_cursor, [AssetMovement(
                 location=Location.CRYPTOCOM,
-                category=AssetMovementCategory.DEPOSIT,
-                address=None,
-                transaction_id=None,
-                timestamp=timestamp,
+                event_type=HistoryEventType.DEPOSIT,
+                timestamp=ts_sec_to_ms(timestamp),
                 asset=asset,
-                amount=amount,
-                fee=fee,
-                fee_asset=fee_currency,
-                link='',
-            )
-            self.add_asset_movement(write_cursor, asset_movement)
+                balance=Balance(amount),
+            )])
         elif row_type == 'invest_withdrawal':
             asset = asset_from_cryptocom(csv_row['Currency'])
             amount = deserialize_asset_amount(csv_row['Amount'])
-            asset_movement = AssetMovement(
+            self.add_history_events(write_cursor, [AssetMovement(
                 location=Location.CRYPTOCOM,
-                category=AssetMovementCategory.WITHDRAWAL,
-                address=None,
-                transaction_id=None,
-                timestamp=timestamp,
+                event_type=HistoryEventType.WITHDRAWAL,
+                timestamp=ts_sec_to_ms(timestamp),
                 asset=asset,
-                amount=amount,
-                fee=fee,
-                fee_asset=fee_currency,
-                link='',
-            )
-            self.add_asset_movement(write_cursor, asset_movement)
+                balance=Balance(amount),
+            )])
         elif row_type == 'crypto_transfer':
             asset = asset_from_cryptocom(csv_row['Currency'])
             amount = deserialize_asset_amount(csv_row['Amount'])

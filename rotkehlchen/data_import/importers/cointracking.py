@@ -20,17 +20,17 @@ from rotkehlchen.db.drivers.gevent import DBCursor
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
+from rotkehlchen.exchanges.data_structures import Trade
+from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
     deserialize_asset_amount_force_positive,
-    deserialize_asset_movement_category,
     deserialize_fee,
     deserialize_timestamp_from_date,
 )
-from rotkehlchen.types import AssetAmount, AssetMovementCategory, Fee, Location, Price, TradeType
+from rotkehlchen.types import AssetAmount, Fee, Location, Price, TradeType
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
@@ -159,27 +159,33 @@ class CointrackingImporter(BaseExchangeImporter):
             )
             self.add_trade(write_cursor, trade)
         elif row_type in {'Deposit', 'Withdrawal'}:
-            category = deserialize_asset_movement_category(row_type.lower())
-            if category == AssetMovementCategory.DEPOSIT:
+            if row_type == 'Deposit':
                 amount = deserialize_asset_amount(csv_row['Buy'])
                 asset = asset_resolver(csv_row['Cur.Buy'])
+                event_type = HistoryEventType.DEPOSIT
             else:
                 amount = deserialize_asset_amount_force_positive(csv_row['Sell'])
                 asset = asset_resolver(csv_row['Cur.Sell'])
+                event_type = HistoryEventType.WITHDRAWAL
 
-            asset_movement = AssetMovement(
+            events = [AssetMovement(
                 location=location,
-                category=category,
-                address=None,
-                transaction_id=None,
-                timestamp=timestamp,
+                event_type=event_type,  # type: ignore[arg-type]  # will only be deposit or withdrawal
+                timestamp=ts_sec_to_ms(timestamp),
                 asset=asset,
-                amount=amount,
-                fee=fee,
-                fee_asset=fee_currency,
-                link='',
-            )
-            self.add_asset_movement(write_cursor, asset_movement)
+                balance=Balance(amount),
+            )]
+            if fee != ZERO:
+                events.append(AssetMovement(
+                    event_identifier=events[0].event_identifier,
+                    location=location,
+                    event_type=event_type,  # type: ignore[arg-type]  # will only be deposit or withdrawal
+                    timestamp=ts_sec_to_ms(timestamp),
+                    asset=fee_currency,
+                    balance=Balance(fee),
+                    is_fee=True,
+                ))
+            self.add_history_events(write_cursor, events)
         elif row_type == 'Staking':
             amount = deserialize_asset_amount(csv_row['Buy'])
             asset = asset_resolver(csv_row['Cur.Buy'])

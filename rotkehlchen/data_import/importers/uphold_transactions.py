@@ -10,8 +10,9 @@ from rotkehlchen.db.drivers.gevent import DBCursor
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
+from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.serialization.deserialize import (
@@ -19,7 +20,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_fee,
     deserialize_timestamp_from_date,
 )
-from rotkehlchen.types import AssetAmount, AssetMovementCategory, Fee, Location, Price, TradeType
+from rotkehlchen.types import AssetAmount, Fee, Location, Price, TradeType
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
@@ -115,19 +116,24 @@ Activity from uphold with uphold transaction id:
                     raise SkippedCSVEntry(f'Trade destination amount is {destination_amount}.')
         elif origin == 'uphold' and transaction_type == 'out':
             if origin_asset == destination_asset:  # Withdrawals
-                asset_movement = AssetMovement(
+                events = [AssetMovement(
                     location=Location.UPHOLD,
-                    category=AssetMovementCategory.WITHDRAWAL,
-                    address=None,
-                    transaction_id=None,
-                    timestamp=timestamp,
+                    event_type=HistoryEventType.WITHDRAWAL,
+                    timestamp=ts_sec_to_ms(timestamp),
                     asset=origin_asset,
-                    amount=origin_amount,
-                    fee=Fee(fee),
-                    fee_asset=fee_asset,
-                    link='',
-                )
-                self.add_asset_movement(write_cursor, asset_movement)
+                    balance=Balance(origin_amount),
+                )]
+                if fee != ZERO:
+                    events.append(AssetMovement(
+                        event_identifier=events[0].event_identifier,
+                        location=Location.UPHOLD,
+                        event_type=HistoryEventType.WITHDRAWAL,
+                        timestamp=ts_sec_to_ms(timestamp),
+                        asset=fee_asset,
+                        balance=Balance(fee),
+                        is_fee=True,
+                    ))
+                self.add_history_events(write_cursor, events)
             elif origin_amount > 0:  # Trades (sell)
                 trade = Trade(
                     timestamp=timestamp,
@@ -148,19 +154,24 @@ Activity from uphold with uphold transaction id:
 
         elif destination == 'uphold' and transaction_type == 'in':
             if origin_asset == destination_asset:  # Deposits
-                asset_movement = AssetMovement(
+                events = [AssetMovement(
                     location=Location.UPHOLD,
-                    category=AssetMovementCategory.DEPOSIT,
-                    address=None,
-                    transaction_id=None,
-                    timestamp=timestamp,
+                    event_type=HistoryEventType.DEPOSIT,
+                    timestamp=ts_sec_to_ms(timestamp),
                     asset=origin_asset,
-                    amount=origin_amount,
-                    fee=Fee(fee),
-                    fee_asset=fee_asset,
-                    link='',
-                )
-                self.add_asset_movement(write_cursor, asset_movement)
+                    balance=Balance(origin_amount),
+                )]
+                if fee != ZERO:
+                    events.append(AssetMovement(
+                        event_identifier=events[0].event_identifier,
+                        location=Location.UPHOLD,
+                        event_type=HistoryEventType.DEPOSIT,
+                        timestamp=ts_sec_to_ms(timestamp),
+                        asset=fee_asset,
+                        balance=Balance(fee),
+                        is_fee=True,
+                    ))
+                self.add_history_events(write_cursor, events)
             elif destination_amount > 0:  # Trades (buy)
                 trade = Trade(
                     timestamp=timestamp,

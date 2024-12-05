@@ -15,7 +15,8 @@ from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
+from rotkehlchen.exchanges.data_structures import Trade
+from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.base import HistoryBaseEntry, HistoryEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.history.price import PriceHistorian
@@ -26,7 +27,6 @@ from rotkehlchen.serialization.deserialize import (
 )
 from rotkehlchen.types import (
     AssetAmount,
-    AssetMovementCategory,
     Fee,
     Location,
     Price,
@@ -383,20 +383,13 @@ class BinanceDepositWithdrawEntry(BinanceSingleEntry):
             data: BinanceCsvRow,
     ) -> None:
         asset = data['Coin']
-        category = AssetMovementCategory.WITHDRAWAL if data['Operation'] == 'Withdraw' else AssetMovementCategory.DEPOSIT  # else clause also covers 'Buy Crypto' & 'Fiat Deposit'  # noqa: E501
-        asset_movement = AssetMovement(
+        importer.add_history_events(write_cursor, [AssetMovement(
             location=Location.BINANCE,
-            category=category,
-            address=None,
-            transaction_id=None,
-            timestamp=timestamp,
+            event_type=HistoryEventType.WITHDRAWAL if data['Operation'] == 'Withdraw' else HistoryEventType.DEPOSIT,  # else clause also covers 'Buy Crypto' & 'Fiat Deposit'  # noqa: E501
+            timestamp=ts_sec_to_ms(timestamp),
             asset=asset,
-            amount=abs(data['Change']),
-            fee=Fee(ZERO),
-            fee_asset=A_USD,
-            link=f'Imported from binance CSV file. Binance operation: {data["Operation"]}',
-        )
-        importer.add_asset_movement(write_cursor=write_cursor, asset_movement=asset_movement)
+            balance=Balance(abs(data['Change'])),
+        )])
 
 
 class BinanceDistributionEntry(BinanceSingleEntry):

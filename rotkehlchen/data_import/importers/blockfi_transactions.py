@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING, Any
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.converters import asset_from_blockfi
 from rotkehlchen.constants import ZERO
-from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.data_import.utils import (
     BaseExchangeImporter,
     SkippedCSVEntry,
@@ -17,7 +16,7 @@ from rotkehlchen.db.drivers.gevent import DBCursor
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.exchanges.data_structures import AssetMovement
+from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -25,7 +24,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
     deserialize_timestamp_from_date,
 )
-from rotkehlchen.types import AssetAmount, AssetMovementCategory, Fee, Location
+from rotkehlchen.types import AssetAmount, Location
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
@@ -70,51 +69,32 @@ class BlockfiTransactionsImporter(BaseExchangeImporter):
         raw_amount = deserialize_asset_amount(csv_row['Amount'])
         abs_amount = AssetAmount(abs(raw_amount))
         entry_type = csv_row['Transaction Type']
-        # BlockFI doesn't provide information about fees
-        fee = Fee(ZERO)
-        fee_asset = A_USD  # Can be whatever
 
         if entry_type in {'Deposit', 'Wire Deposit', 'ACH Deposit'}:
-            asset_movement = AssetMovement(
+            self.add_history_events(write_cursor, [AssetMovement(
                 location=Location.BLOCKFI,
-                category=AssetMovementCategory.DEPOSIT,
-                address=None,
-                transaction_id=None,
-                timestamp=timestamp,
-                asset=asset,
-                amount=abs_amount,
-                fee=fee,
-                fee_asset=fee_asset,
-                link='',
-            )
-            self.add_asset_movement(write_cursor, asset_movement)
-        elif entry_type in {'Withdrawal', 'Wire Withdrawal', 'ACH Withdrawal'}:
-            asset_movement = AssetMovement(
-                location=Location.BLOCKFI,
-                category=AssetMovementCategory.WITHDRAWAL,
-                address=None,
-                transaction_id=None,
-                timestamp=timestamp,
-                asset=asset,
-                amount=abs_amount,
-                fee=fee,
-                fee_asset=fee_asset,
-                link='',
-            )
-            self.add_asset_movement(write_cursor, asset_movement)
-        elif entry_type == 'Withdrawal Fee':
-            event = HistoryEvent(
-                event_identifier=f'{BLOCKFI_PREFIX}{hash_csv_row(csv_row)}',
-                sequence_index=0,
+                event_type=HistoryEventType.DEPOSIT,
                 timestamp=ts_sec_to_ms(timestamp),
-                location=Location.BLOCKFI,
-                event_type=HistoryEventType.SPEND,
-                event_subtype=HistoryEventSubType.FEE,
-                balance=Balance(amount=abs_amount),
                 asset=asset,
-                notes=f'{entry_type} from BlockFi',
-            )
-            self.add_history_events(write_cursor, [event])
+                balance=Balance(abs_amount),
+            )])
+        elif entry_type in {'Withdrawal', 'Wire Withdrawal', 'ACH Withdrawal'}:
+            self.add_history_events(write_cursor, [AssetMovement(
+                location=Location.BLOCKFI,
+                event_type=HistoryEventType.WITHDRAWAL,
+                timestamp=ts_sec_to_ms(timestamp),
+                asset=asset,
+                balance=Balance(abs_amount),
+            )])
+        elif entry_type == 'Withdrawal Fee':
+            self.add_history_events(write_cursor, [AssetMovement(
+                location=Location.BLOCKFI,
+                event_type=HistoryEventType.WITHDRAWAL,
+                timestamp=ts_sec_to_ms(timestamp),
+                asset=asset,
+                balance=Balance(abs_amount),
+                is_fee=True,
+            )])
         elif entry_type in {'Interest Payment', 'Bonus Payment', 'Referral Bonus'}:
             event = HistoryEvent(
                 event_identifier=f'{BLOCKFI_PREFIX}{hash_csv_row(csv_row)}',
@@ -129,23 +109,13 @@ class BlockfiTransactionsImporter(BaseExchangeImporter):
             )
             self.add_history_events(write_cursor, [event])
         elif entry_type == 'Crypto Transfer':
-            category = (
-                AssetMovementCategory.WITHDRAWAL if raw_amount < ZERO
-                else AssetMovementCategory.DEPOSIT
-            )
-            asset_movement = AssetMovement(
+            self.add_history_events(write_cursor, [AssetMovement(
                 location=Location.BLOCKFI,
-                category=category,
-                address=None,
-                transaction_id=None,
-                timestamp=timestamp,
+                event_type=HistoryEventType.WITHDRAWAL if raw_amount < ZERO else HistoryEventType.DEPOSIT,  # noqa: E501
+                timestamp=ts_sec_to_ms(timestamp),
                 asset=asset,
-                amount=abs_amount,
-                fee=fee,
-                fee_asset=fee_asset,
-                link='',
-            )
-            self.add_asset_movement(write_cursor, asset_movement)
+                balance=Balance(abs_amount),
+            )])
         elif entry_type == 'Trade':
             raise SkippedCSVEntry('Entry is a trade.')
         else:
