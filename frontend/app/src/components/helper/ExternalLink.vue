@@ -14,15 +14,15 @@ const props = withDefaults(
     premium?: boolean;
   }>(),
   {
-    url: undefined,
-    truncate: false,
-    text: '',
     custom: false,
     premium: false,
+    text: '',
+    truncate: false,
+    url: undefined,
   },
 );
 
-const { url, truncate, text } = toRefs(props);
+const { text, truncate, url } = toRefs(props);
 const { isPackaged } = useInterop();
 
 const { href, linkTarget, onLinkClick } = useLinks(url);

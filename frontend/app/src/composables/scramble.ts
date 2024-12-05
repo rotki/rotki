@@ -1,4 +1,5 @@
 import { findAddressKnownPrefix } from '@/utils/truncate';
+import { useSessionSettingsStore } from '@/store/settings/session';
 import type { ComputedRef } from 'vue';
 
 interface UseScrambleReturn {
@@ -15,8 +16,8 @@ export function useScramble(): UseScrambleReturn {
 
   const {
     scrambleData: scrambleSetting,
-    shouldShowAmount,
     scrambleMultiplier,
+    shouldShowAmount,
   } = storeToRefs(useSessionSettingsStore());
 
   const scrambleData = logicOr(scrambleSetting, logicNot(shouldShowAmount));
@@ -85,11 +86,11 @@ export function useScramble(): UseScrambleReturn {
   };
 
   return {
-    scrambleData,
-    shouldShowAmount,
-    scrambleInteger,
-    scrambleIdentifier,
     scrambleAddress,
+    scrambleData,
+    scrambleIdentifier,
+    scrambleInteger,
     scrambleTimestamp,
+    shouldShowAmount,
   };
 }

@@ -5,6 +5,9 @@ import { Section } from '@/types/status';
 import { ProtocolVersion } from '@/types/defi';
 import { AaveEarnedDetails, CompoundLendingDetails } from '@/premium/premium';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
+import { useDefiStore } from '@/store/defi';
+import { useAaveStore } from '@/store/defi/aave';
+import { useStatusStore } from '@/store/status';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 
 const section = Section.DEFI_LENDING;
@@ -18,7 +21,7 @@ const selectedAccounts = ref<BlockchainAccount<AddressData>[]>([]);
 const protocol = ref<DefiProtocol>();
 const premium = usePremium();
 const route = useRoute();
-const { shouldShowLoadingScreen, isLoading } = useStatusStore();
+const { isLoading, shouldShowLoadingScreen } = useStatusStore();
 
 const defiStore = useDefiStore();
 const defiLending = useDefiLending();

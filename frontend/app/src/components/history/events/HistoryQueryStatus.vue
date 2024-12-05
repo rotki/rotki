@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { TaskType } from '@/types/task-type';
+import { useTaskStore } from '@/store/tasks';
+import { useHistoryStore } from '@/store/history';
 import type {
   EvmTransactionQueryData,
   HistoryEventsQueryData,
@@ -15,35 +17,35 @@ const props = withDefaults(defineProps<{
   locations?: string[];
   decoding: boolean;
 }>(), {
-  onlyChains: () => [],
-  locations: () => [],
   loading: false,
+  locations: () => [],
+  onlyChains: () => [],
 });
 
 const emit = defineEmits<{
   'show:dialog': [type: 'decode' | 'protocol-refresh'];
 }>();
 
-const { onlyChains, locations } = toRefs(props);
+const { locations, onlyChains } = toRefs(props);
 
 const { t } = useI18n();
 
 const { resetUndecodedTransactionsStatus } = useHistoryStore();
-const { receivingProtocolCacheStatus, protocolCacheStatus } = storeToRefs(useHistoryStore());
+const { protocolCacheStatus, receivingProtocolCacheStatus } = storeToRefs(useHistoryStore());
 const { decodingStatus } = storeToRefs(useHistoryStore());
 
 const {
-  sortedQueryStatus: transactions,
   getKey: getTransactionKey,
   isQueryFinished: isTransactionQueryFinished,
   resetQueryStatus: resetTransactionsQueryStatus,
+  sortedQueryStatus: transactions,
 } = useTransactionQueryStatus(onlyChains);
 
 const {
-  sortedQueryStatus: events,
   getKey: getEventKey,
   isQueryFinished: isEventQueryFinished,
   resetQueryStatus: resetEventsQueryStatus,
+  sortedQueryStatus: events,
 } = useEventsQueryStatus(locations);
 const { isTaskRunning } = useTaskStore();
 

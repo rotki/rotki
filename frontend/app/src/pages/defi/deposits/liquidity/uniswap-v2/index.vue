@@ -4,6 +4,8 @@ import { UniswapDetails } from '@/premium/premium';
 import { Module } from '@/types/modules';
 import { Section } from '@/types/status';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
+import { useUniswapStore } from '@/store/defi/uniswap';
+import { useStatusStore } from '@/store/status';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 
 const modules = [Module.UNISWAP];
@@ -14,7 +16,7 @@ const selectedPools = ref<string[]>([]);
 
 const store = useUniswapStore();
 
-const { fetchEvents, fetchV2Balances: fetchBalances, uniswapV2Balances: uniswapBalances, uniswapPoolProfit } = store;
+const { fetchEvents, fetchV2Balances: fetchBalances, uniswapPoolProfit, uniswapV2Balances: uniswapBalances } = store;
 
 const { uniswapV2Addresses: addresses, uniswapV2PoolAssets: poolAssets } = storeToRefs(store);
 

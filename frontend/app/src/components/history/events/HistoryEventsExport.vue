@@ -2,6 +2,9 @@
 import { type NotificationPayload, type SemiPartial, Severity } from '@rotki/common';
 import { TaskType } from '@/types/task-type';
 import { isTaskCancelled } from '@/utils';
+import { useNotificationsStore } from '@/store/notifications';
+import { useConfirmStore } from '@/store/confirm';
+import { useTaskStore } from '@/store/tasks';
 import type { TaskMeta } from '@/types/task';
 import type { HistoryEventRequestPayload } from '@/types/history/events';
 
@@ -15,7 +18,7 @@ const { t } = useI18n();
 
 const { appSession, openDirectory } = useInterop();
 
-const { exportHistoryEventsCSV, downloadHistoryEventsCSV } = useHistoryEventsApi();
+const { downloadHistoryEventsCSV, exportHistoryEventsCSV } = useHistoryEventsApi();
 
 const { awaitTask, isTaskRunning } = useTaskStore();
 const { notify } = useNotificationsStore();
@@ -36,8 +39,8 @@ async function createCsv(directoryPath?: string): Promise<{ result: boolean | { 
       return null;
 
     return {
-      result: false,
       message: error.message,
+      result: false,
     };
   }
 }
@@ -57,18 +60,18 @@ async function exportCSV(): Promise<void> {
     if (response === null)
       return;
 
-    const { result, message: taskMessage } = response;
+    const { message: taskMessage, result } = response;
 
     if (appSession || !result) {
       message = {
-        title: t('actions.history_events_export.title'),
+        display: true,
         message: result
           ? t('actions.history_events_export.message.success')
           : t('actions.history_events_export.message.failure', {
             description: taskMessage,
           }),
         severity: result ? Severity.INFO : Severity.ERROR,
-        display: true,
+        title: t('actions.history_events_export.title'),
       };
     }
     else if (result !== true && 'filePath' in result) {
@@ -77,12 +80,12 @@ async function exportCSV(): Promise<void> {
   }
   catch (error: any) {
     message = {
-      title: t('actions.history_events_export.title'),
+      display: true,
       message: t('actions.history_events_export.message.failure', {
         description: error.message,
       }),
       severity: Severity.ERROR,
-      display: true,
+      title: t('actions.history_events_export.title'),
     };
   }
 
@@ -95,8 +98,8 @@ const { show } = useConfirmStore();
 function showConfirmation() {
   show(
     {
-      title: t('common.actions.export_csv'),
       message: t('transactions.events.export.confirmation_message'),
+      title: t('common.actions.export_csv'),
       type: 'info',
     },
     exportCSV,

@@ -9,6 +9,11 @@ import { balanceUsdValueSum, sum } from '@/utils/balances';
 import { zeroBalance } from '@/utils/bignumbers';
 import { uniqueStrings } from '@/utils/data';
 import { truncateAddress } from '@/utils/truncate';
+import { useCompoundStore } from '@/store/defi/compound';
+import { useMakerDaoStore } from '@/store/defi/makerdao';
+import { useAaveStore } from '@/store/defi/aave';
+import { useYearnStore } from '@/store/defi/yearn';
+import { useLiquityStore } from '@/store/defi/liquity';
 import type { AaveLoan, BaseDefiBalance, DefiBalance, LoanSummary } from '@/types/defi/lending';
 import type { CompoundBalances, CompoundLoan } from '@/types/defi/compound';
 import type { MakerDAOVaultModel } from '@/types/defi/maker';
@@ -40,12 +45,12 @@ export function useDefiLending(): UseDefiLendingReturn {
   const compoundStore = useCompoundStore();
   const makerDaoStore = useMakerDaoStore();
 
-  const { history: aaveHistory, balances: aaveBalances } = storeToRefs(aaveStore);
-  const { history: compoundHistory, balances: compoundBalances } = storeToRefs(compoundStore);
-  const { dsrHistory, dsrBalances, makerDAOVaults, makerDAOVaultDetails } = storeToRefs(makerDaoStore);
+  const { balances: aaveBalances, history: aaveHistory } = storeToRefs(aaveStore);
+  const { balances: compoundBalances, history: compoundHistory } = storeToRefs(compoundStore);
+  const { dsrBalances, dsrHistory, makerDAOVaultDetails, makerDAOVaults } = storeToRefs(makerDaoStore);
   const { balances: liquityBalances } = storeToRefs(liquityStore);
 
-  const { setStatus, fetchDisabled } = useStatusUpdater(Section.DEFI_LENDING);
+  const { fetchDisabled, setStatus } = useStatusUpdater(Section.DEFI_LENDING);
   const { scrambleAddress, scrambleIdentifier } = useScramble();
 
   const { yearnVaultsAssets } = yearnStore;
@@ -75,11 +80,11 @@ export function useDefiLending(): UseDefiLendingReturn {
           const formattedAddress = truncateAddress(scrambleAddress(address), 6);
 
           loans.push({
+            asset,
             identifier: `${symbol} - ${address}`,
             label: `${symbol} - ${formattedAddress}`,
-            protocol: DefiProtocol.AAVE,
             owner: address,
-            asset,
+            protocol: DefiProtocol.AAVE,
           });
         }
       }
@@ -99,11 +104,11 @@ export function useDefiLending(): UseDefiLendingReturn {
           const formattedAddress = truncateAddress(scrambleAddress(address), 6);
 
           loans.push({
+            asset,
             identifier: `${symbol} - ${address}`,
             label: `${symbol} - ${formattedAddress}`,
-            protocol: DefiProtocol.COMPOUND,
             owner: address,
-            asset,
+            protocol: DefiProtocol.COMPOUND,
           });
         }
       }
@@ -120,11 +125,11 @@ export function useDefiLending(): UseDefiLendingReturn {
           const formattedAddress = truncateAddress(scrambleAddress(address), 6);
 
           return {
+            asset: '',
             identifier: `Trove ${troveId} - ${address}`,
             label: `Trove ${formattedTroveId} - ${formattedAddress}`,
-            protocol: DefiProtocol.LIQUITY,
             owner: address,
-            asset: '',
+            protocol: DefiProtocol.LIQUITY,
           };
         }),
       );
@@ -167,9 +172,9 @@ export function useDefiLending(): UseDefiLendingReturn {
       const asset = loan.asset ?? '';
 
       let selectedLoan = {
+        balance: zeroBalance(),
         stableApr: '-',
         variableApr: '-',
-        balance: zeroBalance(),
       };
 
       let lending: AaveLending = {};
@@ -182,7 +187,7 @@ export function useDefiLending(): UseDefiLendingReturn {
       const lost: Writeable<AaveHistoryTotal> = {};
       const liquidationEarned: Writeable<AaveHistoryTotal> = {};
       if (perAddressAaveHistory[owner]) {
-        const { totalLost, totalEarnedLiquidations } = perAddressAaveHistory[owner];
+        const { totalEarnedLiquidations, totalLost } = perAddressAaveHistory[owner];
 
         if (totalLost[asset])
           lost[asset] = totalLost[asset];
@@ -193,21 +198,21 @@ export function useDefiLending(): UseDefiLendingReturn {
 
       return {
         asset,
-        owner,
-        protocol: loan.protocol,
-        identifier: loan.identifier,
-        stableApr: selectedLoan.stableApr,
-        variableApr: selectedLoan.variableApr,
-        debt: {
-          amount: selectedLoan.balance.amount,
-          usdValue: selectedLoan.balance.usdValue,
-        },
         collateral: Object.keys(lending).map(asset => ({
           asset,
           ...lending[asset].balance,
         })),
-        totalLost: lost,
+        debt: {
+          amount: selectedLoan.balance.amount,
+          usdValue: selectedLoan.balance.usdValue,
+        },
+        identifier: loan.identifier,
         liquidationEarned,
+        owner,
+        protocol: loan.protocol,
+        stableApr: selectedLoan.stableApr,
+        totalLost: lost,
+        variableApr: selectedLoan.variableApr,
       } satisfies AaveLoan;
     }
 
@@ -235,13 +240,13 @@ export function useDefiLending(): UseDefiLendingReturn {
       }
 
       return {
+        apy,
         asset,
+        collateral,
+        debt,
+        identifier: loan.identifier,
         owner,
         protocol: loan.protocol,
-        identifier: loan.identifier,
-        apy,
-        debt,
-        collateral,
       } satisfies CompoundLoan;
     }
 
@@ -250,9 +255,9 @@ export function useDefiLending(): UseDefiLendingReturn {
       const { owner } = loan;
 
       return {
+        balance: get(liquityBalances).balances[owner],
         owner,
         protocol: loan.protocol,
-        balance: get(liquityBalances).balances[owner],
       } satisfies LiquityLoan;
     }
 
@@ -327,9 +332,9 @@ export function useDefiLending(): UseDefiLendingReturn {
         const format = isBigNumber ? currentDsr.toFormat(2) : 0;
         balances.push({
           address,
-          protocol: DefiProtocol.MAKERDAO_DSR,
           asset: assetSymbolToIdentifierMap.DAI,
           effectiveInterestRate: `${format}%`,
+          protocol: DefiProtocol.MAKERDAO_DSR,
           ...balance,
         });
       }
@@ -347,9 +352,9 @@ export function useDefiLending(): UseDefiLendingReturn {
           const aaveAsset = lending[asset];
           balances.push({
             address,
-            protocol: DefiProtocol.AAVE,
             asset,
             effectiveInterestRate: aaveAsset.apy,
+            protocol: DefiProtocol.AAVE,
             ...aaveAsset.balance,
           });
         }
@@ -367,9 +372,9 @@ export function useDefiLending(): UseDefiLendingReturn {
           const assetDetails = lending[asset];
           balances.push({
             address,
-            protocol: DefiProtocol.COMPOUND,
             asset,
             effectiveInterestRate: assetDetails.apy ?? '0%',
+            protocol: DefiProtocol.COMPOUND,
             ...assetDetails.balance,
           });
         }
@@ -483,18 +488,18 @@ export function useDefiLending(): UseDefiLendingReturn {
       .map(({ effectiveInterestRate, usdValue }) => {
         const n = Number.parseFloat(effectiveInterestRate);
         return {
-          weight: usdValue.multipliedBy(n),
           usdValue,
+          weight: usdValue.multipliedBy(n),
         };
       })
       .reduce(
         (sum, current) => ({
-          weight: sum.weight.plus(current.weight),
           usdValue: sum.usdValue.plus(current.usdValue),
+          weight: sum.weight.plus(current.weight),
         }),
         {
-          weight: Zero,
           usdValue: Zero,
+          weight: Zero,
         },
       );
 
@@ -510,7 +515,7 @@ export function useDefiLending(): UseDefiLendingReturn {
           usdValue: BigNumber;
         }[] = [];
 
-        get(yearnVaultsAssets(addresses, version)).forEach(({ underlyingValue: { usdValue }, roi }) => {
+        get(yearnVaultsAssets(addresses, version)).forEach(({ roi, underlyingValue: { usdValue } }) => {
           if (roi && usdValue.gt(Zero)) {
             filtered.push({
               usdValue,
@@ -521,10 +526,10 @@ export function useDefiLending(): UseDefiLendingReturn {
 
         return filtered.reduce(
           ({ usdValue, weight: sWeight }, current) => ({
-            weight: sWeight.plus(current.weight),
             usdValue: usdValue.plus(current.usdValue),
+            weight: sWeight.plus(current.weight),
           }),
-          { weight: Zero, usdValue: Zero },
+          { usdValue: Zero, weight: Zero },
         );
       });
 
@@ -633,47 +638,47 @@ export function useDefiLending(): UseDefiLendingReturn {
     const aggregated: BaseDefiBalance[] = [];
 
     for (const asset in balances) {
-      const { weight, amount, usdValue } = balances[asset]
-        .map(({ effectiveInterestRate, usdValue, amount }) => ({
-          weight: usdValue.multipliedBy(Number.parseFloat(effectiveInterestRate)),
-          usdValue,
+      const { amount, usdValue, weight } = balances[asset]
+        .map(({ amount, effectiveInterestRate, usdValue }) => ({
           amount,
+          usdValue,
+          weight: usdValue.multipliedBy(Number.parseFloat(effectiveInterestRate)),
         }))
         .reduce(
           (sum, current) => ({
-            weight: sum.weight.plus(current.weight),
-            usdValue: sum.usdValue.plus(current.usdValue),
             amount: sum.amount.plus(current.amount),
+            usdValue: sum.usdValue.plus(current.usdValue),
+            weight: sum.weight.plus(current.weight),
           }),
           {
-            weight: Zero,
-            usdValue: Zero,
             amount: Zero,
+            usdValue: Zero,
+            weight: Zero,
           },
         );
 
       const effectiveInterestRate = weight.div(usdValue);
 
       aggregated.push({
-        asset,
         amount,
-        usdValue,
+        asset,
         effectiveInterestRate: effectiveInterestRate.isNaN() ? '0.00%' : `${effectiveInterestRate.toFormat(2)}%`,
+        usdValue,
       });
     }
     return aggregated;
   });
 
   return {
-    effectiveInterestRate,
-    totalLendingDeposit,
-    totalUsdEarned,
     aggregatedLendingBalances,
+    effectiveInterestRate,
+    fetchBorrowing,
+    fetchLending,
+    lendingBalances,
     loan,
     loans,
     loanSummary,
-    lendingBalances,
-    fetchLending,
-    fetchBorrowing,
+    totalLendingDeposit,
+    totalUsdEarned,
   };
 }

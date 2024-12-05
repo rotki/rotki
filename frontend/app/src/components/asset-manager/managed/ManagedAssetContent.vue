@@ -1,5 +1,9 @@
 <script setup lang="ts">
 import { isEqual, keyBy } from 'lodash-es';
+import { useAssetCacheStore } from '@/store/assets/asset-cache';
+import { useIgnoredAssetsStore } from '@/store/assets/ignored';
+import { useConfirmStore } from '@/store/confirm';
+import { useMessageStore } from '@/store/message';
 import type { Nullable, SupportedAsset } from '@rotki/common';
 import type { AssetRequestPayload, IgnoredAssetsHandlingType } from '@/types/asset';
 import type { Filters, Matcher } from '@/composables/filters/assets';
@@ -22,12 +26,12 @@ const ignoredFilter = ref<{
   onlyShowWhitelisted: boolean;
   ignoredAssetsHandling: IgnoredAssetsHandlingType;
 }>({
+  ignoredAssetsHandling: 'exclude',
   onlyShowOwned: false,
   onlyShowWhitelisted: false,
-  ignoredAssetsHandling: 'exclude',
 });
 
-const { expanded, selected, editableItem } = useCommonTableProps<SupportedAsset>();
+const { editableItem, expanded, selected } = useCommonTableProps<SupportedAsset>();
 
 const extraParams = computed(() => {
   const { ignoredAssetsHandling, onlyShowOwned, onlyShowWhitelisted } = get(ignoredFilter);
@@ -40,7 +44,7 @@ const extraParams = computed(() => {
 
 const router = useRouter();
 const route = useRoute();
-const { queryAllAssets, deleteAsset } = useAssetManagementApi();
+const { deleteAsset, queryAllAssets } = useAssetManagementApi();
 const { setMessage } = useMessageStore();
 const { show } = useConfirmStore();
 const { ignoredAssets } = storeToRefs(useIgnoredAssetsStore());
@@ -54,33 +58,33 @@ async function confirmDelete(toDeleteAsset: SupportedAsset) {
 }
 
 const {
-  filters,
-  matchers,
-  state: assets,
-  isLoading: loading,
   fetchData,
+  filters,
+  isLoading: loading,
+  matchers,
+  pagination,
   setPage,
   sort,
-  pagination,
+  state: assets,
 } = usePaginationFilters<
   SupportedAsset,
   AssetRequestPayload,
   Filters,
   Matcher
 >(queryAllAssets, {
-  history: get(mainPage) ? 'router' : false,
-  filterSchema: useAssetFilter,
-  onUpdateFilters(query) {
-    set(ignoredFilter, {
-      onlyShowOwned: query.showUserOwnedAssetsOnly === 'true',
-      onlyShowWhitelisted: query.showWhitelistedAssetsOnly === 'true',
-      ignoredAssetsHandling: query.ignoredAssetsHandling || 'exclude',
-    });
-  },
-  extraParams,
   defaultSortBy: {
     column: 'symbol',
     direction: 'asc',
+  },
+  extraParams,
+  filterSchema: useAssetFilter,
+  history: get(mainPage) ? 'router' : false,
+  onUpdateFilters(query) {
+    set(ignoredFilter, {
+      ignoredAssetsHandling: query.ignoredAssetsHandling || 'exclude',
+      onlyShowOwned: query.showUserOwnedAssetsOnly === 'true',
+      onlyShowWhitelisted: query.showWhitelistedAssetsOnly === 'true',
+    });
   },
 });
 
@@ -149,10 +153,10 @@ const selectedRows = computed({
 function showDeleteConfirmation(item: SupportedAsset) {
   show(
     {
-      title: t('asset_management.confirm_delete.title'),
       message: t('asset_management.confirm_delete.message', {
         asset: item?.symbol ?? '',
       }),
+      title: t('asset_management.confirm_delete.title'),
     },
     async () => await confirmDelete(item),
   );

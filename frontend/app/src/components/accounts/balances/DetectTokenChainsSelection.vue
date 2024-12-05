@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { TaskType } from '@/types/task-type';
+import { useTaskStore } from '@/store/tasks';
 
 const { t } = useI18n();
 

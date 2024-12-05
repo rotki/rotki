@@ -28,21 +28,21 @@ function sortBy(a: any, b: any, asc: boolean): number {
 }
 
 function filterBalance(balance: ManualBalance, filters: Filters): boolean {
-  const { tags: tagFilter, label: labelFilter, asset: assetFilter, location: locationFilter } = filters;
+  const { asset: assetFilter, label: labelFilter, location: locationFilter, tags: tagFilter } = filters;
 
   const matches: { name: keyof typeof filters; matches: boolean }[] = [];
 
   if (tagFilter && tagFilter.length > 0)
-    matches.push({ name: 'tags', matches: balance.tags?.some(tag => tagFilter.includes(tag)) ?? false });
+    matches.push({ matches: balance.tags?.some(tag => tagFilter.includes(tag)) ?? false, name: 'tags' });
 
   if (labelFilter)
-    matches.push({ name: 'label', matches: includes(balance.label, labelFilter) });
+    matches.push({ matches: includes(balance.label, labelFilter), name: 'label' });
 
   if (locationFilter)
-    matches.push({ name: 'location', matches: includes(balance.location, locationFilter) });
+    matches.push({ matches: includes(balance.location, locationFilter), name: 'location' });
 
   if (assetFilter)
-    matches.push({ name: 'asset', matches: balance.asset.trim() === assetFilter.trim() });
+    matches.push({ matches: balance.asset.trim() === assetFilter.trim(), name: 'asset' });
 
   return matches.length > 0 && matches.every(match => match.matches);
 }
@@ -54,7 +54,7 @@ export function sortAndFilterManualBalance(
     resolveAssetPrice: (asset: string) => BigNumber | undefined;
   },
 ): Collection<ManualBalanceWithPrice> {
-  const { offset, limit, orderByAttributes = [], ascending = [], tags, label, asset, location } = params;
+  const { ascending = [], asset, label, limit, location, offset, orderByAttributes = [], tags } = params;
 
   const hasFilter = !!label || !!asset || !!location || (!!tags && tags.length > 0);
 
@@ -62,10 +62,10 @@ export function sortAndFilterManualBalance(
     ? balances
     : balances.filter(balance =>
       filterBalance(balance, {
-        tags,
-        label,
         asset,
+        label,
         location,
+        tags,
       }),
     );
 
@@ -97,9 +97,9 @@ export function sortAndFilterManualBalance(
       ...balance,
       usdPrice: resolvers.resolveAssetPrice(balance.asset),
     })),
+    found: sorted.length,
     limit: -1,
     total: balances.length,
-    found: sorted.length,
     totalUsdValue: total,
   };
 }

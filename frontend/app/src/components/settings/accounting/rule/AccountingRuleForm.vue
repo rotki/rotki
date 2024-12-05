@@ -6,6 +6,7 @@ import { type AccountingRuleEntry, AccountingTreatment } from '@/types/settings/
 import { toMessages } from '@/utils/validation';
 import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
 import { getPlaceholderRule } from '@/utils/settings';
+import { useMessageStore } from '@/store/message';
 
 const props = withDefaults(
   defineProps<{
@@ -35,15 +36,15 @@ const counterparty = computed<string>({
 const externalServerValidation = () => true;
 
 const rules = {
-  eventType: { required },
-  eventSubtype: { required },
-  counterparty: { externalServerValidation },
   accountingTreatment: { externalServerValidation },
+  counterparty: { externalServerValidation },
+  eventSubtype: { required },
+  eventType: { required },
 };
 
 const { t } = useI18n();
 
-const { setValidation, setSubmitFunc } = useAccountingRuleForm();
+const { setSubmitFunc, setValidation } = useAccountingRuleForm();
 
 const errorMessages = ref<ValidationErrors>({});
 
@@ -98,9 +99,9 @@ async function save() {
 
     if (typeof errors === 'string') {
       setMessage({
-        title: errorTitle,
         description: errors,
         success: false,
+        title: errorTitle,
       });
     }
     else {

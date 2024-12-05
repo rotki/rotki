@@ -15,9 +15,9 @@ withDefaults(
   }>(),
   {
     logo: 'app',
-    uniqueKey: undefined,
     size: undefined,
     text: false,
+    uniqueKey: undefined,
   },
 );
 

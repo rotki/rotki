@@ -20,7 +20,7 @@ const emit = defineEmits<{
 
 const { editableItem, loading } = toRefs(props);
 
-const { openDialog, submitting, closeDialog, trySubmit, stateUpdated } = useCalendarEventForm();
+const { closeDialog, openDialog, stateUpdated, submitting, trySubmit } = useCalendarEventForm();
 
 const { t } = useI18n();
 

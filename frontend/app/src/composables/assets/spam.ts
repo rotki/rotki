@@ -1,3 +1,6 @@
+import { useIgnoredAssetsStore } from '@/store/assets/ignored';
+import { useWhitelistedAssetsStore } from '@/store/assets/whitelisted';
+import { useNotificationsStore } from '@/store/notifications';
 import type { ActionStatus } from '@/types/action';
 
 interface UseSpamAssetReturn {
@@ -26,13 +29,13 @@ export function useSpamAsset(): UseSpamAssetReturn {
     }
     catch (error: any) {
       notify({
-        title: t('ignore.spam.failed.mark_title'),
+        display: true,
         message: t('ignore.spam.failed.mark_message', {
           message: error.message,
         }),
-        display: true,
+        title: t('ignore.spam.failed.mark_title'),
       });
-      return { success: false, message: error.message };
+      return { message: error.message, success: false };
     }
   };
 
@@ -45,13 +48,13 @@ export function useSpamAsset(): UseSpamAssetReturn {
     }
     catch (error: any) {
       notify({
-        title: t('ignore.spam.failed.unmark_title'),
+        display: true,
         message: t('ignore.spam.failed.unmark_message', {
           message: error.message,
         }),
-        display: true,
+        title: t('ignore.spam.failed.unmark_title'),
       });
-      return { success: false, message: error.message };
+      return { message: error.message, success: false };
     }
   };
 

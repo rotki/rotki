@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import { Defaults } from '@/data/defaults';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 
 const { t } = useI18n();
 const dotRpcEndpoint = ref(Defaults.DOT_RPC_ENDPOINT);

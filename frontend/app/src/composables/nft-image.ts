@@ -59,8 +59,8 @@ export function useNftImage(mediaUrl: Ref<string | null>): UseNftImageReturnType
   });
 
   return {
-    shouldRender,
     isVideo,
     renderedMedia,
+    shouldRender,
   };
 }

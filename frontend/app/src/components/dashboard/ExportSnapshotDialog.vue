@@ -2,9 +2,13 @@
 import dayjs from 'dayjs';
 import { downloadFileByBlobResponse } from '@/utils/download';
 import { bigNumberifyFromRef } from '@/utils/bignumbers';
+import { useStatisticsStore } from '@/store/statistics';
+import { useConfirmStore } from '@/store/confirm';
+import { useMessageStore } from '@/store/message';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 import type { BigNumber, Message } from '@rotki/common';
 
-const display = defineModel<boolean>({ required: true, default: false });
+const display = defineModel<boolean>({ default: false, required: true });
 
 const props = withDefaults(
   defineProps<{
@@ -12,14 +16,14 @@ const props = withDefaults(
     balance?: number;
   }>(),
   {
-    timestamp: 0,
     balance: 0,
+    timestamp: 0,
   },
 );
 
 const { t } = useI18n();
 
-const { timestamp, balance } = toRefs(props);
+const { balance, timestamp } = toRefs(props);
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
 const editMode = ref<boolean>(false);
@@ -61,11 +65,11 @@ async function exportSnapshotCSV() {
       });
 
       message = {
-        title: t('dashboard.snapshot.download.message.title'),
         description: success
           ? t('dashboard.snapshot.download.message.success')
           : t('dashboard.snapshot.download.message.failure'),
         success,
+        title: t('dashboard.snapshot.download.message.title'),
       };
 
       set(display, false);
@@ -76,9 +80,9 @@ async function exportSnapshotCSV() {
   }
   catch (error: any) {
     message = {
-      title: t('dashboard.snapshot.download.message.title'),
       description: error.message,
       success: false,
+      title: t('dashboard.snapshot.download.message.title'),
     };
   }
 
@@ -103,11 +107,11 @@ async function deleteSnapshot() {
     });
 
     message = {
-      title: t('dashboard.snapshot.delete.message.title'),
       description: success
         ? t('dashboard.snapshot.delete.message.success')
         : t('dashboard.snapshot.delete.message.failure'),
       success,
+      title: t('dashboard.snapshot.delete.message.title'),
     };
 
     set(display, false);
@@ -115,9 +119,9 @@ async function deleteSnapshot() {
   }
   catch (error: any) {
     message = {
-      title: t('dashboard.snapshot.download.message.title'),
       description: error.message,
       success: false,
+      title: t('dashboard.snapshot.download.message.title'),
     };
   }
 
@@ -134,8 +138,8 @@ const { show } = useConfirmStore();
 function showDeleteConfirmation() {
   show(
     {
-      title: t('dashboard.snapshot.delete.dialog.title'),
       message: t('dashboard.snapshot.delete.dialog.message'),
+      title: t('dashboard.snapshot.delete.dialog.title'),
     },
     deleteSnapshot,
   );

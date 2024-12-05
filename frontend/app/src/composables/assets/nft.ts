@@ -1,6 +1,8 @@
 import { NftResponse } from '@/types/nfts';
 import { TaskType } from '@/types/task-type';
 import { getDomain } from '@/utils/url';
+import { useTaskStore } from '@/store/tasks';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import type { ActionResult } from '@rotki/common';
 import type { TaskMeta } from '@/types/task';
 
@@ -26,14 +28,14 @@ export function useNfts(): UseNftsReturn {
         title: t('actions.session.fetch_nfts.task.title'),
       });
       return {
-        result: NftResponse.parse(result),
         message: '',
+        result: NftResponse.parse(result),
       };
     }
     catch (error: any) {
       return {
-        result: null,
         message: error.message,
+        result: null,
       };
     }
   };

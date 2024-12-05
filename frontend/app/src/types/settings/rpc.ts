@@ -2,13 +2,13 @@ import { z } from 'zod';
 import type { Blockchain } from '@rotki/common';
 
 const EvmRpcNode = z.object({
-  identifier: z.number(),
-  name: z.string().min(1),
-  endpoint: z.string(),
-  owned: z.boolean(),
-  weight: z.preprocess(weight => Number.parseFloat(weight as string), z.number().nonnegative().max(100)),
   active: z.boolean(),
   blockchain: z.string().min(1),
+  endpoint: z.string(),
+  identifier: z.number(),
+  name: z.string().min(1),
+  owned: z.boolean(),
+  weight: z.preprocess(weight => Number.parseFloat(weight as string), z.number().nonnegative().max(100)),
 });
 
 export type EvmRpcNode = z.infer<typeof EvmRpcNode>;
@@ -19,13 +19,13 @@ export type EvmRpcNodeList = z.infer<typeof EvmRpcNodeList>;
 
 export function getPlaceholderNode(chain: Blockchain): EvmRpcNode {
   return {
+    active: true,
+    blockchain: chain,
+    endpoint: '',
     identifier: -1,
     name: '',
-    endpoint: '',
-    weight: 0,
-    active: true,
     owned: true,
-    blockchain: chain,
+    weight: 0,
   };
 }
 

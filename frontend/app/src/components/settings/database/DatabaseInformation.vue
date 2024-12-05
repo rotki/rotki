@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { logger } from '@/utils/logging';
 import { size } from '@/utils/data';
+import { useNotificationsStore } from '@/store/notifications';
 import type { DatabaseInfo } from '@/types/backup';
 
 interface UserDbInfo {
@@ -46,35 +47,35 @@ const userDb = computed<UserDbInfo>(() => {
 const globalDb = computed<GlobalDbInfo>(() => {
   const info = get(backupInfo);
   return {
-    schema: info ? info.globaldb.globaldbSchemaVersion.toString() : '0',
     assets: info ? info.globaldb.globaldbAssetsVersion.toString() : '0',
+    schema: info ? info.globaldb.globaldbSchemaVersion.toString() : '0',
   };
 });
 
 const userDetails = computed(() => [
   {
-    value: get(directory),
-    label: t('database_settings.database_info.labels.directory'),
     copiable: true,
+    label: t('database_settings.database_info.labels.directory'),
+    value: get(directory),
   },
   {
-    value: get(userDb).version,
     label: t('database_settings.database_info.labels.userdb_version'),
+    value: get(userDb).version,
   },
   {
-    value: get(userDb).size,
     label: t('database_settings.database_info.labels.userdb_size'),
+    value: get(userDb).size,
   },
 ]);
 
 const globalDetails = computed(() => [
   {
-    value: get(globalDb).schema,
     label: t('database_settings.database_info.labels.globaldb_schema'),
+    value: get(globalDb).schema,
   },
   {
-    value: get(globalDb).assets,
     label: t('database_settings.database_info.labels.globaldb_assets'),
+    value: get(globalDb).assets,
   },
 ]);
 
@@ -87,10 +88,10 @@ async function loadInfo() {
     logger.error(error);
     notify({
       display: true,
-      title: t('database_backups.load_error.title'),
       message: t('database_backups.load_error.message', {
         message: error.message,
       }),
+      title: t('database_backups.load_error.title'),
     });
   }
   finally {

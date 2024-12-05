@@ -1,10 +1,12 @@
 <script setup lang="ts">
+import { useGeneralSettingsStore } from '@/store/settings/general';
+
 withDefaults(
   defineProps<{
     dialog?: boolean;
     confirm?: boolean;
   }>(),
-  { dialog: false, confirm: false },
+  { confirm: false, dialog: false },
 );
 
 const value = ref(false);

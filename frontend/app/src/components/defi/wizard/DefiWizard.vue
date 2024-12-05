@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
+
 const { t } = useI18n();
 
 const step = ref<number>(1);

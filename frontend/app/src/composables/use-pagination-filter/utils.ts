@@ -47,7 +47,7 @@ export function parseQueryHistory<T extends NonNullable<unknown>>(query: Locatio
 }
 
 export function parseQueryPagination(query: LocationQuery, pagination: TablePaginationData): TablePaginationData {
-  const { page, limit } = HistoryPaginationSchema.parse(query);
+  const { limit, page } = HistoryPaginationSchema.parse(query);
 
   return {
     ...pagination,
@@ -81,8 +81,8 @@ export function applySortingDefaults<T extends NonNullable<unknown>>(sorting: Da
 
 export function applyPaginationDefaults(limit: number): TablePaginationData {
   return {
-    page: 1,
     limit,
+    page: 1,
     total: -1,
   };
 }
@@ -91,21 +91,21 @@ export function getApiSortingParams<T extends NonNullable<unknown>>(sorting: Sor
   if (Array.isArray(sorting)) {
     if (sorting.length === 0) {
       return {
-        orderByAttributes: ['timestamp'],
         ascending: [false],
+        orderByAttributes: ['timestamp'],
       };
     }
     else {
       return {
-        orderByAttributes: sorting.map(item => transformCase(item.column)),
         ascending: sorting.map(item => item.direction === 'asc'),
+        orderByAttributes: sorting.map(item => transformCase(item.column)),
       };
     }
   }
   else {
     return {
-      orderByAttributes: [transformCase(sorting.column)],
       ascending: [sorting.direction === 'asc'],
+      orderByAttributes: [transformCase(sorting.column)],
     };
   }
 }

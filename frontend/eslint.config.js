@@ -20,6 +20,7 @@ export default rotki({
   imports: {
     overrides: {
       'import/no-cycle': 'off',
+      'import/max-dependencies': ['warn', { max: 20 }],
     },
   },
   vueI18n: {
@@ -38,7 +39,7 @@ export default rotki({
     },
   },
 }, {
-  files: ['src/**/*.@(ts|vue|js)'],
+  files: ['**/src/**/*.@(ts|vue|js)'],
   rules: {
     'perfectionist/sort-objects': 'error',
   },

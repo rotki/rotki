@@ -1,4 +1,5 @@
 import { TaskType } from '@/types/task-type';
+import { useTaskStore } from '@/store/tasks';
 import type { ComputedRef, Ref } from 'vue';
 
 interface UseAccountLoadingReturn {
@@ -28,10 +29,10 @@ export const useAccountLoading = createSharedComposable((): UseAccountLoadingRet
   const loading: ComputedRef<boolean> = logicOr(isAccountOperationRunning(), pending, isQueryingBlockchain);
 
   return {
-    pending,
-    loading,
-    isQueryingBlockchain,
-    isBlockchainLoading,
     isAccountOperationRunning,
+    isBlockchainLoading,
+    isQueryingBlockchain,
+    loading,
+    pending,
   };
 });

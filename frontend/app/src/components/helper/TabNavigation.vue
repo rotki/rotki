@@ -10,8 +10,8 @@ withDefaults(
     plain?: boolean;
   }>(),
   {
-    hideRouterView: false,
     child: false,
+    hideRouterView: false,
     plain: false,
   },
 );

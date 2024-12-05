@@ -10,6 +10,7 @@ import { createAccountWithBalance } from '@/utils/blockchain/accounts/create';
 import { getAccountAddress, getAccountLabel } from '@/utils/blockchain/accounts/utils';
 import { assetSum } from '@/utils/calculation';
 import { uniqueStrings } from '@/utils/data';
+import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import type {
   AccountPayload,
   Accounts,
@@ -81,14 +82,14 @@ export const useBlockchainStore = defineStore('blockchain', () => {
       }
 
       return {
-        type: 'group',
-        data: accountsForAddress.length === 1 ? accountsForAddress[0].data : { type: 'address', address },
         category: getChainAccountType(chains[0]),
-        usdValue,
+        chains,
+        data: accountsForAddress.length === 1 ? accountsForAddress[0].data : { address, type: 'address' },
+        expansion: chains.length > 1 ? 'accounts' : (hasAssets ? 'assets' : undefined),
         label,
         tags: tags.length > 0 ? tags : undefined,
-        chains,
-        expansion: chains.length > 1 ? 'accounts' : (hasAssets ? 'assets' : undefined),
+        type: 'group',
+        usdValue,
       } satisfies BlockchainAccountGroupWithBalance;
     });
 
@@ -109,10 +110,10 @@ export const useBlockchainStore = defineStore('blockchain', () => {
         return {
           ...objectOmit(account, ['chain', 'groupId', 'groupHeader']),
           ...balance,
-          type: 'group',
-          chains: [account.chain],
           category: getChainAccountType(account.chain),
+          chains: [account.chain],
           expansion: groupAccounts.length > 0 ? 'accounts' : undefined,
+          type: 'group',
         } satisfies BlockchainAccountGroupWithBalance;
       });
     return [...groupHeaders, ...preGrouped];
@@ -135,8 +136,8 @@ export const useBlockchainStore = defineStore('blockchain', () => {
       .map(([chain, accounts]) => ({
         chain,
         children: [],
-        usdValue: sum(accounts),
         loading: false,
+        usdValue: sum(accounts),
       }))
       .filter(item => item.usdValue.gt(0))
       .sort((a, b) => sortDesc(a.usdValue, b.usdValue)),
@@ -359,32 +360,32 @@ export const useBlockchainStore = defineStore('blockchain', () => {
 
   return {
     accounts,
+    accountTags,
     addresses,
-    balances,
-    groups,
-    aggregatedTotals,
     aggregatedLiabilities,
+    aggregatedTotals,
     aggregatedTotalsWithFilter,
-    blockchainAccounts,
+    assetBreakdown,
+    balances,
     blockchainAccountList,
+    blockchainAccounts,
     blockchainTotals,
     fetchAccounts,
     fetchGroupAccounts,
-    getAccounts,
-    getBlockchainAccounts,
     getAccountByAddress,
     getAccountDetails,
-    getAddresses,
+    getAccounts,
     getAddressBalances,
-    assetBreakdown,
+    getAddresses,
+    getBlockchainAccounts,
+    groups,
     liabilityBreakdown,
-    updateAccounts,
-    updateAccountData,
-    updateBalances,
-    updatePrices,
     removeAccounts,
     removeTag,
-    accountTags,
+    updateAccountData,
+    updateAccounts,
+    updateBalances,
+    updatePrices,
   };
 });
 

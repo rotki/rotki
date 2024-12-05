@@ -10,17 +10,17 @@ export const MovementCategory = z.enum(['deposit', 'withdrawal']);
 export type MovementCategory = z.infer<typeof MovementCategory>;
 
 export const AssetMovement = z.object({
-  identifier: z.string(),
-  location: z.string(),
-  category: MovementCategory,
   address: z.string().nullable(),
-  transactionId: z.string().nullable(),
-  timestamp: z.number(),
-  asset: z.string(),
   amount: NumericString,
-  feeAsset: z.string(),
+  asset: z.string(),
+  category: MovementCategory,
   fee: NumericString,
+  feeAsset: z.string(),
+  identifier: z.string(),
   link: z.string(),
+  location: z.string(),
+  timestamp: z.number(),
+  transactionId: z.string().nullable(),
 });
 
 export type AssetMovement = z.infer<typeof AssetMovement>;

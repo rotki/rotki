@@ -5,6 +5,7 @@ import dayjs from 'dayjs';
 import { toMessages } from '@/utils/validation';
 import { convertToTimestamp } from '@/utils/date';
 import { useSimplePropVModel } from '@/utils/model';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import type { PeriodChangedEvent, SelectionChangedEvent } from '@/types/reports';
 
 const props = defineProps<{ modelValue: { start: string; end: string } }>();
@@ -41,7 +42,7 @@ function updateValid(valid: boolean) {
 
 async function onChanged(event: SelectionChangedEvent) {
   if (event.year === 'custom')
-    input({ start: '', end: '' });
+    input({ end: '', start: '' });
 
   await store.updateSetting({
     profitLossReportPeriod: event,
@@ -50,7 +51,7 @@ async function onChanged(event: SelectionChangedEvent) {
 
 function onPeriodChange(period: PeriodChangedEvent | null) {
   if (period === null) {
-    input({ start: '', end: '' });
+    input({ end: '', start: '' });
     return;
   }
 
@@ -59,25 +60,25 @@ function onPeriodChange(period: PeriodChangedEvent | null) {
   if (convertToTimestamp(period.end) > dayjs().unix())
     end = dayjs().format('DD/MM/YYYY HH:mm:ss');
 
-  input({ start, end });
+  input({ end, start });
 }
 
 const { t } = useI18n();
 
 const rules = {
-  start: {
-    required: helpers.withMessage(t('generate.validation.empty_start_date'), requiredIf(custom)),
-  },
   end: {
     required: helpers.withMessage(t('generate.validation.empty_end_date'), requiredIf(custom)),
+  },
+  start: {
+    required: helpers.withMessage(t('generate.validation.empty_start_date'), requiredIf(custom)),
   },
 };
 
 const v$ = useVuelidate(
   rules,
   {
-    start,
     end,
+    start,
   },
   { $autoDirty: false },
 );

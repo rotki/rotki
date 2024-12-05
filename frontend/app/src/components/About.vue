@@ -1,12 +1,13 @@
 <script setup lang="ts">
+import { useMainStore } from '@/store/main';
 import type { SystemVersion } from '@shared/ipc';
 import type { WebVersion } from '@/types';
 
 const store = useMainStore();
-const { version: getVersion, isPackaged, openPath } = useInterop();
+const { isPackaged, openPath, version: getVersion } = useInterop();
 const { t } = useI18n();
 
-const { version, dataDirectory } = toRefs(store);
+const { dataDirectory, version } = toRefs(store);
 const versionInfo = asyncComputed<SystemVersion | WebVersion>(() => getVersion());
 
 const premium = usePremium();
@@ -20,8 +21,8 @@ const componentsVersion = computed(() => {
     return null;
 
   return {
-    version: cmp.version as string,
     build: cmp.build as number,
+    version: cmp.version as string,
   };
 });
 

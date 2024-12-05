@@ -9,7 +9,7 @@ const props = defineProps<{
 }>();
 
 const { items } = toRefs(props);
-const { isXs, isXlAndDown } = useBreakpoint();
+const { isXlAndDown, isXs } = useBreakpoint();
 const page = ref(1);
 const itemsPerPage = ref(8);
 
@@ -30,10 +30,10 @@ const limits = computed(() => {
 const paginationData = computed({
   get() {
     return {
-      page: get(page),
-      total: get(items).length,
       limit: get(itemsPerPage),
       limits: get(limits),
+      page: get(page),
+      total: get(items).length,
     };
   },
   set(value: TablePaginationData) {

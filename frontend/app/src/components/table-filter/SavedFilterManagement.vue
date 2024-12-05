@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import { isEqual } from 'lodash-es';
+import { useMessageStore } from '@/store/message';
 import type { SavedFilterLocation, SearchMatcher, Suggestion } from '@/types/filtering';
 
 const props = defineProps<{
@@ -15,7 +16,7 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 
-const { selection, location, matchers } = toRefs(props);
+const { location, matchers, selection } = toRefs(props);
 
 const open = ref<boolean>(false);
 
@@ -25,7 +26,7 @@ function applyFilter(filter: Suggestion[]) {
 }
 
 const added = ref<boolean>(false);
-const { start, stop, isPending } = useTimeoutFn(
+const { isPending, start, stop } = useTimeoutFn(
   () => {
     set(added, false);
   },
@@ -47,7 +48,7 @@ function isAsset(searchKey: string): boolean {
   return !!found && 'asset' in found;
 }
 
-const { savedFilters, addFilter, deleteFilter } = useSavedFilter(location, isAsset);
+const { addFilter, deleteFilter, savedFilters } = useSavedFilter(location, isAsset);
 
 const filtersList = computed(() => {
   const matcherKeys = get(matchers).map(item => item.key);
@@ -79,9 +80,9 @@ async function addToSavedFilter() {
   }
   else {
     setMessage({
-      title: t('table_filter.saved_filters.saving.title'),
       description: status.message,
       success: false,
+      title: t('table_filter.saved_filters.saving.title'),
     });
   }
 }

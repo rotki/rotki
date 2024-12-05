@@ -1,4 +1,5 @@
 import { camelCase } from 'lodash-es';
+import { useMainStore } from '@/store/main';
 import type { MaybeRef } from '@vueuse/core';
 import type { ProtocolMetadata } from '@/types/defi';
 
@@ -41,8 +42,8 @@ export const useAirdropsMetadata = createSharedComposable(() => {
     });
 
   return {
-    getAirdropName,
     getAirdropImageUrl,
+    getAirdropName,
     loading,
   };
 });

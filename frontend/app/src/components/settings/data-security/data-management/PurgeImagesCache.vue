@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { PurgeableImageCache } from '@/types/session/purge';
+import { useAssetIconStore } from '@/store/assets/icon';
+import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 
 const { t } = useI18n();
 
@@ -45,22 +47,22 @@ async function purgeSource(source: PurgeableImageCache) {
   }
 }
 
-const { status, pending, showConfirmation } = useCacheClear<PurgeableImageCache>(
+const { pending, showConfirmation, status } = useCacheClear<PurgeableImageCache>(
   purgeable,
   purgeSource,
   (source: string) => ({
-    success: t('data_management.purge_images_cache.success', {
+    error: t('data_management.purge_images_cache.error', {
       source,
     }),
-    error: t('data_management.purge_images_cache.error', {
+    success: t('data_management.purge_images_cache.success', {
       source,
     }),
   }),
   (source: string) => ({
-    title: t('data_management.purge_images_cache.confirm.title'),
     message: t('data_management.purge_images_cache.confirm.message', {
       source,
     }),
+    title: t('data_management.purge_images_cache.confirm.title'),
   }),
 );
 </script>

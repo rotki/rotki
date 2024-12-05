@@ -11,7 +11,7 @@ export function useSyncApi(): UseSyncApiReturn {
   const forceSync = async (action: SyncAction): Promise<PendingTask> => {
     const response = await api.instance.put<ActionResult<PendingTask>>(
       '/premium/sync',
-      snakeCaseTransformer({ asyncQuery: true, action }),
+      snakeCaseTransformer({ action, asyncQuery: true }),
       {
         validateStatus: validWithParamsSessionAndExternalService,
       },

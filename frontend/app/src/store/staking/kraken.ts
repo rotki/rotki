@@ -2,24 +2,27 @@ import { Section, Status } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import { logger } from '@/utils/logging';
 import { balanceSum } from '@/utils/calculation';
+import { useTaskStore } from '@/store/tasks';
+import { useNotificationsStore } from '@/store/notifications';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import type { KrakenStakingEvents, KrakenStakingPagination, ReceivedAmount } from '@/types/staking';
 import type { TaskMeta } from '@/types/task';
 
 function defaultPagination(): KrakenStakingPagination {
   return {
-    offset: 0,
-    limit: useFrontendSettingsStore().itemsPerPage,
-    orderByAttributes: ['timestamp'],
     ascending: [false],
+    limit: useFrontendSettingsStore().itemsPerPage,
+    offset: 0,
+    orderByAttributes: ['timestamp'],
   };
 }
 
 function defaultEventState(): KrakenStakingEvents {
   return {
     assets: [],
-    entriesTotal: 0,
     entriesFound: 0,
     entriesLimit: 0,
+    entriesTotal: 0,
     received: [],
     totalUsdValue: Zero,
   };
@@ -62,9 +65,9 @@ export const useKrakenStakingStore = defineStore('staking/kraken', () => {
     };
   });
 
-  const { isTaskRunning, awaitTask } = useTaskStore();
+  const { awaitTask, isTaskRunning } = useTaskStore();
   const { notify } = useNotificationsStore();
-  const { isFirstLoad, loading, setStatus, resetStatus } = useStatusUpdater(Section.STAKING_KRAKEN);
+  const { isFirstLoad, loading, resetStatus, setStatus } = useStatusUpdater(Section.STAKING_KRAKEN);
 
   const refreshEvents = async (): Promise<void> => {
     const { taskId } = await api.refreshKrakenStaking();
@@ -100,11 +103,11 @@ export const useKrakenStakingStore = defineStore('staking/kraken', () => {
       logger.error(error);
       resetStatus();
       notify({
-        title: t('actions.kraken_staking.error.title'),
+        display: true,
         message: t('actions.kraken_staking.error.message', {
           message: error.message,
         }),
-        display: true,
+        title: t('actions.kraken_staking.error.title'),
       });
     }
   };
@@ -115,9 +118,9 @@ export const useKrakenStakingStore = defineStore('staking/kraken', () => {
   };
 
   return {
-    pagination,
     events,
-    updatePagination,
     load: fetchEvents,
+    pagination,
+    updatePagination,
   };
 });

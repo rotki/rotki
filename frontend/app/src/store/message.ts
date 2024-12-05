@@ -13,8 +13,8 @@ export const useMessageStore = defineStore('message', () => {
     }
     set(message, {
       ...{
-        title: msg.success ? t('message.success.title') : t('message.error.title'),
         success: false,
+        title: msg.success ? t('message.success.title') : t('message.error.title'),
       },
       ...msg,
     });
@@ -22,8 +22,8 @@ export const useMessageStore = defineStore('message', () => {
 
   return {
     message,
-    showMessage,
     setMessage,
+    showMessage,
   };
 });
 

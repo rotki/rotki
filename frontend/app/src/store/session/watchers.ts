@@ -1,4 +1,5 @@
 import { type Watcher, WatcherType } from '@/types/session';
+import { useNotificationsStore } from '@/store/notifications';
 
 export const useWatchersStore = defineStore('session/watchers', () => {
   const watchers = ref<Watcher[]>([]);
@@ -24,11 +25,11 @@ export const useWatchersStore = defineStore('session/watchers', () => {
     }
     catch (error: any) {
       notify({
-        title: t('actions.session.fetch_watchers.error.title'),
+        display: true,
         message: t('actions.session.fetch_watchers.error.message', {
           message: error.message,
         }),
-        display: true,
+        title: t('actions.session.fetch_watchers.error.title'),
       });
     }
   };
@@ -46,12 +47,12 @@ export const useWatchersStore = defineStore('session/watchers', () => {
   };
 
   return {
-    watchers,
-    loanWatchers,
-    fetchWatchers,
     addWatchers,
-    editWatchers,
     deleteWatchers,
+    editWatchers,
+    fetchWatchers,
+    loanWatchers,
+    watchers,
   };
 });
 

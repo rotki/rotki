@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ApiValidationError } from '@/types/api/errors';
+import { useBalancePricesStore } from '@/store/balances/prices';
 import type { BigNumber } from '@rotki/common';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { EditableMissingPrice, MissingPrice } from '@/types/reports';
@@ -11,10 +12,10 @@ const props = defineProps<{
 }>();
 
 const { t } = useI18n();
-const { items, isPinned } = toRefs(props);
+const { isPinned, items } = toRefs(props);
 const prices = ref<HistoricalPrice[]>([]);
 const errorMessages = ref<Record<string, string[]>>({});
-const { fetchHistoricalPrices, addHistoricalPrice, editHistoricalPrice, deleteHistoricalPrice } = useAssetPricesApi();
+const { addHistoricalPrice, deleteHistoricalPrice, editHistoricalPrice, fetchHistoricalPrices } = useAssetPricesApi();
 
 function createKey(item: MissingPrice) {
   return item.fromAsset + item.toAsset + item.time;
@@ -47,8 +48,8 @@ const formattedItems = computed<EditableMissingPrice[]>(() =>
 
     return {
       ...item,
-      saved: !!savedPrice,
       price,
+      saved: !!savedPrice,
       useRefreshedHistoricalPrice,
     };
   }),
@@ -60,8 +61,8 @@ async function updatePrice(item: EditableMissingPrice) {
 
   const payload: HistoricalPriceDeletePayload = {
     fromAsset: item.fromAsset,
-    toAsset: item.toAsset,
     timestamp: item.time,
+    toAsset: item.toAsset,
   };
 
   try {
@@ -101,27 +102,27 @@ const tableContainer = computed(() => get(tableRef)?.$el);
 
 const headers = computed<DataTableColumn<EditableMissingPrice>[]>(() => [
   {
-    label: t('profit_loss_report.actionable.missing_prices.headers.from_asset'),
     key: 'fromAsset',
+    label: t('profit_loss_report.actionable.missing_prices.headers.from_asset'),
     sortable: true,
   },
   {
-    label: t('profit_loss_report.actionable.missing_prices.headers.to_asset'),
+    cellClass: get(isPinned) ? 'px-2' : '',
     key: 'toAsset',
-    cellClass: get(isPinned) ? 'px-2' : '',
+    label: t('profit_loss_report.actionable.missing_prices.headers.to_asset'),
     sortable: true,
   },
   {
-    label: t('common.datetime'),
+    cellClass: get(isPinned) ? 'px-2' : '',
     key: 'time',
-    cellClass: get(isPinned) ? 'px-2' : '',
+    label: t('common.datetime'),
     sortable: true,
   },
   {
-    label: t('common.price'),
-    key: 'price',
-    cellClass: `pb-1 ${get(isPinned) ? '' : ''}`,
     align: 'end',
+    cellClass: `pb-1 ${get(isPinned) ? '' : ''}`,
+    key: 'price',
+    label: t('common.price'),
   },
 ]);
 
@@ -132,8 +133,8 @@ const refreshing = ref<boolean>(false);
 async function refreshHistoricalPrice(item: EditableMissingPrice) {
   set(refreshing, true);
   const rateFromHistoricPrice = await getHistoricPrice({
-    timestamp: item.time,
     fromAsset: item.fromAsset,
+    timestamp: item.time,
     toAsset: item.toAsset,
   });
 

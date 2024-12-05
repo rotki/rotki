@@ -4,10 +4,12 @@ import { Blockchain } from '@rotki/common';
 import { helpers, required, requiredIf } from '@vuelidate/validators';
 import { toMessages } from '@/utils/validation';
 import { nullDefined, useSimplePropVModel } from '@/utils/model';
+import { useBlockchainStore } from '@/store/blockchain';
+import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import type { SelectOptions } from '@/types/common';
 import type { AddressBookLocation, AddressBookPayload } from '@/types/eth-names';
 
-const enabledForAllChains = defineModel<boolean>('enableForAllChains', { required: true, default: false });
+const enabledForAllChains = defineModel<boolean>('enableForAllChains', { default: false, required: true });
 
 const props = defineProps<{
   modelValue: AddressBookPayload;
@@ -30,20 +32,20 @@ const chain = useSimplePropVModel(props, 'blockchain', emit);
 const blockchain = nullDefined(chain);
 const { addresses } = useBlockchainStore();
 const addressesNamesStore = useAddressesNamesStore();
-const { getAddressesWithoutNames, addressNameSelector } = addressesNamesStore;
+const { addressNameSelector, getAddressesWithoutNames } = addressesNamesStore;
 
 const addressSuggestions = getAddressesWithoutNames(chain);
 const locations = computed<SelectOptions<AddressBookLocation>>(() => [
-  { label: t('address_book.hint.global'), key: 'global' },
-  { label: t('address_book.hint.private'), key: 'private' },
+  { key: 'global', label: t('address_book.hint.global') },
+  { key: 'private', label: t('address_book.hint.private') },
 ]);
 
 const rules = {
-  blockchain: {
-    required: helpers.withMessage(t('address_book.form.validation.chain'), requiredIf(logicNot(enabledForAllChains))),
-  },
   address: {
     required: helpers.withMessage(t('address_book.form.validation.address'), required),
+  },
+  blockchain: {
+    required: helpers.withMessage(t('address_book.form.validation.chain'), requiredIf(logicNot(enabledForAllChains))),
   },
   name: {
     required: helpers.withMessage(t('address_book.form.validation.name'), required),
@@ -55,8 +57,8 @@ const { setValidation } = useAddressBookForm();
 const v$ = setValidation(
   rules,
   {
-    blockchain,
     address,
+    blockchain,
     name,
   },
   { $autoDirty: true, $externalResults: errorMessages },

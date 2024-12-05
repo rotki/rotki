@@ -13,6 +13,9 @@ import { convertFromTimestamp } from '@/utils/date';
 import { logger } from '@/utils/logging';
 import { isTaskCancelled } from '@/utils';
 import { chunkArray } from '@/utils/data';
+import { useNotificationsStore } from '@/store/notifications';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useTaskStore } from '@/store/tasks';
 import type { TaskMeta } from '@/types/task';
 import type { Balances } from '@/types/blockchain/balances';
 import type { MaybeRef } from '@vueuse/core';
@@ -29,11 +32,11 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
   const { assetInfo } = useAssetInfoRetrieval();
   const { t } = useI18n();
   const {
-    getPriceCache,
     createPriceCache,
     deletePriceCache,
-    queryHistoricalRate,
+    getPriceCache,
     queryFiatExchangeRates,
+    queryHistoricalRate,
     queryPrices,
   } = usePriceApi();
   const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
@@ -73,9 +76,9 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
           error: error.message,
         });
         notify({
-          title,
-          message,
           display: true,
+          message,
+          title,
         });
       }
     }
@@ -114,11 +117,11 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
     catch (error: any) {
       if (!isTaskCancelled(error)) {
         notify({
-          title: t('actions.balances.exchange_rates.error.title'),
+          display: true,
           message: t('actions.balances.exchange_rates.error.message', {
             message: error.message,
           }),
-          display: true,
+          title: t('actions.balances.exchange_rates.error.title'),
         });
       }
     }
@@ -137,16 +140,16 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
         taskId,
         taskType,
         {
-          title: t('actions.balances.historic_fetch_price.task.title'),
           description: t(
             'actions.balances.historic_fetch_price.task.description',
             {
+              date: convertFromTimestamp(timestamp),
               fromAsset,
               toAsset,
-              date: convertFromTimestamp(timestamp),
             },
             1,
           ),
+          title: t('actions.balances.historic_fetch_price.task.title'),
         },
         true,
       );
@@ -171,8 +174,8 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
     const taskType = TaskType.CREATE_PRICE_CACHE;
     if (get(isTaskRunning(taskType))) {
       return {
-        success: false,
         message: t('actions.balances.create_oracle_cache.already_running'),
+        success: false,
       };
     }
     try {
@@ -183,8 +186,8 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
         {
           title: t('actions.balances.create_oracle_cache.task', {
             fromAsset,
-            toAsset,
             source,
+            toAsset,
           }),
         },
         true,
@@ -197,21 +200,21 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
     catch (error: any) {
       if (!isTaskCancelled(error)) {
         notify({
-          title: t('actions.balances.create_oracle_cache.error.title'),
+          display: true,
           message: t('actions.balances.create_oracle_cache.error.message', {
             message: error.message,
           }),
-          display: true,
+          title: t('actions.balances.create_oracle_cache.error.title'),
         });
       }
       return {
-        success: false,
         message: t('actions.balances.create_oracle_cache.failed', {
-          fromAsset,
-          toAsset,
-          source,
           error: error.message,
+          fromAsset,
+          source,
+          toAsset,
         }),
+        success: false,
       };
     }
   };
@@ -259,29 +262,29 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
       const rate = get(exchangeRate(symbol));
       if (!rate || rate.eq(0)) {
         notify({
-          title: t('missing_exchange_rate.title'),
-          message: t('missing_exchange_rate.message'),
           display: true,
+          message: t('missing_exchange_rate.message'),
+          title: t('missing_exchange_rate.title'),
         });
       }
     }
   });
 
   return {
-    prices,
-    exchangeRates,
     assetPrice,
-    fetchPrices,
-    updateBalancesPrices,
-    fetchExchangeRates,
-    exchangeRate,
-    getHistoricPrice,
     createOracleCache,
-    getPriceCache,
     deletePriceCache,
-    toSelectedCurrency,
-    isManualAssetPrice,
+    exchangeRate,
+    exchangeRates,
+    fetchExchangeRates,
+    fetchPrices,
+    getHistoricPrice,
+    getPriceCache,
     isAssetPriceInCurrentCurrency,
+    isManualAssetPrice,
+    prices,
+    toSelectedCurrency,
+    updateBalancesPrices,
   };
 });
 

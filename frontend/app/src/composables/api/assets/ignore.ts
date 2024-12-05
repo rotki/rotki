@@ -45,8 +45,8 @@ export function useAssetIgnoreApi(): UseAssetIgnoreApiReturn {
   };
 
   return {
-    getIgnoredAssets,
     addIgnoredAssets,
+    getIgnoredAssets,
     removeIgnoredAssets,
   };
 }

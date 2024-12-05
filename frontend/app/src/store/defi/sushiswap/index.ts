@@ -30,31 +30,31 @@ export const useSushiswapStore = defineStore('defi/sushiswap', () => {
     };
 
     const onError: OnError = {
-      title: t('actions.defi.sushiswap_balances.error.title'),
       error: message => t('actions.defi.sushiswap_balances.error.description', {
         message,
       }),
+      title: t('actions.defi.sushiswap_balances.error.title'),
     };
 
     await fetchDataAsync(
       {
-        task: {
-          type: TaskType.SUSHISWAP_BALANCES,
-          section: Section.DEFI_SUSHISWAP_BALANCES,
-          meta,
-          query: async () => fetchSushiswapBalances(),
-          parser: data => XswapBalances.parse(data),
-          onError,
+        refresh,
+        requires: {
+          module: Module.SUSHISWAP,
+          premium: true,
         },
         state: {
-          isPremium,
           activeModules,
+          isPremium,
         },
-        requires: {
-          premium: true,
-          module: Module.SUSHISWAP,
+        task: {
+          meta,
+          onError,
+          parser: data => XswapBalances.parse(data),
+          query: async () => fetchSushiswapBalances(),
+          section: Section.DEFI_SUSHISWAP_BALANCES,
+          type: TaskType.SUSHISWAP_BALANCES,
         },
-        refresh,
       },
       balances,
     );
@@ -66,32 +66,32 @@ export const useSushiswapStore = defineStore('defi/sushiswap', () => {
     };
 
     const onError: OnError = {
-      title: t('actions.defi.sushiswap_events.error.title'),
       error: message =>
         t('actions.defi.sushiswap_events.error.description', {
           message,
         }),
+      title: t('actions.defi.sushiswap_events.error.title'),
     };
 
     await fetchDataAsync(
       {
-        task: {
-          type: TaskType.SUSHISWAP_EVENTS,
-          section: Section.DEFI_SUSHISWAP_EVENTS,
-          meta,
-          query: async () => fetchSushiswapEvents(),
-          parser: data => XswapEvents.parse(data),
-          onError,
-        },
-        state: {
-          isPremium,
-          activeModules,
-        },
+        refresh,
         requires: {
           module: Module.SUSHISWAP,
           premium: true,
         },
-        refresh,
+        state: {
+          activeModules,
+          isPremium,
+        },
+        task: {
+          meta,
+          onError,
+          parser: data => XswapEvents.parse(data),
+          query: async () => fetchSushiswapEvents(),
+          section: Section.DEFI_SUSHISWAP_EVENTS,
+          type: TaskType.SUSHISWAP_EVENTS,
+        },
       },
       events,
     );
@@ -106,14 +106,14 @@ export const useSushiswapStore = defineStore('defi/sushiswap', () => {
   };
 
   return {
+    addresses,
+    balanceList,
     balances,
     events,
-    addresses,
-    pools,
-    balanceList,
-    poolProfit,
     fetchBalances,
     fetchEvents,
+    poolProfit,
+    pools,
     reset,
   };
 });

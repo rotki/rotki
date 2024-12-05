@@ -5,13 +5,16 @@ import { NoteLocation } from '@/types/notes';
 import HideSmallBalances from '@/components/settings/HideSmallBalances.vue';
 import { BalanceSource } from '@/types/settings/frontend-settings';
 import { uniqueStrings } from '@/utils/data';
+import { useExchangeBalancesStore } from '@/store/balances/exchanges';
+import { useExchangesStore } from '@/store/exchanges';
+import { useTaskStore } from '@/store/tasks';
 import type { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
 
 definePage({
-  name: 'accounts-balances-exchange',
   meta: {
     noteLocation: NoteLocation.ACCOUNTS_BALANCES_EXCHANGE,
   },
+  name: 'accounts-balances-exchange',
   props: true,
 });
 
@@ -22,7 +25,7 @@ const selectedTab = ref<string | undefined>(props.exchange ?? undefined);
 
 const { exchange } = toRefs(props);
 const { isTaskRunning } = useTaskStore();
-const { getBalances, refreshExchangeSavings, fetchExchangeSavings } = useExchangeBalancesStore();
+const { fetchExchangeSavings, getBalances, refreshExchangeSavings } = useExchangeBalancesStore();
 const { connectedExchanges } = storeToRefs(useExchangesStore());
 
 const { refreshBalance } = useRefresh();
@@ -104,8 +107,8 @@ async function checkSavingsData() {
   if (isBinance(exchangeVal)) {
     const { total } = await fetchExchangeSavings({
       limit: 1,
-      offset: 0,
       location: exchangeVal,
+      offset: 0,
     });
 
     set(exchangeSavingsExist, !!total);

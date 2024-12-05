@@ -7,10 +7,10 @@ withDefaults(
     bordered?: boolean;
   }>(),
   {
-    title: '',
+    bordered: false,
     loading: false,
     protocolIcon: '',
-    bordered: false,
+    title: '',
   },
 );
 </script>

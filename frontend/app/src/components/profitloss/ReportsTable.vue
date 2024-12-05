@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { calculateTotalProfitLoss } from '@/utils/report';
+import { useReportsStore } from '@/store/reports';
 import type { DataTableColumn, DataTableSortColumn } from '@rotki/ui-library';
 import type { Report } from '@/types/reports';
 import type { RouteLocationRaw } from 'vue-router';
 
 const expanded = ref<Report[]>([]);
 const reportStore = useReportsStore();
-const { fetchReports, deleteReport, isLatestReport } = reportStore;
+const { deleteReport, fetchReports, isLatestReport } = reportStore;
 const { reports } = storeToRefs(reportStore);
 const { t } = useI18n();
 
@@ -18,38 +19,38 @@ const items = computed(() =>
 );
 
 const limits = computed(() => ({
-  total: get(reports).entriesFound,
   limit: get(reports).entriesLimit,
+  total: get(reports).entriesFound,
 }));
 
 const tableHeaders = computed<DataTableColumn<Report>[]>(() => [
   {
-    label: t('profit_loss_reports.columns.start'),
     key: 'startTs',
+    label: t('profit_loss_reports.columns.start'),
   },
   {
-    label: t('profit_loss_reports.columns.end'),
     key: 'endTs',
+    label: t('profit_loss_reports.columns.end'),
   },
   {
-    label: t('profit_loss_reports.columns.taxfree_profit_loss'),
+    align: 'end',
     key: 'free',
-    align: 'end',
+    label: t('profit_loss_reports.columns.taxfree_profit_loss'),
   },
   {
-    label: t('profit_loss_reports.columns.taxable_profit_loss'),
+    align: 'end',
     key: 'taxable',
-    align: 'end',
+    label: t('profit_loss_reports.columns.taxable_profit_loss'),
   },
   {
-    label: t('profit_loss_reports.columns.created'),
+    align: 'end',
     key: 'timestamp',
-    align: 'end',
+    label: t('profit_loss_reports.columns.created'),
   },
   {
-    label: t('common.actions_text'),
-    key: 'actions',
     align: 'end',
+    key: 'actions',
+    label: t('common.actions_text'),
     width: 140,
   },
 ]);

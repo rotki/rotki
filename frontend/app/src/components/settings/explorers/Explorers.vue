@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common';
 import { type ExplorerUrls, explorerUrls } from '@/types/asset/asset-urls';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
 const additional = ['ETC'] as const;
 const supportedExplorers = [...Object.values(Blockchain), ...additional];

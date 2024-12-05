@@ -11,13 +11,13 @@ const props = withDefaults(
   }>(),
   {
     editableItem: undefined,
-    nextSequence: undefined,
     groupHeader: undefined,
+    nextSequence: undefined,
   },
 );
 
 const { t } = useI18n();
-const { groupHeader, editableItem } = toRefs(props);
+const { editableItem, groupHeader } = toRefs(props);
 
 const entryType = ref<HistoryEventEntryType>(HistoryEventEntryType.HISTORY_EVENT);
 

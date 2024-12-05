@@ -40,12 +40,12 @@ function unlockTask(lockedTasks: Ref<number[]>, taskId: number): number[] {
 function useError(): { error: ErrorHandler } {
   const { t } = useI18n();
   const error: ErrorHandler = (task, error) => ({
-    result: {},
     message: t('task_manager.error', {
+      error,
       taskId: task.id,
       title: task.meta.title,
-      error,
     }),
+    result: {},
   });
   return { error };
 }
@@ -131,9 +131,9 @@ export const useTaskStore = defineStore('tasks', () => {
 
     add({
       id,
-      type,
       meta,
       time: dayjs().valueOf(),
+      type,
     });
   };
 
@@ -153,7 +153,7 @@ export const useTaskStore = defineStore('tasks', () => {
   };
 
   const cancelTask = async (task: Task<TaskMeta>): Promise<boolean> => {
-    const { id, type, meta } = task;
+    const { id, meta, type } = task;
 
     if (!get(isTaskRunning(type, meta)))
       return false;
@@ -168,7 +168,7 @@ export const useTaskStore = defineStore('tasks', () => {
         }
         else {
           lock(id);
-          handleResult({ result: null, message: USER_CANCELLED_TASK }, task);
+          handleResult({ message: USER_CANCELLED_TASK, result: null }, task);
           unlock(id);
         }
       }
@@ -196,7 +196,7 @@ export const useTaskStore = defineStore('tasks', () => {
         type,
         (actionResult, meta) => {
           unregisterHandler(type, id.toString());
-          const { result, message } = actionResult;
+          const { message, result } = actionResult;
 
           if (actionResult.error) {
             reject(actionResult.error);
@@ -220,7 +220,7 @@ export const useTaskStore = defineStore('tasks', () => {
             }
           }
           else {
-            resolve({ result, meta, message });
+            resolve({ message, meta, result });
           }
         },
         nonUnique ? id.toString() : undefined,
@@ -265,7 +265,7 @@ export const useTaskStore = defineStore('tasks', () => {
           const totalTimeouts = (get(timeouts)[task.id] ?? 0) + 1;
           if (totalTimeouts >= TIMEOUT_THRESHOLD) {
             remove(task.id);
-            handleResult({ message: error_.message, result: null, error: error_ }, task);
+            handleResult({ error: error_, message: error_.message, result: null }, task);
           }
           else {
             set(timeouts, { ...get(timeouts), [task.id]: totalTimeouts });
@@ -273,7 +273,7 @@ export const useTaskStore = defineStore('tasks', () => {
         }
         else {
           remove(task.id);
-          handleResult({ message: error_.message, result: null, error: error_ }, task);
+          handleResult({ error: error_, message: error_.message, result: null }, task);
         }
       }
     }
@@ -344,18 +344,18 @@ export const useTaskStore = defineStore('tasks', () => {
   };
 
   return {
-    tasks: taskList,
-    taskById: tasks,
-    locked,
     add,
-    remove,
-    cancelTask,
-    isTaskRunning,
-    hasRunningTasks,
-    metadata,
     addTask,
     awaitTask,
+    cancelTask,
+    hasRunningTasks,
+    isTaskRunning,
+    locked,
+    metadata,
     monitor,
+    remove,
+    taskById: tasks,
+    tasks: taskList,
   };
 });
 

@@ -1,11 +1,17 @@
 import { type BigNumber, type NetValue, type TimeFramePeriod, TimeUnit, timeframes } from '@rotki/common';
 import dayjs from 'dayjs';
 import { CURRENCY_USD, type SupportedCurrency } from '@/types/currencies';
+import { useSessionSettingsStore } from '@/store/settings/session';
+import { useBalancePricesStore } from '@/store/balances/prices';
+import { useNonFungibleBalancesStore } from '@/store/balances/non-fungible';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useNotificationsStore } from '@/store/notifications';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
 function defaultNetValue(): NetValue {
   return {
-    times: [],
     data: [],
+    times: [],
   };
 }
 
@@ -90,11 +96,11 @@ export const useStatisticsStore = defineStore('statistics', () => {
     const delta = balanceDelta.multipliedBy(rate).toFormat(floatPrecision);
 
     return {
-      period: selectedTimeframe,
       currency,
-      netWorth: totalNW.toFormat(floatPrecision),
       delta,
+      netWorth: totalNW.toFormat(floatPrecision),
       percentage: percentage.isFinite() ? percentage.toFormat(2) : '-',
+      period: selectedTimeframe,
       up,
     };
   });
@@ -108,7 +114,7 @@ export const useStatisticsStore = defineStore('statistics', () => {
 
       const convert = (value: BigNumber): BigNumber => (currency === CURRENCY_USD ? value : value.multipliedBy(rate));
 
-      const { times, data } = get(netValue);
+      const { data, times } = get(netValue);
 
       const now = Math.floor(Date.now() / 1000);
       const netWorth = get(totalNetWorth);
@@ -117,12 +123,12 @@ export const useStatisticsStore = defineStore('statistics', () => {
         const oneDayTimestamp = 24 * 60 * 60;
 
         return {
-          times: [now - oneDayTimestamp, now],
           data: [Zero, netWorth],
+          times: [now - oneDayTimestamp, now],
         };
       }
 
-      const nv: NetValue = { times: [], data: [] };
+      const nv: NetValue = { data: [], times: [] };
 
       for (const [i, time] of times.entries()) {
         if (time < startingDate)
@@ -133,8 +139,8 @@ export const useStatisticsStore = defineStore('statistics', () => {
       }
 
       return {
-        times: [...nv.times, now],
         data: [...nv.data, netWorth],
+        times: [...nv.times, now],
       };
     });
   }
@@ -145,22 +151,22 @@ export const useStatisticsStore = defineStore('statistics', () => {
     }
     catch (error: any) {
       notify({
-        title: t('actions.statistics.net_value.error.title'),
+        display: false,
         message: t('actions.statistics.net_value.error.message', {
           message: error.message,
         }),
-        display: false,
+        title: t('actions.statistics.net_value.error.title'),
       });
     }
   };
 
   return {
-    netValue,
-    totalNetWorth,
-    totalNetWorthUsd,
-    overall,
     fetchNetValue,
     getNetValue,
+    netValue,
+    overall,
+    totalNetWorth,
+    totalNetWorthUsd,
   };
 });
 

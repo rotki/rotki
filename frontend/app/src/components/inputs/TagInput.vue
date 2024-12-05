@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { logger } from '@/utils/logging.ts';
+import { logger } from '@/utils/logging';
 import { type Tag, defaultTag } from '@/types/tags';
+import { useTagStore } from '@/store/session/tags';
 
 const modelValue = defineModel<string[]>({ required: true });
 
@@ -41,10 +42,10 @@ function tagExists(tagName: string): boolean {
 async function createTag(name: string) {
   const { backgroundColor, foregroundColor } = get(colorScheme);
   const tag: Tag = {
-    name,
-    description: '',
     backgroundColor,
+    description: '',
     foregroundColor,
+    name,
   };
   return await store.addTag(tag);
 }

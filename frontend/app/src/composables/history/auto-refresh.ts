@@ -1,10 +1,11 @@
 import { startPromise } from '@shared/utils';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
 export function useHistoryAutoRefresh(refresh: () => Promise<void>): void {
   const { refreshPeriod } = storeToRefs(useFrontendSettingsStore());
   const period = computed(() => get(refreshPeriod) * 60 * 1000);
 
-  const { pause, resume, isActive } = useIntervalFn(() => startPromise(refresh()), period, {
+  const { isActive, pause, resume } = useIntervalFn(() => startPromise(refresh()), period, {
     immediate: false,
   });
 

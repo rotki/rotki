@@ -42,17 +42,17 @@ const numericPrice = bigNumberifyFromRef(price);
 const { t } = useI18n();
 
 const rules = {
+  date: {
+    required: helpers.withMessage(t('price_form.date_non_empty'), required),
+  },
   fromAsset: {
     required: helpers.withMessage(t('price_form.from_non_empty'), required),
-  },
-  toAsset: {
-    required: helpers.withMessage(t('price_form.to_non_empty'), required),
   },
   price: {
     required: helpers.withMessage(t('price_form.price_non_empty'), required),
   },
-  date: {
-    required: helpers.withMessage(t('price_form.date_non_empty'), required),
+  toAsset: {
+    required: helpers.withMessage(t('price_form.to_non_empty'), required),
   },
 };
 
@@ -61,10 +61,10 @@ const { setValidation } = useHistoricPriceForm();
 const v$ = setValidation(
   rules,
   {
-    fromAsset,
-    toAsset,
-    price,
     date,
+    fromAsset,
+    price,
+    toAsset,
   },
   { $autoDirty: true },
 );

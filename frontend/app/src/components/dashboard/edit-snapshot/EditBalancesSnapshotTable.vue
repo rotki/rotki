@@ -3,6 +3,8 @@ import { CURRENCY_USD } from '@/types/currencies';
 import { isNft } from '@/utils/nft';
 import { BalanceType } from '@/types/balances';
 import { bigNumberSum } from '@/utils/calculation';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useBalancePricesStore } from '@/store/balances/prices';
 import type { BigNumber } from '@rotki/common';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { BalanceSnapshot, BalanceSnapshotPayload, Snapshot } from '@/types/snapshots';
@@ -22,7 +24,7 @@ const { t } = useI18n();
 
 type IndexedBalanceSnapshot = BalanceSnapshot & { index: number; categoryLabel: string };
 
-const { openDialog, setOpenDialog, closeDialog, submitting, setSubmitFunc, trySubmit, stateUpdated } = useEditBalancesSnapshotForm();
+const { closeDialog, openDialog, setOpenDialog, setSubmitFunc, stateUpdated, submitting, trySubmit } = useEditBalancesSnapshotForm();
 
 const { timestamp } = toRefs(props);
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
@@ -72,35 +74,35 @@ const total = computed<BigNumber>(() => {
 
 const tableHeaders = computed<DataTableColumn<IndexedBalanceSnapshot>[]>(() => [
   {
-    label: t('common.category'),
-    key: 'categoryLabel',
     cellClass: 'py-2',
     class: 'w-[10rem]',
+    key: 'categoryLabel',
+    label: t('common.category'),
     sortable: true,
   },
   {
-    label: t('common.asset'),
-    key: 'assetIdentifier',
     cellClass: 'py-0',
+    key: 'assetIdentifier',
+    label: t('common.asset'),
     sortable: true,
   },
   {
-    label: t('common.amount'),
+    align: 'end',
     key: 'amount',
-    align: 'end',
+    label: t('common.amount'),
     sortable: true,
   },
   {
-    label: t('common.value_in_symbol', { symbol: get(currencySymbol) }),
+    align: 'end',
     key: 'usdValue',
-    align: 'end',
+    label: t('common.value_in_symbol', { symbol: get(currencySymbol) }),
     sortable: true,
   },
   {
-    label: '',
-    key: 'action',
-    class: 'w-[6.25rem]',
     cellClass: 'py-2',
+    class: 'w-[6.25rem]',
+    key: 'action',
+    label: '',
   },
 ]);
 
@@ -155,8 +157,8 @@ function editClick(item: IndexedBalanceSnapshot) {
   set(form, {
     ...item,
     amount: item.amount.toFixed(),
-    usdValue: convertedFiatValue,
     location: '',
+    usdValue: convertedFiatValue,
   });
 
   setOpenDialog(true);
@@ -175,12 +177,12 @@ function deleteClick(item: IndexedBalanceSnapshot) {
 function add() {
   set(indexToEdit, null);
   set(form, {
-    timestamp: get(timestamp),
-    category: BalanceType.ASSET,
-    assetIdentifier: '',
     amount: '',
-    usdValue: '',
+    assetIdentifier: '',
+    category: BalanceType.ASSET,
     location: '',
+    timestamp: get(timestamp),
+    usdValue: '',
   });
   setOpenDialog(true);
 }
@@ -202,8 +204,8 @@ const previewLocationBalance = computed<Record<string, BigNumber> | null>(() => 
 
   if (!locationData) {
     return {
-      before: Zero,
       after: convertedUsdValue,
+      before: Zero,
     };
   }
 
@@ -220,8 +222,8 @@ const previewLocationBalance = computed<Record<string, BigNumber> | null>(() => 
   }
 
   return {
-    before: locationData.usdValue,
     after: locationData.usdValue.plus(usdValueDiff),
+    before: locationData.usdValue,
   };
 });
 
@@ -244,8 +246,8 @@ const previewDeleteLocationBalance = computed<Record<string, BigNumber> | null>(
   const usdValueDiff = balanceData.usdValue.multipliedBy(currentFactor);
 
   return {
-    before: locationData.usdValue,
     after: locationData.usdValue.plus(usdValueDiff),
+    before: locationData.usdValue,
   };
 });
 
@@ -264,8 +266,8 @@ function updateData(
     }
     else {
       locationDataSnapshot.push({
-        timestamp: get(timestamp),
         location,
+        timestamp: get(timestamp),
         usdValue: calculatedBalance!.after,
       });
     }
@@ -302,10 +304,10 @@ function save() {
 
   const balancesSnapshot = [...val.balancesSnapshot];
   const payload = {
-    timestamp: timestampVal,
-    category: formVal.category,
-    assetIdentifier: formVal.assetIdentifier,
     amount: bigNumberify(formVal.amount),
+    assetIdentifier: formVal.assetIdentifier,
+    category: formVal.category,
+    timestamp: timestampVal,
     usdValue: bigNumberify(formVal.usdValue),
   };
 

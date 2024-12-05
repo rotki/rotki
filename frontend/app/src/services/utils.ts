@@ -10,7 +10,7 @@ export function handleResponse<T>(
   response: AxiosResponse<ActionResult<T>>,
   parse: Parser<T> = response => response.data,
 ): T {
-  const { result, message } = parse(response);
+  const { message, result } = parse(response);
   if (result)
     return result;
 
@@ -26,11 +26,11 @@ export async function fetchExternalAsync(
   params?: Record<string, any>,
 ): Promise<PendingTask> {
   const result = await api.get<ActionResult<PendingTask>>(url, {
-    validateStatus: validWithSessionAndExternalService,
     params: snakeCaseTransformer({
       asyncQuery: true,
       ...(params || {}),
     }),
+    validateStatus: validWithSessionAndExternalService,
   });
   return handleResponse(result);
 }

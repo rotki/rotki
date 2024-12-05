@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import type { BigNumber } from '@rotki/common';
 import type { RoundingMode } from '@/types/settings/frontend-settings';
 

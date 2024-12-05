@@ -1,6 +1,11 @@
 import { ApiValidationError } from '@/types/api/errors';
 import { uniqueStrings } from '@/utils/data';
 import { logger } from '@/utils/logging';
+import { usePremiumStore } from '@/store/session/premium';
+import { useQueriedAddressesStore } from '@/store/session/queried-addresses';
+import { useMessageStore } from '@/store/message';
+import { useAccountingSettingsStore } from '@/store/settings/accounting';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 import type { KrakenAccountType } from '@/types/exchanges';
 import type { Module } from '@/types/modules';
 import type { SettingsUpdate } from '@/types/user';
@@ -23,15 +28,15 @@ export const useSettingsStore = defineStore('settings', () => {
       });
       generalStore.update(general);
       setMessage({
-        title: t('actions.session.kraken_account.success.title'),
         description: t('actions.session.kraken_account.success.message'),
         success: true,
+        title: t('actions.session.kraken_account.success.title'),
       });
     }
     catch (error: any) {
       setMessage({
-        title: t('actions.session.kraken_account.error.title'),
         description: error.message,
+        title: t('actions.session.kraken_account.error.title'),
       });
     }
   };
@@ -71,8 +76,8 @@ export const useSettingsStore = defineStore('settings', () => {
       message = handleErrors(error, Object.keys(update));
     }
     return {
-      success,
       message,
+      success,
     };
   };
 
@@ -83,13 +88,13 @@ export const useSettingsStore = defineStore('settings', () => {
     await update({ activeModules: modules });
 
     for (const module of payload.enable) {
-      for (const address of payload.addresses) await addQueriedAddress({ module, address });
+      for (const address of payload.addresses) await addQueriedAddress({ address, module });
     }
   };
 
   return {
-    setKrakenAccountType,
     enableModule,
+    setKrakenAccountType,
     update,
   };
 });

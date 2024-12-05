@@ -15,9 +15,9 @@ function onEditRule() {
   const entry = get(event);
 
   const data = {
+    counterparty: '',
     eventSubtype: entry.eventSubtype,
     eventType: entry.eventType,
-    counterparty: '',
   };
 
   if ('counterparty' in entry)

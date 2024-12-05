@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import { Module } from '@/types/modules';
 import { Section } from '@/types/status';
+import { useBalancePricesStore } from '@/store/balances/prices';
+import { useStatusStore } from '@/store/status';
+import { useLiquityStore } from '@/store/defi/liquity';
 
 const modules = [Module.LIQUITY];
 const { isModuleEnabled } = useModules();
-const { fetchStaking, fetchPools, fetchStatistics } = useLiquityStore();
+const { fetchPools, fetchStaking, fetchStatistics } = useLiquityStore();
 const { shouldShowLoadingScreen } = useStatusStore();
 const moduleEnabled = isModuleEnabled(modules[0]);
 const premium = usePremium();

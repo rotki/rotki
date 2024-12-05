@@ -35,25 +35,25 @@ export function useAssetInfoApi(): UseAssetInfoApiReturn {
 
   const assetSearch = async (params: AssetSearchParams): Promise<AssetsWithId> => {
     const {
-      value,
+      address,
       evmChain,
       limit,
       searchNfts,
       signal,
-      address,
+      value,
     } = params;
     const response = await api.instance.post<ActionResult<AssetsWithId>>(
       '/assets/search/levenshtein',
       snakeCaseTransformer({
-        value,
+        address,
         evmChain,
         limit: limit || 25,
         searchNfts,
-        address,
+        value,
       }),
       {
-        validateStatus: validStatus,
         signal,
+        validateStatus: validStatus,
       },
     );
     return AssetsWithId.parse(handleResponse(response));

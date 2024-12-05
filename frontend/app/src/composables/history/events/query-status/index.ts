@@ -27,9 +27,9 @@ export function useQueryStatus<T extends { period?: [number, number] }>(
   };
 
   return {
-    sortedQueryStatus,
-    queryingLength,
-    length,
     isQueryStatusRange,
+    length,
+    queryingLength,
+    sortedQueryStatus,
   };
 }

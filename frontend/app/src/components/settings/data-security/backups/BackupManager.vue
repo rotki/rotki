@@ -2,6 +2,8 @@
 import { Severity } from '@rotki/common';
 import { getFilepath } from '@/utils/backups';
 import { logger } from '@/utils/logging';
+import { useNotificationsStore } from '@/store/notifications';
+import { useConfirmStore } from '@/store/confirm';
 import type { DatabaseInfo, UserDbBackup, UserDbBackupWithId } from '@/types/backup';
 
 const { t } = useI18n();
@@ -32,7 +34,7 @@ const directory = computed(() => {
   return filepath.slice(0, index + 1);
 });
 
-const { info, createBackup, deleteBackup } = useBackupApi();
+const { createBackup, deleteBackup, info } = useBackupApi();
 
 async function loadInfo() {
   try {
@@ -43,10 +45,10 @@ async function loadInfo() {
     logger.error(error);
     notify({
       display: true,
-      title: t('database_backups.load_error.title'),
       message: t('database_backups.load_error.message', {
         message: error.message,
       }),
+      title: t('database_backups.load_error.title'),
     });
   }
   finally {
@@ -78,10 +80,10 @@ async function massRemove() {
     logger.error(error);
     notify({
       display: true,
-      title: t('database_backups.delete_error.title'),
       message: t('database_backups.delete_error.mass_message', {
         message: error.message,
       }),
+      title: t('database_backups.delete_error.title'),
     });
   }
 }
@@ -110,11 +112,11 @@ async function remove(db: UserDbBackup) {
     logger.error(error);
     notify({
       display: true,
-      title: t('database_backups.delete_error.title'),
       message: t('database_backups.delete_error.message', {
         file: filepath,
         message: error.message,
       }),
+      title: t('database_backups.delete_error.title'),
     });
   }
 }
@@ -125,11 +127,11 @@ async function backup() {
     const filepath = await createBackup();
     notify({
       display: true,
-      severity: Severity.INFO,
-      title: t('database_backups.backup.title'),
       message: t('database_backups.backup.message', {
         filepath,
       }),
+      severity: Severity.INFO,
+      title: t('database_backups.backup.title'),
     });
 
     await loadInfo();
@@ -138,10 +140,10 @@ async function backup() {
     logger.error(error);
     notify({
       display: true,
-      title: t('database_backups.backup_error.title'),
       message: t('database_backups.backup_error.message', {
         message: error.message,
       }),
+      title: t('database_backups.backup_error.title'),
     });
   }
   finally {
@@ -154,10 +156,10 @@ const { show } = useConfirmStore();
 function showMassDeleteConfirmation() {
   show(
     {
-      title: t('database_backups.confirm.title'),
       message: t('database_backups.confirm.mass_message', {
         length: get(selected).length,
       }),
+      title: t('database_backups.confirm.title'),
     },
     massRemove,
   );

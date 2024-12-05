@@ -24,7 +24,7 @@ export const useMainStore = defineStore('main', () => {
   const { info, ping } = useInfoApi();
 
   const updateNeeded = computed(() => {
-    const { version: appVersion, downloadUrl } = get(version);
+    const { downloadUrl, version: appVersion } = get(version);
     return appVersion.includes('dev') ? false : !!downloadUrl;
   });
 
@@ -47,19 +47,19 @@ export const useMainStore = defineStore('main', () => {
     const { version: appVersion } = await info(true);
     if (appVersion) {
       set(version, {
-        version: appVersion.ourVersion || '',
-        latestVersion: appVersion.latestVersion || '',
         downloadUrl: appVersion.downloadUrl || '',
+        latestVersion: appVersion.latestVersion || '',
+        version: appVersion.ourVersion || '',
       });
     }
   };
 
   const getInfo = async (): Promise<void> => {
     const {
-      dataDirectory: appDataDirectory,
-      logLevel: level,
       acceptDockerRisk,
       backendDefaultArguments,
+      dataDirectory: appDataDirectory,
+      logLevel: level,
     } = await info(false);
 
     set(dataDirectory, appDataDirectory);
@@ -122,28 +122,28 @@ export const useMainStore = defineStore('main', () => {
   };
 
   return {
-    version,
     appVersion,
+    connect,
     connected,
     connectionFailure,
     dataDirectory,
-    updateNeeded,
-    dockerRiskAccepted,
     defaultBackendArguments,
-    isDevelop,
-    connect,
-    getVersion,
+    dockerRiskAccepted,
     getInfo,
+    getVersion,
+    isDevelop,
     setConnected,
     setConnectionFailure,
+    updateNeeded,
+    version,
   };
 });
 
 function defaultVersion(): Version {
   return {
-    version: '',
-    latestVersion: '',
     downloadUrl: '',
+    latestVersion: '',
+    version: '',
   };
 }
 

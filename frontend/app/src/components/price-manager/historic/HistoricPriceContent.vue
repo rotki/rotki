@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useRefPropVModel } from '@/utils/model';
+import { useConfirmStore } from '@/store/confirm';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { HistoricalPrice, HistoricalPriceFormPayload } from '@/types/prices';
 
@@ -14,48 +15,48 @@ const sort = ref<DataTableSortData<HistoricalPrice>>([
 
 const headers = computed<DataTableColumn<HistoricalPrice>[]>(() => [
   {
-    label: t('price_table.headers.from_asset'),
     key: 'fromAsset',
+    label: t('price_table.headers.from_asset'),
     sortable: true,
   },
   {
-    label: '',
+    cellClass: '!text-xs !text-rui-text-secondary',
     key: 'wasWorth',
-    cellClass: '!text-xs !text-rui-text-secondary',
+    label: '',
   },
   {
-    label: t('common.price'),
-    key: 'price',
     align: 'end',
+    key: 'price',
+    label: t('common.price'),
     sortable: true,
   },
   {
-    label: t('price_table.headers.to_asset'),
     key: 'toAsset',
+    label: t('price_table.headers.to_asset'),
     sortable: true,
   },
   {
-    label: '',
-    key: 'on',
     cellClass: '!text-xs !text-rui-text-secondary',
+    key: 'on',
+    label: '',
   },
   {
-    label: t('common.datetime'),
     key: 'timestamp',
+    label: t('common.datetime'),
     sortable: true,
   },
   {
-    label: '',
-    key: 'actions',
     class: 'w-[3rem]',
+    key: 'actions',
+    label: '',
   },
 ]);
 
 const emptyPrice: () => HistoricalPriceFormPayload = () => ({
   fromAsset: '',
-  toAsset: '',
   price: '',
   timestamp: 0,
+  toAsset: '',
 });
 
 const price = ref<HistoricalPriceFormPayload>(emptyPrice());
@@ -68,9 +69,9 @@ const update = ref(false);
 const router = useRouter();
 const route = useRoute();
 
-const { items, loading, save, deletePrice, refresh } = useHistoricPrices(filter, t);
+const { deletePrice, items, loading, refresh, save } = useHistoricPrices(filter, t);
 
-const { openDialog, setOpenDialog, submitting, closeDialog, setSubmitFunc, trySubmit, setPostSubmitFunc, stateUpdated }
+const { closeDialog, openDialog, setOpenDialog, setPostSubmitFunc, setSubmitFunc, stateUpdated, submitting, trySubmit }
   = useHistoricPriceForm();
 
 function openForm(hPrice: HistoricalPrice | null = null) {
@@ -101,8 +102,8 @@ const { show } = useConfirmStore();
 function showDeleteConfirmation(item: HistoricalPrice) {
   show(
     {
-      title: t('price_table.delete.dialog.title'),
       message: t('price_table.delete.dialog.message'),
+      title: t('price_table.delete.dialog.title'),
     },
     () => deletePrice(item),
   );

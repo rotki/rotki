@@ -1,17 +1,18 @@
 <script setup lang="ts">
 import { externalLinks } from '@shared/external-links';
+import { useNotificationsStore } from '@/store/notifications';
 import type ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
 
 const name = 'thegraph';
 const { t } = useI18n();
 
-const { loading, apiKey, actionStatus, save, confirmDelete } = useExternalApiKeys(t);
-const { serviceKeyRef, saveHandler } = useServiceKeyHandler<InstanceType<typeof ServiceKey>>();
+const { actionStatus, apiKey, confirmDelete, loading, save } = useExternalApiKeys(t);
+const { saveHandler, serviceKeyRef } = useServiceKeyHandler<InstanceType<typeof ServiceKey>>();
 
 const key = apiKey(name);
 const status = actionStatus(name);
 
-const { remove: removeNotification, prioritized } = useNotificationsStore();
+const { prioritized, remove: removeNotification } = useNotificationsStore();
 
 /**
  * After an api key is added, remove thegraph notification

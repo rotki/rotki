@@ -39,7 +39,7 @@ export function useForm<T = void>(): UseFormReturn<T> {
   ): Ref<Validation> => {
     v$ = useVuelidate(validationsArgs, states, config);
 
-    watch(v$, ({ $invalid, $dirty }) => {
+    watch(v$, ({ $dirty, $invalid }) => {
       if ($dirty)
         set(valid, !$invalid);
     });
@@ -95,17 +95,17 @@ export function useForm<T = void>(): UseFormReturn<T> {
   };
 
   return {
-    submitting,
-    openDialog,
-    valid,
-    stateUpdated,
-    v$,
-    setOpenDialog,
     closeDialog,
-    setSubmitFunc,
+    openDialog,
+    setOpenDialog,
     setPostSubmitFunc,
+    setSubmitFunc,
     setValidation,
+    stateUpdated,
+    submitting,
     trySubmit,
+    v$,
+    valid,
   };
 }
 

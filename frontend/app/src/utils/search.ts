@@ -8,9 +8,9 @@ interface SplitResult {
 
 function defaultSplitResult(): SplitResult {
   return {
+    exclude: undefined,
     key: '',
     value: '',
-    exclude: undefined,
   };
 }
 
@@ -30,9 +30,9 @@ export function splitSearch(keyword: Nullable<string>): SplitResult {
 
   if (!exclude && matchOperatorIndex < 0) {
     return {
+      exclude: undefined,
       key: keyword.trim(),
       value: '',
-      exclude: undefined,
     };
   }
 
@@ -43,8 +43,8 @@ export function splitSearch(keyword: Nullable<string>): SplitResult {
   const value = keyword.substring(separatorIndex + length, keyword.length).trim();
 
   return {
+    exclude,
     key,
     value,
-    exclude,
   };
 }

@@ -19,7 +19,7 @@ const assets = computed(() => {
   });
 });
 
-const { getDefiName, getDefiImage, loading } = useDefiMetadata();
+const { getDefiImage, getDefiName, loading } = useDefiMetadata();
 
 const protocol = useRefMap(summary, i => i.protocol);
 const name = getDefiName(protocol);

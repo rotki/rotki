@@ -8,18 +8,18 @@ const { t } = useI18n();
 
 const tableHeaders = computed<DataTableColumn<UnderlyingToken>[]>(() => [
   {
-    label: t('common.address'),
     key: 'address',
+    label: t('common.address'),
   },
   {
-    label: t('underlying_token_manager.tokens.token_kind'),
+    cellClass: 'text-no-wrap',
     key: 'tokenKind',
-    cellClass: 'text-no-wrap',
+    label: t('underlying_token_manager.tokens.token_kind'),
   },
   {
-    label: t('underlying_token_manager.tokens.weight'),
-    key: 'weight',
     cellClass: 'text-no-wrap',
+    key: 'weight',
+    label: t('underlying_token_manager.tokens.weight'),
   },
 ]);
 </script>

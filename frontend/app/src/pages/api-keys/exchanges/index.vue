@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import { externalLinks } from '@shared/external-links';
 import { startPromise } from '@shared/utils';
+import { useNotificationsStore } from '@/store/notifications';
+import { useConfirmStore } from '@/store/confirm';
+import { useSettingsStore } from '@/store/settings';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useExchangesStore } from '@/store/exchanges';
+import { useLocationStore } from '@/store/locations';
 import type { Exchange, ExchangeFormData } from '@/types/exchanges';
 import type { DataTableColumn, DataTableSortColumn } from '@rotki/ui-library';
 
@@ -26,39 +32,39 @@ const { exchangeName } = useLocations();
 
 const cols = computed<DataTableColumn<Exchange>[]>(() => [
   {
-    label: t('common.location'),
-    key: 'location',
     align: 'center',
     cellClass: 'py-0 w-32',
+    key: 'location',
+    label: t('common.location'),
   },
   {
-    label: t('common.name'),
     key: 'name',
+    label: t('common.name'),
   },
   {
-    label: t('exchange_settings.header.sync_enabled'),
+    cellClass: 'w-32',
     key: 'syncEnabled',
-    cellClass: 'w-32',
+    label: t('exchange_settings.header.sync_enabled'),
   },
   {
-    label: t('common.actions_text'),
-    key: 'actions',
-    cellClass: 'w-32',
     align: 'center',
+    cellClass: 'w-32',
+    key: 'actions',
+    label: t('common.actions_text'),
   },
 ]);
 
 function createNewExchange(): ExchangeFormData {
   return {
-    mode: 'add',
-    location: get(exchangesWithKey)[0],
-    name: '',
-    newName: '',
     apiKey: '',
     apiSecret: '',
-    passphrase: '',
-    krakenAccountType: 'starter',
     binanceMarkets: undefined,
+    krakenAccountType: 'starter',
+    location: get(exchangesWithKey)[0],
+    mode: 'add',
+    name: '',
+    newName: '',
+    passphrase: '',
   };
 }
 
@@ -98,14 +104,14 @@ async function toggleSync(exchange: Exchange) {
   if (!status.success) {
     const { notify } = useNotificationsStore();
     notify({
-      title: t('exchange_settings.sync.messages.title'),
+      display: true,
       message: t('exchange_settings.sync.messages.description', {
         action: enable ? t('exchange_settings.sync.messages.enable') : t('exchange_settings.sync.messages.disable'),
         location: exchange.location,
-        name: exchange.name,
         message: status.message,
+        name: exchange.name,
       }),
-      display: true,
+      title: t('exchange_settings.sync.messages.title'),
     });
   }
 
@@ -120,8 +126,8 @@ function editExchange(exchangePayload: Exchange) {
   set(exchange, {
     ...createNewExchange(),
     ...exchangePayload,
-    newName: exchangePayload.name,
     mode: 'edit',
+    newName: exchangePayload.name,
   });
 }
 
@@ -131,11 +137,11 @@ async function remove(item: Exchange) {
 
 function showRemoveConfirmation(item: Exchange) {
   show({
-    title: t('exchange_settings.confirmation.title'),
     message: t('exchange_settings.confirmation.message', {
-      name: item?.name ?? '',
       location: item ? exchangeName(item.location) : '',
+      name: item?.name ?? '',
     }),
+    title: t('exchange_settings.confirmation.title'),
   }, () => remove(item));
 }
 

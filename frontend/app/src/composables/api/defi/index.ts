@@ -38,9 +38,9 @@ export function useDefiApi(): UseDefiApiReturn {
   };
 
   return {
-    fetchAllDefi,
     fetchAirdrops,
     fetchAirdropsMetadata,
+    fetchAllDefi,
     fetchDefiMetadata,
   };
 }

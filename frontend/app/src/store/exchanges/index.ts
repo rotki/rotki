@@ -1,4 +1,7 @@
 import { startPromise } from '@shared/utils';
+import { useMessageStore } from '@/store/message';
+import { useSessionSettingsStore } from '@/store/settings/session';
+import { useExchangeBalancesStore } from '@/store/balances/exchanges';
 import type { EditExchange, Exchange, ExchangeFormData } from '@/types/exchanges';
 
 export const useExchangesStore = defineStore('exchanges', () => {
@@ -9,7 +12,7 @@ export const useExchangesStore = defineStore('exchanges', () => {
   const { setConnectedExchanges } = sessionStore;
   const { connectedExchanges } = storeToRefs(sessionStore);
 
-  const { queryRemoveExchange, callSetupExchange } = useExchangeApi();
+  const { callSetupExchange, queryRemoveExchange } = useExchangeApi();
   const { setMessage } = useMessageStore();
 
   const { t } = useI18n();
@@ -21,15 +24,15 @@ export const useExchangesStore = defineStore('exchanges', () => {
     setConnectedExchanges([...get(connectedExchanges), exchange]);
   };
 
-  const editExchange = ({ exchange: { location, name: oldName, krakenAccountType }, newName }: EditExchange): void => {
+  const editExchange = ({ exchange: { krakenAccountType, location, name: oldName }, newName }: EditExchange): void => {
     const exchanges = [...get(connectedExchanges)];
     const name = newName ?? oldName;
     const index = exchanges.findIndex(value => value.name === oldName && value.location === location);
     exchanges[index] = {
       ...exchanges[index],
-      name,
-      location,
       krakenAccountType,
+      location,
+      name,
     };
     setConnectedExchanges(exchanges);
   };
@@ -63,8 +66,8 @@ export const useExchangesStore = defineStore('exchanges', () => {
         // if multiple keys exist for the deleted exchange, re-fetch and update the balances for the location
         if (exchanges.some(exch => exch.location === exchange.location)) {
           await fetchExchangeBalances({
-            location: exchange.location,
             ignoreCache: false,
+            location: exchange.location,
           });
         }
       }
@@ -73,11 +76,11 @@ export const useExchangesStore = defineStore('exchanges', () => {
     }
     catch (error: any) {
       setMessage({
-        title: t('actions.balances.exchange_removal.title'),
         description: t('actions.balances.exchange_removal.description', {
-          exchange,
           error: error.message,
+          exchange,
         }),
+        title: t('actions.balances.exchange_removal.title'),
       });
       return false;
     }
@@ -86,11 +89,11 @@ export const useExchangesStore = defineStore('exchanges', () => {
   const setupExchange = async (exchange: ExchangeFormData): Promise<boolean> => {
     try {
       const success = await callSetupExchange(exchange);
-      const { mode, name, newName, location, krakenAccountType } = exchange;
+      const { krakenAccountType, location, mode, name, newName } = exchange;
       const exchangeEntry: Exchange = {
-        name,
-        location,
         krakenAccountType,
+        location,
+        name,
       };
 
       if (mode !== 'edit') {
@@ -105,8 +108,8 @@ export const useExchangesStore = defineStore('exchanges', () => {
 
       startPromise(
         fetchExchangeBalances({
-          location,
           ignoreCache: false,
+          location,
         }),
       );
 
@@ -114,21 +117,21 @@ export const useExchangesStore = defineStore('exchanges', () => {
     }
     catch (error: any) {
       setMessage({
-        title: t('actions.balances.exchange_setup.title'),
         description: t('actions.balances.exchange_setup.description', {
-          exchange: exchange.location,
           error: error.message,
+          exchange: exchange.location,
         }),
+        title: t('actions.balances.exchange_setup.title'),
       });
       return false;
     }
   };
 
   return {
-    connectedExchanges,
-    getExchangeNonce,
     addExchange,
+    connectedExchanges,
     editExchange,
+    getExchangeNonce,
     removeExchange,
     setupExchange,
   };

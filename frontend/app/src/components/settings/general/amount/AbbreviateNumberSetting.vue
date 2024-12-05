@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { MINIMUM_DIGIT_TO_BE_ABBREVIATED } from '@/data/constraints';
 import { abbreviationList } from '@/data/amount-formatter';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
 const { t } = useI18n();
 
@@ -21,9 +22,9 @@ const transform = (value?: string) => (value ? Number.parseInt(value) : value);
 
 const items = computed(() => {
   const textMap = {
+    B: t('amount_display.abbreviation.b'),
     k: t('amount_display.abbreviation.k'),
     M: t('amount_display.abbreviation.m'),
-    B: t('amount_display.abbreviation.b'),
     T: t('amount_display.abbreviation.t'),
   };
 
@@ -32,8 +33,8 @@ const items = computed(() => {
     const value = (digit + 1).toString();
 
     return {
-      value,
       label: `${label} (${abbreviation})`,
+      value,
     };
   });
 });

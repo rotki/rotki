@@ -6,6 +6,8 @@ import { getNonRootAttrs, getRootAttrs } from '@/utils/attrs';
 import { getAccountAddress, getAccountId } from '@/utils/blockchain/accounts/utils';
 import { createAccount } from '@/utils/blockchain/accounts/create';
 import { hasAccountAddress } from '@/utils/blockchain/accounts';
+import { useBlockchainStore } from '@/store/blockchain';
+import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 
 type AccountWithAddressData = BlockchainAccount<AddressData>;
@@ -35,24 +37,24 @@ const props = withDefaults(defineProps<{
   showDetails?: boolean;
   customHint?: string;
 }>(), {
-  label: '',
-  hint: false,
-  loading: false,
-  usableAddresses: () => [],
-  multiple: false,
   chains: () => [],
-  outlined: false,
-  dense: false,
-  hideOnEmptyUsable: false,
-  multichain: false,
-  unique: false,
-  hideChainIcon: false,
-  errorMessages: () => [],
-  showDetails: false,
   customHint: '',
+  dense: false,
+  errorMessages: () => [],
+  hideChainIcon: false,
+  hideOnEmptyUsable: false,
+  hint: false,
+  label: '',
+  loading: false,
+  multichain: false,
+  multiple: false,
+  outlined: false,
+  showDetails: false,
+  unique: false,
+  usableAddresses: () => [],
 });
 
-const { chains, usableAddresses, hideOnEmptyUsable, multiple, multichain, unique } = toRefs(props);
+const { chains, hideOnEmptyUsable, multichain, multiple, unique, usableAddresses } = toRefs(props);
 
 const { t } = useI18n();
 
@@ -194,8 +196,8 @@ function input(nextValue?: AccountWithExtra | AccountWithExtra[]) {
 
 function getAccount(account: AccountWithAddressData): Account {
   return {
-    chain: account.chain,
     address: getAccountAddress(account),
+    chain: account.chain,
   };
 }
 </script>

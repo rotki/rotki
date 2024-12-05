@@ -1,14 +1,16 @@
 <script setup lang="ts">
 import { RefreshableCache } from '@/types/session/purge';
 import { TaskType } from '@/types/task-type';
+import { useTaskStore } from '@/store/tasks';
+import { useHistoryStore } from '@/store/history';
 
 const { t } = useI18n();
 
 const refreshable = [
   {
     id: RefreshableCache.GENERAL_CACHE,
-    text: t('data_management.refresh_cache.label.general_cache'),
     shortText: t('data_management.refresh_cache.label.general_cache_short'),
+    text: t('data_management.refresh_cache.label.general_cache'),
   },
 ];
 
@@ -26,22 +28,22 @@ async function refreshSource(source: RefreshableCache) {
     await refreshGeneralCache();
 }
 
-const { status, pending, showConfirmation } = useCacheClear<RefreshableCache>(
+const { pending, showConfirmation, status } = useCacheClear<RefreshableCache>(
   refreshable,
   refreshSource,
   (source: string) => ({
-    success: t('data_management.refresh_cache.success', {
+    error: t('data_management.refresh_cache.error', {
       source,
     }),
-    error: t('data_management.refresh_cache.error', {
+    success: t('data_management.refresh_cache.success', {
       source,
     }),
   }),
   (source: string) => ({
-    title: t('data_management.refresh_cache.confirm.title'),
     message: t('data_management.refresh_cache.confirm.message', {
       source,
     }),
+    title: t('data_management.refresh_cache.confirm.title'),
   }),
 );
 
@@ -59,8 +61,8 @@ const hint = computed<string>(() => {
 
   return t('transactions.protocol_cache_updates.hint', {
     ...data,
-    protocol: toCapitalCase(data.protocol),
     chain: get(getChainName(data.chain)),
+    protocol: toCapitalCase(data.protocol),
   });
 });
 

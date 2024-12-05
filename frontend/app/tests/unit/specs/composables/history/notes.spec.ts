@@ -1,6 +1,7 @@
 import { Blockchain } from '@rotki/common';
 import { describe, expect, it, vi } from 'vitest';
 import { type NoteFormat, NoteType } from '@/composables/history/events/notes';
+import { useSessionSettingsStore } from '@/store/settings/session';
 
 vi.mock('@/composables/assets/retrieval', () => ({
   useAssetInfoRetrieval: vi.fn().mockReturnValue({

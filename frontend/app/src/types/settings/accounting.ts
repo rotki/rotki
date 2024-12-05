@@ -9,20 +9,20 @@ export enum AccountingTreatment {
 const AccountingTreatmentEnum = z.nativeEnum(AccountingTreatment);
 
 export const AccountingRuleWithLinkedProperty = z.object({
-  value: z.boolean(),
   linkedSetting: z.string().optional(),
+  value: z.boolean(),
 });
 
 export type AccountingRuleWithLinkedProperty = z.infer<typeof AccountingRuleWithLinkedProperty>;
 
 export const AccountingRule = z.object({
-  eventType: z.string(),
-  eventSubtype: z.string(),
-  counterparty: z.string().nullable(),
-  taxable: AccountingRuleWithLinkedProperty,
+  accountingTreatment: AccountingTreatmentEnum.nullable(),
   countCostBasisPnl: AccountingRuleWithLinkedProperty,
   countEntireAmountSpend: AccountingRuleWithLinkedProperty,
-  accountingTreatment: AccountingTreatmentEnum.nullable(),
+  counterparty: z.string().nullable(),
+  eventSubtype: z.string(),
+  eventType: z.string(),
+  taxable: AccountingRuleWithLinkedProperty,
 });
 
 export type AccountingRule = z.infer<typeof AccountingRule>;
@@ -52,8 +52,8 @@ export interface AccountingRuleLinkedSettingMap {
 }
 
 export const AccountingRuleConflict = z.object({
-  localId: z.number(),
   localData: AccountingRule,
+  localId: z.number(),
   remoteData: AccountingRule,
 });
 

@@ -19,28 +19,28 @@ const props = withDefaults(
     counterparty?: string;
   }>(),
   {
-    notes: '',
     amount: undefined,
     asset: '',
+    blockNumber: undefined,
     chain: Blockchain.ETH,
+    notes: '',
     noTxHash: false,
     validatorIndex: undefined,
-    blockNumber: undefined,
   },
 );
 
-const { notes, amount, asset, noTxHash, validatorIndex, blockNumber, counterparty } = toRefs(props);
+const { amount, asset, blockNumber, counterparty, notes, noTxHash, validatorIndex } = toRefs(props);
 
 const { formatNotes } = useHistoryEventNote();
 
 const formattedNotes: ComputedRef<NoteFormat[]> = formatNotes({
-  notes,
   amount,
   assetId: asset,
-  noTxHash,
-  validatorIndex,
   blockNumber,
   counterparty,
+  notes,
+  noTxHash,
+  validatorIndex,
 });
 
 function isLinkType(t: any): t is keyof ExplorerUrls {

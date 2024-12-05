@@ -4,9 +4,9 @@ import { Balance, Percentage } from '../../balances';
 import type { Account } from '../../account';
 
 const Eth2DailyStat = z.object({
-  validatorIndex: z.number().nonnegative(),
-  timestamp: z.number().nonnegative(),
   pnl: Balance,
+  timestamp: z.number().nonnegative(),
+  validatorIndex: z.number().nonnegative(),
 });
 
 export type Eth2DailyStat = z.infer<typeof Eth2DailyStat>;
@@ -30,18 +30,18 @@ const EthStakingStats = z.object({
   apr: NumericString.optional(),
   execution: NumericString.optional(),
   exits: NumericString.optional(),
+  outstandingConsensusPnl: NumericString.optional(),
   sum: NumericString.optional(),
   withdrawals: NumericString.optional(),
-  outstandingConsensusPnl: NumericString.optional(),
 });
 
 export type EthStakingStats = z.infer<typeof EthStakingStats>;
 
 export const EthStakingPerformanceResponse = z.object({
+  entriesFound: z.number(),
+  entriesTotal: z.number(),
   sums: EthStakingStats,
   validators: z.record(EthStakingStats),
-  entriesTotal: z.number(),
-  entriesFound: z.number(),
 });
 
 export type EthStakingPerformanceResponse = z.infer<typeof EthStakingPerformanceResponse>;
@@ -67,13 +67,13 @@ export interface EthStakingPayload extends EthStakingPeriod {
 }
 
 const Validator = z.object({
+  activationTimestamp: z.number().nonnegative().optional(),
   index: z.number(),
+  ownershipPercentage: Percentage.optional(),
   publicKey: z.string(),
   status: z.string(),
-  ownershipPercentage: Percentage.optional(),
-  withdrawalAddress: z.string().optional(),
-  activationTimestamp: z.number().nonnegative().optional(),
   withdrawableTimestamp: z.number().nonnegative().optional(),
+  withdrawalAddress: z.string().optional(),
 });
 
 export type Eth2ValidatorEntry = z.infer<typeof Validator>;

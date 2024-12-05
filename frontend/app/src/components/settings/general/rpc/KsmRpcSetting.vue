@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import { Defaults } from '@/data/defaults';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 
 const { t } = useI18n();
 const ksmRpcEndpoint = ref(Defaults.KSM_RPC_ENDPOINT);

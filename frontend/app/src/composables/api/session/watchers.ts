@@ -50,9 +50,9 @@ export function useWatchersApi(): UseWatcherApiReturn {
   };
 
   return {
-    watchers,
     addWatcher,
-    editWatcher,
     deleteWatcher,
+    editWatcher,
+    watchers,
   };
 }

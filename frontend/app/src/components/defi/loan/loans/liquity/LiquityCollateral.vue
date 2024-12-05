@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { externalLinks } from '@shared/external-links';
+import { useLiquityStore } from '@/store/defi/liquity';
 import type { AssetBalance, BigNumber } from '@rotki/common';
 
 withDefaults(

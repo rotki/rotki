@@ -5,6 +5,9 @@ import { createValidatorAccount } from '@/utils/blockchain/accounts/create';
 import { logger } from '@/utils/logging';
 import { sortAndFilterValidators } from '@/utils/blockchain/accounts/validator';
 import { isAccountWithBalanceValidator } from '@/utils/blockchain/accounts';
+import { useNotificationsStore } from '@/store/notifications';
+import { useBlockchainStore } from '@/store/blockchain/index';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 import type { EthereumValidator, EthereumValidatorRequestPayload } from '@/types/blockchain/accounts';
 import type { Collection } from '@/types/collection';
 
@@ -66,12 +69,12 @@ export const useBlockchainValidatorsStore = defineStore('blockchain/validators',
     catch (error: any) {
       logger.error(error);
       notify({
-        title: t('actions.get_accounts.error.title'),
+        display: true,
         message: t('actions.get_accounts.error.description', {
           blockchain: Blockchain.ETH2,
           message: error.message,
         }),
-        display: true,
+        title: t('actions.get_accounts.error.title'),
       });
     }
   };
@@ -82,16 +85,16 @@ export const useBlockchainValidatorsStore = defineStore('blockchain/validators',
     if (isEth2Enabled()) {
       await fetchEthStakingValidators();
       await fetchBlockchainBalances({
-        ignoreCache: true,
         blockchain: Blockchain.ETH2,
+        ignoreCache: true,
       });
     }
   });
 
   return {
-    stakingValidatorsLimits,
     ethStakingValidators,
-    fetchValidators,
     fetchEthStakingValidators,
+    fetchValidators,
+    stakingValidatorsLimits,
   };
 });

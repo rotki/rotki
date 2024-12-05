@@ -5,12 +5,12 @@ import type { ComputedRef } from 'vue';
 
 export const NoteType = {
   ADDRESS: 'address',
-  TX: 'transaction',
-  BLOCK: 'block',
   AMOUNT: 'amount',
-  WORD: 'word',
-  URL: 'url',
+  BLOCK: 'block',
   FLAG: 'flag',
+  TX: 'transaction',
+  URL: 'url',
+  WORD: 'word',
 } as const;
 
 export type NoteType = (typeof NoteType)[keyof typeof NoteType];
@@ -127,13 +127,13 @@ export function useHistoryEventNote(): UseHistoryEventsNoteReturn {
   };
 
   const formatNotes = ({
-    notes,
     amount,
     assetId,
-    noTxHash,
-    validatorIndex,
     blockNumber,
     counterparty,
+    notes,
+    noTxHash,
+    validatorIndex,
   }: FormatNoteParams): ComputedRef<NoteFormat[]> => computed<NoteFormat[]>(() => {
     const asset = get(assetSymbol(assetId, {
       collectionParent: false,
@@ -193,10 +193,10 @@ export function useHistoryEventNote(): UseHistoryEventsNoteReturn {
       // Check if the word is ETH address
       if (isValidEthAddress(word)) {
         formats.push({
-          type: NoteType.ADDRESS,
           address: word,
-          showIcon: true,
           showHashLink: true,
+          showIcon: true,
+          type: NoteType.ADDRESS,
         });
         return putBackPunctuation();
       }
@@ -204,9 +204,9 @@ export function useHistoryEventNote(): UseHistoryEventsNoteReturn {
       // Check if the word is Tx Hash
       if (isValidTxHash(word) && !get(noTxHash)) {
         formats.push({
-          type: NoteType.TX,
           address: word,
           showHashLink: true,
+          type: NoteType.TX,
         });
         return putBackPunctuation();
       }
@@ -214,10 +214,10 @@ export function useHistoryEventNote(): UseHistoryEventsNoteReturn {
       // Check if the word is ETH2 Validator Index
       if (get(validatorIndex)?.toString() === word) {
         formats.push({
-          type: NoteType.ADDRESS,
           address: word,
           chain: Blockchain.ETH2,
           showHashLink: true,
+          type: NoteType.ADDRESS,
         });
         return putBackPunctuation();
       }
@@ -225,9 +225,9 @@ export function useHistoryEventNote(): UseHistoryEventsNoteReturn {
       // Check if the word is Block Number
       if (get(blockNumber)?.toString() === word) {
         formats.push({
-          type: NoteType.BLOCK,
           address: word,
           showHashLink: true,
+          type: NoteType.BLOCK,
         });
         return putBackPunctuation();
       }
@@ -244,9 +244,9 @@ export function useHistoryEventNote(): UseHistoryEventsNoteReturn {
           && processedWords[index + 1] === asset;
 
         formats.push({
-          type: NoteType.AMOUNT,
-          asset: isAsset ? get(assetId) : undefined,
           amount: amountVal,
+          asset: isAsset ? get(assetId) : undefined,
+          type: NoteType.AMOUNT,
         });
 
         if (isAsset)
@@ -268,8 +268,8 @@ export function useHistoryEventNote(): UseHistoryEventsNoteReturn {
 
           formats.push({
             type: NoteType.URL,
-            word: text,
             url,
+            word: text,
           });
 
           return putBackPunctuation();
@@ -282,8 +282,8 @@ export function useHistoryEventNote(): UseHistoryEventsNoteReturn {
       if (urlRegex.test(word)) {
         formats.push({
           type: NoteType.URL,
-          word,
           url: word,
+          word,
         });
 
         return putBackPunctuation();
@@ -304,8 +304,8 @@ export function useHistoryEventNote(): UseHistoryEventsNoteReturn {
       const countryFlagMatch = word.match(countryFlagRegex);
       if (countryFlagMatch && counterpartyVal === 'gnosis_pay') {
         formats.push({
-          type: NoteType.FLAG,
           countryCode: countryFlagMatch[1]?.toLowerCase(),
+          type: NoteType.FLAG,
         });
         return putBackPunctuation();
       }

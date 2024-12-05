@@ -17,17 +17,17 @@ const props = withDefaults(
     loading?: boolean;
   }>(),
   {
-    width: undefined,
-    height: undefined,
-    maxWidth: undefined,
-    maxHeight: undefined,
-    size: undefined,
-    src: undefined,
-    sizes: undefined,
-    srcset: undefined,
     alt: undefined,
     contain: false,
+    height: undefined,
     loading: false,
+    maxHeight: undefined,
+    maxWidth: undefined,
+    size: undefined,
+    sizes: undefined,
+    src: undefined,
+    srcset: undefined,
+    width: undefined,
   },
 );
 
@@ -37,16 +37,16 @@ const emit = defineEmits<{
   (e: 'loadstart'): void;
 }>();
 
-const { width, height, maxWidth, maxHeight, size } = toRefs(props);
+const { height, maxHeight, maxWidth, size, width } = toRefs(props);
 
 const error = ref<boolean>(false);
 const success = ref<boolean>(false);
 
 const style = computed(() => ({
-  width: getSizeOrValue(width),
   height: getSizeOrValue(height),
-  maxWidth: getSizeOrValue(maxWidth),
   maxHeight: getSizeOrValue(maxHeight),
+  maxWidth: getSizeOrValue(maxWidth),
+  width: getSizeOrValue(width),
 }));
 
 function getSizeOrValue(value: MaybeRef<string | number | undefined>) {

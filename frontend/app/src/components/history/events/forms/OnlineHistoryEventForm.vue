@@ -9,6 +9,8 @@ import { DateFormat } from '@/types/date-format';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 import { bigNumberifyFromRef } from '@/utils/bignumbers';
 import HistoryEventAssetPriceForm from '@/components/history/events/forms/HistoryEventAssetPriceForm.vue';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useSessionSettingsStore } from '@/store/settings/session';
 import type { NewOnlineHistoryEventPayload, OnlineHistoryEvent } from '@/types/history/events';
 
 const props = withDefaults(
@@ -19,8 +21,8 @@ const props = withDefaults(
   }>(),
   {
     editableItem: undefined,
-    nextSequence: '',
     groupHeader: undefined,
+    nextSequence: '',
   },
 );
 
@@ -51,21 +53,30 @@ const errorMessages = ref<Record<string, string[]>>({});
 const externalServerValidation = () => true;
 
 const rules = {
-  timestamp: { externalServerValidation },
-  locationLabel: { externalServerValidation },
-  notes: { externalServerValidation },
-  eventIdentifier: {
-    required: helpers.withMessage(t('transactions.events.form.event_identifier.validation.non_empty'), required),
-  },
-  location: {
-    required: helpers.withMessage(t('transactions.events.form.location.validation.non_empty'), required),
+  amount: {
+    required: helpers.withMessage(t('transactions.events.form.amount.validation.non_empty'), required),
   },
   asset: {
     required: helpers.withMessage(t('transactions.events.form.asset.validation.non_empty'), required),
   },
-  amount: {
-    required: helpers.withMessage(t('transactions.events.form.amount.validation.non_empty'), required),
+  eventIdentifier: {
+    required: helpers.withMessage(t('transactions.events.form.event_identifier.validation.non_empty'), required),
   },
+  eventSubtype: {
+    required: helpers.withMessage(t('transactions.events.form.event_subtype.validation.non_empty'), required),
+  },
+  eventType: {
+    required: helpers.withMessage(t('transactions.events.form.event_type.validation.non_empty'), required),
+  },
+  location: {
+    required: helpers.withMessage(t('transactions.events.form.location.validation.non_empty'), required),
+  },
+  locationLabel: { externalServerValidation },
+  notes: { externalServerValidation },
+  sequenceIndex: {
+    required: helpers.withMessage(t('transactions.events.form.sequence_index.validation.non_empty'), required),
+  },
+  timestamp: { externalServerValidation },
   usdValue: {
     required: helpers.withMessage(
       t('transactions.events.form.fiat_value.validation.non_empty', {
@@ -74,36 +85,27 @@ const rules = {
       required,
     ),
   },
-  sequenceIndex: {
-    required: helpers.withMessage(t('transactions.events.form.sequence_index.validation.non_empty'), required),
-  },
-  eventType: {
-    required: helpers.withMessage(t('transactions.events.form.event_type.validation.non_empty'), required),
-  },
-  eventSubtype: {
-    required: helpers.withMessage(t('transactions.events.form.event_subtype.validation.non_empty'), required),
-  },
 };
 
 const numericAmount = bigNumberifyFromRef(amount);
 const numericUsdValue = bigNumberifyFromRef(usdValue);
 
-const { setValidation, setSubmitFunc, saveHistoryEventHandler, getPayloadNotes } = useHistoryEventsForm();
+const { getPayloadNotes, saveHistoryEventHandler, setSubmitFunc, setValidation } = useHistoryEventsForm();
 
 const v$ = setValidation(
   rules,
   {
-    timestamp: datetime,
+    amount,
+    asset,
+    eventIdentifier,
+    eventSubtype,
+    eventType,
+    location,
     locationLabel,
     notes,
-    eventIdentifier,
-    location,
-    asset,
-    amount,
-    usdValue,
     sequenceIndex,
-    eventType,
-    eventSubtype,
+    timestamp: datetime,
+    usdValue,
   },
   {
     $autoDirty: true,
@@ -163,20 +165,20 @@ async function save(): Promise<boolean> {
   const usedNotes = getPayloadNotes(get(notes), editable?.notes);
 
   const payload: NewOnlineHistoryEventPayload = {
-    entryType: HistoryEventEntryType.HISTORY_EVENT,
-    eventIdentifier: get(eventIdentifier),
-    sequenceIndex: get(sequenceIndex) || '0',
-    timestamp,
-    eventType: get(eventType),
-    eventSubtype: get(eventSubtype),
     asset: get(asset),
     balance: {
       amount: get(numericAmount).isNaN() ? Zero : get(numericAmount),
       usdValue: get(numericUsdValue).isNaN() ? Zero : get(numericUsdValue),
     },
+    entryType: HistoryEventEntryType.HISTORY_EVENT,
+    eventIdentifier: get(eventIdentifier),
+    eventSubtype: get(eventSubtype),
+    eventType: get(eventType),
     location: get(location),
     locationLabel: get(locationLabel) || null,
     notes: usedNotes ? usedNotes.trim() : undefined,
+    sequenceIndex: get(sequenceIndex) || '0',
+    timestamp,
   };
 
   return await saveHistoryEventHandler(

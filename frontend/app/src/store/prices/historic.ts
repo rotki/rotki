@@ -1,6 +1,9 @@
 import { HistoricPrices } from '@/types/prices';
 import { TaskType } from '@/types/task-type';
 import { isTaskCancelled } from '@/utils';
+import { useTaskStore } from '@/store/tasks';
+import { useNotificationsStore } from '@/store/notifications';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 import type { BigNumber } from '@rotki/common';
 import type { TaskMeta } from '@/types/task';
 
@@ -27,14 +30,13 @@ export const useHistoricCachePriceStore = defineStore('prices/historic-cache', (
       targetAsset,
     });
 
-    let data = { targetAsset: '', assets: {} };
+    let data = { assets: {}, targetAsset: '' };
 
     try {
       const { result } = await awaitTask<HistoricPrices, TaskMeta>(
         taskId,
         taskType,
         {
-          title: t('actions.balances.historic_fetch_price.task.title'),
           description: t(
             'actions.balances.historic_fetch_price.task.description',
             {
@@ -43,6 +45,7 @@ export const useHistoricCachePriceStore = defineStore('prices/historic-cache', (
             },
             2,
           ),
+          title: t('actions.balances.historic_fetch_price.task.title'),
         },
         true,
       );
@@ -51,11 +54,11 @@ export const useHistoricCachePriceStore = defineStore('prices/historic-cache', (
     catch (error: any) {
       if (!isTaskCancelled(error)) {
         notify({
-          title: t('actions.balances.historic_fetch_price.task.title'),
+          display: true,
           message: t('actions.balances.historic_fetch_price.error.message', {
             message: error.message,
           }),
-          display: true,
+          title: t('actions.balances.historic_fetch_price.task.title'),
         });
       }
     }
@@ -68,12 +71,12 @@ export const useHistoricCachePriceStore = defineStore('prices/historic-cache', (
         const key = createKey(fromAsset, timestamp);
 
         const item = response.assets?.[fromAsset]?.[timestamp];
-        yield { key, item };
+        yield { item, key };
       }
     };
   };
 
-  const { cache, isPending, retrieve, reset, deleteCacheKey } = useItemCache<BigNumber>(async keys =>
+  const { cache, deleteCacheKey, isPending, reset, retrieve } = useItemCache<BigNumber>(async keys =>
     fetchHistoricPrices(keys),
   );
 
@@ -118,12 +121,12 @@ export const useHistoricCachePriceStore = defineStore('prices/historic-cache', (
 
   return {
     cache,
-    isPending,
-    retrieve,
-    reset,
     createKey,
     historicPriceInCurrentCurrency,
+    isPending,
+    reset,
     resetHistoricalPricesData,
+    retrieve,
   };
 });
 

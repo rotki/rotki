@@ -46,8 +46,8 @@ export const displayAmountFormatter = new AmountFormatter();
 
 export function getBnFormat(thousandSeparator: string, decimalSeparator: string): BnFormat {
   return {
-    groupSize: 3,
-    groupSeparator: thousandSeparator,
     decimalSeparator,
+    groupSeparator: thousandSeparator,
+    groupSize: 3,
   };
 }

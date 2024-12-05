@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Section } from '@/types/status';
+import { useStatusStore } from '@/store/status';
 import type { LiquityStakingDetailEntry } from '@rotki/common';
 
 withDefaults(

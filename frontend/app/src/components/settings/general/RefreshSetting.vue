@@ -3,6 +3,7 @@ import useVuelidate from '@vuelidate/core';
 import { between, helpers, required } from '@vuelidate/validators';
 import { Constraints } from '@/data/constraints';
 import { toMessages } from '@/utils/validation';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
 const refreshPeriod = ref<string>('');
 const refreshEnabled = ref<boolean>(false);
@@ -14,14 +15,14 @@ const { t } = useI18n();
 
 const rules = {
   refreshPeriod: {
-    required: helpers.withMessage(t('frontend_settings.refresh_balance.validation.non_empty'), required),
     between: helpers.withMessage(
       t('frontend_settings.refresh_balance.validation.invalid_period', {
-        start: minRefreshPeriod,
         end: maxRefreshPeriod,
+        start: minRefreshPeriod,
       }),
       between(minRefreshPeriod, maxRefreshPeriod),
     ),
+    required: helpers.withMessage(t('frontend_settings.refresh_balance.validation.non_empty'), required),
   },
 };
 

@@ -11,6 +11,11 @@ import { UserAccount, type UserSettingsModel } from '@/types/user';
 import { api } from '@/services/rotkehlchen-api';
 import { logger } from '@/utils/logging';
 import { lastLogin } from '@/utils/account-management';
+import { useMonitorStore } from '@/store/monitor';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useTaskStore } from '@/store/tasks';
+import { useMessageStore } from '@/store/message';
+import { useSessionAuthStore } from '@/store/session/auth';
 import type { Exchange } from '@/types/exchanges';
 import type { SupportedLanguage } from '@/types/settings/frontend-settings';
 import type { TaskMeta } from '@/types/task';
@@ -23,7 +28,7 @@ export const useSessionStore = defineStore('session', () => {
   const checkForAssetUpdate = ref<boolean>(false);
 
   const authStore = useSessionAuthStore();
-  const { logged, username, syncConflict, conflictExist, incompleteUpgradeConflict, shouldFetchData }
+  const { conflictExist, incompleteUpgradeConflict, logged, shouldFetchData, syncConflict, username }
     = storeToRefs(authStore);
 
   const { initialize } = useSessionSettings();
@@ -33,7 +38,7 @@ export const useSessionStore = defineStore('session', () => {
 
   const { setMessage } = useMessageStore();
 
-  const { checkForUpdates, resetTray, isPackaged, clearPassword } = useInterop();
+  const { checkForUpdates, clearPassword, isPackaged, resetTray } = useInterop();
   const { awaitTask } = useTaskStore();
 
   const { t } = useI18n();
@@ -60,10 +65,10 @@ export const useSessionStore = defineStore('session', () => {
       message = error.message;
     }
 
-    return { success: false, message };
+    return { message, success: false };
   };
 
-  const unlock = ({ settings, exchanges, fetchData, username: user }: UnlockPayload): ActionStatus => {
+  const unlock = ({ exchanges, fetchData, settings, username: user }: UnlockPayload): ActionStatus => {
     try {
       initialize(settings, exchanges);
       set(username, user);
@@ -87,18 +92,18 @@ export const useSessionStore = defineStore('session', () => {
       const { result } = await awaitTask<UserAccount, TaskMeta>(taskId, taskType, {
         title: 'creating account',
       });
-      const { settings, exchanges } = UserAccount.parse(result);
+      const { exchanges, settings } = UserAccount.parse(result);
       const data: UnlockPayload = {
-        settings,
         exchanges,
-        username: payload.credentials.username,
         fetchData: payload.premiumSetup?.syncDatabase,
+        settings,
+        username: payload.credentials.username,
       };
       return unlock(data);
     }
     catch (error: any) {
       logger.error(error);
-      return { success: false, message: error.message };
+      return { message: error.message, success: false };
     }
   };
 
@@ -116,7 +121,7 @@ export const useSessionStore = defineStore('session', () => {
       }
       else {
         if (!credentials.username)
-          return { success: false, message: '' };
+          return { message: '', success: false };
 
         authStore.resetSyncConflict();
         authStore.resetIncompleteUpgradeConflict();
@@ -128,14 +133,14 @@ export const useSessionStore = defineStore('session', () => {
         });
 
         const account = UserAccount.parse(result);
-        ({ settings, exchanges } = account);
+        ({ exchanges, settings } = account);
       }
 
       return unlock({
-        settings,
         exchanges,
-        username,
         fetchData: true,
+        settings,
+        username,
       });
     }
     catch (error: any) {
@@ -158,8 +163,8 @@ export const useSessionStore = defineStore('session', () => {
     catch (error: any) {
       logger.error(error);
       setMessage({
-        title: 'Logout failed',
         description: error.message,
+        title: 'Logout failed',
       });
     }
 
@@ -176,10 +181,10 @@ export const useSessionStore = defineStore('session', () => {
     }
     catch (error: any) {
       setMessage({
-        title: 'Remote session logout failure',
         description: error.message,
+        title: 'Remote session logout failure',
       });
-      return { success: false, message: error.message };
+      return { message: error.message, success: false };
     }
   };
 
@@ -212,8 +217,8 @@ export const useSessionStore = defineStore('session', () => {
         }),
       });
       return {
-        success: false,
         message: error.message,
+        success: false,
       };
     }
   };
@@ -230,15 +235,15 @@ export const useSessionStore = defineStore('session', () => {
 
   return {
     adaptiveLanguage,
-    showUpdatePopup,
+    changePassword,
+    checkForAssetUpdate,
+    checkForUpdate,
+    createAccount,
     darkModeEnabled,
     login,
     logout,
     logoutRemoteSession,
-    createAccount,
-    changePassword,
-    checkForUpdate,
-    checkForAssetUpdate,
+    showUpdatePopup,
   };
 });
 

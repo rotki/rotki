@@ -2,6 +2,7 @@ import { type VueWrapper, mount } from '@vue/test-utils';
 import flushPromises from 'flush-promises/index';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import PremiumSettings from '@/pages/api-keys/premium/index.vue';
+import { useConfirmStore } from '@/store/confirm';
 
 vi.mock('@/composables/electron-interop', () => {
   const mockInterop = {

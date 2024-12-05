@@ -73,8 +73,8 @@ export const useWebsocketStore = defineStore('websocket', () => {
   };
 
   return {
-    connected,
     connect,
+    connected,
     disconnect,
   };
 });

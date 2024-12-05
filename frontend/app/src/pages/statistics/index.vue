@@ -3,10 +3,10 @@ import { PremiumStatistics } from '@/premium/premium';
 import { NoteLocation } from '@/types/notes';
 
 definePage({
-  name: 'statistics',
   meta: {
     noteLocation: NoteLocation.STATISTICS,
   },
+  name: 'statistics',
 });
 
 const premium = usePremium();

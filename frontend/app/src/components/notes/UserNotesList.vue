@@ -2,6 +2,7 @@
 import { logger } from '@/utils/logging';
 import { getCollectionData, setupEntryLimit } from '@/utils/collection';
 import UserNotesFormDialog from '@/components/notes/UserNotesFormDialog.vue';
+import { useSessionAuthStore } from '@/store/session/auth';
 import type { UserNote, UserNotesRequestPayload } from '@/types/notes';
 
 const props = withDefaults(defineProps<{ location?: string }>(), {
@@ -10,10 +11,10 @@ const props = withDefaults(defineProps<{ location?: string }>(), {
 
 function getDefaultForm() {
   return {
-    title: '',
     content: '',
     isPinned: false,
     location: '',
+    title: '',
   };
 }
 
@@ -29,7 +30,7 @@ const loading = ref<boolean>(false);
 const search = ref<string>('');
 const titleSubstring = ref<string>('');
 
-const { fetchUserNotes, updateUserNote, addUserNote, deleteUserNote } = useUserNotesApi();
+const { addUserNote, deleteUserNote, fetchUserNotes, updateUserNote } = useUserNotesApi();
 
 const extraParams = computed(() => ({
   location: get(location),
@@ -37,9 +38,9 @@ const extraParams = computed(() => ({
 }));
 
 const {
-  state: notes,
   fetchData,
   pagination,
+  state: notes,
 } = usePaginationFilters<UserNote, UserNotesRequestPayload>(fetchUserNotes, {
   defaultSortBy: [{
     column: 'isPinned',
@@ -61,7 +62,7 @@ async function fetchNotes(loadingIndicator = false) {
   set(loading, false);
 }
 
-const { limit: itemsPerPage, found, total } = getCollectionData<UserNote>(notes);
+const { found, limit: itemsPerPage, total } = getCollectionData<UserNote>(notes);
 
 const { showUpgradeRow } = setupEntryLimit(itemsPerPage, found, total);
 
@@ -72,8 +73,8 @@ const LIMIT = 10;
 watch(page, (page) => {
   set(pagination, {
     ...get(pagination),
-    page: 1,
     limit: LIMIT * page,
+    page: 1,
   });
 });
 

@@ -12,7 +12,7 @@ export function useCopy(source: Ref<string>): UseCopyReturn {
     source,
   });
 
-  const { start, stop, isPending } = useTimeoutFn(() => {
+  const { isPending, start, stop } = useTimeoutFn(() => {
     set(copied, false);
   }, 4000, { immediate: false });
 
@@ -30,5 +30,5 @@ export function useCopy(source: Ref<string>): UseCopyReturn {
     startAnimation();
   };
 
-  return { copy, copied };
+  return { copied, copy };
 }

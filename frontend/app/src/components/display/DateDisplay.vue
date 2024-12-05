@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { displayDateFormatter } from '@/data/date-formatter';
+import { useSessionSettingsStore } from '@/store/settings/session';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 
 const props = withDefaults(
   defineProps<{
@@ -10,14 +12,14 @@ const props = withDefaults(
     hideTooltip?: boolean;
   }>(),
   {
-    showTimezone: false,
-    noTime: false,
-    milliseconds: false,
     hideTooltip: false,
+    milliseconds: false,
+    noTime: false,
+    showTimezone: false,
   },
 );
 
-const { timestamp, showTimezone, noTime, milliseconds } = toRefs(props);
+const { milliseconds, noTime, showTimezone, timestamp } = toRefs(props);
 const { dateDisplayFormat } = storeToRefs(useGeneralSettingsStore());
 const { shouldShowAmount } = storeToRefs(useSessionSettingsStore());
 
@@ -58,7 +60,7 @@ const showTooltip = computed(() => {
 
 const splitByMillisecondsPart = computed(() => get(formattedDate).split('.'));
 
-const { copy, copied } = useCopy(formattedDate);
+const { copied, copy } = useCopy(formattedDate);
 </script>
 
 <template>

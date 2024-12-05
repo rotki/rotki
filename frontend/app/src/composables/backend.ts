@@ -1,6 +1,7 @@
 import { BackendOptions } from '@shared/ipc';
 import { getDefaultLogLevel, logger, setLevel } from '@/utils/logging';
 import { deleteBackendUrl, getBackendUrl } from '@/utils/account-management';
+import { useMainStore } from '@/store/main';
 import type { Writeable } from '@rotki/common';
 import type { LogLevel } from '@shared/log-level';
 import type { ComputedRef, Ref } from 'vue';
@@ -48,7 +49,7 @@ export function useBackendManagement(loaded: () => void = () => {}): UseBackendM
   const interop = useInterop();
   const store = useMainStore();
   const { connected } = storeToRefs(store);
-  const { setConnected, connect } = store;
+  const { connect, setConnected } = store;
 
   const defaultLogLevel = computed<LogLevel>(() => getDefaultLogLevel());
   const logLevel = ref<LogLevel>(get(defaultLogLevel));
@@ -84,10 +85,10 @@ export function useBackendManagement(loaded: () => void = () => {}): UseBackendM
   };
 
   const saveOptions = async (opts: Partial<BackendOptions>): Promise<void> => {
-    const { logDirectory, dataDirectory, loglevel } = get(userOptions);
+    const { dataDirectory, logDirectory, loglevel } = get(userOptions);
     const updatedOptions = {
-      logDirectory,
       dataDirectory,
+      logDirectory,
       loglevel,
       ...opts,
     };
@@ -142,16 +143,16 @@ export function useBackendManagement(loaded: () => void = () => {}): UseBackendM
   });
 
   return {
-    logLevel,
-    defaultLogLevel,
-    defaultLogDirectory,
-    options,
-    fileConfig,
-    saveOptions,
-    resetOptions,
-    restartBackend,
-    resetSessionBackend,
-    setupBackend,
     backendChanged,
+    defaultLogDirectory,
+    defaultLogLevel,
+    fileConfig,
+    logLevel,
+    options,
+    resetOptions,
+    resetSessionBackend,
+    restartBackend,
+    saveOptions,
+    setupBackend,
   };
 }

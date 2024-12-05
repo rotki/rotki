@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { api } from '@/services/rotkehlchen-api';
+import { useMainStore } from '@/store/main';
 
 const { t } = useI18n();
 

@@ -70,10 +70,10 @@ export function useStatisticsApi(): UseStatisticsApiReturn {
   };
 
   return {
-    queryNetValueData,
-    queryTimedBalancesData,
-    queryLatestLocationValueDistribution,
     queryLatestAssetValueDistribution,
+    queryLatestLocationValueDistribution,
+    queryNetValueData,
     queryStatisticsRenderer,
+    queryTimedBalancesData,
   };
 }

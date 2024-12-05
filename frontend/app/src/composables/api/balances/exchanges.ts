@@ -35,8 +35,8 @@ export function useExchangeApi(): UseExchangeApiReturn {
   const queryRemoveExchange = async ({ location, name }: Exchange): Promise<boolean> => {
     const response = await api.instance.delete<ActionResult<boolean>>('/exchanges', {
       data: {
-        name,
         location,
+        name,
       },
       validateStatus: validStatus,
     });
@@ -157,14 +157,14 @@ export function useExchangeApi(): UseExchangeApiReturn {
   };
 
   return {
-    queryRemoveExchange,
-    queryExchangeBalances,
     callSetupExchange,
+    deleteExchangeData,
     getExchanges,
+    getExchangeSavings,
+    getExchangeSavingsTask,
     queryBinanceMarkets,
     queryBinanceUserMarkets,
-    deleteExchangeData,
-    getExchangeSavingsTask,
-    getExchangeSavings,
+    queryExchangeBalances,
+    queryRemoveExchange,
   };
 }

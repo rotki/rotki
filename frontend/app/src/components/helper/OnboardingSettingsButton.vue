@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useMainStore } from '@/store/main';
+
 const { t } = useI18n();
 const visible = ref<boolean>(false);
 const { connected } = toRefs(useMainStore());

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 withDefaults(defineProps<{ title?: string; medium?: boolean }>(), {
-  title: '',
   medium: true,
+  title: '',
 });
 </script>
 

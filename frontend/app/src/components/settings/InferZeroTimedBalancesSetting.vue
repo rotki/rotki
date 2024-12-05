@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useGeneralSettingsStore } from '@/store/settings/general';
+
 const emit = defineEmits<{
   (e: 'updated'): void;
 }>();

@@ -46,69 +46,18 @@ function isAppSession(): boolean {
 }
 
 const interop: UseInteropReturn = {
-  get isPackaged(): boolean {
-    return electronApp;
-  },
-
   get appSession(): boolean {
     return isAppSession();
   },
 
-  logToFile: (message: string): void => {
-    window.interop?.logToFile(message);
-  },
+  checkForUpdates: async (): Promise<boolean> => (await window.interop?.checkForUpdates()) ?? false,
 
-  navigate: (url: string): void => {
-    window.interop?.openUrl(url);
-  },
-
-  navigateToPremium: (): void => {
-    window.interop?.openUrl(externalLinks.premium);
-  },
-
-  setupListeners: (listeners: Listeners): void => {
-    window.interop?.setListeners(listeners);
-  },
-
-  openDirectory: async (title: string): Promise<string | undefined> =>
-    (await window.interop?.openDirectory(title)) ?? undefined,
-
-  openUrl: (url: string): void => {
-    if (electronApp) {
-      window.interop?.openUrl(url);
-    }
-    else {
-      window.open(url, '_blank');
-    }
-  },
-
-  openPath: (path: string): void => {
-    window.interop?.openPath(path);
-  },
-
-  premiumUserLoggedIn: (premiumUser: boolean): void => {
-    window.interop?.premiumUserLoggedIn(premiumUser);
+  clearPassword: async (): Promise<void> => {
+    await window.interop?.clearPassword();
   },
 
   closeApp: (): void => {
     window.interop?.closeApp();
-  },
-
-  metamaskImport: async (): Promise<string[]> => {
-    if (!window.interop)
-      throw new Error('environment does not support interop');
-
-    const response = await window.interop.metamaskImport();
-
-    if ('error' in response)
-      throw new Error(response.error);
-
-    return response.addresses;
-  },
-
-  restartBackend: async (options: Partial<BackendOptions>): Promise<boolean> => {
-    assert(window.interop);
-    return window.interop.restartBackend(options);
   },
 
   config: async (defaults: boolean): Promise<Partial<BackendOptions>> => {
@@ -116,46 +65,13 @@ const interop: UseInteropReturn = {
     return window.interop.config(defaults);
   },
 
-  version: async (): Promise<SystemVersion | WebVersion> => {
-    if (!window.interop) {
-      return Promise.resolve({
-        platform: navigator?.platform,
-        userAgent: navigator?.userAgent,
-      });
-    }
-    return window.interop?.version();
-  },
-
-  isMac: async (): Promise<boolean> => Promise.resolve(window.interop?.isMac() || navigator.platform?.startsWith?.('Mac')),
-
-  resetTray: (): void => {
-    window.interop?.updateTray({});
-  },
-
-  updateTray: (update: TrayUpdate): void => {
-    window.interop?.updateTray(update);
-  },
-
-  storePassword: async (username: string, password: string): Promise<boolean | undefined> => {
-    assert(window.interop);
-    return window.interop.storePassword(username, password);
-  },
+  downloadUpdate: async (progress: (percentage: number) => void): Promise<boolean> =>
+    (await window.interop?.downloadUpdate(progress)) ?? false,
 
   getPassword: async (username: string): Promise<string | undefined> => {
     assert(window.interop);
     return window.interop.getPassword(username);
   },
-
-  clearPassword: async (): Promise<void> => {
-    await window.interop?.clearPassword();
-  },
-
-  checkForUpdates: async (): Promise<boolean> => (await window.interop?.checkForUpdates()) ?? false,
-
-  downloadUpdate: async (progress: (percentage: number) => void): Promise<boolean> =>
-    (await window.interop?.downloadUpdate(progress)) ?? false,
-
-  installUpdate: async (): Promise<boolean | Error> => (await window.interop?.installUpdate()) ?? false,
 
   /**
    * Electron attaches a path property to {@see File}. In normal DOM inside a browser this property does not exist.
@@ -172,6 +88,90 @@ const interop: UseInteropReturn = {
       return file.path;
 
     return undefined;
+  },
+
+  installUpdate: async (): Promise<boolean | Error> => (await window.interop?.installUpdate()) ?? false,
+
+  isMac: async (): Promise<boolean> => Promise.resolve(window.interop?.isMac() || navigator.platform?.startsWith?.('Mac')),
+
+  get isPackaged(): boolean {
+    return electronApp;
+  },
+
+  logToFile: (message: string): void => {
+    window.interop?.logToFile(message);
+  },
+
+  metamaskImport: async (): Promise<string[]> => {
+    if (!window.interop)
+      throw new Error('environment does not support interop');
+
+    const response = await window.interop.metamaskImport();
+
+    if ('error' in response)
+      throw new Error(response.error);
+
+    return response.addresses;
+  },
+
+  navigate: (url: string): void => {
+    window.interop?.openUrl(url);
+  },
+
+  navigateToPremium: (): void => {
+    window.interop?.openUrl(externalLinks.premium);
+  },
+
+  openDirectory: async (title: string): Promise<string | undefined> =>
+    (await window.interop?.openDirectory(title)) ?? undefined,
+
+  openPath: (path: string): void => {
+    window.interop?.openPath(path);
+  },
+
+  openUrl: (url: string): void => {
+    if (electronApp) {
+      window.interop?.openUrl(url);
+    }
+    else {
+      window.open(url, '_blank');
+    }
+  },
+
+  premiumUserLoggedIn: (premiumUser: boolean): void => {
+    window.interop?.premiumUserLoggedIn(premiumUser);
+  },
+
+  resetTray: (): void => {
+    window.interop?.updateTray({});
+  },
+
+  restartBackend: async (options: Partial<BackendOptions>): Promise<boolean> => {
+    assert(window.interop);
+    return window.interop.restartBackend(options);
+  },
+
+  setupListeners: (listeners: Listeners): void => {
+    window.interop?.setListeners(listeners);
+  },
+
+  storePassword: async (username: string, password: string): Promise<boolean | undefined> => {
+    assert(window.interop);
+    return window.interop.storePassword(username, password);
+  },
+
+  updateTray: (update: TrayUpdate): void => {
+    window.interop?.updateTray(update);
+  },
+
+  version: async (): Promise<SystemVersion | WebVersion> => {
+    if (!window.interop) {
+      return Promise.resolve({
+        platform: navigator?.platform,
+        userAgent: navigator?.userAgent,
+      });
+    }
+    return window.interop?.version();
   },
 };
 

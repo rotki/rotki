@@ -10,6 +10,8 @@ import { registerDevtools } from '@/plugins/devtools';
 import { i18n } from '@/i18n';
 import { router } from '@/router';
 import { createRuiPlugin } from '@/plugins/rui';
+import { StoreResetPlugin, StoreTrackPlugin } from '@/store/plugins';
+import { StoreStatePersistsPlugin } from '@/store/debug';
 import './main.scss';
 import 'roboto-fontface/css/roboto/roboto-fontface.css';
 import 'typeface-roboto-mono';
@@ -32,7 +34,7 @@ setActivePinia(pinia);
 const itemsPerPage = useItemsPerPage();
 
 const rui = createRuiPlugin({
-  table: { itemsPerPage, globalItemsPerPage: true, limits: [10, 25, 50, 100], stickyOffset: 60 },
+  table: { globalItemsPerPage: true, itemsPerPage, limits: [10, 25, 50, 100], stickyOffset: 60 },
 });
 
 const app = createApp(App);

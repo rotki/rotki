@@ -18,7 +18,7 @@ export function getPools(balances: XswapBalances, events: XswapEvents): XswapPoo
     if (!accountBalances || accountBalances.length === 0)
       continue;
 
-    for (const { assets, address } of accountBalances) {
+    for (const { address, assets } of accountBalances) {
       if (known[address])
         continue;
 
@@ -92,7 +92,7 @@ export function getBalances(xswapBalance: XswapBalances, addresses: string[], gr
     if (!accountBalances || accountBalances.length === 0)
       continue;
 
-    for (const { userBalance, totalSupply, assets, address, nftId, priceRange } of accountBalances) {
+    for (const { address, assets, nftId, priceRange, totalSupply, userBalance } of accountBalances) {
       const balance = balances[address];
       if (balance) {
         const oldBalance = balance.userBalance;
@@ -116,12 +116,12 @@ export function getBalances(xswapBalance: XswapBalances, addresses: string[], gr
       else {
         balances[address] = {
           account,
-          userBalance,
-          totalSupply,
-          assets,
           address,
+          assets,
           nftId,
           priceRange,
+          totalSupply,
+          userBalance,
         };
       }
     }

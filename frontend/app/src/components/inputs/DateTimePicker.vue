@@ -8,6 +8,7 @@ import { DateFormat } from '@/types/date-format';
 import { toMessages } from '@/utils/validation';
 import { timezones } from '@/data/timezones';
 import { changeDateFormat, convertDateByTimezone, getDateInputISOFormat, guessTimezone, isValidDate } from '@/utils/date';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
 const props = withDefaults(
   defineProps<{
@@ -26,24 +27,24 @@ const props = withDefaults(
     dense?: boolean;
   }>(),
   {
-    label: '',
-    hint: '',
-    persistentHint: false,
-    limitNow: false,
     allowEmpty: false,
-    milliseconds: false,
+    dateOnly: false,
+    dense: false,
     disabled: false,
     errorMessages: () => [],
     hideDetails: false,
-    dateOnly: false,
+    hint: '',
     inputOnly: false,
-    dense: false,
+    label: '',
+    limitNow: false,
+    milliseconds: false,
+    persistentHint: false,
   },
 );
 
 const emit = defineEmits<{ (e: 'update:model-value', value: string): void }>();
 
-const { allowEmpty, limitNow, errorMessages, milliseconds, dateOnly } = toRefs(props);
+const { allowEmpty, dateOnly, errorMessages, limitNow, milliseconds } = toRefs(props);
 const imask = ref<InputMask<any> | null>(null);
 
 const { t } = useI18n();
@@ -111,6 +112,7 @@ const dateFormatErrorMessage = computed<string>(() => {
 
 const rules = {
   date: {
+    isOnLimit: helpers.withMessage(t('date_time_picker.limit_now'), (v: string): boolean => isDateOnLimit(v)),
     isValidFormat: helpers.withMessage(
       () => get(dateFormatErrorMessage),
       (v: string): boolean => {
@@ -120,7 +122,6 @@ const rules = {
         return isValidFormat(v);
       },
     ),
-    isOnLimit: helpers.withMessage(t('date_time_picker.limit_now'), (v: string): boolean => isDateOnLimit(v)),
   },
   timezone: {
     required: helpers.withMessage(t('date_time_picker.timezone_field.non_empty'), required),
@@ -135,8 +136,8 @@ const v$ = useVuelidate(
   },
   {
     $autoDirty: true,
-    $stopPropagation: true,
     $externalResults: computed(() => ({ date: get(errorMessages) })),
+    $stopPropagation: true,
   },
 );
 
@@ -214,15 +215,15 @@ function initImask() {
   const input = inputWrapper.$el.querySelector('input') as HTMLInputElement;
 
   const createBlock = (from: number, to: number) => ({
-    mask: MaskedRange,
     from,
+    mask: MaskedRange,
     to,
   });
 
   const dateBlocks = {
-    YYYY: createBlock(1970, 9999),
-    MM: createBlock(1, 12),
     DD: createBlock(1, 31),
+    MM: createBlock(1, 12),
+    YYYY: createBlock(1970, 9999),
   };
 
   const hourAndMinuteBlocks = {
@@ -244,11 +245,11 @@ function initImask() {
 
   const mask = [
     {
-      mask: convertPattern(get(dateOnlyFormat)),
       blocks: {
         ...dateBlocks,
       },
       lazy: false,
+      mask: convertPattern(get(dateOnlyFormat)),
       overwrite: true,
     },
   ];
@@ -256,29 +257,28 @@ function initImask() {
   if (!get(dateOnly)) {
     mask.push(
       {
-        mask: convertPattern(get(dateTimeFormat)),
         blocks: {
           ...dateBlocks,
           ...hourAndMinuteBlocks,
         },
         lazy: false,
+        mask: convertPattern(get(dateTimeFormat)),
         overwrite: true,
       },
       {
-        mask: convertPattern(get(dateTimeFormatWithSecond)),
         blocks: {
           ...dateBlocks,
           ...hourAndMinuteBlocks,
           ...secondBlocks,
         },
         lazy: false,
+        mask: convertPattern(get(dateTimeFormatWithSecond)),
         overwrite: true,
       },
     );
 
     if (get(milliseconds)) {
       mask.push({
-        mask: convertPattern(get(dateTimeFormatWithMilliseconds)),
         blocks: {
           ...dateBlocks,
           ...hourAndMinuteBlocks,
@@ -286,6 +286,7 @@ function initImask() {
           ...millisecondsBlocks,
         },
         lazy: false,
+        mask: convertPattern(get(dateTimeFormatWithMilliseconds)),
         overwrite: true,
       });
     }

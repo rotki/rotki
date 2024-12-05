@@ -5,6 +5,9 @@ import { defaultCollectionState } from '@/utils/collection';
 import { isTaskCancelled } from '@/utils';
 import { uniqueStrings } from '@/utils/data';
 import { logger } from '@/utils/logging';
+import { useTaskStore } from '@/store/tasks';
+import { useNotificationsStore } from '@/store/notifications';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import type { MaybeRef } from '@vueuse/core';
 import type {
   AddressBookEntries,
@@ -31,13 +34,13 @@ export const useAddressesNamesStore = defineStore('blockchains/accounts/addresse
   const { supportedChains } = useSupportedChains();
 
   const {
-    getEnsNames,
-    getEnsNamesTask,
-    getAddressesNames,
-    ensAvatarUrl,
-    fetchAddressBook,
     addAddressBook: addAddressBookCaller,
     deleteAddressBook: deleteAddressBookCaller,
+    ensAvatarUrl,
+    fetchAddressBook,
+    getAddressesNames,
+    getEnsNames,
+    getEnsNamesTask,
     updateAddressBook: updateAddressBookCaller,
   } = useAddressesNamesApi();
 
@@ -82,9 +85,9 @@ export const useAddressesNamesStore = defineStore('blockchains/accounts/addresse
       logger.error(error);
       const message = error?.message ?? error ?? '';
       notify({
-        title: t('alias_names.error.title'),
-        message: t('alias_names.error.message', { message }),
         display: true,
+        message: t('alias_names.error.message', { message }),
+        title: t('alias_names.error.title'),
       });
       result = [];
     }
@@ -99,17 +102,17 @@ export const useAddressesNamesStore = defineStore('blockchains/accounts/addresse
             && res.blockchain === entry.blockchain,
         )?.name || '';
 
-        yield { key, item };
+        yield { item, key };
       }
     };
   };
 
   const {
     isPending,
-    retrieve,
-    unknown,
     refresh,
     reset: resetAddressesNames,
+    retrieve,
+    unknown,
   } = useItemCache<string>(async keys => fetchAddressesNames(keys));
 
   const getAddressesWithoutNames = (blockchain?: MaybeRef<string | null>): ComputedRef<string[]> => computed<string[]>(() => {
@@ -171,11 +174,11 @@ export const useAddressesNamesStore = defineStore('blockchains/accounts/addresse
       logger.error(error);
       const message = error?.message ?? error ?? '';
       notify({
-        title: t('address_book.actions.fetch.error.title'),
+        display: true,
         message: t('address_book.actions.fetch.error.message', {
           message,
         }),
-        display: true,
+        title: t('address_book.actions.fetch.error.title'),
       });
 
       return defaultCollectionState();
@@ -252,9 +255,9 @@ export const useAddressesNamesStore = defineStore('blockchains/accounts/addresse
       catch (error: any) {
         if (!isTaskCancelled(error)) {
           notify({
-            title: t('ens_names.task.title'),
-            message: t('ens_names.error.message', { message: error.message }),
             display: true,
+            message: t('ens_names.error.message', { message: error.message }),
+            title: t('ens_names.task.title'),
           });
         }
       }
@@ -273,21 +276,21 @@ export const useAddressesNamesStore = defineStore('blockchains/accounts/addresse
   };
 
   return {
-    ensNames,
-    fetchEnsNames,
-    fetchedEntries,
-    getAddressesWithoutNames,
-    setLastRefreshedAvatar,
-    addressesNames,
-    ensNameSelector,
-    getEnsAvatarUrl,
-    addressNameSelector,
-    getAddressBook,
     addAddressBook,
-    updateAddressBook,
+    addressesNames,
+    addressNameSelector,
     deleteAddressBook,
-    resetAddressNamesData,
+    ensNames,
+    ensNameSelector,
+    fetchedEntries,
+    fetchEnsNames,
+    getAddressBook,
+    getAddressesWithoutNames,
+    getEnsAvatarUrl,
     resetAddressesNames,
+    resetAddressNamesData,
+    setLastRefreshedAvatar,
+    updateAddressBook,
   };
 });
 

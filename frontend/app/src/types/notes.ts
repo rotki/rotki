@@ -3,12 +3,12 @@ import { CollectionCommonFields } from '@/types/collection';
 import type { PaginationRequestPayload } from '@/types/common';
 
 export const UserNote = z.object({
-  identifier: z.number(),
-  title: z.string(),
   content: z.string(),
-  location: z.string(),
-  lastUpdateTimestamp: z.number(),
+  identifier: z.number(),
   isPinned: z.boolean(),
+  lastUpdateTimestamp: z.number(),
+  location: z.string(),
+  title: z.string(),
 });
 
 export type UserNote = z.infer<typeof UserNote>;

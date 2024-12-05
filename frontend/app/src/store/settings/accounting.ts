@@ -23,17 +23,17 @@ export const useAccountingSettingsStore = defineStore('settings/accounting', () 
   };
 
   return {
-    pnlCsvHaveSummary,
-    pnlCsvWithFormulas,
-    includeCrypto2crypto,
-    includeGasCosts,
-    taxfreeAfterPeriod,
     accountForAssetsMovements,
     calculatePastCostBasis,
-    ethStakingTaxableAfterWithdrawalEnabled,
-    includeFeesInCostBasis,
     costBasisMethod,
+    ethStakingTaxableAfterWithdrawalEnabled,
+    includeCrypto2crypto,
+    includeFeesInCostBasis,
+    includeGasCosts,
+    pnlCsvHaveSummary,
+    pnlCsvWithFormulas,
     settings,
+    taxfreeAfterPeriod,
     update,
   };
 });

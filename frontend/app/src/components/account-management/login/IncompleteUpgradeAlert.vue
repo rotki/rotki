@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useSessionAuthStore } from '@/store/session/auth';
+
 const emit = defineEmits<{ (e: 'confirm'): void; (e: 'cancel'): void }>();
 
 const { t } = useI18n();

@@ -1,4 +1,5 @@
 import { balanceSum } from '@/utils/calculation';
+import { useManualBalancesStore } from '@/store/balances/manual';
 import type { Balance } from '@rotki/common';
 import type { AssetBalances } from '@/types/balances';
 import type { ManualBalanceWithValue } from '@/types/manual-balances';
@@ -7,7 +8,7 @@ import type { ComputedRef } from 'vue';
 function toAssetBalances(balances: ManualBalanceWithValue[]): AssetBalances {
   const ownedAssets: AssetBalances = {};
 
-  for (const { asset, usdValue, amount } of balances) {
+  for (const { amount, asset, usdValue } of balances) {
     const balance: Balance = {
       amount,
       usdValue,

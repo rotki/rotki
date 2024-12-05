@@ -5,9 +5,9 @@ const props = defineProps<{
   icon?: string;
 }>();
 
-const { getAirdropName, getAirdropImageUrl, loading } = useAirdropsMetadata();
+const { getAirdropImageUrl, getAirdropName, loading } = useAirdropsMetadata();
 
-const { source, icon } = toRefs(props);
+const { icon, source } = toRefs(props);
 
 const name = getAirdropName(source);
 const image = getAirdropImageUrl(source);

@@ -13,8 +13,8 @@ interface UseExternalServicesApiReturn {
 export function useExternalServicesApi(): UseExternalServicesApiReturn {
   const queryExternalServices = async (): Promise<ExternalServiceKeys> => {
     const response = await api.instance.get<ActionResult<ExternalServiceKeys>>('/external_services', {
-      validateStatus: validWithSessionStatus,
       transformResponse: setupTransformer(true),
+      validateStatus: validWithSessionStatus,
     });
 
     const data = handleResponse(response);
@@ -28,8 +28,8 @@ export function useExternalServicesApi(): UseExternalServicesApiReturn {
         services: keys,
       }),
       {
-        validateStatus: validStatus,
         transformResponse: setupTransformer(true),
+        validateStatus: validStatus,
       },
     );
 
@@ -42,8 +42,8 @@ export function useExternalServicesApi(): UseExternalServicesApiReturn {
       data: {
         services: [serviceToDelete],
       },
-      validateStatus: validStatus,
       transformResponse: setupTransformer(true),
+      validateStatus: validStatus,
     });
 
     const data = handleResponse(response);
@@ -51,8 +51,8 @@ export function useExternalServicesApi(): UseExternalServicesApiReturn {
   };
 
   return {
+    deleteExternalServices,
     queryExternalServices,
     setExternalServices,
-    deleteExternalServices,
   };
 }

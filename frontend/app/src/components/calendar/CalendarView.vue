@@ -6,6 +6,9 @@ import { isBlockchain } from '@/types/blockchain/chains';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
 import CalendarGrid from '@/components/calendar/CalendarGrid.vue';
 import CalendarUpcomingEventList from '@/components/calendar/CalendarUpcomingEventList.vue';
+import { useConfirmStore } from '@/store/confirm';
+import { useMessageStore } from '@/store/message';
+import { useBlockchainStore } from '@/store/blockchain';
 import type { CalendarEvent, CalendarEventRequestPayload } from '@/types/history/calendar';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 import type { Writeable } from '@rotki/common';
@@ -20,7 +23,7 @@ const range = ref<[number, number]>([0, 0]);
 const selectedDateEvents = ref<CalendarEvent[]>([]);
 const upcomingEvents = ref<CalendarEvent[]>([]);
 
-const { fetchCalendarEvents, deleteCalendarEvent } = useCalendarApi();
+const { deleteCalendarEvent, fetchCalendarEvents } = useCalendarApi();
 const accounts = ref<BlockchainAccount<AddressData>[]>([]);
 
 const extraParams = computed(() => {
@@ -36,14 +39,18 @@ const { getAccountByAddress } = useBlockchainStore();
 const { editableItem } = useCommonTableProps<CalendarEvent>();
 
 const {
-  state: events,
-  isLoading,
   fetchData,
+  isLoading,
   pagination,
+  state: events,
 } = usePaginationFilters<
   CalendarEvent,
   CalendarEventRequestPayload
 >(fetchCalendarEvents, {
+  defaultSortBy: {
+    direction: 'asc',
+  },
+  extraParams,
   onUpdateFilters(query) {
     const parsedAccounts = RouterAccountsSchema.parse(query);
     const accountsParsed = parsedAccounts.accounts;
@@ -57,10 +64,6 @@ const {
       );
     }
   },
-  defaultSortBy: {
-    direction: 'asc',
-  },
-  extraParams,
   requestParams: computed<Partial<CalendarEventRequestPayload>>(() => {
     const params: Writeable<Partial<CalendarEventRequestPayload>> = {};
     const accountsVal = get(accounts);
@@ -101,10 +104,10 @@ watch([events, today], async ([events, today], [oldEvents, oldToday]) => {
   }
   else {
     const data = await fetchCalendarEvents({
+      ascending: [true],
       fromTimestamp: today.add(1, 'day').startOf('day').unix(),
       limit: 5,
       offset: 0,
-      ascending: [true],
       orderByAttributes: ['timestamp'],
     });
     set(upcomingEvents, data.data);
@@ -156,9 +159,9 @@ async function deleteClicked() {
     }
     catch (error: any) {
       setMessage({
-        title: t('calendar.delete_event'),
         description: t('calendar.delete_error.message', { message: error.message }),
         success: false,
+        title: t('calendar.delete_event'),
       });
     }
   }
@@ -167,8 +170,8 @@ async function deleteClicked() {
 function deleteEvent() {
   show(
     {
-      title: t('calendar.delete_event'),
       message: t('calendar.dialog.delete.message'),
+      title: t('calendar.delete_event'),
     },
     deleteClicked,
   );

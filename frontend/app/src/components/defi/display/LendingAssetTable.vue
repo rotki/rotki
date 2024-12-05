@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useGeneralSettingsStore } from '@/store/settings/general';
 import type { BaseDefiBalance } from '@/types/defi/lending';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 
@@ -22,21 +23,21 @@ const sort = ref<DataTableSortData<BaseDefiBalance>>({
 
 const headers = computed<DataTableColumn<BaseDefiBalance>[]>(() => [
   {
-    label: t('common.asset'),
     key: 'asset',
+    label: t('common.asset'),
     sortable: true,
   },
   {
-    label: t('common.amount'),
+    align: 'end',
     key: 'amount',
-    align: 'end',
+    label: t('common.amount'),
     sortable: true,
   },
-  { label: '', key: 'usdValue', align: 'end', sortable: true },
+  { align: 'end', key: 'usdValue', label: '', sortable: true },
   {
-    label: t('lending_asset_table.headers.effective_interest_rate'),
-    key: 'effectiveInterestRate',
     align: 'end',
+    key: 'effectiveInterestRate',
+    label: t('lending_asset_table.headers.effective_interest_rate'),
     sortable: true,
   },
 ]);

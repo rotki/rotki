@@ -24,8 +24,8 @@ const { scrambleIdentifier } = useScramble();
 const header = computed(() => {
   const makerVault = props.vault;
   return {
-    identifier: scrambleIdentifier(makerVault.identifier),
     collateralType: makerVault.collateralType,
+    identifier: scrambleIdentifier(makerVault.identifier),
   };
 });
 

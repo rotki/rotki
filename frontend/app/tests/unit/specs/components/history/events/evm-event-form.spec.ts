@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { HistoryEventEntryType } from '@rotki/common';
 import EvmEventForm from '@/components/history/events/forms/EvmEventForm.vue';
 import { setupDayjs } from '@/utils/date';
+import { useBalancePricesStore } from '@/store/balances/prices';
 import type { AssetMap } from '@/types/asset';
 import type { EvmHistoryEvent } from '@/types/history/events';
 

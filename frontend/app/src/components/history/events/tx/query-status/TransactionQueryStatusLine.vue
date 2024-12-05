@@ -3,7 +3,7 @@ import type { EvmTransactionQueryData } from '@/types/websocket-messages';
 
 defineProps<{ item: EvmTransactionQueryData }>();
 
-const { getLabel, getItemTranslationKey } = useTransactionQueryStatus();
+const { getItemTranslationKey, getLabel } = useTransactionQueryStatus();
 const { getChain } = useSupportedChains();
 </script>
 

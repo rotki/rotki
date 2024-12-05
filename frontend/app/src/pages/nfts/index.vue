@@ -3,10 +3,10 @@ import { Module } from '@/types/modules';
 import { NoteLocation } from '@/types/notes';
 
 definePage({
-  name: 'nfts',
   meta: {
     noteLocation: NoteLocation.NFTS,
   },
+  name: 'nfts',
 });
 
 const modules = [Module.NFTS];

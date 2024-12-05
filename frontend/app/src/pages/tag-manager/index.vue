@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { NoteLocation } from '@/types/notes.ts';
+import { NoteLocation } from '@/types/notes';
 
 definePage({
-  name: 'tag_manager',
   meta: {
     noteLocation: NoteLocation.TAG_MANAGER,
   },
+  name: 'tag_manager',
 });
 </script>
 

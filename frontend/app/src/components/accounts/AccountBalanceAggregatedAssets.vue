@@ -1,5 +1,8 @@
 <script lang="ts" setup>
 import { balanceSum } from '@/utils/calculation';
+import { useBalancePricesStore } from '@/store/balances/prices';
+import { useIgnoredAssetsStore } from '@/store/assets/ignored';
+import { useBlockchainStore } from '@/store/blockchain';
 import type { AssetBalance, AssetBalanceWithPrice } from '@rotki/common';
 
 const props = defineProps<{
@@ -7,7 +10,7 @@ const props = defineProps<{
   chains: string[];
 }>();
 
-const { groupId, chains } = toRefs(props);
+const { chains, groupId } = toRefs(props);
 const { getAccountDetails } = useBlockchainStore();
 
 const { isAssetIgnored } = useIgnoredAssetsStore();

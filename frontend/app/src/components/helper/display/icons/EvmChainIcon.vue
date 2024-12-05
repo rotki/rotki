@@ -20,8 +20,8 @@ const chainData = computed(() => {
   const chainProp = get(chain);
 
   return {
-    label: toCapitalCase(chainProp),
     image: getImageUrl(chainProp),
+    label: toCapitalCase(chainProp),
   };
 });
 </script>

@@ -7,7 +7,7 @@ const props = defineProps<{
 
 const { address, chain } = toRefs(props);
 
-const { detectingTokens, detectedTokens, detectTokens } = useTokenDetection(chain, address);
+const { detectedTokens, detectingTokens, detectTokens } = useTokenDetection(chain, address);
 
 const { t } = useI18n();
 </script>

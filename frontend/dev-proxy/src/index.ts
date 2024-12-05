@@ -71,8 +71,8 @@ const mockAsync: {
 
   taskResponses: { [task: number]: any };
 } = {
-  pending: [],
   completed: [],
+  pending: [],
   taskResponses: {},
 };
 
@@ -96,8 +96,8 @@ setInterval(() => {
 
 function createResult(result: unknown): Record<string, unknown> {
   return {
-    result,
     message: '',
+    result,
   };
 }
 
@@ -185,8 +185,8 @@ function handleAsyncQuery(url: string, req: Request, res: Response): void {
   }
   else {
     pendingResponse = {
-      result: null,
       message: 'There is something wrong with this mock',
+      result: null,
     };
   }
 
@@ -194,10 +194,10 @@ function handleAsyncQuery(url: string, req: Request, res: Response): void {
   mockAsync.pending.push(taskId);
   mockAsync.taskResponses[taskId] = pendingResponse;
   manipulateResponse(res, () => ({
+    message: '',
     result: {
       task_id: taskId,
     },
-    message: '',
   }));
 }
 
@@ -310,13 +310,13 @@ server.use(bodyParser.urlencoded({ extended: true }));
 server.use(bodyParser.json());
 // eslint-disable-next-line @typescript-eslint/no-misused-promises
 server.use(createProxyMiddleware({
-  target: backend,
-  on: {
-    proxyRes: onProxyRes,
-    proxyReq: onProxyReq,
-  },
-  ws: true,
   logger: consola,
+  on: {
+    proxyReq: onProxyReq,
+    proxyRes: onProxyRes,
+  },
+  target: backend,
+  ws: true,
 }));
 
 server.listen(port, () => {

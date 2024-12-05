@@ -16,10 +16,10 @@ withDefaults(
     getKey: (item: EvmTransactionQueryData | HistoryEventsQueryData) => string;
   }>(),
   {
-    onlyChains: () => [],
-    locations: () => [],
-    transactions: () => [],
     events: () => [],
+    locations: () => [],
+    onlyChains: () => [],
+    transactions: () => [],
   },
 );
 

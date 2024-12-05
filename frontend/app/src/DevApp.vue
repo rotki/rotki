@@ -2,6 +2,7 @@
 import { Routes } from '@/router/routes';
 import { useHistoryEventCounterpartyMappings } from '@/composables/history/events/mapping/counterparty';
 import { uniqueStrings } from '@/utils/data';
+import { useLocationStore } from '@/store/locations';
 
 function reset() {
   sessionStorage.removeItem('vuex');
@@ -11,8 +12,8 @@ function reset() {
 const resetState = 'Reset State';
 
 const { supportedChains } = useSupportedChains();
-const { allLocations, allExchanges } = storeToRefs(useLocationStore());
-const { getCounterpartyData, counterparties } = useHistoryEventCounterpartyMappings();
+const { allExchanges, allLocations } = storeToRefs(useLocationStore());
+const { counterparties, getCounterpartyData } = useHistoryEventCounterpartyMappings();
 
 const imageUrl = 'https://raw.githubusercontent.com/rotki/rotki/develop/frontend/app/public/assets/images/protocols/';
 
@@ -20,16 +21,16 @@ const integrationData = computed(() => {
   const blockchains = get(supportedChains)
     .filter(item => item.name !== 'Ethereum Staking')
     .map(item => ({
-      label: toSentenceCase(item.name),
       image: `${imageUrl}${item.image}`,
+      label: toSentenceCase(item.name),
     }));
 
   const exchanges = get(allExchanges).map((item) => {
     const data = get(allLocations)[item];
 
     return {
-      label: data.label || toSentenceCase(item),
       image: `${imageUrl}${data.image}`,
+      label: data.label || toSentenceCase(item),
     };
   });
 
@@ -39,8 +40,8 @@ const integrationData = computed(() => {
     .map((item) => {
       const data = get(getCounterpartyData(item));
       return {
-        label: toHumanReadable(data.label, 'sentence'),
         image: `${imageUrl}${data.image}`,
+        label: toHumanReadable(data.label, 'sentence'),
       };
     });
 

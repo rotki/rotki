@@ -1,6 +1,10 @@
 import { samePriceAssets } from '@/types/blockchain';
 import { uniqueStrings } from '@/utils/data';
 import { sumAssetBalances } from '@/utils/balances';
+import { useBlockchainStore } from '@/store/blockchain';
+import { useExchangeBalancesStore } from '@/store/balances/exchanges';
+import { useBalancePricesStore } from '@/store/balances/prices';
+import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import type { AssetBalanceWithPrice } from '@rotki/common';
 import type { MaybeRef } from '@vueuse/core';
 import type { AssetPriceInfo } from '@/types/prices';
@@ -16,7 +20,7 @@ interface UseAggregatedBalancesReturn {
 export function useAggregatedBalances(): UseAggregatedBalancesReturn {
   const { isAssetIgnored } = useIgnoredAssetsStore();
   const { assetPrice } = useBalancePricesStore();
-  const { aggregatedTotals, aggregatedLiabilities } = storeToRefs(useBlockchainStore());
+  const { aggregatedLiabilities, aggregatedTotals } = storeToRefs(useBlockchainStore());
   const { balances: exchangeBalances } = storeToRefs(useExchangeBalancesStore());
   const { balances: manualBalances, liabilities: manualLiabilities } = useManualAssetBalances();
 
@@ -87,16 +91,16 @@ export function useAggregatedBalances(): UseAggregatedBalancesReturn {
     );
 
     return {
-      usdPrice: assetValue?.usdPrice ?? Zero,
       amount: assetValue?.amount ?? Zero,
+      usdPrice: assetValue?.usdPrice ?? Zero,
       usdValue: assetValue?.usdValue ?? Zero,
     };
   });
 
   return {
-    balances,
-    liabilities,
     assetPriceInfo,
     assets,
+    balances,
+    liabilities,
   };
 }

@@ -51,33 +51,33 @@ function filterAccount<T extends BlockchainAccountBalance>(
   const chains = account.type === 'group' ? account.chains : [account.chain];
   const { getLabel } = resolvers;
   const {
-    tags: tagFilter,
     address: addressFilter,
+    category: categoryFilter,
     chain: chainFilter,
     label: labelFilter,
-    category: categoryFilter,
+    tags: tagFilter,
   } = filters;
 
   const matches: { name: keyof typeof filters; matches: boolean }[] = [];
   if (addressFilter)
-    matches.push({ name: 'address', matches: includes(getAccountAddress(account), addressFilter) });
+    matches.push({ matches: includes(getAccountAddress(account), addressFilter), name: 'address' });
 
   if (labelFilter) {
     const resolvedLabel = getLabel(getAccountAddress(account), getChain(account))
       ?? account.label
       ?? getAccountAddress(account);
     if (resolvedLabel)
-      matches.push({ name: 'label', matches: includes(resolvedLabel, labelFilter) });
+      matches.push({ matches: includes(resolvedLabel, labelFilter), name: 'label' });
   }
 
   if (chainFilter && chainFilter.length > 0)
-    matches.push({ name: 'chain', matches: chains.some(chain => chainFilter.includes(chain)) });
+    matches.push({ matches: chains.some(chain => chainFilter.includes(chain)), name: 'chain' });
 
   if (tagFilter && tagFilter.length > 0)
-    matches.push({ name: 'tags', matches: tagFilter.every(tag => account.tags?.includes(tag) ?? false) });
+    matches.push({ matches: tagFilter.every(tag => account.tags?.includes(tag) ?? false), name: 'tags' });
 
   if (categoryFilter)
-    matches.push({ name: 'category', matches: account.category === categoryFilter });
+    matches.push({ matches: account.category === categoryFilter, name: 'category' });
 
   return matches.length === 0 || matches.every(match => match.matches);
 }
@@ -116,16 +116,16 @@ export function sortAndFilterAccounts<T extends BlockchainAccountBalance>(
     getLabel,
   } = resolvers;
   const {
-    offset,
-    limit,
-    orderByAttributes = [],
-    ascending = [],
-    tags,
-    label,
     address,
-    chain,
+    ascending = [],
     category,
+    chain,
     excluded = {},
+    label,
+    limit,
+    offset,
+    orderByAttributes = [],
+    tags,
   } = params;
 
   const hasFilter = isFilterEnabled(tags)
@@ -139,11 +139,11 @@ export function sortAndFilterAccounts<T extends BlockchainAccountBalance>(
   const filtered = !hasFilter
     ? accounts.map(account => applyExclusionFilter(account, excluded, groupId => getAccounts?.(groupId) ?? []))
     : accounts.filter(account => filterAccount(account, {
-      tags,
-      label,
       address,
-      chain,
       category,
+      chain,
+      label,
+      tags,
     }, { getLabel })).map((account) => {
       /**
        * Second stage filtering for groups. Let's say that we have a group that has a tag `Public`
@@ -155,9 +155,9 @@ export function sortAndFilterAccounts<T extends BlockchainAccountBalance>(
         const groupAccounts = getAccounts?.(getGroupId(account));
         if (groupAccounts) {
           const matchesWithoutChains = groupAccounts.filter(account => filterAccount(account, {
-            tags,
-            label: undefined, // we only this to the group
             address: undefined, // we only this to the group
+            label: undefined, // we only this to the group
+            tags,
           }, { getLabel }));
 
           const matches = matchesWithoutChains.filter(account => filterAccount(account, {
@@ -168,19 +168,19 @@ export function sortAndFilterAccounts<T extends BlockchainAccountBalance>(
             return null;
 
           const chains = matches.map(match => match.chain).filter(uniqueStrings);
-          const groupId = getGroupId({ data: account.data, chains });
+          const groupId = getGroupId({ chains, data: account.data });
           const exclusion = excluded[groupId];
           const usdValue = sum(matches);
           const includedUsdValue = exclusion ? sum(matches.filter(match => !exclusion.includes(match.chain))) : undefined;
 
           return {
             ...account,
-            usdValue,
+            allChains: groupAccounts.map(item => item.chain),
+            chains,
+            expansion: matches.length === 1 ? matches[0].expansion : 'accounts',
             includedUsdValue,
             tags: matches.flatMap(match => match.tags ?? []).filter(uniqueStrings),
-            chains,
-            allChains: groupAccounts.map(item => item.chain),
-            expansion: matches.length === 1 ? matches[0].expansion : 'accounts',
+            usdValue,
           };
         }
       }
@@ -211,9 +211,9 @@ export function sortAndFilterAccounts<T extends BlockchainAccountBalance>(
 
   return {
     data: sorted.slice(offset, offset + limit),
+    found: sorted.length,
     limit: -1,
     total: accounts.length,
-    found: sorted.length,
     totalUsdValue: sum(filtered),
   };
 }
@@ -224,8 +224,8 @@ export function convertBtcAccounts(
   accounts: BitcoinAccounts,
 ): BlockchainAccount[] {
   const chainInfo = {
-    nativeAsset: getNativeAsset(chain).toUpperCase() ?? chain.toUpperCase(),
     chain,
+    nativeAsset: getNativeAsset(chain).toUpperCase() ?? chain.toUpperCase(),
   };
 
   const fromXpub = accounts.xpubs.flatMap((xpub) => {
@@ -258,8 +258,8 @@ export function convertBtcBalances(
     liabilities: {},
   } satisfies EthBalance]));
   return {
-    totals,
     perAccount: { [chain]: chainBalances },
+    totals,
   };
 }
 

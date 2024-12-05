@@ -110,10 +110,10 @@ const ThemeSwitchLock = defineAsyncComponent(async () => import('@/components/pr
 
 function createFactory(component: string, options?: { loading?: Component; error?: Component }): Component {
   return defineAsyncComponent({
+    delay: 500,
+    errorComponent: options?.error ?? PremiumLoadingError,
     loader: async () => load(component),
     loadingComponent: options?.loading ?? PremiumLoading,
-    errorComponent: options?.error ?? PremiumLoadingError,
-    delay: 500,
     timeout: 30000,
   });
 }
@@ -137,8 +137,8 @@ export const AssetAmountAndValueOverTime = createFactory('AssetAmountAndValueOve
 export const ThemeChecker = createFactory('ThemeChecker');
 
 export const ThemeSwitch = createFactory('ThemeSwitch', {
-  loading: ThemeSwitchLock,
   error: ThemeSwitchLock,
+  loading: ThemeSwitchLock,
 });
 
 export const ThemeManager = createFactory('ThemeManager');

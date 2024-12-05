@@ -40,180 +40,180 @@ const { appRoutes } = useAppRoutes();
 const Routes = get(appRoutes);
 const navItems: MenuItem[] = [
   {
-    type: 'item',
     class: 'dashboard',
+    type: 'item',
     ...Routes.DASHBOARD,
   },
   {
-    type: 'group',
     class: 'accounts-balances',
+    type: 'group',
     ...Routes.ACCOUNTS_BALANCES,
     items: [
       {
-        type: 'item',
         class: 'accounts-balances-blockchain',
+        type: 'item',
         ...Routes.ACCOUNTS_BALANCES_BLOCKCHAIN,
       },
       {
-        type: 'item',
         class: 'accounts-balances-exchange',
+        type: 'item',
         ...Routes.ACCOUNTS_BALANCES_EXCHANGE,
       },
       {
-        type: 'item',
         class: 'accounts-balances-manual',
+        type: 'item',
         ...Routes.ACCOUNTS_BALANCES_MANUAL,
       },
       {
-        type: 'item',
         class: 'accounts-balances-non-fungible',
+        type: 'item',
         ...Routes.ACCOUNTS_BALANCES_NON_FUNGIBLE,
       },
     ],
   },
   {
-    type: 'item',
     class: 'nfts',
+    type: 'item',
     ...Routes.NFTS,
   },
   {
-    type: 'group',
     class: 'history',
+    type: 'group',
     ...Routes.HISTORY,
     items: [
       {
-        type: 'item',
         class: 'history-trades',
+        type: 'item',
         ...Routes.HISTORY_TRADES,
       },
       {
-        type: 'item',
         class: 'history-deposits-withdrawals',
+        type: 'item',
         ...Routes.HISTORY_DEPOSITS_WITHDRAWALS,
       },
       {
-        type: 'item',
         class: 'history-events',
+        type: 'item',
         ...Routes.HISTORY_EVENTS,
       },
     ],
   },
   {
-    type: 'group',
     class: 'defi',
+    type: 'group',
     ...Routes.DEFI,
     items: [
       {
-        type: 'item',
         class: 'defi-overview',
+        type: 'item',
         ...Routes.DEFI_OVERVIEW,
       },
       {
-        type: 'item',
         class: 'defi-deposits',
+        type: 'item',
         ...Routes.DEFI_DEPOSITS,
       },
       {
-        type: 'item',
         class: 'defi-liabilities',
+        type: 'item',
         ...Routes.DEFI_LIABILITIES,
       },
       {
-        type: 'item',
         class: 'defi-airdrops',
+        type: 'item',
         ...Routes.DEFI_AIRDROPS,
       },
     ],
   },
   {
-    type: 'item',
     class: 'statistics',
+    type: 'item',
     ...Routes.STATISTICS,
   },
   {
-    type: 'item',
     class: 'staking',
+    type: 'item',
     ...Routes.STAKING,
     route: '/staking',
   },
   {
-    type: 'item',
     class: 'profit-loss-report',
+    type: 'item',
     ...Routes.PROFIT_LOSS_REPORTS,
   },
   {
     type: 'divider',
   },
   {
-    type: 'item',
     class: 'tag-manager',
+    type: 'item',
     ...Routes.TAG_MANAGER,
   },
   {
-    type: 'group',
     class: 'asset-manager',
+    type: 'group',
     ...Routes.ASSET_MANAGER,
     items: [
       {
-        type: 'item',
         class: 'asset-manager-managed',
+        type: 'item',
         ...Routes.ASSET_MANAGER_MANAGED,
       },
       {
-        type: 'item',
         class: 'asset-manager-custom',
+        type: 'item',
         ...Routes.ASSET_MANAGER_CUSTOM,
       },
       {
-        type: 'item',
         class: 'asset-manager-more',
+        type: 'item',
         ...Routes.ASSET_MANAGER_MORE,
       },
     ],
   },
   {
-    type: 'group',
     class: 'price-manager',
+    type: 'group',
     ...Routes.PRICE_MANAGER,
     items: [
       {
-        type: 'item',
         class: 'price-manager-latest',
+        type: 'item',
         ...Routes.PRICE_MANAGER_LATEST,
       },
       {
-        type: 'item',
         class: 'price-manager-historic',
+        type: 'item',
         ...Routes.PRICE_MANAGER_HISTORIC,
       },
     ],
   },
   {
-    type: 'item',
     class: 'address-book-manager',
+    type: 'item',
     ...Routes.ADDRESS_BOOK_MANAGER,
   },
   {
     type: 'divider',
   },
   {
-    type: 'group',
     class: 'api-keys',
+    type: 'group',
     ...Routes.API_KEYS,
     items: [
       {
-        type: 'item',
         class: 'api-keys-premium',
+        type: 'item',
         ...Routes.API_KEYS_ROTKI_PREMIUM,
       },
       {
-        type: 'item',
         class: 'api-keys-exchanges',
+        type: 'item',
         ...Routes.API_KEYS_EXCHANGES,
       },
       {
-        type: 'item',
         class: 'api-keys-external-services',
+        type: 'item',
         ...Routes.API_KEYS_EXTERNAL_SERVICES,
       },
     ],

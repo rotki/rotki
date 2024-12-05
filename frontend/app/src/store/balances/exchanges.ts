@@ -10,6 +10,11 @@ import { appendAssetBalance, mergeAssociatedAssets, sumAssetBalances } from '@/u
 import { sortDesc } from '@/utils/bignumbers';
 import { assetSum } from '@/utils/calculation';
 import { BalanceSource } from '@/types/settings/frontend-settings';
+import { useSessionSettingsStore } from '@/store/settings/session';
+import { useIgnoredAssetsStore } from '@/store/assets/ignored';
+import { useNotificationsStore } from '@/store/notifications';
+import { useTaskStore } from '@/store/tasks';
+import { useBalancePricesStore } from '@/store/balances/prices';
 import type { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
 import type { MaybeRef } from '@vueuse/core';
 import type {
@@ -34,7 +39,7 @@ export const useExchangeBalancesStore = defineStore('balances/exchanges', () => 
   const { isAssetIgnored } = useIgnoredAssetsStore();
   const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
   const { assetPrice } = useBalancePricesStore();
-  const { queryExchangeBalances, getExchangeSavings, getExchangeSavingsTask } = useExchangeApi();
+  const { getExchangeSavings, getExchangeSavingsTask, queryExchangeBalances } = useExchangeApi();
   const { toSortedAssetBalanceWithPrice } = useBalanceSorting();
   const balanceUsdValueThreshold = useUsdValueThreshold(BalanceSource.EXCHANGES);
 
@@ -42,8 +47,8 @@ export const useExchangeBalancesStore = defineStore('balances/exchanges', () => 
     const balances = get(exchangeBalances);
     return Object.keys(balances)
       .map(value => ({
-        location: value,
         balances: balances[value],
+        location: value,
         total: assetSum(balances[value]),
       }))
       .sort((a, b) => sortDesc(a.total, b.total));
@@ -115,7 +120,7 @@ export const useExchangeBalancesStore = defineStore('balances/exchanges', () => 
   });
 
   const fetchExchangeBalances = async (payload: ExchangeBalancePayload): Promise<void> => {
-    const { location, ignoreCache } = payload;
+    const { ignoreCache, location } = payload;
     const taskType = TaskType.QUERY_EXCHANGE_BALANCES;
     const meta = metadata<ExchangeMeta>(taskType);
 
@@ -124,7 +129,7 @@ export const useExchangeBalancesStore = defineStore('balances/exchanges', () => 
     if (get(isTaskRunning(taskType)) && meta?.location === location)
       return;
 
-    const { setStatus, resetStatus, isFirstLoad } = useStatusUpdater(Section.EXCHANGES);
+    const { isFirstLoad, resetStatus, setStatus } = useStatusUpdater(Section.EXCHANGES);
 
     const newStatus = isFirstLoad() ? Status.LOADING : Status.REFRESHING;
     setStatus(newStatus);
@@ -149,17 +154,17 @@ export const useExchangeBalancesStore = defineStore('balances/exchanges', () => 
     catch (error: any) {
       if (!isTaskCancelled(error)) {
         const message = t('actions.balances.exchange_balances.error.message', {
-          location,
           error: error.message,
+          location,
         });
         const title = t('actions.balances.exchange_balances.error.title', {
           location,
         });
 
         notify({
-          title,
-          message,
           display: true,
+          message,
+          title,
         });
       }
       resetStatus();
@@ -170,8 +175,8 @@ export const useExchangeBalancesStore = defineStore('balances/exchanges', () => 
     const exchanges = get(connectedExchanges);
     for (const exchange of exchanges) {
       await fetchExchangeBalances({
-        location: exchange.location,
         ignoreCache: refresh,
+        location: exchange.location,
       });
     }
   };
@@ -198,12 +203,12 @@ export const useExchangeBalancesStore = defineStore('balances/exchanges', () => 
     const taskType = TaskType.QUERY_EXCHANGE_SAVINGS;
 
     const defaults: ExchangeSavingsRequestPayload = {
-      limit: 0,
-      offset: 0,
       ascending: [false],
-      orderByAttributes: ['timestamp'],
-      onlyCache: false,
+      limit: 0,
       location,
+      offset: 0,
+      onlyCache: false,
+      orderByAttributes: ['timestamp'],
     };
 
     const { taskId } = await getExchangeSavingsTask(defaults);
@@ -221,11 +226,11 @@ export const useExchangeBalancesStore = defineStore('balances/exchanges', () => 
     catch (error: any) {
       if (!isTaskCancelled(error)) {
         notify({
+          display: true,
+          message: t('actions.balances.exchange_savings_interest.error.message', { location }),
           title: t('actions.balances.exchange_savings_interest.error.title', {
             location,
           }),
-          message: t('actions.balances.exchange_savings_interest.error.message', { location }),
-          display: true,
         });
       }
     }
@@ -234,7 +239,7 @@ export const useExchangeBalancesStore = defineStore('balances/exchanges', () => 
   };
 
   const refreshExchangeSavings = async (userInitiated = false): Promise<void> => {
-    const { setStatus, resetStatus, fetchDisabled } = useStatusUpdater(Section.EXCHANGE_SAVINGS);
+    const { fetchDisabled, resetStatus, setStatus } = useStatusUpdater(Section.EXCHANGE_SAVINGS);
 
     if (fetchDisabled(userInitiated)) {
       logger.info('skipping exchanges savings');
@@ -261,18 +266,18 @@ export const useExchangeBalancesStore = defineStore('balances/exchanges', () => 
   };
 
   return {
-    exchanges,
-    exchangeBalances,
     balances,
-    getBalances,
-    fetchExchangeBalances,
+    exchangeBalances,
+    exchanges,
     fetchConnectedExchangeBalances,
-    getBreakdown,
-    getLocationBreakdown,
-    getByLocationBalances,
-    updatePrices,
+    fetchExchangeBalances,
     fetchExchangeSavings,
+    getBalances,
+    getBreakdown,
+    getByLocationBalances,
+    getLocationBreakdown,
     refreshExchangeSavings,
+    updatePrices,
   };
 });
 

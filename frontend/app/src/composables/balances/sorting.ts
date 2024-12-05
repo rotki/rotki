@@ -2,6 +2,7 @@ import { groupBy } from 'lodash-es';
 import { EvmNativeToken } from '@/types/asset';
 import { sortDesc, zeroBalance } from '@/utils/bignumbers';
 import { balanceSum } from '@/utils/calculation';
+import { useAssetCacheStore } from '@/store/assets/asset-cache';
 import type { AssetBalance, AssetBalanceWithPrice, Balance, BigNumber } from '@rotki/common';
 import type { AssetBalances } from '@/types/balances';
 import type { ComputedRef } from 'vue';
@@ -89,10 +90,10 @@ export function useBalanceSorting(): UseBalanceSortingReturn {
     groupMultiChain = true,
   ): AssetBalanceWithPrice[] =>
     toSortedAndGroupedArray(ownedAssets, isIgnored, groupMultiChain, asset => ({
-      asset,
       amount: ownedAssets[asset].amount,
-      usdValue: ownedAssets[asset].usdValue,
+      asset,
       usdPrice: get(getPrice(asset)) ?? NoPrice,
+      usdValue: ownedAssets[asset].usdValue,
     }));
 
   const toSortedAssetBalanceArray = (
@@ -101,8 +102,8 @@ export function useBalanceSorting(): UseBalanceSortingReturn {
     groupMultiChain = false,
   ): AssetBalance[] =>
     toSortedAndGroupedArray(ownedAssets, isIgnored, groupMultiChain, asset => ({
-      asset,
       amount: ownedAssets[asset].amount,
+      asset,
       usdValue: ownedAssets[asset].usdValue,
     }));
 

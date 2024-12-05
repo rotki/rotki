@@ -5,6 +5,7 @@ import { startPromise } from '@shared/utils';
 import { Section } from '@/types/status';
 import { useBlockchainStore } from '@/store/blockchain';
 import { createAccount } from '@/utils/blockchain/accounts/create';
+import { useStatusStore } from '@/store/status';
 import type { EvmChainInfo, SupportedChains } from '@/types/api/chains';
 
 vi.mock('@/store/blockchain/balances/eth', () => ({

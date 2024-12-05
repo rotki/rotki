@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
+import { useStatusStore } from '@/store/status';
+import { useTaskStore } from '@/store/tasks';
 
 const emit = defineEmits<{
   (e: 'click'): void;

@@ -1,12 +1,14 @@
 import { ThemeMode, useRotkiTheme } from '@rotki/ui-library';
 import { getColors } from 'theme-colors';
 import { DARK_COLORS, LIGHT_COLORS } from '@/plugins/theme';
+import { useSessionStore } from '@/store/session';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import type { ThemeColors } from '@rotki/common';
 
 interface ColorScheme { DEFAULT: string; lighter: string; darker: string }
 
 export const useDarkMode = createSharedComposable(() => {
-  const { config, switchThemeScheme, setThemeConfig } = useRotkiTheme();
+  const { config, setThemeConfig, switchThemeScheme } = useRotkiTheme();
   const store = useSessionStore();
   const { darkModeEnabled } = storeToRefs(store);
   const { darkTheme, lightTheme } = storeToRefs(useFrontendSettingsStore());
@@ -18,9 +20,9 @@ export const useDarkMode = createSharedComposable(() => {
   };
 
   const getColorScheme = (palette: Record<string, string>): ColorScheme => ({
+    darker: hexToRgbPoints(palette['600']).join(', '),
     DEFAULT: hexToRgbPoints(palette['500']).join(', '),
     lighter: hexToRgbPoints(palette['300']).join(', '),
-    darker: hexToRgbPoints(palette['600']).join(', '),
   });
 
   const updateThemeColors = (variant: 'light' | 'dark', theme: ThemeColors): void => {

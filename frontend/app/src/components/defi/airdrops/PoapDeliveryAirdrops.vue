@@ -30,13 +30,13 @@ const { t } = useI18n();
 
 const headers = computed<DataTableColumn<PoapDeliveryDetails>[]>(() => [
   {
-    label: t('common.name'),
     key: 'name',
+    label: t('common.name'),
   },
   {
-    label: '',
-    key: 'link',
     align: 'end',
+    key: 'link',
+    label: '',
     width: '50px',
   },
 ]);

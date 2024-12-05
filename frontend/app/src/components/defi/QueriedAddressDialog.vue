@@ -2,6 +2,8 @@
 import { Blockchain } from '@rotki/common';
 import { type Module, SUPPORTED_MODULES } from '@/types/modules';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
+import { useQueriedAddressesStore } from '@/store/session/queried-addresses';
+import { useBlockchainStore } from '@/store/blockchain';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 import type { CamelCase } from '@/types/common';
 
@@ -17,7 +19,7 @@ const ETH = Blockchain.ETH;
 const store = useQueriedAddressesStore();
 const { addQueriedAddress, deleteQueriedAddress } = store;
 const { queriedAddresses } = storeToRefs(useQueriedAddressesStore());
-const { getAddresses, getAccounts } = useBlockchainStore();
+const { getAccounts, getAddresses } = useBlockchainStore();
 
 const { t } = useI18n();
 
@@ -59,8 +61,8 @@ const addAddress = async function () {
   const currentAccount = get(selectedAccounts);
   assert(currentModule && currentAccount.length > 0);
   await addQueriedAddress({
-    module: currentModule,
     address: getAccountAddress(currentAccount[0]),
+    module: currentModule,
   });
   set(selectedAccounts, []);
 };

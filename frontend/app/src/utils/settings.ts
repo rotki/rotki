@@ -7,13 +7,13 @@ export function isPeriodAllowed(period: TimeFrameSetting): boolean {
 
 export function getPlaceholderRule(): AccountingRuleEntry {
   return {
-    identifier: -1,
-    eventType: '',
-    eventSubtype: '',
-    counterparty: null,
-    taxable: { value: false },
-    countEntireAmountSpend: { value: false },
-    countCostBasisPnl: { value: false },
     accountingTreatment: null,
+    countCostBasisPnl: { value: false },
+    countEntireAmountSpend: { value: false },
+    counterparty: null,
+    eventSubtype: '',
+    eventType: '',
+    identifier: -1,
+    taxable: { value: false },
   };
 }

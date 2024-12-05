@@ -6,7 +6,7 @@ defineOptions({
   inheritAttrs: false,
 });
 
-const model = defineModel<string>({ required: true, default: '' });
+const model = defineModel<string>({ default: '', required: true });
 
 const props = withDefaults(
   defineProps<{
@@ -15,13 +15,13 @@ const props = withDefaults(
     dense?: boolean;
   }>(),
   {
-    items: () => [],
-    excludes: () => [],
     dense: false,
+    excludes: () => [],
+    items: () => [],
   },
 );
 
-const { items, excludes } = toRefs(props);
+const { excludes, items } = toRefs(props);
 
 const { tradeLocations } = useLocations();
 

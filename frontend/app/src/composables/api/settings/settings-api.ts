@@ -41,8 +41,8 @@ export function useSettingsApi(): UseSettingApiReturn {
   };
 
   return {
-    setSettings,
-    getSettings,
     backendSettings,
+    getSettings,
+    setSettings,
   };
 }

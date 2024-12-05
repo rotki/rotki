@@ -18,6 +18,11 @@ import { TaskType } from '@/types/task-type';
 import { OnlineHistoryEventsQueryType } from '@/types/history/events';
 import { logger } from '@/utils/logging';
 import { nonEmptyProperties } from '@/utils/data';
+import { useTaskStore } from '@/store/tasks';
+import { useBlockchainValidatorsStore } from '@/store/blockchain/validators';
+import { useStatusStore } from '@/store/status';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useSessionAuthStore } from '@/store/session/auth';
 
 const module = Module.ETH2;
 const performanceSection = Section.STAKING_ETH2;
@@ -41,7 +46,7 @@ function createLastRefreshStorage(username: string): Ref<number> {
 const lastRefresh = createLastRefreshStorage(get(username));
 const { shouldRefreshValidatorDailyStats } = storeToRefs(useFrontendSettingsStore());
 
-const { performance, performanceLoading, pagination: performancePagination, refreshPerformance } = useEth2Staking();
+const { pagination: performancePagination, performance, performanceLoading, refreshPerformance } = useEth2Staking();
 
 const { isModuleEnabled } = useModules();
 
@@ -84,8 +89,8 @@ function shouldRefreshDailyStats() {
 async function refresh(userInitiated = false): Promise<void> {
   const refreshValidators = async (userInitiated: boolean) => {
     await fetchBlockchainBalances({
-      ignoreCache: userInitiated || isFirstLoad(),
       blockchain: Blockchain.ETH2,
+      ignoreCache: userInitiated || isFirstLoad(),
     });
     await fetchEthStakingValidators();
   };

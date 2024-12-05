@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useConfirmStore } from '@/store/confirm';
+
 defineOptions({
   inheritAttrs: false,
 });
@@ -18,24 +20,24 @@ const props = withDefaults(defineProps<{
   autoHeight?: boolean;
   promptOnClose?: boolean;
 }>(), {
-  subtitle: '',
-  loading: false,
-  actionHidden: false,
   actionDisabled: false,
-  primaryAction: undefined,
-  secondaryAction: undefined,
+  actionHidden: false,
+  autoHeight: false,
+  divide: false,
+  loading: false,
   maxWidth: '900px',
   persistent: false,
-  divide: false,
-  autoHeight: false,
+  primaryAction: undefined,
   promptOnClose: false,
+  secondaryAction: undefined,
+  subtitle: '',
 });
 const emit = defineEmits<{
   (event: 'confirm'): void;
   (event: 'cancel'): void;
 }>();
 
-const { subtitle, primaryAction, secondaryAction, display, promptOnClose } = toRefs(props);
+const { display, primaryAction, promptOnClose, secondaryAction, subtitle } = toRefs(props);
 
 const wrapper = useTemplateRef('wrapper');
 
@@ -67,10 +69,10 @@ function promptClose() {
     return;
 
   show({
-    title: t('big_dialog.prompt_close.title'),
     message: t('big_dialog.prompt_close.message'),
-    type: 'info',
     primaryAction: t('big_dialog.prompt_close.actions.discard'),
+    title: t('big_dialog.prompt_close.title'),
+    type: 'info',
   }, async () => {
     set(displayModel, false);
   });

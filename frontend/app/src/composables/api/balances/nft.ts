@@ -63,8 +63,8 @@ export function useNftBalancesApi(): UseNftBalancesApiReturn {
   };
 
   return {
-    fetchNfBalancesTask,
     fetchNfBalances,
+    fetchNfBalancesTask,
     getNftBalanceById,
   };
 }

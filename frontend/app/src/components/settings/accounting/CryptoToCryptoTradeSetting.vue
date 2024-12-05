@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useAccountingSettingsStore } from '@/store/settings/accounting';
+
 const crypto2CryptoTrades = ref(false);
 const { includeCrypto2crypto } = storeToRefs(useAccountingSettingsStore());
 

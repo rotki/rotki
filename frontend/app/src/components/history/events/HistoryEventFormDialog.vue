@@ -10,15 +10,15 @@ const props = withDefaults(
   }>(),
   {
     editableItem: undefined,
-    nextSequence: undefined,
-    loading: false,
     groupHeader: undefined,
+    loading: false,
+    nextSequence: undefined,
   },
 );
 
 const { editableItem, groupHeader } = toRefs(props);
 
-const { openDialog, submitting, closeDialog, trySubmit, defaultNotes, stateUpdated } = useHistoryEventsForm();
+const { closeDialog, defaultNotes, openDialog, stateUpdated, submitting, trySubmit } = useHistoryEventsForm();
 
 const { t } = useI18n();
 

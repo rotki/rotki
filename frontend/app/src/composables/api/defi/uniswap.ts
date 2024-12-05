@@ -25,8 +25,8 @@ export function useUniswapApi(): UseUniswapApiReturn {
   };
 
   return {
+    fetchUniswapEvents,
     fetchUniswapV2Balances,
     fetchUniswapV3Balances,
-    fetchUniswapEvents,
   };
 }

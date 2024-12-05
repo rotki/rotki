@@ -3,6 +3,7 @@ import { helpers, required, requiredIf } from '@vuelidate/validators';
 import { objectOmit } from '@vueuse/core';
 import { toMessages } from '@/utils/validation';
 import { useRefPropVModel } from '@/utils/model';
+import { useMessageStore } from '@/store/message';
 import type { CexMapping } from '@/types/asset';
 
 const props = withDefaults(
@@ -18,12 +19,12 @@ const props = withDefaults(
   },
 );
 
-const { selectedLocation, form } = toRefs(props);
+const { form, selectedLocation } = toRefs(props);
 
 const emptyMapping: () => CexMapping = () => ({
+  asset: '',
   location: get(selectedLocation) || '',
   locationSymbol: '',
-  asset: '',
 });
 
 const formData = ref<CexMapping>(emptyMapping());
@@ -59,9 +60,12 @@ watchImmediate(form, checkPassedForm);
 
 const { t } = useI18n();
 
-const { setValidation, setSubmitFunc } = useCexMappingForm();
+const { setSubmitFunc, setValidation } = useCexMappingForm();
 
 const rules = {
+  asset: {
+    required: helpers.withMessage(t('asset_management.cex_mapping.form.asset_non_empty'), required),
+  },
   location: {
     required: helpers.withMessage(
       t('asset_management.cex_mapping.form.location_non_empty'),
@@ -74,17 +78,14 @@ const rules = {
       required,
     ),
   },
-  asset: {
-    required: helpers.withMessage(t('asset_management.cex_mapping.form.asset_non_empty'), required),
-  },
 };
 
 const v$ = setValidation(
   rules,
   {
+    asset,
     location,
     locationSymbol,
-    asset,
   },
   { $autoDirty: true },
 );

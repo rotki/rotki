@@ -38,7 +38,7 @@ export function useTaskApi(): UseTaskApiReturn {
     const { outcome, statusCode } = handleResponse(response);
 
     if (outcome) {
-      const { result, message } = outcome;
+      const { message, result } = outcome;
 
       if (statusCode === 300) {
         if (typeof result === 'object') {
@@ -74,8 +74,8 @@ export function useTaskApi(): UseTaskApiReturn {
   };
 
   return {
-    queryTasks,
-    queryTaskResult,
     cancelAsyncTask,
+    queryTaskResult,
+    queryTasks,
   };
 }

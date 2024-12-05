@@ -5,6 +5,9 @@ import { TaskType } from '@/types/task-type';
 import { toMessages } from '@/utils/validation';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 import { bigNumberifyFromRef } from '@/utils/bignumbers';
+import { useBalancePricesStore } from '@/store/balances/prices';
+import { useMessageStore } from '@/store/message';
+import { useTaskStore } from '@/store/tasks';
 import type { Writeable } from '@rotki/common';
 import type { NewTrade, Trade, TradeType } from '@/types/history/trade';
 
@@ -47,20 +50,11 @@ const baseSymbol = assetSymbol(base);
 const quoteSymbol = assetSymbol(quote);
 
 const rules = {
-  baseAsset: {
-    required: helpers.withMessage(t('external_trade_form.validation.non_empty_base'), required),
-  },
-  quoteAsset: {
-    required: helpers.withMessage(t('external_trade_form.validation.non_empty_quote'), required),
-  },
   amount: {
     required: helpers.withMessage(t('external_trade_form.validation.non_empty_amount'), required),
   },
-  rate: {
-    required: helpers.withMessage(t('external_trade_form.validation.non_empty_rate'), required),
-  },
-  quoteAmount: {
-    required: helpers.withMessage(t('external_trade_form.validation.non_empty_quote_amount'), required),
+  baseAsset: {
+    required: helpers.withMessage(t('external_trade_form.validation.non_empty_base'), required),
   },
   fee: {
     required: helpers.withMessage(
@@ -74,20 +68,29 @@ const rules = {
       requiredIf(refIsTruthy(fee)),
     ),
   },
+  quoteAmount: {
+    required: helpers.withMessage(t('external_trade_form.validation.non_empty_quote_amount'), required),
+  },
+  quoteAsset: {
+    required: helpers.withMessage(t('external_trade_form.validation.non_empty_quote'), required),
+  },
+  rate: {
+    required: helpers.withMessage(t('external_trade_form.validation.non_empty_rate'), required),
+  },
 };
 
-const { setValidation, setSubmitFunc } = useTradesForm();
+const { setSubmitFunc, setValidation } = useTradesForm();
 
 const v$ = setValidation(
   rules,
   {
-    baseAsset: base,
-    quoteAsset: quote,
     amount,
-    rate,
-    quoteAmount,
+    baseAsset: base,
     fee,
     feeCurrency,
+    quoteAmount,
+    quoteAsset: quote,
+    rate,
   },
   {
     $autoDirty: true,
@@ -159,14 +162,14 @@ async function save(): Promise<boolean> {
 
   const tradePayload: Writeable<NewTrade> = {
     amount: amount.isNaN() ? Zero : amount,
+    baseAsset: get(base),
     fee: fee.isNaN() || fee.isZero() ? null : fee,
     feeCurrency: get(feeCurrency) || null,
     link: get(link) || null,
+    location: 'external',
     notes: get(notes) || null,
-    baseAsset: get(base),
     quoteAsset: get(quote),
     rate: rate.isNaN() ? Zero : rate,
-    location: 'external',
     timestamp: convertToTimestamp(get(datetime)),
     tradeType: get(type),
   };
@@ -212,8 +215,8 @@ async function fetchPrice() {
   const toAsset = get(quote);
 
   const rateFromHistoricPrice = await getHistoricPrice({
-    timestamp,
     fromAsset,
+    timestamp,
     toAsset,
   });
 

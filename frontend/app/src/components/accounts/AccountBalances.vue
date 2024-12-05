@@ -6,6 +6,7 @@ import { fromUriEncoded, toUriEncoded } from '@/utils/route-uri';
 import AccountBalancesTable from '@/components/accounts/AccountBalancesTable.vue';
 import AccountGroupDetailsTable from '@/components/accounts/AccountGroupDetailsTable.vue';
 import DetectTokenChainsSelection from '@/components/accounts/balances/DetectTokenChainsSelection.vue';
+import { useBlockchainStore } from '@/store/blockchain';
 import type { AccountManageState } from '@/composables/accounts/blockchain/use-account-manage';
 import type {
   BlockchainAccountGroupWithBalance,
@@ -40,39 +41,30 @@ const { handleBlockchainRefresh } = useRefresh();
 const { fetchAccounts } = useBlockchains();
 
 const {
+  fetchData,
   filters,
   matchers,
-  state: accounts,
-  fetchData,
   pagination,
   sort,
+  state: accounts,
 } = usePaginationFilters<
   BlockchainAccountGroupWithBalance,
   BlockchainAccountRequestPayload,
   Filters,
   Matcher
 >(fetchAccountsPage, {
-  history: 'router',
-  filterSchema: () => useBlockchainAccountFilter(t, category),
+  defaultSortBy: {
+    column: 'usdValue',
+    direction: 'desc',
+  },
   extraParams: computed(() => ({
     tags: get(visibleTags),
     ...(get(category) !== 'all' ? { category: get(category) } : {}),
   })),
-  queryParamsOnly: computed(() => ({
-    ...(get(expanded).length > 0
-      ? {
-          tab: get(tab),
-          expanded: get(expanded),
-          ...(get(tab) === 1
-            ? {
-                q: toUriEncoded(get(query)),
-              }
-            : {}),
-        }
-      : {}),
-  })),
+  filterSchema: () => useBlockchainAccountFilter(t, category),
+  history: 'router',
   onUpdateFilters(filterQuery) {
-    const { tab: qTab, tags, expanded: expandedIds, q } = AccountExternalFilterSchema.parse(filterQuery);
+    const { expanded: expandedIds, q, tab: qTab, tags } = AccountExternalFilterSchema.parse(filterQuery);
     if (tags)
       set(visibleTags, tags);
     if (qTab !== undefined)
@@ -82,19 +74,28 @@ const {
 
     set(query, q ? fromUriEncoded(q) : {});
   },
+  queryParamsOnly: computed(() => ({
+    ...(get(expanded).length > 0
+      ? {
+          expanded: get(expanded),
+          tab: get(tab),
+          ...(get(tab) === 1
+            ? {
+                q: toUriEncoded(get(query)),
+              }
+            : {}),
+        }
+      : {}),
+  })),
   requestParams: computed(() => ({
     excluded: get(chainExclusionFilter),
   })),
-  defaultSortBy: {
-    column: 'usdValue',
-    direction: 'desc',
-  },
 });
 
 const isEvm = computed(() => get(category) === 'evm');
 const showEvmElements = computed(() => get(isEvm) || get(category) === 'all');
 
-const { refreshDisabled, isDetectingTokens } = useBlockchainAccountLoading(fetchData);
+const { isDetectingTokens, refreshDisabled } = useBlockchainAccountLoading(fetchData);
 
 async function refreshClick() {
   await fetchAccounts(undefined, true);

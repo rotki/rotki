@@ -14,11 +14,11 @@ import { createNotification } from '@/utils/notifications';
 
 function notificationDefaults(): NotificationPayload {
   return {
-    title: '',
+    category: NotificationCategory.DEFAULT,
+    display: false,
     message: '',
     severity: Severity.ERROR,
-    display: false,
-    category: NotificationCategory.DEFAULT,
+    title: '',
   };
 }
 
@@ -89,9 +89,9 @@ export const useNotificationsStore = defineStore('notifications', () => {
           const groupCount = existing.groupCount + 1;
           dataList[index] = {
             ...existing,
-            message: t('notification_messages.deserialization_error', { count: groupCount }),
-            groupCount,
             date: new Date(),
+            groupCount,
+            message: t('notification_messages.deserialization_error', { count: groupCount }),
           };
 
           set(data, dataList);
@@ -100,9 +100,9 @@ export const useNotificationsStore = defineStore('notifications', () => {
           update([
             createNotification(get(nextId), Object.assign(notificationDefaults(), {
               ...newData,
-              message: t('notification_messages.deserialization_error', { count: 1 }),
               group: NotificationGroup.DESERIALIZATION_ERROR,
               groupCount: 1,
+              message: t('notification_messages.deserialization_error', { count: 1 }),
             })),
           ]);
         }
@@ -142,14 +142,14 @@ export const useNotificationsStore = defineStore('notifications', () => {
 
       const newNotification: NotificationData = {
         ...notification,
-        date,
-        title: newData.title,
-        message: newData.message,
-        groupCount: newData.groupCount,
         action: newData.action,
-        severity: newData.severity || notification.severity,
-        priority: newData.priority,
+        date,
         display,
+        groupCount: newData.groupCount,
+        message: newData.message,
+        priority: newData.priority,
+        severity: newData.severity || notification.severity,
+        title: newData.title,
       };
 
       dataList.splice(notificationIndex, 1);
@@ -181,13 +181,13 @@ export const useNotificationsStore = defineStore('notifications', () => {
   };
 
   return {
-    data,
     count,
-    nextId,
-    queue,
-    prioritized,
-    notify,
+    data,
     displayed,
+    nextId,
+    notify,
+    prioritized,
+    queue,
     remove,
   };
 });

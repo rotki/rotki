@@ -22,14 +22,14 @@ const DefiAsset = z.object({
 export type DefiAsset = z.infer<typeof DefiAsset>;
 
 const DefiProtocolSummary = z.object({
-  protocol: z.string(),
-  balanceUsd: NumericString.optional(),
   assets: z.array(DefiAsset),
-  tokenInfo: TokenInfo.nullable(),
+  balanceUsd: NumericString.optional(),
   deposits: z.boolean(),
-  liabilities: z.boolean(),
   depositsUrl: z.string().optional(),
+  liabilities: z.boolean(),
   liabilitiesUrl: z.string().optional(),
+  protocol: z.string(),
+  tokenInfo: TokenInfo.nullable(),
   totalCollateralUsd: NumericString,
   totalDebtUsd: NumericString,
   totalLendingDepositUsd: NumericString,
@@ -38,9 +38,9 @@ const DefiProtocolSummary = z.object({
 export type DefiProtocolSummary = z.infer<typeof DefiProtocolSummary>;
 
 const DefiProtocolData = z.object({
-  protocol: DefiProtocolInfo,
   balanceType: z.enum(['Asset', 'Debt'] as const),
   baseBalance: DefiAsset,
+  protocol: DefiProtocolInfo,
   underlyingBalances: z.array(DefiAsset),
 });
 

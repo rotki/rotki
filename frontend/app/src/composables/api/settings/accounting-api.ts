@@ -156,8 +156,8 @@ export function useAccountingApi(): UseAccountingApiReturn {
     const response = await api.instance.put<ActionResult<PendingTask>>(
       '/accounting/rules/import',
       snakeCaseTransformer({
-        filepath,
         asyncQuery: true,
+        filepath,
       }),
       {
         validateStatus: validStatus,
@@ -180,16 +180,16 @@ export function useAccountingApi(): UseAccountingApiReturn {
   };
 
   return {
-    fetchAccountingRule,
-    fetchAccountingRules,
     addAccountingRule,
-    editAccountingRule,
     deleteAccountingRule,
-    getAccountingRuleLinkedMapping,
-    fetchAccountingRuleConflicts,
-    resolveAccountingRuleConflicts,
+    editAccountingRule,
     exportAccountingRules,
+    fetchAccountingRule,
+    fetchAccountingRuleConflicts,
+    fetchAccountingRules,
+    getAccountingRuleLinkedMapping,
     importAccountingRulesData,
+    resolveAccountingRuleConflicts,
     uploadAccountingRulesData,
   };
 }

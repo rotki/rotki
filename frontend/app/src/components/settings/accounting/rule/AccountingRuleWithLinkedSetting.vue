@@ -33,8 +33,8 @@ const linkedModel = computed({
   set(newValue: boolean) {
     if (newValue) {
       updateModelValue({
-        value: props.modelValue.value,
         linkedSetting: get(linkableSettingOptions)[0]?.identifier || '',
+        value: props.modelValue.value,
       });
     }
     else {

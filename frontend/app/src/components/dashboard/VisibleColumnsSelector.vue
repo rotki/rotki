@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { TableColumn } from '@/types/table-column';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import type { DashboardTableType, FrontendSettingsPayload } from '@/types/settings/frontend-settings';
 
 const props = withDefaults(
@@ -16,14 +17,14 @@ const { group, groupLabel } = toRefs(props);
 
 const availableColumns = computed(() => [
   {
-    value: TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE,
     text: t('dashboard_asset_table.headers.percentage_of_total_net_value'),
+    value: TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE,
   },
   {
-    value: TableColumn.PERCENTAGE_OF_TOTAL_CURRENT_GROUP,
     text: t('dashboard_asset_table.headers.percentage_of_total_current_group', {
       group: get(groupLabel) || get(group),
     }),
+    value: TableColumn.PERCENTAGE_OF_TOTAL_CURRENT_GROUP,
   },
 ]);
 

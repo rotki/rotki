@@ -20,23 +20,23 @@ const props = withDefaults(
   },
 );
 
-const { size, asset } = toRefs(props);
+const { asset, size } = toRefs(props);
 
 const dimensions = computed<Dimension>(() => {
   const match: RegExpMatchArray | null = get(size).match(/^(\d+(?:\.\d)?)(\w+|%)?$/);
   const value: string = match?.[1] ?? '0';
   const unit: string = match?.[2] ?? '';
   return {
-    value: Number(value),
     unit,
+    value: Number(value),
   };
 });
 
 const wrapperStyle = computed<Style>(() => ({
-  width: get(size),
   height: get(size),
-  minWidth: get(size),
   minHeight: get(size),
+  minWidth: get(size),
+  width: get(size),
 }));
 
 const text = computed<string>(() => {

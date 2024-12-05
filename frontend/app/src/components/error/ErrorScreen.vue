@@ -9,12 +9,12 @@ const props = withDefaults(
     alternative?: string;
   }>(),
   {
-    header: '',
-    title: '',
-    subtitle: '',
-    message: '',
-    error: '',
     alternative: '',
+    error: '',
+    header: '',
+    message: '',
+    subtitle: '',
+    title: '',
   },
 );
 

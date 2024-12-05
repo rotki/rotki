@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
+
 const value = ref<boolean>(false);
 
 const { unifyAccountsTable: enabled } = storeToRefs(useFrontendSettingsStore());

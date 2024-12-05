@@ -3,6 +3,8 @@ import { type AssetBalance, type BigNumber, Blockchain } from '@rotki/common';
 import { CURRENCY_USD } from '@/types/currencies';
 import { calculatePercentage } from '@/utils/calculation';
 import { groupAssetBreakdown } from '@/utils/balances';
+import { useBlockchainStore } from '@/store/blockchain';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 import type { AssetBreakdown } from '@/types/blockchain/accounts';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 
@@ -21,9 +23,9 @@ const props = withDefaults(
   }>(),
   {
     blockchainOnly: false,
+    isLiability: false,
     showPercentage: false,
     total: undefined,
-    isLiability: false,
   },
 );
 
@@ -74,46 +76,46 @@ const sort = ref<DataTableSortData<AssetBreakdown>>({
 const cols = computed<DataTableColumn<AssetBreakdown>[]>(() => {
   const headers: DataTableColumn<AssetBreakdown>[] = [
     {
-      label: t('common.location'),
-      key: 'location',
       align: 'center',
+      cellClass: 'py-2',
       class: 'text-no-wrap',
-      cellClass: 'py-2',
+      key: 'location',
+      label: t('common.location'),
       sortable: true,
     },
     {
+      align: 'end',
+      cellClass: 'py-2',
+      class: 'w-full',
       key: 'tokens',
-      align: 'end',
-      class: 'w-full',
-      cellClass: 'py-2',
       sortable: true,
     },
     {
-      label: t('common.amount'),
+      align: 'end',
+      cellClass: 'py-2',
+      class: 'w-full',
       key: 'amount',
-      align: 'end',
-      class: 'w-full',
-      cellClass: 'py-2',
+      label: t('common.amount'),
       sortable: true,
     },
     {
+      align: 'end',
+      cellClass: 'py-2',
+      key: 'usdValue',
       label: t('asset_locations.header.value', {
         symbol: get(currencySymbol) ?? CURRENCY_USD,
       }),
-      key: 'usdValue',
-      align: 'end',
-      cellClass: 'py-2',
       sortable: true,
     },
   ];
 
   if (get(showPercentage)) {
     headers.push({
-      label: t('asset_locations.header.percentage'),
-      key: 'percentage',
       align: 'end',
-      class: 'text-no-wrap',
       cellClass: 'py-2',
+      class: 'text-no-wrap',
+      key: 'percentage',
+      label: t('asset_locations.header.percentage'),
     });
   }
 
@@ -137,8 +139,8 @@ function getAssets(location: string): AssetBalance[] {
     const entry = entries.find(entry => entry.location === location);
     if (entry) {
       balances.push({
-        asset,
         amount: entry.amount,
+        asset,
         usdValue: entry.usdValue,
       });
     }

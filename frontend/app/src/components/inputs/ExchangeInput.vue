@@ -1,4 +1,6 @@
 <script lang="ts" setup>
+import { useLocationStore } from '@/store/locations';
+
 defineOptions({
   inheritAttrs: false,
 });

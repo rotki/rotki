@@ -65,13 +65,13 @@ export const useLocationStore = defineStore('locations', () => {
   });
 
   return {
-    allLocations,
-    tradeLocations,
-    fetchAllTradeLocations,
     allExchanges,
+    allLocations,
     exchangesWithKey,
-    exchangesWithPassphrase,
     exchangesWithoutApiSecret,
+    exchangesWithPassphrase,
+    fetchAllTradeLocations,
+    tradeLocations,
   };
 });
 

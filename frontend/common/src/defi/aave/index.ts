@@ -13,8 +13,8 @@ const AaveBorrowingAsset = z.object({
 });
 
 const AaveLendingAsset = z.object({
-  balance: Balance,
   apy: z.string(),
+  balance: Balance,
 });
 
 const AaveBorrowing = z.record(AaveBorrowingAsset);
@@ -24,8 +24,8 @@ const AaveLending = z.record(AaveLendingAsset);
 export type AaveLending = z.infer<typeof AaveLending>;
 
 const AaveBalance = z.object({
-  lending: AaveLending,
   borrowing: AaveBorrowing,
+  lending: AaveLending,
 });
 
 export const AaveBalances = z.record(AaveBalance);

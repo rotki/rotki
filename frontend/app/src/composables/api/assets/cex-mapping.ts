@@ -74,9 +74,9 @@ export function useAssetCexMappingApi(): UseAssetCexMappingApiReturn {
   };
 
   return {
-    fetchAllCexMapping,
     addCexMapping,
-    editCexMapping,
     deleteCexMapping,
+    editCexMapping,
+    fetchAllCexMapping,
   };
 }

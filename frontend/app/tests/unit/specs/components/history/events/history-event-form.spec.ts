@@ -5,6 +5,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import flushPromises from 'flush-promises';
 import HistoryEventForm from '@/components/history/events/HistoryEventForm.vue';
 import { setupDayjs } from '@/utils/date';
+import { useBalancePricesStore } from '@/store/balances/prices';
 
 vi.mock('@/store/balances/prices', () => ({
   useBalancePricesStore: vi.fn().mockReturnValue({

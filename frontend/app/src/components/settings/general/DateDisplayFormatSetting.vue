@@ -4,6 +4,7 @@ import { helpers, required } from '@vuelidate/validators';
 import { displayDateFormatter } from '@/data/date-formatter';
 import { Defaults } from '@/data/defaults';
 import { toMessages } from '@/utils/validation';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 
 const dateDisplayFormat = ref<string>('');
 const formatHelp = ref<boolean>(false);
@@ -18,11 +19,11 @@ const { t } = useI18n();
 
 const rules = {
   dateDisplayFormat: {
-    required: helpers.withMessage(t('general_settings.date_display.validation.empty'), required),
     containsValidDirectives: helpers.withMessage(
       t('general_settings.date_display.validation.invalid'),
       containsValidDirectives,
     ),
+    required: helpers.withMessage(t('general_settings.date_display.validation.empty'), required),
   },
 };
 

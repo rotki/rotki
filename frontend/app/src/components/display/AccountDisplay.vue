@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { type Account, Blockchain } from '@rotki/common';
 import { truncateAddress } from '@/utils/truncate';
+import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 
 const props = withDefaults(defineProps<{
   account: Account;
@@ -8,9 +9,9 @@ const props = withDefaults(defineProps<{
   truncate?: boolean;
   hideChainIcon?: boolean;
 }>(), {
-  useAliasName: true,
-  truncate: true,
   hideChainIcon: false,
+  truncate: true,
+  useAliasName: true,
 });
 
 const { account, useAliasName } = toRefs(props);
@@ -19,7 +20,7 @@ const { t } = useI18n();
 
 const { addressNameSelector } = useAddressesNamesStore();
 
-const { scrambleData, shouldShowAmount, scrambleAddress } = useScramble();
+const { scrambleAddress, scrambleData, shouldShowAmount } = useScramble();
 
 const address = computed<string>(() => {
   const address = get(account).address;

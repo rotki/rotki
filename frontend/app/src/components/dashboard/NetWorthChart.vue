@@ -8,6 +8,8 @@ import {
 } from '@rotki/common';
 import { Chart, type ChartConfiguration, type ChartOptions, type TooltipOptions } from 'chart.js';
 import dayjs from 'dayjs';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 import type { ValueOverTime } from '@/types/graphs';
 
 type ActiveRangeButton = 'start' | 'end' | 'both';
@@ -38,7 +40,7 @@ const chartId = 'net-worth-chart__chart';
 const tooltipId = 'net-worth-chart__tooltip';
 const rangeId = 'net-worth-chart__range';
 
-const { tooltipContent, tooltipDisplayOption, calculateTooltipPosition } = useTooltip(tooltipId);
+const { calculateTooltipPosition, tooltipContent, tooltipDisplayOption } = useTooltip(tooltipId);
 
 const balanceData = ref<ValueOverTime[]>([]);
 const showVirtualCurrentData = ref<boolean>(true);
@@ -72,16 +74,16 @@ interface Bound {
 }
 
 const displayedXRange = ref<Bound>({
-  min: 0,
   max: 0,
+  min: 0,
   range: 0,
 });
 
 function calculateXRange() {
   if (!chart) {
     set(displayedXRange, {
-      min: 0,
       max: 0,
+      min: 0,
       range: 0,
     });
     return;
@@ -93,8 +95,8 @@ function calculateXRange() {
   const max = +xAxis.max!;
 
   set(displayedXRange, {
-    min,
     max,
+    min,
     range: max - min,
   });
 }
@@ -103,8 +105,8 @@ const dataTimeRange = computed<Bound>(() => {
   const data = get(balanceData);
   if (data.length === 0) {
     return {
-      min: 0,
       max: 0,
+      min: 0,
       range: 0,
     };
   }
@@ -114,15 +116,15 @@ const dataTimeRange = computed<Bound>(() => {
 
   if (!last) {
     return {
-      min: 0,
       max: first.x,
+      min: 0,
       range: first.x,
     };
   }
 
   return {
-    min: first.x,
     max: last.x,
+    min: first.x,
     range: last.x - first.x,
   };
 });
@@ -131,8 +133,8 @@ const dataValueRange = computed<Bound>(() => {
   const data = get(balanceData);
   if (data.length === 0) {
     return {
-      min: 0,
       max: 0,
+      min: 0,
       range: 0,
     };
   }
@@ -141,26 +143,26 @@ const dataValueRange = computed<Bound>(() => {
   const max = Math.max(...data.map(item => item.y));
 
   return {
-    min,
     max,
+    min,
     range: max - min,
   };
 });
 
 const activeTimeframe = computed<Timeframe>(() => {
-  const { min, max } = get(displayedXRange);
+  const { max, min } = get(displayedXRange);
   return getTimeframeByRange(min, max);
 });
 
 const rangeTimeframe = computed<Timeframe>(() => {
   const range = get(dataTimeRange);
-  const { min, max } = range;
+  const { max, min } = range;
   return getTimeframeByRange(min, max);
 });
 
 watch(activeTimeframe, () => updateChart(true, false));
 
-function transformData({ times, data }: NetValue) {
+function transformData({ data, times }: NetValue) {
   const newBalances: ValueOverTime[] = [];
 
   let showVirtual = true;
@@ -204,26 +206,26 @@ watch(chartData, () => {
   prepareData();
 });
 
-const { getCanvasCtx, baseColor, gradient, fontColor, backgroundColor, gridColor } = useGraph(chartId);
+const { backgroundColor, baseColor, fontColor, getCanvasCtx, gradient, gridColor } = useGraph(chartId);
 const { getCanvasCtx: getRangeCanvasCtx } = useGraph(rangeId);
 
 function createDatasets(isRange = false) {
   const borderColor = () => get(baseColor);
 
   const dataset = {
-    data: [],
-    tension: 0.1,
-    fill: true,
     backgroundColor: () => (!isRange ? get(gradient) : 'transparent'),
     borderColor,
     borderWidth: 2,
-    pointRadius: 1,
-    pointHoverRadius: !isRange ? 6 : 0,
-    pointHoverBorderWidth: !isRange ? 2 : 0,
-    pointBorderColor: 'transparent',
+    data: [],
+    fill: true,
     pointBackgroundColor: 'transparent',
-    pointHoverBorderColor: borderColor,
+    pointBorderColor: 'transparent',
     pointHoverBackgroundColor: () => get(backgroundColor),
+    pointHoverBorderColor: borderColor,
+    pointHoverBorderWidth: !isRange ? 2 : 0,
+    pointHoverRadius: !isRange ? 6 : 0,
+    pointRadius: 1,
+    tension: 0.1,
   };
 
   return [dataset];
@@ -231,42 +233,42 @@ function createDatasets(isRange = false) {
 
 function createScales(isRange = false) {
   const x: any = {
-    type: 'time',
     border: {
-      display: true,
       color: () => get(gridColor),
+      display: true,
     },
     grid: {
       display: false,
       drawBorder: !isRange,
     },
     ticks: {
-      display: isRange || !get(showGraphRangeSelector),
-      color: () => get(fontColor),
       autoSkip: true,
-      maxRotation: 0,
+      color: () => get(fontColor),
       crossAlign: isRange ? 'center' : 'near',
+      display: isRange || !get(showGraphRangeSelector),
+      maxRotation: 0,
     },
     time: {
-      unit: () => (isRange ? get(rangeTimeframe).xAxisTimeUnit : get(activeTimeframe).xAxisTimeUnit),
-      stepSize: () => (isRange ? get(rangeTimeframe).xAxisStepSize : get(activeTimeframe).xAxisStepSize),
       displayFormats: () => {
         const format = isRange
           ? get(rangeTimeframe).xAxisLabelDisplayFormat
           : get(activeTimeframe).xAxisLabelDisplayFormat;
 
         return {
+          day: format,
           month: format,
           week: format,
-          day: format,
         };
       },
+      stepSize: () => (isRange ? get(rangeTimeframe).xAxisStepSize : get(activeTimeframe).xAxisStepSize),
+      unit: () => (isRange ? get(rangeTimeframe).xAxisTimeUnit : get(activeTimeframe).xAxisTimeUnit),
     },
+    type: 'time',
   };
 
   const y: any = {
-    display: false,
     beginAtZero: () => (isRange ? false : get(graphZeroBased)),
+    display: false,
   };
 
   if (isRange) {
@@ -305,9 +307,9 @@ function createTooltip(): Partial<TooltipOptions> {
     const time = dayjs(x).format(get(activeTimeframe).tooltipTimeFormat);
 
     set(tooltipContent, {
-      value: bigNumberify(y),
-      time: `${time}`,
       currentBalance: get(showVirtualCurrentData) && item.dataIndex === get(balanceData).length - 1,
+      time: `${time}`,
+      value: bigNumberify(y),
     });
 
     nextTick(() => {
@@ -320,9 +322,9 @@ function createTooltip(): Partial<TooltipOptions> {
 
   return {
     enabled: false,
-    mode: 'index',
-    intersect: false,
     external,
+    intersect: false,
+    mode: 'index',
   };
 }
 
@@ -336,22 +338,21 @@ function createChart(): Chart {
 
   const options: ChartOptions = {
     animation: (() => !get(activeRangeButton)) as any,
-    maintainAspectRatio: false,
     clip: 8,
-    interaction: {
-      mode: 'index',
-      intersect: false,
-    },
     hover: { intersect: false },
-    scales: scales as any,
+    interaction: {
+      intersect: false,
+      mode: 'index',
+    },
+    maintainAspectRatio: false,
     plugins: {
       legend: { display: false },
       tooltip,
       zoom: {
         limits: {
           x: {
-            min: 'original',
             max: 'original',
+            min: 'original',
             minRange: oneHourTimestamp,
           },
         },
@@ -366,12 +367,13 @@ function createChart(): Chart {
         },
       },
     },
+    scales: scales as any,
   };
 
   const config: ChartConfiguration = {
-    type: 'line',
     data: { datasets },
     options,
+    type: 'line',
   };
 
   return new Chart(context, config);
@@ -392,9 +394,7 @@ function createRange() {
 
   const options: ChartOptions = {
     animation: false,
-    responsive: true,
     maintainAspectRatio: false,
-    scales: scales as any,
     plugins: {
       legend: {
         display: false,
@@ -403,12 +403,14 @@ function createRange() {
         enabled: false,
       },
     },
+    responsive: true,
+    scales: scales as any,
   };
 
   const config: ChartConfiguration = {
-    type: 'line',
     data: { datasets },
     options,
+    type: 'line',
   };
 
   return new Chart(context, config);
@@ -482,7 +484,7 @@ function resetZoom(updateRange = false) {
 
   const xAxis = chart.options!.scales!.x!;
 
-  const { min, max } = get(dataTimeRange);
+  const { max, min } = get(dataTimeRange);
 
   xAxis.min = min;
   xAxis.max = max;
@@ -499,8 +501,8 @@ const rangeMarkerStyle = computed<Record<string, string>>(() => {
 
   return {
     left: `${left * 100}%`,
-    width: `${length * 100}%`,
     transition: get(activeRangeButton) ? 'none' : '0.3s all',
+    width: `${length * 100}%`,
   };
 });
 
@@ -516,15 +518,15 @@ function rangeButtonMouseMove(event: MouseEvent) {
   if (!activeRangeButtonVal || !rangeElem)
     return;
 
-  const { x: elemX, width } = rangeElem.getBoundingClientRect();
+  const { width, x: elemX } = rangeElem.getBoundingClientRect();
   const x = Math.round(event.pageX) - elemX;
   const scale = x / width;
 
-  const { min, max, range } = get(dataTimeRange);
+  const { max, min, range } = get(dataTimeRange);
   if (range < oneHourTimestamp)
     return;
 
-  const { min: displayedMin, max: displayedMax } = get(displayedXRange);
+  const { max: displayedMax, min: displayedMin } = get(displayedXRange);
 
   const chart = getChart();
   if (!chart)

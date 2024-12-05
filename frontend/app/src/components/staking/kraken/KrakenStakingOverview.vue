@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useBalancePricesStore } from '@/store/balances/prices';
 import type { BigNumber } from '@rotki/common';
 import type { ReceivedAmount } from '@/types/staking';
 
@@ -21,7 +22,7 @@ const totalUsdCurrent = computed<BigNumber>(() => {
 
   let sum = Zero;
 
-  for (const { asset, amount } of earnedAssets) {
+  for (const { amount, asset } of earnedAssets) {
     const assetPrice = assetPrices[asset];
     assert(assetPrice);
     sum = sum.plus(assetPrice.value.times(amount));

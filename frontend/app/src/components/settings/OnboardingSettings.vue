@@ -4,6 +4,8 @@ import { and, helpers, minValue, numeric, required } from '@vuelidate/validators
 import { isEqual } from 'lodash-es';
 import { LogLevel } from '@shared/log-level';
 import { toMessages } from '@/utils/validation';
+import { useMainStore } from '@/store/main';
+import { useConfirmStore } from '@/store/confirm';
 import type { RuiIcons } from '@rotki/ui-library';
 import type { BackendOptions } from '@shared/ipc';
 import type { Writeable } from '@rotki/common';
@@ -47,7 +49,7 @@ function stringifyValue(value?: number) {
   return value.toString();
 }
 
-const { resetOptions, saveOptions, fileConfig, logLevel, defaultLogLevel, defaultLogDirectory, options }
+const { defaultLogDirectory, defaultLogLevel, fileConfig, logLevel, options, resetOptions, saveOptions }
   = useBackendManagement(loaded);
 
 const initialOptions = computed<Partial<BackendOptions>>(() => {
@@ -55,10 +57,10 @@ const initialOptions = computed<Partial<BackendOptions>>(() => {
   const opts = get(options);
   const defaults = get(defaultBackendArguments);
   return {
-    loglevel: opts.loglevel ?? get(defaultLogLevel),
     dataDirectory: opts.dataDirectory ?? get(dataDirectory),
     logDirectory: opts.logDirectory ?? get(defaultLogDirectory),
     logFromOtherModules: opts.logFromOtherModules ?? false,
+    loglevel: opts.loglevel ?? get(defaultLogLevel),
     maxLogfilesNum: opts.maxLogfilesNum ?? config?.maxLogfilesNum?.value ?? defaults.maxLogfilesNum,
     maxSizeInMbAllLogs: opts.maxSizeInMbAllLogs ?? config?.maxSizeInMbAllLogs?.value ?? defaults.maxSizeInMbAllLogs,
     sqliteInstructions: opts.sqliteInstructions ?? config?.sqliteInstructions?.value ?? defaults.sqliteInstructions,
@@ -136,13 +138,13 @@ const newUserOptions = computed(() => {
 
 const anyValueChanged = computed(() => {
   const form: Partial<BackendOptions> = {
-    loglevel: get(logLevel),
     dataDirectory: get(userDataDirectory),
     logDirectory: get(userLogDirectory),
     logFromOtherModules: get(logFromOtherModules),
+    loglevel: get(logLevel),
+    maxLogfilesNum: parseValue(get(maxLogFiles)),
     maxSizeInMbAllLogs: parseValue(get(maxLogSize)),
     sqliteInstructions: parseValue(get(sqliteInstructions)),
-    maxLogfilesNum: parseValue(get(maxLogFiles)),
   };
 
   return !isEqual(form, get(initialOptions));
@@ -151,21 +153,21 @@ const anyValueChanged = computed(() => {
 const { openDirectory } = useInterop();
 
 const nonNegativeNumberRules = {
-  required: helpers.withMessage(t('backend_settings.errors.non_empty'), required),
   nonNegative: helpers.withMessage(t('backend_settings.errors.min', { min: 0 }), and(numeric, minValue(0))),
+  required: helpers.withMessage(t('backend_settings.errors.non_empty'), required),
 };
 
 const rules = {
-  maxLogSize: nonNegativeNumberRules,
   maxLogFiles: nonNegativeNumberRules,
+  maxLogSize: nonNegativeNumberRules,
   sqliteInstructions: nonNegativeNumberRules,
 };
 
 const v$ = useVuelidate(
   rules,
   {
-    maxLogSize,
     maxLogFiles,
+    maxLogSize,
     sqliteInstructions,
   },
   { $autoDirty: true },
@@ -248,8 +250,8 @@ const { show } = useConfirmStore();
 function showResetConfirmation() {
   show(
     {
-      title: t('backend_settings.confirm.title'),
       message: t('backend_settings.confirm.message'),
+      title: t('backend_settings.confirm.title'),
     },
     reset,
   );

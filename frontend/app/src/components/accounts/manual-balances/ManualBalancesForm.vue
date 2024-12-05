@@ -4,11 +4,12 @@ import useVuelidate from '@vuelidate/core';
 import { toMessages } from '@/utils/validation';
 import { useSimplePropVModel } from '@/utils/model';
 import ManualBalancesPriceForm from '@/components/accounts/manual-balances/ManualBalancesPriceForm.vue';
+import { useManualBalancesStore } from '@/store/balances/manual';
 import type { ManualBalance, RawManualBalance } from '@/types/manual-balances';
 import type { ValidationErrors } from '@/types/api/errors';
 
 const errors = defineModel<ValidationErrors>('errorMessages', { required: true });
-const stateUpdated = defineModel<boolean>('stateUpdated', { required: false, default: false });
+const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
 
 const props = defineProps<{
   modelValue: RawManualBalance | ManualBalance;
@@ -58,8 +59,11 @@ const rules = {
   amount: {
     required: helpers.withMessage(t('manual_balances_form.validation.amount'), required),
   },
+  asset: {
+    required: helpers.withMessage(t('manual_balances_form.validation.asset'), required),
+  },
+  balanceType: {},
   label: {
-    required: helpers.withMessage(t('manual_balances_form.validation.label_empty'), required),
     doesNotExist: helpers.withMessage(
       ({ $model: label }) =>
         t('manual_balances_form.validation.label_exists', {
@@ -67,24 +71,21 @@ const rules = {
         }),
       (label: string) => !get(manualLabels).includes(label),
     ),
-  },
-  asset: {
-    required: helpers.withMessage(t('manual_balances_form.validation.asset'), required),
+    required: helpers.withMessage(t('manual_balances_form.validation.label_empty'), required),
   },
   location: {
     required,
   },
   tags: {},
-  balanceType: {},
 };
 
 const states = {
   amount,
   asset,
+  balanceType,
   label,
   location,
   tags,
-  balanceType,
 };
 
 const v$ = useVuelidate(
@@ -123,8 +124,8 @@ async function savePrice() {
 }
 
 defineExpose({
-  validate,
   savePrice,
+  validate,
 });
 </script>
 

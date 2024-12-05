@@ -6,6 +6,10 @@ import { DashboardTableType } from '@/types/settings/frontend-settings';
 import { aggregateTotal, calculatePercentage } from '@/utils/calculation';
 import { sortAssetBalances } from '@/utils/balances';
 import { assetFilterByKeyword } from '@/utils/assets';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useStatisticsStore } from '@/store/statistics';
+import { useBalancePricesStore } from '@/store/balances/prices';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 import type { AssetBalance, AssetBalanceWithPrice, BigNumber, Nullable } from '@rotki/common';
 import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 
@@ -21,7 +25,7 @@ const props = withDefaults(
 
 const { t } = useI18n();
 
-const { balances, title, tableType } = toRefs(props);
+const { balances, tableType, title } = toRefs(props);
 const search = ref('');
 
 const expanded = ref<AssetBalanceWithPrice[]>([]);
@@ -32,13 +36,13 @@ const sort = ref<DataTableSortData<AssetBalanceWithPrice>>({
 });
 
 const pagination = ref({
-  page: 1,
   itemsPerPage: 10,
+  page: 1,
 });
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { exchangeRate } = useBalancePricesStore();
-const { assetSymbol, assetName, assetInfo } = useAssetInfoRetrieval();
+const { assetInfo, assetName, assetSymbol } = useAssetInfoRetrieval();
 const { dashboardTablesVisibleColumns } = storeToRefs(useFrontendSettingsStore());
 const statisticsStore = useStatisticsStore();
 const { totalNetWorthUsd } = storeToRefs(statisticsStore);
@@ -74,10 +78,10 @@ function setTablePagination(event: TablePaginationData | undefined) {
   if (!isDefined(event))
     return;
 
-  const { page, limit } = event;
+  const { limit, page } = event;
   set(pagination, {
-    page,
     itemsPerPage: limit,
+    page,
   });
 }
 
@@ -95,62 +99,62 @@ const tableHeaders = computed<DataTableColumn<AssetBalanceWithPrice>[]>(() => {
 
   const headers: DataTableColumn<AssetBalanceWithPrice>[] = [
     {
-      label: t('common.asset'),
-      key: 'asset',
-      class: 'text-no-wrap w-full',
       cellClass: 'py-0',
+      class: 'text-no-wrap w-full',
+      key: 'asset',
+      label: t('common.asset'),
       sortable: true,
     },
     {
+      align: 'end',
+      cellClass: 'py-0',
+      class: 'text-no-wrap',
+      key: 'usdPrice',
       label: t('common.price_in_symbol', {
         symbol: get(currencySymbol),
       }),
-      key: 'usdPrice',
-      align: 'end',
-      class: 'text-no-wrap',
-      cellClass: 'py-0',
       sortable: true,
     },
     {
-      label: t('common.amount'),
+      align: 'end',
+      cellClass: 'py-0',
       key: 'amount',
-      align: 'end',
-      cellClass: 'py-0',
+      label: t('common.amount'),
       sortable: true,
     },
     {
+      align: 'end',
+      cellClass: 'py-0',
+      class: 'text-no-wrap',
+      key: 'usdValue',
       label: t('common.value_in_symbol', {
         symbol: get(currencySymbol),
       }),
-      key: 'usdValue',
-      align: 'end',
-      class: 'text-no-wrap',
-      cellClass: 'py-0',
       sortable: true,
     },
   ];
 
   if (visibleColumns.includes(TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE)) {
     headers.push({
-      label: get(totalNetWorthUsd).gt(0)
-        ? t('dashboard_asset_table.headers.percentage_of_total_net_value')
-        : t('dashboard_asset_table.headers.percentage_total'),
-      key: 'percentageOfTotalNetValue',
       align: 'end',
       cellClass: 'py-0',
       class: 'text-no-wrap',
+      key: 'percentageOfTotalNetValue',
+      label: get(totalNetWorthUsd).gt(0)
+        ? t('dashboard_asset_table.headers.percentage_of_total_net_value')
+        : t('dashboard_asset_table.headers.percentage_total'),
     });
   }
 
   if (visibleColumns.includes(TableColumn.PERCENTAGE_OF_TOTAL_CURRENT_GROUP)) {
     headers.push({
-      label: t('dashboard_asset_table.headers.percentage_of_total_current_group', {
-        group: get(title),
-      }),
-      key: 'percentageOfTotalCurrentGroup',
       align: 'end',
       cellClass: 'py-0',
       class: 'text-no-wrap',
+      key: 'percentageOfTotalCurrentGroup',
+      label: t('dashboard_asset_table.headers.percentage_of_total_current_group', {
+        group: get(title),
+      }),
     });
   }
 

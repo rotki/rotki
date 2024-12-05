@@ -31,12 +31,12 @@ const COINBASE_FORMATS = {
 const customLabel: Record<string, LocationConfig> = {
   coinbase: {
     apiKey: {
-      label: t('exchange_settings.inputs.api_key_name'),
       hint: `${t('exchange_settings.inputs.format')}: ${COINBASE_FORMATS.apiKeyNameFormat}`,
+      label: t('exchange_settings.inputs.api_key_name'),
     },
     apiSecret: {
-      label: t('exchange_settings.inputs.private_key'),
       hint: `${t('exchange_settings.inputs.format')}: ${COINBASE_FORMATS.privateKeyFormat}`,
+      label: t('exchange_settings.inputs.private_key'),
     },
   },
   coinbaseprime: {
@@ -44,12 +44,12 @@ const customLabel: Record<string, LocationConfig> = {
       label: t('exchange_settings.inputs.access_key'),
     },
     apiSecret: {
-      label: t('exchange_settings.inputs.signing_key'),
       className: 'order-2',
+      label: t('exchange_settings.inputs.signing_key'),
     },
     passphrase: {
-      label: t('exchange_settings.inputs.passphrase'),
       className: 'order-1',
+      label: t('exchange_settings.inputs.passphrase'),
     },
   },
 };
@@ -73,12 +73,12 @@ const slotData = computed(() => {
 
   return LOCATION_KEYS
     .map(name => ({
-      name,
-      slot: slots[name],
       bindings: {
         ...defaultData[name],
         ...locationConfig[name],
       },
+      name,
+      slot: slots[name],
     }))
     .filter(item => item.slot);
 });

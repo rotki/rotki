@@ -1,4 +1,7 @@
 import { CURRENCY_USD } from '@/types/currencies';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useBalancePricesStore } from '@/store/balances/prices';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import type { BalanceSource } from '@/types/settings/frontend-settings';
 import type { ComputedRef } from 'vue';
 

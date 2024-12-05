@@ -30,23 +30,23 @@ const { t } = useI18n();
 
 const cols = computed<DataTableColumn<CustomAsset>[]>(() => [
   {
-    label: t('common.asset'),
+    cellClass: 'py-0',
+    class: 'w-1/2',
     key: 'name',
-    class: 'w-1/2',
-    cellClass: 'py-0',
+    label: t('common.asset'),
     sortable: true,
   },
   {
-    label: t('common.type'),
+    cellClass: 'py-0',
+    class: 'w-1/2',
     key: 'custom_asset_type',
-    class: 'w-1/2',
-    cellClass: 'py-0',
+    label: t('common.type'),
     sortable: true,
   },
   {
-    label: '',
-    key: 'actions',
     cellClass: 'py-0',
+    key: 'actions',
+    label: '',
   },
 ]);
 
@@ -55,11 +55,11 @@ const deleteAsset = (asset: CustomAsset) => emit('delete-asset', asset);
 
 function getAsset(item: CustomAsset) {
   return {
-    name: item.name,
-    symbol: item.customAssetType,
+    customAssetType: item.customAssetType,
     identifier: item.identifier,
     isCustomAsset: true,
-    customAssetType: item.customAssetType,
+    name: item.name,
+    symbol: item.customAssetType,
   };
 }
 

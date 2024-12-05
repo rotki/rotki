@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { TaskType } from '@/types/task-type';
+import { useTaskStore } from '@/store/tasks';
 import type { EvmUnDecodedTransactionsData } from '@/types/websocket-messages';
 
 const props = defineProps<{ item: EvmUnDecodedTransactionsData }>();

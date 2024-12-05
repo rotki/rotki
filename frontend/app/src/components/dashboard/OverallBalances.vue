@@ -3,6 +3,12 @@ import { TimeFramePeriod, TimeFramePersist, type TimeFrameSetting, TimeUnit, tim
 import dayjs from 'dayjs';
 import { Section } from '@/types/status';
 import { isPeriodAllowed } from '@/utils/settings';
+import { useStatusStore } from '@/store/status';
+import { useSessionAuthStore } from '@/store/session/auth';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useStatisticsStore } from '@/store/statistics';
+import { useSessionSettingsStore } from '@/store/settings/session';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 
 const { t } = useI18n();
 const { currencySymbol, floatingPrecision } = storeToRefs(useGeneralSettingsStore());
@@ -16,7 +22,7 @@ const { totalNetWorth } = storeToRefs(statistics);
 const frontendStore = useFrontendSettingsStore();
 const { visibleTimeframes } = storeToRefs(frontendStore);
 
-const { shouldShowLoadingScreen, isLoading: isSectionLoading } = useStatusStore();
+const { isLoading: isSectionLoading, shouldShowLoadingScreen } = useStatusStore();
 
 const isLoading = logicOr(
   shouldShowLoadingScreen(Section.BLOCKCHAIN),

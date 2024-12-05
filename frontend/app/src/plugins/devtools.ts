@@ -8,13 +8,13 @@ const componentStateTypes: string[] = [stateType];
 export function registerDevtools(app: App): void {
   setupDevtoolsPlugin(
     {
+      app,
+      componentStateTypes,
+      homepage: 'https://rotki.com',
       id: 'com.rotki',
       label: 'rotki',
       logo: 'https://raw.githubusercontent.com/rotki/data/main/assets/icons/app_logo.png',
       packageName: 'rotki',
-      homepage: 'https://rotki.com',
-      componentStateTypes,
-      app,
     },
     (api) => {
       api.on.inspectComponent((payload) => {
@@ -26,13 +26,13 @@ export function registerDevtools(app: App): void {
         bgnState.forEach((state) => {
           payload.instanceData.state.push({
             ...state,
-            type: stateType,
             editable: false,
+            type: stateType,
             value: {
               _custom: {
-                type: BigNumber,
-                readonly: true,
                 display: state.value.toString(),
+                readonly: true,
+                type: BigNumber,
                 value: state.value,
               },
             },

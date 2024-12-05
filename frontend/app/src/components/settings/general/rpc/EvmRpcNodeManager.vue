@@ -6,6 +6,10 @@ import {
   type EvmRpcNodeManageState,
   getPlaceholderNode,
 } from '@/types/settings/rpc';
+import { useConfirmStore } from '@/store/confirm';
+import { usePeriodicStore } from '@/store/session/periodic';
+import { useMessageStore } from '@/store/message';
+import { useNotificationsStore } from '@/store/notifications';
 import type { Blockchain } from '@rotki/common';
 
 const props = defineProps<{
@@ -24,7 +28,7 @@ const { setMessage } = useMessageStore();
 
 const { connectedNodes } = storeToRefs(usePeriodicStore());
 const api = useEvmNodesApi(chain);
-const { getEvmChainName, getChainName } = useSupportedChains();
+const { getChainName, getEvmChainName } = useSupportedChains();
 
 const chainName = computed(() => get(getChainName(chain)));
 
@@ -34,10 +38,10 @@ async function loadNodes(): Promise<void> {
   }
   catch (error: any) {
     notify({
+      message: error.message,
       title: t('evm_rpc_node_manager.loading_error.title', {
         chain: get(chain),
       }),
-      message: error.message,
     });
   }
 }
@@ -64,11 +68,11 @@ async function deleteNode(node: EvmRpcNode) {
   }
   catch (error: any) {
     setMessage({
+      description: error.message,
+      success: false,
       title: t('evm_rpc_node_manager.delete_error.title', {
         chain: get(chain),
       }),
-      description: error.message,
-      success: false,
     });
   }
 }
@@ -81,11 +85,11 @@ async function onActiveChange(active: boolean, node: EvmRpcNode) {
   }
   catch (error: any) {
     setMessage({
+      description: error.message,
+      success: false,
       title: t('evm_rpc_node_manager.activate_error.title', {
         node: node.name,
       }),
-      description: error.message,
-      success: false,
     });
   }
 }
@@ -109,12 +113,12 @@ function showDeleteConfirmation(item: EvmRpcNode) {
   const chainProp = get(chainName);
   show(
     {
-      title: t('evm_rpc_node_manager.confirm.title', { chain: chainProp }),
       message: t('evm_rpc_node_manager.confirm.message', {
-        node: item.name,
-        endpoint: item.endpoint,
         chain: chainProp,
+        endpoint: item.endpoint,
+        node: item.name,
       }),
+      title: t('evm_rpc_node_manager.confirm.title', { chain: chainProp }),
     },
     () => deleteNode(item),
   );

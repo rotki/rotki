@@ -1,4 +1,5 @@
 import { backoff } from '@shared/utils';
+import { useNotificationsStore } from '@/store/notifications';
 
 export const usePeriodicStore = defineStore('session/periodic', () => {
   const lastBalanceSave = ref(0);
@@ -22,7 +23,7 @@ export const usePeriodicStore = defineStore('session/periodic', () => {
         return;
       }
 
-      const { lastBalanceSave: balance, lastDataUploadTs: upload, connectedNodes: connected } = result;
+      const { connectedNodes: connected, lastBalanceSave: balance, lastDataUploadTs: upload } = result;
 
       if (get(lastBalanceSave) !== balance)
         set(lastBalanceSave, balance);
@@ -34,11 +35,11 @@ export const usePeriodicStore = defineStore('session/periodic', () => {
     }
     catch (error: any) {
       notify({
-        title: t('actions.session.periodic_query.error.title'),
+        display: true,
         message: t('actions.session.periodic_query.error.message', {
           message: error.message,
         }),
-        display: true,
+        title: t('actions.session.periodic_query.error.title'),
       });
     }
     finally {
@@ -47,10 +48,10 @@ export const usePeriodicStore = defineStore('session/periodic', () => {
   };
 
   return {
+    check,
+    connectedNodes,
     lastBalanceSave,
     lastDataUpload,
-    connectedNodes,
-    check,
   };
 });
 

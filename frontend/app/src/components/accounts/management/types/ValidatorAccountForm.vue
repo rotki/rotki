@@ -2,6 +2,7 @@
 import Eth2Input from '@/components/accounts/blockchain/Eth2Input.vue';
 import { TaskType } from '@/types/task-type';
 import { useRefPropVModel } from '@/utils/model';
+import { useTaskStore } from '@/store/tasks';
 import type { StakingValidatorManage } from '@/composables/accounts/blockchain/use-account-manage';
 import type { ValidationErrors } from '@/types/api/errors';
 import type { ComponentExposed } from 'vue-component-type-helpers';

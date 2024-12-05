@@ -18,8 +18,8 @@ export const useAddressBookForm = createSharedComposable(() => {
   };
 
   return {
-    showGlobalDialog,
     globalPayload,
+    showGlobalDialog,
     ...forms,
   };
 });

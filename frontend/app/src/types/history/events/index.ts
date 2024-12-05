@@ -78,26 +78,26 @@ export const HistoryEventDetail = z
 export type HistoryEventDetail = z.infer<typeof HistoryEventDetail>;
 
 export const CommonHistoryEvent = z.object({
-  identifier: z.number(),
-  eventIdentifier: z.string(),
-  sequenceIndex: z.number().or(z.string()),
-  timestamp: z.number(),
-  location: z.string(),
   asset: z.string(),
   balance: Balance,
-  eventType: z.string(),
+  eventIdentifier: z.string(),
   eventSubtype: z.string(),
+  eventType: z.string(),
+  identifier: z.number(),
+  location: z.string(),
   locationLabel: z.string().nullable(),
   notes: z.string().nullable().optional(),
+  sequenceIndex: z.number().or(z.string()),
+  timestamp: z.number(),
 });
 
 export const EvmHistoryEvent = CommonHistoryEvent.extend({
-  entryType: z.literal(HistoryEventEntryType.EVM_EVENT),
   address: z.string().nullable(),
   counterparty: z.string().nullable(),
+  entryType: z.literal(HistoryEventEntryType.EVM_EVENT),
+  extraData: z.unknown().nullable(),
   product: z.string().nullable(),
   txHash: z.string(),
-  extraData: z.unknown().nullable(),
 });
 
 export type EvmHistoryEvent = z.infer<typeof EvmHistoryEvent>;
@@ -117,21 +117,21 @@ export const EthWithdrawalEvent = CommonHistoryEvent.extend({
 export type EthWithdrawalEvent = z.infer<typeof EthWithdrawalEvent>;
 
 export const EthBlockEvent = CommonHistoryEvent.extend({
-  entryType: z.literal(HistoryEventEntryType.ETH_BLOCK_EVENT),
   blockNumber: z.number(),
+  entryType: z.literal(HistoryEventEntryType.ETH_BLOCK_EVENT),
   validatorIndex: z.number(),
 });
 
 export type EthBlockEvent = z.infer<typeof EthBlockEvent>;
 
 export const EthDepositEvent = CommonHistoryEvent.extend({
-  entryType: z.literal(HistoryEventEntryType.ETH_DEPOSIT_EVENT),
   address: z.string().nullable(),
   counterparty: z.string().nullable(),
+  entryType: z.literal(HistoryEventEntryType.ETH_DEPOSIT_EVENT),
+  extraData: z.unknown().nullable(),
   product: z.string().nullable(),
   txHash: z.string(),
   validatorIndex: z.number(),
-  extraData: z.unknown().nullable(),
 });
 
 export type EthDepositEvent = z.infer<typeof EthDepositEvent>;
@@ -243,11 +243,11 @@ export const HistoryEventAccountingRuleStatusEnum = z.nativeEnum(HistoryEventAcc
 export const HistoryEventMeta = EntryMeta.merge(
   z.object({
     customized: z.boolean().optional(),
+    defaultNotes: z.boolean().optional(),
+    eventAccountingRuleStatus: HistoryEventAccountingRuleStatusEnum,
+    groupedEventsNum: z.number().nullish(),
     hasDetails: z.boolean().optional(),
     hidden: z.boolean().optional(),
-    groupedEventsNum: z.number().nullish(),
-    eventAccountingRuleStatus: HistoryEventAccountingRuleStatusEnum,
-    defaultNotes: z.boolean().optional(),
   }),
 );
 
@@ -288,8 +288,8 @@ export const SkippedHistoryEventsSummary = z.object({
 export type SkippedHistoryEventsSummary = z.infer<typeof SkippedHistoryEventsSummary>;
 
 export const ProcessSkippedHistoryEventsResponse = z.object({
-  total: z.number(),
   successful: z.number(),
+  total: z.number(),
 });
 
 export type ProcessSkippedHistoryEventsResponse = z.infer<typeof ProcessSkippedHistoryEventsResponse>;

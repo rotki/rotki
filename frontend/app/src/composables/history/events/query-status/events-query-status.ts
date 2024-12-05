@@ -1,3 +1,4 @@
+import { useEventsQueryStatusStore } from '@/store/history/query-status/events-query-status';
 import type { MaybeRef } from '@vueuse/core';
 import type { HistoryEventsQueryData } from '@/types/websocket-messages';
 import type { ComputedRef, Ref } from 'vue';
@@ -22,7 +23,7 @@ interface UseEventsQueryStatusReturn {
 export function useEventsQueryStatus(locations: MaybeRef<string[]> = []): UseEventsQueryStatusReturn {
   const store = useEventsQueryStatusStore();
   const { isStatusFinished, resetQueryStatus } = store;
-  const { queryStatus, isAllFinished } = storeToRefs(store);
+  const { isAllFinished, queryStatus } = storeToRefs(store);
 
   const filtered = computed<HistoryEventsQueryData[]>(() => {
     const statuses = Object.values(get(queryStatus));
@@ -33,7 +34,7 @@ export function useEventsQueryStatus(locations: MaybeRef<string[]> = []): UseEve
     return statuses.filter(({ location }) => locationsVal.includes(location));
   });
 
-  const { sortedQueryStatus, queryingLength, length, isQueryStatusRange } = useQueryStatus(filtered, isStatusFinished);
+  const { isQueryStatusRange, length, queryingLength, sortedQueryStatus } = useQueryStatus(filtered, isStatusFinished);
 
   const getItemTranslationKey = (item: HistoryEventsQueryData): QueryTranslationKey => {
     const isRange = isQueryStatusRange(item);
@@ -52,14 +53,14 @@ export function useEventsQueryStatus(locations: MaybeRef<string[]> = []): UseEve
   const isQueryFinished = (item: HistoryEventsQueryData): boolean => isStatusFinished(item);
 
   return {
-    getItemTranslationKey,
-    isQueryFinished,
-    getKey,
-    resetQueryStatus,
-    isAllFinished,
-    sortedQueryStatus,
     filtered,
-    queryingLength,
+    getItemTranslationKey,
+    getKey,
+    isAllFinished,
+    isQueryFinished,
     length,
+    queryingLength,
+    resetQueryStatus,
+    sortedQueryStatus,
   };
 }

@@ -3,6 +3,10 @@ import { isCancel } from 'axios';
 import { type AssetsWithId, CUSTOM_ASSET } from '@/types/asset';
 import { TaskType } from '@/types/task-type';
 import { isTaskCancelled } from '@/utils';
+import { useNotificationsStore } from '@/store/notifications';
+import { useTaskStore } from '@/store/tasks';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useAssetCacheStore } from '@/store/assets/asset-cache';
 import type { MaybeRef } from '@vueuse/core';
 import type { ERC20Token } from '@/types/blockchain/accounts';
 import type { TaskMeta } from '@/types/task';
@@ -39,8 +43,8 @@ interface UseAssetInfoRetrievalReturn {
 
 export function useAssetInfoRetrieval(): UseAssetInfoRetrievalReturn {
   const { t } = useI18n();
-  const { erc20details, assetSearch: assetSearchCaller } = useAssetInfoApi();
-  const { retrieve, queueIdentifier } = useAssetCacheStore();
+  const { assetSearch: assetSearchCaller, erc20details } = useAssetInfoApi();
+  const { queueIdentifier, retrieve } = useAssetCacheStore();
   const { treatEth2AsEth } = storeToRefs(useGeneralSettingsStore());
   const { notify } = useNotificationsStore();
   const { awaitTask } = useTaskStore();
@@ -100,9 +104,9 @@ export function useAssetInfoRetrieval(): UseAssetInfoRetrievalReturn {
     if (isCustomAsset) {
       return {
         ...data,
-        symbol: data.name,
         isCustomAsset,
         resolved: !!data,
+        symbol: data.name,
       };
     }
     const { fetchedAssetCollections } = storeToRefs(useAssetCacheStore());
@@ -118,8 +122,8 @@ export function useAssetInfoRetrieval(): UseAssetInfoRetrievalReturn {
       ...data,
       isCustomAsset,
       name,
-      symbol,
       resolved: !!data,
+      symbol,
     };
   });
 
@@ -172,11 +176,11 @@ export function useAssetInfoRetrieval(): UseAssetInfoRetrievalReturn {
     catch (error: any) {
       if (!isTaskCancelled(error)) {
         notify({
-          title: t('actions.assets.erc20.error.title', payload),
+          display: true,
           message: t('actions.assets.erc20.error.description', {
             message: error.message,
           }),
-          display: true,
+          title: t('actions.assets.erc20.error.title', payload),
         });
       }
       return {};
@@ -193,27 +197,27 @@ export function useAssetInfoRetrieval(): UseAssetInfoRetrievalReturn {
         return [];
 
       notify({
-        title: t('asset_search.error.title'),
+        display: true,
+        group: NotificationGroup.ASSET_SEARCH_ERROR,
         message: t('asset_search.error.message', {
           message: error.message,
         }),
         severity: Severity.ERROR,
-        display: true,
-        group: NotificationGroup.ASSET_SEARCH_ERROR,
+        title: t('asset_search.error.title'),
       });
       return [];
     }
   };
 
   return {
-    fetchTokenDetails,
-    getAssociatedAssetIdentifier,
-    getAssetAssociationIdentifiers,
     assetInfo,
-    refetchAssetInfo: queueIdentifier,
-    assetSymbol,
     assetName,
-    tokenAddress,
     assetSearch,
+    assetSymbol,
+    fetchTokenDetails,
+    getAssetAssociationIdentifiers,
+    getAssociatedAssetIdentifier,
+    refetchAssetInfo: queueIdentifier,
+    tokenAddress,
   };
 }

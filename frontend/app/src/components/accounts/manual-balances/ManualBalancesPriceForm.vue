@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useBalancePricesStore } from '@/store/balances/prices';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 import type { BigNumber } from '@rotki/common';
 
 const props = withDefaults(
@@ -21,7 +23,7 @@ const fiatPriceHint = ref<BigNumber | null>();
 const { asset } = toRefs(props);
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-const { fetchPrices, toSelectedCurrency, assetPrice, isAssetPriceInCurrentCurrency } = useBalancePricesStore();
+const { assetPrice, fetchPrices, isAssetPriceInCurrentCurrency, toSelectedCurrency } = useBalancePricesStore();
 const { addLatestPrice } = useAssetPricesApi();
 
 const { fetchLatestPrices } = useAssetPricesApi();
@@ -99,8 +101,8 @@ async function savePrice(asset: string) {
   if (get(isCustomPrice) && get(price) && get(priceAsset)) {
     await addLatestPrice({
       fromAsset: asset,
-      toAsset: get(priceAsset),
       price: get(price),
+      toAsset: get(priceAsset),
     });
   }
 }

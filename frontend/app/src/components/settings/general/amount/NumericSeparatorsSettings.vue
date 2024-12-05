@@ -2,28 +2,17 @@
 import useVuelidate from '@vuelidate/core';
 import { helpers, not, numeric, required, sameAs } from '@vuelidate/validators';
 import { toMessages } from '@/utils/validation';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
 const thousandSeparator = ref<string>('');
 const decimalSeparator = ref<string>('');
 
-const { thousandSeparator: thousands, decimalSeparator: decimals } = storeToRefs(useFrontendSettingsStore());
+const { decimalSeparator: decimals, thousandSeparator: thousands } = storeToRefs(useFrontendSettingsStore());
 
 const { t } = useI18n();
 
 const rules = {
-  thousandSeparator: {
-    required: helpers.withMessage(t('general_settings.thousand_separator.validation.empty'), required),
-    notANumber: helpers.withMessage(
-      t('general_settings.thousand_separator.validation.cannot_be_numeric_character'),
-      not(numeric),
-    ),
-    notTheSame: helpers.withMessage(
-      t('general_settings.thousand_separator.validation.cannot_be_the_same'),
-      not(sameAs(decimalSeparator)),
-    ),
-  },
   decimalSeparator: {
-    required: helpers.withMessage(t('general_settings.decimal_separator.validation.empty'), required),
     notANumber: helpers.withMessage(
       t('general_settings.decimal_separator.validation.cannot_be_numeric_character'),
       not(numeric),
@@ -32,10 +21,22 @@ const rules = {
       t('general_settings.decimal_separator.validation.cannot_be_the_same'),
       not(sameAs(thousandSeparator)),
     ),
+    required: helpers.withMessage(t('general_settings.decimal_separator.validation.empty'), required),
+  },
+  thousandSeparator: {
+    notANumber: helpers.withMessage(
+      t('general_settings.thousand_separator.validation.cannot_be_numeric_character'),
+      not(numeric),
+    ),
+    notTheSame: helpers.withMessage(
+      t('general_settings.thousand_separator.validation.cannot_be_the_same'),
+      not(sameAs(decimalSeparator)),
+    ),
+    required: helpers.withMessage(t('general_settings.thousand_separator.validation.empty'), required),
   },
 };
 
-const v$ = useVuelidate(rules, { thousandSeparator, decimalSeparator }, { $autoDirty: true });
+const v$ = useVuelidate(rules, { decimalSeparator, thousandSeparator }, { $autoDirty: true });
 
 const { callIfValid } = useValidation(v$);
 

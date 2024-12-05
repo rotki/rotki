@@ -6,6 +6,9 @@ import { ApiValidationError } from '@/types/api/errors';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 import { hasAccountAddress } from '@/utils/blockchain/accounts';
+import { useBlockchainStore } from '@/store/blockchain';
+import { useMessageStore } from '@/store/message';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 import type { CalendarEvent, CalendarEventPayload } from '@/types/history/calendar';
 import type { Writeable } from '@rotki/common';
 import type { Dayjs } from 'dayjs';
@@ -40,27 +43,27 @@ const reminderRef = ref();
 const externalServerValidation = () => true;
 
 const rules = {
-  timestamp: { externalServerValidation },
+  accounts: { externalServerValidation },
+  autoDelete: { externalServerValidation },
+  counterparty: { externalServerValidation },
+  description: { externalServerValidation },
   name: {
     required: helpers.withMessage(t('calendar.form.name.validation.non_empty'), required),
   },
-  description: { externalServerValidation },
-  counterparty: { externalServerValidation },
-  accounts: { externalServerValidation },
-  autoDelete: { externalServerValidation },
+  timestamp: { externalServerValidation },
 };
 
-const { setValidation, setSubmitFunc } = useCalendarEventForm();
+const { setSubmitFunc, setValidation } = useCalendarEventForm();
 
 const v$ = setValidation(
   rules,
   {
-    timestamp: datetime,
-    name,
-    description,
-    counterparty,
     accounts,
     autoDelete,
+    counterparty,
+    description,
+    name,
+    timestamp: datetime,
   },
   {
     $autoDirty: true,
@@ -106,11 +109,11 @@ const { setMessage } = useMessageStore();
 async function save() {
   const accountVal = get(accounts)[0];
   const payload: Writeable<CalendarEventPayload> = {
-    name: get(name),
-    description: get(description),
-    timestamp: convertToTimestamp(get(datetime)),
-    color: get(color),
     autoDelete: get(autoDelete),
+    color: get(color),
+    description: get(description),
+    name: get(name),
+    timestamp: convertToTimestamp(get(datetime)),
   };
 
   if (accountVal) {
@@ -147,9 +150,9 @@ async function save() {
 
     if (typeof errors === 'string') {
       setMessage({
-        title: errorTitle,
         description: errors,
         success: false,
+        title: errorTitle,
       });
     }
     else {

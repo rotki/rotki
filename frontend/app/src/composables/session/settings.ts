@@ -1,5 +1,10 @@
 import { BigNumber, TimeFramePersist } from '@rotki/common';
 import { getBnFormat } from '@/data/amount-formatter';
+import { useSessionSettingsStore } from '@/store/settings/session';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useAccountingSettingsStore } from '@/store/settings/accounting';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { usePremiumStore } from '@/store/session/premium';
 import type { Exchange } from '@/types/exchanges';
 import type { UserSettingsModel } from '@/types/user';
 
@@ -12,7 +17,7 @@ export function useSessionSettings(): UseSessionSettingsReturn {
   const { update: updateFrontendSettings } = useFrontendSettingsStore();
   const { update: updateAccountingSettings } = useAccountingSettingsStore();
   const { update: updateGeneralSettings } = useGeneralSettingsStore();
-  const { update: updateSessionSettings, setConnectedExchanges } = useSessionSettingsStore();
+  const { setConnectedExchanges, update: updateSessionSettings } = useSessionSettingsStore();
   const { checkDefaultThemeVersion } = useThemeMigration();
 
   const initialize = (
@@ -20,8 +25,8 @@ export function useSessionSettings(): UseSessionSettingsReturn {
     exchanges: Exchange[],
   ): void => {
     if (frontendSettings) {
-      const { timeframeSetting, lastKnownTimeframe } = frontendSettings;
-      const { thousandSeparator, decimalSeparator } = frontendSettings;
+      const { lastKnownTimeframe, timeframeSetting } = frontendSettings;
+      const { decimalSeparator, thousandSeparator } = frontendSettings;
       const timeframe = timeframeSetting !== TimeFramePersist.REMEMBER ? timeframeSetting : lastKnownTimeframe;
 
       updateFrontendSettings(frontendSettings);

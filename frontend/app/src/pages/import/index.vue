@@ -3,10 +3,10 @@ import { externalLinks } from '@shared/external-links';
 import { NoteLocation } from '@/types/notes';
 
 definePage({
-  name: 'import',
   meta: {
     noteLocation: NoteLocation.IMPORT,
   },
+  name: 'import',
 });
 
 const { t } = useI18n();

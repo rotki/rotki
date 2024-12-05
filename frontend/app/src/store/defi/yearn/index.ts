@@ -7,6 +7,8 @@ import { isTaskCancelled } from '@/utils';
 import { getProtocolAddresses } from '@/utils/addresses';
 import { balanceSum } from '@/utils/calculation';
 import { zeroBalance } from '@/utils/bignumbers';
+import { useTaskStore } from '@/store/tasks';
+import { useNotificationsStore } from '@/store/notifications';
 import type { TaskMeta } from '@/types/task';
 
 export const useYearnStore = defineStore('defi/yearn', () => {
@@ -20,7 +22,7 @@ export const useYearnStore = defineStore('defi/yearn', () => {
   const { t } = useI18n();
   const { fetchYearnVaultsBalances } = useYearnApi();
 
-  const { setStatus, fetchDisabled } = useStatusUpdater(Section.DEFI_YEARN_VAULTS_BALANCES);
+  const { fetchDisabled, setStatus } = useStatusUpdater(Section.DEFI_YEARN_VAULTS_BALANCES);
 
   const yearnVaultsAssets = (
     addresses: string[],
@@ -55,26 +57,26 @@ export const useYearnStore = defineStore('defi/yearn', () => {
     const vaultAssets: YearnVaultAsset[] = [];
     for (const key in balances) {
       const allBalances = balances[key];
-      const { underlyingToken, vaultToken, roi } = allBalances[0];
+      const { roi, underlyingToken, vaultToken } = allBalances[0];
 
       const underlyingValue = zeroBalance();
       const vaultValue = zeroBalance();
       const values = { underlyingValue, vaultValue };
       const summary = allBalances.reduce(
         (sum, current) => ({
-          vaultValue: balanceSum(sum.vaultValue, current.vaultValue),
           underlyingValue: balanceSum(sum.underlyingValue, current.underlyingValue),
+          vaultValue: balanceSum(sum.vaultValue, current.vaultValue),
         }),
         values,
       );
       vaultAssets.push({
-        vault: key,
-        version,
+        roi,
         underlyingToken,
         underlyingValue: summary.underlyingValue,
+        vault: key,
         vaultToken,
         vaultValue: summary.vaultValue,
-        roi,
+        version,
       });
     }
     return vaultAssets;
@@ -120,14 +122,14 @@ export const useYearnStore = defineStore('defi/yearn', () => {
     catch (error: any) {
       if (!isTaskCancelled(error)) {
         notify({
-          title: t('actions.defi.yearn_vaults.error.title', {
-            version,
-          }),
+          display: true,
           message: t('actions.defi.yearn_vaults.error.description', {
             error: error.message,
             version,
           }),
-          display: true,
+          title: t('actions.defi.yearn_vaults.error.title', {
+            version,
+          }),
         });
       }
     }
@@ -154,13 +156,13 @@ export const useYearnStore = defineStore('defi/yearn', () => {
   const addressesV2 = computed<string[]>(() => getProtocolAddresses(get(vaultsV2Balances), []));
 
   return {
-    vaultsBalances,
-    vaultsV2Balances,
     addressesV1,
     addressesV2,
-    yearnVaultsAssets,
     fetchBalances,
     reset,
+    vaultsBalances,
+    vaultsV2Balances,
+    yearnVaultsAssets,
   };
 });
 

@@ -69,10 +69,10 @@ export function useTradesApi(): UseTradesApiReturn {
   };
 
   return {
-    getTradesTask,
-    getTrades,
     addExternalTrade,
-    editExternalTrade,
     deleteExternalTrade,
+    editExternalTrade,
+    getTrades,
+    getTradesTask,
   };
 }

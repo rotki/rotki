@@ -9,6 +9,8 @@ import { DateFormat } from '@/types/date-format';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 import { bigNumberifyFromRef } from '@/utils/bignumbers';
 import HistoryEventAssetPriceForm from '@/components/history/events/forms/HistoryEventAssetPriceForm.vue';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useBlockchainStore } from '@/store/blockchain';
 import type { EvmHistoryEvent, NewEvmHistoryEventPayload } from '@/types/history/events';
 
 const props = withDefaults(
@@ -19,8 +21,8 @@ const props = withDefaults(
   }>(),
   {
     editableItem: undefined,
-    nextSequence: '',
     groupHeader: undefined,
+    nextSequence: '',
   },
 );
 
@@ -70,13 +72,23 @@ const historyEventLimitedProducts = computed<string[]>(() => {
 });
 
 const rules = {
-  timestamp: { externalServerValidation },
-  locationLabel: { externalServerValidation },
-  notes: { externalServerValidation },
-  txHash: {
-    required: helpers.withMessage(t('transactions.events.form.tx_hash.validation.non_empty'), required),
-    isValid: helpers.withMessage(t('transactions.events.form.tx_hash.validation.valid'), (value: string) =>
-      isValidTxHash(value)),
+  address: {
+    isValid: helpers.withMessage(
+      t('transactions.events.form.address.validation.valid'),
+      (value: string) => !value || isValidEthAddress(value),
+    ),
+  },
+  amount: {
+    required: helpers.withMessage(t('transactions.events.form.amount.validation.non_empty'), required),
+  },
+  asset: {
+    required: helpers.withMessage(t('transactions.events.form.asset.validation.non_empty'), required),
+  },
+  counterparty: {
+    isValid: helpers.withMessage(
+      t('transactions.events.form.counterparty.validation.valid'),
+      (value: string) => !value || get(counterparties).includes(value) || isValidEthAddress(value),
+    ),
   },
   eventIdentifier: {
     required: helpers.withMessage(
@@ -84,14 +96,31 @@ const rules = {
       requiredIf(() => !!get(editableItem)),
     ),
   },
+  eventSubtype: {
+    required: helpers.withMessage(t('transactions.events.form.event_subtype.validation.non_empty'), required),
+  },
+  eventType: {
+    required: helpers.withMessage(t('transactions.events.form.event_type.validation.non_empty'), required),
+  },
   location: {
     required: helpers.withMessage(t('transactions.events.form.location.validation.non_empty'), required),
   },
-  asset: {
-    required: helpers.withMessage(t('transactions.events.form.asset.validation.non_empty'), required),
+  locationLabel: { externalServerValidation },
+  notes: { externalServerValidation },
+  product: {
+    isValid: helpers.withMessage(
+      t('transactions.events.form.product.validation.valid'),
+      (value: string) => !value || get(historyEventLimitedProducts).includes(value),
+    ),
   },
-  amount: {
-    required: helpers.withMessage(t('transactions.events.form.amount.validation.non_empty'), required),
+  sequenceIndex: {
+    required: helpers.withMessage(t('transactions.events.form.sequence_index.validation.non_empty'), required),
+  },
+  timestamp: { externalServerValidation },
+  txHash: {
+    isValid: helpers.withMessage(t('transactions.events.form.tx_hash.validation.valid'), (value: string) =>
+      isValidTxHash(value)),
+    required: helpers.withMessage(t('transactions.events.form.tx_hash.validation.non_empty'), required),
   },
   usdValue: {
     required: helpers.withMessage(
@@ -101,58 +130,31 @@ const rules = {
       required,
     ),
   },
-  address: {
-    isValid: helpers.withMessage(
-      t('transactions.events.form.address.validation.valid'),
-      (value: string) => !value || isValidEthAddress(value),
-    ),
-  },
-  sequenceIndex: {
-    required: helpers.withMessage(t('transactions.events.form.sequence_index.validation.non_empty'), required),
-  },
-  eventType: {
-    required: helpers.withMessage(t('transactions.events.form.event_type.validation.non_empty'), required),
-  },
-  eventSubtype: {
-    required: helpers.withMessage(t('transactions.events.form.event_subtype.validation.non_empty'), required),
-  },
-  counterparty: {
-    isValid: helpers.withMessage(
-      t('transactions.events.form.counterparty.validation.valid'),
-      (value: string) => !value || get(counterparties).includes(value) || isValidEthAddress(value),
-    ),
-  },
-  product: {
-    isValid: helpers.withMessage(
-      t('transactions.events.form.product.validation.valid'),
-      (value: string) => !value || get(historyEventLimitedProducts).includes(value),
-    ),
-  },
 };
 
 const numericAmount = bigNumberifyFromRef(amount);
 const numericUsdValue = bigNumberifyFromRef(usdValue);
 
-const { setValidation, setSubmitFunc, saveHistoryEventHandler, getPayloadNotes } = useHistoryEventsForm();
+const { getPayloadNotes, saveHistoryEventHandler, setSubmitFunc, setValidation } = useHistoryEventsForm();
 
 const v$ = setValidation(
   rules,
   {
-    timestamp: datetime,
+    address,
+    amount,
+    asset,
+    counterparty,
+    eventIdentifier,
+    eventSubtype,
+    eventType,
+    location,
     locationLabel,
     notes,
-    eventIdentifier,
-    txHash,
-    location,
-    asset,
-    amount,
-    usdValue,
-    address,
-    sequenceIndex,
-    eventType,
-    eventSubtype,
-    counterparty,
     product,
+    sequenceIndex,
+    timestamp: datetime,
+    txHash,
+    usdValue,
   },
   {
     $autoDirty: true,
@@ -224,25 +226,25 @@ async function save(): Promise<boolean> {
   const usedNotes = getPayloadNotes(get(notes), editable?.notes);
 
   const payload: NewEvmHistoryEventPayload = {
-    entryType: HistoryEventEntryType.EVM_EVENT,
-    txHash: get(txHash),
-    eventIdentifier: get(eventIdentifier) ?? null,
-    sequenceIndex: get(sequenceIndex) || '0',
-    timestamp,
-    eventType: get(eventType),
-    eventSubtype: get(eventSubtype),
+    address: get(address) || null,
     asset: get(asset),
     balance: {
       amount: get(numericAmount).isNaN() ? Zero : get(numericAmount),
       usdValue: get(numericUsdValue).isNaN() || get(isInformationalEvent) ? Zero : get(numericUsdValue),
     },
+    counterparty: get(counterparty) || null,
+    entryType: HistoryEventEntryType.EVM_EVENT,
+    eventIdentifier: get(eventIdentifier) ?? null,
+    eventSubtype: get(eventSubtype),
+    eventType: get(eventType),
+    extraData: get(extraData) || null,
     location: get(location),
-    address: get(address) || null,
     locationLabel: get(locationLabel) || null,
     notes: usedNotes ? usedNotes.trim() : undefined,
-    counterparty: get(counterparty) || null,
     product: get(product) || null,
-    extraData: get(extraData) || null,
+    sequenceIndex: get(sequenceIndex) || '0',
+    timestamp,
+    txHash: get(txHash),
   };
 
   return await saveHistoryEventHandler(

@@ -3,11 +3,13 @@ import { api } from '@/services/rotkehlchen-api';
 import { TaskType } from '@/types/task-type';
 import { SYNC_DOWNLOAD, SYNC_UPLOAD, type SyncAction } from '@/types/session/sync';
 import { isTaskCancelled } from '@/utils';
+import { useTaskStore } from '@/store/tasks';
+import { useNotificationsStore } from '@/store/notifications';
 import type { TaskMeta } from '@/types/task';
 import type { DbUploadResult } from '@/types/websocket-messages';
 
 export const useSync = createSharedComposable(() => {
-  const { isTaskRunning, awaitTask } = useTaskStore();
+  const { awaitTask, isTaskRunning } = useTaskStore();
   const { notify } = useNotificationsStore();
   const { t } = useI18n();
   const syncAction = ref<SyncAction>(SYNC_DOWNLOAD);
@@ -40,9 +42,9 @@ export const useSync = createSharedComposable(() => {
       });
 
       notify({
-        title,
-        message,
         display: true,
+        message,
+        title,
       });
     };
 
@@ -53,7 +55,7 @@ export const useSync = createSharedComposable(() => {
         set(displaySyncConfirmation, false);
 
       const { taskId } = await useSyncApi().forceSync(action);
-      const { result, message } = await awaitTask<boolean, TaskMeta>(taskId, taskType, {
+      const { message, result } = await awaitTask<boolean, TaskMeta>(taskId, taskType, {
         title: t('actions.session.force_sync.task.title'),
       });
 
@@ -62,10 +64,10 @@ export const useSync = createSharedComposable(() => {
         const message = t('actions.session.force_sync.success.message');
 
         notify({
-          title,
+          display: true,
           message,
           severity: Severity.INFO,
-          display: true,
+          title,
         });
 
         if (action === SYNC_DOWNLOAD)
@@ -86,14 +88,14 @@ export const useSync = createSharedComposable(() => {
   };
 
   return {
-    syncAction,
+    cancelSync,
+    clearUploadStatus,
     confirmChecked,
     displaySyncConfirmation,
+    forceSync,
+    showSyncConfirmation,
+    syncAction,
     uploadStatus,
     uploadStatusAlreadyHandled,
-    forceSync,
-    cancelSync,
-    showSyncConfirmation,
-    clearUploadStatus,
   };
 });

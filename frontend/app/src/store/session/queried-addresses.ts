@@ -1,3 +1,4 @@
+import { useMessageStore } from '@/store/message';
 import type { QueriedAddressPayload, QueriedAddresses } from '@/types/session';
 
 export const useQueriedAddressesStore = defineStore('session/queried-addresses', () => {
@@ -47,10 +48,10 @@ export const useQueriedAddressesStore = defineStore('session/queried-addresses',
   }
 
   return {
-    queriedAddresses,
     addQueriedAddress,
     deleteQueriedAddress,
     fetchQueriedAddresses,
+    queriedAddresses,
   };
 });
 

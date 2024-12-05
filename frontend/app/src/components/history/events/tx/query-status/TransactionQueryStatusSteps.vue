@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { TaskType } from '@/types/task-type';
+import { useTaskStore } from '@/store/tasks';
 import type { EvmTransactionQueryData } from '@/types/websocket-messages';
 
 const props = defineProps<{ item: EvmTransactionQueryData }>();
@@ -27,8 +28,8 @@ const stepList = computed(() => [
 
 const steps = computed(() =>
   get(stepList).map((step, index) => ({
-    title: toSentenceCase(step),
     loading: isStepInProgress(index),
+    title: toSentenceCase(step),
   })),
 );
 

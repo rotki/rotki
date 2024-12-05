@@ -30,39 +30,39 @@ const items = computed<Item[]>(() => {
   const settings = get(accountingSettings);
   const items = [
     {
-      label: t('account_settings_display.past_cost_basis'),
       data: settings.calculatePastCostBasis,
+      label: t('account_settings_display.past_cost_basis'),
     },
     {
-      label: t('account_settings_display.crypto2crypto'),
       data: settings.includeCrypto2crypto,
+      label: t('account_settings_display.crypto2crypto'),
     },
     {
-      label: t('account_settings_display.cost_basis_fees'),
       data: settings.includeFeesInCostBasis || false,
+      label: t('account_settings_display.cost_basis_fees'),
     },
     {
-      label: t('account_settings_display.gas_costs'),
       data: settings.includeGasCosts,
+      label: t('account_settings_display.gas_costs'),
     },
     {
-      label: t('account_settings_display.profit_currency'),
       data: settings.profitCurrency || '',
+      label: t('account_settings_display.profit_currency'),
     },
     {
-      label: t('account_settings_display.account_asset_movement'),
       data: settings.accountForAssetsMovements,
+      label: t('account_settings_display.account_asset_movement'),
     },
     {
-      label: t('account_settings_display.tax_free_period'),
       data: settings.taxfreeAfterPeriod ? taxFreePeriod(settings.taxfreeAfterPeriod) : false,
+      label: t('account_settings_display.tax_free_period'),
     },
   ];
 
   if (settings.ethStakingTaxableAfterWithdrawalEnabled !== undefined) {
     items.push({
-      label: t('account_settings_display.eth_staking_taxable_after_withdrawal_enabled'),
       data: !!settings.ethStakingTaxableAfterWithdrawalEnabled,
+      label: t('account_settings_display.eth_staking_taxable_after_withdrawal_enabled'),
     });
   }
 
@@ -70,8 +70,8 @@ const items = computed<Item[]>(() => {
 
   if (costBasis) {
     items.push({
-      label: t('account_settings_display.cost_basis_method'),
       data: `${costBasis.identifier.toUpperCase()} (${costBasis.label})`,
+      label: t('account_settings_display.cost_basis_method'),
     });
   }
 

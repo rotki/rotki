@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { type SupportedCurrency, useCurrencies } from '@/types/currencies';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 
 const { currencies } = useCurrencies();
 const selectedCurrency = ref<SupportedCurrency>(get(currencies)[0].tickerSymbol);

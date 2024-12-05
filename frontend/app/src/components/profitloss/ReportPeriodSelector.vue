@@ -27,11 +27,11 @@ const QUARTER_STARTS: { [quarter in Quarter]: string } = {
 };
 
 const QUARTER_ENDS: { [quarter in Quarter]: string } = {
+  [Quarter.ALL]: '31/12',
   [Quarter.Q1]: '31/03',
   [Quarter.Q2]: '30/06',
   [Quarter.Q3]: '30/09',
   [Quarter.Q4]: '31/12',
-  [Quarter.ALL]: '31/12',
 };
 
 const { quarter, year } = toRefs(props);
@@ -64,8 +64,8 @@ const end = computed(() => {
 });
 
 const periodEventPayload = computed<PeriodChangedEvent>(() => ({
-  start: get(start),
   end: get(end),
+  start: get(start),
 }));
 
 onMounted(() => {
@@ -111,8 +111,8 @@ function onChange(change: { year?: string; quarter?: Quarter }) {
   const yearVal = get(year);
   const quarterVal = get(quarter);
   updateSelection({
-    year: change?.year ?? yearVal,
     quarter: change?.quarter ?? quarterVal,
+    year: change?.year ?? yearVal,
   });
   updatePeriod(yearVal !== 'custom' ? get(periodEventPayload) : null);
 }

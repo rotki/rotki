@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import { startPromise } from '@shared/utils';
+import { useSessionStore } from '@/store/session';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useMainStore } from '@/store/main';
 
 const mainStore = useMainStore();
-const { version, updateNeeded } = storeToRefs(mainStore);
+const { updateNeeded, version } = storeToRefs(mainStore);
 const { getVersion } = mainStore;
 const { isPackaged, openUrl } = useInterop();
 const { versionUpdateCheckFrequency } = storeToRefs(useFrontendSettingsStore());
@@ -24,7 +27,7 @@ function update() {
 
 const period = get(versionUpdateCheckFrequency) * 60 * 60 * 1000;
 
-const { pause, resume, isActive } = useIntervalFn(() => {
+const { isActive, pause, resume } = useIntervalFn(() => {
   startPromise(getVersion());
 }, period, { immediate: false });
 

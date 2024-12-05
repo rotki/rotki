@@ -3,11 +3,11 @@ import { z } from 'zod';
 import { ProtocolVersion } from '@/types/defi/index';
 
 const YearnVaultBalance = z.object({
-  underlyingToken: z.string(),
-  vaultToken: z.string(),
-  underlyingValue: Balance,
-  vaultValue: Balance,
   roi: z.string().optional(),
+  underlyingToken: z.string(),
+  underlyingValue: Balance,
+  vaultToken: z.string(),
+  vaultValue: Balance,
 });
 
 export type YearnVaultBalance = z.infer<typeof YearnVaultBalance>;

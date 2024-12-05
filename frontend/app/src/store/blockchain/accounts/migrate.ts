@@ -2,6 +2,8 @@ import { type Notification, NotificationCategory, Severity } from '@rotki/common
 import { type MaybeRef, useSessionStorage } from '@vueuse/core';
 import { startPromise } from '@shared/utils';
 import { useLoggedUserIdentifier } from '@/composables/user/account';
+import { useSessionAuthStore } from '@/store/session/auth';
+import { useNotificationsStore } from '@/store/notifications';
 import type { MigratedAddresses } from '@/types/websocket-messages';
 
 function setupMigrationSessionCache(identifier: string): Ref<MigratedAddresses> {
@@ -12,7 +14,7 @@ export const useAccountMigrationStore = defineStore('blockchain/accounts/migrati
   let migratedAddresses = ref<MigratedAddresses>([]);
 
   const { canRequestData } = storeToRefs(useSessionAuthStore());
-  const { txChains, getChainName, isEvm } = useSupportedChains();
+  const { getChainName, isEvm, txChains } = useSupportedChains();
   const { fetchAccounts } = useBlockchains();
   const loggedUserIdentifier = useLoggedUserIdentifier();
 
@@ -48,19 +50,19 @@ export const useAccountMigrationStore = defineStore('blockchain/accounts/migrati
         promises.push(useTokenDetection(chain).detectTokens(chainAddresses));
 
       notifications.push({
-        title: t('notification_messages.address_migration.title', { chain: chainName }, chainAddresses.length),
+        category: NotificationCategory.ADDRESS_MIGRATION,
+        display: true,
+        duration: -1,
         message: t(
           'notification_messages.address_migration.message',
           {
-            chain: chainName,
             addresses: chainAddresses.join(', '),
+            chain: chainName,
           },
           chainAddresses.length,
         ),
         severity: Severity.INFO,
-        display: true,
-        category: NotificationCategory.ADDRESS_MIGRATION,
-        duration: -1,
+        title: t('notification_messages.address_migration.title', { chain: chainName }, chainAddresses.length),
       });
     }
 

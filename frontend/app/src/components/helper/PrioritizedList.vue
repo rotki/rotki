@@ -86,8 +86,8 @@ const autoCompleteHint = computed<string>(() => {
   const num = get(missing).length;
   if (num) {
     return t('prioritized_list.disabled_items', {
-      num,
       namePluralized: get(itemNameTr).namePluralized,
+      num,
     });
   }
   return t('prioritized_list.all_added');

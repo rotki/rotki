@@ -7,7 +7,7 @@ const downloaded = ref(false);
 const uploading = ref(false);
 const uploaded = ref(false);
 
-const { importCustomAssets, exportCustomAssets } = useAssets();
+const { exportCustomAssets, importCustomAssets } = useAssets();
 const importDisabled = computed(() => !get(zip));
 const { start, stop } = useTimeoutFn(() => set(downloaded, false), 4000);
 

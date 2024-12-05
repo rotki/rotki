@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { Module, SUPPORTED_MODULES, type SupportedModule } from '@/types/modules';
 import { Section } from '@/types/status';
+import { useNonFungibleBalancesStore } from '@/store/balances/non-fungible';
+import { useSettingsStore } from '@/store/settings';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useQueriedAddressesStore } from '@/store/session/queried-addresses';
 import type { DataTableColumn } from '@rotki/ui-library';
 import type { CamelCase } from '@/types/common';
 
@@ -23,24 +27,24 @@ const { resetStatus } = useStatusUpdater(Section.NON_FUNGIBLE_BALANCES);
 
 const headers = computed<DataTableColumn<ModuleEntry>[]>(() => [
   {
-    label: t('common.name'),
-    key: 'name',
     class: 'w-full',
+    key: 'name',
+    label: t('common.name'),
   },
   {
-    label: t('module_selector.table.select_accounts'),
     key: 'selectedAccounts',
+    label: t('module_selector.table.select_accounts'),
   },
   {
-    label: t('module_selector.table.enabled'),
-    key: 'enabled',
     align: 'end',
     cellClass: 'flex justify-end align-center',
+    key: 'enabled',
+    label: t('module_selector.table.enabled'),
   },
   {
-    label: '',
-    key: 'actions',
     align: 'center',
+    key: 'actions',
+    label: '',
   },
 ]);
 

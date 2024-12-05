@@ -1,5 +1,6 @@
 import { Routes } from '@/router/routes';
 import { isBlockchain } from '@/types/blockchain/chains';
+import { useLocationStore } from '@/store/locations';
 import type { MaybeRef } from '@vueuse/core';
 import type { TradeLocationData } from '@/types/history/trade/location';
 
@@ -12,7 +13,7 @@ export const useLocations = createSharedComposable(() => {
     return exchange?.name ?? '';
   };
 
-  const { getChainName, getChainImageUrl, getChainAccountType } = useSupportedChains();
+  const { getChainAccountType, getChainImageUrl, getChainName } = useSupportedChains();
 
   const locationData = (identifier: MaybeRef<string | null>): ComputedRef<TradeLocationData | null> => computed(() => {
     const id = get(identifier);
@@ -24,10 +25,10 @@ export const useLocations = createSharedComposable(() => {
     if (isBlockchain(blockchainId)) {
       const type = blockchainId === Blockchain.ETH2 ? 'validators' : getChainAccountType(blockchainId);
       return {
-        name: get(getChainName(blockchainId)),
+        detailPath: `${Routes.ACCOUNTS_BALANCES_BLOCKCHAIN.toString()}/${type}`,
         identifier: blockchainId,
         image: get(getChainImageUrl(blockchainId)),
-        detailPath: `${Routes.ACCOUNTS_BALANCES_BLOCKCHAIN.toString()}/${type}`,
+        name: get(getChainName(blockchainId)),
       };
     }
 
@@ -38,9 +39,9 @@ export const useLocations = createSharedComposable(() => {
   const getLocationData = (identifier: string): TradeLocationData | null => get(locationData(identifier));
 
   return {
-    tradeLocations,
     exchangeName,
     getLocationData,
     locationData,
+    tradeLocations,
   };
 });

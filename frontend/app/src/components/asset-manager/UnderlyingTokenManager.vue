@@ -24,13 +24,13 @@ const underlyingWeight = ref<string>('');
 
 const rules = {
   address: {
-    required: helpers.withMessage(t('underlying_token_manager.validation.address_non_empty'), required),
     isValidEthAddress: helpers.withMessage(t('underlying_token_manager.validation.valid'), isValidEthAddress),
+    required: helpers.withMessage(t('underlying_token_manager.validation.address_non_empty'), required),
   },
   weight: {
-    required: helpers.withMessage(t('underlying_token_manager.validation.non_empty'), required),
-    notNaN: helpers.withMessage(t('underlying_token_manager.validation.not_valid'), numeric),
     minMax: helpers.withMessage(t('underlying_token_manager.validation.out_of_range'), between(1, 100)),
+    notNaN: helpers.withMessage(t('underlying_token_manager.validation.not_valid'), numeric),
+    required: helpers.withMessage(t('underlying_token_manager.validation.non_empty'), required),
   },
 };
 

@@ -1,9 +1,10 @@
+import { useMessageStore } from '@/store/message';
 import type { EditHistoryEventPayload, NewHistoryEventPayload } from '@/types/history/events';
 import type HistoryEventAssetPriceForm from '@/components/history/events/forms/HistoryEventAssetPriceForm.vue';
 
 export const useHistoryEventsForm = createSharedComposable(() => {
   const { setMessage } = useMessageStore();
-  const { editHistoryEvent, addHistoryEvent } = useHistoryEvents();
+  const { addHistoryEvent, editHistoryEvent } = useHistoryEvents();
 
   const defaultNotes = ref<boolean>(false);
   const getPayloadNotes = (newNotes?: string | null, oldNotes?: string | null): undefined | string => {

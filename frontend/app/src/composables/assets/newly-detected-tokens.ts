@@ -1,3 +1,4 @@
+import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import type { NewDetectedToken } from '@/types/websocket-messages';
 
 const MAX_SIZE = 500;
@@ -54,9 +55,9 @@ export const useNewlyDetectedTokens = createSharedComposable(() => {
   }, { immediate: true });
 
   return {
-    tokens,
-    removeNewDetectedTokens,
-    clearInternalTokens,
     addNewDetectedToken,
+    clearInternalTokens,
+    removeNewDetectedTokens,
+    tokens,
   };
 });

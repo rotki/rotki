@@ -1,4 +1,5 @@
 import { type HistoryEventsQueryData, HistoryEventsQueryStatus } from '@/types/websocket-messages';
+import { useQueryStatusStore } from '@/store/history/query-status/index';
 
 export const useEventsQueryStatusStore = defineStore('history/events-query-status', () => {
   const createKey = ({ location, name }: HistoryEventsQueryData): string => location + name;
@@ -6,7 +7,7 @@ export const useEventsQueryStatusStore = defineStore('history/events-query-statu
   const isStatusFinished = (item: HistoryEventsQueryData): boolean =>
     item.status === HistoryEventsQueryStatus.QUERYING_EVENTS_FINISHED;
 
-  const { queryStatus, isAllFinished, removeQueryStatus, resetQueryStatus }
+  const { isAllFinished, queryStatus, removeQueryStatus, resetQueryStatus }
     = useQueryStatusStore<HistoryEventsQueryData>(isStatusFinished, createKey);
 
   const setQueryStatus = (data: HistoryEventsQueryData): void => {
@@ -21,12 +22,12 @@ export const useEventsQueryStatusStore = defineStore('history/events-query-statu
   };
 
   return {
-    queryStatus,
     isAllFinished,
     isStatusFinished,
-    setQueryStatus,
+    queryStatus,
     removeQueryStatus,
     resetQueryStatus,
+    setQueryStatus,
   };
 });
 

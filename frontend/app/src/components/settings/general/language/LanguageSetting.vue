@@ -2,6 +2,7 @@
 import { externalLinks } from '@shared/external-links';
 import { supportedLanguages } from '@/data/supported-language';
 import { SupportedLanguage } from '@/types/settings/frontend-settings';
+import { useSessionStore } from '@/store/session';
 
 defineOptions({
   inheritAttrs: false,

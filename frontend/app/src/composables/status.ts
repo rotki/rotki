@@ -1,4 +1,5 @@
 import { type Section, Status } from '@/types/status';
+import { useStatusStore } from '@/store/status';
 
 interface Opts {
   section?: Section;
@@ -15,14 +16,14 @@ interface UseStatusUpdaterReturn {
 }
 
 export function useStatusUpdater(defaultSection: Section): UseStatusUpdaterReturn {
-  const { setStatus, getStatus, isLoading } = useStatusStore();
+  const { getStatus, isLoading, setStatus } = useStatusStore();
   const updateStatus = (status: Status, opts: Opts = {}): void => {
     const { section = defaultSection, subsection } = opts;
 
     setStatus({
       section,
-      subsection,
       status,
+      subsection,
     });
   };
 
@@ -31,8 +32,8 @@ export function useStatusUpdater(defaultSection: Section): UseStatusUpdaterRetur
 
     setStatus({
       section,
-      subsection,
       status: Status.NONE,
+      subsection,
     });
   };
 
@@ -54,11 +55,11 @@ export function useStatusUpdater(defaultSection: Section): UseStatusUpdaterRetur
   };
 
   return {
-    loading,
-    isFirstLoad,
-    setStatus: updateStatus,
-    getStatus: getSectionStatus,
     fetchDisabled,
+    getStatus: getSectionStatus,
+    isFirstLoad,
+    loading,
     resetStatus,
+    setStatus: updateStatus,
   };
 }

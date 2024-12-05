@@ -15,6 +15,11 @@ import { isTaskCancelled } from '@/utils';
 import { awaitParallelExecution } from '@/utils/await-parallel-execution';
 import { logger } from '@/utils/logging';
 import { LimitedParallelizationQueue } from '@/utils/limited-parallelization-queue';
+import { useTxQueryStatusStore } from '@/store/history/query-status/tx-query-status';
+import { useHistoryStore } from '@/store/history';
+import { useTaskStore } from '@/store/tasks';
+import { useBlockchainStore } from '@/store/blockchain';
+import { useNotificationsStore } from '@/store/notifications';
 import type { ActionStatus } from '@/types/action';
 import type { Blockchain } from '@rotki/common';
 
@@ -24,20 +29,20 @@ export const useHistoryTransactions = createSharedComposable(() => {
   const queue = new LimitedParallelizationQueue(1);
 
   const {
-    fetchTransactionsTask,
     addTransactionHash: addTransactionHashCaller,
+    fetchTransactionsTask,
     queryOnlineHistoryEvents,
   } = useHistoryEventsApi();
 
   const { addresses } = storeToRefs(useBlockchainStore());
   const { awaitTask, isTaskRunning } = useTaskStore();
   const { removeQueryStatus, resetQueryStatus } = useTxQueryStatusStore();
-  const { getEvmChainName, supportsTransactions, isEvmLikeChains, getChainName } = useSupportedChains();
-  const { setStatus, resetStatus, fetchDisabled } = useStatusUpdater(Section.HISTORY_EVENT);
+  const { getChainName, getEvmChainName, isEvmLikeChains, supportsTransactions } = useSupportedChains();
+  const { fetchDisabled, resetStatus, setStatus } = useStatusUpdater(Section.HISTORY_EVENT);
   const {
     decodeTransactionsTask,
-    fetchUndecodedTransactionsStatus,
     fetchUndecodedTransactionsBreakdown,
+    fetchUndecodedTransactionsStatus,
   } = useHistoryTransactionDecoding();
   const { resetUndecodedTransactionsStatus } = useHistoryStore();
 
@@ -53,14 +58,14 @@ export const useHistoryTransactions = createSharedComposable(() => {
 
     const { taskId } = await fetchTransactionsTask(defaults, type);
     const taskMeta = {
-      title: t('actions.transactions.task.title'),
+      address: account.address,
+      chain: account.evmChain,
       description: t('actions.transactions.task.description', {
         address: account.address,
         chain: get(getChainName(account.evmChain)),
       }),
       isEvm,
-      chain: account.evmChain,
-      address: account.address,
+      title: t('actions.transactions.task.title'),
     };
 
     try {
@@ -73,13 +78,13 @@ export const useHistoryTransactions = createSharedComposable(() => {
       }
       else if (!isTaskCancelled(error)) {
         notify({
-          title: t('actions.transactions.error.title'),
+          display: true,
           message: t('actions.transactions.error.description', {
-            error,
             address: account.address,
             chain: toHumanReadable(account.evmChain),
+            error,
           }),
-          display: true,
+          title: t('actions.transactions.error.title'),
         });
       }
     }
@@ -143,11 +148,11 @@ export const useHistoryTransactions = createSharedComposable(() => {
     });
 
     const taskMeta = {
-      title: t('actions.online_events.task.title'),
       description: t('actions.online_events.task.description', {
         queryType,
       }),
       queryType,
+      title: t('actions.online_events.task.title'),
     };
 
     try {
@@ -157,12 +162,12 @@ export const useHistoryTransactions = createSharedComposable(() => {
       if (!isTaskCancelled(error)) {
         logger.error(error);
         notify({
-          title: t('actions.online_events.error.title'),
+          display: true,
           message: t('actions.online_events.error.description', {
             error,
             queryType,
           }),
-          display: true,
+          title: t('actions.online_events.error.title'),
         });
       }
     }
@@ -174,8 +179,8 @@ export const useHistoryTransactions = createSharedComposable(() => {
   ): Promise<void> => {
     const groupedByChains = Object.entries(groupBy(addresses, account => account.evmChain)).map(
       ([evmChain, data]) => ({
-        evmChain,
         data,
+        evmChain,
       }),
     );
 
@@ -249,11 +254,11 @@ export const useHistoryTransactions = createSharedComposable(() => {
         message = error.getValidationErrors(payload);
     }
 
-    return { success, message };
+    return { message, success };
   };
 
   return {
-    refreshTransactions,
     addTransactionHash,
+    refreshTransactions,
   };
 });

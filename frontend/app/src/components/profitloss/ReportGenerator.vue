@@ -12,7 +12,7 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 
-const range = ref({ start: '', end: '' });
+const range = ref({ end: '', start: '' });
 const valid = ref<boolean>(false);
 
 const startTimestamp = computed<number>(() => convertToTimestamp(get(range).start));
@@ -21,15 +21,15 @@ const endTimestamp = computed<number>(() => convertToTimestamp(get(range).end));
 
 function generate() {
   emit('generate', {
-    start: get(startTimestamp),
     end: get(endTimestamp),
+    start: get(startTimestamp),
   });
 }
 
 function exportReportData() {
   emit('export-data', {
-    start: get(startTimestamp),
     end: get(endTimestamp),
+    start: get(startTimestamp),
   });
 }
 

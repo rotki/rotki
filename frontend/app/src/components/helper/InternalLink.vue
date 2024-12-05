@@ -14,10 +14,10 @@ const props = withDefaults(
     replace?: boolean;
   }>(),
   {
-    exact: false,
-    replace: false,
     activeClass: '',
+    exact: false,
     exactActiveClass: '',
+    replace: false,
   },
 );
 </script>

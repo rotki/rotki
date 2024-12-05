@@ -2,6 +2,9 @@
 import { startPromise } from '@shared/utils';
 import { TaskType } from '@/types/task-type';
 import { getPlaceholderRule } from '@/utils/settings';
+import { useMessageStore } from '@/store/message';
+import { useTaskStore } from '@/store/tasks';
+import { useConfirmStore } from '@/store/confirm';
 import type { DataTableColumn } from '@rotki/ui-library';
 import type { Filters, Matcher } from '@/composables/filters/accounting-rule';
 import type { AccountingRuleEntry, AccountingRuleRequestPayload } from '@/types/settings/accounting';
@@ -10,17 +13,17 @@ const { t } = useI18n();
 const router = useRouter();
 const route = useRoute();
 
-const { getAccountingRule, getAccountingRules, getAccountingRulesConflicts, exportJSON } = useAccountingSettings();
+const { exportJSON, getAccountingRule, getAccountingRules, getAccountingRulesConflicts } = useAccountingSettings();
 const { editableItem } = useCommonTableProps<AccountingRuleEntry>();
 
 const {
-  state,
-  isLoading,
   fetchData,
-  setPage,
   filters,
-  pagination,
+  isLoading,
   matchers,
+  pagination,
+  setPage,
+  state,
   updateFilter,
 } = usePaginationFilters<
   AccountingRuleEntry,
@@ -28,8 +31,8 @@ const {
   Filters,
   Matcher
 >(getAccountingRules, {
-  history: 'router',
   filterSchema: useAccountingRuleFilter,
+  history: 'router',
 });
 
 const conflictsNumber = ref<number>(0);
@@ -56,55 +59,55 @@ async function checkConflicts() {
 
 const cols = computed<DataTableColumn<AccountingRuleEntry>[]>(() => [
   {
+    cellClass: 'py-4',
+    class: 'whitespace-pre-line',
+    key: 'eventTypeAndSubtype',
     label: `${t('accounting_settings.rule.labels.event_type')} - \n${t(
       'accounting_settings.rule.labels.event_subtype',
     )}`,
-    key: 'eventTypeAndSubtype',
-    class: 'whitespace-pre-line',
-    cellClass: 'py-4',
   },
   {
-    label: t('transactions.events.form.resulting_combination.label'),
     key: 'resultingCombination',
+    label: t('transactions.events.form.resulting_combination.label'),
   },
   {
-    label: t('common.counterparty'),
-    key: 'counterparty',
-    class: 'border-r border-default',
     cellClass: 'border-r border-default',
+    class: 'border-r border-default',
+    key: 'counterparty',
+    label: t('common.counterparty'),
   },
   {
-    label: t('accounting_settings.rule.labels.taxable'),
+    align: 'center',
+    class: 'max-w-[6rem] text-sm whitespace-normal font-medium align-center',
     key: 'taxable',
-    class: 'max-w-[6rem] text-sm whitespace-normal font-medium align-center',
-    align: 'center',
+    label: t('accounting_settings.rule.labels.taxable'),
   },
   {
-    label: t('accounting_settings.rule.labels.count_entire_amount_spend'),
+    align: 'center',
+    class: 'max-w-[6rem] text-sm whitespace-normal font-medium align-center',
     key: 'countEntireAmountSpend',
-    class: 'max-w-[6rem] text-sm whitespace-normal font-medium align-center',
-    align: 'center',
+    label: t('accounting_settings.rule.labels.count_entire_amount_spend'),
   },
   {
-    label: t('accounting_settings.rule.labels.count_cost_basis_pnl'),
+    align: 'center',
+    class: 'max-w-[6rem] text-sm whitespace-normal font-medium align-center',
     key: 'countCostBasisPnl',
-    class: 'max-w-[6rem] text-sm whitespace-normal font-medium align-center',
-    align: 'center',
+    label: t('accounting_settings.rule.labels.count_cost_basis_pnl'),
   },
   {
-    label: t('accounting_settings.rule.labels.accounting_treatment'),
+    class: 'max-w-[6rem] text-sm whitespace-normal font-medium align-center',
     key: 'accountingTreatment',
-    class: 'max-w-[6rem] text-sm whitespace-normal font-medium align-center',
+    label: t('accounting_settings.rule.labels.accounting_treatment'),
   },
   {
-    label: t('common.actions_text'),
-    key: 'actions',
     align: 'center',
+    key: 'actions',
+    label: t('common.actions_text'),
     width: '1px',
   },
 ]);
 
-const { historyEventTypesData, historyEventSubTypesData, getEventTypeData } = useHistoryEventMappings();
+const { getEventTypeData, historyEventSubTypesData, historyEventTypesData } = useHistoryEventMappings();
 
 function getHistoryEventTypeName(eventType: string): string {
   return get(historyEventTypesData).find(item => item.identifier === eventType)?.label ?? toSentenceCase(eventType);
@@ -157,8 +160,8 @@ async function refresh() {
 function showDeleteConfirmation(item: AccountingRuleEntry) {
   show(
     {
-      title: t('accounting_settings.rule.delete'),
       message: t('accounting_settings.rule.confirm_delete'),
+      title: t('accounting_settings.rule.delete'),
     },
     async () => await deleteAccountingRule(item),
   );
@@ -167,20 +170,20 @@ function showDeleteConfirmation(item: AccountingRuleEntry) {
 function getType(eventType: string, eventSubtype: string) {
   return get(
     getEventTypeData({
-      eventType,
       eventSubtype,
+      eventType,
     }),
   );
 }
 
 onMounted(async () => {
   const { query } = get(route);
-  const { 'add-rule': addRule, 'edit-rule': editRule, eventSubtype, eventType, counterparty } = query;
+  const { 'add-rule': addRule, counterparty, 'edit-rule': editRule, eventSubtype, eventType } = query;
 
   const ruleData = {
+    counterparty: counterparty?.toString() ?? null,
     eventSubtype: eventSubtype?.toString() ?? '',
     eventType: eventType?.toString() ?? '',
-    counterparty: counterparty?.toString() ?? null,
   };
 
   async function openDialog(rule?: AccountingRuleEntry) {
@@ -199,8 +202,8 @@ onMounted(async () => {
   }
   else if (editRule) {
     await openDialog(await getAccountingRule({
-      eventTypes: [ruleData.eventType],
       eventSubtypes: [ruleData.eventSubtype],
+      eventTypes: [ruleData.eventType],
       limit: 2,
       offset: 0,
     }, ruleData.counterparty));

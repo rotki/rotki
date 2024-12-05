@@ -10,6 +10,11 @@ import { balanceSum } from '@/utils/calculation';
 import { logger } from '@/utils/logging';
 import { isTaskCancelled } from '@/utils';
 import { convertBtcBalances } from '@/utils/blockchain/accounts';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useStatusStore } from '@/store/status';
+import { useBlockchainStore } from '@/store/blockchain';
+import { useNotificationsStore } from '@/store/notifications';
+import { useTaskStore } from '@/store/tasks';
 import type { BlockchainMetadata, TaskMeta } from '@/types/task';
 import type { BlockchainAccount, BlockchainBalancePayload } from '@/types/blockchain/accounts';
 
@@ -28,10 +33,10 @@ export function useBlockchainBalances(): UseBlockchainbalancesReturn {
   const { queryBlockchainBalances } = useBlockchainBalancesApi();
   const blockchainStore = useBlockchainStore();
   const { accounts } = storeToRefs(blockchainStore);
-  const { updateBalances, updateAccounts } = blockchainStore;
+  const { updateAccounts, updateBalances } = blockchainStore;
   const { getChainName, supportedChains } = useSupportedChains();
   const { t } = useI18n();
-  const { setStatus, resetStatus, isFirstLoad } = useStatusUpdater(Section.BLOCKCHAIN);
+  const { isFirstLoad, resetStatus, setStatus } = useStatusUpdater(Section.BLOCKCHAIN);
   const { activeModules } = storeToRefs(useGeneralSettingsStore());
   const { queryLoopringBalances } = useBlockchainBalancesApi();
   const { getAssociatedAssetIdentifier } = useAssetInfoRetrieval();
@@ -87,11 +92,11 @@ export function useBlockchainBalances(): UseBlockchainbalancesReturn {
       if (!isTaskCancelled(error)) {
         logger.error(error);
         notify({
-          title: t('actions.balances.blockchain.error.title'),
+          display: true,
           message: t('actions.balances.blockchain.error.description', {
             error: error.message,
           }),
-          display: true,
+          title: t('actions.balances.blockchain.error.title'),
         });
       }
       resetStatus({ subsection: blockchain });
@@ -138,9 +143,9 @@ export function useBlockchainBalances(): UseBlockchainbalancesReturn {
         error: error.message,
       });
       notify({
-        title: t('actions.balances.blockchain.error.title'),
-        message,
         display: true,
+        message,
+        title: t('actions.balances.blockchain.error.title'),
       });
     }
   };
@@ -149,7 +154,7 @@ export function useBlockchainBalances(): UseBlockchainbalancesReturn {
     if (!get(activeModules).includes(Module.LOOPRING))
       return;
 
-    const { setStatus, resetStatus, fetchDisabled } = useStatusUpdater(Section.BLOCKCHAIN);
+    const { fetchDisabled, resetStatus, setStatus } = useStatusUpdater(Section.BLOCKCHAIN);
 
     if (fetchDisabled(refresh, { subsection: 'loopring' }))
       return;
@@ -167,13 +172,13 @@ export function useBlockchainBalances(): UseBlockchainbalancesReturn {
       const accounts = Object.keys(loopringBalances).map(
         address =>
           ({
-            data: {
-              type: 'address',
-              address,
-            },
             chain: 'loopring',
-            tags: [],
+            data: {
+              address,
+              type: 'address',
+            },
             nativeAsset: Blockchain.ETH.toUpperCase(),
+            tags: [],
             virtual: true,
           }) satisfies BlockchainAccount,
       );
@@ -217,11 +222,11 @@ export function useBlockchainBalances(): UseBlockchainbalancesReturn {
     catch (error: any) {
       if (!isTaskCancelled(error)) {
         notify({
-          title: t('actions.balances.loopring.error.title'),
+          display: true,
           message: t('actions.balances.loopring.error.description', {
             error: error.message,
           }),
-          display: true,
+          title: t('actions.balances.loopring.error.title'),
         });
       }
       resetStatus({ subsection: 'loopring' });

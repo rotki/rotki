@@ -24,7 +24,7 @@ const subtitle = computed<string>(() =>
   get(model)?.mode === 'edit' ? t('blockchain_balances.form_dialog.edit_subtitle') : '',
 );
 
-const { save, pending, errorMessages } = useAccountManage();
+const { errorMessages, pending, save } = useAccountManage();
 const { loading } = useAccountLoading();
 
 function dismiss() {

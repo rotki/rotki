@@ -1,3 +1,4 @@
+import { usePremiumStore } from '@/store/session/premium';
 import type { Ref } from 'vue';
 
 export function usePremium(): Ref<boolean> {

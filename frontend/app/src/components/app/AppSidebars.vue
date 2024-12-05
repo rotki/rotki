@@ -1,5 +1,7 @@
 <script setup lang="ts">
-const { showAbout, showNotificationBar, showNotesSidebar, showHelpBar, showPinned }
+import { useAreaVisibilityStore } from '@/store/session/visibility';
+
+const { showAbout, showHelpBar, showNotesSidebar, showNotificationBar, showPinned }
   = storeToRefs(useAreaVisibilityStore());
 </script>
 

@@ -2,11 +2,11 @@
 import { NoteLocation } from '@/types/notes';
 
 definePage({
-  name: 'price-manager',
   meta: {
     canNavigateBack: true,
     noteLocation: NoteLocation.PRICE_MANAGER,
   },
+  name: 'price-manager',
   props: true,
   redirect: '/price-manager/latest',
 });

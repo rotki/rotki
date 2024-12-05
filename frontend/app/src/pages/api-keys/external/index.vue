@@ -4,17 +4,17 @@ const { t } = useI18n();
 const search = ref<string>('');
 
 const services = {
-  etherscan: defineAsyncComponent(() => import('@/components/settings/api-keys/external/EtherscanApiKeys.vue')),
-  blockscout: defineAsyncComponent(() => import('@/components/settings/api-keys/external/BlockscoutApiKeys.vue')),
-  cryptocompare: defineAsyncComponent(() => import('@/components/settings/api-keys/external/CryptoCompareApiKey.vue')),
   beaconchain: defineAsyncComponent(() => import('@/components/settings/api-keys/external/BeaconchainApiKey.vue')),
-  loopring: defineAsyncComponent(() => import('@/components/settings/api-keys/external/LoopringApiKey.vue')),
-  opensea: defineAsyncComponent(() => import('@/components/settings/api-keys/external/OpenSeaApiKey.vue')),
-  monerium: defineAsyncComponent(() => import('@/components/settings/api-keys/external/MoneriumAuth.vue')),
-  thegraph: defineAsyncComponent(() => import('@/components/settings/api-keys/external/TheGraphApiKey.vue')),
-  gnosispay: defineAsyncComponent(() => import('@/components/settings/api-keys/external/GnosisPayAuth.vue')),
-  defillama: defineAsyncComponent(() => import('@/components/settings/api-keys/external/DefiLlamaApiKey.vue')),
+  blockscout: defineAsyncComponent(() => import('@/components/settings/api-keys/external/BlockscoutApiKeys.vue')),
   coingecko: defineAsyncComponent(() => import('@/components/settings/api-keys/external/CoinGeckoApiKey.vue')),
+  cryptocompare: defineAsyncComponent(() => import('@/components/settings/api-keys/external/CryptoCompareApiKey.vue')),
+  defillama: defineAsyncComponent(() => import('@/components/settings/api-keys/external/DefiLlamaApiKey.vue')),
+  etherscan: defineAsyncComponent(() => import('@/components/settings/api-keys/external/EtherscanApiKeys.vue')),
+  gnosispay: defineAsyncComponent(() => import('@/components/settings/api-keys/external/GnosisPayAuth.vue')),
+  loopring: defineAsyncComponent(() => import('@/components/settings/api-keys/external/LoopringApiKey.vue')),
+  monerium: defineAsyncComponent(() => import('@/components/settings/api-keys/external/MoneriumAuth.vue')),
+  opensea: defineAsyncComponent(() => import('@/components/settings/api-keys/external/OpenSeaApiKey.vue')),
+  thegraph: defineAsyncComponent(() => import('@/components/settings/api-keys/external/TheGraphApiKey.vue')),
 };
 
 const { load } = useExternalApiKeys(t);

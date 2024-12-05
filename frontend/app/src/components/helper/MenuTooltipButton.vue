@@ -16,12 +16,12 @@ withDefaults(
     customColor?: boolean;
   }>(),
   {
-    retainFocusOnClick: false,
     className: '',
-    variant: 'text',
-    size: undefined,
-    href: undefined,
     customColor: false,
+    href: undefined,
+    retainFocusOnClick: false,
+    size: undefined,
+    variant: 'text',
   },
 );
 </script>

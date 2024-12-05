@@ -13,11 +13,11 @@ const props = withDefaults(
   }>(),
   {
     credential: null,
-    status: undefined,
-    loading: false,
-    tooltip: '',
-    hint: '',
     hideActions: false,
+    hint: '',
+    loading: false,
+    status: undefined,
+    tooltip: '',
   },
 );
 
@@ -67,8 +67,8 @@ function saveHandler() {
   if (get(editMode)) {
     emit('save', {
       name: props.name,
-      username: get(username),
       password: get(password),
+      username: get(username),
     });
     set(editMode, false);
     set(cancellable, true);
@@ -93,16 +93,16 @@ watch(
     updateStatus();
   },
   {
-    immediate: true,
     deep: true,
+    immediate: true,
   },
 );
 
 const allFilled = computed(() => get(username) && get(password));
 defineExpose({
-  saveHandler,
   allFilled,
   editMode,
+  saveHandler,
 });
 </script>
 

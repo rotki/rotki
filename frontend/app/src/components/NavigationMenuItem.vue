@@ -14,13 +14,13 @@ withDefaults(
     parent?: boolean;
   }>(),
   {
-    mini: false,
-    icon: undefined,
-    image: '',
-    iconComponent: undefined,
     active: false,
-    subMenu: false,
+    icon: undefined,
+    iconComponent: undefined,
+    image: '',
+    mini: false,
     parent: false,
+    subMenu: false,
   },
 );
 

@@ -1,5 +1,8 @@
 import { TaskType } from '@/types/task-type';
 import { awaitParallelExecution } from '@/utils/await-parallel-execution';
+import { useBlockchainStore } from '@/store/blockchain';
+import { useBlockchainTokensStore } from '@/store/blockchain/tokens';
+import { useTaskStore } from '@/store/tasks';
 import type { MaybeRef } from '@vueuse/core';
 import type { EthDetectedTokensInfo } from '@/types/balances';
 import type { ComputedRef } from 'vue';
@@ -14,7 +17,7 @@ interface UseTokenDetectionReturn {
 
 export function useTokenDetection(chain: MaybeRef<string>, accountAddress: MaybeRef<string | null> = null): UseTokenDetectionReturn {
   const { isTaskRunning } = useTaskStore();
-  const { getEthDetectedTokensInfo, fetchDetectedTokens: fetchDetectedTokensCaller } = useBlockchainTokensStore();
+  const { fetchDetectedTokens: fetchDetectedTokensCaller, getEthDetectedTokensInfo } = useBlockchainTokensStore();
   const { addresses } = useBlockchainStore();
   const { supportsTransactions } = useSupportedChains();
 
@@ -58,10 +61,10 @@ export function useTokenDetection(chain: MaybeRef<string>, accountAddress: Maybe
   };
 
   return {
-    detectingTokens,
     detectedTokens,
-    getEthDetectedTokensInfo,
+    detectingTokens,
     detectTokens,
     detectTokensOfAllAddresses,
+    getEthDetectedTokensInfo,
   };
 }

@@ -10,15 +10,17 @@ import { Module } from '@/types/modules';
 import { NoteLocation } from '@/types/notes';
 import { BalanceSource, DashboardTableType } from '@/types/settings/frontend-settings';
 import { uniqueStrings } from '@/utils/data';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useBlockchainStore } from '@/store/blockchain';
 import type { RouteLocationRaw } from 'vue-router';
 import type { ComponentExposed } from 'vue-component-type-helpers';
 
 definePage({
-  name: 'accounts-balances-blockchain',
   meta: {
     canNavigateBack: true,
     noteLocation: NoteLocation.ACCOUNTS_BALANCES_BLOCKCHAIN,
   },
+  name: 'accounts-balances-blockchain',
   props: true,
 });
 
@@ -40,7 +42,7 @@ const route = useRoute('accounts-balances-blockchain');
 const { blockchainAssets } = useBlockchainAggregatedBalances();
 const { isBlockchainLoading } = useAccountLoading();
 const { isModuleEnabled } = useModules();
-const { unifyAccountsTable, dashboardTablesVisibleColumns } = storeToRefs(useFrontendSettingsStore());
+const { dashboardTablesVisibleColumns, unifyAccountsTable } = storeToRefs(useFrontendSettingsStore());
 const { supportedChains } = useSupportedChains();
 const { groups } = storeToRefs(useBlockchainStore());
 

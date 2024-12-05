@@ -3,6 +3,7 @@ import flushPromises from 'flush-promises';
 import { createTestingPinia } from '@pinia/testing';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { getBackendUrl } from '@/utils/account-management';
+import { useMainStore } from '@/store/main';
 
 vi.mock('@/composables/electron-interop', () => ({
   useInterop: vi.fn().mockReturnValue({

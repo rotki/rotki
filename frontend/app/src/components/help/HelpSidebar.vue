@@ -2,6 +2,7 @@
 import { TWITTER_URL, externalLinks } from '@shared/external-links';
 import { IndexedDb } from '@/utils/indexed-db';
 import { downloadFileByTextContent } from '@/utils/download';
+import { useNotificationsStore } from '@/store/notifications';
 import type { RuiIcons } from '@rotki/ui-library';
 
 const display = defineModel<boolean>({ required: true });
@@ -22,33 +23,33 @@ interface Entry {
 const entries: Entry[] = [
   {
     icon: 'book-open-line',
-    title: t('help_sidebar.user_guide.title'),
-    subtitle: t('help_sidebar.user_guide.subtitle'),
     link: externalLinks.usageGuide,
+    subtitle: t('help_sidebar.user_guide.subtitle'),
+    title: t('help_sidebar.user_guide.title'),
   },
   {
     icon: 'questionnaire-line',
-    title: t('help_sidebar.faq.title'),
-    subtitle: t('help_sidebar.faq.subtitle'),
     link: externalLinks.faq,
+    subtitle: t('help_sidebar.faq.subtitle'),
+    title: t('help_sidebar.faq.title'),
   },
   {
     icon: 'discord-line',
-    title: t('help_sidebar.support.title'),
-    subtitle: t('help_sidebar.support.subtitle'),
     link: externalLinks.discord,
+    subtitle: t('help_sidebar.support.subtitle'),
+    title: t('help_sidebar.support.title'),
   },
   {
     icon: 'github-line',
-    title: t('help_sidebar.github.title'),
-    subtitle: t('help_sidebar.github.subtitle'),
     link: externalLinks.github,
+    subtitle: t('help_sidebar.github.subtitle'),
+    title: t('help_sidebar.github.title'),
   },
   {
     icon: 'twitter-x-line',
-    title: t('help_sidebar.twitter.title'),
-    subtitle: t('help_sidebar.twitter.subtitle'),
     link: TWITTER_URL,
+    subtitle: t('help_sidebar.twitter.subtitle'),
+    title: t('help_sidebar.twitter.title'),
   },
 ];
 
@@ -66,9 +67,9 @@ async function downloadBrowserLog() {
     if (data?.length === 0) {
       const { notify } = useNotificationsStore();
       notify({
-        title: t('help_sidebar.browser_log.error.empty.title'),
-        message: t('help_sidebar.browser_log.error.empty.message'),
         display: true,
+        message: t('help_sidebar.browser_log.error.empty.message'),
+        title: t('help_sidebar.browser_log.error.empty.title'),
       });
       return;
     }

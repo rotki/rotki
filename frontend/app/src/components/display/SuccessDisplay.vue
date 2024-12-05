@@ -5,8 +5,8 @@ withDefaults(
     size?: string | number;
   }>(),
   {
-    success: false,
     size: 20,
+    success: false,
   },
 );
 </script>

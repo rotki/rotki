@@ -9,7 +9,7 @@ const emit = defineEmits<{
   (e: 'dismiss'): void;
 }>();
 
-const { step, steps, onNavigate, onPause, onResume } = useRandomStepper(props.messages.length);
+const { onNavigate, onPause, onResume, step, steps } = useRandomStepper(props.messages.length);
 
 const activeItem = computed<DashboardMessage>(() => props.messages[get(step) - 1]);
 </script>

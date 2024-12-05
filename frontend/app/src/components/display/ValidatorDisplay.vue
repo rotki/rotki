@@ -17,7 +17,7 @@ const length = computed(() => (get(horizontal) ? 4 : 10));
 
 const { t } = useI18n();
 
-const { scrambleIdentifier, scrambleAddress, shouldShowAmount } = useScramble();
+const { scrambleAddress, scrambleIdentifier, shouldShowAmount } = useScramble();
 </script>
 
 <template>

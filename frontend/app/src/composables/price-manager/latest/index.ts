@@ -2,6 +2,9 @@ import { NotificationCategory, type NotificationPayload, Severity } from '@rotki
 import { Section } from '@/types/status';
 import { CURRENCY_USD } from '@/types/currencies';
 import { isNft } from '@/utils/nft';
+import { useNotificationsStore } from '@/store/notifications';
+import { useMessageStore } from '@/store/message';
+import { useBalancePricesStore } from '@/store/balances/prices';
 import type { ManualPrice, ManualPriceFormPayload, ManualPriceWithUsd } from '@/types/prices';
 import type { ComputedRef, Ref } from 'vue';
 
@@ -23,7 +26,7 @@ export function useLatestPrices(
   const loading = ref(false);
   const refreshing = ref(false);
 
-  const { deleteLatestPrice, fetchLatestPrices, addLatestPrice } = useAssetPricesApi();
+  const { addLatestPrice, deleteLatestPrice, fetchLatestPrices } = useAssetPricesApi();
   const { assetPrice } = useBalancePricesStore();
   const { refreshPrices } = useBalances();
   const { resetStatus } = useStatusUpdater(Section.NON_FUNGIBLE_BALANCES);
@@ -64,13 +67,13 @@ export function useLatestPrices(
     }
     catch (error: any) {
       const notification: NotificationPayload = {
-        title: t('price_table.fetch.failure.title'),
+        category: NotificationCategory.DEFAULT,
+        display: true,
         message: t('price_table.fetch.failure.message', {
           message: error.message,
         }),
-        display: true,
         severity: Severity.ERROR,
-        category: NotificationCategory.DEFAULT,
+        title: t('price_table.fetch.failure.title'),
       };
       notify(notification);
     }
@@ -91,9 +94,9 @@ export function useLatestPrices(
         : t('price_management.add.error.description', values);
 
       setMessage({
-        title,
         description,
         success: false,
+        title,
       });
       return false;
     }
@@ -115,25 +118,25 @@ export function useLatestPrices(
     }
     catch (error: any) {
       const notification: NotificationPayload = {
-        title: t('price_table.delete.failure.title'),
+        category: NotificationCategory.DEFAULT,
+        display: true,
         message: t('price_table.delete.failure.message', {
           message: error.message,
         }),
-        display: true,
         severity: Severity.ERROR,
-        category: NotificationCategory.DEFAULT,
+        title: t('price_table.delete.failure.title'),
       };
       notify(notification);
     }
   };
 
   return {
+    deletePrice,
+    getLatestPrices,
     items,
     loading,
-    refreshing,
-    getLatestPrices,
-    save,
     refreshCurrentPrices,
-    deletePrice,
+    refreshing,
+    save,
   };
 }

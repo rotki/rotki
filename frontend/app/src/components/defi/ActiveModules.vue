@@ -1,5 +1,9 @@
 <script setup lang="ts">
 import { type Module, SUPPORTED_MODULES } from '@/types/modules';
+import { useConfirmStore } from '@/store/confirm';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useSettingsStore } from '@/store/settings';
+import { useQueriedAddressesStore } from '@/store/session/queried-addresses';
 import type { Nullable } from '@rotki/common';
 
 interface ModuleWithStatus {
@@ -25,8 +29,8 @@ const moduleStatus = computed(() => {
   const active = get(activeModules);
   return get(modules)
     .map(module => ({
-      identifier: module,
       enabled: active.includes(module),
+      identifier: module,
     }))
     .sort((a, b) => (a.enabled === b.enabled ? 0 : a.enabled ? -1 : 1));
 });
@@ -77,8 +81,8 @@ const { show } = useConfirmStore();
 function showConfirmation() {
   show(
     {
-      title: t('active_modules.enable.title'),
       message: t('active_modules.enable.description', getName(get(confirmEnable))),
+      title: t('active_modules.enable.title'),
       type: 'info',
     },
     enableModule,

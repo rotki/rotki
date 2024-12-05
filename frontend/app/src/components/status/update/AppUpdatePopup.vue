@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { externalLinks } from '@shared/external-links';
+import { useSessionStore } from '@/store/session';
 
 const downloadReady = ref(false);
 const downloading = ref(false);
@@ -10,7 +11,7 @@ const error = ref('');
 const store = useSessionStore();
 const { showUpdatePopup } = storeToRefs(store);
 const { checkForUpdate } = store;
-const { downloadUpdate, isPackaged, installUpdate } = useInterop();
+const { downloadUpdate, installUpdate, isPackaged } = useInterop();
 
 const { t } = useI18n();
 

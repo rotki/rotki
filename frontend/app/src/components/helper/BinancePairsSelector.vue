@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Severity } from '@rotki/common';
+import { useNotificationsStore } from '@/store/notifications';
 
 defineOptions({
   inheritAttrs: false,
@@ -19,7 +20,7 @@ const props = withDefaults(
 );
 
 const emit = defineEmits<{ (e: 'update:selection', pairs: string[]): void }>();
-const { name, location } = toRefs(props);
+const { location, name } = toRefs(props);
 
 const updateSelection = (value: string[]) => emit('update:selection', value);
 
@@ -49,10 +50,10 @@ onMounted(async () => {
       message: error.message,
     });
     notify({
-      title,
+      display: true,
       message: description,
       severity: Severity.ERROR,
-      display: true,
+      title,
     });
   }
 
@@ -65,10 +66,10 @@ onMounted(async () => {
       message: error.message,
     });
     notify({
-      title,
+      display: true,
       message: description,
       severity: Severity.ERROR,
-      display: true,
+      title,
     });
   }
 

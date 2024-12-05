@@ -67,9 +67,9 @@ export interface AssetRequestPayload extends PaginationRequestPayload<SupportedA
 }
 
 export const CustomAsset = z.object({
+  customAssetType: z.string(),
   identifier: z.string(),
   name: z.string(),
-  customAssetType: z.string(),
   notes: z.string().nullable(),
 });
 
@@ -88,16 +88,16 @@ export interface CustomAssetRequestPayload extends PaginationRequestPayload<Cust
 }
 
 export const IgnoredAssetHandlingType = {
-  NONE: 'none',
   EXCLUDE: 'exclude',
+  NONE: 'none',
   SHOW_ONLY: 'show_only',
 } as const;
 
 export type IgnoredAssetsHandlingType = (typeof IgnoredAssetHandlingType)[keyof typeof IgnoredAssetHandlingType];
 
 export const IgnoredAssetResponse = z.object({
-  successful: z.array(z.string()),
   noAction: z.array(z.string()),
+  successful: z.array(z.string()),
 });
 
 export type IgnoredAssetResponse = z.infer<typeof IgnoredAssetResponse>;

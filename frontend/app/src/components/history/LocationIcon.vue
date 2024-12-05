@@ -10,8 +10,8 @@ const props = withDefaults(
   {
     horizontal: false,
     icon: false,
-    size: '24px',
     noPadding: false,
+    size: '24px',
   },
 );
 

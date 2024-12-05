@@ -2,6 +2,8 @@
 import useVuelidate from '@vuelidate/core';
 import { between, helpers, required } from '@vuelidate/validators';
 import { toMessages } from '@/utils/validation';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useMonitorStore } from '@/store/monitor';
 
 const queryPeriod = ref<string>('5');
 const minQueryPeriod = 5;
@@ -11,14 +13,14 @@ const { t } = useI18n();
 
 const rules = {
   queryPeriod: {
-    required: helpers.withMessage(t('frontend_settings.periodic_query.validation.non_empty'), required),
     between: helpers.withMessage(
       t('frontend_settings.periodic_query.validation.invalid_period', {
-        start: minQueryPeriod,
         end: maxQueryPeriod,
+        start: minQueryPeriod,
       }),
       between(minQueryPeriod, maxQueryPeriod),
     ),
+    required: helpers.withMessage(t('frontend_settings.periodic_query.validation.non_empty'), required),
   },
 };
 

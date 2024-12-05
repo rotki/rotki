@@ -15,6 +15,8 @@ import { zeroBalance } from '@/utils/bignumbers';
 import { uniqueStrings } from '@/utils/data';
 import { balanceSum } from '@/utils/calculation';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
+import { useLiquityStore } from '@/store/defi/liquity';
+import { useStatusStore } from '@/store/status';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 
 const emit = defineEmits<{
@@ -170,7 +172,7 @@ const aggregatedStatistic = computed<LiquityStatisticDetails | null>(() => {
       aggregatedStatistic = { ...statistic };
     }
     else {
-      const { stakingGains, stabilityPoolGains, ...remaining } = statistic;
+      const { stabilityPoolGains, stakingGains, ...remaining } = statistic;
 
       let key: keyof typeof remaining;
 

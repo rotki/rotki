@@ -1,9 +1,9 @@
 <script setup lang="ts">
 definePage({
-  redirect: '/user/login',
   meta: {
     layout: 'auth',
   },
+  redirect: '/user/login',
 });
 </script>
 

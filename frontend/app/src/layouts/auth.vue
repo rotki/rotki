@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useAreaVisibilityStore } from '@/store/session/visibility';
+
 const { showAbout } = storeToRefs(useAreaVisibilityStore());
 const { isPackaged } = useInterop();
 const { updateDarkMode } = useDarkMode();

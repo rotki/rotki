@@ -6,10 +6,10 @@ import { type PriceOracle, PriceOracleEnum } from '@/types/settings/price-oracle
 export const AssetPriceInput = z.tuple([NumericString, z.number(), z.boolean()]);
 
 export const AssetPrice = z.object({
-  value: NumericString,
-  usdPrice: NumericString.nullish(),
-  isManualPrice: z.boolean(),
   isCurrentCurrency: z.boolean(),
+  isManualPrice: z.boolean(),
+  usdPrice: NumericString.nullish(),
+  value: NumericString,
 });
 
 export const AssetPrices = z.record(AssetPrice);
@@ -19,8 +19,8 @@ export type AssetPrices = z.infer<typeof AssetPrices>;
 export const AssetPriceResponse = z
   .object({
     assets: z.record(AssetPriceInput),
-    targetAsset: z.string(),
     oracles: z.record(PriceOracleEnum, z.number()),
+    targetAsset: z.string(),
   })
   .transform((response) => {
     const mappedAssets: AssetPrices = {};
@@ -28,9 +28,9 @@ export const AssetPriceResponse = z
     forEach(assets, (val, asset) => {
       const [value, oracle, isCurrentCurrency] = val;
       mappedAssets[asset] = {
-        value,
-        isManualPrice: oracle === response.oracles.manualcurrent,
         isCurrentCurrency,
+        isManualPrice: oracle === response.oracles.manualcurrent,
+        value,
       };
     });
 
@@ -128,10 +128,10 @@ export interface ManualPricePayload {
 }
 
 export const PriceInformation = z.object({
-  usdPrice: NumericString,
   manuallyInput: z.boolean(),
   priceAsset: z.string().min(1),
   priceInAsset: NumericString,
+  usdPrice: NumericString,
 });
 
 export type PriceInformation = z.infer<typeof PriceInformation>;

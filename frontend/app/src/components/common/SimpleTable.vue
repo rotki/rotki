@@ -12,8 +12,8 @@ const props = withDefaults(
     height?: string | number;
   }>(),
   {
-    variant: 'outlined',
     height: undefined,
+    variant: 'outlined',
   },
 );
 

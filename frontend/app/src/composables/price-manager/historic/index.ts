@@ -1,5 +1,8 @@
 import { NotificationCategory, type NotificationPayload, Severity } from '@rotki/common';
 import { startPromise } from '@shared/utils';
+import { useNotificationsStore } from '@/store/notifications';
+import { useMessageStore } from '@/store/message';
+import { useHistoricCachePriceStore } from '@/store/prices/historic';
 import type { HistoricalPrice, HistoricalPriceFormPayload, ManualPricePayload } from '@/types/prices';
 import type { Ref } from 'vue';
 
@@ -18,7 +21,7 @@ export function useHistoricPrices(
   const loading = ref(false);
   const items = ref<HistoricalPrice[]>([]);
 
-  const { editHistoricalPrice, addHistoricalPrice, fetchHistoricalPrices, deleteHistoricalPrice } = useAssetPricesApi();
+  const { addHistoricalPrice, deleteHistoricalPrice, editHistoricalPrice, fetchHistoricalPrices } = useAssetPricesApi();
   const { resetHistoricalPricesData } = useHistoricCachePriceStore();
   const { setMessage } = useMessageStore();
   const { notify } = useNotificationsStore();
@@ -30,13 +33,13 @@ export function useHistoricPrices(
     }
     catch (error: any) {
       const notification: NotificationPayload = {
-        title: t('price_table.fetch.failure.title'),
+        category: NotificationCategory.DEFAULT,
+        display: true,
         message: t('price_table.fetch.failure.message', {
           message: error.message,
         }),
-        display: true,
         severity: Severity.ERROR,
-        category: NotificationCategory.DEFAULT,
+        title: t('price_table.fetch.failure.title'),
       };
       notify(notification);
     }
@@ -71,9 +74,9 @@ export function useHistoricPrices(
         ? t('price_management.edit.error.description', values)
         : t('price_management.add.error.description', values);
       setMessage({
-        title,
         description,
         success: false,
+        title,
       });
 
       return false;
@@ -85,19 +88,19 @@ export function useHistoricPrices(
     try {
       await deleteHistoricalPrice(payload);
       await refresh({
-        modified: true,
         additionalEntry: item,
+        modified: true,
       });
     }
     catch (error: any) {
       const notification: NotificationPayload = {
-        title: t('price_table.delete.failure.title'),
+        category: NotificationCategory.DEFAULT,
+        display: true,
         message: t('price_table.delete.failure.message', {
           message: error.message,
         }),
-        display: true,
         severity: Severity.ERROR,
-        category: NotificationCategory.DEFAULT,
+        title: t('price_table.delete.failure.title'),
       };
       notify(notification);
     }
@@ -116,10 +119,10 @@ export function useHistoricPrices(
   });
 
   return {
+    deletePrice,
     items,
     loading,
-    save,
-    deletePrice,
     refresh,
+    save,
   };
 }

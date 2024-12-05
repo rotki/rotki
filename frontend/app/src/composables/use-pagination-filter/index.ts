@@ -5,6 +5,7 @@ import { FilterBehaviour, type MatchedKeywordWithBehaviour, type SearchMatcher }
 import { defaultCollectionState } from '@/utils/collection';
 import { logger } from '@/utils/logging';
 import { nonEmptyProperties } from '@/utils/data';
+import { useNotificationsStore } from '@/store/notifications';
 import type { LocationQuery, RawLocationQuery } from '@/types/route';
 import type { DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import type { MaybeRef } from '@vueuse/core';
@@ -83,21 +84,21 @@ export function usePaginationFilters<
   const internalPagination = ref<TablePaginationData>(applyPaginationDefaults(get(itemsPerPage)));
 
   const {
-    onUpdateFilters,
-    // giving it a default value since it is watched, for cases where there are no extra params
-    extraParams = computed<LocationQuery>(() => ({})),
-    queryParamsOnly = computed<LocationQuery>(() => ({})),
-    requestParams,
     defaultParams,
     defaultSortBy,
-    locationOverview,
-    history = false,
+    // giving it a default value since it is watched, for cases where there are no extra params
+    extraParams = computed<LocationQuery>(() => ({})),
     filterSchema = (): FilterSchema<TFilter, TSuggestionMatcher> => ({
       filters: ref({}) as Ref<TFilter>,
       matchers: computed<TSuggestionMatcher[]>(() => []),
       RouteFilterSchema: undefined,
     }),
+    history = false,
+    locationOverview,
+    onUpdateFilters,
     query = ref<LocationQuery>({}),
+    queryParamsOnly = computed<LocationQuery>(() => ({})),
+    requestParams,
   } = options;
 
   const defaultSorting = (): Sorting<TItem> => applySortingDefaults(defaultSortBy);
@@ -171,7 +172,7 @@ export function usePaginationFilters<
   };
 
   const pageParams = computed<TPayload>(() => {
-    const { page, limit } = get(internalPagination);
+    const { limit, page } = get(internalPagination);
     const offset = (page - 1) * limit;
 
     const selectedFilters = get(filters);
@@ -196,17 +197,16 @@ export function usePaginationFilters<
     } as TPayload; // todo: figure out a way to not typecast
   });
 
-  const { isLoading, state, execute } = useAsyncState<Collection<TItem>, MaybeRef<TPayload>[]>(
+  const { execute, isLoading, state } = useAsyncState<Collection<TItem>, MaybeRef<TPayload>[]>(
     requestData,
     defaultCollectionState<TItem>(),
     {
-      immediate: false,
-      resetOnExecute: false,
       delay: 0,
+      immediate: false,
       onError(e) {
         const error = e as AxiosError<{ message: string }>;
         const path = error.config?.url;
-        let { message, code } = error;
+        let { code, message } = error;
 
         if (error.response) {
           message = error.response.data.message;
@@ -216,24 +216,25 @@ export function usePaginationFilters<
         logger.error(error);
         if (Number(code) >= 400) {
           notify({
-            title: t('error.generic.title'),
+            display: true,
             message: t('error.generic.message', { code, message, path }),
             severity: Severity.ERROR,
-            display: true,
+            title: t('error.generic.title'),
           });
         }
       },
+      resetOnExecute: false,
     },
   );
 
   const pagination = computed<TablePaginationData>({
     get() {
-      const { page, limit } = get(internalPagination);
+      const { limit, page } = get(internalPagination);
       const { found: total, limit: entriesLimit } = get(state);
       return {
-        total: entriesLimit > 0 && entriesLimit < total ? entriesLimit : total,
-        page,
         limit,
+        page,
+        total: entriesLimit > 0 && entriesLimit < total ? entriesLimit : total,
       };
     },
     set(pagination) {
@@ -241,8 +242,8 @@ export function usePaginationFilters<
       const currentPagination = get(internalPagination);
       set(internalPagination, {
         ...currentPagination,
-        page: pagination?.page ?? currentPagination.page,
         limit: pagination?.limit ?? currentPagination.limit,
+        page: pagination?.page ?? currentPagination.page,
       });
     },
   });
@@ -288,7 +289,7 @@ export function usePaginationFilters<
    * @returns {LocationQuery}
    */
   const getQuery = (): LocationQuery => {
-    const { page, limit } = get(internalPagination);
+    const { limit, page } = get(internalPagination);
     const sorting = get(internalSorting);
     const selectedFilters = get(filters);
 
@@ -399,16 +400,16 @@ export function usePaginationFilters<
   });
 
   return {
-    pageParams,
-    isLoading,
-    userAction,
-    state,
+    fetchData,
     filters: filter,
+    isLoading,
     matchers,
-    sort,
+    pageParams,
     pagination,
     setPage,
-    fetchData,
+    sort,
+    state,
     updateFilter,
+    userAction,
   };
 }

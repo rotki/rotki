@@ -34,8 +34,8 @@ export function usePriceApi(): UsePriceApiReturn {
       `/oracles/${source}/cache`,
       snakeCaseTransformer({
         asyncQuery: true,
-        purgeOld: purgeOld || undefined,
         fromAsset,
+        purgeOld: purgeOld || undefined,
         toAsset,
       }),
       {
@@ -70,8 +70,8 @@ export function usePriceApi(): UsePriceApiReturn {
     const response = await api.instance.post<ActionResult<PendingTask>>(
       '/assets/prices/historical',
       snakeCaseTransformer({
-        asyncQuery: true,
         assetsTimestamp: [[fromAsset, timestamp]],
+        asyncQuery: true,
         targetAsset: toAsset,
       }),
       {
@@ -101,10 +101,10 @@ export function usePriceApi(): UsePriceApiReturn {
     const response = await api.instance.post<ActionResult<PendingTask>>(
       '/assets/prices/latest',
       snakeCaseTransformer({
-        asyncQuery: true,
         assets,
-        targetAsset,
+        asyncQuery: true,
         ignoreCache: ignoreCache || undefined,
+        targetAsset,
       }),
       {
         validateStatus: validWithSessionAndExternalService,
@@ -128,12 +128,12 @@ export function usePriceApi(): UsePriceApiReturn {
   };
 
   return {
-    queryPrices,
+    createPriceCache,
+    deletePriceCache,
+    getPriceCache,
     queryFiatExchangeRates,
     queryHistoricalRate,
     queryHistoricalRates,
-    getPriceCache,
-    createPriceCache,
-    deletePriceCache,
+    queryPrices,
   };
 }

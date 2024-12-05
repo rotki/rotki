@@ -4,6 +4,9 @@ import { TaskType } from '@/types/task-type';
 import { Section } from '@/types/status';
 import { getAccountAddress, getAccountId, getGroupId } from '@/utils/blockchain/accounts/utils';
 import { sum } from '@/utils/balances';
+import { useTaskStore } from '@/store/tasks';
+import { useStatusStore } from '@/store/status';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 import type { TableRowKey } from '@/composables/use-pagination-filter/types';
 import type { AccountManageState } from '@/composables/accounts/blockchain/use-account-manage';
 import type { Collection } from '@/types/collection';
@@ -17,7 +20,7 @@ defineOptions({
   inheritAttrs: false,
 });
 
-const chainFilter = defineModel<Record<string, string[]>>('chainFilter', { required: false, default: {} });
+const chainFilter = defineModel<Record<string, string[]>>('chainFilter', { default: {}, required: false });
 
 const pagination = defineModel<TablePaginationData>('pagination', { required: true });
 
@@ -32,10 +35,10 @@ const props = withDefaults(defineProps<{
   showGroupLabel?: boolean;
   isEvm?: boolean;
 }>(), {
-  loading: false,
   group: false,
-  showGroupLabel: false,
   isEvm: false,
+  loading: false,
+  showGroupLabel: false,
 });
 
 const emit = defineEmits<{
@@ -89,56 +92,56 @@ const cols = computed<DataTableColumn<DataRow>[]>(() => {
   const headers: DataTableColumn<T>[] = [
     ...(get(anyExpansion)
       ? [{
-          label: '',
-          key: 'expand',
-          sortable: false,
-          class: '!py-0 !pr-0 !pl-3',
           cellClass: '!py-0 !pr-0 !pl-3',
+          class: '!py-0 !pr-0 !pl-3',
+          key: 'expand',
+          label: '',
+          sortable: false,
         }]
       : []),
     ...(isEvm
       ? []
       : [{
-          label: t('common.account'),
-          key: 'label',
-          class: '!px-3',
           cellClass: 'py-0 !px-3',
+          class: '!px-3',
+          key: 'label',
+          label: t('common.account'),
           sortable: true,
         }]),
     {
-      label: t('common.chain'),
-      key: 'chain',
       cellClass: 'py-0 !pr-0',
       class: '!pr-0',
+      key: 'chain',
+      label: t('common.chain'),
       sortable: false,
     },
     ...(isEvm
       ? []
       : [{
-          label: t('common.tags'),
-          key: 'tags',
           cellClass: 'py-0',
+          key: 'tags',
+          label: t('common.tags'),
           sortable: false,
         }]),
     {
-      label: t('common.assets'),
-      key: 'assets',
+      align: 'end',
       cellClass: 'py-0 !pr-0 !pl-2',
       class: '!pr-0 !pl-2',
-      align: 'end',
+      key: 'assets',
+      label: t('common.assets'),
     },
     {
-      label: t('account_balances.headers.usd_value', currency),
-      key: 'usdValue',
-      sortable: true,
+      align: 'end',
       cellClass: 'py-0',
-      align: 'end',
+      key: 'usdValue',
+      label: t('account_balances.headers.usd_value', currency),
+      sortable: true,
     },
     {
-      label: t('common.actions_text'),
-      key: 'actions',
-      cellClass: '!p-0',
       align: 'end',
+      cellClass: '!p-0',
+      key: 'actions',
+      label: t('common.actions_text'),
     },
   ];
 
@@ -188,8 +191,8 @@ function showTokenDetection(row: DataRow): boolean {
 
 function confirmDelete(item: DataRow) {
   showConfirmation({
-    type: 'account',
     data: item,
+    type: 'account',
   }, () => {
     emit('refresh');
   });

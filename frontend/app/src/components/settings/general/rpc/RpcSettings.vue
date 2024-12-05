@@ -43,10 +43,10 @@ const rpcSettingTabs = computed<RpcSettingTab[]>(() => [
     component: defineAsyncComponent(() => import('@/components/settings/general/rpc/DotRpcSetting.vue')),
   },
   {
-    id: 'eth_consensus_layer',
-    name: 'ETH Beacon Node',
-    image: './assets/images/protocols/ethereum.svg',
     component: defineAsyncComponent(() => import('@/components/settings/general/rpc/BeaconchainRpcSetting.vue')),
+    id: 'eth_consensus_layer',
+    image: './assets/images/protocols/ethereum.svg',
+    name: 'ETH Beacon Node',
   },
 ]);
 

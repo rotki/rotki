@@ -6,6 +6,14 @@ import { Section } from '@/types/status';
 import { logger } from '@/utils/logging';
 import { isTaskCancelled } from '@/utils';
 import { awaitParallelExecution } from '@/utils/await-parallel-execution';
+import { useTaskStore } from '@/store/tasks';
+import { useNotificationsStore } from '@/store/notifications';
+import { useBlockchainStore } from '@/store/blockchain';
+import { useStatusStore } from '@/store/status';
+import { useDefiStore } from '@/store/defi';
+import { useSettingsStore } from '@/store/settings';
+import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
+import { useBlockchainTokensStore } from '@/store/blockchain/tokens';
 import type { MaybeRef } from '@vueuse/core';
 import type { AccountPayload, AddAccountsPayload, XpubAccountPayload } from '@/types/blockchain/accounts';
 import type { TaskMeta } from '@/types/task';
@@ -50,7 +58,7 @@ function CHAIN_ORDER_COMPARATOR(chains: string[]): (a: Account, b: Account) => n
 }
 
 export function useBlockchains(): UseBlockchainsReturn {
-  const { addAccount, fetch, addEvmAccount } = useBlockchainAccounts();
+  const { addAccount, addEvmAccount, fetch } = useBlockchainAccounts();
   const { fetchBlockchainBalances, fetchLoopringBalances } = useBlockchainBalances();
   const { fetchDetected } = useBlockchainTokensStore();
   const { fetchEnsNames } = useAddressesNamesStore();
@@ -58,18 +66,18 @@ export function useBlockchains(): UseBlockchainsReturn {
   const { reset: resetDefi } = useDefiStore();
   const { resetDefiStatus } = useStatusStore();
   const { detectEvmAccounts: detectEvmAccountsCaller } = useBlockchainAccountsApi();
-  const { getChainName, supportsTransactions, evmChains, isEvm, supportedChains } = useSupportedChains();
+  const { evmChains, getChainName, isEvm, supportedChains, supportsTransactions } = useSupportedChains();
   const { getAddresses } = useBlockchainStore();
 
-  const { isTaskRunning, awaitTask } = useTaskStore();
+  const { awaitTask, isTaskRunning } = useTaskStore();
   const { notify } = useNotificationsStore();
   const { t } = useI18n();
 
   const { resetStatus: resetNftSectionStatus } = useStatusUpdater(Section.NON_FUNGIBLE_BALANCES);
   const {
-    notifyUser,
     createFailureNotification,
     notifyFailedToAddAddress,
+    notifyUser,
   } = useAccountAdditionNotifications();
 
   const getNewAccountPayload = (chain: string, payload: AccountPayload[]): AccountPayload[] => {
@@ -128,8 +136,8 @@ export function useBlockchains(): UseBlockchainsReturn {
   ): Promise<void> => {
     const {
       addedAccounts,
-      modulesToEnable,
       chain,
+      modulesToEnable,
     } = params;
     resetStatuses();
 
@@ -142,11 +150,11 @@ export function useBlockchains(): UseBlockchainsReturn {
       sortedAccounts,
       item => item.address + item.chain,
       async (account) => {
-        const { chain, address }: Account = account;
+        const { address, chain }: Account = account;
         if (chain === Blockchain.ETH && modulesToEnable) {
           await enableModule({
-            enable: modulesToEnable,
             addresses: [address],
+            enable: modulesToEnable,
           });
         }
 
@@ -175,27 +183,27 @@ export function useBlockchains(): UseBlockchainsReturn {
           }
 
           addedAccounts.push({
-            chain,
             address,
+            chain,
           });
         });
 
-        notifyUser({ account, isAll, chains });
+        notifyUser({ account, chains, isAll });
       }
 
       createFailureNotification(result, account);
 
       return {
-        type: 'success',
         accounts: addedAccounts,
+        type: 'success',
       };
     }
     catch (error: any) {
       logger.error(error.message);
       return {
-        type: 'error',
-        error,
         account,
+        error,
+        type: 'error',
       };
     }
   };
@@ -245,16 +253,16 @@ export function useBlockchains(): UseBlockchainsReturn {
     try {
       const address = await addAccount(chain, isXpub ? account : [account]);
       return {
-        type: 'success',
         address,
+        type: 'success',
       };
     }
     catch (error: any) {
       logger.error(error.message);
       return {
-        type: 'error',
         account,
         error,
+        type: 'error',
       };
     }
   };
@@ -282,7 +290,7 @@ export function useBlockchains(): UseBlockchainsReturn {
     if (failedToAddAccounts.length > 0)
       notifyFailedToAddAddress(failedToAddAccounts, payload.length, chain);
 
-    startPromise(completeAccountAddition({ addedAccounts, modulesToEnable: modules, chain }));
+    startPromise(completeAccountAddition({ addedAccounts, chain, modulesToEnable: modules }));
   };
 
   const addAccounts = async (chain: string, payload: AddAccountsPayload | XpubAccountPayload): Promise<void> => {
@@ -301,10 +309,10 @@ export function useBlockchains(): UseBlockchainsReturn {
       });
       const message = t('actions.balances.blockchain_accounts_add.no_new.description');
       notify({
-        title,
+        display: true,
         message,
         severity: Severity.INFO,
-        display: true,
+        title,
       });
       return;
     }
@@ -339,11 +347,11 @@ export function useBlockchains(): UseBlockchainsReturn {
       if (!isTaskCancelled(error)) {
         logger.error(error);
         notify({
-          title: t('actions.detect_evm_accounts.error.title'),
+          display: true,
           message: t('actions.detect_evm_accounts.error.message', {
             message: error.message,
           }),
-          display: true,
+          title: t('actions.detect_evm_accounts.error.title'),
         });
       }
     }

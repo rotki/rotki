@@ -23,8 +23,8 @@ const props = withDefaults(
     disabled?: boolean;
   }>(),
   {
-    location: undefined,
     disabled: false,
+    location: undefined,
   },
 );
 
@@ -40,10 +40,10 @@ const selection = ref<Suggestion[]>([]);
 const search = ref('');
 const selectedSuggestion = ref(0);
 const suggestedFilter = ref<Suggestion>({
-  index: 0,
-  total: 0,
   asset: false,
+  index: 0,
   key: '',
+  total: 0,
   value: '',
 });
 const validKeys = computed(() => get(matchers).map(({ key }) => key));
@@ -86,11 +86,11 @@ function setSearchToMatcherKey(matcher: SearchMatcher<any>) {
   const boolean = 'boolean' in matcher;
   if (boolean) {
     applyFilter({
-      key: matcher.key,
       asset: false,
-      value: true,
       index: 0,
+      key: matcher.key,
       total: 1,
+      value: true,
     });
     return;
   }
@@ -198,7 +198,7 @@ async function applySuggestion() {
     await nextTick(() => applyFilter(filter));
   }
   else {
-    const { key, value: keyword, exclude } = splitSearch(get(search));
+    const { exclude, key, value: keyword } = splitSearch(get(search));
 
     const matcher = matcherForKey(key);
     let asset = false;
@@ -218,12 +218,12 @@ async function applySuggestion() {
       if (suggestedItems.length === 0 && 'validate' in matcher && matcher.validate(keyword)) {
         await nextTick(() =>
           applyFilter({
-            key,
             asset,
-            value: keyword,
-            index: 0,
-            total: 1,
             exclude,
+            index: 0,
+            key,
+            total: 1,
+            value: keyword,
           }),
         );
       }
@@ -280,9 +280,9 @@ function getSuggestionText(suggestion: Suggestion) {
   const startSelection = suggestion.key.length + operator.length;
   const value = getDisplayValue(suggestion);
   return {
-    text: `${suggestion.key}${operator}${value}`,
-    startSelection,
     endSelection: startSelection + value.length,
+    startSelection,
+    text: `${suggestion.key}${operator}${value}`,
   };
 }
 
@@ -333,12 +333,12 @@ function restoreSelection(matches: MatchedKeywordWithBehaviour<any>): void {
       }
 
       newSelection.push({
-        key: foundMatchers.key,
-        value: deserializedValue,
         asset,
-        total: 1,
-        index: 0,
         exclude,
+        index: 0,
+        key: foundMatchers.key,
+        total: 1,
+        value: deserializedValue,
       });
     });
   });

@@ -24,44 +24,44 @@ export function useManualBalanceFilter(locations: MaybeRef<string[]>): FilterSch
   const filters = ref<Filters>({});
 
   const { t } = useI18n();
-  const { assetSearch, assetInfo } = useAssetInfoRetrieval();
+  const { assetInfo, assetSearch } = useAssetInfoRetrieval();
 
   const matchers = computed<Matcher[]>(() => [
     {
+      description: t('common.location'),
       key: ManualBalanceFilterKeys.LOCATION,
       keyValue: ManualBalanceFilterValueKeys.LOCATION,
-      description: t('common.location'),
       string: true,
       suggestions: (): string[] => get(locations),
       validate: (location): boolean => get(locations).includes(location),
     },
     {
+      description: t('common.label'),
       key: ManualBalanceFilterKeys.LABEL,
       keyValue: ManualBalanceFilterValueKeys.LABEL,
-      description: t('common.label'),
       string: true,
       suggestions: (): string[] => [],
       validate: (type: string): boolean => !!type,
     },
     {
+      asset: true,
+      description: t('common.asset'),
+      deserializer: assetDeserializer(assetInfo),
       key: ManualBalanceFilterKeys.ASSET,
       keyValue: ManualBalanceFilterValueKeys.ASSET,
-      description: t('common.asset'),
-      asset: true,
       suggestions: assetSuggestions(assetSearch),
-      deserializer: assetDeserializer(assetInfo),
     },
   ]);
 
   const RouteFilterSchema = z.object({
-    [ManualBalanceFilterValueKeys.LOCATION]: z.string().optional(),
-    [ManualBalanceFilterValueKeys.LABEL]: z.string().optional(),
     [ManualBalanceFilterValueKeys.ASSET]: z.string().optional(),
+    [ManualBalanceFilterValueKeys.LABEL]: z.string().optional(),
+    [ManualBalanceFilterValueKeys.LOCATION]: z.string().optional(),
   });
 
   return {
-    matchers,
     filters,
+    matchers,
     RouteFilterSchema,
   };
 }

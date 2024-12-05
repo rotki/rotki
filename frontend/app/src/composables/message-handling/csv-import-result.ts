@@ -4,7 +4,7 @@ import type { CommonMessageHandler, CsvImportResult } from '@/types/websocket-me
 
 export function useCsvImportResultHandler(t: ReturnType<typeof useI18n>['t']): CommonMessageHandler<CsvImportResult> {
   const handle = (data: CsvImportResult): Notification => {
-    const { sourceName, totalEntries, importedEntries, messages } = data;
+    const { importedEntries, messages, sourceName, totalEntries } = data;
     const title = t('notification_messages.csv_import_result.title', { sourceName });
     let messageBody = t('notification_messages.csv_import_result.summary', {
       imported: importedEntries,
@@ -26,11 +26,11 @@ export function useCsvImportResultHandler(t: ReturnType<typeof useI18n>['t']): C
     else
       severity = Severity.INFO;
     return {
-      title,
-      message: messageBody,
       display: true,
-      severity,
+      message: messageBody,
       priority: Priority.HIGH,
+      severity,
+      title,
     };
   };
 

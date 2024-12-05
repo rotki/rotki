@@ -1,4 +1,5 @@
 import { type EvmTransactionQueryData, EvmTransactionsQueryStatus } from '@/types/websocket-messages';
+import { useTxQueryStatusStore } from '@/store/history/query-status/tx-query-status';
 import type { Blockchain } from '@rotki/common';
 import type { MaybeRef } from '@vueuse/core';
 import type { ComputedRef, Ref } from 'vue';
@@ -30,7 +31,7 @@ export function useTransactionQueryStatus(onlyChains: MaybeRef<Blockchain[]> = [
   const { t } = useI18n();
   const store = useTxQueryStatusStore();
   const { isStatusFinished, resetQueryStatus } = store;
-  const { queryStatus, isAllFinished } = storeToRefs(store);
+  const { isAllFinished, queryStatus } = storeToRefs(store);
   const { getChain } = useSupportedChains();
 
   const filtered = computed<EvmTransactionQueryData[]>(() => {
@@ -42,29 +43,29 @@ export function useTransactionQueryStatus(onlyChains: MaybeRef<Blockchain[]> = [
     return statuses.filter(({ evmChain }) => chains.includes(getChain(evmChain)));
   });
 
-  const { sortedQueryStatus, queryingLength, length, isQueryStatusRange } = useQueryStatus(filtered, isStatusFinished);
+  const { isQueryStatusRange, length, queryingLength, sortedQueryStatus } = useQueryStatus(filtered, isStatusFinished);
 
   const statusesData = computed<Statuses>(() => ({
-    [EvmTransactionsQueryStatus.QUERYING_TRANSACTIONS_STARTED]: {
-      index: -1,
-    },
     [EvmTransactionsQueryStatus.ACCOUNT_CHANGE]: {
       index: 0,
-    },
-    [EvmTransactionsQueryStatus.QUERYING_TRANSACTIONS]: {
-      index: 1,
-      label: t('transactions.query_status.statuses.querying_transactions'),
-    },
-    [EvmTransactionsQueryStatus.QUERYING_INTERNAL_TRANSACTIONS]: {
-      index: 2,
-      label: t('transactions.query_status.statuses.querying_internal_transactions'),
     },
     [EvmTransactionsQueryStatus.QUERYING_EVM_TOKENS_TRANSACTIONS]: {
       index: 3,
       label: t('transactions.query_status.statuses.querying_evm_tokens_transactions'),
     },
+    [EvmTransactionsQueryStatus.QUERYING_INTERNAL_TRANSACTIONS]: {
+      index: 2,
+      label: t('transactions.query_status.statuses.querying_internal_transactions'),
+    },
+    [EvmTransactionsQueryStatus.QUERYING_TRANSACTIONS]: {
+      index: 1,
+      label: t('transactions.query_status.statuses.querying_transactions'),
+    },
     [EvmTransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED]: {
       index: 4,
+    },
+    [EvmTransactionsQueryStatus.QUERYING_TRANSACTIONS_STARTED]: {
+      index: -1,
     },
   }));
 
@@ -86,16 +87,16 @@ export function useTransactionQueryStatus(onlyChains: MaybeRef<Blockchain[]> = [
   const isQueryFinished = (item: EvmTransactionQueryData): boolean => isStatusFinished(item);
 
   return {
+    filtered,
+    getItemTranslationKey,
+    getKey,
     getLabel,
     getStatusData,
-    getItemTranslationKey,
-    isQueryFinished,
-    getKey,
-    resetQueryStatus,
     isAllFinished,
-    sortedQueryStatus,
-    filtered,
-    queryingLength,
+    isQueryFinished,
     length,
+    queryingLength,
+    resetQueryStatus,
+    sortedQueryStatus,
   };
 }

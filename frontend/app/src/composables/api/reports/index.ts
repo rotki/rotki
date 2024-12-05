@@ -68,10 +68,10 @@ export function useReportsApi(): UseReportsApi {
       const body = await (response.data as Blob).text();
       const result: ActionResult<null> = JSON.parse(body);
 
-      return { success: false, message: result.message };
+      return { message: result.message, success: false };
     }
     catch (error: any) {
-      return { success: false, message: error.message };
+      return { message: error.message, success: false };
     }
   };
 
@@ -93,8 +93,8 @@ export function useReportsApi(): UseReportsApi {
     const response = await api.instance.put<ActionResult<PendingTask>>(
       '/history/debug',
       snakeCaseTransformer({
-        filepath,
         asyncQuery: true,
+        filepath,
       }),
       {
         validateStatus: validStatus,
@@ -162,16 +162,16 @@ export function useReportsApi(): UseReportsApi {
   };
 
   return {
-    generateReport,
-    exportReportCSV,
+    deleteReport,
     downloadReportCSV,
-    importReportData,
+    exportReportCSV,
     exportReportData,
-    uploadReportData,
     fetchActionableItems,
-    fetchReports,
     fetchReport,
     fetchReportEvents,
-    deleteReport,
+    fetchReports,
+    generateReport,
+    importReportData,
+    uploadReportData,
   };
 }

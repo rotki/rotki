@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { logger } from '@/utils/logging';
+import { useNotificationsStore } from '@/store/notifications';
 import type { CalendarEvent } from '@/types/history/calendar';
 import type { CalendarReminderTemporaryPayload, CalenderReminderPayload } from '@/types/history/calendar/reminder';
 
@@ -20,10 +21,10 @@ const newIdCreated = ref<number>(-1);
 const { notify } = useNotificationsStore();
 
 const {
-  fetchCalendarReminders,
   addCalendarReminder,
-  editCalendarReminder,
   deleteCalendarReminder,
+  editCalendarReminder,
+  fetchCalendarReminders,
 } = useCalendarReminderApi();
 
 const length = computed<number>(() => get(temporaryData).filter(item => item.secsBefore > 0).length);
@@ -50,10 +51,10 @@ async function addCalendarReminderHandler(reminders: CalenderReminderPayload[]) 
     if (result.failed && result.failed.length > 0) {
       notify({
         display: true,
-        title: t('calendar.reminder.add_error.title'),
         message: t('calendar.reminder.add_error.some_failed', {
           ids: result.failed.join(', '),
         }),
+        title: t('calendar.reminder.add_error.title'),
       });
     }
   }
@@ -61,10 +62,10 @@ async function addCalendarReminderHandler(reminders: CalenderReminderPayload[]) 
     logger.error(error);
     notify({
       display: true,
-      title: t('calendar.reminder.add_error.title'),
       message: t('calendar.reminder.add_error.message', {
         message: error.message,
       }),
+      title: t('calendar.reminder.add_error.title'),
     });
   }
 }
@@ -86,10 +87,10 @@ async function refreshTemporaryData() {
     logger.error(error);
     notify({
       display: true,
-      title: t('calendar.reminder.fetch_error.title'),
       message: t('calendar.reminder.fetch_error.message', {
         message: error.message,
       }),
+      title: t('calendar.reminder.fetch_error.title'),
     });
   }
 }
@@ -110,9 +111,9 @@ async function addReminder(secsBefore: number = 900, inTimeReminder = false) {
   if (!item || isSameSecsBeforeExist(secsBefore) || inTimeReminder) {
     const newId = Date.now();
     const newData: CalendarReminderTemporaryPayload = {
-      secsBefore,
       identifier: newId,
       isTemporary: true,
+      secsBefore,
     };
 
     set(temporaryData, [...get(temporaryData), newData]);
@@ -148,10 +149,10 @@ async function deleteData(index: number) {
       logger.error(error);
       notify({
         display: true,
-        title: t('calendar.reminder.delete_error.title'),
         message: t('calendar.reminder.delete_error.message', {
           message: error.message,
         }),
+        title: t('calendar.reminder.delete_error.title'),
       });
     }
     await refreshTemporaryData();
@@ -171,19 +172,19 @@ async function updateData(index: number, { secsBefore }: CalendarReminderTempora
     if (!data.isTemporary) {
       try {
         await editCalendarReminder({
+          eventId: item.identifier,
           identifier: data.identifier,
           secsBefore,
-          eventId: item.identifier,
         });
       }
       catch (error: any) {
         logger.error(error);
         notify({
           display: true,
-          title: t('calendar.reminder.edit_error.title'),
           message: t('calendar.reminder.edit_error.message', {
             message: error.message,
           }),
+          title: t('calendar.reminder.edit_error.title'),
         });
       }
 
@@ -220,7 +221,7 @@ async function saveTemporaryReminder(eventId: number) {
         secsBeforeToSave.push(secsBefore);
     });
 
-    await addCalendarReminderHandler(secsBeforeToSave.map(secsBefore => ({ secsBefore, eventId })));
+    await addCalendarReminderHandler(secsBeforeToSave.map(secsBefore => ({ eventId, secsBefore })));
   }
 }
 

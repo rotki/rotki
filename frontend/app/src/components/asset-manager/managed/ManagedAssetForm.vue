@@ -8,6 +8,8 @@ import { ApiValidationError } from '@/types/api/errors';
 import AssetIconForm from '@/components/asset-manager/AssetIconForm.vue';
 import { toMessages } from '@/utils/validation';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
+import { useMessageStore } from '@/store/message';
+import { useAssetCacheStore } from '@/store/assets/asset-cache';
 import type { SelectOption, SelectOptions } from '@/types/common';
 import type { EvmTokenKind, SupportedAsset, UnderlyingToken } from '@rotki/common';
 
@@ -59,48 +61,48 @@ const { allEvmChains } = useSupportedChains();
 
 const { setMessage } = useMessageStore();
 
-const { getAssetTypes, editAsset, addAsset } = useAssetManagementApi();
+const { addAsset, editAsset, getAssetTypes } = useAssetManagementApi();
 
-const { setValidation, setSubmitFunc, submitting } = useManagedAssetForm();
+const { setSubmitFunc, setValidation, submitting } = useManagedAssetForm();
 
 const externalServerValidation = () => true;
 
 const v$ = setValidation(
   {
-    assetType: { required },
-    evmChain: { externalServerValidation },
     address: {
       required: requiredIf(isEvmToken),
-      isValid: helpers.withMessage(
+      validated: helpers.withMessage(
         t('asset_form.validation.valid_address'),
         (v: string) => !get(isEvmToken) || isValidEthAddress(v),
       ),
     },
-    tokenKind: { externalServerValidation },
-    name: { externalServerValidation },
-    symbol: { externalServerValidation },
-    decimals: { externalServerValidation },
+    assetType: { required },
     coingecko: { externalServerValidation },
     cryptocompare: { externalServerValidation },
-    started: { externalServerValidation },
-    protocol: { externalServerValidation },
-    swappedFor: { externalServerValidation },
+    decimals: { externalServerValidation },
+    evmChain: { externalServerValidation },
     forked: { externalServerValidation },
+    name: { externalServerValidation },
+    protocol: { externalServerValidation },
+    started: { externalServerValidation },
+    swappedFor: { externalServerValidation },
+    symbol: { externalServerValidation },
+    tokenKind: { externalServerValidation },
   },
   {
-    assetType,
-    evmChain,
-    tokenKind,
     address,
-    name,
-    symbol,
-    decimals,
+    assetType,
     coingecko,
     cryptocompare,
-    started,
-    protocol,
-    swappedFor,
+    decimals,
+    evmChain,
     forked,
+    name,
+    protocol,
+    started,
+    swappedFor,
+    symbol,
+    tokenKind,
   },
   { $autoDirty: true, $externalResults: errors },
 );
@@ -155,17 +157,17 @@ const asset = computed<Omit<SupportedAsset, 'identifier' | 'assetType'>>(() => {
 
   return {
     address: get(address),
-    name: get(name),
-    symbol: get(symbol),
-    decimals: parseDecimals(get(decimals)),
     coingecko: get(coingeckoEnabled) ? onlyIfTruthy(get(coingecko)) : null,
     cryptocompare: get(cryptocompareEnabled) ? onlyIfTruthy(get(cryptocompare)) : '',
-    started: time(get(started)),
-    underlyingTokens: ut.length > 0 ? ut : undefined,
-    swappedFor: onlyIfTruthy(get(swappedFor)),
-    protocol: onlyIfTruthy(get(protocol)),
+    decimals: parseDecimals(get(decimals)),
     evmChain: get(evmChain) || null,
+    name: get(name),
+    protocol: onlyIfTruthy(get(protocol)),
+    started: time(get(started)),
+    swappedFor: onlyIfTruthy(get(swappedFor)),
+    symbol: get(symbol),
     tokenKind: (get(tokenKind) as EvmTokenKind) || null,
+    underlyingTokens: ut.length > 0 ? ut : undefined,
   };
 });
 
@@ -266,14 +268,14 @@ function handleError(
   if ('underlyingTokens' in message) {
     const messages = getUnderlyingTokenErrors(message.underlyingTokens);
     setMessage({
-      title: t('asset_form.underlying_tokens'),
       description: messages.join(','),
+      title: t('asset_form.underlying_tokens'),
     });
   }
   else {
     setMessage({
-      title: t('asset_form.underlying_tokens'),
       description: message._schema[0],
+      title: t('asset_form.underlying_tokens'),
     });
   }
 }
@@ -295,8 +297,8 @@ async function save() {
 
     if (typeof errorsMessage === 'string') {
       setMessage({
-        title: get(editableItem) ? t('asset_form.edit_error') : t('asset_form.add_error'),
         description: errorsMessage,
+        title: get(editableItem) ? t('asset_form.edit_error') : t('asset_form.add_error'),
       });
     }
     else {

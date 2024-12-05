@@ -20,24 +20,24 @@ export function useNewTokenDetectedHandler(t: ReturnType<typeof useI18n>['t']): 
       return null;
 
     return {
-      title: t('notification_messages.new_detected_token.title', count),
+      action: {
+        action: async () => router.push(Routes.ASSET_MANAGER_NEWLY_DETECTED),
+        label: t('notification_messages.new_detected_token.action'),
+      },
+      display: true,
+      group: NotificationGroup.NEW_DETECTED_TOKENS,
+      groupCount: count,
       message: t(
         'notification_messages.new_detected_token.message',
         {
-          identifier: data.tokenIdentifier,
           count,
+          identifier: data.tokenIdentifier,
         },
         count,
       ),
-      display: true,
-      severity: Severity.INFO,
       priority: Priority.ACTION,
-      action: {
-        label: t('notification_messages.new_detected_token.action'),
-        action: async () => router.push(Routes.ASSET_MANAGER_NEWLY_DETECTED),
-      },
-      group: NotificationGroup.NEW_DETECTED_TOKENS,
-      groupCount: count,
+      severity: Severity.INFO,
+      title: t('notification_messages.new_detected_token.title', count),
     };
   };
 

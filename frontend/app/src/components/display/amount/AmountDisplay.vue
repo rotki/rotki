@@ -3,6 +3,11 @@ import { BigNumber } from '@rotki/common';
 import { or } from '@vueuse/math';
 import { displayAmountFormatter } from '@/data/amount-formatter';
 import { CURRENCY_USD, type Currency, type ShownCurrency, useCurrencies } from '@/types/currencies';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useHistoricCachePriceStore } from '@/store/prices/historic';
+import { useBalancePricesStore } from '@/store/balances/prices';
+import { useSessionSettingsStore } from '@/store/settings/session';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 import type { RoundingMode } from '@/types/settings/frontend-settings';
 import type { AssetResolutionOptions } from '@/composables/assets/retrieval';
 
@@ -36,57 +41,57 @@ const props = withDefaults(
     resolutionOptions?: AssetResolutionOptions;
   }>(),
   {
-    loading: false,
     amount: () => One,
-    fiatCurrency: null,
-    showCurrency: 'none',
-    forceCurrency: false,
     asset: '',
-    priceOfAsset: null,
-    priceAsset: '',
-    integer: false,
     assetPadding: 0,
-    pnl: false,
+    fiatCurrency: null,
+    forceCurrency: false,
+    integer: false,
+    loading: false,
+    milliseconds: false,
     noScramble: false,
     noTruncate: false,
-    timestamp: -1,
-    milliseconds: false,
-    xl: false,
+    pnl: false,
+    priceAsset: '',
+    priceOfAsset: null,
     resolutionOptions: () => ({}),
+    showCurrency: 'none',
+    timestamp: -1,
+    xl: false,
   },
 );
 
 const {
   amount,
-  value,
   asset,
   fiatCurrency: sourceCurrency,
-  priceOfAsset,
-  priceAsset,
-  integer,
   forceCurrency,
-  noScramble,
-  timestamp,
-  milliseconds,
+  integer,
   loading,
+  milliseconds,
+  noScramble,
+  priceAsset,
+  priceOfAsset,
   resolutionOptions,
+  timestamp,
+  value,
 } = toRefs(props);
 
 const { t } = useI18n();
 
 const { currency, currencySymbol: currentCurrency, floatingPrecision } = storeToRefs(useGeneralSettingsStore());
 
-const { scrambleData, shouldShowAmount, scrambleMultiplier } = storeToRefs(useSessionSettingsStore());
+const { scrambleData, scrambleMultiplier, shouldShowAmount } = storeToRefs(useSessionSettingsStore());
 
-const { exchangeRate, assetPrice, isAssetPriceInCurrentCurrency } = useBalancePricesStore();
+const { assetPrice, exchangeRate, isAssetPriceInCurrentCurrency } = useBalancePricesStore();
 
 const {
   abbreviateNumber,
+  amountRoundingMode,
+  currencyLocation,
+  decimalSeparator,
   minimumDigitToBeAbbreviated,
   thousandSeparator,
-  decimalSeparator,
-  currencyLocation,
-  amountRoundingMode,
   valueRoundingMode,
 } = storeToRefs(useFrontendSettingsStore());
 
@@ -94,7 +99,7 @@ const isCurrentCurrency = isAssetPriceInCurrentCurrency(priceAsset);
 
 const { findCurrency } = useCurrencies();
 
-const { historicPriceInCurrentCurrency, isPending, createKey } = useHistoricCachePriceStore();
+const { createKey, historicPriceInCurrentCurrency, isPending } = useHistoricCachePriceStore();
 
 const { assetInfo } = useAssetInfoRetrieval();
 
@@ -177,9 +182,9 @@ const internalValue = computed<BigNumber>(() => {
 });
 
 const displayValue: ComputedRef<BigNumber> = useNumberScrambler({
-  value: internalValue,
-  multiplier: scrambleMultiplier,
   enabled: computed(() => !get(noScramble) && (get(scrambleData) || !get(shouldShowAmount))),
+  multiplier: scrambleMultiplier,
+  value: internalValue,
 });
 
 // Check if the `realValue` is NaN
@@ -288,7 +293,7 @@ function fixExponentialSeparators(value: string, thousands: string, decimals: st
   return value;
 }
 
-const { copy, copied } = useCopy(copyValue);
+const { copied, copy } = useCopy(copyValue);
 
 const anyLoading = logicOr(loading, evaluating);
 const info = assetInfo(asset, resolutionOptions);

@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useConfirmStore } from '@/store/confirm';
+import { useBalancePricesStore } from '@/store/balances/prices';
 import type { AssetPriceInfo, ManualPriceFormPayload } from '@/types/prices';
 
 const props = withDefaults(
@@ -23,7 +26,7 @@ const { t } = useI18n();
 
 const customPrice = ref<Partial<ManualPriceFormPayload> | null>(null);
 
-const { setPostSubmitFunc, setOpenDialog } = useLatestPriceForm();
+const { setOpenDialog, setPostSubmitFunc } = useLatestPriceForm();
 const { show } = useConfirmStore();
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
@@ -35,24 +38,24 @@ function setPriceForm() {
   setOpenDialog(true);
   set(customPrice, {
     fromAsset: get(identifier),
-    toAsset,
     price: get(info)
       .usdPrice
       .multipliedBy(get(exchangeRate(toAsset)) ?? One)
       .toFixed(),
+    toAsset,
   });
 }
 
-const { refreshCurrentPrices, deletePrice, refreshing } = useLatestPrices(t);
+const { deletePrice, refreshCurrentPrices, refreshing } = useLatestPrices(t);
 
 function showDeleteConfirmation() {
   const identifierVal = get(identifier);
   show(
     {
-      title: t('assets.custom_price.delete.tooltip'),
       message: t('assets.custom_price.delete.message', {
         asset: get(assetName(identifierVal)) ?? identifierVal,
       }),
+      title: t('assets.custom_price.delete.tooltip'),
     },
     () => deletePrice({ fromAsset: identifierVal }),
   );

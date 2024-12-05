@@ -1,8 +1,10 @@
 <script setup lang="ts">
+import { useMainStore } from '@/store/main';
+
 const { autolog } = useAutoLogin();
 const { restarting } = useRestartingStatus();
 
-const { connectionFailure, connected, dockerRiskAccepted } = storeToRefs(useMainStore());
+const { connected, connectionFailure, dockerRiskAccepted } = storeToRefs(useMainStore());
 
 const isDocker = import.meta.env.VITE_DOCKER;
 const showDockerWarning = logicAnd(isDocker, logicNot(dockerRiskAccepted));

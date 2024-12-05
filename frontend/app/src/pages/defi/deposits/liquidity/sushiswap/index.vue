@@ -2,6 +2,8 @@
 import { Sushi } from '@/premium/premium';
 import { Module } from '@/types/modules';
 import { Section } from '@/types/status';
+import { useSushiswapStore } from '@/store/defi/sushiswap';
+import { useStatusStore } from '@/store/status';
 
 const section = Section.DEFI_SUSHISWAP_BALANCES;
 const secondSection = Section.DEFI_SUSHISWAP_EVENTS;
@@ -9,7 +11,7 @@ const modules: Module[] = [Module.SUSHISWAP];
 
 const { fetchBalances, fetchEvents } = useSushiswapStore();
 const { isModuleEnabled } = useModules();
-const { shouldShowLoadingScreen, isLoading } = useStatusStore();
+const { isLoading, shouldShowLoadingScreen } = useStatusStore();
 const premium = usePremium();
 const { t } = useI18n();
 

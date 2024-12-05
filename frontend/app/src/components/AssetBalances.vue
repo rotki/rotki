@@ -5,6 +5,8 @@ import { TableColumn } from '@/types/table-column';
 import { bigNumberSum, calculatePercentage } from '@/utils/calculation';
 import { sortAssetBalances } from '@/utils/balances';
 import { assetFilterByKeyword } from '@/utils/assets';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useStatisticsStore } from '@/store/statistics';
 import type { AssetBalance, AssetBalanceWithPrice, BigNumber, Nullable } from '@rotki/common';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 
@@ -12,7 +14,7 @@ defineOptions({
   name: 'AssetBalances',
 });
 
-const search = defineModel<string>('search', { required: false, default: '' });
+const search = defineModel<string>('search', { default: '', required: false });
 
 const props = withDefaults(
   defineProps<{
@@ -30,13 +32,13 @@ const props = withDefaults(
     visibleColumns?: TableColumn[];
   }>(),
   {
-    loading: false,
-    hideTotal: false,
-    hideBreakdown: false,
-    stickyHeader: false,
-    details: undefined,
-    isLiability: false,
     allBreakdown: false,
+    details: undefined,
+    hideBreakdown: false,
+    hideTotal: false,
+    isLiability: false,
+    loading: false,
+    stickyHeader: false,
     visibleColumns: () => [],
   },
 );
@@ -51,7 +53,7 @@ const sort = ref<DataTableSortData<AssetBalanceWithPrice>>({
   direction: 'desc' as const,
 });
 
-const { assetSymbol, assetName, assetInfo } = useAssetInfoRetrieval();
+const { assetInfo, assetName, assetSymbol } = useAssetInfoRetrieval();
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const statistics = useStatisticsStore();
 const { totalNetWorthUsd } = storeToRefs(statistics);
@@ -85,59 +87,59 @@ function percentageOfCurrentGroup(value: BigNumber) {
 const tableHeaders = computed<DataTableColumn<AssetBalanceWithPrice>[]>(() => {
   const headers: DataTableColumn<AssetBalanceWithPrice>[] = [
     {
-      label: t('common.asset'),
-      key: 'asset',
-      class: 'text-no-wrap w-full',
       cellClass: 'py-0',
+      class: 'text-no-wrap w-full',
+      key: 'asset',
+      label: t('common.asset'),
       sortable: true,
     },
     {
+      align: 'end',
+      cellClass: 'py-0',
+      key: 'usdPrice',
       label: t('common.price_in_symbol', {
         symbol: get(currencySymbol),
       }),
-      key: 'usdPrice',
-      align: 'end',
-      cellClass: 'py-0',
       sortable: true,
     },
     {
-      label: t('common.amount'),
+      align: 'end',
+      cellClass: 'py-0',
       key: 'amount',
-      align: 'end',
-      cellClass: 'py-0',
+      label: t('common.amount'),
       sortable: true,
     },
     {
+      align: 'end',
+      cellClass: 'py-0',
+      class: 'text-no-wrap',
+      key: 'usdValue',
       label: t('common.value_in_symbol', {
         symbol: get(currencySymbol),
       }),
-      key: 'usdValue',
-      align: 'end',
-      class: 'text-no-wrap',
-      cellClass: 'py-0',
       sortable: true,
     },
   ];
 
   if (props.visibleColumns.includes(TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE)) {
     headers.push({
-      label: t('dashboard_asset_table.headers.percentage_of_total_net_value'),
-      key: 'percentageOfTotalNetValue',
       align: 'end',
-      class: 'text-no-wrap',
       cellClass: 'py-0',
+      class: 'text-no-wrap',
+      key: 'percentageOfTotalNetValue',
+      label: t('dashboard_asset_table.headers.percentage_of_total_net_value'),
     });
   }
 
   if (props.visibleColumns.includes(TableColumn.PERCENTAGE_OF_TOTAL_CURRENT_GROUP)) {
     headers.push({
+      align: 'end',
+      cellClass: 'py-0',
+      class: 'text-no-wrap',
+      key: 'percentageOfTotalCurrentGroup',
       label: t('dashboard_asset_table.headers.percentage_of_total_current_group', {
         group: t('blockchain_balances.group_label'),
       }),
-      key: 'percentageOfTotalCurrentGroup',
-      align: 'end',
-      class: 'text-no-wrap',
-      cellClass: 'py-0',
     });
   }
 

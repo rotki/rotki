@@ -4,6 +4,7 @@ import { omit } from 'lodash-es';
 import AssetIconForm from '@/components/asset-manager/AssetIconForm.vue';
 import { toMessages } from '@/utils/validation';
 import { useRefPropVModel } from '@/utils/model';
+import { useMessageStore } from '@/store/message';
 import type { CustomAsset } from '@/types/asset';
 
 const props = withDefaults(
@@ -17,9 +18,9 @@ const props = withDefaults(
 const { editableItem } = toRefs(props);
 
 const emptyCustomAsset: () => CustomAsset = () => ({
+  customAssetType: '',
   identifier: '',
   name: '',
-  customAssetType: '',
   notes: '',
 });
 
@@ -63,7 +64,7 @@ const rules = {
   },
 };
 
-const { setValidation, setSubmitFunc } = useCustomAssetForm();
+const { setSubmitFunc, setValidation } = useCustomAssetForm();
 
 const v$ = setValidation(
   rules,
@@ -79,7 +80,7 @@ function saveIcon(identifier: string) {
 }
 
 const { setMessage } = useMessageStore();
-const { editCustomAsset, addCustomAsset } = useAssetManagementApi();
+const { addCustomAsset, editCustomAsset } = useAssetManagementApi();
 
 async function save(): Promise<string> {
   const data = get(formData);

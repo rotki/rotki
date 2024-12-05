@@ -1,4 +1,5 @@
 import { startPromise } from '@shared/utils';
+import { useNotificationsStore } from '@/store/notifications';
 import type { ActionDataEntry } from '@/types/action';
 import type { MaybeRef } from '@vueuse/core';
 
@@ -7,7 +8,7 @@ export const useHistoryEventCounterpartyMappings = createSharedComposable(() => 
 
   const dataEntries = ref<ActionDataEntry[]>([]);
 
-  const { scrambleData, scrambleAddress } = useScramble();
+  const { scrambleAddress, scrambleData } = useScramble();
   const { notify } = useNotificationsStore();
   const { t } = useI18n();
 
@@ -17,18 +18,18 @@ export const useHistoryEventCounterpartyMappings = createSharedComposable(() => 
     }
     catch (error: any) {
       notify({
+        action: [
+          {
+            action: async (): Promise<void> => fetchCounterparties(),
+            icon: 'refresh-line',
+            label: t('actions.fetch_counterparties.actions.fetch_again'),
+          },
+        ],
         display: true,
-        title: t('actions.fetch_counterparties.error.title'),
         message: t('actions.fetch_counterparties.error.description', {
           message: error.message,
         }),
-        action: [
-          {
-            label: t('actions.fetch_counterparties.actions.fetch_again'),
-            action: async (): Promise<void> => fetchCounterparties(),
-            icon: 'refresh-line',
-          },
-        ],
+        title: t('actions.fetch_counterparties.error.title'),
       });
     }
   };
@@ -36,14 +37,14 @@ export const useHistoryEventCounterpartyMappings = createSharedComposable(() => 
   const getEventCounterpartyData = (
     event: MaybeRef<{ counterparty: string | null; address?: string | null }>,
   ): ComputedRef<ActionDataEntry | null> => computed(() => {
-    const { counterparty, address } = get(event);
+    const { address, counterparty } = get(event);
     const excludedCounterparty = ['gas'];
 
     if (counterparty && excludedCounterparty.includes(counterparty))
       return null;
 
     if (counterparty && !isValidEthAddress(counterparty)) {
-      const data = get(dataEntries).find(({ matcher, identifier }: ActionDataEntry) => {
+      const data = get(dataEntries).find(({ identifier, matcher }: ActionDataEntry) => {
         if (matcher)
           return matcher(counterparty);
 
@@ -58,10 +59,10 @@ export const useHistoryEventCounterpartyMappings = createSharedComposable(() => 
       }
 
       return {
+        color: 'error',
+        icon: 'question-line',
         identifier: '',
         label: counterparty,
-        icon: 'question-line',
-        color: 'error',
       };
     }
 
@@ -93,10 +94,10 @@ export const useHistoryEventCounterpartyMappings = createSharedComposable(() => 
       return data;
 
     return {
+      color: 'error',
+      icon: 'question-line',
       identifier: counterpartyVal,
       label: counterpartyVal,
-      icon: 'question-line',
-      color: 'error',
     };
   });
 
@@ -105,9 +106,9 @@ export const useHistoryEventCounterpartyMappings = createSharedComposable(() => 
   });
 
   return {
-    getEventCounterpartyData,
-    getCounterpartyData,
-    fetchCounterparties,
     counterparties,
+    fetchCounterparties,
+    getCounterpartyData,
+    getEventCounterpartyData,
   };
 });

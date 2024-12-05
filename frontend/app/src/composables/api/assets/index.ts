@@ -30,8 +30,8 @@ export function useAssetsApi(): UseAssetApiReturn {
   const performUpdate = async (version: number, conflicts?: ConflictResolution): Promise<PendingTask> => {
     const data = {
       async_query: true,
-      up_to_version: version,
       conflicts,
+      up_to_version: version,
     };
 
     const response = await api.instance.post<ActionResult<PendingTask>>('/assets/updates', data, {
@@ -55,9 +55,9 @@ export function useAssetsApi(): UseAssetApiReturn {
   const restoreAssetsDatabase = async (reset: 'hard' | 'soft', ignoreWarnings: boolean): Promise<PendingTask> => {
     const response = await api.instance.delete<ActionResult<PendingTask>>('/assets/updates', {
       data: snakeCaseTransformer({
-        reset,
-        ignoreWarnings,
         asyncQuery: true,
+        ignoreWarnings,
+        reset,
       }),
       validateStatus: validStatus,
     });
@@ -72,10 +72,10 @@ export function useAssetsApi(): UseAssetApiReturn {
       data.append('async_query', 'true');
 
       const response = await api.instance.post('/assets/user', data, {
-        validateStatus: validFileOperationStatus,
         headers: {
           'Content-Type': 'multipart/form-data',
         },
+        validateStatus: validFileOperationStatus,
       });
       return handleResponse(response);
     }
@@ -84,8 +84,8 @@ export function useAssetsApi(): UseAssetApiReturn {
       '/assets/user',
       snakeCaseTransformer({
         action: 'upload',
-        file,
         asyncQuery: true,
+        file,
       }),
       {
         validateStatus: validFileOperationStatus,
@@ -112,7 +112,7 @@ export function useAssetsApi(): UseAssetApiReturn {
         const body = await (response.data as Blob).text();
         const result: ActionResult<null> = JSON.parse(body);
 
-        return { success: false, message: result.message };
+        return { message: result.message, success: false };
       }
       const response = await api.instance.put<ActionResult<{ file: string }>>(
         '/assets/user',
@@ -128,7 +128,7 @@ export function useAssetsApi(): UseAssetApiReturn {
       };
     }
     catch (error: any) {
-      return { success: false, message: error.message };
+      return { message: error.message, success: false };
     }
   };
 
@@ -149,11 +149,11 @@ export function useAssetsApi(): UseAssetApiReturn {
 
   return {
     checkForAssetUpdate,
-    performUpdate,
-    mergeAssets,
-    restoreAssetsDatabase,
-    importCustom,
     exportCustom,
     fetchNfts,
+    importCustom,
+    mergeAssets,
+    performUpdate,
+    restoreAssetsDatabase,
   };
 }

@@ -19,7 +19,7 @@ const upToVersion = ref<string>('0');
 const skipUpdate = ref<boolean>(false);
 
 const multiple = computed(() => {
-  const { remote, local } = get(versions);
+  const { local, remote } = get(versions);
   return remote - local > 1;
 });
 

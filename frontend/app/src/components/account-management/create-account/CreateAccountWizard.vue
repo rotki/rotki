@@ -17,7 +17,7 @@ const emit = defineEmits<{
   (e: 'clear-error'): void;
 }>();
 
-const { step, error } = toRefs(props);
+const { error, step } = toRefs(props);
 
 function setStep(newStep: number) {
   emit('update:step', newStep);
@@ -46,8 +46,8 @@ const premiumSetupForm = ref<PremiumSetup>({
 });
 
 const credentialsForm = ref<LoginCredentials>({
-  username: '',
   password: '',
+  username: '',
 });
 const passwordConfirm = ref<string>('');
 const userPrompted = ref<boolean>(false);

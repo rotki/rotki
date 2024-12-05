@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { useTaskStore } from '@/store/tasks';
+import { useNotificationsStore } from '@/store/notifications';
+
 defineProps<{
   visible: boolean;
 }>();

@@ -18,9 +18,9 @@ interface LiquidityPageInfo {
 const imageSize = '64px';
 
 const pages = {
+  'sushiswap': defineAsyncComponent(() => import('@/pages/defi/deposits/liquidity/sushiswap/index.vue')),
   'uniswap-v2': defineAsyncComponent(() => import('@/pages/defi/deposits/liquidity/uniswap-v2/index.vue')),
   'uniswap-v3': defineAsyncComponent(() => import('@/pages/defi/deposits/liquidity/uniswap-v3/index.vue')),
-  'sushiswap': defineAsyncComponent(() => import('@/pages/defi/deposits/liquidity/sushiswap/index.vue')),
 } as const;
 
 const { t } = useI18n();

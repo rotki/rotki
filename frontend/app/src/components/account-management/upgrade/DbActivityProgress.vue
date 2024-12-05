@@ -20,7 +20,7 @@ const [DefineProgress, ReuseProgress] = createReusableTemplate<{
 
 const multipleUpgrades = computed<boolean>(() => {
   if (isDefined(progress)) {
-    const { toVersion, fromVersion } = get(progress);
+    const { fromVersion, toVersion } = get(progress);
     return toVersion - fromVersion > 1;
   }
   return false;

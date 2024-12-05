@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { type TablePaginationData, useBreakpoint } from '@rotki/ui-library';
 import { Section } from '@/types/status';
+import { useStatusStore } from '@/store/status';
+import { useDefiOverviewStore } from '@/store/defi/overview';
+import { useDefiStore } from '@/store/defi';
 
 definePage({
   name: 'defi-overview',
@@ -16,7 +19,7 @@ const section = Section.DEFI_OVERVIEW;
 
 const { t } = useI18n();
 
-const { isMdAndDown, isMd, is2xl } = useBreakpoint();
+const { is2xl, isMd, isMdAndDown } = useBreakpoint();
 
 const firstLimit = computed(() => {
   if (get(isMdAndDown))
@@ -31,7 +34,7 @@ const firstLimit = computed(() => {
   return 9;
 });
 
-const { shouldShowLoadingScreen, isLoading } = useStatusStore();
+const { isLoading, shouldShowLoadingScreen } = useStatusStore();
 
 const loading = shouldShowLoadingScreen(section);
 const refreshing = isLoading(section);
@@ -56,10 +59,10 @@ const limits = computed(() => {
 const paginationData = computed({
   get() {
     return {
-      page: get(page),
-      total: get(currentOverview).length,
       limit: get(itemsPerPage),
       limits: get(limits),
+      page: get(page),
+      total: get(currentOverview).length,
     };
   },
   set(value: TablePaginationData) {

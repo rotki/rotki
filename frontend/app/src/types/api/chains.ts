@@ -2,29 +2,29 @@ import { z } from 'zod';
 
 const BasicChainInfo = z.object({
   id: z.string(),
+  image: z.string(),
   name: z.string(),
   type: z.string(),
-  image: z.string(),
 });
 
 const SubstrateChainInfo = BasicChainInfo.extend({
-  type: z.literal('substrate'),
   nativeToken: z.string().optional(),
+  type: z.literal('substrate'),
 });
 
 export type SubstrateChainInfo = z.infer<typeof SubstrateChainInfo>;
 
 const EvmLikeChainInfo = BasicChainInfo.extend({
-  type: z.literal('evmlike'),
   nativeToken: z.string().optional(),
+  type: z.literal('evmlike'),
 });
 
 export type EvmLikeChainInfo = z.infer<typeof EvmLikeChainInfo>;
 
 const EvmChainInfo = BasicChainInfo.extend({
-  type: z.literal('evm'),
   evmChainName: z.string(),
   nativeToken: z.string().optional(),
+  type: z.literal('evm'),
 });
 
 export type EvmChainInfo = z.infer<typeof EvmChainInfo>;
@@ -45,8 +45,8 @@ export type SupportedChains = z.infer<typeof SupportedChains>;
 
 export const EvmChainEntry = z.object({
   id: z.number(),
-  name: z.string(),
   label: z.string(),
+  name: z.string(),
 });
 
 export type EvmChainEntry = z.infer<typeof EvmChainEntry>;

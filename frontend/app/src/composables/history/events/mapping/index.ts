@@ -2,6 +2,8 @@ import { cloneDeep } from 'lodash-es';
 import { HistoryEventEntryType } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { uniqueStrings } from '@/utils/data';
+import { useLocationStore } from '@/store/locations';
+import { useNotificationsStore } from '@/store/notifications';
 import type { MaybeRef } from '@vueuse/core';
 import type {
   HistoryEventCategoryDetailWithId,
@@ -24,10 +26,10 @@ export const useHistoryEventMappings = createSharedComposable(() => {
   const { t, te } = useI18n();
 
   const historyEventTypeData = ref<HistoryEventTypeData>(({
-    globalMappings: {},
-    eventCategoryDetails: {},
     accountingEventsIcons: {},
     entryTypeMappings: {},
+    eventCategoryDetails: {},
+    globalMappings: {},
   }));
 
   const { allExchanges } = storeToRefs(useLocationStore());
@@ -89,14 +91,14 @@ export const useHistoryEventMappings = createSharedComposable(() => {
       const translationKey = `backend_mappings.profit_loss_event_type.${translationId}`;
 
       return {
-        identifier,
         icon,
+        identifier,
         label: te(translationKey) ? t(translationKey) : toCapitalCase(identifier),
       };
     }));
 
   const getEventType = (event: Event): ComputedRef<string | undefined> => computed(() => {
-    const { eventType, eventSubtype, entryType, isExit, location } = get(event);
+    const { entryType, eventSubtype, eventType, isExit, location } = get(event);
 
     if (entryType === HistoryEventEntryType.ETH_WITHDRAWAL_EVENT) {
       const withdrawalEntryType = get(historyEventTypeByEntryTypeMapping)[entryType]
@@ -131,11 +133,11 @@ export const useHistoryEventMappings = createSharedComposable(() => {
     const label = showFallbackLabel ? eventSubtype || eventType || unknownLabel : unknownLabel;
 
     return {
-      identifier: '',
-      label,
-      icon: 'question-line',
       color: 'error',
       direction: 'neutral',
+      icon: 'question-line',
+      identifier: '',
+      label,
     };
   }
 
@@ -145,7 +147,7 @@ export const useHistoryEventMappings = createSharedComposable(() => {
   ): ComputedRef<HistoryEventCategoryDetailWithId> => computed(() => {
     const defaultKey = 'default';
     const type = get(getEventType(event));
-    const { counterparty, eventType, eventSubtype } = get(event);
+    const { counterparty, eventSubtype, eventType } = get(event);
     const counterpartyVal = counterparty || defaultKey;
     const data = type && get(transactionEventTypesData)[type];
 
@@ -155,8 +157,8 @@ export const useHistoryEventMappings = createSharedComposable(() => {
       if (categoryDetail) {
         return {
           ...categoryDetail,
-          identifier: counterpartyVal !== defaultKey ? counterpartyVal : type,
           direction: data.direction,
+          identifier: counterpartyVal !== defaultKey ? counterpartyVal : type,
         };
       }
     }
@@ -168,8 +170,8 @@ export const useHistoryEventMappings = createSharedComposable(() => {
     const typeVal = get(type);
     return (
       get(accountingEventsTypeData).find(({ identifier }) => identifier === typeVal) || {
-        identifier: typeVal,
         icon: 'question-line',
+        identifier: typeVal,
         label: toCapitalCase(typeVal),
       }
     );
@@ -181,18 +183,18 @@ export const useHistoryEventMappings = createSharedComposable(() => {
     }
     catch (error: any) {
       notify({
+        action: [
+          {
+            action: async (): Promise<void> => fetchMappings(),
+            icon: 'refresh-line',
+            label: t('actions.history_events.fetch_mapping.actions.fetch_again'),
+          },
+        ],
         display: true,
-        title: t('actions.history_events.fetch_mapping.error.title'),
         message: t('actions.history_events.fetch_mapping.error.description', {
           message: error.message,
         }),
-        action: [
-          {
-            label: t('actions.history_events.fetch_mapping.actions.fetch_again'),
-            action: async (): Promise<void> => fetchMappings(),
-            icon: 'refresh-line',
-          },
-        ],
+        title: t('actions.history_events.fetch_mapping.error.title'),
       });
     }
   };
@@ -202,17 +204,17 @@ export const useHistoryEventMappings = createSharedComposable(() => {
   });
 
   return {
-    historyEventTypeData,
-    historyEventTypes,
-    historyEventTypesData,
-    historyEventSubTypes,
-    historyEventSubTypesData,
-    transactionEventTypesData,
-    getEventType,
-    getEventTypeData,
-    historyEventTypeGlobalMapping,
     accountingEventsTypeData,
     getAccountingEventTypeData,
+    getEventType,
+    getEventTypeData,
+    historyEventSubTypes,
+    historyEventSubTypesData,
+    historyEventTypeData,
+    historyEventTypeGlobalMapping,
+    historyEventTypes,
+    historyEventTypesData,
     refresh: fetchMappings,
+    transactionEventTypesData,
   };
 });

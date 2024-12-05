@@ -2,6 +2,9 @@
 import { Blockchain } from '@rotki/common';
 import { truncateAddress } from '@/utils/truncate';
 import { type ExplorerUrls, explorerUrls, isChains } from '@/types/asset/asset-urls';
+import { useBlockchainStore } from '@/store/blockchain';
+import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
 defineOptions({
   inheritAttrs: false,
@@ -27,29 +30,29 @@ const props = withDefaults(
     location?: string;
   }>(),
   {
-    showIcon: true,
-    text: '',
-    fullAddress: false,
-    linkOnly: false,
-    noLink: false,
-    copyOnly: false,
     baseUrl: undefined,
-    chain: Blockchain.ETH,
-    evmChain: undefined,
     buttons: false,
+    chain: Blockchain.ETH,
+    copyOnly: false,
+    disableScramble: false,
+    evmChain: undefined,
+    fullAddress: false,
+    hideAliasName: false,
+    linkOnly: false,
+    location: undefined,
+    noLink: false,
+    showIcon: true,
     size: 12,
+    text: '',
     truncateLength: 4,
     type: 'address',
-    disableScramble: false,
-    hideAliasName: false,
-    location: undefined,
   },
 );
 const { t } = useI18n();
 const { copy } = useClipboard();
 
-const { text, baseUrl, chain, evmChain, type, disableScramble, hideAliasName, location } = toRefs(props);
-const { scrambleData, shouldShowAmount, scrambleAddress, scrambleIdentifier } = useScramble();
+const { baseUrl, chain, disableScramble, evmChain, hideAliasName, location, text, type } = toRefs(props);
+const { scrambleAddress, scrambleData, scrambleIdentifier, shouldShowAmount } = useScramble();
 
 const { explorers } = storeToRefs(useFrontendSettingsStore());
 const { getChain, getChainInfoByName } = useSupportedChains();

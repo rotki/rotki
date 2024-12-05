@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import FileUpload from '@/components/import/FileUpload.vue';
+import { useMessageStore } from '@/store/message';
 
 const model = defineModel<boolean>({ required: true });
 
@@ -32,11 +33,11 @@ async function importData() {
   const { success } = response;
 
   setMessage({
-    title: t('actions.accounting_rules.import.title'),
     description: success
       ? t('actions.accounting_rules.import.message.success')
       : t('actions.accounting_rules.import.message.failure', { description: response.message }),
     success,
+    title: t('actions.accounting_rules.import.title'),
   });
 
   if (success) {

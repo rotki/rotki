@@ -5,6 +5,11 @@ import { Section } from '@/types/status';
 import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
 import HashLink from '@/components/helper/HashLink.vue';
 import { SavedFilterLocation } from '@/types/filtering';
+import { useTaskStore } from '@/store/tasks';
+import { useStatusStore } from '@/store/status';
+import { useBalancePricesStore } from '@/store/balances/prices';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useBlockchainValidatorsStore } from '@/store/blockchain/validators';
 import type { Filters, Matcher } from '@/composables/filters/eth-validator';
 import type { StakingValidatorManage } from '@/composables/accounts/blockchain/use-account-manage';
 import type { ContextColorsType, DataTableColumn } from '@rotki/ui-library';
@@ -26,73 +31,73 @@ const { exchangeRate } = useBalancePricesStore();
 const { fetchBlockchainBalances } = useBlockchainBalances();
 
 const {
+  fetchData,
   filters,
   matchers,
-  state: rows,
-  fetchData,
   pagination,
   sort,
+  state: rows,
 } = usePaginationFilters<
   EthereumValidator,
   EthereumValidatorRequestPayload,
   Filters,
   Matcher
 >(fetchValidators, {
-  history: 'router',
-  filterSchema: () => useEthValidatorAccountFilter(t),
   defaultSortBy: {
     column: 'index',
     direction: 'desc',
   },
+  filterSchema: () => useEthValidatorAccountFilter(t),
+  history: 'router',
 });
 
 const cols = computed<DataTableColumn<EthereumValidator>[]>(() => {
   const currency = { symbol: get(currencySymbol) };
   return [
     {
-      label: t('common.validator_index'),
+      cellClass: 'py-0',
       key: 'index',
+      label: t('common.validator_index'),
       sortable: true,
-      cellClass: 'py-0',
     },
     {
-      label: t('eth2_input.public_key'),
+      cellClass: 'py-0',
       key: 'publicKey',
+      label: t('eth2_input.public_key'),
       sortable: true,
-      cellClass: 'py-0',
     },
     {
-      label: t('common.status'),
+      cellClass: 'py-0',
       key: 'status',
+      label: t('common.status'),
       sortable: true,
-      cellClass: 'py-0',
     },
     {
-      label: t('common.amount'),
+      align: 'end',
+      cellClass: 'py-0',
       key: 'amount',
+      label: t('common.amount'),
       sortable: true,
-      cellClass: 'py-0',
-      align: 'end',
     },
     {
-      label: t('account_balances.headers.usd_value', currency),
+      align: 'end',
+      cellClass: 'py-0',
       key: 'usdValue',
+      label: t('account_balances.headers.usd_value', currency),
       sortable: true,
-      cellClass: 'py-0',
-      align: 'end',
     },
     {
-      label: t('common.ownership'),
+      align: 'end',
+      cellClass: 'py-0',
       key: 'ownershipPercentage',
+      label: t('common.ownership'),
       sortable: false,
-      cellClass: 'py-0',
-      align: 'end',
     },
     {
-      label: t('common.actions_text'),
-      key: 'actions',
-      cellClass: '!p-0',
       align: 'end',
+      cellClass: '!p-0',
+      key: 'actions',
+      label: t('common.actions_text'),
     },
   ];
 });
@@ -109,25 +114,25 @@ const accountOperation = logicOr(
 );
 
 function edit(account: EthereumValidator) {
-  const { publicKey, index, ownershipPercentage } = account;
+  const { index, ownershipPercentage, publicKey } = account;
   const state: StakingValidatorManage = {
-    mode: 'edit',
-    type: 'validator',
     chain: Blockchain.ETH2,
     data: {
       ownershipPercentage: ownershipPercentage ?? '100',
       publicKey,
       validatorIndex: index.toString(),
     },
+    mode: 'edit',
+    type: 'validator',
   };
   emit('edit', state);
 }
 
 const colorMap: Record<string, ContextColorsType | undefined> = {
   active: 'success',
-  pending: 'info',
-  exiting: 'warning',
   exited: 'error',
+  exiting: 'warning',
+  pending: 'info',
 };
 
 function getColor(status: string): ContextColorsType | undefined {
@@ -141,15 +146,15 @@ function getOwnershipPercentage(row: EthereumValidator): string {
 async function refresh() {
   await fetchEthStakingValidators();
   await fetchBlockchainBalances({
-    ignoreCache: true,
     blockchain: Blockchain.ETH2,
+    ignoreCache: true,
   });
 }
 
 function confirmDelete(item: EthereumValidator) {
   showConfirmation({
-    type: 'validator',
     data: item,
+    type: 'validator',
   });
 }
 

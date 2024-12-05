@@ -20,8 +20,8 @@ export type UserDbBackup = z.infer<typeof UserDbBackup>;
 export type UserDbBackupWithId = UserDbBackup & { id: number };
 
 const UserDb = z.object({
-  info: UserDbInfo,
   backups: z.array(UserDbBackup),
+  info: UserDbInfo,
 });
 
 const DatabaseInfo = z.object({
@@ -32,22 +32,22 @@ const DatabaseInfo = z.object({
 export type DatabaseInfo = z.infer<typeof DatabaseInfo>;
 
 export const DatabaseInfoResponse = z.object({
-  result: DatabaseInfo,
   message: z.string(),
+  result: DatabaseInfo,
 });
 
 export type DatabaseInfoResponse = z.infer<typeof DatabaseInfoResponse>;
 
 export const CreateDatabaseResponse = z.object({
-  result: z.string(),
   message: z.string(),
+  result: z.string(),
 });
 
 export type CreateDatabaseResponse = z.infer<typeof CreateDatabaseResponse>;
 
 export const DeleteDatabaseResponse = z.object({
-  result: z.boolean(),
   message: z.string(),
+  result: z.boolean(),
 });
 
 export type DeleteDatabaseResponse = z.infer<typeof DeleteDatabaseResponse>;

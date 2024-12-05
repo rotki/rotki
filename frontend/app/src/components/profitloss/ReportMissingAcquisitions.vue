@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Routes } from '@/router/routes';
 import { bigNumberSum } from '@/utils/calculation';
+import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import type { BigNumber } from '@rotki/common';
 import type { MissingAcquisition, SelectedReport } from '@/types/reports';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
@@ -25,10 +26,10 @@ const emit = defineEmits<{
   (e: 'pin'): void;
 }>();
 
-const { items, isPinned } = toRefs(props);
+const { isPinned, items } = toRefs(props);
 
 const router = useRouter();
-const { isAssetIgnored, ignoreAsset } = useIgnoredAssetsStore();
+const { ignoreAsset, isAssetIgnored } = useIgnoredAssetsStore();
 
 const groupedMissingAcquisitions = computed<MappedGroupedItems[]>(() => {
   const grouped: GroupedItems = {};
@@ -48,11 +49,11 @@ const groupedMissingAcquisitions = computed<MappedGroupedItems[]>(() => {
     const totalAmountMissing = bigNumberSum(sortedAcquisitions.map(({ missingAmount }) => missingAmount));
 
     return {
-      asset: key,
-      startDate,
-      endDate,
-      totalAmountMissing,
       acquisitions: sortedAcquisitions,
+      asset: key,
+      endDate,
+      startDate,
+      totalAmountMissing,
     };
   });
 });
@@ -73,67 +74,67 @@ const { t } = useI18n();
 
 const headers = computed<DataTableColumn<MappedGroupedItems>[]>(() => [
   {
-    label: '',
-    key: 'expand',
-    sortable: false,
-    class: '!py-0 !pr-0 !pl-3',
     cellClass: '!py-0 !pr-0 !pl-3',
+    class: '!py-0 !pr-0 !pl-3',
+    key: 'expand',
+    label: '',
+    sortable: false,
   },
   {
-    label: t('common.asset'),
-    key: 'asset',
     cellClass: 'py-0',
+    key: 'asset',
+    label: t('common.asset'),
     sortable: true,
   },
   ...(get(isPinned)
     ? []
     : [
       {
-        label: t('common.datetime'),
-        key: 'startDate',
         cellClass: 'py-2',
+        key: 'startDate',
+        label: t('common.datetime'),
         sortable: true,
       },
       {
-        label: t('profit_loss_report.actionable.missing_acquisitions.headers.missing_acquisitions'),
-        key: 'total_missing_acquisition',
         align: 'end',
+        key: 'total_missing_acquisition',
+        label: t('profit_loss_report.actionable.missing_acquisitions.headers.missing_acquisitions'),
         sortable: true,
       },
     ] satisfies DataTableColumn<MappedGroupedItems>[]),
   {
-    label: t('profit_loss_report.actionable.missing_acquisitions.headers.total_missing'),
-    key: 'total_amount_missing',
     align: 'end',
+    key: 'total_amount_missing',
+    label: t('profit_loss_report.actionable.missing_acquisitions.headers.total_missing'),
   },
   {
-    label: t('profit_loss_report.actionable.missing_acquisitions.headers.quick_action'),
-    key: 'action',
     cellClass: 'py-0',
+    key: 'action',
+    label: t('profit_loss_report.actionable.missing_acquisitions.headers.quick_action'),
   },
 ]);
 
 const childHeaders = computed<DataTableColumn<MissingAcquisition>[]>(() => [
   {
-    label: t('common.datetime'),
     key: 'time',
+    label: t('common.datetime'),
     sortable: true,
   },
   {
-    label: t('profit_loss_report.actionable.missing_acquisitions.headers.found_amount'),
+    align: 'end',
     key: 'foundAmount',
-    align: 'end',
+    label: t('profit_loss_report.actionable.missing_acquisitions.headers.found_amount'),
     sortable: true,
   },
   {
-    label: t('profit_loss_report.actionable.missing_acquisitions.headers.missing_amount'),
+    align: 'end',
     key: 'missingAmount',
-    align: 'end',
+    label: t('profit_loss_report.actionable.missing_acquisitions.headers.missing_amount'),
     sortable: true,
   },
   {
-    label: t('common.actions_text'),
     key: 'actions',
+    label: t('common.actions_text'),
     sortable: true,
   },
 ]);

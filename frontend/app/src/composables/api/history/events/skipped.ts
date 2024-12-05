@@ -59,17 +59,17 @@ export function useSkippedHistoryEventsApi(): UseSkippedHistoryEventsApiReturn {
       const body = await (response.data as Blob).text();
       const result: ActionResult<null> = JSON.parse(body);
 
-      return { success: false, message: result.message };
+      return { message: result.message, success: false };
     }
     catch (error: any) {
-      return { success: false, message: error.message };
+      return { message: error.message, success: false };
     }
   };
 
   return {
+    downloadSkippedEventsCSV,
+    exportSkippedEventsCSV,
     getSkippedEventsSummary,
     reProcessSkippedEvents,
-    exportSkippedEventsCSV,
-    downloadSkippedEventsCSV,
   };
 }

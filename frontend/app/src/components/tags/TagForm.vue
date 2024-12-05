@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { helpers, required } from '@vuelidate/validators';
 import useVuelidate from '@vuelidate/core';
-import { toMessages } from '@/utils/validation.ts';
+import { toMessages } from '@/utils/validation';
 import { useRefPropVModel } from '@/utils/model';
-import type { Tag } from '@/types/tags.ts';
+import type { Tag } from '@/types/tags';
 
 const modelValue = defineModel<Tag>({ required: true });
 
@@ -21,26 +21,26 @@ const backgroundColor = useRefPropVModel(modelValue, 'backgroundColor');
 const foregroundColor = useRefPropVModel(modelValue, 'foregroundColor');
 
 useFormStateWatcher({
-  name,
-  description,
   backgroundColor,
+  description,
   foregroundColor,
+  name,
 }, stateUpdated);
 
 const rules = {
-  name: {
-    required: helpers.withMessage(t('tag_creator.validation.empty_name'), required),
-  },
   description: {
     optional: () => true,
+  },
+  name: {
+    required: helpers.withMessage(t('tag_creator.validation.empty_name'), required),
   },
 };
 
 const v$ = useVuelidate(
   rules,
   {
-    name,
     description,
+    name,
   },
   { $autoDirty: true },
 );

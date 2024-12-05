@@ -21,7 +21,7 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n();
-const { errorMessages, addresses, disabled } = toRefs(props);
+const { addresses, disabled, errorMessages } = toRefs(props);
 
 const address = ref<string>('');
 const userAddresses = ref<string>('');
@@ -128,8 +128,8 @@ const v$ = useVuelidate(
   },
   {
     $autoDirty: true,
-    $stopPropagation: true,
     $externalResults: errorMessagesModel,
+    $stopPropagation: true,
   },
 );
 

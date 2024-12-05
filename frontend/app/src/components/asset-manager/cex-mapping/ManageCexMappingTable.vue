@@ -27,26 +27,26 @@ const emit = defineEmits<{
 const { t } = useI18n();
 const tableHeaders = computed<DataTableColumn<CexMapping>[]>(() => [
   {
-    label: t('asset_management.cex_mapping.exchange'),
+    align: 'center',
+    cellClass: 'py-3',
     key: 'location',
-    align: 'center',
-    cellClass: 'py-3',
+    label: t('asset_management.cex_mapping.exchange'),
   },
   {
-    label: t('asset_management.cex_mapping.location_symbol'),
+    align: 'center',
+    cellClass: 'py-3',
     key: 'locationSymbol',
-    align: 'center',
-    cellClass: 'py-3',
+    label: t('asset_management.cex_mapping.location_symbol'),
   },
   {
-    label: t('asset_management.cex_mapping.recognized_as'),
-    key: 'asset',
-    class: 'border-x border-default',
     cellClass: 'py-0 border-x border-default',
+    class: 'border-x border-default',
+    key: 'asset',
+    label: t('asset_management.cex_mapping.recognized_as'),
   },
   {
-    label: '',
     key: 'actions',
+    label: '',
   },
 ]);
 

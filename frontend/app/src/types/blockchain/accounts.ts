@@ -112,11 +112,11 @@ const BasicBlockchainAccount = z.object({
 export type BasicBlockchainAccount = z.infer<typeof BasicBlockchainAccount>;
 
 const BitcoinXpubAccount = z.object({
-  xpub: z.string(),
+  addresses: z.array(BasicBlockchainAccount).nullable(),
   derivationPath: z.string().nullable(),
   label: z.string().nullable(),
   tags: z.array(z.string()).nullable(),
-  addresses: z.array(BasicBlockchainAccount).nullable(),
+  xpub: z.string(),
 });
 
 export type BitcoinXpubAccount = z.infer<typeof BitcoinXpubAccount>;

@@ -16,18 +16,18 @@ const props = withDefaults(
     errorMessage?: string | TransformMessageCallback<string>;
   }>(),
   {
+    errorMessage: '',
     frontendSetting: false,
     sessionSetting: false,
-    transform: null,
     successMessage: '',
-    errorMessage: '',
+    transform: null,
   },
 );
 
 const emit = defineEmits(['updated', 'finished']);
 
-const { setting, frontendSetting, sessionSetting, successMessage, errorMessage, transform } = toRefs(props);
-const { error, success, clearAll, wait, stop, setSuccess, setError } = useClearableMessages();
+const { errorMessage, frontendSetting, sessionSetting, setting, successMessage, transform } = toRefs(props);
+const { clearAll, error, setError, setSuccess, stop, success, wait } = useClearableMessages();
 const { updateSetting } = useSettings();
 
 const loading = ref(false);
@@ -55,8 +55,8 @@ async function updateImmediate(newValue: any) {
       : SettingLocation.GENERAL;
 
   const result = await updateSetting(settingKey, settingValue, location, {
-    success: getMessage(successMessage, newValue),
     error: getMessage(errorMessage, newValue),
+    success: getMessage(successMessage, newValue),
   });
 
   set(loading, false);

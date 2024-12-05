@@ -6,9 +6,9 @@ export interface Themes {
 }
 
 export const ThemeColors = z.object({
-  primary: z.string(),
   accent: z.string(),
   graph: z.string(),
+  primary: z.string(),
 });
 
 export type ThemeColors = z.infer<typeof ThemeColors>;

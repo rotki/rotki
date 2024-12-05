@@ -15,11 +15,11 @@ export function getDefaultFrontendLogLevel(): ConsolaLogLevel {
 
 const mapping = {
   [LogLevel.CRITICAL]: LogLevels.silent,
-  [LogLevel.ERROR]: LogLevels.error,
-  [LogLevel.WARNING]: LogLevels.warn,
-  [LogLevel.INFO]: LogLevels.info,
   [LogLevel.DEBUG]: LogLevels.debug,
+  [LogLevel.ERROR]: LogLevels.error,
+  [LogLevel.INFO]: LogLevels.info,
   [LogLevel.TRACE]: LogLevels.trace,
+  [LogLevel.WARNING]: LogLevels.warn,
 };
 
 export function mapToFrontendLogLevel(logLevel?: LogLevel): ConsolaLogLevel {

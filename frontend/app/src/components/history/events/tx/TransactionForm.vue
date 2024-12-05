@@ -2,6 +2,7 @@
 import { helpers, required } from '@vuelidate/validators';
 import { toMessages } from '@/utils/validation';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
+import { useMessageStore } from '@/store/message';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 import type { AddTransactionHashPayload, EvmChainAndTxHash } from '@/types/history/events';
 
@@ -18,25 +19,25 @@ function reset() {
 }
 
 const rules = {
-  txHash: {
-    required: helpers.withMessage(t('transactions.form.tx_hash.validation.non_empty'), required),
-    isValidTxHash: helpers.withMessage(t('transactions.form.tx_hash.validation.valid'), isValidTxHash),
-  },
   associatedAddress: {
     required: helpers.withMessage(
       t('transactions.form.account.validation.non_empty'),
       (accounts: BlockchainAccount<AddressData>[]) => accounts.length > 0,
     ),
   },
+  txHash: {
+    isValidTxHash: helpers.withMessage(t('transactions.form.tx_hash.validation.valid'), isValidTxHash),
+    required: helpers.withMessage(t('transactions.form.tx_hash.validation.non_empty'), required),
+  },
 };
 
-const { setValidation, setSubmitFunc } = useHistoryTransactionsForm();
+const { setSubmitFunc, setValidation } = useHistoryTransactionsForm();
 
 const v$ = setValidation(
   rules,
   {
-    txHash,
     associatedAddress: accounts,
+    txHash,
   },
 
   {
@@ -45,7 +46,7 @@ const v$ = setValidation(
   },
 );
 
-const { txEvmChains, getEvmChainName } = useSupportedChains();
+const { getEvmChainName, txEvmChains } = useSupportedChains();
 const txChains = useArrayMap(txEvmChains, x => x.id);
 
 const { setMessage } = useMessageStore();
@@ -62,9 +63,9 @@ async function save(): Promise<EvmChainAndTxHash | null> {
   const txHashVal = get(txHash);
 
   const payload: AddTransactionHashPayload = {
-    txHash: txHashVal,
     associatedAddress: getAccountAddress(accountsVal[0]),
     evmChain,
+    txHash: txHashVal,
   };
 
   const result = await addTransactionHash(payload);

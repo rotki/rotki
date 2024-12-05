@@ -33,8 +33,8 @@ export function useAddressesNamesApi(): UseAddressesNamesApiReturn {
     const response = await api.instance.post<ActionResult<T>>(
       '/names/ens/reverse',
       snakeCaseTransformer({
-        ethereumAddresses,
         asyncQuery,
+        ethereumAddresses,
         ignoreCache: asyncQuery,
       }),
       {
@@ -144,14 +144,14 @@ export function useAddressesNamesApi(): UseAddressesNamesApiReturn {
   };
 
   return {
-    getEnsNamesTask,
-    getEnsNames,
-    fetchAddressBook,
     addAddressBook,
-    updateAddressBook,
-    deleteAddressBook,
-    getAddressesNames,
-    ensAvatarUrl,
     clearEnsAvatarCache,
+    deleteAddressBook,
+    ensAvatarUrl,
+    fetchAddressBook,
+    getAddressesNames,
+    getEnsNames,
+    getEnsNamesTask,
+    updateAddressBook,
   };
 }

@@ -4,11 +4,13 @@ import { setupLayouts } from 'virtual:generated-layouts';
 import { type RouteLocationRaw, createRouter, createWebHashHistory } from 'vue-router';
 import { handleHotUpdate, routes } from 'vue-router/auto-routes';
 import { startPromise } from '@shared/utils';
+import { useSessionAuthStore } from '@/store/session/auth';
 
 const base = import.meta.env.VITE_PUBLIC_PATH ? window.location.pathname : '/';
 
 export const router = createRouter({
   history: createWebHashHistory(base),
+  routes: setupLayouts(routes),
   scrollBehavior: (to, from, savedPosition) => {
     if (to.hash) {
       const element = document.getElementById(to.hash.replace(/#/, ''));
@@ -16,9 +18,9 @@ export const router = createRouter({
         setTimeout(() => {
           startPromise(nextTick(() => {
             document.body.scrollTo({
+              behavior: 'smooth',
               left: 0,
               top: element.offsetTop - 80,
-              behavior: 'smooth',
             });
           }));
         }, 200);
@@ -33,10 +35,9 @@ export const router = createRouter({
 
     if (from.path !== to.path && !to.query.keepScrollPosition) {
       document.body.scrollTo(0, 0);
-      return { top: 0, left: 0 };
+      return { left: 0, top: 0 };
     }
   },
-  routes: setupLayouts(routes),
 });
 
 const userRoutes: RouteLocationRaw[] = ['/user/create', '/user/login', '/user'];

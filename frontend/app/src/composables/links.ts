@@ -25,8 +25,8 @@ export function useLinks(url?: MaybeRef<string | undefined>): UseLinksReturn {
   const hasLink = computed<boolean>(() => get(url)?.startsWith('http') ?? false);
 
   return {
-    href,
     hasLink,
+    href,
     linkTarget,
     onLinkClick,
   };

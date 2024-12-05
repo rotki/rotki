@@ -1,4 +1,5 @@
 import { logger } from '@/utils/logging';
+import { useConfirmStore } from '@/store/confirm';
 import type { Auth, ExternalServiceKey, ExternalServiceKeys, ExternalServiceName } from '@/types/user';
 import type { MaybeRef } from '@vueuse/core';
 import type { ComputedRef, Ref } from 'vue';
@@ -38,7 +39,7 @@ export const useExternalApiKeys = createSharedComposable((t: ReturnType<typeof u
   const status = ref<Record<string, Status>>({});
 
   const { show } = useConfirmStore();
-  const { setExternalServices, deleteExternalServices, queryExternalServices } = useExternalServicesApi();
+  const { deleteExternalServices, queryExternalServices, setExternalServices } = useExternalServicesApi();
 
   const apiKey = (
     name: MaybeRef<ExternalServiceName>,
@@ -134,7 +135,6 @@ export const useExternalApiKeys = createSharedComposable((t: ReturnType<typeof u
       const serviceName = toCapitalCase(name.split('_').join(' '));
 
       setStatus(name, {
-        success: true,
         message: isPayloadWithCredential
           ? t('external_services.set_credential.success.message', {
             serviceName,
@@ -142,6 +142,7 @@ export const useExternalApiKeys = createSharedComposable((t: ReturnType<typeof u
           : t('external_services.set.success.message', {
             serviceName,
           }),
+        success: true,
       });
       await postConfirmAction?.();
     }
@@ -183,8 +184,8 @@ export const useExternalApiKeys = createSharedComposable((t: ReturnType<typeof u
     resetStatus(name);
     show(
       {
-        title: t('external_services.confirmation.title'),
         message: t('external_services.confirmation.message'),
+        title: t('external_services.confirmation.title'),
         type: 'info',
       },
       async () => {
@@ -195,15 +196,15 @@ export const useExternalApiKeys = createSharedComposable((t: ReturnType<typeof u
   };
 
   return {
-    loading,
-    getName,
-    apiKey,
-    credential,
     actionStatus,
-    load,
-    save,
+    apiKey,
     confirmDelete,
+    credential,
+    getName,
     keys,
+    load,
+    loading,
+    save,
   };
 });
 
@@ -223,7 +224,7 @@ export function useServiceKeyHandler<T extends InstanceType<typeof ServiceKey | 
   };
 
   return {
-    serviceKeyRef,
     saveHandler,
+    serviceKeyRef,
   };
 }

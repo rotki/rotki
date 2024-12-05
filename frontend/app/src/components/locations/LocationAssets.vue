@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { TaskType } from '@/types/task-type';
+import { useTaskStore } from '@/store/tasks';
 import type { AssetBalanceWithPrice } from '@rotki/common';
 
 const props = defineProps<{

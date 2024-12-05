@@ -10,7 +10,7 @@ const props = defineProps<{
 
 const svg = ref();
 
-const { step, steps, onNavigate, onPause, onResume } = useRandomStepper(props.messages.length);
+const { onNavigate, onPause, onResume, step, steps } = useRandomStepper(props.messages.length);
 
 const activeItem = computed(() => props.messages[get(step) - 1]);
 

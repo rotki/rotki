@@ -1,3 +1,4 @@
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import type { MaybeRef } from '@vueuse/core';
 import type { BaseSuggestion, SavedFilterLocation, Suggestion } from '@/types/filtering';
 import type { ActionStatus } from '@/types/action';
@@ -27,9 +28,9 @@ export function useSavedFilter(
     return baseSuggestions.map(suggestions =>
       suggestions.map(suggestion => ({
         ...suggestion,
+        asset: isAsset(suggestion.key),
         index: 0,
         total: 1,
-        asset: isAsset(suggestion.key),
       })),
     );
   });
@@ -59,9 +60,9 @@ export function useSavedFilter(
     const newFilters = [
       ...currentFilters,
       newFilter.map(item => ({
+        exclude: item.exclude,
         key: item.key,
         value: !item.asset || typeof item.value === 'string' ? item.value : item.value.identifier,
-        exclude: item.exclude,
       })),
     ];
     return saveFilters(newFilters);
@@ -75,9 +76,9 @@ export function useSavedFilter(
   };
 
   return {
-    savedFilters,
     addFilter,
     deleteFilter,
+    savedFilters,
     saveFilters,
   };
 }

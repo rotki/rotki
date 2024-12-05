@@ -31,8 +31,8 @@ export const usePremiumStore = defineStore('session/premium', () => {
       }
 
       return {
-        success: false,
         message: errors,
+        success: false,
       };
     }
   };
@@ -47,17 +47,17 @@ export const usePremiumStore = defineStore('session/premium', () => {
     }
     catch (error: any) {
       return {
-        success: false,
         message: error.message,
+        success: false,
       };
     }
   };
 
   return {
+    deletePremium,
     premium,
     premiumSync,
     setup,
-    deletePremium,
   };
 });
 

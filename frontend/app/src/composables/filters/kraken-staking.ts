@@ -1,5 +1,6 @@
 import { type MatchedKeyword, type SearchMatcher, assetSuggestions } from '@/types/filtering';
 import { convertToTimestamp, getDateInputISOFormat } from '@/utils/date';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import type { FilterSchema } from '@/composables/use-pagination-filter/types';
 
 enum KrakenStakingKeys {
@@ -36,44 +37,44 @@ export function useKrakenStakingFilter(): FilterSchema<Filters, Matcher> {
 
     return [
       {
+        asset: true,
+        description: t('kraken_staking_events.filter.asset'),
         key: KrakenStakingKeys.ASSET,
         keyValue: KrakenStakingValueKeys.ASSET,
-        description: t('kraken_staking_events.filter.asset'),
-        asset: true,
         suggestions: assetSuggestions(assetSearch),
       },
       {
+        description: t('kraken_staking_events.filter.type'),
         key: KrakenStakingKeys.TYPE,
         keyValue: KrakenStakingValueKeys.TYPE,
-        description: t('kraken_staking_events.filter.type'),
         string: true,
         suggestions: (): string[] => krakenStakingEventTypeValues,
-        validate: (option: string): boolean => krakenStakingEventTypeValues.includes(option as any),
         transformer: (type: string): string => getEventTypeIdentifier(type),
+        validate: (option: string): boolean => krakenStakingEventTypeValues.includes(option as any),
       },
       {
-        key: KrakenStakingKeys.START,
-        keyValue: KrakenStakingValueKeys.START,
         description: t('kraken_staking_events.filter.start_date'),
         hint: t('kraken_staking_events.filter.date_hint', {
           format: getDateInputISOFormat(get(dateInputFormat)),
         }),
+        key: KrakenStakingKeys.START,
+        keyValue: KrakenStakingValueKeys.START,
         string: true,
         suggestions: (): string[] => [],
-        validate: (value): boolean => value.length > 0 && !isNaN(convertToTimestamp(value, get(dateInputFormat))),
         transformer: (date: string): string => convertToTimestamp(date, get(dateInputFormat)).toString(),
+        validate: (value): boolean => value.length > 0 && !isNaN(convertToTimestamp(value, get(dateInputFormat))),
       },
       {
-        key: KrakenStakingKeys.END,
-        keyValue: KrakenStakingValueKeys.END,
         description: t('kraken_staking_events.filter.end_date'),
         hint: t('kraken_staking_events.filter.date_hint', {
           format: getDateInputISOFormat(get(dateInputFormat)),
         }),
+        key: KrakenStakingKeys.END,
+        keyValue: KrakenStakingValueKeys.END,
         string: true,
         suggestions: (): string[] => [],
-        validate: (value): boolean => value.length > 0 && !isNaN(convertToTimestamp(value, get(dateInputFormat))),
         transformer: (date: string): string => convertToTimestamp(date, get(dateInputFormat)).toString(),
+        validate: (value): boolean => value.length > 0 && !isNaN(convertToTimestamp(value, get(dateInputFormat))),
       },
     ];
   });

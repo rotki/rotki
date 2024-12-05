@@ -8,6 +8,8 @@ import { DateFormat } from '@/types/date-format';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 import { bigNumberifyFromRef } from '@/utils/bignumbers';
 import HistoryEventAssetPriceForm from '@/components/history/events/forms/HistoryEventAssetPriceForm.vue';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useBlockchainStore } from '@/store/blockchain';
 import type { EthDepositEvent, NewEthDepositEventPayload } from '@/types/history/events';
 
 const props = withDefaults(
@@ -18,8 +20,8 @@ const props = withDefaults(
   }>(),
   {
     editableItem: undefined,
-    nextSequence: '',
     groupHeader: undefined,
+    nextSequence: '',
   },
 );
 
@@ -44,11 +46,13 @@ const extraData = ref<object>({});
 const errorMessages = ref<Record<string, string[]>>({});
 
 const rules = {
-  timestamp: { externalServerValidation: () => true },
-  txHash: {
-    required: helpers.withMessage(t('transactions.events.form.tx_hash.validation.non_empty'), required),
-    isValid: helpers.withMessage(t('transactions.events.form.tx_hash.validation.valid'), (value: string) =>
-      isValidTxHash(value)),
+  amount: {
+    required: helpers.withMessage(t('transactions.events.form.amount.validation.non_empty'), required),
+  },
+  depositor: {
+    isValid: helpers.withMessage(t('transactions.events.form.depositor.validation.valid'), (value: string) =>
+      isValidEthAddress(value)),
+    required: helpers.withMessage(t('transactions.events.form.depositor.validation.non_empty'), required),
   },
   eventIdentifier: {
     required: helpers.withMessage(
@@ -56,9 +60,16 @@ const rules = {
       requiredIf(() => !!get(editableItem)),
     ),
   },
-  amount: {
-    required: helpers.withMessage(t('transactions.events.form.amount.validation.non_empty'), required),
+  sequenceIndex: {
+    required: helpers.withMessage(t('transactions.events.form.sequence_index.validation.non_empty'), required),
   },
+  timestamp: { externalServerValidation: () => true },
+  txHash: {
+    isValid: helpers.withMessage(t('transactions.events.form.tx_hash.validation.valid'), (value: string) =>
+      isValidTxHash(value)),
+    required: helpers.withMessage(t('transactions.events.form.tx_hash.validation.non_empty'), required),
+  },
+
   usdValue: {
     required: helpers.withMessage(
       t('transactions.events.form.fiat_value.validation.non_empty', {
@@ -67,36 +78,27 @@ const rules = {
       required,
     ),
   },
-  sequenceIndex: {
-    required: helpers.withMessage(t('transactions.events.form.sequence_index.validation.non_empty'), required),
-  },
-
   validatorIndex: {
     required: helpers.withMessage(t('transactions.events.form.validator_index.validation.non_empty'), required),
-  },
-  depositor: {
-    required: helpers.withMessage(t('transactions.events.form.depositor.validation.non_empty'), required),
-    isValid: helpers.withMessage(t('transactions.events.form.depositor.validation.valid'), (value: string) =>
-      isValidEthAddress(value)),
   },
 };
 
 const numericAmount = bigNumberifyFromRef(amount);
 const numericUsdValue = bigNumberifyFromRef(usdValue);
 
-const { setValidation, setSubmitFunc, saveHistoryEventHandler } = useHistoryEventsForm();
+const { saveHistoryEventHandler, setSubmitFunc, setValidation } = useHistoryEventsForm();
 
 const v$ = setValidation(
   rules,
   {
-    timestamp: datetime,
-    eventIdentifier,
-    txHash,
     amount,
-    usdValue,
-    sequenceIndex,
-    validatorIndex,
     depositor,
+    eventIdentifier,
+    sequenceIndex,
+    timestamp: datetime,
+    txHash,
+    usdValue,
+    validatorIndex,
   },
   {
     $autoDirty: true,
@@ -150,18 +152,18 @@ async function save(): Promise<boolean> {
   const timestamp = convertToTimestamp(get(datetime), DateFormat.DateMonthYearHourMinuteSecond, true);
 
   const payload: NewEthDepositEventPayload = {
-    entryType: HistoryEventEntryType.ETH_DEPOSIT_EVENT,
-    txHash: get(txHash),
-    eventIdentifier: get(eventIdentifier) ?? null,
-    sequenceIndex: get(sequenceIndex) || '0',
-    timestamp,
     balance: {
       amount: get(numericAmount).isNaN() ? Zero : get(numericAmount),
       usdValue: get(numericUsdValue).isNaN() ? Zero : get(numericUsdValue),
     },
-    validatorIndex: parseInt(get(validatorIndex)),
     depositor: get(depositor),
+    entryType: HistoryEventEntryType.ETH_DEPOSIT_EVENT,
+    eventIdentifier: get(eventIdentifier) ?? null,
     extraData: get(extraData) || null,
+    sequenceIndex: get(sequenceIndex) || '0',
+    timestamp,
+    txHash: get(txHash),
+    validatorIndex: parseInt(get(validatorIndex)),
   };
 
   const edit = get(editableItem);

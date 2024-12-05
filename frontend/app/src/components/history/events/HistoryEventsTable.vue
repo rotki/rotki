@@ -3,6 +3,9 @@ import { groupBy } from 'lodash-es';
 import { IgnoreActionType } from '@/types/history/ignored';
 import { Section } from '@/types/status';
 import { isTaskCancelled } from '@/utils';
+import { useConfirmStore } from '@/store/confirm';
+import { useStatusStore } from '@/store/status';
+import { useNotificationsStore } from '@/store/notifications';
 import type {
   EvmChainAndTxHash,
   HistoryEventEntry,
@@ -34,7 +37,7 @@ const emit = defineEmits<{
   'refresh': [payload?: PullEvmTransactionPayload];
 }>();
 
-const { groups, groupLoading } = toRefs(props);
+const { groupLoading, groups } = toRefs(props);
 
 const eventsLoading = ref(false);
 const deleteOrIgnoreEvent = ref<DeleteOrIgnoreEvent>();
@@ -47,7 +50,7 @@ const { show } = useConfirmStore();
 const { isLoading } = useStatusStore();
 
 const { deleteTransactions } = useHistoryEventsApi();
-const { fetchHistoryEvents, deleteHistoryEvent } = useHistoryEvents();
+const { deleteHistoryEvent, fetchHistoryEvents } = useHistoryEvents();
 const { ignoreSingle, toggle } = useIgnore<HistoryEventEntry>({
   actionType: IgnoreActionType.HISTORY_EVENTS,
   toData: (item: HistoryEventEntry) => item.eventIdentifier,
@@ -59,37 +62,37 @@ const sectionLoading = isLoading(Section.HISTORY_EVENT);
 
 const cols = computed<DataTableColumn<HistoryEventEntry>[]>(() => [
   {
-    label: '',
-    key: 'ignoredInAccounting',
-    class: '!p-0 w-px',
     cellClass: '!p-0 w-px',
+    class: '!p-0 w-px',
+    key: 'ignoredInAccounting',
+    label: '',
   },
   {
-    label: t('transactions.events.headers.event_identifier'),
-    key: 'txHash',
-    class: 'w-[60%]',
     cellClass: '!py-2',
+    class: 'w-[60%]',
+    key: 'txHash',
+    label: t('transactions.events.headers.event_identifier'),
   },
   {
-    label: t('common.datetime'),
-    key: 'timestamp',
-    cellClass: 'text-no-wrap !py-2',
     align: 'end',
+    cellClass: 'text-no-wrap !py-2',
+    key: 'timestamp',
+    label: t('common.datetime'),
     sortable: true,
   },
   {
-    label: '',
-    key: 'action',
-    class: 'w-[1.25rem]',
-    cellClass: 'w-[1.25rem] !py-2',
     align: 'end',
+    cellClass: 'w-[1.25rem] !py-2',
+    class: 'w-[1.25rem]',
+    key: 'action',
+    label: '',
   },
   {
-    label: '',
-    key: 'expand',
     align: 'end',
-    class: '!w-0 !p-0',
     cellClass: '!w-0 !p-0',
+    class: '!w-0 !p-0',
+    key: 'expand',
+    label: '',
   },
 ]);
 
@@ -100,18 +103,18 @@ const events: Ref<HistoryEventEntry[]> = asyncComputed(async () => {
     return [];
 
   const response = await fetchHistoryEvents({
+    eventIdentifiers: data.map(item => item.eventIdentifier),
+    excludeIgnoredAssets: props.excludeIgnored,
+    groupByEventIds: false,
+    identifiers: props.identifiers,
     limit: -1,
     offset: 0,
-    eventIdentifiers: data.map(item => item.eventIdentifier),
-    groupByEventIds: false,
-    excludeIgnoredAssets: props.excludeIgnored,
-    identifiers: props.identifiers,
   });
 
   return response.data;
 }, [], {
-  lazy: true,
   evaluating: eventsLoading,
+  lazy: true,
 });
 
 const eventsGroupedByEventIdentifier = computed<Record<string, HistoryEventEntry[]>>(() => groupBy(get(events), item => item.eventIdentifier));
@@ -123,25 +126,25 @@ function getItemClass(item: HistoryEventEntry): '' | 'opacity-50' {
   return item.ignoredInAccounting ? 'opacity-50' : '';
 }
 
-function confirmDelete({ item, canDelete }: { item: HistoryEventEntry; canDelete: boolean }): void {
+function confirmDelete({ canDelete, item }: { item: HistoryEventEntry; canDelete: boolean }): void {
   set(deleteOrIgnoreEvent, {
-    mode: canDelete ? 'delete' : 'ignore',
     event: item,
+    mode: canDelete ? 'delete' : 'ignore',
   });
 
   let text: { primaryAction: string; title: string; message: string };
   if (!canDelete) {
     text = {
-      title: t('transactions.events.confirmation.ignore.title'),
       message: t('transactions.events.confirmation.ignore.message'),
       primaryAction: t('transactions.events.confirmation.ignore.action'),
+      title: t('transactions.events.confirmation.ignore.title'),
     };
   }
   else {
     text = {
-      title: t('transactions.events.confirmation.delete.title'),
       message: t('transactions.events.confirmation.delete.message'),
       primaryAction: t('common.actions.confirm'),
+      title: t('transactions.events.confirmation.delete.title'),
     };
   }
   show(text, onConfirmDelete, () => {
@@ -197,17 +200,17 @@ async function onConfirmTxAndEventDelete({ evmChain, txHash }: EvmChainAndTxHash
       message: error.message,
     });
     notify({
-      title,
-      message,
       display: true,
+      message,
+      title,
     });
   }
 }
 
 function confirmTxAndEventsDelete(payload: EvmChainAndTxHash): void {
   show({
-    title: t('transactions.dialog.delete.title'),
     message: t('transactions.dialog.delete.message'),
+    title: t('transactions.dialog.delete.title'),
   }, () => onConfirmTxAndEventDelete(payload));
 }
 
@@ -233,8 +236,8 @@ function forceRedecode(): void {
   const payload = get(redecodePayload);
   if (payload) {
     emit('refresh', {
-      transactions: [payload],
       deleteCustom: get(deleteCustom),
+      transactions: [payload],
     });
   }
   set(showRedecodeConfirmation, false);

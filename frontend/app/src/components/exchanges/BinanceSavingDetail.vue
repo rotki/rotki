@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { CURRENCY_USD } from '@/types/currencies';
 import { Section } from '@/types/status';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useExchangeBalancesStore } from '@/store/balances/exchanges';
+import { useStatusStore } from '@/store/status';
 import type { AssetBalance } from '@rotki/common';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { ExchangeSavingsEvent, ExchangeSavingsRequestPayload } from '@/types/exchanges';
@@ -27,26 +30,26 @@ const defaultParams = computed(() => ({
 }));
 
 const {
+  fetchData,
   isLoading,
-  state: collection,
   pagination,
   sort,
-  fetchData,
+  state: collection,
 } = usePaginationFilters<
   ExchangeSavingsEvent,
   ExchangeSavingsRequestPayload
 >(async (payload) => {
-  const { received = [], assets = [], ...collection } = await fetchExchangeSavings(payload);
+  const { assets = [], received = [], ...collection } = await fetchExchangeSavings(payload);
   set(savingsAssets, assets);
   set(savingsReceived, received);
   return collection;
 }, {
-  history: 'router',
-  locationOverview: exchange,
+  defaultParams,
   defaultSortBy: {
     direction: 'asc',
   },
-  defaultParams,
+  history: 'router',
+  locationOverview: exchange,
 });
 
 const receivedTableSort = ref<DataTableSortData<AssetBalance>>({
@@ -56,49 +59,49 @@ const receivedTableSort = ref<DataTableSortData<AssetBalance>>({
 
 const receivedTableHeaders = computed<DataTableColumn<AssetBalance>[]>(() => [
   {
-    label: t('common.asset'),
     key: 'asset',
+    label: t('common.asset'),
     sortable: true,
   },
   {
-    label: t('common.amount'),
-    key: 'amount',
     align: 'end',
+    key: 'amount',
+    label: t('common.amount'),
     sortable: true,
   },
   {
+    align: 'end',
+    key: 'usdValue',
     label: t('common.value_in_symbol', {
       symbol: get(currencySymbol),
     }),
-    key: 'usdValue',
-    align: 'end',
     sortable: true,
   },
 ]);
 
 const tableHeaders = computed<DataTableColumn<ExchangeSavingsEvent>[]>(() => [
   {
-    label: t('common.datetime'),
     key: 'timestamp',
+    label: t('common.datetime'),
     sortable: true,
   },
   {
-    label: t('common.asset'),
     key: 'asset',
+    label: t('common.asset'),
     sortable: true,
   },
   {
-    label: t('common.amount'),
-    key: 'amount',
     align: 'end',
+    key: 'amount',
+    label: t('common.amount'),
     sortable: true,
   },
   {
+    align: 'end',
+    key: 'usdValue',
     label: t('common.value_in_symbol', {
       symbol: get(currencySymbol),
     }),
-    key: 'usdValue',
-    align: 'end',
     sortable: true,
   },
 ]);

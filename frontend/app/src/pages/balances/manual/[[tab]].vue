@@ -4,13 +4,15 @@ import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
 import { BalanceType } from '@/types/balances';
 import { NoteLocation } from '@/types/notes';
 import { BalanceSource } from '@/types/settings/frontend-settings';
+import { useManualBalancesStore } from '@/store/balances/manual';
+import { useHistoryStore } from '@/store/history';
 import type { ManualBalance, RawManualBalance } from '@/types/manual-balances';
 
 definePage({
-  name: 'accounts-balances-manual',
   meta: {
     noteLocation: NoteLocation.ACCOUNTS_BALANCES_MANUAL,
   },
+  name: 'accounts-balances-manual',
   props: true,
 });
 
@@ -27,12 +29,12 @@ const { fetchAssociatedLocations } = useHistoryStore();
 
 function add() {
   set(balance, {
-    location: TRADE_LOCATION_EXTERNAL,
-    asset: '',
-    label: '',
-    balanceType: props.tab === 'liabilities' ? BalanceType.LIABILITY : BalanceType.ASSET,
-    tags: null,
     amount: Zero,
+    asset: '',
+    balanceType: props.tab === 'liabilities' ? BalanceType.LIABILITY : BalanceType.ASSET,
+    label: '',
+    location: TRADE_LOCATION_EXTERNAL,
+    tags: null,
   } satisfies RawManualBalance);
 }
 

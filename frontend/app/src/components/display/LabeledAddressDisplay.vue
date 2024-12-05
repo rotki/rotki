@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { findAddressKnownPrefix, truncateAddress } from '@/utils/truncate';
 import { getAccountAddress, getAccountLabel, getChain } from '@/utils/blockchain/accounts/utils';
+import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import type {
   BlockchainAccount,
   BlockchainAccountBalance,
@@ -11,7 +12,7 @@ const props = defineProps<{
 }>();
 
 const { account } = toRefs(props);
-const { scrambleData, shouldShowAmount, scrambleAddress, scrambleIdentifier } = useScramble();
+const { scrambleAddress, scrambleData, scrambleIdentifier, shouldShowAmount } = useScramble();
 const { addressNameSelector, ensNameSelector } = useAddressesNamesStore();
 const { t } = useI18n();
 

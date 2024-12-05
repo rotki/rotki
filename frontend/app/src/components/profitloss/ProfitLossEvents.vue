@@ -44,74 +44,74 @@ const { getChain } = useSupportedChains();
 
 const tableHeaders = computed<DataTableColumn<PnLItem>[]>(() => [
   {
-    label: '',
-    key: 'group',
-    class: '!p-0',
     cellClass: '!p-0 h-px',
-  },
-  {
+    class: '!p-0',
+    key: 'group',
     label: '',
-    key: 'expand',
   },
   {
-    label: t('common.type'),
-    key: 'type',
+    key: 'expand',
+    label: '',
+  },
+  {
     align: 'center',
     class: 'w-[6.875rem]',
+    key: 'type',
+    label: t('common.type'),
   },
   {
-    label: t('common.location'),
-    key: 'location',
     align: 'center',
-    class: 'w-[7.5rem]',
     cellClass: 'py-2',
+    class: 'w-[7.5rem]',
+    key: 'location',
+    label: t('common.location'),
   },
   {
-    label: t('profit_loss_events.headers.tax_free_amount'),
+    align: 'end',
     key: 'free_amount',
-    align: 'end',
+    label: t('profit_loss_events.headers.tax_free_amount'),
   },
   {
-    label: t('profit_loss_events.headers.taxable_amount'),
+    align: 'end',
     key: 'taxable_amount',
-    align: 'end',
+    label: t('profit_loss_events.headers.taxable_amount'),
   },
   {
-    label: t('common.price'),
+    align: 'end',
     key: 'price',
-    align: 'end',
+    label: t('common.price'),
   },
   {
-    label: t('profit_loss_events.headers.pnl_free'),
+    align: 'end',
     key: 'pnl_free',
-    align: 'end',
+    label: t('profit_loss_events.headers.pnl_free'),
   },
   {
-    label: t('profit_loss_events.headers.pnl_taxable'),
+    align: 'end',
     key: 'pnl_taxable',
-    align: 'end',
+    label: t('profit_loss_events.headers.pnl_taxable'),
   },
   {
-    label: t('common.datetime'),
     key: 'timestamp',
+    label: t('common.datetime'),
   },
   {
-    label: t('common.notes'),
     key: 'notes',
+    label: t('common.notes'),
   },
   {
-    label: t('common.actions_text'),
-    key: 'actions',
     align: 'end',
     class: 'w-[8.75rem]',
+    key: 'actions',
+    label: t('common.actions_text'),
   },
 ]);
 
 const items = computed<PnLItem[]>(() =>
   get(report).entries.map((value, index) => ({
     ...value,
-    id: index,
     groupLine: checkGroupLine(get(report).entries, index),
+    id: index,
   })),
 );
 
@@ -134,14 +134,14 @@ function updatePagination(tableOptions: DataTableOptions<PnLItem>) {
   if (!pagination)
     return;
 
-  const { page, limit } = pagination;
+  const { limit, page } = pagination;
 
   const reportId = Number.parseInt(get(route).params.id as string);
 
   emit('update:page', {
-    reportId,
     limit,
     offset: limit * (page - 1),
+    reportId,
   });
 }
 
@@ -151,8 +151,8 @@ function checkGroupLine(entries: ProfitLossEvents, index: number) {
   const next = index + 1 < entries.length ? entries[index + 1] : null;
 
   return {
-    top: !!(current?.groupId && prev && current?.groupId === prev?.groupId),
     bottom: !!(current?.groupId && next && current?.groupId === next?.groupId),
+    top: !!(current?.groupId && prev && current?.groupId === prev?.groupId),
   };
 }
 

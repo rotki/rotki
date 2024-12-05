@@ -11,12 +11,12 @@ const props = withDefaults(
     hideActions?: boolean;
   }>(),
   {
-    status: undefined,
-    loading: false,
-    tooltip: '',
+    hideActions: false,
     hint: '',
     label: '',
-    hideActions: false,
+    loading: false,
+    status: undefined,
+    tooltip: '',
   },
 );
 
@@ -26,7 +26,7 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n();
-const { apiKey, status, hideActions } = toRefs(props);
+const { apiKey, hideActions, status } = toRefs(props);
 
 const currentValue = ref<string>('');
 const editMode = ref<boolean>(false);
@@ -59,8 +59,8 @@ function updateStatus() {
 function saveHandler() {
   if (get(editMode) || get(hideActions)) {
     emit('save', {
-      name: props.name,
       apiKey: get(currentValue),
+      name: props.name,
     });
 
     if (!get(status) || get(status)?.success) {
@@ -92,8 +92,8 @@ watch(status, (newStatus) => {
 });
 
 defineExpose({
-  saveHandler,
   currentValue,
+  saveHandler,
 });
 </script>
 

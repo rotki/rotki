@@ -3,6 +3,9 @@ import { Routes } from '@/router/routes';
 import { Section } from '@/types/status';
 import { IgnoreActionType } from '@/types/history/ignored';
 import { SavedFilterLocation } from '@/types/filtering';
+import { useConfirmStore } from '@/store/confirm';
+import { useStatusStore } from '@/store/status';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 import type { Writeable } from '@rotki/common';
 import type { TradeEntry, TradeRequestPayload } from '@/types/history/trade';
 import type { Filters, Matcher } from '@/composables/filters/trades';
@@ -33,72 +36,72 @@ const tableHeaders = computed<DataTableColumn<TradeEntry>[]>(() => {
   const overview = !get(mainPage);
   const headers: DataTableColumn<TradeEntry>[] = [
     {
-      label: '',
-      key: 'ignoredInAccounting',
-      class: !overview ? '!p-0' : '',
       cellClass: !overview ? '!p-0' : '!w-0 !max-w-[4rem]',
+      class: !overview ? '!p-0' : '',
+      key: 'ignoredInAccounting',
+      label: '',
     },
     {
-      label: t('common.location'),
-      key: 'location',
-      class: '!w-[7.5rem]',
-      cellClass: '!py-1',
       align: 'center',
+      cellClass: '!py-1',
+      class: '!w-[7.5rem]',
+      key: 'location',
+      label: t('common.location'),
       sortable: true,
     },
     {
-      label: t('closed_trades.headers.action'),
-      key: 'type',
       align: overview ? 'start' : 'center',
       cellClass: '!px-0',
       class: '!px-0',
+      key: 'type',
+      label: t('closed_trades.headers.action'),
       sortable: true,
     },
     {
-      label: t('common.amount'),
-      key: 'amount',
       align: 'end',
+      key: 'amount',
+      label: t('common.amount'),
       sortable: true,
     },
     {
-      label: t('closed_trades.headers.base'),
-      key: 'baseAsset',
-      class: '!pl-0',
       cellClass: '!py-1 !pl-0',
+      class: '!pl-0',
+      key: 'baseAsset',
+      label: t('closed_trades.headers.base'),
     },
     {
-      label: '',
-      key: 'description',
       align: 'center',
       cellClass: '!px-0',
       class: '!px-0',
+      key: 'description',
+      label: '',
     },
     {
-      label: t('closed_trades.headers.quote_amount'),
+      align: 'end',
       key: 'quoteAmount',
-      align: 'end',
+      label: t('closed_trades.headers.quote_amount'),
     },
     {
-      label: t('closed_trades.headers.quote'),
-      key: 'quoteAsset',
-      class: '!pl-0',
       cellClass: '!py-1 !pl-0',
+      class: '!pl-0',
+      key: 'quoteAsset',
+      label: t('closed_trades.headers.quote'),
     },
     {
-      label: t('closed_trades.headers.rate'),
-      key: 'rate',
       align: 'end',
+      key: 'rate',
+      label: t('closed_trades.headers.rate'),
       sortable: true,
     },
     {
-      label: t('common.datetime'),
       key: 'timestamp',
+      label: t('common.datetime'),
       sortable: true,
     },
     {
-      label: t('common.actions_text'),
-      key: 'actions',
       align: 'center',
+      key: 'actions',
+      label: t('common.actions_text'),
     },
   ];
 
@@ -111,33 +114,34 @@ const tableHeaders = computed<DataTableColumn<TradeEntry>[]>(() => {
 });
 
 const extraParams = computed(() => ({
-  includeIgnoredTrades: !get(hideIgnoredTrades),
   excludeIgnoredAssets: !get(showIgnoredAssets),
+  includeIgnoredTrades: !get(hideIgnoredTrades),
 }));
 
 const assetInfoRetrievalStore = useAssetInfoRetrieval();
 const { assetSymbol } = assetInfoRetrievalStore;
 const { deleteExternalTrade, fetchTrades, refreshTrades } = useTrades();
-const { selected, editableItem, itemsToDelete: tradesToDelete, confirmationMessage, expanded } = useCommonTableProps<TradeEntry>();
+const { confirmationMessage, editableItem, expanded, itemsToDelete: tradesToDelete, selected } = useCommonTableProps<TradeEntry>();
 
 const {
-  isLoading,
-  state: trades,
-  filters,
-  matchers,
-  setPage,
-  pagination,
-  sort,
   fetchData,
+  filters,
+  isLoading,
+  matchers,
+  pagination,
+  setPage,
+  sort,
+  state: trades,
 } = usePaginationFilters<
   TradeEntry,
   TradeRequestPayload,
   Filters,
   Matcher
 >(fetchTrades, {
+  extraParams,
+  filterSchema: useTradeFilters,
   history: get(mainPage) ? 'router' : false,
   locationOverview,
-  filterSchema: useTradeFilters,
   onUpdateFilters(query) {
     set(hideIgnoredTrades, query.includeIgnoredTrades === 'false');
     set(showIgnoredAssets, query.excludeIgnoredAssets === 'false');
@@ -151,7 +155,6 @@ const {
 
     return params;
   }),
-  extraParams,
 });
 
 useHistoryAutoRefresh(fetchData);
@@ -182,9 +185,9 @@ function promptForDelete(trade: TradeEntry) {
   set(
     confirmationMessage,
     t('closed_trades.confirmation.message', {
-      pair: `${base} ${prep} ${quote}`,
       action: trade.tradeType,
       amount: trade.amount.toFormat(get(floatingPrecision)),
+      pair: `${base} ${prep} ${quote}`,
     }),
   );
   set(tradesToDelete, [trade]);
@@ -247,8 +250,8 @@ const { show } = useConfirmStore();
 function showDeleteConfirmation() {
   show(
     {
-      title: t('closed_trades.confirmation.title'),
       message: get(confirmationMessage),
+      title: t('closed_trades.confirmation.title'),
     },
     deleteTradeHandler,
   );

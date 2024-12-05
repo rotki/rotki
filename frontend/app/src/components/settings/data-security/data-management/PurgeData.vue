@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { DECENTRALIZED_EXCHANGES, Module, PurgeableOnlyModule } from '@/types/modules';
 import { Purgeable } from '@/types/session/purge';
+import { useLocationStore } from '@/store/locations';
 
 const purgeableOnlyModules = Object.values(PurgeableOnlyModule);
 const purgeableModules = [...Object.values(Module), ...purgeableOnlyModules];
@@ -70,14 +71,14 @@ async function purgeSource(source: Purgeable) {
   purgeCache(source, value);
 }
 
-const { status, pending, showConfirmation } = useCacheClear<Purgeable>(
+const { pending, showConfirmation, status } = useCacheClear<Purgeable>(
   purgeable,
   purgeSource,
   (source: string) => ({
-    success: t('data_management.purge_data.success', {
+    error: t('data_management.purge_data.error', {
       source,
     }),
-    error: t('data_management.purge_data.error', {
+    success: t('data_management.purge_data.success', {
       source,
     }),
   }),
@@ -102,8 +103,8 @@ const { status, pending, showConfirmation } = useCacheClear<Purgeable>(
     }
 
     return {
-      title: t('data_management.purge_data.confirm.title'),
       message,
+      title: t('data_management.purge_data.confirm.title'),
     };
   },
 );

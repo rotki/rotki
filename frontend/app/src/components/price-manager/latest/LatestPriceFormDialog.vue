@@ -15,20 +15,20 @@ const props = withDefaults(
 
 const emptyPrice: () => ManualPriceFormPayload = () => ({
   fromAsset: '',
-  toAsset: '',
   price: '',
+  toAsset: '',
 });
 
 const form = ref<ManualPriceFormPayload>(emptyPrice());
 
-const { value, editMode } = toRefs(props);
+const { editMode, value } = toRefs(props);
 
 watchImmediate(value, (value) => {
   if (value)
     set(form, { ...emptyPrice(), ...value });
 });
 
-const { openDialog, submitting, closeDialog, setSubmitFunc, trySubmit, stateUpdated } = useLatestPriceForm();
+const { closeDialog, openDialog, setSubmitFunc, stateUpdated, submitting, trySubmit } = useLatestPriceForm();
 
 const { t } = useI18n();
 

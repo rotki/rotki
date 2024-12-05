@@ -14,18 +14,30 @@ dayjs.extend(isoWeek);
 
 const FORMATS = {
   datetime: 'MMM D, YYYY, h:mm:ss a',
-  millisecond: 'h:mm:ss.SSS a',
-  second: 'h:mm:ss a',
-  minute: 'h:mm a',
-  hour: 'hA',
   day: 'MMM D',
-  week: 'll',
+  hour: 'hA',
+  millisecond: 'h:mm:ss.SSS a',
+  minute: 'h:mm a',
   month: 'MMM YYYY',
   quarter: '[Q]Q - YYYY',
+  second: 'h:mm:ss a',
+  week: 'll',
   year: 'YYYY',
 };
 
 _adapters._date.override({
+  add(time: any, amount: number, unit: QUnitType & TimeUnit) {
+    return dayjs(time).add(amount, unit).valueOf();
+  },
+  diff(max: any, min: any, unit: TimeUnit) {
+    return dayjs(max).diff(dayjs(min), unit);
+  },
+  endOf(time: any, unit: TimeUnit & QUnitType) {
+    return dayjs(time).endOf(unit).valueOf();
+  },
+  format(time: any, format: TimeUnit): string {
+    return dayjs(time).format(format);
+  },
   formats: () => FORMATS,
   parse(value: any, format?: TimeUnit) {
     const valueType = typeof value;
@@ -40,15 +52,6 @@ _adapters._date.override({
 
     return null;
   },
-  format(time: any, format: TimeUnit): string {
-    return dayjs(time).format(format);
-  },
-  add(time: any, amount: number, unit: QUnitType & TimeUnit) {
-    return dayjs(time).add(amount, unit).valueOf();
-  },
-  diff(max: any, min: any, unit: TimeUnit) {
-    return dayjs(max).diff(dayjs(min), unit);
-  },
   startOf(time: any, unit: (TimeUnit & QUnitType) | 'isoWeek', weekday?: number) {
     if (unit === 'isoWeek') {
       // Ensure that weekday has a valid format
@@ -56,8 +59,5 @@ _adapters._date.override({
       return dayjs(time).isoWeekday(validatedWeekday).startOf('day').valueOf();
     }
     return dayjs(time).startOf(unit).valueOf();
-  },
-  endOf(time: any, unit: TimeUnit & QUnitType) {
-    return dayjs(time).endOf(unit).valueOf();
   },
 });

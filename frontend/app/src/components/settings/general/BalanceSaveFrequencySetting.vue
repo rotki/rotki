@@ -4,6 +4,7 @@ import { between, helpers, required } from '@vuelidate/validators';
 import { Constraints } from '@/data/constraints';
 import { toMessages } from '@/utils/validation';
 import { Defaults } from '@/data/defaults';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 
 const DEFAULT_FREQUENCY = Defaults.BALANCE_SAVE_FREQUENCY;
 
@@ -16,14 +17,14 @@ const { t } = useI18n();
 const maxBalanceSaveFrequency = Constraints.MAX_HOURS_DELAY;
 const rules = {
   balanceSaveFrequency: {
-    required: helpers.withMessage(t('general_settings.balance_frequency.validation.non_empty'), required),
     between: helpers.withMessage(
       t('general_settings.balance_frequency.validation.invalid_frequency', {
-        start: 1,
         end: maxBalanceSaveFrequency,
+        start: 1,
       }),
       between(1, maxBalanceSaveFrequency),
     ),
+    required: helpers.withMessage(t('general_settings.balance_frequency.validation.non_empty'), required),
   },
 };
 const v$ = useVuelidate(rules, { balanceSaveFrequency }, { $autoDirty: true });

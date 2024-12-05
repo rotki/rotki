@@ -7,15 +7,15 @@ const DSRMovementType = z.enum(['withdrawal', 'deposit'] as const);
 const MakerDAOVaultEventType = z.enum(['deposit', 'withdraw', 'generate', 'payback', 'liquidation'] as const);
 
 export const ApiMakerDAOVault = z.object({
-  identifier: z.number(),
-  collateralType: z.string(),
-  owner: z.string(),
-  collateralAsset: z.string(),
   collateral: Balance,
-  debt: Balance,
+  collateralAsset: z.string(),
   collateralizationRatio: z.string().nullable(),
-  liquidationRatio: z.string(),
+  collateralType: z.string(),
+  debt: Balance,
+  identifier: z.number(),
   liquidationPrice: NumericString.nullable(),
+  liquidationRatio: z.string(),
+  owner: z.string(),
   stabilityFee: z.string(),
 });
 
@@ -26,19 +26,19 @@ export const ApiMakerDAOVaults = z.array(ApiMakerDAOVault);
 export type ApiMakerDAOVaults = z.infer<typeof ApiMakerDAOVaults>;
 
 export const DSRBalances = z.object({
-  currentDsr: NumericString,
   balances: z.record(Balance),
+  currentDsr: NumericString,
 });
 
 export type DSRBalances = z.infer<typeof DSRBalances>;
 
 const DSRMovement = z.object({
-  movementType: DSRMovementType,
-  gainSoFar: Balance,
-  value: Balance,
   blockNumber: z.number(),
+  gainSoFar: Balance,
+  movementType: DSRMovementType,
   timestamp: z.number(),
   txHash: z.string(),
+  value: Balance,
 });
 
 const DSRHistoryItem = z.object({
@@ -60,17 +60,17 @@ export interface MakerDAOVault extends CollateralizedLoan<Collateral> {
 
 const MakerDAOVaultEvent = z.object({
   eventType: MakerDAOVaultEventType,
-  value: Balance,
   timestamp: z.number(),
   txHash: z.string(),
+  value: Balance,
 });
 
 const MakerDAOVaultDetail = z.object({
-  identifier: z.number().transform(arg => arg.toString()),
   creationTs: z.number(),
+  events: z.array(MakerDAOVaultEvent),
+  identifier: z.number().transform(arg => arg.toString()),
   totalInterestOwed: NumericString,
   totalLiquidated: Balance,
-  events: z.array(MakerDAOVaultEvent),
 });
 
 export type MakerDAOVaultDetail = z.infer<typeof MakerDAOVaultDetail>;

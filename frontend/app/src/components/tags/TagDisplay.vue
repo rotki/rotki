@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useTagStore } from '@/store/session/tags';
+
 withDefaults(
   defineProps<{
     tags?: string[];
@@ -6,8 +8,8 @@ withDefaults(
     wrapperClass?: string;
   }>(),
   {
-    tags: () => [],
     small: false,
+    tags: () => [],
     wrapperClass: '',
   },
 );
