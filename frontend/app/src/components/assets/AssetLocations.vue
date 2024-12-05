@@ -250,7 +250,10 @@ watch([onlyTags, locationFilter, selectedAccounts], () => {
         />
       </template>
       <template #item.percentage="{ row }">
-        <PercentageDisplay :value="getPercentage(row.usdValue)" />
+        <PercentageDisplay
+          :value="getPercentage(row.usdValue)"
+          :asset-padding="0.1"
+        />
       </template>
     </RuiDataTable>
   </RuiCard>
