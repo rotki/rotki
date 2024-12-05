@@ -17,6 +17,7 @@ export enum Priority {
 export enum NotificationGroup {
   NEW_DETECTED_TOKENS = 'NEW_DETECTED_TOKENS',
   ASSET_SEARCH_ERROR = 'ASSET_SEARCH_ERROR',
+  DESERIALIZATION_ERROR = 'DESERIALIZATION_ERROR',
 }
 
 export const NotificationCategory = {
