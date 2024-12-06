@@ -76,6 +76,7 @@ if TYPE_CHECKING:
     from rotkehlchen.assets.asset import Asset, AssetWithOracles
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.history.events.structures.base import HistoryBaseEntry
     from rotkehlchen.user_messages import MessagesAggregator
 
 
@@ -1238,7 +1239,12 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
 
         return returned_events, skipped, found_unknown_event
 
-    def query_history_events(self) -> None:
+    def query_history_events(
+            self,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+            only_cache: bool,
+    ) -> list['HistoryBaseEntry']:
         self.msg_aggregator.add_message(
             message_type=WSMessageType.HISTORY_EVENTS_STATUS,
             data={
@@ -1265,3 +1271,4 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
                 'name': self.name,
             },
         )
+        return []
