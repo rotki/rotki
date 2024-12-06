@@ -76,7 +76,6 @@ from rotkehlchen.chain.ethereum.modules.makerdao.cache import (
     query_ilk_registry_and_maybe_update_cache,
 )
 from rotkehlchen.chain.ethereum.modules.nft.structures import NftLpHandling
-from rotkehlchen.chain.ethereum.modules.yearn.utils import query_yearn_vaults
 from rotkehlchen.chain.ethereum.utils import try_download_ens_avatar
 from rotkehlchen.chain.evm.accounting.aggregator import EVMAccountingAggregators
 from rotkehlchen.chain.evm.decoding.curve.curve_cache import (
@@ -89,6 +88,7 @@ from rotkehlchen.chain.evm.decoding.monerium.constants import CPT_MONERIUM
 from rotkehlchen.chain.evm.decoding.velodrome.velodrome_cache import (
     query_velodrome_like_data,
 )
+from rotkehlchen.chain.evm.decoding.yearn.utils import query_yearn_vaults
 from rotkehlchen.chain.evm.names import find_ens_mappings, search_for_addresses_names
 from rotkehlchen.chain.evm.types import EvmlikeAccount, WeightedNode
 from rotkehlchen.chain.gnosis.modules.gnosis_pay.constants import CPT_GNOSIS_PAY
@@ -4773,23 +4773,30 @@ class RestAPI:
                     status_code=HTTPStatus.CONFLICT,
                 )
 
-        try:
-            query_yearn_vaults(
-                db=self.rotkehlchen.data.db,
-                ethereum_inquirer=eth_node_inquirer,
-            )
-        except RemoteError as e:
-            return wrap_in_fail_result(
-                message=f'Failed to refresh yearn vaults cache due to: {e!s}',
-                status_code=HTTPStatus.CONFLICT,
-            )
-        try:
-            query_ilk_registry_and_maybe_update_cache(eth_node_inquirer)
-        except RemoteError as e:
-            return wrap_in_fail_result(
-                message=f'Failed to refresh makerdao vault ilk cache due to: {e!s}',
-                status_code=HTTPStatus.CONFLICT,
-            )
+        for node_inquirer in (
+            eth_node_inquirer,
+            optimism_inquirer,
+            arbitrum_inquirer,
+            base_inquirer,
+            polygon_inquirer,
+        ):
+            try:
+                query_yearn_vaults(
+                    db=self.rotkehlchen.data.db,
+                    evm_inquirer=node_inquirer,
+                )
+            except RemoteError as e:
+                return wrap_in_fail_result(
+                    message=f'Failed to refresh yearn vaults cache due to: {e!s}',
+                    status_code=HTTPStatus.CONFLICT,
+                )
+            try:
+                query_ilk_registry_and_maybe_update_cache(eth_node_inquirer)
+            except RemoteError as e:
+                return wrap_in_fail_result(
+                    message=f'Failed to refresh makerdao vault ilk cache due to: {e!s}',
+                    status_code=HTTPStatus.CONFLICT,
+                )
         return OK_RESULT
 
     def get_airdrops_metadata(self) -> Response:
