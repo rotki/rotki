@@ -1,15 +1,6 @@
 import { z } from 'zod';
 import { HistoryEventEntryType } from '@rotki/common';
 import { isEqual } from 'lodash-es';
-import {
-  type MatchedKeywordWithBehaviour,
-  type SearchMatcher,
-  assetDeserializer,
-  assetSuggestions,
-  dateDeserializer,
-  dateSerializer,
-  dateValidator,
-} from '@/types/filtering';
 import { uniqueStrings } from '@/utils/data';
 import { arrayify } from '@/utils/array';
 import { isEthBlockEventType, isEthDepositEventType, isEvmEventType, isOnlineHistoryEventType, isWithdrawalEventType } from '@/utils/history/events';
@@ -20,6 +11,12 @@ import { useHistoryEventCounterpartyMappings } from '@/composables/history/event
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useHistoryEventProductMappings } from '@/composables/history/events/mapping/product';
 import { useHistoryEventMappings } from '@/composables/history/events/mapping';
+import { assetDeserializer, assetSuggestions, dateDeserializer, dateSerializer, dateValidator } from '@/utils/assets';
+import type {
+  MatchedKeywordWithBehaviour,
+  SearchMatcher,
+
+} from '@/types/filtering';
 import type { MaybeRef } from '@vueuse/core';
 import type { FilterSchema } from '@/composables/use-pagination-filter/types';
 

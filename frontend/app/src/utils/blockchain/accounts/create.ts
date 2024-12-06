@@ -1,5 +1,3 @@
-import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
-import { getAccountBalance } from '@/utils/blockchain/accounts/index';
 import type { Eth2ValidatorEntry } from '@rotki/common';
 import type {
   AccountExtraParams,
@@ -7,11 +5,9 @@ import type {
   BasicBlockchainAccount,
   BitcoinXpubAccount,
   BlockchainAccount,
-  BlockchainAccountWithBalance,
   ValidatorData,
   XpubData,
 } from '@/types/blockchain/accounts';
-import type { BlockchainAssetBalances } from '@/types/blockchain/balances';
 
 export function createXpubAccount(data: BitcoinXpubAccount, extra: AccountExtraParams): BlockchainAccount<XpubData> {
   return {
@@ -49,20 +45,4 @@ export function createAccount(data: BasicBlockchainAccount, extra: AccountExtraP
     tags: data.tags ?? undefined,
     ...extra,
   };
-}
-
-export function createAccountWithBalance(
-  account: BlockchainAccount,
-  chainBalances: BlockchainAssetBalances,
-): BlockchainAccountWithBalance {
-  const { balance, expansion } = getAccountBalance(account, chainBalances);
-  const address = getAccountAddress(account);
-
-  return {
-    groupId: address,
-    type: 'account',
-    ...account,
-    ...balance,
-    expansion,
-  } satisfies BlockchainAccountWithBalance;
 }

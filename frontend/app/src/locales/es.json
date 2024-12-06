@@ -2454,13 +2454,7 @@
     }
   },
   "kraken_staking_events": {
-    "refresh_tooltip": "Refresh your Kraken staking events",
-    "types": {
-      "receive_staked_asset": "receive staked asset",
-      "stake_asset": "stake asset",
-      "staking_reward": "staking reward",
-      "unstake_asset": "unstake asset"
-    }
+    "refresh_tooltip": "Refresh your Kraken staking events"
   },
   "kraken_staking_overview": {
     "current": "current",

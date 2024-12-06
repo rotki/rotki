@@ -1,5 +1,10 @@
+import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
+import type { AssetInfoWithId, AssetsWithId } from '@/types/asset';
 import type { AssetBalance, AssetInfo, Nullable } from '@rotki/common';
 import type { AssetNameReturn, AssetSymbolReturn } from '@/composables/assets/retrieval';
+import type { DateFormat } from '@/types/date-format';
+import type { AssetSearchParams } from '@/composables/api/assets/info';
+import type { ComputedRef, Ref } from 'vue';
 
 function levenshtein(a: string, b: string): number {
   let tmp;
@@ -116,4 +121,60 @@ export function assetFilterByKeyword(
   const name = getTextToken(get(assetName(item.asset)));
   const symbol = getTextToken(get(assetSymbol(item.asset)));
   return symbol.includes(keyword) || name.includes(keyword);
+}
+
+export function assetSuggestions(assetSearch: (params: AssetSearchParams) => Promise<AssetsWithId>, evmChain?: string): (value: string) => Promise<AssetsWithId> {
+  let pending: AbortController | null = null;
+
+  return useDebounceFn(async (value: string) => {
+    if (pending) {
+      pending.abort();
+      pending = null;
+    }
+
+    pending = new AbortController();
+
+    let keyword = value;
+    let address;
+
+    if (isValidEthAddress(value)) {
+      keyword = '';
+      address = value;
+    }
+
+    const result = await assetSearch({
+      address,
+      evmChain,
+      limit: 10,
+      signal: pending.signal,
+      value: keyword,
+    });
+    pending = null;
+    return result;
+  }, 200);
+}
+
+export function assetDeserializer(assetInfo: (identifier: string) => ComputedRef<AssetInfo | null>): (identifier: string) => AssetInfoWithId | null {
+  return (identifier: string): AssetInfoWithId | null => {
+    const asset = get(assetInfo(identifier));
+    if (!asset)
+      return null;
+
+    return {
+      ...asset,
+      identifier,
+    };
+  };
+}
+
+export function dateValidator(dateInputFormat: Ref<DateFormat>): (value: string) => boolean {
+  return (value: string) => value.length > 0 && !isNaN(convertToTimestamp(value, get(dateInputFormat)));
+}
+
+export function dateSerializer(dateInputFormat: Ref<DateFormat>): (date: string) => string {
+  return (date: string) => convertToTimestamp(date, get(dateInputFormat)).toString();
+}
+
+export function dateDeserializer(dateInputFormat: Ref<DateFormat>): (timestamp: string) => string {
+  return (timestamp: string) => convertFromTimestamp(parseInt(timestamp), get(dateInputFormat));
 }

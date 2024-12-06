@@ -12,7 +12,7 @@ import { router } from '@/router';
 import { createRuiPlugin } from '@/plugins/rui';
 import { StoreResetPlugin, StoreTrackPlugin } from '@/store/plugins';
 import { StoreStatePersistsPlugin } from '@/store/debug';
-import { useItemsPerPage } from '@/composables/session/settings';
+import { useItemsPerPage } from '@/composables/session/use-items-per-page';
 import './main.scss';
 import 'roboto-fontface/css/roboto/roboto-fontface.css';
 import 'typeface-roboto-mono';

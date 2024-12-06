@@ -2744,13 +2744,7 @@
     }
   },
   "kraken_staking_events": {
-    "refresh_tooltip": "Rafraîchir vos événements de mise en jeu Kraken",
-    "types": {
-      "receive_staked_asset": "recevoir un actif mis en jeu",
-      "stake_asset": "mettre en jeu un actif",
-      "staking_reward": "récompense de mise en jeu",
-      "unstake_asset": "retirer un actif mis en jeu"
-    }
+    "refresh_tooltip": "Rafraîchir vos événements de mise en jeu Kraken"
   },
   "kraken_staking_overview": {
     "current": "actuel",

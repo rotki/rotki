@@ -1,18 +1,15 @@
 import { z } from 'zod';
-import {
-  type MatchedKeyword,
-  type SearchMatcher,
-  assetDeserializer,
-  assetSuggestions,
-  dateDeserializer,
-  dateSerializer,
-  dateValidator,
-} from '@/types/filtering';
 import { TradeType } from '@/types/history/trade';
 import { getDateInputISOFormat } from '@/utils/date';
 import { useHistoryStore } from '@/store/history';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import { assetDeserializer, assetSuggestions, dateDeserializer, dateSerializer, dateValidator } from '@/utils/assets';
+import type {
+  MatchedKeyword,
+  SearchMatcher,
+
+} from '@/types/filtering';
 import type { FilterSchema } from '@/composables/use-pagination-filter/types';
 
 enum TradeFilterKeys {
