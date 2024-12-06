@@ -20,7 +20,6 @@ describe('useBlockchainStore', () => {
           value: bigNumberify(2500),
           usdPrice: null,
           isManualPrice: false,
-          isCurrentCurrency: true,
         },
       };
 

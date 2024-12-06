@@ -1,10 +1,8 @@
 import { startPromise } from '@shared/utils';
-import { CURRENCY_USD } from '@/types/currencies';
 import { Section, Status } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import { uniqueStrings } from '@/utils/data';
 import { isTaskCancelled } from '@/utils';
-import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useStatisticsStore } from '@/store/statistics';
 import { useTaskStore } from '@/store/tasks';
 import { useNotificationsStore } from '@/store/notifications';
@@ -29,28 +27,14 @@ export const useBalances = createSharedComposable(() => {
   const { queryBalancesAsync } = useBalancesApi();
   const priceStore = useBalancePricesStore();
   const { prices } = storeToRefs(priceStore);
-  const { assetPrice, exchangeRate, fetchExchangeRates, fetchPrices } = priceStore;
+  const { assetPrice, fetchExchangeRates, fetchPrices } = priceStore;
   const { notify } = useNotificationsStore();
   const { awaitTask, isTaskRunning } = useTaskStore();
   const { t } = useI18n();
-  const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
   const { fetchNetValue } = useStatisticsStore();
 
   const adjustPrices = (prices: MaybeRef<AssetPrices>): void => {
     const pricesConvertedToUsd = { ...get(prices) };
-
-    const mainCurrency = get(currencySymbol);
-    if (mainCurrency !== CURRENCY_USD) {
-      const rate = get(exchangeRate(mainCurrency)) ?? One;
-
-      for (const asset in pricesConvertedToUsd) {
-        const price = pricesConvertedToUsd[asset];
-
-        if (price.isCurrentCurrency)
-          price.usdPrice = price.value.dividedBy(rate);
-      }
-    }
-
     updateChainPrices(pricesConvertedToUsd);
     updateManualPrices(pricesConvertedToUsd);
     updateExchangePrices(pricesConvertedToUsd);
