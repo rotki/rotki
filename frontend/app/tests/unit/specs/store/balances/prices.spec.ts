@@ -25,7 +25,7 @@ describe('store::balances/manual', () => {
     it('first call', async () => {
       const mockPricesResponse = {
         assets: {
-          DAI: [1, 0, false],
+          DAI: [1, 0],
         },
         targetAsset: CURRENCY_USD,
         oracles: {
@@ -51,7 +51,6 @@ describe('store::balances/manual', () => {
         DAI: {
           value: bigNumberify(1),
           isManualPrice: false,
-          isCurrentCurrency: false,
         },
       });
     });
@@ -59,7 +58,7 @@ describe('store::balances/manual', () => {
     it('second call', async () => {
       const mockPricesResponse = {
         assets: {
-          ETH: [2, 1, true],
+          ETH: [2, 1],
         },
         targetAsset: CURRENCY_USD,
         oracles: {
@@ -85,12 +84,10 @@ describe('store::balances/manual', () => {
         DAI: {
           value: bigNumberify(1),
           isManualPrice: false,
-          isCurrentCurrency: false,
         },
         ETH: {
           value: bigNumberify(2),
           isManualPrice: true,
-          isCurrentCurrency: true,
         },
       });
     });
@@ -227,7 +224,7 @@ describe('store::balances/manual', () => {
   describe('isAssetPriceInCurrentCurrency', () => {
     it('default', () => {
       expect(get(store.isAssetPriceInCurrentCurrency('DAI'))).toEqual(false);
-      expect(get(store.isAssetPriceInCurrentCurrency('ETH'))).toEqual(true);
+      expect(get(store.isAssetPriceInCurrentCurrency('ETH'))).toEqual(false);
     });
   });
 });

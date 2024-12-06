@@ -350,7 +350,6 @@ describe('amountDisplay.vue', () => {
         ETH: {
           value: bigNumberify(500),
           isManualPrice: false,
-          isCurrentCurrency: false,
         },
       });
 
@@ -367,7 +366,6 @@ describe('amountDisplay.vue', () => {
         ETH: {
           value: bigNumberify(500),
           isManualPrice: true,
-          isCurrentCurrency: false,
         },
       });
 
@@ -379,60 +377,30 @@ describe('amountDisplay.vue', () => {
     });
   });
 
-  describe('check current currency manual latest prices', () => {
-    it('`isCurrentCurrency=false`', () => {
-      const { prices } = storeToRefs(useBalancePricesStore());
-      set(prices, {
-        ETH: {
-          value: bigNumberify(500),
-          isManualPrice: true,
-          isCurrentCurrency: false,
-        },
-      });
-
-      const priceWrapper = createWrapper(bigNumberify(400), {
-        priceAsset: 'ETH',
-        priceOfAsset: bigNumberify(500),
-        fiatCurrency: 'USD',
-      });
-
-      const valueWrapper = createWrapper(bigNumberify(800), {
-        amount: bigNumberify(2),
-        priceAsset: 'ETH',
-        priceOfAsset: bigNumberify(500),
-        fiatCurrency: 'USD',
-      });
-
-      expect(priceWrapper.find('[data-cy="display-amount"]').text()).toBe('480.00');
-      expect(valueWrapper.find('[data-cy="display-amount"]').text()).toBe('960.00');
+  it('check current currency manual latest prices', () => {
+    const { prices } = storeToRefs(useBalancePricesStore());
+    set(prices, {
+      ETH: {
+        value: bigNumberify(500),
+        isManualPrice: true,
+      },
     });
 
-    it('`isCurrentCurrency=true`', () => {
-      const { prices } = storeToRefs(useBalancePricesStore());
-      set(prices, {
-        ETH: {
-          value: bigNumberify(500),
-          isManualPrice: true,
-          isCurrentCurrency: true,
-        },
-      });
-
-      const priceWrapper = createWrapper(bigNumberify(400), {
-        priceAsset: 'ETH',
-        priceOfAsset: bigNumberify(500),
-        fiatCurrency: 'USD',
-      });
-
-      const valueWrapper = createWrapper(bigNumberify(800), {
-        amount: bigNumberify(2),
-        priceAsset: 'ETH',
-        priceOfAsset: bigNumberify(500),
-        fiatCurrency: 'USD',
-      });
-
-      expect(priceWrapper.find('[data-cy="display-amount"]').text()).toBe('500.00');
-      expect(valueWrapper.find('[data-cy="display-amount"]').text()).toBe('1,000.00');
+    const priceWrapper = createWrapper(bigNumberify(400), {
+      priceAsset: 'ETH',
+      priceOfAsset: bigNumberify(500),
+      fiatCurrency: 'USD',
     });
+
+    const valueWrapper = createWrapper(bigNumberify(800), {
+      amount: bigNumberify(2),
+      priceAsset: 'ETH',
+      priceOfAsset: bigNumberify(500),
+      fiatCurrency: 'USD',
+    });
+
+    expect(priceWrapper.find('[data-cy="display-amount"]').text()).toBe('480.00');
+    expect(valueWrapper.find('[data-cy="display-amount"]').text()).toBe('960.00');
   });
 
   describe('uses historic price', () => {

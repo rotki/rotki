@@ -3,10 +3,9 @@ import { forEach } from 'lodash-es';
 import { z } from 'zod';
 import { type PriceOracle, PriceOracleEnum } from '@/types/settings/price-oracle';
 
-export const AssetPriceInput = z.tuple([NumericString, z.number(), z.boolean()]);
+export const AssetPriceInput = z.tuple([NumericString, z.number()]);
 
 export const AssetPrice = z.object({
-  isCurrentCurrency: z.boolean(),
   isManualPrice: z.boolean(),
   usdPrice: NumericString.nullish(),
   value: NumericString,
@@ -16,26 +15,23 @@ export const AssetPrices = z.record(AssetPrice);
 
 export type AssetPrices = z.infer<typeof AssetPrices>;
 
-export const AssetPriceResponse = z
-  .object({
-    assets: z.record(AssetPriceInput),
-    oracles: z.record(PriceOracleEnum, z.number()),
-    targetAsset: z.string(),
-  })
-  .transform((response) => {
-    const mappedAssets: AssetPrices = {};
-    const assets = response.assets;
-    forEach(assets, (val, asset) => {
-      const [value, oracle, isCurrentCurrency] = val;
-      mappedAssets[asset] = {
-        isCurrentCurrency,
-        isManualPrice: oracle === response.oracles.manualcurrent,
-        value,
-      };
-    });
-
-    return mappedAssets;
+export const AssetPriceResponse = z.object({
+  assets: z.record(AssetPriceInput),
+  oracles: z.record(PriceOracleEnum, z.number()),
+  targetAsset: z.string(),
+}).transform((response) => {
+  const mappedAssets: AssetPrices = {};
+  const assets = response.assets;
+  forEach(assets, (val, asset) => {
+    const [value, oracle] = val;
+    mappedAssets[asset] = {
+      isManualPrice: oracle === response.oracles.manualcurrent,
+      value,
+    };
   });
+
+  return mappedAssets;
+});
 
 export type AssetPriceResponse = z.infer<typeof AssetPriceResponse>;
 

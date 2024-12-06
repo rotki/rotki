@@ -62,27 +62,22 @@ describe('store::balances/aggregated', () => {
       DAI: {
         value: bigNumberify(1),
         isManualPrice: false,
-        isCurrentCurrency: false,
       },
       EUR: {
         value: bigNumberify(1),
         isManualPrice: false,
-        isCurrentCurrency: false,
       },
       SAI: {
         value: bigNumberify(1),
         isManualPrice: false,
-        isCurrentCurrency: false,
       },
       ETH: {
         value: bigNumberify(3000),
         isManualPrice: false,
-        isCurrentCurrency: false,
       },
       BTC: {
         value: bigNumberify(40000),
         isManualPrice: false,
-        isCurrentCurrency: false,
       },
     });
 
@@ -360,27 +355,22 @@ describe('store::balances/aggregated', () => {
       DAI: {
         value: bigNumberify(1),
         isManualPrice: false,
-        isCurrentCurrency: false,
       },
       EUR: {
         value: bigNumberify(1),
         isManualPrice: false,
-        isCurrentCurrency: false,
       },
       SAI: {
         value: bigNumberify(1),
         isManualPrice: false,
-        isCurrentCurrency: false,
       },
       ETH: {
         value: bigNumberify(3000),
         isManualPrice: false,
-        isCurrentCurrency: true,
       },
       BTC: {
         value: bigNumberify(40000),
         isManualPrice: false,
-        isCurrentCurrency: false,
       },
     });
 
@@ -451,7 +441,7 @@ describe('store::balances/aggregated', () => {
         {
           asset: 'ETH',
           amount: bigNumberify(150),
-          usdValue: bigNumberify(375000),
+          usdValue: bigNumberify(450000),
           usdPrice: bigNumberify(3000),
         },
         {

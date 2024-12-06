@@ -254,11 +254,7 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
     computed(() => get(prices)[get(asset)]?.isManualPrice || false);
 
   const isAssetPriceInCurrentCurrency = (asset: MaybeRef<string>): ComputedRef<boolean> =>
-    computed(() => {
-      if (get(isAssetPriceEqualToCurrentCurrency(asset)))
-        return true;
-      return get(prices)[get(asset)]?.isCurrentCurrency || false;
-    });
+    isAssetPriceEqualToCurrentCurrency(asset);
 
   watch([exchangeRates, currencySymbol], ([rates, symbol]) => {
     if (Object.keys(rates).length > 0) {
