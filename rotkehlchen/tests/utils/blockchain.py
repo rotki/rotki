@@ -9,7 +9,7 @@ from web3 import Web3
 
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.chain.ethereum.defi.zerionsdk import ZERION_ADAPTER_ADDRESS
-from rotkehlchen.chain.evm.base_contracts import BALANCE_SCANNER
+from rotkehlchen.chain.evm.constants import BALANCE_SCANNER_ADDRESS
 from rotkehlchen.chain.evm.types import NodeName, Web3Node, string_to_evm_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_BTC, A_ETH
@@ -216,7 +216,7 @@ def mock_etherscan_query(
         extra_flags: list[str] | None,
         original_requests_get,
 ):
-    eth_scan = BALANCE_SCANNER
+    eth_scan = ethereum.contracts.contract(BALANCE_SCANNER_ADDRESS)
     eth_multicall = ethereum.contracts.contract(string_to_evm_address('0x5BA1e12693Dc8F9c48aAD8770482f4739bEeD696'))  # noqa: E501
     original_queries = [] if original_queries is None else original_queries
     extra_flags = [] if extra_flags is None else extra_flags

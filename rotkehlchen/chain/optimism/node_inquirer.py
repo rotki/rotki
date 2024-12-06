@@ -2,7 +2,7 @@ import logging
 from typing import TYPE_CHECKING, Literal, cast
 
 from rotkehlchen.chain.constants import DEFAULT_EVM_RPC_TIMEOUT
-from rotkehlchen.chain.evm.base_contracts import BALANCE_SCANNER
+from rotkehlchen.chain.evm.constants import BALANCE_SCANNER_ADDRESS
 from rotkehlchen.chain.evm.contracts import EvmContracts
 from rotkehlchen.chain.evm.l2_with_l1_fees.node_inquirer import (
     DSProxyL2WithL1FeesInquirerWithCacheData,
@@ -55,7 +55,7 @@ class OptimismInquirer(DSProxyL2WithL1FeesInquirerWithCacheData):
             contracts=contracts,
             rpc_timeout=rpc_timeout,
             contract_multicall=contracts.contract(string_to_evm_address('0x2DC0E2aa608532Da689e89e237dF582B783E552C')),
-            contract_scan=BALANCE_SCANNER,
+            contract_scan=contracts.contract(BALANCE_SCANNER_ADDRESS),
             dsproxy_registry=contracts.contract(string_to_evm_address('0x283Cc5C26e53D66ed2Ea252D986F094B37E6e895')),
             native_token=A_ETH.resolve_to_crypto_asset(),
             blockscout=Blockscout(
