@@ -1,7 +1,7 @@
 import csv
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Final
 
 from rotkehlchen.accounting.structures.balance import AssetBalance, Balance
 from rotkehlchen.constants import ZERO
@@ -97,7 +97,7 @@ class BitMEXImporter(BaseExchangeImporter):
         amount = deserialize_asset_amount_force_positive(csv_row['amount'])
         fee = deserialize_fee(csv_row['fee']) if csv_row['fee'] != 'null' else Fee(ZERO)
         transact_type = csv_row['transactType']
-        event_type = HistoryEventType.DEPOSIT if transact_type == 'Deposit' else HistoryEventType.WITHDRAWAL  # noqa: E501
+        event_type: Final = HistoryEventType.DEPOSIT if transact_type == 'Deposit' else HistoryEventType.WITHDRAWAL  # noqa: E501
         amount = AssetAmount(satoshis_to_btc(amount))  # bitmex stores amounts in satoshis
         fee = Fee(satoshis_to_btc(fee))
         ts = deserialize_timestamp_from_date(
@@ -108,7 +108,7 @@ class BitMEXImporter(BaseExchangeImporter):
         events = [AssetMovement(
             timestamp=ts_sec_to_ms(ts),
             location=Location.BITMEX,
-            event_type=event_type,  # type: ignore[arg-type]  # will only be deposit or withdrawal
+            event_type=event_type,
             asset=asset,
             balance=Balance(amount),
             unique_id=(transaction_id := get_key_if_has_val(csv_row, 'tx')),
@@ -121,7 +121,7 @@ class BitMEXImporter(BaseExchangeImporter):
             events.append(AssetMovement(
                 timestamp=ts_sec_to_ms(ts),
                 location=Location.BITMEX,
-                event_type=event_type,  # type: ignore[arg-type]  # will only be deposit or withdrawal
+                event_type=event_type,
                 asset=asset,
                 balance=Balance(fee),
                 unique_id=transaction_id,

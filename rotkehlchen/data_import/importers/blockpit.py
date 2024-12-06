@@ -1,6 +1,6 @@
 import csv
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 from uuid import uuid4
 
 from rotkehlchen.accounting.structures.balance import Balance
@@ -110,14 +110,14 @@ class BlockpitImporter(BaseExchangeImporter):
         elif transaction_type in {'Deposit', 'Withdrawal', 'NonTaxableIn', 'NonTaxableOut'}:
             if transaction_type in {'Deposit', 'NonTaxableIn'}:
                 direction = 'Incoming'
-                event_type = HistoryEventType.DEPOSIT
+                movement_type: Literal[HistoryEventType.DEPOSIT, HistoryEventType.WITHDRAWAL] = HistoryEventType.DEPOSIT  # noqa: E501
             else:
                 direction = 'Outgoing'
-                event_type = HistoryEventType.WITHDRAWAL
+                movement_type = HistoryEventType.WITHDRAWAL
 
             events = [AssetMovement(
                 location=location,
-                event_type=event_type,  # type: ignore[arg-type]  # will only be deposit or withdrawal
+                event_type=movement_type,
                 timestamp=ts_sec_to_ms(timestamp),
                 asset=asset_resolver(csv_row[f'{direction} Asset']),
                 balance=Balance(deserialize_asset_amount(csv_row[f'{direction} Amount'])),
@@ -126,7 +126,7 @@ class BlockpitImporter(BaseExchangeImporter):
                 events.append(AssetMovement(
                     event_identifier=events[0].event_identifier,
                     location=location,
-                    event_type=event_type,  # type: ignore[arg-type]  # will only be deposit or withdrawal
+                    event_type=movement_type,
                     timestamp=ts_sec_to_ms(timestamp),
                     asset=fee_currency,
                     balance=Balance(fee_amount),

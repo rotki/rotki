@@ -3,7 +3,7 @@ import functools
 import logging
 from collections import defaultdict
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.converters import asset_from_cryptocom
@@ -154,16 +154,16 @@ class CryptocomImporter(BaseExchangeImporter):
             'viban_card_top_up',
         }:
             if row_type in {'crypto_withdrawal', 'viban_deposit', 'viban_card_top_up'}:
-                event_type = HistoryEventType.WITHDRAWAL
+                movement_type: Literal[HistoryEventType.DEPOSIT, HistoryEventType.WITHDRAWAL] = HistoryEventType.WITHDRAWAL  # noqa: E501
                 amount = deserialize_asset_amount_force_positive(csv_row['Amount'])
             else:
-                event_type = HistoryEventType.DEPOSIT
+                movement_type = HistoryEventType.DEPOSIT
                 amount = deserialize_asset_amount(csv_row['Amount'])
 
             asset = asset_from_cryptocom(csv_row['Currency'])
             self.add_history_events(write_cursor, [AssetMovement(
                 location=Location.CRYPTOCOM,
-                event_type=event_type,  # type: ignore[arg-type]  # will only be deposit or withdrawal
+                event_type=movement_type,
                 timestamp=ts_sec_to_ms(timestamp),
                 asset=asset,
                 balance=Balance(amount),
