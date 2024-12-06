@@ -25,7 +25,7 @@ export default mergeConfig(
         reportsDirectory: 'tests/unit/coverage',
         reporter: ['json'],
         include: ['src/*'],
-        exclude: ['node_modules', 'tests/', '**/*.d.ts'],
+        exclude: ['node_modules', 'tests/', '**/*.d.ts', '**/*.spec.ts'],
       },
     },
   }),

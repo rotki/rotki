@@ -92,7 +92,7 @@ jobs:
           path: ./frontend/app/.e2e/logs/*.log
       - name: Upload videos
         uses: actions/upload-artifact@v4
-        if: always()
+        if: failure()
         with:
           name: videos-${{ runner.os }}-${{ matrix.group }}
           path: ./frontend/app/tests/e2e/videos
