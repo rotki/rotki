@@ -4,6 +4,10 @@ import { Section } from '@/types/status';
 import { useStatusStore } from '@/store/status';
 import { useDefiOverviewStore } from '@/store/defi/overview';
 import { useDefiStore } from '@/store/defi';
+import Overview from '@/components/defi/Overview.vue';
+import NoDataScreen from '@/components/common/NoDataScreen.vue';
+import ProgressScreen from '@/components/helper/ProgressScreen.vue';
+import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 
 definePage({
   name: 'defi-overview',

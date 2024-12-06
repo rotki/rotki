@@ -2,8 +2,11 @@
 import { Blockchain } from '@rotki/common';
 import { isOfEnum } from '@/utils';
 import { useSupportedChains } from '@/composables/info/chains';
-import type { Component } from 'vue';
+import AppImage from '@/components/common/AppImage.vue';
+import LocationDisplay from '@/components/history/LocationDisplay.vue';
+import SettingCategoryHeader from '@/components/settings/SettingCategoryHeader.vue';
 import type EvmRpcNodeManager from '@/components/settings/general/rpc/EvmRpcNodeManager.vue';
+import type { Component } from 'vue';
 
 const { t } = useI18n();
 

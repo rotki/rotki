@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import ManagedAssetContent from '@/components/asset-manager/managed/ManagedAssetContent.vue';
+
 definePage({
   name: 'asset-manager-managed',
   props: to => ({

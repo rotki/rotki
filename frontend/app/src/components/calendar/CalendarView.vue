@@ -13,9 +13,18 @@ import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import { useCalendarEventForm } from '@/composables/calendar/form';
 import { useCommonTableProps } from '@/composables/use-common-table-props';
 import { useCalendarApi } from '@/composables/history/calendar';
-import type { CalendarEvent, CalendarEventRequestPayload } from '@/types/history/calendar';
-import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
+import CalendarEventList from '@/components/calendar/CalendarEventList.vue';
+import DateDisplay from '@/components/display/DateDisplay.vue';
+import CalendarFormDialog from '@/components/calendar/CalendarFormDialog.vue';
+import CalendarDateNavigator from '@/components/calendar/CalendarDateNavigator.vue';
+import CalendarMonthNavigator from '@/components/calendar/CalendarMonthNavigator.vue';
+import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
+import HistoryTableActions from '@/components/history/HistoryTableActions.vue';
+import CalendarSettingsMenu from '@/components/calendar/CalendarSettingsMenu.vue';
+import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import type { Writeable } from '@rotki/common';
+import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
+import type { CalendarEvent, CalendarEventRequestPayload } from '@/types/history/calendar';
 
 const { t } = useI18n();
 

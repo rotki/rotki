@@ -1,9 +1,14 @@
 <script setup lang="ts">
 import { calculateTotalProfitLoss } from '@/utils/report';
 import { useReportsStore } from '@/store/reports';
-import type { DataTableColumn, DataTableSortColumn } from '@rotki/ui-library';
-import type { Report } from '@/types/reports';
+import ProfitLossOverview from '@/components/profitloss/ProfitLossOverview.vue';
+import ReportsTableMoreAction from '@/components/profitloss/ReportsTableMoreAction.vue';
+import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
+import DateDisplay from '@/components/display/DateDisplay.vue';
+import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import type { RouteLocationRaw } from 'vue-router';
+import type { Report } from '@/types/reports';
+import type { DataTableColumn, DataTableSortColumn } from '@rotki/ui-library';
 
 const expanded = ref<Report[]>([]);
 const reportStore = useReportsStore();

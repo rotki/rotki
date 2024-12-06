@@ -3,6 +3,7 @@ import { Blockchain } from '@rotki/common';
 import { Module } from '@/types/modules';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useModules } from '@/composables/session/modules';
+import ChainDisplay from '@/components/accounts/blockchain/ChainDisplay.vue';
 import type { AutoCompleteProps } from '@rotki/ui-library';
 import type { ChainInfo } from '@/types/api/chains';
 

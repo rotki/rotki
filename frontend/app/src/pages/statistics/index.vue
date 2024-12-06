@@ -2,6 +2,7 @@
 import { PremiumStatistics } from '@/premium/premium';
 import { NoteLocation } from '@/types/notes';
 import { usePremium } from '@/composables/premium';
+import NoPremiumPlaceholder from '@/components/premium/NoPremiumPlaceholder.vue';
 
 definePage({
   meta: {

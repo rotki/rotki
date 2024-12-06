@@ -10,6 +10,8 @@ import { useTaskStore } from '@/store/tasks';
 import { refIsTruthy } from '@/composables/ref';
 import { useImportDataApi } from '@/composables/api/import';
 import { useInterop } from '@/composables/electron-interop';
+import DateFormatHelp from '@/components/settings/controls/DateFormatHelp.vue';
+import FileUpload from '@/components/import/FileUpload.vue';
 import type { TaskMeta } from '@/types/task';
 import type { ImportSourceType } from '@/types/upload-types';
 

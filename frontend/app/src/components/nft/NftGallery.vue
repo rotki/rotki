@@ -8,10 +8,22 @@ import { uniqueStrings } from '@/utils/data';
 import { useNfts } from '@/composables/assets/nft';
 import { useAssetPricesApi } from '@/composables/api/assets/prices';
 import { usePremium } from '@/composables/premium';
-import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
-import type { Module } from '@/types/modules';
-import type { GalleryNft, Nft, Nfts } from '@/types/nfts';
+import NftGalleryItem from '@/components/nft/NftGalleryItem.vue';
+import ExternalLink from '@/components/helper/ExternalLink.vue';
+import NftSorter from '@/components/nft/NftSorter.vue';
+import NftCollectionSelector from '@/components/nft/NftCollectionSelector.vue';
+import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
+import RefreshButton from '@/components/helper/RefreshButton.vue';
+import ActiveModules from '@/components/defi/ActiveModules.vue';
+import NftImageRenderingSettingMenu from '@/components/settings/general/nft/NftImageRenderingSettingMenu.vue';
+import TablePageLayout from '@/components/layout/TablePageLayout.vue';
+import InternalLink from '@/components/helper/InternalLink.vue';
+import NoDataScreen from '@/components/common/NoDataScreen.vue';
+import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import type { NftPrice } from '@/types/prices';
+import type { GalleryNft, Nft, Nfts } from '@/types/nfts';
+import type { Module } from '@/types/modules';
+import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 
 defineProps<{ modules: Module[] }>();
 

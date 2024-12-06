@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useAccountingRuleMappings } from '@/composables/settings/accounting/rule-mapping';
+import SuccessDisplay from '@/components/display/SuccessDisplay.vue';
 import type { AccountingRuleWithLinkedProperty } from '@/types/settings/accounting';
 
 const props = defineProps<{

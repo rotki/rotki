@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { LpType } from '@rotki/common';
+import AppImage from '@/components/common/AppImage.vue';
+import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
 
 const props = defineProps<{
   assets: string[];

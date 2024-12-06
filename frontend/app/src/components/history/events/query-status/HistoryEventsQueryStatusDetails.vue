@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import DateDisplay from '@/components/display/DateDisplay.vue';
+import HistoryEventsQueryStatusLine from '@/components/history/events/query-status/HistoryEventsQueryStatusLine.vue';
+import LocationIcon from '@/components/history/LocationIcon.vue';
 import type { HistoryEventsQueryData } from '@/types/websocket-messages';
 
 defineProps<{ item: HistoryEventsQueryData }>();

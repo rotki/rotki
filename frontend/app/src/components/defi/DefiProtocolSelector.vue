@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { DefiProtocol, SUPPORTED_MODULES, type SupportedModule, isDefiProtocol } from '@/types/modules';
+import DefiIcon from '@/components/defi/DefiIcon.vue';
 
 type SupportedProtocol = Omit<SupportedModule, 'identifier'> & { identifier: DefiProtocol };
 

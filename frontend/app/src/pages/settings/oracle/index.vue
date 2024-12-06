@@ -1,5 +1,9 @@
 <script setup lang="ts">
 import { NoteLocation } from '@/types/notes';
+import OraclePenaltySettings from '@/components/settings/data-security/oracle/OraclePenaltySettings.vue';
+import OracleCacheManagement from '@/components/settings/data-security/oracle/OracleCacheManagement.vue';
+import PriceOracleSettings from '@/components/settings/PriceOracleSettings.vue';
+import SettingsPage from '@/components/settings/controls/SettingsPage.vue';
 
 definePage({
   meta: {

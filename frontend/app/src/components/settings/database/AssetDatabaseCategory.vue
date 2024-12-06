@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import RestoreAssetsDatabase from '@/components/settings/data-security/RestoreAssetsDatabase.vue';
+import AssetUpdate from '@/components/status/update/AssetUpdate.vue';
+import SettingCategory from '@/components/settings/SettingCategory.vue';
+
 const { t } = useI18n();
 </script>
 

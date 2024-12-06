@@ -11,6 +11,9 @@ import HistoryEventAssetPriceForm from '@/components/history/events/forms/Histor
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useBlockchainStore } from '@/store/blockchain';
 import { useHistoryEventsForm } from '@/composables/history/events/form';
+import AutoCompleteWithSearchSync from '@/components/inputs/AutoCompleteWithSearchSync.vue';
+import AmountInput from '@/components/inputs/AmountInput.vue';
+import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
 import type { EthWithdrawalEvent, NewEthWithdrawalEventPayload } from '@/types/history/events';
 
 const props = withDefaults(

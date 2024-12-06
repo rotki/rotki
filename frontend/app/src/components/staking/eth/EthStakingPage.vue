@@ -31,6 +31,12 @@ import { useStatusUpdater } from '@/composables/status';
 import { useEth2DailyStats } from '@/composables/staking/eth2/daily-stats';
 import { useModules } from '@/composables/session/modules';
 import { useEth2Staking } from '@/composables/staking/eth2/eth2';
+import EthValidatorFilter from '@/components/staking/eth/EthValidatorFilter.vue';
+import EthStakingPageSettingMenu from '@/components/staking/eth/EthStakingPageSettingMenu.vue';
+import ActiveModules from '@/components/defi/ActiveModules.vue';
+import TablePageLayout from '@/components/layout/TablePageLayout.vue';
+import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
+import NoPremiumPlaceholder from '@/components/premium/NoPremiumPlaceholder.vue';
 
 const module = Module.ETH2;
 const performanceSection = Section.STAKING_ETH2;

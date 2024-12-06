@@ -3,6 +3,8 @@ import { getSortItems } from '@/utils/assets';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
+import AssetDetails from '@/components/helper/AssetDetails.vue';
 import type { AssetBalance, BigNumber } from '@rotki/common';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 

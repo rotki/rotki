@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { size } from '@/utils/data';
+import FadeTransition from '@/components/helper/FadeTransition.vue';
 import type { ImportSourceType } from '@/types/upload-types';
 
 const file = defineModel<File | undefined>({ required: true });

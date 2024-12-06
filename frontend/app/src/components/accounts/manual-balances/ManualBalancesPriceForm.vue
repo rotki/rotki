@@ -2,6 +2,9 @@
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useAssetPricesApi } from '@/composables/api/assets/prices';
+import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
+import AssetSelect from '@/components/inputs/AssetSelect.vue';
+import AmountInput from '@/components/inputs/AmountInput.vue';
 import type { BigNumber } from '@rotki/common';
 
 const props = withDefaults(

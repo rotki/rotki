@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useBalancesBreakdown } from '@/composables/balances/breakdown';
+import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import type { BigNumber } from '@rotki/common';
 
 const props = defineProps<{ identifier: string }>();

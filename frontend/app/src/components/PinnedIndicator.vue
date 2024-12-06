@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useAreaVisibilityStore } from '@/store/session/visibility';
+import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 
 const props = defineProps<{ visible: boolean }>();
 

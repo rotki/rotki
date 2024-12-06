@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { Routes } from '@/router/routes';
 import { useLocations } from '@/composables/locations';
+import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
+import LocationDisplay from '@/components/history/LocationDisplay.vue';
+import ListItem from '@/components/common/ListItem.vue';
 import type { BigNumber } from '@rotki/common';
 
 const props = defineProps<{

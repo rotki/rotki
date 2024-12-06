@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useAppRoutes } from '@/router/routes';
+import TabNavigation from '@/components/helper/TabNavigation.vue';
 import type { TabContent } from '@/types/tabs';
 
 definePage({

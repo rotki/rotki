@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import SuccessDisplay from '@/components/display/SuccessDisplay.vue';
+
 defineProps<{ remoteVersion: number }>();
 
 const emit = defineEmits<{ (e: 'confirm'): void }>();

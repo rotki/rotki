@@ -4,8 +4,12 @@ import { getDomain } from '@/utils/url';
 import { useConfirmStore } from '@/store/confirm';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useNftImage } from '@/composables/nft-image';
-import type { StyleValue } from 'vue';
+import IconLink from '@/components/base/IconLink.vue';
+import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
+import AppImage from '@/components/common/AppImage.vue';
+import ExternalLink from '@/components/helper/ExternalLink.vue';
 import type { GalleryNft } from '@/types/nfts';
+import type { StyleValue } from 'vue';
 
 const props = defineProps<{
   item: GalleryNft;

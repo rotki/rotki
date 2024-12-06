@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { useSessionAuthStore } from '@/store/session/auth';
 import { useRefMap } from '@/composables/utils/useRefMap';
+import DateDisplay from '@/components/display/DateDisplay.vue';
+import LoginActionAlert from '@/components/account-management/login/LoginActionAlert.vue';
 
 const emit = defineEmits<{ (e: 'proceed', approval: 'yes' | 'no'): void }>();
 

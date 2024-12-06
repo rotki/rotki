@@ -3,6 +3,9 @@ import { NotificationCategory, type NotificationPayload, Severity } from '@rotki
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import { useNotificationsStore } from '@/store/notifications';
 import { useConfirmStore } from '@/store/confirm';
+import RowActions from '@/components/helper/RowActions.vue';
+import AccountDisplay from '@/components/display/AccountDisplay.vue';
+import CollectionHandler from '@/components/helper/CollectionHandler.vue';
 import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import type { AddressBookEntry, AddressBookLocation } from '@/types/eth-names';
 import type { Collection } from '@/types/collection';

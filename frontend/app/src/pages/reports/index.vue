@@ -15,8 +15,12 @@ import { useReportsStore } from '@/store/reports';
 import { useTaskStore } from '@/store/tasks';
 import { useInterop } from '@/composables/electron-interop';
 import { useReportsApi } from '@/composables/api/reports';
-import type { ProfitLossReportDebugPayload, ProfitLossReportPeriod } from '@/types/reports';
+import ProgressScreen from '@/components/helper/ProgressScreen.vue';
+import ReportsTable from '@/components/profitloss/ReportsTable.vue';
+import ErrorScreen from '@/components/error/ErrorScreen.vue';
+import ReportGenerator from '@/components/profitloss/ReportGenerator.vue';
 import type { TaskMeta } from '@/types/task';
+import type { ProfitLossReportDebugPayload, ProfitLossReportPeriod } from '@/types/reports';
 
 definePage({
   meta: {

@@ -1,4 +1,14 @@
 <script setup lang="ts">
+import EthStakingTaxableAfterWithdrawalSetting from '@/components/settings/accounting/EthStakingTaxableAfterWithdrawalSetting.vue';
+import CostBasisMethodSetting from '@/components/settings/accounting/CostBasisMethodSetting.vue';
+import CostBasisFeesSetting from '@/components/settings/accounting/CostBasisFeesSetting.vue';
+import CalculatePastCostBasisSetting from '@/components/settings/accounting/CalculatePastCostBasisSetting.vue';
+import AccountAssetMovementsSetting from '@/components/settings/accounting/AccountAssetMovementsSetting.vue';
+import TaxFreeSetting from '@/components/settings/accounting/TaxFreeSetting.vue';
+import GasCostSetting from '@/components/settings/accounting/GasCostSetting.vue';
+import CryptoToCryptoTradeSetting from '@/components/settings/accounting/CryptoToCryptoTradeSetting.vue';
+import SettingsItem from '@/components/settings/controls/SettingsItem.vue';
+
 const { t } = useI18n();
 </script>
 

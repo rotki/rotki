@@ -3,6 +3,7 @@ import { type NotificationAction, type NotificationData, Severity } from '@rotki
 import dayjs from 'dayjs';
 import { type RuiIcons, isRuiIcon } from '@rotki/ui-library';
 import { arrayify } from '@/utils/array';
+import MissingKeyNotification from '@/components/status/notifications/MissingKeyNotification.vue';
 
 const props = withDefaults(
   defineProps<{

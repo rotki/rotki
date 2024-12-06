@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { objectOmit } from '@vueuse/core';
 import XpubInput from '@/components/accounts/blockchain/XpubInput.vue';
+import AccountDataInput from '@/components/accounts/management/inputs/AccountDataInput.vue';
 import type { ValidationErrors } from '@/types/api/errors';
 import type { XpubPayload } from '@/types/blockchain/accounts';
 import type { XpubManage } from '@/composables/accounts/blockchain/use-account-manage';

@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import PnlCsvSummarySetting from '@/components/settings/accounting/PnlCsvSummarySetting.vue';
+import PnlCsvWithFormulasSetting from '@/components/settings/accounting/PnlCsvWithFormulasSetting.vue';
+import SettingsItem from '@/components/settings/controls/SettingsItem.vue';
+
 const { t } = useI18n();
 </script>
 

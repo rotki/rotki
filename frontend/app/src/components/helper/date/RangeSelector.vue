@@ -6,6 +6,8 @@ import { toMessages } from '@/utils/validation';
 import { convertToTimestamp } from '@/utils/date';
 import { useSimplePropVModel } from '@/utils/model';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
+import ReportPeriodSelector from '@/components/profitloss/ReportPeriodSelector.vue';
 import type { PeriodChangedEvent, SelectionChangedEvent } from '@/types/reports';
 
 const props = defineProps<{ modelValue: { start: string; end: string } }>();

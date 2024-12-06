@@ -10,6 +10,10 @@ import { useSessionStore } from '@/store/session';
 import { useDynamicMessages } from '@/composables/dynamic-messages';
 import { useInterop } from '@/composables/electron-interop';
 import { useUsersApi } from '@/composables/api/session/users';
+import WelcomeMessageDisplay from '@/components/account-management/login/WelcomeMessageDisplay.vue';
+import IncompleteUpgradeAlert from '@/components/account-management/login/IncompleteUpgradeAlert.vue';
+import PremiumSyncConflictAlert from '@/components/account-management/login/PremiumSyncConflictAlert.vue';
+import ExternalLink from '@/components/helper/ExternalLink.vue';
 import type { LoginCredentials, SyncApproval } from '@/types/login';
 
 const props = withDefaults(

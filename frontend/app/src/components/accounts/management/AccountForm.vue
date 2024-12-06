@@ -16,6 +16,9 @@ import ValidatorAccountForm from '@/components/accounts/management/types/Validat
 import XpubAccountForm from '@/components/accounts/management/types/XpubAccountForm.vue';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useExternalApiKeys } from '@/composables/settings/api-keys/external';
+import AllEvmChainsSelector from '@/components/accounts/management/inputs/AllEvmChainsSelector.vue';
+import AgnosticAddressAccountForm from '@/components/accounts/management/types/AgnosticAddressAccountForm.vue';
+import AccountSelector from '@/components/accounts/management/inputs/AccountSelector.vue';
 import type { ValidationErrors } from '@/types/api/errors';
 
 const modelValue = defineModel<AccountManageState>({ required: true });

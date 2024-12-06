@@ -4,6 +4,7 @@ import { TaskType } from '@/types/task-type';
 import { useTaskStore } from '@/store/tasks';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
+import HintMenuIcon from '@/components/HintMenuIcon.vue';
 
 const props = defineProps<{
   source: BalanceSource;

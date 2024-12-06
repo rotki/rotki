@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { useBalancePricesStore } from '@/store/balances/prices';
-import type { Balance } from '@rotki/common';
+import BalanceDisplay from '@/components/display/BalanceDisplay.vue';
+import ValueAccuracyHint from '@/components/helper/hint/ValueAccuracyHint.vue';
+import AssetDetails from '@/components/helper/AssetDetails.vue';
 import type { ReceivedAmount } from '@/types/staking';
+import type { Balance } from '@rotki/common';
 
 defineProps<{
   received: ReceivedAmount[];

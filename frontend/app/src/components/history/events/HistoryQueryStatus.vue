@@ -4,11 +4,16 @@ import { useTaskStore } from '@/store/tasks';
 import { useHistoryStore } from '@/store/history';
 import { useTransactionQueryStatus } from '@/composables/history/events/query-status/tx-query-status';
 import { useEventsQueryStatus } from '@/composables/history/events/query-status/events-query-status';
+import HistoryQueryStatusDialog from '@/components/history/events/HistoryQueryStatusDialog.vue';
+import EventsDecodingStatusCurrent from '@/components/history/events/EventsDecodingStatusCurrent.vue';
+import HistoryQueryStatusCurrent from '@/components/history/events/HistoryQueryStatusCurrent.vue';
+import EventsCacheRefreshStatusCurrent from '@/components/history/events/EventsCacheRefreshStatusCurrent.vue';
+import HistoryQueryStatusBar from '@/components/history/events/HistoryQueryStatusBar.vue';
+import type { Blockchain } from '@rotki/common';
 import type {
   EvmTransactionQueryData,
   HistoryEventsQueryData,
 } from '@/types/websocket-messages';
-import type { Blockchain } from '@rotki/common';
 
 const currentAction = defineModel<'decode' | 'query'>('currentAction', { required: true });
 

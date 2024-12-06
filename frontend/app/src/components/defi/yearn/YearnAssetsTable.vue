@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ProtocolVersion } from '@/types/defi';
 import { useYearnStore } from '@/store/defi/yearn';
+import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
+import BalanceDisplay from '@/components/display/BalanceDisplay.vue';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { YearnVaultAsset } from '@/types/defi/yearn';
 import type { BigNumber } from '@rotki/common';

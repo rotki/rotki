@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import ExternalLink from '@/components/helper/ExternalLink.vue';
+import RotkiLogo from '@/components/common/RotkiLogo.vue';
+import FullSizeContent from '@/components/common/FullSizeContent.vue';
+
 defineProps<{ text: string }>();
 
 const { t } = useI18n();

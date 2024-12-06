@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useTagStore } from '@/store/session/tags';
+import TagIcon from '@/components/tags/TagIcon.vue';
 import type { Tag } from '@/types/tags';
 
 const model = defineModel<string[]>({ required: true });

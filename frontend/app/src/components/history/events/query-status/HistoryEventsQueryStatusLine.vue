@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { useEventsQueryStatus } from '@/composables/history/events/query-status/events-query-status';
+import DateDisplay from '@/components/display/DateDisplay.vue';
+import HashLink from '@/components/helper/HashLink.vue';
 import type { HistoryEventsQueryData } from '@/types/websocket-messages';
 
 defineProps<{ item: HistoryEventsQueryData }>();

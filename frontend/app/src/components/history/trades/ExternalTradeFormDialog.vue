@@ -1,5 +1,7 @@
 <script lang="ts" setup>
 import { useTradesForm } from '@/composables/history/trades/form';
+import ExternalTradeForm from '@/components/history/trades/ExternalTradeForm.vue';
+import BigDialog from '@/components/dialogs/BigDialog.vue';
 import type { Trade } from '@/types/history/trade';
 
 const props = withDefaults(

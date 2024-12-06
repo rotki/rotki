@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useGeneralSettingsStore } from '@/store/settings/general';
+import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 
 const anonymousUsageAnalytics = ref<boolean>(false);
 const { submitUsageAnalytics } = storeToRefs(useGeneralSettingsStore());

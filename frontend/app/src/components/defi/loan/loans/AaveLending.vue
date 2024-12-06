@@ -5,6 +5,10 @@ import { useStatusStore } from '@/store/status';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useRefMap } from '@/composables/utils/useRefMap';
 import { usePremium } from '@/composables/premium';
+import PremiumCard from '@/components/display/PremiumCard.vue';
+import LoanDebt from '@/components/defi/loan/LoanDebt.vue';
+import AaveCollateral from '@/components/defi/loan/loans/aave/AaveCollateral.vue';
+import LoanHeader from '@/components/defi/loan/LoanHeader.vue';
 import type { AaveLoan } from '@/types/defi/lending';
 
 const props = defineProps<{ loan: AaveLoan }>();

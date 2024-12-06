@@ -6,6 +6,11 @@ import { useSessionStore } from '@/store/session';
 import { useBackendManagement } from '@/composables/backend';
 import { useRestartingStatus } from '@/composables/user/account';
 import { useAssets } from '@/composables/assets';
+import AssetConflictDialog from '@/components/status/update/AssetConflictDialog.vue';
+import AssetUpdateMessage from '@/components/status/update/AssetUpdateMessage.vue';
+import AssetUpdateInlineConfirm from '@/components/status/update/AssetUpdateInlineConfirm.vue';
+import AssetUpdateStatus from '@/components/status/update/AssetUpdateStatus.vue';
+import AssetUpdateSetting from '@/components/status/update/AssetUpdateSetting.vue';
 import type { AssetUpdateConflictResult, AssetVersionUpdate, ConflictResolution } from '@/types/asset';
 
 const props = withDefaults(defineProps<{ headless?: boolean }>(), {

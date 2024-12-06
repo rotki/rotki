@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import MovementLinks from '@/components/history/MovementLinks.vue';
 import type { AssetMovementEntry } from '@/types/history/asset-movements';
 
 defineProps<{ item: AssetMovementEntry }>();

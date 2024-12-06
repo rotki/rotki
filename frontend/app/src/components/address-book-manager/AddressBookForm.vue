@@ -8,8 +8,11 @@ import { useBlockchainStore } from '@/store/blockchain';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import { useAddressBookForm } from '@/composables/address-book/form';
 import { useBlockie } from '@/composables/accounts/blockie';
-import type { SelectOptions } from '@/types/common';
+import AppImage from '@/components/common/AppImage.vue';
+import AutoCompleteWithSearchSync from '@/components/inputs/AutoCompleteWithSearchSync.vue';
+import ChainSelect from '@/components/accounts/blockchain/ChainSelect.vue';
 import type { AddressBookLocation, AddressBookPayload } from '@/types/eth-names';
+import type { SelectOptions } from '@/types/common';
 
 const enabledForAllChains = defineModel<boolean>('enableForAllChains', { default: false, required: true });
 

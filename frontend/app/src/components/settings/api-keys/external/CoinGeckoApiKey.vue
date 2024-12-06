@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { externalLinks } from '@shared/external-links';
 import { useExternalApiKeys, useServiceKeyHandler } from '@/composables/settings/api-keys/external';
-import type ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
+import ExternalLink from '@/components/helper/ExternalLink.vue';
+import ServiceKeyCard from '@/components/settings/api-keys/ServiceKeyCard.vue';
+import ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
 
 const name = 'coingecko';
 

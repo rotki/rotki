@@ -4,6 +4,12 @@ import { Routes } from '@/router/routes';
 import { useExchangesStore } from '@/store/exchanges';
 import { useKrakenStakingStore } from '@/store/staking/kraken';
 import { useStatusStore } from '@/store/status';
+import KrakenStaking from '@/components/staking/kraken/KrakenStaking.vue';
+import ProgressScreen from '@/components/helper/ProgressScreen.vue';
+import InternalLink from '@/components/helper/InternalLink.vue';
+import AppImage from '@/components/common/AppImage.vue';
+import FullSizeContent from '@/components/common/FullSizeContent.vue';
+import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import type { RouteLocationRaw } from 'vue-router';
 
 const { isLoading, shouldShowLoadingScreen } = useStatusStore();

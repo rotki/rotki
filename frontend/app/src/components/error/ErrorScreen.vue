@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import CopyButton from '@/components/helper/CopyButton.vue';
+
 const props = withDefaults(
   defineProps<{
     header?: string;

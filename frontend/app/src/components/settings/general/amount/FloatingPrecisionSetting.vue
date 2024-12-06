@@ -4,6 +4,7 @@ import { helpers, required } from '@vuelidate/validators';
 import { toMessages } from '@/utils/validation';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useValidation } from '@/composables/validation';
+import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 
 const floatingPrecision = ref<string>('0');
 const maxFloatingPrecision = 8;

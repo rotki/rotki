@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import AddressNamePrioritySetting from '@/components/settings/frontend/AddressNamePrioritySetting.vue';
+import SettingCategory from '@/components/settings/SettingCategory.vue';
+
 const { t } = useI18n();
 </script>
 

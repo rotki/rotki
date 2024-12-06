@@ -15,6 +15,13 @@ import { useHistoryEventsForm } from '@/composables/history/events/form';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useHistoryEventCounterpartyMappings } from '@/composables/history/events/mapping/counterparty';
 import { useHistoryEventProductMappings } from '@/composables/history/events/mapping/product';
+import JsonInput from '@/components/inputs/JsonInput.vue';
+import CounterpartyInput from '@/components/inputs/CounterpartyInput.vue';
+import AmountInput from '@/components/inputs/AmountInput.vue';
+import AutoCompleteWithSearchSync from '@/components/inputs/AutoCompleteWithSearchSync.vue';
+import HistoryEventTypeForm from '@/components/history/events/forms/HistoryEventTypeForm.vue';
+import LocationSelector from '@/components/helper/LocationSelector.vue';
+import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
 import type { EvmHistoryEvent, NewEvmHistoryEventPayload } from '@/types/history/events';
 
 const props = withDefaults(

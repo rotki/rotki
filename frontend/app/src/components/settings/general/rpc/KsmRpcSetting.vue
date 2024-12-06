@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import { Defaults } from '@/data/defaults';
 import { useGeneralSettingsStore } from '@/store/settings/general';
+import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 
 const { t } = useI18n();
 const ksmRpcEndpoint = ref(Defaults.KSM_RPC_ENDPOINT);

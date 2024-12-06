@@ -8,9 +8,14 @@ import { useConfirmStore } from '@/store/confirm';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useTaskStore } from '@/store/tasks';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
-import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
-import type { PrioritizedListItemData } from '@/types/settings/prioritized-list-data';
+import DateDisplay from '@/components/display/DateDisplay.vue';
+import AssetDetails from '@/components/helper/AssetDetails.vue';
+import AssetSelect from '@/components/inputs/AssetSelect.vue';
+import PrioritizedListEntry from '@/components/helper/PrioritizedListEntry.vue';
+import SettingCategoryHeader from '@/components/settings/SettingCategoryHeader.vue';
 import type { OracleCacheMeta } from '@/types/prices';
+import type { PrioritizedListItemData } from '@/types/settings/prioritized-list-data';
+import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 
 type OracleCacheEntry = OracleCacheMeta & { id: number };
 

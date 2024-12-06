@@ -1,10 +1,21 @@
 <script setup lang="ts">
+import SuccessDisplay from '@/components/display/SuccessDisplay.vue';
+import EventDecodingStatusDetails from '@/components/history/events/EventDecodingStatusDetails.vue';
+import TransactionQueryStatusSteps from '@/components/history/events/tx/query-status/TransactionQueryStatusSteps.vue';
+import TransactionQueryStatusDetails
+  from '@/components/history/events/tx/query-status/TransactionQueryStatusDetails.vue';
+import TransactionQueryStatusCurrent
+  from '@/components/history/events/tx/query-status/TransactionQueryStatusCurrent.vue';
+import HistoryEventsQueryStatusDetails
+  from '@/components/history/events/query-status/HistoryEventsQueryStatusDetails.vue';
+import HistoryEventsQueryStatusCurrent
+  from '@/components/history/events/query-status/HistoryEventsQueryStatusCurrent.vue';
+import type { Blockchain } from '@rotki/common';
 import type {
   EvmTransactionQueryData,
   EvmUnDecodedTransactionsData,
   HistoryEventsQueryData,
 } from '@/types/websocket-messages';
-import type { Blockchain } from '@rotki/common';
 
 withDefaults(
   defineProps<{

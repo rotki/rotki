@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { TableColumn } from '@/types/table-column';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import type { DashboardTableType, FrontendSettingsPayload } from '@/types/settings/frontend-settings';
 
 const props = withDefaults(

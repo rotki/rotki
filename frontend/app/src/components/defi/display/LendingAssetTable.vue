@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import type { BaseDefiBalance } from '@/types/defi/lending';
+import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
+import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
+import AssetDetails from '@/components/helper/AssetDetails.vue';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
+import type { BaseDefiBalance } from '@/types/defi/lending';
 
 withDefaults(
   defineProps<{

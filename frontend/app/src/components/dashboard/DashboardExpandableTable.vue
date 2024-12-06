@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import CardTitle from '@/components/typography/CardTitle.vue';
+
 const expanded = ref<boolean>(true);
 
 const panel = computed<number>(() => (get(expanded) ? 0 : -1));

@@ -5,8 +5,15 @@ import { useConfirmStore } from '@/store/confirm';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useLatestPrices } from '@/composables/price-manager/latest';
 import { useLatestPriceForm } from '@/composables/price-manager/latest/form';
-import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
+import LatestPriceFormDialog from '@/components/price-manager/latest/LatestPriceFormDialog.vue';
+import RowActions from '@/components/helper/RowActions.vue';
+import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
+import AssetDetails from '@/components/helper/AssetDetails.vue';
+import NftDetails from '@/components/helper/NftDetails.vue';
+import AssetSelect from '@/components/inputs/AssetSelect.vue';
+import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import type { ManualPriceFormPayload, ManualPriceWithUsd } from '@/types/prices';
+import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 
 const { t } = useI18n();
 

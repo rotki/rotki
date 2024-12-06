@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import BadgeDisplay from '@/components/history/BadgeDisplay.vue';
+import SettingsItem from '@/components/settings/controls/SettingsItem.vue';
+
 defineProps<{
   skipped: number;
   loading: boolean;

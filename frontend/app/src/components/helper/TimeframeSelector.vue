@@ -3,6 +3,7 @@ import { TimeFramePeriod, TimeFramePersist, type TimeFrameSetting } from '@rotki
 import { isPeriodAllowed } from '@/utils/settings';
 import { isOfEnum } from '@/utils';
 import { usePremium } from '@/composables/premium';
+import PremiumLock from '@/components/premium/PremiumLock.vue';
 
 const props = defineProps<{
   modelValue: TimeFrameSetting;

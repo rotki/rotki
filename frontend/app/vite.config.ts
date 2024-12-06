@@ -106,7 +106,8 @@ export default defineConfig({
     }),
     Components({
       dts: true,
-      include: [/\.vue$/, /\.vue\?vue/],
+      include: [],
+      dirs: [],
       resolvers: [RuiComponentResolver()],
       types: [
         {

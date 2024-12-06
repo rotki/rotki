@@ -1,4 +1,9 @@
 <script setup lang="ts">
+import OraclePenaltyThresholdCountSetting
+  from '@/components/settings/data-security/oracle/OraclePenaltyThresholdCountSetting.vue';
+import OraclePenaltyDurationSetting from '@/components/settings/data-security/oracle/OraclePenaltyDurationSetting.vue';
+import SettingCategory from '@/components/settings/SettingCategory.vue';
+
 const { t } = useI18n();
 </script>
 

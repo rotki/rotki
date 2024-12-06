@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import AskUserUponSizeDiscrepancySetting from '@/components/settings/general/AskUserUponSizeDiscrepancySetting.vue';
+
 const model = defineModel<boolean>({ required: true });
 
 const { t } = useI18n();

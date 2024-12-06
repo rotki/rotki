@@ -2,6 +2,7 @@
 import { Blockchain } from '@rotki/common';
 import { isEthBlockEventRef, isEthDepositEventRef, isEvmEventRef, isWithdrawalEventRef } from '@/utils/history/events';
 import { useSupportedChains } from '@/composables/info/chains';
+import HashLink from '@/components/helper/HashLink.vue';
 import type { HistoryEventEntry } from '@/types/history/events';
 
 const props = defineProps<{

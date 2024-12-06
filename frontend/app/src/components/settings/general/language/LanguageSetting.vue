@@ -4,6 +4,9 @@ import { supportedLanguages } from '@/data/supported-language';
 import { SupportedLanguage } from '@/types/settings/frontend-settings';
 import { useSessionStore } from '@/store/session';
 import { useLastLanguage } from '@/composables/session/language';
+import LanguageSelectorItem from '@/components/settings/general/language/LanguageSelectorItem.vue';
+import ExternalLink from '@/components/helper/ExternalLink.vue';
+import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 
 defineOptions({
   inheritAttrs: false,

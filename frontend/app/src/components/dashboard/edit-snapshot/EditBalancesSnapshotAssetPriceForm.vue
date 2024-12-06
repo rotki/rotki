@@ -10,8 +10,11 @@ import { useBalancePricesStore } from '@/store/balances/prices';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useHistoricCachePriceStore } from '@/store/prices/historic';
 import { useAssetPricesApi } from '@/composables/api/assets/prices';
-import type { BigNumber } from '@rotki/common';
+import TwoFieldsAmountInput from '@/components/inputs/TwoFieldsAmountInput.vue';
+import AmountInput from '@/components/inputs/AmountInput.vue';
+import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import type { HistoricalPriceFormPayload } from '@/types/prices';
+import type { BigNumber } from '@rotki/common';
 
 const amount = defineModel<string>('amount', { required: true });
 

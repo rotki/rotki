@@ -4,6 +4,8 @@ import { toMessages } from '@/utils/validation';
 import { usePropVModel } from '@/utils/model';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useEditLocationsSnapshotForm } from '@/composables/snapshots/edit-location/form';
+import AmountInput from '@/components/inputs/AmountInput.vue';
+import LocationSelector from '@/components/helper/LocationSelector.vue';
 import type { LocationDataSnapshotPayload } from '@/types/snapshots';
 
 const props = withDefaults(

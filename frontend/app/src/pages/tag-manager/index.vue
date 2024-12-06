@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { NoteLocation } from '@/types/notes';
+import TagManager from '@/components/tags/TagManager.vue';
 
 definePage({
   meta: {

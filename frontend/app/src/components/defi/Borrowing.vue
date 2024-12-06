@@ -3,6 +3,16 @@ import { type DefiProtocol, type Module, isDefiProtocol } from '@/types/modules'
 import { Section } from '@/types/status';
 import { useStatusStore } from '@/store/status';
 import { useDefiLending } from '@/composables/defi/lending';
+import FullSizeContent from '@/components/common/FullSizeContent.vue';
+import LoanInfo from '@/components/defi/loan/LoanInfo.vue';
+import DefiProtocolSelector from '@/components/defi/DefiProtocolSelector.vue';
+import DefiSelectorItem from '@/components/defi/DefiSelectorItem.vue';
+import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
+import StatCardColumn from '@/components/display/StatCardColumn.vue';
+import StatCardWide from '@/components/display/StatCardWide.vue';
+import ProgressScreen from '@/components/helper/ProgressScreen.vue';
+import ActiveModules from '@/components/defi/ActiveModules.vue';
+import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 
 defineProps<{
   modules: Module[];

@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { externalLinks } from '@shared/external-links';
 import { Routes } from '@/router/routes';
+import InternalLink from '@/components/helper/InternalLink.vue';
+import ExternalLink from '@/components/helper/ExternalLink.vue';
+import ImportSource from '@/components/import/ImportSource.vue';
 
 const { t } = useI18n();
 </script>

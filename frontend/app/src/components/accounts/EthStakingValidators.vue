@@ -15,9 +15,16 @@ import { type Filters, type Matcher, useEthValidatorAccountFilter } from '@/comp
 import { useBlockchainBalances } from '@/composables/blockchain/balances';
 import { useEthStaking } from '@/composables/blockchain/accounts/staking';
 import { useAccountDelete } from '@/composables/accounts/blockchain/use-account-delete';
-import type { StakingValidatorManage } from '@/composables/accounts/blockchain/use-account-manage';
-import type { ContextColorsType, DataTableColumn } from '@rotki/ui-library';
+import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
+import RowAppend from '@/components/helper/RowAppend.vue';
+import Eth2ValidatorLimitRow from '@/components/accounts/blockchain/eth2/Eth2ValidatorLimitRow.vue';
+import RowActions from '@/components/helper/RowActions.vue';
+import TableFilter from '@/components/table-filter/TableFilter.vue';
+import CardTitle from '@/components/typography/CardTitle.vue';
+import RefreshButton from '@/components/helper/RefreshButton.vue';
 import type { EthereumValidator, EthereumValidatorRequestPayload } from '@/types/blockchain/accounts';
+import type { ContextColorsType, DataTableColumn } from '@rotki/ui-library';
+import type { StakingValidatorManage } from '@/composables/accounts/blockchain/use-account-manage';
 
 const emit = defineEmits<{
   (e: 'edit', value: StakingValidatorManage): void;

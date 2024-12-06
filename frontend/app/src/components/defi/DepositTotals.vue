@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
+import StatCardColumn from '@/components/display/StatCardColumn.vue';
+import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
+import StatCardWide from '@/components/display/StatCardWide.vue';
 import type { BigNumber } from '@rotki/common';
 
 defineProps<{

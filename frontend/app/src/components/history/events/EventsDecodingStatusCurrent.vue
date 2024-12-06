@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import HistoryQueryStatusCurrent from '@/components/history/events/HistoryQueryStatusCurrent.vue';
+
 defineProps<{
   finished: boolean;
 }>();

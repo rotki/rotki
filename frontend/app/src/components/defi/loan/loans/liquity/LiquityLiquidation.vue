@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
+import LoanRow from '@/components/defi/loan/LoanRow.vue';
+import StatCard from '@/components/display/StatCard.vue';
 import type { BigNumber } from '@rotki/common';
 
 defineProps<{

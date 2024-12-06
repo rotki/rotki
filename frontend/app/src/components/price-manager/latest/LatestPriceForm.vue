@@ -5,6 +5,9 @@ import { bigNumberifyFromRef } from '@/utils/bignumbers';
 import { useSimplePropVModel } from '@/utils/model';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useLatestPriceForm } from '@/composables/price-manager/latest/form';
+import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
+import AmountInput from '@/components/inputs/AmountInput.vue';
+import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import type { ManualPriceFormPayload } from '@/types/prices';
 
 const props = withDefaults(

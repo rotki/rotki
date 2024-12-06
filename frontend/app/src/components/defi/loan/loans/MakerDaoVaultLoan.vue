@@ -2,6 +2,13 @@
 import { type BigNumber, Blockchain, HistoryEventEntryType } from '@rotki/common';
 import { useScramble } from '@/composables/scramble';
 import { usePremium } from '@/composables/premium';
+import HistoryEventsView from '@/components/history/events/HistoryEventsView.vue';
+import PremiumCard from '@/components/display/PremiumCard.vue';
+import MakerDaoVaultDebtDetails from '@/components/defi/loan/loans/makerdao/MakerDaoVaultDebtDetails.vue';
+import LoanDebt from '@/components/defi/loan/LoanDebt.vue';
+import MakerDaoVaultLiquidation from '@/components/defi/loan/loans/makerdao/MakerDaoVaultLiquidation.vue';
+import MakerDaoVaultCollateral from '@/components/defi/loan/loans/makerdao/MakerDaoVaultCollateral.vue';
+import LoanHeader from '@/components/defi/loan/LoanHeader.vue';
 import type { MakerDAOVaultModel } from '@/types/defi/maker';
 
 const props = defineProps<{

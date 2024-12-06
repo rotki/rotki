@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { toMessages } from '@/utils/validation';
 import { useHistoryEventMappings } from '@/composables/history/events/mapping';
+import HistoryEventTypeCombination from '@/components/history/events/HistoryEventTypeCombination.vue';
 import type { Validation } from '@vuelidate/core';
 import type { ActionDataEntry } from '@/types/action';
 

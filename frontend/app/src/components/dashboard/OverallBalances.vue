@@ -10,6 +10,10 @@ import { useStatisticsStore } from '@/store/statistics';
 import { useSessionSettingsStore } from '@/store/settings/session';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { usePremium } from '@/composables/premium';
+import NetWorthChart from '@/components/dashboard/NetWorthChart.vue';
+import TimeframeSelector from '@/components/helper/TimeframeSelector.vue';
+import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
+import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 
 const { t } = useI18n();
 const { currencySymbol, floatingPrecision } = storeToRefs(useGeneralSettingsStore());

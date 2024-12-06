@@ -5,6 +5,8 @@ import { useSessionStore } from '@/store/session';
 import { usePrivacyMode } from '@/composables/privacy';
 import { useDarkMode } from '@/composables/dark-mode';
 import { useInterop } from '@/composables/electron-interop';
+import ThemeControl from '@/components/premium/ThemeControl.vue';
+import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 
 const { t } = useI18n();
 

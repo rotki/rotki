@@ -8,8 +8,14 @@ import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useExchangesStore } from '@/store/exchanges';
 import { useLocationStore } from '@/store/locations';
 import { useLocations } from '@/composables/locations';
-import type { Exchange, ExchangeFormData } from '@/types/exchanges';
+import ExchangeKeysFormDialog from '@/components/settings/api-keys/exchange/ExchangeKeysFormDialog.vue';
+import RowActions from '@/components/helper/RowActions.vue';
+import LocationDisplay from '@/components/history/LocationDisplay.vue';
+import ExternalLink from '@/components/helper/ExternalLink.vue';
+import HintMenuIcon from '@/components/HintMenuIcon.vue';
+import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import type { DataTableColumn, DataTableSortColumn } from '@rotki/ui-library';
+import type { Exchange, ExchangeFormData } from '@/types/exchanges';
 
 const nonSyncingExchanges = ref<Exchange[]>([]);
 const exchange = ref<ExchangeFormData>();

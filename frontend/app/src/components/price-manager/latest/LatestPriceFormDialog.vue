@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { useLatestPrices } from '@/composables/price-manager/latest';
 import { useLatestPriceForm } from '@/composables/price-manager/latest/form';
+import LatestPriceForm from '@/components/price-manager/latest/LatestPriceForm.vue';
+import BigDialog from '@/components/dialogs/BigDialog.vue';
 import type { ManualPriceFormPayload } from '@/types/prices';
 
 const props = withDefaults(

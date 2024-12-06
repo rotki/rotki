@@ -15,6 +15,16 @@ import { useSushiswapStore } from '@/store/defi/sushiswap';
 import { useUniswapStore } from '@/store/defi/uniswap';
 import { useLiquidityPosition } from '@/composables/defi';
 import { usePremium } from '@/composables/premium';
+import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
+import RowAppend from '@/components/helper/RowAppend.vue';
+import LiquidityProviderBalanceDetails
+  from '@/components/dashboard/liquity-provider/LiquidityProviderBalanceDetails.vue';
+import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
+import LpPoolIcon from '@/components/display/defi/LpPoolIcon.vue';
+import NftDetails from '@/components/helper/NftDetails.vue';
+import VisibleColumnsSelector from '@/components/dashboard/VisibleColumnsSelector.vue';
+import RefreshButton from '@/components/helper/RefreshButton.vue';
+import DashboardExpandableTable from '@/components/dashboard/DashboardExpandableTable.vue';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 
 const { t } = useI18n();

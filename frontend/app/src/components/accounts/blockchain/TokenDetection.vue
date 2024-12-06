@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useTokenDetection } from '@/composables/balances/token-detection';
+import DateDisplay from '@/components/display/DateDisplay.vue';
 
 const props = defineProps<{
   address: string;

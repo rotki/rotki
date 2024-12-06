@@ -10,6 +10,8 @@ import ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
 import { useSessionStore } from '@/store/session';
 import { useConfirmStore } from '@/store/confirm';
 import { useExternalServicesApi } from '@/composables/api/settings/external-services-api';
+import ServiceKeyCard from '@/components/settings/api-keys/ServiceKeyCard.vue';
+import ServiceWithAuth from '@/components/settings/api-keys/ServiceWithAuth.vue';
 import { createCustomPinia } from '../../../../utils/create-pinia';
 import type { ExternalServiceKeys } from '@/types/user';
 import type { EvmChainInfo } from '@/types/api/chains';
@@ -79,10 +81,11 @@ describe('/settings/api-keys/external-services', () => {
           Teleport: {
             template: '<span><slot /></span>',
           },
+          EvmChainIcon,
+          ServiceKeyCard,
+          ServiceKey,
+          ServiceWithAuth,
         },
-      },
-      components: {
-        EvmChainIcon,
       },
     });
   }

@@ -11,8 +11,16 @@ import { useStatisticsStore } from '@/store/statistics';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
-import type { AssetBalance, AssetBalanceWithPrice, BigNumber, Nullable } from '@rotki/common';
+import AssetBalances from '@/components/AssetBalances.vue';
+import EvmNativeTokenBreakdown from '@/components/EvmNativeTokenBreakdown.vue';
+import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
+import RowAppend from '@/components/helper/RowAppend.vue';
+import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
+import AssetDetails from '@/components/helper/AssetDetails.vue';
+import VisibleColumnsSelector from '@/components/dashboard/VisibleColumnsSelector.vue';
+import DashboardExpandableTable from '@/components/dashboard/DashboardExpandableTable.vue';
 import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
+import type { AssetBalance, AssetBalanceWithPrice, BigNumber, Nullable } from '@rotki/common';
 
 const props = withDefaults(
   defineProps<{

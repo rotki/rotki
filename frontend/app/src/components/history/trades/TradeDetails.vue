@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useLinks } from '@/composables/links';
+import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import type { TradeEntry } from '@/types/history/trade';
 
 const props = defineProps<{ item: TradeEntry }>();

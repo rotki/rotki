@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { useUserNotesForm } from '@/composables/notes/form';
+import UserNotesForm from '@/components/notes/UserNotesForm.vue';
+import BigDialog from '@/components/dialogs/BigDialog.vue';
 import type { UserNote } from '@/types/notes';
 
 const model = defineModel<Partial<UserNote>>({ required: true });

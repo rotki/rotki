@@ -2,9 +2,13 @@
 import { Routes } from '@/router/routes';
 import { bigNumberSum } from '@/utils/calculation';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
-import type { BigNumber } from '@rotki/common';
-import type { MissingAcquisition, SelectedReport } from '@/types/reports';
+import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
+import DateDisplay from '@/components/display/DateDisplay.vue';
+import BadgeDisplay from '@/components/history/BadgeDisplay.vue';
+import AssetDetails from '@/components/helper/AssetDetails.vue';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
+import type { MissingAcquisition, SelectedReport } from '@/types/reports';
+import type { BigNumber } from '@rotki/common';
 
 type GroupedItems = Record<string, MissingAcquisition[]>;
 

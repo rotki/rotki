@@ -5,6 +5,8 @@ import { Constraints } from '@/data/constraints';
 import { toMessages } from '@/utils/validation';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useValidation } from '@/composables/validation';
+import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
+import SettingsItem from '@/components/settings/controls/SettingsItem.vue';
 
 const versionUpdateCheckFrequency = ref<string>('');
 const versionUpdateCheckEnabled = ref<boolean>(false);

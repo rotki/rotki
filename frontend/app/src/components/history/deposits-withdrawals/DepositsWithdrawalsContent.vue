@@ -9,9 +9,25 @@ import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import { useCommonTableProps } from '@/composables/use-common-table-props';
 import { useAssetMovements } from '@/composables/history/asset-movements';
 import { type Filters, type Matcher, useAssetMovementFilters } from '@/composables/filters/asset-movement';
-import type { AssetMovementEntry, AssetMovementRequestPayload } from '@/types/history/asset-movements';
-import type { Writeable } from '@rotki/common';
+import UpgradeRow from '@/components/history/UpgradeRow.vue';
+import DepositWithdrawalDetails from '@/components/history/deposits-withdrawals/DepositWithdrawalDetails.vue';
+import DateDisplay from '@/components/display/DateDisplay.vue';
+import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
+import AssetDetails from '@/components/helper/AssetDetails.vue';
+import BadgeDisplay from '@/components/history/BadgeDisplay.vue';
+import LocationDisplay from '@/components/history/LocationDisplay.vue';
+import IgnoredInAcountingIcon from '@/components/history/IgnoredInAcountingIcon.vue';
+import CollectionHandler from '@/components/helper/CollectionHandler.vue';
+import IgnoreButtons from '@/components/history/IgnoreButtons.vue';
+import TableFilter from '@/components/table-filter/TableFilter.vue';
+import TableStatusFilter from '@/components/helper/TableStatusFilter.vue';
+import HistoryTableActions from '@/components/history/HistoryTableActions.vue';
+import NavigatorLink from '@/components/helper/NavigatorLink.vue';
+import CardTitle from '@/components/typography/CardTitle.vue';
+import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import type { DataTableColumn } from '@rotki/ui-library';
+import type { Writeable } from '@rotki/common';
+import type { AssetMovementEntry, AssetMovementRequestPayload } from '@/types/history/asset-movements';
 
 const props = withDefaults(
   defineProps<{

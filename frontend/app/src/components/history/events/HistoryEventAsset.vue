@@ -3,6 +3,8 @@ import { CURRENCY_USD } from '@/types/currencies';
 import { useAssetPageNavigation } from '@/composables/assets/navigation';
 import { useRefMap } from '@/composables/utils/useRefMap';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
+import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
 import type { HistoryEventEntry } from '@/types/history/events';
 
 const props = defineProps<{

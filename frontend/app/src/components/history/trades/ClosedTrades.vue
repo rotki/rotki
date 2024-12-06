@@ -14,9 +14,27 @@ import { useCommonTableProps } from '@/composables/use-common-table-props';
 import { useTrades } from '@/composables/history/trades';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { type Filters, type Matcher, useTradeFilters } from '@/composables/filters/trades';
-import type { Writeable } from '@rotki/common';
-import type { TradeEntry, TradeRequestPayload } from '@/types/history/trade';
+import ExternalTradeFormDialog from '@/components/history/trades/ExternalTradeFormDialog.vue';
+import UpgradeRow from '@/components/history/UpgradeRow.vue';
+import TradeDetails from '@/components/history/trades/TradeDetails.vue';
+import RowActions from '@/components/helper/RowActions.vue';
+import DateDisplay from '@/components/display/DateDisplay.vue';
+import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
+import AssetDetails from '@/components/helper/AssetDetails.vue';
+import BadgeDisplay from '@/components/history/BadgeDisplay.vue';
+import LocationDisplay from '@/components/history/LocationDisplay.vue';
+import IgnoredInAcountingIcon from '@/components/history/IgnoredInAcountingIcon.vue';
+import CollectionHandler from '@/components/helper/CollectionHandler.vue';
+import IgnoreButtons from '@/components/history/IgnoreButtons.vue';
+import TableFilter from '@/components/table-filter/TableFilter.vue';
+import TableStatusFilter from '@/components/helper/TableStatusFilter.vue';
+import HistoryTableActions from '@/components/history/HistoryTableActions.vue';
+import NavigatorLink from '@/components/helper/NavigatorLink.vue';
+import CardTitle from '@/components/typography/CardTitle.vue';
+import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import type { DataTableColumn } from '@rotki/ui-library';
+import type { TradeEntry, TradeRequestPayload } from '@/types/history/trade';
+import type { Writeable } from '@rotki/common';
 
 const props = withDefaults(
   defineProps<{

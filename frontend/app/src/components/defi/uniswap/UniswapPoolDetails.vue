@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { type XswapAsset, type XswapBalance, Zero } from '@rotki/common';
 import { useGeneralSettingsStore } from '@/store/settings/general';
+import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
+import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
 
 defineProps<{
   balance: XswapBalance;

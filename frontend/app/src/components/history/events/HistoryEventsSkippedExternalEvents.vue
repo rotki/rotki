@@ -3,6 +3,8 @@ import { logger } from '@/utils/logging';
 import { useMessageStore } from '@/store/message';
 import { useInterop } from '@/composables/electron-interop';
 import { useSkippedHistoryEventsApi } from '@/composables/api/history/events/skipped';
+import LocationDisplay from '@/components/history/LocationDisplay.vue';
+import SettingCategoryHeader from '@/components/settings/SettingCategoryHeader.vue';
 import type { DataTableColumn } from '@rotki/ui-library';
 import type { Message } from '@rotki/common';
 import type { SkippedHistoryEventsSummary } from '@/types/history/events';

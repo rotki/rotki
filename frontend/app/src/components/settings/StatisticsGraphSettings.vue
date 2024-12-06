@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import InferZeroTimedBalancesSetting from '@/components/settings/InferZeroTimedBalancesSetting.vue';
+import SsfGraphMultiplierSetting from '@/components/settings/SsfGraphMultiplierSetting.vue';
+import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
+
 const emit = defineEmits<{
   (e: 'updated'): void;
 }>();

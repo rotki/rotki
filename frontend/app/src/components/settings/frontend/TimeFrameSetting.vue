@@ -2,6 +2,9 @@
 import { TimeFramePeriod, type TimeFrameSetting } from '@rotki/common';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useSessionSettingsStore } from '@/store/settings/session';
+import TimeFrameSettings from '@/components/settings/general/TimeFrameSettings.vue';
+import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
+import SettingsItem from '@/components/settings/controls/SettingsItem.vue';
 
 const defaultGraphTimeframe = ref<TimeFrameSetting>(TimeFramePeriod.ALL);
 const visibleTimeframes = ref<TimeFramePeriod[]>([]);

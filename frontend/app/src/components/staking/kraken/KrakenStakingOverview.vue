@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { useBalancePricesStore } from '@/store/balances/prices';
+import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
+import ValueAccuracyHint from '@/components/helper/hint/ValueAccuracyHint.vue';
 import type { BigNumber } from '@rotki/common';
 import type { ReceivedAmount } from '@/types/staking';
 

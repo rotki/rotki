@@ -8,6 +8,7 @@ import {
 } from '@/types/filtering';
 import { getDateInputISOFormat } from '@/utils/date';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import TableFilter from '@/components/table-filter/TableFilter.vue';
 import type { EthStakingCombinedFilter } from '@rotki/common';
 
 const props = withDefaults(

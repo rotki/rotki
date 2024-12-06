@@ -15,9 +15,15 @@ import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
 import { useTaskStore } from '@/store/tasks';
 import { useNotificationsStore } from '@/store/notifications';
 import { useDefiApi } from '@/composables/api/defi';
-import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
-import type { DataTableColumn, TablePaginationData } from '@rotki/ui-library';
+import PoapDeliveryAirdrops from '@/components/defi/airdrops/PoapDeliveryAirdrops.vue';
+import ExternalLink from '@/components/helper/ExternalLink.vue';
+import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
+import HashLink from '@/components/helper/HashLink.vue';
+import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
+import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import type { TaskMeta } from '@/types/task';
+import type { DataTableColumn, TablePaginationData } from '@rotki/ui-library';
+import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 
 type AirdropWithIndex = Omit<Airdrop, 'amount'> & { index: number; amount: BigNumber };
 

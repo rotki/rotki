@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import BalanceDisplay from '@/components/display/BalanceDisplay.vue';
+import LoanRow from '@/components/defi/loan/LoanRow.vue';
+import StatCard from '@/components/display/StatCard.vue';
 import type { Balance } from '@rotki/common';
 
 withDefaults(

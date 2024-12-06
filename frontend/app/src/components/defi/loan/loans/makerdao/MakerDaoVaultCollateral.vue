@@ -1,4 +1,9 @@
 <script setup lang="ts">
+import ManageWatchers from '@/components/defi/loan/loans/makerdao/ManageWatchers.vue';
+import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
+import LoanRow from '@/components/defi/loan/LoanRow.vue';
+import BalanceDisplay from '@/components/display/BalanceDisplay.vue';
+import StatCard from '@/components/display/StatCard.vue';
 import type { MakerDAOVaultModel } from '@/types/defi/maker';
 
 const props = defineProps<{

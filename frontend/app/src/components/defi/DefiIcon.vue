@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import AppImage from '@/components/common/AppImage.vue';
+
 interface Item {
   icon?: string;
   name: string;

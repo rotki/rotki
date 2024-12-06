@@ -3,6 +3,13 @@ import { useSessionAuthStore } from '@/store/session/auth';
 import { useMainStore } from '@/store/main';
 import { useAccountManagement } from '@/composables/user/account';
 import { useAppNavigation } from '@/composables/navigation';
+import AccountManagementFooterText from '@/components/account-management/AccountManagementFooterText.vue';
+import RotkiLogo from '@/components/common/RotkiLogo.vue';
+import AccountManagementAside from '@/components/account-management/AccountManagementAside.vue';
+import AdaptiveFooterButton from '@/components/account-management/AdaptiveFooterButton.vue';
+import CreateAccountWizard from '@/components/account-management/create-account/CreateAccountWizard.vue';
+import UpgradeProgressDisplay from '@/components/account-management/upgrade/UpgradeProgressDisplay.vue';
+import UserHost from '@/components/account-management/UserHost.vue';
 
 definePage({
   meta: {

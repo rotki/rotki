@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { useManagedAssetForm } from '@/composables/assets/forms/managed-asset-form';
+import ManagedAssetForm from '@/components/asset-manager/managed/ManagedAssetForm.vue';
+import BigDialog from '@/components/dialogs/BigDialog.vue';
 import type { SupportedAsset } from '@rotki/common';
 
 const props = withDefaults(

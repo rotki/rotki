@@ -16,8 +16,17 @@ import { useModules } from '@/composables/session/modules';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useAccountLoading } from '@/composables/accounts/loading';
 import { useBlockchainAggregatedBalances } from '@/composables/blockchain/balances/aggregated';
-import type { RouteLocationRaw } from 'vue-router';
+import AccountBalancesSetting from '@/components/accounts/AccountBalancesSetting.vue';
+import AssetBalances from '@/components/AssetBalances.vue';
+import AccountDialog from '@/components/accounts/management/AccountDialog.vue';
+import VisibleColumnsSelector from '@/components/dashboard/VisibleColumnsSelector.vue';
+import ChainSelect from '@/components/accounts/blockchain/ChainSelect.vue';
+import CardTitle from '@/components/typography/CardTitle.vue';
+import HideSmallBalances from '@/components/settings/HideSmallBalances.vue';
+import PriceRefresh from '@/components/helper/PriceRefresh.vue';
+import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import type { ComponentExposed } from 'vue-component-type-helpers';
+import type { RouteLocationRaw } from 'vue-router';
 
 definePage({
   meta: {

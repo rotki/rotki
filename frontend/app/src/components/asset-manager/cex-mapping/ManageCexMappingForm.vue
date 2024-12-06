@@ -6,6 +6,8 @@ import { useRefPropVModel } from '@/utils/model';
 import { useMessageStore } from '@/store/message';
 import { useCexMappingForm } from '@/composables/assets/forms/cex-mapping-form';
 import { useAssetCexMappingApi } from '@/composables/api/assets/cex-mapping';
+import AssetSelect from '@/components/inputs/AssetSelect.vue';
+import ExchangeInput from '@/components/inputs/ExchangeInput.vue';
 import type { CexMapping } from '@/types/asset';
 
 const props = withDefaults(

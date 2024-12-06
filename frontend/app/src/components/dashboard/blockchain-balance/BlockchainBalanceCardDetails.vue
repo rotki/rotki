@@ -1,6 +1,10 @@
 <script setup lang="ts">
-import type { SubBlockchainTotal } from '@/types/blockchain';
+import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
+import AppImage from '@/components/common/AppImage.vue';
+import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
+import ListItem from '@/components/common/ListItem.vue';
 import type { ActionDataEntry } from '@/types/action';
+import type { SubBlockchainTotal } from '@/types/blockchain';
 
 withDefaults(
   defineProps<{

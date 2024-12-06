@@ -4,15 +4,22 @@ import { useMessageStore } from '@/store/message';
 import { useHistoryEventMappings } from '@/composables/history/events/mapping';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import { useAccountingSettings } from '@/composables/settings/accounting';
+import BadgeDisplay from '@/components/history/BadgeDisplay.vue';
+import AccountingRuleWithLinkedSettingDisplay
+  from '@/components/settings/accounting/rule/AccountingRuleWithLinkedSettingDisplay.vue';
+import CounterpartyDisplay from '@/components/history/CounterpartyDisplay.vue';
+import HistoryEventTypeCombination from '@/components/history/events/HistoryEventTypeCombination.vue';
+import CollectionHandler from '@/components/helper/CollectionHandler.vue';
+import BigDialog from '@/components/dialogs/BigDialog.vue';
+import type { DataTableColumn } from '@rotki/ui-library';
+import type { ConflictResolutionStrategy } from '@/types/common';
+import type { ConflictResolution } from '@/types/asset';
 import type {
   AccountingRuleConflict,
   AccountingRuleConflictRequestPayload,
   AccountingRuleConflictResolution,
   AccountingTreatment,
 } from '@/types/settings/accounting';
-import type { ConflictResolution } from '@/types/asset';
-import type { ConflictResolutionStrategy } from '@/types/common';
-import type { DataTableColumn } from '@rotki/ui-library';
 
 const emit = defineEmits<{
   (e: 'close'): void;

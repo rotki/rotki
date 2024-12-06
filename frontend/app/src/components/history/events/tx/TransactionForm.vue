@@ -6,6 +6,7 @@ import { useMessageStore } from '@/store/message';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useHistoryTransactions } from '@/composables/history/events/tx';
 import { useHistoryTransactionsForm } from '@/composables/history/events/tx/form';
+import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 import type { AddTransactionHashPayload, EvmChainAndTxHash } from '@/types/history/events';
 

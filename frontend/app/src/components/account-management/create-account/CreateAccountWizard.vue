@@ -1,4 +1,12 @@
 <script lang="ts" setup>
+import CreateAccountSubmitAnalytics
+  from '@/components/account-management/create-account/analytics/CreateAccountSubmitAnalytics.vue';
+import CreateAccountCredentials
+  from '@/components/account-management/create-account/credentials/CreateAccountCredentials.vue';
+import CreateAccountPremium from '@/components/account-management/create-account/premium/CreateAccountPremium.vue';
+import CreateAccountIntroduction
+  from '@/components/account-management/create-account/introduction/CreateAccountIntroduction.vue';
+import RotkiLogo from '@/components/common/RotkiLogo.vue';
 import type { CreateAccountPayload, LoginCredentials, PremiumSetup } from '@/types/login';
 
 const props = withDefaults(

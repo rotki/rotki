@@ -14,8 +14,13 @@ import { useAssetManagementApi } from '@/composables/api/assets/management';
 import { useManagedAssetForm } from '@/composables/assets/forms/managed-asset-form';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
-import type { SelectOption, SelectOptions } from '@/types/common';
+import UnderlyingTokenManager from '@/components/asset-manager/UnderlyingTokenManager.vue';
+import AssetSelect from '@/components/inputs/AssetSelect.vue';
+import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
+import HelpLink from '@/components/helper/HelpLink.vue';
+import CopyButton from '@/components/helper/CopyButton.vue';
 import type { EvmTokenKind, SupportedAsset, UnderlyingToken } from '@rotki/common';
+import type { SelectOption, SelectOptions } from '@/types/common';
 
 const props = withDefaults(
   defineProps<{

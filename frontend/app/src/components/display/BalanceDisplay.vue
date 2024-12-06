@@ -3,6 +3,9 @@ import { useBalancePricesStore } from '@/store/balances/prices';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useRefMap } from '@/composables/utils/useRefMap';
 import { useValueOrDefault } from '@/composables/utils/useValueOrDefault';
+import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
+import AssetLink from '@/components/assets/AssetLink.vue';
+import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import type { Balance } from '@rotki/common';
 
 const props = withDefaults(

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import ExternalLink from '@/components/helper/ExternalLink.vue';
 import type { I18nParam } from '@rotki/common';
 
 defineProps<{

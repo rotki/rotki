@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { usePremium } from '@/composables/premium';
+import ExternalLink from '@/components/helper/ExternalLink.vue';
 
 const { t } = useI18n();
 const premium = usePremium();

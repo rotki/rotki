@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { useSupportedChains } from '@/composables/info/chains';
 import { useTransactionQueryStatus } from '@/composables/history/events/query-status/tx-query-status';
+import DateDisplay from '@/components/display/DateDisplay.vue';
+import HashLink from '@/components/helper/HashLink.vue';
 import type { EvmTransactionQueryData } from '@/types/websocket-messages';
 
 defineProps<{ item: EvmTransactionQueryData }>();

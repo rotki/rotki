@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import ModuleSelector from '@/components/defi/wizard/ModuleSelector.vue';
 
 const { t } = useI18n();
 

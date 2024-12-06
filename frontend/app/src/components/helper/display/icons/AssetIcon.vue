@@ -5,6 +5,9 @@ import { isBlockchain } from '@/types/blockchain/chains';
 import { useAssetIconStore } from '@/store/assets/icon';
 import { type AssetResolutionOptions, useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useCopy } from '@/composables/copy';
+import AppImage from '@/components/common/AppImage.vue';
+import GeneratedIcon from '@/components/helper/display/icons/GeneratedIcon.vue';
+import EvmChainIcon from '@/components/helper/display/icons/EvmChainIcon.vue';
 import type { StyleValue } from 'vue';
 
 const props = withDefaults(defineProps<{

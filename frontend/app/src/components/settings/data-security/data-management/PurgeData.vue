@@ -8,6 +8,11 @@ import { useHistoryEventsApi } from '@/composables/api/history/events';
 import { useBlockchainBalancesApi } from '@/composables/api/balances/blockchain';
 import { useSessionPurge } from '@/composables/session/purge';
 import { useSupportedChains } from '@/composables/info/chains';
+import ActionStatusIndicator from '@/components/error/ActionStatusIndicator.vue';
+import DefiModuleSelector from '@/components/defi/DefiModuleSelector.vue';
+import LocationSelector from '@/components/helper/LocationSelector.vue';
+import ChainSelect from '@/components/accounts/blockchain/ChainSelect.vue';
+import SettingsItem from '@/components/settings/controls/SettingsItem.vue';
 
 const purgeableOnlyModules = Object.values(PurgeableOnlyModule);
 const purgeableModules = [...Object.values(Module), ...purgeableOnlyModules];

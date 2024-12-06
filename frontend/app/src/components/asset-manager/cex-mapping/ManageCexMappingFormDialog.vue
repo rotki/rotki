@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { useCexMappingForm } from '@/composables/assets/forms/cex-mapping-form';
+import ManageCexMappingForm from '@/components/asset-manager/cex-mapping/ManageCexMappingForm.vue';
+import BigDialog from '@/components/dialogs/BigDialog.vue';
 import type { CexMapping } from '@/types/asset';
 
 const props = withDefaults(

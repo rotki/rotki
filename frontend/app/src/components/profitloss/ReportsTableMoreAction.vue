@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import ExportReportCsv from '@/components/profitloss/ExportReportCsv.vue';
+
 defineProps<{
   showExportButton: boolean;
 }>();

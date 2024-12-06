@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { NoteLocation } from '@/types/notes';
+import ModuleSelector from '@/components/defi/wizard/ModuleSelector.vue';
+import SettingCategory from '@/components/settings/SettingCategory.vue';
+import SettingsPage from '@/components/settings/controls/SettingsPage.vue';
 
 definePage({
   meta: {

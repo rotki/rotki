@@ -4,8 +4,11 @@ import { balanceSum } from '@/utils/calculation';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
 import { useBlockchainStore } from '@/store/blockchain';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
-import type { AssetBalance } from '@rotki/common';
+import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
+import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
+import IconTokenDisplay from '@/components/accounts/IconTokenDisplay.vue';
 import type { BlockchainAccountBalance } from '@/types/blockchain/accounts';
+import type { AssetBalance } from '@rotki/common';
 
 const props = defineProps<{
   chains: string[];

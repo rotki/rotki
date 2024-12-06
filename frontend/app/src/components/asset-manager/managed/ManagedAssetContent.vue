@@ -9,8 +9,13 @@ import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import { useAssetManagementApi } from '@/composables/api/assets/management';
 import { useCommonTableProps } from '@/composables/use-common-table-props';
 import { type Filters, type Matcher, useAssetFilter } from '@/composables/filters/assets';
-import type { Nullable, SupportedAsset } from '@rotki/common';
+import ManagedAssetFormDialog from '@/components/asset-manager/managed/ManagedAssetFormDialog.vue';
+import ManagedAssetTable from '@/components/asset-manager/managed/ManagedAssetTable.vue';
+import MergeDialog from '@/components/asset-manager/MergeDialog.vue';
+import RestoreAssetDbButton from '@/components/asset-manager/RestoreAssetDbButton.vue';
+import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import type { AssetRequestPayload, IgnoredAssetsHandlingType } from '@/types/asset';
+import type { Nullable, SupportedAsset } from '@rotki/common';
 
 const props = withDefaults(
   defineProps<{

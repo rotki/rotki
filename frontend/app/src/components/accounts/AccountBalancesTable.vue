@@ -10,11 +10,19 @@ import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useAccountDelete } from '@/composables/accounts/blockchain/use-account-delete';
 import { type AccountManageState, editBlockchainAccount } from '@/composables/accounts/blockchain/use-account-manage';
 import { useSupportedChains } from '@/composables/info/chains';
-import type { TableRowKey } from '@/composables/use-pagination-filter/types';
-import type { Collection } from '@/types/collection';
-import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
-import type { BigNumber } from '@rotki/common';
+import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
+import RowAppend from '@/components/helper/RowAppend.vue';
+import RowActions from '@/components/helper/RowActions.vue';
+import TokenDetection from '@/components/accounts/blockchain/TokenDetection.vue';
+import AccountTopTokens from '@/components/accounts/AccountTopTokens.vue';
+import TagDisplay from '@/components/tags/TagDisplay.vue';
+import AccountChains from '@/components/accounts/AccountChains.vue';
+import LabeledAddressDisplay from '@/components/display/LabeledAddressDisplay.vue';
 import type { BlockchainAccountGroupWithBalance, BlockchainAccountWithBalance } from '@/types/blockchain/accounts';
+import type { BigNumber } from '@rotki/common';
+import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
+import type { Collection } from '@/types/collection';
+import type { TableRowKey } from '@/composables/use-pagination-filter/types';
 
 type DataRow = T & { id: string };
 

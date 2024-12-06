@@ -3,6 +3,7 @@ import { TaskType } from '@/types/task-type';
 import { useTaskStore } from '@/store/tasks';
 import { useRefresh } from '@/composables/balances/refresh';
 import { useSupportedChains } from '@/composables/info/chains';
+import LocationIcon from '@/components/history/LocationIcon.vue';
 
 const { t } = useI18n();
 

@@ -2,6 +2,8 @@
 import { Module } from '@/types/modules';
 import { NoteLocation } from '@/types/notes';
 import { useModules } from '@/composables/session/modules';
+import NftGallery from '@/components/nft/NftGallery.vue';
+import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
 
 definePage({
   meta: {

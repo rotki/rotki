@@ -1,6 +1,11 @@
 <script setup lang="ts">
 import { HistoryEventEntryType } from '@rotki/common';
 import { isOfEventType } from '@/utils/history/events';
+import EthWithdrawalEventForm from '@/components/history/events/forms/EthWithdrawalEventForm.vue';
+import EthDepositEventForm from '@/components/history/events/forms/EthDepositEventForm.vue';
+import EthBlockEventForm from '@/components/history/events/forms/EthBlockEventForm.vue';
+import OnlineHistoryEventForm from '@/components/history/events/forms/OnlineHistoryEventForm.vue';
+import EvmEventForm from '@/components/history/events/forms/EvmEventForm.vue';
 import type { HistoryEvent } from '@/types/history/events';
 
 const props = withDefaults(

@@ -12,6 +12,11 @@ import HistoryEventAssetPriceForm from '@/components/history/events/forms/Histor
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useSessionSettingsStore } from '@/store/settings/session';
 import { useHistoryEventsForm } from '@/composables/history/events/form';
+import AmountInput from '@/components/inputs/AmountInput.vue';
+import AutoCompleteWithSearchSync from '@/components/inputs/AutoCompleteWithSearchSync.vue';
+import HistoryEventTypeForm from '@/components/history/events/forms/HistoryEventTypeForm.vue';
+import LocationSelector from '@/components/helper/LocationSelector.vue';
+import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
 import type { NewOnlineHistoryEventPayload, OnlineHistoryEvent } from '@/types/history/events';
 
 const props = withDefaults(

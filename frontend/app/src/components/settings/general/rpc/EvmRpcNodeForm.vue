@@ -5,6 +5,7 @@ import useVuelidate from '@vuelidate/core';
 import { toMessages } from '@/utils/validation';
 import { useRefPropVModel, useSimplePropVModel } from '@/utils/model';
 import { useFormStateWatcher } from '@/composables/form';
+import AmountInput from '@/components/inputs/AmountInput.vue';
 import type { ValidationErrors } from '@/types/api/errors';
 import type { EvmRpcNodeManageState } from '@/types/settings/rpc';
 

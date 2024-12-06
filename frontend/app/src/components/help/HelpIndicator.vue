@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
+
 const props = defineProps<{ visible: boolean }>();
 
 const emit = defineEmits<{ (e: 'update:visible', visible: boolean): void }>();

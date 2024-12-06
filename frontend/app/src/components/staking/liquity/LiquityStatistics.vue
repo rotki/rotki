@@ -5,6 +5,8 @@ import { bigNumberSum } from '@/utils/calculation';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useStatusStore } from '@/store/status';
 import { useRefMap } from '@/composables/utils/useRefMap';
+import BalanceDisplay from '@/components/display/BalanceDisplay.vue';
+import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import type { AssetBalance, Balance, BigNumber, LiquityPoolDetailEntry, LiquityStatisticDetails } from '@rotki/common';
 
 const props = withDefaults(

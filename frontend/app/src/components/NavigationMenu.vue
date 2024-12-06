@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useAppRoutes } from '@/router/routes';
+import NavigationMenuItem from '@/components/NavigationMenuItem.vue';
 import type { RuiIcons } from '@rotki/ui-library';
 import type { RouteLocationRaw } from 'vue-router';
 

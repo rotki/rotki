@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import EvmChainIcon from '@/components/helper/display/icons/EvmChainIcon.vue';
+import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import type { ProtocolCacheUpdatesData } from '@/types/websocket-messages';
 
 const props = defineProps<{ item: ProtocolCacheUpdatesData }>();

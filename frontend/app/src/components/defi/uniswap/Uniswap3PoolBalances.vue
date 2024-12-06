@@ -1,6 +1,10 @@
 <script lang="ts" setup>
 import UniswapPoolHeader from '@/components/defi/uniswap/UniswapPoolHeader.vue';
 import { usePremium } from '@/composables/premium';
+import PremiumLock from '@/components/premium/PremiumLock.vue';
+import UniswapPoolAssetBalance from '@/components/defi/uniswap/UniswapPoolAssetBalance.vue';
+import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
+import NftDetails from '@/components/helper/NftDetails.vue';
 import type { LpType, XswapBalance } from '@rotki/common';
 
 defineProps<{

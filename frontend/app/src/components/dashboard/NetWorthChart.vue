@@ -11,6 +11,10 @@ import dayjs from 'dayjs';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useGraph, useTooltip } from '@/composables/graphs';
+import ExportSnapshotDialog from '@/components/dashboard/ExportSnapshotDialog.vue';
+import SnapshotActionButton from '@/components/dashboard/SnapshotActionButton.vue';
+import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
+import GraphTooltipWrapper from '@/components/graphs/GraphTooltipWrapper.vue';
 import type { ValueOverTime } from '@/types/graphs';
 
 type ActiveRangeButton = 'start' | 'end' | 'both';

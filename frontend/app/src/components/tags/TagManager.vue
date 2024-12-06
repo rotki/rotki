@@ -2,6 +2,10 @@
 import { type Tag, defaultTag } from '@/types/tags';
 import { useConfirmStore } from '@/store/confirm';
 import { useTagStore } from '@/store/session/tags';
+import TagFormDialog from '@/components/tags/TagFormDialog.vue';
+import RowActions from '@/components/helper/RowActions.vue';
+import TagIcon from '@/components/tags/TagIcon.vue';
+import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import type { DataTableColumn } from '@rotki/ui-library';
 
 const store = useTagStore();

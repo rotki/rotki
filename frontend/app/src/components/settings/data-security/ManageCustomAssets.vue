@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { useAssets } from '@/composables/assets';
+import FileUpload from '@/components/import/FileUpload.vue';
+import SettingsItem from '@/components/settings/controls/SettingsItem.vue';
 
 const zip = ref<File>();
 const importError = ref('');

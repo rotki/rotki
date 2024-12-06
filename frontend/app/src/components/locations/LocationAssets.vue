@@ -2,6 +2,7 @@
 import { TaskType } from '@/types/task-type';
 import { useTaskStore } from '@/store/tasks';
 import { useBalancesBreakdown } from '@/composables/balances/breakdown';
+import AssetBalances from '@/components/AssetBalances.vue';
 import type { AssetBalanceWithPrice } from '@rotki/common';
 
 const props = defineProps<{

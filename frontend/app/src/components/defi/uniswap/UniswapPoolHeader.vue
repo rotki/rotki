@@ -1,5 +1,9 @@
 <script setup lang="ts">
 import { useLiquidityPosition } from '@/composables/defi';
+import UniswapPoolDetails from '@/components/defi/uniswap/UniswapPoolDetails.vue';
+import HashLink from '@/components/helper/HashLink.vue';
+import LpPoolIcon from '@/components/display/defi/LpPoolIcon.vue';
+import LpPoolHeader from '@/components/display/defi/LpPoolHeader.vue';
 import type { LpType, XswapBalance } from '@rotki/common';
 
 const props = defineProps<{

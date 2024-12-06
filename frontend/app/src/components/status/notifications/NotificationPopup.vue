@@ -2,6 +2,7 @@
 import { createNotification } from '@/utils/notifications';
 import { useAreaVisibilityStore } from '@/store/session/visibility';
 import { useNotificationsStore } from '@/store/notifications';
+import Notification from '@/components/status/notifications/Notification.vue';
 
 const { t } = useI18n();
 

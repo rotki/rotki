@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import TagInput from '@/components/inputs/TagInput.vue';
+
 const labelModel = defineModel<string>('label', { required: true });
 
 const tagsModel = defineModel<string[]>('tags', { required: true });

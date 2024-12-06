@@ -2,6 +2,7 @@
 import { truncateAddress } from '@/utils/truncate';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
 import type { Suggestion } from '@/types/filtering';
 
 const props = withDefaults(

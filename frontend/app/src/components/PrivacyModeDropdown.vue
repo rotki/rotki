@@ -2,6 +2,8 @@
 import { generateRandomScrambleMultiplier } from '@/utils/session';
 import { useSessionSettingsStore } from '@/store/settings/session';
 import { usePrivacyMode } from '@/composables/privacy';
+import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
+import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 
 const { t } = useI18n();
 

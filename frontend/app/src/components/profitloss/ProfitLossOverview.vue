@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { calculateTotalProfitLoss } from '@/utils/report';
+import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import type { ProfitLossOverviewItem, Report, SelectedReport } from '@/types/reports';
 
 const props = withDefaults(

@@ -2,6 +2,9 @@
 import { ApiValidationError } from '@/types/api/errors';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useAssetPricesApi } from '@/composables/api/assets/prices';
+import AmountInput from '@/components/inputs/AmountInput.vue';
+import DateDisplay from '@/components/display/DateDisplay.vue';
+import AssetDetails from '@/components/helper/AssetDetails.vue';
 import type { BigNumber } from '@rotki/common';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { EditableMissingPrice, MissingPrice } from '@/types/reports';

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useLinks } from '@/composables/links';
+import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 
 const { href, onLinkClick } = useLinks();
 const { t } = useI18n();

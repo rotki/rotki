@@ -6,6 +6,8 @@ import { useConfirmStore } from '@/store/confirm';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useNftImage } from '@/composables/nft-image';
+import HashLink from '@/components/helper/HashLink.vue';
+import AppImage from '@/components/common/AppImage.vue';
 import type { StyleValue } from 'vue';
 
 const props = withDefaults(

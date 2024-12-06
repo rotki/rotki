@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { DefiProtocol } from '@/types/modules';
+import AppImage from '@/components/common/AppImage.vue';
 
 const props = withDefaults(
   defineProps<{
