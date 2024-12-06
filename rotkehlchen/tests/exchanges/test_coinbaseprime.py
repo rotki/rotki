@@ -240,7 +240,7 @@ def test_process_movements(function_scope_coinbaseprime: Coinbaseprime):
 def test_history_events(function_scope_coinbaseprime: Coinbaseprime):
     """Test history events in coinbase prime. It tests conversions and staking rewards
     This test checks the logic for _query_paginated_endpoint by returning
-    a mocked pagination from _api_query and the logic of query_history_events
+    a mocked pagination from _api_query and the logic of query_other_history_events
     """
     first_id, second_id, third_id = str(uuid.uuid4()), str(uuid.uuid4()), str(uuid.uuid4())
     raw_data = [{
@@ -333,7 +333,7 @@ def test_history_events(function_scope_coinbaseprime: Coinbaseprime):
         attribute='_api_query',
         new=mock_query,
     ):
-        function_scope_coinbaseprime.query_history_events()
+        function_scope_coinbaseprime.query_other_history_events()
 
     history_events_db = DBHistoryEvents(function_scope_coinbaseprime.db)
     with history_events_db.db.conn.read_ctx() as cursor:

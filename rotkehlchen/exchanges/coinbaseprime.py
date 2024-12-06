@@ -540,7 +540,7 @@ class Coinbaseprime(ExchangeInterface):
     ) -> list['HistoryEvent']:
         return []
 
-    def query_history_events(self) -> None:
+    def query_other_history_events(self) -> None:
         """Query history events from the current exchange
         instance and store them in the database
         """
