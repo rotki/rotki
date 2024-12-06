@@ -6,6 +6,10 @@ import { useStatusStore } from '@/store/status';
 import { useLiquityStore } from '@/store/defi/liquity';
 import { useModules } from '@/composables/session/modules';
 import { usePremium } from '@/composables/premium';
+import ActiveModules from '@/components/defi/ActiveModules.vue';
+import LiquityStakingDetails from '@/components/staking/liquity/LiquityStakingDetails.vue';
+import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
+import NoPremiumPlaceholder from '@/components/premium/NoPremiumPlaceholder.vue';
 
 const modules = [Module.LIQUITY];
 const { isModuleEnabled } = useModules();

@@ -2,7 +2,9 @@
 import { logger } from '@/utils/logging';
 import { compareTextByKeyword } from '@/utils/assets';
 import { splitSearch } from '@/utils/search';
-import type { AssetInfo } from '@rotki/common';
+import SavedFilterManagement from '@/components/table-filter/SavedFilterManagement.vue';
+import FilterDropdown from '@/components/table-filter/FilterDropdown.vue';
+import SuggestedItem from '@/components/table-filter/SuggestedItem.vue';
 import type {
   MatchedKeyword,
   MatchedKeywordWithBehaviour,
@@ -10,6 +12,7 @@ import type {
   SearchMatcher,
   Suggestion,
 } from '@/types/filtering';
+import type { AssetInfo } from '@rotki/common';
 
 defineOptions({
   inheritAttrs: false,

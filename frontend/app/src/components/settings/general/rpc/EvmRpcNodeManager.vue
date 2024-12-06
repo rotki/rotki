@@ -12,6 +12,10 @@ import { useMessageStore } from '@/store/message';
 import { useNotificationsStore } from '@/store/notifications';
 import { useEvmNodesApi } from '@/composables/api/settings/evm-nodes-api';
 import { useSupportedChains } from '@/composables/info/chains';
+import EvmRpcNodeFormDialog from '@/components/settings/general/rpc/EvmRpcNodeFormDialog.vue';
+import RowActions from '@/components/helper/RowActions.vue';
+import BadgeDisplay from '@/components/history/BadgeDisplay.vue';
+import SimpleTable from '@/components/common/SimpleTable.vue';
 import type { Blockchain } from '@rotki/common';
 
 const props = defineProps<{

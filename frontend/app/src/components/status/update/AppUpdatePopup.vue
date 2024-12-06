@@ -2,6 +2,7 @@
 import { externalLinks } from '@shared/external-links';
 import { useSessionStore } from '@/store/session';
 import { useInterop } from '@/composables/electron-interop';
+import ExternalLink from '@/components/helper/ExternalLink.vue';
 
 const downloadReady = ref(false);
 const downloading = ref(false);

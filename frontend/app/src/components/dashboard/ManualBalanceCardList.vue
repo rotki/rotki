@@ -2,6 +2,9 @@
 import { Routes } from '@/router/routes';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useLocations } from '@/composables/locations';
+import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
+import LocationDisplay from '@/components/history/LocationDisplay.vue';
+import ListItem from '@/components/common/ListItem.vue';
 import type { BigNumber } from '@rotki/common';
 
 const props = defineProps<{

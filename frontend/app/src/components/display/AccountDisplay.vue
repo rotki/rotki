@@ -3,6 +3,8 @@ import { type Account, Blockchain } from '@rotki/common';
 import { truncateAddress } from '@/utils/truncate';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import { useScramble } from '@/composables/scramble';
+import EnsAvatar from '@/components/display/EnsAvatar.vue';
+import ChainIcon from '@/components/helper/display/icons/ChainIcon.vue';
 
 const props = withDefaults(defineProps<{
   account: Account;

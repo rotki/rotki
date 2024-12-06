@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useUpdateMessage } from '@/composables/update-message';
+import ExternalLink from '@/components/helper/ExternalLink.vue';
 
 const { t } = useI18n();
 

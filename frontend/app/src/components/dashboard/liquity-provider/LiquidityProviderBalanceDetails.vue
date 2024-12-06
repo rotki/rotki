@@ -2,8 +2,11 @@
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { usePremium } from '@/composables/premium';
-import type { AssetBalanceWithPrice, XswapAsset } from '@rotki/common';
+import PremiumLock from '@/components/premium/PremiumLock.vue';
+import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
+import AssetDetails from '@/components/helper/AssetDetails.vue';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
+import type { AssetBalanceWithPrice, XswapAsset } from '@rotki/common';
 
 withDefaults(
   defineProps<{

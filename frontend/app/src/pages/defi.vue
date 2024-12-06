@@ -7,6 +7,7 @@ import { useAaveStore } from '@/store/defi/aave';
 import { useYearnStore } from '@/store/defi/yearn';
 import { useDefiStore } from '@/store/defi';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import DefiWizard from '@/components/defi/wizard/DefiWizard.vue';
 
 definePage({
   meta: {

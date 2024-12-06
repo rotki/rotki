@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { isEqual } from 'lodash-es';
 import { useLocations } from '@/composables/locations';
+import LocationIcon from '@/components/history/LocationIcon.vue';
 import type { TradeLocationData } from '@/types/history/trade/location';
 
 defineOptions({

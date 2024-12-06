@@ -4,6 +4,7 @@ import useVuelidate from '@vuelidate/core';
 import { toMessages } from '@/utils/validation';
 import { useRefPropVModel } from '@/utils/model';
 import { useFormStateWatcher } from '@/composables/form';
+import TagIcon from '@/components/tags/TagIcon.vue';
 import type { Tag } from '@/types/tags';
 
 const modelValue = defineModel<Tag>({ required: true });

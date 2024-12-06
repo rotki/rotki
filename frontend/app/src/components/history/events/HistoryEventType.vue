@@ -2,8 +2,11 @@
 import HistoryEventTypeCounterparty from '@/components/history/events/HistoryEventTypeCounterparty.vue';
 import { isEthDepositEventRef, isEvmEventRef, isOnlineHistoryEventRef } from '@/utils/history/events';
 import { useHistoryEventMappings } from '@/composables/history/events/mapping';
-import type { Blockchain } from '@rotki/common';
+import HashLink from '@/components/helper/HashLink.vue';
+import LocationIcon from '@/components/history/LocationIcon.vue';
+import HistoryEventTypeCombination from '@/components/history/events/HistoryEventTypeCombination.vue';
 import type { HistoryEventEntry } from '@/types/history/events';
+import type { Blockchain } from '@rotki/common';
 
 const props = defineProps<{
   event: HistoryEventEntry;

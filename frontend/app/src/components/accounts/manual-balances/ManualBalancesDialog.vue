@@ -5,6 +5,7 @@ import ManualBalancesForm from '@/components/accounts/manual-balances/ManualBala
 import { useMessageStore } from '@/store/message';
 import { useManualBalancesStore } from '@/store/balances/manual';
 import { useBalances } from '@/composables/balances';
+import BigDialog from '@/components/dialogs/BigDialog.vue';
 import type { ManualBalance, RawManualBalance } from '@/types/manual-balances';
 
 const modelValue = defineModel<ManualBalance | RawManualBalance | undefined>({ required: true });

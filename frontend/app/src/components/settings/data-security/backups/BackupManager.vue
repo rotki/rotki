@@ -6,6 +6,8 @@ import { useNotificationsStore } from '@/store/notifications';
 import { useConfirmStore } from '@/store/confirm';
 import { useRefMap } from '@/composables/utils/useRefMap';
 import { useBackupApi } from '@/composables/api/backup';
+import DatabaseBackups from '@/components/settings/data-security/backups/DatabaseBackups.vue';
+import SettingCategoryHeader from '@/components/settings/SettingCategoryHeader.vue';
 import type { DatabaseInfo, UserDbBackup, UserDbBackupWithId } from '@/types/backup';
 
 const { t } = useI18n();

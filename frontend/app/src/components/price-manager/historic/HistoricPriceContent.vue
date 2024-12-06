@@ -3,8 +3,16 @@ import { useRefPropVModel } from '@/utils/model';
 import { useConfirmStore } from '@/store/confirm';
 import { useHistoricPriceForm } from '@/composables/price-manager/historic/form';
 import { useHistoricPrices } from '@/composables/price-manager/historic';
-import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
+import HistoricPriceForm from '@/components/price-manager/historic/HistoricPriceForm.vue';
+import BigDialog from '@/components/dialogs/BigDialog.vue';
+import RowActions from '@/components/helper/RowActions.vue';
+import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
+import DateDisplay from '@/components/display/DateDisplay.vue';
+import AssetDetails from '@/components/helper/AssetDetails.vue';
+import AssetSelect from '@/components/inputs/AssetSelect.vue';
+import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import type { HistoricalPrice, HistoricalPriceFormPayload } from '@/types/prices';
+import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 
 const { t } = useI18n();
 

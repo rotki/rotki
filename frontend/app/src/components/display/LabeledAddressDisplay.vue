@@ -3,6 +3,8 @@ import { findAddressKnownPrefix, truncateAddress } from '@/utils/truncate';
 import { getAccountAddress, getAccountLabel, getChain } from '@/utils/blockchain/accounts/utils';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import { useScramble } from '@/composables/scramble';
+import HashLink from '@/components/helper/HashLink.vue';
+import EnsAvatar from '@/components/display/EnsAvatar.vue';
 import type {
   BlockchainAccount,
   BlockchainAccountBalance,

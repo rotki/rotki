@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { NoteLocation } from '@/types/notes';
 import AmountSettingsCategory from '@/components/settings/AmountSettingsCategory.vue';
+import ExternalServiceSettingsCategory from '@/components/settings/ExternalServiceSettingsCategory.vue';
+import NftSettingsCategory from '@/components/settings/NftSettingsCategory.vue';
+import GeneralSettingsCategory from '@/components/settings/GeneralSettingsCategory.vue';
+import SettingsPage from '@/components/settings/controls/SettingsPage.vue';
 
 definePage({
   meta: {

@@ -10,8 +10,17 @@ import { useAggregatedBalances } from '@/composables/balances/aggregated';
 import { useSupportedChains } from '@/composables/info/chains';
 import { type AssetResolutionOptions, useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useSpamAsset } from '@/composables/assets/spam';
-import type { RouteLocationRaw } from 'vue-router';
+import AssetBalances from '@/components/AssetBalances.vue';
+import AssetLocations from '@/components/assets/AssetLocations.vue';
+import AssetValueRow from '@/components/assets/AssetValueRow.vue';
+import ManagedAssetIgnoringMore from '@/components/asset-manager/managed/ManagedAssetIgnoringMore.vue';
+import AppImage from '@/components/common/AppImage.vue';
+import ExternalLink from '@/components/helper/ExternalLink.vue';
+import HashLink from '@/components/helper/HashLink.vue';
+import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
+import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import type { AssetBalanceWithPrice } from '@rotki/common';
+import type { RouteLocationRaw } from 'vue-router';
 
 definePage({
   meta: {

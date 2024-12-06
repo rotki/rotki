@@ -3,6 +3,8 @@ import { logger } from '@/utils/logging';
 import { size } from '@/utils/data';
 import { useNotificationsStore } from '@/store/notifications';
 import { useBackupApi } from '@/composables/api/backup';
+import SettingsItem from '@/components/settings/controls/SettingsItem.vue';
+import CopyButton from '@/components/helper/CopyButton.vue';
 import type { DatabaseInfo } from '@/types/backup';
 
 interface UserDbInfo {

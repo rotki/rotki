@@ -2,7 +2,8 @@
 import { isEqual } from 'lodash-es';
 import { useAccountLoading } from '@/composables/accounts/loading';
 import { type AccountManageState, useAccountManage } from '@/composables/accounts/blockchain/use-account-manage';
-import type AccountForm from '@/components/accounts/management/AccountForm.vue';
+import BigDialog from '@/components/dialogs/BigDialog.vue';
+import AccountForm from '@/components/accounts/management/AccountForm.vue';
 
 const model = defineModel<AccountManageState | undefined>({ required: true });
 

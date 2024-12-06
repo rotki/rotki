@@ -7,6 +7,9 @@ import { useUserNotesForm } from '@/composables/notes/form';
 import { usePremium } from '@/composables/premium';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import { useUserNotesApi } from '@/composables/api/session/user-notes';
+import DateDisplay from '@/components/display/DateDisplay.vue';
+import ExternalLink from '@/components/helper/ExternalLink.vue';
+import CollectionHandler from '@/components/helper/CollectionHandler.vue';
 import type { UserNote, UserNotesRequestPayload } from '@/types/notes';
 
 const props = withDefaults(defineProps<{ location?: string }>(), {

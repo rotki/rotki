@@ -5,6 +5,7 @@ import { toMessages } from '@/utils/validation';
 import { Defaults } from '@/data/defaults';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useValidation } from '@/composables/validation';
+import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 
 const DEFAULT_DELIMITER = Defaults.DEFAULT_CSV_EXPORT_DELIMITER;
 const csvExportDelimiter = ref<string>(DEFAULT_DELIMITER);

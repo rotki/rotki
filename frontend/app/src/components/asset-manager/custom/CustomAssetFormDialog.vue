@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { useCustomAssetForm } from '@/composables/assets/forms/custom-asset-form';
+import CustomAssetForm from '@/components/asset-manager/custom/CustomAssetForm.vue';
+import BigDialog from '@/components/dialogs/BigDialog.vue';
 import type { CustomAsset } from '@/types/asset';
 
 const props = withDefaults(

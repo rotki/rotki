@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import SummaryCardRefreshMenu from '@/components/dashboard/summary-card/SummaryCardRefreshMenu.vue';
+import NavigatorLink from '@/components/helper/NavigatorLink.vue';
+import CardTitle from '@/components/typography/CardTitle.vue';
 import type { RouteLocationRaw } from 'vue-router';
 
 withDefaults(

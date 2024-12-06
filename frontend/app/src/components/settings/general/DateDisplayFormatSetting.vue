@@ -6,6 +6,8 @@ import { Defaults } from '@/data/defaults';
 import { toMessages } from '@/utils/validation';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useValidation } from '@/composables/validation';
+import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
+import DateFormatHelp from '@/components/settings/controls/DateFormatHelp.vue';
 
 const dateDisplayFormat = ref<string>('');
 const formatHelp = ref<boolean>(false);

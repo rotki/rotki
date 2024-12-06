@@ -2,7 +2,9 @@
 import { externalLinks } from '@shared/external-links';
 import { useNotificationsStore } from '@/store/notifications';
 import { useExternalApiKeys, useServiceKeyHandler } from '@/composables/settings/api-keys/external';
-import type ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
+import ExternalLink from '@/components/helper/ExternalLink.vue';
+import ServiceKeyCard from '@/components/settings/api-keys/ServiceKeyCard.vue';
+import ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
 
 const name = 'thegraph';
 const { t } = useI18n();

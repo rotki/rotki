@@ -6,6 +6,10 @@ import { useSimplePropVModel } from '@/utils/model';
 import { bigNumberifyFromRef } from '@/utils/bignumbers';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useHistoricPriceForm } from '@/composables/price-manager/historic/form';
+import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
+import AmountInput from '@/components/inputs/AmountInput.vue';
+import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
+import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import type { HistoricalPriceFormPayload } from '@/types/prices';
 
 const props = defineProps<{

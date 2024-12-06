@@ -5,6 +5,7 @@ import { toMessages } from '@/utils/validation';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useMonitorStore } from '@/store/monitor';
 import { useValidation } from '@/composables/validation';
+import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 
 const props = withDefaults(defineProps<{
   setting: 'queryRetryLimit' | 'connectTimeout' | 'readTimeout';

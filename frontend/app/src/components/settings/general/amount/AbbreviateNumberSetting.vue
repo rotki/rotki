@@ -2,6 +2,7 @@
 import { MINIMUM_DIGIT_TO_BE_ABBREVIATED } from '@/data/constraints';
 import { abbreviationList } from '@/data/amount-formatter';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 
 const { t } = useI18n();
 

@@ -12,8 +12,13 @@ import { useTradesForm } from '@/composables/history/trades/form';
 import { useTrades } from '@/composables/history/trades';
 import { refIsTruthy } from '@/composables/ref';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
-import type { Writeable } from '@rotki/common';
+import AssetSelect from '@/components/inputs/AssetSelect.vue';
+import AmountInput from '@/components/inputs/AmountInput.vue';
+import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
+import TwoFieldsAmountInput from '@/components/inputs/TwoFieldsAmountInput.vue';
+import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
 import type { NewTrade, Trade, TradeType } from '@/types/history/trade';
+import type { Writeable } from '@rotki/common';
 
 const props = withDefaults(
   defineProps<{

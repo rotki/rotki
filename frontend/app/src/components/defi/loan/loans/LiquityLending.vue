@@ -2,6 +2,12 @@
 import { type AssetBalance, type BigNumber, Blockchain, HistoryEventEntryType } from '@rotki/common';
 import { useScramble } from '@/composables/scramble';
 import { usePremium } from '@/composables/premium';
+import HistoryEventsView from '@/components/history/events/HistoryEventsView.vue';
+import PremiumCard from '@/components/display/PremiumCard.vue';
+import LoanDebt from '@/components/defi/loan/LoanDebt.vue';
+import LiquityLiquidation from '@/components/defi/loan/loans/liquity/LiquityLiquidation.vue';
+import LiquityCollateral from '@/components/defi/loan/loans/liquity/LiquityCollateral.vue';
+import LoanHeader from '@/components/defi/loan/LoanHeader.vue';
 import type { LiquityLoan } from '@/types/defi/liquity';
 
 const props = defineProps<{

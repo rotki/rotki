@@ -8,6 +8,15 @@ import { useUniswapStore } from '@/store/defi/uniswap';
 import { useStatusStore } from '@/store/status';
 import { useModules } from '@/composables/session/modules';
 import { usePremium } from '@/composables/premium';
+import HistoryEventsView from '@/components/history/events/HistoryEventsView.vue';
+import PaginatedCards from '@/components/common/PaginatedCards.vue';
+import LiquidityPoolSelector from '@/components/helper/LiquidityPoolSelector.vue';
+import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
+import ActiveModules from '@/components/defi/ActiveModules.vue';
+import TablePageLayout from '@/components/layout/TablePageLayout.vue';
+import ExternalLink from '@/components/helper/ExternalLink.vue';
+import ProgressScreen from '@/components/helper/ProgressScreen.vue';
+import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 
 const uniswap = Module.UNISWAP;

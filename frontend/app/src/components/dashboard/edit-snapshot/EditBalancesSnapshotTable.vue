@@ -6,10 +6,21 @@ import { bigNumberSum } from '@/utils/calculation';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useEditBalancesSnapshotForm } from '@/composables/snapshots/edit-balance/form';
-import type { BigNumber } from '@rotki/common';
-import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
+import EditBalancesSnapshotLocationSelector
+  from '@/components/dashboard/edit-snapshot/EditBalancesSnapshotLocationSelector.vue';
+import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
+import ConfirmSnapshotConflictReplacementDialog
+  from '@/components/snapshots/ConfirmSnapshotConflictReplacementDialog.vue';
+import BigDialog from '@/components/dialogs/BigDialog.vue';
+import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
+import RowActions from '@/components/helper/RowActions.vue';
+import NftDetails from '@/components/helper/NftDetails.vue';
+import AssetDetails from '@/components/helper/AssetDetails.vue';
+import AssetSelect from '@/components/inputs/AssetSelect.vue';
+import EditBalancesSnapshotForm from '@/components/dashboard/edit-snapshot/EditBalancesSnapshotForm.vue';
 import type { BalanceSnapshot, BalanceSnapshotPayload, Snapshot } from '@/types/snapshots';
-import type EditBalancesSnapshotForm from '@/components/dashboard/edit-snapshot/EditBalancesSnapshotForm.vue';
+import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
+import type { BigNumber } from '@rotki/common';
 
 const props = defineProps<{
   modelValue: Snapshot;

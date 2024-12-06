@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import CardTitle from '@/components/typography/CardTitle.vue';
+import AppImage from '@/components/common/AppImage.vue';
+
 withDefaults(
   defineProps<{
     title?: string;

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import RefreshButton from '@/components/helper/RefreshButton.vue';
+
 withDefaults(
   defineProps<{
     tooltip: string;

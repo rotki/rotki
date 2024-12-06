@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useSessionAuthStore } from '@/store/session/auth';
+import LoginActionAlert from '@/components/account-management/login/LoginActionAlert.vue';
 
 const emit = defineEmits<{ (e: 'confirm'): void; (e: 'cancel'): void }>();
 

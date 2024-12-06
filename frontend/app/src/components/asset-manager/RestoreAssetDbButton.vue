@@ -9,6 +9,7 @@ import { useMainStore } from '@/store/main';
 import { useNotificationsStore } from '@/store/notifications';
 import { useAssets } from '@/composables/assets';
 import { useBackendManagement } from '@/composables/backend';
+import ListItem from '@/components/common/ListItem.vue';
 
 withDefaults(
   defineProps<{

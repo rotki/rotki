@@ -5,6 +5,10 @@ import { useAreaVisibilityStore } from '@/store/session/visibility';
 import { useCoreScroll } from '@/composables/use-core-scroll';
 import { initGraph } from '@/composables/graphs';
 import { useInterop } from '@/composables/electron-interop';
+import AppSidebars from '@/components/app/AppSidebars.vue';
+import AppIndicators from '@/components/app/AppIndicators.vue';
+import AppDrawer from '@/components/app/AppDrawer.vue';
+import NotificationPopup from '@/components/status/notifications/NotificationPopup.vue';
 
 const visibilityStore = useAreaVisibilityStore();
 const { isMini, showDrawer, showPinned } = storeToRefs(visibilityStore);

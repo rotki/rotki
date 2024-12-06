@@ -7,6 +7,12 @@ import { usePeriodicStore } from '@/store/session/periodic';
 import { useSessionStore } from '@/store/session';
 import { useSync } from '@/composables/session/sync';
 import { useLinks } from '@/composables/links';
+import AskUserUponSizeDiscrepancySetting from '@/components/settings/general/AskUserUponSizeDiscrepancySetting.vue';
+import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
+import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
+import SyncButtons from '@/components/status/sync/SyncButtons.vue';
+import SyncSettings from '@/components/status/sync/SyncSettings.vue';
+import DateDisplay from '@/components/display/DateDisplay.vue';
 
 const { t } = useI18n();
 const { logout } = useSessionStore();

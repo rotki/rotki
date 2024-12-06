@@ -1,6 +1,11 @@
 <script setup lang="ts">
 import { externalLinks } from '@shared/external-links';
 import { useLiquityStore } from '@/store/defi/liquity';
+import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
+import ExternalLink from '@/components/helper/ExternalLink.vue';
+import LoanRow from '@/components/defi/loan/LoanRow.vue';
+import BalanceDisplay from '@/components/display/BalanceDisplay.vue';
+import StatCard from '@/components/display/StatCard.vue';
 import type { AssetBalance, BigNumber } from '@rotki/common';
 
 withDefaults(

@@ -7,6 +7,7 @@ import { useRefPropVModel } from '@/utils/model';
 import { useMessageStore } from '@/store/message';
 import { useCustomAssetForm } from '@/composables/assets/forms/custom-asset-form';
 import { useAssetManagementApi } from '@/composables/api/assets/management';
+import AutoCompleteWithSearchSync from '@/components/inputs/AutoCompleteWithSearchSync.vue';
 import type { CustomAsset } from '@/types/asset';
 
 const props = withDefaults(

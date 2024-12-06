@@ -8,11 +8,22 @@ import { useMessageStore } from '@/store/message';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useSpamAsset } from '@/composables/assets/spam';
-import type { Collection } from '@/types/collection';
-import type { Filters, Matcher } from '@/composables/filters/assets';
-import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
-import type { SupportedAsset } from '@rotki/common';
+import AssetUnderlyingTokens from '@/components/asset-manager/AssetUnderlyingTokens.vue';
+import CopyButton from '@/components/helper/CopyButton.vue';
+import RowActions from '@/components/helper/RowActions.vue';
+import ManagedAssetIgnoringMore from '@/components/asset-manager/managed/ManagedAssetIgnoringMore.vue';
+import DateDisplay from '@/components/display/DateDisplay.vue';
+import HashLink from '@/components/helper/HashLink.vue';
+import AssetDetailsBase from '@/components/helper/AssetDetailsBase.vue';
+import CollectionHandler from '@/components/helper/CollectionHandler.vue';
+import TableFilter from '@/components/table-filter/TableFilter.vue';
+import AssetStatusFilter from '@/components/asset-manager/AssetStatusFilter.vue';
+import IgnoreButtons from '@/components/history/IgnoreButtons.vue';
 import type { ActionStatus } from '@/types/action';
+import type { SupportedAsset } from '@rotki/common';
+import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
+import type { Filters, Matcher } from '@/composables/filters/assets';
+import type { Collection } from '@/types/collection';
 
 interface IgnoredFilter {
   onlyShowOwned: boolean;

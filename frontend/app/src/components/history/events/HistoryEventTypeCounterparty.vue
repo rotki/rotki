@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { useHistoryEventCounterpartyMappings } from '@/composables/history/events/mapping/counterparty';
+import EnsAvatar from '@/components/display/EnsAvatar.vue';
+import AppImage from '@/components/common/AppImage.vue';
 
 const props = defineProps<{
   event: { counterparty: string | null; address?: string | null };

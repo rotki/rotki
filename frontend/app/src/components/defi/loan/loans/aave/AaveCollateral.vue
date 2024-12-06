@@ -1,5 +1,10 @@
 <script setup lang="ts">
 import { totalCollateral } from '@/utils/total-collateral';
+import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
+import LoanRow from '@/components/defi/loan/LoanRow.vue';
+import BalanceDisplay from '@/components/display/BalanceDisplay.vue';
+import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
+import StatCard from '@/components/display/StatCard.vue';
 import type { AaveLoan } from '@/types/defi/lending';
 
 const props = defineProps<{

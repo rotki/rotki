@@ -11,6 +11,7 @@ import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useNumberScrambler } from '@/composables/utils/useNumberScrambler';
 import { useCopy } from '@/composables/copy';
 import { type AssetResolutionOptions, useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import CopyTooltip from '@/components/helper/CopyTooltip.vue';
 import type { RoundingMode } from '@/types/settings/frontend-settings';
 
 const props = withDefaults(

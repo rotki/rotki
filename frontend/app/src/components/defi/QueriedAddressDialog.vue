@@ -5,8 +5,13 @@ import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
 import { useQueriedAddressesStore } from '@/store/session/queried-addresses';
 import { useBlockchainStore } from '@/store/blockchain';
 import { useRefMap } from '@/composables/utils/useRefMap';
-import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
+import TagDisplay from '@/components/tags/TagDisplay.vue';
+import LabeledAddressDisplay from '@/components/display/LabeledAddressDisplay.vue';
+import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
+import AppImage from '@/components/common/AppImage.vue';
+import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import type { CamelCase } from '@/types/common';
+import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 
 const props = defineProps<{ module: Module }>();
 

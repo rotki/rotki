@@ -4,6 +4,8 @@ import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
 import { useBlockchainStore } from '@/store/blockchain';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import { useBlockchainAccountLoading } from '@/composables/accounts/blockchain/use-account-loading';
+import AccountBalanceDetails from '@/components/accounts/balances/AccountBalanceDetails.vue';
+import AccountBalancesTable from '@/components/accounts/AccountBalancesTable.vue';
 import type { AccountManageState } from '@/composables/accounts/blockchain/use-account-manage';
 import type {
   BlockchainAccountGroupRequestPayload,

@@ -1,4 +1,6 @@
 <script lang="ts" setup>
+import FileUpload from '@/components/import/FileUpload.vue';
+
 const model = defineModel<boolean>({ required: true });
 
 const props = withDefaults(

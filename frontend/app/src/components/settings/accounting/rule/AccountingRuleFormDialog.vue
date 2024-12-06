@@ -1,5 +1,7 @@
 <script lang="ts" setup>
 import { useAccountingRuleForm } from '@/composables/settings/accounting/form';
+import AccountingRuleForm from '@/components/settings/accounting/rule/AccountingRuleForm.vue';
+import BigDialog from '@/components/dialogs/BigDialog.vue';
 import type { AccountingRuleEntry } from '@/types/settings/accounting';
 
 const props = withDefaults(

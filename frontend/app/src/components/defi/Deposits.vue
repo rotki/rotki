@@ -10,6 +10,17 @@ import { useAaveStore } from '@/store/defi/aave';
 import { useStatusStore } from '@/store/status';
 import { usePremium } from '@/composables/premium';
 import { useDefiLending } from '@/composables/defi/lending';
+import HistoryEventsView from '@/components/history/events/HistoryEventsView.vue';
+import PremiumCard from '@/components/display/PremiumCard.vue';
+import YearnAssetsTable from '@/components/defi/yearn/YearnAssetsTable.vue';
+import LendingAssetTable from '@/components/defi/display/LendingAssetTable.vue';
+import StatCard from '@/components/display/StatCard.vue';
+import DefiProtocolSelector from '@/components/defi/DefiProtocolSelector.vue';
+import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
+import DepositTotals from '@/components/defi/DepositTotals.vue';
+import ProgressScreen from '@/components/helper/ProgressScreen.vue';
+import ActiveModules from '@/components/defi/ActiveModules.vue';
+import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 
 const section = Section.DEFI_LENDING;

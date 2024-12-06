@@ -9,8 +9,17 @@ import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useManualBalancesStore } from '@/store/balances/manual';
 import { type Filters, ManualBalancesFilterSchema, type Matcher, useManualBalanceFilter } from '@/composables/filters/manual-balances';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
-import type { ManualBalance, ManualBalanceRequestPayload, ManualBalanceWithPrice } from '@/types/manual-balances';
+import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
+import RowAppend from '@/components/helper/RowAppend.vue';
+import RowActions from '@/components/helper/RowActions.vue';
+import LocationDisplay from '@/components/history/LocationDisplay.vue';
+import AssetDetails from '@/components/helper/AssetDetails.vue';
+import TagDisplay from '@/components/tags/TagDisplay.vue';
+import TableFilter from '@/components/table-filter/TableFilter.vue';
+import TagFilter from '@/components/inputs/TagFilter.vue';
+import RefreshButton from '@/components/helper/RefreshButton.vue';
 import type { DataTableColumn } from '@rotki/ui-library';
+import type { ManualBalance, ManualBalanceRequestPayload, ManualBalanceWithPrice } from '@/types/manual-balances';
 
 const props = defineProps<{
   title: string;

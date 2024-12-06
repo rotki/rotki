@@ -3,6 +3,10 @@ import { CompoundBorrowingDetails } from '@/premium/premium';
 import { useRefMap } from '@/composables/utils/useRefMap';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { usePremium } from '@/composables/premium';
+import PremiumCard from '@/components/display/PremiumCard.vue';
+import LoanDebt from '@/components/defi/loan/LoanDebt.vue';
+import CompoundCollateral from '@/components/defi/loan/loans/compound/CompoundCollateral.vue';
+import LoanHeader from '@/components/defi/loan/LoanHeader.vue';
 import type { CompoundLoan } from '@/types/defi/compound';
 
 const props = defineProps<{ loan: CompoundLoan }>();

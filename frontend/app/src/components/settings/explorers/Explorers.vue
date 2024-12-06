@@ -4,6 +4,10 @@ import { type ExplorerUrls, explorerUrls } from '@/types/asset/asset-urls';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useValueOrDefault } from '@/composables/utils/useValueOrDefault';
 import { useRefMap } from '@/composables/utils/useRefMap';
+import ExplorerInput from '@/components/settings/explorers/ExplorerInput.vue';
+import AssetDetails from '@/components/helper/AssetDetails.vue';
+import ChainDisplay from '@/components/accounts/blockchain/ChainDisplay.vue';
+import SettingsItem from '@/components/settings/controls/SettingsItem.vue';
 
 const additional = ['ETC'] as const;
 const supportedExplorers = [...Object.values(Blockchain), ...additional];

@@ -6,6 +6,8 @@ import { useHistoryStore } from '@/store/history';
 import { useCacheClear } from '@/composables/session/cache-clear';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useSessionPurge } from '@/composables/session/purge';
+import ActionStatusIndicator from '@/components/error/ActionStatusIndicator.vue';
+import SettingsItem from '@/components/settings/controls/SettingsItem.vue';
 
 const { t } = useI18n();
 

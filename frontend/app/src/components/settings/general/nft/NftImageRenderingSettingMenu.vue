@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import NftImageRenderingSetting from '@/components/settings/general/nft/NftImageRenderingSetting.vue';
+
 const dialogOpen = ref(false);
 </script>
 

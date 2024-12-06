@@ -8,8 +8,13 @@ import { assetFilterByKeyword } from '@/utils/assets';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useStatisticsStore } from '@/store/statistics';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
-import type { AssetBalance, AssetBalanceWithPrice, BigNumber, Nullable } from '@rotki/common';
+import EvmNativeTokenBreakdown from '@/components/EvmNativeTokenBreakdown.vue';
+import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
+import RowAppend from '@/components/helper/RowAppend.vue';
+import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
+import AssetDetails from '@/components/helper/AssetDetails.vue';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
+import type { AssetBalance, AssetBalanceWithPrice, BigNumber, Nullable } from '@rotki/common';
 
 defineOptions({
   name: 'AssetBalances',

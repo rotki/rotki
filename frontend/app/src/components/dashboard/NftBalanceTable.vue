@@ -11,10 +11,18 @@ import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useNonFungibleBalancesStore } from '@/store/balances/non-fungible';
 import { useStatisticsStore } from '@/store/statistics';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
-import type { BigNumber } from '@rotki/common';
-import type { DataTableColumn } from '@rotki/ui-library';
-import type { IgnoredAssetsHandlingType } from '@/types/asset';
+import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
+import RowAppend from '@/components/helper/RowAppend.vue';
+import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
+import NftDetails from '@/components/helper/NftDetails.vue';
+import CollectionHandler from '@/components/helper/CollectionHandler.vue';
+import VisibleColumnsSelector from '@/components/dashboard/VisibleColumnsSelector.vue';
+import RefreshButton from '@/components/helper/RefreshButton.vue';
+import DashboardExpandableTable from '@/components/dashboard/DashboardExpandableTable.vue';
 import type { NonFungibleBalance, NonFungibleBalancesRequestPayload } from '@/types/nfbalances';
+import type { IgnoredAssetsHandlingType } from '@/types/asset';
+import type { DataTableColumn } from '@rotki/ui-library';
+import type { BigNumber } from '@rotki/common';
 
 const ignoredAssetsHandling: IgnoredAssetsHandlingType = 'exclude';
 

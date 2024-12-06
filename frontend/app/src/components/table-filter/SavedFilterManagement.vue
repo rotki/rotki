@@ -2,6 +2,7 @@
 import { isEqual } from 'lodash-es';
 import { useMessageStore } from '@/store/message';
 import { useSavedFilter } from '@/composables/filters/saved';
+import SuggestedItem from '@/components/table-filter/SuggestedItem.vue';
 import type { SavedFilterLocation, SearchMatcher, Suggestion } from '@/types/filtering';
 
 const props = defineProps<{

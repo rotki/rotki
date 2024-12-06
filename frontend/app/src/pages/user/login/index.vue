@@ -6,6 +6,16 @@ import { useDynamicMessages } from '@/composables/dynamic-messages';
 import { useAccountManagement } from '@/composables/user/account';
 import { useBackendManagement } from '@/composables/backend';
 import { useAppNavigation } from '@/composables/navigation';
+import WelcomeMessageDisplay from '@/components/account-management/login/WelcomeMessageDisplay.vue';
+import NewReleaseChangelog from '@/components/account-management/login/NewReleaseChangelog.vue';
+import RotkiLogo from '@/components/common/RotkiLogo.vue';
+import AccountManagementAside from '@/components/account-management/AccountManagementAside.vue';
+import AdaptiveFooterButton from '@/components/account-management/AdaptiveFooterButton.vue';
+import AccountManagementFooterText from '@/components/account-management/AccountManagementFooterText.vue';
+import LoginForm from '@/components/account-management/login/LoginForm.vue';
+import UpgradeProgressDisplay from '@/components/account-management/upgrade/UpgradeProgressDisplay.vue';
+import AssetUpdate from '@/components/status/update/AssetUpdate.vue';
+import UserHost from '@/components/account-management/UserHost.vue';
 import type { LoginCredentials } from '@/types/login';
 
 definePage({

@@ -2,6 +2,19 @@
 import { checkIfDevelopment } from '@shared/utils';
 import { useAreaVisibilityStore } from '@/store/session/visibility';
 import { useDarkMode } from '@/composables/dark-mode';
+import HelpIndicator from '@/components/help/HelpIndicator.vue';
+import UserDropdown from '@/components/UserDropdown.vue';
+import PrivacyModeDropdown from '@/components/PrivacyModeDropdown.vue';
+import CurrencyDropdown from '@/components/CurrencyDropdown.vue';
+import NotificationIndicator from '@/components/status/NotificationIndicator.vue';
+import ThemeControl from '@/components/premium/ThemeControl.vue';
+import PinnedIndicator from '@/components/PinnedIndicator.vue';
+import UserNotesIndicator from '@/components/notes/UserNotesIndicator.vue';
+import AppUpdateIndicator from '@/components/status/AppUpdateIndicator.vue';
+import GetPremiumButton from '@/components/premium/GetPremiumButton.vue';
+import BackButton from '@/components/helper/BackButton.vue';
+import GlobalSearch from '@/components/GlobalSearch.vue';
+import SyncIndicator from '@/components/status/sync/SyncIndicator.vue';
 
 const isDevelopment = checkIfDevelopment();
 

@@ -9,6 +9,13 @@ import { useExchangeBalancesStore } from '@/store/balances/exchanges';
 import { useExchangesStore } from '@/store/exchanges';
 import { useTaskStore } from '@/store/tasks';
 import { useRefresh } from '@/composables/balances/refresh';
+import InternalLink from '@/components/helper/InternalLink.vue';
+import BinanceSavingDetail from '@/components/exchanges/BinanceSavingDetail.vue';
+import AssetBalances from '@/components/AssetBalances.vue';
+import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
+import LocationDisplay from '@/components/history/LocationDisplay.vue';
+import ExchangeAmountRow from '@/components/accounts/exchanges/ExchangeAmountRow.vue';
+import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import type { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
 
 definePage({

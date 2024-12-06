@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { useWatchersStore } from '@/store/session/watchers';
 import { usePremium } from '@/composables/premium';
+import WatcherDialog from '@/components/dialogs/WatcherDialog.vue';
+import PremiumLock from '@/components/premium/PremiumLock.vue';
 import type { MakerDAOVaultModel } from '@/types/defi/maker';
 
 const props = defineProps<{

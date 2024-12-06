@@ -2,6 +2,8 @@
 import { Blockchain, type Eth2ValidatorEntry, type EthStakingFilter } from '@rotki/common';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
 import { useBlockchainValidatorsStore } from '@/store/blockchain/validators';
+import ValidatorFilterInput from '@/components/helper/filter/ValidatorFilterInput.vue';
+import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 
 defineProps<{

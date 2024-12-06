@@ -2,6 +2,9 @@
 import { logger } from '@/utils/logging';
 import { type Tag, defaultTag } from '@/types/tags';
 import { useTagStore } from '@/store/session/tags';
+import TagFormDialog from '@/components/tags/TagFormDialog.vue';
+import TagIcon from '@/components/tags/TagIcon.vue';
+import ListItem from '@/components/common/ListItem.vue';
 
 const modelValue = defineModel<string[]>({ required: true });
 

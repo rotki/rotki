@@ -11,13 +11,23 @@ import { useBlockchainAccountLoading } from '@/composables/accounts/blockchain/u
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import { useBlockchains } from '@/composables/blockchain';
 import { useRefresh } from '@/composables/balances/refresh';
-import type { AccountManageState } from '@/composables/accounts/blockchain/use-account-manage';
+import AccountBalanceDetails from '@/components/accounts/balances/AccountBalanceDetails.vue';
+import AccountBalanceAggregatedAssets from '@/components/accounts/AccountBalanceAggregatedAssets.vue';
+import AccountGroupDetails from '@/components/accounts/AccountGroupDetails.vue';
+import TableFilter from '@/components/table-filter/TableFilter.vue';
+import TagFilter from '@/components/inputs/TagFilter.vue';
+import DetectEvmAccounts from '@/components/accounts/balances/DetectEvmAccounts.vue';
+import CardTitle from '@/components/typography/CardTitle.vue';
+import BlockchainBalanceRefreshBehaviourMenu
+  from '@/components/dashboard/blockchain-balance/BlockchainBalanceRefreshBehaviourMenu.vue';
+import SummaryCardRefreshMenu from '@/components/dashboard/summary-card/SummaryCardRefreshMenu.vue';
+import type { LocationQuery } from '@/types/route';
+import type { ComponentExposed } from 'vue-component-type-helpers';
 import type {
   BlockchainAccountGroupWithBalance,
   BlockchainAccountRequestPayload,
 } from '@/types/blockchain/accounts';
-import type { ComponentExposed } from 'vue-component-type-helpers';
-import type { LocationQuery } from '@/types/route';
+import type { AccountManageState } from '@/composables/accounts/blockchain/use-account-manage';
 
 const props = defineProps<{
   category: string;

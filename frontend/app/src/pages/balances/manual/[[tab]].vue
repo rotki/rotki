@@ -6,6 +6,11 @@ import { NoteLocation } from '@/types/notes';
 import { BalanceSource } from '@/types/settings/frontend-settings';
 import { useManualBalancesStore } from '@/store/balances/manual';
 import { useHistoryStore } from '@/store/history';
+import ManualBalancesDialog from '@/components/accounts/manual-balances/ManualBalancesDialog.vue';
+import ManualBalanceTable from '@/components/accounts/manual-balances/ManualBalanceTable.vue';
+import HideSmallBalances from '@/components/settings/HideSmallBalances.vue';
+import PriceRefresh from '@/components/helper/PriceRefresh.vue';
+import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import type { ManualBalance, RawManualBalance } from '@/types/manual-balances';
 
 definePage({

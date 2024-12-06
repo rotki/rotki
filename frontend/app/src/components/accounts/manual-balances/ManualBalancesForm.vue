@@ -8,8 +8,15 @@ import { useManualBalancesStore } from '@/store/balances/manual';
 import { useCustomAssetForm } from '@/composables/assets/forms/custom-asset-form';
 import { useAssetManagementApi } from '@/composables/api/assets/management';
 import { useFormStateWatcher } from '@/composables/form';
-import type { ManualBalance, RawManualBalance } from '@/types/manual-balances';
+import CustomAssetFormDialog from '@/components/asset-manager/custom/CustomAssetFormDialog.vue';
+import LocationSelector from '@/components/helper/LocationSelector.vue';
+import TagInput from '@/components/inputs/TagInput.vue';
+import AmountInput from '@/components/inputs/AmountInput.vue';
+import AssetSelect from '@/components/inputs/AssetSelect.vue';
+import BalanceTypeInput from '@/components/inputs/BalanceTypeInput.vue';
+import RuiForm from '@/components/helper/RuiForm.vue';
 import type { ValidationErrors } from '@/types/api/errors';
+import type { ManualBalance, RawManualBalance } from '@/types/manual-balances';
 
 const errors = defineModel<ValidationErrors>('errorMessages', { required: true });
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });

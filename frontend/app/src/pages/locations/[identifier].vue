@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import { NoteLocation } from '@/types/notes';
 import { useLocations } from '@/composables/locations';
+import DepositsWithdrawalsContent from '@/components/history/deposits-withdrawals/DepositsWithdrawalsContent.vue';
+import ClosedTrades from '@/components/history/trades/ClosedTrades.vue';
+import LocationAssets from '@/components/locations/LocationAssets.vue';
+import LocationValueRow from '@/components/locations/LocationValueRow.vue';
+import LocationIcon from '@/components/history/LocationIcon.vue';
+import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 
 definePage({
   meta: {

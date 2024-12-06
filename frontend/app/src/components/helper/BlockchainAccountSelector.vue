@@ -8,6 +8,8 @@ import { createAccount } from '@/utils/blockchain/accounts/create';
 import { hasAccountAddress } from '@/utils/blockchain/accounts';
 import { useBlockchainStore } from '@/store/blockchain';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
+import TagDisplay from '@/components/tags/TagDisplay.vue';
+import AccountDisplay from '@/components/display/AccountDisplay.vue';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 
 type AccountWithAddressData = BlockchainAccount<AddressData>;

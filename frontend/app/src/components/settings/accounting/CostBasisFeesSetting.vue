@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useAccountingSettingsStore } from '@/store/settings/accounting';
+import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 
 const includeFeesInCostBasis = ref(true);
 const { includeFeesInCostBasis: enabled } = storeToRefs(useAccountingSettingsStore());

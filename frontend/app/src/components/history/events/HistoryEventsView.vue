@@ -24,6 +24,21 @@ import { useHistoryEventMappings } from '@/composables/history/events/mapping';
 import { useHistoryTransactionDecoding } from '@/composables/history/events/tx/decoding';
 import { useHistoryTransactions } from '@/composables/history/events/tx';
 import { useHistoryEvents } from '@/composables/history/events';
+import HistoryEventsProtocolCacheUpdateStatus
+  from '@/components/history/events/HistoryEventsProtocolCacheUpdateStatus.vue';
+import HistoryEventsDecodingStatus from '@/components/history/events/HistoryEventsDecodingStatus.vue';
+import MissingRulesDialog from '@/components/dialogs/MissingRulesDialog.vue';
+import TransactionFormDialog from '@/components/history/events/tx/TransactionFormDialog.vue';
+import HistoryEventFormDialog from '@/components/history/events/HistoryEventFormDialog.vue';
+import HistoryQueryStatus from '@/components/history/events/HistoryQueryStatus.vue';
+import HistoryEventsTable from '@/components/history/events/HistoryEventsTable.vue';
+import HistoryEventsTableActions from '@/components/history/events/HistoryEventsTableActions.vue';
+import RefreshButton from '@/components/helper/RefreshButton.vue';
+import CardTitle from '@/components/typography/CardTitle.vue';
+import HistoryEventsViewButtons from '@/components/history/events/HistoryEventsViewButtons.vue';
+import TablePageLayout from '@/components/layout/TablePageLayout.vue';
+import type { AccountingRuleEntry } from '@/types/settings/accounting';
+import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 import type {
   HistoryEvent,
   HistoryEventEntry,
@@ -31,8 +46,6 @@ import type {
   PullEvmTransactionPayload,
   ShowEventHistoryForm,
 } from '@/types/history/events';
-import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
-import type { AccountingRuleEntry } from '@/types/settings/accounting';
 
 const props = withDefaults(defineProps<{
   location?: string;

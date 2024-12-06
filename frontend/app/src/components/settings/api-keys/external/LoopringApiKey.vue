@@ -4,7 +4,8 @@ import { Routes } from '@/router/routes';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useExternalApiKeys, useServiceKeyHandler } from '@/composables/settings/api-keys/external';
 import { useBlockchainBalances } from '@/composables/blockchain/balances';
-import type ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
+import ServiceKeyCard from '@/components/settings/api-keys/ServiceKeyCard.vue';
+import ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
 
 const name = 'loopring';
 

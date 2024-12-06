@@ -9,6 +9,8 @@ import { useExchangesStore } from '@/store/exchanges';
 import { useLocationStore } from '@/store/locations';
 import { useLocations } from '@/composables/locations';
 import { useFormStateWatcher } from '@/composables/form';
+import BinancePairsSelector from '@/components/helper/BinancePairsSelector.vue';
+import ExchangeInput from '@/components/inputs/ExchangeInput.vue';
 
 const modelValue = defineModel<ExchangeFormData>({ required: true });
 

@@ -1,4 +1,9 @@
 <script setup lang="ts">
+import AppImage from '@/components/common/AppImage.vue';
+import InternalLink from '@/components/helper/InternalLink.vue';
+import FullSizeContent from '@/components/common/FullSizeContent.vue';
+import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
+
 definePage({
   props: true,
 });

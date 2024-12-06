@@ -4,6 +4,10 @@ import { useMessageStore } from '@/store/message';
 import { useNotificationsStore } from '@/store/notifications';
 import { useStatisticsStore } from '@/store/statistics';
 import { useSnapshotApi } from '@/composables/api/settings/snapshot-api';
+import EditSnapshotTotal from '@/components/dashboard/edit-snapshot/EditSnapshotTotal.vue';
+import EditLocationDataSnapshotTable from '@/components/dashboard/edit-snapshot/EditLocationDataSnapshotTable.vue';
+import EditBalancesSnapshotTable from '@/components/dashboard/edit-snapshot/EditBalancesSnapshotTable.vue';
+import DateDisplay from '@/components/display/DateDisplay.vue';
 import type { BalanceSnapshot, LocationDataSnapshot, Snapshot, SnapshotPayload } from '@/types/snapshots';
 
 const props = defineProps<{

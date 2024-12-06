@@ -2,6 +2,10 @@
 import { useAreaVisibilityStore } from '@/store/session/visibility';
 import { useDarkMode } from '@/composables/dark-mode';
 import { useInterop } from '@/composables/electron-interop';
+import AppHost from '@/components/app/AppHost.vue';
+import FrontendUpdateNotifier from '@/components/status/FrontendUpdateNotifier.vue';
+import AppMessages from '@/components/app/AppMessages.vue';
+import About from '@/components/About.vue';
 
 const { showAbout } = storeToRefs(useAreaVisibilityStore());
 const { isPackaged } = useInterop();

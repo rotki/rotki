@@ -6,8 +6,11 @@ import { convertFromTimestamp } from '@/utils/date';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useMessageStore } from '@/store/message';
 import { useAssetPricesApi } from '@/composables/api/assets/prices';
-import type { ProfitLossEvent } from '@/types/reports';
+import AmountInput from '@/components/inputs/AmountInput.vue';
+import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
+import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import type { HistoricalPriceFormPayload } from '@/types/prices';
+import type { ProfitLossEvent } from '@/types/reports';
 
 const props = defineProps<{
   event: ProfitLossEvent;

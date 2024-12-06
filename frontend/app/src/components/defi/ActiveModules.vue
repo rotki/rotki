@@ -4,6 +4,8 @@ import { useConfirmStore } from '@/store/confirm';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useSettingsStore } from '@/store/settings';
 import { useQueriedAddressesStore } from '@/store/session/queried-addresses';
+import QueriedAddressDialog from '@/components/defi/QueriedAddressDialog.vue';
+import AppImage from '@/components/common/AppImage.vue';
 import type { Nullable } from '@rotki/common';
 
 interface ModuleWithStatus {

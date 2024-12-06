@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { useCalendarEventForm } from '@/composables/calendar/form';
+import CalendarForm from '@/components/calendar/CalendarForm.vue';
+import BigDialog from '@/components/dialogs/BigDialog.vue';
 import type { Dayjs } from 'dayjs';
 import type { CalendarEvent } from '@/types/history/calendar';
 

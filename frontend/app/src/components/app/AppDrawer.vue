@@ -2,6 +2,8 @@
 import { Routes } from '@/router/routes';
 import { useMainStore } from '@/store/main';
 import { useAreaVisibilityStore } from '@/store/session/visibility';
+import NavigationMenu from '@/components/NavigationMenu.vue';
+import RotkiLogo from '@/components/common/RotkiLogo.vue';
 
 const { isMini, showDrawer } = storeToRefs(useAreaVisibilityStore());
 const { appVersion } = storeToRefs(useMainStore());

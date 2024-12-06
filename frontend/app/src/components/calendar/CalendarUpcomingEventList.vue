@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import dayjs, { type Dayjs } from 'dayjs';
+import CalendarEventList from '@/components/calendar/CalendarEventList.vue';
+import DateDisplay from '@/components/display/DateDisplay.vue';
 import type { CalendarEvent } from '@/types/history/calendar';
 
 const selectedDate = defineModel<Dayjs>('selectedDate', { required: true });

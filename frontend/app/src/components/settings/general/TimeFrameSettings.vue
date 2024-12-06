@@ -4,6 +4,7 @@ import { isPeriodAllowed } from '@/utils/settings';
 import { useSessionSettingsStore } from '@/store/settings/session';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { usePremium } from '@/composables/premium';
+import PremiumLock from '@/components/premium/PremiumLock.vue';
 
 const props = defineProps<{
   message: { error: string; success: string };

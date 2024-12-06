@@ -3,6 +3,12 @@ import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-na
 import { type Filters, type Matcher, useAddressBookFilter } from '@/composables/filters/address-book';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import { useAddressBookForm } from '@/composables/address-book/form';
+import AddressBookFormDialog from '@/components/address-book-manager/AddressBookFormDialog.vue';
+import AddressBookTable from '@/components/address-book-manager/AddressBookTable.vue';
+import EthNamesHint from '@/components/EthNamesHint.vue';
+import TableFilter from '@/components/table-filter/TableFilter.vue';
+import ChainSelect from '@/components/accounts/blockchain/ChainSelect.vue';
+import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import type {
   AddressBookEntry,
   AddressBookLocation,

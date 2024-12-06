@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common';
+import HashLink from '@/components/helper/HashLink.vue';
 import type { AssetMovement } from '@/types/history/asset-movements';
 
 const props = defineProps<{

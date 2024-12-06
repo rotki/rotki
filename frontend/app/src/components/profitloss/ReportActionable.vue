@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useReportsStore } from '@/store/reports';
+import ReportActionableCard from '@/components/profitloss/ReportActionableCard.vue';
 import type { SelectedReport } from '@/types/reports';
 
 const props = withDefaults(

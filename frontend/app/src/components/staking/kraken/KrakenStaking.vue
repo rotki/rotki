@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { HistoryEventEntryType } from '@rotki/common';
 import { useKrakenStakingStore } from '@/store/staking/kraken';
+import HistoryEventsView from '@/components/history/events/HistoryEventsView.vue';
+import KrakenStakingReceived from '@/components/staking/kraken/KrakenStakingReceived.vue';
+import KrakenStakingOverview from '@/components/staking/kraken/KrakenStakingOverview.vue';
 
 const { events } = toRefs(useKrakenStakingStore());
 </script>

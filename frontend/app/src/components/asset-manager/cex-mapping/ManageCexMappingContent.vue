@@ -6,6 +6,9 @@ import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import { useCexMappingForm } from '@/composables/assets/forms/cex-mapping-form';
 import { useCommonTableProps } from '@/composables/use-common-table-props';
 import { useAssetCexMappingApi } from '@/composables/api/assets/cex-mapping';
+import ManageCexMappingFormDialog from '@/components/asset-manager/cex-mapping/ManageCexMappingFormDialog.vue';
+import ManageCexMappingTable from '@/components/asset-manager/cex-mapping/ManageCexMappingTable.vue';
+import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import type { CexMapping, CexMappingRequestPayload } from '@/types/asset';
 
 const { t } = useI18n();

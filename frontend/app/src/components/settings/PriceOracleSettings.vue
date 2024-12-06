@@ -11,6 +11,10 @@ import {
 } from '@/types/settings/prioritized-list-id';
 import { useHistoricCachePriceStore } from '@/store/prices/historic';
 import { useGeneralSettingsStore } from '@/store/settings/general';
+import PrioritizedList from '@/components/helper/PrioritizedList.vue';
+import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
+import PriceRefresh from '@/components/helper/PriceRefresh.vue';
+import SettingCategoryHeader from '@/components/settings/SettingCategoryHeader.vue';
 
 const currentOracles = ref<PrioritizedListId[]>([]);
 const historicOracles = ref<PrioritizedListId[]>([]);

@@ -6,6 +6,11 @@ import { useSushiswapStore } from '@/store/defi/sushiswap';
 import { useStatusStore } from '@/store/status';
 import { useModules } from '@/composables/session/modules';
 import { usePremium } from '@/composables/premium';
+import ActiveModules from '@/components/defi/ActiveModules.vue';
+import TablePageLayout from '@/components/layout/TablePageLayout.vue';
+import ProgressScreen from '@/components/helper/ProgressScreen.vue';
+import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
+import NoPremiumPlaceholder from '@/components/premium/NoPremiumPlaceholder.vue';
 
 const section = Section.DEFI_SUSHISWAP_BALANCES;
 const secondSection = Section.DEFI_SUSHISWAP_EVENTS;

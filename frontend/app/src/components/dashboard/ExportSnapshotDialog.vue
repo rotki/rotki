@@ -8,6 +8,9 @@ import { useMessageStore } from '@/store/message';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useSnapshotApi } from '@/composables/api/settings/snapshot-api';
 import { useInterop } from '@/composables/electron-interop';
+import EditSnapshotDialog from '@/components/dashboard/edit-snapshot/EditSnapshotDialog.vue';
+import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
+import DateDisplay from '@/components/display/DateDisplay.vue';
 import type { BigNumber, Message } from '@rotki/common';
 
 const display = defineModel<boolean>({ default: false, required: true });

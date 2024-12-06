@@ -7,6 +7,9 @@ import { useConfirmStore } from '@/store/confirm';
 import { useSettingsStore } from '@/store/settings';
 import { useSessionAuthStore } from '@/store/session/auth';
 import { useInterop } from '@/composables/electron-interop';
+import ExternalLink from '@/components/helper/ExternalLink.vue';
+import HintMenuIcon from '@/components/HintMenuIcon.vue';
+import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 
 const { username } = storeToRefs(useSessionAuthStore());
 const { update } = useSettingsStore();

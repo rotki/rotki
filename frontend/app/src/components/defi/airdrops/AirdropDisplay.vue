@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { useAirdropsMetadata } from '@/composables/defi/airdrops/metadata';
+import AppImage from '@/components/common/AppImage.vue';
+import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 
 const props = defineProps<{
   source: string;

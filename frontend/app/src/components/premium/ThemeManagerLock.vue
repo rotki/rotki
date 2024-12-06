@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import PremiumLock from '@/components/premium/PremiumLock.vue';
+
 const { t } = useI18n();
 </script>
 

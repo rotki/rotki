@@ -11,10 +11,15 @@ import { useMessageStore } from '@/store/message';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useCalendarEventForm } from '@/composables/calendar/form';
 import { useCalendarApi } from '@/composables/history/calendar';
-import type { CalendarEvent, CalendarEventPayload } from '@/types/history/calendar';
-import type { Writeable } from '@rotki/common';
-import type { Dayjs } from 'dayjs';
+import CounterpartyInput from '@/components/inputs/CounterpartyInput.vue';
+import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
+import CalendarColorInput from '@/components/calendar/CalendarColorInput.vue';
+import CalendarReminder from '@/components/calendar/CalendarReminder.vue';
+import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
+import type { Dayjs } from 'dayjs';
+import type { Writeable } from '@rotki/common';
+import type { CalendarEvent, CalendarEventPayload } from '@/types/history/calendar';
 
 const props = withDefaults(
   defineProps<{

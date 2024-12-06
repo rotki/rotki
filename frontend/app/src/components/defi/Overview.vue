@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { useRefMap } from '@/composables/utils/useRefMap';
 import { useDefiMetadata } from '@/composables/defi/metadata';
+import DefiAsset from '@/components/defi/DefiAsset.vue';
+import AppImage from '@/components/common/AppImage.vue';
+import InfoRow from '@/components/defi/display/InfoRow.vue';
+import StatCard from '@/components/display/StatCard.vue';
 import type { DefiProtocolSummary } from '@/types/defi/overview';
 
 const props = defineProps<{

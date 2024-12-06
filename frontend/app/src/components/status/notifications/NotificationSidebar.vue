@@ -4,6 +4,9 @@ import { Routes } from '@/router/routes';
 import { useTaskStore } from '@/store/tasks';
 import { useNotificationsStore } from '@/store/notifications';
 import { useConfirmStore } from '@/store/confirm';
+import Notification from '@/components/status/notifications/Notification.vue';
+import LazyLoader from '@/components/helper/LazyLoader.vue';
+import PendingTasks from '@/components/status/notifications/PendingTasks.vue';
 
 const display = defineModel<boolean>({ required: true });
 

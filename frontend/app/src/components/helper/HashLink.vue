@@ -9,6 +9,8 @@ import { useLinks } from '@/composables/links';
 import { useAddressBookForm } from '@/composables/address-book/form';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useScramble } from '@/composables/scramble';
+import TagDisplay from '@/components/tags/TagDisplay.vue';
+import EnsAvatar from '@/components/display/EnsAvatar.vue';
 
 defineOptions({
   inheritAttrs: false,

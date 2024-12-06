@@ -6,6 +6,7 @@ import { toMessages } from '@/utils/validation';
 import { Defaults } from '@/data/defaults';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useValidation } from '@/composables/validation';
+import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 
 const DEFAULT_FREQUENCY = Defaults.BALANCE_SAVE_FREQUENCY;
 

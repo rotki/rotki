@@ -5,6 +5,9 @@ import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-na
 import { useAddressesNamesApi } from '@/composables/api/blockchain/addresses-names';
 import { useCacheClear } from '@/composables/session/cache-clear';
 import { useAssetIconApi } from '@/composables/api/assets/icon';
+import ActionStatusIndicator from '@/components/error/ActionStatusIndicator.vue';
+import AssetSelect from '@/components/inputs/AssetSelect.vue';
+import SettingsItem from '@/components/settings/controls/SettingsItem.vue';
 
 const { t } = useI18n();
 

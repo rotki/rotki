@@ -1,7 +1,13 @@
 <script setup lang="ts">
-import type { CexMapping } from '@/types/asset';
-import type { Collection } from '@/types/collection';
+import RowActions from '@/components/helper/RowActions.vue';
+import AssetDetails from '@/components/helper/AssetDetails.vue';
+import LocationDisplay from '@/components/history/LocationDisplay.vue';
+import CollectionHandler from '@/components/helper/CollectionHandler.vue';
+import ExchangeInput from '@/components/inputs/ExchangeInput.vue';
+import HintMenuIcon from '@/components/HintMenuIcon.vue';
 import type { DataTableColumn, TablePaginationData } from '@rotki/ui-library';
+import type { Collection } from '@/types/collection';
+import type { CexMapping } from '@/types/asset';
 
 const locationModel = defineModel<string | undefined>('location', { required: true });
 

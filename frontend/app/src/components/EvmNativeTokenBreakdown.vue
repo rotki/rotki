@@ -7,8 +7,13 @@ import { useBlockchainStore } from '@/store/blockchain';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useBalancesBreakdown } from '@/composables/balances/breakdown';
 import { useSupportedChains } from '@/composables/info/chains';
-import type { AssetBreakdown } from '@/types/blockchain/accounts';
+import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
+import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
+import Eth2ValidatorLimitTooltip from '@/components/accounts/blockchain/eth2/Eth2ValidatorLimitTooltip.vue';
+import IconTokenDisplay from '@/components/accounts/IconTokenDisplay.vue';
+import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
+import type { AssetBreakdown } from '@/types/blockchain/accounts';
 
 const props = withDefaults(
   defineProps<{

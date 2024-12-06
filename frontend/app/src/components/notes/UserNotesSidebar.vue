@@ -2,6 +2,7 @@
 import { useAppRoutes } from '@/router/routes';
 import { NoteLocation } from '@/types/notes';
 import { useUserNotesForm } from '@/composables/notes/form';
+import UserNotesList from '@/components/notes/UserNotesList.vue';
 
 const display = defineModel<boolean>({ required: true });
 

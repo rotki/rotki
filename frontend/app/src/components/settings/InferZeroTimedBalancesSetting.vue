@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { useGeneralSettingsStore } from '@/store/settings/general';
+import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
+import CardTitle from '@/components/typography/CardTitle.vue';
 
 const emit = defineEmits<{
   (e: 'updated'): void;

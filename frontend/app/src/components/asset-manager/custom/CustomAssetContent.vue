@@ -6,8 +6,11 @@ import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import { useCommonTableProps } from '@/composables/use-common-table-props';
 import { useCustomAssetForm } from '@/composables/assets/forms/custom-asset-form';
 import { useAssetManagementApi } from '@/composables/api/assets/management';
-import type { Nullable } from '@rotki/common';
+import CustomAssetFormDialog from '@/components/asset-manager/custom/CustomAssetFormDialog.vue';
+import CustomAssetTable from '@/components/asset-manager/custom/CustomAssetTable.vue';
+import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import type { CustomAsset, CustomAssetRequestPayload } from '@/types/asset';
+import type { Nullable } from '@rotki/common';
 
 const props = withDefaults(
   defineProps<{

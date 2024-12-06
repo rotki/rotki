@@ -11,6 +11,10 @@ import {
 } from '@/types/settings/prioritized-list-id';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import { useGeneralSettingsStore } from '@/store/settings/general';
+import ActionStatusIndicator from '@/components/error/ActionStatusIndicator.vue';
+import PrioritizedList from '@/components/helper/PrioritizedList.vue';
+import EnableEnsNamesSetting from '@/components/settings/frontend/EnableEnsNamesSetting.vue';
+import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 
 const currentAddressNamePriorities = ref<PrioritizedListId[]>([]);
 const { addressNamePriority } = storeToRefs(useGeneralSettingsStore());

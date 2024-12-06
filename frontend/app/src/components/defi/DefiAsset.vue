@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import BalanceDisplay from '@/components/display/BalanceDisplay.vue';
+import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
 import type { DefiAsset } from '@/types/defi/overview';
 
 const props = defineProps<{

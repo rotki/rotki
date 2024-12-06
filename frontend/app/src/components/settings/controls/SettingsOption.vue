@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { SettingLocation, useClearableMessages, useSettings } from '@/composables/settings';
+import SettingsItem from '@/components/settings/controls/SettingsItem.vue';
 import type { MaybeRef } from '@vueuse/core';
 import type { FrontendSettingsPayload } from '@/types/settings/frontend-settings';
 import type { SettingsUpdate } from '@/types/user';

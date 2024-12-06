@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { type BigNumber, assetSymbolToIdentifierMap } from '@rotki/common';
 import { usePremium } from '@/composables/premium';
+import PremiumLock from '@/components/premium/PremiumLock.vue';
+import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
+import LoanRow from '@/components/defi/loan/LoanRow.vue';
+import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
 
 const props = defineProps<{
   totalInterestOwed: BigNumber;

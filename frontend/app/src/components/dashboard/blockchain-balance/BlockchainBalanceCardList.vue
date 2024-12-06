@@ -5,8 +5,13 @@ import { type BlockchainTotal, SupportedSubBlockchainProtocolData } from '@/type
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useRefMap } from '@/composables/utils/useRefMap';
-import type { RouteLocationRaw } from 'vue-router';
+import BlockchainBalanceCardDetails from '@/components/dashboard/blockchain-balance/BlockchainBalanceCardDetails.vue';
+import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
+import Eth2ValidatorLimitTooltip from '@/components/accounts/blockchain/eth2/Eth2ValidatorLimitTooltip.vue';
+import ChainIcon from '@/components/helper/display/icons/ChainIcon.vue';
+import ListItem from '@/components/common/ListItem.vue';
 import type { ActionDataEntry } from '@/types/action';
+import type { RouteLocationRaw } from 'vue-router';
 
 const props = defineProps<{
   total: BlockchainTotal;

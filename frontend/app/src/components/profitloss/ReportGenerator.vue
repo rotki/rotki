@@ -2,6 +2,8 @@
 import { checkIfDevelopment } from '@shared/utils';
 import { Routes } from '@/router/routes';
 import { convertToTimestamp } from '@/utils/date';
+import RangeSelector from '@/components/helper/date/RangeSelector.vue';
+import CardTitle from '@/components/typography/CardTitle.vue';
 import type { ProfitLossReportPeriod } from '@/types/reports';
 
 const emit = defineEmits<{

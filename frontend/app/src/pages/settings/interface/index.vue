@@ -1,5 +1,10 @@
 <script setup lang="ts">
 import { NoteLocation } from '@/types/notes';
+import ThemeSettingsCategory from '@/components/settings/frontend/ThemeSettingsCategory.vue';
+import AliasSettingsCategory from '@/components/settings/frontend/AliasSettingsCategory.vue';
+import GraphSettingsCategory from '@/components/settings/frontend/GraphSettingsCategory.vue';
+import InterfaceOnlyCategory from '@/components/settings/frontend/InterfaceOnlyCategory.vue';
+import SettingsPage from '@/components/settings/controls/SettingsPage.vue';
 
 definePage({
   meta: {

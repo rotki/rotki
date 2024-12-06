@@ -1,4 +1,7 @@
 <script lang="ts" setup>
+import CreateAccountPremiumForm
+  from '@/components/account-management/create-account/premium/CreateAccountPremiumForm.vue';
+import ExternalLink from '@/components/helper/ExternalLink.vue';
 import type { PremiumSetup } from '@/types/login';
 
 const props = defineProps<{

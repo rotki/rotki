@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import AppImage from '@/components/common/AppImage.vue';
+import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import type { RuiIcons } from '@rotki/ui-library';
 import type { ImportSource } from '@/types/upload-types';
 

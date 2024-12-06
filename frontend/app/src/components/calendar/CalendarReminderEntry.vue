@@ -3,6 +3,7 @@ import { helpers, maxValue, minValue, required } from '@vuelidate/validators';
 import useVuelidate from '@vuelidate/core';
 import { toMessages } from '@/utils/validation';
 import { useSimpleVModel } from '@/utils/model';
+import AmountInput from '@/components/inputs/AmountInput.vue';
 import type { CalendarReminderTemporaryPayload } from '@/types/history/calendar/reminder';
 
 const props = defineProps<{

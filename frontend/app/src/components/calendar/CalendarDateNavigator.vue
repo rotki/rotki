@@ -2,6 +2,7 @@
 import dayjs, { type Dayjs } from 'dayjs';
 import { DateFormat } from '@/types/date-format';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
+import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
 
 const model = defineModel<Dayjs>({ required: true });
 

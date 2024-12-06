@@ -1,4 +1,10 @@
 <script setup lang="ts">
+import ShowGraphRangeSelectorSetting from '@/components/settings/frontend/ShowGraphRangeSelectorSetting.vue';
+import ZeroBasedGraphSetting from '@/components/settings/frontend/ZeroBasedGraphSetting.vue';
+import SettingsItem from '@/components/settings/controls/SettingsItem.vue';
+import TimeFrameSetting from '@/components/settings/frontend/TimeFrameSetting.vue';
+import SettingCategory from '@/components/settings/SettingCategory.vue';
+
 const { t } = useI18n();
 </script>
 

@@ -2,6 +2,8 @@
 import { Blockchain } from '@rotki/common';
 import AddressInput from '@/components/accounts/blockchain/AddressInput.vue';
 import { useSupportedChains } from '@/composables/info/chains';
+import AccountDataInput from '@/components/accounts/management/inputs/AccountDataInput.vue';
+import ModuleActivator from '@/components/accounts/ModuleActivator.vue';
 import type { ValidationErrors } from '@/types/api/errors';
 import type { Module } from '@/types/modules';
 import type { AccountManage } from '@/composables/accounts/blockchain/use-account-manage';

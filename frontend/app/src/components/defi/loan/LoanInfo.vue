@@ -1,5 +1,9 @@
 <script setup lang="ts">
 import { DefiProtocol } from '@/types/modules';
+import LiquityLending from '@/components/defi/loan/loans/LiquityLending.vue';
+import CompoundLending from '@/components/defi/loan/loans/CompoundLending.vue';
+import AaveLending from '@/components/defi/loan/loans/AaveLending.vue';
+import MakerDaoVaultLoan from '@/components/defi/loan/loans/MakerDaoVaultLoan.vue';
 import type { AaveLoan } from '@/types/defi/lending';
 import type { CompoundLoan } from '@/types/defi/compound';
 import type { MakerDAOVaultModel } from '@/types/defi/maker';

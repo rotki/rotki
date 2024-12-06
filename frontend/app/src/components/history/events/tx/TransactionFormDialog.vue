@@ -1,5 +1,7 @@
 <script lang="ts" setup>
 import { useHistoryTransactionsForm } from '@/composables/history/events/tx/form';
+import TransactionForm from '@/components/history/events/tx/TransactionForm.vue';
+import BigDialog from '@/components/dialogs/BigDialog.vue';
 
 withDefaults(
   defineProps<{

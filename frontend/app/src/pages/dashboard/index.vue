@@ -12,6 +12,19 @@ import { useModules } from '@/composables/session/modules';
 import { useDynamicMessages } from '@/composables/dynamic-messages';
 import { useRefresh } from '@/composables/balances/refresh';
 import { useAggregatedBalances } from '@/composables/balances/aggregated';
+import NftBalanceTable from '@/components/dashboard/NftBalanceTable.vue';
+import DashboardAssetTable from '@/components/dashboard/DashboardAssetTable.vue';
+import LiquidityProviderBalanceTable from '@/components/dashboard/liquity-provider/LiquidityProviderBalanceTable.vue';
+import PriceRefresh from '@/components/helper/PriceRefresh.vue';
+import ManualBalanceCardList from '@/components/dashboard/ManualBalanceCardList.vue';
+import SummaryCardCreateButton from '@/components/dashboard/summary-card/SummaryCardCreateButton.vue';
+import SummaryCard from '@/components/dashboard/summary-card/SummaryCard.vue';
+import BlockchainBalanceCardList from '@/components/dashboard/blockchain-balance/BlockchainBalanceCardList.vue';
+import BlockchainBalanceRefreshBehaviourMenu
+  from '@/components/dashboard/blockchain-balance/BlockchainBalanceRefreshBehaviourMenu.vue';
+import ExchangeBox from '@/components/dashboard/ExchangeBox.vue';
+import OverallBalances from '@/components/dashboard/OverallBalances.vue';
+import DynamicMessageDisplay from '@/components/dashboard/DynamicMessageDisplay.vue';
 
 definePage({
   meta: {

@@ -1,5 +1,7 @@
 <script lang="ts" setup>
 import { useSessionSettingsStore } from '@/store/settings/session';
+import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
+import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
 import type { AssetBalance } from '@rotki/common';
 import type { AssetResolutionOptions } from '@/composables/assets/retrieval';
 

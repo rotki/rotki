@@ -5,6 +5,8 @@ import { between, helpers, numeric, required } from '@vuelidate/validators';
 import { evmTokenKindsData } from '@/types/blockchain/chains';
 import { toMessages } from '@/utils/validation';
 import { useSimpleVModel } from '@/utils/model';
+import RowActions from '@/components/helper/RowActions.vue';
+import SimpleTable from '@/components/common/SimpleTable.vue';
 
 const props = defineProps<{
   modelValue: UnderlyingToken[];

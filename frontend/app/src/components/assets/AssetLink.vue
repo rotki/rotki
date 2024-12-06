@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useAssetPageNavigation } from '@/composables/assets/navigation';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import HashLink from '@/components/helper/HashLink.vue';
 
 const props = withDefaults(
   defineProps<{

@@ -11,12 +11,23 @@ import { useNonFungibleBalancesStore } from '@/store/balances/non-fungible';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import { useLatestPriceForm } from '@/composables/price-manager/latest/form';
 import { useAssetPricesApi } from '@/composables/api/assets/prices';
-import type { DataTableColumn } from '@rotki/ui-library';
-import type { ActionStatus } from '@/types/action';
-import type { IgnoredAssetsHandlingType } from '@/types/asset';
-import type { Module } from '@/types/modules';
-import type { NonFungibleBalance, NonFungibleBalancesRequestPayload } from '@/types/nfbalances';
+import LatestPriceFormDialog from '@/components/price-manager/latest/LatestPriceFormDialog.vue';
+import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
+import RowAppend from '@/components/helper/RowAppend.vue';
+import SuccessDisplay from '@/components/display/SuccessDisplay.vue';
+import RowActions from '@/components/helper/RowActions.vue';
+import NftDetails from '@/components/helper/NftDetails.vue';
+import CollectionHandler from '@/components/helper/CollectionHandler.vue';
+import NonFungibleBalancesFilter from '@/components/accounts/balances/NonFungibleBalancesFilter.vue';
+import NftImageRenderingSettingMenu from '@/components/settings/general/nft/NftImageRenderingSettingMenu.vue';
+import ActiveModules from '@/components/defi/ActiveModules.vue';
+import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import type { ManualPriceFormPayload } from '@/types/prices';
+import type { NonFungibleBalance, NonFungibleBalancesRequestPayload } from '@/types/nfbalances';
+import type { Module } from '@/types/modules';
+import type { IgnoredAssetsHandlingType } from '@/types/asset';
+import type { ActionStatus } from '@/types/action';
+import type { DataTableColumn } from '@rotki/ui-library';
 
 defineProps<{ modules: Module[] }>();
 

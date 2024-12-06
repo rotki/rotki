@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useSessionSettingsStore } from '@/store/settings/session';
+import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 
 const animationsEnabled = ref<boolean>(true);
 const { t } = useI18n();

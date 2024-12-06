@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import images from '@/components/defi/airdrops/poap.json';
-import type { DataTableColumn } from '@rotki/ui-library';
+import ExternalLink from '@/components/helper/ExternalLink.vue';
+import AppImage from '@/components/common/AppImage.vue';
+import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import type { PoapDeliveryDetails } from '@/types/defi/airdrops';
+import type { DataTableColumn } from '@rotki/ui-library';
 
 defineProps<{ items: PoapDeliveryDetails[] }>();
 

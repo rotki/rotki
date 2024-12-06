@@ -3,8 +3,18 @@ import { some } from 'lodash-es';
 import { isTransactionEvent } from '@/utils/report';
 import { usePremium } from '@/composables/premium';
 import { useSupportedChains } from '@/composables/info/chains';
-import type { DataTableColumn, DataTableOptions, DataTableSortData } from '@rotki/ui-library';
+import CostBasisTable from '@/components/profitloss/CostBasisTable.vue';
+import ReportProfitLossEventAction from '@/components/profitloss/ReportProfitLossEventAction.vue';
+import HistoryEventNote from '@/components/history/events/HistoryEventNote.vue';
+import UpgradeRow from '@/components/history/UpgradeRow.vue';
+import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
+import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
+import AssetLink from '@/components/assets/AssetLink.vue';
+import DateDisplay from '@/components/display/DateDisplay.vue';
+import LocationDisplay from '@/components/history/LocationDisplay.vue';
+import ProfitLossEventType from '@/components/profitloss/ProfitLossEventType.vue';
 import type { ProfitLossEvent, ProfitLossEvents, SelectedReport } from '@/types/reports';
+import type { DataTableColumn, DataTableOptions, DataTableSortData } from '@rotki/ui-library';
 
 interface GroupLine {
   top: boolean;

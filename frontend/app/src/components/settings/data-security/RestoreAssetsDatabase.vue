@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import RestoreAssetDbButton from '@/components/asset-manager/RestoreAssetDbButton.vue';
+import SettingsItem from '@/components/settings/controls/SettingsItem.vue';
+
 const { t } = useI18n();
 </script>
 

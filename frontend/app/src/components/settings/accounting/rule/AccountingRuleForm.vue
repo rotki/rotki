@@ -9,6 +9,9 @@ import { getPlaceholderRule } from '@/utils/settings';
 import { useMessageStore } from '@/store/message';
 import { useAccountingRuleForm } from '@/composables/settings/accounting/form';
 import { useAccountingApi } from '@/composables/api/settings/accounting-api';
+import AccountingRuleWithLinkedSetting from '@/components/settings/accounting/rule/AccountingRuleWithLinkedSetting.vue';
+import CounterpartyInput from '@/components/inputs/CounterpartyInput.vue';
+import HistoryEventTypeForm from '@/components/history/events/forms/HistoryEventTypeForm.vue';
 
 const props = withDefaults(
   defineProps<{

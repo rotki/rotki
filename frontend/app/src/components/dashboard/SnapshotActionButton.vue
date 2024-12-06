@@ -9,6 +9,8 @@ import { useInterop } from '@/composables/electron-interop';
 import { useSnapshotApi } from '@/composables/api/settings/snapshot-api';
 import { useBalances } from '@/composables/balances';
 import { usePremium } from '@/composables/premium';
+import DateDisplay from '@/components/display/DateDisplay.vue';
+import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import type { Writeable } from '@rotki/common';
 import type { AllBalancePayload } from '@/types/blockchain/accounts';
 

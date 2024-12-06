@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { useAssetCacheStore } from '@/store/assets/asset-cache';
-import type { StyleValue } from 'vue';
+import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
+import AppImage from '@/components/common/AppImage.vue';
+import ListItem from '@/components/common/ListItem.vue';
 import type { NftAsset } from '@/types/nfts';
+import type { StyleValue } from 'vue';
 
 defineOptions({
   inheritAttrs: false,

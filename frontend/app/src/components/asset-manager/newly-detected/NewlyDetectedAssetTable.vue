@@ -6,8 +6,11 @@ import { useAssetCacheStore } from '@/store/assets/asset-cache';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useSpamAsset } from '@/composables/assets/spam';
 import { useNewlyDetectedTokens } from '@/composables/assets/newly-detected-tokens';
-import type { NewDetectedToken } from '@/types/websocket-messages';
+import HashLink from '@/components/helper/HashLink.vue';
+import AssetDetails from '@/components/helper/AssetDetails.vue';
+import HintMenuIcon from '@/components/HintMenuIcon.vue';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
+import type { NewDetectedToken } from '@/types/websocket-messages';
 
 interface Token extends NewDetectedToken {
   address: string;

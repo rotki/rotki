@@ -10,8 +10,16 @@ import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useBalancesBreakdown } from '@/composables/balances/breakdown';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useAggregatedBalances } from '@/composables/balances/aggregated';
-import type { AddressData, AssetBreakdown, BlockchainAccount } from '@/types/blockchain/accounts';
+import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
+import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
+import TagDisplay from '@/components/tags/TagDisplay.vue';
+import LabeledAddressDisplay from '@/components/display/LabeledAddressDisplay.vue';
+import LocationDisplay from '@/components/history/LocationDisplay.vue';
+import TagFilter from '@/components/inputs/TagFilter.vue';
+import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
+import LocationSelector from '@/components/helper/LocationSelector.vue';
 import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
+import type { AddressData, AssetBreakdown, BlockchainAccount } from '@/types/blockchain/accounts';
 
 type AssetLocations = AssetLocation[];
 

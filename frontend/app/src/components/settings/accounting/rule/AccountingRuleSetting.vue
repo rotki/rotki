@@ -12,8 +12,20 @@ import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import { useCommonTableProps } from '@/composables/use-common-table-props';
 import { useAccountingSettings } from '@/composables/settings/accounting';
 import { type Filters, type Matcher, useAccountingRuleFilter } from '@/composables/filters/accounting-rule';
-import type { DataTableColumn } from '@rotki/ui-library';
+import AccountingRuleImportDialog from '@/components/settings/accounting/rule/AccountingRuleImportDialog.vue';
+import AccountingRuleFormDialog from '@/components/settings/accounting/rule/AccountingRuleFormDialog.vue';
+import RowActions from '@/components/helper/RowActions.vue';
+import BadgeDisplay from '@/components/history/BadgeDisplay.vue';
+import AccountingRuleWithLinkedSettingDisplay
+  from '@/components/settings/accounting/rule/AccountingRuleWithLinkedSettingDisplay.vue';
+import CounterpartyDisplay from '@/components/history/CounterpartyDisplay.vue';
+import HistoryEventTypeCombination from '@/components/history/events/HistoryEventTypeCombination.vue';
+import CollectionHandler from '@/components/helper/CollectionHandler.vue';
+import TableFilter from '@/components/table-filter/TableFilter.vue';
+import AccountingRuleConflictsDialog from '@/components/settings/accounting/rule/AccountingRuleConflictsDialog.vue';
+import SettingCategoryHeader from '@/components/settings/SettingCategoryHeader.vue';
 import type { AccountingRuleEntry, AccountingRuleRequestPayload } from '@/types/settings/accounting';
+import type { DataTableColumn } from '@rotki/ui-library';
 
 const { t } = useI18n();
 const router = useRouter();

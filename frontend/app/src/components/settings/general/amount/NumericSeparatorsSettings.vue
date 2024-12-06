@@ -4,6 +4,7 @@ import { helpers, not, numeric, required, sameAs } from '@vuelidate/validators';
 import { toMessages } from '@/utils/validation';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useValidation } from '@/composables/validation';
+import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 
 const thousandSeparator = ref<string>('');
 const decimalSeparator = ref<string>('');
