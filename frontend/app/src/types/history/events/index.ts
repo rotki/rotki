@@ -19,11 +19,6 @@ export interface TransactionRequestPayload {
   readonly accounts: EvmChainAddress[];
 }
 
-export interface TransactionHashAndEvmChainPayload {
-  readonly txHashes?: string[] | null;
-  readonly evmChain: string;
-}
-
 export interface PullEvmTransactionPayload {
   readonly transactions: EvmChainAndTxHash[];
   readonly deleteCustom?: boolean;
@@ -63,11 +58,6 @@ export const EvmChainLikeAddress = z.object({
 });
 
 export type EvmChainLikeAddress = z.infer<typeof EvmChainLikeAddress>;
-
-export interface TransactionEventRequestPayload {
-  readonly data: TransactionHashAndEvmChainPayload[];
-  readonly ignoreCache: boolean;
-}
 
 export const HistoryEventDetail = z
   .object({

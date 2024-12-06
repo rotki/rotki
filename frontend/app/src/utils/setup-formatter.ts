@@ -5,16 +5,18 @@ export function setupFormatter(): void {
   if (!checkIfDevelopment())
     return;
 
-  // @ts-expect-error object does not exist in window
-  window.devtoolsFormatters = [
-    {
-      hasBody: (): boolean => false,
-      header: (obj: any): unknown[] | null => {
-        if (!(obj instanceof BigNumber))
-          return null;
+  const formatter: {
+    hasBody: () => boolean;
+    header: (obj: any) => unknown[] | null;
+  } = {
+    hasBody: (): boolean => false,
+    header: (obj: any): unknown[] | null => {
+      if (!(obj instanceof BigNumber))
+        return null;
 
-        return ['div', {}, obj.toString()];
-      },
+      return ['div', {}, obj.toString()];
     },
-  ];
+  };
+  // @ts-expect-error object does not exist in window
+  window.devtoolsFormatters = [formatter];
 }
