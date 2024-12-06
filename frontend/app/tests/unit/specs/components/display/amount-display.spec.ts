@@ -440,4 +440,86 @@ describe('amountDisplay.vue', () => {
       expect(getPrice).toHaveBeenCalledWith('USD', 1000);
     });
   });
+  describe('subscript display', () => {
+    beforeEach(async () => {
+      const frontendStore = useFrontendSettingsStore();
+      frontendStore.update({
+        ...FrontendSettings.parse({}),
+        subscriptDecimals: true,
+      });
+
+      updateGeneralSettings({
+        uiFloatingPrecision: 10,
+      });
+
+      await nextTick();
+      await flushPromises();
+    });
+
+    describe('small decimal numbers', () => {
+      it('shows correct subscript count for numbers with multiple leading zeros', async () => {
+        wrapper = createWrapper(bigNumberify('0.0000000815'));
+        await nextTick();
+        await flushPromises();
+
+        const subscriptElement = wrapper.find('[data-cy="amount-display-subscript"]');
+        expect(subscriptElement.exists()).toBe(true);
+        expect(subscriptElement.text()).toBe('7');
+      });
+
+      it('shows correct subscript count for very small numbers', async () => {
+        wrapper = createWrapper(bigNumberify('0.000000000123'));
+        await nextTick();
+        await flushPromises();
+
+        const subscriptElement = wrapper.find('[data-cy="amount-display-subscript"]');
+        expect(subscriptElement.exists()).toBe(true);
+        expect(subscriptElement.text()).toBe('9');
+      });
+
+      it('shows no subscript for number with only one leading zero', async () => {
+        wrapper = createWrapper(bigNumberify('0.0123'));
+        await nextTick();
+        await flushPromises();
+
+        const subscriptElement = wrapper.find('[data-cy="amount-display-subscript"]');
+        expect(subscriptElement.exists()).toBe(false);
+      });
+    });
+
+    describe('non-subscript cases', () => {
+      it('shows no subscript for numbers greater than or equal to 1', async () => {
+        wrapper = createWrapper(bigNumberify('1.000000000123'));
+        await nextTick();
+        await flushPromises();
+
+        const subscriptElement = wrapper.find('[data-cy="amount-display-subscript"]');
+        expect(subscriptElement.exists()).toBe(false);
+      });
+
+      it('handles regular numbers without subscript', async () => {
+        wrapper = createWrapper(bigNumberify('1.23'));
+        await nextTick();
+        await flushPromises();
+
+        const subscriptElement = wrapper.find('[data-cy="amount-display-subscript"]');
+        expect(subscriptElement.exists()).toBe(false);
+      });
+    });
+
+    it('respects disabled subscript setting', async () => {
+      const frontendStore = useFrontendSettingsStore();
+      frontendStore.update({
+        ...FrontendSettings.parse({}),
+        subscriptDecimals: false,
+      });
+
+      wrapper = createWrapper(bigNumberify('0.0000000815'));
+      await nextTick();
+      await flushPromises();
+
+      const subscriptElement = wrapper.find('[data-cy="amount-display-subscript"]');
+      expect(subscriptElement.exists()).toBe(false);
+    });
+  });
 });

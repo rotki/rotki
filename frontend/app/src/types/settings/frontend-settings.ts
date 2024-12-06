@@ -141,6 +141,7 @@ export const FrontendSettings = z.object({
   selectedTheme: ThemeEnum.default(Theme.AUTO),
   shouldRefreshValidatorDailyStats: z.boolean().default(false),
   showGraphRangeSelector: z.boolean().default(true),
+  subscriptDecimals: z.boolean().default(false),
   thousandSeparator: z.string().default(Defaults.DEFAULT_THOUSAND_SEPARATOR),
   timeframeSetting: TimeFrameSetting.default(TimeFramePersist.REMEMBER),
   unifyAccountsTable: z.boolean().default(false),

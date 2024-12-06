@@ -94,6 +94,7 @@ const {
   currencyLocation,
   decimalSeparator,
   minimumDigitToBeAbbreviated,
+  subscriptDecimals,
   thousandSeparator,
   valueRoundingMode,
 } = storeToRefs(useFrontendSettingsStore());
@@ -196,6 +197,7 @@ const isNaN = computed<boolean>(() => get(displayValue).isNaN());
 // Decimal place of `realValue`
 const decimalPlaces = computed<number>(() => get(displayValue).decimalPlaces() ?? 0);
 
+const zeroDisplay = '0';
 // Set exponential notation when the `realValue` is too big
 const showExponential = computed<boolean>(() => get(displayValue).gt(1e18));
 
@@ -218,7 +220,7 @@ const renderedValue = computed<string>(() => {
 
   if (get(showExponential) && !get(abbreviate)) {
     return fixExponentialSeparators(
-      get(displayValue).toExponential(floatingPrecisionUsed, get(rounding)),
+      get(displayValue).toExponential(floatingPrecisionUsed, get(subscriptDecimals) ? undefined : get(rounding)),
       get(thousandSeparator),
       get(decimalSeparator),
     );
@@ -229,7 +231,7 @@ const renderedValue = computed<string>(() => {
     floatingPrecisionUsed,
     get(thousandSeparator),
     get(decimalSeparator),
-    get(rounding),
+    get(subscriptDecimals) ? undefined : get(rounding),
     get(abbreviate),
   );
 });
@@ -251,6 +253,10 @@ const displayCurrency = computed<Currency>(() => {
 });
 
 const comparisonSymbol = computed<'' | '<' | '>'>(() => {
+  if (get(subscriptDecimals)) {
+    return '';
+  }
+
   const value = get(displayValue);
   const floatingPrecisionUsed = get(integer) ? 0 : get(floatingPrecision);
   const decimals = get(decimalPlaces);
@@ -264,9 +270,75 @@ const comparisonSymbol = computed<'' | '<' | '>'>(() => {
   return '';
 });
 
+const shouldUseSubscript = computed(() => {
+  if (!get(subscriptDecimals) || get(showExponential) || get(abbreviate)) {
+    return false;
+  }
+
+  const value = get(displayValue);
+
+  // only apply to decimal numbers between 0 and 1
+  if (!value.lt(1) || !value.gt(0) || value.isZero() || value.isNaN()) {
+    return false;
+  }
+
+  const valueString = value.toFormat(value.decimalPlaces() || 0);
+  const [, decimalPart = ''] = valueString.split(get(decimalSeparator));
+
+  const leadingZeros = decimalPart.match(/^0+/)?.[0]?.length || 0;
+
+  // only use subscript for 2 or more leading zeros
+  return leadingZeros >= 2;
+});
+
 const defaultShownCurrency = computed<ShownCurrency>(() => {
   const type = props.showCurrency;
   return type === 'none' && !!get(sourceCurrency) ? 'symbol' : type;
+});
+
+const numberParts = computed(() => {
+  if (!get(shouldUseSubscript)) {
+    return { full: get(renderedValue) };
+  }
+
+  const value = get(displayValue);
+  const precision = get(integer) ? 0 : get(floatingPrecision);
+  const [wholePart, decimalPart = ''] = value.toFormat(value.decimalPlaces() || 0).split(get(decimalSeparator));
+
+  // only process decimal numbers
+  if (!decimalPart || wholePart !== '0') {
+    return { full: get(renderedValue) };
+  }
+
+  const match = decimalPart.match(/^(0+)(\d+)$/);
+  if (!match) {
+    return { full: get(renderedValue) };
+  }
+
+  const [, zeros, significantPart] = match;
+  const zeroCount = zeros.length;
+
+  let digits;
+  if (significantPart.length > precision) {
+    digits = displayAmountFormatter.format(
+      bigNumberify(`0.${significantPart}`),
+      precision,
+      get(thousandSeparator),
+      get(decimalSeparator),
+      undefined,
+      false,
+    ).split(get(decimalSeparator))[1];
+  }
+  else {
+    digits = significantPart;
+  }
+
+  return {
+    leadingZeros: zeroCount.toString(),
+    separator: get(decimalSeparator),
+    significantDigits: digits || significantPart[0],
+    whole: wholePart,
+  };
 });
 
 const shouldShowCurrency = computed<boolean>(
@@ -374,7 +446,6 @@ const [DefineSymbol, ReuseSymbol] = createReusableTemplate<{ name: string }>();
           v-if="shouldShowCurrency && currencyLocation === 'before'"
           :name="displayAsset"
         />
-
         <CopyTooltip
           :disabled="!shouldShowAmount"
           :copied="copied"
@@ -382,9 +453,24 @@ const [DefineSymbol, ReuseSymbol] = createReusableTemplate<{ name: string }>();
           data-cy="display-amount"
           @click="copy()"
         >
-          {{ renderedValue }}
+          <template v-if="numberParts.full">
+            {{ numberParts.full }}
+          </template>
+          <template v-else>
+            <span>{{ numberParts.whole }}</span>
+            <span>{{ numberParts.separator }}</span>
+            <span>{{ zeroDisplay }}</span>
+            <span
+              class="text-[0.8em] align-bottom relative top-[0.35em]"
+              data-cy="amount-display-subscript"
+            >
+              {{ numberParts.leadingZeros }}
+            </span>
+            <span>
+              {{ numberParts.significantDigits }}
+            </span>
+          </template>
         </CopyTooltip>
-
         <ReuseSymbol
           v-if="shouldShowCurrency && currencyLocation === 'after'"
           :name="displayAsset"
