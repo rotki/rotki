@@ -1,7 +1,7 @@
 import csv
 from itertools import count
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 from uuid import uuid4
 
 from rotkehlchen.accounting.structures.balance import Balance
@@ -162,15 +162,15 @@ class CointrackingImporter(BaseExchangeImporter):
             if row_type == 'Deposit':
                 amount = deserialize_asset_amount(csv_row['Buy'])
                 asset = asset_resolver(csv_row['Cur.Buy'])
-                event_type = HistoryEventType.DEPOSIT
+                movement_type: Literal[HistoryEventType.DEPOSIT, HistoryEventType.WITHDRAWAL] = HistoryEventType.DEPOSIT  # noqa: E501
             else:
                 amount = deserialize_asset_amount_force_positive(csv_row['Sell'])
                 asset = asset_resolver(csv_row['Cur.Sell'])
-                event_type = HistoryEventType.WITHDRAWAL
+                movement_type = HistoryEventType.WITHDRAWAL
 
             events = [AssetMovement(
                 location=location,
-                event_type=event_type,  # type: ignore[arg-type]  # will only be deposit or withdrawal
+                event_type=movement_type,
                 timestamp=ts_sec_to_ms(timestamp),
                 asset=asset,
                 balance=Balance(amount),
@@ -179,7 +179,7 @@ class CointrackingImporter(BaseExchangeImporter):
                 events.append(AssetMovement(
                     event_identifier=events[0].event_identifier,
                     location=location,
-                    event_type=event_type,  # type: ignore[arg-type]  # will only be deposit or withdrawal
+                    event_type=movement_type,
                     timestamp=ts_sec_to_ms(timestamp),
                     asset=fee_currency,
                     balance=Balance(fee),
