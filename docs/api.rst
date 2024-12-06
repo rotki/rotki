@@ -5445,7 +5445,7 @@ Querying online events
 
 
    :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
-   :reqjson string query_type: The name of the type of events to query for. Valid values are: ``"eth_withdrawals"``, ``"block_productions"``, ``"exchanges"``
+   :reqjson string query_type: The name of the type of events to query for. Valid values are: ``"eth_withdrawals"``, ``"block_productions"``
 
    **Example Response**:
 
@@ -5466,6 +5466,52 @@ Querying online events
    :statuscode 409: Module for the given events is not active.
    :statuscode 500: Internal rotki error.
    :statuscode 502: An external service used in the query such as beaconchain could not be reached or returned an unexpected response.
+
+Querying exchange history events
+============================================
+
+.. http:post:: /api/(version)/history/events/query/exchange
+
+   Doing a POST on this endpoint will query latest events for the given exchange and save them in the DB
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      POST /api/1/history/events/query/exchange HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {
+          "async_query": true,
+          "name": "Kraken 1",
+          "location": "kraken"
+      }
+
+
+   :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
+   :reqjson string location: The location of the exchange to query
+   :reqjson string name: Optional. The name of the exchange to query. Queries all connected exchanges for the given location when omitted.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+         "result": true,
+         "message": ""
+      }
+
+   :resjson bool result: A boolean for success or failure
+   :resjson str message: Error message if any errors occurred.
+   :statuscode 200: Events were queried successfully
+   :statuscode 400: Provided JSON is in some way malformed.
+   :statuscode 409: Module for the given events is not active.
+   :statuscode 500: Internal rotki error.
+   :statuscode 502: The exchange api could not be reached or returned an unexpected response.
 
 Querying messages to show to the user
 =====================================

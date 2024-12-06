@@ -91,6 +91,7 @@ from rotkehlchen.api.v1.schemas import (
     EvmTransactionHashAdditionSchema,
     EvmTransactionQuerySchema,
     ExchangeBalanceQuerySchema,
+    ExchangeEventsQuerySchema,
     ExchangeRatesSchema,
     ExchangesDataResourceSchema,
     ExchangesResourceAddSchema,
@@ -1295,6 +1296,25 @@ class EventsOnlineQueryResource(BaseMethodView):
         return self.rest_api.query_online_events(
             async_query=async_query,
             query_type=query_type,
+        )
+
+
+class ExchangeEventsQueryResource(BaseMethodView):
+
+    post_schema = ExchangeEventsQuerySchema()
+
+    @require_loggedin_user()
+    @use_kwargs(post_schema, location='json')
+    def post(
+            self,
+            location: Location,
+            async_query: bool,
+            name: str | None,
+    ) -> Response:
+        return self.rest_api.query_exchange_history_events(
+            name=name,
+            location=location,
+            async_query=async_query,
         )
 
 

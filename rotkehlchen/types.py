@@ -1249,4 +1249,3 @@ class HistoryEventQueryType(SerializableEnumNameMixin):
     """Locations to query for history events"""
     ETH_WITHDRAWALS = auto()
     BLOCK_PRODUCTIONS = auto()
-    EXCHANGES = auto()

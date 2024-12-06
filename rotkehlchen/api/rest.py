@@ -773,6 +773,26 @@ class RestAPI:
         return {'result': result, 'message': error_msg, 'status_code': status_code}
 
     @async_api_call()
+    def query_exchange_history_events(
+            self,
+            location: Location,
+            name: str | None,
+    ) -> dict[str, Any]:
+        """Queries new history events for the specified exchange and saves them in the database."""
+        try:
+            self.rotkehlchen.exchange_manager.query_history_events(
+                name=name,
+                location=location,
+            )
+        except RemoteError as e:
+            return wrap_in_fail_result(
+                message=str(e),
+                status_code=HTTPStatus.BAD_GATEWAY,
+            )
+
+        return OK_RESULT
+
+    @async_api_call()
     def query_exchange_balances(
             self,
             location: Location | None,
@@ -3831,11 +3851,7 @@ class RestAPI:
     def query_online_events(self, query_type: HistoryEventQueryType) -> dict[str, Any]:
         """Queries the specified event type for any new events and saves them in the DB"""
         try:
-            if query_type == HistoryEventQueryType.EXCHANGES:
-                self.rotkehlchen.exchange_manager.query_history_events()
-                return OK_RESULT
-
-            # else we query eth staking events
+            # query eth staking events
             eth2 = self.rotkehlchen.chains_aggregator.get_module('eth2')
             if eth2 is None:
                 return wrap_in_fail_result(

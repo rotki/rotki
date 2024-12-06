@@ -2,14 +2,19 @@ from unittest.mock import patch
 
 import pytest
 
+from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_BTC
+from rotkehlchen.db.filtering import HistoryEventFilterQuery
+from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.exchanges.bitmex import Bitmex
-from rotkehlchen.exchanges.data_structures import AssetMovement, Location, MarginPosition
+from rotkehlchen.exchanges.data_structures import Location, MarginPosition
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.asset_movement import AssetMovement
+from rotkehlchen.history.events.structures.types import HistoryEventType
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import AssetMovementCategory
+from rotkehlchen.types import TimestampMS
 from rotkehlchen.utils.misc import ts_now
 
 TEST_BITMEX_WITHDRAWAL = """[{
@@ -52,73 +57,58 @@ def test_bitmex_api_signature(mock_bitmex):
     assert sig == '1749cd2ccae4aa49048ae09f0b95110cee706e0944e6a14ad0b3a8cb45bd336b'
 
 
-def test_bitmex_api_withdrawals_deposit_and_query_after_subquery(sandbox_bitmex):
-    """Test the happy case of bitmex withdrawals deposit query
+def test_bitmex_api_withdrawals_deposit_and_query_after_subquery(database, sandbox_bitmex):
+    """Test the happy case of bitmex withdrawals deposit query."""
+    sandbox_bitmex.query_history_events()
+    with database.conn.read_ctx() as cursor:
+        result = DBHistoryEvents(database).get_history_events(
+            cursor,
+            filter_query=HistoryEventFilterQuery.make(location=Location.BITMEX),
+            has_premium=True,
+        )
 
-    This test also tests an important case where a subquery for a an in-between
-    time range is done first and then an encompassing range is requested. And
-    we test that the full query, queries the remaining timestamp ranges.
-    """
-    # This is an initial subquery of a small range where no deposit happened.
-    result = sandbox_bitmex.query_deposits_withdrawals(
-        start_ts=1536492800,
-        end_ts=1536492976,
-        only_cache=False,
-    )
-    assert len(result) == 0
-
-    # Now after the subquery we test that the exchange engine logic properly
-    # queries the required start/end timestamp ranges
-    now = ts_now()
-    result = sandbox_bitmex.query_deposits_withdrawals(
-        start_ts=0,
-        end_ts=now,
-        only_cache=False,
-    )
     expected_result = [AssetMovement(
+        identifier=5,
+        event_identifier='ccc9482b81ec668e8846054933f14426bb99fae1d31a1d753187962454544a1c',
         location=Location.BITMEX,
-        category=AssetMovementCategory.DEPOSIT,
-        address=None,
-        transaction_id=None,
-        timestamp=1536486278,
+        event_type=HistoryEventType.DEPOSIT,
+        timestamp=TimestampMS(1536486278000),
         asset=A_BTC,
-        amount=FVal('0.46966992'),
-        fee_asset=A_BTC,
-        fee=ZERO,
-        link='166b9aac-70ac-cedc-69a0-dbd12c0661bf',
+        balance=Balance(FVal('0.46966992')),
     ), AssetMovement(
+        identifier=3,
+        event_identifier='e0f2ca47943d1769d568c8a7a5348ffdbd0ed11a98e3444eebc3370f1fc1f52d',
         location=Location.BITMEX,
-        category=AssetMovementCategory.WITHDRAWAL,
-        address='mv4rnyY3Su5gjcDNzbMLKBQkBicCtHUtFB',
-        transaction_id=None,
-        timestamp=1536536707,
+        event_type=HistoryEventType.WITHDRAWAL,
+        timestamp=TimestampMS(1536536707000),
         asset=A_BTC,
-        amount=FVal('0.00700000'),
-        fee_asset=A_BTC,
-        fee=FVal('0.00300000'),
-        link='bf19ca4e-e084-11f9-12cd-6ae41e26f9db',
+        balance=Balance(FVal('0.00700000')),
+        extra_data={'address': 'mv4rnyY3Su5gjcDNzbMLKBQkBicCtHUtFB'},
     ), AssetMovement(
+        identifier=4,
+        event_identifier='e0f2ca47943d1769d568c8a7a5348ffdbd0ed11a98e3444eebc3370f1fc1f52d',
         location=Location.BITMEX,
-        category=AssetMovementCategory.DEPOSIT,
-        address=None,
-        transaction_id=None,
-        timestamp=1536563759,
+        event_type=HistoryEventType.WITHDRAWAL,
+        timestamp=TimestampMS(1536536707000),
         asset=A_BTC,
-        amount=FVal('0.38474377'),
-        fee_asset=A_BTC,
-        fee=ZERO,
-        link='72500751-d052-5bbb-18d7-08363edef812',
+        balance=Balance(FVal('0.00300000')),
+        is_fee=True,
     ), AssetMovement(
+        identifier=2,
+        event_identifier='290836ed7b44d7921bc7ab2f8d189f456e266769fa6517e6361e407f4ef4fbc9',
         location=Location.BITMEX,
-        category=AssetMovementCategory.DEPOSIT,
-        address=None,
-        transaction_id=None,
-        timestamp=1537014656,
+        event_type=HistoryEventType.DEPOSIT,
+        timestamp=TimestampMS(1536563759000),
         asset=A_BTC,
-        amount=FVal(0.16960386),
-        fee_asset=A_BTC,
-        fee=FVal(0E-8),
-        link='b6c6fd2c-4d0c-b101-a41c-fa5aa1ce7ef1',
+        balance=Balance(FVal('0.38474377')),
+    ), AssetMovement(
+        identifier=1,
+        event_identifier='d4307315ea24915446578e8f8015a5ea95e30194769a62ce8f92f43c2b876bac',
+        location=Location.BITMEX,
+        event_type=HistoryEventType.DEPOSIT,
+        timestamp=TimestampMS(1537014656000),
+        asset=A_BTC,
+        balance=Balance(FVal(0.16960386)),
     )]
     assert result == expected_result
     # also make sure that asset movements contain Asset and not strings
@@ -132,16 +122,16 @@ def test_bitmex_api_withdrawals_deposit_unexpected_data(sandbox_bitmex):
     now = ts_now()
 
     def query_bitmex_and_test(input_str, expected_warnings_num, expected_errors_num):
-        def mock_get_deposit_withdrawal(url, data, **kwargs):  # pylint: disable=unused-argument
+        def mock_get_history_events(url, data, **kwargs):  # pylint: disable=unused-argument
             return MockResponse(200, input_str)
-        with patch.object(sandbox_bitmex.session, 'get', side_effect=mock_get_deposit_withdrawal):
-            movements = sandbox_bitmex.query_online_deposits_withdrawals(
+        with patch.object(sandbox_bitmex.session, 'get', side_effect=mock_get_history_events):
+            movements = sandbox_bitmex.query_online_history_events(
                 start_ts=0,
                 end_ts=now,
             )
 
         if expected_warnings_num == 0 and expected_errors_num == 0:
-            assert len(movements) == 1
+            assert len(movements) == 1 if '"fee": null' in input_str else 2
         else:
             assert len(movements) == 0
             errors = sandbox_bitmex.msg_aggregator.consume_errors()
@@ -190,7 +180,7 @@ def test_bitmex_api_withdrawals_deposit_unknown_asset(mock_bitmex):
         return MockResponse(200, TEST_BITMEX_WITHDRAWAL.replace('"XBt"', '"dadsdsa"'))
 
     with patch.object(mock_bitmex.session, 'get', side_effect=mock_get_response):
-        movements = mock_bitmex.query_online_deposits_withdrawals(
+        movements = mock_bitmex.query_online_history_events(
             start_ts=0,
             end_ts=ts_now(),
         )
