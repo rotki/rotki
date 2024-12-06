@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`-` Added an option to display leading zeros of small decimal values as subscript.
 * :bug:`-` The application will now only show a single notification for multiple asset deserialization errors.
 * :feature:`-` Makes the tag manager accessible from left sidebar menu.
 * :feature:`7498` Adds the option for users to hide assets where the balance is smaller than a threshold amount.

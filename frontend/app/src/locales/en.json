@@ -4308,7 +4308,14 @@
     "subtitle": "Set how the displayed amounts will be rounded in the frontend",
     "title": "Amount rounding",
     "value_rounding": "Value Rounding",
-    "value_rounding_hint": "Specify how the value (e.g the FIAT value of an owned asset) is rounded."
+    "value_rounding_hint": "Specify how the value (e.g the FIAT value of an owned asset) is rounded.",
+    "subscript": {
+      "title": "Subscript Format",
+      "subtitle": "Show leading zeros in small numbers as subscript.",
+      "hint": "Floating precision setting above controls how many digits are shown after leading zeros. For example the amount 0.0000000875; with a precision of 2: 0.0₅87, and with a precision of 3: 0.0₅875.",
+      "error": "Error setting the subscript format",
+      "toggle_label": "Use subscript for leading zero"
+    }
   },
   "rpc_node_form": {
     "active": "Active",
