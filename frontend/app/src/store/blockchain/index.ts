@@ -6,13 +6,13 @@ import { mergeAssociatedAssets, sum } from '@/utils/balances';
 import { updateBlockchainAssetBalances } from '@/utils/prices';
 import { removeTags } from '@/utils/tags';
 import { sortDesc } from '@/utils/bignumbers';
-import { createAccountWithBalance } from '@/utils/blockchain/accounts/create';
 import { getAccountAddress, getAccountLabel } from '@/utils/blockchain/accounts/utils';
 import { assetSum } from '@/utils/calculation';
 import { uniqueStrings } from '@/utils/data';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import { createAccountWithBalance } from '@/utils/blockchain/accounts/create-account-with-balance';
 import type {
   AccountPayload,
   Accounts,

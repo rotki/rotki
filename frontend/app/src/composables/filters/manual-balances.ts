@@ -1,7 +1,8 @@
 import z from 'zod';
-import { type MatchedKeyword, type SearchMatcher, assetDeserializer, assetSuggestions } from '@/types/filtering';
 import { CommaSeparatedStringSchema } from '@/types/route';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import { assetDeserializer, assetSuggestions } from '@/utils/assets';
+import type { MatchedKeyword, SearchMatcher } from '@/types/filtering';
 import type { MaybeRef } from '@vueuse/core';
 import type { FilterSchema } from '@/composables/use-pagination-filter/types';
 

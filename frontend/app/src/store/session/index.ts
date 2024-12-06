@@ -35,8 +35,14 @@ export const useSessionStore = defineStore('session', () => {
   const checkForAssetUpdate = ref<boolean>(false);
 
   const authStore = useSessionAuthStore();
-  const { conflictExist, incompleteUpgradeConflict, logged, shouldFetchData, syncConflict, username }
-    = storeToRefs(authStore);
+  const {
+    conflictExist,
+    incompleteUpgradeConflict,
+    logged,
+    shouldFetchData,
+    syncConflict,
+    username,
+  } = storeToRefs(authStore);
 
   const { initialize } = useSessionSettings();
   const usersApi = useUsersApi();

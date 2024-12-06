@@ -7,10 +7,9 @@ import { useSessionStore } from '@/store/session';
 import { useBackendManagement } from '@/composables/backend';
 import { usePremiumReminder } from '@/composables/premium';
 import { useAppNavigation } from '@/composables/navigation';
+import { useLoggedUserIdentifier } from '@/composables/user/use-logged-user-identifier';
 import type { CreateAccountPayload, LoginCredentials } from '@/types/login';
 import type { Ref } from 'vue';
-
-export const useLoggedUserIdentifier = createSharedComposable(() => useSessionStorage<string | undefined>('rotki.logged_user_id', undefined));
 
 interface UseAccountManagementReturn {
   loading: Ref<boolean>;
