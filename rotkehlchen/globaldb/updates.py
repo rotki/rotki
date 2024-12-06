@@ -117,7 +117,7 @@ def _force_remote_asset(cursor: DBCursor, local_asset: Asset, full_insert: str) 
     executeall(cursor, full_insert)
     if collection:
         cursor.execute(  # reinsert the collection since it was cascade-deleted
-            'INSERT INTO asset_collections (id, name, symbol, main_asset) VALUES (?, ?, ?, ?);',
+            'INSERT OR IGNORE INTO asset_collections (id, name, symbol, main_asset) VALUES (?, ?, ?, ?);',  # noqa: E501
             collection,
         )
     # now add the old mappings back into the db

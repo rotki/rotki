@@ -73,9 +73,8 @@ def test_defillama_with_api_key(price_historian, database):  # pylint: disable=u
     result = llama.query_current_price(
         from_asset=eth,
         to_asset=eur,
-        match_main_currency=False,
     )
-    assert result == (FVal('3598.5'), False)
+    assert result == FVal('3598.5')
     # similar for historical
     result = llama.query_historical_price(
         from_asset=dai,

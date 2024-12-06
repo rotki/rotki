@@ -180,11 +180,9 @@ class Defillama(
             self,
             from_asset: AssetWithOracles,
             to_asset: AssetWithOracles,
-            match_main_currency: bool,
-    ) -> tuple[Price, bool]:
+    ) -> Price:
         """
-        Returns a simple price for from_asset to to_asset in Defillama and `False` value
-        since it never tries to match main currency.
+        Returns a simple price for from_asset to to_asset in Defillama.
 
         May raise:
         - RemoteError if there is a problem querying defillama
@@ -197,7 +195,7 @@ class Defillama(
                 f'{to_asset} but {from_asset} is not an EVM token and is not '
                 f'supported by defillama',
             )
-            return ZERO_PRICE, False
+            return ZERO_PRICE
 
         result = self._query(
             module='prices',
@@ -206,12 +204,12 @@ class Defillama(
 
         usd_price = self._deserialize_price(result, coin_id, from_asset, to_asset)
         if usd_price == ZERO or to_asset == A_USD:
-            return usd_price, False
+            return usd_price
 
         # We got the price in usd but that is not what we need we should query for the next
         # step in the chain of prices
         rate_price = Inquirer.find_price(from_asset=A_USD, to_asset=to_asset)
-        return Price(usd_price * rate_price), False
+        return Price(usd_price * rate_price)
 
     def can_query_history(
             self,

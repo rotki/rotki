@@ -166,9 +166,8 @@ def test_coingecko_with_api_key(database):
     result = coingecko.query_current_price(
         from_asset=A_ETH.resolve(),
         to_asset=A_BTC.resolve(),
-        match_main_currency=False,
     )
-    assert result == (FVal('0.03950436'), False)
+    assert result == FVal('0.03950436')
 
     result = coingecko.query_historical_price(
         from_asset=A_ETH.resolve(),

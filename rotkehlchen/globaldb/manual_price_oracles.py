@@ -72,37 +72,25 @@ class ManualCurrentOracle(CurrentPriceOracleInterface, DBSetterMixin):
             self,
             from_asset: Asset,
             to_asset: Asset,
-            match_main_currency: bool,
-    ) -> tuple[Price, bool]:
-        """
-        Searches for a manually specified current price for the `from_asset`.
-        If it finds the price and it is the main currency, returns as is and along with a True
-        value to indicate that main currency price was used.
-        Otherwise converts it to a price in `to_asset` and returns it along with a False value to
-        indicate no main currency matching happened.
+    ) -> Price:
+        """Searches for a manually specified current price for the `from_asset`.
+        If found, converts it to a price in `to_asset` and returns it.
         """
         manual_current_result = GlobalDBHandler.get_manual_current_price(
             asset=from_asset,
         )
         if manual_current_result is None:
-            return ZERO_PRICE, False
+            return ZERO_PRICE
         current_to_asset, current_price = manual_current_result
-        if match_main_currency is True:
-            assert self.db is not None, 'When trying to match main currency, database should be set'  # noqa: E501
-            with self.db.conn.read_ctx() as cursor:
-                main_currency = self.db.get_setting(cursor=cursor, name='main_currency')
-                if current_to_asset == main_currency:
-                    return current_price, True
 
         # we call _find_price to avoid catching the recursion error at `find_price_and_oracle`.
         # ManualCurrentOracle does a special handling of RecursionError using
         # `coming_from_latest_price` to detect recursions on the manual prices and break
         # it to continue to the next oracle.
-        current_to_asset_price, _, used_main_currency = Inquirer._find_price(
+        current_to_asset_price, _ = Inquirer._find_price(
             from_asset=current_to_asset,
             to_asset=to_asset,
             coming_from_latest_price=True,
-            match_main_currency=match_main_currency,
         )
 
-        return Price(current_price * current_to_asset_price), used_main_currency
+        return Price(current_price * current_to_asset_price)

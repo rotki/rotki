@@ -44,16 +44,11 @@ class CurrentPriceOracleInterface(abc.ABC):
             self,
             from_asset: AssetWithOracles,
             to_asset: AssetWithOracles,
-            match_main_currency: bool,
-    ) -> tuple[Price, bool]:
-        """
-        Accepts a pair of assets to find price for and a flag. If `match_main_currency` is True
-        and there is a manual latest price that has value in `main_currency`, then it will be
-        returned without the conversion to `to_asset`.
+    ) -> Price:
+        """Query current price between two assets using oracle data.
+
         Returns:
-        1. The price of from_asset at the current timestamp
-        for the current oracle
-        2. Whether returned price is in main currency
+            Current price between from_asset and to_asset using this oracle's data
         """
 
 

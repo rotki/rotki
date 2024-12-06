@@ -39,7 +39,7 @@ def test_uniswap_oracles_asset_to_asset(inquirer_defi, socket_enabled):  # pylin
         else:
             price_instance = inquirer_defi._uniswapv3
         inquirer_defi.set_oracles_order(oracles=[oracle])
-        price, _ = price_instance.query_current_price(A_1INCH, A_LINK, False)
+        price = price_instance.query_current_price(A_1INCH, A_LINK)
         assert price != ZERO_PRICE
         assert (inch_price / link_price).is_close(price, max_diff='0.01')
         defi_price = inquirer_defi.find_usd_price(A_LINK, ignore_cache=True)
@@ -48,7 +48,7 @@ def test_uniswap_oracles_asset_to_asset(inquirer_defi, socket_enabled):  # pylin
         # test with ethereum tokens but as assets instead of instance of the EvmToken class
         a1inch = Asset(A_1INCH.identifier)
         alink = Asset(A_LINK.identifier)
-        price_as_assets, _ = price_instance.query_current_price(a1inch, alink, False)
+        price_as_assets = price_instance.query_current_price(a1inch, alink)
         assert price_as_assets.is_close(price, max_diff='0.01')
 
 
@@ -104,14 +104,14 @@ def test_uniswap_oracles_special_cases(inquirer_defi, socket_enabled):  # pylint
     # ETH/WETH is handled correctly
     for oracle in (CurrentPriceOracle.UNISWAPV2, CurrentPriceOracle.UNISWAPV3):
         inquirer_defi.set_oracles_order(oracles=[oracle])
-        inch_weth, _ = inquirer_defi._uniswapv2.query_current_price(A_1INCH, A_WETH, False)
-        inch_eth, _ = inquirer_defi._uniswapv2.query_current_price(A_1INCH, A_ETH, False)
+        inch_weth = inquirer_defi._uniswapv2.query_current_price(A_1INCH, A_WETH)
+        inch_eth = inquirer_defi._uniswapv2.query_current_price(A_1INCH, A_ETH)
         assert inch_eth.is_close(inch_weth)
         # Non eth tokens
         with pytest.raises(PriceQueryUnsupportedAsset):
-            inquirer_defi._uniswapv2.query_current_price(A_BTC, A_DOGE, False)
+            inquirer_defi._uniswapv2.query_current_price(A_BTC, A_DOGE)
         # Same asset
-        assert inquirer_defi._uniswapv2.query_current_price(A_ETH, A_WETH, False)[0] == Price(ONE)
+        assert inquirer_defi._uniswapv2.query_current_price(A_ETH, A_WETH) == Price(ONE)
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -156,9 +156,9 @@ def test_uniswap_no_decimals(inquirer_defi: 'Inquirer'):
         assert inquirer_defi._uniswapv2 is not None
         assert inquirer_defi._uniswapv3 is not None
         with pytest.raises(DefiPoolError):
-            inquirer_defi._uniswapv2.query_current_price(weth, resolved_usdc, False)
+            inquirer_defi._uniswapv2.query_current_price(weth, resolved_usdc)
         with pytest.raises(DefiPoolError):
-            inquirer_defi._uniswapv3.query_current_price(weth, resolved_usdc, False)
+            inquirer_defi._uniswapv3.query_current_price(weth, resolved_usdc)
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
@@ -208,5 +208,4 @@ def test_invalid_token_kind_price_query(inquirer_defi: 'Inquirer'):
         inquirer_defi._uniswapv3.query_current_price(
             from_asset=nft_token,
             to_asset=A_USDC.resolve_to_evm_token(),
-            match_main_currency=False,
         )

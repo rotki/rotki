@@ -533,7 +533,7 @@ def get_unknown_asset_price_chain(
     asset_price: AssetToPrice = {}
     for from_token in unknown_tokens:
         try:
-            price, _ = oracle.query_current_price(from_token, A_USDC.resolve_to_asset_with_oracles(), False)  # noqa: E501
+            price = oracle.query_current_price(from_token, A_USDC.resolve_to_asset_with_oracles())
             asset_price[from_token.evm_address] = price
         except (PriceQueryUnsupportedAsset, RemoteError) as e:
             log.debug(

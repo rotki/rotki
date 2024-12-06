@@ -691,10 +691,8 @@ class Coingecko(
             self,
             from_asset: AssetWithOracles,
             to_asset: AssetWithOracles,
-            match_main_currency: bool,
-    ) -> tuple[Price, bool]:
-        """Returns a simple price for from_asset to to_asset in coingecko and `False` value
-        since it never tries to match main currency.
+    ) -> Price:
+        """Returns a simple price for from_asset to to_asset in coingecko.
 
         Uses the simple/price endpoint of coingecko. If to_asset is not part of the
         coingecko simple vs currencies or if from_asset is not supported in coingecko
@@ -709,7 +707,7 @@ class Coingecko(
             location='simple price',
         )
         if not vs_currency:
-            return ZERO_PRICE, False
+            return ZERO_PRICE
 
         try:
             from_coingecko_id = from_asset.to_coingecko()
@@ -718,7 +716,7 @@ class Coingecko(
                 f'Tried to query coingecko simple price from {from_asset.identifier} '
                 f'to {to_asset.identifier}. But from_asset is not supported in coingecko',
             )
-            return ZERO_PRICE, False
+            return ZERO_PRICE
 
         result = self._query(
             module='simple/price',
@@ -729,14 +727,14 @@ class Coingecko(
 
         # https://github.com/PyCQA/pylint/issues/4739
         try:
-            return Price(FVal(result[from_coingecko_id][vs_currency])), False
+            return Price(FVal(result[from_coingecko_id][vs_currency]))
         except KeyError as e:
             log.warning(
                 f'Queried coingecko simple price from {from_asset.identifier} '
                 f'to {to_asset.identifier}. But got key error for {e!s} when '
                 f'processing the result.',
             )
-            return ZERO_PRICE, False
+            return ZERO_PRICE
 
     def can_query_history(
             self,
