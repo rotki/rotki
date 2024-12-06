@@ -19,6 +19,7 @@ def migrate_to_v10(connection: 'DBConnection', progress_handler: 'DBUpgradeProgr
 
     @progress_step('Adding main_asset column to asset_collections')
     def add_main_asset_column(write_cursor: 'DBCursor') -> None:
+        # Disable foreign keys to prevent cascade deletion of multiasset_mappings entries
         write_cursor.executescript('PRAGMA foreign_keys = OFF;')
 
         collections = write_cursor.execute('SELECT id, name, symbol FROM asset_collections').fetchall()  # noqa: E501

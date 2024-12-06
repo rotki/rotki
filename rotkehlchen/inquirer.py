@@ -242,19 +242,19 @@ def get_underlying_asset_price(token: EvmToken) -> tuple[Price | None, CurrentPr
         )
 
     if token == A_FARM_DAI:
-        price, oracle, _ = Inquirer.find_usd_price_and_oracle(A_DAI)
+        price, oracle = Inquirer.find_usd_price_and_oracle(A_DAI)
     elif token == A_FARM_WETH:
-        price, oracle, _ = Inquirer.find_usd_price_and_oracle(A_ETH)
+        price, oracle = Inquirer.find_usd_price_and_oracle(A_ETH)
     elif token == A_FARM_USDT:
-        price, oracle, _ = Inquirer.find_usd_price_and_oracle(A_USDT)
+        price, oracle = Inquirer.find_usd_price_and_oracle(A_USDT)
     elif token == A_FARM_USDC:
-        price, oracle, _ = Inquirer.find_usd_price_and_oracle(A_USDC)
+        price, oracle = Inquirer.find_usd_price_and_oracle(A_USDC)
     elif token == A_FARM_TUSD:
-        price, oracle, _ = Inquirer.find_usd_price_and_oracle(A_TUSD)
+        price, oracle = Inquirer.find_usd_price_and_oracle(A_TUSD)
     elif token in ASSETS_UNDERLYING_BTC:
-        price, oracle, _ = Inquirer.find_usd_price_and_oracle(A_BTC)
+        price, oracle = Inquirer.find_usd_price_and_oracle(A_BTC)
     elif token == 'eip155:1/erc20:0x815C23eCA83261b6Ec689b60Cc4a58b54BC24D8D':  # vTHOR
-        price, oracle, _ = Inquirer.find_usd_price_and_oracle(Asset('eip155:1/erc20:0xa5f2211B9b8170F694421f2046281775E8468044'))  # THOR token  # noqa: E501
+        price, oracle = Inquirer.find_usd_price_and_oracle(Asset('eip155:1/erc20:0xa5f2211B9b8170F694421f2046281775E8468044'))  # THOR token  # noqa: E501
 
     # At this point we have to return the price if it's not None. If we don't do this and got
     # a price for a token that has underlying assets, the code will enter the if statement after
@@ -266,7 +266,7 @@ def get_underlying_asset_price(token: EvmToken) -> tuple[Price | None, CurrentPr
         usd_price = ZERO
         for underlying_token in token.underlying_tokens:
             token = EvmToken(underlying_token.get_identifier(parent_chain=token.chain_id))
-            underlying_asset_price, oracle, _ = Inquirer.find_usd_price_and_oracle(token)
+            underlying_asset_price, oracle = Inquirer.find_usd_price_and_oracle(token)
             usd_price += underlying_asset_price * underlying_token.weight
 
         if usd_price != ZERO_PRICE:
@@ -339,7 +339,6 @@ class CachedPriceEntry(NamedTuple):
     price: Price
     time: Timestamp
     oracle: CurrentPriceOracle
-    used_main_currency: bool
 
 
 class Inquirer:
@@ -470,10 +469,9 @@ class Inquirer:
     @staticmethod
     def get_cached_current_price_entry(
             cache_key: tuple[Asset, Asset],
-            match_main_currency: bool,
     ) -> CachedPriceEntry | None:
         cache = Inquirer._cached_current_price.get(cache_key)
-        if cache is None or ts_now() - cache.time > CURRENT_PRICE_CACHE_SECS or cache.used_main_currency != match_main_currency:  # noqa: E501
+        if cache is None or ts_now() - cache.time > CURRENT_PRICE_CACHE_SECS:
             return None
 
         return cache
@@ -514,24 +512,22 @@ class Inquirer:
             from_asset: AssetWithOracles,
             to_asset: AssetWithOracles,
             coming_from_latest_price: bool,
-            match_main_currency: bool,
-    ) -> tuple[Price, bool, bool]:
+    ) -> tuple[Price, bool]:
         """Tries to query the current price of the asset pair using the provided oracle instance.
-        Returns a tuple of (price, used_main_currency, is_error). The third element is used to
+        Returns a tuple of (price, is_error). The third element is used to
         indicate whether the error should be ignored or not.
 
         May raise:
         - RecursionError if `coming_from_latest_price` is True. Used in the ManualCurrentOracle
         """
-        price, used_main_currency, is_error = ZERO_PRICE, False, True
+        price, is_error = ZERO_PRICE, True
 
         if from_asset == A_POLYGON_POS_MATIC and ts_now() > POLYGON_POS_POL_HARDFORK:  # after hardfork, we use different oracles  # noqa: E501
             from_asset = Asset('eip155:1/erc20:0x455e53CBB86018Ac2B8092FdCd39d8444aFFC3F6').resolve_to_asset_with_oracles()  # POL token  # noqa: E501
         try:
-            price, used_main_currency, is_error = *oracle_instance.query_current_price(
+            price, is_error = oracle_instance.query_current_price(
                 from_asset=from_asset,
                 to_asset=to_asset,
-                match_main_currency=match_main_currency,
             ), False
         except (DefiPoolError, PriceQueryUnsupportedAsset, RemoteError) as e:
             log.warning(
@@ -553,17 +549,16 @@ class Inquirer:
             )
             is_error = False
 
-        if (price, used_main_currency) != (ZERO_PRICE, False):
+        if price != ZERO_PRICE:
             Inquirer.set_cached_price(
                 cache_key=(from_asset, to_asset),
                 cached_price=CachedPriceEntry(
                     price=price,
                     time=ts_now(),
                     oracle=oracle,
-                    used_main_currency=used_main_currency,
                 ),
             )
-        return price, used_main_currency, is_error
+        return price, is_error
 
     @staticmethod
     def _query_oracle_instances(
@@ -571,8 +566,7 @@ class Inquirer:
             to_asset: Asset,
             coming_from_latest_price: bool,
             skip_onchain: bool = False,
-            match_main_currency: bool = False,
-    ) -> tuple[Price, CurrentPriceOracle, bool]:
+    ) -> tuple[Price, CurrentPriceOracle]:
         """
         Query oracle instances.
         `coming_from_latest_price` is used by manual latest price oracle to handle price loops.
@@ -596,11 +590,10 @@ class Inquirer:
                 oracles = instance._oracles
                 oracle_instances = instance._oracle_instances
         else:
-            return ZERO_PRICE, CurrentPriceOracle.BLOCKCHAIN, False
+            return ZERO_PRICE, CurrentPriceOracle.BLOCKCHAIN
 
         price = ZERO_PRICE
         oracle_queried = CurrentPriceOracle.BLOCKCHAIN
-        used_main_currency = False
         for oracle, oracle_instance in zip(oracles, oracle_instances, strict=True):
             if (
                 isinstance(oracle_instance, CurrentPriceOracleInterface) and
@@ -611,13 +604,12 @@ class Inquirer:
             ):
                 continue
 
-            price, used_main_currency, should_continue = Inquirer._try_oracle_price_query(
+            price, should_continue = Inquirer._try_oracle_price_query(
                 oracle=oracle,
                 oracle_instance=oracle_instance,
                 from_asset=from_asset,
                 to_asset=to_asset,
                 coming_from_latest_price=coming_from_latest_price,
-                match_main_currency=match_main_currency,
             )
             if should_continue:
                 continue
@@ -632,7 +624,7 @@ class Inquirer:
                 )
                 break
 
-        return price, oracle_queried, used_main_currency
+        return price, oracle_queried
 
     @staticmethod
     def _find_price(
@@ -641,36 +633,33 @@ class Inquirer:
             ignore_cache: bool = False,
             skip_onchain: bool = False,
             coming_from_latest_price: bool = False,
-            match_main_currency: bool = False,
-    ) -> tuple[Price, CurrentPriceOracle, bool]:
+    ) -> tuple[Price, CurrentPriceOracle]:
         """Returns:
         1. The current price of 'from_asset' in 'to_asset' valuation.
         2. Oracle that was used to get the price.
-        3. Flag that shows whether returned price is in main currency.
         NB: prices for special symbols in any currency but USD are not supported.
 
         Returns ZERO_PRICE if all options have been exhausted and errors are logged in the logs.
         `coming_from_latest_price` is used by manual latest price oracle to handle price loops.
         """
         if from_asset == to_asset:
-            return Price(ONE), CurrentPriceOracle.MANUALCURRENT, False
+            return Price(ONE), CurrentPriceOracle.MANUALCURRENT
 
         if (collection_main_asset := GlobalDBHandler.get_collection_main_asset(from_asset.identifier)) is not None:  # noqa: E501
             from_asset = Asset(collection_main_asset).resolve_to_asset_with_oracles()
 
         if to_asset == A_USD:
-            price, oracle, used_main_currency = Inquirer.find_usd_price_and_oracle(
+            price, oracle = Inquirer.find_usd_price_and_oracle(
                 asset=from_asset,
                 ignore_cache=ignore_cache,
                 coming_from_latest_price=coming_from_latest_price,
-                match_main_currency=match_main_currency,
             )
-            return price, oracle, used_main_currency
+            return price, oracle
 
         if ignore_cache is False:
-            cache = Inquirer.get_cached_current_price_entry(cache_key=(from_asset, to_asset), match_main_currency=match_main_currency)  # noqa: E501
+            cache = Inquirer.get_cached_current_price_entry(cache_key=(from_asset, to_asset))
             if cache is not None:
-                return cache.price, cache.oracle, cache.used_main_currency
+                return cache.price, cache.oracle
 
         # check manual prices
         if (price_result := Inquirer._try_oracle_price_query(
@@ -679,10 +668,9 @@ class Inquirer:
             from_asset=from_asset,  # type: ignore[arg-type]  # Manual current oracle can works with Asset type
             to_asset=to_asset,  # type: ignore[arg-type]  # Manual current oracle can works with Asset type
             coming_from_latest_price=coming_from_latest_price,
-            match_main_currency=match_main_currency,
-        )) != (ZERO_PRICE, False, False):
-            price, used_main_currency, _ = price_result
-            return price, CurrentPriceOracle.MANUALCURRENT, used_main_currency
+        )) != (ZERO_PRICE, False):
+            price, _ = price_result
+            return price, CurrentPriceOracle.MANUALCURRENT
 
         if from_asset.is_fiat() and to_asset.is_fiat():
             with suppress(RemoteError):
@@ -690,16 +678,15 @@ class Inquirer:
                     base=from_asset.resolve_to_fiat_asset(),
                     quote=to_asset.resolve_to_fiat_asset(),
                 )
-                return price, oracle, False
+                return price, oracle
 
-        oracle_price, oracle_queried, used_main_currency = Inquirer._query_oracle_instances(
+        oracle_price, oracle_queried = Inquirer._query_oracle_instances(
             from_asset=from_asset,
             to_asset=to_asset,
             skip_onchain=skip_onchain,
             coming_from_latest_price=coming_from_latest_price,
-            match_main_currency=match_main_currency,
         )
-        return oracle_price, oracle_queried, used_main_currency
+        return oracle_price, oracle_queried
 
     @staticmethod
     @handle_recursion_error(return_price_only=True)
@@ -711,7 +698,7 @@ class Inquirer:
             coming_from_latest_price: bool = False,
     ) -> Price:
         """Wrapper around _find_price to ignore oracle queried when getting price"""
-        price, _, _ = Inquirer._find_price(
+        price, _ = Inquirer._find_price(
             from_asset=from_asset,
             to_asset=to_asset,
             ignore_cache=ignore_cache,
@@ -728,8 +715,7 @@ class Inquirer:
             ignore_cache: bool = False,
             skip_onchain: bool = False,
             coming_from_latest_price: bool = False,
-            match_main_currency: bool = False,
-    ) -> tuple[Price, CurrentPriceOracle, bool]:
+    ) -> tuple[Price, CurrentPriceOracle]:
         """
         Wrapper around _find_price to include oracle queried when getting price and
         flag that shows whether returned price is in main currency.
@@ -740,7 +726,6 @@ class Inquirer:
             ignore_cache=ignore_cache,
             skip_onchain=skip_onchain,
             coming_from_latest_price=coming_from_latest_price,
-            match_main_currency=match_main_currency,
         )
 
     @staticmethod
@@ -752,7 +737,7 @@ class Inquirer:
             coming_from_latest_price: bool = False,
     ) -> Price:
         """Wrapper around _find_usd_price to ignore oracle queried when getting usd price"""
-        price, _, _ = Inquirer._find_usd_price(
+        price, _ = Inquirer._find_usd_price(
             asset=asset,
             ignore_cache=ignore_cache,
             skip_onchain=skip_onchain,
@@ -767,8 +752,7 @@ class Inquirer:
             ignore_cache: bool = False,
             skip_onchain: bool = False,
             coming_from_latest_price: bool = False,
-            match_main_currency: bool = False,
-    ) -> tuple[Price, CurrentPriceOracle, bool]:
+    ) -> tuple[Price, CurrentPriceOracle]:
         """
         Wrapper around _find_usd_price to include oracle queried when getting usd price and
         flag that shows whether returned price is in main currency
@@ -778,7 +762,6 @@ class Inquirer:
             ignore_cache=ignore_cache,
             skip_onchain=skip_onchain,
             coming_from_latest_price=coming_from_latest_price,
-            match_main_currency=match_main_currency,
         )
 
     @staticmethod
@@ -787,8 +770,7 @@ class Inquirer:
             ignore_cache: bool = False,
             skip_onchain: bool = False,
             coming_from_latest_price: bool = False,
-            match_main_currency: bool = False,
-    ) -> tuple[Price, CurrentPriceOracle, bool]:
+    ) -> tuple[Price, CurrentPriceOracle]:
         """Returns the current price of the asset, oracle that was used and whether returned price
         is in main currency.
 
@@ -796,26 +778,26 @@ class Inquirer:
         `coming_from_latest_price` is used by manual latest price oracle to handle price loops.
         """
         if asset == A_USD:
-            return Price(ONE), CurrentPriceOracle.FIAT, False
+            return Price(ONE), CurrentPriceOracle.FIAT
         elif asset == A_ETH2:
             asset = A_ETH
 
         cache_key = (asset, A_USD)
         if ignore_cache is False:
-            cache = Inquirer.get_cached_current_price_entry(cache_key=cache_key, match_main_currency=match_main_currency)  # noqa: E501
+            cache = Inquirer.get_cached_current_price_entry(cache_key=cache_key)
             if cache is not None:
-                return cache.price, cache.oracle, cache.used_main_currency
+                return cache.price, cache.oracle
 
         try:
             asset = asset.resolve()
         except UnknownAsset:
             log.error(f'Tried to ask for {asset.identifier} price but asset is missing from the DB')  # noqa: E501
-            return ZERO_PRICE, CurrentPriceOracle.FIAT, False
+            return ZERO_PRICE, CurrentPriceOracle.FIAT
 
         if isinstance(asset, FiatAsset):
             with suppress(RemoteError):
                 price, oracle = Inquirer._query_fiat_pair(base=asset, quote=Inquirer.usd)
-                return price, oracle, False
+                return price, oracle
 
         # continue, asset isn't fiat, check manual prices
         if (price_result := Inquirer._try_oracle_price_query(
@@ -824,10 +806,9 @@ class Inquirer:
             from_asset=asset,  # type: ignore[arg-type]  # Manual current oracle can works with Asset type
             to_asset=A_USD.resolve_to_asset_with_oracles(),
             coming_from_latest_price=coming_from_latest_price,
-            match_main_currency=match_main_currency,
-        )) != (ZERO_PRICE, False, False):
-            price, used_main_currency, _ = price_result
-            return price, CurrentPriceOracle.MANUALCURRENT, used_main_currency
+        )) != (ZERO_PRICE, False):
+            price, _ = price_result
+            return price, CurrentPriceOracle.MANUALCURRENT
 
         # Try and check if it is an ethereum token with specified protocol or underlying tokens
         is_known_protocol = False
@@ -854,10 +835,9 @@ class Inquirer:
                         price=price,
                         time=ts_now(),
                         oracle=CurrentPriceOracle.BLOCKCHAIN,
-                        used_main_currency=False,
                     ),
                 )
-                return price, oracle, False
+                return price, oracle
 
             if is_known_protocol is True or underlying_tokens is not None:
                 if (
@@ -877,10 +857,9 @@ class Inquirer:
                                 price=(usd_price := Price(result)),
                                 time=ts_now(),
                                 oracle=oracle,
-                                used_main_currency=False,  # function is for usd only, so it doesn't matter  # noqa: E501
                             ),
                         )
-                        return usd_price, oracle, False
+                        return usd_price, oracle
                 # else known protocol on-chain query failed. Continue to external oracles
 
         # BSQ is a special asset that doesn't have oracle information but its custom API
@@ -889,7 +868,7 @@ class Inquirer:
                 bsq = A_BSQ.resolve_to_crypto_asset()
             except (UnknownAsset, WrongAssetType):
                 log.error('Asked for BSQ price but BSQ is missing or misclassified in the global DB')  # noqa: E501
-                return ZERO_PRICE, oracle, False
+                return ZERO_PRICE, oracle
 
             try:
                 price_in_btc = get_bisq_market_price(bsq)
@@ -901,29 +880,27 @@ class Inquirer:
                         price=usd_price,
                         time=ts_now(),
                         oracle=oracle,
-                        used_main_currency=False,  # this is for usd only, so it doesn't matter
                     ),
                 )
             except (RemoteError, DeserializationError) as e:
                 msg = f'Could not find price for BSQ. {e!s}'
                 Inquirer._msg_aggregator.add_warning(msg)
-                return Price(BTC_PER_BSQ * price_in_btc), CurrentPriceOracle.BLOCKCHAIN, False
+                return Price(BTC_PER_BSQ * price_in_btc), CurrentPriceOracle.BLOCKCHAIN
             else:
-                return usd_price, oracle, False
+                return usd_price, oracle
 
         if asset == A_KFEE:
             # KFEE is a kraken special asset where 1000 KFEE = 10 USD
-            return Price(FVal(0.01)), CurrentPriceOracle.FIAT, False
+            return Price(FVal(0.01)), CurrentPriceOracle.FIAT
 
         # continue, price can be found by one of the oracles (CC for example)
-        price, oracle, used_main_currency = Inquirer._query_oracle_instances(
+        price, oracle = Inquirer._query_oracle_instances(
             from_asset=asset,
             to_asset=A_USD,
             coming_from_latest_price=coming_from_latest_price,
             skip_onchain=skip_onchain,
-            match_main_currency=match_main_currency,
         )
-        return price, oracle, used_main_currency
+        return price, oracle
 
     def find_lp_price_from_uniswaplike_pool(
             self,

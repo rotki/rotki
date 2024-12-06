@@ -302,15 +302,14 @@ def _create_inquirer(
             to_asset,
             **kwargs,  # pylint: disable=unused-argument
     ):
-        result = mocked_current_prices_with_oracles.get((from_asset, to_asset))
-        if result is not None:  # check mocked_current_prices_with_oracles first
-            return *result, False
-        price, oracle = mocked_prices.get((from_asset, to_asset), (CURRENT_PRICE_MOCK, CurrentPriceOracle.BLOCKCHAIN))  # noqa: E501
-        return price, oracle, False
+        # check mocked_current_prices_with_oracles first
+        if (result := mocked_current_prices_with_oracles.get((from_asset, to_asset))) is not None:
+            return result
+
+        return mocked_prices.get((from_asset, to_asset), (CURRENT_PRICE_MOCK, CurrentPriceOracle.BLOCKCHAIN))  # noqa: E501
 
     def mock_find_usd_price_with_oracle(asset, ignore_cache: bool = False):  # pylint: disable=unused-argument
-        price, oracle = mocked_prices.get(asset, (FVal('1.5'), CurrentPriceOracle.BLOCKCHAIN))
-        return price, oracle, False
+        return mocked_prices.get(asset, (FVal('1.5'), CurrentPriceOracle.BLOCKCHAIN))
 
     # Since we are not yielding here we are using a **really** hacky way in order to
     # achieve two things:
@@ -368,43 +367,41 @@ def _create_inquirer(
                 coming_from_latest_price=coming_from_latest_price,
             )
 
-        def mock_prices_with_oracles(from_asset, to_asset, ignore_cache=False, coming_from_latest_price=False, match_main_currency=False):  # noqa: E501
+        def mock_prices_with_oracles(from_asset, to_asset, ignore_cache=False, coming_from_latest_price=False):  # noqa: E501
             if from_asset.identifier in ignore_mocked_prices_for:
                 return inquirer.find_price_and_oracle_old(  # pylint: disable=no-member # dynamic attribute
                     from_asset=from_asset,
                     to_asset=to_asset,
                     ignore_cache=ignore_cache,
                     coming_from_latest_price=coming_from_latest_price,
-                    match_main_currency=match_main_currency,
                 )
             if len(mocked_current_prices_with_oracles) != 0:
                 price, oracle = mocked_current_prices_with_oracles.get((from_asset, to_asset), (FVal('1.5'), CurrentPriceOracle.BLOCKCHAIN))  # noqa: E501
-                return price, oracle, False
+                return price, oracle
             price = mock_find_price(
                 from_asset=from_asset,
                 to_asset=to_asset,
                 ignore_cache=ignore_cache,
                 coming_from_latest_price=coming_from_latest_price,
             )
-            return price, CurrentPriceOracle.BLOCKCHAIN, False
+            return price, CurrentPriceOracle.BLOCKCHAIN
 
-        def mock_usd_prices_with_oracles(asset, ignore_cache=False, coming_from_latest_price=False, match_main_currency=False):  # noqa: E501
+        def mock_usd_prices_with_oracles(asset, ignore_cache=False, coming_from_latest_price=False):  # noqa: E501
             if asset.identifier in ignore_mocked_prices_for:
                 return inquirer.find_usd_price_and_oracle_old(  # pylint: disable=no-member # dynamic attribute
                     asset=asset,
                     ignore_cache=ignore_cache,
                     coming_from_latest_price=coming_from_latest_price,
-                    match_main_currency=match_main_currency,
                 )
             if len(mocked_current_prices_with_oracles) != 0:
                 price, oracle = mocked_current_prices_with_oracles.get(asset, (FVal('1.5'), CurrentPriceOracle.BLOCKCHAIN))  # noqa: E501
-                return price, oracle, False
+                return price, oracle
             price = mock_find_usd_price(
                 asset=asset,
                 ignore_cache=ignore_cache,
                 coming_from_latest_price=coming_from_latest_price,
             )
-            return price, CurrentPriceOracle.BLOCKCHAIN, False
+            return price, CurrentPriceOracle.BLOCKCHAIN
 
         inquirer.find_price = Inquirer.find_price = mock_some_prices  # type: ignore
         inquirer.find_usd_price = Inquirer.find_usd_price = mock_some_usd_prices  # type: ignore

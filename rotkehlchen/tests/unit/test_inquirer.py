@@ -247,7 +247,7 @@ def test_fallback_to_coingecko(inquirer: Inquirer):
 def test_find_usd_price_cache(inquirer, freezer):  # pylint: disable=unused-argument
     call_count = 0
 
-    def mock_query_price(from_asset, to_asset, match_main_currency):  # pylint: disable=unused-argument
+    def mock_query_price(from_asset, to_asset):  # pylint: disable=unused-argument
         assert from_asset.identifier == 'ETH'
         assert to_asset.identifier == 'USD'
         nonlocal call_count
@@ -259,7 +259,7 @@ def test_find_usd_price_cache(inquirer, freezer):  # pylint: disable=unused-argu
             raise AssertionError('Called too many times for this test')
 
         call_count += 1
-        return price, False
+        return price
 
     cc_patch = patch.object(
         inquirer._cryptocompare,
@@ -319,7 +319,7 @@ def test_find_usd_price_all_rate_limited_in_last(inquirer):
             self.rate_limited_in_last_call_count += 1
             return True
 
-        def query_current_price(self, from_asset, to_asset, match_main_currency):
+        def query_current_price(self, from_asset, to_asset):
             self.query_current_price_call_count += 1
 
     inquirer._oracle_instances = [OracleMock('x') for _ in inquirer._oracles]
@@ -340,7 +340,7 @@ def test_find_usd_price_no_price_found(inquirer):
     inquirer._oracle_instances = [MagicMock() for _ in inquirer._oracles]
 
     for oracle_instance in inquirer._oracle_instances:
-        oracle_instance.query_current_price.return_value = (ZERO_PRICE, False)
+        oracle_instance.query_current_price.return_value = ZERO_PRICE
 
     price = inquirer.find_usd_price(A_BTC)
 
@@ -359,7 +359,7 @@ def test_find_usd_price_via_second_oracle(inquirer):
 
     expected_price = Price(FVal('30000'))
     inquirer._oracle_instances[0].query_current_price.side_effect = RemoteError
-    inquirer._oracle_instances[1].query_current_price.return_value = (expected_price, False)
+    inquirer._oracle_instances[1].query_current_price.return_value = expected_price
 
     price = inquirer.find_usd_price(A_BTC)
 

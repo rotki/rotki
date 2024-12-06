@@ -293,24 +293,20 @@ class UniswapOracle(HistoricalPriceOracleInterface, CacheableMixIn):
             self,
             from_asset: AssetWithOracles,
             to_asset: AssetWithOracles,
-            match_main_currency: bool,
-    ) -> tuple[Price, bool]:
+    ) -> Price:
         """
         This method gets the current price for two ethereum tokens finding a pool
         or a path of pools in the uniswap protocol.
         Returns:
         1. The price of from_asset at the current timestamp
         for the current oracle
-        2. False value, since it never tries to match main currency
         """
         to_asset, from_asset = self._replace_fiat_with_stablecoin([to_asset, from_asset])
-
-        price = self.get_price(
+        return self.get_price(
             from_asset=from_asset,
             to_asset=to_asset,
             block_identifier='latest',
         )
-        return price, False
 
     def _call_methods(
             self,
@@ -477,9 +473,9 @@ class UniswapV3Oracle(UniswapOracle):
 
         return PoolPrice(price=price, token_0=token_0, token_1=token_1)
 
-    def is_before_contract_creation(self, current_block: BlockIdentifier) -> bool:
-        """Check if current_block is before creation of uniswap v3 factory contract"""
-        return current_block < UNISWAPV3_FACTORY_DEPLOYED_BLOCK if isinstance(current_block, int) else False  # noqa: E501
+    def is_before_contract_creation(self, block_identifier: BlockIdentifier) -> bool:
+        """Check if block_identifier is before creation of uniswap v3 factory contract"""
+        return block_identifier < UNISWAPV3_FACTORY_DEPLOYED_BLOCK if isinstance(block_identifier, int) else False  # noqa: E501
 
 
 class UniswapV2Oracle(UniswapOracle):
@@ -565,6 +561,6 @@ class UniswapV2Oracle(UniswapOracle):
         price = FVal((reserve_1 / reserve_0) * decimals_constant)
         return PoolPrice(price=price, token_0=token_0, token_1=token_1)
 
-    def is_before_contract_creation(self, current_block: BlockIdentifier) -> bool:
-        """Check if current_block is before creation of uniswap v2 factory contract"""
-        return current_block < UNISWAPV2_FACTORY_DEPLOYED_BLOCK if isinstance(current_block, int) else False  # noqa: E501
+    def is_before_contract_creation(self, block_identifier: BlockIdentifier) -> bool:
+        """Check if block_identifier is before creation of uniswap v2 factory contract"""
+        return block_identifier < UNISWAPV2_FACTORY_DEPLOYED_BLOCK if isinstance(block_identifier, int) else False  # noqa: E501
