@@ -165,6 +165,7 @@ describe('settings:frontend', () => {
       blockchainRefreshButtonBehaviour: BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES,
       shouldRefreshValidatorDailyStats: false,
       unifyAccountsTable: false,
+      subscriptDecimals: false,
       savedFilters: {},
       balanceUsdValueThreshold: {
         [BalanceSource.EXCHANGES]: '0',

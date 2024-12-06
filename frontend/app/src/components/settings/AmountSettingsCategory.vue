@@ -8,6 +8,7 @@ import NumericSeparatorsSettings from '@/components/settings/general/amount/Nume
 import FloatingPrecisionSetting from '@/components/settings/general/amount/FloatingPrecisionSetting.vue';
 import MainCurrencySetting from '@/components/settings/general/amount/MainCurrencySetting.vue';
 import SettingCategory from '@/components/settings/SettingCategory.vue';
+import SubscriptToggle from './general/amount/SubscriptToggle.vue';
 
 const { t } = useI18n();
 
@@ -45,16 +46,12 @@ const amountExample = bigNumberify(123456.789);
 
     <SettingsItem>
       <template #title>
-        {{ t('general_settings.amount.label.abbreviation') }}
+        {{ t('rounding_settings.subscript.title') }}
       </template>
-      <AbbreviateNumberSetting />
-    </SettingsItem>
-
-    <SettingsItem>
-      <template #title>
-        {{ t('general_settings.amount.label.currency_location') }}
+      <template #subtitle>
+        {{ t('rounding_settings.subscript.subtitle') }}
       </template>
-      <CurrencyLocationSetting />
+      <SubscriptToggle />
     </SettingsItem>
 
     <SettingsItem>
@@ -65,6 +62,20 @@ const amountExample = bigNumberify(123456.789);
         {{ t('rounding_settings.subtitle') }}
       </template>
       <RoundingSettings />
+    </SettingsItem>
+
+    <SettingsItem>
+      <template #title>
+        {{ t('general_settings.amount.label.abbreviation') }}
+      </template>
+      <AbbreviateNumberSetting />
+    </SettingsItem>
+
+    <SettingsItem>
+      <template #title>
+        {{ t('general_settings.amount.label.currency_location') }}
+      </template>
+      <CurrencyLocationSetting />
     </SettingsItem>
   </SettingCategory>
 </template>
