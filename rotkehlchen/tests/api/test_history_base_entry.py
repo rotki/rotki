@@ -39,7 +39,6 @@ from rotkehlchen.tests.utils.history_base_entry import (
 from rotkehlchen.types import (
     ChainID,
     EvmTransaction,
-    HistoryEventQueryType,
     Location,
     Timestamp,
     TimestampMS,
@@ -598,10 +597,9 @@ def test_get_events(rotkehlchen_api_server: 'APIServer') -> None:
     ]
 
 
-@pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('added_exchanges', [(Location.KRAKEN,)])
 def test_query_new_events(rotkehlchen_api_server_with_exchanges: 'APIServer') -> None:
-    """Test that the endpoint for querying new events works correctly both sync and async"""
+    """Test that querying new exchange events works correctly both sync and async"""
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
     db = DBHistoryEvents(rotki.data.db)
     query_filter = HistoryEventFilterQuery.make(location=Location.KRAKEN)
@@ -617,11 +615,12 @@ def test_query_new_events(rotkehlchen_api_server_with_exchanges: 'APIServer') ->
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server_with_exchanges,
-            'eventsonlinequeryresource',
+            'exchangeeventsqueryresource',
         ),
         json={
             'async_query': async_query,
-            'query_type': HistoryEventQueryType.EXCHANGES.serialize(),
+            'location': Location.KRAKEN.serialize(),
+            'name': 'mockkraken',
         },
     )
 

@@ -1,6 +1,6 @@
 import logging
 from abc import abstractmethod
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from typing import TYPE_CHECKING, Any
 
 import requests
@@ -10,7 +10,6 @@ from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.db.filtering import (
     AssetMovementsFilterQuery,
-    HistoryEventFilterQuery,
     TradesFilterQuery,
 )
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -28,13 +27,13 @@ from rotkehlchen.types import (
     T_ApiSecret,
     Timestamp,
 )
-from rotkehlchen.utils.misc import set_user_agent
+from rotkehlchen.utils.misc import set_user_agent, ts_now
 from rotkehlchen.utils.mixins.cacheable import CacheableMixIn
 from rotkehlchen.utils.mixins.lockable import LockableQueryMixIn, protect_with_lock
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.history.events.structures.base import HistoryEvent
+    from rotkehlchen.history.events.structures.base import HistoryBaseEntry, HistoryEvent
     from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
@@ -214,10 +213,10 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
         """Queries the exchange's API for the asset movements of the user
 
         Should be implemented in subclasses.
+
+        Deprecated, will be replaced by query_online_history_events
         """
-        raise NotImplementedError(
-            'query_online_deposits_withdrawals should only be implemented by subclasses',
-        )
+        return []
 
     def query_online_income_loss_expense(
             self,
@@ -230,16 +229,23 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
         Has to be implemented by exchanges if they have anything exchange specific
 
         For example coinbase
-        """
-        raise NotImplementedError(
-            'query_online_income_loss_expense should only be implemented by subclasses',
-        )
 
-    def query_history_events(self) -> None:
-        """Query history events from the current exchange
-        instance and store them in the database
+        Deprecated, will be replaced by query_online_history_events
         """
-        return None
+        return []
+
+    def query_online_history_events(
+            self,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+    ) -> Sequence['HistoryBaseEntry']:
+        """Queries the exchange's API for history events of the user
+
+        Should be implemented in subclasses, unless query_history_events is reimplemented with
+        custom logic.
+        Returns events based on HistoryBaseEntry, such as HistoryEvent, AssetMovement, etc.
+        """
+        return []
 
     @protect_with_lock()
     def query_trade_history(
@@ -367,6 +373,8 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
 
         If only_cache is true only what is already cached in the DB is returned without
         an actual exchange query.
+
+        Deprecated, will be replaced by query_history_events
         """
         log.debug(f'Querying deposits/withdrawals history for {self.name} exchange')
         if only_cache is False:
@@ -422,6 +430,8 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
 
         If only_cache is true only what is already cached in the DB is returned without
         an actual exchange query.
+
+        Deprecated, will be replaced by query_history_events
         """
         db = DBHistoryEvents(self.db)
         if only_cache is False:
@@ -456,6 +466,33 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
         )
         with self.db.conn.read_ctx() as cursor:
             return db.get_history_events(cursor, filter_query=filter_query, has_premium=True)  # type: ignore[return-value]  # HistoryBaseEntry vs HistoryEvent
+
+    def query_history_events(self) -> None:
+        """Queries the exchange for new history events and saves them to the database."""
+        db = DBHistoryEvents(self.db)
+        ranges = DBQueryRanges(self.db)
+        location_string = f'{self.location!s}_history_events_{self.name}'
+        with self.db.conn.read_ctx() as cursor:
+            ranges_to_query = ranges.get_location_query_ranges(
+                cursor=cursor,
+                location_string=location_string,
+                start_ts=Timestamp(0),
+                end_ts=ts_now(),
+            )
+
+        for query_start_ts, query_end_ts in ranges_to_query:
+            new_events = self.query_online_history_events(
+                start_ts=query_start_ts,
+                end_ts=query_end_ts,
+            )
+            with self.db.user_write() as write_cursor:
+                if len(new_events) != 0:
+                    db.add_history_events(write_cursor=write_cursor, history=new_events)
+                ranges.update_used_query_range(
+                    write_cursor=write_cursor,
+                    location_string=location_string,
+                    queried_ranges=[(query_start_ts, query_end_ts)],
+                )
 
     def query_history_with_callbacks(
             self,
@@ -494,11 +531,7 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
             )
             if new_step_data is not None:
                 new_step_callback(f'Querying {exchange_name} events history')
-            self.query_income_loss_expense(
-                start_ts=start_ts,
-                end_ts=end_ts,
-                only_cache=False,
-            )
+            self.query_history_events()
             # No new step for exchange_specific_history since it is not used in any exchange atm.
             self.query_exchange_specific_history(
                 start_ts=start_ts,

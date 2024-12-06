@@ -3,21 +3,26 @@ import hmac
 import json
 import logging
 import time
+from collections.abc import Sequence
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 from urllib.parse import urlencode
 
 import requests
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset, AssetWithOracles
+from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_BTC
+from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.exchanges.data_structures import AssetMovement, Location, MarginPosition, Trade
+from rotkehlchen.exchanges.data_structures import Location, MarginPosition, Trade
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
 from rotkehlchen.exchanges.utils import deserialize_asset_movement_address, get_key_if_has_val
+from rotkehlchen.history.events.structures.asset_movement import AssetMovement
+from rotkehlchen.history.events.structures.types import HistoryEventType
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
@@ -29,19 +34,18 @@ from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
     AssetAmount,
-    AssetMovementCategory,
     ExchangeAuthCredentials,
     Fee,
     Timestamp,
 )
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import iso8601ts_to_timestamp, satoshis_to_btc
+from rotkehlchen.utils.misc import iso8601ts_to_timestamp, satoshis_to_btc, ts_sec_to_ms
 from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
 from rotkehlchen.utils.mixins.lockable import protect_with_lock
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.history.events.structures.base import HistoryEvent
+    from rotkehlchen.history.events.structures.base import HistoryBaseEntry
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -299,11 +303,11 @@ class Bitmex(ExchangeInterface):
 
         return margin_trades
 
-    def query_online_deposits_withdrawals(
+    def query_online_history_events(
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> list:
+    ) -> Sequence['HistoryBaseEntry']:
         resp = self._api_query_list('get', 'user/walletHistory', {'currency': 'all'})
 
         log.debug('Bitmex deposit/withdrawals query', results_num=len(resp))
@@ -312,9 +316,9 @@ class Bitmex(ExchangeInterface):
             try:
                 transaction_type = movement['transactType']
                 if transaction_type == 'Deposit':
-                    transaction_type = AssetMovementCategory.DEPOSIT
+                    event_type: Literal[HistoryEventType.DEPOSIT, HistoryEventType.WITHDRAWAL] = HistoryEventType.DEPOSIT  # noqa: E501
                 elif transaction_type == 'Withdrawal':
-                    transaction_type = AssetMovementCategory.WITHDRAWAL
+                    event_type = HistoryEventType.WITHDRAWAL
                 else:
                     continue
 
@@ -335,16 +339,26 @@ class Bitmex(ExchangeInterface):
 
                 movements.append(AssetMovement(
                     location=Location.BITMEX,
-                    category=transaction_type,
-                    address=deserialize_asset_movement_address(movement, 'address', asset),
-                    transaction_id=get_key_if_has_val(movement, 'tx'),
-                    timestamp=timestamp,
+                    event_type=event_type,
+                    timestamp=(timestamp_ms := ts_sec_to_ms(timestamp)),
                     asset=asset,
-                    amount=amount,
-                    fee_asset=asset,
-                    fee=fee,
-                    link=str(movement['transactID']),
+                    balance=Balance(amount),
+                    unique_id=str(movement['transactID']),
+                    extra_data=maybe_set_transaction_extra_data(
+                        address=deserialize_asset_movement_address(movement, 'address', asset),
+                        transaction_id=get_key_if_has_val(movement, 'tx'),
+                    ),
                 ))
+                if fee != ZERO:
+                    movements.append(AssetMovement(
+                        event_identifier=movements[-1].event_identifier,
+                        location=Location.BITMEX,
+                        event_type=event_type,
+                        timestamp=timestamp_ms,
+                        asset=asset,
+                        balance=Balance(fee),
+                        is_fee=True,
+                    ))
             except UnknownAsset as e:
                 self.send_unknown_asset_message(
                     asset_identifier=e.identifier,
@@ -372,10 +386,3 @@ class Bitmex(ExchangeInterface):
             end_ts: Timestamp,
     ) -> tuple[list[Trade], tuple[Timestamp, Timestamp]]:
         return [], (start_ts, end_ts)  # noop for bitmex
-
-    def query_online_income_loss_expense(
-            self,
-            start_ts: Timestamp,  # pylint: disable=unused-argument
-            end_ts: Timestamp,
-    ) -> list['HistoryEvent']:
-        return []  # noop for bitmex
