@@ -281,7 +281,7 @@ def decode_uniswap_like_deposit_and_withdrawals(
         symbol = pool_token.symbol
         if symbol in {UNISWAP_PROTOCOL, SUSHISWAP_PROTOCOL}:
             # uniswap and sushiswap provide the same symbol for all the LP tokens. In order to
-            # provide a a better UX if the default symbol is used then change the symbol to
+            # provide a better UX if the default symbol is used then change the symbol to
             # include the symbols of the underlying tokens.
             symbol = f'{symbol} {token0.symbol}-{token1.symbol}'
 

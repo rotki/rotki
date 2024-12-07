@@ -241,7 +241,7 @@ class Trade(AccountingEventMixin):
     base_asset: Asset
     quote_asset: Asset
     trade_type: TradeType
-    # The amount represents the amount bought if it's a buy or or the amount
+    # The amount represents the amount bought if it's a buy or the amount
     # sold if it's a sell. Should NOT include fees
     amount: AssetAmount
     rate: Price
