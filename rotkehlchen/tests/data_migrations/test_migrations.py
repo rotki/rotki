@@ -2,8 +2,8 @@ import json
 import operator
 from contextlib import ExitStack
 from pathlib import Path
-from typing import TYPE_CHECKING, NamedTuple
-from unittest.mock import patch
+from typing import TYPE_CHECKING, Any, NamedTuple
+from unittest.mock import _patch, patch
 
 import pytest
 
@@ -22,11 +22,13 @@ from rotkehlchen.data_migrations.manager import (
 )
 from rotkehlchen.db.constants import UpdateType
 from rotkehlchen.db.dbhandler import DBHandler
+from rotkehlchen.externalapis.coingecko import Coingecko
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.cache import globaldb_delete_general_cache_values
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.globaldb.utils import set_token_spam_protocol
 from rotkehlchen.icons import IconManager
+from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.tests.utils.blockchain import setup_evm_addresses_activity_mock
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.tests.utils.exchanges import check_saved_events_for_exchange
@@ -45,6 +47,8 @@ from rotkehlchen.types import (
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
+    from rotkehlchen.data_migrations.progress import MigrationProgressHandler
+    from rotkehlchen.greenlets.manager import GreenletManager
     from rotkehlchen.tests.fixtures.websockets import WebsocketReader
 
 
@@ -58,14 +62,14 @@ class MockDataForMigrations(NamedTuple):
     db: DBHandler
 
 
-class MockRotkiForMigrations:
+class MockRotkiForMigrations(Rotkehlchen):
 
-    def __init__(self, db) -> None:
-        self.data = MockDataForMigrations(db=db)
+    def __init__(self, db: DBHandler) -> None:  # pylint: disable=W0231 # inheritance from Rotkehlchen is just for the type checker
+        self.data = MockDataForMigrations(db=db)  # type: ignore
         self.msg_aggregator = db.msg_aggregator
 
 
-def assert_progress_message(msg, step_num, description, migration_version, migration_steps) -> None:  # noqa: E501
+def assert_progress_message(msg: dict[str, Any], step_num: int, description: str | None, migration_version: int, migration_steps: int) -> None:  # noqa: E501
     assert msg['type'] == 'data_migration_status'
     assert msg['data']['start_version'] == migration_version
     assert msg['data']['target_version'] == LAST_DATA_MIGRATION
@@ -175,7 +179,7 @@ def detect_accounts_migration_check(
 @pytest.mark.parametrize('data_migration_version', [0])
 @pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
 @pytest.mark.parametrize('new_db_unlock_actions', [None])
-def test_migration_1(database):
+def test_migration_1(database: DBHandler) -> None:
     """
     Test that the first data migration for rotki works. This migration removes information about
     some exchanges when there is more than one instance or if it is kraken.
@@ -231,9 +235,9 @@ def test_migration_1(database):
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """
             database.write_tuples(write_cursor=write_cursor, tuple_type='trade', query=query, tuples=trade_tuples)  # noqa: E501
-            database.update_used_query_range(write_cursor=write_cursor, name=f'{exchange_location!s}_trades_{exchange_location!s}', start_ts=0, end_ts=9999)  # noqa: E501
-            database.update_used_query_range(write_cursor=write_cursor, name=f'{exchange_location!s}_margins_{exchange_location!s}', start_ts=0, end_ts=9999)  # noqa: E501
-            database.update_used_query_range(write_cursor=write_cursor, name=f'{exchange_location!s}_asset_movements_{exchange_location!s}', start_ts=0, end_ts=9999)  # noqa: E501
+            database.update_used_query_range(write_cursor=write_cursor, name=f'{exchange_location!s}_trades_{exchange_location!s}', start_ts=Timestamp(0), end_ts=Timestamp(9999))  # noqa: E501
+            database.update_used_query_range(write_cursor=write_cursor, name=f'{exchange_location!s}_margins_{exchange_location!s}', start_ts=Timestamp(0), end_ts=Timestamp(9999))  # noqa: E501
+            database.update_used_query_range(write_cursor=write_cursor, name=f'{exchange_location!s}_asset_movements_{exchange_location!s}', start_ts=Timestamp(0), end_ts=Timestamp(9999))  # noqa: E501
 
     migration_patch = patch(
         'rotkehlchen.data_migrations.manager.MIGRATION_LIST',
@@ -256,14 +260,14 @@ def test_migration_1(database):
 @pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
 @pytest.mark.parametrize('data_migration_version', [0])
 @pytest.mark.parametrize('new_db_unlock_actions', [None])
-def test_failed_migration(database):
+def test_failed_migration(database: DBHandler) -> None:
     """Test that a failed migration does not update DB setting and logs error"""
     rotki = MockRotkiForMigrations(database)
 
-    def botched_migration(rotki, progress_handler) -> None:
+    def botched_migration(rotki: MockDataForMigrations, progress_handler: 'MigrationProgressHandler') -> None:  # noqa: E501
         raise ValueError('ngmi')
 
-    botched_list = [MigrationRecord(version=1, function=botched_migration)]
+    botched_list = [MigrationRecord(version=1, function=botched_migration)]  # type: ignore
 
     migrate_mock = patch(
         'rotkehlchen.data_migrations.manager.MIGRATION_LIST',
@@ -290,13 +294,17 @@ def test_failed_migration(database):
 @pytest.mark.parametrize('data_migration_version', [2])
 @pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_migration_3(database, data_dir, greenlet_manager):
+def test_migration_3(
+        database: DBHandler,
+        data_dir: Path,
+        greenlet_manager: 'GreenletManager',
+) -> None:
     """
     Test that the third data migration for rotki works. This migration removes icons of assets
     that are not valid images and update the list of ignored assets.
     """
     rotki = MockRotkiForMigrations(database)
-    icon_manager = IconManager(data_dir=data_dir, coingecko=None, greenlet_manager=greenlet_manager)  # noqa: E501
+    icon_manager = IconManager(data_dir=data_dir, coingecko=Coingecko(None), greenlet_manager=greenlet_manager)  # noqa: E501
     rotki.icon_manager = icon_manager
     btc_iconpath = _create_invalid_icon(A_BTC.identifier, icon_manager.icons_dir)
     eth_iconpath = _create_invalid_icon(A_ETH.identifier, icon_manager.icons_dir)
@@ -315,13 +323,17 @@ def test_migration_3(database, data_dir, greenlet_manager):
 @pytest.mark.parametrize('data_migration_version', [4])
 @pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_migration_5(database, data_dir, greenlet_manager):
+def test_migration_5(
+        database: DBHandler,
+        data_dir: Path,
+        greenlet_manager: 'GreenletManager',
+) -> None:
     """
     Test that the fifth data migration for rotki works.
     - Create two fake icons and check that the file name was correctly updated
     """
     rotki = MockRotkiForMigrations(database)
-    icon_manager = IconManager(data_dir=data_dir, coingecko=None, greenlet_manager=greenlet_manager)  # noqa: E501
+    icon_manager = IconManager(data_dir=data_dir, coingecko=Coingecko(None), greenlet_manager=greenlet_manager)  # noqa: E501
     rotki.icon_manager = icon_manager
     migration_patch = patch(
         'rotkehlchen.data_migrations.manager.MIGRATION_LIST',
@@ -654,7 +666,7 @@ def test_migration_18(rotkehlchen_api_server: 'APIServer') -> None:
 @pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
 # make sure fixtures does not modify DB last_data_migration
 @pytest.mark.parametrize('data_migration_version', [None])
-def test_new_db_remembers_last_migration_even_if_no_migrations_run(database):
+def test_new_db_remembers_last_migration_even_if_no_migrations_run(database: DBHandler) -> None:
     """Test that a newly created database remembers the current last data migration
     at the time of creation even if no migration has actually ran"""
     rotki = MockRotkiForMigrations(database)
@@ -662,7 +674,7 @@ def test_new_db_remembers_last_migration_even_if_no_migrations_run(database):
         cursor.execute("SELECT value FROM settings WHERE name='last_data_migration'")
         assert cursor.fetchone() is None
 
-    migration_patch = patch(
+    migration_patch: _patch[list] = patch(
         'rotkehlchen.data_migrations.manager.MIGRATION_LIST',
         new=[],
     )

@@ -120,6 +120,7 @@ module = [
     "rotkehlchen.tests.api.test_statistics",
     "rotkehlchen.tests.api.test_substrate_manager",
     "rotkehlchen.tests.api.test_sushiswap",
+    "rotkehlchen.tests.data_migrations.test_migrations",
 ]
 check_untyped_defs = true
 disallow_untyped_defs = true
