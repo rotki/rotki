@@ -3459,7 +3459,7 @@ class DBHandler:
         )
 
     def is_etherscan_node(self, node_identifier: int) -> bool:
-        """Checks if a a given node is an etherscan node (ethereum, optimism, etc)"""
+        """Checks if a given node is an etherscan node (ethereum, optimism, etc)"""
         with self.conn.read_ctx() as cursor:
             return bool(cursor.execute(
                 "SELECT COUNT(*) FROM rpc_nodes WHERE identifier=? AND endpoint=''",

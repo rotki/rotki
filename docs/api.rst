@@ -3220,7 +3220,7 @@ Get asset identifiers mappings
 
 .. http:post:: /api/(version)/assets/mappings
 
-   Doing a POST on the assets mappings endpoint with a list of of identifiers will return a mapping of those identifiers to their respective name and symbols.
+   Doing a POST on the assets mappings endpoint with a list of identifiers will return a mapping of those identifiers to their respective name and symbols.
 
    **Example Request**:
 
@@ -3832,7 +3832,7 @@ Performing an asset update
         "message": ""
       }
 
-   :resjson object result: Either ``true`` if all went fine or a a list of conflicts, containing the identifier of the asset in question and the local and remote versions.
+   :resjson object result: Either ``true`` if all went fine or a list of conflicts, containing the identifier of the asset in question and the local and remote versions.
    :statuscode 200: Update was successfully applied (if any).
    :statuscode 400: Provided JSON is in some way malformed
    :statuscode 401: User is not logged in.
