@@ -32,6 +32,7 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
   const itemsPerPage = useComputedRef(settings, 'itemsPerPage');
   const amountRoundingMode = useComputedRef(settings, 'amountRoundingMode');
   const valueRoundingMode = useComputedRef(settings, 'valueRoundingMode');
+  const subscriptDecimals = useComputedRef(settings, 'subscriptDecimals');
   const selectedTheme = useComputedRef(settings, 'selectedTheme');
   const lightTheme = useComputedRef(settings, 'lightTheme');
   const darkTheme = useComputedRef(settings, 'darkTheme');
@@ -142,6 +143,7 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
     settings,
     shouldRefreshValidatorDailyStats,
     showGraphRangeSelector,
+    subscriptDecimals,
     thousandSeparator,
     timeframeSetting,
     unifyAccountsTable,
