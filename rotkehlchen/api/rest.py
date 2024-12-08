@@ -3832,7 +3832,7 @@ class RestAPI:
         """Queries the specified event type for any new events and saves them in the DB"""
         try:
             if query_type == HistoryEventQueryType.EXCHANGES:
-                self.rotkehlchen.exchange_manager.query_history_events()
+                self.rotkehlchen.exchange_manager.query_other_history_events()
                 return OK_RESULT
 
             # else we query eth staking events

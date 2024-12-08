@@ -1238,7 +1238,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
 
         return returned_events, skipped, found_unknown_event
 
-    def query_history_events(self) -> None:
+    def query_other_history_events(self) -> None:
         self.msg_aggregator.add_message(
             message_type=WSMessageType.HISTORY_EVENTS_STATUS,
             data={

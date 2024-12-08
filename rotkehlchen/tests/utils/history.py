@@ -14,6 +14,7 @@ from rotkehlchen.errors.price import NoPriceForGivenTimestamp
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.asset_movement import AssetMovement as NewAssetMovement
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.rotkehlchen import Rotkehlchen
@@ -705,15 +706,15 @@ def mock_history_processing(
         limited_range_test = False
         expected_trades_num = 7
         expected_margin_num = 1
-        expected_asset_movements_num = 13
+        expected_asset_movements_num = 5
         if not limited_range_test:
             expected_margin_num = 2
-            expected_asset_movements_num = 13
+            expected_asset_movements_num = 5
         if end_ts == 1539713238:
             limited_range_test = True
             expected_trades_num = 6
             expected_margin_num = 1
-            expected_asset_movements_num = 12
+            expected_asset_movements_num = 3
         if end_ts == 1601040361:
             expected_trades_num = 6
 
@@ -724,7 +725,7 @@ def mock_history_processing(
         assert len(margin_positions) == expected_margin_num
 
         asset_movements = [x for x in events if isinstance(x, AssetMovement)]
-        assert len(asset_movements) == expected_asset_movements_num
+        assert len(asset_movements) == 10
         if not limited_range_test:
             assert asset_movements[0].location == Location.KRAKEN
             assert asset_movements[0].category == AssetMovementCategory.WITHDRAWAL
@@ -756,15 +757,27 @@ def mock_history_processing(
             assert asset_movements[9].location == Location.POLONIEX
             assert asset_movements[9].category == AssetMovementCategory.WITHDRAWAL
             assert asset_movements[9].asset == A_ETH
-            assert asset_movements[10].location == Location.BITMEX
-            assert asset_movements[10].category == AssetMovementCategory.DEPOSIT
-            assert asset_movements[10].asset == A_BTC
-            assert asset_movements[11].location == Location.BITMEX
-            assert asset_movements[11].category == AssetMovementCategory.WITHDRAWAL
-            assert asset_movements[11].asset == A_BTC
-            assert asset_movements[12].location == Location.BITMEX
-            assert asset_movements[12].category == AssetMovementCategory.WITHDRAWAL
-            assert asset_movements[12].asset == A_BTC
+
+        new_asset_movements = [x for x in events if isinstance(x, NewAssetMovement)]
+        assert len(new_asset_movements) == expected_asset_movements_num
+        if not limited_range_test:
+            assert new_asset_movements[0].location == Location.BITMEX
+            assert new_asset_movements[0].event_type == HistoryEventType.DEPOSIT
+            assert new_asset_movements[0].asset == A_BTC
+            assert new_asset_movements[1].location == Location.BITMEX
+            assert new_asset_movements[1].event_type == HistoryEventType.WITHDRAWAL
+            assert new_asset_movements[1].asset == A_BTC
+            assert new_asset_movements[2].location == Location.BITMEX
+            assert new_asset_movements[2].event_type == HistoryEventType.WITHDRAWAL
+            assert new_asset_movements[2].event_subtype == HistoryEventSubType.FEE
+            assert new_asset_movements[2].asset == A_BTC
+            assert new_asset_movements[3].location == Location.BITMEX
+            assert new_asset_movements[3].event_type == HistoryEventType.WITHDRAWAL
+            assert new_asset_movements[3].asset == A_BTC
+            assert new_asset_movements[4].location == Location.BITMEX
+            assert new_asset_movements[4].event_type == HistoryEventType.WITHDRAWAL
+            assert new_asset_movements[4].event_subtype == HistoryEventSubType.FEE
+            assert new_asset_movements[4].asset == A_BTC
 
         tx_events = [x for x in events if isinstance(x, EvmEvent)]
         gas_in_eth = FVal('14.36963')
