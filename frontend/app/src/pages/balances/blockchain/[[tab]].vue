@@ -25,6 +25,7 @@ import CardTitle from '@/components/typography/CardTitle.vue';
 import HideSmallBalances from '@/components/settings/HideSmallBalances.vue';
 import PriceRefresh from '@/components/helper/PriceRefresh.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
+import AccountBalancesExportImport from '@/components/accounts/AccountBalancesExportImport.vue';
 import type { ComponentExposed } from 'vue-component-type-helpers';
 import type { RouteLocationRaw } from 'vue-router';
 
@@ -227,6 +228,7 @@ watchImmediate(route, (route) => {
         </div>
 
         <AccountBalancesSetting />
+        <AccountBalancesExportImport />
       </div>
 
       <Transition
