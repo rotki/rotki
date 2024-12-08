@@ -148,9 +148,9 @@ class CryptoAssetSchema(CryptoAssetFieldsSchema):
     def validate_schema(
             self,
             data: dict[str, Any],
-            **_kwargs: Any,
+            **kwargs: Any,
     ) -> None:
-        super().validate_schema(data, **_kwargs)
+        super().validate_schema(data, **kwargs)
         if self.expected_asset_type is None and data['asset_type'] is None:
             raise ValidationError(message='asset_type should be given', field_name='asset_type')
         if self.expected_asset_type is not None and data['asset_type'] is not None and data['asset_type'] != self.expected_asset_type:  # noqa: E501
@@ -210,9 +210,9 @@ class EvmTokenSchema(CryptoAssetFieldsSchema):
     def validate_schema(
             self,
             data: dict[str, Any],
-            **_kwargs: Any,
+            **kwargs: Any,
     ) -> None:
-        super().validate_schema(data, **_kwargs)
+        super().validate_schema(data, **kwargs)
         given_underlying_tokens = data.get('underlying_tokens')
         if given_underlying_tokens is not None:
             weight_sum = sum(x['weight'] for x in given_underlying_tokens)
