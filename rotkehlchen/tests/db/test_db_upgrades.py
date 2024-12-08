@@ -82,19 +82,18 @@ def assert_tx_hash_is_bytes(
     - Checks that comparing the entries after converting the bytes to its string equivalent yields
     the same as its `old` counterpart.
     """
-    for _old, _new in zip(old, new, strict=True):
-        assert isinstance(_new[tx_hash_index], bytes)
-        assert isinstance(_old[tx_hash_index], str)
-        _old = list(_old)
-        _new = list(_new)
+    for z_old, z_new in zip(old, new, strict=True):
+        assert isinstance(z_new[tx_hash_index], bytes)
+        assert isinstance(z_old[tx_hash_index], str)
+        l_new = list(z_new)
         if is_history_event is True:
-            _new[tx_hash_index] = make_serialized_event_identifier(
-                location=Location.deserialize_from_db(_new[4]),
-                raw_event_identifier=_new[1],
+            l_new[tx_hash_index] = make_serialized_event_identifier(
+                location=Location.deserialize_from_db(l_new[4]),
+                raw_event_identifier=l_new[1],
             )
         else:
-            _new[tx_hash_index] = deserialize_evm_tx_hash(_new[tx_hash_index]).hex()  # pylint: disable=no-member
-        assert _old == _new
+            l_new[tx_hash_index] = deserialize_evm_tx_hash(l_new[tx_hash_index]).hex()  # pylint: disable=no-member
+        assert list(z_old) == l_new
 
 
 @contextmanager

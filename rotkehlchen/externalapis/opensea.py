@@ -370,11 +370,11 @@ class Opensea(ExternalServiceWithApiKey):
                     endpoint='collectionstats', options={'name': entry['collection']},
                 )
                 log.debug(stats_result)
-                _floor_price = (
+                raw_floor_price = (
                     stats_result['total']['floor_price'] or stats_result['total']['average_price']
                 )
                 floor_price = deserialize_optional_to_optional_fval(
-                    value=_floor_price,
+                    value=raw_floor_price,
                     name='floor price',
                     location='opensea',
                 )
