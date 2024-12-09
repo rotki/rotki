@@ -2,7 +2,7 @@ gevent==24.11.1
 greenlet==3.1.1
 gevent-websocket==0.10.1  # like the below is abandoned
 wsaccel==0.6.7  # recommended for acceleration of gevent-websocket. But abandoned.
-web3==7.6.0
+web3==7.5.0  # 7.6.0 has a performance issue https://github.com/ethereum/web3.py/issues/3536. Updated when fixed
 eth-typing==5.0.1
 content-hash==2.0.0
 rotki-pysqlcipher3==2024.10.1
