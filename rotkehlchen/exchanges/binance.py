@@ -1615,10 +1615,3 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
             end_ts: Timestamp,
     ) -> list[MarginPosition]:
         return []  # noop for binance
-
-    def query_online_income_loss_expense(
-            self,
-            start_ts: Timestamp,  # pylint: disable=unused-argument
-            end_ts: Timestamp,
-    ) -> list['HistoryEvent']:
-        return []  # noop for binance

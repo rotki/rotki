@@ -39,7 +39,6 @@ from rotkehlchen.user_messages import MessagesAggregator
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import AssetWithOracles
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.history.events.structures.base import HistoryEvent
 
 
 logger = logging.getLogger(__name__)
@@ -371,11 +370,4 @@ class Iconomi(ExchangeInterface):
             start_ts: Timestamp,  # pylint: disable=unused-argument
             end_ts: Timestamp,
     ) -> list[MarginPosition]:
-        return []  # noop for iconomi
-
-    def query_online_income_loss_expense(
-            self,
-            start_ts: Timestamp,  # pylint: disable=unused-argument
-            end_ts: Timestamp,
-    ) -> list['HistoryEvent']:
         return []  # noop for iconomi

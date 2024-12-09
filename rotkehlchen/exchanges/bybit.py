@@ -47,7 +47,6 @@ from rotkehlchen.utils.misc import ts_ms_to_sec, ts_now, ts_now_in_ms, ts_sec_to
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.history.events.structures.base import HistoryEvent
     from rotkehlchen.user_messages import MessagesAggregator
 
 
@@ -564,11 +563,4 @@ class Bybit(ExchangeInterface):
             start_ts: Timestamp,  # pylint: disable=unused-argument
             end_ts: Timestamp,
     ) -> list[MarginPosition]:
-        return []  # noop for bybit
-
-    def query_online_income_loss_expense(
-            self,
-            start_ts: Timestamp,  # pylint: disable=unused-argument
-            end_ts: Timestamp,
-    ) -> list['HistoryEvent']:
         return []  # noop for bybit

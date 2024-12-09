@@ -33,7 +33,7 @@ from rotkehlchen.utils.mixins.lockable import LockableQueryMixIn, protect_with_l
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.history.events.structures.base import HistoryBaseEntry, HistoryEvent
+    from rotkehlchen.history.events.structures.base import HistoryBaseEntry
     from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
@@ -213,22 +213,6 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
         """Queries the exchange's API for the asset movements of the user
 
         Should be implemented in subclasses.
-
-        Deprecated, will be replaced by query_online_history_events
-        """
-        return []
-
-    def query_online_income_loss_expense(
-            self,
-            start_ts: Timestamp,
-            end_ts: Timestamp,
-    ) -> list['HistoryEvent']:
-        """Queries the exchange's API for simple history events of the user
-
-        Should be implemented in subclasses.
-        Has to be implemented by exchanges if they have anything exchange specific
-
-        For example coinbase
 
         Deprecated, will be replaced by query_online_history_events
         """
@@ -420,53 +404,6 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
             )
 
     @protect_with_lock()
-    def query_income_loss_expense(
-            self,
-            start_ts: Timestamp,
-            end_ts: Timestamp,
-            only_cache: bool,
-    ) -> list['HistoryEvent']:
-        """Queries the local DB and the exchange for the income/loss/expense history of the user
-
-        If only_cache is true only what is already cached in the DB is returned without
-        an actual exchange query.
-
-        Deprecated, will be replaced by query_history_events
-        """
-        db = DBHistoryEvents(self.db)
-        if only_cache is False:
-            ranges = DBQueryRanges(self.db)
-            location_string = f'{self.location!s}_history_events_{self.name}'
-            with self.db.conn.read_ctx() as cursor:
-                ranges_to_query = ranges.get_location_query_ranges(
-                    cursor=cursor,
-                    location_string=location_string,
-                    start_ts=start_ts,
-                    end_ts=end_ts,
-                )
-
-            for query_start_ts, query_end_ts in ranges_to_query:
-                new_events = self.query_online_income_loss_expense(
-                    start_ts=query_start_ts,
-                    end_ts=query_end_ts,
-                )
-                with self.db.user_write() as write_cursor:
-                    if len(new_events) != 0:
-                        db.add_history_events(write_cursor, new_events)
-                    ranges.update_used_query_range(
-                        write_cursor=write_cursor,
-                        location_string=location_string,
-                        queried_ranges=[(query_start_ts, query_end_ts)],
-                    )
-
-        filter_query = HistoryEventFilterQuery.make(
-            from_ts=start_ts,
-            to_ts=end_ts,
-            location=self.location,
-        )
-        with self.db.conn.read_ctx() as cursor:
-            return db.get_history_events(cursor, filter_query=filter_query, has_premium=True)  # type: ignore[return-value]  # HistoryBaseEntry vs HistoryEvent
-
     def query_history_events(self) -> None:
         """Queries the exchange for new history events and saves them to the database."""
         db = DBHistoryEvents(self.db)

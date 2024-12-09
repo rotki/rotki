@@ -8,7 +8,8 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.converters import asset_from_coinbase
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_1INCH, A_BTC, A_ETH, A_EUR, A_SOL, A_USDC
-from rotkehlchen.db.filtering import TradesFilterQuery
+from rotkehlchen.db.filtering import HistoryEventFilterQuery, TradesFilterQuery
+from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.exchanges.coinbase import Coinbase, trade_from_conversion
 from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
@@ -483,7 +484,8 @@ def test_coinbase_query_deposit_withdrawals(function_scope_coinbase):
     assert movements[0].timestamp == 1502554304
 
 
-def test_coinbase_query_income_loss_expense(
+def test_coinbase_query_history_events(
+        database,
         function_scope_coinbase,
         price_historian,    # pylint: disable=unused-argument
 ):
@@ -491,10 +493,13 @@ def test_coinbase_query_income_loss_expense(
     coinbase = function_scope_coinbase
 
     with patch.object(coinbase.session, 'get', side_effect=mock_normal_coinbase_query):
-        events = coinbase.query_income_loss_expense(
-            start_ts=0,
-            end_ts=1612439233,
-            only_cache=False,
+        coinbase.query_history_events()
+
+    with database.conn.read_ctx() as cursor:
+        events = DBHistoryEvents(database).get_history_events(
+            cursor,
+            filter_query=HistoryEventFilterQuery.make(location=Location.COINBASE),
+            has_premium=True,
         )
 
     warnings = coinbase.msg_aggregator.consume_warnings()
@@ -539,20 +544,6 @@ def test_coinbase_query_income_loss_expense(
         ),
     ]
     assert expected_events == events
-
-    # and now try to query within a specific range
-    with patch.object(coinbase.session, 'get', side_effect=mock_normal_coinbase_query):
-        events = coinbase.query_income_loss_expense(
-            start_ts=0,
-            end_ts=1609877514,
-            only_cache=False,
-        )
-
-    warnings = coinbase.msg_aggregator.consume_warnings()
-    errors = coinbase.msg_aggregator.consume_errors()
-    assert len(warnings) == 0
-    assert len(errors) == 0
-    assert events == [expected_events[0]]
 
 
 def test_asset_conversion():
