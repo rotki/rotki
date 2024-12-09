@@ -2,7 +2,7 @@ import { Blockchain } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
 import { isBtcChain } from '@/types/blockchain/chains';
-import { XpubPrefix, getKeyType, isPrefixed } from '@/utils/xpub';
+import { getKeyType, guessPrefix } from '@/utils/xpub';
 import { getAccountAddress, getChain } from '@/utils/blockchain/accounts/utils';
 import { logger } from '@/utils/logging';
 import { useBlockchainStore } from '@/store/blockchain';
@@ -101,8 +101,7 @@ export function editBlockchainAccount(account: BlockchainAccountBalance): Accoun
   else if ('xpub' in account.data) {
     const chain = getChain(account);
     assert(chain && isBtcChain(chain));
-    const match = isPrefixed(account.data.xpub);
-    const prefix = match?.[1] ?? XpubPrefix.XPUB;
+    const prefix = guessPrefix(account.data.xpub);
     return {
       chain,
       data: {
@@ -111,7 +110,7 @@ export function editBlockchainAccount(account: BlockchainAccountBalance): Accoun
         xpub: {
           derivationPath: account.data.derivationPath ?? '',
           xpub: account.data.xpub,
-          xpubType: getKeyType(prefix as XpubPrefix),
+          xpubType: getKeyType(prefix),
         },
       },
       mode: 'edit',

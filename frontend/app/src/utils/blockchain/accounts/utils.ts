@@ -1,17 +1,22 @@
-import type { BlockchainAccountData } from '@/types/blockchain/accounts';
+import type { BlockchainAccountData, XpubData } from '@/types/blockchain/accounts';
+
+export function getXpubId(data: Omit<XpubData, 'type'>): string {
+  if (!data.derivationPath)
+    return data.xpub;
+
+  return `${data.xpub}#${data.derivationPath}`;
+}
 
 function getDataId(group: { data: BlockchainAccountData }): string {
-  if (group.data.type === 'address') {
-    return group.data.address;
+  const data = group.data;
+  if (data.type === 'address') {
+    return data.address;
   }
-  else if (group.data.type === 'validator') {
-    return group.data.publicKey;
+  else if (data.type === 'validator') {
+    return data.publicKey;
   }
   else {
-    if (!group.data.derivationPath)
-      return group.data.xpub;
-
-    return `${group.data.xpub}#${group.data.derivationPath}`;
+    return getXpubId(data);
   }
 }
 
