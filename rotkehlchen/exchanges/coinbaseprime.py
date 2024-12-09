@@ -534,13 +534,6 @@ class Coinbaseprime(ExchangeInterface):
 
         return dict(returned_balances), ''
 
-    def query_online_income_loss_expense(
-            self,
-            start_ts: Timestamp,
-            end_ts: Timestamp,
-    ) -> list['HistoryEvent']:
-        return []
-
     def query_history_events(
             self,
             start_ts: Timestamp,

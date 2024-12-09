@@ -483,7 +483,7 @@ def test_coinbase_query_deposit_withdrawals(function_scope_coinbase):
     assert movements[0].timestamp == 1502554304
 
 
-def test_coinbase_query_income_loss_expense(
+def test_coinbase_query_history_events(
         function_scope_coinbase,
         price_historian,    # pylint: disable=unused-argument
 ):
@@ -491,7 +491,7 @@ def test_coinbase_query_income_loss_expense(
     coinbase = function_scope_coinbase
 
     with patch.object(coinbase.session, 'get', side_effect=mock_normal_coinbase_query):
-        events = coinbase.query_income_loss_expense(
+        events = coinbase.query_history_events(
             start_ts=0,
             end_ts=1612439233,
             only_cache=False,
@@ -542,7 +542,7 @@ def test_coinbase_query_income_loss_expense(
 
     # and now try to query within a specific range
     with patch.object(coinbase.session, 'get', side_effect=mock_normal_coinbase_query):
-        events = coinbase.query_income_loss_expense(
+        events = coinbase.query_history_events(
             start_ts=0,
             end_ts=1609877514,
             only_cache=False,
