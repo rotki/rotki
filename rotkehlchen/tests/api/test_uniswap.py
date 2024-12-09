@@ -7,8 +7,10 @@ from unittest.mock import patch
 import pytest
 import requests
 
-from rotkehlchen.chain.ethereum.interfaces.ammswap.types import LiquidityPoolEventsBalance
-from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.chain.ethereum.interfaces.ammswap.types import (
+    LiquidityPoolEventsBalance,
+)
+from rotkehlchen.chain.evm.types import ChecksumEvmAddress, string_to_evm_address
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_WETH
 from rotkehlchen.fval import FVal
@@ -22,7 +24,10 @@ from rotkehlchen.tests.utils.api import (
     wait_for_async_task,
 )
 from rotkehlchen.tests.utils.constants import A_DOLLAR_BASED
-from rotkehlchen.tests.utils.ethereum import ANKR_NODE, get_decoded_events_of_transaction
+from rotkehlchen.tests.utils.ethereum import (
+    ANKR_NODE,
+    get_decoded_events_of_transaction,
+)
 from rotkehlchen.types import AssetAmount, Price, deserialize_evm_tx_hash
 
 if TYPE_CHECKING:
@@ -38,9 +43,9 @@ LP_V3_HOLDER_ADDRESS = string_to_evm_address('0xEf45d2ad5e0E01e4B57A6229B590c798
 @pytest.mark.parametrize('ethereum_accounts', [[LP_HOLDER_ADDRESS]])
 @pytest.mark.parametrize('ethereum_modules', [['compound']])
 def test_get_balances_module_not_activated(
-        rotkehlchen_api_server,
-        ethereum_accounts,  # pylint: disable=unused-argument
-):
+        rotkehlchen_api_server: 'APIServer',
+        ethereum_accounts: list[ChecksumEvmAddress],  # pylint: disable=unused-argument
+) -> None:
     response = requests.get(
         api_url_for(
             api_server=rotkehlchen_api_server,
@@ -65,7 +70,7 @@ def test_get_balances(
         rotkehlchen_api_server: 'APIServer',
         start_with_valid_premium: bool,
         inquirer: Inquirer,  # pylint: disable=unused-argument
-):
+) -> None:
     """
     Check querying the uniswap balances endpoint works. Uses real data. Needs the deposit
     event in uniswap to trigger the logic based on events to query pool balances.
@@ -147,9 +152,9 @@ def test_get_balances(
 @pytest.mark.parametrize('default_mock_price_value', [ONE])
 def test_get_events_history_filtering_by_timestamp(
         rotkehlchen_api_server: 'APIServer',
-        inquirer,  # pylint: disable=unused-argument
-        ethereum_accounts,
-):
+        inquirer: Inquirer,  # pylint: disable=unused-argument
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
     """Test the events balances from 1604273256 to 1604283808 (both included).
 
     LPs involved by the address within this time range: 1, $BASED-WETH
@@ -221,7 +226,7 @@ def test_get_events_history_filtering_by_timestamp(
 @pytest.mark.parametrize('ethereum_accounts', [[LP_V3_HOLDER_ADDRESS]])
 @pytest.mark.parametrize('ethereum_modules', [['uniswap']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
-def test_get_v3_balances_premium(rotkehlchen_api_server):
+def test_get_v3_balances_premium(rotkehlchen_api_server: 'APIServer') -> None:
     """Check querying the uniswap balances v3 endpoint works."""
     response = requests.get(
         api_url_for(
@@ -274,7 +279,7 @@ def test_get_v3_balances_premium(rotkehlchen_api_server):
 @pytest.mark.parametrize('ethereum_accounts', [[LP_V3_HOLDER_ADDRESS]])
 @pytest.mark.parametrize('ethereum_modules', [['uniswap']])
 @pytest.mark.parametrize('start_with_valid_premium', [False])
-def test_get_v3_balances_no_premium(rotkehlchen_api_server):
+def test_get_v3_balances_no_premium(rotkehlchen_api_server: 'APIServer') -> None:
     """Check querying the uniswap balances v3 endpoint works."""
     response = requests.get(
         api_url_for(
