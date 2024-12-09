@@ -61,3 +61,12 @@ export const keyType: XpubType[] = [
 export function isPrefixed(value: string): RegExpMatchArray | null {
   return value.match(/([x-z]pub)(.*)/);
 }
+
+export function guessPrefix(key: string): XpubPrefix {
+  const match = isPrefixed(key);
+  if (!match) {
+    throw new Error('Invalid key, key should be prefixed with xpub, ypub or zpub');
+  }
+  const prefix = match?.[1] ?? XpubPrefix.XPUB;
+  return prefix as XpubPrefix;
+}
