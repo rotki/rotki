@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Monerium transactions with multiple mint or burn events in them will now properly distinguish which of the events belong to the user and only decode them.
 * :feature:`-` Show upcoming events on the right side of the calendar view.
 * :bug:`-` Fix the issue where clicking the link to input the Etherscan key doesn't open the correct tab.
 * :bug:`8982` Fix the issue where Cmd / Alt + Arrow Left / Arrow Right forces navigation, as it should interact with user selection in text input.
