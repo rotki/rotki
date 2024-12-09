@@ -39,7 +39,6 @@ from rotkehlchen.utils.misc import ts_ms_to_sec, ts_sec_to_ms
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import AssetWithOracles
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.history.events.structures.base import HistoryEvent
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -369,13 +368,6 @@ class Okx(ExchangeInterface):
                 movements.append(movement)
 
         return movements
-
-    def query_online_income_loss_expense(
-            self,
-            start_ts: Timestamp,
-            end_ts: Timestamp,
-    ) -> list['HistoryEvent']:
-        return []  # noop for okx
 
     def trade_from_okx(self, raw_trade: dict[str, Any]) -> Trade | None:
         """

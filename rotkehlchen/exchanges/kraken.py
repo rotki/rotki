@@ -673,13 +673,6 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
     ) -> list[MarginPosition]:
         return []  # noop for kraken
 
-    def query_online_income_loss_expense(
-            self,
-            start_ts: Timestamp,  # pylint: disable=unused-argument
-            end_ts: Timestamp,
-    ) -> list['HistoryEvent']:
-        return []  # noop for kraken
-
     def process_kraken_events_for_trade(
             self,
             trade_parts: list[HistoryEvent],

@@ -37,7 +37,6 @@ from rotkehlchen.utils.misc import iso8601ts_to_timestamp
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.history.events.structures.base import HistoryEvent
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -340,13 +339,6 @@ class Bitcoinde(ExchangeInterface):
             start_ts: Timestamp,  # pylint: disable=unused-argument
             end_ts: Timestamp,
     ) -> list[AssetMovement]:
-        return []  # noop for bitcoinde
-
-    def query_online_income_loss_expense(
-            self,
-            start_ts: Timestamp,  # pylint: disable=unused-argument
-            end_ts: Timestamp,
-    ) -> list['HistoryEvent']:
         return []  # noop for bitcoinde
 
     def query_online_margin_history(
