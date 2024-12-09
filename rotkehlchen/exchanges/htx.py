@@ -42,7 +42,6 @@ if TYPE_CHECKING:
     from rotkehlchen.assets.asset import AssetWithOracles
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.exchanges.data_structures import MarginPosition
-    from rotkehlchen.history.events.structures.base import HistoryEvent
     from rotkehlchen.user_messages import MessagesAggregator
 
 
@@ -359,13 +358,6 @@ class Htx(ExchangeInterface):
             start_ts: Timestamp,
             end_ts: Timestamp,
     ) -> list['MarginPosition']:
-        return []  # noop for htx
-
-    def query_online_income_loss_expense(
-            self,
-            start_ts: Timestamp,
-            end_ts: Timestamp,
-    ) -> list['HistoryEvent']:
         return []  # noop for htx
 
     def query_online_trade_history(

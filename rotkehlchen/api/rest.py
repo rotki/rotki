@@ -3831,11 +3831,7 @@ class RestAPI:
     def query_online_events(self, query_type: HistoryEventQueryType) -> dict[str, Any]:
         """Queries the specified event type for any new events and saves them in the DB"""
         try:
-            if query_type == HistoryEventQueryType.EXCHANGES:
-                self.rotkehlchen.exchange_manager.query_history_events()
-                return OK_RESULT
-
-            # else we query eth staking events
+            # query eth staking events
             eth2 = self.rotkehlchen.chains_aggregator.get_module('eth2')
             if eth2 is None:
                 return wrap_in_fail_result(

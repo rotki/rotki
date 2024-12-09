@@ -54,6 +54,7 @@ from rotkehlchen.utils.mixins.lockable import protect_with_lock
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import AssetWithOracles
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.history.events.structures.base import HistoryBaseEntry
 
 
 PRIME_BASE_URL: Final = 'https://api.prime.coinbase.com/v1'
@@ -533,14 +534,12 @@ class Coinbaseprime(ExchangeInterface):
 
         return dict(returned_balances), ''
 
-    def query_online_income_loss_expense(
+    def query_history_events(
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> list['HistoryEvent']:
-        return []
-
-    def query_history_events(self) -> None:
+            only_cache: bool,
+    ) -> list['HistoryBaseEntry']:
         """Query history events from the current exchange
         instance and store them in the database
         """
@@ -553,16 +552,16 @@ class Coinbaseprime(ExchangeInterface):
                 ranges_to_query = ranges.get_location_query_ranges(
                     cursor=cursor,
                     location_string=range_query_name,
-                    start_ts=Timestamp(0),
-                    end_ts=ts_now(),
+                    start_ts=start_ts,
+                    end_ts=end_ts,
                 )
 
-            for start_ts, end_ts in ranges_to_query:
+            for query_start_ts, query_end_ts in ranges_to_query:
                 history_events = []
                 query_params = {
                     'sort_direction': 'ASC',
-                    'start_time': timestamp_to_iso8601(start_ts),
-                    'end_time': timestamp_to_iso8601(end_ts),
+                    'start_time': timestamp_to_iso8601(query_start_ts),
+                    'end_time': timestamp_to_iso8601(query_end_ts),
                     'types': ['CONVERSION', 'REWARD'],
                 }
                 new_events_list: list[list[HistoryEvent]] = self._query_paginated_endpoint(
@@ -582,8 +581,10 @@ class Coinbaseprime(ExchangeInterface):
                     ranges.update_used_query_range(
                         write_cursor=write_cursor,
                         location_string=range_query_name,
-                        queried_ranges=[(start_ts, end_ts)],
+                        queried_ranges=[(query_start_ts, query_end_ts)],
                     )
+
+        return []
 
     def query_online_deposits_withdrawals(
             self,

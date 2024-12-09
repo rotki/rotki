@@ -1,7 +1,7 @@
 import csv
 from enum import Enum, auto
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.converters import asset_from_bittrex
@@ -116,6 +116,7 @@ class BittrexImporter(BaseExchangeImporter):
         - KeyError
         - DeserializationError
         """
+        event_type: Literal[HistoryEventType.DEPOSIT, HistoryEventType.WITHDRAWAL]
         if file_type == BittrexFileType.DEPOSITS_AND_WITHDRAWALS:
             asset = csv_row['Currency']
             event_type = HistoryEventType.DEPOSIT if csv_row['Type'] == 'DEPOSIT' else HistoryEventType.WITHDRAWAL  # noqa: E501
@@ -154,7 +155,7 @@ class BittrexImporter(BaseExchangeImporter):
         asset = asset_from_bittrex(asset)
         return [AssetMovement(
             location=Location.BITTREX,
-            event_type=event_type,  # type: ignore[arg-type]  # will only be deposit or withdrawal
+            event_type=event_type,
             timestamp=ts_sec_to_ms(deserialize_timestamp_from_date(
                 date=date,
                 formatstr=timestamp_format,

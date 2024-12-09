@@ -23,7 +23,7 @@ from rotkehlchen.history.events.structures.base import (
 from rotkehlchen.inquirer import A_ETH, A_USD
 from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import FVal, Location
+from rotkehlchen.types import FVal, Location, Timestamp
 from rotkehlchen.utils.misc import TimestampMS, ts_now
 
 
@@ -333,7 +333,11 @@ def test_history_events(function_scope_coinbaseprime: Coinbaseprime):
         attribute='_api_query',
         new=mock_query,
     ):
-        function_scope_coinbaseprime.query_history_events()
+        function_scope_coinbaseprime.query_history_events(
+            start_ts=Timestamp(0),
+            end_ts=ts_now(),
+            only_cache=False,
+        )
 
     history_events_db = DBHistoryEvents(function_scope_coinbaseprime.db)
     with history_events_db.db.conn.read_ctx() as cursor:
