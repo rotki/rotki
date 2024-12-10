@@ -3047,6 +3047,10 @@
     "lt": "<"
   },
   "ignore": {
+    "confirm": {
+      "title": "Ignore Asset",
+      "message": "Are you sure you want to ignore {asset}?\n\nIgnoring {asset} will prevent rotki from displaying any {asset} balances across all locations and will hide all events related to it."
+    },
     "failed": {
       "ignore_message": "{length} asset(s) could not be added to ignored assets: {message}",
       "ignore_title": "Failed to ignore assets",
