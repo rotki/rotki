@@ -4,26 +4,7 @@ import { useAddressBookImport } from '@/composables/address-book/use-address-boo
 import { CSVMissingHeadersError, useCsvImportExport } from '@/composables/common/use-csv-import-export';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import { useNotificationsStore } from '@/store/notifications';
-
-class MockFile {
-  private content: string;
-  name: string;
-  type: string;
-
-  constructor(content: string[], filename: string, options: { type: string }) {
-    this.content = content.join('');
-    this.name = filename;
-    this.type = options.type;
-  }
-
-  text(): string {
-    return this.content;
-  }
-}
-
-function createMockCSV(content: string[]): File {
-  return new MockFile(content, 'test.csv', { type: 'text/csv' }) as unknown as File;
-}
+import { createMockCSV } from '../../../tests/unit/utils/mocks/file';
 
 // Mocks
 vi.mock('@/store/notifications', () => ({
