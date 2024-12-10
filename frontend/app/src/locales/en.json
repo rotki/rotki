@@ -1075,6 +1075,16 @@
       },
       "private": "Private",
       "private_description": "address book is saved only for this account."
+    },
+    "import": {
+      "title": "Import Address Book Entries",
+      "import_error": {
+        "message": "Error importing address book names: {error}",
+        "invalid_format": "Invalid CSV format. Must contain \"address\" and \"name\" columns."
+      },
+      "import_success": {
+        "message": "{length} entries successfully added to the address book"
+      }
     }
   },
   "airdrops": {

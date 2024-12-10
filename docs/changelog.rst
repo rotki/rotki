@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :feature:`7144` Users will be able to import multiple addresses into the address book via CSV.
+* :feature:`5822` Users will be able to import and export blockchain accounts with the information (labels, tags).
 * :feature:`-` Added an option to display leading zeros of small decimal values as subscript.
 * :bug:`-` The application will now only show a single notification for multiple asset deserialization errors.
 * :feature:`-` Makes the tag manager accessible from left sidebar menu.

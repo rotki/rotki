@@ -1,9 +1,14 @@
 <script setup lang="ts">
-import { externalLinks } from '@shared/external-links';
-import FileUpload from '@/components/import/FileUpload.vue';
+import { externalLinks } from '@shared/external-links.ts';
+import { useAddressBookImport } from '@/composables/address-book/use-address-book-import.ts';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
-import { useAccountImportExport } from '@/composables/accounts/use-account-import-export';
+import FileUpload from '@/components/import/FileUpload.vue';
+import { useNotificationsStore } from '@/store/notifications';
 import type { ComponentExposed } from 'vue-component-type-helpers';
+
+const emit = defineEmits<{
+  (e: 'refresh'): void;
+}>();
 
 const importFileUploader = useTemplateRef<ComponentExposed<typeof FileUpload>>('uploader');
 const importFile = ref<File>();
@@ -11,7 +16,8 @@ const importDialogOpen = ref<boolean>(false);
 const loading = ref<boolean>(false);
 
 const { t } = useI18n();
-const { exportAccounts, importAccounts } = useAccountImportExport();
+const { importAddressBook } = useAddressBookImport();
+const { notify } = useNotificationsStore();
 
 async function doImport() {
   if (!isDefined(importFile)) {
@@ -20,10 +26,21 @@ async function doImport() {
   const file = get(importFile);
   set(loading, true);
   set(importDialogOpen, false);
-  await importAccounts(file);
+  const successEntries = await importAddressBook(file);
   set(importFile, undefined);
   get(importFileUploader)?.removeFile();
   set(loading, false);
+  if (successEntries > 0) {
+    notify({
+      display: true,
+      message: t('address_book.import.import_success.message', {
+        length: successEntries,
+      }),
+      severity: Severity.INFO,
+      title: t('address_book.import.title'),
+    });
+  }
+  emit('refresh');
 }
 </script>
 
@@ -48,21 +65,12 @@ async function doImport() {
       <div class="py-2">
         <RuiButton
           variant="list"
-          @click="exportAccounts()"
-        >
-          <template #prepend>
-            <RuiIcon name="file-download-line" />
-          </template>
-          {{ t('blockchain_balances.export_blockchain_accounts') }}
-        </RuiButton>
-        <RuiButton
-          variant="list"
           @click="importDialogOpen = true;"
         >
           <template #prepend>
             <RuiIcon name="file-upload-line" />
           </template>
-          {{ t('blockchain_balances.import_blockchain_accounts') }}
+          {{ t('address_book.import.title') }}
         </RuiButton>
       </div>
     </RuiMenu>
@@ -72,7 +80,7 @@ async function doImport() {
     >
       <RuiCard>
         <template #header>
-          {{ t('blockchain_balances.import_blockchain_accounts') }}
+          {{ t('address_book.import.title') }}
         </template>
         <FileUpload
           ref="uploader"
@@ -85,7 +93,7 @@ async function doImport() {
             <template #here>
               <ExternalLink
                 color="primary"
-                :url="externalLinks.usageGuideSection.importBlockchainAccounts"
+                :url="externalLinks.usageGuideSection.importAddressBook"
               >
                 {{ t('common.here') }}
               </ExternalLink>
