@@ -19,6 +19,7 @@ import CollectionHandler from '@/components/helper/CollectionHandler.vue';
 import TableFilter from '@/components/table-filter/TableFilter.vue';
 import AssetStatusFilter from '@/components/asset-manager/AssetStatusFilter.vue';
 import IgnoreButtons from '@/components/history/IgnoreButtons.vue';
+import { useConfirmStore } from '@/store/confirm';
 import type { ActionStatus } from '@/types/action';
 import type { SupportedAsset } from '@rotki/common';
 import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
@@ -136,15 +137,28 @@ function getAsset(item: SupportedAsset) {
 const { setMessage } = useMessageStore();
 const { fetchIgnoredAssets, ignoreAsset, isAssetIgnored, unignoreAsset } = useIgnoredAssetsStore();
 const { isAssetWhitelisted, unWhitelistAsset, whitelistAsset } = useWhitelistedAssetsStore();
+const { show } = useConfirmStore();
 
 const { markAssetsAsSpam, removeAssetFromSpamList } = useSpamAsset();
 
 const { getChain } = useSupportedChains();
 
-async function toggleIgnoreAsset(identifier: string) {
-  if (get(isAssetIgnored(identifier)))
+async function toggleIgnoreAsset(asset: SupportedAsset) {
+  const { identifier, name, symbol } = asset;
+  if (get(isAssetIgnored(identifier))) {
     await unignoreAsset(identifier);
-  else await ignoreAsset(identifier);
+  }
+  else {
+    show({
+      message: t('ignore.confirm.message', {
+        asset: symbol || name,
+      }),
+      title: t('ignore.confirm.title'),
+      type: 'warning',
+    }, async () => {
+      await ignoreAsset(identifier);
+    });
+  }
 
   if (get(ignoredFilter).ignoredAssetsHandling !== 'none')
     emit('refresh');
@@ -315,7 +329,10 @@ const disabledRows = computed(() => {
             {{ formatType(row.assetType) }}
           </template>
           <template #item.ignored="{ row }">
-            <div class="flex justify-start items-center gap-2">
+            <div
+              v-if="row.assetType !== CUSTOM_ASSET"
+              class="flex justify-start items-center gap-2"
+            >
               <RuiTooltip
                 :popper="{ placement: 'top' }"
                 :open-delay="400"
@@ -328,7 +345,7 @@ const disabledRows = computed(() => {
                     hide-details
                     :disabled="isSpamAsset(row)"
                     :model-value="isAssetIgnored(row.identifier).value"
-                    @update:model-value="toggleIgnoreAsset(row.identifier)"
+                    @update:model-value="toggleIgnoreAsset(row)"
                   />
                 </template>
                 {{ t('ignore.spam.hint') }}
