@@ -9,6 +9,7 @@ import EthNamesHint from '@/components/EthNamesHint.vue';
 import TableFilter from '@/components/table-filter/TableFilter.vue';
 import ChainSelect from '@/components/accounts/blockchain/ChainSelect.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
+import AddressBookManagementMore from '@/components/address-book-manager/AddressBookManagementMore.vue';
 import type {
   AddressBookEntry,
   AddressBookLocation,
@@ -103,6 +104,9 @@ setPostSubmitFunc(fetchData);
         </template>
         {{ t('address_book.dialog.add_title') }}
       </RuiButton>
+      <AddressBookManagementMore
+        @refresh="fetchData()"
+      />
     </template>
 
     <RuiCard>
