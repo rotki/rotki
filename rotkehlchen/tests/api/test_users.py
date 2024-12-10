@@ -65,7 +65,11 @@ def check_user_status(api_server: APIServer) -> dict[str, str]:
     return assert_proper_sync_response_with_result(response)
 
 
-def test_loggedin_user_querying(rotkehlchen_api_server: APIServer, username: str, data_dir: Path):
+def test_loggedin_user_querying(
+        rotkehlchen_api_server: APIServer,
+        username: str,
+        data_dir: Path,
+) -> None:
     """Start with a logged in user and make sure we can query all users"""
     users_dir = data_dir / USERSDIR_NAME
     user_dir = users_dir / 'another_user'
@@ -83,7 +87,7 @@ def test_not_loggedin_user_querying(
         rotkehlchen_api_server: APIServer,
         username: str,
         data_dir: Path,
-):
+) -> None:
     """Start without logged in user and make sure we can query all users"""
     users_dir = data_dir / USERSDIR_NAME
     another_user_dir = users_dir / 'another_user'
@@ -101,7 +105,10 @@ def test_not_loggedin_user_querying(
 
 
 @pytest.mark.parametrize('start_with_logged_in_user', [False])
-def test_user_creation(rotkehlchen_api_server, data_dir):
+def test_user_creation(
+        rotkehlchen_api_server: APIServer,
+        data_dir: Path,
+) -> None:
     """Test that PUT at user endpoint can create a new user"""
     # Create a user without any premium credentials
     async_query = random.choice([False, True])
@@ -143,7 +150,10 @@ def test_user_creation(rotkehlchen_api_server, data_dir):
 
 
 @pytest.mark.parametrize('start_with_logged_in_user', [False])
-def test_user_creation_with_no_analytics(rotkehlchen_api_server, data_dir):
+def test_user_creation_with_no_analytics(
+        rotkehlchen_api_server: APIServer,
+        data_dir: Path,
+) -> None:
     """Test that providing specific settings at user creation works"""
     # Create a user without any premium credentials
     username = 'hania'
@@ -179,9 +189,10 @@ def test_user_creation_with_no_analytics(rotkehlchen_api_server, data_dir):
     ),
 )
 def test_user_creation_permission_error(
-        mock_path_mkdir, rotkehlchen_api_server,  # pylint:disable=unused-argument
-):
-    """Test that creating a user when data directory permissions are wrong is handled"""
+        rotkehlchen_api_server: APIServer,
+        mock_path_mkdir: Path,
+) -> None:
+    """Test that creati: Path,ng a user when data directory permissions are wrong is handled"""
     username = 'hania'
     data = {
         'name': username,
@@ -200,7 +211,10 @@ def test_user_creation_permission_error(
 
 
 @pytest.mark.parametrize('start_with_logged_in_user', [False])
-def test_user_creation_with_premium_credentials(rotkehlchen_api_server, data_dir):
+def test_user_creation_with_premium_credentials(
+        rotkehlchen_api_server: APIServer,
+        data_dir: Path,
+) -> None:
     """Test that PUT at user endpoint can create a new user"""
     # Create a user with premium credentials
     username = 'hania'
@@ -215,8 +229,8 @@ def test_user_creation_with_premium_credentials(rotkehlchen_api_server, data_dir
         PremiumCredentials(VALID_PREMIUM_KEY, VALID_PREMIUM_SECRET),
         username=username,
         patch_get=True,
-        metadata_last_modify_ts=0,
-        metadata_data_hash=b'',
+        metadata_last_modify_ts=Timestamp(0),
+        metadata_data_hash=str(b''),
         metadata_data_size=0,
     )
 
@@ -244,7 +258,10 @@ def test_user_creation_with_premium_credentials(rotkehlchen_api_server, data_dir
 
 
 @pytest.mark.parametrize('start_with_logged_in_user', [False])
-def test_user_creation_with_invalid_premium_credentials(rotkehlchen_api_server, data_dir):
+def test_user_creation_with_invalid_premium_credentials(
+        rotkehlchen_api_server: APIServer,
+        data_dir: Path,
+) -> None:
     """
     Test that invalid and unauthenticated premium credentials are handled at new user creation
     """
@@ -321,7 +338,10 @@ def test_user_creation_with_invalid_premium_credentials(rotkehlchen_api_server, 
 
 
 @pytest.mark.parametrize('start_with_logged_in_user', [False])
-def test_user_creation_errors(rotkehlchen_api_server, data_dir):
+def test_user_creation_errors(
+        rotkehlchen_api_server: APIServer,
+        data_dir: Path,
+) -> None:
     """Test errors and edge cases for user creation"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
 
@@ -331,7 +351,7 @@ def test_user_creation_errors(rotkehlchen_api_server, data_dir):
 
         # Missing username
         username = 'hania'
-        data = {'password': '1234'}
+        data: dict[str, str | float | int | bool] = {'password': '1234'}
         response = requests.put(api_url_for(rotkehlchen_api_server, 'usersresource'), json=data)
         assert_error_response(
             response=response,
@@ -447,7 +467,7 @@ def test_user_creation_errors(rotkehlchen_api_server, data_dir):
 def test_user_creation_with_already_loggedin_user(
         rotkehlchen_api_server: APIServer,
         username: str,
-):
+) -> None:
     """Test that creating a user while another one is logged in fails"""
     # Missing username
     data = {
@@ -466,7 +486,11 @@ def test_user_creation_with_already_loggedin_user(
     )
 
 
-def test_user_password_change(rotkehlchen_api_server, username, db_password):
+def test_user_password_change(
+        rotkehlchen_api_server: APIServer,
+        username: str,
+        db_password: str,
+) -> None:
     """
     Test that changing a logged-in user's users password works successfully and that
     common errors are handled. Also make sure logging in again with the new password works.
@@ -527,7 +551,7 @@ def test_user_password_change(rotkehlchen_api_server, username, db_password):
     assert rotki.data.db.password == new_password
 
     # Logout
-    data = {'action': 'logout'}
+    data: dict[str, str | bool] = {'action': 'logout'}
     response = requests.patch(
         api_url_for(rotkehlchen_api_server, 'usersbynameresource', name=username),
         json=data,
@@ -537,6 +561,10 @@ def test_user_password_change(rotkehlchen_api_server, username, db_password):
 
     # And login with the new password to make sure it works
     data = {'password': new_password, 'sync_approval': 'unknown', 'async_query': True}
+
+    users_data = check_user_status(rotkehlchen_api_server)
+    assert len(users_data) == 1
+    assert users_data[username] == 'loggedin'
 
     with ExitStack() as stack:
         patch_no_op_unlock(rotki, stack)
@@ -549,16 +577,13 @@ def test_user_password_change(rotkehlchen_api_server, username, db_password):
         check_proper_unlock_result(result)
 
     assert rotki.user_is_logged_in is True
-    users_data = check_user_status(rotkehlchen_api_server)
-    assert len(users_data) == 1
-    assert users_data[username] == 'loggedin'
 
 
 def test_user_logout(
         rotkehlchen_api_server: 'APIServer',
         username: str,
         db_password: str,
-):
+) -> None:
     """Test that user logout works successfully and that common errors are handled"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
 
@@ -625,7 +650,12 @@ def test_user_logout(
     assert rotki.user_is_logged_in is False
 
 
-def test_user_login(rotkehlchen_api_server, username, db_password, data_dir):
+def test_user_login(
+        rotkehlchen_api_server: 'APIServer',
+        username: str,
+        db_password: str,
+        data_dir: Path,
+) -> None:
     """Test that user login works properly"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
 
@@ -642,7 +672,7 @@ def test_user_login(rotkehlchen_api_server, username, db_password, data_dir):
     assert users_data['another_user'] == 'loggedout'
 
     # Logout of the active user
-    data = {'action': 'logout'}
+    data: dict[str, str | bool] = {'action': 'logout'}
     response = requests.patch(
         api_url_for(rotkehlchen_api_server, 'usersbynameresource', name=username),
         json=data,
@@ -657,6 +687,11 @@ def test_user_login(rotkehlchen_api_server, username, db_password, data_dir):
     # Now let's try to login
     data = {'password': db_password, 'sync_approval': 'unknown', 'async_query': True}
 
+    users_data = check_user_status(rotkehlchen_api_server)
+    assert len(users_data) == 2
+    assert users_data[username] == 'loggedin'
+    assert users_data['another_user'] == 'loggedout'
+
     with ExitStack() as stack:
         patch_no_op_unlock(rotki, stack)
         response = requests.post(
@@ -669,13 +704,10 @@ def test_user_login(rotkehlchen_api_server, username, db_password, data_dir):
         check_proper_unlock_result(result)
 
     assert rotki.user_is_logged_in is True
-    users_data = check_user_status(rotkehlchen_api_server)
-    assert len(users_data) == 2
-    assert users_data[username] == 'loggedin'
-    assert users_data['another_user'] == 'loggedout'
 
     # Logout again
-    data = {'action': 'logout'}
+    data = {'action': 'logout'}  # type: ignore  # TODO: mypy for some reason says that this statement is unreachable. Not sure why.
+
     response = requests.patch(
         api_url_for(rotkehlchen_api_server, 'usersbynameresource', name=username),
         json=data,
@@ -834,7 +866,10 @@ def test_user_login(rotkehlchen_api_server, username, db_password, data_dir):
         )
 
 
-def test_user_set_premium_credentials(rotkehlchen_api_server: APIServer, username: str):
+def test_user_set_premium_credentials(
+        rotkehlchen_api_server: APIServer,
+        username: str,
+) -> None:
     """Test that setting the premium credentials endpoint works.
 
     We mock the server accepting the premium credentials
@@ -864,7 +899,10 @@ def test_user_set_premium_credentials(rotkehlchen_api_server: APIServer, usernam
         assert rotki.premium.is_active()
 
 
-def test_user_del_premium_credentials(rotkehlchen_api_server, username):
+def test_user_del_premium_credentials(
+        rotkehlchen_api_server: APIServer,
+        username: str,
+) -> None:
     """Test that removing the premium credentials endpoint works.
 
     We first set up mock the server accepting the premium credentials
@@ -887,22 +925,25 @@ def test_user_del_premium_credentials(rotkehlchen_api_server, username):
             json=data,
         )
     with patched_get:
+        assert rotki.premium is not None
         assert rotki.premium.is_active()
 
     # Delete premium credentials for current user
+    assert rotki.premium is None
+    assert rotki.premium_sync_manager.premium is None  # type: ignore  # TODO: mypy for some reason says that this statement is unreachable. Not sure why.
     response = requests.delete(api_url_for(rotkehlchen_api_server, 'userpremiumkeyresource',
                                            name=username))
     assert_simple_ok_response(response)
-    assert rotki.premium is None
-    assert rotki.premium_sync_manager.premium is None
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('start_with_logged_in_user', [False])
 @mock.patch.object(Path, 'exists', side_effect=PermissionError)
 def test_user_login_user_dir_permission_error(
-        mock_path_exists, rotkehlchen_api_server, data_dir,  # pylint: disable=unused-argument
-):
+        mock_path_exists: bool,
+        rotkehlchen_api_server: 'APIServer',
+        data_dir: Path,  # pylint: disable=unused-argument
+) -> None:
     """Test that user login with userdir path permission errors is handled properly"""
     users_dir = data_dir / USERSDIR_NAME
     username = 'a_user'
@@ -935,8 +976,10 @@ def test_user_login_user_dir_permission_error(
     DBConnection, '__init__', side_effect=sqlcipher.OperationalError,  # pylint: disable=no-member
 )
 def test_user_login_db_permission_error(
-        mock_db_conn, rotkehlchen_api_server, data_dir,  # pylint: disable=unused-argument
-):
+        mock_db_conn: DBConnection,
+        rotkehlchen_api_server: APIServer,
+        data_dir: Path,  # pylint: disable=unused-argument
+) -> None:
     """Test that user login with db path permission errors is handled properly"""
     username = 'a_user'
     user_dir = data_dir / USERSDIR_NAME / username
@@ -962,7 +1005,10 @@ def test_user_login_db_permission_error(
     )
 
 
-def test_user_set_premium_credentials_errors(rotkehlchen_api_server: APIServer, username: str):
+def test_user_set_premium_credentials_errors(
+        rotkehlchen_api_server: APIServer,
+        username: str,
+) -> None:
     """Test that setting the premium credentials endpoint reacts properly to bad input"""
     # Set premium credentials for non-logged in user
     data = {'premium_api_key': 'dadssad', 'premium_api_secret': 'jhjhkh'}
@@ -989,11 +1035,15 @@ def test_user_set_premium_credentials_errors(rotkehlchen_api_server: APIServer, 
     )
 
 
-def test_users_by_name_endpoint_errors(rotkehlchen_api_server, username, db_password):
+def test_users_by_name_endpoint_errors(
+        rotkehlchen_api_server: APIServer,
+        username: str,
+        db_password: str,
+) -> None:
     """Test that user by name endpoint errors are handled (for login/logout and edit)"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     # Now let's try to login while the user is already logged in
-    data = {'password': db_password, 'sync_approval': 'unknown', 'async_query': True}
+    data: dict[str, str | bool] = {'password': db_password, 'sync_approval': 'unknown', 'async_query': True}  # noqa: E501
     response = requests.post(
         api_url_for(rotkehlchen_api_server, 'usersbynameresource', name=username),
         json=data,
@@ -1022,7 +1072,8 @@ def test_users_by_name_endpoint_errors(rotkehlchen_api_server, username, db_pass
     assert rotki.user_is_logged_in is False
 
     # Now let's try to login with an invalid password
-    data = {'password': 'wrong-password', 'sync_approval': 'unknown', 'async_query': True}
+    data = {'password': 'wrong-password', 'sync_approval': 'unknown', 'async_query': True}  # type: ignore  # TODO: mypy for some reason says that this statement is unreachable. Not sure why.
+
     response = requests.post(
         api_url_for(rotkehlchen_api_server, 'usersbynameresource', name=username),
         json=data,
