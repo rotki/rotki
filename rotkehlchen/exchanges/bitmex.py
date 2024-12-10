@@ -12,7 +12,6 @@ import requests
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset, AssetWithOracles
-from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_BTC
 from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
 from rotkehlchen.errors.asset import UnknownAsset
@@ -21,7 +20,7 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import Location, MarginPosition, Trade
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
 from rotkehlchen.exchanges.utils import deserialize_asset_movement_address, get_key_if_has_val
-from rotkehlchen.history.events.structures.asset_movement import AssetMovement
+from rotkehlchen.history.events.structures.asset_movement import create_asset_movement_with_fee
 from rotkehlchen.history.events.structures.types import HistoryEventType
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -337,28 +336,20 @@ class Bitmex(ExchangeInterface):
                     amount = AssetAmount(satoshis_to_btc(amount))
                     fee = Fee(satoshis_to_btc(fee))
 
-                movements.append(AssetMovement(
-                    location=Location.BITMEX,
+                movements.extend(create_asset_movement_with_fee(
+                    location=self.location,
                     event_type=event_type,
-                    timestamp=(timestamp_ms := ts_sec_to_ms(timestamp)),
+                    timestamp=ts_sec_to_ms(timestamp),
                     asset=asset,
-                    balance=Balance(amount),
+                    amount=amount,
+                    fee_asset=asset,
+                    fee=fee,
                     unique_id=str(movement['transactID']),
                     extra_data=maybe_set_transaction_extra_data(
                         address=deserialize_asset_movement_address(movement, 'address', asset),
                         transaction_id=get_key_if_has_val(movement, 'tx'),
                     ),
                 ))
-                if fee != ZERO:
-                    movements.append(AssetMovement(
-                        event_identifier=movements[-1].event_identifier,
-                        location=Location.BITMEX,
-                        event_type=event_type,
-                        timestamp=timestamp_ms,
-                        asset=asset,
-                        balance=Balance(fee),
-                        is_fee=True,
-                    ))
             except UnknownAsset as e:
                 self.send_unknown_asset_message(
                     asset_identifier=e.identifier,

@@ -20,14 +20,15 @@ from rotkehlchen.exchanges.bitfinex import (
     API_RATE_LIMITS_ERROR_MESSAGE,
     Bitfinex,
 )
-from rotkehlchen.exchanges.data_structures import AssetMovement, Trade, TradeType
+from rotkehlchen.exchanges.data_structures import Trade, TradeType
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.asset_movement import AssetMovement
+from rotkehlchen.history.events.structures.types import HistoryEventType
 from rotkehlchen.tests.utils.constants import A_NEO
 from rotkehlchen.tests.utils.exchanges import get_exchange_asset_symbols
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import (
     AssetAmount,
-    AssetMovementCategory,
     ChainID,
     EvmTokenKind,
     Fee,
@@ -35,6 +36,7 @@ from rotkehlchen.types import (
     LocationAssetMappingUpdateEntry,
     Price,
     Timestamp,
+    TimestampMS,
 )
 
 
@@ -158,7 +160,7 @@ def test_api_key_err_auth_nonce(mock_bitfinex):
         assert result is False
         assert msg == API_ERR_AUTH_NONCE_MESSAGE
 
-        movements = mock_bitfinex.query_online_deposits_withdrawals(0, 1)
+        movements = mock_bitfinex.query_online_history_events(0, 1)
         assert movements == []
         errors = mock_bitfinex.msg_aggregator.consume_errors()
         assert len(errors) == 1
@@ -357,7 +359,7 @@ def test_deserialize_trade_buy(mock_bitfinex):
         -0.09868591,
         'USD',
     ]
-    expected_trade = Trade(
+    expected_trade = [Trade(
         timestamp=Timestamp(1573485493),
         location=Location.BITFINEX,
         base_asset=A_WBTC,
@@ -369,7 +371,7 @@ def test_deserialize_trade_buy(mock_bitfinex):
         fee_currency=A_USD,
         link='399251013',
         notes='',
-    )
+    )]
     trade = mock_bitfinex._deserialize_trade(raw_result=raw_result)
     assert trade == expected_trade
 
@@ -389,7 +391,7 @@ def test_deserialize_trade_sell(mock_bitfinex):
         -0.09868591,
         'USD',
     ]
-    expected_trade = Trade(
+    expected_trade = [Trade(
         timestamp=Timestamp(1573485493),
         location=Location.BITFINEX,
         base_asset=A_ETH,
@@ -401,7 +403,7 @@ def test_deserialize_trade_sell(mock_bitfinex):
         fee_currency=A_USD,
         link='399251013',
         notes='',
-    )
+    )]
     trade = mock_bitfinex._deserialize_trade(raw_result=raw_result)
     assert trade == expected_trade
 
@@ -432,7 +434,7 @@ def test_delisted_pair_trades_work(mock_bitfinex):
         -0.09868591,
         'RLC',
     ]
-    expected_trade = Trade(
+    expected_trade = [Trade(
         timestamp=Timestamp(1573485493),
         location=Location.BITFINEX,
         base_asset=rlc,
@@ -444,7 +446,7 @@ def test_delisted_pair_trades_work(mock_bitfinex):
         fee_currency=rlc,
         link='399251013',
         notes='',
-    )
+    )]
     trade = mock_bitfinex._deserialize_trade(raw_result=raw_result)
     assert trade == expected_trade
 
@@ -867,18 +869,27 @@ def test_deserialize_asset_movement_deposit(mock_bitfinex):
         None,
     ]
     fee_asset = A_WBTC
-    expected_asset_movement = AssetMovement(
-        timestamp=Timestamp(1569348774),
+    expected_asset_movement = [AssetMovement(
+        timestamp=TimestampMS(1569348774000),
         location=Location.BITFINEX,
-        category=AssetMovementCategory.DEPOSIT,
-        address='DESTINATION_ADDRESS',
-        transaction_id='TRANSACTION_ID',
+        event_type=HistoryEventType.DEPOSIT,
         asset=fee_asset,
-        amount=FVal('0.26300954'),
-        fee_asset=fee_asset,
-        fee=Fee(FVal('0.00135')),
-        link=str(13105603),
-    )
+        balance=Balance(FVal('0.26300954')),
+        unique_id='13105603',
+        extra_data={
+            'movement_id': '13105603',
+            'address': 'DESTINATION_ADDRESS',
+            'transaction_id': 'TRANSACTION_ID',
+        },
+    ), AssetMovement(
+        timestamp=TimestampMS(1569348774000),
+        location=Location.BITFINEX,
+        event_type=HistoryEventType.DEPOSIT,
+        asset=fee_asset,
+        balance=Balance(FVal('0.00135')),
+        unique_id='13105603',
+        is_fee=True,
+    )]
     asset_movement = mock_bitfinex._deserialize_asset_movement(raw_result=raw_result)
     assert asset_movement == expected_asset_movement
 
@@ -912,18 +923,23 @@ def test_deserialize_asset_movement_withdrawal(mock_bitfinex):
         None,
     ]
     fee_asset = A_EUR
-    expected_asset_movement = AssetMovement(
-        timestamp=Timestamp(1569348774),
+    expected_asset_movement = [AssetMovement(
+        timestamp=TimestampMS(1569348774000),
         location=Location.BITFINEX,
-        category=AssetMovementCategory.WITHDRAWAL,
-        address=None,
-        transaction_id=None,
+        event_type=HistoryEventType.WITHDRAWAL,
         asset=fee_asset,
-        amount=FVal('0.26300954'),
-        fee_asset=fee_asset,
-        fee=Fee(FVal('0.00135')),
-        link=str(13105603),
-    )
+        balance=Balance(FVal('0.26300954')),
+        unique_id='13105603',
+        extra_data={'movement_id': '13105603'},
+    ), AssetMovement(
+        timestamp=TimestampMS(1569348774000),
+        location=Location.BITFINEX,
+        event_type=HistoryEventType.WITHDRAWAL,
+        asset=fee_asset,
+        balance=Balance(FVal('0.00135')),
+        unique_id='13105603',
+        is_fee=True,
+    )]
     asset_movement = mock_bitfinex._deserialize_asset_movement(raw_result=raw_result)
     assert asset_movement == expected_asset_movement
 
@@ -1134,7 +1150,7 @@ def test_query_online_deposits_withdrawals_case_1(mock_bitfinex):
     with ExitStack() as stack:
         stack.enter_context(api_limit_patch)
         api_query_mock = stack.enter_context(api_query_patch)
-        asset_movements = mock_bitfinex.query_online_deposits_withdrawals(
+        asset_movements = mock_bitfinex.query_online_history_events(
             start_ts=Timestamp(0),
             end_ts=Timestamp(int(datetime.datetime.now(tz=datetime.UTC).timestamp())),
         )
@@ -1144,40 +1160,66 @@ def test_query_online_deposits_withdrawals_case_1(mock_bitfinex):
         eur_fee_asset = A_EUR
         expected_asset_movements = [
             AssetMovement(
-                timestamp=Timestamp(1606899600),
+                timestamp=TimestampMS(1606899600000),
                 location=Location.BITFINEX,
-                category=AssetMovementCategory.DEPOSIT,
-                address='DESTINATION_ADDRESS',
-                transaction_id='TRANSACTION_ID',
+                event_type=HistoryEventType.DEPOSIT,
                 asset=wbtc_fee_asset,
-                amount=FVal('0.26300954'),
-                fee_asset=wbtc_fee_asset,
-                fee=Fee(FVal('0.00135')),
-                link=str(1),
+                balance=Balance(FVal('0.26300954')),
+                unique_id='1',
+                extra_data={
+                    'movement_id': '1',
+                    'address': 'DESTINATION_ADDRESS',
+                    'transaction_id': 'TRANSACTION_ID',
+                },
             ),
             AssetMovement(
-                timestamp=Timestamp(1606901400),
+                timestamp=TimestampMS(1606899600000),
                 location=Location.BITFINEX,
-                category=AssetMovementCategory.WITHDRAWAL,
-                address='DESTINATION_ADDRESS',
-                transaction_id='TRANSACTION_ID',
+                event_type=HistoryEventType.DEPOSIT,
                 asset=wbtc_fee_asset,
-                amount=FVal('0.26300954'),
-                fee_asset=wbtc_fee_asset,
-                fee=Fee(FVal('0.00135')),
-                link=str(2),
+                balance=Balance(FVal('0.00135')),
+                unique_id='1',
+                is_fee=True,
             ),
             AssetMovement(
-                timestamp=Timestamp(1606986000),
+                timestamp=TimestampMS(1606901400000),
                 location=Location.BITFINEX,
-                category=AssetMovementCategory.WITHDRAWAL,
-                address=None,
-                transaction_id=None,
+                event_type=HistoryEventType.WITHDRAWAL,
+                asset=wbtc_fee_asset,
+                balance=Balance(FVal('0.26300954')),
+                unique_id='2',
+                extra_data={
+                    'movement_id': '2',
+                    'address': 'DESTINATION_ADDRESS',
+                    'transaction_id': 'TRANSACTION_ID',
+                },
+            ),
+            AssetMovement(
+                timestamp=TimestampMS(1606901400000),
+                location=Location.BITFINEX,
+                event_type=HistoryEventType.WITHDRAWAL,
+                asset=wbtc_fee_asset,
+                balance=Balance(FVal('0.00135')),
+                unique_id='2',
+                is_fee=True,
+            ),
+            AssetMovement(
+                timestamp=TimestampMS(1606986000000),
+                location=Location.BITFINEX,
+                event_type=HistoryEventType.WITHDRAWAL,
                 asset=eur_fee_asset,
-                amount=FVal('0.26300954'),
-                fee_asset=eur_fee_asset,
-                fee=Fee(FVal('0.00135')),
-                link=str(4),
+                balance=Balance(FVal('0.26300954')),
+                unique_id='4',
+                extra_data={'movement_id': '4'},
+            ),
+            AssetMovement(
+                timestamp=TimestampMS(1606986000000),
+                location=Location.BITFINEX,
+                event_type=HistoryEventType.WITHDRAWAL,
+                asset=eur_fee_asset,
+                balance=Balance(FVal('0.00135')),
+                unique_id='4',
+                is_fee=True,
             ),
         ]
         assert asset_movements == expected_asset_movements
@@ -1334,7 +1376,7 @@ def test_query_online_deposits_withdrawals_case_2(mock_bitfinex):
     with ExitStack() as stack:
         stack.enter_context(api_limit_patch)
         stack.enter_context(api_query_patch)
-        asset_movements = mock_bitfinex.query_online_deposits_withdrawals(
+        asset_movements = mock_bitfinex.query_online_history_events(
             start_ts=Timestamp(0),
             end_ts=Timestamp(int(datetime.datetime.now(tz=datetime.UTC).timestamp())),
         )
@@ -1342,52 +1384,88 @@ def test_query_online_deposits_withdrawals_case_2(mock_bitfinex):
         eur_fee_asset = A_EUR
         expected_asset_movements = [
             AssetMovement(
-                timestamp=Timestamp(1606899600),
+                timestamp=TimestampMS(1606899600000),
                 location=Location.BITFINEX,
-                category=AssetMovementCategory.DEPOSIT,
-                address='DESTINATION_ADDRESS',
-                transaction_id='TRANSACTION_ID',
+                event_type=HistoryEventType.DEPOSIT,
                 asset=wbtc_fee_asset,
-                amount=FVal('0.26300954'),
-                fee_asset=wbtc_fee_asset,
-                fee=Fee(FVal('0.00135')),
-                link=str(1),
+                balance=Balance(FVal('0.26300954')),
+                unique_id='1',
+                extra_data={
+                    'movement_id': '1',
+                    'address': 'DESTINATION_ADDRESS',
+                    'transaction_id': 'TRANSACTION_ID',
+                },
             ),
             AssetMovement(
-                timestamp=Timestamp(1606901400),
+                timestamp=TimestampMS(1606899600000),
                 location=Location.BITFINEX,
-                category=AssetMovementCategory.WITHDRAWAL,
-                address='DESTINATION_ADDRESS',
-                transaction_id='TRANSACTION_ID',
+                event_type=HistoryEventType.DEPOSIT,
                 asset=wbtc_fee_asset,
-                amount=FVal('0.26300954'),
-                fee_asset=wbtc_fee_asset,
-                fee=Fee(FVal('0.00135')),
-                link=str(2),
+                balance=Balance(FVal('0.00135')),
+                unique_id='1',
+                is_fee=True,
             ),
             AssetMovement(
-                timestamp=Timestamp(1606986000),
+                timestamp=TimestampMS(1606901400000),
                 location=Location.BITFINEX,
-                category=AssetMovementCategory.WITHDRAWAL,
-                address=None,
-                transaction_id=None,
+                event_type=HistoryEventType.WITHDRAWAL,
+                asset=wbtc_fee_asset,
+                balance=Balance(FVal('0.26300954')),
+                unique_id='2',
+                extra_data={
+                    'movement_id': '2',
+                    'address': 'DESTINATION_ADDRESS',
+                    'transaction_id': 'TRANSACTION_ID',
+                },
+            ),
+            AssetMovement(
+                timestamp=TimestampMS(1606901400000),
+                location=Location.BITFINEX,
+                event_type=HistoryEventType.WITHDRAWAL,
+                asset=wbtc_fee_asset,
+                balance=Balance(FVal('0.00135')),
+                unique_id='2',
+                is_fee=True,
+            ),
+            AssetMovement(
+                timestamp=TimestampMS(1606986000000),
+                location=Location.BITFINEX,
+                event_type=HistoryEventType.WITHDRAWAL,
                 asset=eur_fee_asset,
-                amount=FVal('0.26300954'),
-                fee_asset=eur_fee_asset,
-                fee=Fee(FVal('0.00135')),
-                link=str(3),
+                balance=Balance(FVal('0.26300954')),
+                unique_id='3',
+                extra_data={'movement_id': '3'},
             ),
             AssetMovement(
-                timestamp=Timestamp(1606996800),
+                timestamp=TimestampMS(1606986000000),
                 location=Location.BITFINEX,
-                category=AssetMovementCategory.DEPOSIT,
-                address='DESTINATION_ADDRESS',
-                transaction_id='TRANSACTION_ID',
+                event_type=HistoryEventType.WITHDRAWAL,
+                asset=eur_fee_asset,
+                balance=Balance(FVal('0.00135')),
+                unique_id='3',
+                is_fee=True,
+            ),
+            AssetMovement(
+                timestamp=TimestampMS(1606996800000),
+                location=Location.BITFINEX,
+                event_type=HistoryEventType.DEPOSIT,
                 asset=wbtc_fee_asset,
-                amount=FVal('0.26300954'),
-                fee_asset=wbtc_fee_asset,
-                fee=Fee(FVal('0.00135')),
-                link=str(4),
+                balance=Balance(FVal('0.26300954')),
+                unique_id='4',
+                extra_data={
+                    'movement_id': '4',
+                    'address': 'DESTINATION_ADDRESS',
+                    'transaction_id': 'TRANSACTION_ID',
+                },
+            ),
+            AssetMovement(
+                timestamp=TimestampMS(1606996800000),
+                location=Location.BITFINEX,
+                event_type=HistoryEventType.DEPOSIT,
+                asset=wbtc_fee_asset,
+                balance=Balance(FVal('0.00135')),
+                unique_id='4',
+                is_fee=True,
             ),
         ]
         assert asset_movements == expected_asset_movements

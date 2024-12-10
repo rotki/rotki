@@ -300,6 +300,8 @@ def deserialize_asset_movement_category(
     """Takes a string and determines whether to accept it as an asset movement category
 
     Can throw DeserializationError if value is not as expected
+
+    Deprecated, will be replaced by deserialize_asset_movement_event_type
     """
     if isinstance(value, str):
         if value.lower() == 'deposit':
@@ -318,6 +320,27 @@ def deserialize_asset_movement_category(
         raise DeserializationError(
             f'Failed to deserialize asset movement category from '
             f'HistoryEventType and {value} entry',
+        )
+
+    raise DeserializationError(
+        f'Failed to deserialize asset movement category from {type(value)} entry',
+    )
+
+
+def deserialize_asset_movement_event_type(
+        value: str,
+) -> Literal[HistoryEventType.DEPOSIT, HistoryEventType.WITHDRAWAL]:
+    """Takes a string and determines whether to accept it as an asset movement event_type
+
+    Can throw DeserializationError if value is not as expected
+    """
+    if isinstance(value, str):
+        if (lowered_value := value.lower()) == 'deposit':
+            return HistoryEventType.DEPOSIT
+        if lowered_value in {'withdraw', 'withdrawal'}:
+            return HistoryEventType.WITHDRAWAL
+        raise DeserializationError(
+            f'Failed to deserialize asset movement category symbol. Unknown {value}',
         )
 
     raise DeserializationError(

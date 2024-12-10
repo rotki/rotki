@@ -12,18 +12,23 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.converters import asset_from_bitpanda
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_BEST
+from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
+from rotkehlchen.exchanges.data_structures import MarginPosition, Trade
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
 from rotkehlchen.history.deserialization import deserialize_price
+from rotkehlchen.history.events.structures.asset_movement import (
+    AssetMovement,
+    create_asset_movement_with_fee,
+)
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
-    deserialize_asset_movement_category,
+    deserialize_asset_movement_event_type,
     deserialize_fee,
     deserialize_int_from_str,
 )
@@ -37,7 +42,7 @@ from rotkehlchen.types import (
     TradeType,
 )
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import ts_now
+from rotkehlchen.utils.misc import ts_now, ts_sec_to_ms
 from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
 from rotkehlchen.utils.mixins.lockable import protect_with_lock
 from rotkehlchen.utils.serialization import jsonloads_dict
@@ -148,7 +153,7 @@ class Bitpanda(ExchangeInterface):
             entry: dict[str, Any],
             from_ts: Timestamp,
             to_ts: Timestamp,
-    ) -> AssetMovement | None:
+    ) -> list[AssetMovement] | None:
         """Deserializes a bitpanda fiatwallets/transactions or wallets/transactions
         entry to a deposit/withdrawal
 
@@ -173,7 +178,7 @@ class Bitpanda(ExchangeInterface):
                 return None
 
             try:
-                movement_category = deserialize_asset_movement_category(entry['attributes']['type'])  # noqa: E501
+                event_type = deserialize_asset_movement_event_type(entry['attributes']['type'])
             except DeserializationError:
                 return None  # not a deposit/withdrawal
 
@@ -208,17 +213,19 @@ class Bitpanda(ExchangeInterface):
             )
             return None
 
-        return AssetMovement(
-            location=Location.BITPANDA,
-            category=movement_category,
-            address=address,
-            transaction_id=transaction_id,
-            timestamp=time,
+        return create_asset_movement_with_fee(
+            location=self.location,
+            event_type=event_type,
+            timestamp=ts_sec_to_ms(time),
             asset=asset,
             amount=amount,
             fee_asset=asset,
             fee=fee,
-            link=tx_id,
+            unique_id=f'{tx_id}{transaction_id}',  # Use both here as tx_id is not always unique (at least in the test data)  # noqa: E501
+            extra_data=maybe_set_transaction_extra_data(
+                address=address,
+                transaction_id=transaction_id,
+            ),
         )
 
     def _deserialize_trade(
@@ -433,7 +440,7 @@ class Bitpanda(ExchangeInterface):
         given_options = options.copy() if options else {}
         page = 1
         count_so_far = 0
-        result = []
+        result: list[AssetMovement | Trade] = []
         deserialize_fn = self._deserialize_trade if endpoint == 'trades' else self._deserialize_wallettx  # noqa: E501
 
         while True:
@@ -447,7 +454,10 @@ class Bitpanda(ExchangeInterface):
             for entry in data:
                 decoded_entry = deserialize_fn(entry, from_timestamp, to_timestamp)
                 if decoded_entry is not None:
-                    result.append(decoded_entry)
+                    if isinstance(decoded_entry, list):
+                        result.extend(decoded_entry)
+                    else:
+                        result.append(decoded_entry)
 
             count_so_far += len(data)
             if meta is None or meta.get('total_count') is None:
@@ -537,7 +547,7 @@ class Bitpanda(ExchangeInterface):
         )
         return trades, (start_ts, end_ts)
 
-    def query_online_deposits_withdrawals(
+    def query_online_history_events(
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,

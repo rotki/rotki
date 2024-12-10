@@ -30,6 +30,7 @@ if TYPE_CHECKING:
 
     from rotkehlchen.accounting.mixins.event import AccountingEventMixin
     from rotkehlchen.accounting.pot import AccountingPot
+    from rotkehlchen.fval import FVal
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -201,3 +202,40 @@ class AssetMovement(HistoryBaseEntry):
             )
 
         return 1
+
+
+def create_asset_movement_with_fee(
+        timestamp: TimestampMS,
+        location: Location,
+        event_type: Literal[HistoryEventType.DEPOSIT, HistoryEventType.WITHDRAWAL],
+        asset: Asset,
+        amount: 'FVal',
+        fee_asset: Asset,
+        fee: 'FVal',
+        unique_id: str | None = None,
+        extra_data: dict[str, Any] | None = None,
+) -> list[AssetMovement]:
+    """Create an asset movement and its corresponding fee event.
+    Returns the new asset movements in a list.
+    """
+    events = [AssetMovement(
+        location=location,
+        event_type=event_type,
+        timestamp=timestamp,
+        asset=asset,
+        balance=Balance(amount),
+        unique_id=unique_id,
+        extra_data=extra_data,
+    )]
+    if fee != ZERO:
+        events.append(AssetMovement(
+            event_identifier=events[0].event_identifier,
+            location=location,
+            event_type=event_type,
+            timestamp=timestamp,
+            asset=fee_asset,
+            balance=Balance(fee),
+            is_fee=True,
+        ))
+
+    return events

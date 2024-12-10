@@ -4,6 +4,7 @@ import json
 import logging
 import operator
 from collections import defaultdict
+from collections.abc import Sequence
 from contextlib import suppress
 from json.decoder import JSONDecodeError
 from sqlite3 import IntegrityError
@@ -18,6 +19,7 @@ from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.assets.converters import asset_from_binance
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_USD
+from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
 from rotkehlchen.db.constants import BINANCE_MARKETS_KEY
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.ranges import DBQueryRanges
@@ -27,7 +29,6 @@ from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import (
-    AssetMovement,
     BinancePair,
     MarginPosition,
     Trade,
@@ -45,7 +46,11 @@ from rotkehlchen.exchanges.utils import (
 )
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.deserialization import deserialize_price
-from rotkehlchen.history.events.structures.base import HistoryEvent
+from rotkehlchen.history.events.structures.asset_movement import (
+    AssetMovement,
+    create_asset_movement_with_fee,
+)
+from rotkehlchen.history.events.structures.base import HistoryBaseEntry, HistoryEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.inquirer import Inquirer
@@ -60,7 +65,6 @@ from rotkehlchen.serialization.deserialize import (
 from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
-    AssetMovementCategory,
     ExchangeAuthCredentials,
     Fee,
     Location,
@@ -68,7 +72,7 @@ from rotkehlchen.types import (
     TimestampMS,
 )
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import ts_ms_to_sec, ts_now_in_ms
+from rotkehlchen.utils.misc import ts_ms_to_sec, ts_now_in_ms, ts_sec_to_ms
 from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
 from rotkehlchen.utils.mixins.lockable import protect_with_lock
 
@@ -1356,8 +1360,8 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
     def _deserialize_fiat_movement(
             self,
             raw_data: dict[str, Any],
-            category: AssetMovementCategory,
-    ) -> AssetMovement | None:
+            event_type: Literal[HistoryEventType.DEPOSIT, HistoryEventType.WITHDRAWAL],
+    ) -> list[AssetMovement] | None:
         """Processes a single deposit/withdrawal from binance and deserializes it
 
         Can log error/warning and return None if something went wrong at deserialization
@@ -1371,9 +1375,8 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
 
             asset = asset_from_binance(raw_data['fiatCurrency'])
             tx_id = get_key_if_has_val(raw_data, 'orderNo')
-            timestamp = deserialize_timestamp_from_intms(raw_data['createTime'])
+            timestamp = ts_sec_to_ms(deserialize_timestamp_from_intms(raw_data['createTime']))
             fee = Fee(deserialize_asset_amount(raw_data['totalFee']))
-            link_str = str(tx_id) if tx_id else ''
             amount = deserialize_asset_amount_force_positive(raw_data['amount'])
             address = deserialize_asset_movement_address(raw_data, 'address', asset)
         except UnknownAsset as e:
@@ -1400,45 +1403,48 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
                 error=msg,
             )
         else:
-            return AssetMovement(
+            return create_asset_movement_with_fee(
                 location=self.location,
-                category=category,
-                address=address,
-                transaction_id=tx_id,
+                event_type=event_type,
                 timestamp=timestamp,
                 asset=asset,
                 amount=amount,
                 fee_asset=asset,
                 fee=fee,
-                link=link_str,
+                unique_id=tx_id,
+                extra_data=maybe_set_transaction_extra_data(
+                    address=address,
+                    transaction_id=tx_id,
+                ),
             )
 
         return None
 
-    def _deserialize_asset_movement(self, raw_data: dict[str, Any]) -> AssetMovement | None:
+    def _deserialize_asset_movement(self, raw_data: dict[str, Any]) -> list[AssetMovement] | None:
         """Processes a single deposit/withdrawal from binance and deserializes it
 
         Can log error/warning and return None if something went wrong at deserialization
         """
         try:
+            event_type: Literal[HistoryEventType.DEPOSIT, HistoryEventType.WITHDRAWAL]
             if 'insertTime' in raw_data:
-                category = AssetMovementCategory.DEPOSIT
-                timestamp = deserialize_timestamp_from_intms(raw_data['insertTime'])
+                event_type = HistoryEventType.DEPOSIT
+                timestamp = ts_sec_to_ms(deserialize_timestamp_from_intms(raw_data['insertTime']))
                 fee = Fee(ZERO)
             else:
-                category = AssetMovementCategory.WITHDRAWAL
-                timestamp = deserialize_timestamp_from_date(
+                event_type = HistoryEventType.WITHDRAWAL
+                timestamp = ts_sec_to_ms(deserialize_timestamp_from_date(
                     date=raw_data['applyTime'],
                     formatstr='%Y-%m-%d %H:%M:%S',
                     location='binance withdrawal',
                     skip_milliseconds=True,
-                )
+                ))
                 fee = Fee(deserialize_asset_amount(raw_data['transactionFee']))
 
             asset = asset_from_binance(raw_data['coin'])
             tx_id = get_key_if_has_val(raw_data, 'txId')
             internal_id = get_key_if_has_val(raw_data, 'id')
-            link_str = str(internal_id) if internal_id else str(tx_id) if tx_id else ''
+            unique_id = str(internal_id) if internal_id else str(tx_id) if tx_id else ''
             address = deserialize_asset_movement_address(raw_data, 'address', asset)
             amount = deserialize_asset_amount_force_positive(raw_data['amount'])
         except UnknownAsset as e:
@@ -1465,17 +1471,19 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
                 error=msg,
             )
         else:
-            return AssetMovement(
+            return create_asset_movement_with_fee(
                 location=self.location,
-                category=category,
-                address=address,
-                transaction_id=tx_id,
+                event_type=event_type,
                 timestamp=timestamp,
                 asset=asset,
                 amount=amount,
                 fee_asset=asset,
                 fee=fee,
-                link=link_str,
+                unique_id=unique_id,
+                extra_data=maybe_set_transaction_extra_data(
+                    address=address,
+                    transaction_id=tx_id,
+                ),
             )
 
         return None
@@ -1540,11 +1548,11 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
 
         return results
 
-    def query_online_deposits_withdrawals(
+    def query_online_history_events(
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> list[AssetMovement]:
+    ) -> Sequence[HistoryBaseEntry]:
         """
         Be aware of:
           - Timestamps must be in milliseconds.
@@ -1599,13 +1607,15 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
         for raw_movement in deposits + withdraws:
             movement = self._deserialize_asset_movement(raw_movement)
             if movement:
-                movements.append(movement)
+                movements.extend(movement)
 
         for idx, fiat_movement in enumerate(fiat_deposits + fiat_withdraws):
-            category = AssetMovementCategory.DEPOSIT if idx < len(fiat_deposits) else AssetMovementCategory.WITHDRAWAL  # noqa: E501
-            movement = self._deserialize_fiat_movement(fiat_movement, category=category)
+            movement = self._deserialize_fiat_movement(
+                raw_data=fiat_movement,
+                event_type=HistoryEventType.DEPOSIT if idx < len(fiat_deposits) else HistoryEventType.WITHDRAWAL,  # noqa: E501
+            )
             if movement:
-                movements.append(movement)
+                movements.extend(movement)
 
         return movements
 
