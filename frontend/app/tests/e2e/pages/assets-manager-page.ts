@@ -68,6 +68,7 @@ export class AssetsManagerPage {
         );
       },
     );
+    cy.get('[data-cy=confirm-dialog]').find('[data-cy=button-confirm]').click();
   }
 
   selectShowAll(): void {
