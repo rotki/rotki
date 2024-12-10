@@ -112,7 +112,7 @@ const loading = logicOr(pending, taskRunning, eventTaskLoading);
             :loading="loading"
             @click="showConfirmation(source)"
           >
-            <RuiIcon name="restart-line" />
+            <RuiIcon name="lu-rotate-ccw" />
           </RuiButton>
         </template>
         <span> {{ t('data_management.refresh_cache.tooltip') }} </span>

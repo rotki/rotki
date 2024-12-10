@@ -53,7 +53,7 @@ onMounted(async () => {
         hide-details
         class="w-[360px]"
         :label="t('external_services.search')"
-        prepend-icon="search-line"
+        prepend-icon="lu-search"
       />
     </template>
     <RuiAlert

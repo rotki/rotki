@@ -383,7 +383,7 @@ defineExpose({
             size="sm"
             @click="toggle()"
           >
-            <RuiIcon :name="isOpen ? 'arrow-up-s-line' : 'arrow-down-s-line' " />
+            <RuiIcon :name="isOpen ? 'lu-chevron-up' : 'lu-chevron-down' " />
           </RuiButton>
           <template
             v-if="header.group.category"

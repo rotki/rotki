@@ -66,7 +66,7 @@ const textStyle = computed<Style>(() => {
     <RuiIcon
       v-if="customAsset"
       size="16"
-      name="pencil-line"
+      name="lu-pencil"
     />
     <template v-else>
       {{ text }}

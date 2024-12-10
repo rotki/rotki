@@ -29,7 +29,7 @@ const { isLgAndDown } = useBreakpoint();
           >
             <span v-if="!isLgAndDown">{{ t('premium_settings.get') }}</span>
             <template #append>
-              <RuiIcon name="vip-crown-line" />
+              <RuiIcon name="lu-crown" />
             </template>
           </RuiButton>
         </ExternalLink>

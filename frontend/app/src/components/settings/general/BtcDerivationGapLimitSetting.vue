@@ -55,7 +55,7 @@ onMounted(() => {
           icon
           @click="reset(updateImmediate)"
         >
-          <RuiIcon name="history-line" />
+          <RuiIcon name="lu-history" />
         </RuiButton>
       </div>
     </SettingsOption>

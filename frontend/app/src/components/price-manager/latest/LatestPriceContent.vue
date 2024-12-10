@@ -119,7 +119,7 @@ onMounted(async () => {
             @click="refreshCurrentPrices()"
           >
             <template #prepend>
-              <RuiIcon name="refresh-line" />
+              <RuiIcon name="lu-refresh-ccw" />
             </template>
             {{ t('common.refresh') }}
           </RuiButton>
@@ -132,7 +132,7 @@ onMounted(async () => {
         @click="openForm()"
       >
         <template #prepend>
-          <RuiIcon name="add-line" />
+          <RuiIcon name="lu-plus" />
         </template>
         {{ t('price_management.dialog.add_title') }}
       </RuiButton>

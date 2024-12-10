@@ -179,7 +179,7 @@ const steps = computed(() => [
         >
           <RuiIcon
             class="text-white"
-            name="close-line"
+            name="lu-x"
           />
         </RuiButton>
 

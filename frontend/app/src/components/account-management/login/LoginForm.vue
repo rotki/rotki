@@ -432,7 +432,7 @@ function abortLogin() {
                   >
                     <template #activator>
                       <RuiIcon
-                        name="question-line"
+                        name="lu-circle-help"
                         color="primary"
                       />
                     </template>
@@ -460,7 +460,7 @@ function abortLogin() {
                       <RuiIcon
                         size="16"
                         class="-ml-2"
-                        :name="customBackendDisplay ? 'arrow-up-s-line' : 'arrow-down-s-line'"
+                        :name="customBackendDisplay ? 'lu-chevron-up' : 'lu-chevron-down'"
                       />
                     </template>
                   </RuiButton>

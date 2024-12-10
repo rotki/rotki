@@ -100,7 +100,7 @@ setPostSubmitFunc(fetchData);
         @click="openForm()"
       >
         <template #prepend>
-          <RuiIcon name="add-line" />
+          <RuiIcon name="lu-plus" />
         </template>
         {{ t('address_book.dialog.add_title') }}
       </RuiButton>

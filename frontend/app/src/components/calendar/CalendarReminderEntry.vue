@@ -210,7 +210,7 @@ onMounted(() => {
       >
         <RuiIcon
           size="20"
-          name="delete-bin-line"
+          name="lu-trash-2"
         />
       </RuiButton>
     </div>

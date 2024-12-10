@@ -30,7 +30,7 @@ const { showHelpBar, showNotesSidebar, showNotificationBar, showPinned } = store
     <GlobalSearch v-if="isSmAndUp" />
     <BackButton />
   </div>
-  <div class="flex overflow-hidden h-full items-center">
+  <div class="flex overflow-hidden h-full items-center gap-0.5">
     <GetPremiumButton />
     <RouterLink
       v-if="isDevelopment && isSmAndUp"
@@ -41,7 +41,7 @@ const { showHelpBar, showNotesSidebar, showNotificationBar, showPinned } = store
         class="!text-rui-text-secondary"
         icon
       >
-        <RuiIcon name="code-box-line" />
+        <RuiIcon name="lu-code-xml" />
       </RuiButton>
     </RouterLink>
     <AppUpdateIndicator />
@@ -61,11 +61,11 @@ const { showHelpBar, showNotesSidebar, showNotificationBar, showPinned } = store
       v-if="isSmAndUp"
       class="app__app-bar__button"
     />
-    <UserDropdown class="app__app-bar__button" />
     <HelpIndicator
       v-if="isSmAndUp"
       v-model:visible="showHelpBar"
     />
+    <UserDropdown class="app__app-bar__button" />
   </div>
 </template>
 

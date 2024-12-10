@@ -145,7 +145,7 @@ async function regenerateReport() {
           @click="regenerateReport()"
         >
           <template #prepend>
-            <RuiIcon name="refresh-line" />
+            <RuiIcon name="lu-refresh-ccw" />
           </template>
           {{ t('profit_loss_report.actionable.actions.regenerate_report') }}
         </RuiButton>

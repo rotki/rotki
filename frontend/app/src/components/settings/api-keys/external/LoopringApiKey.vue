@@ -46,7 +46,7 @@ const navigateToModules = () => router.push(Routes.SETTINGS_MODULES);
       >
         <template #prepend>
           <RuiIcon
-            name="delete-bin-line"
+            name="lu-trash-2"
             size="16"
           />
         </template>

@@ -23,7 +23,7 @@ const { copy } = useClipboard({ source: value });
       >
         <RuiIcon
           size="16"
-          name="file-copy-line"
+          name="lu-copy"
         />
       </RuiButton>
     </template>
