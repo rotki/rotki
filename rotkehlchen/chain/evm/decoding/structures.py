@@ -35,6 +35,9 @@ class ActionItem:
     # This is a way to control the order of the action item generated event relative
     # to the paired events.
     paired_events_data: tuple[Sequence['EvmEvent'], bool] | None = None
+    # if true adds the resulting transfer of the current action item to the next
+    # action items paired event data. This is a way to guarantee order only via action items.
+    pair_with_next_action_item: bool = False
     # Error tolerance that can be used for protocols having rounding errors. Such as with stETH (https://github.com/lidofinance/lido-dao/issues/442)
     # In those cases the notes should also be formatted to have an amount as format string since at
     # action item matching this format will populate the note with the actual amount

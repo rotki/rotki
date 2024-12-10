@@ -40,3 +40,5 @@ ERC721_PROPERTIES: Final = ('symbol', 'name')
 
 # uniswap like merkle distributor claimed signature
 MERKLE_CLAIM: Final = b'N\xc9\x0e\x96U\x19\xd9&\x81&tg\xf7u\xad\xa5\xbd!J\xa9,\r\xc9=\x90\xa5\xe8\x80\xce\x9e\xd0&'  # noqa: E501
+# simple claim for address and amount used by multiple protocols
+SIMPLE_CLAIM: Final = b'G\xce\xe9|\xb7\xac\xd7\x17\xb3\xc0\xaa\x145\xd0\x04\xcd[<\x8cW\xd7\r\xbc\xebNDX\xbb\xd6\x0e9\xd4'  # noqa: E501
