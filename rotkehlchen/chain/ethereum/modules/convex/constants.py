@@ -1,5 +1,6 @@
 from typing import Final
 
+from rotkehlchen.chain.evm.decoding.constants import WITHDRAWN
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.types import string_to_evm_address
 
@@ -17,16 +18,13 @@ CVX_LOCKER_V2: Final = string_to_evm_address('0x72a19342e8F1838460eBFCCEf09F6585
 CVX_REWARDS: Final = string_to_evm_address('0xCF50b810E57Ac33B91dCF525C6ddd9881B139332')
 CVXCRV_REWARDS: Final = string_to_evm_address('0x3Fe65692bfCD0e6CF84cB1E7d24108E434A7587e')
 
-CVX_WITHDRAW_TOPIC: Final = b'p\x84\xf5Gf\x18\xd8\xe6\x0b\x11\xef\r}?\x06\x91FU\xad\xb8y>(\xff\x7f\x01\x8dLv\xd5\x05\xd5'  # noqa: E501
 CVXCRV_REWARD_PAID_TOPIC: Final = b'\xe2@6@\xbah\xfe\xd3\xa2\xf8\x8buWU\x1d\x19\x93\xf8K\x99\xbb\x10\xff\x83?\x0c\xf8\xdb\x0c^\x04\x86'  # noqa: E501
-CVXCRV_WITHDRAWAL_TOPIC: Final = b'p\x84\xf5Gf\x18\xd8\xe6\x0b\x11\xef\r}?\x06\x91FU\xad\xb8y>(\xff\x7f\x01\x8dLv\xd5\x05\xd5'  # noqa: E501
 CVX_LOCKER_REWARD_PAID_TOPIC: Final = b'T\x07\x98\xdfF\x8d{#\xd1\x1f\x15o\xdb\x95L\xb1\x9a\xd4\x14\xd1Pr*{mU\xba6\x9d\xeay.'  # noqa: E501
 BOOSTER_WITHDRAW_TOPIC: Final = b'\x92\xcc\xf4P\xa2\x86\xa9W\xafRP\x9b\xc1\xc9\x93\x9d\x1ajH\x17\x83\xe1B\xe4\x1e$\x99\xf0\xbbf\xeb\xc6'  # noqa: E501
 CVX_LOCK_WITHDRAWN: Final = b'/\xd8=^\x9f]$\x0b\xedG\xa9z$\xcf5N@G\xe2^\xdc-\xa2{\x01\xfd\x95\xe5\xe8\xa0\xc9\xa5'  # withdraw locked CVX  # noqa: E501
 
 WITHDRAWAL_TOPICS = {
-    CVXCRV_WITHDRAWAL_TOPIC,
-    CVX_WITHDRAW_TOPIC,
+    WITHDRAWN,
     BOOSTER_WITHDRAW_TOPIC,
 }
 

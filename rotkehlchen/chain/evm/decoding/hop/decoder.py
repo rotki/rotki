@@ -8,6 +8,7 @@ from rotkehlchen.chain.ethereum.utils import (
     token_normalized_value_decimals,
 )
 from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS, ZERO_ADDRESS
+from rotkehlchen.chain.evm.decoding.constants import STAKED, WITHDRAWN
 from rotkehlchen.chain.evm.decoding.hop.constants import CPT_HOP, HOP_CPT_DETAILS
 from rotkehlchen.chain.evm.decoding.hop.structures import HopBridgeEventData
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
@@ -41,12 +42,10 @@ from .constants import (
     REMOVE_LIQUIDITY,
     REMOVE_LIQUIDITY_ONE,
     REWARDS_PAID,
-    STAKED,
     TOKEN_SWAP,
     TRANSFER_FROM_L1_COMPLETED,
     TRANSFER_SENT,
     WITHDRAWAL_BONDED,
-    WITHDRAWN,
     WITHDREW,
 )
 

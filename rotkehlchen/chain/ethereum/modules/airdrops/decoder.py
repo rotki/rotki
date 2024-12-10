@@ -6,7 +6,7 @@ from rotkehlchen.chain.ethereum.airdrops import AIRDROP_IDENTIFIER_KEY
 from rotkehlchen.chain.ethereum.modules.convex.constants import CONVEX_CPT_DETAILS, CPT_CONVEX
 from rotkehlchen.chain.ethereum.modules.ens.constants import CPT_ENS, ENS_CPT_DETAILS
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
-from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS
+from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS, SIMPLE_CLAIM
 from rotkehlchen.chain.evm.decoding.airdrops import match_airdrop_claim
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.cowswap.constants import COWSWAP_CPT_DETAILS
@@ -60,7 +60,6 @@ ONEINCH: Final = string_to_evm_address('0xE295aD71242373C37C5FdA7B57F26f9eA1088A
 
 FPIS: Final = string_to_evm_address('0x61A1f84F12Ba9a56C22c31dDB10EC2e2CA0ceBCf')
 CONVEX: Final = string_to_evm_address('0x2E088A0A19dda628B4304301d1EA70b114e4AcCd')
-FPIS_CONVEX_CLAIM: Final = b'G\xce\xe9|\xb7\xac\xd7\x17\xb3\xc0\xaa\x145\xd0\x04\xcd[<\x8cW\xd7\r\xbc\xebNDX\xbb\xd6\x0e9\xd4'  # noqa: E501
 
 FOX_DISTRIBUTORS: Final = (
     string_to_evm_address('0x91B9A78658273913bf3F5444Cb5F2592d1123eA7'),
@@ -85,8 +84,6 @@ FOX_CLAIMED: Final = b"R\x897\xb30\x08-\x89*\x98\xd4\xe4(\xab-\xcc\xa7\x84KQ\xd2
 ELFI_LOCKING: Final = string_to_evm_address('0x02Bd4A3b1b95b01F2Aa61655415A5d3EAAcaafdD')
 ELFI_ADDRESS: Final = string_to_evm_address('0x5c6D51ecBA4D8E4F20373e3ce96a62342B125D6d')
 ELFI_VOTE_CHANGE: Final = b'3\x16\x1c\xf2\xda(\xd7G\xbe\x9d\xf16\xb6\xf3r\x93\x90)\x84\x94\x94rht1\x93\xc5=s\xd3\xc2\xe0'  # noqa: E501
-
-ENS_CLAIM: Final = b'G\xce\xe9|\xb7\xac\xd7\x17\xb3\xc0\xaa\x145\xd0\x04\xcd[<\x8cW\xd7\r\xbc\xebNDX\xbb\xd6\x0e9\xd4'  # noqa: E501
 ENS_ADDRESS: Final = string_to_evm_address('0xC18360217D8F7Ab5e7c516566761Ea12Ce7F9D72')
 
 
@@ -159,7 +156,7 @@ class AirdropsDecoder(MerkleClaimDecoderInterface):
             context: DecoderContext,
             airdrop: Literal['convex', 'fpis'],
     ) -> DecodingOutput:
-        if context.tx_log.topics[0] != FPIS_CONVEX_CLAIM:
+        if context.tx_log.topics[0] != SIMPLE_CLAIM:
             return DEFAULT_DECODING_OUTPUT
 
         user_address = bytes_to_address(context.tx_log.data[0:32])
@@ -250,7 +247,7 @@ class AirdropsDecoder(MerkleClaimDecoderInterface):
         return DEFAULT_DECODING_OUTPUT
 
     def _decode_ens_claim(self, context: DecoderContext) -> DecodingOutput:
-        if context.tx_log.topics[0] != ENS_CLAIM:
+        if context.tx_log.topics[0] != SIMPLE_CLAIM:
             return DEFAULT_DECODING_OUTPUT
 
         raw_amount = int.from_bytes(context.tx_log.data[:32])

@@ -1094,6 +1094,13 @@ class EVMTransactionDecoder(ABC):
                 if action_item.to_location_label is not None:
                     transfer.location_label = action_item.to_location_label
 
+                if action_item.pair_with_next_action_item:
+                    if len(action_items) <= idx + 1:
+                        log.error(f'At {transaction=} asked for pair with next action item for {action_item=} while there is no more items')  # noqa: E501
+                        break
+
+                    action_items[idx + 1].paired_events_data = ([transfer], True)
+
                 if action_item.paired_events_data is not None:
                     # If there is a paired event to this, take care of the order
                     out_events: Sequence[EvmEvent] = [transfer]
