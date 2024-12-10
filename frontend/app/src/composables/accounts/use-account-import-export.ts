@@ -221,17 +221,21 @@ export function useAccountImportExport(): UseAccountImportExportReturn {
       1,
     );
 
-    // Wait until accounts refreshed
-    await until(blockchainLoading).toBe(true);
-    await until(doneLoading).toBe(true);
+    if (validators.length > 0) {
+      // Wait until accounts refreshed
+      await until(blockchainLoading).toBe(true);
+      await until(doneLoading).toBe(true);
 
-    await importValidators(validators);
+      await importValidators(validators);
+    }
   }
 
   async function importAccounts(file: File): Promise<void> {
     try {
       const csvContent = await file.text();
-      const accounts = CSVSchema.parse(parseCSV(csvContent));
+      const accounts = CSVSchema.parse(parseCSV(csvContent, {
+        requiredHeaders: ['address', 'chain'],
+      }));
       await handleAccountRestore(accounts);
     }
     catch (error) {
