@@ -12,6 +12,7 @@ export default rotki({
       '@rotki/consistent-ref-type-annotation': ['error', {
         allowInference: true,
       }],
+      '@rotki/no-dot-ts-imports': 'error',
     },
   },
   cypress: {
