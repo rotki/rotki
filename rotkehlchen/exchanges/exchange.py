@@ -407,10 +407,9 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
     def query_history_events(self) -> None:
         """Queries the exchange for new history events and saves them to the database."""
         db = DBHistoryEvents(self.db)
-        ranges = DBQueryRanges(self.db)
         location_string = f'{self.location!s}_history_events_{self.name}'
         with self.db.conn.read_ctx() as cursor:
-            ranges_to_query = ranges.get_location_query_ranges(
+            ranges_to_query = (ranges := DBQueryRanges(self.db)).get_location_query_ranges(
                 cursor=cursor,
                 location_string=location_string,
                 start_ts=Timestamp(0),

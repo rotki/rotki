@@ -4,9 +4,10 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Final, Literal, overload
 from unittest.mock import _patch, patch
 
-from rotkehlchen.assets.asset import Asset, AssetWithOracles
+from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.assets.converters import asset_from_kraken
-from rotkehlchen.constants import ONE, ZERO
+from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH, A_ETH2, A_EUR
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors.asset import UnprocessableTradePair
@@ -19,7 +20,7 @@ from rotkehlchen.exchanges.bitstamp import Bitstamp
 from rotkehlchen.exchanges.bybit import Bybit
 from rotkehlchen.exchanges.coinbase import Coinbase
 from rotkehlchen.exchanges.coinbaseprime import Coinbaseprime
-from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
+from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.exchanges.exchange import ExchangeInterface
 from rotkehlchen.exchanges.gemini import Gemini
 from rotkehlchen.exchanges.htx import Htx
@@ -33,6 +34,8 @@ from rotkehlchen.exchanges.utils import create_binance_symbols_to_pair
 from rotkehlchen.exchanges.woo import Woo
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.history.events.structures.asset_movement import AssetMovement
+from rotkehlchen.history.events.structures.types import HistoryEventType
 from rotkehlchen.tests.utils.constants import A_XMR
 from rotkehlchen.tests.utils.factories import (
     make_api_key,
@@ -45,11 +48,11 @@ from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
     AssetAmount,
-    AssetMovementCategory,
     Fee,
     Location,
     Price,
     Timestamp,
+    TimestampMS,
     TradeType,
 )
 from rotkehlchen.user_messages import MessagesAggregator
@@ -486,55 +489,100 @@ def assert_binance_asset_movements_result(
         location: Location,
         got_fiat: bool,
 ) -> None:
-    assert len(movements) == 6 if got_fiat else 4
-    assert movements[0].location == location
-    assert movements[0].category == AssetMovementCategory.DEPOSIT
-    assert movements[0].timestamp == 1508198532
-    assert isinstance(movements[0].asset, Asset)
-    assert movements[0].asset == A_ETH
-    assert movements[0].amount == FVal('0.04670582')
-    assert movements[0].fee == ZERO
+    for movement in movements:
+        movement.event_identifier = 'x'  # reset event_identifier since its different depending on location.  # noqa: E501
 
-    assert movements[1].location == location
-    assert movements[1].category == AssetMovementCategory.DEPOSIT
-    assert movements[1].timestamp == 1508398632
-    assert isinstance(movements[1].asset, Asset)
-    assert movements[1].asset == A_XMR
-    assert movements[1].amount == FVal('1000')
-    assert movements[1].fee == ZERO
+    assert movements[:6] == [AssetMovement(
+            event_identifier='x',
+            timestamp=TimestampMS(1508198532000),
+            location=location,
+            event_type=HistoryEventType.DEPOSIT,
+            asset=A_ETH,
+            balance=Balance(FVal('0.04670582')),
+            extra_data={
+                'address': '0x6915f16F8791d0A1CC2BF47c13a6B2A92000504B',
+                'transaction_id': '0xef33b22bdb2b28b1f75ccd201a4a4m6e7g83jy5fc5d5a9d1340961598cfcb0a1',  # noqa: E501
+            },
+        ), AssetMovement(
+            event_identifier='x',
+            timestamp=TimestampMS(1508398632000),
+            location=location,
+            event_type=HistoryEventType.DEPOSIT,
+            asset=A_XMR,
+            balance=Balance(FVal('1000')),
+            extra_data={
+                'address': '463tWEBn5XZJSxLU34r6g7h8jtxuNcDbjLSjkn3XAXHCbLrTTErJrBWYgHJQyrCwkNgYvV38',  # noqa: E501
+                'transaction_id': 'c3c6219639c8ae3f9cf010cdc24fw7f7yt8j1e063f9b4bd1a05cb44c4b6e2509',  # noqa: E501
+            },
+        ), AssetMovement(
+            event_identifier='x',
+            timestamp=TimestampMS(1508198532000),
+            location=location,
+            event_type=HistoryEventType.WITHDRAWAL,
+            asset=A_ETH,
+            balance=Balance(FVal('0.99')),
+            extra_data={
+                'address': '0x6915f16F8791d0A1CC2BF47c13a6B2A92000504B',
+                'transaction_id': '0xdf33b22bdb2b28b1f75ccd201a4a4m6e7g83jy5fc5d5a9d1340961598cfcb0a1',  # noqa: E501
+            },
+        ), AssetMovement(
+            event_identifier='x',
+            timestamp=TimestampMS(1508198532000),
+            location=location,
+            event_type=HistoryEventType.WITHDRAWAL,
+            asset=A_ETH,
+            balance=Balance(FVal('0.01')),
+            is_fee=True,
+        ), AssetMovement(
+            event_identifier='x',
+            timestamp=TimestampMS(1508198532000),
+            location=location,
+            event_type=HistoryEventType.WITHDRAWAL,
+            asset=A_XMR,
+            balance=Balance(FVal('999.9999')),
+            extra_data={
+                'address': '463tWEBn5XZJSxLU34r6g7h8jtxuNcDbjLSjkn3XAXHCbLrTTErJrBWYgHJQyrCwkNgYvyV3z8zctJLPCZy24jvb3NiTcTJ',  # noqa: E501
+                'transaction_id': 'b3c6219639c8ae3f9cf010cdc24fw7f7yt8j1e063f9b4bd1a05cb44c4b6e2509',  # noqa: E501
+            },
+        ), AssetMovement(
+            event_identifier='x',
+            timestamp=TimestampMS(1508198532000),
+            location=location,
+            event_type=HistoryEventType.WITHDRAWAL,
+            asset=A_XMR,
+            balance=Balance(FVal('0.0001')),
+            is_fee=True,
+        ),
+    ]
 
-    assert movements[2].location == location
-    assert movements[2].category == AssetMovementCategory.WITHDRAWAL
-    assert movements[2].timestamp == 1508198532
-    assert isinstance(movements[2].asset, Asset)
-    assert movements[2].asset == A_ETH
-    assert movements[2].amount == FVal('0.99')
-    assert movements[2].fee == FVal('0.01')
+    if got_fiat is False:
+        return
 
-    assert movements[3].location == location
-    assert movements[3].category == AssetMovementCategory.WITHDRAWAL
-    assert movements[3].timestamp == 1508198532
-    assert isinstance(movements[3].asset, Asset)
-    assert movements[3].asset == A_XMR
-    assert movements[3].amount == FVal('999.9999')
-    assert movements[3].fee == FVal('0.0001')
-
-    if got_fiat:
-        assert movements[4].location == location
-        assert movements[4].category == AssetMovementCategory.DEPOSIT
-        assert movements[4].timestamp == 1626144956
-        assert isinstance(movements[4].asset, Asset)
-        assert movements[4].asset == A_EUR
-        assert movements[4].amount == FVal('10')
-        assert movements[4].fee == FVal('0')
-
-        assert movements[5].location == location
-        assert movements[5].category == AssetMovementCategory.WITHDRAWAL
-        assert movements[5].timestamp == 1636144956
-        assert isinstance(movements[5].asset, Asset)
-        assert movements[5].asset == A_EUR
-        assert movements[5].amount == FVal('10')
-        assert movements[5].fee == FVal('0.02')
+    assert movements[6:] == [AssetMovement(
+        event_identifier='x',
+        timestamp=TimestampMS(1626144956000),
+        location=location,
+        event_type=HistoryEventType.DEPOSIT,
+        asset=A_EUR,
+        balance=Balance(FVal('10.00')),
+        extra_data={'transaction_id': '7d76d611-0568-4f43-afb6-24cac7767365'},
+    ), AssetMovement(
+        event_identifier='x',
+        timestamp=TimestampMS(1636144956000),
+        location=location,
+        event_type=HistoryEventType.WITHDRAWAL,
+        asset=A_EUR,
+        balance=Balance(FVal('10.00')),
+        extra_data={'transaction_id': '8e76d611-0568-4f43-afb6-24cac7767365'},
+    ), AssetMovement(
+        event_identifier='x',
+        timestamp=TimestampMS(1636144956000),
+        location=location,
+        event_type=HistoryEventType.WITHDRAWAL,
+        asset=A_EUR,
+        balance=Balance(FVal('0.02')),
+        is_fee=True,
+    )]
 
 
 def assert_poloniex_balances_result(balances: dict[str, Any]) -> None:

@@ -780,7 +780,7 @@ class RestAPI:
     ) -> dict[str, Any]:
         """Queries new history events for the specified exchange and saves them in the database."""
         try:
-            self.rotkehlchen.exchange_manager.query_history_events(
+            self.rotkehlchen.exchange_manager.query_exchange_history_events(
                 name=name,
                 location=location,
             )

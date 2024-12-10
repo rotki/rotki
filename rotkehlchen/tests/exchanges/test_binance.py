@@ -28,6 +28,7 @@ from rotkehlchen.exchanges.binance import (
 )
 from rotkehlchen.exchanges.data_structures import Location, Trade, TradeType
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.types import HistoryEventSubType
 from rotkehlchen.tests.utils.constants import A_AXS, A_BUSD, A_LUNA, A_RDN
 from rotkehlchen.tests.utils.exchanges import (
     BINANCE_DEPOSITS_HISTORY_RESPONSE,
@@ -379,7 +380,7 @@ def test_binance_query_deposits_withdrawals(function_scope_binance):
     end_ts = 1636400907
     binance = function_scope_binance
 
-    def mock_get_deposit_withdrawal(url, params, **kwargs):  # pylint: disable=unused-argument
+    def mock_get_history_events(url, params, **kwargs):  # pylint: disable=unused-argument
         from_ts, to_ts = params.get('startTime'), params.get('endTime')
         if 'capital/deposit' in url:
             if from_ts >= 1508022000000 and to_ts <= 1515797999999:
@@ -410,8 +411,8 @@ def test_binance_query_deposits_withdrawals(function_scope_binance):
 
         return MockResponse(200, response_str)
 
-    with patch.object(binance.session, 'request', side_effect=mock_get_deposit_withdrawal):
-        movements = binance.query_online_deposits_withdrawals(
+    with patch.object(binance.session, 'request', side_effect=mock_get_history_events):
+        movements = binance.query_online_history_events(
             start_ts=Timestamp(start_ts),
             end_ts=Timestamp(end_ts),
         )
@@ -439,7 +440,7 @@ def test_binance_query_deposits_withdrawals_unexpected_data(function_scope_binan
 
     def mock_binance_and_query(deposits, withdrawals, expected_warnings_num, expected_errors_num):
 
-        def mock_get_deposit_withdrawal(url, **kwargs):  # pylint: disable=unused-argument
+        def mock_get_history_events(url, **kwargs):  # pylint: disable=unused-argument
             if 'deposit' in url:
                 response_str = deposits
             else:
@@ -447,14 +448,17 @@ def test_binance_query_deposits_withdrawals_unexpected_data(function_scope_binan
 
             return MockResponse(200, response_str)
 
-        with patch.object(binance.session, 'request', side_effect=mock_get_deposit_withdrawal):
-            movements = binance.query_online_deposits_withdrawals(
+        with patch.object(binance.session, 'request', side_effect=mock_get_history_events):
+            movements = binance.query_online_history_events(
                 start_ts=Timestamp(start_ts),
                 end_ts=Timestamp(end_ts),
             )
 
         if expected_errors_num == 0 and expected_warnings_num == 0:
-            assert len(movements) == 1
+            if len(movements) == 2:
+                assert movements[1].event_subtype == HistoryEventSubType.FEE
+            else:
+                assert len(movements) == 1
         else:
             assert len(movements) == 0
 
@@ -629,7 +633,7 @@ def test_binance_query_deposits_withdrawals_gte_90_days(function_scope_binance):
         ]
         yield from results
 
-    def mock_get_deposit_withdrawal(url, params, **kwargs):  # pylint: disable=unused-argument
+    def mock_get_history_events(url, params, **kwargs):  # pylint: disable=unused-argument
         if 'capital/deposit' in url:
             response_str = next(get_deposit_result)
         elif 'capital/withdraw' in url:
@@ -652,8 +656,8 @@ def test_binance_query_deposits_withdrawals_gte_90_days(function_scope_binance):
     get_fiat_deposit_result = get_fiat_deposit_result()
     get_fiat_withdraw_result = get_fiat_withdraw_result()
 
-    with patch.object(binance.session, 'request', side_effect=mock_get_deposit_withdrawal):
-        movements = binance.query_online_deposits_withdrawals(
+    with patch.object(binance.session, 'request', side_effect=mock_get_history_events):
+        movements = binance.query_online_history_events(
             start_ts=Timestamp(start_ts),
             end_ts=Timestamp(end_ts),
         )
@@ -663,7 +667,7 @@ def test_binance_query_deposits_withdrawals_gte_90_days(function_scope_binance):
     assert len(errors) == 0
     assert len(warnings) == 0
 
-    assert len(movements) == 6
+    assert len(movements) == 9
 
 
 @pytest.mark.freeze_time(datetime.datetime(2020, 11, 24, 3, 14, 15, tzinfo=datetime.UTC))
@@ -758,7 +762,7 @@ def test_api_query_list_calls_with_time_delta(function_scope_binance):
     binance = function_scope_binance
 
     with patch.object(binance, 'api_query_list') as mock_api_query_list:
-        binance.query_online_deposits_withdrawals(
+        binance.query_online_history_events(
             start_ts=Timestamp(start_ts),
             end_ts=Timestamp(end_ts),
         )

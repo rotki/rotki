@@ -306,7 +306,7 @@ class ExchangeManager:
             return self.database.get_binance_pairs(name, location)
         return []
 
-    def query_history_events(self, location: Location, name: str | None) -> None:
+    def query_exchange_history_events(self, location: Location, name: str | None) -> None:
         """Queries new history events for the specified exchange.
 
         May raise:

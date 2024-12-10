@@ -92,7 +92,7 @@ def test_binanceus_deposits_withdrawals_location(function_scope_binance):
     end_ts = 1508540400  # 2017-10-21 (less than 90 days since `start_ts`)
     binance = function_scope_binance
 
-    def mock_get_deposit_withdrawal(url, **kwargs):  # pylint: disable=unused-argument
+    def mock_get_history_events(url, **kwargs):  # pylint: disable=unused-argument
         if 'deposit' in url:
             response_str = BINANCE_DEPOSITS_HISTORY_RESPONSE
         else:
@@ -100,8 +100,8 @@ def test_binanceus_deposits_withdrawals_location(function_scope_binance):
 
         return MockResponse(200, response_str)
 
-    with patch.object(binance.session, 'request', side_effect=mock_get_deposit_withdrawal):
-        movements = binance.query_online_deposits_withdrawals(
+    with patch.object(binance.session, 'request', side_effect=mock_get_history_events):
+        movements = binance.query_online_history_events(
             start_ts=Timestamp(start_ts),
             end_ts=Timestamp(end_ts),
         )
@@ -111,7 +111,7 @@ def test_binanceus_deposits_withdrawals_location(function_scope_binance):
     assert len(errors) == 0
     assert len(warnings) == 0
 
-    assert len(movements) == 4
+    assert len(movements) == 6
     assert_binance_asset_movements_result(
         movements=movements,
         location=Location.BINANCEUS,

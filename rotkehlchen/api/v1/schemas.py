@@ -1578,7 +1578,7 @@ class ExchangesDataResourceSchema(Schema):
 
 
 class ExchangeEventsQuerySchema(AsyncQueryArgumentSchema):
-    name = fields.String()
+    name = fields.String(required=False)
     location = LocationField(limit_to=SUPPORTED_EXCHANGES, required=True)
 
 
