@@ -135,7 +135,7 @@ defineExpose({
             color="primary"
             @click="emit('delete-key', name)"
           >
-            <RuiIcon name="delete-bin-line" />
+            <RuiIcon name="lu-trash-2" />
           </RuiButton>
         </template>
         {{ tooltip }}

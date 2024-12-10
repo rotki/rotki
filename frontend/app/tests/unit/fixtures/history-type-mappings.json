@@ -83,7 +83,7 @@
         "counterparty_mappings": {
           "default": {
             "label": "send",
-            "icon": "arrow-up-line"
+            "icon": "lu-arrow-up"
           }
         },
         "direction": "out"
@@ -92,7 +92,7 @@
         "counterparty_mappings": {
           "default": {
             "label": "receive",
-            "icon": "arrow-down-line",
+            "icon": "lu-arrow-down",
             "color": "success"
           }
         },
@@ -102,7 +102,7 @@
         "counterparty_mappings": {
           "default": {
             "label": "swap",
-            "icon": "arrow-go-forward-line"
+            "icon": "lu-redo-2"
           }
         },
         "direction": "out"
@@ -111,7 +111,7 @@
         "counterparty_mappings": {
           "default": {
             "label": "swap",
-            "icon": "arrow-go-back-line",
+            "icon": "lu-undo-2",
             "color": "success"
           }
         },
@@ -121,7 +121,7 @@
         "counterparty_mappings": {
           "default": {
             "label": "migrate",
-            "icon": "arrow-go-forward-line"
+            "icon": "lu-redo-2"
           }
         },
         "direction": "out"
@@ -130,7 +130,7 @@
         "counterparty_mappings": {
           "default": {
             "label": "migrate",
-            "icon": "arrow-go-back-line",
+            "icon": "lu-undo-2",
             "color": "success"
           }
         },
@@ -168,7 +168,7 @@
         "counterparty_mappings": {
           "default": {
             "label": "airdrop",
-            "icon": "gift-line"
+            "icon": "lu-gift"
           }
         },
         "direction": "in"
@@ -382,7 +382,7 @@
         "counterparty_mappings": {
           "default": {
             "label": "new project",
-            "icon": "file-add-line"
+            "icon": "lu-file-plus"
           }
         },
         "direction": "neutral"
@@ -433,7 +433,7 @@
       "prefork acquisition": "git-branch-line",
       "staking": "seedling-line",
       "history event": "exchange-box-line",
-      "transaction event": "arrow-left-right-line"
+      "transaction event": "lu-arrow-left-right"
     }
   },
   "message": ""

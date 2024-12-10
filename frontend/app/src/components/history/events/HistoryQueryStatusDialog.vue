@@ -71,7 +71,7 @@ const { t } = useI18n();
               variant="text"
               @click="close()"
             >
-              <RuiIcon name="close-line" />
+              <RuiIcon name="lu-x" />
             </RuiButton>
           </div>
         </template>

@@ -128,7 +128,7 @@ const dialogTitle = computed<string>(() =>
         @click="fetchData()"
       >
         <template #prepend>
-          <RuiIcon name="refresh-line" />
+          <RuiIcon name="lu-refresh-ccw" />
         </template>
         {{ t('common.refresh') }}
       </RuiButton>
@@ -139,7 +139,7 @@ const dialogTitle = computed<string>(() =>
         @click="add()"
       >
         <template #prepend>
-          <RuiIcon name="add-line" />
+          <RuiIcon name="lu-plus" />
         </template>
         {{ t('asset_management.cex_mapping.add_mapping') }}
       </RuiButton>

@@ -130,7 +130,7 @@ watch(
           icon
           @click="close()"
         >
-          <RuiIcon name="close-line" />
+          <RuiIcon name="lu-x" />
         </RuiButton>
       </div>
 
@@ -192,7 +192,7 @@ watch(
           >
             <template #prepend>
               <RuiIcon
-                name="calendar-event-line"
+                name="lu-calendar-days"
                 size="20"
               />
             </template>

@@ -48,7 +48,7 @@ const emit = defineEmits<{ (e: 'reset'): void }>();
           variant="text"
           @click="emit('reset')"
         >
-          <RuiIcon name="close-line" />
+          <RuiIcon name="lu-x" />
         </RuiButton>
       </div>
     </td>

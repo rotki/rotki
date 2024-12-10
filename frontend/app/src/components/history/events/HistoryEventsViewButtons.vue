@@ -40,7 +40,7 @@ function addTransactionHash(): void {
         @click="emit('refresh')"
       >
         <template #prepend>
-          <RuiIcon name="refresh-line" />
+          <RuiIcon name="lu-refresh-ccw" />
         </template>
         {{ t('common.refresh') }}
       </RuiButton>
@@ -54,7 +54,7 @@ function addTransactionHash(): void {
     @click="emit('show:form', { type: 'event', data: { nextSequenceId: '0' } })"
   >
     <template #prepend>
-      <RuiIcon name="add-line" />
+      <RuiIcon name="lu-plus" />
     </template>
     {{ t('transactions.actions.add_event') }}
   </RuiButton>
@@ -115,7 +115,7 @@ function addTransactionHash(): void {
         @click="addTransactionHash()"
       >
         <template #prepend>
-          <RuiIcon name="add-line" />
+          <RuiIcon name="lu-plus" />
         </template>
         {{ t('transactions.dialog.add_tx') }}
       </RuiButton>

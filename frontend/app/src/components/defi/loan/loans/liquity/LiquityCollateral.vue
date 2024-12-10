@@ -63,7 +63,7 @@ const { t } = useI18n();
               size="sm"
               class="-my-1"
             >
-              <RuiIcon name="question-line" />
+              <RuiIcon name="lu-circle-help" />
             </RuiButton>
           </ExternalLink>
         </div>

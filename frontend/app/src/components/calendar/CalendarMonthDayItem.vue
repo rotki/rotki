@@ -114,7 +114,7 @@ function getColor(isDark: boolean, color: string | undefined, isBg: boolean = fa
     >
       <RuiIcon
         size="14"
-        name="add-line"
+        name="lu-plus"
       />
     </RuiButton>
   </div>
