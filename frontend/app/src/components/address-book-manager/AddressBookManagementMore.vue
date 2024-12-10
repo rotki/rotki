@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { externalLinks } from '@shared/external-links.ts';
-import { useAddressBookImport } from '@/composables/address-book/use-address-book-import.ts';
+import { externalLinks } from '@shared/external-links';
+import { useAddressBookImport } from '@/composables/address-book/use-address-book-import';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
 import FileUpload from '@/components/import/FileUpload.vue';
 import { useNotificationsStore } from '@/store/notifications';

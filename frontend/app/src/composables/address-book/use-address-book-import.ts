@@ -1,15 +1,15 @@
 import { z } from 'zod';
 import { groupBy, omit } from 'lodash-es';
-import { logger } from '@/utils/logging.ts';
-import { CSVMissingHeadersError, useCsvImportExport } from '@/composables/common/use-csv-import-export.ts';
+import { logger } from '@/utils/logging';
+import { CSVMissingHeadersError, useCsvImportExport } from '@/composables/common/use-csv-import-export';
 import { useNotificationsStore } from '@/store/notifications';
-import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names.ts';
+import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 
 const CSVRow = z.object({
-  address: z.string(),
+  address: z.string().min(1),
   blockchain: z.string().nullish().transform(item => item || null),
   location: z.string().optional().transform(item => item || 'private'),
-  name: z.string(),
+  name: z.string().min(1),
 });
 
 const CSVSchema = z.array(CSVRow);
@@ -52,9 +52,10 @@ export function useAddressBookImport(): UseAddressBookImport {
   async function importAddressBook(file: File): Promise<number> {
     try {
       const csvContent = await file.text();
-      const names = CSVSchema.parse(parseCSV(csvContent));
-      const length = await handleAddressBookImport(names);
-      return length;
+      const names = CSVSchema.parse(parseCSV(csvContent, {
+        requiredHeaders: ['address', 'name'],
+      }));
+      return await handleAddressBookImport(names);
     }
     catch (error) {
       const message = error instanceof CSVMissingHeadersError
