@@ -34,7 +34,7 @@ class PNL:
         if isinstance(x, FVal | int):
             return PNL(taxable=self.taxable + x, free=self.free + x)
 
-        raise TypeError(f'Cant add type {type(x)} to PNL')
+        raise TypeError(f"Can't add type {type(x)} to PNL")
 
     __radd__ = __add__
 
@@ -44,7 +44,7 @@ class PNL:
         if isinstance(x, FVal | int):
             return PNL(taxable=self.taxable - x, free=self.free - x)
 
-        raise TypeError(f'Cant sub type {type(x)} from PNL')
+        raise TypeError(f"Can't sub type {type(x)} from PNL")
 
     __rsub__ = __sub__
 
