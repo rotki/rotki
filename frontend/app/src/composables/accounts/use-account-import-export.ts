@@ -18,8 +18,8 @@ import type {
   AccountPayload,
   AddAccountsPayload,
   XpubAccountPayload,
-} from '@/types/blockchain/accounts.ts';
-import type { Eth2Validator } from '@/types/balances.ts';
+} from '@/types/blockchain/accounts';
+import type { Eth2Validator } from '@/types/balances';
 
 const CSVRow = z.object({
   address: z.string(),
