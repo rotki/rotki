@@ -57,7 +57,7 @@ class AccountingRulesManager:
         else:
             callback = None
 
-        if isinstance(event, EvmEvent) is False or rule is not None:
+        if not isinstance(event, EvmEvent) or rule is not None:
             return rule, callback
 
         event_id_no_cpt = event.get_type_identifier(include_counterparty=False)
