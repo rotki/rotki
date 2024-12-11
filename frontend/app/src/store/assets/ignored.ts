@@ -2,6 +2,7 @@ import { uniqueStrings } from '@/utils/data';
 import { arrayify } from '@/utils/array';
 import { useNotificationsStore } from '@/store/notifications';
 import { useAssetIgnoreApi } from '@/composables/api/assets/ignore';
+import { useConfirmStore } from '@/store/confirm';
 import type { MaybeRef } from '@vueuse/core';
 import type { ActionStatus } from '@/types/action';
 
@@ -11,6 +12,7 @@ export const useIgnoredAssetsStore = defineStore('assets/ignored', () => {
   const { t } = useI18n();
 
   const { addIgnoredAssets, getIgnoredAssets, removeIgnoredAssets } = useAssetIgnoreApi();
+  const { show } = useConfirmStore();
 
   const fetchIgnoredAssets = async (): Promise<void> => {
     try {
@@ -47,6 +49,21 @@ export const useIgnoredAssetsStore = defineStore('assets/ignored', () => {
       });
       return { message: error.message, success: false };
     }
+  };
+
+  const ignoreAssetWithConfirmation = async (assets: string[] | string, assetName?: string | null, onSuccess?: () => any): Promise<void> => {
+    show({
+      message: t('ignore.confirm.message', {
+        asset: assetName || (typeof assets === 'string' ? assets : t('ignore.confirm.these_assets')),
+      }),
+      title: t('ignore.confirm.title'),
+      type: 'warning',
+    }, async () => {
+      const { success } = await ignoreAsset(assets);
+      if (success) {
+        onSuccess?.();
+      }
+    });
   };
 
   const unignoreAsset = async (assets: string[] | string): Promise<ActionStatus> => {
@@ -86,6 +103,7 @@ export const useIgnoredAssetsStore = defineStore('assets/ignored', () => {
     addIgnoredAsset,
     fetchIgnoredAssets,
     ignoreAsset,
+    ignoreAssetWithConfirmation,
     ignoredAssets,
     isAssetIgnored,
     unignoreAsset,

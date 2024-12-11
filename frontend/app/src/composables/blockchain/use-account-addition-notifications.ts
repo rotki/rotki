@@ -82,7 +82,7 @@ export function useAccountAdditionNotifications(): UseAccountAdditionNotificatio
         address: account.address,
         list: listOfFailureText.join('\n'),
       }),
-      severity: Severity.INFO,
+      severity: Severity.WARNING,
       title: t('actions.balances.blockchain_accounts_add.task.title', { blockchain: 'EVM' }),
     });
   }

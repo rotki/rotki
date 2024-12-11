@@ -94,7 +94,7 @@ const { isLoading: isSectionLoading } = useStatusStore();
 const loading = isSectionLoading(Section.NON_FUNGIBLE_BALANCES);
 
 const { setMessage } = useMessageStore();
-const { ignoreAsset, isAssetIgnored, unignoreAsset } = useIgnoredAssetsStore();
+const { ignoreAsset, ignoreAssetWithConfirmation, isAssetIgnored, unignoreAsset } = useIgnoredAssetsStore();
 
 const {
   fetchData,
@@ -123,19 +123,23 @@ const { show } = useConfirmStore();
 
 const isIgnored = (identifier: string) => isAssetIgnored(identifier);
 
-async function toggleIgnoreAsset(identifier: string) {
-  let success;
-  if (get(isIgnored(identifier))) {
-    const response = await unignoreAsset(identifier);
-    success = response.success;
+function refreshCallback() {
+  if (get(ignoredAssetsHandling) !== 'none') {
+    fetchData();
+  }
+}
+
+async function toggleIgnoreAsset(balance: NonFungibleBalance) {
+  const { id, name } = balance;
+  if (get(isIgnored(id))) {
+    const response = await unignoreAsset(id);
+    if (response.success) {
+      refreshCallback();
+    }
   }
   else {
-    const response = await ignoreAsset(identifier);
-    success = response.success;
+    await ignoreAssetWithConfirmation(id, name, refreshCallback);
   }
-
-  if (success && get(ignoredAssetsHandling) !== 'none')
-    await fetchData();
 }
 
 async function massIgnore(ignored: boolean) {
@@ -283,7 +287,7 @@ watch(loading, async (isLoading, wasLoading) => {
                   color="primary"
                   hide-details
                   :model-value="isIgnored(row.id).value"
-                  @update:model-value="toggleIgnoreAsset(row.id)"
+                  @update:model-value="toggleIgnoreAsset(row)"
                 />
               </div>
             </template>

@@ -46,7 +46,7 @@ const route = useRoute();
 
 const { coingeckoAsset, cryptocompareAsset } = externalLinks;
 
-const { ignoreAsset, isAssetIgnored, unignoreAsset } = useIgnoredAssetsStore();
+const { ignoreAssetWithConfirmation, isAssetIgnored, unignoreAsset } = useIgnoredAssetsStore();
 const { isAssetWhitelisted, unWhitelistAsset, whitelistAsset } = useWhitelistedAssetsStore();
 const { markAssetsAsSpam, removeAssetFromSpamList } = useSpamAsset();
 const { assetInfo, assetName, assetSymbol, refetchAssetInfo, tokenAddress } = useAssetInfoRetrieval();
@@ -121,10 +121,12 @@ async function toggleSpam() {
 
 async function toggleIgnoreAsset() {
   const id = get(identifier);
-  if (get(isIgnored))
+  if (get(isIgnored)) {
     await unignoreAsset(id);
-  else
-    await ignoreAsset(id);
+  }
+  else {
+    await ignoreAssetWithConfirmation(id, get(symbol) || get(name));
+  }
 }
 
 async function toggleWhitelistAsset() {
@@ -233,27 +235,29 @@ async function toggleWhitelistAsset() {
           <RuiIcon name="pencil-line" />
         </RuiButton>
 
-        <div class="text-body-2 mr-4">
-          {{ t('assets.ignore') }}
-        </div>
+        <template v-if="!isCustomAsset">
+          <div class="text-body-2 mr-4">
+            {{ t('assets.ignore') }}
+          </div>
 
-        <RuiTooltip
-          :popper="{ placement: 'top' }"
-          :open-delay="400"
-          tooltip-class="max-w-[10rem]"
-          :disabled="!isSpam"
-        >
-          <template #activator>
-            <RuiSwitch
-              color="primary"
-              hide-details
-              :disabled="isSpam"
-              :model-value="isIgnored"
-              @update:model-value="toggleIgnoreAsset()"
-            />
-          </template>
-          {{ t('ignore.spam.hint') }}
-        </RuiTooltip>
+          <RuiTooltip
+            :popper="{ placement: 'top' }"
+            :open-delay="400"
+            tooltip-class="max-w-[10rem]"
+            :disabled="!isSpam"
+          >
+            <template #activator>
+              <RuiSwitch
+                color="primary"
+                hide-details
+                :disabled="isSpam"
+                :model-value="isIgnored"
+                @update:model-value="toggleIgnoreAsset()"
+              />
+            </template>
+            {{ t('ignore.spam.hint') }}
+          </RuiTooltip>
+        </template>
 
         <ManagedAssetIgnoringMore
           v-if="asset?.assetType === EVM_TOKEN"

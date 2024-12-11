@@ -64,7 +64,7 @@ const secondaryText = computed<string>(() => get(secondaryAction) || t('common.a
             :name="icon"
           />
         </div>
-        <div class="text-body-1 pt-1 w-full break-words">
+        <div class="text-body-1 pt-1 w-full break-words whitespace-pre-line">
           {{ message }}
           <slot />
         </div>
