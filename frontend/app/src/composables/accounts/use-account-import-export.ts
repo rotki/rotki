@@ -229,7 +229,14 @@ export function useAccountImportExport(): UseAccountImportExportReturn {
     await awaitParallelExecution(
       accounts,
       ([_chain, id]) => id,
-      async ([chain, _id, account]) => addAccounts(chain, account, { wait: true }),
+      async ([chain, _id, account]) => {
+        try {
+          await addAccounts(chain, account, { wait: true });
+        }
+        catch (error) {
+          logger.error(error);
+        }
+      },
       1,
     );
 
