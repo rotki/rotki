@@ -19,7 +19,6 @@ import CollectionHandler from '@/components/helper/CollectionHandler.vue';
 import TableFilter from '@/components/table-filter/TableFilter.vue';
 import AssetStatusFilter from '@/components/asset-manager/AssetStatusFilter.vue';
 import IgnoreButtons from '@/components/history/IgnoreButtons.vue';
-import { useConfirmStore } from '@/store/confirm';
 import type { ActionStatus } from '@/types/action';
 import type { SupportedAsset } from '@rotki/common';
 import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
@@ -135,9 +134,8 @@ function getAsset(item: SupportedAsset) {
 }
 
 const { setMessage } = useMessageStore();
-const { fetchIgnoredAssets, ignoreAsset, isAssetIgnored, unignoreAsset } = useIgnoredAssetsStore();
+const { fetchIgnoredAssets, ignoreAsset, ignoreAssetWithConfirmation, isAssetIgnored, unignoreAsset } = useIgnoredAssetsStore();
 const { isAssetWhitelisted, unWhitelistAsset, whitelistAsset } = useWhitelistedAssetsStore();
-const { show } = useConfirmStore();
 
 const { markAssetsAsSpam, removeAssetFromSpamList } = useSpamAsset();
 
@@ -149,15 +147,7 @@ async function toggleIgnoreAsset(asset: SupportedAsset) {
     await unignoreAsset(identifier);
   }
   else {
-    show({
-      message: t('ignore.confirm.message', {
-        asset: symbol || name,
-      }),
-      title: t('ignore.confirm.title'),
-      type: 'warning',
-    }, async () => {
-      await ignoreAsset(identifier);
-    });
+    await ignoreAssetWithConfirmation(identifier, symbol || name);
   }
 
   if (get(ignoredFilter).ignoredAssetsHandling !== 'none')

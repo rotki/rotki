@@ -19,7 +19,6 @@ import ExternalLink from '@/components/helper/ExternalLink.vue';
 import HashLink from '@/components/helper/HashLink.vue';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
-import { useConfirmStore } from '@/store/confirm';
 import type { AssetBalanceWithPrice } from '@rotki/common';
 import type { RouteLocationRaw } from 'vue-router';
 
@@ -47,14 +46,13 @@ const route = useRoute();
 
 const { coingeckoAsset, cryptocompareAsset } = externalLinks;
 
-const { ignoreAsset, isAssetIgnored, unignoreAsset } = useIgnoredAssetsStore();
+const { ignoreAssetWithConfirmation, isAssetIgnored, unignoreAsset } = useIgnoredAssetsStore();
 const { isAssetWhitelisted, unWhitelistAsset, whitelistAsset } = useWhitelistedAssetsStore();
 const { markAssetsAsSpam, removeAssetFromSpamList } = useSpamAsset();
 const { assetInfo, assetName, assetSymbol, refetchAssetInfo, tokenAddress } = useAssetInfoRetrieval();
 const { getChain } = useSupportedChains();
 const premium = usePremium();
 const { balances } = useAggregatedBalances();
-const { show } = useConfirmStore();
 
 const isIgnored = isAssetIgnored(identifier);
 const isWhitelisted = isAssetWhitelisted(identifier);
@@ -127,15 +125,7 @@ async function toggleIgnoreAsset() {
     await unignoreAsset(id);
   }
   else {
-    show({
-      message: t('ignore.confirm.message', {
-        asset: get(symbol) || get(name),
-      }),
-      title: t('ignore.confirm.title'),
-      type: 'warning',
-    }, async () => {
-      await ignoreAsset(id);
-    });
+    await ignoreAssetWithConfirmation(id, get(symbol) || get(name));
   }
 }
 
