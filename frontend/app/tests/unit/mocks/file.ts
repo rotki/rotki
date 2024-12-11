@@ -4,7 +4,7 @@ class MockFile {
   type: string;
 
   constructor(content: string[], filename: string, options: { type: string }) {
-    this.content = content.join('');
+    this.content = content.join('\n');
     this.name = filename;
     this.type = options.type;
   }

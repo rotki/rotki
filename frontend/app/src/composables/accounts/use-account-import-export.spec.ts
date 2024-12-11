@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { createMockCSV } from '@test/mocks/file';
 import { useAccountImportExport } from '@/composables/accounts/use-account-import-export';
 import { useBlockchainAccounts } from '@/composables/blockchain/accounts/index';
 import { useTagsApi } from '@/composables/api/tags';
 import { useNotificationsStore } from '@/store/notifications/index';
-import { createMockCSV } from '../../../tests/unit/utils/mocks/file';
 import type { Tag } from '@/types/tags';
 
 vi.mock('@/composables/api/tags', async () => {
@@ -65,9 +65,9 @@ describe('useAccountImportExport', () => {
     const { queryAddTag } = useTagsApi();
 
     const mockFile = createMockCSV([
-      'address,address extras,chain,label,tags\n'
-      + '0x123,,evm,Name1,tag1;tag2\n'
-      + '0x124,,eth,Name2,tag1;tag2',
+      'address,address extras,chain,label,tags',
+      '0x123,,evm,Name1,tag1;tag2',
+      '0x124,,eth,Name2,tag1;tag2',
     ]);
 
     const { importAccounts } = useAccountImportExport();
@@ -93,9 +93,9 @@ describe('useAccountImportExport', () => {
   it('should not import from csv with missing headers', async () => {
     const { notify } = useNotificationsStore();
     const mockFile = createMockCSV([
-      'label,tags\n'
-      + 'Name1,tag1;tag2\n'
-      + 'Name2,tag1;tag2',
+      'label,tags',
+      'Name1,tag1;tag2',
+      'Name2,tag1;tag2',
     ]);
 
     const { importAccounts } = useAccountImportExport();
