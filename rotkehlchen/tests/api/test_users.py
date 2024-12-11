@@ -194,7 +194,7 @@ def test_user_creation_with_no_analytics(
     ),
 )
 def test_user_creation_permission_error(
-        mock_path_mkdir,
+        mock_path_mkdir: mock.MagicMock,
         rotkehlchen_api_server: 'APIServer',
         use_clean_caching_directory: bool,
         start_with_logged_in_user: bool,
