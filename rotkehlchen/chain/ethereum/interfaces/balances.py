@@ -49,6 +49,7 @@ PROTOCOLS_WITH_BALANCES = Literal[
     'balancer-v2',
     'walletconnect',
     'aura-finance',
+    'giveth',
 ]
 BalancesSheetType = dict[ChecksumEvmAddress, BalanceSheet]
 

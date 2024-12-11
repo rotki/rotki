@@ -53,7 +53,11 @@ from rotkehlchen.chain.evm.decoding.hop.balances import HopBalances
 from rotkehlchen.chain.evm.decoding.velodrome.constants import CPT_VELODROME
 from rotkehlchen.chain.evm.tokens import TokenBalancesType
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.chain.gnosis.modules.giveth.balances import GivethBalances as GivethGnosisBalances
 from rotkehlchen.chain.optimism.modules.extrafi.balances import ExtrafiBalances
+from rotkehlchen.chain.optimism.modules.giveth.balances import (
+    GivethBalances as GivethOptimismBalances,
+)
 from rotkehlchen.chain.optimism.modules.velodrome.balances import VelodromeBalances
 from rotkehlchen.chain.optimism.modules.walletconnect.balances import WalletconnectBalances
 from rotkehlchen.chain.optimism.modules.walletconnect.constants import WCT_TOKEN_ID
@@ -1253,6 +1257,60 @@ def test_curve_lend_balances(
     )
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+@pytest.mark.parametrize('gnosis_accounts', [['0x839395e20bbB182fa440d08F850E6c7A8f6F0780']])
+def test_gnosis_giveth_staked_balances(
+        gnosis_inquirer: 'GnosisInquirer',
+        gnosis_accounts: list[ChecksumEvmAddress],
+        inquirer: 'Inquirer',  # pylint: disable=unused-argument
+) -> None:
+    """Check that staked balances in Giveth Gnosis are properly detected"""
+    _, tx_decoder = get_decoded_events_of_transaction(
+        evm_inquirer=gnosis_inquirer,
+        tx_hash=deserialize_evm_tx_hash('0x9cd449bab5d207bb5c72d681efb94f7c1643addfc41003ed7fc5a58cb7f0f265'),
+    )
+    protocol_balances_inquirer = GivethGnosisBalances(
+        evm_inquirer=gnosis_inquirer,
+        tx_decoder=tx_decoder,
+    )
+    protocol_balances = protocol_balances_inquirer.query_balances()
+    user_balance = protocol_balances[gnosis_accounts[0]]
+    giv_asset = Asset(protocol_balances_inquirer.giv_token_id)
+
+    assert user_balance.assets[giv_asset] == Balance(
+        amount=FVal('21266652.068337565927179618'),
+        usd_value=FVal('170838.63139580728447924149192906'),
+    )
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+@pytest.mark.parametrize('optimism_accounts', [['0x9924285ff2207D6e36642B6832A515A6a3aedCAB']])
+def test_optimism_giveth_staked_balances(
+        optimism_inquirer: 'OptimismInquirer',
+        optimism_accounts: list[ChecksumEvmAddress],
+        inquirer: 'Inquirer',  # pylint: disable=unused-argument
+) -> None:
+    """Check that staked balances in Giveth Optimism are properly detected"""
+    _, tx_decoder = get_decoded_events_of_transaction(
+        evm_inquirer=optimism_inquirer,
+        tx_hash=deserialize_evm_tx_hash('0x06a3f05d3441d4eb36c3497ddffbfaef059a47c735f6efa317ae0ba5962ed46c'),
+    )
+    protocol_balances_inquirer = GivethOptimismBalances(
+        evm_inquirer=optimism_inquirer,
+        tx_decoder=tx_decoder,
+    )
+    protocol_balances = protocol_balances_inquirer.query_balances()
+    user_balance = protocol_balances[optimism_accounts[0]]
+    giv_asset = Asset(protocol_balances_inquirer.giv_token_id)
+
+    assert user_balance.assets[giv_asset] == Balance(
+        amount=FVal('31641.865744797163817899'),
+        usd_value=FVal('247.43907370565637308433200101'),
+    )
+
+
 def test_all_balance_classes_used():
     """
     Test that all protocol balance classes are used properly in the
@@ -1266,6 +1324,7 @@ def test_all_balance_classes_used():
             'GearboxCommonBalances',
             'ExtrafiCommonBalances',
             'VelodromeLikeBalances',
+            'GivethCommonBalances',
         },
     )
     unused_classes = set()

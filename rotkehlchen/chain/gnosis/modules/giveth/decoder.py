@@ -19,6 +19,8 @@ from rotkehlchen.chain.evm.decoding.structures import (
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.gnosis.modules.giveth.constants import (
     GGIV_TOKEN_ID,
+    GIV_TOKEN_ID,
+    GIVPOW_ADDRESS,
     GNOSIS_GIVPOWERSTAKING_WRAPPER,
 )
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -47,8 +49,8 @@ class GivethDecoder(GivethDecoderBase):
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
             distro_address=string_to_evm_address('0xc0dbDcA66a0636236fAbe1B3C16B1bD4C84bB1E1'),
-            givpower_staking_address=string_to_evm_address('0xD93d3bDBa18ebcB3317a57119ea44ed2Cf41C2F2'),
-            giv_token_id='eip155:100/erc20:0x4f4F9b8D5B4d0Dc10506e5551B0513B61fD59e75',
+            givpower_staking_address=GIVPOW_ADDRESS,
+            giv_token_id=GIV_TOKEN_ID,
             pow_token_id='eip155:100/erc20:0xD93d3bDBa18ebcB3317a57119ea44ed2Cf41C2F2',
         )
 

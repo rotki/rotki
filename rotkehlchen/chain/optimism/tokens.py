@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING
 
 from rotkehlchen.chain.evm.tokens import EvmTokens
+from rotkehlchen.chain.optimism.modules.giveth.constants import GIVPOW_ADDRESS
 from rotkehlchen.constants.assets import A_OPTIMISM_ETH
 from rotkehlchen.types import ChecksumEvmAddress
 
@@ -21,4 +22,4 @@ class OptimismTokens(EvmTokens):
         Optimism ETH ERC20 token mirrors the user's balance on the chain.
         To avoid double counting, we exclude the token from the balance query.
         """
-        return {A_OPTIMISM_ETH.resolve_to_evm_token().evm_address}
+        return {A_OPTIMISM_ETH.resolve_to_evm_token().evm_address, GIVPOW_ADDRESS}
