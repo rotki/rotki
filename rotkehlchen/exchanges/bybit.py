@@ -4,6 +4,7 @@ import json
 import logging
 import urllib.parse
 from collections import defaultdict
+from collections.abc import Sequence
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Any, Final, Literal
 
@@ -15,16 +16,23 @@ from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.assets.converters import asset_from_bybit
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.timing import DAY_IN_SECONDS, WEEK_IN_SECONDS
+from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnprocessableTradePair
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
+from rotkehlchen.exchanges.data_structures import MarginPosition, Trade
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
 from rotkehlchen.exchanges.utils import pair_symbol_to_base_quote
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.deserialization import deserialize_price
+from rotkehlchen.history.events.structures.asset_movement import (
+    AssetMovement,
+    create_asset_movement_with_fee,
+)
+from rotkehlchen.history.events.structures.base import HistoryBaseEntry
+from rotkehlchen.history.events.structures.types import HistoryEventType
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
@@ -35,7 +43,6 @@ from rotkehlchen.serialization.deserialize import (
 from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
-    AssetMovementCategory,
     ExchangeAuthCredentials,
     Fee,
     Location,
@@ -471,7 +478,7 @@ class Bybit(ExchangeInterface):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-            query_for: AssetMovementCategory,
+            query_for: Literal[HistoryEventType.DEPOSIT, HistoryEventType.WITHDRAWAL],
     ) -> list[AssetMovement]:
         """
         Process deposits/withdrawals from bybit. If any asset is unknown or we fail to
@@ -484,16 +491,16 @@ class Bybit(ExchangeInterface):
         started to use the api.
         """
         log.debug(f'querying bybit online {query_for} with {start_ts=}-{end_ts=}')
-        if query_for == AssetMovementCategory.DEPOSIT:
+        if query_for == HistoryEventType.DEPOSIT:
             endpoint = 'asset/deposit/query-record'
             timestamp_key = 'successAt'
             fee_key = 'depositFee'
-            link_key = 'txID'
+            id_key = 'txID'
         else:
             endpoint = 'asset/withdraw/query-record'
             timestamp_key = 'updateTime'
             fee_key = 'withdrawFee'
-            link_key = 'withdrawId'
+            id_key = 'withdrawId'
 
         raw_data = self._paginated_api_query(
             endpoint=endpoint,  # type: ignore  # mypy doesn't detect that the string is assigned once
@@ -516,17 +523,19 @@ class Bybit(ExchangeInterface):
                 continue
 
             try:
-                movements.append(AssetMovement(
-                    timestamp=timestamp,
+                movements.extend(create_asset_movement_with_fee(
+                    timestamp=ts_sec_to_ms(timestamp),
                     location=Location.BYBIT,
-                    category=query_for,
-                    address=None,
-                    transaction_id=movement['txID'],
+                    event_type=query_for,
                     asset=coin,
                     amount=deserialize_asset_amount(movement['amount']),
                     fee_asset=coin,
                     fee=deserialize_fee(movement[fee_key]) if len(movement[fee_key]) else Fee(ZERO),  # noqa: E501,
-                    link=movement[link_key],
+                    unique_id=movement[id_key],
+                    extra_data=maybe_set_transaction_extra_data(
+                        address=None,
+                        transaction_id=movement['txID'],
+                    ),
                 ))
             except (DeserializationError, KeyError) as e:
                 msg = str(e)
@@ -538,22 +547,22 @@ class Bybit(ExchangeInterface):
 
         return movements
 
-    def query_online_deposits_withdrawals(
+    def query_online_history_events(
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> list[AssetMovement]:
+    ) -> Sequence[HistoryBaseEntry]:
         """Query deposits and withdrawals sequentially"""
         new_movements = self._query_deposits_withdrawals(
             start_ts=start_ts,
             end_ts=end_ts,
-            query_for=AssetMovementCategory.DEPOSIT,
+            query_for=HistoryEventType.DEPOSIT,
         )
         new_movements.extend(
             self._query_deposits_withdrawals(
                 start_ts=start_ts,
                 end_ts=end_ts,
-                query_for=AssetMovementCategory.WITHDRAWAL,
+                query_for=HistoryEventType.WITHDRAWAL,
             ),
         )
         return new_movements

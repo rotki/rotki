@@ -130,8 +130,8 @@ class AssetMovement(HistoryBaseEntry):
         - DeserializationError
         - UnknownAsset
         """
-        amount = deserialize_fval(entry[7], 'amount', 'evm event')
-        usd_value = deserialize_fval(entry[8], 'usd_value', 'evm event')
+        amount = deserialize_fval(entry[7], 'amount', 'asset movement event')
+        usd_value = deserialize_fval(entry[8], 'usd_value', 'asset movement event')
         return cls(
             identifier=entry[0],
             event_identifier=entry[1],

@@ -10,6 +10,7 @@ import requests
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.converters import asset_from_bitstamp
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR, A_LINK, A_USD, A_USDC
+from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.exchanges.bitstamp import (
@@ -21,16 +22,13 @@ from rotkehlchen.exchanges.bitstamp import (
     USER_TRANSACTION_SORTING_MODE,
     Bitstamp,
 )
-from rotkehlchen.exchanges.data_structures import (
-    AssetMovement,
-    AssetMovementCategory,
-    Trade,
-    TradeType,
-)
+from rotkehlchen.exchanges.data_structures import Trade, TradeType
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.asset_movement import AssetMovement
+from rotkehlchen.history.events.structures.types import HistoryEventType
 from rotkehlchen.tests.utils.constants import A_GBP
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import Fee, Location, Timestamp
+from rotkehlchen.types import Location, Timestamp, TimestampMS
 from rotkehlchen.utils.serialization import jsonloads_list
 
 
@@ -103,7 +101,7 @@ def test_validate_api_key_err_auth_nonce(mock_bitstamp):
         assert result is False
         assert msg == API_ERR_AUTH_NONCE_MESSAGE
 
-        movements = mock_bitstamp.query_online_deposits_withdrawals(0, 1)
+        movements = mock_bitstamp.query_online_history_events(0, 1)
         assert movements == []
         errors = mock_bitstamp.msg_aggregator.consume_errors()
         assert len(errors) == 2  # since we do 2 queries underneath
@@ -275,7 +273,7 @@ def test_deserialize_trade_buy(mock_bitstamp):
         'fee': '20.00000000',
         'order_id': 2,
     }
-    expected_trade = Trade(
+    expected_trade = [Trade(
         timestamp=1606901400,
         location=Location.BITSTAMP,
         base_asset=A_BTC,
@@ -287,7 +285,7 @@ def test_deserialize_trade_buy(mock_bitstamp):
         fee_currency=A_USD,
         link='2',
         notes='',
-    )
+    )]
     trade = mock_bitstamp._deserialize_trade(raw_trade)
     assert trade == expected_trade
 
@@ -302,7 +300,7 @@ def test_deserialize_trade_buy(mock_bitstamp):
         'fee': '0.02',
         'order_id': 2,
     }
-    expected_trade = Trade(
+    expected_trade = [Trade(
         timestamp=1555402145,
         location=Location.BITSTAMP,
         base_asset=A_BTC,
@@ -314,7 +312,7 @@ def test_deserialize_trade_buy(mock_bitstamp):
         fee_currency=A_EUR,
         link='2',
         notes='',
-    )
+    )]
     trade = mock_bitstamp._deserialize_trade(raw_trade)
     assert trade == expected_trade
 
@@ -329,7 +327,7 @@ def test_deserialize_trade_buy(mock_bitstamp):
         'fee': '0.02',
         'order_id': 15,
     }
-    expected_trade = Trade(
+    expected_trade = [Trade(
         timestamp=1555345154,
         location=Location.BITSTAMP,
         base_asset=A_EUR,
@@ -341,7 +339,7 @@ def test_deserialize_trade_buy(mock_bitstamp):
         fee_currency=A_USD,
         link='15',
         notes='',
-    )
+    )]
     trade = mock_bitstamp._deserialize_trade(raw_trade)
     assert trade == expected_trade
 
@@ -357,7 +355,7 @@ def test_deserialize_trade_sell(mock_bitstamp):
         'fee': '0.00610000',
         'order_id': 3,
     }
-    expected_trade = Trade(
+    expected_trade = [Trade(
         timestamp=1606995000,
         location=Location.BITSTAMP,
         base_asset=A_EUR,
@@ -369,7 +367,7 @@ def test_deserialize_trade_sell(mock_bitstamp):
         fee_currency=A_USD,
         link='5',
         notes='',
-    )
+    )]
     trade = mock_bitstamp._deserialize_trade(raw_trade)
     assert trade == expected_trade
 
@@ -384,7 +382,7 @@ def test_deserialize_trade_sell(mock_bitstamp):
         'fee': '40.35000',
         'order_id': 3,
     }
-    expected_trade = Trade(
+    expected_trade = [Trade(
         timestamp=1561498868,
         location=Location.BITSTAMP,
         base_asset=A_BTC,
@@ -396,7 +394,7 @@ def test_deserialize_trade_sell(mock_bitstamp):
         fee_currency=A_EUR,
         link='10',
         notes='',
-    )
+    )]
     trade = mock_bitstamp._deserialize_trade(raw_trade)
     assert trade == expected_trade
 
@@ -822,18 +820,26 @@ def test_deserialize_asset_movement_deposit(mock_bitstamp):
         'eur': '0.00',
     }
     asset = A_BTC
-    movement = AssetMovement(
-        timestamp=1606901400,
+    movement = [AssetMovement(
+        timestamp=TimestampMS(1606901400000),
         location=Location.BITSTAMP,
-        category=AssetMovementCategory.DEPOSIT,
-        address=None,
-        transaction_id=None,
+        event_type=HistoryEventType.DEPOSIT,
         asset=asset,
-        amount=FVal('0.5'),
-        fee_asset=asset,
-        fee=Fee(FVal('0.0005')),
-        link='2',
-    )
+        balance=Balance(FVal('0.50000000')),
+        unique_id='2',
+        extra_data={
+            'movement_id': '2',
+            'fee': FVal('0.00050000'),
+        },
+    ), AssetMovement(
+        timestamp=TimestampMS(1606901400000),
+        location=Location.BITSTAMP,
+        event_type=HistoryEventType.DEPOSIT,
+        asset=asset,
+        balance=Balance(FVal('0.00050000')),
+        unique_id='2',
+        is_fee=True,
+    )]
     expected_movement = mock_bitstamp._deserialize_asset_movement_from_user_transaction(raw_movement)  # noqa: E501
     assert movement == expected_movement
 
@@ -849,18 +855,26 @@ def test_deserialize_asset_movement_deposit(mock_bitstamp):
         'gbp': '1000.51',
     }
     asset = A_GBP
-    movement = AssetMovement(
-        timestamp=1521614766,
+    movement = [AssetMovement(
+        timestamp=TimestampMS(1521614766000),
         location=Location.BITSTAMP,
-        category=AssetMovementCategory.DEPOSIT,
-        address=None,
-        transaction_id=None,
+        event_type=HistoryEventType.DEPOSIT,
         asset=asset,
-        amount=FVal('1000.51'),
-        fee_asset=asset,
-        fee=Fee(FVal('0.1')),
-        link='3',
-    )
+        balance=Balance(FVal('1000.51')),
+        unique_id='3',
+        extra_data={
+            'movement_id': '3',
+            'fee': FVal('0.1'),
+        },
+    ), AssetMovement(
+        timestamp=TimestampMS(1521614766000),
+        location=Location.BITSTAMP,
+        event_type=HistoryEventType.DEPOSIT,
+        asset=asset,
+        balance=Balance(FVal('0.1')),
+        unique_id='3',
+        is_fee=True,
+    )]
     expected_movement = mock_bitstamp._deserialize_asset_movement_from_user_transaction(raw_movement)  # noqa: E501
     assert movement == expected_movement
 
@@ -876,18 +890,26 @@ def test_deserialize_asset_movement_deposit(mock_bitstamp):
         'usdc': '1000.51',
     }
     asset = A_USDC
-    movement = AssetMovement(
-        timestamp=1521614766,
+    movement = [AssetMovement(
+        timestamp=TimestampMS(1521614766000),
         location=Location.BITSTAMP,
-        category=AssetMovementCategory.DEPOSIT,
-        address=None,
-        transaction_id=None,
+        event_type=HistoryEventType.DEPOSIT,
         asset=asset,
-        amount=FVal('1000.51'),
-        fee_asset=asset,
-        fee=Fee(FVal('0.1')),
-        link='3',
-    )
+        balance=Balance(FVal('1000.51')),
+        unique_id='3',
+        extra_data={
+            'movement_id': '3',
+            'fee': FVal('0.1'),
+        },
+    ), AssetMovement(
+        timestamp=TimestampMS(1521614766000),
+        location=Location.BITSTAMP,
+        event_type=HistoryEventType.DEPOSIT,
+        asset=asset,
+        balance=Balance(FVal('0.1')),
+        unique_id='3',
+        is_fee=True,
+    )]
     expected_movement = mock_bitstamp._deserialize_asset_movement_from_user_transaction(raw_movement)  # noqa: E501
     assert movement == expected_movement
 
@@ -905,18 +927,26 @@ def test_deserialize_asset_movement_withdrawal(mock_bitstamp):
         'eur': '0.00',
     }
     asset = A_USD
-    movement = AssetMovement(
-        timestamp=1606901400,
+    movement = [AssetMovement(
+        timestamp=TimestampMS(1606901400000),
         location=Location.BITSTAMP,
-        category=AssetMovementCategory.WITHDRAWAL,
-        address=None,
-        transaction_id=None,
+        event_type=HistoryEventType.WITHDRAWAL,
         asset=asset,
-        amount=FVal('10000'),
-        fee_asset=asset,
-        fee=Fee(FVal('50')),
-        link='5',
-    )
+        balance=Balance(FVal('10000.00000000')),
+        unique_id='5',
+        extra_data={
+            'movement_id': '5',
+            'fee': FVal('50.00000000'),
+        },
+    ), AssetMovement(
+        timestamp=TimestampMS(1606901400000),
+        location=Location.BITSTAMP,
+        event_type=HistoryEventType.WITHDRAWAL,
+        asset=asset,
+        balance=Balance(FVal('50.00000000')),
+        unique_id='5',
+        is_fee=True,
+    )]
     expected_movement = mock_bitstamp._deserialize_asset_movement_from_user_transaction(raw_movement)  # noqa: E501
     assert movement == expected_movement
 
@@ -932,18 +962,26 @@ def test_deserialize_asset_movement_withdrawal(mock_bitstamp):
         'eur': '500',
     }
     asset = A_EUR
-    movement = AssetMovement(
-        timestamp=1521614766,
+    movement = [AssetMovement(
+        timestamp=TimestampMS(1521614766000),
         location=Location.BITSTAMP,
-        category=AssetMovementCategory.WITHDRAWAL,
-        address=None,
-        transaction_id=None,
+        event_type=HistoryEventType.WITHDRAWAL,
         asset=asset,
-        amount=FVal('500'),
-        fee_asset=asset,
-        fee=Fee(FVal('0.1')),
-        link='5',
-    )
+        balance=Balance(FVal('500')),
+        unique_id='5',
+        extra_data={
+            'movement_id': '5',
+            'fee': FVal('0.1'),
+        },
+    ), AssetMovement(
+        timestamp=TimestampMS(1521614766000),
+        location=Location.BITSTAMP,
+        event_type=HistoryEventType.WITHDRAWAL,
+        asset=asset,
+        balance=Balance(FVal('0.1')),
+        unique_id='5',
+        is_fee=True,
+    )]
     expected_movement = mock_bitstamp._deserialize_asset_movement_from_user_transaction(raw_movement)  # noqa: E501
     assert movement == expected_movement
 
@@ -956,34 +994,44 @@ def test_query_online_deposits_withdrawals(mock_bitstamp, start_ts, since_id):
     """
     asset_btc = A_BTC
     asset_usd = A_USD
-    movements = [
-        AssetMovement(
-            timestamp=1606901400,
-            location=Location.BITSTAMP,
-            category=AssetMovementCategory.WITHDRAWAL,
-            address=None,
-            transaction_id=None,
-            asset=asset_usd,
-            amount=FVal('10000'),
-            fee_asset=asset_usd,
-            fee=Fee(FVal('50')),
-            link='5',
-        ),
-        AssetMovement(
-            timestamp=1606801400,
-            location=Location.BITSTAMP,
-            category=AssetMovementCategory.DEPOSIT,
-            address=None,
-            transaction_id=None,
-            asset=asset_btc,
-            amount=FVal('0.5'),
-            fee_asset=asset_btc,
-            fee=Fee(FVal('0.0005')),
-            link='2',
-        ),
-    ]
-    with mock_bitstamp.db.user_write() as cursor:
-        mock_bitstamp.db.add_asset_movements(cursor, movements)
+    movements = [AssetMovement(
+        timestamp=TimestampMS(1606901400000),
+        location=Location.BITSTAMP,
+        event_type=HistoryEventType.WITHDRAWAL,
+        asset=asset_usd,
+        balance=Balance(FVal('10000')),
+        unique_id='5',
+        extra_data={'movement_id': '5'},
+    ), AssetMovement(
+        timestamp=TimestampMS(1606901400000),
+        location=Location.BITSTAMP,
+        event_type=HistoryEventType.WITHDRAWAL,
+        asset=asset_usd,
+        balance=Balance(FVal('50')),
+        unique_id='5',
+        is_fee=True,
+    ), AssetMovement(
+        timestamp=TimestampMS(1606801400000),
+        location=Location.BITSTAMP,
+        event_type=HistoryEventType.DEPOSIT,
+        asset=asset_btc,
+        balance=Balance(FVal('0.5')),
+        unique_id='2',
+        extra_data={'movement_id': '5'},
+    ), AssetMovement(
+        timestamp=TimestampMS(1606801400000),
+        location=Location.BITSTAMP,
+        event_type=HistoryEventType.DEPOSIT,
+        asset=asset_btc,
+        balance=Balance(FVal('0.0005')),
+        unique_id='2',
+        is_fee=True,
+    )]
+    with mock_bitstamp.db.user_write() as write_cursor:
+        DBHistoryEvents(mock_bitstamp.db).add_history_events(
+            write_cursor=write_cursor,
+            history=movements,
+        )
 
     end_ts = Timestamp(1606901401)
     expected_call = call(
@@ -998,7 +1046,7 @@ def test_query_online_deposits_withdrawals(mock_bitstamp, start_ts, since_id):
         case='asset_movements',
     )
     with patch.object(mock_bitstamp, '_api_query_paginated') as mock_api_query_paginated:
-        mock_bitstamp.query_online_deposits_withdrawals(
+        mock_bitstamp.query_online_history_events(
             start_ts=Timestamp(start_ts),
             end_ts=end_ts,
         )
