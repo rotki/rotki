@@ -1,9 +1,17 @@
 import { fileURLToPath } from 'node:url';
+import path from 'node:path';
 import { configDefaults, defineConfig, mergeConfig } from 'vitest/config';
+import merge from 'lodash-es/merge';
 import viteConfig from './vite.config';
 
 export default mergeConfig(
-  viteConfig,
+  merge({}, viteConfig, {
+    resolve: {
+      alias: {
+        '@test': `${path.join(__dirname, 'tests', 'unit')}/`,
+      },
+    },
+  }),
   defineConfig({
     test: {
       globals: true,

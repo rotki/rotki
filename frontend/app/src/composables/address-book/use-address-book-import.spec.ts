@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import flushPromises from 'flush-promises';
+import { createMockCSV } from '@test/mocks/file';
 import { useAddressBookImport } from '@/composables/address-book/use-address-book-import';
 import { CSVMissingHeadersError, useCsvImportExport } from '@/composables/common/use-csv-import-export';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import { useNotificationsStore } from '@/store/notifications';
-import { createMockCSV } from '../../../tests/unit/utils/mocks/file';
 
 // Mocks
 vi.mock('@/store/notifications', () => ({
@@ -34,9 +34,9 @@ describe('useAddressBookImport', () => {
   it('handles rows with no location (defaults to private)', async () => {
     const { importAddressBook } = useAddressBookImport();
     const mockFile = createMockCSV([
-      'address,blockchain,name\n'
-      + 'address1,eth,Name1\n'
-      + 'address2,btc,Name2',
+      'address,blockchain,name',
+      'address1,eth,Name1',
+      'address2,btc,Name2',
     ]);
 
     const csvContent = await mockFile.text();
@@ -61,9 +61,9 @@ describe('useAddressBookImport', () => {
     const { importAddressBook } = useAddressBookImport();
 
     const mockFile = createMockCSV([
-      'address,blockchain,name\n'
-      + ',eth,Name1\n' // Missing address
-      + 'address2,btc,', // Missing name
+      'address,blockchain,name',
+      ',eth,Name1', // Missing address
+      'address2,btc,', // Missing name
     ]);
 
     const result = await importAddressBook(mockFile);
@@ -110,9 +110,9 @@ describe('useAddressBookImport', () => {
     const { importAddressBook } = useAddressBookImport();
 
     const mockFile = createMockCSV([
-      'address,blockchain,name,location\n'
-      + 'address1,eth,Name1,private\n'
-      + 'address2,btc,Name2,global',
+      'address,blockchain,name,location',
+      'address1,eth,Name1,private',
+      'address2,btc,Name2,global',
     ]);
 
     const result = await importAddressBook(mockFile);
@@ -131,9 +131,9 @@ describe('useAddressBookImport', () => {
     const { importAddressBook } = useAddressBookImport();
 
     const mockFile = createMockCSV([
-      'address,blockchain,name,location\n'
-      + 'address1,eth,Name1,invalid_location\n'
-      + 'address2,btc,Name2,private',
+      'address,blockchain,name,location',
+      'address1,eth,Name1,invalid_location',
+      'address2,btc,Name2,private',
     ]);
 
     const result = await importAddressBook(mockFile);

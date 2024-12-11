@@ -87,6 +87,18 @@ export function useAccountImportExport(): UseAccountImportExportReturn {
     tags: acc.tags || null,
   });
 
+  function getChainType(chains: string[]): string {
+    const EVM_CHAIN_TYPE = 'evm';
+    const hasEvmSupport = (chain: string): boolean => get(isEvm(chain)) || get(isEvmLikeChains(chain));
+
+    if (chains.length > 1 && chains.some(hasEvmSupport)) {
+      return EVM_CHAIN_TYPE;
+    }
+    else {
+      return chains[0];
+    }
+  }
+
   function exportAccounts(): void {
     const rows: CSVRow[] = [];
 
@@ -98,7 +110,7 @@ export function useAccountImportExport(): UseAccountImportExportReturn {
       rows.push({
         address: getAccountAddress(group),
         addressExtras,
-        chain: group.chains.some(chain => get(isEvm(chain)) || get(isEvmLikeChains(chain))) ? 'evm' : group.chains[0],
+        chain: getChainType(group.chains),
         label: group.label,
         tags: group.tags ?? [],
       });
@@ -223,8 +235,10 @@ export function useAccountImportExport(): UseAccountImportExportReturn {
 
     if (validators.length > 0) {
       // Wait until accounts refreshed
-      await until(blockchainLoading).toBe(true);
-      await until(doneLoading).toBe(true);
+      if (evmAccounts.length > 0 || accounts.length > 0) {
+        await until(blockchainLoading).toBe(true);
+        await until(doneLoading).toBe(true);
+      }
 
       await importValidators(validators);
     }
