@@ -12,6 +12,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
 )
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.chain.optimism.modules.giveth.constants import GIV_TOKEN_ID, GIVPOW_ADDRESS
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
@@ -42,8 +43,8 @@ class GivethDecoder(GivethDecoderBase):
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
             distro_address=string_to_evm_address('0xE3Ac7b3e6B4065f4765d76fDC215606483BF3bD1'),
-            givpower_staking_address=string_to_evm_address('0x301C739CF6bfb6B47A74878BdEB13f92F13Ae5E7'),
-            giv_token_id='eip155:10/erc20:0x528CDc92eAB044E1E39FE43B9514bfdAB4412B98',
+            givpower_staking_address=GIVPOW_ADDRESS,
+            giv_token_id=GIV_TOKEN_ID,
             pow_token_id='eip155:10/erc20:0x301C739CF6bfb6B47A74878BdEB13f92F13Ae5E7',
         )
 

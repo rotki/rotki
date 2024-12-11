@@ -59,11 +59,15 @@ from rotkehlchen.chain.evm.decoding.balancer.v2.balances import Balancerv2Balanc
 from rotkehlchen.chain.evm.decoding.compound.v3.balances import Compoundv3Balances
 from rotkehlchen.chain.evm.decoding.curve_lend.balances import CurveLendBalances
 from rotkehlchen.chain.evm.decoding.hop.balances import HopBalances
+from rotkehlchen.chain.gnosis.modules.giveth.balances import GivethBalances as GivethGnosisBalances
 from rotkehlchen.chain.optimism.modules.extrafi.balances import (
     ExtrafiBalances as ExtrafiBalancesOp,
 )
 from rotkehlchen.chain.optimism.modules.gearbox.balances import (
     GearboxBalances as GearboxBalancesOptimism,
+)
+from rotkehlchen.chain.optimism.modules.giveth.balances import (
+    GivethBalances as GivethOptimismBalances,
 )
 from rotkehlchen.chain.optimism.modules.velodrome.balances import VelodromeBalances
 from rotkehlchen.chain.optimism.modules.walletconnect.balances import WalletconnectBalances
@@ -233,6 +237,7 @@ CHAIN_TO_BALANCE_PROTOCOLS = {
         WalletconnectBalances,
         CurveLendBalances,
         AuraFinanceBalances,
+        GivethOptimismBalances,
     ),
     ChainID.BASE: (
         Compoundv3Balances,
@@ -255,7 +260,13 @@ CHAIN_TO_BALANCE_PROTOCOLS = {
         AuraFinanceBalances,
     ),
     ChainID.POLYGON_POS: (Compoundv3Balances, HopBalances, Balancerv2Balances, AuraFinanceBalances),  # noqa: E501
-    ChainID.GNOSIS: (HopBalances, Balancerv1Balances, Balancerv2Balances, AuraFinanceBalances),
+    ChainID.GNOSIS: (
+        HopBalances,
+        Balancerv1Balances,
+        Balancerv2Balances,
+        AuraFinanceBalances,
+        GivethGnosisBalances,
+    ),
     ChainID.SCROLL: (Compoundv3Balances,),
 }
 
