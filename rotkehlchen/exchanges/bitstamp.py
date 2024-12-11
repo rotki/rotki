@@ -2,6 +2,7 @@ import hashlib
 import hmac
 import logging
 import uuid
+from collections.abc import Sequence
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Literal, NamedTuple, overload
@@ -14,19 +15,20 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.assets.converters import asset_from_bitstamp
 from rotkehlchen.constants import ZERO
+from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
 from rotkehlchen.db.cache import DBCacheDynamic
+from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.exchanges.data_structures import (
-    AssetMovement,
-    AssetMovementCategory,
-    MarginPosition,
-    Trade,
-    TradeType,
-)
+from rotkehlchen.exchanges.data_structures import MarginPosition, Trade, TradeType
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
 from rotkehlchen.history.deserialization import deserialize_price
+from rotkehlchen.history.events.structures.asset_movement import (
+    AssetMovement,
+    create_asset_movement_with_fee,
+)
+from rotkehlchen.history.events.structures.types import HistoryEventType
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
@@ -40,12 +42,11 @@ from rotkehlchen.types import (
     ApiSecret,
     AssetAmount,
     ExchangeAuthCredentials,
-    Fee,
     Location,
     Timestamp,
 )
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import ts_now_in_ms
+from rotkehlchen.utils.misc import ts_now_in_ms, ts_sec_to_ms
 from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
 from rotkehlchen.utils.mixins.lockable import protect_with_lock
 from rotkehlchen.utils.serialization import jsonloads_dict, jsonloads_list
@@ -228,11 +229,11 @@ class Bitstamp(ExchangeInterface):
 
         return assets_balance, ''
 
-    def query_online_deposits_withdrawals(
+    def query_online_history_events(
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> list[AssetMovement]:
+    ) -> Sequence[AssetMovement]:
         """Return the account asset movements on Bitstamp.
 
         NB: when `since_id` is used, the Bitstamp API v2 will return by default
@@ -250,11 +251,18 @@ class Bitstamp(ExchangeInterface):
             # Get latest link from the DB to know where to resume from
             with self.db.conn.read_ctx() as cursor:
                 query_result = cursor.execute(
-                    'SELECT link FROM asset_movements WHERE location=? AND timestamp <= ? ORDER BY timestamp DESC LIMIT 1',  # noqa: E501
-                    (Location.BITSTAMP.serialize_for_db(), start_ts),
+                    'SELECT extra_data FROM history_events WHERE location=? AND timestamp <= ? ORDER BY timestamp DESC LIMIT 1',  # noqa: E501
+                    (Location.BITSTAMP.serialize_for_db(), ts_sec_to_ms(start_ts)),
                 ).fetchone()
-                if query_result is not None:
-                    since_id = int(query_result[0]) + 1
+                if (
+                    query_result is not None and
+                    (extra_data := AssetMovement.deserialize_extra_data(
+                        entry=query_result,
+                        extra_data=query_result[0],
+                    )) is not None and
+                    'movement_id' in extra_data
+                ):
+                    since_id = int(extra_data['movement_id']) + 1
                     options.update({'since_id': since_id})
 
         # get user transactions (which is deposits/withdrawals) with fees but not address/txid
@@ -282,10 +290,18 @@ class Bitstamp(ExchangeInterface):
         # they correspond to so we can also have the fee taken into account
         indices_to_delete = []
         for asset_movement in asset_movements:
+            if asset_movement.extra_data is None:
+                continue  # skip fee events
+
             for idx, crypto_movement in enumerate(crypto_asset_movements):
-                if crypto_movement.category == asset_movement.category and crypto_movement.asset == asset_movement.asset and crypto_movement.amount == asset_movement.amount + asset_movement.fee and abs(crypto_movement.timestamp - asset_movement.timestamp) <= BITSTAMP_MATCHING_TOLERANCE:  # noqa: E501
-                    asset_movement.address = crypto_movement.address
-                    asset_movement.transaction_id = crypto_movement.transaction_id
+                if (
+                    crypto_movement.event_type == asset_movement.event_type and
+                    crypto_movement.asset == asset_movement.asset and
+                    crypto_movement.balance.amount == asset_movement.balance.amount + asset_movement.extra_data['fee'] and  # noqa: E501
+                    abs(crypto_movement.timestamp - asset_movement.timestamp) <= BITSTAMP_MATCHING_TOLERANCE  # noqa: E501
+                ):
+                    asset_movement.extra_data.update(crypto_movement.extra_data)  # type: ignore  # crypto_movement.extra_data should always be set here
+                    del asset_movement.extra_data['fee']  # no need to save this to the DB
                     indices_to_delete.append(idx)
                     break
 
@@ -296,17 +312,27 @@ class Bitstamp(ExchangeInterface):
         # may end up with some crypto asset movements here that would need to
         # check for corresponding asset movement in the DB.
         serialized_location = Location.BITSTAMP.serialize_for_db()
+        history_db = DBHistoryEvents(self.db)
         indices_to_delete = []
         with self.db.user_write() as write_cursor:
             for idx, crypto_movement in enumerate(crypto_asset_movements):
                 write_cursor.execute(
-                    'SELECT id from asset_movements WHERE location=? AND category=? AND timestamp=? AND asset=?',  # noqa: E501
-                    (serialized_location, crypto_movement.category.serialize_for_db(), crypto_movement.timestamp, crypto_movement.asset.identifier),  # noqa: E501
+                    'SELECT * from history_events WHERE location=? AND type=? AND subtype=? AND timestamp=? AND asset=?',  # noqa: E501
+                    (serialized_location, crypto_movement.event_type.serialize(), crypto_movement.event_subtype.serialize(), crypto_movement.timestamp, crypto_movement.asset.identifier),  # noqa: E501
                 )
                 if (result := write_cursor.fetchone()) is not None:
-                    write_cursor.execute(
-                        'UPDATE asset_movements SET address=?, transaction_id=? WHERE id=?',
-                        (crypto_movement.address, crypto_movement.transaction_id, result[0]),
+                    try:
+                        matched_movement = AssetMovement.deserialize_from_db(entry=result)
+                    except (DeserializationError, UnknownAsset) as e:
+                        log.error(f'Failed to update extra data for bitstamp asset movement due to {e!s}')  # noqa: E501
+                        continue
+
+                    extra_data = matched_movement.extra_data if matched_movement.extra_data is not None else {}  # noqa: E501
+                    extra_data.update(crypto_movement.extra_data)  # type: ignore  # crypto_movement.extra_data should always be set here
+                    history_db.edit_event_extra_data(
+                        write_cursor=write_cursor,
+                        event=matched_movement,
+                        extra_data=extra_data,
                     )
                     indices_to_delete.append(idx)
 
@@ -357,11 +383,11 @@ class Bitstamp(ExchangeInterface):
             asset_movements = [
                 self._deserialize_asset_movement_from_crypto_transaction(
                     raw_movement=entry,
-                    category=category,
+                    event_type=event_type,  # type: ignore  # will only be deposit or withdrawal
                 )
-                for entry_key, category in [
-                    ('deposits', AssetMovementCategory.DEPOSIT),
-                    ('withdrawals', AssetMovementCategory.WITHDRAWAL),
+                for entry_key, event_type in [
+                    ('deposits', HistoryEventType.DEPOSIT),
+                    ('withdrawals', HistoryEventType.WITHDRAWAL),
                 ]
                 for entry in response_dict.get(entry_key, {})
             ]
@@ -525,7 +551,7 @@ class Bitstamp(ExchangeInterface):
             options: dict[str, Any],
             case: Literal['trades', 'asset_movements'],
             offset: int = 0,
-    ) -> list[Trade] | (list[AssetMovement] | list):
+    ) -> Sequence[Trade | AssetMovement]:
         """Request a Bitstamp API v2 endpoint paginating via an options
         attribute.
 
@@ -539,7 +565,7 @@ class Bitstamp(ExchangeInterface):
             * limit: 1000 (API v2 default using `since_id`).
             * sort: 'asc'
         """
-        deserialization_method: Callable[[dict[str, Any]], Trade | AssetMovement]
+        deserialization_method: Callable[[dict[str, Any]], list[Trade] | list[AssetMovement]]
         endpoint: Literal['user_transactions']
         response_case: Literal['trades', 'asset_movements']
         if case == 'trades':
@@ -566,7 +592,7 @@ class Bitstamp(ExchangeInterface):
 
         call_options = options.copy()
         limit = options.get('limit', API_MAX_LIMIT)
-        results = []
+        results: list[Trade | AssetMovement] = []
         while True:
             response = self._api_query(
                 endpoint=endpoint,
@@ -590,7 +616,7 @@ class Bitstamp(ExchangeInterface):
 
             has_results = False
             is_result_timestamp_gt_end_ts = False
-            result: Trade | AssetMovement
+            result: list[Trade] | list[AssetMovement]
             for raw_result in response_list:
                 try:
                     entry_type = deserialize_int_from_str(raw_result['type'], 'bitstamp event')
@@ -621,7 +647,7 @@ class Bitstamp(ExchangeInterface):
                     )
                     continue
 
-                results.append(result)
+                results.extend(result)
                 has_results = True  # NB: endpoint agnostic
 
             if len(response_list) < limit or is_result_timestamp_gt_end_ts:
@@ -643,7 +669,7 @@ class Bitstamp(ExchangeInterface):
     @staticmethod
     def _deserialize_asset_movement_from_user_transaction(
             raw_movement: dict[str, Any],
-    ) -> AssetMovement:
+    ) -> list[AssetMovement]:
         """Process a deposit/withdrawal user transaction from Bitstamp and
         deserialize it.
 
@@ -657,15 +683,15 @@ class Bitstamp(ExchangeInterface):
         https://www.bitstamp.net/api/#user-transactions
         """
         type_ = deserialize_int_from_str(raw_movement['type'], 'bitstamp asset movement')
-        category: AssetMovementCategory
+        event_type: Literal[HistoryEventType.DEPOSIT, HistoryEventType.WITHDRAWAL]
         if type_ == 0:
-            category = AssetMovementCategory.DEPOSIT
+            event_type = HistoryEventType.DEPOSIT
         elif type_ == 1:
-            category = AssetMovementCategory.WITHDRAWAL
+            event_type = HistoryEventType.WITHDRAWAL
         else:
             raise AssertionError(f'Unexpected Bitstamp asset movement case: {type_}.')
 
-        timestamp = deserialize_timestamp_from_bitstamp_date(raw_movement['datetime'])
+        timestamp = ts_sec_to_ms(deserialize_timestamp_from_bitstamp_date(raw_movement['datetime']))  # noqa: E501
         amount: FVal = ZERO
         fee_asset: AssetWithOracles
         for raw_movement_key, value in raw_movement.items():
@@ -689,23 +715,28 @@ class Bitstamp(ExchangeInterface):
                 f'Unexpected asset amount combination found in: {raw_movement}.',
             )
 
-        return AssetMovement(
-            timestamp=timestamp,
+        # TODO: Improve the logic combining these with the ones from the crypto_transaction query.
+        # Using this temporary fee entry in the extra_data is rather hacky.
+        # See: https://github.com/orgs/rotki/projects/11/views/2?pane=issue&itemId=90720824
+        return create_asset_movement_with_fee(
             location=Location.BITSTAMP,
-            category=category,
-            address=None,  # requires query "crypto-transactions" endpoint
-            transaction_id=None,  # requires query "crypto-transactions" endpoint
+            event_type=event_type,
+            timestamp=timestamp,
             asset=fee_asset,
             amount=abs(amount),
             fee_asset=fee_asset,
-            fee=deserialize_fee(raw_movement['fee']),
-            link=str(raw_movement['id']),
+            fee=(fee := deserialize_fee(raw_movement['fee'])),
+            unique_id=(movement_id := str(raw_movement['id'])),
+            extra_data={
+                'movement_id': movement_id,
+                'fee': fee,  # Used for matching the corresponding crypto_transaction. Removed before being saved to the DB.  # noqa: E501
+            },
         )
 
     @staticmethod
     def _deserialize_asset_movement_from_crypto_transaction(
             raw_movement: dict[str, Any],
-            category: AssetMovementCategory,
+            event_type: Literal[HistoryEventType.DEPOSIT, HistoryEventType.WITHDRAWAL],
     ) -> AssetMovement:
         """Process a deposit/withdrawal crypto transaction from Bitstamp and
         deserialize it.
@@ -721,27 +752,26 @@ class Bitstamp(ExchangeInterface):
             amount = deserialize_asset_amount(raw_movement['amount'])
             address = raw_movement['destinationAddress']
             transaction_id = raw_movement['txid']
-            link = f'A {raw_movement["network"]} {category}'
         except KeyError as e:
             raise DeserializationError(f'Could not find key {e} in bitstramp crypto transaction') from e  # noqa: E501
 
         return AssetMovement(
-            timestamp=timestamp,
+            timestamp=ts_sec_to_ms(timestamp),
             location=Location.BITSTAMP,
-            category=category,
-            address=address,
-            transaction_id=transaction_id,
+            event_type=event_type,
             asset=asset,
-            amount=abs(amount),
-            fee_asset=asset,
-            fee=Fee(ZERO),
-            link=link,
+            balance=Balance(abs(amount)),
+            unique_id=transaction_id,
+            extra_data=maybe_set_transaction_extra_data(
+                address=address,
+                transaction_id=transaction_id,
+            ),
         )
 
     def _deserialize_trade(
             self,
             raw_trade: dict[str, Any],
-    ) -> Trade:
+    ) -> list[Trade]:
         """Process a trade user transaction from Bitstamp and deserialize it.
 
         Can raise DeserializationError.
@@ -766,7 +796,7 @@ class Bitstamp(ExchangeInterface):
                 )
             trade_type = TradeType.SELL
 
-        return Trade(
+        return [Trade(
             timestamp=timestamp,
             location=Location.BITSTAMP,
             base_asset=trade_pair_data.base_asset,
@@ -778,7 +808,7 @@ class Bitstamp(ExchangeInterface):
             fee_currency=fee_currency,
             link=str(raw_trade['id']),
             notes='',
-        )
+        )]
 
     @staticmethod
     def _get_trade_pair_data_from_transaction(raw_result: dict[str, Any]) -> TradePairData:

@@ -15,15 +15,17 @@ from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.errors.asset import UnknownAsset, UnprocessableTradePair
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.exchanges.bybit import Bybit, bybit_symbol_to_base_quote
-from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
+from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.asset_movement import AssetMovement
+from rotkehlchen.history.events.structures.types import HistoryEventType
 from rotkehlchen.types import (
     AssetAmount,
-    AssetMovementCategory,
     Fee,
     Location,
     Price,
     Timestamp,
+    TimestampMS,
     TradeType,
 )
 from rotkehlchen.utils.misc import ts_now
@@ -238,34 +240,28 @@ def test_deposit_withdrawals(bybit_exchange: Bybit) -> None:
         ],
     })
     with patch.object(bybit_exchange, '_api_query', side_effect=mock_fn):
-        movements = bybit_exchange.query_online_deposits_withdrawals(
+        movements = bybit_exchange.query_online_history_events(
             start_ts=Timestamp(1701200010),
             end_ts=Timestamp(1701300880),
         )
 
     assert movements == [
         AssetMovement(
-            timestamp=Timestamp(1701200911),
+            timestamp=TimestampMS(1701200911000),
             location=Location.BYBIT,
-            category=AssetMovementCategory.DEPOSIT,
-            address=None,
-            transaction_id='0xe9bce05f14cb35eeb762ed5ce109ab4676ed1459480f6196c82060c4e0c63b27',
+            event_type=HistoryEventType.DEPOSIT,
             asset=A_USDC,
-            amount=FVal('79.993947'),
-            fee_asset=A_USDC,
-            fee=Fee(ZERO),
-            link='0xe9bce05f14cb35eeb762ed5ce109ab4676ed1459480f6196c82060c4e0c63b27',
+            balance=Balance(FVal('79.993947')),
+            unique_id='0xe9bce05f14cb35eeb762ed5ce109ab4676ed1459480f6196c82060c4e0c63b27',
+            extra_data={'transaction_id': '0xe9bce05f14cb35eeb762ed5ce109ab4676ed1459480f6196c82060c4e0c63b27'},  # noqa: E501
         ), AssetMovement(
-            timestamp=Timestamp(1701200780),
+            timestamp=TimestampMS(1701200780000),
             location=Location.BYBIT,
-            category=AssetMovementCategory.DEPOSIT,
-            address=None,
-            transaction_id='0xc2433faf5938e4be896127a15815952e99b41412b8aa0fbe239ce24c8bc435ab',
+            event_type=HistoryEventType.DEPOSIT,
             asset=A_USDC,
-            amount=FVal('20'),
-            fee_asset=A_USDC,
-            fee=Fee(ZERO),
-            link='0xc2433faf5938e4be896127a15815952e99b41412b8aa0fbe239ce24c8bc435ab',
+            balance=Balance(FVal('20')),
+            unique_id='0xc2433faf5938e4be896127a15815952e99b41412b8aa0fbe239ce24c8bc435ab',
+            extra_data={'transaction_id': '0xc2433faf5938e4be896127a15815952e99b41412b8aa0fbe239ce24c8bc435ab'},  # noqa: E501
         ),
     ]
 

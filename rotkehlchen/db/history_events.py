@@ -784,7 +784,7 @@ class DBHistoryEvents:
         )
         return [x[0] for x in cursor]
 
-    def edit_event_extra_data(self, write_cursor: 'DBCursor', event: EvmEvent, extra_data: dict[str, Any]) -> None:  # noqa: E501
+    def edit_event_extra_data(self, write_cursor: 'DBCursor', event: HistoryBaseEntry, extra_data: dict[str, Any]) -> None:  # noqa: E501
         """Edit an event's extra data in the DB and save it. Does not turn it into
         a customized event. This is meant to be used programmatically.
 

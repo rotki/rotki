@@ -5,8 +5,9 @@ import re
 import secrets
 import time
 from collections import defaultdict
+from collections.abc import Sequence
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 from urllib.parse import urlencode
 
 import gevent
@@ -18,6 +19,7 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.converters import asset_from_coinbase
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.timing import HOUR_IN_SECONDS
+from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
 from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings
@@ -25,9 +27,13 @@ from rotkehlchen.errors.api import AuthenticationError
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
+from rotkehlchen.exchanges.data_structures import MarginPosition, Trade
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
 from rotkehlchen.exchanges.utils import deserialize_asset_movement_address, get_key_if_has_val
+from rotkehlchen.history.events.structures.asset_movement import (
+    AssetMovement,
+    create_asset_movement_with_fee,
+)
 from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.inquirer import Inquirer
@@ -42,7 +48,6 @@ from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
     AssetAmount,
-    AssetMovementCategory,
     ExchangeAuthCredentials,
     Fee,
     Location,
@@ -575,7 +580,7 @@ class Coinbase(ExchangeInterface):
                 )) is not None:
                     last_id = str(result_id)
 
-            trades, asset_movements, history_events = self._query_single_account_transactions(
+            trades, history_events = self._query_single_account_transactions(
                 account_id=account_id,
                 account_last_id_name=f'{self.location}_{self.name}_{account_id}_last_query_id',
                 last_tx_id=last_id,
@@ -588,8 +593,6 @@ class Coinbase(ExchangeInterface):
             with self.db.user_write() as write_cursor:
                 if len(trades) != 0:
                     self.db.add_trades(write_cursor=write_cursor, trades=trades)
-                if len(asset_movements) != 0:
-                    self.db.add_asset_movements(write_cursor=write_cursor, asset_movements=asset_movements)  # noqa: E501
                 if len(history_events) != 0:
                     db = DBHistoryEvents(self.db)
                     db.add_history_events(write_cursor=write_cursor, history=history_events)
@@ -607,7 +610,7 @@ class Coinbase(ExchangeInterface):
             account_id: str,
             account_last_id_name: str,
             last_tx_id: str | None,
-    ) -> tuple[list[Trade], list[AssetMovement], list[HistoryEvent]]:
+    ) -> tuple[list[Trade], Sequence[HistoryEvent | AssetMovement]]:
         """
         Query all the transactions and save all newly generated events
 
@@ -615,8 +618,7 @@ class Coinbase(ExchangeInterface):
         - RemoteError
         """
         trades: list[Trade] = []
-        asset_movements: list[AssetMovement] = []
-        history_events: list[HistoryEvent] = []
+        history_events: list[HistoryEvent | AssetMovement] = []
         options = {}
         if last_tx_id is not None:
             options['starting_after'] = last_tx_id
@@ -624,11 +626,10 @@ class Coinbase(ExchangeInterface):
         transactions = self._api_query(f'accounts/{account_id}/transactions', options=options)
         if len(transactions) == 0:
             log.debug('Coinbase API query returned no transactions')
-            return trades, asset_movements, history_events
+            return trades, history_events
 
         trade_pairs = defaultdict(list)  # Maps every trade id to their two transactions
         trades = []
-        asset_movements = []
         for transaction in transactions:
             log.debug(f'Processing coinbase {transaction=}')
             tx_type = transaction.get('type')
@@ -657,7 +658,7 @@ class Coinbase(ExchangeInterface):
                 # Their docs don't list all possible types. Added some I saw in the wild
                 # and some I assume would exist (exchange_withdrawal, since I saw exchange_deposit)
                 if (asset_movement := self._deserialize_asset_movement(transaction)) is not None:
-                    asset_movements.append(asset_movement)
+                    history_events.extend(asset_movement)
             elif tx_type not in (
                     'exchange_deposit',  # duplicated from send. Has less info.
                     'exchange_withdrawal',  # assume it exists and has duplicate
@@ -672,7 +673,7 @@ class Coinbase(ExchangeInterface):
                 (account_last_id_name, transactions[-1]['id']),  # -1 takes last transaction due to ascending order  # noqa: E501
             )
 
-        return trades, asset_movements, history_events
+        return trades, history_events
 
     def _process_trades_from_conversion(self, trade_pairs: dict[str, list], trades: list[Trade]) -> None:  # noqa: E501
         """Processes the trade pairs to create trades from conversions"""
@@ -877,7 +878,7 @@ class Coinbase(ExchangeInterface):
         self._query_transactions()
         return [], (start_ts, end_ts)
 
-    def _deserialize_asset_movement(self, raw_data: dict[str, Any]) -> AssetMovement | None:
+    def _deserialize_asset_movement(self, raw_data: dict[str, Any]) -> list[AssetMovement] | None:
         """Processes a single deposit/withdrawal from coinbase and deserializes it
 
         Can log error/warning and return None if something went wrong at deserialization
@@ -898,16 +899,15 @@ class Coinbase(ExchangeInterface):
 
             # Only get address/transaction id for "send" type of transactions
             address = None
-            transaction_id = None
-            transaction_url = raw_data.get('id', '')
+            transaction_id = raw_data.get('id')
+            transaction_url = None
             fee = Fee(ZERO)
             tx_type = raw_data['type']  # not sure if fiat
+            event_type: Literal[HistoryEventType.DEPOSIT, HistoryEventType.WITHDRAWAL]
             if tx_type in ('send', 'fiat_withdrawal'):
-                movement_category = AssetMovementCategory.WITHDRAWAL
+                event_type = HistoryEventType.WITHDRAWAL
             elif tx_type in ('fiat_deposit', 'pro_withdrawal'):
-                movement_category = AssetMovementCategory.DEPOSIT
-                if tx_type == 'pro_withdrawal':
-                    transaction_id = 'From Coinbase Pro'
+                event_type = HistoryEventType.DEPOSIT
             else:
                 log.error(
                     f'In a coinbase deposit/withdrawal we got unknown type {tx_type}',
@@ -946,10 +946,10 @@ class Coinbase(ExchangeInterface):
                 return None  # Can ignore. https://github.com/rotki/rotki/issues/3901
 
             if 'from' in raw_data:
-                movement_category = AssetMovementCategory.DEPOSIT
+                event_type = HistoryEventType.DEPOSIT
 
             if tx_type == 'send' and not amount_data['amount'].startswith('-'):
-                movement_category = AssetMovementCategory.DEPOSIT
+                event_type = HistoryEventType.DEPOSIT
 
         except UnknownAsset as e:
             self.send_unknown_asset_message(
@@ -974,29 +974,23 @@ class Coinbase(ExchangeInterface):
                 f'asset_movement {raw_data}. Error was: {msg}',
             )
         else:
-            return AssetMovement(
+            return create_asset_movement_with_fee(
                 location=Location.COINBASE,
-                category=movement_category,
-                address=address,
-                transaction_id=transaction_id,
-                timestamp=timestamp,
+                event_type=event_type,
+                timestamp=ts_sec_to_ms(timestamp),
                 asset=asset,
                 amount=amount,
                 fee_asset=asset,
                 fee=fee,
-                link=str(transaction_url),
+                unique_id=transaction_id,
+                extra_data=maybe_set_transaction_extra_data(
+                    address=address,
+                    transaction_id=transaction_id,
+                    extra_data={'url': transaction_url} if transaction_url is not None else None,
+                ),
             )
 
         return None
-
-    def query_online_deposits_withdrawals(
-            self,
-            start_ts: Timestamp,
-            end_ts: Timestamp,
-    ) -> list[AssetMovement]:
-        """Make sure latest transactions are queried and saved in the DB. Since all history comes from one endpoint and can't be queried by time range this doesn't follow the same logic as another exchanges"""  # noqa: E501
-        self._query_transactions()
-        return []
 
     def query_online_history_events(
             self,

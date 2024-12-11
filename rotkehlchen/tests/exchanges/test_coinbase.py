@@ -12,13 +12,14 @@ from rotkehlchen.db.filtering import HistoryEventFilterQuery, TradesFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.exchanges.coinbase import Coinbase, trade_from_conversion
-from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
+from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.exchanges import TRANSACTIONS_RESPONSE, mock_normal_coinbase_query
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import AssetMovementCategory, Location, TimestampMS, TradeType
+from rotkehlchen.types import Location, TimestampMS, TradeType
 from rotkehlchen.utils.misc import ts_now
 
 
@@ -415,75 +416,6 @@ def test_coinbase_query_trade_history_paginated(function_scope_coinbase):
     )
 
 
-def test_coinbase_query_deposit_withdrawals(function_scope_coinbase):
-    """Test that coinbase deposit/withdrawals history query works fine for the happy path"""
-    coinbase = function_scope_coinbase
-
-    with patch.object(coinbase.session, 'get', side_effect=mock_normal_coinbase_query):
-        movements = coinbase.query_deposits_withdrawals(
-            start_ts=0,
-            end_ts=ts_now(),
-            only_cache=False,
-        )
-
-    warnings = coinbase.msg_aggregator.consume_warnings()
-    errors = coinbase.msg_aggregator.consume_errors()
-    assert len(warnings) == 0
-    assert len(errors) == 0
-    assert len(movements) == 3
-    expected_movements = [AssetMovement(
-        location=Location.COINBASE,
-        category=AssetMovementCategory.DEPOSIT,
-        address=None,
-        transaction_id='ccc',
-        timestamp=1502554304,
-        asset=A_BTC,
-        amount=FVal('0.10181673'),
-        fee_asset=A_BTC,
-        fee=ZERO,
-        link='https://blockchain.info/tx/ccc',
-    ), AssetMovement(
-        location=Location.COINBASE,
-        category=AssetMovementCategory.WITHDRAWAL,
-        address='0x6dcD6449dbCa615e40d696328209686eA95327b2',
-        transaction_id='0x558bfa4d2a4ef598ddb92233459c00eda9e6c14cda75e6773b90208cb6938169',
-        timestamp=1566726126,
-        asset=A_ETH,
-        amount=FVal('0.05770427'),
-        fee_asset=A_ETH,
-        fee=FVal('0.00021'),
-        link='https://etherscan.io/tx/bbb',
-    ), AssetMovement(
-        location=Location.COINBASE,
-        category=AssetMovementCategory.WITHDRAWAL,
-        address='0x6dcD6449dbCa615e40d696328209686eA95327b2',
-        transaction_id=None,
-        timestamp=1566726126,
-        asset=A_ETH,
-        amount=FVal('0.05770427'),
-        fee_asset=A_ETH,
-        fee=ZERO,
-        link='id2',
-    )]
-    assert expected_movements == movements
-
-    # and now try to query within a specific range
-    with patch.object(coinbase.session, 'get', side_effect=mock_normal_coinbase_query):
-        movements = coinbase.query_deposits_withdrawals(
-            start_ts=0,
-            end_ts=1519001640,
-            only_cache=False,
-        )
-
-    warnings = coinbase.msg_aggregator.consume_warnings()
-    errors = coinbase.msg_aggregator.consume_errors()
-    assert len(warnings) == 0
-    assert len(errors) == 0
-    assert len(movements) == 1
-    assert movements[0].category == AssetMovementCategory.DEPOSIT
-    assert movements[0].timestamp == 1502554304
-
-
 def test_coinbase_query_history_events(
         database,
         function_scope_coinbase,
@@ -506,43 +438,87 @@ def test_coinbase_query_history_events(
     errors = coinbase.msg_aggregator.consume_errors()
     assert len(warnings) == 0
     assert len(errors) == 0
-    assert len(events) == 3
-    expected_events = [
-        HistoryEvent(
-            identifier=1,
-            event_identifier='CBE_id4',
-            sequence_index=0,
-            timestamp=TimestampMS(1609877514000),
-            location=Location.COINBASE,
-            event_type=HistoryEventType.RECEIVE,
-            event_subtype=HistoryEventSubType.NONE,
-            asset=asset_from_coinbase('NMR'),
-            balance=Balance(amount=FVal('0.02762431'), usd_value=ZERO),
-            notes='Received 0.02762431 NMR ($1.01) from coinbase earn',
-        ), HistoryEvent(
-            identifier=2,
-            event_identifier='CBE_id5',
-            sequence_index=0,
-            timestamp=TimestampMS(1611426233000),
-            location=Location.COINBASE,
-            event_type=HistoryEventType.RECEIVE,
-            event_subtype=HistoryEventSubType.NONE,
-            asset=asset_from_coinbase('ALGO'),
-            balance=Balance(amount=FVal('0.000076'), usd_value=ZERO),
-            notes='Received 0.000076 ALGO ($0.00) as inflation_reward',
-        ), HistoryEvent(
-            identifier=3,
-            event_identifier='CBE_id6',
-            sequence_index=0,
-            timestamp=TimestampMS(1611512633000),
-            location=Location.COINBASE,
-            event_type=HistoryEventType.RECEIVE,
-            event_subtype=HistoryEventSubType.NONE,
-            asset=asset_from_coinbase('SOL'),
-            balance=Balance(amount=FVal('0.025412'), usd_value=ZERO),
-            notes='',
-        ),
-    ]
+    assert len(events) == 7
+    expected_events = [AssetMovement(
+        identifier=4,
+        event_identifier='85f97d6a5db423ff17707b8c0738be0bd0a59d19944021d384226b232b152c91',
+        location=Location.COINBASE,
+        event_type=HistoryEventType.DEPOSIT,
+        timestamp=TimestampMS(1502554304000),
+        asset=A_BTC,
+        balance=Balance(FVal('0.10181673')),
+        extra_data={
+            'transaction_id': 'ccc',
+            'url': 'https://blockchain.info/tx/ccc',
+        },
+    ), AssetMovement(
+        identifier=1,
+        event_identifier='99a69dbdea53ae388b138d05f303893d139214f810f349becc4ee45b2308e198',
+        location=Location.COINBASE,
+        event_type=HistoryEventType.WITHDRAWAL,
+        timestamp=TimestampMS(1566726126000),
+        asset=A_ETH,
+        balance=Balance(FVal('0.05770427')),
+        extra_data={
+            'address': '0x6dcD6449dbCa615e40d696328209686eA95327b2',
+            'transaction_id': '0x558bfa4d2a4ef598ddb92233459c00eda9e6c14cda75e6773b90208cb6938169',
+            'url': 'https://etherscan.io/tx/bbb',
+        },
+    ), AssetMovement(
+        identifier=3,
+        event_identifier='af84752f7e7bcdd99c91dd856a117086df6205e26f0c8f6e530dfd5f3ff5add1',
+        location=Location.COINBASE,
+        event_type=HistoryEventType.WITHDRAWAL,
+        timestamp=TimestampMS(1566726126000),
+        asset=A_ETH,
+        balance=Balance(FVal('0.05770427')),
+        extra_data={
+            'address': '0x6dcD6449dbCa615e40d696328209686eA95327b2',
+            'transaction_id': 'id2',
+        },
+    ), AssetMovement(
+        identifier=2,
+        event_identifier='99a69dbdea53ae388b138d05f303893d139214f810f349becc4ee45b2308e198',
+        location=Location.COINBASE,
+        event_type=HistoryEventType.WITHDRAWAL,
+        timestamp=TimestampMS(1566726126000),
+        asset=A_ETH,
+        balance=Balance(FVal('0.00021')),
+        is_fee=True,
+    ), HistoryEvent(
+        identifier=5,
+        event_identifier='CBE_id4',
+        sequence_index=0,
+        timestamp=TimestampMS(1609877514000),
+        location=Location.COINBASE,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=asset_from_coinbase('NMR'),
+        balance=Balance(amount=FVal('0.02762431'), usd_value=ZERO),
+        notes='Received 0.02762431 NMR ($1.01) from coinbase earn',
+    ), HistoryEvent(
+        identifier=6,
+        event_identifier='CBE_id5',
+        sequence_index=0,
+        timestamp=TimestampMS(1611426233000),
+        location=Location.COINBASE,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=asset_from_coinbase('ALGO'),
+        balance=Balance(amount=FVal('0.000076'), usd_value=ZERO),
+        notes='Received 0.000076 ALGO ($0.00) as inflation_reward',
+    ), HistoryEvent(
+        identifier=7,
+        event_identifier='CBE_id6',
+        sequence_index=0,
+        timestamp=TimestampMS(1611512633000),
+        location=Location.COINBASE,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=asset_from_coinbase('SOL'),
+        balance=Balance(amount=FVal('0.025412'), usd_value=ZERO),
+        notes='',
+    )]
     assert expected_events == events
 
 
