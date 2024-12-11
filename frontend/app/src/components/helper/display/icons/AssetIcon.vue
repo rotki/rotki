@@ -76,10 +76,20 @@ const displayAsset = computed<string>(() => {
 });
 
 const tooltip = computed(() => {
+  const assetName = get(name) ?? '';
+  const assetSymbol = get(symbol) ?? '';
+
   if (get(isCustomAsset)) {
     return {
       name: '',
-      symbol: get(name),
+      symbol: get(name) ?? '',
+    };
+  }
+
+  if (assetName.toLowerCase() === assetSymbol.toLowerCase()) {
+    return {
+      name: '',
+      symbol: assetSymbol,
     };
   }
 
@@ -184,7 +194,10 @@ const { copy } = useCopy(identifier);
     <div>
       {{ t('asset_icon.tooltip', tooltip) }}
     </div>
-    <div class="font-mono flex items-center gap-2 -my-1">
+    <div
+      v-if="isEvmIdentifier(identifier)"
+      class="font-mono flex items-center gap-2 -my-1"
+    >
       {{ (isEvmIdentifier(identifier) ? getAddressFromEvmIdentifier(identifier) : identifier) }}
       <RuiButton
         size="sm"
