@@ -5,12 +5,17 @@ from unittest.mock import patch
 import pytest
 import requests
 
+from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_BCH, A_BTC, A_ETH, A_LINK, A_LTC, A_USD
+from rotkehlchen.db.filtering import HistoryEventFilterQuery
+from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.asset import UnknownAsset, UnprocessableTradePair, UnsupportedAsset
-from rotkehlchen.exchanges.data_structures import AssetMovement, Trade, TradeType
+from rotkehlchen.exchanges.data_structures import Trade, TradeType
 from rotkehlchen.exchanges.gemini import gemini_symbol_to_base_quote
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.asset_movement import AssetMovement
+from rotkehlchen.history.events.structures.types import HistoryEventType
 from rotkehlchen.tests.fixtures.exchanges.gemini import (
     SANDBOX_GEMINI_WP_API_KEY,
     SANDBOX_GEMINI_WP_API_SECRET,
@@ -18,7 +23,7 @@ from rotkehlchen.tests.fixtures.exchanges.gemini import (
 from rotkehlchen.tests.utils.constants import A_PAXG, A_ZEC
 from rotkehlchen.tests.utils.exchanges import get_exchange_asset_symbols
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import AssetMovementCategory, Location, Timestamp
+from rotkehlchen.types import Location, Timestamp, TimestampMS
 from rotkehlchen.utils.misc import ts_now
 
 UNSUPPORTED_GEMINI_PAIRS = {'btcgusdperp', 'ethgusdperp', 'pepegusdperp'}
@@ -264,79 +269,74 @@ def test_gemini_query_deposits_withdrawals(sandbox_gemini):
     transfers_patch = mock_gemini_transfers(sandbox_gemini, requests.post)
 
     with transfers_patch:
-        movements = sandbox_gemini.query_deposits_withdrawals(
-            start_ts=0,
-            end_ts=Timestamp(1584881354),
-            only_cache=False,
+        sandbox_gemini.query_history_events()
+
+    with sandbox_gemini.db.conn.read_ctx() as cursor:
+        movements = DBHistoryEvents(sandbox_gemini.db).get_history_events(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(location=Location.GEMINI),
+            has_premium=True,
         )
 
     assert len(movements) == 6
     expected_movements = [AssetMovement(
+        identifier=1,
         location=Location.GEMINI,
-        category=AssetMovementCategory.DEPOSIT,
-        timestamp=Timestamp(1507913541),
-        address=None,
-        transaction_id=None,
+        event_type=HistoryEventType.WITHDRAWAL,
+        timestamp=TimestampMS(1535451930000),
         asset=A_USD,
-        amount=FVal('36'),
-        fee_asset=A_USD,
-        fee=ZERO,
-        link='320013281',
+        balance=Balance(FVal('1.00')),
+        unique_id='341167014',
+        extra_data={
+            'address': '0xd24400ae8BfEBb18cA49Be86258a3C749cf46853',
+            'transaction_id': '7bffd85893ee8e72e31061a84d25c45f2c4537c2f765a1e79feb06a7294445c3',
+        },
     ), AssetMovement(
+        identifier=6,
         location=Location.GEMINI,
-        category=AssetMovementCategory.DEPOSIT,
-        address=None,
-        transaction_id='605c5fa8bf99458d24d61e09941bc443ddc44839d9aaa508b14b296c0c8269b2',
-        timestamp=Timestamp(1499990797),
+        event_type=HistoryEventType.DEPOSIT,
+        timestamp=TimestampMS(1507913541000),
+        asset=A_USD,
+        balance=Balance(FVal('36.00')),
+        unique_id='320013281',
+    ), AssetMovement(
+        identifier=5,
+        location=Location.GEMINI,
+        event_type=HistoryEventType.DEPOSIT,
+        timestamp=TimestampMS(1499990797000),
         asset=A_ETH,
-        amount=FVal('100'),
-        fee_asset=A_ETH,
-        fee=ZERO,
-        link='309356152',
+        balance=Balance(FVal('100')),
+        unique_id='309356152',
+        extra_data={'transaction_id': '605c5fa8bf99458d24d61e09941bc443ddc44839d9aaa508b14b296c0c8269b2'},  # noqa: E501
     ), AssetMovement(
+        identifier=4,
         location=Location.GEMINI,
-        category=AssetMovementCategory.DEPOSIT,
-        address=None,
-        transaction_id='163eeee4741f8962b748289832dd7f27f754d892f5d23bf3ea6fba6e350d9ce3',
-        timestamp=Timestamp(1495550176),
+        event_type=HistoryEventType.DEPOSIT,
+        timestamp=TimestampMS(1495550176000),
         asset=A_BTC,
-        amount=FVal('1500'),
-        fee_asset=A_BTC,
-        fee=ZERO,
-        link='298112782',
+        balance=Balance(FVal('1500')),
+        unique_id='298112782',
+        extra_data={'transaction_id': '163eeee4741f8962b748289832dd7f27f754d892f5d23bf3ea6fba6e350d9ce3'},  # noqa: E501
     ), AssetMovement(
+        identifier=3,
         location=Location.GEMINI,
-        category=AssetMovementCategory.DEPOSIT,
-        address=None,
-        transaction_id=None,
-        timestamp=Timestamp(1458862076),
+        event_type=HistoryEventType.DEPOSIT,
+        timestamp=TimestampMS(1458862076000),
         asset=A_USD,
-        amount=FVal('500'),
-        fee_asset=A_USD,
-        fee=ZERO,
-        link='265799530',
+        balance=Balance(FVal('500.00')),
+        unique_id='265799530',
     ), AssetMovement(
+        identifier=2,
         location=Location.GEMINI,
-        category=AssetMovementCategory.WITHDRAWAL,
-        address='mqjvCtt4TJfQaC7nUgLMvHwuDPXMTEUGqx',
-        transaction_id='c458b86955b80db0718cfcadbff3df3734a906367982c6eb191e61117b810bbb',
-        timestamp=Timestamp(1450403787),
+        event_type=HistoryEventType.WITHDRAWAL,
+        timestamp=TimestampMS(1450403787000),
         asset=A_BTC,
-        amount=FVal('5'),
-        fee_asset=A_BTC,
-        fee=ZERO,
-        link='82897811',
-    ), AssetMovement(
-        location=Location.GEMINI,
-        category=AssetMovementCategory.WITHDRAWAL,
-        address='0xd24400ae8BfEBb18cA49Be86258a3C749cf46853',
-        transaction_id='7bffd85893ee8e72e31061a84d25c45f2c4537c2f765a1e79feb06a7294445c3',
-        timestamp=Timestamp(1535451930),
-        asset=A_USD,
-        amount=FVal('1'),
-        fee_asset=A_USD,
-        fee=ZERO,
-        link='341167014',
+        balance=Balance(FVal('5')),
+        unique_id='82897811',
+        extra_data={
+            'address': 'mqjvCtt4TJfQaC7nUgLMvHwuDPXMTEUGqx',
+            'transaction_id': 'c458b86955b80db0718cfcadbff3df3734a906367982c6eb191e61117b810bbb',
+        },
     )]
     # The deposits should be returned with the oldest first (so given list is reversed)
     assert movements == expected_movements[::-1]

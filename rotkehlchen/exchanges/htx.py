@@ -4,6 +4,7 @@ import hashlib
 import hmac
 import logging
 import urllib.parse
+from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any, Final, Literal
 
 import requests
@@ -12,13 +13,21 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.converters import asset_from_htx
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
+from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnprocessableTradePair
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
+from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
+from rotkehlchen.exchanges.utils import get_key_if_has_val
 from rotkehlchen.history.deserialization import deserialize_price
+from rotkehlchen.history.events.structures.asset_movement import (
+    AssetMovement,
+    create_asset_movement_with_fee,
+)
+from rotkehlchen.history.events.structures.base import HistoryBaseEntry
+from rotkehlchen.history.events.structures.types import HistoryEventType
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
@@ -29,7 +38,6 @@ from rotkehlchen.serialization.deserialize import (
 from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
-    AssetMovementCategory,
     Fee,
     Location,
     Timestamp,
@@ -286,7 +294,7 @@ class Htx(ExchangeInterface):
             return []
 
         movements = []
-        category = AssetMovementCategory.DEPOSIT if query_for == 'deposit' else AssetMovementCategory.WITHDRAWAL  # noqa: E501
+        event_type: Final = HistoryEventType.DEPOSIT if query_for == 'deposit' else HistoryEventType.WITHDRAWAL  # noqa: E501
         for movement in raw_data:
             if (timestamp_raw := movement.get('created-at')) is not None:
                 timestamp = ts_ms_to_sec(TimestampMS(int(timestamp_raw)))
@@ -298,17 +306,19 @@ class Htx(ExchangeInterface):
 
             try:
                 coin = asset_from_htx(movement['currency'])
-                movements.append(AssetMovement(
-                    timestamp=timestamp,
+                movements.extend(create_asset_movement_with_fee(
+                    timestamp=ts_sec_to_ms(timestamp),
                     location=Location.HTX,
-                    category=category,
-                    address=movement['address'],
-                    transaction_id=movement['tx-hash'],
+                    event_type=event_type,
                     asset=coin,
                     amount=deserialize_asset_amount(movement['amount']),
                     fee_asset=coin,
                     fee=deserialize_fee(movement.get('fee', '0')),
-                    link=str(movement['id']),
+                    unique_id=str(movement['id']),
+                    extra_data=maybe_set_transaction_extra_data(
+                        address=get_key_if_has_val(movement, 'address'),
+                        transaction_id=get_key_if_has_val(movement, 'tx-hash'),
+                    ),
                 ))
             except (DeserializationError, KeyError) as e:
                 msg = str(e)
@@ -326,11 +336,11 @@ class Htx(ExchangeInterface):
 
         return movements
 
-    def query_online_deposits_withdrawals(
+    def query_online_history_events(
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> list[AssetMovement]:
+    ) -> Sequence[HistoryBaseEntry]:
         """Query deposits and withdrawals sequentially
 
         This method sequentially queries for 'deposit' and 'withdrawal' types. Each type
