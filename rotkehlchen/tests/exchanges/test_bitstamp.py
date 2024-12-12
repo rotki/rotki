@@ -28,7 +28,7 @@ from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.types import HistoryEventType
 from rotkehlchen.tests.utils.constants import A_GBP
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import Location, Timestamp, TimestampMS
+from rotkehlchen.types import Fee, Location, Timestamp, TimestampMS
 from rotkehlchen.utils.serialization import jsonloads_list
 
 
@@ -828,7 +828,7 @@ def test_deserialize_asset_movement_deposit(mock_bitstamp):
         balance=Balance(FVal('0.50000000')),
         unique_id='2',
         extra_data={
-            'movement_id': '2',
+            'reference': '2',
             'fee': FVal('0.00050000'),
         },
     ), AssetMovement(
@@ -863,8 +863,8 @@ def test_deserialize_asset_movement_deposit(mock_bitstamp):
         balance=Balance(FVal('1000.51')),
         unique_id='3',
         extra_data={
-            'movement_id': '3',
-            'fee': FVal('0.1'),
+            'reference': '3',
+            'fee': Fee(FVal('0.1')),
         },
     ), AssetMovement(
         timestamp=TimestampMS(1521614766000),
@@ -898,8 +898,8 @@ def test_deserialize_asset_movement_deposit(mock_bitstamp):
         balance=Balance(FVal('1000.51')),
         unique_id='3',
         extra_data={
-            'movement_id': '3',
-            'fee': FVal('0.1'),
+            'reference': '3',
+            'fee': Fee(FVal('0.1')),
         },
     ), AssetMovement(
         timestamp=TimestampMS(1521614766000),
@@ -935,8 +935,8 @@ def test_deserialize_asset_movement_withdrawal(mock_bitstamp):
         balance=Balance(FVal('10000.00000000')),
         unique_id='5',
         extra_data={
-            'movement_id': '5',
-            'fee': FVal('50.00000000'),
+            'reference': '5',
+            'fee': Fee(FVal('50.00000000')),
         },
     ), AssetMovement(
         timestamp=TimestampMS(1606901400000),
@@ -970,8 +970,8 @@ def test_deserialize_asset_movement_withdrawal(mock_bitstamp):
         balance=Balance(FVal('500')),
         unique_id='5',
         extra_data={
-            'movement_id': '5',
-            'fee': FVal('0.1'),
+            'reference': '5',
+            'fee': Fee(FVal('0.1')),
         },
     ), AssetMovement(
         timestamp=TimestampMS(1521614766000),
@@ -1001,7 +1001,7 @@ def test_query_online_deposits_withdrawals(mock_bitstamp, start_ts, since_id):
         asset=asset_usd,
         balance=Balance(FVal('10000')),
         unique_id='5',
-        extra_data={'movement_id': '5'},
+        extra_data={'reference': '5'},
     ), AssetMovement(
         timestamp=TimestampMS(1606901400000),
         location=Location.BITSTAMP,
@@ -1017,7 +1017,7 @@ def test_query_online_deposits_withdrawals(mock_bitstamp, start_ts, since_id):
         asset=asset_btc,
         balance=Balance(FVal('0.5')),
         unique_id='2',
-        extra_data={'movement_id': '5'},
+        extra_data={'reference': '5'},
     ), AssetMovement(
         timestamp=TimestampMS(1606801400000),
         location=Location.BITSTAMP,

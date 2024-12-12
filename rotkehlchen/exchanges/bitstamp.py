@@ -260,9 +260,9 @@ class Bitstamp(ExchangeInterface):
                         entry=query_result,
                         extra_data=query_result[0],
                     )) is not None and
-                    'movement_id' in extra_data
+                    'reference' in extra_data
                 ):
-                    since_id = int(extra_data['movement_id']) + 1
+                    since_id = int(extra_data['reference']) + 1
                     options.update({'since_id': since_id})
 
         # get user transactions (which is deposits/withdrawals) with fees but not address/txid
@@ -726,10 +726,10 @@ class Bitstamp(ExchangeInterface):
             amount=abs(amount),
             fee_asset=fee_asset,
             fee=(fee := deserialize_fee(raw_movement['fee'])),
-            unique_id=(movement_id := str(raw_movement['id'])),
+            unique_id=(reference := str(raw_movement['id'])),
             extra_data={
-                'movement_id': movement_id,
-                'fee': fee,  # Used for matching the corresponding crypto_transaction. Removed before being saved to the DB.  # noqa: E501
+                'reference': reference,
+                'fee': fee,
             },
         )
 

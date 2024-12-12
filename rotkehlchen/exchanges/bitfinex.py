@@ -341,8 +341,12 @@ class Bitfinex(ExchangeInterface):
                     if (extra_data := result.extra_data) is None:
                         continue  # fees don't have an id set in extra_data
 
-                    newly_processed_results.add(extra_data['movement_id'])
-                else:
+                    if (reference := extra_data.get('reference')) is None:
+                        log.error(f'Unexpected missing movement_id in {result} from bitfinex. Skipping.')  # noqa: E501
+                        continue
+
+                    newly_processed_results.add(reference)
+                elif result.link is not None:
                     newly_processed_results.add(result.link)
 
             processed_result_ids.update(newly_processed_results)
@@ -526,11 +530,11 @@ class Bitfinex(ExchangeInterface):
             amount=abs(amount),
             fee_asset=asset,
             fee=abs(deserialize_fee(raw_result[13])),
-            unique_id=(movement_id := str(raw_result[0])),
+            unique_id=(reference := str(raw_result[0])),
             extra_data=maybe_set_transaction_extra_data(
                 address=address,
                 transaction_id=transaction_id,
-                extra_data={'movement_id': movement_id},
+                extra_data={'reference': reference},
             ),
         )
 

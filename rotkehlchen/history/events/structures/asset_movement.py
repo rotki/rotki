@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Literal, NotRequired, TypedDict
 
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.structures.balance import Balance
@@ -31,13 +31,28 @@ if TYPE_CHECKING:
     from rotkehlchen.accounting.mixins.event import AccountingEventMixin
     from rotkehlchen.accounting.pot import AccountingPot
     from rotkehlchen.fval import FVal
+    from rotkehlchen.types import Fee
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class AssetMovement(HistoryBaseEntry):
+class AssetMovementExtraData(TypedDict):
+    """Typed dict with all the valid fields used in extra_data for AssetMovements"""
+    # Address receiving or sending funds in the asset movement.
+    address: NotRequired[str]
+    # Transaction if it is available where funds were moved on chain.
+    transaction_id: NotRequired[str]
+    # Internal reference used in exchanges.
+    reference: NotRequired[str]
+    # Internal use only. Used for matching the corresponding crypto_transaction. Removed before being saved to the DB.  # noqa: E501
+    fee: NotRequired['Fee']
+
+
+class AssetMovement(HistoryBaseEntry[AssetMovementExtraData | None]):
     """Asset movement event representing deposits and withdrawals on exchanges."""
+
+    extra_data: AssetMovementExtraData | None
 
     def __init__(
             self,
@@ -49,7 +64,7 @@ class AssetMovement(HistoryBaseEntry):
             identifier: int | None = None,
             event_identifier: str | None = None,
             unique_id: str | None = None,
-            extra_data: dict[str, Any] | None = None,
+            extra_data: AssetMovementExtraData | None = None,
             is_fee: bool = False,
     ) -> None:
         """
@@ -213,7 +228,7 @@ def create_asset_movement_with_fee(
         fee_asset: Asset,
         fee: 'FVal',
         unique_id: str | None = None,
-        extra_data: dict[str, Any] | None = None,
+        extra_data: AssetMovementExtraData | None = None,
 ) -> list[AssetMovement]:
     """Create an asset movement and its corresponding fee event.
     Returns the new asset movements in a list.

@@ -2633,6 +2633,7 @@ def test_upgrade_db_45_to_46(user_data_dir: 'Path', messages_aggregator):
         existing_evm_event = cursor.execute('SELECT * FROM history_events WHERE identifier = "35"').fetchone()  # noqa: E501
         existing_evm_event_extra_data = cursor.execute('SELECT extra_data FROM evm_events_info WHERE identifier = "35"').fetchone()[0]  # noqa: E501
         assert existing_evm_event_extra_data == '{"airdrop_identifier": "elfi"}'
+        assert cursor.execute('SELECT COUNT(*) FROM asset_movements').fetchone()[0] == 2
 
     # Add a plain history event to the db to be checked after upgrade that it wasn't modified
     # Note that it has to be manually inserted here since the functions for creating
@@ -2667,7 +2668,7 @@ def test_upgrade_db_45_to_46(user_data_dir: 'Path', messages_aggregator):
             "SELECT COUNT(*) FROM pragma_table_info('evm_events_info') WHERE name='extra_data'",
         ).fetchone()[0] == 0
         assert events_with_extra_data == [row[0] for row in cursor.execute(
-            "SELECT identifier FROM history_events WHERE extra_data != '';",
+            "SELECT identifier FROM history_events WHERE extra_data != '' AND entry_type != 6;",  # 6 is the entry type for the new asset movements  # noqa: E501
         )]
 
         # Confirm an evm event with extra data has been migrated correctly
@@ -2683,6 +2684,18 @@ def test_upgrade_db_45_to_46(user_data_dir: 'Path', messages_aggregator):
             history_event_bindings,
         ).fetchone()[0] == 1
 
+        assert cursor.execute(
+            'SELECT entry_type, event_identifier, sequence_index, '
+            'timestamp, location, location_label, asset, amount, usd_value, notes, '
+            'type, subtype, extra_data FROM history_events WHERE entry_type=6',
+        ).fetchall() == [
+            (6, '20522c693bcda4ef646682c6a58bb0349b01f4d7b9168a62ce94b2c8dd1fe639', 0, 1644244023000, 'B', None, 'ATOM', '3.40000000', '0', 'Withdraw 3.40000000 ATOM from Kraken', 'withdrawal', 'remove asset', '{"reference": "KRAKEN-XXX"}'),  # noqa: E501
+            (6, '20522c693bcda4ef646682c6a58bb0349b01f4d7b9168a62ce94b2c8dd1fe639', 1, 1644244023000, 'B', None, 'ATOM', '0.10000000', '0', 'Pay 0.10000000 ATOM as Kraken withdrawal fee', 'withdrawal', 'fee', None),  # noqa: E501
+            (6, '1cf3fc675d4835efe532d18730db35163b07fb5f44956b888d7aaf852b04fd1c', 0, 1727542684000, 'G', None, 'ETH', '0.07126231', '0', 'Deposit 0.07126231 ETH to Coinbase', 'deposit', 'deposit asset', '{"address": "0xc37b40ABdB939635068d3c5f13E7faF686F03B65", "transaction_id": "0xc8aa60c9f8a93692b66fbc3f57c64f2b1c4afd92f370e12dc7bb23acfa303dbb"}'),  # noqa: E501
+        ]
+        # TODO: Remove this when table is removed
+        # assert table_exists(cursor, 'asset_movements') is False  # noqa: ERA001
+        # assert table_exists(cursor, 'asset_movement_category') is False  # noqa: ERA001
     db.logout()
 
 

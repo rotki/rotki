@@ -1,7 +1,7 @@
 import copy
 import json
 import logging
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING, Any, Literal, Optional, overload
 
 from pysqlcipher3 import dbapi2 as sqlcipher
@@ -784,7 +784,12 @@ class DBHistoryEvents:
         )
         return [x[0] for x in cursor]
 
-    def edit_event_extra_data(self, write_cursor: 'DBCursor', event: HistoryBaseEntry, extra_data: dict[str, Any]) -> None:  # noqa: E501
+    def edit_event_extra_data(
+            self,
+            write_cursor: 'DBCursor',
+            event: HistoryBaseEntry,
+            extra_data: Mapping[str, Any],
+    ) -> None:
         """Edit an event's extra data in the DB and save it. Does not turn it into
         a customized event. This is meant to be used programmatically.
 

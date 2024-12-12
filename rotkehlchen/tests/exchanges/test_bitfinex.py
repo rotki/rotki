@@ -877,7 +877,7 @@ def test_deserialize_asset_movement_deposit(mock_bitfinex):
         balance=Balance(FVal('0.26300954')),
         unique_id='13105603',
         extra_data={
-            'movement_id': '13105603',
+            'reference': '13105603',
             'address': 'DESTINATION_ADDRESS',
             'transaction_id': 'TRANSACTION_ID',
         },
@@ -930,7 +930,7 @@ def test_deserialize_asset_movement_withdrawal(mock_bitfinex):
         asset=fee_asset,
         balance=Balance(FVal('0.26300954')),
         unique_id='13105603',
-        extra_data={'movement_id': '13105603'},
+        extra_data={'reference': '13105603'},
     ), AssetMovement(
         timestamp=TimestampMS(1569348774000),
         location=Location.BITFINEX,
@@ -1167,7 +1167,7 @@ def test_query_online_deposits_withdrawals_case_1(mock_bitfinex):
                 balance=Balance(FVal('0.26300954')),
                 unique_id='1',
                 extra_data={
-                    'movement_id': '1',
+                    'reference': '1',
                     'address': 'DESTINATION_ADDRESS',
                     'transaction_id': 'TRANSACTION_ID',
                 },
@@ -1189,7 +1189,7 @@ def test_query_online_deposits_withdrawals_case_1(mock_bitfinex):
                 balance=Balance(FVal('0.26300954')),
                 unique_id='2',
                 extra_data={
-                    'movement_id': '2',
+                    'reference': '2',
                     'address': 'DESTINATION_ADDRESS',
                     'transaction_id': 'TRANSACTION_ID',
                 },
@@ -1210,7 +1210,7 @@ def test_query_online_deposits_withdrawals_case_1(mock_bitfinex):
                 asset=eur_fee_asset,
                 balance=Balance(FVal('0.26300954')),
                 unique_id='4',
-                extra_data={'movement_id': '4'},
+                extra_data={'reference': '4'},
             ),
             AssetMovement(
                 timestamp=TimestampMS(1606986000000),
@@ -1391,7 +1391,7 @@ def test_query_online_deposits_withdrawals_case_2(mock_bitfinex):
                 balance=Balance(FVal('0.26300954')),
                 unique_id='1',
                 extra_data={
-                    'movement_id': '1',
+                    'reference': '1',
                     'address': 'DESTINATION_ADDRESS',
                     'transaction_id': 'TRANSACTION_ID',
                 },
@@ -1413,7 +1413,7 @@ def test_query_online_deposits_withdrawals_case_2(mock_bitfinex):
                 balance=Balance(FVal('0.26300954')),
                 unique_id='2',
                 extra_data={
-                    'movement_id': '2',
+                    'reference': '2',
                     'address': 'DESTINATION_ADDRESS',
                     'transaction_id': 'TRANSACTION_ID',
                 },
@@ -1434,7 +1434,7 @@ def test_query_online_deposits_withdrawals_case_2(mock_bitfinex):
                 asset=eur_fee_asset,
                 balance=Balance(FVal('0.26300954')),
                 unique_id='3',
-                extra_data={'movement_id': '3'},
+                extra_data={'reference': '3'},
             ),
             AssetMovement(
                 timestamp=TimestampMS(1606986000000),
@@ -1453,7 +1453,7 @@ def test_query_online_deposits_withdrawals_case_2(mock_bitfinex):
                 balance=Balance(FVal('0.26300954')),
                 unique_id='4',
                 extra_data={
-                    'movement_id': '4',
+                    'reference': '4',
                     'address': 'DESTINATION_ADDRESS',
                     'transaction_id': 'TRANSACTION_ID',
                 },

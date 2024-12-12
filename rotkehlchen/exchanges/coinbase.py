@@ -899,8 +899,7 @@ class Coinbase(ExchangeInterface):
 
             # Only get address/transaction id for "send" type of transactions
             address = None
-            transaction_id = raw_data.get('id')
-            transaction_url = None
+            transaction_id, transaction_hash = raw_data.get('id'), None
             fee = Fee(ZERO)
             tx_type = raw_data['type']  # not sure if fiat
             event_type: Literal[HistoryEventType.DEPOSIT, HistoryEventType.WITHDRAWAL]
@@ -936,8 +935,8 @@ class Coinbase(ExchangeInterface):
                         fee = deserialize_fee(raw_fee['amount'])
 
             if 'network' in raw_data:
-                transaction_id = get_key_if_has_val(raw_data['network'], 'hash')
-                transaction_url = get_key_if_has_val(raw_data['network'], 'transaction_url')
+                transaction_hash = get_key_if_has_val(raw_data['network'], 'hash')
+
             raw_to = raw_data.get('to')
             if raw_to is not None:
                 address = deserialize_asset_movement_address(raw_to, 'address', asset)
@@ -985,8 +984,8 @@ class Coinbase(ExchangeInterface):
                 unique_id=transaction_id,
                 extra_data=maybe_set_transaction_extra_data(
                     address=address,
-                    transaction_id=transaction_id,
-                    extra_data={'url': transaction_url} if transaction_url is not None else None,
+                    transaction_id=transaction_hash,
+                    extra_data={'reference': transaction_id} if transaction_id is not None else None,  # noqa: E501
                 ),
             )
 
