@@ -183,6 +183,7 @@ from rotkehlchen.externalapis.github import Github
 from rotkehlchen.externalapis.gnosispay import GNOSIS_PAY_TX_TIMESTAMP_RANGE, init_gnosis_pay
 from rotkehlchen.externalapis.monerium import init_monerium
 from rotkehlchen.fval import FVal
+from rotkehlchen.globaldb.asset_updates.manager import ASSETS_VERSION_KEY
 from rotkehlchen.globaldb.assets_management import export_assets_from_file, import_assets_from_file
 from rotkehlchen.globaldb.cache import (
     globaldb_delete_general_cache_values,
@@ -190,7 +191,6 @@ from rotkehlchen.globaldb.cache import (
     globaldb_set_general_cache_values,
 )
 from rotkehlchen.globaldb.handler import GlobalDBHandler
-from rotkehlchen.globaldb.updates import ASSETS_VERSION_KEY
 from rotkehlchen.globaldb.utils import set_token_spam_protocol
 from rotkehlchen.history.events.structures.base import (
     HistoryBaseEntryType,

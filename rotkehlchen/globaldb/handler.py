@@ -1,5 +1,4 @@
 import logging
-import os
 import shutil
 import sqlite3
 from pathlib import Path
@@ -23,7 +22,7 @@ from rotkehlchen.assets.types import AssetData, AssetType
 from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.structures import EvmTokenDetectionData
-from rotkehlchen.constants.assets import A_ETH, A_ETH2
+from rotkehlchen.constants.assets import A_ETH, A_ETH2, CONSTANT_ASSETS
 from rotkehlchen.constants.misc import (
     DEFAULT_SQL_VM_INSTRUCTIONS_CB,
     GLOBALDB_NAME,
@@ -33,7 +32,7 @@ from rotkehlchen.constants.misc import (
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType, DBCursor
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset, WrongAssetType
-from rotkehlchen.errors.misc import DBUpgradeError, InputError
+from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
@@ -55,10 +54,8 @@ from rotkehlchen.utils.serialization import (
     deserialize_generic_asset_from_db,
 )
 
-from .migrations.manager import LAST_DATA_MIGRATION, maybe_apply_globaldb_migrations
-from .schema import DB_SCRIPT_CREATE_TABLES
-from .upgrades.manager import maybe_upgrade_globaldb
-from .utils import GLOBAL_DB_VERSION, globaldb_get_setting_value
+from .upgrades.manager import configure_globaldb
+from .utils import GLOBAL_DB_VERSION, globaldb_get_setting_value, initialize_globaldb
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -87,127 +84,6 @@ ALL_ASSETS_TABLES_QUERY_WITH_COLLECTIONS = (
 )
 
 
-def _initialize_and_check_unfinished_upgrades(
-        global_dir: Path,
-        db_filename: str,
-        sql_vm_instructions_cb: int,
-) -> tuple[DBConnection, bool]:
-    """
-    Checks the database whether there are any not finished upgrades and automatically uses a
-    backup if there are any. If no backup found, throws an error.
-
-    Returns the DB connection and true if a DB backup was used and False otherwise
-    """
-    connection = DBConnection(
-        path=global_dir / db_filename,
-        connection_type=DBConnectionType.GLOBAL,
-        sql_vm_instructions_cb=sql_vm_instructions_cb,
-    )
-    try:
-        with connection.read_ctx() as cursor:
-            ongoing_upgrade_from_version = globaldb_get_setting_value(
-                cursor=cursor,
-                name='ongoing_upgrade_from_version',
-                default_value=-1,
-            )
-    except sqlite3.OperationalError:  # pylint: disable=no-member
-        ongoing_upgrade_from_version = -1  # Fresh DB
-
-    if ongoing_upgrade_from_version == -1:
-        return connection, False  # We are all good
-
-    # Otherwise replace the db with a backup and relogin
-    connection.close()
-    backup_postfix = f'global_db_v{ongoing_upgrade_from_version}.backup'
-    found_backups = list(filter(
-        lambda x: x[-len(backup_postfix):] == backup_postfix,
-        os.listdir(global_dir),
-    ))
-    if len(found_backups) == 0:
-        raise DBUpgradeError(
-            'Your global database is in a half-upgraded state and there was no backup '
-            'found. Please open an issue on our github or contact us in our discord server.',
-        )
-
-    backup_to_use = max(found_backups)  # Use latest backup
-    shutil.copyfile(
-        global_dir / backup_to_use,
-        global_dir / db_filename,
-    )
-    connection = DBConnection(
-        path=global_dir / db_filename,
-        connection_type=DBConnectionType.GLOBAL,
-        sql_vm_instructions_cb=sql_vm_instructions_cb,
-    )
-    return connection, True
-
-
-def initialize_globaldb(
-        global_dir: Path,
-        db_filename: str,
-        sql_vm_instructions_cb: int,
-        msg_aggregator: 'MessagesAggregator',
-) -> tuple[DBConnection, bool]:
-    """Initialize globaldb.
-
-    - global_dir: The directory in which to find the global.db to initialize
-    - db_filename: The filename of the DB. Almost always: global.db.
-    - sql_vm_instructions_cb is a connection setting. Check DBConnection for details.
-
-    May raise DBSchemaError if GlobalDB's schema is malformed.
-    """
-    connection, used_backup = _initialize_and_check_unfinished_upgrades(
-        global_dir=global_dir,
-        db_filename=db_filename,
-        sql_vm_instructions_cb=sql_vm_instructions_cb,
-    )
-    is_fresh_db = maybe_upgrade_globaldb(
-        connection=connection,
-        global_dir=global_dir,
-        db_filename=db_filename,
-        msg_aggregator=msg_aggregator,
-    )
-    connection.executescript('PRAGMA foreign_keys=on;')
-    # switch to WAL mode: https://www.sqlite.org/wal.html
-    connection.execute('PRAGMA journal_mode=WAL;')
-    if is_fresh_db is True:
-        connection.executescript(DB_SCRIPT_CREATE_TABLES)
-        with connection.write_ctx() as cursor:
-            cursor.executemany(
-                'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
-                [('version', str(GLOBAL_DB_VERSION)), ('last_data_migration', str(LAST_DATA_MIGRATION))],  # noqa: E501
-            )
-    else:
-        maybe_apply_globaldb_migrations(connection)
-    connection.schema_sanity_check()
-    return connection, used_backup
-
-
-def _initialize_global_db_directory(
-        data_dir: Path,
-        sql_vm_instructions_cb: int,
-        msg_aggregator: 'MessagesAggregator',
-) -> tuple[DBConnection, bool]:
-    """Initialize globaldb directory. May raise DBSchemaError if GlobalDB's schema is malformed.
-
-    Returns the DB connection and True if a DB backup was used and False otherwise
-    """
-    global_dir = data_dir / GLOBALDIR_NAME
-    global_dir.mkdir(parents=True, exist_ok=True)
-    dbname = global_dir / GLOBALDB_NAME
-    if not dbname.is_file():
-        # if no global db exists, copy the built-in file
-        root_dir = Path(__file__).resolve().parent.parent
-        builtin_data_dir = root_dir / 'data'
-        shutil.copyfile(builtin_data_dir / GLOBALDB_NAME, global_dir / GLOBALDB_NAME)
-    return initialize_globaldb(
-        global_dir=global_dir,
-        db_filename=GLOBALDB_NAME,
-        sql_vm_instructions_cb=sql_vm_instructions_cb,
-        msg_aggregator=msg_aggregator,
-    )
-
-
 class GlobalDBHandler:
     """A singleton class controlling the global DB"""
     __instance: Optional['GlobalDBHandler'] = None
@@ -222,6 +98,7 @@ class GlobalDBHandler:
             cls,
             data_dir: Path | None = None,
             sql_vm_instructions_cb: int | None = None,
+            perform_assets_updates: bool | None = None,
             msg_aggregator: 'MessagesAggregator | None' = None,
     ) -> 'GlobalDBHandler':
         """
@@ -229,6 +106,10 @@ class GlobalDBHandler:
 
         If the data dir is given it uses the already existing global DB in that directory,
         of if there is none copies the built-in one there.
+
+        If perform_assets_updates is True any assets data will be updated before applying
+        schema-breaking changes.
+
         May raise:
         - DBSchemaError if GlobalDB's schema is malformed
         """
@@ -237,15 +118,36 @@ class GlobalDBHandler:
         assert data_dir is not None, 'First instantiation of GlobalDBHandler should have a data_dir'  # noqa: E501
         assert sql_vm_instructions_cb is not None, 'First instantiation of GlobalDBHandler should have a sql_vm_instructions_cb'  # noqa: E501
         assert msg_aggregator is not None, 'First instantiation of GlobalDBHandler should have a messages_aggregator'  # noqa: E501
+        assert perform_assets_updates is not None, 'First instantiation of GlobalDBHandler should have a perform_assets_updates'  # noqa: E501
+
         GlobalDBHandler.__instance = object.__new__(cls)
         GlobalDBHandler.__instance._data_directory = data_dir
         GlobalDBHandler.__instance.msg_aggregator = msg_aggregator
-        GlobalDBHandler.__instance.conn, GlobalDBHandler.__instance.used_backup = _initialize_global_db_directory(  # noqa: E501
-            data_dir=data_dir,
+
+        global_dir = data_dir / GLOBALDIR_NAME
+        global_dir.mkdir(parents=True, exist_ok=True)
+        if not (global_dir / GLOBALDB_NAME).is_file():
+            # if no global db exists, copy the built-in file
+            root_dir = Path(__file__).resolve().parent.parent
+            builtin_data_dir = root_dir / 'data'
+            shutil.copyfile(builtin_data_dir / GLOBALDB_NAME, global_dir / GLOBALDB_NAME)
+
+        GlobalDBHandler.__instance.conn, GlobalDBHandler.__instance.used_backup = initialize_globaldb(  # noqa: E501
+            global_dir=global_dir,
+            db_filename=GLOBALDB_NAME,
             sql_vm_instructions_cb=sql_vm_instructions_cb,
-            msg_aggregator=msg_aggregator,
         )
         GlobalDBHandler.__instance.packaged_db_lock = Semaphore()
+
+        # initialise the asset resolver here since asset updater class might require it.
+        AssetResolver(globaldb=GlobalDBHandler.__instance, constant_assets=CONSTANT_ASSETS)
+        configure_globaldb(
+            global_dir=global_dir,
+            db_filename=GLOBALDB_NAME,
+            msg_aggregator=msg_aggregator,
+            globaldb=GlobalDBHandler.__instance if perform_assets_updates else None,
+            connection=GlobalDBHandler.__instance.conn,
+        )
         return GlobalDBHandler.__instance
 
     def filepath(self) -> Path:

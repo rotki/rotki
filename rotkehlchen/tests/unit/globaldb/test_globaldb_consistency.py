@@ -15,7 +15,7 @@ from rotkehlchen.constants.misc import GLOBALDIR_NAME, ONE
 from rotkehlchen.db.constants import UpdateType
 from rotkehlchen.db.updates import RotkiDataUpdater
 from rotkehlchen.fval import FVal
-from rotkehlchen.globaldb.updates import AssetsUpdater
+from rotkehlchen.globaldb.asset_updates.manager import AssetsUpdater
 from rotkehlchen.tests.fixtures.globaldb import create_globaldb
 from rotkehlchen.types import (
     AERODROME_POOL_PROTOCOL,
@@ -86,8 +86,6 @@ class DBToken:
         }
 
 
-# See https://github.com/orgs/rotki/projects/11/views/2?pane=issue&itemId=89977797
-@pytest.mark.skipif('CI' in os.environ, reason='skipped in CI until remote asset updates are fixed')  # noqa: E501
 def test_asset_updates_consistency_with_packaged_db(
         tmpdir_factory: 'pytest.TempdirFactory',
         messages_aggregator: 'MessagesAggregator',
@@ -112,6 +110,7 @@ def test_asset_updates_consistency_with_packaged_db(
     globaldb = create_globaldb(
         data_directory=temp_data_dir,
         sql_vm_instructions_cb=0,
+        perform_assets_updates=True,
         messages_aggregator=messages_aggregator,
     )
 
@@ -119,10 +118,16 @@ def test_asset_updates_consistency_with_packaged_db(
         globaldb.conn.read_ctx() as old_db_cursor,
         globaldb.packaged_db_conn().read_ctx() as packaged_db_cursor,
     ):
-        assert old_db_cursor.execute("SELECT value FROM settings WHERE name='assets_version'").fetchone()[0] == '15'  # noqa: E501
+        # normally this would be 15, but since we check for compatible asset updates
+        # while upgrading the globaldb schema, it becomes 31 meaning we have all
+        # asset updates before schema-breaking changes
+        assert old_db_cursor.execute("SELECT value FROM settings WHERE name='assets_version'").fetchone()[0] == '31'  # noqa: E501
         assert packaged_db_cursor.execute("SELECT value FROM settings WHERE name='assets_version'").fetchone()[0] == '30'  # noqa: E501
 
-    assets_updater = AssetsUpdater(msg_aggregator=messages_aggregator)
+    assets_updater = AssetsUpdater(
+        globaldb=globaldb,
+        msg_aggregator=messages_aggregator,
+    )
     assets_updater.branch = target_branch
     if (conflicts := assets_updater.perform_update(
         up_to_version=None,
