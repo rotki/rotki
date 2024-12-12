@@ -12,10 +12,8 @@ export const useMessageStore = defineStore('message', () => {
       return;
     }
     set(message, {
-      ...{
-        success: false,
-        title: msg.success ? t('message.success.title') : t('message.error.title'),
-      },
+      success: false,
+      title: msg.success ? t('message.success.title') : t('message.error.title'),
       ...msg,
     });
   };

@@ -49,7 +49,7 @@ const icon = computed<RuiIcons>(() => (get(props.message.success) ? 'checkbox-ci
           class="hyphens-auto break-words"
           data-cy="message-dialog__title"
         >
-          {{ message }}
+          {{ message.description }}
         </div>
       </div>
 
