@@ -597,3 +597,20 @@ def test_get_logs_anonymous(ethereum_inquirer, ethereum_manager_connect_at_start
             argument_filters=argument_filters,
             call_order=call_order,
         )
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_manager_connect_at_start', [(INFURA_ETH_NODE,)])
+def test_contract_call_raises_on_non_checksum_token_address(ethereum_inquirer):
+    """Check that contract calls fail properly when given a non-checksum token address.
+
+    Validates that a RemoteError is raised with appropriate message when providing
+    a non-checksum token address to tokens_balance call.
+    """
+    token_address = '0x5283d291dbcf85356a21ba090e6db59121208b44'
+    with pytest.raises(RemoteError, match=f'non-checksum address {token_address}'):
+        ethereum_inquirer.contract_scan.call(
+            node_inquirer=ethereum_inquirer,
+            method_name='tokens_balance',
+            arguments=['0xBCaBdc5eBd28dC9d1629210f92D27171852eBa53', [token_address]],
+        )
