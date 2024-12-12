@@ -50,7 +50,7 @@ const evmOrEthDepositEvent = computed(() => get(isEvmEventRef(event)) || get(isE
           icon
           :item="onlineEvent.location"
           size="16px"
-          class="mr-1"
+          class="mr-2"
         />
         <HashLink
           :show-icon="!onlineEvent"

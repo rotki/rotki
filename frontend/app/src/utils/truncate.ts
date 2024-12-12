@@ -26,7 +26,7 @@ export function truncateAddress(address: string, truncLength = 4): string {
 
   const length = address.length;
 
-  if (length <= truncLength * 2 + startPadding)
+  if (length <= truncLength * 2 + startPadding + 3)
     return address;
 
   return `${address.slice(0, truncLength + startPadding)}...${address.slice(length - truncLength, length)}`;
