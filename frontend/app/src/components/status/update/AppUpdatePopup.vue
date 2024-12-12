@@ -81,7 +81,7 @@ onMounted(async () => {
             v-if="error"
             size="40"
             color="error"
-            name="error-warning-line"
+            name="lu-circle-alert"
           />
           <RuiIcon
             v-else-if="!downloadReady && !downloading"

@@ -15,6 +15,6 @@ withDefaults(
   <RuiIcon
     :color="success ? 'success' : 'primary'"
     :size="size"
-    :name="success ? 'checkbox-circle-line' : 'close-circle-line'"
+    :name="success ? 'lu-circle-check' : 'lu-circle-x'"
   />
 </template>

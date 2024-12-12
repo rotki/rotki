@@ -327,7 +327,7 @@ const importFileDialog = ref<boolean>(false);
               @click="conflictsDialogOpen = true"
             >
               <template #prepend>
-                <RuiIcon name="error-warning-line" />
+                <RuiIcon name="lu-circle-alert" />
               </template>
               {{ t('accounting_settings.rule.conflicts.title') }}
               <template #append>

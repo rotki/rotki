@@ -94,7 +94,10 @@ function confirm() {
             {{ t('create_account.title') }}
           </h4>
           <div class="w-full">
-            <RuiTabItems :model-value="step - 1">
+            <RuiTabItems
+              class="!overflow-visible"
+              :model-value="step - 1"
+            >
               <RuiTabItem>
                 <CreateAccountIntroduction @next="nextStep()" />
               </RuiTabItem>

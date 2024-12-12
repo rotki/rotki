@@ -191,7 +191,7 @@ function icon(level: LogLevel): RuiIcons {
   else if (level === LogLevel.WARNING)
     return 'alert-line';
   else if (level === LogLevel.ERROR)
-    return 'error-warning-line';
+    return 'lu-circle-alert';
   else if (level === LogLevel.CRITICAL)
     return 'virus-line';
   else if (level === LogLevel.TRACE)

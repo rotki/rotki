@@ -15,7 +15,7 @@ const { link, version } = useUpdateMessage();
     <div class="bg-white rounded-[0.625rem] p-3">
       <RuiIcon
         color="primary"
-        name="checkbox-circle-line"
+        name="lu-circle-check"
       />
     </div>
     <div class="text-h6 text-rui-text">
