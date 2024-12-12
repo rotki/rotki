@@ -5,32 +5,63 @@ import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 const { t } = useI18n();
 
 const search = ref<string>('');
-
-const services = {
-  beaconchain: defineAsyncComponent(() => import('@/components/settings/api-keys/external/BeaconchainApiKey.vue')),
-  blockscout: defineAsyncComponent(() => import('@/components/settings/api-keys/external/BlockscoutApiKeys.vue')),
-  coingecko: defineAsyncComponent(() => import('@/components/settings/api-keys/external/CoinGeckoApiKey.vue')),
-  cryptocompare: defineAsyncComponent(() => import('@/components/settings/api-keys/external/CryptoCompareApiKey.vue')),
-  defillama: defineAsyncComponent(() => import('@/components/settings/api-keys/external/DefiLlamaApiKey.vue')),
-  etherscan: defineAsyncComponent(() => import('@/components/settings/api-keys/external/EtherscanApiKeys.vue')),
-  gnosispay: defineAsyncComponent(() => import('@/components/settings/api-keys/external/GnosisPayAuth.vue')),
-  loopring: defineAsyncComponent(() => import('@/components/settings/api-keys/external/LoopringApiKey.vue')),
-  monerium: defineAsyncComponent(() => import('@/components/settings/api-keys/external/MoneriumAuth.vue')),
-  opensea: defineAsyncComponent(() => import('@/components/settings/api-keys/external/OpenSeaApiKey.vue')),
-  thegraph: defineAsyncComponent(() => import('@/components/settings/api-keys/external/TheGraphApiKey.vue')),
-};
-
 const { load } = useExternalApiKeys(t);
 
+const services = [
+  {
+    component: defineAsyncComponent(() => import('@/components/settings/api-keys/external/EtherscanApiKeys.vue')),
+    name: 'etherscan',
+  },
+  {
+    component: defineAsyncComponent(() => import('@/components/settings/api-keys/external/BlockscoutApiKeys.vue')),
+    name: 'blockscout',
+  },
+  {
+    component: defineAsyncComponent(() => import('@/components/settings/api-keys/external/CryptoCompareApiKey.vue')),
+    name: 'cryptocompare',
+  },
+  {
+    component: defineAsyncComponent(() => import('@/components/settings/api-keys/external/BeaconchainApiKey.vue')),
+    name: 'beaconchain',
+  },
+  {
+    component: defineAsyncComponent(() => import('@/components/settings/api-keys/external/LoopringApiKey.vue')),
+    name: 'loopring',
+  },
+  {
+    component: defineAsyncComponent(() => import('@/components/settings/api-keys/external/OpenSeaApiKey.vue')),
+    name: 'opensea',
+  },
+  {
+    component: defineAsyncComponent(() => import('@/components/settings/api-keys/external/MoneriumAuth.vue')),
+    name: 'monerium',
+  },
+  {
+    component: defineAsyncComponent(() => import('@/components/settings/api-keys/external/TheGraphApiKey.vue')),
+    name: 'thegraph',
+  },
+  {
+    component: defineAsyncComponent(() => import('@/components/settings/api-keys/external/GnosisPayAuth.vue')),
+    name: 'gnosispay',
+  },
+  {
+    component: defineAsyncComponent(() => import('@/components/settings/api-keys/external/DefiLlamaApiKey.vue')),
+    name: 'defillama',
+  },
+  {
+    component: defineAsyncComponent(() => import('@/components/settings/api-keys/external/CoinGeckoApiKey.vue')),
+    name: 'coingecko',
+  },
+];
+
+// Update the filteredServices computed property
 const filteredServices = computed(() => {
   const searchVal = get(search);
   if (!searchVal) {
-    return Object.values(services);
+    return services;
   }
   const keyword = getTextToken(searchVal);
-  return Object.keys(services)
-    .filter(key => getTextToken(key).includes(keyword))
-    .map(key => services[key as keyof typeof services]);
+  return services.filter(service => getTextToken(service.name).includes(keyword));
 });
 
 onMounted(async () => {
@@ -65,9 +96,9 @@ onMounted(async () => {
     <div class="grid sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4 sm:gap-6">
       <template v-if="filteredServices.length > 0">
         <Component
-          :is="component"
-          v-for="(component, index) in filteredServices"
-          :key="index"
+          :is="service.component"
+          v-for="(service) in filteredServices"
+          :key="service.name"
         />
       </template>
       <template v-else>

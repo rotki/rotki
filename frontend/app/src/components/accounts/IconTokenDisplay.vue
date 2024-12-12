@@ -46,7 +46,7 @@ async function navigateToAsset(asset: AssetBalance) {
         <template #activator>
           <div
             data-cy="top-asset"
-            class="rounded-full size-8 flex items-center justify-center border-2 border-white dark:border-rui-grey-700 -ml-2 cursor-pointer"
+            class="rounded-full size-8 flex items-center justify-center border bg-white border-rui-grey-300 dark:border-rui-grey-700 -ml-2 cursor-pointer"
             @click="navigateToAsset(asset)"
           >
             <AssetIcon
@@ -56,7 +56,7 @@ async function navigateToAsset(asset: AssetBalance) {
               :resolution-options="resolutionOptions"
               size="30px"
               padding="1px"
-              class="[&_.icon-bg]:!rounded-full [&_.icon-bg]:!overflow-hidden"
+              class="[&_.icon-bg]:!rounded-full [&_.icon-bg]:!overflow-hidden [&_.icon-bg]:p-[1px]"
               :show-chain="showChain"
             />
           </div>
