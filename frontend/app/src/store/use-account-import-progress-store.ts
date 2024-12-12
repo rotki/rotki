@@ -20,15 +20,16 @@ interface AccountImportProgress {
   readonly skipped: number;
 }
 
-interface UseAccountImportProgressReturn {
+interface UseAccountImportProgressStoreReturn {
   increment: () => void;
   importingAccounts: ComputedRef<boolean>;
   progress: Readonly<Ref<AccountImportProgress>>;
+  progressPercentage: ComputedRef<number>;
   setTotal: (total?: number) => void;
   skip: () => void;
 }
 
-export const useAccountImportProgress = createSharedComposable((): UseAccountImportProgressReturn => {
+export const useAccountImportProgressStore = defineStore('import-progress', (): UseAccountImportProgressStoreReturn => {
   const progress = ref<AccountImportProgress>({
     current: 0,
     skipped: 0,
@@ -36,6 +37,7 @@ export const useAccountImportProgress = createSharedComposable((): UseAccountImp
   });
 
   const importingAccounts = computed<boolean>(() => get(progress).total > 0);
+  const progressPercentage = computed<number>(() => Math.round((get(progress).current / get(progress).total) * 100));
 
   function skip(): void {
     const currentProgress = get(progress);
@@ -76,6 +78,7 @@ export const useAccountImportProgress = createSharedComposable((): UseAccountImp
     importingAccounts,
     increment,
     progress: readonly(progress),
+    progressPercentage,
     setTotal,
     skip,
   };

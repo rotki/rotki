@@ -15,7 +15,7 @@ import { CSVMissingHeadersError, useCsvImportExport } from '@/composables/common
 import { logger } from '@/utils/logging';
 import { useBlockchainValidatorsStore } from '@/store/blockchain/validators';
 import { getKeyType, guessPrefix, isPrefixed } from '@/utils/xpub';
-import { useAccountImportProgress } from '@/composables/accounts/use-account-import-progress';
+import { useAccountImportProgressStore } from '@/store/use-account-import-progress-store';
 import type { AccountPayload, AddAccountsPayload, XpubAccountPayload } from '@/types/blockchain/accounts';
 import type { Eth2Validator } from '@/types/balances';
 
@@ -79,7 +79,9 @@ export function useAccountImportExport(): UseAccountImportExportReturn {
   const { generateCSV, parseCSV } = useCsvImportExport();
   const { t } = useI18n();
   const { allTags } = useTagStore();
-  const { increment, progress, setTotal, skip } = useAccountImportProgress();
+  const progressStore = useAccountImportProgressStore();
+  const { increment, setTotal, skip } = progressStore;
+  const { progress } = storeToRefs(progressStore);
 
   const blockchainLoading = isLoading(Section.BLOCKCHAIN);
   const blockchainLoadingDebounced = refDebounced(blockchainLoading, 2000);

@@ -20,6 +20,9 @@
     "release_notes": "What's new",
     "user_agent": "User Agent:"
   },
+  "account_import_progress": {
+    "importing": "rotki is importing your accounts. Currently importing account {current} of {total}. Please wait!"
+  },
   "big_dialog": {
     "prompt_close": {
       "title": "You have unsaved changes",
