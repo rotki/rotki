@@ -18,7 +18,7 @@ from web3 import HTTPProvider, Web3
 from web3._utils.contracts import find_matching_event_abi
 from web3._utils.filters import construct_event_filter_params
 from web3.datastructures import MutableAttributeDict
-from web3.exceptions import TransactionNotFound, Web3Exception
+from web3.exceptions import InvalidAddress, TransactionNotFound, Web3Exception
 from web3.middleware import ExtraDataToPOAMiddleware
 from web3.types import BlockIdentifier, FilterParams
 
@@ -556,6 +556,11 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
                 if kwargs.get('must_exist', False) is True:
                     continue  # try other nodes, as transaction has to exist
                 return None
+            except InvalidAddress as e:
+                raise RemoteError(  # no need to try other nodes since its not a node problem.
+                    f'Failed to query {node_info.name} for {method!s}: '
+                    f'non-checksum address {e.args[1]}',
+                ) from e
             except (
                     RemoteError,
                     requests.exceptions.RequestException,
@@ -729,6 +734,8 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
         try:
             method = getattr(contract.caller(block_identifier=block_identifier), method_name)
             result = method(*arguments or [])
+        except InvalidAddress:
+            raise  # propagate to _query() where it's handled properly
         except (Web3Exception, ValueError) as e:
             raise BlockchainQueryError(
                 f'Error doing call on contract {contract_address}: {e!s}',

@@ -11,6 +11,7 @@ from rotkehlchen.chain.ethereum.utils import (
 )
 from rotkehlchen.chain.evm.types import WeightedNode, asset_id_is_evm_token
 from rotkehlchen.chain.structures import EvmTokenDetectionData
+from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.inquirer import Inquirer
@@ -153,13 +154,20 @@ class EvmTokens(ABC):
             address=address,
             tokens_num=len(tokens),
         )
-        result = self.evm_inquirer.contract_scan.call(
-            node_inquirer=self.evm_inquirer,
-            method_name='tokens_balance',
-            arguments=[address, [x.address for x in tokens]],
-            call_order=call_order,
-        )
         balances: dict[Asset, FVal] = defaultdict(FVal)
+        try:
+            result = self.evm_inquirer.contract_scan.call(
+                node_inquirer=self.evm_inquirer,
+                method_name='tokens_balance',
+                arguments=[address, [x.address for x in tokens]],
+                call_order=call_order,
+            )
+        except RemoteError as e:
+            log.error(
+                f'{self.evm_inquirer.chain_name} tokensBalance call failed for address {address}.'
+                f' Token addresses: {[x.address for x in tokens]}. Error: {e}',
+            )
+            return balances
 
         try:
             for token_balance, token in zip(result, tokens, strict=True):
