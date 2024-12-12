@@ -4,13 +4,11 @@ import { toMessages } from '@/utils/validation';
 import { isNft } from '@/utils/nft';
 import { usePropVModel } from '@/utils/model';
 import { useEditBalancesSnapshotForm } from '@/composables/snapshots/edit-balance/form';
-import EditBalancesSnapshotLocationSelector
-  from '@/components/dashboard/edit-snapshot/EditBalancesSnapshotLocationSelector.vue';
 import BalanceTypeInput from '@/components/inputs/BalanceTypeInput.vue';
+import EditBalancesSnapshotLocationSelector from '@/components/dashboard/edit-snapshot/EditBalancesSnapshotLocationSelector.vue';
+import EditBalancesSnapshotAssetPriceForm from '@/components/dashboard/edit-snapshot/EditBalancesSnapshotAssetPriceForm.vue';
 import type { BigNumber } from '@rotki/common';
 import type { BalanceSnapshotPayload } from '@/types/snapshots';
-import type EditBalancesSnapshotAssetPriceForm
-  from './EditBalancesSnapshotAssetPriceForm.vue';
 
 interface BalanceSnapshotPayloadAndLocation extends BalanceSnapshotPayload {
   location: string;
