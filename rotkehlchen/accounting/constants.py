@@ -227,7 +227,7 @@ EVENT_CATEGORY_DETAILS = {
         CPT_GAS: EventCategoryDetails(label='gas fee', icon='fire-line'),
     }, EventCategory.FAIL: {DEFAULT: EventCategoryDetails(
         label='Failed',
-        icon='close-circle-line',
+        icon='lu-circle-x',
         color='error',
     )}, EventCategory.MEV_REWARD: {DEFAULT: EventCategoryDetails(
         label='mev',

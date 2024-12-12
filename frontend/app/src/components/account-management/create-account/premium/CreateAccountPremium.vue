@@ -55,7 +55,7 @@ const premiumSelectionButtons = computed(() => [
         <template #prepend>
           <RuiIcon
             class="-ml-2"
-            :name="button.value === premiumEnabled ? 'radio-button-line' : 'checkbox-blank-circle-line'"
+            :name="button.value === premiumEnabled ? 'lu-radio-button-fill' : 'lu-checkbox-blank-circle'"
           />
         </template>
         {{ button.text }}

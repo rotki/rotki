@@ -31,7 +31,7 @@ const { t } = useI18n();
 <template>
   <div class="flex items-center gap-3">
     <div
-      class="bg-rui-grey-200 dark:bg-rui-grey-900 text-rui-grey-600 dark:text-rui-grey-400 size-10 flex items-center justify-center rounded-full"
+      class="shrink-0 bg-rui-grey-200 dark:bg-rui-grey-900 text-rui-grey-600 dark:text-rui-grey-400 size-10 flex items-center justify-center rounded-full"
     >
       <RuiIcon
         size="20"

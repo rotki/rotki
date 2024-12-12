@@ -37,13 +37,13 @@ const icon = computed<RuiIcons>(() => {
   switch (get(notification).severity) {
     case Severity.ERROR:
     case Severity.INFO:
-      return 'error-warning-line';
+      return 'lu-circle-alert';
     case Severity.WARNING:
       return 'alarm-warning-line';
     case Severity.REMINDER:
       return 'alarm-line';
     default:
-      return 'error-warning-line';
+      return 'lu-circle-alert';
   }
 });
 
