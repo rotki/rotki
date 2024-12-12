@@ -441,7 +441,7 @@ def test_coinbase_query_history_events(
     assert len(events) == 7
     expected_events = [AssetMovement(
         identifier=4,
-        event_identifier='85f97d6a5db423ff17707b8c0738be0bd0a59d19944021d384226b232b152c91',
+        event_identifier='582c2b78e88052d879b203fd07b6fca15f90417da7f715dcda72275b8d290054',
         location=Location.COINBASE,
         event_type=HistoryEventType.DEPOSIT,
         timestamp=TimestampMS(1502554304000),
@@ -449,11 +449,11 @@ def test_coinbase_query_history_events(
         balance=Balance(FVal('0.10181673')),
         extra_data={
             'transaction_id': 'ccc',
-            'url': 'https://blockchain.info/tx/ccc',
+            'reference': 'id3',
         },
     ), AssetMovement(
         identifier=1,
-        event_identifier='99a69dbdea53ae388b138d05f303893d139214f810f349becc4ee45b2308e198',
+        event_identifier='157b922cd6b7d3be91d0d3c2e197153dfb91dd9f8d2507eb83b9e3d477a5e6fd',
         location=Location.COINBASE,
         event_type=HistoryEventType.WITHDRAWAL,
         timestamp=TimestampMS(1566726126000),
@@ -462,7 +462,7 @@ def test_coinbase_query_history_events(
         extra_data={
             'address': '0x6dcD6449dbCa615e40d696328209686eA95327b2',
             'transaction_id': '0x558bfa4d2a4ef598ddb92233459c00eda9e6c14cda75e6773b90208cb6938169',
-            'url': 'https://etherscan.io/tx/bbb',
+            'reference': 'id1',
         },
     ), AssetMovement(
         identifier=3,
@@ -474,11 +474,11 @@ def test_coinbase_query_history_events(
         balance=Balance(FVal('0.05770427')),
         extra_data={
             'address': '0x6dcD6449dbCa615e40d696328209686eA95327b2',
-            'transaction_id': 'id2',
+            'reference': 'id2',
         },
     ), AssetMovement(
         identifier=2,
-        event_identifier='99a69dbdea53ae388b138d05f303893d139214f810f349becc4ee45b2308e198',
+        event_identifier='157b922cd6b7d3be91d0d3c2e197153dfb91dd9f8d2507eb83b9e3d477a5e6fd',
         location=Location.COINBASE,
         event_type=HistoryEventType.WITHDRAWAL,
         timestamp=TimestampMS(1566726126000),

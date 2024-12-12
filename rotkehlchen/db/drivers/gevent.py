@@ -92,7 +92,11 @@ class DBCursor:
             logger.trace(f'FINISH EXECUTE {statement}')
         return self
 
-    def executemany(self, statement: str, *bindings: Sequence[Sequence]) -> 'DBCursor':
+    def executemany(
+            self,
+            statement: str,
+            *bindings: Sequence[Sequence] | Generator[Sequence, None, None],
+    ) -> 'DBCursor':
         if __debug__:
             logger.trace(f'EXECUTEMANY {statement}')
         self._cursor.executemany(statement, *bindings)

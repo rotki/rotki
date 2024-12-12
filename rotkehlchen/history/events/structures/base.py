@@ -2,7 +2,7 @@ import json
 import logging
 from abc import ABC, abstractmethod
 from enum import auto
-from typing import TYPE_CHECKING, Any, TypedDict, TypeVar
+from typing import TYPE_CHECKING, Any, Generic, TypedDict, TypeVar
 
 from rotkehlchen.accounting.constants import DEFAULT, EVENT_CATEGORY_MAPPINGS, EXCHANGE
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
@@ -34,6 +34,7 @@ if TYPE_CHECKING:
     from more_itertools import peekable
 
     from rotkehlchen.accounting.pot import AccountingPot
+    from rotkehlchen.history.events.structures.asset_movement import AssetMovementExtraData
 
 
 logger = logging.getLogger(__name__)
@@ -70,7 +71,11 @@ class HistoryBaseEntryType(DBIntEnumMixIn):
     ASSET_MOVEMENT_EVENT = auto()
 
 
-class HistoryBaseEntryData(TypedDict):
+T = TypeVar('T', bound='HistoryBaseEntry')
+ExtraDataType = TypeVar('ExtraDataType', bound='dict[str, Any] | AssetMovementExtraData | None')
+
+
+class HistoryBaseEntryData(TypedDict, Generic[ExtraDataType]):
     event_identifier: str
     sequence_index: int
     timestamp: TimestampMS
@@ -82,13 +87,10 @@ class HistoryBaseEntryData(TypedDict):
     location_label: str | None
     notes: str | None
     identifier: int | None
-    extra_data: dict[str, Any] | None
+    extra_data: ExtraDataType | None
 
 
-T = TypeVar('T', bound='HistoryBaseEntry')
-
-
-class HistoryBaseEntry(AccountingEventMixin, ABC):
+class HistoryBaseEntry(AccountingEventMixin, ABC, Generic[ExtraDataType]):
     """
     Intended to be the base class for all types of event. All trades, deposits,
     swaps etc. are going to be made up of multiple such entries.
@@ -107,7 +109,7 @@ class HistoryBaseEntry(AccountingEventMixin, ABC):
             location_label: str | None = None,
             notes: str | None = None,
             identifier: int | None = None,
-            extra_data: dict[str, Any] | None = None,
+            extra_data: ExtraDataType | None = None,
     ) -> None:
         """
         - `event_identifier`: the identifier shared between related events
@@ -197,7 +199,7 @@ class HistoryBaseEntry(AccountingEventMixin, ABC):
                 self.entry_type.value,
                 self.event_identifier,
                 self.sequence_index,
-                int(self.timestamp),
+                self.timestamp,
                 self.location.serialize_for_db(),
                 self.location_label,
                 self.asset.identifier,
@@ -210,7 +212,7 @@ class HistoryBaseEntry(AccountingEventMixin, ABC):
             ))
 
     @staticmethod
-    def deserialize_extra_data(entry: tuple, extra_data: str | None) -> dict[str, Any] | None:
+    def deserialize_extra_data(entry: tuple, extra_data: str | None) -> ExtraDataType | None:
         """Deserialize a history event's extra_data json from the db.
         Args:
             entry (tuple): event entry from the db to be logged on error
