@@ -16,11 +16,12 @@ from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.assets.converters import asset_from_gemini
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.timing import GLOBAL_REQUESTS_TIMEOUT
+from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnprocessableTradePair, UnsupportedAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
+from rotkehlchen.exchanges.data_structures import MarginPosition, Trade
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
 from rotkehlchen.exchanges.utils import (
     deserialize_asset_movement_address,
@@ -28,12 +29,13 @@ from rotkehlchen.exchanges.utils import (
     pair_symbol_to_base_quote,
 )
 from rotkehlchen.history.deserialization import deserialize_price
+from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
     deserialize_asset_amount_force_positive,
-    deserialize_asset_movement_category,
+    deserialize_asset_movement_event_type,
     deserialize_fee,
     deserialize_timestamp,
 )
@@ -41,21 +43,21 @@ from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
     ExchangeAuthCredentials,
-    Fee,
     Location,
     Timestamp,
     TradeType,
 )
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import ts_now_in_ms
+from rotkehlchen.utils.misc import ts_now_in_ms, ts_sec_to_ms
 from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
 from rotkehlchen.utils.mixins.lockable import protect_with_lock
 from rotkehlchen.utils.serialization import jsonloads_dict, jsonloads_list
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Sequence
 
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.history.events.structures.base import HistoryBaseEntry
 
 
 logger = logging.getLogger(__name__)
@@ -495,11 +497,11 @@ class Gemini(ExchangeInterface):
 
         return trades, (start_ts, end_ts)
 
-    def query_online_deposits_withdrawals(
+    def query_online_history_events(
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> list[AssetMovement]:
+    ) -> 'Sequence[HistoryBaseEntry]':
         result = self._get_paginated_query(
             endpoint='transfers',
             start_ts=start_ts,
@@ -511,19 +513,18 @@ class Gemini(ExchangeInterface):
                 timestamp = deserialize_timestamp(entry['timestampms'])
                 timestamp = Timestamp(int(timestamp / 1000))
                 asset = asset_from_gemini(entry['currency'])
-
+                # Gemini does not include withdrawal fees neither in the API nor in their UI
                 movement = AssetMovement(
                     location=Location.GEMINI,
-                    category=deserialize_asset_movement_category(entry['type']),
-                    address=deserialize_asset_movement_address(entry, 'destination', asset),
-                    transaction_id=get_key_if_has_val(entry, 'txHash'),
-                    timestamp=timestamp,
+                    event_type=deserialize_asset_movement_event_type(entry['type']),
+                    timestamp=ts_sec_to_ms(timestamp),
                     asset=asset,
-                    amount=deserialize_asset_amount_force_positive(entry['amount']),
-                    fee_asset=asset,
-                    # Gemini does not include withdrawal fees neither in the API nor in their UI
-                    fee=Fee(ZERO),
-                    link=str(entry['eid']),
+                    balance=Balance(deserialize_asset_amount_force_positive(entry['amount'])),
+                    unique_id=str(entry['eid']),
+                    extra_data=maybe_set_transaction_extra_data(
+                        address=deserialize_asset_movement_address(entry, 'destination', asset),
+                        transaction_id=get_key_if_has_val(entry, 'txHash'),
+                    ),
                 )
             except UnknownAsset as e:
                 self.send_unknown_asset_message(

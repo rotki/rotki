@@ -3,7 +3,7 @@ import hashlib
 import hmac
 import logging
 from collections import defaultdict
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from typing import TYPE_CHECKING, Any, Final, Literal, overload
 from urllib.parse import urlparse
 
@@ -12,13 +12,18 @@ import requests
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.converters import asset_from_coinbase
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.exchanges.data_structures import AssetMovement, Fee, MarginPosition, Trade
+from rotkehlchen.exchanges.data_structures import Fee, MarginPosition, Trade
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
+from rotkehlchen.history.events.structures.asset_movement import (
+    AssetMovement,
+    create_asset_movement_with_fee,
+)
 from rotkehlchen.history.events.structures.base import (
     HistoryEvent,
     HistoryEventSubType,
@@ -29,13 +34,13 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
     deserialize_asset_amount_force_positive,
+    deserialize_asset_movement_event_type,
     deserialize_fee,
     deserialize_fval,
 )
 from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
-    AssetMovementCategory,
     ExchangeAuthCredentials,
     Location,
     Timestamp,
@@ -124,17 +129,18 @@ def _process_trade(trade_data: dict[str, Any]) -> Trade | None:
         ) from e
 
 
-def _process_deposit_withdrawal(event_data: dict[str, Any]) -> AssetMovement | None:
-    """Process asset movement from coinbase prime. Returns None if the event can't be processed
+def _process_deposit_withdrawal(event_data: dict[str, Any]) -> list[AssetMovement]:
+    """Process asset movement from coinbase prime.
+    Returns an empty list if the event can't be processed
     May raise:
     - DeserializationError
     """
     try:
         if event_data['status'] not in COMPLETED_TRANSACTION_STATUS:
-            return None
+            return []
 
-        event_type = AssetMovementCategory.deserialize(event_data['type'])
-        if event_type == AssetMovementCategory.DEPOSIT:
+        event_type = deserialize_asset_movement_event_type(event_data['type'])
+        if event_type == HistoryEventType.DEPOSIT:
             address = event_data.get('transfer_from', {}).get('value')
         else:
             address = event_data.get('transfer_to', {}).get('value')
@@ -150,17 +156,19 @@ def _process_deposit_withdrawal(event_data: dict[str, Any]) -> AssetMovement | N
                 f'Unknown asset {e.identifier} seen in coinbase prime trade',
             ) from e
 
-        return AssetMovement(
+        return create_asset_movement_with_fee(
             location=Location.COINBASEPRIME,
-            category=event_type,
-            address=address,
-            transaction_id=event_data['blockchain_ids'][0] if len(event_data['blockchain_ids']) != 0 else None,  # noqa: E501
-            timestamp=timestamp,
+            event_type=event_type,
+            timestamp=ts_sec_to_ms(timestamp),
             asset=asset,
             amount=amount,
-            fee=fee,
             fee_asset=fee_asset,
-            link=event_data['id'],
+            fee=fee,
+            unique_id=str(event_data['id']),
+            extra_data=maybe_set_transaction_extra_data(
+                address=address,
+                transaction_id=event_data['blockchain_ids'][0] if len(event_data['blockchain_ids']) != 0 else None,  # noqa: E501
+            ),
         )
     except KeyError as e:
         raise DeserializationError(
@@ -253,7 +261,7 @@ def _process_reward(raw_data: dict[str, Any]) -> list[HistoryEvent]:
     )]
 
 
-def _decode_history_events(raw_data: dict[str, Any]) -> list[HistoryEvent]:
+def _decode_history_events(raw_data: dict[str, Any]) -> Sequence[HistoryEvent | AssetMovement]:
     """Process transaction as history events from coinbase prime
     May raise:
     - DeserializationError
@@ -263,6 +271,8 @@ def _decode_history_events(raw_data: dict[str, Any]) -> list[HistoryEvent]:
             return _process_conversions(raw_data)
         elif tx_type == 'REWARD':
             return _process_reward(raw_data)
+        elif tx_type in ['DEPOSIT', 'WITHDRAWAL', 'COINBASE_DEPOSIT']:
+            return _process_deposit_withdrawal(raw_data)
     except KeyError as e:
         log.error(f'Missing key {e} when processing history events at coinbase prime')
         raise DeserializationError(
@@ -360,16 +370,6 @@ class Coinbaseprime(ExchangeInterface):
             self,
             query_params: dict[str, Any],
             portfolio_id: str,
-            method: Literal['transactions'],
-            decoding_logic: Callable[[dict[str, Any]], AssetMovement | None],
-    ) -> list[AssetMovement]:
-        ...
-
-    @overload
-    def _query_paginated_endpoint(
-            self,
-            query_params: dict[str, Any],
-            portfolio_id: str,
             method: Literal['orders'],
             decoding_logic: Callable[[dict[str, Any]], Trade | None],
     ) -> list[Trade]:
@@ -381,8 +381,8 @@ class Coinbaseprime(ExchangeInterface):
             query_params: dict[str, Any],
             portfolio_id: str,
             method: Literal['transactions'],
-            decoding_logic: Callable[[dict[str, Any]], list[HistoryEvent]],
-    ) -> list[list[HistoryEvent]]:
+            decoding_logic: Callable[[dict[str, Any]], Sequence[HistoryEvent | AssetMovement]],
+    ) -> list[Sequence[HistoryEvent | AssetMovement]]:
         ...
 
     def _query_paginated_endpoint(
@@ -391,11 +391,10 @@ class Coinbaseprime(ExchangeInterface):
             portfolio_id: str,
             method: Literal['orders', 'transactions'],
             decoding_logic: (
-                Callable[[dict[str, Any]], AssetMovement | None] |
                 Callable[[dict[str, Any]], Trade | None] |
-                Callable[[dict[str, Any]], list[HistoryEvent]]
+                Callable[[dict[str, Any]], Sequence[HistoryEvent | AssetMovement]]
             ),
-    ) -> list[Trade] | list[AssetMovement] | list[list[HistoryEvent]]:
+    ) -> list[Trade] | list[Sequence[HistoryEvent | AssetMovement]]:
         """Abstraction to consume all the events in the selected queries.
         It uses the `decoding_logic` to process the different events and returns a list
         whose contents depend on the function's called arguments.
@@ -556,9 +555,9 @@ class Coinbaseprime(ExchangeInterface):
                     'sort_direction': 'ASC',
                     'start_time': timestamp_to_iso8601(start_ts),
                     'end_time': timestamp_to_iso8601(end_ts),
-                    'types': ['CONVERSION', 'REWARD'],
+                    'types': ['CONVERSION', 'REWARD', 'DEPOSIT', 'WITHDRAWAL', 'COINBASE_DEPOSIT'],
                 }
-                new_events_list: list[list[HistoryEvent]] = self._query_paginated_endpoint(
+                new_events_list: list[Sequence[HistoryEvent | AssetMovement]] = self._query_paginated_endpoint(  # noqa: E501
                     query_params=query_params,
                     portfolio_id=portfolio_id,
                     method='transactions',
@@ -577,35 +576,6 @@ class Coinbaseprime(ExchangeInterface):
                         location_string=range_query_name,
                         queried_ranges=[(start_ts, end_ts)],
                     )
-
-    def query_online_deposits_withdrawals(
-            self,
-            start_ts: Timestamp,
-            end_ts: Timestamp,
-    ) -> list['AssetMovement']:
-        """
-        May raise:
-        - RemoteError if we can't query coinbase
-        """
-        portfolio_ids = self._get_portfolio_ids()
-        movements = []
-        for portfolio_id in portfolio_ids:
-            query_params = {
-                'sort_direction': 'ASC',
-                'start_time': timestamp_to_iso8601(start_ts),
-                'end_time': timestamp_to_iso8601(end_ts),
-                'types': ['DEPOSIT', 'WITHDRAWAL', 'COINBASE_DEPOSIT'],
-            }
-            movements.extend(
-                self._query_paginated_endpoint(
-                    query_params=query_params,
-                    portfolio_id=portfolio_id,
-                    method='transactions',
-                    decoding_logic=_process_deposit_withdrawal,
-                ),
-            )
-
-        return movements
 
     def query_online_margin_history(
             self,

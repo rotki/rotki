@@ -11,19 +11,20 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_htx
 from rotkehlchen.constants.assets import A_CRV, A_DAI, A_DOGE, A_USDT, A_ZRX
-from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
-from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
+from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.exchanges.htx import Htx
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.asset_movement import AssetMovement
+from rotkehlchen.history.events.structures.types import HistoryEventType
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import (
     AssetAmount,
-    AssetMovementCategory,
     Fee,
     Location,
     Price,
     Timestamp,
+    TimestampMS,
     TradeType,
 )
 
@@ -113,44 +114,52 @@ def test_deposit_withdrawals(htx_exchange: Htx) -> None:
         ],
     })
     with patch.object(htx_exchange, '_query', side_effect=mock_fn):
-        movements = htx_exchange.query_online_deposits_withdrawals(
+        movements = htx_exchange.query_online_history_events(
             start_ts=Timestamp(1612492580),
             end_ts=Timestamp(1714746851),
         )
     expected_movements = [
         AssetMovement(
             location=Location.HTX,
-            category=AssetMovementCategory.DEPOSIT,
-            timestamp=Timestamp(1612820394),
-            address='0x4838B106FCe9647Bdf1E7877BF73cE8B0BAD5f97',
-            transaction_id='0xda9752c57c3c5e7b847b69f4e7bc2b7bc40beca0f47b4c4d73e9e166eb46d1a6',
+            event_type=HistoryEventType.DEPOSIT,
+            timestamp=TimestampMS(1612820394000),
             asset=A_ZRX,
-            amount=FVal('597.0018'),
-            fee_asset=A_ZRX,
-            fee=Fee(ZERO),
-            link='59781355',
+            balance=Balance(FVal('597.0018')),
+            unique_id='59781355',
+            extra_data={
+                'address': '0x4838B106FCe9647Bdf1E7877BF73cE8B0BAD5f97',
+                'transaction_id': '0xda9752c57c3c5e7b847b69f4e7bc2b7bc40beca0f47b4c4d73e9e166eb46d1a6',  # noqa: E501
+            },
         ), AssetMovement(
             location=Location.HTX,
-            category=AssetMovementCategory.DEPOSIT,
-            timestamp=Timestamp(1710153143),
-            address='0x4838B106FCe9647Bdf1E7877BF73cE8B0BAD5f97',
-            transaction_id='0xefc9ea1f3cf1ed581d75a43eecb1dc17b6f4fd96440f1c0d880f1e9c86e6c179',
+            event_type=HistoryEventType.DEPOSIT,
+            timestamp=TimestampMS(1710153143000),
             asset=A_DAI,
-            amount=FVal('1064.437'),
-            fee_asset=A_DAI,
-            fee=Fee(ZERO),
-            link='131331249',
+            balance=Balance(FVal('1064.437')),
+            unique_id='131331249',
+            extra_data={
+                'address': '0x4838B106FCe9647Bdf1E7877BF73cE8B0BAD5f97',
+                'transaction_id': '0xefc9ea1f3cf1ed581d75a43eecb1dc17b6f4fd96440f1c0d880f1e9c86e6c179',  # noqa: E501
+            },
         ), AssetMovement(
             location=Location.HTX,
-            category=AssetMovementCategory.WITHDRAWAL,
-            timestamp=Timestamp(1631140110),
-            address='0x4838B106FCe9647Bdf1E7877BF73cE8B0BAD5f97',
-            transaction_id='0xd41ab5afa0e19c84ffa388bbfc60623e4936af2232861e1cf365b2f8725cbd2c',
+            event_type=HistoryEventType.WITHDRAWAL,
+            timestamp=TimestampMS(1631140110000),
             asset=A_ZRX,
-            amount=FVal('1174.49047'),
-            fee_asset=A_ZRX,
-            fee=Fee(FVal('13.778201')),
-            link='52360978',
+            balance=Balance(FVal('1174.49047')),
+            unique_id='52360978',
+            extra_data={
+                'address': '0x4838B106FCe9647Bdf1E7877BF73cE8B0BAD5f97',
+                'transaction_id': '0xd41ab5afa0e19c84ffa388bbfc60623e4936af2232861e1cf365b2f8725cbd2c',  # noqa: E501
+            },
+        ), AssetMovement(
+            location=Location.HTX,
+            event_type=HistoryEventType.WITHDRAWAL,
+            timestamp=TimestampMS(1631140110000),
+            asset=A_ZRX,
+            balance=Balance(FVal('13.778201')),
+            unique_id='52360978',
+            is_fee=True,
         ),
     ]
     assert movements == expected_movements

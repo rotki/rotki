@@ -5,7 +5,6 @@ import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.converters import Asset
-from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ENS, A_SOL, A_USDC
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
@@ -15,6 +14,7 @@ from rotkehlchen.exchanges.coinbaseprime import (
     _process_deposit_withdrawal,
     _process_trade,
 )
+from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.base import (
     HistoryEvent,
     HistoryEventSubType,
@@ -165,7 +165,7 @@ def test_process_trade():
 def test_process_movements(function_scope_coinbaseprime: Coinbaseprime):
     """Test that the logic to process asset movements works as expected"""
     address = make_evm_address()
-    tx_hash = make_evm_tx_hash()
+    tx_hash = make_evm_tx_hash().hex()  # pylint: disable=no-member
     deposit = {
         'amount': '100',
         'blockchain_ids': [tx_hash],
@@ -190,14 +190,17 @@ def test_process_movements(function_scope_coinbaseprime: Coinbaseprime):
         'type': 'DEPOSIT',
         'wallet_id': uuid.uuid4(),
     }
-    processed_deposited = _process_deposit_withdrawal(deposit)
-    assert processed_deposited is not None
-    assert processed_deposited.transaction_id == tx_hash
-    assert processed_deposited.address == address
+    deposit_movements = _process_deposit_withdrawal(deposit)
+    assert len(deposit_movements) == 1
+    processed_deposited = deposit_movements[0]
+    assert processed_deposited.event_type == HistoryEventType.DEPOSIT
     assert processed_deposited.asset == A_ETH
-    assert processed_deposited.amount == FVal(100)
-    assert processed_deposited.timestamp == 1697050985
-    assert processed_deposited.fee == ZERO
+    assert processed_deposited.balance.amount == FVal(100)
+    assert processed_deposited.timestamp == 1697050985000
+    assert processed_deposited.extra_data == {
+        'transaction_id': tx_hash,
+        'address': address,
+    }
 
     icp_address = '0d7ab24f2293648e10d35fb78863e86d20dd7e4d85f4dfb589c709fe47000fd5'
     icp_tx_hash = '3108a11dc6a7599d6171d35c483f01d726b3e38b162894e84b0d5c2f9827b9fa'
@@ -225,15 +228,17 @@ def test_process_movements(function_scope_coinbaseprime: Coinbaseprime):
         'type': 'WITHDRAWAL',
         'wallet_id': uuid.uuid4(),
     }
-
-    processed_withdrawal = _process_deposit_withdrawal(withdrawal)
-    assert processed_withdrawal is not None
-    assert processed_withdrawal.transaction_id == icp_tx_hash
-    assert processed_withdrawal.address == icp_address
+    withdrawal_movements = _process_deposit_withdrawal(withdrawal)
+    assert len(withdrawal_movements) == 1
+    processed_withdrawal = withdrawal_movements[0]
+    assert processed_withdrawal.event_type == HistoryEventType.WITHDRAWAL
     assert processed_withdrawal.asset == Asset('ICP')
-    assert processed_withdrawal.amount == FVal(250)
-    assert processed_withdrawal.timestamp == 1728720987
-    assert processed_withdrawal.fee == ZERO
+    assert processed_withdrawal.balance.amount == FVal(250)
+    assert processed_withdrawal.timestamp == 1728720987000
+    assert processed_withdrawal.extra_data == {
+        'transaction_id': icp_tx_hash,
+        'address': icp_address,
+    }
 
 
 @pytest.mark.freeze_time('2024-10-31 13:50:00 GMT')
@@ -242,7 +247,9 @@ def test_history_events(function_scope_coinbaseprime: Coinbaseprime):
     This test checks the logic for _query_paginated_endpoint by returning
     a mocked pagination from _api_query and the logic of query_history_events
     """
-    first_id, second_id, third_id = str(uuid.uuid4()), str(uuid.uuid4()), str(uuid.uuid4())
+    first_id, second_id, third_id, fourth_id = str(uuid.uuid4()), str(uuid.uuid4()), str(uuid.uuid4()), str(uuid.uuid4())  # noqa: E501
+    movement_address = make_evm_address()
+    movement_tx_hash = make_evm_tx_hash().hex()  # pylint: disable=no-member
     raw_data = [{
         'amount': '50',
         'blockchain_ids': [],
@@ -312,6 +319,29 @@ def test_history_events(function_scope_coinbaseprime: Coinbaseprime):
         'transfer_to': {'type': 'WALLET', 'value': uuid.uuid4()},
         'type': 'REWARD',
         'wallet_id': uuid.uuid4(),
+    }, {
+        'amount': '100',
+        'blockchain_ids': [movement_tx_hash],
+        'completed_at': '2023-10-11T19:03:05.297Z',
+        'created_at': '2023-10-11T19:00:06.927Z',
+        'destination_symbol': '',
+        'estimated_asset_changes': [],
+        'estimated_network_fees': None,
+        'fee_symbol': 'ETH',
+        'fees': '0',
+        'id': fourth_id,
+        'idempotency_key': uuid.uuid4(),
+        'metadata': None,
+        'network': '',
+        'network_fees': '0',
+        'portfolio_id': uuid.uuid4(),
+        'status': 'TRANSACTION_IMPORTED',
+        'symbol': 'ETH',
+        'transaction_id': 'XXXX',
+        'transfer_from': {'type': 'ADDRESS', 'value': movement_address},
+        'transfer_to': {'type': 'WALLET', 'value': uuid.uuid4()},
+        'type': 'DEPOSIT',
+        'wallet_id': uuid.uuid4(),
     }]
 
     raw_data_iter = iter(enumerate(raw_data))
@@ -344,7 +374,19 @@ def test_history_events(function_scope_coinbaseprime: Coinbaseprime):
         )
 
     assert new_events == [
-        HistoryEvent(
+        AssetMovement(
+            identifier=7,
+            timestamp=TimestampMS(1697050985000),
+            location=Location.COINBASEPRIME,
+            event_type=HistoryEventType.DEPOSIT,
+            asset=A_ETH,
+            balance=Balance(FVal(100)),
+            unique_id=fourth_id,
+            extra_data={
+                'address': movement_address,
+                'transaction_id': movement_tx_hash,
+            },
+        ), HistoryEvent(
             identifier=1,
             event_identifier=first_id,
             sequence_index=0,
