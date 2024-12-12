@@ -119,6 +119,7 @@ module = [
     "rotkehlchen.tests.api.test_snapshots",
     "rotkehlchen.tests.api.test_statistics",
     "rotkehlchen.tests.api.test_substrate_manager",
+    "rotkehlchen.tests.api.test_sushiswap",
     "rotkehlchen.tests.api.test_tags",
     "rotkehlchen.tests.api.test_trades",
     "rotkehlchen.tests.api.test_uniswap",
