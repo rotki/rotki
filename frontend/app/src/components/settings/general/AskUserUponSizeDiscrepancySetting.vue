@@ -21,19 +21,14 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <SettingsItem
-    :class="{
-      '!py-0 border-b-0': dialog,
-    }"
-  >
-    <template #title>
+  <SettingsOption setting="askUserUponSizeDiscrepancy">
+    <template
+      v-if="!dialog"
+      #title
+    >
       {{ t('sync_indicator.setting.ask_user_upon_size_discrepancy.title') }}
     </template>
-
-    <SettingsOption
-      #default="{ error, success, updateImmediate }"
-      setting="askUserUponSizeDiscrepancy"
-    >
+    <template #default="{ error, success, updateImmediate }">
       <RuiCheckbox
         v-if="confirm"
         :model-value="value"
@@ -56,6 +51,6 @@ const { t } = useI18n();
         :error-messages="error"
         @update:model-value="updateImmediate(!$event)"
       />
-    </SettingsOption>
-  </SettingsItem>
+    </template>
+  </SettingsOption>
 </template>
