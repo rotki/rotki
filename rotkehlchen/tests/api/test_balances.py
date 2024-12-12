@@ -1036,6 +1036,9 @@ def test_query_balances_with_threshold(
             A_DAI.resolve_to_evm_token(): ['5000000000000000000', '0'],  # 5 DAI and 0 DAI
             A_USDC.resolve_to_evm_token(): ['1000000', '2000000'],  # 1 USDC and 2 USDC
         },
+        liabilities={
+            A_DAI.resolve_to_evm_token(): ['15000000000000000000', '10'],
+        },
         btc_balances=['1000000000000', '1'],
     )
 
@@ -1061,16 +1064,20 @@ def test_query_balances_with_threshold(
         blockchain_result, exchange_result, manual_result = results
 
         # Assert blockchain balances
-        if len(blockchain_result['per_account']) > 0:  # If any balances remain after filtering
-            for chain in blockchain_result['per_account']:
-                for balances in blockchain_result['per_account'][chain].values():
-                    if chain == 'btc':
-                        for balance in balances.values():
-                            assert FVal(balance['usd_value']) > threshold
+        for chain, chain_balances in blockchain_result['per_account'].items():
+            for address, balances in chain_balances.items():
+                if chain == 'btc':
+                    for balance in balances.values():
+                        assert FVal(balance['usd_value']) > threshold
+                else:
+                    assets = balances['assets']
+                    for balance in assets.values():
+                        assert FVal(balance['usd_value']) > threshold
+
+                    if address == ethereum_accounts[0]:
+                        assert balances['liabilies'] == {A_DAI: FVal(15)}
                     else:
-                        assets = balances['assets']
-                        for balance in assets.values():
-                            assert FVal(balance['usd_value']) > threshold
+                        assert balances['liabilies'] == {}  # value gets filtered
 
         # Assert exchange balances
         assert len(exchange_result) != 0
