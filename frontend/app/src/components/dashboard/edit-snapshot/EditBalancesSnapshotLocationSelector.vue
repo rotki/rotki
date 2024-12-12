@@ -47,6 +47,7 @@ const showOnlyExisting = ref<boolean>(true);
       :items="showOnlyExisting ? locations : []"
       class="edit-balances-snapshot__location"
       clearable
+      :menu-options="{ menuClass: 'z-[10001]' }"
       :persistent-hint="!modelValue"
       :hide-details="!!modelValue"
       :hint="t('dashboard.snapshot.edit.dialog.balances.hints.location')"
