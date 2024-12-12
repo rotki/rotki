@@ -176,6 +176,7 @@ const { copy } = useCopy(identifier);
           <AppImage
             v-else
             v-show="!pending"
+            :class="{ 'rounded-full overflow-hidden': flat }"
             contain
             :alt="displayAsset"
             :src="url"

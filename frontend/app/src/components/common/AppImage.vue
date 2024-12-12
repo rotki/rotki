@@ -71,7 +71,7 @@ function onLoadStart() {
 </script>
 
 <template>
-  <div :class="$style.wrapper">
+  <div class="flex">
     <RuiSkeletonLoader
       v-if="loading"
       :style="style"
@@ -98,9 +98,3 @@ function onLoadStart() {
     />
   </div>
 </template>
-
-<style module lang="scss">
-.wrapper {
-  @apply flex;
-}
-</style>
