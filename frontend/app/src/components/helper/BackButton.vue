@@ -48,7 +48,7 @@ const { t } = useI18n();
         class="back-button__button"
         @click="goBack()"
       >
-        <RuiIcon name="arrow-left-line" />
+        <RuiIcon name="lu-arrow-left" />
       </RuiButton>
     </template>
     <span>{{ t('back_button.tooltip') }}</span>

@@ -205,7 +205,7 @@ watch(ignoredFilter, (oldValue, newValue) => {
         @click="fetchData()"
       >
         <template #prepend>
-          <RuiIcon name="refresh-line" />
+          <RuiIcon name="lu-refresh-ccw" />
         </template>
         {{ t('common.refresh') }}
       </RuiButton>
@@ -216,7 +216,7 @@ watch(ignoredFilter, (oldValue, newValue) => {
         @click="add()"
       >
         <template #prepend>
-          <RuiIcon name="add-line" />
+          <RuiIcon name="lu-plus" />
         </template>
         {{ t('managed_asset_content.add_asset') }}
       </RuiButton>

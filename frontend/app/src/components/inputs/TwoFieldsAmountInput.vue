@@ -129,7 +129,7 @@ const focused = ref<boolean>(false);
     >
       <RuiIcon
         size="16"
-        name="arrow-up-down-line"
+        name="lu-arrow-up-down"
       />
     </RuiButton>
   </div>

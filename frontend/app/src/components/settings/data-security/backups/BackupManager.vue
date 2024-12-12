@@ -199,7 +199,7 @@ onMounted(loadInfo);
         >
           <template #prepend>
             <RuiIcon
-              name="refresh-line"
+              name="lu-refresh-ccw"
               size="16"
             />
           </template>

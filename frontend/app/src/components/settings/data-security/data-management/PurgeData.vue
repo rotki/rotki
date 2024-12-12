@@ -191,7 +191,7 @@ const chainsSelection = useArrayMap(txChains, item => item.id);
         >
           <template #prepend>
             <RuiIcon
-              name="delete-bin-line"
+              name="lu-trash-2"
               size="16"
             />
           </template>

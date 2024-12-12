@@ -24,7 +24,7 @@ withDefaults(defineProps<{ hideHeader?: boolean; child?: boolean; title?: string
               >
                 {{ item }}
                 <RuiIcon
-                  name="arrow-right-s-line"
+                  name="lu-chevron-right"
                   size="16"
                   class="mx-2"
                 />

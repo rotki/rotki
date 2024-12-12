@@ -217,7 +217,7 @@ function closePinnedSidebar() {
       >
         <RuiIcon
           class="text-white"
-          name="close-line"
+          name="lu-x"
         />
       </RuiButton>
       <RuiButton
@@ -229,7 +229,7 @@ function closePinnedSidebar() {
       >
         <RuiIcon
           class="text-white"
-          name="arrow-right-s-line"
+          name="lu-chevron-right"
           size="20"
         />
       </RuiButton>

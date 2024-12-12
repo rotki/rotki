@@ -30,11 +30,11 @@ const { t } = useI18n();
     >
       <RuiIcon
         v-if="model"
-        name="arrow-up-s-line"
+        name="lu-chevron-up"
       />
       <RuiIcon
         v-else
-        name="arrow-down-s-line"
+        name="lu-chevron-down"
       />
     </RuiButton>
   </div>

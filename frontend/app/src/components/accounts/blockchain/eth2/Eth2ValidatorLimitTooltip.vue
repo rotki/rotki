@@ -17,7 +17,7 @@ const { validatorsLimitInfo } = useEthStaking();
       <RuiIcon
         size="24"
         class="text-rui-text-secondary p-0.5 cursor-pointer"
-        name="error-warning-line"
+        name="lu-circle-alert"
       />
     </template>
 

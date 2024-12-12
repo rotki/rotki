@@ -705,7 +705,7 @@ onBeforeUnmount(() => {
       <div :class="$style.snapshot">
         <SnapshotActionButton>
           <template #button-icon>
-            <RuiIcon name="arrow-down-s-line" />
+            <RuiIcon name="lu-chevron-down" />
           </template>
         </SnapshotActionButton>
       </div>

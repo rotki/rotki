@@ -232,7 +232,7 @@ async function toggleWhitelistAsset() {
           variant="text"
           @click="goToEdit()"
         >
-          <RuiIcon name="pencil-line" />
+          <RuiIcon name="lu-pencil" />
         </RuiButton>
 
         <template v-if="!isCustomAsset">
