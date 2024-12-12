@@ -335,7 +335,7 @@ describe('useAccountImportExport', () => {
       });
     });
 
-    it('should adjust ownership percentage if validator is already present', async () => {
+    it('should skip a validator if it is already present', async () => {
       const { save } = useAccountManage();
       useBlockchainStore().updateAccounts(Blockchain.ETH2, [
         createValidatorAccount({
@@ -358,7 +358,7 @@ describe('useAccountImportExport', () => {
       const { importAccounts } = useAccountImportExport();
       await importAccounts(mockFile);
 
-      expect(save).toHaveBeenCalledTimes(2);
+      expect(save).toHaveBeenCalledTimes(1);
       expect(save).toHaveBeenCalledWith({
         chain: 'eth2',
         data: {
@@ -366,16 +366,6 @@ describe('useAccountImportExport', () => {
           publicKey: VALIDATOR_1,
         },
         mode: 'add',
-        type: 'validator',
-      });
-      expect(save).toHaveBeenCalledWith({
-        chain: 'eth2',
-        data: {
-          ownershipPercentage: '99',
-          publicKey: VALIDATOR_2,
-          validatorIndex: '55751',
-        },
-        mode: 'edit',
         type: 'validator',
       });
     });

@@ -1520,6 +1520,7 @@
     },
     "export_blockchain_accounts": "Export blockchain accounts",
     "import_blockchain_accounts": "Import blockchain accounts",
+    "import_blockchain_accounts_complete": "The account import was completed successfully. {imported} of {total} accounts were imported. Skipped {skipped} already existing accounts.",
     "import_csv_example": "See the CSV example {here}",
     "import_error": {
       "message": "Error importing blockchain accounts: {error}",
