@@ -881,9 +881,16 @@ class RestAPI:
                                 asset: balance for asset, balance in account_data.assets.items()
                                 if balance.usd_value > usd_value_threshold
                             }
-                            if len(filtered_assets) != 0:
-                                new_balance_sheet = BalanceSheet()
-                                new_balance_sheet.assets = defaultdict(Balance, filtered_assets)
+                            filtered_liabilities = {
+                                asset: balance for asset, balance in account_data.liabilities.items()  # noqa: E501
+                                if balance.usd_value > usd_value_threshold
+                            }
+                            if len(filtered_assets) != 0 or len(filtered_liabilities) != 0:
+                                new_balance_sheet = BalanceSheet(
+                                    assets=defaultdict(Balance, filtered_assets),
+                                    liabilities=defaultdict(Balance, filtered_liabilities),
+                                )
+
                                 filtered_balances[account] = new_balance_sheet
                         elif isinstance(account_data, Balance):
                             # For BTC and BCH, account_data is a single Balance object
