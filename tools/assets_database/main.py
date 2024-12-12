@@ -23,6 +23,8 @@ Args:
 Example command:
 python -m tools.assets_database.main --start-db-path /<path to last release's db>/global.db --target-version 28 --assets-branch develop --update-mode all
 """  # noqa: E501
+from typing import TYPE_CHECKING
+
 from gevent import monkey
 
 monkey.patch_all()  # isort:skip
@@ -34,18 +36,24 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.db.constants import UpdateType
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.updates import RotkiDataUpdater
-from rotkehlchen.globaldb.updates import AssetsUpdater
+from rotkehlchen.globaldb.asset_updates.manager import AssetsUpdater
 from rotkehlchen.user_messages import MessagesAggregator
 
 from .utils import clean_folder, parse_args, prepare_globaldb
 
+if TYPE_CHECKING:
+    from rotkehlchen.globaldb.handler import GlobalDBHandler
 
-def populate_db_with_assets():
+
+def populate_db_with_assets(globaldb: 'GlobalDBHandler'):
     """Populate the globaldb created in target_directory with the updates in the remote assets repo
     """
     print('Applying updates...')
     msg_aggregator = MessagesAggregator()
-    assets_updater = AssetsUpdater(msg_aggregator=msg_aggregator)
+    assets_updater = AssetsUpdater(
+        globaldb=globaldb,
+        msg_aggregator=msg_aggregator,
+    )
 
     if (conflicts := assets_updater.perform_update(
         up_to_version=parse_args().target_version,
@@ -87,7 +95,7 @@ def main() -> None:
     globaldb, target_directory = prepare_globaldb(args)
 
     if args.update_mode in {'assets', 'all'}:
-        populate_db_with_assets()
+        populate_db_with_assets(globaldb)
     if args.update_mode in {'remote', 'all'}:
         populate_location_mappings()
 

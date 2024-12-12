@@ -1,35 +1,34 @@
-import json
 import logging
-import re
 import sqlite3
+from collections import defaultdict
 from contextlib import suppress
-from enum import Enum, auto
 from http import HTTPStatus
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import TYPE_CHECKING, Any, Literal, NamedTuple
+from typing import TYPE_CHECKING, Any, Literal
 
 import requests
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.resolver import AssetResolver
-from rotkehlchen.assets.types import AssetData, AssetType
+from rotkehlchen.assets.types import AssetData
 from rotkehlchen.constants.misc import GLOBALDB_NAME, GLOBALDIR_NAME
 from rotkehlchen.db.drivers.gevent import DBCursor
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
+from rotkehlchen.globaldb.utils import initialize_globaldb
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.serialization.deserialize import deserialize_evm_address
-from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind, Timestamp
 from rotkehlchen.utils.misc import is_production
 from rotkehlchen.utils.network import query_file
 
-from .handler import GlobalDBHandler, initialize_globaldb
+from .parsers import AssetCollectionParser, AssetParser, MultiAssetMappingsParser
+from .types import UpdateFileType
 
 if TYPE_CHECKING:
     from rotkehlchen.db.drivers.gevent import DBConnection
+    from rotkehlchen.globaldb.handler import GlobalDBHandler
     from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
@@ -40,12 +39,7 @@ ASSETS_UPDATES_URL = 'https://raw.githubusercontent.com/rotki/assets/{branch}/up
 ASSET_COLLECTIONS_UPDATES_URL = 'https://raw.githubusercontent.com/rotki/assets/{branch}/updates/{version}/asset_collections_updates.sql'
 ASSET_COLLECTIONS_MAPPINGS_UPDATES_URL = 'https://raw.githubusercontent.com/rotki/assets/{branch}/updates/{version}/asset_collections_mappings_updates.sql'
 FIRST_VERSION_WITH_COLLECTIONS = 16
-
-
-class UpdateFileType(Enum):
-    ASSETS = auto()
-    ASSET_COLLECTIONS = auto()
-    ASSET_COLLECTIONS_MAPPINGS = auto()
+FIRST_GLOBAL_DB_VERSION_WITH_COLLECTIONS = 4
 
 
 def executeall(cursor: DBCursor, statements: str) -> None:
@@ -64,28 +58,60 @@ def _replace_assets_from_db(
         connection: 'DBConnection',
         sourcedb_path: Path,
 ) -> None:
+    """Replace asset-related tables with data from source database.
+
+    Handles: token_kinds, asset_types, assets, evm_tokens, underlying_tokens_list,
+    common_asset_details, asset_collections, multiasset_mappings.
+    """
+    # First handle token_kinds & asset_types since other tables reference it
+    required_tables = [
+        'token_kinds',
+        'asset_types',
+        'assets',
+        'evm_tokens',
+        'underlying_tokens_list',
+        'common_asset_details',
+        'asset_collections',
+        'multiasset_mappings',
+        'settings',
+    ]
+
+    script_parts = ['PRAGMA foreign_keys = OFF;']
     with connection.write_ctx() as cursor:
-        cursor.executescript(f"""
-        ATTACH DATABASE '{sourcedb_path}' AS other_db;
-        PRAGMA foreign_keys = OFF;
-        DELETE FROM assets;
-        DELETE FROM evm_tokens;
-        DELETE FROM underlying_tokens_list;
-        DELETE FROM common_asset_details;
-        DELETE FROM asset_collections;
-        DELETE FROM multiasset_mappings;
-        INSERT INTO assets SELECT * FROM other_db.assets;
-        INSERT INTO evm_tokens SELECT * FROM other_db.evm_tokens;
-        INSERT INTO underlying_tokens_list SELECT * FROM other_db.underlying_tokens_list;
-        INSERT INTO common_asset_details SELECT * FROM other_db.common_asset_details;
-        INSERT INTO asset_collections SELECT * FROM other_db.asset_collections;
-        INSERT INTO multiasset_mappings SELECT * FROM other_db.multiasset_mappings;
-        INSERT OR REPLACE INTO settings(name, value) VALUES('{ASSETS_VERSION_KEY}',
-        (SELECT value FROM other_db.settings WHERE name='{ASSETS_VERSION_KEY}')
-        );
-        PRAGMA foreign_keys = ON;
-        DETACH DATABASE 'other_db';
-        """)
+        cursor.execute(f"ATTACH DATABASE '{sourcedb_path}' AS other_db;")
+        cursor.execute(
+            """SELECT COUNT(*) FROM sqlite_master
+            WHERE type='table' AND name IN ({})
+            """.format(','.join('?' * len(required_tables))),
+            required_tables,
+        )
+        if cursor.fetchone()[0] < len(required_tables):
+            schemas = {}
+            for table in required_tables:
+                if (schema := cursor.execute(
+                    "SELECT sql FROM other_db.sqlite_master WHERE type='table' AND name=?",
+                    (table,),
+                ).fetchone()):
+                    raw_schema = schema[0]
+                    schema_def = raw_schema.split('CREATE TABLE')[1].split('(', 1)[1]
+                    schemas[table] = schema_def
+
+            for table, schema in schemas.items():
+                script_parts.append(f'CREATE TABLE IF NOT EXISTS {table} ({schema};')
+
+        # Always do the delete and insert
+        for table in required_tables:
+            script_parts.extend([
+                f'DELETE FROM {table};',
+                f'INSERT INTO {table} SELECT * FROM other_db.{table};',
+            ])
+        script_parts.extend([
+            f"INSERT OR REPLACE INTO settings(name, value) VALUES('{ASSETS_VERSION_KEY}',"
+            f"(SELECT value FROM other_db.settings WHERE name='{ASSETS_VERSION_KEY}'));",
+            'PRAGMA foreign_keys = ON;',
+            "DETACH DATABASE 'other_db';",
+        ])
+        cursor.executescript('\n'.join(script_parts))
 
 
 def _force_remote_asset(cursor: DBCursor, local_asset: Asset, full_insert: str) -> None:
@@ -104,20 +130,27 @@ def _force_remote_asset(cursor: DBCursor, local_asset: Asset, full_insert: str) 
         'WHERE identifier=? OR parent_token_entry=?;',
         (local_asset.identifier, local_asset.identifier),
     ).fetchall()
-    collection = cursor.execute(
-        'SELECT id, name, symbol, main_asset FROM asset_collections WHERE main_asset=?;',
-        (local_asset.identifier,),
-    ).fetchone()
+
+    try:
+        collection = cursor.execute(
+            'SELECT * FROM asset_collections WHERE main_asset=?;',
+            (local_asset.identifier,),
+        ).fetchone()
+    except sqlite3.Error:
+        # If query fails due to missing main_asset
+        # column (pre-v10 schema), set collection to None
+        collection = None
+
     cursor.execute(
         'DELETE FROM assets WHERE identifier=?;',
         (local_asset.identifier,),
     )
 
-    # Insert new entry. Since identifiers are the same, no foreign key constrains should break
+    # Insert new entry. Since identifiers are the same, no foreign key constraints should break
     executeall(cursor, full_insert)
     if collection:
         cursor.execute(  # reinsert the collection since it was cascade-deleted
-            'INSERT OR IGNORE INTO asset_collections (id, name, symbol, main_asset) VALUES (?, ?, ?, ?);',  # noqa: E501
+            'INSERT OR IGNORE INTO asset_collections VALUES (?, ?, ?, ?)',
             collection,
         )
     # now add the old mappings back into the db
@@ -135,41 +168,17 @@ def _force_remote_asset(cursor: DBCursor, local_asset: Asset, full_insert: str) 
     AssetResolver.clean_memory_cache(local_asset.identifier.lower())
 
 
-class ParsedAssetData(NamedTuple):
-    identifier: str
-    asset_type: AssetType
-    name: str
-    symbol: str
-    started: Timestamp | None
-    swapped_for: str | None
-    coingecko: str | None
-    cryptocompare: str | None
-    forked: str | None
-
-
-def replace_double_quotes(match_result: re.Match[str]) -> str:
-    """Utility function to act on double quote regex matching and also
-    escape single quotes inside the string literal body.
-
-    Should act on the matching of double_quotes_re"""
-    content = match_result.group(1).replace("'", "''")
-    return f"'{content}'"
-
-
 class AssetsUpdater:
 
-    def __init__(self, msg_aggregator: 'MessagesAggregator') -> None:
+    def __init__(self, msg_aggregator: 'MessagesAggregator', globaldb: 'GlobalDBHandler') -> None:
+        self.globaldb = globaldb
         self.msg_aggregator = msg_aggregator
-        self.local_assets_version = GlobalDBHandler.get_setting_value(ASSETS_VERSION_KEY, 0)
+        self.local_assets_version = globaldb.get_setting_value(ASSETS_VERSION_KEY, 0)
         self.last_remote_checked_version = -1  # integer value that represents no update
         self.conflicts: dict[str, tuple[AssetData, AssetData]] = {}
-        self.assets_re = re.compile(r'.*INSERT +INTO +assets\( *identifier *, *name *, *type *\) *VALUES\(([^,]*?),([^,]*?),([^,]*?)\).*?')  # noqa: E501
-        self.evm_tokens_re = re.compile(r'.*INSERT +INTO +evm_tokens\( *identifier *, *token_kind *, *chain *, *address *, *decimals *, *protocol *\) *VALUES\(([^,]*?),([^,]*?),([^,]*?),([^,]*?),([^,]*?),([^,]*?)\).*')  # noqa: E501
-        self.common_asset_details_re = re.compile(r'.*INSERT +INTO +common_asset_details\( *identifier *, *symbol *, *coingecko *, *cryptocompare *, *forked *, *started *, *swapped_for *\) *VALUES\((.*?),(.*?),(.*?),(.*?),(.*?),([^,]*?),([^,]*?)\).*')  # noqa: E501
-        self.assets_collection_re = re.compile(r'.*INSERT +INTO +asset_collections\( *id *, *name *, *symbol, *main_asset *\) *VALUES +\(([^,]*?),([^,]*?),([^,]*?),([^,]*?)\).*?')  # noqa: E501
-        self.multiasset_mappings_re = re.compile(r'.*INSERT +INTO +multiasset_mappings\( *collection_id *, *asset *\) *VALUES +\(([^,]*?), *([\'"])([^,]+?)\2\).*?')  # noqa: E501
-        self.string_re = re.compile(r'.*([\'"])(.*?)\1.*')
-        self.double_quotes_re = re.compile(r'\"(.*?)\"')
+        self.asset_parser = AssetParser()
+        self.asset_collection_parser = AssetCollectionParser()
+        self.multiasset_mappings_parser = MultiAssetMappingsParser()
         self.branch = 'develop'
         if is_production():
             self.branch = 'master'
@@ -183,7 +192,7 @@ class AssetsUpdater:
 
         try:
             json_data = response.json()
-        except json.decoder.JSONDecodeError as e:
+        except requests.exceptions.RequestException as e:
             raise RemoteError(
                 f'Could not parse assets update info as json from Github: {response.text}',
             ) from e
@@ -196,9 +205,9 @@ class AssetsUpdater:
         May raise:
            - RemoteError if there is a problem querying Github
         """
-        self.local_assets_version = GlobalDBHandler().get_setting_value(ASSETS_VERSION_KEY, 0)
+        self.local_assets_version = self.globaldb.get_setting_value(ASSETS_VERSION_KEY, 0)
         json_data = self._get_remote_info_json()
-        local_schema_version = GlobalDBHandler().get_schema_version()
+        local_schema_version = self.globaldb.get_schema_version()
         new_asset_changes = 0
         try:
             remote_version = json_data['latest']
@@ -217,179 +226,22 @@ class AssetsUpdater:
         self.last_remote_checked_version = remote_version
         return self.local_assets_version, remote_version, new_asset_changes
 
-    def _parse_value(self, value: str) -> str | int | None:
-        match = self.string_re.match(value)
-        if match is not None:
-            return match.group(2)
-
-        value = value.strip()
-        if value == 'NULL':
-            return None
-
-        try:
-            return int(value)
-        except ValueError:
-            return value
-
-    def _parse_str(self, value: str, name: str, insert_text: str) -> str:
-        result = self._parse_value(value)
-        if not isinstance(result, str):
-            raise DeserializationError(
-                f'At asset DB update got invalid {name} {value} from {insert_text}',
-            )
-        return result
-
-    def _parse_optional_str(self, value: str, name: str, insert_text: str) -> str | None:
-        result = self._parse_value(value)
-        if result is not None and not isinstance(result, str):
-            raise DeserializationError(
-                f'At asset DB update got invalid {name} {value} from {insert_text}',
-            )
-        return result
-
-    def _parse_optional_int(self, value: str, name: str, insert_text: str) -> int | None:
-        result = self._parse_value(value)
-        if result is not None and not isinstance(result, int):
-            raise DeserializationError(
-                f'At asset DB update got invalid {name} {value} from {insert_text}',
-            )
-        return result
-
-    def _parse_asset_data(self, insert_text: str) -> ParsedAssetData:
-        assets_match = self.assets_re.match(insert_text)
-        if assets_match is None:
-            raise DeserializationError(
-                f'At asset DB update could not parse asset data out of {insert_text}',
-            )
-        if len(assets_match.groups()) != 3:
-            raise DeserializationError(
-                f'At asset DB update could not parse asset data out of {insert_text}',
-            )
-
-        raw_type = self._parse_str(assets_match.group(3), 'asset type', insert_text)
-        asset_type = AssetType.deserialize_from_db(raw_type)
-
-        common_details_match = self.common_asset_details_re.match(insert_text)
-        if common_details_match is None:
-            raise DeserializationError(
-                f'At asset DB update could not parse common asset '
-                f'details data out of {insert_text}',
-            )
-        raw_started = self._parse_optional_int(common_details_match.group(6), 'started', insert_text)  # noqa: E501
-        started = Timestamp(raw_started) if raw_started else None
-
-        return ParsedAssetData(
-            identifier=self._parse_str(common_details_match.group(1), 'identifier', insert_text),
-            asset_type=asset_type,
-            name=self._parse_str(assets_match.group(2), 'name', insert_text),
-            symbol=self._parse_str(common_details_match.group(2), 'symbol', insert_text),
-            started=started,
-            swapped_for=self._parse_optional_str(common_details_match.group(7), 'swapped_for', insert_text),  # noqa: E501
-            coingecko=self._parse_optional_str(common_details_match.group(3), 'coingecko', insert_text),  # noqa: E501
-            cryptocompare=self._parse_optional_str(common_details_match.group(4), 'cryptocompare', insert_text),  # noqa: E501
-            forked=self._parse_optional_str(common_details_match.group(5), 'forked', insert_text),
-        )
-
-    def _parse_evm_token_data(
-            self,
-            insert_text: str,
-    ) -> tuple[ChecksumEvmAddress, int | None, str | None, ChainID | None, EvmTokenKind | None]:
-        """
-        Read information related to evm assets from the insert line. May raise:
-        - DeserializationError: if the regex didn't work or we failed to deserialize any value
-        """
-        match = self.evm_tokens_re.match(insert_text)
-        if match is None:
-            raise DeserializationError(
-                f'At asset DB update could not parse evm token data out '
-                f'of {insert_text}',
-            )
-
-        if len(match.groups()) != 6:
-            raise DeserializationError(
-                f'At asset DB update could not parse evm token data out of {insert_text}',
-            )
-
-        chain_value = self._parse_optional_int(
-            value=match.group(3),
-            name='chain',
-            insert_text=insert_text,
-        )
-        if chain_value is not None:
-            chain_id = ChainID.deserialize(chain_value)
-        else:
-            chain_id = None
-
-        token_kind_value = self._parse_optional_str(
-            value=match.group(2),
-            name='token_kind',
-            insert_text=insert_text,
-        )
-        if token_kind_value is not None:
-            token_kind = EvmTokenKind.deserialize_from_db(token_kind_value)
-        else:
-            token_kind = None
-
-        return (
-            deserialize_evm_address(self._parse_str(match.group(4), 'address', insert_text)),
-            self._parse_optional_int(match.group(5), 'decimals', insert_text),
-            self._parse_optional_str(match.group(6), 'protocol', insert_text),
-            chain_id,
-            token_kind,
-        )
-
-    def _parse_full_insert_assets(self, insert_text: str) -> AssetData:
-        """Parses full insert line for an asset to give information for the conflict to the user
-
-        Note: In the future this needs to be different for each version
-        May raise:
-        - DeserializationError if the appropriate data is not found or if it can't
-        be properly parsed.
-        """
-        asset_data = self._parse_asset_data(insert_text)
-        address = decimals = protocol = chain_id = token_kind = None
-        if asset_data.asset_type == AssetType.EVM_TOKEN:
-            address, decimals, protocol, chain_id, token_kind = self._parse_evm_token_data(insert_text)  # noqa: E501
-
-        # types are not really proper here (except for asset_type, chain_id and token_kind)
-        return AssetData(
-            identifier=asset_data.identifier,
-            name=asset_data.name,
-            symbol=asset_data.symbol,
-            asset_type=asset_data.asset_type,
-            started=asset_data.started,
-            forked=asset_data.forked,
-            swapped_for=asset_data.swapped_for,
-            address=address,
-            chain_id=chain_id,
-            token_kind=token_kind,
-            decimals=decimals,
-            cryptocompare=asset_data.cryptocompare,
-            coingecko=asset_data.coingecko,
-            protocol=protocol,
-        )
-
     def _process_asset_collection(
             self,
             connection: 'DBConnection',
             action: str,
             full_insert: str,
+            version: int,
     ) -> None:
-        """Process the insertion of a new asset_collection"""
-        collection_match = self.assets_collection_re.match(full_insert)
-        if collection_match is None:
-            log.error(f'Failed to match asset collection {full_insert}')
-            raise DeserializationError(
-                f'At asset DB update could not parse asset collection data out of {action}',
-            )
-
-        groups = collection_match.groups()
-        if len(groups) != 4:
-            log.error(f'Asset collection {full_insert} does not have the expected elements')
-            raise DeserializationError(
-                f'At asset DB update could not parse asset collection data out of {action}',
-            )
-
+        """Process the insertion of a new asset_collection.
+        May raise:
+            - DeserializationError
+        """
+        result = self.asset_collection_parser.parse(
+            insert_text=full_insert,
+            connection=connection,
+            version=version,
+        )
         try:
             with connection.savepoint_ctx() as cursor:
                 executeall(cursor, action)
@@ -399,8 +251,8 @@ class AssetsUpdater:
                     executeall(cursor, full_insert)
             except sqlite3.Error as e:
                 log.error(
-                    f'Failed to edit or add asset collection with name {groups[1]} and id '
-                    f'{groups[0]}. {action}. Error: {e!s}',
+                    f'Failed to edit or add asset collection with values {result}. '
+                    f'{action}. Error: {e!s}',
                 )
 
     def _process_multiasset_mapping(
@@ -408,6 +260,7 @@ class AssetsUpdater:
             connection: 'DBConnection',
             action: str,
             full_insert: str,
+            version: int,
     ) -> None:
         """
         Process the insertion of a new asset_collection mapping
@@ -415,35 +268,11 @@ class AssetsUpdater:
         - DeserializationError
         - UnknownAsset
         """
-        mapping_match = self.multiasset_mappings_re.match(full_insert)
-        if mapping_match is None:
-            log.error(f'Failed to match asset collection mapping {full_insert}')
-            raise DeserializationError(
-                f'At asset DB update could not parse asset collection data out of {action}',
-            )
-
-        groups = mapping_match.groups()
-        if len(groups) != 3:
-            log.error(f'Failed to find all elements in asset collection mapping {full_insert}')
-            raise DeserializationError(
-                f'At asset DB update could not parse asset collection data out of {action}',
-            )
-
-        # check that the asset exists and so does the collection
-        with connection.read_ctx() as cursor:
-            cursor.execute('SELECT COUNT(*) FROM assets where identifier=?', (groups[2],))
-            if cursor.fetchone()[0] == 0:
-                raise UnknownAsset(groups[2])
-
-            cursor.execute(
-                'SELECT COUNT(*) FROM asset_collections WHERE id=?',
-                (self._parse_value(groups[0]),),
-            )
-            if cursor.fetchone()[0] != 1:
-                raise DeserializationError(
-                    f'Tried to add asset to collection with id {groups[0]} but it does not exist',
-                )
-
+        result = self.multiasset_mappings_parser.parse(
+            insert_text=full_insert,
+            connection=connection,
+            version=version,
+        )
         try:
             with connection.savepoint_ctx() as cursor:
                 executeall(cursor, action)
@@ -453,8 +282,8 @@ class AssetsUpdater:
                     executeall(cursor, full_insert)
             except sqlite3.Error as e:
                 log.error(
-                    f'Failed to edit asset collection mapping with asset {groups[2]} '
-                    f'and id {groups[0]}. {action}. Error: {e!s}',
+                    f'Failed to edit asset collection mapping with values {result}. '
+                    f'{action}. Error: {e!s}',
                 )
 
     def _handle_asset_update(
@@ -505,7 +334,11 @@ class AssetsUpdater:
                 AssetResolver().clean_memory_cache(local_asset.identifier.lower())
 
             # otherwise asset is known, so it's a conflict. Check if we can resolve
-            resolution = assets_conflicts.get(local_asset) if assets_conflicts else None
+            try:
+                resolution = assets_conflicts[local_asset] if assets_conflicts is not None else None  # noqa: E501
+            except KeyError:
+                resolution = None
+
             if resolution == 'local':
                 # do nothing, keep local
                 return
@@ -523,7 +356,7 @@ class AssetsUpdater:
 
             # else can't resolve. Mark it for the user to resolve.
             # TODO: When assets refactor is finished, remove the usage of AssetData here
-            local_data = GlobalDBHandler.get_all_asset_data(
+            local_data = self.globaldb.get_all_asset_data(
                 mapping=False,
                 serialized=False,
                 specific_ids=[local_asset.identifier],
@@ -558,8 +391,8 @@ class AssetsUpdater:
                 # with double quotes we need to replace them here
                 # https://github.com/rotki/rotki/issues/6368
                 # TODO: Get rid of all those
-                full_insert = self.double_quotes_re.sub(replace_double_quotes, full_insert)
-                action = self.double_quotes_re.sub(replace_double_quotes, action)
+                full_insert = self.asset_parser.standardize_quotes(full_insert)
+                action = self.asset_parser.standardize_quotes(action)
 
                 if (
                     (update_file_type in (  # handle update/delete for collections
@@ -580,7 +413,11 @@ class AssetsUpdater:
                 elif update_file_type == UpdateFileType.ASSETS:  # update or insert assets
                     remote_asset_data = None
                     try:
-                        remote_asset_data = self._parse_full_insert_assets(full_insert)
+                        remote_asset_data = self.asset_parser.parse(
+                            insert_text=full_insert,
+                            connection=connection,
+                            version=version,
+                        )
                     except DeserializationError as e:
                         log.error(
                             f'Failed to add asset with action {action} during update to v{version}',  # noqa: E501
@@ -605,6 +442,7 @@ class AssetsUpdater:
                             connection=connection,
                             action=action,
                             full_insert=full_insert,
+                            version=version,
                         )
                     except DeserializationError as e:
                         self.msg_aggregator.add_warning(
@@ -618,11 +456,12 @@ class AssetsUpdater:
                             connection=connection,
                             action=action,
                             full_insert=full_insert,
+                            version=version,
                         )
                     except DeserializationError as e:
                         self.msg_aggregator.add_warning(
-                            f'Skipping entry during assets collection multimapping update to '
-                            f'v{version} due to a deserialization error. {e!s}',
+                            f'Skipping entry during assets collection multimapping update due '
+                            f'to a deserialization error. {e!s}',
                         )
                     except UnknownAsset as e:
                         self.msg_aggregator.add_warning(
@@ -661,8 +500,8 @@ class AssetsUpdater:
 
         self.conflicts = {}  # reset the stored conflicts
         infojson = self._get_remote_info_json()
-        local_schema_version = GlobalDBHandler().get_schema_version()
-        data_directory = GlobalDBHandler()._data_directory
+        local_schema_version = self.globaldb.get_schema_version()
+        data_directory = self.globaldb._data_directory
         assert data_directory is not None, 'data directory should be initialized at this point'
         global_db_path = data_directory / GLOBALDIR_NAME / GLOBALDB_NAME
 
@@ -676,19 +515,21 @@ class AssetsUpdater:
         with TemporaryDirectory() as tmpdirname:
             tmpdir = Path(tmpdirname)
             temp_db_name = 'temp.db'
+            # here, the global db just needs to be initialised and not
+            # configured since its already up to date with the latest data.
             temp_db_connection, _ = initialize_globaldb(
                 global_dir=tmpdir,
                 db_filename=temp_db_name,
-                sql_vm_instructions_cb=GlobalDBHandler().conn.sql_vm_instructions_cb,
-                msg_aggregator=self.msg_aggregator,
+                sql_vm_instructions_cb=self.globaldb.conn.sql_vm_instructions_cb,
             )
 
             # use a critical section to avoid modifications in the globaldb during the update
             # process since we ignore any possible change in the user globaldb once we started
             # the update.
-            with GlobalDBHandler().conn.critical_section():
+            with self.globaldb.conn.critical_section():
                 log.info('Starting assets update. Copying content from the user globaldb')
                 _replace_assets_from_db(temp_db_connection, global_db_path)
+
                 self._perform_update(
                     connection=temp_db_connection,
                     assets_conflicts=conflicts,
@@ -706,7 +547,7 @@ class AssetsUpdater:
                 # otherwise we are sure the DB will work without conflicts so let's
                 # now move the data to the actual global DB
                 log.info('Finishing assets update. Replacing users globaldb with the updated information')  # noqa: E501
-                _replace_assets_from_db(GlobalDBHandler().conn, tmpdir / temp_db_name)
+                _replace_assets_from_db(self.globaldb.conn, tmpdir / temp_db_name)
 
         return None
 
@@ -837,3 +678,47 @@ class AssetsUpdater:
             }
 
         return updates
+
+    def apply_pending_compatible_updates(self) -> None:
+        """Apply any pending asset updates that are compatible with the current DB version
+        before upgrading to target_db_version.
+
+        This ensures we don't miss any asset updates that would become incompatible
+        after the DB upgrade.
+        """
+        try:
+            max_compatible_version = None
+            info_json = self._get_remote_info_json()
+            if (latest_assets_version := info_json.get('latest')) is None:
+                log.error('Missing latest version in info json. Skipping updates')
+                return
+
+            if (current_db_version := self.globaldb.get_schema_version()) < FIRST_GLOBAL_DB_VERSION_WITH_COLLECTIONS:  # noqa: E501
+                log.error(f'Global DB version too old for collections. {current_db_version=}, required={FIRST_GLOBAL_DB_VERSION_WITH_COLLECTIONS}')  # noqa: E501
+                return
+
+            start_version = max(FIRST_VERSION_WITH_COLLECTIONS, self.local_assets_version + 1)
+            # Find the highest compatible assets version for current DB version
+            for version in range(start_version, latest_assets_version + 1):
+                update_info = info_json['updates'][str(version)]
+                if update_info['min_schema_version'] <= current_db_version <= update_info['max_schema_version']:  # noqa: E501
+                    max_compatible_version = version
+                elif update_info['min_schema_version'] > current_db_version:
+                    break  # Stop at first incompatible version
+
+            # Apply updates up to the highest compatible version
+            if max_compatible_version is not None:
+                log.debug(
+                    'Found compatible assets version. Updating assets',
+                    from_version=self.local_assets_version,
+                    to_version=max_compatible_version,
+                    global_db_version=current_db_version,
+                )
+
+                self.perform_update(
+                    up_to_version=max_compatible_version,
+                    conflicts=defaultdict(lambda: 'remote'),  # always choose remote
+                )
+        except (DeserializationError, RemoteError, UnknownAsset, KeyError) as e:
+            msg = f'missing key {e!s}' if isinstance(e, KeyError) else str(e)
+            log.error(f'Failed to apply pending asset updates during global DB upgrade due to: {msg}')  # noqa: E501

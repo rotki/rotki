@@ -16,8 +16,8 @@ from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_GLM
 from rotkehlchen.constants.resolver import strethaddress_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset
+from rotkehlchen.globaldb.asset_updates.manager import ASSETS_VERSION_KEY
 from rotkehlchen.globaldb.handler import GLOBAL_DB_VERSION, GlobalDBHandler
-from rotkehlchen.globaldb.updates import ASSETS_VERSION_KEY
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
@@ -722,20 +722,20 @@ def test_update_from_early_clean_db(
     version key set we still upgrade properly and set the assets version properly.
     """
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    update_1 = """INSERT INTO assets(identifier, name, type) VALUES('121-ada-FADS-as', 'A name', 'F'); INSERT INTO common_asset_details(identifier, symbol, coingecko, cryptocompare, forked, started, swapped_for) VALUES('121-ada-FADS-as', 'SYMBOL', '', '', 'BTC', NULL, NULL);
+    update_15 = """INSERT INTO assets(identifier, name, type) VALUES('121-ada-FADS-as', 'A name', 'F'); INSERT INTO common_asset_details(identifier, symbol, coingecko, cryptocompare, forked, started, swapped_for) VALUES('121-ada-FADS-as', 'SYMBOL', '', '', 'BTC', NULL, NULL);
 *
 UPDATE assets SET swapped_for='eip155:1/erc20:0xA8d35739EE92E69241A2Afd9F513d41021A07972' WHERE identifier='eip155:1/erc20:0xa74476443119A942dE498590Fe1f2454d7D4aC0d';
 INSERT INTO evm_tokens(identifier, token_kind, chain, address, decimals, protocol) VALUES('eip155:1/erc20:0xa74476443119A942dE498590Fe1f2454d7D4aC0d', 'A', 1, '0xa74476443119A942dE498590Fe1f2454d7D4aC0d', 18, NULL);INSERT INTO assets(identifier, name, type) VALUES('eip155:1/erc20:0xa74476443119A942dE498590Fe1f2454d7D4aC0d', 'Golem', 'C'); INSERT INTO common_asset_details(identifier, symbol, coingecko, cryptocompare, forked, started, swapped_for) VALUES('eip155:1/erc20:0xa74476443119A942dE498590Fe1f2454d7D4aC0d', 'GNT', 'golem', NULL, NULL,1478810650, 'eip155:1/erc20:0xA8d35739EE92E69241A2Afd9F513d41021A07972')
     """  # noqa: E501
     update_patch = mock_asset_updates(
         original_requests_get=requests.get,
-        latest=1,
-        updates={'1': {
+        latest=15,
+        updates={'15': {
             'changes': 2,
             'min_schema_version': GLOBAL_DB_VERSION,
             'max_schema_version': GLOBAL_DB_VERSION,
         }},
-        sql_actions={'1': {'assets': update_1, 'collections': '', 'mappings': ''}},
+        sql_actions={'15': {'assets': update_15, 'collections': '', 'mappings': ''}},
     )
     cursor = globaldb.conn.cursor()
     cursor.execute('DELETE FROM settings WHERE name=?', (ASSETS_VERSION_KEY,))
@@ -749,7 +749,7 @@ INSERT INTO evm_tokens(identifier, token_kind, chain, address, decimals, protoco
         )
         result = assert_proper_sync_response_with_result(response)
         assert result['local'] == 0
-        assert result['remote'] == 1
+        assert result['remote'] == 15
         assert result['new_changes'] == 2
 
         response = requests.post(
@@ -827,7 +827,7 @@ INSERT INTO evm_tokens(identifier, token_kind, chain, address, decimals, protoco
         # check new asset was added and conflict was ignored with an error due to
         # inability to do anything with the missing swapped_for
         assert result is True
-        assert globaldb.get_setting_value(ASSETS_VERSION_KEY, 0) == 1
+        assert globaldb.get_setting_value(ASSETS_VERSION_KEY, 0) == 15
         # TODO: Needs to be fixed as described in # 4876
         """
         gnt = EvmToken('eip155:1/erc20:0xa74476443119A942dE498590Fe1f2454d7D4aC0d')
@@ -860,7 +860,7 @@ INSERT INTO evm_tokens(identifier, token_kind, chain, address, decimals, protoco
         warnings = rotki.msg_aggregator.consume_warnings()
         assert len(errors) == 0, f'Found errors: {errors}'
         assert len(warnings) == 1
-        assert 'Failed to resolve conflict for eip155:1/erc20:0xa74476443119A942dE498590Fe1f2454d7D4aC0d in the DB during the v1 assets update. Skipping entry' in warnings[0]  # noqa: E501
+        assert 'Failed to resolve conflict for eip155:1/erc20:0xa74476443119A942dE498590Fe1f2454d7D4aC0d in the DB during the v15 assets update. Skipping entry' in warnings[0]  # noqa: E501
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])

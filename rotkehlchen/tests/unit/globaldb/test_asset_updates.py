@@ -10,8 +10,12 @@ from rotkehlchen.assets.types import AssetData, AssetType
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.errors.serialization import DeserializationError
+from rotkehlchen.globaldb.asset_updates.manager import (
+    ASSETS_VERSION_KEY,
+    AssetsUpdater,
+    UpdateFileType,
+)
 from rotkehlchen.globaldb.handler import GlobalDBHandler
-from rotkehlchen.globaldb.updates import ASSETS_VERSION_KEY, AssetsUpdater, UpdateFileType
 from rotkehlchen.globaldb.utils import GLOBAL_DB_VERSION
 from rotkehlchen.tests.api.test_assets_updates import mock_asset_updates
 from rotkehlchen.tests.utils.mock import MockResponse
@@ -33,8 +37,11 @@ INSERT INTO assets(identifier, name, type) VALUES("new-asset", "New Asset", "Y")
 
 
 @pytest.fixture(name='assets_updater')
-def fixture_assets_updater(messages_aggregator):
-    return AssetsUpdater(messages_aggregator)
+def fixture_assets_updater(messages_aggregator, globaldb):
+    return AssetsUpdater(
+        globaldb=globaldb,
+        msg_aggregator=messages_aggregator,
+    )
 
 
 def get_mock_github_assets_response(
@@ -349,13 +356,22 @@ def test_parse_full_insert_assets(
         text: str,
         expected_data: AssetData | None,
         error_msg: str,
+        globaldb,
 ) -> None:
     text = text.replace('\n', '')
     if expected_data is not None:
-        assert expected_data == assets_updater._parse_full_insert_assets(text)
+        assert expected_data == assets_updater.asset_parser.parse(
+            insert_text=text,
+            connection=globaldb.conn,
+            version=15,  # any version works for assets since no change has happened.
+        )
     else:
         with pytest.raises(DeserializationError) as excinfo:
-            assets_updater._parse_full_insert_assets(text)
+            assets_updater.asset_parser.parse(
+                insert_text=text,
+                connection=globaldb.conn,
+                version=15,  # any version works for assets since no change has happened.
+            )
 
         assert error_msg in str(excinfo.value)
 
@@ -458,7 +474,7 @@ def test_updates_assets_collections_errors(assets_updater: AssetsUpdater):
     assert warnings == [
         "Skipping entry during assets collection update to v999 due to a deserialization error. At asset DB update could not parse asset collection data out of INSERT INTO asset_collections(id, name) VALUES (99999999, 'My custom ETH')",  # noqa: E501
         'Tried to add unknown asset ETH99999 to collection of assets. Skipping',
-        'Skipping entry during assets collection multimapping update to v999 due to a deserialization error. Tried to add asset to collection with id 99999999 but it does not exist',  # noqa: E501
+        'Skipping entry during assets collection multimapping update due to a deserialization error. Tried to add asset to collection with id 99999999 but it does not exist',  # noqa: E501
     ]
 
 
@@ -530,23 +546,23 @@ def test_conflict_updates(assets_updater: AssetsUpdater, globaldb: GlobalDBHandl
 *"""  # noqa: E501
     update_patch = mock_asset_updates(
         original_requests_get=requests.get,
-        latest=2,
-        updates={'1': {
+        latest=16,
+        updates={'15': {
             'changes': 1,
             'min_schema_version': GLOBAL_DB_VERSION,
             'max_schema_version': GLOBAL_DB_VERSION,
-        }, '2': {
+        }, '16': {
             'changes': 1,
             'min_schema_version': GLOBAL_DB_VERSION,
             'max_schema_version': GLOBAL_DB_VERSION,
         }},
-        sql_actions={'1': {'assets': update_1, 'collections': '', 'mappings': ''}, '2': {'assets': update_2, 'collections': '', 'mappings': ''}},  # noqa: E501
+        sql_actions={'15': {'assets': update_1, 'collections': '', 'mappings': ''}, '16': {'assets': update_2, 'collections': '', 'mappings': ''}},  # noqa: E501
     )
     cursor = globaldb.conn.cursor()
     cursor.execute(f"DELETE FROM settings WHERE name='{ASSETS_VERSION_KEY}'")
     with update_patch:
         conflicts = assets_updater.perform_update(
-            up_to_version=2,
+            up_to_version=16,
             conflicts=None,
         )
     assert conflicts is not None
@@ -556,13 +572,13 @@ def test_conflict_updates(assets_updater: AssetsUpdater, globaldb: GlobalDBHandl
     # resolve with all the remote updates and check if the multiasset and underlying_asset mappings still exists  # noqa: E501
     with update_patch:
         assets_updater.perform_update(
-            up_to_version=2,
+            up_to_version=16,
             conflicts={
                 Asset(conflict['identifier']): 'remote'
                 for conflict in conflicts
             },
         )
-    assert cursor.execute("SELECT value FROM settings WHERE name='assets_version'").fetchone()[0] == '2'  # noqa: E501
+    assert cursor.execute("SELECT value FROM settings WHERE name='assets_version'").fetchone()[0] == '16'  # noqa: E501
     with globaldb.conn.read_ctx() as cursor:
         assert cursor.execute(
             'SELECT COUNT(*) FROM underlying_tokens_list WHERE parent_token_entry=?;',

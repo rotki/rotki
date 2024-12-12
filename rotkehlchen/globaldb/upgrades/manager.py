@@ -5,26 +5,39 @@ import traceback
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from rotkehlchen.globaldb.asset_updates.manager import AssetsUpdater
+from rotkehlchen.globaldb.migrations.manager import (
+    LAST_DATA_MIGRATION,
+    maybe_apply_globaldb_migrations,
+)
+from rotkehlchen.globaldb.schema import DB_SCRIPT_CREATE_TABLES
 from rotkehlchen.globaldb.upgrades.v6_v7 import migrate_to_v7
 from rotkehlchen.globaldb.upgrades.v7_v8 import migrate_to_v8
 from rotkehlchen.globaldb.upgrades.v8_v9 import migrate_to_v9
+from rotkehlchen.globaldb.utils import (
+    GLOBAL_DB_SCHEMA_BREAKING_CHANGES,
+    GLOBAL_DB_VERSION,
+    MIN_SUPPORTED_GLOBAL_DB_VERSION,
+    globaldb_get_setting_value,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.utils.misc import ts_now
 from rotkehlchen.utils.upgrades import DBUpgradeProgressHandler, UpgradeRecord
 
-from ..utils import GLOBAL_DB_VERSION, MIN_SUPPORTED_GLOBAL_DB_VERSION, globaldb_get_setting_value
 from .v2_v3 import migrate_to_v3
 from .v3_v4 import migrate_to_v4
 from .v4_v5 import migrate_to_v5
 from .v5_v6 import migrate_to_v6
 from .v9_v10 import migrate_to_v10
 
-logger = logging.getLogger(__name__)
-log = RotkehlchenLogsAdapter(logger)
-
 if TYPE_CHECKING:
     from rotkehlchen.db.drivers.gevent import DBConnection
+    from rotkehlchen.globaldb.handler import GlobalDBHandler
     from rotkehlchen.user_messages import MessagesAggregator
+
+
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 
 UPGRADES_LIST = [
@@ -68,15 +81,17 @@ def maybe_upgrade_globaldb(
         global_dir: Path,
         db_filename: str,
         msg_aggregator: 'MessagesAggregator',
+        globaldb: 'GlobalDBHandler | None' = None,
 ) -> bool:
     """Maybe upgrade the global DB.
 
     Returns True if this is a fresh DB. In that
     case the caller should make sure to input the latest version
-    and also the latest migration in the settings.
+    and also the latest migration in the settings. In all other cases returns False.
 
-    In all other cases returns False"""
-
+    The globaldb parameter is needed to handle schema-breaking changes that require
+    updating assets data before the DB schema is modified.
+    """
     try:
         with connection.read_ctx() as cursor:
             db_version = globaldb_get_setting_value(cursor, 'version', GLOBAL_DB_VERSION)
@@ -102,6 +117,12 @@ def maybe_upgrade_globaldb(
         target_version=GLOBAL_DB_VERSION,
     )
     for upgrade in UPGRADES_LIST:
+        if globaldb is not None and upgrade.from_version in GLOBAL_DB_SCHEMA_BREAKING_CHANGES:
+            AssetsUpdater(
+                globaldb=globaldb,
+                msg_aggregator=msg_aggregator,
+            ).apply_pending_compatible_updates()
+
         _perform_single_upgrade(
             upgrade=upgrade,
             connection=connection,
@@ -171,3 +192,44 @@ def _perform_single_upgrade(
             'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
             ('version', str(to_version)),
         )
+
+
+def configure_globaldb(
+        global_dir: Path,
+        db_filename: str,
+        connection: 'DBConnection',
+        msg_aggregator: 'MessagesAggregator',
+        globaldb: 'GlobalDBHandler | None' = None,
+) -> None:
+    """Configure the global database and handle schema upgrades.
+
+    - global_dir: Directory containing the global database
+    - db_filename: Name of the database file (typically global.db)
+    - connection: The database connection object
+    - msg_aggregator: Message aggregator for logging
+    - globaldb: Optional handler instance - determines whether asset updates are attempted
+
+    May raise:
+        - DBSchemaError if the database schema is invalid.
+    """
+    is_fresh_db = maybe_upgrade_globaldb(
+        globaldb=globaldb,
+        connection=connection,
+        global_dir=global_dir,
+        db_filename=db_filename,
+        msg_aggregator=msg_aggregator,
+    )
+
+    # its not a fresh database and foreign keys are not turned on by default.
+    connection.executescript('PRAGMA foreign_keys=on;')
+    connection.execute('PRAGMA journal_mode=WAL;')
+    if is_fresh_db is True:
+        connection.executescript(DB_SCRIPT_CREATE_TABLES)
+        with connection.write_ctx() as cursor:
+            cursor.executemany(
+                'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
+                [('version', str(GLOBAL_DB_VERSION)), ('last_data_migration', str(LAST_DATA_MIGRATION))],  # noqa: E501
+            )
+    else:
+        maybe_apply_globaldb_migrations(connection)
+    connection.schema_sanity_check()

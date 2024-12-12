@@ -970,3 +970,47 @@ def test_applying_all_upgrade(globaldb: GlobalDBHandler, messages_aggregator):
     assert globaldb.get_setting_value('version', 0) == GLOBAL_DB_VERSION
     with globaldb.conn.cursor() as cursor:
         assert cursor.execute('SELECT COUNT(*) from assets WHERE identifier=?', ('eip155:/erc20:0x32c6fcC9bC912C4A30cd53D2E606461e44B77AF2',)).fetchone()[0] == 1  # noqa: E501
+
+
+@pytest.mark.parametrize('globaldb_upgrades', [[]])
+@pytest.mark.parametrize('custom_globaldb', ['v4_global.db'])
+@pytest.mark.parametrize('target_globaldb_version', [4])
+@pytest.mark.parametrize('reload_user_assets', [False])
+def test_assets_updates_applied_before_v10_change(globaldb, messages_aggregator):
+    """Test that asset updates v17-31 are applied before db schema v10.
+
+    Schema v10 adds the main_asset column which prevents pulling additional
+    asset updates. This ensures compatible updates are applied first.
+    """
+    with globaldb.conn.read_ctx() as cursor:
+        assert not column_exists(  # breaking schema change not present.
+            cursor=cursor,
+            table_name='asset_collections',
+            column_name='main_asset',
+        )
+
+        # see that certain assets are not present in the db.
+        rocket_pool_asset = 'eip155:1/erc20:0xD33526068D116cE69F19A9ee46F0bd304F21A51f'  # from update 24.  # noqa: E501
+        compound_usdt_asset = 'eip155:1/erc20:0x3Afdc9BCA9213A35503b077a6072F3D0d5AB0840'  # from update 29  # noqa: E501
+        morpho_asset = 'eip155:1/erc20:0x58D97B57BB95320F9a05dC918Aef65434969c2B2'  # from update 31  # noqa: E501
+        assert cursor.execute('SELECT COUNT(*) FROM assets WHERE identifier IN (?, ?, ?)', (rocket_pool_asset, compound_usdt_asset, morpho_asset)).fetchone()[0] == 0  # noqa: E501
+
+    with ExitStack() as stack:
+        patch_for_globaldb_upgrade_to(stack, 10)
+        maybe_upgrade_globaldb(
+            globaldb=globaldb,
+            connection=globaldb.conn,
+            global_dir=globaldb._data_directory / GLOBALDIR_NAME,
+            db_filename=GLOBALDB_NAME,
+            msg_aggregator=messages_aggregator,
+        )
+
+    assert globaldb.get_setting_value('version', 0) == 10
+    with globaldb.conn.read_ctx() as cursor:
+        assert column_exists(
+            cursor=cursor,
+            table_name='asset_collections',
+            column_name='main_asset',
+        )
+        # see that said assets are now present in the db
+        assert cursor.execute('SELECT COUNT(*) FROM assets WHERE identifier IN (?, ?, ?)', (rocket_pool_asset, compound_usdt_asset, morpho_asset)).fetchone()[0] == 3  # noqa: E501

@@ -85,6 +85,7 @@ def create_globaldb(
         data_directory,
         sql_vm_instructions_cb,
         messages_aggregator,
+        perform_assets_updates=False,
 ) -> GlobalDBHandler:
     # Since this is a singleton and we want it initialized everytime the fixture
     # is called make sure its instance is always starting from scratch
@@ -94,6 +95,7 @@ def create_globaldb(
         data_dir=data_directory,
         sql_vm_instructions_cb=sql_vm_instructions_cb,
         msg_aggregator=messages_aggregator,
+        perform_assets_updates=perform_assets_updates,
     )
 
 
@@ -128,7 +130,7 @@ def _initialize_fixture_globaldb(
         )
         if run_globaldb_migrations is False:
             stack.enter_context(
-                patch('rotkehlchen.globaldb.handler.maybe_apply_globaldb_migrations', side_effect=lambda *args: None),  # noqa: E501
+                patch('rotkehlchen.globaldb.upgrades.manager.maybe_apply_globaldb_migrations', side_effect=lambda *args: None),  # noqa: E501
             )
         if reload_user_assets is False:
             stack.enter_context(
