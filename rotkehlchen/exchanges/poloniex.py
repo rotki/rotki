@@ -4,6 +4,7 @@ import hmac
 import json
 import logging
 import operator
+from collections.abc import Sequence
 from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Literal
 from urllib.parse import urlencode
@@ -15,14 +16,21 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.converters import asset_from_poloniex
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_LEND
+from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnprocessableTradePair, UnsupportedAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade, TradeType
+from rotkehlchen.exchanges.data_structures import MarginPosition, Trade, TradeType
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
 from rotkehlchen.exchanges.utils import deserialize_asset_movement_address, get_key_if_has_val
 from rotkehlchen.history.deserialization import deserialize_price
+from rotkehlchen.history.events.structures.asset_movement import (
+    AssetMovement,
+    create_asset_movement_with_fee,
+)
+from rotkehlchen.history.events.structures.base import HistoryBaseEntry
+from rotkehlchen.history.events.structures.types import HistoryEventType
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
@@ -36,7 +44,6 @@ from rotkehlchen.serialization.deserialize import (
 from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
-    AssetMovementCategory,
     ExchangeAuthCredentials,
     Fee,
     Location,
@@ -44,7 +51,7 @@ from rotkehlchen.types import (
     TimestampMS,
 )
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import ts_now_in_ms
+from rotkehlchen.utils.misc import ts_now_in_ms, ts_sec_to_ms
 from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
 from rotkehlchen.utils.mixins.lockable import protect_with_lock
 
@@ -491,15 +498,15 @@ class Poloniex(ExchangeInterface):
 
     def _deserialize_asset_movement(
             self,
-            movement_type: AssetMovementCategory,
+            movement_type: Literal[HistoryEventType.DEPOSIT, HistoryEventType.WITHDRAWAL],
             movement_data: dict[str, Any],
-    ) -> AssetMovement | None:
+    ) -> list[AssetMovement]:
         """Processes a single deposit/withdrawal from polo and deserializes it
 
         Can log error/warning and return None if something went wrong at deserialization
         """
         try:
-            if movement_type == AssetMovementCategory.DEPOSIT:
+            if movement_type == HistoryEventType.DEPOSIT:
                 fee = Fee(ZERO)
                 uid_key = 'depositNumber'
                 transaction_id = get_key_if_has_val(movement_data, 'txid')
@@ -515,17 +522,19 @@ class Poloniex(ExchangeInterface):
                         transaction_id = None
 
             asset = asset_from_poloniex(movement_data['currency'])
-            return AssetMovement(  # many deserializations can raise here
+            return create_asset_movement_with_fee(
                 location=Location.POLONIEX,
-                category=movement_type,
-                address=deserialize_asset_movement_address(movement_data, 'address', asset),
-                transaction_id=transaction_id,
-                timestamp=deserialize_timestamp(movement_data['timestamp']),
+                event_type=movement_type,
+                timestamp=ts_sec_to_ms(deserialize_timestamp(movement_data['timestamp'])),
                 asset=asset,
                 amount=deserialize_asset_amount_force_positive(movement_data['amount']),
                 fee_asset=asset,
                 fee=fee,
-                link=str(movement_data[uid_key]),
+                unique_id=f'{movement_type.serialize()}_{movement_data[uid_key]!s}',  # movement_data[uid_key] is only unique within the same event type  # noqa: E501
+                extra_data=maybe_set_transaction_extra_data(
+                    address=deserialize_asset_movement_address(movement_data, 'address', asset),
+                    transaction_id=transaction_id,
+                ),
             )
         except UnsupportedAsset as e:
             self.msg_aggregator.add_warning(
@@ -550,13 +559,13 @@ class Poloniex(ExchangeInterface):
                 f'{movement_type!s}: {movement_data}. Error was: {msg}',
             )
 
-        return None
+        return []
 
-    def query_online_deposits_withdrawals(
+    def query_online_history_events(
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> list[AssetMovement]:
+    ) -> Sequence[HistoryBaseEntry]:
         result = self.api_query_dict(
             '/wallets/activity',
             {'start': start_ts, 'end': end_ts},
@@ -568,20 +577,16 @@ class Poloniex(ExchangeInterface):
 
         movements = []
         for withdrawal in result['withdrawals']:
-            asset_movement = self._deserialize_asset_movement(
-                movement_type=AssetMovementCategory.WITHDRAWAL,
+            movements.extend(self._deserialize_asset_movement(
+                movement_type=HistoryEventType.WITHDRAWAL,
                 movement_data=withdrawal,
-            )
-            if asset_movement:
-                movements.append(asset_movement)
+            ))
 
         for deposit in result['deposits']:
-            asset_movement = self._deserialize_asset_movement(
-                movement_type=AssetMovementCategory.DEPOSIT,
+            movements.extend(self._deserialize_asset_movement(
+                movement_type=HistoryEventType.DEPOSIT,
                 movement_data=deposit,
-            )
-            if asset_movement:
-                movements.append(asset_movement)
+            ))
 
         return movements
 

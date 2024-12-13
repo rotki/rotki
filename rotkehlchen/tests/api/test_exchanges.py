@@ -11,7 +11,7 @@ import requests
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
-from rotkehlchen.constants.limits import FREE_ASSET_MOVEMENTS_LIMIT, FREE_TRADES_LIMIT
+from rotkehlchen.constants.limits import FREE_TRADES_LIMIT
 from rotkehlchen.db.constants import KRAKEN_ACCOUNT_TYPE_KEY
 from rotkehlchen.db.filtering import AssetMovementsFilterQuery, TradesFilterQuery
 from rotkehlchen.db.history_events import HISTORY_BASE_ENTRY_FIELDS, DBHistoryEvents
@@ -49,10 +49,8 @@ from rotkehlchen.tests.utils.exchanges import (
 from rotkehlchen.tests.utils.factories import make_random_uppercasenumeric_string
 from rotkehlchen.tests.utils.history import (
     assert_binance_trades_result,
-    assert_poloniex_asset_movements,
     assert_poloniex_trades_result,
     mock_history_processing_and_exchanges,
-    prepare_rotki_for_history_processing_test,
 )
 from rotkehlchen.tests.utils.kraken import MockKraken
 from rotkehlchen.tests.utils.mock import MockResponse
@@ -731,81 +729,6 @@ def test_exchange_query_trades(rotkehlchen_api_server_with_exchanges: 'APIServer
         )
     result = assert_proper_sync_response_with_result(response)
     assert len(result['entries']) == 0
-
-
-@pytest.mark.parametrize('number_of_eth_accounts', [0])
-@pytest.mark.parametrize('added_exchanges', [(Location.KRAKEN, Location.POLONIEX)])
-@pytest.mark.parametrize('start_with_valid_premium', [False, True])
-def test_query_asset_movements_over_limit(
-        rotkehlchen_api_server_with_exchanges: 'APIServer',
-        start_with_valid_premium: bool,
-) -> None:
-    """Test that using the asset movements query endpoint works fine"""
-    start_ts = 0
-    end_ts = 1598453214
-    server = rotkehlchen_api_server_with_exchanges
-    rotki = server.rest_api.rotkehlchen
-    # Make sure online kraken is not queried by setting query ranges
-    with rotki.data.db.user_write() as cursor:
-        rotki.data.db.update_used_query_range(
-            write_cursor=cursor,
-            name='kraken_asset_movements_mockkraken',
-            start_ts=Timestamp(start_ts),
-            end_ts=Timestamp(end_ts),
-        )
-        polo_entries_num = 4
-        # Set a ton of kraken asset movements in the DB
-        kraken_entries_num = FREE_ASSET_MOVEMENTS_LIMIT + 50
-        movements = [AssetMovement(
-            location=Location.KRAKEN,
-            category=AssetMovementCategory.DEPOSIT,
-            address=None,
-            transaction_id=None,
-            timestamp=Timestamp(x),
-            asset=A_BTC,
-            amount=FVal(x * 100),
-            fee_asset=A_BTC,
-            fee=Fee(FVal(x)),
-            link='') for x in range(kraken_entries_num)
-        ]
-        rotki.data.db.add_asset_movements(cursor, movements)
-
-    all_movements_num = kraken_entries_num + polo_entries_num
-    setup = prepare_rotki_for_history_processing_test(server.rest_api.rotkehlchen)
-
-    # Check that querying movements with/without limits works even if we query two times
-    for _ in range(2):
-        # query asset movements of polo which has less movements than the limit
-        with setup.polo_patch:
-            response = requests.get(
-                api_url_for(
-                    server,
-                    'assetmovementsresource',
-                ), json={'location': 'poloniex'},
-            )
-        result = assert_proper_sync_response_with_result(response)
-        assert result['entries_found'] == polo_entries_num
-        assert result['entries_total'] == all_movements_num
-        assert result['entries_limit'] == -1 if start_with_valid_premium else FREE_ASSET_MOVEMENTS_LIMIT  # noqa: E501
-        assert_poloniex_asset_movements([x['entry'] for x in result['entries']], deserialized=True)
-
-        # now query kraken which has a ton of DB entries
-        response = requests.get(
-            api_url_for(server, 'assetmovementsresource'),
-            json={'location': 'kraken'},
-        )
-        result = assert_proper_sync_response_with_result(response)
-
-        if start_with_valid_premium:
-            assert len(result['entries']) == kraken_entries_num
-            assert result['entries_limit'] == -1
-            assert result['entries_found'] == kraken_entries_num
-            assert result['entries_total'] == all_movements_num
-        else:
-            assert len(result['entries']) == FREE_ASSET_MOVEMENTS_LIMIT - polo_entries_num
-            assert result['entries_limit'] == FREE_ASSET_MOVEMENTS_LIMIT
-            assert result['entries_found'] == kraken_entries_num
-            assert result['entries_total'] == all_movements_num
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])

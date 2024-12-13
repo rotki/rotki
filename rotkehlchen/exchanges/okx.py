@@ -4,6 +4,7 @@ import hashlib
 import hmac
 import logging
 from collections import defaultdict
+from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any, Literal
 from urllib.parse import urlencode, urljoin
 
@@ -12,20 +13,26 @@ import requests
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.converters import asset_from_okx
 from rotkehlchen.constants import ZERO
+from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
+from rotkehlchen.exchanges.data_structures import MarginPosition, Trade
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
 from rotkehlchen.exchanges.utils import deserialize_asset_movement_address
 from rotkehlchen.history.deserialization import deserialize_price
+from rotkehlchen.history.events.structures.asset_movement import (
+    AssetMovement,
+    create_asset_movement_with_fee,
+)
+from rotkehlchen.history.events.structures.base import HistoryBaseEntry
+from rotkehlchen.history.events.structures.types import HistoryEventType
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_asset_amount, deserialize_fee
 from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
-    AssetMovementCategory,
     ExchangeAuthCredentials,
     Fee,
     Location,
@@ -322,11 +329,11 @@ class Okx(ExchangeInterface):
     ) -> list[MarginPosition]:
         return []  # noop for okx
 
-    def query_online_deposits_withdrawals(
+    def query_online_history_events(
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> list[AssetMovement]:
+    ) -> Sequence[HistoryBaseEntry]:
         """
         https://www.okx.com/docs-v5/en/#rest-api-funding-get-deposit-history
         https://www.okx.com/docs-v5/en/#rest-api-funding-get-withdrawal-history
@@ -353,19 +360,15 @@ class Okx(ExchangeInterface):
 
         movements: list[AssetMovement] = []
         for raw_movement in deposits:
-            movement = self.asset_movement_from_okx(
+            movements.extend(self.asset_movement_from_okx(
                 raw_movement=raw_movement,
-                category=AssetMovementCategory.DEPOSIT,
-            )
-            if movement is not None:
-                movements.append(movement)
+                event_type=HistoryEventType.DEPOSIT,
+            ))
         for raw_movement in withdrawals:
-            movement = self.asset_movement_from_okx(
+            movements.extend(self.asset_movement_from_okx(
                 raw_movement=raw_movement,
-                category=AssetMovementCategory.WITHDRAWAL,
-            )
-            if movement is not None:
-                movements.append(movement)
+                event_type=HistoryEventType.WITHDRAWAL,
+            ))
 
         return movements
 
@@ -434,34 +437,35 @@ class Okx(ExchangeInterface):
     def asset_movement_from_okx(
             self,
             raw_movement: dict[str, Any],
-            category: AssetMovementCategory,
-    ) -> AssetMovement | None:
+            event_type: Literal[HistoryEventType.DEPOSIT, HistoryEventType.WITHDRAWAL],
+    ) -> list[AssetMovement]:
         """
         Converts a raw asset movement from OKX into an AssetMovement object.
         If there is an error `None` is returned and error is logged.
         """
-        asset_movement = None
         try:
             tx_hash = raw_movement['txId']
-            timestamp = ts_ms_to_sec(TimestampMS(int(raw_movement['ts'])))
+            timestamp = TimestampMS(int(raw_movement['ts']))
             asset = asset_from_okx(raw_movement['ccy'])
             amount = deserialize_asset_amount(raw_movement['amt'])
             address = deserialize_asset_movement_address(raw_movement, 'to', asset)
             fee = Fee(ZERO)
-            if category is AssetMovementCategory.WITHDRAWAL:
+            if event_type is HistoryEventType.WITHDRAWAL:
                 fee = deserialize_fee(raw_movement['fee'])
 
-            asset_movement = AssetMovement(
+            return create_asset_movement_with_fee(
                 location=Location.OKX,
-                category=category,
-                address=address,
-                transaction_id=tx_hash,
+                event_type=event_type,
                 timestamp=timestamp,
                 asset=asset,
                 amount=amount,
                 fee_asset=asset,
                 fee=fee,
-                link=tx_hash,
+                unique_id=tx_hash,
+                extra_data=maybe_set_transaction_extra_data(
+                    address=address,
+                    transaction_id=tx_hash,
+                ),
             )
         except UnknownAsset as e:
             self.send_unknown_asset_message(
@@ -486,4 +490,4 @@ class Okx(ExchangeInterface):
                 f'asset_movement {raw_movement}. Error was: {msg}',
             )
 
-        return asset_movement
+        return []

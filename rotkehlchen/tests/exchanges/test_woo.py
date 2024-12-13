@@ -9,15 +9,12 @@ from rotkehlchen.assets.converters import asset_from_woo
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_SOL, A_USDT, A_WOO
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
-from rotkehlchen.exchanges.data_structures import (
-    AssetMovement,
-    AssetMovementCategory,
-    Trade,
-    TradeType,
-)
+from rotkehlchen.exchanges.data_structures import Trade, TradeType
 from rotkehlchen.exchanges.woo import API_MAX_LIMIT, Woo
 from rotkehlchen.fval import FVal
-from rotkehlchen.types import Location, Timestamp
+from rotkehlchen.history.events.structures.asset_movement import AssetMovement
+from rotkehlchen.history.events.structures.types import HistoryEventType
+from rotkehlchen.types import Location, Timestamp, TimestampMS
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 
@@ -227,7 +224,7 @@ def test_query_online_deposits_withdrawals(mock_woo):
         side_effect=lambda endpoint, options: next(deposits_withdrawals_response),
     )
     with limit_patch, api_query_patch as mock_query:
-        mock_woo.query_online_deposits_withdrawals(
+        mock_woo.query_online_history_events(
             start_ts=Timestamp(start_ts),
             end_ts=Timestamp(end_ts),
         )
@@ -399,18 +396,18 @@ def test_deserialize_asset_movement_deposit(mock_woo):
         'status': 'COMPLETED',
     }
     result = mock_woo._deserialize_asset_movement(mock_deposit)
-    assert result == AssetMovement(
+    assert result == [AssetMovement(
         location=Location.WOO,
-        category=AssetMovementCategory.DEPOSIT,
-        timestamp=Timestamp(1579399877),
-        address='0x70fd25717f769c7f9a46b319f0f9103c0d887af0',
-        transaction_id='0x8a74c517bc104c8ebad0c3c3f64b1f302ed5f8bca598ae4459c63419038106b6',
+        event_type=HistoryEventType.DEPOSIT,
+        timestamp=TimestampMS(1579399877000),
         asset=A_ETH,
-        amount=FVal(1000),
-        fee_asset=A_ETH,
-        fee=0,
-        link='202029292829292',
-    )
+        balance=Balance(FVal(1000)),
+        unique_id='202029292829292',
+        extra_data={
+            'address': '0x70fd25717f769c7f9a46b319f0f9103c0d887af0',
+            'transaction_id': '0x8a74c517bc104c8ebad0c3c3f64b1f302ed5f8bca598ae4459c63419038106b6',
+        },
+    )]
 
 
 def test_deserialize_asset_movement_withdrawal(mock_woo):
@@ -435,15 +432,15 @@ def test_deserialize_asset_movement_withdrawal(mock_woo):
         'confirmed_number': 1,
     }
     result = mock_woo._deserialize_asset_movement(mock_withdrawal)
-    assert result == AssetMovement(
+    assert result == [AssetMovement(
         location=Location.WOO,
-        category=AssetMovementCategory.WITHDRAWAL,
-        timestamp=Timestamp(1686677756),
-        address='D2egh1gRCHNuDLWhdcxPVEVvmiMB6KGMKAgQm6vR1diL',
-        transaction_id='4DPkJEmE3RnmDLZnM65NtFZ6L5J2R8Lwy2C1sVq7iwcPfTkjJhN5Uuh2GFsT6m13UHkeQiKjznLKK5SqK1kfTfZa',
+        event_type=HistoryEventType.WITHDRAWAL,
+        timestamp=TimestampMS(1686677756000),
         asset=A_SOL,
-        amount=FVal(12.71),
-        fee_asset=A_SOL,
-        fee=0,
-        link='23061317355600291',
-    )
+        balance=Balance(FVal(12.71)),
+        unique_id='23061317355600291',
+        extra_data={
+            'address': 'D2egh1gRCHNuDLWhdcxPVEVvmiMB6KGMKAgQm6vR1diL',
+            'transaction_id': '4DPkJEmE3RnmDLZnM65NtFZ6L5J2R8Lwy2C1sVq7iwcPfTkjJhN5Uuh2GFsT6m13UHkeQiKjznLKK5SqK1kfTfZa',  # noqa: E501
+        },
+    )]
