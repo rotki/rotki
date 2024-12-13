@@ -1077,34 +1077,47 @@ class RestAPI:
 
         return {'result': result, 'message': msg, 'status_code': status_code}
 
-    def add_history_event(self, event: 'HistoryBaseEntry') -> Response:
+    def add_history_events(self, events: list['HistoryBaseEntry']) -> Response:
+        """Add list of history events to DB. Returns identifier of first event.
+        The first event is the main event, subsequent events are related (e.g. fees).
+        """
         db = DBHistoryEvents(self.rotkehlchen.data.db)
-        with self.rotkehlchen.data.db.user_write() as cursor:
-            try:
-                identifier = db.add_history_event(
-                    write_cursor=cursor,
-                    event=event,
-                    mapping_values={
-                        HISTORY_MAPPING_KEY_STATE: HISTORY_MAPPING_STATE_CUSTOMIZED,
-                    },
-                )
-            except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
-                error_msg = f'Failed to add event to the DB due to a DB error: {e!s}'
-                return api_response(wrap_in_fail_result(error_msg), status_code=HTTPStatus.CONFLICT)  # noqa: E501
+        main_identifier = None
+        try:
+            with self.rotkehlchen.data.db.user_write() as cursor:
+                for idx, event in enumerate(events):
+                    identifier = db.add_history_event(
+                        write_cursor=cursor,
+                        event=event,
+                        mapping_values={
+                            HISTORY_MAPPING_KEY_STATE: HISTORY_MAPPING_STATE_CUSTOMIZED,
+                        },
+                    )
+                    if idx == 0:
+                        main_identifier = identifier
+        except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
+            error_msg = f'Failed to add event to the DB due to a DB error: {e!s}'
+            return api_response(wrap_in_fail_result(error_msg), status_code=HTTPStatus.CONFLICT)
 
-        if identifier is None:
+        if main_identifier is None:
             error_msg = 'Failed to add event to the DB. It already exists'
             return api_response(wrap_in_fail_result(error_msg), status_code=HTTPStatus.CONFLICT)
 
         # success
-        result_dict = _wrap_in_ok_result({'identifier': identifier})
+        result_dict = _wrap_in_ok_result({'identifier': main_identifier})
         return api_response(result_dict, status_code=HTTPStatus.OK)
 
-    def edit_history_event(self, event: 'HistoryBaseEntry') -> Response:
+    def edit_history_events(self, events: list['HistoryBaseEntry']) -> Response:
         db = DBHistoryEvents(self.rotkehlchen.data.db)
-        result, msg = db.edit_history_event(event)
-        if result is False:
-            return api_response(wrap_in_fail_result(msg), status_code=HTTPStatus.CONFLICT)
+        try:
+            with self.rotkehlchen.data.db.user_write() as write_cursor:
+                for event in events:
+                    db.edit_history_event(
+                        event=event,
+                        write_cursor=write_cursor,
+                    )
+        except InputError as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
 
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 

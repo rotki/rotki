@@ -1345,8 +1345,12 @@ class HistoryEventResource(BaseMethodView):
 
     put_schema = CreateHistoryEventSchema()
     post_schema = HistoryEventSchema()
-    patch_schema = EditHistoryEventSchema()
     delete_schema = HistoryEventsDeletionSchema()
+
+    def make_patch_schema(self) -> EditHistoryEventSchema:
+        return EditHistoryEventSchema(
+            dbhandler=self.rest_api.rotkehlchen.data.db,
+        )
 
     @require_loggedin_user()
     @use_kwargs(post_schema, location='json')
@@ -1355,13 +1359,13 @@ class HistoryEventResource(BaseMethodView):
 
     @require_loggedin_user()
     @use_kwargs(put_schema, location='json')
-    def put(self, event: 'HistoryBaseEntry') -> Response:
-        return self.rest_api.add_history_event(event=event)
+    def put(self, events: list['HistoryBaseEntry']) -> Response:
+        return self.rest_api.add_history_events(events)
 
     @require_loggedin_user()
-    @use_kwargs(patch_schema, location='json')
-    def patch(self, event: 'HistoryBaseEntry') -> Response:
-        return self.rest_api.edit_history_event(event=event)
+    @resource_parser.use_kwargs(make_patch_schema, location='json')
+    def patch(self, events: list['HistoryBaseEntry']) -> Response:
+        return self.rest_api.edit_history_events(events)
 
     @require_loggedin_user()
     @use_kwargs(delete_schema, location='json')

@@ -180,8 +180,8 @@ def test_tx_decode(ethereum_transaction_decoder, database):
 
     dbevents = DBHistoryEvents(database)
     # customize one evm event to check that the logic for them works correctly
-    success, _ = dbevents.edit_history_event(events[1])
-    assert success is True
+    with database.user_write() as write_cursor:
+        assert dbevents.edit_history_event(write_cursor=write_cursor, event=events[1]) is None
 
     with database.user_write() as write_cursor:
         assert write_cursor.execute('SELECT COUNT(*) from history_events').fetchone()[0] == 2

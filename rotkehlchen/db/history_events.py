@@ -34,6 +34,7 @@ from rotkehlchen.db.filtering import (
     HistoryEventFilterQuery,
 )
 from rotkehlchen.errors.asset import UnknownAsset
+from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
@@ -149,36 +150,35 @@ class DBHistoryEvents:
                 event=event,
             )
 
-    def edit_history_event(self, event: HistoryBaseEntry) -> tuple[bool, str]:
+    def edit_history_event(self, write_cursor: 'DBCursor', event: HistoryBaseEntry) -> None:
         """
         Edit a history entry to the DB with information provided by the user.
         NOTE: It edits all the fields except the extra_data one.
+
+        May raise:
+            - InputError if an error occurred.
         """
-        with self.db.user_write() as write_cursor:
-            for idx, (_, updatestr, bindings) in enumerate(event.serialize_for_db()):
-                if idx == 0:  # base history event data
-                    try:
-                        write_cursor.execute(f'{updatestr} WHERE identifier=?', (*bindings, event.identifier))  # noqa: E501
-                    except sqlcipher.IntegrityError:  # pylint: disable=no-member
-                        return False, (
-                            f'Tried to edit event to have event_identifier {event.event_identifier} '  # noqa: E501
-                            f'and sequence_index {event.sequence_index} but it already exists'
-                        )
-
-                    if write_cursor.rowcount != 1:
-                        return False, f'Tried to edit event with id {event.identifier} but could not find it in the DB'  # noqa: E501
-
-                else:  # all other data
+        for idx, (_, updatestr, bindings) in enumerate(event.serialize_for_db()):
+            if idx == 0:  # base history event data
+                try:
                     write_cursor.execute(f'{updatestr} WHERE identifier=?', (*bindings, event.identifier))  # noqa: E501
+                except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
+                    raise InputError(
+                        f'Tried to edit event to have event_identifier {event.event_identifier} '
+                        f'and sequence_index {event.sequence_index} but it already exists',
+                    ) from e
+                if write_cursor.rowcount != 1:
+                    raise InputError(f'Tried to edit event with id {event.identifier} but could not find it in the DB')  # noqa: E501
 
-            # Also mark it as customized
-            write_cursor.execute(
-                'INSERT OR IGNORE INTO history_events_mappings(parent_identifier, name, value) '
-                'VALUES(?, ?, ?)',
-                (event.identifier, HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED),
-            )
+            else:  # all other data
+                write_cursor.execute(f'{updatestr} WHERE identifier=?', (*bindings, event.identifier))  # noqa: E501
 
-        return True, ''
+        # Also mark it as customized
+        write_cursor.execute(
+            'INSERT OR IGNORE INTO history_events_mappings(parent_identifier, name, value) '
+            'VALUES(?, ?, ?)',
+            (event.identifier, HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED),
+        )
 
     def delete_history_events_by_identifier(
             self,

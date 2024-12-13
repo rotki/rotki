@@ -81,6 +81,11 @@ from rotkehlchen.errors.misc import InputError, RemoteError, XPUBError
 from rotkehlchen.errors.serialization import DeserializationError, EncodingError
 from rotkehlchen.exchanges.constants import ALL_SUPPORTED_EXCHANGES, SUPPORTED_EXCHANGES
 from rotkehlchen.exchanges.kraken import KrakenAccountType
+from rotkehlchen.history.events.structures.asset_movement import (
+    AssetMovement,
+    AssetMovementExtraData,
+    create_asset_movement_with_fee,
+)
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType, HistoryEvent
 from rotkehlchen.history.events.structures.eth2 import (
     EthBlockEvent,
@@ -856,7 +861,7 @@ class CreateHistoryEventSchema(Schema):
                 data: dict[str, Any],
                 **_kwargs: Any,
         ) -> dict[str, Any]:
-            return {'event': HistoryEvent(**data)}
+            return {'events': [HistoryEvent(**data)]}
 
     class CreateEvmEventSchema(BaseEventSchema):
         """Schema used when adding a new event in the EVM transactions view"""
@@ -874,7 +879,7 @@ class CreateHistoryEventSchema(Schema):
                 data: dict[str, Any],
                 **_kwargs: Any,
         ) -> dict[str, Any]:
-            return {'event': EvmEvent(**data)}
+            return {'events': [EvmEvent(**data)]}
 
     class CreateEthBlockEventEventSchema(BaseSchema):
         is_mev_reward = fields.Boolean(required=True)
@@ -901,7 +906,7 @@ class CreateHistoryEventSchema(Schema):
                 data: dict[str, Any],
                 **_kwargs: Any,
         ) -> dict[str, Any]:
-            return {'event': EthBlockEvent(**data)}
+            return {'events': [EthBlockEvent(**data)]}
 
     class CreateEthDepositEventEventSchema(BaseSchema):
         tx_hash = EVMTransactionHashField(required=True)
@@ -923,7 +928,7 @@ class CreateHistoryEventSchema(Schema):
                 data: dict[str, Any],
                 **_kwargs: Any,
         ) -> dict[str, Any]:
-            return {'event': EthDepositEvent(**data)}
+            return {'events': [EthDepositEvent(**data)]}
 
     class CreateEthWithdrawalEventEventSchema(BaseSchema):
         is_exit = fields.Boolean(required=True)
@@ -943,7 +948,64 @@ class CreateHistoryEventSchema(Schema):
                 data: dict[str, Any],
                 **_kwargs: Any,
         ) -> dict[str, Any]:
-            return {'event': EthWithdrawalEvent(**data)}
+            return {'events': [EthWithdrawalEvent(**data)]}
+
+    class CreateAssetMovementEventSchema(BaseSchema):
+        event_type = SerializableEnumField(
+            enum_class=HistoryEventType,
+            allow_only=[HistoryEventType.DEPOSIT, HistoryEventType.WITHDRAWAL],
+            required=True,
+        )
+        fee = FeeField(load_default=None, validate=validate.Range(min=ZERO, min_inclusive=False))
+        location = LocationField(required=True)
+        unique_id = fields.String(required=False, load_default=None)
+        address = fields.String(required=False, load_default=None)
+        transaction_id = fields.String(required=False, load_default=None)
+        event_identifier = fields.String(required=False, load_default=None)
+        asset = AssetField(required=True, expected_type=Asset, form_with_incomplete_data=True)
+        fee_asset = AssetField(load_default=None, required=False, expected_type=Asset, form_with_incomplete_data=True)  # noqa: E501
+
+        @post_load
+        def make_history_base_entry(
+                self,
+                data: dict[str, Any],
+                **_kwargs: Any,
+        ) -> dict[str, Any]:
+            if ((fee := data['fee']) is None) ^ (data['fee_asset'] is None):
+                raise ValidationError(
+                    message='fee and fee_asset must be provided together',
+                    field_name='fee',
+                )
+
+            extra_data: AssetMovementExtraData = {
+                'address': data['address'],
+                'transaction_id': data['transaction_id'],
+            }
+            events = create_asset_movement_with_fee(
+                fee=fee,
+                asset=data['asset'],
+                location=data['location'],
+                timestamp=data['timestamp'],
+                fee_asset=data['fee_asset'],
+                event_type=data['event_type'],
+                identifier=data.get('identifier'),
+                amount=data['balance'].amount,
+                extra_data=extra_data,
+                fee_identifier=self.context['schema'].get_fee_event_identifier(data),
+            ) if fee is not None else [AssetMovement(
+                is_fee=False,
+                asset=data['asset'],
+                balance=data['balance'],
+                location=data['location'],
+                unique_id=data['unique_id'],
+                timestamp=data['timestamp'],
+                identifier=data.get('identifier'),
+                event_type=data['event_type'],
+                extra_data=extra_data,
+                event_identifier=data['event_identifier'],
+            )]
+
+            return {'events': events}
 
     ENTRY_TO_SCHEMA: Final[dict[HistoryBaseEntryType, type[Schema]]] = {
         HistoryBaseEntryType.HISTORY_EVENT: CreateBaseHistoryEventSchema,
@@ -951,7 +1013,12 @@ class CreateHistoryEventSchema(Schema):
         HistoryBaseEntryType.ETH_DEPOSIT_EVENT: CreateEthDepositEventEventSchema,
         HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT: CreateEthWithdrawalEventEventSchema,
         HistoryBaseEntryType.EVM_EVENT: CreateEvmEventSchema,
+        HistoryBaseEntryType.ASSET_MOVEMENT_EVENT: CreateAssetMovementEventSchema,
     }
+
+    def get_fee_event_identifier(self, data: dict[str, Any]) -> int | None:
+        """Retrieve fee event's identifier for asset movement, returns None for create."""
+        return None
 
     @post_load
     def make_history_base_entry(
@@ -961,7 +1028,7 @@ class CreateHistoryEventSchema(Schema):
     ) -> dict[str, Any]:
         entry_type = data.pop('entry_type')  # already used to decide schema
         exclude = () if self.include_identifier else ('identifier',)
-        return self.ENTRY_TO_SCHEMA[entry_type](exclude=exclude).load(data)
+        return self.ENTRY_TO_SCHEMA[entry_type](exclude=exclude, context={'schema': self}).load(data)  # noqa: E501
 
     class Meta:  # need it to validate extra fields in make_history_base_entry
         unknown = INCLUDE
@@ -970,6 +1037,26 @@ class CreateHistoryEventSchema(Schema):
 class EditHistoryEventSchema(CreateHistoryEventSchema):
     """Schema used when editing an existing event in the EVM transactions view"""
     include_identifier = True
+
+    def __init__(self, dbhandler: 'DBHandler') -> None:
+        super().__init__()
+        self.database = dbhandler
+
+    def get_fee_event_identifier(self, data: dict[str, Any]) -> int | None:
+        """Retrieve fee event's identifier for asset movement, returns None for create."""
+        with self.database.conn.read_ctx() as cursor:
+            result = cursor.execute("""
+                SELECT identifier
+                FROM history_events
+                WHERE event_identifier = (
+                    SELECT event_identifier
+                    FROM history_events
+                    WHERE identifier = ?
+                )
+                AND subtype = 'fee'
+            """, (data['identifier'],)).fetchone()
+
+            return result[0] if result else None
 
 
 class AssetMovementsQuerySchema(

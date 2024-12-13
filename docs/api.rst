@@ -5174,6 +5174,42 @@ Dealing with History Events
          :reqjson string withdrawal_address: an evm address field to specify the withdrawer in an "eth withdrawal event".
          :reqjson bool is_exit: true if the "eth withdrawal event" is an exit event.
 
+    .. tab:: Asset Movement Event
+
+    **Example Request**:
+
+    .. http:put:: /api/(version)/history/events
+
+        .. http:example:: curl wget httpie python-requests
+
+            PUT /api/1/history/events HTTP/1.1
+            Host: localhost:5042
+            Content-Type: application/json;charset=UTF-8
+
+            {
+                "entry_type": "asset movement event",
+                "event_type": "deposit",
+                "timestamp": 1569924574,
+                "balance": {"amount": "0.5", "usd_value": "100.0"},
+                "asset": "ETH",
+                "location": "binance",
+                "fee": "0.001",
+                "fee_asset": "ETH",
+                "address": "0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12",
+                "transaction_id": "0x64f1982504ab714037467fdd45d3ecf5a6356361403fc97dd325101d8c038c4e",
+                "event_identifier": "AM_xxxxxxxxxx"
+            }
+
+        :reqjson string event_type: The type of asset movement event ("deposit" or "withdrawal")
+        :reqjson string asset: The asset being moved (e.g. "ETH", "BTC")
+        :reqjson string location: The location/exchange where the movement occurred
+        :reqjson string[optional] fee: The fee amount charged for the movement. If provided, fee_asset must also be provided
+        :reqjson string[optional] fee_asset: The asset in which the fee was paid. If provided, fee must also be provided
+        :reqjson string[optional] address: The address involved in the movement
+        :reqjson string[optional] transaction_id: The transaction hash of the movement.
+        :reqjson string[optional] unique_id: A unique identifier for this movement
+        :reqjson string[optional] event_identifier: Custom identifier for the event
+
    :reqjson string entry_type: The type of the event that will be processed. Different validation is used based on the value for this field. Possible values are: ``"history event"``, ``"evm event"``, ``"eth withdrawal event"``, ``"eth block event"``, ``"eth deposit event"``.
    :reqjson int timestamp: The timestamp of the entry **in milliseconds**.
    :reqjson object balance: The amount/usd value of the event. If not known usd_value can also be "0".
