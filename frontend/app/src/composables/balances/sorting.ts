@@ -1,5 +1,4 @@
 import { groupBy } from 'lodash-es';
-import { EvmNativeToken } from '@/types/asset';
 import { sortDesc, zeroBalance } from '@/utils/bignumbers';
 import { balanceSum } from '@/utils/calculation';
 import { useAssetCacheStore } from '@/store/assets/asset-cache';
@@ -62,9 +61,10 @@ export function useBalanceSorting(): UseBalanceSortingReturn {
           zeroBalance(),
         );
 
-        // If it's a native asset (e.g., ETH), it should be used rather than the wrapped version (e.g., WETH)
+        // If it contains a native asset, it should be used rather than the eip155 variant.
+        // E.g., ETH should be prioritized over WETH, and BTC should be prioritized over cbBTC.
         let parentAsset = grouped[0];
-        const nativeAsset = grouped.find(item => EvmNativeToken.includes(item.asset));
+        const nativeAsset = grouped.find(item => !isEvmIdentifier(item.asset));
         if (nativeAsset)
           parentAsset = nativeAsset;
 

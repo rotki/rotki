@@ -259,12 +259,12 @@ export const useBlockchainStore = defineStore('blockchain', () => {
 
   const { getAssetAssociationIdentifiers, getAssociatedAssetIdentifier } = useAssetInfoRetrieval();
 
-  const getBreakdown = (asset: string, isLiability = false, chains?: string[], groupId?: string): AssetBreakdown[] => {
+  const getBreakdown = (asset: string, isLiability = false, chains?: string[], groupId?: string): ComputedRef<AssetBreakdown[]> => computed(() => {
     const breakdown: AssetBreakdown[] = [];
     const balanceData = get(balances);
     const accountData = get(accounts);
 
-    const chainList = chains ?? Object.keys(accountData);
+    const chainList = chains && chains.length > 0 ? chains : Object.keys(accountData);
 
     for (const chain of chainList) {
       const chainAccounts = accountData[chain] ?? {};
@@ -295,11 +295,11 @@ export const useBlockchainStore = defineStore('blockchain', () => {
     }
 
     return breakdown;
-  };
+  });
 
-  const assetBreakdown = (asset: string, chains?: string[], groupId?: string): AssetBreakdown[] => getBreakdown(asset, false, chains, groupId);
+  const assetBreakdown = (asset: string, chains?: string[], groupId?: string): ComputedRef<AssetBreakdown[]> => getBreakdown(asset, false, chains, groupId);
 
-  const liabilityBreakdown = (asset: string): AssetBreakdown[] => getBreakdown(asset, true);
+  const liabilityBreakdown = (asset: string): ComputedRef<AssetBreakdown[]> => getBreakdown(asset, true);
 
   const getAccountDetails = (
     chain: string,
