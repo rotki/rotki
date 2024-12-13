@@ -114,8 +114,8 @@ def test_adding_user_tokens(
     initial_tokens = create_initial_globaldb_test_tokens()
     expected_tokens = create_initial_expected_globaldb_test_tokens()
     serialized_token = USER_TOKEN3.to_dict()
-    serialized_token.pop('identifier', None)
-    serialized_token.pop('forked', None)
+    del serialized_token['identifier']
+    del serialized_token['forked']
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
@@ -147,8 +147,8 @@ def test_adding_user_tokens(
 
     # test that adding an already existing address is handled properly
     serialized_token = initial_tokens[1].to_dict()
-    serialized_token.pop('identifier', None)
-    serialized_token.pop('forked', None)
+    del serialized_token['identifier']
+    del serialized_token['forked']
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
@@ -193,8 +193,8 @@ def test_adding_user_tokens(
         ],
     )
     serialized_token = bad_token.to_dict()
-    serialized_token.pop('identifier', None)
-    serialized_token.pop('forked', None)
+    del serialized_token['identifier']
+    del serialized_token['forked']
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
@@ -225,8 +225,8 @@ def test_adding_user_tokens(
         ],
     )
     serialized_token = bad_token.to_dict()
-    serialized_token.pop('identifier', None)
-    serialized_token.pop('forked', None)
+    del serialized_token['identifier']
+    del serialized_token['forked']
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
@@ -254,8 +254,8 @@ def test_adding_user_tokens(
         underlying_tokens=[],
     )
     serialized_bad_token = bad_token.to_dict()
-    serialized_bad_token.pop('identifier', None)
-    serialized_bad_token.pop('forked', None)
+    del serialized_bad_token['identifier']
+    del serialized_bad_token['forked']
     serialized_bad_token['underlying_tokens'] = []
     response = requests.put(
         api_url_for(
@@ -325,8 +325,8 @@ def test_editing_user_tokens(
     """Test that the endpoint for editing a user ethereum token works"""
     expected_tokens = create_initial_expected_globaldb_test_tokens()
     new_token: dict[str, Any] = expected_tokens[0].to_dict()
-    new_token.pop('identifier', None)
-    new_token.pop('forked', None)
+    del new_token['identifier']
+    del new_token['forked']
     new_name = 'Edited token'
     new_symbol = 'ESMBL'
     new_protocol = 'curve'
@@ -362,8 +362,8 @@ def test_editing_user_tokens(
 
     # test that editing an non existing address is handled properly
     non_existing_token = expected_tokens[0].to_dict()
-    non_existing_token.pop('identifier', None)
-    non_existing_token.pop('forked', None)
+    del non_existing_token['identifier']
+    del non_existing_token['forked']
     non_existing_address = make_evm_address()
     non_existing_token['address'] = non_existing_address
     response = requests.patch(

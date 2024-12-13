@@ -18,7 +18,7 @@ from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType
 from rotkehlchen.db.settings import ROTKEHLCHEN_DB_VERSION, DBSettings
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.inquirer import Inquirer
-from rotkehlchen.premium.premium import PremiumCredentials
+from rotkehlchen.premium.premium import Premium, PremiumCredentials
 from rotkehlchen.tests.fixtures.rotkehlchen import patch_no_op_unlock
 from rotkehlchen.tests.utils.api import (
     api_url_for,
@@ -199,7 +199,7 @@ def test_user_creation_permission_error(
         use_clean_caching_directory: bool,
         start_with_logged_in_user: bool,
 ) -> None:
-    """Test that creati: Path,ng a user when data directory permissions are wrong is handled"""
+    """Test that creating a user when data directory permissions are wrong is handled"""
     username = 'hania'
     data = {
         'name': username,
@@ -238,7 +238,7 @@ def test_user_creation_with_premium_credentials(
         username=username,
         patch_get=True,
         metadata_last_modify_ts=Timestamp(0),
-        metadata_data_hash=str(b''),
+        metadata_data_hash='',
         metadata_data_size=0,
     )
 
@@ -580,11 +580,11 @@ def test_user_password_change(
         task_id = assert_ok_async_response(response)
         result = wait_for_async_task_with_result(rotkehlchen_api_server, task_id)
         check_proper_unlock_result(result)
-
-    assert rotki.user_is_logged_in is True
-    users_data_2 = check_user_status(rotkehlchen_api_server)  # type: ignore
-    assert len(users_data_2) == 1
-    assert users_data_2[username] == 'loggedin'
+    user_is_logged_in: bool = rotki.user_is_logged_in
+    assert user_is_logged_in is True
+    users_data = check_user_status(rotkehlchen_api_server)
+    assert len(users_data) == 1
+    assert users_data[username] == 'loggedin'
 
 
 def test_user_logout(
@@ -633,8 +633,9 @@ def test_user_logout(
         json=data,
     )
     assert_simple_ok_response(response)
-    assert rotki.user_is_logged_in is False
-    assert rotki.data.db.password == ''  # type: ignore  # TODO: mypy for some reason says that this statement is unreachable. Not sure why.
+    user_is_logged_in: bool = rotki.user_is_logged_in
+    assert user_is_logged_in is False
+    assert rotki.data.db.password == ''
 
     # Check that task isn't pending anymore
     assert requests.get(
@@ -706,8 +707,9 @@ def test_user_login(
         result = wait_for_async_task_with_result(rotkehlchen_api_server, task_id)
         check_proper_unlock_result(result)
 
-    assert rotki.user_is_logged_in is True
-    users_data = check_user_status(rotkehlchen_api_server)  # type: ignore  # TODO: mypy for some reason says that this statement is unreachable. Not sure why.
+    user_is_logged_in: bool = rotki.user_is_logged_in
+    assert user_is_logged_in is True
+    users_data = check_user_status(rotkehlchen_api_server)
 
     assert len(users_data) == 2
     assert users_data[username] == 'loggedin'
@@ -776,7 +778,7 @@ def test_user_login(
         result = wait_for_async_task_with_result(rotkehlchen_api_server, task_id)
         check_proper_unlock_result(result)
 
-    assert rotki.user_is_logged_in is True
+    assert user_is_logged_in is True
     users_data = check_user_status(rotkehlchen_api_server)
     assert len(users_data) == 2
     assert users_data[username] == 'loggedin'
@@ -850,7 +852,7 @@ def test_user_login(
         result = wait_for_async_task_with_result(rotkehlchen_api_server, task_id)
         check_proper_unlock_result(result)
 
-    assert rotki.user_is_logged_in is True
+    assert user_is_logged_in is True
     users_data = check_user_status(rotkehlchen_api_server)
     assert len(users_data) == 2
     assert users_data[username] == 'loggedin'
@@ -862,14 +864,14 @@ def test_user_login(
         results = cursor.fetchall()
         assert len(results) == 1, f'Expected one result, got {len(results)}'
         result = results[0]
-        assert result[1] == 'Yes'
+        assert result['1'] == 'Yes'
 
     # Remove the ongoing upgrade setting
     with rotki.data.db.user_write() as write_cursor:
         rotki.data.db.set_setting(
             write_cursor=write_cursor,
             name='ongoing_upgrade_from_version',
-            value=None,
+            value='',
         )
 
 
@@ -935,12 +937,13 @@ def test_user_del_premium_credentials(
         assert rotki.premium is not None
         assert rotki.premium.is_active()
 
+    # Delete premium credentials for current user
     response = requests.delete(api_url_for(rotkehlchen_api_server, 'userpremiumkeyresource',
                                            name=username))
     assert_simple_ok_response(response)
-    # Delete premium credentials for current user
-    assert rotki.premium is None
-    assert rotki.premium_sync_manager.premium is None  # type: ignore  # TODO: mypy for some reason says that this statement is unreachable. Not sure why.
+    premium: Premium | None = rotki.premium  # typing hinting because mypy assumes it is never None when reading the Rotkehlchen class  #  noqa: E501
+    assert premium is None
+    assert rotki.premium_sync_manager.premium is None
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
@@ -1052,7 +1055,7 @@ def test_users_by_name_endpoint_errors(
     """Test that user by name endpoint errors are handled (for login/logout and edit)"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     # Now let's try to login while the user is already logged in
-    data: dict[str, str | bool] = {'password': db_password, 'sync_approval': 'unknown', 'async_query': True}  # noqa: E501
+    data: dict[str, str | bool | float] = {'password': db_password, 'sync_approval': 'unknown', 'async_query': True}  # noqa: E501
     response = requests.post(
         api_url_for(rotkehlchen_api_server, 'usersbynameresource', name=username),
         json=data,
@@ -1078,10 +1081,11 @@ def test_users_by_name_endpoint_errors(
         json=data,
     )
     assert_simple_ok_response(response)
-    assert rotki.user_is_logged_in is False
+    user_is_logged_in: bool = rotki.user_is_logged_in
+    assert user_is_logged_in is False
 
     # Now let's try to login with an invalid password
-    data = {'password': 'wrong-password', 'sync_approval': 'unknown', 'async_query': True}  # type: ignore  # TODO: mypy for some reason says that this statement is unreachable. Not sure why.
+    data = {'password': 'wrong-password', 'sync_approval': 'unknown', 'async_query': True}
 
     response = requests.post(
         api_url_for(rotkehlchen_api_server, 'usersbynameresource', name=username),
@@ -1095,7 +1099,7 @@ def test_users_by_name_endpoint_errors(
         contained_in_msg='Wrong password or invalid/corrupt database for user',
         status_code=HTTPStatus.UNAUTHORIZED,
     )
-    assert rotki.user_is_logged_in is False
+    assert user_is_logged_in is False
 
     # Login action without a password
     data = {'sync_approval': 'unknown'}
@@ -1108,7 +1112,7 @@ def test_users_by_name_endpoint_errors(
         contained_in_msg='Missing data for required field',
         status_code=HTTPStatus.BAD_REQUEST,
     )
-    assert rotki.user_is_logged_in is False
+    assert user_is_logged_in is False
 
     # Login first to test that schema validation works.
     data = {'password': db_password, 'sync_approval': 'unknown', 'async_query': True}

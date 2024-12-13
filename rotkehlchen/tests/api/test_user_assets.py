@@ -521,8 +521,8 @@ def test_deleting_user_assets(
     assert globaldb.get_asset_data(identifier=user_asset1_id, form_with_incomplete_data=False) is None  # noqa: E501
     # Also check that `forked` was updated
 
-    if globaldb.get_asset_data(identifier=user_asset2_id, form_with_incomplete_data=False) is not None:  # noqa: E501
-        assert globaldb.get_asset_data(identifier=user_asset2_id, form_with_incomplete_data=False).forked is None  # type: ignore # mypy complains about None of Assetdata | None even after checking in the previous line. # noqa: E501
+    assert (asset_data := globaldb.get_asset_data(identifier=user_asset2_id, form_with_incomplete_data=False)) is not None  # noqa: E501
+    assert asset_data.forked is None
 
     # Delete user asset 2 and assert it works
     response = requests.delete(
