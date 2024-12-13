@@ -1,7 +1,6 @@
 import { setupServer } from 'msw/node';
 import {
   allEvmChainsHandlers,
-  assetMovementHandlers,
   assetsHandlers,
   binanceSavingsHandlers,
   historyEventCounterpartiesHandlers,
@@ -19,7 +18,6 @@ import {
 
 const server = setupServer(
   ...tradesHandlers,
-  ...assetMovementHandlers,
   ...historyEventsHandlers,
   ...nftsHandlers,
   ...binanceSavingsHandlers,

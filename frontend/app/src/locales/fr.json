@@ -208,16 +208,6 @@
         "title": "Ajout du validateur : {id}"
       }
     },
-    "asset_movements": {
-      "error": {
-        "description": "Échec de la requête pour {exchange} : {error}",
-        "title": "Dépôts & retraits pour {exchange}"
-      },
-      "task": {
-        "description": "Récupération des dépôts & retraits pour {exchange}",
-        "title": "Dépôts & retraits de l'échange"
-      }
-    },
     "assets": {
       "erc20": {
         "error": {
@@ -1997,28 +1987,6 @@
         "used_default": "Utiliser les paramètres par défaut"
       }
     }
-  },
-  "deposit_withdrawals": {
-    "filter": {
-      "action": "filtrer par l'action",
-      "asset": "filtrer par l'actif",
-      "location": "filtrer par l'emplacement"
-    }
-  },
-  "deposits_withdrawals": {
-    "details": {
-      "no_details": "Aucun détail trouvé.",
-      "title": "Détails"
-    },
-    "headers": {
-      "action": "Action",
-      "fee": "Frais"
-    },
-    "label": "mouvements d'actifs",
-    "loading": "Patientez s'il vous plaît pendant que vos mouvements d'actifs se chargent...",
-    "refresh_tooltip": " Rafraîchir les dépôts et les retraits",
-    "selected": "{count} élément(s) sélectionné(s)",
-    "title": "Dépôts et retraits Exchange"
   },
   "docker_warning": {
     "action": "Oui, je comprends",

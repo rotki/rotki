@@ -155,16 +155,6 @@
         "title": "添加验证器：{id}"
       }
     },
-    "asset_movements": {
-      "error": {
-        "description": "{exchange} 查询失败：{error}",
-        "title": "{exchange} 的存款和取款"
-      },
-      "task": {
-        "description": "检索{exchange}的存款和取款",
-        "title": "外汇存款和取款"
-      }
-    },
     "assets": {
       "erc20": {
         "error": {
@@ -1832,28 +1822,6 @@
         "used_default": "使用默认值"
       }
     }
-  },
-  "deposit_withdrawals": {
-    "filter": {
-      "action": "按动作过滤",
-      "asset": "按资产过滤",
-      "location": "按位置过滤"
-    }
-  },
-  "deposits_withdrawals": {
-    "details": {
-      "no_details": "未找到详细信息。",
-      "title": "详情"
-    },
-    "headers": {
-      "action": "动作",
-      "fee": "费用"
-    },
-    "label": "资产变动",
-    "loading": "正在加载您的资产移动，请稍候...",
-    "refresh_tooltip": "刷新存款和取款",
-    "selected": "{count} 个项目被选中",
-    "title": "外汇存款和取款"
   },
   "docker_warning": {
     "action": "是的，我明白了",

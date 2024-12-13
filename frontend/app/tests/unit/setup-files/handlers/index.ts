@@ -1,7 +1,5 @@
 export * from './all-evm-chains';
 
-export * from './asset-movements';
-
 export * from './assets';
 
 export * from './binance-savings';
