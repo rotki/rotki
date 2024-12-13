@@ -241,6 +241,15 @@ TRANSFERS_RESPONSE = """[
       "amount": "1.00",
       "txHash": "7bffd85893ee8e72e31061a84d25c45f2c4537c2f765a1e79feb06a7294445c3",
       "destination": "0xd24400ae8BfEBb18cA49Be86258a3C749cf46853"
+   },
+   {
+      "type":"Reward",
+      "status":"Complete",
+      "timestampms":1535452530431,
+      "eid":341170014,
+      "currency":"ETH",
+      "amount":"0.000161",
+      "method":"CreditCard"
    }
 ]"""
 
@@ -337,6 +346,17 @@ def test_gemini_query_deposits_withdrawals(sandbox_gemini):
         fee_asset=A_USD,
         fee=ZERO,
         link='341167014',
+    ), AssetMovement(
+        location=Location.GEMINI,
+        category=AssetMovementCategory.DEPOSIT,
+        address=None,
+        transaction_id=None,
+        timestamp=Timestamp(1535452530),
+        asset=A_ETH,
+        amount=FVal('0.000161'),
+        fee_asset=A_ETH,
+        fee=ZERO,
+        link='341170014',
     )]
     # The deposits should be returned with the oldest first (so given list is reversed)
     assert movements == expected_movements[::-1]

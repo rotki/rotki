@@ -16,6 +16,8 @@ from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.assets.converters import asset_from_gemini
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.timing import GLOBAL_REQUESTS_TIMEOUT
+from rotkehlchen.db.cache import DBCacheDynamic
+from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnprocessableTradePair, UnsupportedAsset
 from rotkehlchen.errors.misc import RemoteError
@@ -28,18 +30,20 @@ from rotkehlchen.exchanges.utils import (
     pair_symbol_to_base_quote,
 )
 from rotkehlchen.history.deserialization import deserialize_price
+from rotkehlchen.history.events.structures.base import HistoryEvent
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
     deserialize_asset_amount_force_positive,
-    deserialize_asset_movement_category,
     deserialize_fee,
     deserialize_timestamp,
 )
 from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
+    AssetMovementCategory,
     ExchangeAuthCredentials,
     Fee,
     Location,
@@ -47,7 +51,7 @@ from rotkehlchen.types import (
     TradeType,
 )
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import ts_now_in_ms
+from rotkehlchen.utils.misc import ts_now, ts_now_in_ms
 from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
 from rotkehlchen.utils.mixins.lockable import protect_with_lock
 from rotkehlchen.utils.serialization import jsonloads_dict, jsonloads_list
@@ -60,6 +64,8 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+GEMINI_EVENTS_PREFIX = 'GMNI_'
 
 
 class GeminiPermissionError(Exception):
@@ -431,6 +437,37 @@ class Gemini(ExchangeInterface):
             return []
         return trades
 
+    def _deserialize_asset_movement_category(
+            self,
+            value: str | HistoryEventType,
+    ) -> AssetMovementCategory:
+        """Takes a string and determines whether to accept it as an asset movement category
+
+        Can throw DeserializationError if value is not as expected
+        """
+        if isinstance(value, str):
+            if value.lower() in {'deposit', 'reward'}:
+                return AssetMovementCategory.DEPOSIT
+            if value.lower() in {'withdraw', 'withdrawal'}:
+                return AssetMovementCategory.WITHDRAWAL
+            raise DeserializationError(
+                f'Failed to deserialize asset movement category symbol. Unknown {value}',
+            )
+
+        if isinstance(value, HistoryEventType):
+            if value == HistoryEventType.DEPOSIT:
+                return AssetMovementCategory.DEPOSIT
+            if value == HistoryEventType.WITHDRAWAL:
+                return AssetMovementCategory.WITHDRAWAL
+            raise DeserializationError(
+                f'Failed to deserialize asset movement category from '
+                f'HistoryEventType and {value} entry',
+            )
+
+        raise DeserializationError(
+            f'Failed to deserialize asset movement category from {type(value)} entry',
+        )
+
     def query_online_trade_history(
             self,
             start_ts: Timestamp,
@@ -506,15 +543,19 @@ class Gemini(ExchangeInterface):
             end_ts=end_ts,
         )
         movements = []
+        history_events: list[HistoryEvent] = []
         for entry in result:
             try:
                 timestamp = deserialize_timestamp(entry['timestampms'])
                 timestamp = Timestamp(int(timestamp / 1000))
                 asset = asset_from_gemini(entry['currency'])
-
+                category = self._deserialize_asset_movement_category(entry['type'])
+                if (history_event := self._deserialize_history_event(entry, timestamp,
+                                                    asset, category)) is not None:
+                    history_events.append(history_event)
                 movement = AssetMovement(
                     location=Location.GEMINI,
-                    category=deserialize_asset_movement_category(entry['type']),
+                    category=category,
                     address=deserialize_asset_movement_address(entry, 'destination', asset),
                     transaction_id=get_key_if_has_val(entry, 'txHash'),
                     timestamp=timestamp,
@@ -553,8 +594,78 @@ class Gemini(ExchangeInterface):
                 continue
 
             movements.append(movement)
-
+            with self.db.user_write() as write_cursor:
+                if len(history_events) != 0:
+                    db = DBHistoryEvents(self.db)
+                    db.add_history_events(write_cursor=write_cursor, history=history_events)
+                self.db.set_dynamic_cache(
+                    write_cursor=write_cursor,
+                    name=DBCacheDynamic.LAST_QUERY_TS,
+                    value=ts_now(),
+                    location=self.location.serialize(),
+                    location_name=self.name,
+                )
         return movements
+
+    def _deserialize_history_event(
+            self,
+            raw_data: dict[str, Any],
+            timestamp: Timestamp,
+            asset: AssetWithOracles,
+            event_type: AssetMovementCategory,
+        ) -> HistoryEvent | None:
+        """Processes a single transaction from coinbase and deserializes it
+
+        Can log error/warning and return None if something went wrong at deserialization
+        """
+        try:
+            if raw_data.get('status').lower() != 'complete':
+                return None
+            if raw_data.get('type').lower() != 'reward':
+                return None
+
+            amount = deserialize_asset_amount(raw_data.get('amount'))
+            event_subtype = HistoryEventSubType.REWARD
+            if raw_data.get('method') == 'CreditCard':
+                notes = 'Gemini Credit Card Reward'
+            else:
+                notes = ''
+            return HistoryEvent(
+                event_identifier=f'{GEMINI_EVENTS_PREFIX}{raw_data["eid"]!s}',
+                sequence_index=0,
+                timestamp=timestamp,
+                location=Location.GEMINI,
+                event_type=event_type,
+                event_subtype=event_subtype,
+                asset=asset,
+                balance=Balance(amount=amount, usd_value=ZERO),
+                location_label=None,
+                notes=notes,
+            )
+
+        except UnknownAsset as e:
+            self.send_unknown_asset_message(
+                asset_identifier=e.identifier,
+                details='transaction',
+            )
+        except UnsupportedAsset as e:
+            self.msg_aggregator.add_warning(
+                f'Found gemini transaction with unsupported asset '
+                f'{e.identifier}. Ignoring it.',
+            )
+        except (DeserializationError, KeyError) as e:
+            msg = str(e)
+            if isinstance(e, KeyError):
+                msg = f'Missing key entry for {msg}.'
+            self.msg_aggregator.add_error(
+                'Unexpected data encountered during deserialization of a gemini '
+                'history event. Check logs for details and open a bug report.',
+            )
+            log.error(
+                f'Unexpected data encountered during deserialization of gemini '
+                f'history event {raw_data}. Error was: {msg}',
+            )
+        return None
 
     def query_online_margin_history(
             self,
