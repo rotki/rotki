@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { Severity } from '@rotki/common';
 import { useSupportedChains } from '@/composables/info/chains';
 import { awaitParallelExecution } from '@/utils/await-parallel-execution';
 import { type StakingValidatorManage, useAccountManage } from '@/composables/accounts/blockchain/use-account-manage';
@@ -14,11 +15,8 @@ import { CSVMissingHeadersError, useCsvImportExport } from '@/composables/common
 import { logger } from '@/utils/logging';
 import { useBlockchainValidatorsStore } from '@/store/blockchain/validators';
 import { getKeyType, guessPrefix, isPrefixed } from '@/utils/xpub';
-import type {
-  AccountPayload,
-  AddAccountsPayload,
-  XpubAccountPayload,
-} from '@/types/blockchain/accounts';
+import { useAccountImportProgressStore } from '@/store/use-account-import-progress-store';
+import type { AccountPayload, AddAccountsPayload, XpubAccountPayload } from '@/types/blockchain/accounts';
 import type { Eth2Validator } from '@/types/balances';
 
 const CSVRow = z.object({
@@ -65,6 +63,10 @@ function createValidatorAction(mode: 'add' | 'edit', data: Eth2Validator): Staki
   };
 }
 
+function doesAccountExist(row: CSVRow, accounts: { address: string; chain: string }[]): boolean {
+  return accounts.some(account => account.chain === row.chain && account.address === row.address);
+}
+
 export function useAccountImportExport(): UseAccountImportExportReturn {
   const { isEvm, isEvmLikeChains } = useSupportedChains();
   const { groups } = storeToRefs(useBlockchainStore());
@@ -76,6 +78,10 @@ export function useAccountImportExport(): UseAccountImportExportReturn {
   const { notify } = useNotificationsStore();
   const { generateCSV, parseCSV } = useCsvImportExport();
   const { t } = useI18n();
+  const { allTags } = useTagStore();
+  const progressStore = useAccountImportProgressStore();
+  const { increment, setTotal, skip } = progressStore;
+  const { progress } = storeToRefs(progressStore);
 
   const blockchainLoading = isLoading(Section.BLOCKCHAIN);
   const blockchainLoadingDebounced = refDebounced(blockchainLoading, 2000);
@@ -142,39 +148,23 @@ export function useAccountImportExport(): UseAccountImportExportReturn {
   }
 
   async function importValidators(validators: CSVRow[]): Promise<void> {
-    const knownValidators = get(ethStakingValidators);
     const validatorActions: StakingValidatorManage[] = [];
 
     for (const validator of validators) {
       const ownershipPercentage = validator.addressExtras.ownershipPercentage || '100';
       const publicKey = validator.address;
-      const knownValidator = knownValidators.find(knownValidator => knownValidator.publicKey === publicKey);
 
-      if (knownValidator) {
-        const knownOwnershipPercentage = knownValidator.ownershipPercentage || '100';
-
-        if (knownOwnershipPercentage === ownershipPercentage) {
-          continue;
-        }
-
-        validatorActions.push(createValidatorAction('edit', {
-          ownershipPercentage,
-          publicKey,
-          validatorIndex: knownValidator.index.toString(),
-        }));
-      }
-      else {
-        validatorActions.push(createValidatorAction('add', {
-          ownershipPercentage,
-          publicKey,
-        }));
-      }
+      validatorActions.push(createValidatorAction('add', {
+        ownershipPercentage,
+        publicKey,
+      }));
     }
 
     await awaitParallelExecution(
       validatorActions,
       item => item.data.publicKey!,
       async (item) => {
+        increment();
         await save(item);
       },
       1,
@@ -187,9 +177,25 @@ export function useAccountImportExport(): UseAccountImportExportReturn {
     const evmAccounts: AddAccountsPayload[] = [];
     const accounts: [string, string, AddAccountsPayload | XpubAccountPayload][] = [];
 
+    const knownTags = Object.keys(allTags);
+    const knownAccounts = get(groups).map(group => ({
+      address: getAccountAddress(group),
+      chain: getChainType(group.chains),
+    })).concat(get(ethStakingValidators).map(validator => ({
+      address: validator.publicKey,
+      chain: Blockchain.ETH2,
+    })));
+
+    setTotal(rows.length);
+
     for (const row of rows) {
+      if (doesAccountExist(row, knownAccounts)) {
+        skip();
+        continue;
+      }
+
       if (row.tags) {
-        const missingTags = row.tags.filter(tag => !tags.includes(tag));
+        const missingTags = row.tags.filter(tag => !tags.includes(tag) && !knownTags.includes(tag));
         tags.push(...missingTags);
       }
 
@@ -222,14 +228,25 @@ export function useAccountImportExport(): UseAccountImportExportReturn {
     await awaitParallelExecution(
       evmAccounts,
       accounts => accounts.payload[0].address,
-      async payload => addEvmAccounts(payload, { wait: true }),
+      async (payload) => {
+        increment();
+        await addEvmAccounts(payload, { wait: true });
+      },
       1,
     );
 
     await awaitParallelExecution(
       accounts,
       ([_chain, id]) => id,
-      async ([chain, _id, account]) => addAccounts(chain, account, { wait: true }),
+      async ([chain, _id, account]) => {
+        increment();
+        try {
+          await addAccounts(chain, account, { wait: true });
+        }
+        catch (error) {
+          logger.error(error);
+        }
+      },
       1,
     );
 
@@ -242,6 +259,21 @@ export function useAccountImportExport(): UseAccountImportExportReturn {
 
       await importValidators(validators);
     }
+
+    const { skipped, total } = get(progress);
+
+    notify({
+      display: true,
+      message: t('blockchain_balances.import_blockchain_accounts_complete', {
+        imported: total - skipped,
+        skipped,
+        total,
+      }),
+      severity: Severity.INFO,
+      title: t('blockchain_balances.import_blockchain_accounts'),
+    });
+
+    setTotal(0);
   }
 
   async function importAccounts(file: File): Promise<void> {

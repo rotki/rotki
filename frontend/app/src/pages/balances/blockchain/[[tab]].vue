@@ -26,6 +26,8 @@ import HideSmallBalances from '@/components/settings/HideSmallBalances.vue';
 import PriceRefresh from '@/components/helper/PriceRefresh.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import AccountBalancesExportImport from '@/components/accounts/AccountBalancesExportImport.vue';
+import AccountImportProgress from '@/components/accounts/AccountImportProgress.vue';
+import { useAccountImportProgressStore } from '@/store/use-account-import-progress-store';
 import type { ComponentExposed } from 'vue-component-type-helpers';
 import type { RouteLocationRaw } from 'vue-router';
 
@@ -59,6 +61,7 @@ const { isModuleEnabled } = useModules();
 const { dashboardTablesVisibleColumns, unifyAccountsTable } = storeToRefs(useFrontendSettingsStore());
 const { supportedChains } = useSupportedChains();
 const { groups } = storeToRefs(useBlockchainStore());
+const { importingAccounts } = storeToRefs(useAccountImportProgressStore());
 
 const tableType = DashboardTableType.BLOCKCHAIN_ASSET_BALANCES;
 
@@ -134,6 +137,8 @@ watchImmediate(route, (route) => {
       <RuiButton
         data-cy="add-blockchain-balance"
         color="primary"
+        :disabled="importingAccounts"
+        :loading="importingAccounts"
         @click="account = createNewBlockchainAccount()"
       >
         <template #prepend>
@@ -230,6 +235,11 @@ watchImmediate(route, (route) => {
         <AccountBalancesSetting />
         <AccountBalancesExportImport />
       </div>
+
+      <AccountImportProgress
+        v-if="importingAccounts"
+        class="-mb-4 -mt-1"
+      />
 
       <Transition
         enter-from-class="opacity-0 translate-x-8"

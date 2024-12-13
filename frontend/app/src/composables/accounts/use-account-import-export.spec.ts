@@ -9,6 +9,7 @@ import { useBlockchainStore } from '@/store/blockchain/index';
 import { createAccount, createValidatorAccount } from '@/utils/blockchain/accounts/create';
 import { downloadFileByTextContent } from '@/utils/download';
 import type { Tag } from '@/types/tags';
+import type { AccountPayload, XpubAccountPayload } from '@/types/blockchain/accounts';
 
 const VALIDATOR_1 = '0xa685b19738ac8d7ee301f434f77fdbca50f7a2b8d287f4ab6f75cae251aa821576262b79ae9d58d9b458ba748968dfda';
 const VALIDATOR_2 = '0x8e31e6d9771094182a70b75882f7d186986d726f7b4da95f542d18a1cb7fa38cd31b450a9fc62867d81dfc9ad9cbd641';
@@ -35,9 +36,25 @@ vi.mock('@/composables/api/tags', async () => {
   };
 });
 
+function mockAddAccount(failOnAddress?: string[]): (_chain: string, payload: AccountPayload[] | XpubAccountPayload) => Promise<string> {
+  return async (_chain, payload) => {
+    if (Array.isArray(payload)) {
+      if (failOnAddress && payload.length === 1 && failOnAddress.includes(payload[0].address)) {
+        throw new Error(`Failed to add account: ${payload[0].address}`);
+      }
+      else {
+        return payload[0].address;
+      }
+    }
+    else {
+      return Promise.resolve(payload.xpub.xpub);
+    }
+  };
+}
+
 vi.mock('@/composables/blockchain/accounts/index', () => {
   const mock = {
-    addAccount: vi.fn().mockImplementation(async address => Promise.resolve(address)),
+    addAccount: vi.fn().mockImplementation(mockAddAccount()),
     addEvmAccount: vi.fn().mockImplementation(async address => Promise.resolve({
       added: {
         [address]: ['eth', 'optimism', 'gnosis'],
@@ -217,6 +234,39 @@ describe('useAccountImportExport', () => {
       expect(queryAddTag).toHaveBeenCalledWith(expect.objectContaining({ name: 'tag2' }));
     });
 
+    it('should not fail to import accounts if one addition fails', async () => {
+      const { addAccount, addEvmAccount } = useBlockchainAccounts();
+      const { queryAddTag } = useTagsApi();
+
+      vi.mocked(addAccount).mockImplementation(mockAddAccount(['0x124']));
+
+      const mockFile = createMockCSV([
+        'address,address extras,chain,label,tags',
+        '0x123,,evm,Name1,tag1;tag2',
+        '0x124,,eth,Name2,tag1;tag2',
+        '0x125,,gnosis,Name3,tag1;tag2',
+      ]);
+
+      const { importAccounts } = useAccountImportExport();
+      await importAccounts(mockFile);
+
+      expect(addAccount).toHaveBeenCalledTimes(2);
+      expect(addAccount).toHaveBeenCalledWith('gnosis', [{
+        address: '0x125',
+        label: 'Name3',
+        tags: ['tag1', 'tag2'],
+      }]);
+      expect(addEvmAccount).toHaveBeenCalledTimes(1);
+      expect(addEvmAccount).toHaveBeenCalledWith({
+        address: '0x123',
+        label: 'Name1',
+        tags: ['tag1', 'tag2'],
+      });
+      expect(queryAddTag).toHaveBeenCalledTimes(2);
+      expect(queryAddTag).toHaveBeenCalledWith(expect.objectContaining({ name: 'tag1' }));
+      expect(queryAddTag).toHaveBeenCalledWith(expect.objectContaining({ name: 'tag2' }));
+    });
+
     it('should not import from csv with missing headers', async () => {
       const { notify } = useNotificationsStore();
       const mockFile = createMockCSV([
@@ -285,7 +335,7 @@ describe('useAccountImportExport', () => {
       });
     });
 
-    it('should adjust ownership percentage if validator is already present', async () => {
+    it('should skip a validator if it is already present', async () => {
       const { save } = useAccountManage();
       useBlockchainStore().updateAccounts(Blockchain.ETH2, [
         createValidatorAccount({
@@ -308,7 +358,7 @@ describe('useAccountImportExport', () => {
       const { importAccounts } = useAccountImportExport();
       await importAccounts(mockFile);
 
-      expect(save).toHaveBeenCalledTimes(2);
+      expect(save).toHaveBeenCalledTimes(1);
       expect(save).toHaveBeenCalledWith({
         chain: 'eth2',
         data: {
@@ -316,16 +366,6 @@ describe('useAccountImportExport', () => {
           publicKey: VALIDATOR_1,
         },
         mode: 'add',
-        type: 'validator',
-      });
-      expect(save).toHaveBeenCalledWith({
-        chain: 'eth2',
-        data: {
-          ownershipPercentage: '99',
-          publicKey: VALIDATOR_2,
-          validatorIndex: '55751',
-        },
-        mode: 'edit',
         type: 'validator',
       });
     });
