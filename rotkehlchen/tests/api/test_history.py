@@ -208,11 +208,7 @@ def test_query_history_remote_errors(rotkehlchen_api_server_with_exchanges: 'API
     warnings = rotki.msg_aggregator.consume_warnings()
     assert len(warnings) == 0
     errors = rotki.msg_aggregator.consume_errors()
-    # Temporarily changed to 3 errors here, while both `query_deposits_withdrawals` and
-    # `query_history_events` are called in `query_history_with_callbacks`.
-    # Will soon be reverted to only 2 errors again after `query_deposits_withdrawals` is
-    # merged with `query_history_events` in the kraken exchange interface.
-    assert len(errors) == 3
+    assert len(errors) == 2
     assert all('kraken' in e for e in errors)
     # The history processing is completely mocked away and omitted in this test.
     # because it is only for the history creation not its processing.

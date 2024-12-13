@@ -9,7 +9,6 @@ import pytest
 import requests
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.types import ActionType
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
 from rotkehlchen.constants.limits import FREE_ASSET_MOVEMENTS_LIMIT, FREE_TRADES_LIMIT
@@ -30,7 +29,6 @@ from rotkehlchen.globaldb.binance import GlobalDBBinance
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.tests.utils.accounting import toggle_ignore_an_asset
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
@@ -51,7 +49,6 @@ from rotkehlchen.tests.utils.exchanges import (
 from rotkehlchen.tests.utils.factories import make_random_uppercasenumeric_string
 from rotkehlchen.tests.utils.history import (
     assert_binance_trades_result,
-    assert_kraken_asset_movements,
     assert_poloniex_asset_movements,
     assert_poloniex_trades_result,
     mock_history_processing_and_exchanges,
@@ -734,212 +731,6 @@ def test_exchange_query_trades(rotkehlchen_api_server_with_exchanges: 'APIServer
         )
     result = assert_proper_sync_response_with_result(response)
     assert len(result['entries']) == 0
-
-
-@pytest.mark.parametrize('number_of_eth_accounts', [0])
-@pytest.mark.parametrize('added_exchanges', [(Location.KRAKEN, Location.POLONIEX)])
-@pytest.mark.parametrize('start_with_valid_premium', [False, True])
-def test_query_asset_movements(
-        rotkehlchen_api_server_with_exchanges: 'APIServer',
-        start_with_valid_premium: bool,
-) -> None:
-    """Test that using the asset movements query endpoint works fine"""
-    async_query = random.choice([False, True])
-    server = rotkehlchen_api_server_with_exchanges
-    setup = prepare_rotki_for_history_processing_test(server.rest_api.rotkehlchen)
-    # query asset movements of one specific exchange
-    with setup.polo_patch:
-        response = requests.get(
-            api_url_for(
-                server,
-                'assetmovementsresource',
-            ), json={'location': 'poloniex', 'async_query': async_query},
-        )
-        if async_query:
-            task_id = assert_ok_async_response(response)
-            outcome = wait_for_async_task(rotkehlchen_api_server_with_exchanges, task_id)
-            result = outcome['result']
-        else:
-            result = assert_proper_sync_response_with_result(response)
-    assert result['entries_found'] == 4
-    assert result['entries_limit'] == -1 if start_with_valid_premium else FREE_ASSET_MOVEMENTS_LIMIT  # noqa: E501
-    poloniex_ids = [x['entry']['identifier'] for x in result['entries']]
-    assert_poloniex_asset_movements([x['entry'] for x in result['entries']], deserialized=True)
-    assert all(x['ignored_in_accounting'] is False for x in result['entries']), 'ignored should be false'  # noqa: E501
-
-    # now let's ignore all poloniex action ids
-    response = requests.put(
-        api_url_for(
-            rotkehlchen_api_server_with_exchanges,
-            'ignoredactionsresource',
-        ), json={'action_type': 'asset_movement', 'data': poloniex_ids},
-    )
-    assert_simple_ok_response(response)
-    rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
-    with rotki.data.db.conn.read_ctx() as cursor:
-        result = rotki.data.db.get_ignored_action_ids(cursor, None)
-    assert set(result[ActionType.ASSET_MOVEMENT]) == set(poloniex_ids)
-
-    # query asset movements of all exchanges
-    with setup.polo_patch:
-        response = requests.get(
-            api_url_for(server, 'assetmovementsresource'),
-            json={'async_query': async_query},
-        )
-        if async_query:
-            task_id = assert_ok_async_response(response)
-            outcome = wait_for_async_task(rotkehlchen_api_server_with_exchanges, task_id)
-            result = outcome['result']
-        else:
-            result = assert_proper_sync_response_with_result(response)
-
-    movements = result['entries']
-    assert_poloniex_asset_movements([x['entry'] for x in movements if x['entry']['location'] == 'poloniex'], True)  # noqa: E501
-    assert_kraken_asset_movements([x['entry'] for x in movements if x['entry']['location'] == 'kraken'], True)  # noqa: E501
-
-    def assert_okay(response: 'Response') -> None:
-        """Helper function for DRY checking below assertions"""
-        if async_query:
-            task_id = assert_ok_async_response(response)
-            outcome = wait_for_async_task(rotkehlchen_api_server_with_exchanges, task_id)
-            result = outcome['result']
-        else:
-            result = assert_proper_sync_response_with_result(response)
-        movements = result['entries']
-        assert_poloniex_asset_movements(
-            to_check_list=[x['entry'] for x in movements if x['entry']['location'] == 'poloniex'],
-            deserialized=True,
-            movements_to_check=(1, 2),
-        )
-        msg = 'poloniex asset movements should have now been ignored for accounting'
-        assert all(x['ignored_in_accounting'] is True for x in movements if x['entry']['location'] == 'poloniex'), msg  # noqa: E501
-        assert_kraken_asset_movements(
-            to_check_list=[x['entry'] for x in movements if x['entry']['location'] == 'kraken'],
-            deserialized=True,
-            movements_to_check=(0, 1, 2, 3, 4),
-        )
-
-    # and now query them in a specific time range excluding some asset movements
-    data: dict[str, Any] = {'from_timestamp': 1439994442, 'to_timestamp': 1458994442, 'async_query': async_query}  # noqa: E501
-    with setup.polo_patch:
-        response = requests.get(api_url_for(server, 'assetmovementsresource'), json=data)
-        assert_okay(response)
-    # do the same but with query args. This serves as test of from/to timestamp with query args
-    with setup.polo_patch:
-        response = requests.get(
-            api_url_for(server, 'assetmovementsresource') + '?' + urlencode(data))
-        assert_okay(response)
-
-    # now test `exclude_ignored_assets` query param
-    with setup.polo_patch:
-        data = {'only_cache': True}
-        without_ignore_response = requests.get(
-            api_url_for(server, 'assetmovementsresource'),
-            json=data,
-        )
-        without_ignore_response = assert_proper_sync_response_with_result(without_ignore_response)
-
-        toggle_ignore_an_asset(rotkehlchen_api_server_with_exchanges, A_BTC)
-        data |= {'exclude_ignored_assets': True}
-        ignored_response = requests.get(api_url_for(server, 'assetmovementsresource'), json=data)
-        ignored_response_data = assert_proper_sync_response_with_result(ignored_response)
-        default_response = requests.get(api_url_for(server, 'assetmovementsresource'))
-        default_response_data = assert_proper_sync_response_with_result(default_response)
-        assert ignored_response_data == default_response_data, '`exclude_ignored_assets` should be True by default'  # noqa: E501
-
-        assert all(
-            x['entry']['asset'] != 'BTC'
-            for x in ignored_response_data['entries']
-        ), 'BTC asset movements should have now been ignored for accounting'
-        assert len(ignored_response_data['entries']) == 6, 'Only 6 asset movements should have been returned'  # noqa: E501
-
-        data['exclude_ignored_assets'] = False
-        not_exclude_response = requests.get(
-            api_url_for(server, 'assetmovementsresource'),
-            json=data,
-        )
-        not_exclude_response = assert_proper_sync_response_with_result(not_exclude_response)
-        assert not_exclude_response == without_ignore_response, '`exclude_ignored_assets` = False should not exclude any asset movements'  # noqa: E501
-
-        # reset the ignored status of BTC
-        toggle_ignore_an_asset(rotkehlchen_api_server_with_exchanges, A_BTC)
-
-    # and now test pagination
-    data = {'only_cache': True, 'offset': 1, 'limit': 2, 'location': 'kraken'}
-    response = requests.get(api_url_for(server, 'assetmovementsresource'), json=data)
-    result = assert_proper_sync_response_with_result(response)
-    assert result['entries_limit'] == -1 if start_with_valid_premium else FREE_ASSET_MOVEMENTS_LIMIT  # noqa: E501
-    assert result['entries_found'] == 6
-    assert result['entries_total'] == 10
-    movements = result['entries']
-    assert len(movements) == 2
-    assert_kraken_asset_movements(
-        to_check_list=[x['entry'] for x in movements if x['entry']['location'] == 'kraken'],
-        deserialized=True,
-        movements_to_check=(1, 2),
-    )
-
-    def assert_order_by(order_by: str) -> tuple[list[dict[str, Any]], ...]:
-        """A helper to keep things DRY in the test"""
-        data = {'order_by_attributes': [order_by], 'ascending': [False], 'only_cache': True}
-        response = requests.get(
-            api_url_for(
-                rotkehlchen_api_server_with_exchanges,
-                'assetmovementsresource',
-            ), json=data,
-        )
-        result = assert_proper_sync_response_with_result(response)
-        assert result['entries_limit'] == -1 if start_with_valid_premium else FREE_ASSET_MOVEMENTS_LIMIT  # noqa: E501
-        assert result['entries_total'] == 10
-        assert result['entries_found'] == 10
-        desc_result = result['entries']
-        assert len(desc_result) == 10
-        data = {'order_by_attributes': [order_by], 'ascending': [True], 'only_cache': True}
-        response = requests.get(
-            api_url_for(
-                rotkehlchen_api_server_with_exchanges,
-                'assetmovementsresource',
-            ), json=data,
-        )
-        result = assert_proper_sync_response_with_result(response)
-        assert result['entries_limit'] == -1 if start_with_valid_premium else FREE_ASSET_MOVEMENTS_LIMIT  # noqa: E501
-        assert result['entries_total'] == 10
-        assert result['entries_found'] == 10
-        asc_result = result['entries']
-        assert len(asc_result) == 10
-        return desc_result, asc_result
-
-    # test order by location
-    desc_result, asc_result = assert_order_by('location')
-    assert all(x['entry']['location'] == 'poloniex' for x in desc_result[:4])
-    assert all(x['entry']['location'] == 'kraken' for x in desc_result[4:])
-    assert all(x['entry']['location'] == 'kraken' for x in asc_result[:6])
-    assert all(x['entry']['location'] == 'poloniex' for x in asc_result[6:])
-
-    # test order by category
-    desc_result, asc_result = assert_order_by('category')
-    assert all(x['entry']['category'] == 'withdrawal' for x in desc_result[:5])
-    assert all(x['entry']['category'] == 'deposit' for x in desc_result[5:])
-    assert all(x['entry']['category'] == 'deposit' for x in asc_result[:5])
-    assert all(x['entry']['category'] == 'withdrawal' for x in asc_result[5:])
-
-    # test order by amount
-    desc_result, asc_result = assert_order_by('amount')
-    for idx, x in enumerate(desc_result):
-        if idx < len(desc_result) - 1:
-            assert FVal(x['entry']['amount']) >= FVal(desc_result[idx + 1]['entry']['amount'])
-    for idx, x in enumerate(asc_result):
-        if idx < len(asc_result) - 1:
-            assert FVal(x['entry']['amount']) <= FVal(asc_result[idx + 1]['entry']['amount'])
-
-    # test order by fee
-    desc_result, asc_result = assert_order_by('fee')
-    for idx, x in enumerate(desc_result):
-        if idx < len(desc_result) - 1:
-            assert FVal(x['entry']['fee']) >= FVal(desc_result[idx + 1]['entry']['fee'])
-    for idx, x in enumerate(asc_result):
-        if idx < len(asc_result) - 1:
-            assert FVal(x['entry']['fee']) <= FVal(asc_result[idx + 1]['entry']['fee'])
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])

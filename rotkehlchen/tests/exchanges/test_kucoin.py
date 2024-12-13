@@ -9,17 +9,20 @@ import requests
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.converters import asset_from_kucoin
+from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_LINK, A_USDT
 from rotkehlchen.constants.timing import WEEK_IN_SECONDS
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import RemoteError
-from rotkehlchen.exchanges.data_structures import AssetMovement, Trade, TradeType
+from rotkehlchen.exchanges.data_structures import Trade, TradeType
 from rotkehlchen.exchanges.kucoin import KUCOIN_LAUNCH_TS, Kucoin, KucoinCase
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.asset_movement import AssetMovement
+from rotkehlchen.history.events.structures.types import HistoryEventType
 from rotkehlchen.tests.utils.constants import A_BSV, A_KCS, A_NANO
 from rotkehlchen.tests.utils.exchanges import get_exchange_asset_symbols
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import AssetAmount, AssetMovementCategory, Fee, Location, Price, Timestamp
+from rotkehlchen.types import AssetAmount, Fee, Location, Price, Timestamp, TimestampMS
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 
@@ -355,18 +358,26 @@ def test_deserialize_asset_movement_deposit(mock_kucoin):
         'createdAt': 1612556794259,
         'updatedAt': 1612556795000,
     }
-    expected_asset_movement = AssetMovement(
-        timestamp=Timestamp(1612556794),
+    expected_asset_movement = [AssetMovement(
+        timestamp=TimestampMS(1612556794259),
         location=Location.KUCOIN,
-        category=AssetMovementCategory.DEPOSIT,
-        address='0x5bedb060b8eb8d823e2414d82acce78d38be7fe9',
-        transaction_id='3e2414d82acce78d38be7fe9',
+        event_type=HistoryEventType.DEPOSIT,
         asset=A_ETH,
-        amount=AssetAmount(FVal('1')),
-        fee_asset=A_ETH,
-        fee=Fee(FVal('0.01')),
-        link='',
-    )
+        balance=Balance(ONE),
+        unique_id='3e2414d82acce78d38be7fe9',
+        extra_data={
+            'address': '0x5bedb060b8eb8d823e2414d82acce78d38be7fe9',
+            'transaction_id': '3e2414d82acce78d38be7fe9',
+        },
+    ), AssetMovement(
+        timestamp=TimestampMS(1612556794259),
+        location=Location.KUCOIN,
+        event_type=HistoryEventType.DEPOSIT,
+        asset=A_ETH,
+        balance=Balance(FVal('0.01')),
+        unique_id='3e2414d82acce78d38be7fe9',
+        is_fee=True,
+    )]
     asset_movement = mock_kucoin._deserialize_asset_movement(
         raw_result=raw_result,
         case=KucoinCase.DEPOSITS,
@@ -389,18 +400,26 @@ def test_deserialize_asset_movement_withdrawal(mock_kucoin):
         'createdAt': 1612556794259,
         'updatedAt': 1612556795000,
     }
-    expected_asset_movement = AssetMovement(
-        timestamp=Timestamp(1612556794),
+    expected_asset_movement = [AssetMovement(
+        timestamp=TimestampMS(1612556794259),
         location=Location.KUCOIN,
-        category=AssetMovementCategory.WITHDRAWAL,
-        address='0x5bedb060b8eb8d823e2414d82acce78d38be7fe9',
-        transaction_id='3e2414d82acce78d38be7fe9',
+        event_type=HistoryEventType.WITHDRAWAL,
         asset=A_ETH,
-        amount=AssetAmount(FVal('1')),
-        fee_asset=A_ETH,
-        fee=Fee(FVal('0.01')),
-        link='5c2dc64e03aa675aa263f1ac',
-    )
+        balance=Balance(ONE),
+        unique_id='5c2dc64e03aa675aa263f1ac',
+        extra_data={
+            'address': '0x5bedb060b8eb8d823e2414d82acce78d38be7fe9',
+            'transaction_id': '3e2414d82acce78d38be7fe9',
+        },
+    ), AssetMovement(
+        timestamp=TimestampMS(1612556794259),
+        location=Location.KUCOIN,
+        event_type=HistoryEventType.WITHDRAWAL,
+        asset=A_ETH,
+        balance=Balance(FVal('0.01')),
+        unique_id='5c2dc64e03aa675aa263f1ac',
+        is_fee=True,
+    )]
     asset_movement = mock_kucoin._deserialize_asset_movement(
         raw_result=raw_result,
         case=KucoinCase.WITHDRAWALS,
@@ -687,44 +706,64 @@ def test_query_asset_movements_sandbox(
         }
         """
     )
-    expected_asset_movements = [
-        AssetMovement(
-            location=Location.KUCOIN,
-            category=AssetMovementCategory.DEPOSIT,
-            timestamp=Timestamp(1612556652),
-            address='0x5f047b29041bcfdbf0e4478cdfa753a336ba6989',
-            transaction_id='5bbb57386d99522d9f954c5a',
-            asset=A_KCS,
-            amount=AssetAmount(FVal('1')),
-            fee_asset=A_KCS,
-            fee=Fee(FVal('0.0001')),
-            link='',
-        ),
-        AssetMovement(
-            location=Location.KUCOIN,
-            category=AssetMovementCategory.DEPOSIT,
-            timestamp=Timestamp(1612556651),
-            address='0x5f047b29041bcfdbf0e4478cdfa753a336ba6989',
-            transaction_id='5bbb57386d99522d9f954c5b',
-            asset=A_LINK,
-            amount=AssetAmount(FVal('1000')),
-            fee_asset=A_LINK,
-            fee=Fee(FVal('0.01')),
-            link='',
-        ),
-        AssetMovement(
-            location=Location.KUCOIN,
-            category=AssetMovementCategory.WITHDRAWAL,
-            timestamp=Timestamp(1612556652),
-            address='1DrT5xUaJ3CBZPDeFR2qdjppM6dzs4rsMt',
-            transaction_id='b893c3ece1b8d7cacb49a39ddd759cf407817f6902f566c443ba16614874ada4',
-            asset=A_BSV,
-            amount=AssetAmount(FVal('2.5')),
-            fee_asset=A_BSV,
-            fee=Fee(FVal('0.25')),
-            link='5c2dc64e03aa675aa263f1a4',
-        ),
-    ]
+    expected_asset_movements = [AssetMovement(
+        location=Location.KUCOIN,
+        event_type=HistoryEventType.DEPOSIT,
+        timestamp=TimestampMS(1612556652000),
+        asset=A_KCS,
+        balance=Balance(ONE),
+        unique_id='5bbb57386d99522d9f954c5a',
+        extra_data={
+            'address': '0x5f047b29041bcfdbf0e4478cdfa753a336ba6989',
+            'transaction_id': '5bbb57386d99522d9f954c5a',
+        },
+    ), AssetMovement(
+        location=Location.KUCOIN,
+        event_type=HistoryEventType.DEPOSIT,
+        timestamp=TimestampMS(1612556652000),
+        asset=A_KCS,
+        balance=Balance(FVal('0.0001')),
+        unique_id='5bbb57386d99522d9f954c5a',
+        is_fee=True,
+    ), AssetMovement(
+        location=Location.KUCOIN,
+        event_type=HistoryEventType.DEPOSIT,
+        timestamp=TimestampMS(1612556651000),
+        asset=A_LINK,
+        balance=Balance(FVal('1000')),
+        unique_id='5bbb57386d99522d9f954c5b',
+        extra_data={
+            'address': '0x5f047b29041bcfdbf0e4478cdfa753a336ba6989',
+            'transaction_id': '5bbb57386d99522d9f954c5b',
+        },
+    ), AssetMovement(
+        location=Location.KUCOIN,
+        event_type=HistoryEventType.DEPOSIT,
+        timestamp=TimestampMS(1612556651000),
+        asset=A_LINK,
+        balance=Balance(FVal('0.01')),
+        unique_id='5bbb57386d99522d9f954c5b',
+        is_fee=True,
+    ), AssetMovement(
+        location=Location.KUCOIN,
+        event_type=HistoryEventType.WITHDRAWAL,
+        timestamp=TimestampMS(1612556652000),
+        asset=A_BSV,
+        balance=Balance(FVal('2.5')),
+        unique_id='5c2dc64e03aa675aa263f1a4',
+        extra_data={
+            'address': '1DrT5xUaJ3CBZPDeFR2qdjppM6dzs4rsMt',
+            'transaction_id': 'b893c3ece1b8d7cacb49a39ddd759cf407817f6902f566c443ba16614874ada4',
+        },
+    ), AssetMovement(
+        location=Location.KUCOIN,
+        event_type=HistoryEventType.WITHDRAWAL,
+        timestamp=TimestampMS(1612556652000),
+        asset=A_BSV,
+        balance=Balance(FVal('0.25')),
+        unique_id='5c2dc64e03aa675aa263f1a4',
+        is_fee=True,
+    )]
 
     def get_endpoints_response():
         results = [
@@ -755,7 +794,7 @@ def test_query_asset_movements_sandbox(
     with ExitStack() as stack:
         stack.enter_context(months_in_seconds_patch)
         stack.enter_context(api_query_patch)
-        asset_movements = sandbox_kucoin.query_online_deposits_withdrawals(
+        asset_movements = sandbox_kucoin.query_online_history_events(
             start_ts=Timestamp(1612556651),
             end_ts=Timestamp(1612556654),
         )

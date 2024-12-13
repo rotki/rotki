@@ -4,6 +4,7 @@ import json
 import logging
 import time
 from collections import OrderedDict
+from collections.abc import Sequence
 from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Literal
 
@@ -49,38 +50,35 @@ from rotkehlchen.constants.assets import (
     A_YFI,
     A_ZRX,
 )
+from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.exchanges.data_structures import (
-    AssetMovement,
-    Location,
-    MarginPosition,
-    Price,
-    Trade,
-)
+from rotkehlchen.exchanges.data_structures import Location, MarginPosition, Price, Trade
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.asset_movement import AssetMovement
+from rotkehlchen.history.events.structures.base import HistoryBaseEntry
+from rotkehlchen.history.events.structures.types import HistoryEventType
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
-    deserialize_asset_movement_category,
+    deserialize_asset_movement_event_type,
     deserialize_timestamp_from_date,
 )
 from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
     AssetAmount,
-    AssetMovementCategory,
     ExchangeAuthCredentials,
     Fee,
     Timestamp,
     TradeType,
 )
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import timestamp_to_iso8601
+from rotkehlchen.utils.misc import timestamp_to_iso8601, ts_sec_to_ms
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -184,7 +182,7 @@ def _asset_movement_from_independentreserve(raw_tx: dict) -> AssetMovement | Non
     - KeyError
     """
     log.debug(f'Processing raw IndependentReserve transaction: {raw_tx}')
-    movement_type = deserialize_asset_movement_category(raw_tx['Type'])
+    movement_type = deserialize_asset_movement_event_type(raw_tx['Type'])
     asset = independentreserve_asset(raw_tx['CurrencyCode'])
     bitcoin_tx_id = raw_tx.get('BitcoinTransactionId')
     eth_tx_id = raw_tx.get('EthereumTransactionId')
@@ -195,18 +193,12 @@ def _asset_movement_from_independentreserve(raw_tx: dict) -> AssetMovement | Non
     else:
         transaction_id = None
 
-    timestamp = deserialize_timestamp_from_date(
-        date=raw_tx['CreatedTimestampUtc'],
-        formatstr='iso8601',
-        location='IndependentReserve',
-    )
-
     comment = raw_tx.get('Comment')
     address = None
     if comment is not None and comment.startswith('Withdrawing to'):
         address = comment.rsplit()[-1]
 
-    raw_amount = raw_tx.get('Credit') if movement_type == AssetMovementCategory.DEPOSIT else raw_tx.get('Debit')  # noqa: E501
+    raw_amount = raw_tx.get('Credit') if movement_type == HistoryEventType.DEPOSIT else raw_tx.get('Debit')  # noqa: E501
 
     if raw_amount is None:  # skip
         return None   # Can end up being None for some things like this: 'Comment': 'Initial balance after Bitcoin fork'  # noqa: E501
@@ -214,15 +206,19 @@ def _asset_movement_from_independentreserve(raw_tx: dict) -> AssetMovement | Non
 
     return AssetMovement(
         location=Location.INDEPENDENTRESERVE,
-        category=movement_type,
-        address=address,
-        transaction_id=transaction_id,
-        timestamp=timestamp,
+        event_type=movement_type,
+        timestamp=ts_sec_to_ms(deserialize_timestamp_from_date(
+            date=raw_tx['CreatedTimestampUtc'],
+            formatstr='iso8601',
+            location='IndependentReserve',
+        )),
         asset=asset,
-        amount=amount,
-        fee_asset=asset,  # whatever -- no fee
-        fee=Fee(ZERO),  # we can't get fee from this exchange
-        link=raw_tx['CreatedTimestampUtc'] + str(amount) + str(movement_type) + asset.identifier,
+        balance=Balance(amount),
+        unique_id=raw_tx.get('TransactionGuid'),
+        extra_data=maybe_set_transaction_extra_data(
+            address=address,
+            transaction_id=transaction_id,
+        ),
     )
 
 
@@ -460,11 +456,11 @@ class Independentreserve(ExchangeInterface):
 
         return trades, (start_ts, end_ts)
 
-    def query_online_deposits_withdrawals(
+    def query_online_history_events(
             self,
             start_ts: Timestamp,  # pylint: disable=unused-argument
             end_ts: Timestamp,
-    ) -> list[AssetMovement]:
+    ) -> Sequence[HistoryBaseEntry]:
         if self.account_guids is None:
             self.query_balances()  # do a balance query to populate the account guids
         movements = []

@@ -18,7 +18,6 @@ from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import (
-    AssetMovement,
     Location,
     MarginPosition,
     Price,
@@ -357,13 +356,6 @@ class Iconomi(ExchangeInterface):
                     )
 
         return trades, (start_ts, end_ts)
-
-    def query_online_deposits_withdrawals(
-            self,
-            start_ts: Timestamp,  # pylint: disable=unused-argument
-            end_ts: Timestamp,
-    ) -> list[AssetMovement]:
-        return []  # noop for iconomi
 
     def query_online_margin_history(
             self,
