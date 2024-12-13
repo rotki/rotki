@@ -39,17 +39,27 @@ export class AssetsManagerPage {
     cy.get('[data-cy=managed-assets-table] tbody').find('tr').should('have.length', visible);
   }
 
+  focusOnTableFilter() {
+    cy.get('[data-cy=table-filter] [data-id=activator]').then(($activator) => {
+      const arrowButton = $activator.find('> span:last-child');
+      cy.wrap(arrowButton).click();
+      const clearButton = $activator.find('> button:nth-child(3)');
+      if (clearButton && clearButton.length > 0) {
+        cy.wrap(clearButton).click();
+        cy.wrap(arrowButton).click();
+      }
+    });
+  }
+
   searchAsset(asset: string) {
-    cy.get('[data-cy=table-filter] [data-id=activator] > span:last-child').click();
-    cy.get('[data-cy=table-filter] [data-id=activator] > span:nth-child(3)').click();
+    this.focusOnTableFilter();
     cy.get('[data-cy=table-filter] input').type(`symbol: ${asset}{enter}{esc}`);
     cy.get('div[class*=thead__loader]').should('not.exist');
     this.visibleEntries(1);
   }
 
   searchAssetByAddress(address: string) {
-    cy.get('[data-cy=table-filter] [data-id=activator] > span:last-child').click();
-    cy.get('[data-cy=table-filter] [data-id=activator] > span:nth-child(3)').click();
+    this.focusOnTableFilter();
     cy.get('[data-cy=table-filter] input').type(`address: ${address}{enter}{esc}`);
     cy.get('div[class*=thead__loader]').should('not.exist');
     this.visibleEntries(1);
