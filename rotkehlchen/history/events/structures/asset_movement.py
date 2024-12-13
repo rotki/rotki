@@ -228,6 +228,8 @@ def create_asset_movement_with_fee(
         fee_asset: Asset,
         fee: 'FVal',
         unique_id: str | None = None,
+        identifier: int | None = None,
+        fee_identifier: int | None = None,
         extra_data: AssetMovementExtraData | None = None,
 ) -> list[AssetMovement]:
     """Create an asset movement and its corresponding fee event.
@@ -240,10 +242,12 @@ def create_asset_movement_with_fee(
         asset=asset,
         balance=Balance(amount),
         unique_id=unique_id,
+        identifier=identifier,
         extra_data=extra_data,
     )]
     if fee != ZERO:
         events.append(AssetMovement(
+            identifier=fee_identifier,
             event_identifier=events[0].event_identifier,
             location=location,
             event_type=event_type,

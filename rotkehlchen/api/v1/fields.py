@@ -434,6 +434,7 @@ class SerializableEnumField(fields.Field):
             self,
             enum_class: type[SerializableEnumNameMixin | (SerializableEnumIntValueMixin | (DBCharEnumMixIn | DBIntEnumMixIn))],  # noqa: E501
             exclude_types: Sequence[Enum] | None = None,
+            allow_only: Sequence[Enum] | None = None,
             **kwargs: Any,
     ) -> None:
         """We give all possible types as unions instead of just type[SerializableEnumMixin]
@@ -441,6 +442,7 @@ class SerializableEnumField(fields.Field):
         Normally it should have sufficed to give just the former.
         """
         self.exclude_types = exclude_types
+        self.allow_only = allow_only
         self.enum_class = enum_class
         super().__init__(**kwargs)
 
@@ -464,6 +466,9 @@ class SerializableEnumField(fields.Field):
             result = self.enum_class.deserialize(value)
         except DeserializationError as e:
             raise ValidationError(str(e)) from e
+
+        if self.allow_only is not None and result not in self.allow_only:
+            raise ValidationError(f'{result} is not one of the valid values for this endpoint')
 
         if self.exclude_types is not None and result in self.exclude_types:
             raise ValidationError(f'{result} is not one of the valid values for this endpoint')

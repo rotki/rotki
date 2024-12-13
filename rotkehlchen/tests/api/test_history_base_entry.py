@@ -635,3 +635,104 @@ def test_query_new_events(rotkehlchen_api_server_with_exchanges: 'APIServer') ->
             query_filter=query_filter,
         )
         assert kraken_events_count != 0
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
+def test_add_edit_asset_movements(rotkehlchen_api_server: 'APIServer') -> None:
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    db = DBHistoryEvents(rotki.data.db)
+    entries = [
+        {
+            'entry_type': 'asset movement event',
+            'timestamp': 1569924575000,
+            'balance': {'amount': '0.44', 'usd_value': '0'},
+            'event_type': 'deposit',
+            'location': 'bitfinex',
+            'unique_id': 'BITFINEX-543',
+            'asset': 'ETH',
+        }, {
+            'entry_type': 'asset movement event',
+            'timestamp': 1669924575000,
+            'balance': {'amount': '0.0569', 'usd_value': '0'},
+            'event_type': 'withdrawal',
+            'fee': '0.000004',
+            'location': 'bitfinex',
+            'unique_id': 'BITFINEX-344',
+            'asset': 'ETH',
+            'fee_asset': 'ETH',
+        },
+    ]
+    for entry in entries:
+        response = requests.put(
+            api_url_for(rotkehlchen_api_server, 'historyeventresource'),
+            json=entry,
+        )
+        result = assert_proper_sync_response_with_result(response)
+        assert 'identifier' in result
+        entry['identifier'] = result['identifier']
+
+    with rotki.data.db.conn.read_ctx() as cursor:
+        assert len(db.get_history_events(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(),
+            has_premium=True,
+            group_by_event_ids=False,
+        )) == 3  # including the fee event.
+
+    # test editing unknown fails
+    entry = entries[1].copy()
+    entry['identifier'] = 42
+    response = requests.patch(
+        api_url_for(rotkehlchen_api_server, 'historyeventresource'),
+        json=entry,
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='Tried to edit event with id 42 but could not find it in the DB',
+        status_code=HTTPStatus.CONFLICT,
+    )
+    with rotki.data.db.conn.read_ctx() as cursor:
+        # now let's try to edit event_identifier for all possible events.
+        for idx, entry in enumerate(entries, start=1):
+            entry['identifier'] = idx
+            entry['event_identifier'] = f'new_eventid{idx}'
+            response = requests.patch(
+                api_url_for(rotkehlchen_api_server, 'historyeventresource'),
+                json=entry,
+            )
+            assert_simple_ok_response(response)
+
+        saved_events = (db.get_history_events(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(),
+            has_premium=True,
+            group_by_event_ids=False,
+        ))
+        assert len(saved_events) == 3
+        fields_to_exclude = {
+            'notes', 'extra_data', 'event_subtype', 'sequence_index',
+            'location_label', 'unique_id', 'event_identifier',
+            'fee', 'fee_asset', 'timestamp',
+        }
+        for idx, event in enumerate(saved_events):
+            serialized_event = event.serialize()
+            if idx == 2:  # the fee event
+                expected_event = {
+                    'asset': 'ETH',
+                    'balance': {
+                        'amount': '0.000004',
+                        'usd_value': '0',
+                    },
+                    'entry_type': 'asset movement event',
+                    'event_type': 'withdrawal',
+                    'identifier': 3,
+                    'location': 'bitfinex',
+                }
+            else:
+                expected_event = entries[idx].copy()
+
+            for field in fields_to_exclude:
+                serialized_event.pop(field, None)
+                expected_event.pop(field, None)
+
+            assert serialized_event == expected_event
