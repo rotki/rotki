@@ -3,7 +3,7 @@ import hashlib
 import hmac
 import logging
 from collections import defaultdict
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from enum import Enum, auto
 from functools import partial
 from http import HTTPStatus
@@ -20,13 +20,20 @@ from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.assets.converters import asset_from_kucoin
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.timing import MONTH_IN_SECONDS, WEEK_IN_SECONDS
+from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnprocessableTradePair, UnsupportedAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
+from rotkehlchen.exchanges.data_structures import MarginPosition, Trade
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
 from rotkehlchen.history.deserialization import deserialize_price
+from rotkehlchen.history.events.structures.asset_movement import (
+    AssetMovement,
+    create_asset_movement_with_fee,
+)
+from rotkehlchen.history.events.structures.base import HistoryBaseEntry
+from rotkehlchen.history.events.structures.types import HistoryEventType
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
@@ -38,10 +45,10 @@ from rotkehlchen.serialization.deserialize import (
 from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
-    AssetMovementCategory,
     ExchangeAuthCredentials,
     Location,
     Timestamp,
+    TimestampMS,
     TradeType,
 )
 from rotkehlchen.user_messages import MessagesAggregator
@@ -113,7 +120,7 @@ def _deserialize_ts(case: KucoinCase, time: int) -> Timestamp:
     return Timestamp(int(time / 1000))
 
 
-DeserializationMethod = Callable[..., Trade | AssetMovement]
+DeserializationMethod = Callable[..., Trade | list[AssetMovement]]
 
 
 def deserialize_trade_pair(trade_pair_symbol: str) -> tuple[AssetWithOracles, AssetWithOracles]:
@@ -311,7 +318,7 @@ class Kucoin(ExchangeInterface):
 
         May raise RemoteError
         """
-        results = []
+        results: list[Trade | AssetMovement] = []
         deserialization_method: DeserializationMethod
         if case == KucoinCase.TRADES:
             if start_ts < API_V2_TIMESTART:
@@ -323,7 +330,7 @@ class Kucoin(ExchangeInterface):
                     end_ts=API_V2_TIMESTART,
                 ))
                 if end_ts <= API_V2_TIMESTART:
-                    return results
+                    return results  # type: ignore  # will only be list of trades
                 # else the new start is the api v2 and we now query the normal v2 api
                 start_ts = API_V2_TIMESTART
 
@@ -423,7 +430,12 @@ class Kucoin(ExchangeInterface):
                     )
                     continue
 
-                results.append(result)  # type: ignore
+                # TODO: use only extend here after trades are also converted to history events
+                # and have their fee in a separate event.
+                if isinstance(result, list):
+                    results.extend(result)  # AssetMovements - fee in separate event
+                else:
+                    results.append(result)  # Trades - no separate event for fee
 
             is_last_page = total_page in (0, current_page)
             if is_last_page:
@@ -441,7 +453,7 @@ class Kucoin(ExchangeInterface):
                 call_options['currentPage'] = 1
             call_options['startAt'] = Timestamp(current_query_ts * 1000)
 
-        return results
+        return results  # type: ignore  # will either be only trades or only asset movements
 
     def _deserialize_accounts_balances(
             self,
@@ -523,7 +535,7 @@ class Kucoin(ExchangeInterface):
     def _deserialize_asset_movement(
             raw_result: dict[str, Any],
             case: Literal[KucoinCase.DEPOSITS, KucoinCase.WITHDRAWALS],
-    ) -> AssetMovement:
+    ) -> list[AssetMovement]:
         """Process an asset movement result and deserialize it
 
         May raise:
@@ -531,39 +543,41 @@ class Kucoin(ExchangeInterface):
         - UnknownAsset
         - UnsupportedAsset
         """
+        event_type: Literal[HistoryEventType.DEPOSIT, HistoryEventType.WITHDRAWAL]
         if case == KucoinCase.DEPOSITS:
-            category = AssetMovementCategory.DEPOSIT
+            event_type = HistoryEventType.DEPOSIT
         elif case == KucoinCase.WITHDRAWALS:
-            category = AssetMovementCategory.WITHDRAWAL
+            event_type = HistoryEventType.WITHDRAWAL
         else:
             raise AssertionError(f'Unexpected case: {case}')
 
         try:
-            timestamp_ms = deserialize_timestamp(raw_result['createdAt'])
-            timestamp = Timestamp(int(timestamp_ms / 1000))
+            timestamp = TimestampMS(deserialize_timestamp(raw_result['createdAt']))
             address = raw_result['address']
             # The transaction id can have an @ which we should just get rid of
             transaction_id = raw_result['walletTxId'].split('@')[0]
             amount = deserialize_asset_amount(raw_result['amount'])
             fee = deserialize_fee(raw_result['fee'])
             fee_currency_symbol = raw_result['currency']
-            link_id = raw_result.get('id', '')  # NB: id only exists for withdrawals
+            unique_id = raw_result.get('id')  # NB: id only exists for withdrawals
         except KeyError as e:
             raise DeserializationError(f'Missing key: {e!s}.') from e
 
         fee_asset = asset_from_kucoin(fee_currency_symbol)
 
-        return AssetMovement(
+        return create_asset_movement_with_fee(
             timestamp=timestamp,
             location=Location.KUCOIN,
-            category=category,
-            address=address,
-            transaction_id=transaction_id,
+            event_type=event_type,
             asset=fee_asset,
             amount=amount,
             fee_asset=fee_asset,
             fee=fee,
-            link=link_id,
+            unique_id=unique_id or transaction_id,
+            extra_data=maybe_set_transaction_extra_data(
+                address=address,
+                transaction_id=transaction_id,
+            ),
         )
 
     @staticmethod
@@ -738,11 +752,11 @@ class Kucoin(ExchangeInterface):
         account_balances = self._deserialize_accounts_balances(response_dict=response_dict)
         return account_balances, ''
 
-    def query_online_deposits_withdrawals(
+    def query_online_history_events(
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> list[AssetMovement]:
+    ) -> Sequence[HistoryBaseEntry]:
         """Return the account deposits and withdrawals
 
         May raise RemoteError

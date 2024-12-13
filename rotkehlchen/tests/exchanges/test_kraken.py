@@ -11,6 +11,7 @@ import requests
 
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.api.v1.types import IncludeExcludeFilterData
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_kraken
@@ -41,7 +42,7 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.exchanges.kraken import Kraken
 from rotkehlchen.fval import FVal
-from rotkehlchen.history.events.structures.base import HistoryEvent
+from rotkehlchen.history.events.structures.base import HistoryBaseEntryType, HistoryEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.serialization.deserialize import deserialize_timestamp_from_floatstr
 from rotkehlchen.tests.utils.api import (
@@ -74,7 +75,7 @@ from rotkehlchen.tests.utils.history import TEST_END_TS, prices
 from rotkehlchen.tests.utils.kraken import KRAKEN_DELISTED, MockKraken
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.tests.utils.pnl_report import query_api_create_and_get_report
-from rotkehlchen.types import AssetMovementCategory, Location, Timestamp, TimestampMS, TradeType
+from rotkehlchen.types import Location, Timestamp, TimestampMS, TradeType
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
@@ -239,14 +240,23 @@ def test_querying_rate_limit_exhaustion(kraken, database):
 
 def test_querying_deposits_withdrawals(kraken):
     kraken.random_ledgers_data = False
-    now = ts_now()
-    result = kraken.query_deposits_withdrawals(
-        start_ts=1439994442,
-        end_ts=now,
-        only_cache=False,
-    )
-    assert isinstance(result, list)
-    assert len(result) == 5
+    kraken.query_history_events()
+    with kraken.db.conn.read_ctx() as cursor:
+        result = DBHistoryEvents(kraken.db).get_history_events(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(
+                location=Location.KRAKEN,
+                from_ts=Timestamp(1439994442),
+                event_types=[HistoryEventType.DEPOSIT, HistoryEventType.WITHDRAWAL],
+                entry_types=IncludeExcludeFilterData(
+                    values=[HistoryBaseEntryType.ASSET_MOVEMENT_EVENT],
+                ),
+            ),
+            has_premium=True,
+        )
+
+    assert len(result) == 8
+    assert len([event for event in result if event.event_subtype == HistoryEventSubType.FEE]) == 3
 
 
 def test_kraken_to_world_pair(kraken):
@@ -370,20 +380,36 @@ def test_kraken_query_deposit_withdrawals_unknown_asset(kraken):
 
     target = 'rotkehlchen.tests.utils.kraken.KRAKEN_GENERAL_LEDGER_RESPONSE'
     with patch(target, new=input_ledger):
-        movements = kraken.query_deposits_withdrawals(
-            start_ts=1408994442,
-            end_ts=1498994442,
-            only_cache=False,
+        kraken.query_history_events()
+
+    with kraken.db.conn.read_ctx() as cursor:
+        movements = DBHistoryEvents(kraken.db).get_history_events(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(location=Location.KRAKEN),
+            has_premium=True,
         )
 
-    # first normal deposit should have no problem
-    assert len(movements) == 2
+    # withdrawal and first normal deposit should have no problem
+    assert len(movements) == 4
+    assert movements[0].sequence_index == 0
+    assert movements[0].timestamp == TimestampMS(1439994442000)
+    assert movements[0].location == Location.KRAKEN
     assert movements[0].asset == A_ETH
-    assert movements[0].amount == FVal('1')
-    assert movements[0].category == AssetMovementCategory.WITHDRAWAL
-    assert movements[1].asset == A_EUR
-    assert movements[1].amount == FVal('4000000')
-    assert movements[1].category == AssetMovementCategory.DEPOSIT
+    assert movements[0].balance.amount == ONE
+    assert movements[0].event_type == HistoryEventType.WITHDRAWAL
+    assert movements[0].event_subtype == HistoryEventSubType.REMOVE_ASSET
+    assert movements[1].event_identifier == movements[0].event_identifier
+    assert movements[1].sequence_index == 1
+    assert movements[1].timestamp == TimestampMS(1439994442000)
+    assert movements[1].location == Location.KRAKEN
+    assert movements[1].asset == A_ETH
+    assert movements[1].balance.amount == FVal('0.0035')
+    assert movements[1].event_type == HistoryEventType.WITHDRAWAL
+    assert movements[1].event_subtype == HistoryEventSubType.FEE
+    assert movements[2].asset == A_EUR
+    assert movements[2].balance.amount == FVal('4000000')
+    assert movements[2].event_type == HistoryEventType.DEPOSIT
+    assert movements[3].event_subtype == HistoryEventSubType.FEE
     errors = kraken.msg_aggregator.consume_errors()
     assert len(errors) == 1
 
@@ -607,9 +633,12 @@ def test_kraken_failed_withdrawals(kraken):
 
     target = 'rotkehlchen.tests.utils.kraken.KRAKEN_GENERAL_LEDGER_RESPONSE'
     with patch(target, new=test_events):
-        withdrawals = kraken.query_online_deposits_withdrawals(
-            start_ts=0,
-            end_ts=Timestamp(1637406001),
+        kraken.query_history_events()
+    with kraken.db.conn.read_ctx() as cursor:
+        withdrawals = DBHistoryEvents(kraken.db).get_history_events(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(location=Location.KRAKEN),
+            has_premium=True,
         )
     assert len(withdrawals) == 0
 

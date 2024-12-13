@@ -35,11 +35,15 @@ from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
+from rotkehlchen.exchanges.data_structures import MarginPosition, Trade
 from rotkehlchen.exchanges.exchange import (
     ExchangeInterface,
     ExchangeQueryBalances,
     ExchangeWithExtras,
+)
+from rotkehlchen.history.events.structures.asset_movement import (
+    AssetMovement,
+    create_asset_movement_with_fee,
 )
 from rotkehlchen.history.events.structures.base import (
     HistoryBaseEntryType,
@@ -51,7 +55,6 @@ from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
-    deserialize_asset_movement_category,
     deserialize_fval,
 )
 from rotkehlchen.types import (
@@ -582,90 +585,6 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
             request.update(extra_dict)
         return self.api_query(endpoint, request)
 
-    def query_online_deposits_withdrawals(
-            self,
-            start_ts: Timestamp,
-            end_ts: Timestamp,
-    ) -> list[AssetMovement]:
-        with self.db.conn.read_ctx() as cursor:
-            self.query_kraken_ledgers(cursor, start_ts=start_ts, end_ts=end_ts)
-            filter_query = HistoryEventFilterQuery.make(
-                from_ts=Timestamp(start_ts),
-                to_ts=Timestamp(end_ts),
-                event_types=[
-                    HistoryEventType.DEPOSIT,
-                    HistoryEventType.WITHDRAWAL,
-                ],
-                location=Location.KRAKEN,
-                location_labels=[self.name],
-                entry_types=IncludeExcludeFilterData(values=[HistoryBaseEntryType.HISTORY_EVENT]),
-            )
-            events = self.history_events_db.get_history_events(
-                cursor=cursor,
-                filter_query=filter_query,
-                has_premium=True,
-            )
-        log.debug('Kraken deposit/withdrawals query result', num_results=len(events))
-        movements = []
-        get_attr = operator.attrgetter('event_identifier')
-        # Create a list of lists where each sublist has the events for the same event identifier
-        grouped_events = [list(g) for k, g in itertools.groupby(sorted(events, key=get_attr), get_attr)]  # noqa: E501
-        for movement_events in grouped_events:
-            if len(movement_events) == 2:
-                if movement_events[0].event_subtype == HistoryEventSubType.FEE:
-                    fee = Fee(movement_events[0].balance.amount)
-                    movement = movement_events[1]
-                elif movement_events[1].event_subtype == HistoryEventSubType.FEE:
-                    fee = Fee(movement_events[1].balance.amount)
-                    movement = movement_events[0]
-                else:
-                    self.msg_aggregator.add_error(
-                        f'Failed to process deposit/withdrawal. {grouped_events}. Ignoring ...',
-                    )
-                    continue
-            else:
-                movement = movement_events[0]
-                fee = Fee(ZERO)
-
-            amount = movement.balance.amount
-            try:
-                asset = movement.asset
-                movement_type = movement.event_type
-                movements.append(AssetMovement(
-                    location=Location.KRAKEN,
-                    category=deserialize_asset_movement_category(movement_type),
-                    timestamp=ts_ms_to_sec(movement.timestamp),
-                    address=None,  # no data from kraken ledger endpoint
-                    transaction_id=None,  # no data from kraken ledger endpoint
-                    asset=asset,
-                    amount=amount,
-                    fee_asset=asset,
-                    fee=fee,
-                    link=movement.event_identifier,
-                ))
-            except UnknownAsset as e:
-                self.send_unknown_asset_message(
-                    asset_identifier=e.identifier,
-                    details='deposit/withdrawal',
-                )
-                continue
-            except (DeserializationError, KeyError) as e:
-                msg = str(e)
-                if isinstance(e, KeyError):
-                    msg = f'Missing key entry for {msg}.'
-                self.msg_aggregator.add_error(
-                    'Failed to deserialize a kraken deposit/withdrawal. '
-                    'Check logs for details. Ignoring it.',
-                )
-                log.error(
-                    'Error processing a kraken deposit/withdrawal.',
-                    raw_asset_movement=movement_events,
-                    error=msg,
-                )
-                continue
-
-        return movements
-
     def query_online_margin_history(
             self,
             start_ts: Timestamp,  # pylint: disable=unused-argument
@@ -913,7 +832,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
             events: list[dict[str, Any]],
             events_source: str,
             save_skipped_events: bool,
-    ) -> tuple[list[HistoryEvent], set[str]]:
+    ) -> tuple[list[HistoryEvent | AssetMovement], set[str]]:
         """Run through a list of raw kraken events with different refids and process them.
 
         Returns a list of the newly created rotki events and a set of all processed refids
@@ -1041,7 +960,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
             self,
             events: list[dict[str, Any]],
             save_skipped_events: bool,
-    ) -> tuple[list[HistoryEvent], bool, bool]:
+    ) -> tuple[list[HistoryEvent | AssetMovement], bool, bool]:
         """
         This function gets raw data from kraken and creates a list of related history events
         to be used in the app. All events passed to this function have same refid.
@@ -1054,7 +973,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
 
         Information on how to interpret Kraken ledger type field: https://support.kraken.com/hc/en-us/articles/360001169383-How-to-interpret-Ledger-history-fields
         """
-        group_events: list[tuple[int, HistoryEvent]] = []
+        group_events: list[tuple[int, HistoryEvent | AssetMovement]] = []
         skipped = False
         # for receive/spend events they could be airdrops but they could also be instant swaps.
         # the only way to know if it was a trade is by finding a pair of receive/spend events.
@@ -1126,10 +1045,6 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
                     log.warning(
                         f'Encountered kraken historic event type we do not process. {raw_event}',
                     )
-                elif event_type == HistoryEventType.DEPOSIT:
-                    event_subtype = HistoryEventSubType.DEPOSIT_ASSET
-                elif event_type == HistoryEventType.WITHDRAWAL:
-                    event_subtype = HistoryEventSubType.REMOVE_ASSET
 
                 fee_amount = deserialize_asset_amount(raw_event['fee'])
                 # check for failed events (events that cancel each other out -- like failed
@@ -1146,7 +1061,23 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
 
                 # Make sure to not generate an event for KFEES that is not of type FEE
                 if asset != A_KFEE:
-                    event = HistoryEvent(
+                    # Process asset movements - there are no KFEE deposit/withdrawal events
+                    if event_type in {HistoryEventType.DEPOSIT, HistoryEventType.WITHDRAWAL}:
+                        group_events.extend(
+                            (idx, event) for event in create_asset_movement_with_fee(
+                                timestamp=timestamp,
+                                location=Location.KRAKEN,
+                                event_type=event_type,  # type: ignore  # will be deposit or withdrawal
+                                asset=asset,
+                                amount=abs(raw_amount),
+                                fee_asset=asset,
+                                fee=abs(fee_amount),
+                                unique_id=identifier,
+                            )
+                        )
+                        continue
+
+                    history_event = HistoryEvent(
                         event_identifier=identifier,
                         sequence_index=idx,
                         timestamp=timestamp,
@@ -1161,10 +1092,10 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
                         event_type=event_type,
                         event_subtype=event_subtype,
                     )
-                    if event.event_type in (HistoryEventType.RECEIVE, HistoryEventType.SPEND):
-                        receive_spend_events[event.event_identifier].append((idx, event))
+                    if history_event.event_type in (HistoryEventType.RECEIVE, HistoryEventType.SPEND):  # noqa: E501
+                        receive_spend_events[history_event.event_identifier].append((idx, history_event))  # noqa: E501
                     else:
-                        group_events.append((idx, event))
+                        group_events.append((idx, history_event))
                 if event_type != HistoryEventType.INFORMATIONAL and fee_amount != ZERO:  # avoid processing ignored events with fees that were converted to informational  # noqa: E501
                     group_events.append((idx, HistoryEvent(
                         event_identifier=identifier,
@@ -1204,9 +1135,9 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
 
         for event_set in receive_spend_events.values():
             if len(event_set) == 2:
-                for _, event in event_set:
-                    event.event_subtype = HistoryEventSubType.RECEIVE if event.event_type == HistoryEventType.RECEIVE else HistoryEventSubType.SPEND  # noqa: E501
-                    event.event_type = HistoryEventType.TRADE
+                for _, history_event in event_set:
+                    history_event.event_subtype = HistoryEventSubType.RECEIVE if history_event.event_type == HistoryEventType.RECEIVE else HistoryEventSubType.SPEND  # noqa: E501
+                    history_event.event_type = HistoryEventType.TRADE
 
             # make sure to add all the events to group_events
             group_events.extend(event_set)
