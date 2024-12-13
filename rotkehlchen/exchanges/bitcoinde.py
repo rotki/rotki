@@ -16,13 +16,7 @@ from rotkehlchen.constants.assets import A_EUR
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.exchanges.data_structures import (
-    AssetMovement,
-    Location,
-    MarginPosition,
-    Price,
-    Trade,
-)
+from rotkehlchen.exchanges.data_structures import Location, MarginPosition, Price, Trade
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -333,13 +327,6 @@ class Bitcoinde(ExchangeInterface):
                 continue
 
         return trades, (start_ts, end_ts)
-
-    def query_online_deposits_withdrawals(
-            self,
-            start_ts: Timestamp,  # pylint: disable=unused-argument
-            end_ts: Timestamp,
-    ) -> list[AssetMovement]:
-        return []  # noop for bitcoinde
 
     def query_online_margin_history(
             self,

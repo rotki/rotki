@@ -11,14 +11,13 @@ from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH, A_ETH2, A_USDC, A_
 from rotkehlchen.constants.resolver import strethaddress_to_identifier
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp
-from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
+from rotkehlchen.exchanges.data_structures import MarginPosition, Trade
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.fval import FVal
-from rotkehlchen.history.events.structures.asset_movement import AssetMovement as NewAssetMovement
+from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.rotkehlchen import Rotkehlchen
-from rotkehlchen.serialization.serialize import process_result_list
 from rotkehlchen.tests.utils.constants import (
     A_EUR,
     A_RDN,
@@ -32,7 +31,7 @@ from rotkehlchen.tests.utils.constants import (
 )
 from rotkehlchen.tests.utils.exchanges import POLONIEX_MOCK_DEPOSIT_WITHDRAWALS_RESPONSE
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import AssetMovementCategory, Fee, Location, Timestamp
+from rotkehlchen.types import Location, Timestamp
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import Asset
@@ -525,76 +524,6 @@ def mock_exchange_responses(rotki: Rotkehlchen, remote_errors: bool):
     return polo_patch, binance_patch, bitmex_patch
 
 
-def assert_asset_movements(
-        expected: list[AssetMovement],
-        to_check_list: list[Any],
-        deserialized: bool,
-        movements_to_check: tuple[int, ...] | None = None,
-) -> None:
-    if deserialized:
-        expected = process_result_list([x.serialize() for x in expected])
-
-    if movements_to_check is None:
-        assert len(to_check_list) == len(expected)
-        assert all(x in to_check_list for x in expected)
-    else:
-        assert all(expected[x] in to_check_list for x in movements_to_check)
-        assert len(to_check_list) == len(movements_to_check)
-
-
-def assert_poloniex_asset_movements(
-        to_check_list: list[Any],
-        deserialized: bool,
-        movements_to_check: tuple[int, ...] | None = None,
-) -> None:
-    expected = [AssetMovement(
-        location=Location.POLONIEX,
-        category=AssetMovementCategory.WITHDRAWAL,
-        address='0xB7E033598Cb94EF5A35349316D3A2e4f95f308Da',
-        transaction_id='0xbd4da74e1a0b81c21d056c6f58a5b306de85d21ddf89992693b812bb117eace4',
-        timestamp=Timestamp(1468994442),
-        asset=A_ETH,
-        amount=FVal('10.0'),
-        fee_asset=A_ETH,
-        fee=Fee(FVal('0.1')),
-        link='2',
-    ), AssetMovement(
-        location=Location.POLONIEX,
-        category=AssetMovementCategory.WITHDRAWAL,
-        address='131rdg5Rzn6BFufnnQaHhVa5ZtRU1J2EZR',
-        transaction_id='2d27ae26fa9c70d6709e27ac94d4ce2fde19b3986926e9f3bfcf3e2d68354ec5',
-        timestamp=Timestamp(1458994442),
-        asset=A_BTC,
-        amount=FVal('5.0'),
-        fee_asset=A_BTC,
-        fee=Fee(FVal('0.5')),
-        link='1',
-    ), AssetMovement(
-        location=Location.POLONIEX,
-        category=AssetMovementCategory.DEPOSIT,
-        address='131rdg5Rzn6BFufnnQaHhVa5ZtRU1J2EZR',
-        transaction_id='b05bdec7430a56b5a5ed34af4a31a54859dda9b7c88a5586bc5d6540cdfbfc7a',
-        timestamp=Timestamp(1448994442),
-        asset=A_BTC,
-        amount=FVal('50.0'),
-        fee_asset=A_BTC,
-        fee=Fee(FVal('0')),
-        link='1',
-    ), AssetMovement(
-        location=Location.POLONIEX,
-        category=AssetMovementCategory.DEPOSIT,
-        address='0xB7E033598Cb94EF5A35349316D3A2e4f95f308Da',
-        transaction_id='0xf7e7eeb44edcad14c0f90a5fffb1cbb4b80e8f9652124a0838f6906ca939ccd2',
-        timestamp=Timestamp(1438994442),
-        asset=A_ETH,
-        amount=FVal('100.0'),
-        fee_asset=A_ETH,
-        fee=Fee(FVal('0')),
-        link='2',
-    )]
-    assert_asset_movements(expected, to_check_list, deserialized, movements_to_check)
-
-
 def mock_history_processing(
         rotki: Rotkehlchen,
         should_mock_history_processing: bool = True,
@@ -628,15 +557,15 @@ def mock_history_processing(
         limited_range_test = False
         expected_trades_num = 7
         expected_margin_num = 1
-        expected_asset_movements_num = 15
+        expected_asset_movements_num = 21
         if not limited_range_test:
             expected_margin_num = 2
-            expected_asset_movements_num = 15
+            expected_asset_movements_num = 21
         if end_ts == 1539713238:
             limited_range_test = True
             expected_trades_num = 6
             expected_margin_num = 1
-            expected_asset_movements_num = 13
+            expected_asset_movements_num = 19
         if end_ts == 1601040361:
             expected_trades_num = 6
 
@@ -647,75 +576,79 @@ def mock_history_processing(
         assert len(margin_positions) == expected_margin_num
 
         asset_movements = [x for x in events if isinstance(x, AssetMovement)]
-        assert len(asset_movements) == 4
+        assert len(asset_movements) == expected_asset_movements_num
         if not limited_range_test:
-            assert asset_movements[0].location == Location.POLONIEX
-            assert asset_movements[0].category == AssetMovementCategory.DEPOSIT
-            assert asset_movements[0].asset == A_ETH
-            assert asset_movements[1].location == Location.POLONIEX
-            assert asset_movements[1].category == AssetMovementCategory.DEPOSIT
+            assert asset_movements[0].location == Location.KRAKEN
+            assert asset_movements[0].event_type == HistoryEventType.WITHDRAWAL
+            assert asset_movements[0].asset == A_BTC
+            assert asset_movements[1].location == Location.KRAKEN
+            assert asset_movements[1].event_type == HistoryEventType.WITHDRAWAL
+            assert asset_movements[1].event_subtype == HistoryEventSubType.FEE
             assert asset_movements[1].asset == A_BTC
             assert asset_movements[2].location == Location.POLONIEX
-            assert asset_movements[2].category == AssetMovementCategory.WITHDRAWAL
-            assert asset_movements[2].asset == A_BTC
-            assert asset_movements[3].location == Location.POLONIEX
-            assert asset_movements[3].category == AssetMovementCategory.WITHDRAWAL
+            assert asset_movements[2].event_type == HistoryEventType.DEPOSIT
+            assert asset_movements[2].asset == A_ETH
+            assert asset_movements[3].location == Location.KRAKEN
+            assert asset_movements[3].event_type == HistoryEventType.WITHDRAWAL
             assert asset_movements[3].asset == A_ETH
-
-        new_asset_movements = [x for x in events if isinstance(x, NewAssetMovement)]
-        assert len(new_asset_movements) == expected_asset_movements_num
-        if not limited_range_test:
-            assert new_asset_movements[0].location == Location.KRAKEN
-            assert new_asset_movements[0].event_type == HistoryEventType.WITHDRAWAL
-            assert new_asset_movements[0].asset == A_BTC
-            assert new_asset_movements[1].location == Location.KRAKEN
-            assert new_asset_movements[1].event_type == HistoryEventType.WITHDRAWAL
-            assert new_asset_movements[1].event_subtype == HistoryEventSubType.FEE
-            assert new_asset_movements[1].asset == A_BTC
-            assert new_asset_movements[2].location == Location.KRAKEN
-            assert new_asset_movements[2].event_type == HistoryEventType.WITHDRAWAL
-            assert new_asset_movements[2].asset == A_ETH
-            assert new_asset_movements[3].location == Location.KRAKEN
-            assert new_asset_movements[3].event_type == HistoryEventType.WITHDRAWAL
-            assert new_asset_movements[3].asset == A_ETH
-            assert new_asset_movements[4].location == Location.KRAKEN
-            assert new_asset_movements[4].event_type == HistoryEventType.WITHDRAWAL
-            assert new_asset_movements[4].event_subtype == HistoryEventSubType.FEE
-            assert new_asset_movements[4].asset == A_ETH
-            assert new_asset_movements[5].location == Location.KRAKEN
-            assert new_asset_movements[5].event_type == HistoryEventType.WITHDRAWAL
-            assert new_asset_movements[5].event_subtype == HistoryEventSubType.FEE
-            assert new_asset_movements[5].asset == A_ETH
-            assert new_asset_movements[6].location == Location.KRAKEN
-            assert new_asset_movements[6].event_type == HistoryEventType.DEPOSIT
-            assert new_asset_movements[6].asset == A_ETH
-            assert new_asset_movements[7].location == Location.KRAKEN
-            assert new_asset_movements[7].event_type == HistoryEventType.DEPOSIT
-            assert new_asset_movements[7].asset == A_EUR
-            assert new_asset_movements[8].location == Location.KRAKEN
-            assert new_asset_movements[8].event_type == HistoryEventType.DEPOSIT
-            assert new_asset_movements[8].event_subtype == HistoryEventSubType.FEE
-            assert new_asset_movements[8].asset == A_EUR
-            assert new_asset_movements[9].location == Location.KRAKEN
-            assert new_asset_movements[9].event_type == HistoryEventType.DEPOSIT
-            assert new_asset_movements[9].asset == A_BTC
-            assert new_asset_movements[10].location == Location.BITMEX
-            assert new_asset_movements[10].event_type == HistoryEventType.DEPOSIT
-            assert new_asset_movements[10].asset == A_BTC
-            assert new_asset_movements[11].location == Location.BITMEX
-            assert new_asset_movements[11].event_type == HistoryEventType.WITHDRAWAL
-            assert new_asset_movements[11].asset == A_BTC
-            assert new_asset_movements[12].location == Location.BITMEX
-            assert new_asset_movements[12].event_type == HistoryEventType.WITHDRAWAL
-            assert new_asset_movements[12].event_subtype == HistoryEventSubType.FEE
-            assert new_asset_movements[12].asset == A_BTC
-            assert new_asset_movements[13].location == Location.BITMEX
-            assert new_asset_movements[13].event_type == HistoryEventType.WITHDRAWAL
-            assert new_asset_movements[13].asset == A_BTC
-            assert new_asset_movements[14].location == Location.BITMEX
-            assert new_asset_movements[14].event_type == HistoryEventType.WITHDRAWAL
-            assert new_asset_movements[14].event_subtype == HistoryEventSubType.FEE
-            assert new_asset_movements[14].asset == A_BTC
+            assert asset_movements[4].location == Location.KRAKEN
+            assert asset_movements[4].event_type == HistoryEventType.WITHDRAWAL
+            assert asset_movements[4].asset == A_ETH
+            assert asset_movements[5].location == Location.KRAKEN
+            assert asset_movements[5].event_type == HistoryEventType.WITHDRAWAL
+            assert asset_movements[5].event_subtype == HistoryEventSubType.FEE
+            assert asset_movements[5].asset == A_ETH
+            assert asset_movements[6].location == Location.KRAKEN
+            assert asset_movements[6].event_type == HistoryEventType.WITHDRAWAL
+            assert asset_movements[6].event_subtype == HistoryEventSubType.FEE
+            assert asset_movements[6].asset == A_ETH
+            assert asset_movements[7].location == Location.KRAKEN
+            assert asset_movements[7].event_type == HistoryEventType.DEPOSIT
+            assert asset_movements[7].asset == A_ETH
+            assert asset_movements[8].location == Location.POLONIEX
+            assert asset_movements[8].event_type == HistoryEventType.DEPOSIT
+            assert asset_movements[8].asset == A_BTC
+            assert asset_movements[9].location == Location.KRAKEN
+            assert asset_movements[9].event_type == HistoryEventType.DEPOSIT
+            assert asset_movements[9].asset == A_EUR
+            assert asset_movements[10].location == Location.KRAKEN
+            assert asset_movements[10].event_type == HistoryEventType.DEPOSIT
+            assert asset_movements[10].event_subtype == HistoryEventSubType.FEE
+            assert asset_movements[10].asset == A_EUR
+            assert asset_movements[11].location == Location.KRAKEN
+            assert asset_movements[11].event_type == HistoryEventType.DEPOSIT
+            assert asset_movements[11].asset == A_BTC
+            assert asset_movements[12].location == Location.POLONIEX
+            assert asset_movements[12].event_type == HistoryEventType.WITHDRAWAL
+            assert asset_movements[12].asset == A_BTC
+            assert asset_movements[13].location == Location.POLONIEX
+            assert asset_movements[13].event_type == HistoryEventType.WITHDRAWAL
+            assert asset_movements[13].event_subtype == HistoryEventSubType.FEE
+            assert asset_movements[13].asset == A_BTC
+            assert asset_movements[14].location == Location.POLONIEX
+            assert asset_movements[14].event_type == HistoryEventType.WITHDRAWAL
+            assert asset_movements[14].asset == A_ETH
+            assert asset_movements[15].location == Location.POLONIEX
+            assert asset_movements[15].event_type == HistoryEventType.WITHDRAWAL
+            assert asset_movements[15].event_subtype == HistoryEventSubType.FEE
+            assert asset_movements[15].asset == A_ETH
+            assert asset_movements[16].location == Location.BITMEX
+            assert asset_movements[16].event_type == HistoryEventType.DEPOSIT
+            assert asset_movements[16].asset == A_BTC
+            assert asset_movements[17].location == Location.BITMEX
+            assert asset_movements[17].event_type == HistoryEventType.WITHDRAWAL
+            assert asset_movements[17].asset == A_BTC
+            assert asset_movements[18].location == Location.BITMEX
+            assert asset_movements[18].event_type == HistoryEventType.WITHDRAWAL
+            assert asset_movements[18].event_subtype == HistoryEventSubType.FEE
+            assert asset_movements[18].asset == A_BTC
+            assert asset_movements[19].location == Location.BITMEX
+            assert asset_movements[19].event_type == HistoryEventType.WITHDRAWAL
+            assert asset_movements[19].asset == A_BTC
+            assert asset_movements[20].location == Location.BITMEX
+            assert asset_movements[20].event_type == HistoryEventType.WITHDRAWAL
+            assert asset_movements[20].event_subtype == HistoryEventSubType.FEE
+            assert asset_movements[20].asset == A_BTC
 
         tx_events = [x for x in events if isinstance(x, EvmEvent)]
         gas_in_eth = FVal('14.36963')

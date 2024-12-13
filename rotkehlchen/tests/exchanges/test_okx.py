@@ -1,22 +1,25 @@
 import warnings as test_warnings
 from unittest.mock import patch
 
+from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_okx
 from rotkehlchen.constants.assets import A_ETH, A_SOL, A_USDC, A_USDT
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
-from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
+from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.exchanges.okx import Okx
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.asset_movement import AssetMovement
+from rotkehlchen.history.events.structures.types import HistoryEventType
 from rotkehlchen.tests.utils.constants import A_XMR
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import (
     AssetAmount,
-    AssetMovementCategory,
     Fee,
     Location,
     Price,
     Timestamp,
+    TimestampMS,
     TradeType,
 )
 
@@ -734,7 +737,7 @@ def test_okx_query_deposits_withdrawals(mock_okx: Okx):
             'request',
             side_effect=mock_okx_deposits_withdrawals,
     ):
-        asset_movements = mock_okx.query_online_deposits_withdrawals(
+        asset_movements = mock_okx.query_online_history_events(
             Timestamp(1609103082),
             Timestamp(1672175105),
         )
@@ -742,53 +745,70 @@ def test_okx_query_deposits_withdrawals(mock_okx: Okx):
     expected_asset_movements = [
         AssetMovement(
             location=Location.OKX,
-            category=AssetMovementCategory.DEPOSIT,
-            timestamp=Timestamp(1669963555),
-            address='0xAAB27b150451726EC7738aa1d0A94505c8729bd1',
-            transaction_id='0xfd12f8850218dc9d1d706c2dbd6c38f495988109c220bf8833255697b85c92db',
+            event_type=HistoryEventType.DEPOSIT,
+            timestamp=TimestampMS(1669963555000),
             asset=A_USDT,
-            amount=FVal(2500.180327),
-            fee_asset=A_USDT,
-            fee=Fee(FVal(0)),
-            link='0xfd12f8850218dc9d1d706c2dbd6c38f495988109c220bf8833255697b85c92db',
+            balance=Balance(FVal(2500.180327)),
+            unique_id='0xfd12f8850218dc9d1d706c2dbd6c38f495988109c220bf8833255697b85c92db',
+            extra_data={
+                'address': '0xAAB27b150451726EC7738aa1d0A94505c8729bd1',
+                'transaction_id': '0xfd12f8850218dc9d1d706c2dbd6c38f495988109c220bf8833255697b85c92db',  # noqa: E501
+            },
         ),
         AssetMovement(
             location=Location.OKX,
-            category=AssetMovementCategory.DEPOSIT,
-            timestamp=Timestamp(1669405596),
-            address='0xAAB27b150451726EC7738aa1d0A94505c8729bd1',
-            transaction_id='0xcea993d53b2c1f79430a003fb8facb5cd6b83b6cb6a502b6233d83eb338ba8ba',
+            event_type=HistoryEventType.DEPOSIT,
+            timestamp=TimestampMS(1669405596000),
             asset=A_USDC,
-            amount=FVal(990.795352),
-            fee_asset=A_USDC,
-            fee=Fee(FVal(0)),
-            link='0xcea993d53b2c1f79430a003fb8facb5cd6b83b6cb6a502b6233d83eb338ba8ba',
+            balance=Balance(FVal(990.795352)),
+            unique_id='0xcea993d53b2c1f79430a003fb8facb5cd6b83b6cb6a502b6233d83eb338ba8ba',
+            extra_data={
+                'address': '0xAAB27b150451726EC7738aa1d0A94505c8729bd1',
+                'transaction_id': '0xcea993d53b2c1f79430a003fb8facb5cd6b83b6cb6a502b6233d83eb338ba8ba',  # noqa: E501
+            },
         ),
         AssetMovement(
             location=Location.OKX,
-            category=AssetMovementCategory.WITHDRAWAL,
-            timestamp=Timestamp(1671542569),
-            address='9ZLfHwxzgbZi3eiK43duZVJ2nXft3mtkRMjs9YD5Yds2',
-            transaction_id='46tgp3RHNuQqQrHbms1NtPFkRRwsabCajvEUPX'
-                           'BryVuH6qJmQysn1V9VhTYBEJmVQq8s8fbfv4WFW3oj2LtwRzyU',
+            event_type=HistoryEventType.WITHDRAWAL,
+            timestamp=TimestampMS(1671542569000),
             asset=A_SOL,
-            amount=FVal(49.86051649),
-            fee_asset=A_SOL,
-            fee=Fee(FVal(0.008)),
-            link='46tgp3RHNuQqQrHbms1NtPFkRRwsabCajvEUPXBryVuH6qJm'
-                 'Qysn1V9VhTYBEJmVQq8s8fbfv4WFW3oj2LtwRzyU',
+            balance=Balance(FVal(49.86051649)),
+            unique_id='46tgp3RHNuQqQrHbms1NtPFkRRwsabCajvEUPXBryVuH6qJmQysn1V9VhTYBEJmVQq8s8fbfv4WFW3oj2LtwRzyU',
+            extra_data={
+                'address': '9ZLfHwxzgbZi3eiK43duZVJ2nXft3mtkRMjs9YD5Yds2',
+                'transaction_id': '46tgp3RHNuQqQrHbms1NtPFkRRwsabCajvEUPXBryVuH6qJmQysn1V9VhTYBEJmVQq8s8fbfv4WFW3oj2LtwRzyU',  # noqa: E501
+            },
         ),
         AssetMovement(
             location=Location.OKX,
-            category=AssetMovementCategory.WITHDRAWAL,
-            timestamp=Timestamp(1670953159),
-            address='0x388C818CA8B9251b393131C08a736A67ccB19297',
-            transaction_id='0x9444b018c33c5adb58ee171bc18e61c56078495e37ae88833007a46c02b4552f',
+            event_type=HistoryEventType.WITHDRAWAL,
+            timestamp=TimestampMS(1671542569000),
+            asset=A_SOL,
+            balance=Balance(FVal(0.008)),
+            unique_id='46tgp3RHNuQqQrHbms1NtPFkRRwsabCajvEUPXBryVuH6qJmQysn1V9VhTYBEJmVQq8s8fbfv4WFW3oj2LtwRzyU',
+            is_fee=True,
+        ),
+        AssetMovement(
+            location=Location.OKX,
+            event_type=HistoryEventType.WITHDRAWAL,
+            timestamp=TimestampMS(1670953159000),
             asset=A_USDT,
-            amount=FVal(421.169831),
-            fee_asset=A_USDT,
-            fee=Fee(FVal(0.1)),
-            link='0x9444b018c33c5adb58ee171bc18e61c56078495e37ae88833007a46c02b4552f'),
+            balance=Balance(FVal(421.169831)),
+            unique_id='0x9444b018c33c5adb58ee171bc18e61c56078495e37ae88833007a46c02b4552f',
+            extra_data={
+                'address': '0x388C818CA8B9251b393131C08a736A67ccB19297',
+                'transaction_id': '0x9444b018c33c5adb58ee171bc18e61c56078495e37ae88833007a46c02b4552f',  # noqa: E501
+            },
+        ),
+        AssetMovement(
+            location=Location.OKX,
+            event_type=HistoryEventType.WITHDRAWAL,
+            timestamp=TimestampMS(1670953159000),
+            asset=A_USDT,
+            balance=Balance(FVal(0.1)),
+            unique_id='0x9444b018c33c5adb58ee171bc18e61c56078495e37ae88833007a46c02b4552f',
+            is_fee=True,
+        ),
     ]
 
     assert asset_movements == expected_asset_movements
