@@ -27,6 +27,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          persist-credentials: false
       - name: Load env
         uses: rotki/action-env@v2
         with:
@@ -48,7 +49,7 @@ jobs:
         id: pnpm-cache
         shell: bash
         run: |
-          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+          echo "STORE_PATH=$(pnpm store path)" >> "$GITHUB_OUTPUT"
       - name: Setup pnpm cache
         uses: actions/cache@v4
         with:
@@ -63,7 +64,7 @@ jobs:
         id: packaging
         run: |
           echo "::group::packaging dependencies"
-          pip3 install --upgrade uv==${{env.UV_VERSION}}
+          pip3 install --upgrade uv=="${UV_VERSION}"
           uv pip install --system -r requirements_packaging.txt
           echo "::endgroup::"
           ./package.py --build full
@@ -105,6 +106,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          persist-credentials: false
       - name: Load env
         uses: rotki/action-env@v2
         with:
@@ -125,7 +127,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-${{ matrix.os.arch }}-pip-
       - name: Set up python
-        run: packaging/setup-macos-python.sh ${{ env.PYTHON_VERSION }} ${{ env.PYTHON_MACOS }}
+        run: packaging/setup-macos-python.sh "${PYTHON_VERSION}" "${PYTHON_MACOS}"
       - name: Setup node
         uses: actions/setup-node@v4
         with:
@@ -138,7 +140,7 @@ jobs:
         id: pnpm-cache
         shell: bash
         run: |
-          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+          echo "STORE_PATH=$(pnpm store path)" >> "$GITHUB_OUTPUT"
       - name: Setup pnpm cache
         uses: actions/cache@v4
         with:
@@ -153,7 +155,7 @@ jobs:
         id: packaging
         run: |
           echo "::group::packaging dependencies"
-          pip3 install --upgrade uv==${{env.UV_VERSION}}
+          pip3 install --upgrade uv=="${UV_VERSION}"
           pip3 install virtualenv
           python3 -m virtualenv ~/venv
           source ~/venv/bin/activate
@@ -194,6 +196,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          persist-credentials: false
       - name: Load env
         uses: rotki/action-env@v2
         with:
@@ -215,7 +218,7 @@ jobs:
         id: pnpm-cache
         shell: bash
         run: |
-          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+          echo "STORE_PATH=$(pnpm store path)" >> "$GITHUB_OUTPUT"
       - name: Setup pnpm cache
         uses: actions/cache@v4
         with:
@@ -233,7 +236,7 @@ jobs:
           CSC_KEY_PASSWORD: ${{ secrets.CERTIFICATE_PASSWORD }}
         run: |
           echo ::group::"packaging dependencies"          
-          pip3 install --upgrade uv==${{env.UV_VERSION}}
+          pip3 install --upgrade uv=="${env:UV_VERSION}"
           uv pip install --system -r requirements_packaging.txt
           echo ::endgroup::
           python .\package.py --build full
@@ -256,6 +259,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          persist-credentials: false
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
         with:
@@ -273,7 +277,7 @@ jobs:
           ROTKI_VERSION=$(cat .bumpversion.cfg | grep 'current_version = ' | sed -n -e 's/current_version = //p')
           POSTFIX=$(if git describe --tags --exact-match "$REVISION" &>/dev/null; then echo ''; else echo '-dev'; fi)
           ROTKI_VERSION=${ROTKI_VERSION}${POSTFIX}$(date +'%Y%m%d')
-          echo "version=${ROTKI_VERSION}" >> $GITHUB_OUTPUT
+          echo "version=${ROTKI_VERSION}" >> "$GITHUB_OUTPUT"
       - name: Build Information
         id: build_information
         run: |
@@ -284,8 +288,8 @@ jobs:
             PLATFORMS=linux/amd64
             TAG=dev
           fi
-          echo "tag=$TAG" >> $GITHUB_OUTPUT
-          echo "platforms=$PLATFORMS" >> $GITHUB_OUTPUT
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "platforms=$PLATFORMS" >> "$GITHUB_OUTPUT"
       - name: Build and push
         id: docker_build
         uses: docker/build-push-action@v6
@@ -302,7 +306,9 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
       - name: Image digest
-        run: echo ${{ steps.docker_build.outputs.digest }}
+        run: echo "${DIGEST}"
+        env:
+          DIGEST: ${{ steps.docker_build.outputs.digest }}
 
   notify:
     name: 'Success check'
@@ -314,11 +320,12 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
+          persist-credentials: false
       - name: Check if any task failed
         run: |
           pip install requests
 
-          data=($(echo "${{ toJSON(needs.*.result) }}" | sed 's/[][,]//g'))
+          data=($(echo "${RESULT}" | sed 's/[][,]//g'))
           for i in "${data[@]}"
           do
             if [[ $i == "failure" ]]; then
@@ -326,3 +333,5 @@ jobs:
                 exit 1;
             fi
           done
+        env:
+          RESULT: ${{ toJSON(needs.*.result) }}

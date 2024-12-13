@@ -23,7 +23,7 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Rotki Version
         id: rotki_version
-        run: echo "version=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
+        run: echo "version=${GITHUB_REF#refs/*/}" >> "$GITHUB_OUTPUT"
       - name: Cache regctl
         uses: actions/cache@v4
         with:
@@ -33,15 +33,18 @@ jobs:
         run: |
           if [[ ! -f "regctl-linux-amd64" ]]; then
             echo "downloading regctl"
-            curl -LO "https://github.com/regclient/regclient/releases/download/${{ env.REGCTL }}/regctl-linux-amd64"            
+            curl -LO "https://github.com/regclient/regclient/releases/download/${REGCT}/regctl-linux-amd64"            
           fi
           chmod u+x regctl-linux-amd64
-          echo "${{ env.REGCTL_SUM }} regctl-linux-amd64" > regctl-linux-amd64.sha512
+          echo "${REGCTL_SUM} regctl-linux-amd64" > regctl-linux-amd64.sha512
           if [[ ! $(sha512sum -c regctl-linux-amd64.sha512) ]]; then 
             echo checksum failed
             exit 1
           fi
       - name: Publish latest to hub.docker.com
-        run: ./regctl-linux-amd64 image copy "${{ github.repository }}:${{ steps.rotki_version.outputs.version }}" "${{ github.repository }}:latest"
+        run: ./regctl-linux-amd64 image copy "${REPOSITORY}:${VERSION}" "${REPOSITORY}:latest"
+        env:
+          REPOSITORY: ${{ github.repository }}
+          VERSION: ${{ steps.rotki_version.outputs.version }}
 
 

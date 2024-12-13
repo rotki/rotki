@@ -7,19 +7,23 @@ on:
       - bugfixes
       - master
 
-permissions:
-  contents: read
-  pull-requests: write
+permissions: {}
 
 jobs:
   sql-diff:
     name: SQLDiff
     runs-on: ubuntu-24.04
 
+    permissions:
+      contents: read
+      pull-requests: write
+
     steps:
       - name: Checkout
         id: checkout
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Install required
         run: sudo apt-get install -y sqlcipher sqlite3-tools
