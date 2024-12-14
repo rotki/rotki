@@ -861,10 +861,9 @@ def test_user_login(
     # check that the backup db is used
     with rotki.data.db.conn.read_ctx() as cursor:
         cursor.execute('SELECT * FROM settings WHERE name=?', ('is_backup',))
-        results = cursor.fetchall()
+        results: list[tuple[str, ...]] = cursor.fetchall()
         assert len(results) == 1, f'Expected one result, got {len(results)}'
-        result = results[0]
-        assert result['1'] == 'Yes'
+        assert results[0][1] == 'Yes'
 
     # Remove the ongoing upgrade setting
     with rotki.data.db.user_write() as write_cursor:
