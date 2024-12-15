@@ -7,7 +7,7 @@ Rotki Websockets API
 Introduction
 *************
 
-When the rotki backend runs it exposes a websockets API that can be easily subscribed to. Through that API rotki backend pushes data to the subscribed clients (mainly the rotki frontend) in a continuous manner and as soon as they are available.
+When the rotki backend runs it exposes a websockets API that can easily subscribe to. Through that API rotki backend pushes data to the subscribed clients (mainly the rotki frontend) in a continuous manner and as soon as they are available.
 
 
 Subscribe
