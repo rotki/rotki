@@ -7,10 +7,18 @@ from unittest.mock import patch
 import pytest
 import requests
 
-from rotkehlchen.accounting.structures.balance import BalanceType
+from rotkehlchen.accounting.structures.balance import Balance, BalanceType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
+from rotkehlchen.chain.ethereum.modules.ens.constants import CPT_ENS
+from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_ETH2, A_EUR
+from rotkehlchen.constants.misc import ONE
+from rotkehlchen.db.evmtx import DBEvmTx
+from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.evm_event import EvmEvent
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
@@ -19,10 +27,28 @@ from rotkehlchen.tests.utils.api import (
 )
 from rotkehlchen.tests.utils.balances import get_asset_balance_total
 from rotkehlchen.tests.utils.constants import A_RDN
-from rotkehlchen.tests.utils.factories import UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2
+from rotkehlchen.tests.utils.factories import (
+    UNIT_BTC_ADDRESS1,
+    UNIT_BTC_ADDRESS2,
+    make_evm_address,
+    make_evm_tx_hash,
+)
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
-from rotkehlchen.types import BTCAddress, ChecksumEvmAddress, Location
+from rotkehlchen.types import (
+    AssetAmount,
+    BTCAddress,
+    ChainID,
+    ChecksumEvmAddress,
+    EvmTransaction,
+    Fee,
+    Location,
+    Price,
+    Timestamp,
+    TimestampMS,
+    TradeType,
+    deserialize_evm_tx_hash,
+)
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
@@ -431,3 +457,194 @@ def test_query_statistics_renderer(
             contained_in_msg='logged in user testuser does not have a premium subscription',
             status_code=HTTPStatus.FORBIDDEN,
         )
+
+
+@pytest.mark.parametrize('ethereum_accounts', [['0x01471dB828Cfb96Dcf215c57a7a6493702031EC1']])
+@pytest.mark.parametrize('base_accounts', [['0x01471dB828Cfb96Dcf215c57a7a6493702031EC1']])
+def test_query_wrap(
+        rotkehlchen_api_server: 'APIServer',
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
+    """Test that information returned by recap endpoint is correct.
+    It adds:
+    - transactions
+    - evm events (for fees)
+    - gnosis payments
+    - trades
+
+    Some of them are outside the queried range to confirm that the range is correct.
+    """
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    db = rotki.data.db
+
+    with db.conn.write_ctx() as write_cursor:
+        db.add_trades(
+            write_cursor=write_cursor,
+            trades=[
+                Trade(
+                    timestamp=Timestamp(1718562595),
+                    location=Location.KRAKEN,
+                    base_asset=A_ETH,
+                    quote_asset=A_BTC,
+                    trade_type=TradeType.BUY,
+                    amount=AssetAmount(ONE),
+                    rate=Price(ONE),
+                    fee=Fee(FVal('0.1')),
+                    fee_currency=A_BTC,
+                    link='',
+                    notes='',
+                ), Trade(
+                    timestamp=Timestamp(1734373795),
+                    location=Location.COINBASE,
+                    base_asset=A_ETH,
+                    quote_asset=A_BTC,
+                    trade_type=TradeType.BUY,
+                    amount=AssetAmount(FVal(2)),
+                    rate=Price(ONE),
+                    fee=Fee(FVal('0.1')),
+                    fee_currency=A_BTC,
+                    link='',
+                    notes='',
+                ), Trade(
+                    timestamp=Timestamp(1734373795),
+                    location=Location.EXTERNAL,
+                    base_asset=A_ETH,
+                    quote_asset=A_BTC,
+                    trade_type=TradeType.BUY,
+                    amount=AssetAmount(FVal(2)),
+                    rate=Price(ONE),
+                    fee=Fee(FVal('0.1')),
+                    fee_currency=A_BTC,
+                    link='',
+                    notes='',
+                ), Trade(
+                    timestamp=Timestamp(1702751395),  # last year
+                    location=Location.BYBIT,
+                    base_asset=A_ETH,
+                    quote_asset=A_BTC,
+                    trade_type=TradeType.BUY,
+                    amount=AssetAmount(FVal(2)),
+                    rate=Price(ONE),
+                    fee=Fee(FVal('0.1')),
+                    fee_currency=A_BTC,
+                    link='',
+                    notes='',
+                ),
+            ],
+        )
+
+        events_db = DBHistoryEvents(db)
+        events_db.add_history_events(
+            write_cursor=write_cursor,
+            history=[
+                EvmEvent(
+                    tx_hash=make_evm_tx_hash(),
+                    sequence_index=1,
+                    timestamp=TimestampMS(1734373795000),
+                    location=chain,
+                    event_type=HistoryEventType.SPEND,
+                    event_subtype=HistoryEventSubType.FEE,
+                    asset=A_ETH,
+                    balance=Balance(amount=FVal(0.1)),
+                    counterparty=CPT_GAS,
+                    location_label=ethereum_accounts[0],
+                )
+            for chain in (Location.ETHEREUM, Location.GNOSIS, Location.ARBITRUM_ONE)] + [
+                EvmEvent(  # event happening last year
+                    tx_hash=make_evm_tx_hash(),
+                    sequence_index=1,
+                    timestamp=TimestampMS(1702751395000),
+                    location=Location.BASE,
+                    event_type=HistoryEventType.SPEND,
+                    event_subtype=HistoryEventSubType.FEE,
+                    asset=A_ETH,
+                    balance=Balance(amount=FVal(5)),
+                    counterparty=CPT_GAS,
+                    location_label=ethereum_accounts[0],
+                ),
+                EvmEvent(  # example transactions to test counterparties
+                    tx_hash=make_evm_tx_hash(),
+                    sequence_index=1,
+                    timestamp=TimestampMS(1734373795000),
+                    location=Location.ETHEREUM,
+                    event_type=HistoryEventType.SPEND,
+                    event_subtype=HistoryEventSubType.FEE,
+                    asset=A_ETH,
+                    balance=Balance(amount=FVal(0.1)),
+                    counterparty=CPT_ENS,
+                    location_label=ethereum_accounts[0],
+                ),
+            ],
+        )
+
+        dbevmtx = DBEvmTx(db)
+        dbevmtx.add_evm_transactions(
+            write_cursor=write_cursor,
+            evm_transactions=[EvmTransaction(
+                tx_hash=make_evm_tx_hash(),
+                chain_id=chain,
+                timestamp=Timestamp(1718562595),
+                block_number=3,
+                from_address=make_evm_address(),
+                to_address=make_evm_address(),
+                value=4000000,
+                gas=5000000,
+                gas_price=2000000000,
+                gas_used=25000000,
+                input_data=b'',
+                nonce=1,
+            ) for chain in (ChainID.ETHEREUM, ChainID.BASE)],
+            relevant_address=ethereum_accounts[0],
+        )
+
+        dbevmtx.add_evm_transactions(
+            write_cursor=write_cursor,
+            evm_transactions=[EvmTransaction(
+                tx_hash=make_evm_tx_hash(),
+                chain_id=chain,
+                timestamp=Timestamp(1702751395),  # timestamp outside the range
+                block_number=3,
+                from_address=make_evm_address(),
+                to_address=make_evm_address(),
+                value=4000000,
+                gas=5000000,
+                gas_price=2000000000,
+                gas_used=25000000,
+                input_data=b'',
+                nonce=1,
+            ) for chain in (ChainID.ETHEREUM,)],
+            relevant_address=ethereum_accounts[0],
+        )
+
+        write_cursor.execute(
+            'INSERT OR REPLACE INTO gnosispay_data(tx_hash, timestamp, merchant_name, '
+            'merchant_city, country, mcc, transaction_symbol, transaction_amount, '
+            'billing_symbol, billing_amount, reversal_symbol, reversal_amount) '
+            'VALUES(?, ?, ?, ?, ? ,?, ?, ?, ?, ?, ?, ?)',
+            (
+                deserialize_evm_tx_hash('0xb3be0391a753de5ef54b6b43c716240e1cb2a4a0a1120420f5ce168fdd08f17c'),
+                1726712020, 'Acme Inc.',
+                'Sevilla', 'ES', 6666,
+                'EUR', '42.24',
+                None, None,
+                'EUR', '2.35',
+            ),
+        )
+
+    response = requests.post(
+        url=api_url_for(rotkehlchen_api_server, 'statswrapresource'),
+        json={'from_timestamp': 1704067200, 'to_timestamp': 1735689599},
+    )
+    result = assert_proper_sync_response_with_result(response)
+    assert result['trades_by_exchange'] == {'external': 1, 'kraken': 1, 'coinbase': 1}
+    assert FVal(result['eth_on_gas']).is_close('0.3')
+    assert FVal(result['eth_on_gas_per_address'][ethereum_accounts[0]]).is_close('0.3')
+    assert result['transactions_per_chain'] == {
+        'ETHEREUM': 1,
+        'BASE': 1,
+    }
+    assert result['top_days_by_number_of_transactions'] == [
+        {'timestamp': 1718562595, 'amount': '2'},
+    ]
+    assert result['gnosis_max_payments_by_currency'] == {'EUR': '42.24'}
+    assert result['transactions_per_protocol'] == [{'protocol': 'ens', 'transactions': 1}]

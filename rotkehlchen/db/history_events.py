@@ -53,12 +53,13 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval
 from rotkehlchen.types import (
     EVM_EVMLIKE_LOCATIONS_TYPE,
+    ChainID,
     EVMTxHash,
     Location,
     Timestamp,
     TimestampMS,
 )
-from rotkehlchen.utils.misc import ts_ms_to_sec
+from rotkehlchen.utils.misc import ts_ms_to_sec, ts_sec_to_ms
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -802,3 +803,73 @@ class DBHistoryEvents:
             (json.dumps(extra_data), event.identifier),
         )
         event.extra_data = extra_data
+
+    def query_wrap_stats(self, from_ts: Timestamp, to_ts: Timestamp) -> dict[str, Any]:
+        """Query simple statistics about the user to show them as a wrap for the year
+        This logic is temporary and will be removed.
+        """
+        from_ts_ms, to_ts_ms = ts_sec_to_ms(from_ts), ts_sec_to_ms(to_ts)
+        with self.db.conn.read_ctx() as cursor:
+            cursor.execute(
+                'SELECT SUM(CAST(amount AS FLOAT)) FROM history_events JOIN evm_events_info '
+                'ON history_events.identifier=evm_events_info.identifier WHERE '
+                "asset='ETH' AND type='spend' and subtype='fee' AND counterparty='gas' AND "
+                'timestamp >= ? AND timestamp <= ?',
+                (from_ts_ms, to_ts_ms),
+            )
+            eth_on_gas = str(cursor.fetchone()[0])
+            cursor.execute(
+                'SELECT location_label, SUM(CAST(amount AS FLOAT)) FROM history_events JOIN evm_events_info '  # noqa: E501
+                'ON history_events.identifier=evm_events_info.identifier WHERE '
+                "asset='ETH' AND type='spend' and subtype='fee' AND counterparty='gas' AND "
+                'timestamp >= ? AND timestamp <= ? GROUP BY location_label',
+                (from_ts_ms, to_ts_ms),
+            )
+            eth_on_gas_per_address = {row[0]: str(row[1]) for row in cursor}
+            cursor.execute(
+                'SELECT chain_id, COUNT(*) FROM evm_transactions '
+                'WHERE timestamp >= ? AND timestamp <= ? GROUP BY chain_id',
+                (from_ts, to_ts),
+            )
+            transactions_per_chain = {ChainID.deserialize_from_db(row[0]).name: row[1] for row in cursor}  # noqa: E501
+            cursor.execute(
+                'SELECT location, COUNT(*) from trades '
+                'WHERE timestamp >= ? AND timestamp <= ? GROUP BY location',
+                (from_ts, to_ts),
+            )
+            trades_by_exchange = {str(Location.deserialize_from_db(row[0])): row[1] for row in cursor}  # noqa: E501
+            cursor.execute(
+                'SELECT transaction_symbol, CAST(MAX(CAST(transaction_amount AS FLOAT)) AS STRING)'
+                'from gnosispay_data WHERE timestamp >= ? AND timestamp <= ? '
+                'GROUP BY transaction_symbol',
+                (from_ts, to_ts),
+            )
+            gnosis_max_payments_by_currency = {symbol: str(amount) for symbol, amount in cursor}
+            cursor.execute(
+                'SELECT timestamp, COUNT(*) as tx_count FROM evm_transactions '
+                'WHERE timestamp >= ? AND timestamp <= ? GROUP BY timestamp ORDER BY '
+                'tx_count DESC LIMIT 10',
+                (from_ts, to_ts),
+            )
+            top_days_by_number_of_transactions = [{'timestamp': row[0], 'amount': str(row[1])} for row in cursor]  # noqa: E501
+            cursor.execute(
+                'SELECT counterparty,  COUNT(DISTINCT tx_hash) AS unique_transaction_count '
+                'FROM evm_events_info JOIN history_events ON '
+                'evm_events_info.identifier = history_events.identifier '
+                "WHERE counterparty IS NOT NULL AND counterparty != 'gas' "
+                'GROUP BY counterparty ORDER BY unique_transaction_count DESC',
+            )
+            transactions_per_protocol = [
+                {'protocol': row[0], 'transactions': row[1]}
+                for row in cursor
+            ]
+
+        return {
+            'eth_on_gas': eth_on_gas,
+            'eth_on_gas_per_address': eth_on_gas_per_address,
+            'transactions_per_chain': transactions_per_chain,
+            'trades_by_exchange': trades_by_exchange,
+            'gnosis_max_payments_by_currency': gnosis_max_payments_by_currency,
+            'top_days_by_number_of_transactions': top_days_by_number_of_transactions,
+            'transactions_per_protocol': transactions_per_protocol,
+        }
