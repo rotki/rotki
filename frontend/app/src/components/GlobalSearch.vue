@@ -376,7 +376,7 @@ watch(open, (open) => {
 });
 
 function change(index?: number) {
-  if (!index)
+  if (!isDefined(index))
     return;
 
   const item: SearchItem = get(visibleItems)[index];
