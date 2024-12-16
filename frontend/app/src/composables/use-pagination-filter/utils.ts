@@ -2,6 +2,11 @@ import { HistoryPaginationSchema, HistorySortOrderSchema, type LocationQuery } f
 import type { DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import type { SingleColumnSorting, Sorting, TableRowKey } from '@/composables/use-pagination-filter/types';
 
+interface ApiSorting {
+  orderByAttributes: string[];
+  ascending: boolean[];
+}
+
 function getSorting<T extends NonNullable<unknown>>(
   sorting: { column?: string; direction?: 'asc' | 'desc' },
 ): SingleColumnSorting<T> {
@@ -87,25 +92,38 @@ export function applyPaginationDefaults(limit: number): TablePaginationData {
   };
 }
 
-export function getApiSortingParams<T extends NonNullable<unknown>>(sorting: Sorting<T>): { orderByAttributes: string[]; ascending: boolean[] } {
+function arrayToApiSorting<T extends NonNullable<unknown>>(sorting: SingleColumnSorting<T>[]): ApiSorting {
+  return {
+    ascending: sorting.map(item => item.direction === 'asc'),
+    orderByAttributes: sorting.map(item => transformCase(item.column)),
+  };
+}
+
+function singleToApiSorting<T extends NonNullable<unknown>>(sorting: SingleColumnSorting<T>): ApiSorting {
+  return {
+    ascending: [sorting.direction === 'asc'],
+    orderByAttributes: [transformCase(sorting.column)],
+  };
+}
+
+export function getApiSortingParams<T extends NonNullable<unknown>>(
+  sorting: Sorting<T>,
+  defaultSorting: Sorting<T>,
+): ApiSorting {
   if (Array.isArray(sorting)) {
     if (sorting.length === 0) {
-      return {
-        ascending: [false],
-        orderByAttributes: ['timestamp'],
-      };
+      if (Array.isArray(defaultSorting)) {
+        return arrayToApiSorting(defaultSorting);
+      }
+      else {
+        return singleToApiSorting(defaultSorting);
+      }
     }
     else {
-      return {
-        ascending: sorting.map(item => item.direction === 'asc'),
-        orderByAttributes: sorting.map(item => transformCase(item.column)),
-      };
+      return arrayToApiSorting(sorting);
     }
   }
   else {
-    return {
-      ascending: [sorting.direction === 'asc'],
-      orderByAttributes: [transformCase(sorting.column)],
-    };
+    return singleToApiSorting(sorting);
   }
 }

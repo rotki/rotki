@@ -113,7 +113,7 @@ export function usePaginationFilters<
     },
     set(sort) {
       set(userAction, true);
-      set(internalSorting, applySortingDefaults(sort));
+      set(internalSorting, sort);
     },
   });
 
@@ -195,7 +195,7 @@ export function usePaginationFilters<
       ...transformFilters(transformedFilters) as Params<TItem, any>,
       limit,
       offset,
-      ...getApiSortingParams(get(internalSorting)),
+      ...getApiSortingParams(get(internalSorting), defaultSorting()),
     } as TPayload; // todo: figure out a way to not typecast
   });
 
