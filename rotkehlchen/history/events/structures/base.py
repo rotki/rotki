@@ -311,9 +311,9 @@ class HistoryBaseEntry(AccountingEventMixin, ABC, Generic[ExtraDataType]):
         right after the 'asset' in the serialized dictionary. Note that
         'fiat_value' is not in USD but in the user-selected currency.
         """
+        new_dict: dict[str, Any] = {'direction': self.maybe_get_direction()}
         entry = self.serialize()
         balance = entry.pop('balance')
-        new_dict = {}
         for key, value in entry.items():
             new_dict[key] = value
             if key == 'asset':
