@@ -148,14 +148,7 @@ onMounted(async () => {
           :label="t('price_management.from_asset')"
           clearable
           hide-details
-        >
-          <template #prepend>
-            <RuiIcon
-              size="20"
-              name="filter-line"
-            />
-          </template>
-        </AssetSelect>
+        />
       </div>
       <RuiDataTable
         v-model:sort="sort"
