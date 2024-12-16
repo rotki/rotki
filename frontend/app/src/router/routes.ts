@@ -36,7 +36,6 @@ export const Routes = {
   DEFI_LIABILITIES: ensureRoute('/defi/liabilities'),
   DEFI_OVERVIEW: ensureRoute('/defi/overview'),
   HISTORY: ensureRoute('/history'),
-  HISTORY_DEPOSITS_WITHDRAWALS: ensureRoute('/history/deposits-withdrawals'),
   HISTORY_EVENTS: ensureRoute('/history/transactions'),
   HISTORY_TRADES: ensureRoute('/history/trades'),
   IMPORT: ensureRoute('/import'),
@@ -199,11 +198,6 @@ export const useAppRoutes = createSharedComposable(() => {
       icon: 'history-line' as const,
       route: Routes.HISTORY,
       text: t('navigation_menu.history'),
-    },
-    HISTORY_DEPOSITS_WITHDRAWALS: {
-      icon: 'bank-line' as const,
-      route: Routes.HISTORY_DEPOSITS_WITHDRAWALS,
-      text: t('navigation_menu.history_sub.deposits_withdrawals'),
     },
     HISTORY_EVENTS: {
       icon: 'exchange-box-line' as const,

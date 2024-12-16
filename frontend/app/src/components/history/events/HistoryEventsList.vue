@@ -15,7 +15,10 @@ const props = withDefaults(
 );
 
 const emit = defineEmits<{
-  (e: 'edit-event', data: HistoryEventEntry): void;
+  (e: 'edit-event', data: {
+    event: HistoryEventEntry;
+    eventsInGroup: HistoryEventEntry[];
+  }): void;
   (
     e: 'delete-event',
     data: {
@@ -106,7 +109,10 @@ const buttonText = computed(() => {
       :loading="loading"
       @delete-event="emit('delete-event', $event)"
       @show:missing-rule-action="emit('show:missing-rule-action', $event)"
-      @edit-event="emit('edit-event', $event)"
+      @edit-event="emit('edit-event', {
+        event: $event,
+        eventsInGroup: limitedEvents,
+      })"
     />
     <RuiButton
       v-if="showDropdown"

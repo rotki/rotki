@@ -74,7 +74,6 @@ export type Suggestion = z.infer<typeof Suggestion>;
 
 export enum SavedFilterLocation {
   HISTORY_TRADES = 'historyTrades',
-  HISTORY_DEPOSITS_WITHDRAWALS = 'historyDepositsWithdrawals',
   HISTORY_EVENTS = 'historyEvents',
   BLOCKCHAIN_ACCOUNTS = 'blockchainAccounts',
   ETH_VALIDATORS = 'ethValidators',

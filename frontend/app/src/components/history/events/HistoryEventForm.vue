@@ -6,20 +6,20 @@ import EthDepositEventForm from '@/components/history/events/forms/EthDepositEve
 import EthBlockEventForm from '@/components/history/events/forms/EthBlockEventForm.vue';
 import OnlineHistoryEventForm from '@/components/history/events/forms/OnlineHistoryEventForm.vue';
 import EvmEventForm from '@/components/history/events/forms/EvmEventForm.vue';
+import AssetMovementEventForm from '@/components/history/events/forms/AssetMovementEventForm.vue';
 import type { HistoryEvent } from '@/types/history/events';
 
-const props = withDefaults(
-  defineProps<{
-    editableItem?: HistoryEvent;
-    nextSequence?: string;
-    groupHeader?: HistoryEvent;
-  }>(),
-  {
-    editableItem: undefined,
-    groupHeader: undefined,
-    nextSequence: undefined,
-  },
-);
+const props = withDefaults(defineProps<{
+  editableItem?: HistoryEvent;
+  nextSequence?: string;
+  groupHeader?: HistoryEvent;
+  groupEvents?: HistoryEvent[];
+}>(), {
+  editableItem: undefined,
+  groupEvents: undefined,
+  groupHeader: undefined,
+  nextSequence: undefined,
+});
 
 const { t } = useI18n();
 const { editableItem, groupHeader } = toRefs(props);
@@ -31,6 +31,13 @@ function getEvent<T extends HistoryEvent>(event: HistoryEvent | undefined, type:
     return event;
 
   return undefined;
+}
+
+function getEvents<T extends HistoryEvent>(events: HistoryEvent[] | undefined, type: HistoryEventEntryType): T[] | undefined {
+  if (!events)
+    return undefined;
+
+  return events.filter((event): event is T => isOfEventType<T>(event, type));
 }
 
 const historyEventEntryTypes = Object.values(HistoryEventEntryType);
@@ -100,6 +107,12 @@ watchImmediate([groupHeader, editableItem], ([groupHeader, editableItem]) => {
       data-cy="eth-withdrawal-event-form"
       :group-header="getEvent(groupHeader, HistoryEventEntryType.ETH_WITHDRAWAL_EVENT)"
       :editable-item="getEvent(editableItem, HistoryEventEntryType.ETH_WITHDRAWAL_EVENT)"
+    />
+    <AssetMovementEventForm
+      v-if="entryType === HistoryEventEntryType.ASSET_MOVEMENT_EVENT"
+      data-cy="asset-movement-event-form"
+      :group-events="getEvents(groupEvents, HistoryEventEntryType.ASSET_MOVEMENT_EVENT)"
+      :editable-item="getEvent(editableItem, HistoryEventEntryType.ASSET_MOVEMENT_EVENT)"
     />
   </form>
 </template>

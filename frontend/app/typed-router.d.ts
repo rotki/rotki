@@ -49,7 +49,6 @@ declare module 'vue-router/auto-routes' {
     'defi-liabilities': RouteRecordInfo<'defi-liabilities', '/defi/liabilities', Record<never, never>, Record<never, never>>,
     'defi-overview': RouteRecordInfo<'defi-overview', '/defi/overview', Record<never, never>, Record<never, never>>,
     'history': RouteRecordInfo<'history', '/history', Record<never, never>, Record<never, never>>,
-    'deposits-withdrawals': RouteRecordInfo<'deposits-withdrawals', '/history/deposits-withdrawals', Record<never, never>, Record<never, never>>,
     'trades': RouteRecordInfo<'trades', '/history/trades', Record<never, never>, Record<never, never>>,
     'history-events': RouteRecordInfo<'history-events', '/history/transactions', Record<never, never>, Record<never, never>>,
     'import': RouteRecordInfo<'import', '/import', Record<never, never>, Record<never, never>>,

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { toEvmChainAndTxHash } from '@/utils/history';
 import { TaskType } from '@/types/task-type';
-import { isEvmEventRef } from '@/utils/history/events';
+import { isAssetMovementEvent, isEvmEventRef } from '@/utils/history/events';
 import { useTaskStore } from '@/store/tasks';
 import { useSupportedChains } from '@/composables/info/chains';
 import type { EvmChainAndTxHash, EvmHistoryEvent, HistoryEventEntry } from '@/types/history/events';
@@ -35,6 +35,10 @@ const redecode = (data: EvmChainAndTxHash) => emit('redecode', data);
 function deleteTxAndEvents({ location, txHash }: EvmHistoryEvent) {
   return emit('delete-tx', { evmChain: getChain(location), txHash });
 }
+
+function hideAddAction(item: HistoryEventEntry): boolean {
+  return isAssetMovementEvent(item) && item.eventSubtype === 'fee';
+}
 </script>
 
 <template>
@@ -60,6 +64,7 @@ function deleteTxAndEvents({ location, txHash }: EvmHistoryEvent) {
       </template>
       <div class="py-2">
         <RuiButton
+          v-if="!hideAddAction"
           variant="list"
           @click="addEvent(event)"
         >

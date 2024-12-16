@@ -95,7 +95,8 @@ const {
 } = toRefs(props);
 
 const nextSequence = ref<string>();
-const selectedGroup = ref<HistoryEvent>();
+const selectedGroupHeader = ref<HistoryEvent>();
+const selectedGroupEvents = ref<HistoryEvent[]>();
 const eventWithMissingRules = ref<HistoryEventEntry>();
 const accounts = ref<BlockchainAccount<AddressData>[]>([]);
 const locationOverview = ref(get(location));
@@ -301,19 +302,21 @@ function showForm(payload: ShowEventHistoryForm): void {
   if (payload.type === 'event') {
     const {
       event,
+      eventsInGroup,
       group,
       nextSequenceId,
     } = payload.data;
 
-    set(selectedGroup, group);
+    set(selectedGroupHeader, group);
     set(editableItem, event);
     set(nextSequence, nextSequenceId);
+    set(selectedGroupEvents, eventsInGroup);
     setOpenDialog(true);
   }
   else {
     const { event, group } = payload.data;
     set(eventWithMissingRules, event);
-    set(selectedGroup, group);
+    set(selectedGroupHeader, group);
   }
 }
 
@@ -329,7 +332,7 @@ function onAddMissingRule(data: Pick<AccountingRuleEntry, 'eventType' | 'eventSu
 }
 
 function editMissingRulesEntry(event: HistoryEventEntry): void {
-  const group = get(selectedGroup);
+  const group = get(selectedGroupHeader);
 
   startPromise(nextTick(() => {
     showForm({ data: { event, group }, type: 'event' });
@@ -512,8 +515,9 @@ onUnmounted(() => {
 
       <HistoryEventFormDialog
         :editable-item="editableItem"
-        :group-header="selectedGroup"
+        :group-header="selectedGroupHeader"
         :next-sequence="nextSequence"
+        :group-events="selectedGroupEvents"
       />
 
       <TransactionFormDialog :loading="sectionLoading" />

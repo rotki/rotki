@@ -72,17 +72,18 @@ export function compareTextByKeyword(a: string, b: string, keyword: string): num
   const keywordBHaystackIndex = keywordB.indexOf(search);
   const keywordBNeedleIndex = search.indexOf(keywordB);
 
-  const length = search.length;
+  const aLength = keywordA.length;
+  const bLength = keywordB.length;
 
   if (keywordAHaystackIndex === 0 || keywordANeedleIndex === 0)
-    rankA -= length + 1;
+    rankA -= aLength + 1;
   else if (keywordAHaystackIndex > 0 || keywordANeedleIndex > 0)
-    rankA -= length;
+    rankA -= aLength;
 
   if (keywordBHaystackIndex === 0 || keywordBNeedleIndex === 0)
-    rankB -= length + 1;
+    rankB -= bLength + 1;
   else if (keywordBHaystackIndex > 0 || keywordBNeedleIndex > 0)
-    rankB -= length;
+    rankB -= bLength;
 
   return rankA - rankB;
 }

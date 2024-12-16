@@ -112,10 +112,6 @@ function getRoutes(keyword: string): SearchItemWithoutValue[] {
       texts: [Routes.HISTORY.text, Routes.HISTORY_TRADES.text],
     },
     {
-      ...Routes.HISTORY_DEPOSITS_WITHDRAWALS,
-      texts: [Routes.HISTORY.text, Routes.HISTORY_DEPOSITS_WITHDRAWALS.text],
-    },
-    {
       ...Routes.HISTORY_EVENTS,
       texts: [Routes.HISTORY.text, Routes.HISTORY_EVENTS.text],
     },

@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common';
-import { isEthBlockEventRef, isEthDepositEventRef, isEvmEventRef, isWithdrawalEventRef } from '@/utils/history/events';
+import {
+  isAssetMovementEventRef,
+  isEthBlockEventRef,
+  isEthDepositEventRef,
+  isEvmEventRef,
+  isWithdrawalEventRef,
+} from '@/utils/history/events';
 import { useSupportedChains } from '@/composables/info/chains';
 import HashLink from '@/components/helper/HashLink.vue';
 import type { HistoryEventEntry } from '@/types/history/events';
@@ -8,6 +14,8 @@ import type { HistoryEventEntry } from '@/types/history/events';
 const props = defineProps<{
   event: HistoryEventEntry;
 }>();
+
+const { t } = useI18n();
 
 const { event } = toRefs(props);
 
@@ -19,6 +27,7 @@ const translationKey = computed<string>(() => `transactions.events.headers.${toS
 const evmOrDepositEvent = computed(() => get(isEvmEventRef(event)) || get(isEthDepositEventRef(event)));
 const blockEvent = isEthBlockEventRef(event);
 const withdrawEvent = isWithdrawalEventRef(event);
+const assetMovementEvent = isAssetMovementEventRef(event);
 
 /**
  * The key is used to avoid an issue where the block event identifier would be reused
@@ -31,6 +40,8 @@ const key = computed(() => {
     return 'block';
   else if (get(withdrawEvent))
     return 'withdraw';
+  else if (get(assetMovementEvent))
+    return 'asset_movement';
   else
     return undefined;
 });
@@ -40,8 +51,8 @@ const key = computed(() => {
   <i18n-t
     :key="key"
     :keypath="translationKey"
-    tag="span"
-    class="flex items-center gap-2"
+    tag="div"
+    class="flex flex-wrap items-center gap-x-1.5 gap-y-1"
   >
     <template #location>
       {{ toSentenceCase(event.location) }}
@@ -85,6 +96,32 @@ const key = computed(() => {
         :truncate-length="8"
         :full-address="is2xlAndUp"
       />
+    </template>
+
+    <template
+      v-else-if="assetMovementEvent && assetMovementEvent.extraData?.transactionId"
+      #txHash
+    >
+      <HashLink
+        :class="$style.wrapper"
+        :text="assetMovementEvent!.extraData?.transactionId || undefined"
+        :show-icon="false"
+        type="transaction"
+        :truncate-length="8"
+        :full-address="is2xlAndUp"
+        copy-only
+      />
+    </template>
+
+    <template
+      v-if="assetMovementEvent"
+      #verb
+    >
+      {{
+        assetMovementEvent.eventType === 'withdrawal'
+          ? t('transactions.events.headers.asset_movement_event_withdraw')
+          : t('transactions.events.headers.asset_movement_event_deposit')
+      }}
     </template>
   </i18n-t>
 </template>

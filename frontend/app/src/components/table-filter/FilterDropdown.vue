@@ -268,6 +268,6 @@ const highlightedTextClasses = 'text-subtitle-2 text-rui-text-secondary';
 
 <style lang="scss" module>
 .suggestions {
-  @apply max-h-[12rem] overflow-y-auto;
+  @apply max-h-[12rem] overflow-x-hidden overflow-y-auto;
 }
 </style>

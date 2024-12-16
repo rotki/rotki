@@ -1,5 +1,6 @@
 import { HistoryEventEntryType } from '@rotki/common';
 import {
+  type AssetMovementEvent,
   type EthBlockEvent,
   type EthDepositEvent,
   type EthWithdrawalEvent,
@@ -88,6 +89,21 @@ export function isEthDepositEventRef(event: MaybeRef<HistoryEvent>): ComputedRef
   return computed(() => {
     const eventVal = get(event);
     return isEthDepositEvent(eventVal) ? eventVal : undefined;
+  });
+}
+
+export function isAssetMovementEventType(type: HistoryEventEntryType): boolean {
+  return type === HistoryEventEntryType.ASSET_MOVEMENT_EVENT;
+}
+
+export function isAssetMovementEvent(event: HistoryEvent): event is AssetMovementEvent {
+  return isAssetMovementEventType(event.entryType);
+}
+
+export function isAssetMovementEventRef(event: MaybeRef<HistoryEvent>): ComputedRef<AssetMovementEvent | undefined> {
+  return computed(() => {
+    const eventVal = get(event);
+    return isAssetMovementEvent(eventVal) ? eventVal : undefined;
   });
 }
 

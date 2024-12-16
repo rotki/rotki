@@ -18,6 +18,7 @@ import HistoryEventsIdentifier from '@/components/history/events/HistoryEventsId
 import LocationIcon from '@/components/history/LocationIcon.vue';
 import IgnoredInAcountingIcon from '@/components/history/IgnoredInAcountingIcon.vue';
 import CollectionHandler from '@/components/helper/CollectionHandler.vue';
+import { isAssetMovementEvent } from '@/utils/history/events';
 import type { Collection } from '@/types/collection';
 import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import type {
@@ -81,13 +82,13 @@ const cols = computed<DataTableColumn<HistoryEventEntry>[]>(() => [
   },
   {
     cellClass: '!py-2',
-    class: 'w-[60%]',
     key: 'txHash',
     label: t('transactions.events.headers.event_identifier'),
   },
   {
     align: 'end',
-    cellClass: 'text-no-wrap !py-2',
+    cellClass: 'text-no-wrap !py-2 w-[12rem]',
+    class: 'w-[12rem]',
     key: 'timestamp',
     label: t('common.datetime'),
     sortable: true,
@@ -174,8 +175,14 @@ async function onConfirmDelete(): Promise<void> {
     await ignoreSingle(event, true);
   }
   else {
-    const id = event.identifier;
-    const { success } = await deleteHistoryEvent([id]);
+    const ids = [];
+    if (isAssetMovementEvent(event)) {
+      ids.push(...(get(eventsGroupedByEventIdentifier)[event.eventIdentifier] || []).map(item => item.identifier));
+    }
+    else {
+      ids.push(event.identifier);
+    }
+    const { success } = await deleteHistoryEvent(ids);
     if (!success)
       return;
 
@@ -292,7 +299,7 @@ function forceRedecode(): void {
           />
         </template>
         <template #item.txHash="{ row }">
-          <LazyLoader class="flex items-center gap-2">
+          <LazyLoader class="flex items-center gap-2.5">
             <LocationIcon
               icon
               :item="row.location"
@@ -341,7 +348,7 @@ function forceRedecode(): void {
               data: {
                 group: row,
                 nextSequenceId: suggestNextSequenceId(row),
-                event: $event,
+                ...$event,
               },
             })"
             @delete-event="confirmDelete($event)"
