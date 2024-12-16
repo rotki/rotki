@@ -161,6 +161,7 @@ from rotkehlchen.api.v1.schemas import (
     StringIdentifierSchema,
     TagSchema,
     TimedManualPriceSchema,
+    TimestampRangeSchema,
     TradeDeleteSchema,
     TradePatchSchema,
     TradeSchema,
@@ -3378,3 +3379,17 @@ class CalendarRemindersResource(BaseMethodView):
     @use_kwargs(query_schema, location='json_and_query')
     def post(self, identifier: int) -> Response:
         return self.rest_api.query_reminders(event_id=identifier)
+
+
+class StatsWrapResource(BaseMethodView):
+    """Endpoint for the wrap stats. It is temporary and will be removed."""
+
+    query_schema = TimestampRangeSchema()
+
+    @require_loggedin_user()
+    @use_kwargs(query_schema, location='json_and_query')
+    def post(self, from_timestamp: Timestamp, to_timestamp: Timestamp) -> Response:
+        return self.rest_api.query_wrap_stats(
+            from_ts=from_timestamp,
+            to_ts=to_timestamp,
+        )

@@ -5274,3 +5274,13 @@ class RestAPI:
             result=process_result(result),
             status_code=HTTPStatus.OK,
         ))
+
+    def query_wrap_stats(self, from_ts: Timestamp, to_ts: Timestamp) -> Response:
+        """Query starts in the time range selected.
+        This endpoint is temporary and will be removed.
+        """
+        db = DBHistoryEvents(self.rotkehlchen.data.db)
+        return api_response(_wrap_in_ok_result(
+            result=db.query_wrap_stats(from_ts=from_ts, to_ts=to_ts),
+            status_code=HTTPStatus.OK,
+        ))

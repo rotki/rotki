@@ -13704,3 +13704,85 @@ Managing calendar reminders
   :statuscode 401: No user is currently logged in.
   :statuscode 409: Failed to validate the data. Entry doesn't exist.
   :statuscode 500: Internal rotki error.
+
+
+.. http:post:: /api/(version)/statistics/wrap
+
+  Doing a POST on this endpoint will query basic statistics from the user DB.
+
+  **Example Request**:
+
+  .. http:example:: curl wget httpie python-requests
+
+    POST /api/(version)/statistics/wrap HTTP/1.1
+    Host: localhost:5042
+    Content-Type: application/json;charset=UTF-8
+
+    {
+        "from_timestamp": 1704067200,
+        "to_timestamp": 1735689599
+    }
+
+  :reqjsonarr integer from_timestamp: Start of the range used to query statistics. Defaults to 0.
+  :reqjsonarr integer to_timestamp: End of the range used to query statistics. Defaults to now.
+
+  **Example Response**:
+
+  .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "message": "",
+        "result": {
+          "eth_on_gas": "0.21760082633497774",
+          "eth_on_gas_per_address": {
+            "0x01471dB828Cfb96Dcf215c57a7a6493702031EC1": "0.21760082633497774",
+          }
+          "gnosis_max_payments_by_currency": {
+              "AED": "36.0",
+              "EUR": "120.17",
+              "THB": "13615.25",
+              "USD": "85.0"
+          },
+          "top_days_by_number_of_transactions": [
+              {
+                "amount": 5,
+                "timestamp": 1716715671
+              }
+          ],
+          "trades_by_exchange": {
+              "bybit": 4,
+              "coinbase": 21,
+              "kraken": 35
+          },
+          "transactions_per_protocol": [
+            {
+              "protocol": "ens",
+              "transactions": 1
+            }
+          ],
+          "transactions_per_chain": {
+              "ARBITRUM_ONE": 1284,
+              "BASE": 463,
+              "ETHEREUM": 144,
+              "GNOSIS": 1067,
+              "OPTIMISM": 283,
+              "POLYGON_POS": 186,
+              "SCROLL": 17
+          }
+        },
+        "status_code": 200
+      }
+
+  :resjson string eth_on_gas: Amount of ETH spent on gas.
+  :resjson object eth_on_gas_per_address: Amount of ETH spent on gas per address.
+  :resjson object gnosis_max_payments_by_currency: Object that maps currency symbol to the max amount paid in a single payments using that currency.
+  :resjson list top_days_by_number_of_transactions: list with the top 10 days with more EVM transactions. Sorted in descending order.
+  :resjson list transactions_per_protocol: Sorted list of per protocol interactions by number of transactions.
+  :resjson object trades_by_exchange: number of trades executed on every tracked exchange.
+  :resjson object transactions_per_chain: number of transactions that rotki tracks by chain for the user.
+  :statuscode 200: Entry correctly deleted.
+  :statuscode 401: No user is currently logged in.
+  :statuscode 500: Internal rotki error.
