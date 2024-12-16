@@ -172,11 +172,7 @@ setPostSubmitFunc(() => refresh({ modified: true }));
           clearable
           class="flex-1"
           hide-details
-        >
-          <template #prepend>
-            <RuiIcon name="filter-line" />
-          </template>
-        </AssetSelect>
+        />
         <AssetSelect
           v-model="toAsset"
           outlined
@@ -184,11 +180,7 @@ setPostSubmitFunc(() => refresh({ modified: true }));
           :label="t('price_management.to_asset')"
           clearable
           hide-details
-        >
-          <template #prepend>
-            <RuiIcon name="filter-line" />
-          </template>
-        </AssetSelect>
+        />
       </div>
       <RuiDataTable
         v-model:sort="sort"
