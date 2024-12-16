@@ -58,6 +58,7 @@ def assert_csv_export_response(
         assert data['result'] is True
 
     base_headers = (
+        'direction',
         'identifier',
         'entry_type',
         'event_identifier',
