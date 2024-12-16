@@ -1,7 +1,12 @@
 <script setup lang="ts">
 import { HistoryEventEntryType } from '@rotki/common';
 import { objectPick } from '@vueuse/shared';
-import { isEventAccountingRuleProcessed, isEventMissingAccountingRule, isEvmEvent } from '@/utils/history/events';
+import {
+  isAssetMovementEvent,
+  isEventAccountingRuleProcessed,
+  isEventMissingAccountingRule,
+  isEvmEvent,
+} from '@/utils/history/events';
 import { useSupportedChains } from '@/composables/info/chains';
 import HistoryEventAction from '@/components/history/events/HistoryEventAction.vue';
 import RowActions from '@/components/helper/RowActions.vue';
@@ -83,6 +88,10 @@ function getEventNoteAttrs(event: HistoryEventEntry) {
     ...data,
   };
 }
+
+function hideEventAction(item: HistoryEventEntry): boolean {
+  return isAssetMovementEvent(item) && item.eventSubtype === 'fee';
+}
 </script>
 
 <template>
@@ -118,6 +127,8 @@ function getEventNoteAttrs(event: HistoryEventEntry) {
           align="end"
           :delete-tooltip="t('transactions.events.actions.delete')"
           :edit-tooltip="t('transactions.events.actions.edit')"
+          :no-delete="hideEventAction(item)"
+          :no-edit="hideEventAction(item)"
           @edit-click="editEvent(item)"
           @delete-click="deleteEvent(item)"
         >

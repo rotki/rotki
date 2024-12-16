@@ -10,9 +10,11 @@ const props = withDefaults(
     nextSequence?: string;
     loading?: boolean;
     groupHeader?: HistoryEvent;
+    groupEvents?: HistoryEvent[];
   }>(),
   {
     editableItem: undefined,
+    groupEvents: undefined,
     groupHeader: undefined,
     loading: false,
     nextSequence: undefined,
@@ -50,6 +52,7 @@ watchImmediate(editableItem, (editable) => {
       :editable-item="editableItem"
       :next-sequence="nextSequence"
       :default-notes="defaultNotes"
+      :group-events="groupEvents"
     />
   </BigDialog>
 </template>

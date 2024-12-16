@@ -445,7 +445,7 @@ onMounted(setEditMode);
         variant="outlined"
         data-cy="fee"
         :required="!!feeCurrency"
-        :label="t('external_trade_form.fee.label')"
+        :label="t('common.label')"
         :hint="t('external_trade_form.fee.hint')"
         :error-messages="toMessages(v$.fee)"
         @update:model-value="triggerFeeValidator()"

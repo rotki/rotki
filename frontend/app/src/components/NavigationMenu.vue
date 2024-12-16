@@ -88,11 +88,6 @@ const navItems: MenuItem[] = [
         ...Routes.HISTORY_TRADES,
       },
       {
-        class: 'history-deposits-withdrawals',
-        type: 'item',
-        ...Routes.HISTORY_DEPOSITS_WITHDRAWALS,
-      },
-      {
         class: 'history-events',
         type: 'item',
         ...Routes.HISTORY_EVENTS,

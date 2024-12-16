@@ -1435,7 +1435,6 @@
       "with": "avec"
     },
     "details": {
-      "fee": "Frais",
       "link": "Lien",
       "title": "Détails de la transaction"
     },
@@ -1533,6 +1532,7 @@
       "end_date": "filtrer par la date de fin de la période",
       "start_date": "filtrer par la date de début de la période"
     },
+    "fee": "Frais",
     "ignored_in_accounting": "Ignoré dans la comptabilité",
     "important_notice": "Remarque importante :",
     "location": "Emplacement",
@@ -2234,8 +2234,7 @@
       "hint": "Heure à laquelle la transaction a eu lieu"
     },
     "fee": {
-      "hint": "[Facultatif] Frais, le cas échéant, de la transaction",
-      "label": "Frais"
+      "hint": "[Facultatif] Frais, le cas échéant, de la transaction"
     },
     "fee_currency": {
       "hint": "[Facultatif] L'actif utilisé pour les frais",
@@ -3063,7 +3062,6 @@
     },
     "history": "Historique",
     "history_sub": {
-      "deposits_withdrawals": "Dépôts & Retraits d'échange",
       "history_events": "Événements historiques",
       "trades": "Échanges d'échange"
     },

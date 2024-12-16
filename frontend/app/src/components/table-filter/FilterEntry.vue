@@ -18,14 +18,17 @@ function click(matcher: SearchMatcher<any>) {
 <template>
   <RuiButton
     variant="text"
-    class="text-body-1 tracking-wide w-full justify-start text-left text-rui-text-secondary"
+    class="text-body-1 tracking-wide w-full justify-start text-left text-rui-text-secondary [&>span]:overflow-hidden [&>span]:text-ellipsis"
     :class="{
       [$style.selected]: active,
     }"
     @click="click(matcher)"
   >
     <span class="font-medium text-rui-primary"> {{ matcher.key }}: </span>
-    <span class="ml-1 font-normal">
+    <span
+      class="ml-1 font-normal"
+      :title="matcher.description"
+    >
       {{ matcher.description }}
     </span>
   </RuiButton>

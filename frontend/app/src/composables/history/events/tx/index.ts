@@ -232,7 +232,6 @@ export const useHistoryTransactions = createSharedComposable(() => {
         refreshTransactionsHandler(evmLikeAccounts, TransactionChainType.EVMLIKE),
         queryOnlineEvent(OnlineHistoryEventsQueryType.ETH_WITHDRAWALS),
         queryOnlineEvent(OnlineHistoryEventsQueryType.BLOCK_PRODUCTIONS),
-        queryOnlineEvent(OnlineHistoryEventsQueryType.EXCHANGES),
       ]);
 
       if (!disableEvmEvents)

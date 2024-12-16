@@ -126,12 +126,24 @@ export const EthDepositEvent = CommonHistoryEvent.extend({
 
 export type EthDepositEvent = z.infer<typeof EthDepositEvent>;
 
-export const HistoryEvent = EvmHistoryEvent.or(OnlineHistoryEvent)
+export const AssetMovementEvent = CommonHistoryEvent.extend({
+  entryType: z.literal(HistoryEventEntryType.ASSET_MOVEMENT_EVENT),
+  extraData: z.object({
+    address: z.string().nullish(),
+    reference: z.string().nullish(),
+    transactionId: z.string().nullish(),
+  }).nullable(),
+});
+
+export type AssetMovementEvent = z.infer<typeof AssetMovementEvent>;
+
+export const HistoryEvent = EvmHistoryEvent.or(AssetMovementEvent)
+  .or(OnlineHistoryEvent)
   .or(EthWithdrawalEvent)
   .or(EthBlockEvent)
   .or(EthDepositEvent);
 
-export type HistoryEvent = EvmHistoryEvent | OnlineHistoryEvent | EthWithdrawalEvent | EthBlockEvent | EthDepositEvent;
+export type HistoryEvent = EvmHistoryEvent | OnlineHistoryEvent | EthWithdrawalEvent | EthBlockEvent | EthDepositEvent | AssetMovementEvent;
 
 export interface HistoryEventRequestPayload extends PaginationRequestPayload<{ timestamp: number }> {
   readonly fromTimestamp?: string | number;
@@ -208,19 +220,37 @@ export interface EditEthWithdrawalEventPayload {
 
 export type NewEthWithdrawalEventPayload = Omit<EditEthWithdrawalEventPayload, 'identifier'>;
 
+export interface EditAssetMovementEventPayload {
+  entryType: typeof HistoryEventEntryType.ASSET_MOVEMENT_EVENT;
+  identifier: number;
+  timestamp: number;
+  balance: Balance;
+  eventType: string;
+  location: string;
+  locationLabel: string | null;
+  eventIdentifier: string | null;
+  asset: string;
+  fee: string | null;
+  feeAsset: string | null;
+}
+
+export type NewAssetMovementEventPayload = Omit<EditAssetMovementEventPayload, 'identifier'>;
+
 export type EditHistoryEventPayload =
   | EditEvmHistoryEventPayload
   | EditOnlineHistoryEventPayload
   | EditEthBlockEventPayload
   | EditEthDepositEventPayload
-  | EditEthWithdrawalEventPayload;
+  | EditEthWithdrawalEventPayload
+  | EditAssetMovementEventPayload;
 
 export type NewHistoryEventPayload =
   | NewEvmHistoryEventPayload
   | NewOnlineHistoryEventPayload
   | NewEthBlockEventPayload
   | NewEthDepositEventPayload
-  | NewEthWithdrawalEventPayload;
+  | NewEthWithdrawalEventPayload
+  | NewAssetMovementEventPayload;
 
 export enum HistoryEventAccountingRuleStatus {
   HAS_RULE = 'has rule',
@@ -262,7 +292,6 @@ export type HistoryEventEntry = HistoryEvent & HistoryEventMeta;
 export enum OnlineHistoryEventsQueryType {
   ETH_WITHDRAWALS = 'eth_withdrawals',
   BLOCK_PRODUCTIONS = 'block_productions',
-  EXCHANGES = 'exchanges',
 }
 
 export interface OnlineHistoryEventsRequestPayload {
@@ -298,6 +327,7 @@ export interface ShowEventForm {
     group?: HistoryEvent;
     event?: HistoryEvent;
     nextSequenceId?: string;
+    eventsInGroup?: HistoryEvent[];
   };
 }
 

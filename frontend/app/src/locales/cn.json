@@ -1283,7 +1283,6 @@
       "with": "与"
     },
     "details": {
-      "fee": "费用",
       "link": "链接",
       "title": "交易详情"
     },
@@ -1380,6 +1379,7 @@
       "end_date": "按期间结束日期筛选",
       "start_date": "按期间的开始日期过滤"
     },
+    "fee": "费用",
     "ignored_in_accounting": "在会计中忽略",
     "important_notice": "重要通知:",
     "location": "位置",
@@ -2041,8 +2041,7 @@
       "hint": "交易发生的时间"
     },
     "fee": {
-      "hint": "[可选]如果发生任何交易则收取费用",
-      "label": "费用"
+      "hint": "[可选]如果发生任何交易则收取费用"
     },
     "fee_currency": {
       "hint": "[可选] 费用使用的货币",
@@ -2804,7 +2803,6 @@
     },
     "history": "历史",
     "history_sub": {
-      "deposits_withdrawals": "交换。存款和取款",
       "history_events": "历史事件",
       "trades": "交换。行业"
     },

@@ -19,7 +19,7 @@ const { hasLink, href, onLinkClick } = useLinks(link);
     </h6>
     <RuiCard content-class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-3">
       <span class="font-medium">
-        {{ t('closed_trades.details.fee') }}
+        {{ t('common.fee') }}
       </span>
 
       <AmountDisplay

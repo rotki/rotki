@@ -77,6 +77,12 @@ function onFocus() {
   });
 }
 
+function update(value: string) {
+  if (!value) {
+    set(model, '');
+  }
+}
+
 defineExpose({
   focus,
 });
@@ -90,6 +96,7 @@ defineExpose({
     v-bind="$attrs"
     :hide-details="hideDetails"
     @focus="onFocus()"
+    @update:model-value="update($event)"
   >
     <template
       v-for="(_, name) in $slots"

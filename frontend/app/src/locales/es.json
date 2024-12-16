@@ -1255,7 +1255,6 @@
       "with": "with"
     },
     "details": {
-      "fee": "Fee",
       "link": "Link",
       "title": "Trade Details"
     },
@@ -1346,6 +1345,7 @@
     "description": "Descripción",
     "details": "Detalles",
     "events": "Eventos",
+    "fee": "Fee",
     "here": "here",
     "ignored_in_accounting": "Ignored in Accounting",
     "important_notice": "Important notice:",
@@ -1985,8 +1985,7 @@
       "hint": "Time the trade took place"
     },
     "fee": {
-      "hint": "[Optional] Fee if any of the trade that occurred",
-      "label": "Fee"
+      "hint": "[Optional] Fee if any of the trade that occurred"
     },
     "fee_currency": {
       "hint": "[Optional] The currency used for the fee",
@@ -2724,7 +2723,6 @@
     },
     "history": "Historial",
     "history_sub": {
-      "deposits_withdrawals": "Depósitos y Retiros en Exch.",
       "history_events": "Historia Eventos",
       "trades": "Intercambios en Exch."
     },

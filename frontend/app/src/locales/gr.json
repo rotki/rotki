@@ -1263,7 +1263,6 @@
       "with": "with"
     },
     "details": {
-      "fee": "Fee",
       "link": "Link",
       "title": "Trade Details"
     },
@@ -1993,8 +1992,7 @@
       "hint": "Time the trade took place"
     },
     "fee": {
-      "hint": "[Optional] Fee if any of the trade that occurred",
-      "label": "Fee"
+      "hint": "[Optional] Fee if any of the trade that occurred"
     },
     "fee_currency": {
       "hint": "[Optional] The currency used for the fee",
@@ -2740,7 +2738,6 @@
     },
     "history": "Ιστορικό",
     "history_sub": {
-      "deposits_withdrawals": "Καταθέσεις & Αναλήψεις Αντ.",
       "history_events": "Ιστορικά γεγονότα",
       "trades": "Συναλλαγές Ανταλλακτηρίων"
     },

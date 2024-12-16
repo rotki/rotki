@@ -1,15 +1,14 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
-import {
-  type EditEvmHistoryEventPayload,
-  type EvmHistoryEvent,
-  type HistoryEventEntry,
-  OnlineHistoryEventsQueryType,
-} from '@/types/history/events';
 import { isOfEventType } from '@/utils/history/events';
 import { useHistoryTransactions } from '@/composables/history/events/tx';
 import { useHistoryTransactionDecoding } from '@/composables/history/events/tx/decoding';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
 import { useHistoryEvents } from '@/composables/history/events';
+import type {
+  EditEvmHistoryEventPayload,
+  EvmHistoryEvent,
+  HistoryEventEntry,
+} from '@/types/history/events';
 import type { EvmChainInfo } from '@/types/api/chains';
 import type { Blockchain } from '@rotki/common';
 
@@ -138,11 +137,7 @@ describe('composables::history/events/tx', () => {
 
     // add a transaction and check the spy function is called
     await refreshTransactions();
-    expect(queryEvSpy).toHaveBeenCalledOnce();
-    expect(queryEvSpy).toHaveBeenCalledWith({
-      asyncQuery: true,
-      queryType: OnlineHistoryEventsQueryType.EXCHANGES,
-    });
+    expect(queryEvSpy).toHaveBeenCalledTimes(0);
 
     // fetch all transaction and check the spy function is called
     await redecodeTransactions();

@@ -71,7 +71,7 @@ function redecodePageTransactions(): void {
       </TableStatusFilter>
       <TableFilter
         v-model:matches="filters"
-        class="min-w-[24rem]"
+        class="min-w-[12rem] md:min-w-[24rem]"
         :matchers="matchers"
         :location="SavedFilterLocation.HISTORY_EVENTS"
       />
