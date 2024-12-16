@@ -74,7 +74,6 @@ onMounted(() => {
     <RuiRadioGroup
       v-model="renderAllNftImages"
       color="primary"
-      class="mb-2"
       :success-messages="success"
       :error-messages="error"
       @update:model-value="updateRenderingSetting($event, updateImmediate)"
