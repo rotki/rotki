@@ -61,7 +61,6 @@ from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.inquirer import CurrentPriceOracle
 from rotkehlchen.types import (
     AddressbookEntry,
-    AssetMovementCategory,
     ChainID,
     CostBasisMethod,
     EvmTokenKind,
@@ -175,7 +174,6 @@ def _process_entry(entry: Any) -> str | (list[Any] | (dict[str, Any] | Any)):
             KrakenAccountType |
             Location |
             VaultEventType |
-            AssetMovementCategory |
             CurrentPriceOracle |
             HistoricalPriceOracle |
             BalanceType |

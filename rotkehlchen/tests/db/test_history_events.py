@@ -7,7 +7,7 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.api.v1.types import IncludeExcludeFilterData
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE
-from rotkehlchen.constants.assets import A_ETH, A_USDC, A_USDT
+from rotkehlchen.constants.assets import A_BTC, A_ETH, A_USDC, A_USDT
 from rotkehlchen.constants.limits import FREE_HISTORY_EVENTS_LIMIT
 from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED
 from rotkehlchen.db.dbhandler import DBHandler
@@ -18,6 +18,7 @@ from rotkehlchen.db.filtering import (
 )
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType, HistoryEvent
 from rotkehlchen.history.events.structures.eth2 import EthDepositEvent, EthWithdrawalEvent
 from rotkehlchen.history.events.structures.evm_event import EvmEvent, EvmProduct
@@ -317,9 +318,16 @@ def test_delete_last_event(database):
 def test_get_history_events_free_filter(database: 'DBHandler'):
     """Test that the history events filter works consistently with has_premium=True/False"""
     history_events = DBHistoryEvents(database=database)
-    event_identifiers = [make_evm_tx_hash().hex() for _ in range(5)]  # pylint: disable=no-member
+    event_identifiers = [make_evm_tx_hash().hex() for _ in range(6)]  # pylint: disable=no-member
     dummy_events = (
-        HistoryEvent(
+        AssetMovement(
+            event_identifier=event_identifiers[5],
+            timestamp=TimestampMS(1000),
+            location=Location.KRAKEN,
+            event_type=HistoryEventType.DEPOSIT,
+            asset=A_BTC,
+            balance=Balance(amount=ONE),
+        ), HistoryEvent(
             event_identifier=event_identifiers[0],
             sequence_index=0,
             timestamp=TimestampMS(1000),
@@ -429,6 +437,7 @@ def test_get_history_events_free_filter(database: 'DBHandler'):
             HistoryEventFilterQuery.make(assets=(A_ETH,), location=Location.COINBASE),
             HistoryEventFilterQuery.make(from_ts=Timestamp(2)),
             HistoryEventFilterQuery.make(assets=(A_USDT,), to_ts=Timestamp(3)),
+            HistoryEventFilterQuery.make(location=Location.KRAKEN),
             HistoryEventFilterQuery.make(exclude_ignored_assets=True),
         ):
             assert history_events.get_history_events(  # when grouping

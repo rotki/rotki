@@ -888,12 +888,6 @@ BLOCKCHAIN_LOCATIONS_TYPE: TypeAlias = EVM_EVMLIKE_LOCATIONS_TYPE
 BLOCKCHAIN_LOCATIONS: Final = EVM_EVMLIKE_LOCATIONS
 
 
-class AssetMovementCategory(DBCharEnumMixIn):
-    """Supported Asset Movement Types so far only deposit and withdrawals"""
-    DEPOSIT = 1
-    WITHDRAWAL = 2
-
-
 class ExchangeAuthCredentials(NamedTuple):
     """
     Data structure that is used for editing credentials of exchanges.

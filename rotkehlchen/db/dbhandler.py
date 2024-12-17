@@ -35,7 +35,6 @@ from rotkehlchen.chain.substrate.types import SubstrateAddress
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_ETH, A_ETH2, A_USD
 from rotkehlchen.constants.limits import (
-    FREE_ASSET_MOVEMENTS_LIMIT,
     FREE_TRADES_LIMIT,
     FREE_USER_NOTES_LIMIT,
 )
@@ -60,7 +59,6 @@ from rotkehlchen.db.constants import (
 from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType, DBCursor
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import (
-    AssetMovementsFilterQuery,
     TradesFilterQuery,
     UserNotesFilterQuery,
 )
@@ -111,7 +109,7 @@ from rotkehlchen.errors.misc import (
 )
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.constants import SUPPORTED_EXCHANGES
-from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
+from rotkehlchen.exchanges.data_structures import MarginPosition, Trade
 from rotkehlchen.exchanges.kraken import KrakenAccountType
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -166,7 +164,6 @@ TABLES_WITH_ASSETS = (
     ('manually_tracked_balances', 'asset'),
     ('trades', 'base_asset', 'quote_asset', 'fee_currency'),
     ('margin_positions', 'pl_currency', 'fee_currency'),
-    ('asset_movements', 'asset', 'fee_asset'),
     ('timed_balances', 'currency'),
     ('history_events', 'asset'),
 )
@@ -1068,7 +1065,6 @@ class DBHandler:
         Currently possible names are:
         - {exchange_location_name}_trades_{exchange_name}
         - {exchange_location_name}_margins_{exchange_name}
-        - {exchange_location_name}_asset_movements_{exchange_name}
         - {location}_history_events_{optional_label}
         - {exchange_location_name}_lending_history_{exchange_name}
         - gnosisbridge_{address}
@@ -1102,7 +1098,7 @@ class DBHandler:
     def purge_exchange_data(self, write_cursor: 'DBCursor', location: Location) -> None:
         self.delete_used_query_range_for_exchange(write_cursor=write_cursor, location=location)
         serialized_location = location.serialize_for_db()
-        for table in ('trades', 'asset_movements', 'history_events'):
+        for table in ('trades', 'history_events'):
             write_cursor.execute(
                 f'DELETE FROM {table} WHERE location = ?;', (serialized_location,),
             )
@@ -1742,7 +1738,7 @@ class DBHandler:
                 raise InputError(f'Could not update DB user_credentials_mappings due to {e!s}') from e  # noqa: E501
 
         if new_name is not None:
-            exchange_re = re.compile(r'(.*?)_(trades|margins|asset_movements).*')
+            exchange_re = re.compile(r'(.*?)_(trades|margins|history_events).*')
             used_ranges = write_cursor.execute(
                 'SELECT * from used_query_ranges WHERE name LIKE ?',
                 (f'{location!s}_%_{name}',),
@@ -2033,98 +2029,11 @@ class DBHandler:
 
         return margin_positions
 
-    def add_asset_movements(self, write_cursor: 'DBCursor', asset_movements: list[AssetMovement]) -> None:  # noqa: E501
-        movement_tuples = [(
-            movement.identifier,
-            movement.location.serialize_for_db(),
-            movement.category.serialize_for_db(),
-            movement.timestamp,
-            movement.asset.identifier,
-            str(movement.amount),
-            movement.fee_asset.identifier,
-            str(movement.fee),
-            movement.link,
-            movement.address,
-            movement.transaction_id,
-        ) for movement in asset_movements]
-        query = """
-            INSERT OR IGNORE INTO asset_movements(
-              id,
-              location,
-              category,
-              timestamp,
-              asset,
-              amount,
-              fee_asset,
-              fee,
-              link,
-              address,
-              transaction_id
-)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """
-        self.write_tuples(write_cursor=write_cursor, tuple_type='asset_movement', query=query, tuples=movement_tuples)  # noqa: E501
-
-    def get_asset_movements_and_limit_info(
-            self,
-            filter_query: AssetMovementsFilterQuery,
-            has_premium: bool,
-    ) -> tuple[list[AssetMovement], int]:
-        """Gets all asset movements for the query from the DB
-
-        Also returns how many are the total found for the filter
-        """
-        with self.conn.read_ctx() as cursor:
-            movements = self.get_asset_movements(cursor, filter_query=filter_query, has_premium=has_premium)  # noqa: E501
-            query, bindings = filter_query.prepare(with_pagination=False)
-            query = 'SELECT COUNT(*) from asset_movements ' + query
-            total_found_result = cursor.execute(query, bindings)
-            return movements, total_found_result.fetchone()[0]
-
-    def get_asset_movements(
-            self,
-            cursor: 'DBCursor',
-            filter_query: AssetMovementsFilterQuery,
-            has_premium: bool,
-    ) -> list[AssetMovement]:
-        """Returns a list of asset movements optionally filtered by the given filter.
-
-        Returned list is ordered according to the passed filter query
-        """
-        query, bindings = filter_query.prepare()
-        if has_premium:
-            query = 'SELECT * from asset_movements ' + query
-            results = cursor.execute(query, bindings)
-        else:
-            query = 'SELECT * FROM (SELECT * from asset_movements ORDER BY timestamp DESC LIMIT ?) ' + query  # noqa: E501
-            results = cursor.execute(query, [FREE_ASSET_MOVEMENTS_LIMIT] + bindings)
-
-        asset_movements = []
-        for result in results:
-            try:
-                movement = AssetMovement.deserialize_from_db(result)
-            except DeserializationError as e:
-                self.msg_aggregator.add_error(
-                    f'Error deserializing asset movement from the DB. '
-                    f'Skipping it. Error was: {e!s}',
-                )
-                continue
-            except UnknownAsset as e:
-                self.msg_aggregator.add_error(
-                    f'Error deserializing asset movement from the DB. Skipping it. '
-                    f'Unknown asset {e.identifier} found',
-                )
-                continue
-            asset_movements.append(movement)
-
-        return asset_movements
-
     def get_entries_count(
             self,
             cursor: 'DBCursor',
             entries_table: Literal[
                 'address_book',
-                'asset_movements',
                 'trades',
                 'evm_transactions',
                 'eth2_daily_staking_details',
@@ -3281,7 +3190,7 @@ class DBHandler:
             self,
             cursor: 'DBCursor',
             table_name: str,
-            klass: type[Trade | (AssetMovement | MarginPosition)],
+            klass: type[Trade | MarginPosition],
     ) -> None:
         updates: list[tuple[str, str]] = []
         log.debug(f'db integrity: start {table_name}')
@@ -3318,7 +3227,6 @@ class DBHandler:
         log.debug('Starting DB data integrity check')
         with self.conn.read_ctx() as cursor:
             self._ensure_data_integrity(cursor, 'trades', Trade)
-            self._ensure_data_integrity(cursor, 'asset_movements', AssetMovement)
             self._ensure_data_integrity(cursor, 'margin_positions', MarginPosition)
         log.debug(f'DB data integrity check finished after {ts_now() - start_time} seconds')
 
@@ -3371,7 +3279,6 @@ class DBHandler:
         with self.conn.read_ctx() as cursor:
             cursor.execute(
                 'SELECT location FROM trades UNION '
-                'SELECT location FROM asset_movements UNION '
                 'SELECT location FROM margin_positions UNION '
                 'SELECT location FROM user_credentials UNION '
                 'SELECT location FROM history_events',

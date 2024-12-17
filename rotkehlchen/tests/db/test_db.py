@@ -30,7 +30,7 @@ from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.db.addressbook import DBAddressbook
 from rotkehlchen.db.cache import DBCacheDynamic, DBCacheStatic
 from rotkehlchen.db.dbhandler import DBHandler
-from rotkehlchen.db.filtering import AssetMovementsFilterQuery, TradesFilterQuery
+from rotkehlchen.db.filtering import TradesFilterQuery
 from rotkehlchen.db.misc import detect_sqlcipher_version
 from rotkehlchen.db.queried_addresses import QueriedAddresses
 from rotkehlchen.db.schema import DB_CREATE_ETH2_DAILY_STAKING_DETAILS
@@ -73,10 +73,9 @@ from rotkehlchen.db.settings import (
 from rotkehlchen.db.utils import DBAssetBalance, LocationData, SingleDBAssetBalance
 from rotkehlchen.errors.api import AuthenticationError
 from rotkehlchen.errors.misc import DBSchemaError, InputError
-from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
+from rotkehlchen.exchanges.data_structures import MarginPosition, Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.premium.premium import PremiumCredentials
-from rotkehlchen.serialization.deserialize import deserialize_asset_movement_category
 from rotkehlchen.tests.utils.constants import (
     A_DAO,
     A_DOGE,
@@ -96,7 +95,6 @@ from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
     AssetAmount,
-    AssetMovementCategory,
     CostBasisMethod,
     ExchangeLocationID,
     ExternalService,
@@ -115,7 +113,6 @@ TABLES_AT_INIT = [
     'assets',
     'timed_balances',
     'timed_location_data',
-    'asset_movement_category',
     'balance_category',
     'external_service_credentials',
     'user_credentials',
@@ -139,7 +136,6 @@ TABLES_AT_INIT = [
     'settings',
     'used_query_ranges',
     'margin_positions',
-    'asset_movements',
     'tag_mappings',
     'tags',
     'xpubs',
@@ -1301,77 +1297,6 @@ def test_add_margin_positions(data_dir, username, caplog, sql_vm_instructions_cb
     data.logout()
 
 
-def test_add_asset_movements(data_dir, username, sql_vm_instructions_cb):
-    """Test that adding and retrieving asset movements from the DB works fine.
-
-    Also duplicates should be ignored and an error returned
-    """
-    msg_aggregator = MessagesAggregator()
-    data = DataHandler(data_dir, msg_aggregator, sql_vm_instructions_cb)
-    data.unlock(username, '123', create_new=True, resume_from_backup=False)
-
-    movement1 = AssetMovement(
-        location=Location.BITMEX,
-        category=AssetMovementCategory.DEPOSIT,
-        address=None,
-        transaction_id=None,
-        timestamp=1451606400,
-        asset=A_BTC,
-        amount=FVal('1.0'),
-        fee_asset=A_EUR,
-        fee=Fee(FVal('0')),
-        link='',
-    )
-    movement2 = AssetMovement(
-        location=Location.POLONIEX,
-        category=AssetMovementCategory.WITHDRAWAL,
-        address='0xfoo',
-        transaction_id='0xboo',
-        timestamp=1451608501,
-        asset=A_ETH,
-        amount=FVal('1.0'),
-        fee_asset=A_EUR,
-        fee=Fee(FVal('0.01')),
-        link='',
-    )
-    movement3 = AssetMovement(
-        location=Location.KRAKEN,
-        category=AssetMovementCategory.WITHDRAWAL,
-        address='0xcoo',
-        transaction_id='0xdoo',
-        timestamp=1461708501,
-        asset=A_ETH,
-        amount=FVal('1.0'),
-        fee_asset=A_EUR,
-        fee=Fee(FVal('0.01')),
-        link='',
-    )
-
-    # Add and retrieve the first 2 margins. All should be fine.
-    with data.db.user_write() as cursor:
-        data.db.add_asset_movements(cursor, [movement1, movement2])
-        errors = msg_aggregator.consume_errors()
-        warnings = msg_aggregator.consume_warnings()
-        assert len(errors) == 0
-        assert len(warnings) == 0
-        returned_movements = data.db.get_asset_movements(
-            cursor=cursor,
-            filter_query=AssetMovementsFilterQuery.make(),
-            has_premium=True,
-        )
-        assert returned_movements == [movement1, movement2]
-
-        # Add the last 2 movements. Since movement2 already exists in the DB it should be ignored
-        data.db.add_asset_movements(cursor, [movement2, movement3])
-        returned_movements = data.db.get_asset_movements(
-            cursor=cursor,
-            filter_query=AssetMovementsFilterQuery.make(),
-            has_premium=True,
-        )
-    assert returned_movements == [movement1, movement2, movement3]
-    data.logout()
-
-
 @pytest.mark.parametrize('ethereum_accounts', [[]])
 def test_non_checksummed_eth_account_in_db(database):
     """
@@ -1789,23 +1714,22 @@ def test_int_overflow_at_tuple_insertion(database, caplog):
     """
     caplog.set_level(logging.INFO)
     with database.user_write() as cursor:
-        database.add_asset_movements(cursor, [AssetMovement(
+        database.add_margin_positions(cursor, [MarginPosition(
             location=Location.KRAKEN,
-            category=AssetMovementCategory.DEPOSIT,
-            timestamp=177778,
-            address='0xfoo',
-            transaction_id=99999999999999999999999999999999999999999,
-            asset=A_BTC,
-            amount=ONE,
-            fee_asset=A_BTC,
+            open_time=Timestamp(0),
+            close_time=Timestamp(99999999999999999999999999999999999999999),
+            profit_loss=ONE,
+            pl_currency=A_BTC,
             fee=Fee(FVal('0.0001')),
+            fee_currency=A_BTC,
             link='a link',
+            notes='',
         )])
 
     errors = database.msg_aggregator.consume_errors()
     assert len(errors) == 1
-    assert 'Failed to add "asset_movement" to the DB with overflow error' in errors[0]
-    assert 'Overflow error while trying to add "asset_movement" tuples to the DB. Tuples:' in caplog.text  # noqa: E501
+    assert 'Failed to add "margin_position" to the DB with overflow error' in errors[0]
+    assert 'Overflow error while trying to add "margin_position" tuples to the DB. Tuples:' in caplog.text  # noqa: E501
 
 
 @pytest.mark.parametrize(('enum_class', 'query', 'deserialize_from_db', 'deserialize'), [
@@ -1815,8 +1739,6 @@ def test_int_overflow_at_tuple_insertion(database, caplog):
         TradeType.deserialize_from_db, TradeType.deserialize),
     (ActionType, 'SELECT type, seq from action_type',
         ActionType.deserialize_from_db, ActionType.deserialize),
-    (AssetMovementCategory, 'SELECT category, seq from asset_movement_category',
-        AssetMovementCategory.deserialize_from_db, deserialize_asset_movement_category),
 ])
 def test_enum_in_db(database, enum_class, query, deserialize_from_db, deserialize):
     """
@@ -1858,7 +1780,6 @@ def test_all_balance_types_in_db(database):
     (TradeType, 'trade_type'),
     (ActionType, 'action_type'),
     (BalanceType, 'balance_category'),
-    (AssetMovementCategory, 'asset_movement_category'),
 ])
 def test_values_are_present_in_db(database, enum_class, table_name):
     """

@@ -10,20 +10,17 @@ from rotkehlchen.assets.asset import Asset, AssetWithOracles
 from rotkehlchen.assets.converters import asset_from_binance
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.crypto import sha3
-from rotkehlchen.fval import FVal
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.history.events.structures.types import EventDirection
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
     deserialize_fee,
-    deserialize_fval,
     deserialize_optional,
     deserialize_timestamp,
 )
 from rotkehlchen.types import (
     AssetAmount,
-    AssetMovementCategory,
     Fee,
     Location,
     Price,
@@ -43,163 +40,6 @@ log = RotkehlchenLogsAdapter(logger)
 def hash_id(hashable: str) -> TradeID:
     id_bytes = sha3(hashable.encode())
     return TradeID(id_bytes.hex())
-
-
-AssetMovementDBTuple = tuple[
-    str,  # id
-    str,  # location
-    str,  # category
-    str,  # address
-    str,  # transaction_id
-    int,  # time
-    str,  # asset
-    str,  # amount
-    str,  # fee_asset
-    str,  # fee
-    str,  # link
-]
-
-
-@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
-class AssetMovement(AccountingEventMixin):
-    location: Location
-    category: AssetMovementCategory
-    timestamp: Timestamp
-    # The source address if this is a deposit and the destination address if withdrawal
-    address: str | None
-    transaction_id: str | None
-    asset: Asset
-    # Amount is the original amount removed from the account
-    amount: FVal
-    # The asset that is kept as fee for the deposit/withdrawal
-    fee_asset: Asset
-    # Fee is the amount of fee_currency that is kept for the deposit/withdrawal. Can be zero
-    fee: Fee
-    # For exchange asset movements this should be the exchange unique identifier
-    # For movements imported from third parties we should generate a unique id for this.
-    # If movements are both imported from third parties like cointracking.info and from
-    # the exchanges themselves then there is no way to avoid duplicates.
-    link: str
-
-    @property
-    def identifier(self) -> str:
-        """Formulates a unique identifier for the asset movements to become the DB primary key
-
-        We are not using the "self.link" unique exchange identifier as it may not
-        be available if importing from third party sources such as cointracking.info
-
-        Unfortunately this makes the AssetMovement identifier pseudo unique and means
-        we can't have same asset movements with all of the following attributes.
-        """
-        string = (
-            str(self.location) +
-            str(self.category) +
-            str(self.timestamp) +
-            self.asset.identifier +
-            self.fee_asset.identifier +
-            self.link
-        )
-        return hash_id(string)
-
-    def serialize(self) -> dict[str, Any]:
-        return {
-            'identifier': self.identifier,
-            'timestamp': self.timestamp,
-            'location': self.location.serialize(),
-            'category': self.category.serialize(),
-            'address': self.address,
-            'transaction_id': self.transaction_id,
-            'asset': self.asset.serialize(),
-            'amount': str(self.amount),
-            'fee_asset': self.fee_asset.serialize(),
-            'fee': str(self.fee),
-            'link': self.link,
-        }
-
-    @classmethod
-    def deserialize(cls, data: dict[str, Any]) -> 'AssetMovement':
-        """Deserializes an asset movement dict to an AssetMovement object.
-        May raise:
-            - DeserializationError
-            - KeyError
-            - UnknownAsset
-        """
-        return AssetMovement(
-            location=Location.deserialize(data['location']),
-            category=AssetMovementCategory.deserialize(data['category']),
-            timestamp=deserialize_timestamp(data['timestamp']),
-            address=deserialize_optional(data['address'], str),
-            transaction_id=deserialize_optional(data['transaction_id'], str),
-            asset=Asset(data['asset']).check_existence(),
-            amount=deserialize_fval(data['amount'], name='amount', location='data structure'),
-            fee_asset=Asset(data['fee_asset']).check_existence(),
-            fee=deserialize_fee(data['fee']),
-            link=str(data['link']),
-        )
-
-    @classmethod
-    def deserialize_from_db(cls, entry: AssetMovementDBTuple) -> 'AssetMovement':
-        """May raise:
-            - DeserializationError
-            - UnknownAsset
-        """
-        return AssetMovement(
-            location=Location.deserialize_from_db(entry[1]),
-            category=AssetMovementCategory.deserialize_from_db(entry[2]),
-            address=entry[3],
-            transaction_id=entry[4],
-            timestamp=Timestamp(entry[5]),
-            asset=Asset(entry[6]).check_existence(),
-            amount=deserialize_asset_amount(entry[7]),
-            fee_asset=Asset(entry[8]).check_existence(),
-            fee=deserialize_fee(entry[9]),
-            link=entry[10],
-        )
-
-    # -- Methods of AccountingEventMixin
-
-    def get_timestamp(self) -> Timestamp:
-        return self.timestamp
-
-    @staticmethod
-    def get_accounting_event_type() -> AccountingEventType:
-        return AccountingEventType.ASSET_MOVEMENT
-
-    def get_identifier(self) -> str:
-        return self.identifier
-
-    def get_assets(self) -> list[Asset]:
-        return [self.asset, self.fee_asset]
-
-    def should_ignore(self, ignored_ids_mapping: dict[ActionType, set[str]]) -> bool:
-        return self.identifier in ignored_ids_mapping.get(ActionType.ASSET_MOVEMENT, set())
-
-    def process(
-            self,
-            accounting: 'AccountingPot',
-            events_iterator: Iterator['AccountingEventMixin'],  # pylint: disable=unused-argument
-    ) -> int:
-        if self.asset.identifier == 'KFEE' or not accounting.settings.account_for_assets_movements:
-            # There is no reason to process deposits of KFEE for kraken as it has only value
-            # internal to kraken and KFEE has no value and will error at cryptocompare price query
-            return 1
-
-        if self.fee == ZERO:
-            return 1
-
-        accounting.add_out_event(
-            originating_event_id=None,  # not a history event, but an asset movement
-            event_type=AccountingEventType.ASSET_MOVEMENT,
-            notes=f'{self.location} {self.category!s}',
-            location=self.location,
-            timestamp=self.timestamp,
-            asset=self.fee_asset,
-            amount=self.fee,
-            taxable=True,
-            count_entire_amount_spend=True,
-            count_cost_basis_pnl=True,
-        )
-        return 1
 
 
 TradeDBTuple = tuple[

@@ -59,7 +59,6 @@ from rotkehlchen.db.eth2 import DBEth2
 from rotkehlchen.db.filtering import (
     AccountingRulesFilterQuery,
     AddressbookFilterQuery,
-    AssetMovementsFilterQuery,
     AssetsFilterQuery,
     CustomAssetsFilterQuery,
     Eth2DailyStatsFilterQuery,
@@ -111,7 +110,6 @@ from rotkehlchen.types import (
     SUPPORTED_SUBSTRATE_CHAINS,
     AddressbookEntry,
     AddressbookType,
-    AssetMovementCategory,
     BlockchainAddress,
     BTCAddress,
     ChainID,
@@ -1058,86 +1056,6 @@ class EditHistoryEventSchema(CreateHistoryEventSchema):
             """, (data['identifier'],)).fetchone()
 
             return result[0] if result else None
-
-
-class AssetMovementsQuerySchema(
-        AsyncQueryArgumentSchema,
-        TimestampRangeSchema,
-        OnlyCacheQuerySchema,
-        DBPaginationSchema,
-        DBOrderBySchema,
-):
-    asset = AssetField(expected_type=Asset, load_default=None)
-    action = SerializableEnumField(enum_class=AssetMovementCategory, load_default=None)
-    location = LocationField(load_default=None)
-    exclude_ignored_assets = fields.Boolean(load_default=True)
-
-    def __init__(
-            self,
-            treat_eth2_as_eth: bool,
-    ) -> None:
-        super().__init__()
-        self.treat_eth2_as_eth = treat_eth2_as_eth
-
-    @validates_schema
-    def validate_asset_movements_query_schema(
-            self,
-            data: dict[str, Any],
-            **_kwargs: Any,
-    ) -> None:
-        valid_ordering_attr = {
-            None,
-            'timestamp',
-            'location',
-            'category',
-            'amount',
-            'fee',
-        }
-        if (
-            data['order_by_attributes'] is not None and
-            not set(data['order_by_attributes']).issubset(valid_ordering_attr)
-        ):
-            error_msg = (
-                f'order_by_attributes for asset movements can not be '
-                f'{",".join(set(data["order_by_attributes"]) - valid_ordering_attr)}'
-            )
-            raise ValidationError(
-                message=error_msg,
-                field_name='order_by_attributes',
-            )
-
-    @post_load
-    def make_asset_movements_query(
-            self,
-            data: dict[str, Any],
-            **_kwargs: Any,
-    ) -> dict[str, Any]:
-        asset_list: tuple[Asset, ...] | None = None
-        if data['asset'] is not None:
-            asset_list = (data['asset'],)
-        if self.treat_eth2_as_eth is True and data['asset'] == A_ETH:
-            asset_list = (A_ETH, A_ETH2)
-
-        filter_query = AssetMovementsFilterQuery.make(
-            order_by_rules=create_order_by_rules_list(
-                data=data,
-                default_order_by_fields=['timestamp'],
-                default_ascending=[False],
-            ),
-            limit=data['limit'],
-            offset=data['offset'],
-            from_ts=data['from_timestamp'],
-            to_ts=data['to_timestamp'],
-            assets=asset_list,
-            action=[data['action']] if data['action'] is not None else None,
-            location=data['location'],
-            exclude_ignored_assets=data['exclude_ignored_assets'],
-        )
-        return {
-            'async_query': data['async_query'],
-            'only_cache': data['only_cache'],
-            'filter_query': filter_query,
-        }
 
 
 class TradeSchema(Schema):

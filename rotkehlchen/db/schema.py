@@ -128,18 +128,6 @@ INSERT OR IGNORE INTO location(location, seq) VALUES ('t', 52);
 INSERT OR IGNORE INTO location(location, seq) VALUES ('u', 53);
 """
 
-# Custom enum table for AssetMovement categories (deposit/withdrawal)
-DB_CREATE_ASSET_MOVEMENT_CATEGORY = """
-CREATE TABLE IF NOT EXISTS asset_movement_category (
-  category    CHAR(1)       PRIMARY KEY NOT NULL,
-  seq     INTEGER UNIQUE
-);
-/* Deposit Category */
-INSERT OR IGNORE INTO asset_movement_category(category, seq) VALUES ('A', 1);
-/* Withdrawal Category */
-INSERT OR IGNORE INTO asset_movement_category(category, seq) VALUES ('B', 2);
-"""
-
 # Custom enum table for Balance categories (asset/liability)
 DB_CREATE_BALANCE_CATEGORY = """
 CREATE TABLE IF NOT EXISTS balance_category (
@@ -357,24 +345,6 @@ CREATE TABLE IF NOT EXISTS margin_positions (
     notes TEXT,
     FOREIGN KEY(pl_currency) REFERENCES assets(identifier) ON UPDATE CASCADE,
     FOREIGN KEY(fee_currency) REFERENCES assets(identifier) ON UPDATE CASCADE
-);
-"""
-
-DB_CREATE_ASSET_MOVEMENTS = """
-CREATE TABLE IF NOT EXISTS asset_movements (
-    id TEXT PRIMARY KEY,
-    location CHAR(1) NOT NULL DEFAULT('A') REFERENCES location(location),
-    category CHAR(1) NOT NULL DEFAULT('A') REFERENCES asset_movement_category(category),
-    address TEXT,
-    transaction_id TEXT,
-    timestamp INTEGER,
-    asset TEXT NOT NULL,
-    amount TEXT,
-    fee_asset TEXT,
-    fee TEXT,
-    link TEXT,
-    FOREIGN KEY(asset) REFERENCES assets(identifier) ON UPDATE CASCADE,
-    FOREIGN KEY(fee_asset) REFERENCES assets(identifier) ON UPDATE CASCADE
 );
 """
 
@@ -799,7 +769,6 @@ PRAGMA foreign_keys=off;
 BEGIN TRANSACTION;
 {DB_CREATE_TRADE_TYPE}
 {DB_CREATE_LOCATION}
-{DB_CREATE_ASSET_MOVEMENT_CATEGORY}
 {DB_CREATE_BALANCE_CATEGORY}
 {DB_CREATE_ASSETS}
 {DB_CREATE_TIMED_BALANCES}
@@ -823,7 +792,6 @@ BEGIN TRANSACTION;
 {DB_CREATE_ZKSYNCLITE_TRANSACTIONS}
 {DB_CREATE_ZKSYNCLITE_SWAPS}
 {DB_CREATE_MARGIN}
-{DB_CREATE_ASSET_MOVEMENTS}
 {DB_CREATE_USED_QUERY_RANGES}
 {DB_CREATE_EVM_TX_MAPPINGS}
 {DB_CREATE_SETTINGS}

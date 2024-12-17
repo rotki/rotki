@@ -94,7 +94,6 @@ from rotkehlchen.chain.zksync_lite.constants import ZKL_IDENTIFIER
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.limits import (
-    FREE_ASSET_MOVEMENTS_LIMIT,
     FREE_HISTORY_EVENTS_LIMIT,
     FREE_TRADES_LIMIT,
     FREE_USER_NOTES_LIMIT,
@@ -128,7 +127,6 @@ from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import (
     AccountingRulesFilterQuery,
     AddressbookFilterQuery,
-    AssetMovementsFilterQuery,
     AssetsFilterQuery,
     CustomAssetsFilterQuery,
     DBFilterQuery,
@@ -1041,42 +1039,6 @@ class RestAPI:
 
         return api_response(_wrap_in_ok_result(True), status_code=HTTPStatus.OK)
 
-    @async_api_call()
-    def get_asset_movements(
-            self,
-            filter_query: AssetMovementsFilterQuery,
-            only_cache: bool,
-    ) -> dict[str, Any]:
-        msg = ''
-        status_code = HTTPStatus.OK
-        result = None
-        try:
-            movements, filter_total_found = self.rotkehlchen.history_querying_manager.query_asset_movements(  # noqa: E501
-                filter_query=filter_query,
-                only_cache=only_cache,
-            )
-        except RemoteError as e:
-            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
-
-        serialized_movements = process_result_list([x.serialize() for x in movements])
-        limit = FREE_ASSET_MOVEMENTS_LIMIT if self.rotkehlchen.premium is None else -1
-
-        with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
-            mapping = self.rotkehlchen.data.db.get_ignored_action_ids(cursor, ActionType.ASSET_MOVEMENT)  # noqa: E501
-            ignored_ids = mapping.get(ActionType.ASSET_MOVEMENT, set())
-            entries_result = [{
-                'entry': x,
-                'ignored_in_accounting': x['identifier'] in ignored_ids,
-            } for x in serialized_movements]
-            result = {
-                'entries': entries_result,
-                'entries_total': self.rotkehlchen.data.db.get_entries_count(cursor, 'asset_movements'),  # noqa: E501
-                'entries_found': filter_total_found,
-                'entries_limit': limit,
-            }
-
-        return {'result': result, 'message': msg, 'status_code': status_code}
-
     def add_history_events(self, events: list['HistoryBaseEntry']) -> Response:
         """Add list of history events to DB. Returns identifier of first event.
         The first event is the main event, subsequent events are related (e.g. fees).
@@ -1095,7 +1057,7 @@ class RestAPI:
                     )
                     if idx == 0:
                         main_identifier = identifier
-        except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
+        except (sqlcipher.DatabaseError, OverflowError) as e:  # pylint: disable=no-member
             error_msg = f'Failed to add event to the DB due to a DB error: {e!s}'
             return api_response(wrap_in_fail_result(error_msg), status_code=HTTPStatus.CONFLICT)
 

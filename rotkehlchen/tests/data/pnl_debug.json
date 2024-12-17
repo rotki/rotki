@@ -128,17 +128,21 @@
       "notes": null
     },
     {
+      "identifier": 3,
+      "event_identifier": "xyz",
+      "sequence_index": 0,
+      "timestamp": 1643381545000,
       "location": "binance",
-      "category": "deposit",
-      "address": null,
-      "transaction_id": null,
-      "timestamp": 1643381545,
       "asset": "eip155:1/erc20:0x68A118Ef45063051Eac49c7e647CE5Ace48a68a5",
-      "amount": "444.44",
-      "fee": "0",
+      "balance": {
+        "amount": "444.44",
+        "usd_value": "33.33"
+      },
+      "event_type": "deposit",
       "accounting_event_type": "asset movement",
-      "fee_asset": "USD",
-      "link": "Imported from binance CSV file."
+      "event_subtype": "deposit asset",
+      "location_label": "",
+      "notes": "Deposit 444.44 BASED to Binance"
     },
     {
       "location": "poloniex",

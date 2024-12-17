@@ -454,10 +454,12 @@ class Bitpanda(ExchangeInterface):
             for entry in data:
                 decoded_entry = deserialize_fn(entry, from_timestamp, to_timestamp)
                 if decoded_entry is not None:
+                    # TODO: use only extend here after trades are also converted to history events
+                    # and have their fee in a separate event.
                     if isinstance(decoded_entry, list):
-                        result.extend(decoded_entry)
+                        result.extend(decoded_entry)  # AssetMovements - fee in separate event
                     else:
-                        result.append(decoded_entry)
+                        result.append(decoded_entry)  # Trades - no separate event for fee
 
             count_so_far += len(data)
             if meta is None or meta.get('total_count') is None:

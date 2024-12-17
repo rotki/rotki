@@ -29,7 +29,6 @@ from rotkehlchen.history.events.structures.types import HistoryEventSubType, His
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
     SUPPORTED_CHAIN_IDS,
-    AssetMovementCategory,
     CacheType,
     ChainID,
     ChecksumEvmAddress,
@@ -551,7 +550,7 @@ class DBEth2ValidatorIndicesFilter(DBFilter):
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class DBTypeFilter(DBFilter):
     """A filter for type/category/HistoryBaseEntry enums"""
-    filter_types: list[TradeType] | list[AssetMovementCategory]
+    filter_types: list[TradeType]
     type_key: Literal['type', 'subtype', 'category']
 
     def prepare(self) -> tuple[list[str], list[Any]]:
@@ -726,66 +725,6 @@ class TradesFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLocation):
                     asset_key='quote_asset',
                     operator='NOT IN',
                 )))
-
-        filter_query.timestamp_filter = DBTimestampFilter(
-            and_op=True,
-            from_ts=from_ts,
-            to_ts=to_ts,
-        )
-        filters.append(filter_query.timestamp_filter)
-        filter_query.filters = filters
-        return filter_query
-
-
-class AssetMovementsFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLocation):
-
-    @classmethod
-    def make(
-            cls: type['AssetMovementsFilterQuery'],
-            and_op: bool = True,
-            order_by_rules: list[tuple[str, bool]] | None = None,
-            limit: int | None = None,
-            offset: int | None = None,
-            from_ts: Timestamp | None = None,
-            to_ts: Timestamp | None = None,
-            assets: tuple[Asset, ...] | None = None,
-            action: list[AssetMovementCategory] | None = None,
-            location: Location | None = None,
-            exclude_ignored_assets: bool = False,
-    ) -> 'AssetMovementsFilterQuery':
-        if order_by_rules is None:
-            order_by_rules = [('timestamp', True)]
-
-        filter_query = cls.create(
-            and_op=and_op,
-            limit=limit,
-            offset=offset,
-            order_by_rules=order_by_rules,
-        )
-        filters: list[DBFilter] = []
-        if assets is not None:
-            if len(assets) == 1:
-                filters.append(DBAssetFilter(and_op=True, asset=assets[0], asset_key='asset'))
-            else:
-                filters.append(
-                    DBMultiStringFilter(
-                        and_op=True,
-                        column='asset',
-                        values=[asset.identifier for asset in assets],
-                    ),
-                )
-        if action is not None:
-            filters.append(DBTypeFilter(and_op=True, filter_types=action, type_key='category'))
-        if location is not None:
-            filter_query.location_filter = DBLocationFilter(and_op=True, location=location)
-            filters.append(filter_query.location_filter)
-
-        if exclude_ignored_assets is True:
-            filters.append(DBIgnoredAssetsFilter(
-                and_op=True,
-                asset_key='asset',
-                operator='NOT IN',
-            ))
 
         filter_query.timestamp_filter = DBTimestampFilter(
             and_op=True,
