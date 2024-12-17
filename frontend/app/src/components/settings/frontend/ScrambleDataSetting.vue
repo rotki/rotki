@@ -52,6 +52,7 @@ watch([enabled, multiplier], setData);
       #default="{ error, success, update }"
       setting="scrambleMultiplier"
       session-setting
+      :error-message="t('frontend_settings.scramble.validation.error')"
     >
       <AmountInput
         v-model="scrambleMultiplier"
@@ -61,7 +62,7 @@ watch([enabled, multiplier], setData);
         :disabled="!scrambleData"
         :success-messages="success"
         :error-messages="error"
-        @change="update($event)"
+        @update:model-value="update($event)"
       >
         <template #append>
           <RuiButton

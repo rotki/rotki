@@ -4,6 +4,7 @@ import { useSessionSettingsStore } from '@/store/settings/session';
 import { usePrivacyMode } from '@/composables/privacy';
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
+import AmountInput from '@/components/inputs/AmountInput.vue';
 
 const { t } = useI18n();
 
@@ -145,15 +146,12 @@ watch([enabled, multiplier], setData);
             :error-message="t('frontend_settings.scramble.validation.error')"
             session-setting
           >
-            <RuiTextField
+            <AmountInput
               v-model="scrambleMultiplier"
               :label="t('frontend_settings.scramble.multiplier.label')"
               :disabled="!scrambleData"
               variant="outlined"
               color="secondary"
-              min="0"
-              step="0.01"
-              type="number"
               data-cy="privacy-mode-scramble__multiplier"
               hide-details
               dense
@@ -172,7 +170,7 @@ watch([enabled, multiplier], setData);
                   <RuiIcon name="shuffle-line" />
                 </RuiButton>
               </template>
-            </RuiTextField>
+            </AmountInput>
           </SettingsOption>
         </div>
       </div>
