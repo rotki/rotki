@@ -959,8 +959,8 @@ class CreateHistoryEventSchema(Schema):
         fee = FeeField(load_default=None, validate=validate.Range(min=ZERO, min_inclusive=False))
         location = LocationField(required=True)
         unique_id = fields.String(required=False, load_default=None)
-        address = fields.String(required=False, load_default=None)
-        transaction_id = fields.String(required=False, load_default=None)
+        address = fields.String(required=False, load_default=None)  # It can be an address for any chain not only the supported ones so we validate it as string.  # noqa: E501
+        transaction_id = fields.String(required=False, load_default=None)  # It can be a transaction from any chain. We don't do any special validation on it.  # noqa: E501
         event_identifier = fields.String(required=False, load_default=None)
         asset = AssetField(required=True, expected_type=Asset, form_with_incomplete_data=True)
         fee_asset = AssetField(load_default=None, required=False, expected_type=Asset, form_with_incomplete_data=True)  # noqa: E501
@@ -985,6 +985,7 @@ class CreateHistoryEventSchema(Schema):
                 fee=fee,
                 asset=data['asset'],
                 location=data['location'],
+                unique_id=data['unique_id'],
                 timestamp=data['timestamp'],
                 fee_asset=data['fee_asset'],
                 event_type=data['event_type'],
