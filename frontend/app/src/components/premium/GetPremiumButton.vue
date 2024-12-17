@@ -24,11 +24,12 @@ const { isLgAndDown } = useBreakpoint();
           <RuiButton
             icon
             class="lg:!py-2"
-            color="secondary"
+            :rounded="false"
+            color="primary"
             data-cy="get-premium-button"
           >
             <span v-if="!isLgAndDown">{{ t('premium_settings.get') }}</span>
-            <template #append>
+            <template #prepend>
               <RuiIcon name="vip-crown-line" />
             </template>
           </RuiButton>

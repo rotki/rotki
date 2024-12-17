@@ -15,6 +15,7 @@ import GetPremiumButton from '@/components/premium/GetPremiumButton.vue';
 import BackButton from '@/components/helper/BackButton.vue';
 import GlobalSearch from '@/components/GlobalSearch.vue';
 import SyncIndicator from '@/components/status/sync/SyncIndicator.vue';
+import WrappedIndicator from '../premium/WrappedIndicator.vue';
 
 const isDevelopment = checkIfDevelopment();
 
@@ -22,6 +23,8 @@ const { isSmAndUp } = useBreakpoint();
 
 const { darkModeEnabled } = useDarkMode();
 const { showHelpBar, showNotesSidebar, showNotificationBar, showPinned } = storeToRefs(useAreaVisibilityStore());
+
+const route = useRoute();
 </script>
 
 <template>
@@ -29,6 +32,12 @@ const { showHelpBar, showNotesSidebar, showNotificationBar, showPinned } = store
     <SyncIndicator />
     <GlobalSearch v-if="isSmAndUp" />
     <BackButton />
+  </div>
+  <div
+    v-if="route.path === '/dashboard' || route.path === '/history/transactions'"
+    class="flex overflow-hidden h-full items-center"
+  >
+    <WrappedIndicator />
   </div>
   <div class="flex overflow-hidden h-full items-center">
     <GetPremiumButton />
