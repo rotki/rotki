@@ -128,6 +128,7 @@ def prepare_globaldb(args: argparse.Namespace) -> tuple[GlobalDBHandler, Path]:
         data_dir=target_directory,
         sql_vm_instructions_cb=0,
         msg_aggregator=MessagesAggregator(),
+        perform_assets_updates=False,
     ), target_directory
 
 
