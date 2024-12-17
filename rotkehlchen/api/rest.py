@@ -40,6 +40,7 @@ from rotkehlchen.accounting.pot import AccountingPot
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet, BalanceType
 from rotkehlchen.accounting.structures.processed_event import AccountingEventExportType
 from rotkehlchen.accounting.structures.types import ActionType
+from rotkehlchen.api.rest_helpers.history_events import edit_asset_movements
 from rotkehlchen.api.v1.schemas import TradeSchema
 from rotkehlchen.api.v1.types import IncludeExcludeFilterData
 from rotkehlchen.assets.asset import (
@@ -274,6 +275,7 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
     from rotkehlchen.exchanges.kraken import KrakenAccountType
+    from rotkehlchen.history.events.structures.asset_movement import AssetMovement
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
 
 
@@ -1070,11 +1072,24 @@ class RestAPI:
         return api_response(result_dict, status_code=HTTPStatus.OK)
 
     def edit_history_events(self, events: list['HistoryBaseEntry']) -> Response:
-        db = DBHistoryEvents(self.rotkehlchen.data.db)
-        try:
+        events_db = DBHistoryEvents(self.rotkehlchen.data.db)
+        if events[0].entry_type == HistoryBaseEntryType.ASSET_MOVEMENT_EVENT:
+            try:
+                with events_db.db.conn.write_ctx() as write_cursor:
+                    edit_asset_movements(
+                        events_db=events_db,
+                        write_cursor=write_cursor,
+                        events=cast('list[AssetMovement]', events),
+                    )
+            except InputError as e:
+                return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
+            else:
+                return api_response(OK_RESULT, status_code=HTTPStatus.OK)
+
+        try:  # case where we just edit the events
             with self.rotkehlchen.data.db.user_write() as write_cursor:
                 for event in events:
-                    db.edit_history_event(
+                    events_db.edit_history_event(
                         event=event,
                         write_cursor=write_cursor,
                     )
