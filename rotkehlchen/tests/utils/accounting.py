@@ -174,7 +174,7 @@ def assert_pnl_totals_close(expected: PnlTotals, got: PnlTotals) -> None:
 
 def _check_boolean_settings(row: dict[str, Any], accountant: 'Accountant'):
     """Check boolean settings are exported correctly to the spreadsheet CSV"""
-    booleans = ('include_crypto2crypto', 'include_gas_costs', 'account_for_assets_movements', 'calculate_past_cost_basis')  # noqa: E501
+    booleans = ('include_crypto2crypto', 'include_gas_costs', 'calculate_past_cost_basis')
 
     for setting in booleans:
         if row['free_amount'] == setting:

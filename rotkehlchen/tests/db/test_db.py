@@ -35,7 +35,6 @@ from rotkehlchen.db.misc import detect_sqlcipher_version
 from rotkehlchen.db.queried_addresses import QueriedAddresses
 from rotkehlchen.db.schema import DB_CREATE_ETH2_DAILY_STAKING_DETAILS
 from rotkehlchen.db.settings import (
-    DEFAULT_ACCOUNT_FOR_ASSETS_MOVEMENTS,
     DEFAULT_ACTIVE_MODULES,
     DEFAULT_ASK_USER_UPON_SIZE_DISCREPANCY,
     DEFAULT_AUTO_CREATE_CALENDAR_REMINDERS,
@@ -501,7 +500,6 @@ def test_writing_fetching_data(data_dir, username, sql_vm_instructions_cb):
         'last_write_ts': 0,
         'active_modules': DEFAULT_ACTIVE_MODULES,
         'frontend_settings': '',
-        'account_for_assets_movements': DEFAULT_ACCOUNT_FOR_ASSETS_MOVEMENTS,
         'btc_derivation_gap_limit': DEFAULT_BTC_DERIVATION_GAP_LIMIT,
         'calculate_past_cost_basis': DEFAULT_CALCULATE_PAST_COST_BASIS,
         'display_date_in_localtime': DEFAULT_DISPLAY_DATE_IN_LOCALTIME,
