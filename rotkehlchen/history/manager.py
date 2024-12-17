@@ -5,14 +5,13 @@ from typing import TYPE_CHECKING, Literal
 
 from rotkehlchen.constants import ZERO
 from rotkehlchen.db.filtering import (
-    AssetMovementsFilterQuery,
     EvmTransactionsFilterQuery,
     HistoryEventFilterQuery,
     TradesFilterQuery,
 )
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.misc import RemoteError
-from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
+from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES, ExchangeManager
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryBaseEntry, HistoryEvent
@@ -179,61 +178,6 @@ class HistoryQueryingManager:
                     only_cache=False,
                 )
 
-    def _query_services_for_asset_movements(self, filter_query: AssetMovementsFilterQuery) -> None:
-        """Queries all services requested for asset movements and writes them to the DB"""
-        location = filter_query.location
-        from_ts = filter_query.from_ts
-        to_ts = filter_query.to_ts
-
-        if location is None:
-            # query all CEXes
-            for exchange in self.exchange_manager.iterate_exchanges():
-                exchange.query_deposits_withdrawals(
-                    start_ts=from_ts,
-                    end_ts=to_ts,
-                    only_cache=False,
-                )
-            return
-
-        if location not in SUPPORTED_EXCHANGES:
-            return  # nothing to do
-
-        # otherwise it's a single connected exchange and we need to query it
-        exchanges_list = self.exchange_manager.connected_exchanges.get(location)
-        if exchanges_list is None:
-            return
-
-        for exchange in exchanges_list:
-            exchange.query_deposits_withdrawals(
-                start_ts=from_ts,
-                end_ts=to_ts,
-                only_cache=False,
-            )
-
-    def query_asset_movements(
-            self,
-            filter_query: AssetMovementsFilterQuery,
-            only_cache: bool,
-    ) -> tuple[list[AssetMovement], int]:
-        """Queries AssetMovements for the given filter
-
-        If only_cache is True then only what is already in the DB is returned.
-        Otherwise we query all services requested by the filter, populate the DB
-        and then return.
-
-        May raise:
-        - RemoteError: If there are problems connecting to any of the remote exchanges
-        """
-        if only_cache is False:
-            self._query_services_for_asset_movements(filter_query=filter_query)
-
-        has_premium = has_premium_check(self.chains_aggregator.premium)
-        asset_movements, filter_total_found = self.db.get_asset_movements_and_limit_info(
-            filter_query=filter_query,
-            has_premium=has_premium,
-        )
-        return asset_movements, filter_total_found
-
     def query_history_events(
             self,
             cursor: 'DBCursor',
@@ -349,14 +293,6 @@ class HistoryQueryingManager:
                 has_premium=True,  # we need all trades for accounting -- limit happens later
             )
             history.extend(trades)
-
-            # Include all asset movements
-            asset_movements = self.db.get_asset_movements(
-                cursor,
-                filter_query=AssetMovementsFilterQuery.make(to_ts=end_ts),
-                has_premium=True,  # we need all trades for accounting -- limit happens later
-            )
-            history.extend(asset_movements)
 
             # Include all margin positions
             margin_positions = self.db.get_margin_positions(cursor, to_ts=end_ts)

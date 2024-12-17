@@ -347,10 +347,12 @@ class Woo(ExchangeInterface):
                     )
                     continue
 
+                # TODO: use only extend here after trades are also converted to history events
+                # and have their fee in a separate event.
                 if isinstance(result, list):
-                    results.extend(result)
+                    results.extend(result)  # AssetMovements - fee in separate event
                 else:
-                    results.append(result)
+                    results.append(result)  # Trades - no separate event for fee
 
             if len(entries) < API_MAX_LIMIT:
                 break

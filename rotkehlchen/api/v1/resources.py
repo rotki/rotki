@@ -33,7 +33,6 @@ from rotkehlchen.api.v1.schemas import (
     AllBalancesQuerySchema,
     AppInfoSchema,
     AssetIconUploadSchema,
-    AssetMovementsQuerySchema,
     AssetResetRequestSchema,
     AssetsImportingFromFormSchema,
     AssetsImportingSchema,
@@ -205,7 +204,6 @@ from rotkehlchen.db.constants import (
 from rotkehlchen.db.filtering import (
     AccountingRulesFilterQuery,
     AddressbookFilterQuery,
-    AssetMovementsFilterQuery,
     AssetsFilterQuery,
     CustomAssetsFilterQuery,
     DBFilterQuery,
@@ -1213,30 +1211,6 @@ class TradesResource(BaseMethodView):
     @use_kwargs(delete_schema, location='json')
     def delete(self, trades_ids: list[str]) -> Response:
         return self.rest_api.delete_trades(trades_ids=trades_ids)
-
-
-class AssetMovementsResource(BaseMethodView):
-
-    def make_get_schema(self) -> AssetMovementsQuerySchema:
-        with self.rest_api.rotkehlchen.data.db.conn.read_ctx() as cursor:
-            settings = self.rest_api.rotkehlchen.data.db.get_settings(cursor)
-        return AssetMovementsQuerySchema(
-            treat_eth2_as_eth=settings.treat_eth2_as_eth,
-        )
-
-    @require_loggedin_user()
-    @resource_parser.use_kwargs(make_get_schema, location='json_and_query')
-    def get(
-            self,
-            filter_query: AssetMovementsFilterQuery,
-            async_query: bool,
-            only_cache: bool,
-    ) -> Response:
-        return self.rest_api.get_asset_movements(
-            filter_query=filter_query,
-            async_query=async_query,
-            only_cache=only_cache,
-        )
 
 
 class TagsResource(BaseMethodView):

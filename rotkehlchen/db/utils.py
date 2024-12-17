@@ -11,7 +11,6 @@ from rotkehlchen.chain.substrate.utils import is_valid_substrate_address
 from rotkehlchen.db.checks import db_script_normalizer
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import (
-    AssetMovementCategory,
     HexColorCode,
     Location,
     Price,
@@ -328,7 +327,6 @@ def table_exists(cursor: 'DBCursor', name: str, schema: str | None = None) -> bo
 
 DBTupleType = Literal[
     'trade',
-    'asset_movement',
     'margin_position',
     'evm_transaction',
     'evm_internal_transaction',
@@ -340,7 +338,7 @@ def db_tuple_to_str(
         data: tuple[Any, ...],
         tuple_type: DBTupleType,
 ) -> str:
-    """Turns a tuple DB entry for trade, or asset_movement into a user readable string
+    """Turns a tuple DB entry for trade, evm_transaction, etc into a user readable string
 
     This is only intended for error messages.
     """
@@ -349,12 +347,6 @@ def db_tuple_to_str(
             f'{TradeType.deserialize_from_db(data[5])} trade with id {data[0]} '
             f'in {Location.deserialize_from_db(data[2])} and base/quote asset {data[3]} / '
             f'{data[4]} at timestamp {data[1]}'
-        )
-    if tuple_type == 'asset_movement':
-        return (
-            f'{AssetMovementCategory.deserialize_from_db(data[2])} of '
-            f'{data[4]} with id {data[0]} '
-            f'in {Location.deserialize_from_db(data[1])} at timestamp {data[3]}'
         )
     if tuple_type == 'margin_position':
         return (

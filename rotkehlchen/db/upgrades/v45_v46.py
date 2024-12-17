@@ -125,8 +125,8 @@ def upgrade_v45_to_v46(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
             ),
             binding_tuples,
         )
-        # TODO: Uncomment this two lines when we are ready to drop the tables
-        # write_cursor.execute('DROP TABLE asset_movements')  # noqa: ERA001
-        # write_cursor.execute('DROP TABLE asset_movement_category')  # noqa: ERA001
+
+        write_cursor.execute('DROP TABLE asset_movements')
+        write_cursor.execute('DROP TABLE asset_movement_category')
 
     perform_userdb_upgrade_steps(db=db, progress_handler=progress_handler, should_vacuum=True)

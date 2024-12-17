@@ -13,7 +13,7 @@ from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
 from rotkehlchen.constants.limits import FREE_TRADES_LIMIT
 from rotkehlchen.db.constants import KRAKEN_ACCOUNT_TYPE_KEY
-from rotkehlchen.db.filtering import AssetMovementsFilterQuery, TradesFilterQuery
+from rotkehlchen.db.filtering import HistoryEventFilterQuery, TradesFilterQuery
 from rotkehlchen.db.history_events import HISTORY_BASE_ENTRY_FIELDS, DBHistoryEvents
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.exchanges.bitfinex import API_KEY_ERROR_MESSAGE as BITFINEX_API_KEY_ERROR_MESSAGE
@@ -21,12 +21,13 @@ from rotkehlchen.exchanges.bitstamp import (
     API_KEY_ERROR_CODE_ACTION as BITSTAMP_API_KEY_ERROR_CODE_ACTION,
 )
 from rotkehlchen.exchanges.constants import EXCHANGES_WITH_PASSPHRASE, SUPPORTED_EXCHANGES
-from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
+from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.exchanges.kraken import DEFAULT_KRAKEN_ACCOUNT_TYPE, KrakenAccountType
 from rotkehlchen.exchanges.kucoin import API_KEY_ERROR_CODE_ACTION as KUCOIN_API_KEY_ERROR_CODE
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.binance import GlobalDBBinance
 from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.api import (
@@ -56,7 +57,6 @@ from rotkehlchen.tests.utils.kraken import MockKraken
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import (
     AssetAmount,
-    AssetMovementCategory,
     Fee,
     Location,
     Price,
@@ -751,25 +751,22 @@ def test_delete_external_exchange_data_works(
         link='',
         notes='',
     ) for x in (Location.CRYPTOCOM, Location.KRAKEN)]
-    movements = [AssetMovement(
+    events = [AssetMovement(
         location=x,
-        category=AssetMovementCategory.DEPOSIT,
-        address=None,
-        transaction_id=None,
-        timestamp=Timestamp(0),
+        event_type=HistoryEventType.DEPOSIT,
+        timestamp=TimestampMS(0),
         asset=A_BTC,
-        amount=AssetAmount(FVal(100)),
-        fee_asset=A_BTC,
-        fee=Fee(ONE),
-        link='') for x in (Location.CRYPTOCOM, Location.KRAKEN)]
-    with rotki.data.db.user_write() as cursor:
-        rotki.data.db.add_trades(cursor, trades)
-        rotki.data.db.add_asset_movements(cursor, movements)
+        balance=Balance(FVal(100)),
+    ) for x in (Location.CRYPTOCOM, Location.KRAKEN)]
+    history_db = DBHistoryEvents(rotki.data.db)
+    with rotki.data.db.user_write() as write_cursor:
+        rotki.data.db.add_trades(write_cursor, trades)
+        history_db.add_history_events(write_cursor=write_cursor, history=events)
 
-        assert len(rotki.data.db.get_trades(cursor, filter_query=TradesFilterQuery.make(), has_premium=True)) == 2  # noqa: E501
-        assert len(rotki.data.db.get_asset_movements(
-            cursor,
-            filter_query=AssetMovementsFilterQuery.make(),
+        assert len(rotki.data.db.get_trades(cursor=write_cursor, filter_query=TradesFilterQuery.make(), has_premium=True)) == 2  # noqa: E501
+        assert len(history_db.get_history_events(
+            cursor=write_cursor,
+            filter_query=HistoryEventFilterQuery.make(),
             has_premium=True,
         )) == 2
     response = requests.delete(
@@ -783,9 +780,9 @@ def test_delete_external_exchange_data_works(
     assert result is True
     with rotki.data.db.conn.read_ctx() as cursor:
         assert len(rotki.data.db.get_trades(cursor, filter_query=TradesFilterQuery.make(), has_premium=True)) == 1  # noqa: E501
-        assert len(rotki.data.db.get_asset_movements(
-            cursor,
-            filter_query=AssetMovementsFilterQuery.make(),
+        assert len(history_db.get_history_events(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(),
             has_premium=True,
         )) == 1
 
@@ -827,12 +824,12 @@ def test_edit_exchange_account(rotkehlchen_api_server_with_exchanges: 'APIServer
     with db.user_write() as cursor:
         db.update_used_query_range(cursor, name=f'{Location.KRAKEN!s}_trades_mockkraken', start_ts=start_ts, end_ts=end_ts)  # noqa: E501
         db.update_used_query_range(cursor, name=f'{Location.KRAKEN!s}_margins_mockkraken', start_ts=start_ts, end_ts=end_ts)  # noqa: E501
-        db.update_used_query_range(cursor, name=f'{Location.KRAKEN!s}_asset_movements_mockkraken', start_ts=start_ts, end_ts=end_ts)  # noqa: E501
+        db.update_used_query_range(cursor, name=f'{Location.KRAKEN!s}_history_events_mockkraken', start_ts=start_ts, end_ts=end_ts)  # noqa: E501
         db.update_used_query_range(cursor, name=f'{Location.KRAKEN!s}_margins_kraken_boi', start_ts=start_ts, end_ts=end_ts)  # noqa: E501
-        db.update_used_query_range(cursor, name=f'{Location.KRAKEN!s}_asset_movements_kraken_boi', start_ts=start_ts, end_ts=end_ts)  # noqa: E501
+        db.update_used_query_range(cursor, name=f'{Location.KRAKEN!s}_history_events_kraken_boi', start_ts=start_ts, end_ts=end_ts)  # noqa: E501
         db.update_used_query_range(cursor, name=f'{Location.POLONIEX!s}_trades_poloniex', start_ts=start_ts, end_ts=end_ts)  # noqa: E501
         db.update_used_query_range(cursor, name=f'{Location.POLONIEX!s}_margins_poloniex', start_ts=start_ts, end_ts=end_ts)  # noqa: E501
-        db.update_used_query_range(cursor, name=f'{Location.POLONIEX!s}_asset_movements_poloniex', start_ts=start_ts, end_ts=end_ts)  # noqa: E501
+        db.update_used_query_range(cursor, name=f'{Location.POLONIEX!s}_history_events_poloniex', start_ts=start_ts, end_ts=end_ts)  # noqa: E501
         db.update_used_query_range(cursor, name='uniswap_trades', start_ts=start_ts, end_ts=end_ts)
         test_event_id = event_db.add_history_event(write_cursor=cursor, event=test_event)
 
@@ -854,13 +851,13 @@ def test_edit_exchange_account(rotkehlchen_api_server_with_exchanges: 'APIServer
     with db.conn.read_ctx() as cursor:
         assert db.get_used_query_range(cursor, 'kraken_trades_mockkraken') is None
         assert db.get_used_query_range(cursor, 'kraken_margins_mockkraken') is None
-        assert db.get_used_query_range(cursor, 'kraken_asset_movements_mockkraken') is None
+        assert db.get_used_query_range(cursor, 'kraken_history_events_mockkraken') is None
         assert db.get_used_query_range(cursor, 'kraken_trades_my_kraken') == expected_ranges_tuple
         assert db.get_used_query_range(cursor, 'kraken_margins_my_kraken') == expected_ranges_tuple
-        assert db.get_used_query_range(cursor, 'kraken_asset_movements_my_kraken') == expected_ranges_tuple  # noqa: E501
+        assert db.get_used_query_range(cursor, 'kraken_history_events_my_kraken') == expected_ranges_tuple  # noqa: E501
         assert db.get_used_query_range(cursor, 'poloniex_trades_poloniex') == expected_ranges_tuple
         assert db.get_used_query_range(cursor, 'poloniex_margins_poloniex') == expected_ranges_tuple  # noqa: E501
-        assert db.get_used_query_range(cursor, 'poloniex_asset_movements_poloniex') == expected_ranges_tuple  # noqa: E501
+        assert db.get_used_query_range(cursor, 'poloniex_history_events_poloniex') == expected_ranges_tuple  # noqa: E501
 
         data = {'name': 'poloniex', 'location': 'poloniex', 'new_name': 'my_poloniex'}
         response = requests.patch(api_url_for(server, 'exchangesresource'), json=data)
@@ -871,8 +868,8 @@ def test_edit_exchange_account(rotkehlchen_api_server_with_exchanges: 'APIServer
         assert poloniex.name == 'my_poloniex'
         assert db.get_used_query_range(cursor, 'poloniex_trades_my_poloniex') == expected_ranges_tuple  # noqa: E501
         assert db.get_used_query_range(cursor, 'poloniex_margins_my_poloniex') == expected_ranges_tuple  # noqa: E501
-        assert db.get_used_query_range(cursor, 'poloniex_asset_movements_my_poloniex') == expected_ranges_tuple  # noqa: E501
-        assert db.get_used_query_range(cursor, 'poloniex_asset_movements_poloniex') is None
+        assert db.get_used_query_range(cursor, 'poloniex_history_events_my_poloniex') == expected_ranges_tuple  # noqa: E501
+        assert db.get_used_query_range(cursor, 'poloniex_history_events_poloniex') is None
         assert db.get_used_query_range(cursor, 'uniswap_trades') == expected_ranges_tuple
 
         # load from the database the updated history events

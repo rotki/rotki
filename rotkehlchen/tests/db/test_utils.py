@@ -163,10 +163,6 @@ def test_combine_asset_balances():
         'trade',
         'buy trade with id 1 in kraken and base/quote asset ETH / USD at timestamp 1674510513',
     ), (
-        ('42', 'C', 'A', 1674510513, 'ETH', '1', 'USD', '0.1', 'link', 'address', 'txid'),
-        'asset_movement',
-        'deposit of ETH with id 42 in poloniex at timestamp 1674510513',
-    ), (
         ('44', 'F', 1674510513, 1674510513, '1', 'ETH', '0.1', 'USD', 'link', 'notes'),
         'margin_position',
         'Margin position with id 44 in bitmex for ETH closed at timestamp 1674510513',

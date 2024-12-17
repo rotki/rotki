@@ -14,8 +14,9 @@ from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR, A_KSM, A_LINK, A_U
 from rotkehlchen.db.accounting_rules import DBAccountingRules
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.misc import InputError
-from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
+from rotkehlchen.exchanges.data_structures import MarginPosition, Trade
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.accounting import accounting_create_and_process_history
@@ -23,7 +24,6 @@ from rotkehlchen.tests.utils.exchanges import mock_normal_coinbase_query
 from rotkehlchen.tests.utils.history import prices
 from rotkehlchen.types import (
     AssetAmount,
-    AssetMovementCategory,
     Fee,
     Location,
     Price,
@@ -91,18 +91,23 @@ def test_exchanges_removed_api_keys(rotkehlchen_api_server_with_exchanges: APISe
             rate=Price(FVal(7)),
             location=Location.EXTERNAL,
         )])
-        rotki.data.db.add_asset_movements(write_cursor, asset_movements=[AssetMovement(
-            timestamp=Timestamp(1611426201),
-            location=Location.COINBASE,
-            category=AssetMovementCategory.DEPOSIT,
-            asset=A_BTC,
-            amount=ONE,
-            fee_asset=A_BTC,
-            fee=Fee(FVal(0.00001)),
-            address=None,
-            transaction_id=None,
-            link='no link',
-        )])
+        DBHistoryEvents(rotki.data.db).add_history_events(
+            write_cursor=write_cursor,
+            history=[AssetMovement(
+                timestamp=TimestampMS(1611426201000),
+                location=Location.COINBASE,
+                event_type=HistoryEventType.DEPOSIT,
+                asset=A_BTC,
+                balance=Balance(ONE),
+            ), AssetMovement(
+                timestamp=TimestampMS(1611426201000),
+                location=Location.COINBASE,
+                event_type=HistoryEventType.DEPOSIT,
+                asset=A_BTC,
+                balance=Balance(FVal(0.00001)),
+                is_fee=True,
+            )],
+        )
         rotki.data.db.add_margin_positions(write_cursor, margin_positions=[MarginPosition(
             location=Location.COINBASE,
             open_time=Timestamp(1611426200),
@@ -143,17 +148,17 @@ def test_exchanges_removed_api_keys(rotkehlchen_api_server_with_exchanges: APISe
     assert event4.asset == A_LINK
 
     event5 = events[4]
-    assert event5.event_type == AccountingEventType.ASSET_MOVEMENT
+    assert event5.event_type == AccountingEventType.MARGIN_POSITION
     assert event5.location == Location.COINBASE
     assert event5.free_amount == ZERO
-    assert event5.taxable_amount == FVal(0.00001)
+    assert event5.taxable_amount == ONE
     assert event5.asset == A_BTC
 
     event6 = events[5]
-    assert event6.event_type == AccountingEventType.MARGIN_POSITION
+    assert event6.event_type == AccountingEventType.ASSET_MOVEMENT
     assert event6.location == Location.COINBASE
     assert event6.free_amount == ZERO
-    assert event6.taxable_amount == ONE
+    assert event6.taxable_amount == FVal(0.00001)
     assert event6.asset == A_BTC
 
 

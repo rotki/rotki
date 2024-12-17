@@ -8,14 +8,11 @@ import requests
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import AssetWithOracles
-from rotkehlchen.db.filtering import (
-    AssetMovementsFilterQuery,
-    TradesFilterQuery,
-)
+from rotkehlchen.db.filtering import TradesFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.errors.misc import RemoteError
-from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
+from rotkehlchen.exchanges.data_structures import MarginPosition, Trade
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
     ApiKey,
@@ -205,19 +202,6 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
             'query_online_margin_history() should only be implemented by subclasses',
         )
 
-    def query_online_deposits_withdrawals(
-            self,
-            start_ts: Timestamp,
-            end_ts: Timestamp,
-    ) -> list[AssetMovement]:
-        """Queries the exchange's API for the asset movements of the user
-
-        Should be implemented in subclasses.
-
-        Deprecated, will be replaced by query_online_history_events
-        """
-        return []
-
     def query_online_history_events(
             self,
             start_ts: Timestamp,
@@ -347,63 +331,6 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
         return margin_positions
 
     @protect_with_lock()
-    def query_deposits_withdrawals(
-            self,
-            start_ts: Timestamp,
-            end_ts: Timestamp,
-            only_cache: bool,
-    ) -> list[AssetMovement]:
-        """Queries the local DB and the exchange for the deposits/withdrawal history of the user
-
-        If only_cache is true only what is already cached in the DB is returned without
-        an actual exchange query.
-
-        Deprecated, will be replaced by query_history_events
-        """
-        log.debug(f'Querying deposits/withdrawals history for {self.name} exchange')
-        if only_cache is False:
-            ranges = DBQueryRanges(self.db)
-            location_string = f'{self.location!s}_asset_movements_{self.name}'
-            with self.db.conn.read_ctx() as cursor:
-                ranges_to_query = ranges.get_location_query_ranges(
-                    cursor=cursor,
-                    location_string=location_string,
-                    start_ts=start_ts,
-                    end_ts=end_ts,
-                )
-
-            for query_start_ts, query_end_ts in ranges_to_query:
-                log.debug(
-                    f'Querying online deposits/withdrawals for {self.name} between '
-                    f'{query_start_ts} and {query_end_ts}',
-                )
-                new_movements = self.query_online_deposits_withdrawals(
-                    start_ts=query_start_ts,
-                    end_ts=query_end_ts,
-                )
-                with self.db.user_write() as write_cursor:
-                    if len(new_movements) != 0:
-                        self.db.add_asset_movements(write_cursor, new_movements)
-                    ranges.update_used_query_range(
-                        write_cursor=write_cursor,
-                        location_string=location_string,
-                        queried_ranges=[(query_start_ts, query_end_ts)],
-                    )
-
-        # Read all asset movements from the DB
-        filter_query = AssetMovementsFilterQuery.make(
-            from_ts=start_ts,
-            to_ts=end_ts,
-            location=self.location,
-        )
-        with self.db.conn.read_ctx() as cursor:
-            return self.db.get_asset_movements(
-                cursor=cursor,
-                filter_query=filter_query,
-                has_premium=True,  # is okay since the returned events don't make it to the user
-            )
-
-    @protect_with_lock()
     def query_history_events(self) -> None:
         """Queries the exchange for new history events and saves them to the database."""
         db = DBHistoryEvents(self.db)
@@ -457,13 +384,6 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
             self.query_margin_history(
                 start_ts=start_ts,
                 end_ts=end_ts,
-            )
-            if new_step_data is not None:
-                new_step_callback(f'Querying {exchange_name} asset movements history')
-            self.query_deposits_withdrawals(
-                start_ts=start_ts,
-                end_ts=end_ts,
-                only_cache=False,
             )
             if new_step_data is not None:
                 new_step_callback(f'Querying {exchange_name} events history')

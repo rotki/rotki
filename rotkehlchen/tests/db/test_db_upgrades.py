@@ -2693,9 +2693,10 @@ def test_upgrade_db_45_to_46(user_data_dir: 'Path', messages_aggregator):
             (6, '20522c693bcda4ef646682c6a58bb0349b01f4d7b9168a62ce94b2c8dd1fe639', 1, 1644244023000, 'B', None, 'ATOM', '0.10000000', '0', 'Pay 0.10000000 ATOM as Kraken withdrawal fee', 'withdrawal', 'fee', None),  # noqa: E501
             (6, '1cf3fc675d4835efe532d18730db35163b07fb5f44956b888d7aaf852b04fd1c', 0, 1727542684000, 'G', None, 'ETH', '0.07126231', '0', 'Deposit 0.07126231 ETH to Coinbase', 'deposit', 'deposit asset', '{"address": "0xc37b40ABdB939635068d3c5f13E7faF686F03B65", "transaction_id": "0xc8aa60c9f8a93692b66fbc3f57c64f2b1c4afd92f370e12dc7bb23acfa303dbb"}'),  # noqa: E501
         ]
-        # TODO: Remove this when table is removed
-        # assert table_exists(cursor, 'asset_movements') is False  # noqa: ERA001
-        # assert table_exists(cursor, 'asset_movement_category') is False  # noqa: ERA001
+
+        assert table_exists(cursor, 'asset_movements') is False
+        assert table_exists(cursor, 'asset_movement_category') is False
+
     db.logout()
 
 
@@ -2750,7 +2751,7 @@ def test_latest_upgrade_correctness(user_data_dir):
     views_after_creation = {x[0] for x in result}
 
     assert cursor.execute("SELECT value FROM settings WHERE name='version'").fetchone()[0] == '46'
-    removed_tables = set()
+    removed_tables = {'asset_movements', 'asset_movement_category'}
     removed_views = set()
     missing_tables = tables_before - tables_after_upgrade
     missing_views = views_before - views_after_upgrade
