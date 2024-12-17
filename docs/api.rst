@@ -5747,7 +5747,6 @@ Export PnL report debug data
                     "sushiswap"
                 ],
                 "frontend_settings": "{\"defi_setup_done\":false,\"timeframe_setting\":\"REMEMBER\",\"visible_timeframes\":[\"All\",\"1Y\",\"3M\",\"1M\",\"2W\",\"1W\"],\"last_known_timeframe\":\"2W\",\"query_period\":5,\"profit_loss_report_period\":{\"year\":\"2022\",\"quarter\":\"ALL\"},\"thousand_separator\":\",\",\"decimal_separator\":\".\",\"currency_location\":\"after\",\"refresh_period\":-1,\"explorers\":{},\"items_per_page\":10,\"amount_rounding_mode\":0,\"value_rounding_mode\":1,\"dark_mode_enabled\":false,\"light_theme\":{\"primary\":\"#7e4a3b\",\"accent\":\"#e45325\",\"graph\":\"#96DFD2\"},\"dark_theme\":{\"primary\":\"#ff5722\",\"accent\":\"#ff8a50\",\"graph\":\"#E96930\"},\"graph_zero_based\":false,\"nfts_in_net_value\":true,\"dashboard_tables_visible_columns\":{\"ASSETS\":[\"percentage_of_total_net_value\"],\"LIABILITIES\":[\"percentage_of_total_net_value\"],\"NFT\":[\"percentage_of_total_net_value\"]},\"date_input_format\":\"%d/%m/%Y %H:%M:%S\",\"version_update_check_frequency\":24,\"enable_ens\":true}",
-                "account_for_assets_movements": true,
                 "btc_derivation_gap_limit": 20,
                 "calculate_past_cost_basis": true,
                 "display_date_in_localtime": true,
@@ -6156,7 +6155,6 @@ Query saved PnL Reports
                   "include_crypto2crypto": true,
                   "calculate_past_cost_basis": true,
                   "include_gas_costs": true,
-                  "account_for_assets_movements": true,
                   "cost_basis_method": "lifo",
                   "eth_staking_taxable_after_withdrawal_enabled": true
               },
@@ -6179,7 +6177,6 @@ Query saved PnL Reports
                   "include_crypto2crypto": true,
                   "calculate_past_cost_basis": true,
                   "include_gas_costs": true,
-                  "account_for_assets_movements": true,
                   "cost_basis_method": "fifo",
                   "eth_staking_taxable_after_withdrawal_enabled": false
               },
@@ -6201,7 +6198,6 @@ Query saved PnL Reports
                   "include_crypto2crypto": true,
                   "calculate_past_cost_basis": true,
                   "include_gas_costs": true,
-                  "account_for_assets_movements": true,
                   "cost_basis_method": "fifo",
                   "eth_staking_taxable_after_withdrawal_enabled": false
               },
@@ -6236,7 +6232,6 @@ Query saved PnL Reports
    :resjson bool include_crypto2crypto: The value of the setting used in the PnL report.
    :resjson bool calculate_past_cost_basis: The value of the setting used in the PnL report.
    :resjson bool include_gas_costs: The value of the setting used in the PnL report.
-   :resjson bool account_for_assets_movements: The value of the setting used in the PnL report.
    :resjson str cost_basis_method: The method for cost basis calculation. Either fifo or lifo.
    :resjson bool eth_staking_taxable_after_withdrawal_enabled: A boolean indicating whether the staking of ETH is taxable only after the merge and withdrawals are enabled (true) or (false) if each eth staking event is considered taxable at the point of receiving if if you can't yet withdraw.
    :statuscode 200: Data were queried successfully.

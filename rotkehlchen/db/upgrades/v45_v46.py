@@ -128,5 +128,6 @@ def upgrade_v45_to_v46(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
 
         write_cursor.execute('DROP TABLE asset_movements')
         write_cursor.execute('DROP TABLE asset_movement_category')
+        write_cursor.execute("DELETE FROM settings WHERE name='account_for_assets_movements'")
 
     perform_userdb_upgrade_steps(db=db, progress_handler=progress_handler, should_vacuum=True)

@@ -127,9 +127,8 @@ def test_query_history(rotkehlchen_api_server_with_exchanges: 'APIServer', start
     assert overview[str(AccountingEventType.TRADE)] is not None
 
     settings = report['settings']
-    assert len(settings) == 9
+    assert len(settings) == 8
     assert settings['profit_currency'] == 'EUR'
-    assert settings['account_for_assets_movements'] is True
     assert settings['calculate_past_cost_basis'] is True
     assert settings['include_crypto2crypto'] is True
     assert settings['include_gas_costs'] is True

@@ -1278,7 +1278,6 @@ class ModifiableSettingsSchema(Schema):
     date_display_format = fields.String(load_default=None)
     active_modules = fields.List(fields.String(), load_default=None)
     frontend_settings = fields.String(load_default=None)
-    account_for_assets_movements = fields.Bool(load_default=None)
     btc_derivation_gap_limit = fields.Integer(
         strict=True,
         validate=webargs.validate.Range(
@@ -1404,7 +1403,6 @@ class ModifiableSettingsSchema(Schema):
             submit_usage_analytics=data['submit_usage_analytics'],
             active_modules=data['active_modules'],
             frontend_settings=data['frontend_settings'],
-            account_for_assets_movements=data['account_for_assets_movements'],
             btc_derivation_gap_limit=data['btc_derivation_gap_limit'],
             calculate_past_cost_basis=data['calculate_past_cost_basis'],
             display_date_in_localtime=data['display_date_in_localtime'],

@@ -40,7 +40,6 @@ ACCOUNTING_SETTINGS = (
     'include_crypto2crypto',
     'taxfree_after_period',
     'include_gas_costs',
-    'account_for_assets_movements',
     'calculate_past_cost_basis',
     'cost_basis_method',
 )

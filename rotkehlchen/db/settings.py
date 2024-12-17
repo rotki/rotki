@@ -40,7 +40,6 @@ DEFAULT_MAIN_CURRENCY = A_USD
 DEFAULT_DATE_DISPLAY_FORMAT = '%d/%m/%Y %H:%M:%S %Z'
 DEFAULT_SUBMIT_USAGE_ANALYTICS = True
 DEFAULT_ACTIVE_MODULES = tuple(set(AVAILABLE_MODULES_MAP.keys()) - DEFAULT_OFF_MODULES)
-DEFAULT_ACCOUNT_FOR_ASSETS_MOVEMENTS = True
 DEFAULT_BTC_DERIVATION_GAP_LIMIT = 20
 DEFAULT_CALCULATE_PAST_COST_BASIS = True
 DEFAULT_DISPLAY_DATE_IN_LOCALTIME = True
@@ -78,7 +77,6 @@ BOOLEAN_KEYS = (
     'include_gas_costs',
     'premium_should_sync',
     'submit_usage_analytics',
-    'account_for_assets_movements',
     'calculate_past_cost_basis',
     'display_date_in_localtime',
     'pnl_csv_with_formulas',
@@ -133,7 +131,6 @@ CachedDBSettingsFieldNames = Literal[
     'submit_usage_analytics',
     'active_modules',
     'frontend_settings',
-    'account_for_assets_movements',
     'btc_derivation_gap_limit',
     'calculate_past_cost_basis',
     'display_date_in_localtime',
@@ -194,7 +191,6 @@ class DBSettings:
     submit_usage_analytics: bool = DEFAULT_SUBMIT_USAGE_ANALYTICS
     active_modules: Sequence[ModuleName] = field(default=DEFAULT_ACTIVE_MODULES)  # type: ignore
     frontend_settings: str = ''
-    account_for_assets_movements: bool = DEFAULT_ACCOUNT_FOR_ASSETS_MOVEMENTS
     btc_derivation_gap_limit: int = DEFAULT_BTC_DERIVATION_GAP_LIMIT
     calculate_past_cost_basis: bool = DEFAULT_CALCULATE_PAST_COST_BASIS
     display_date_in_localtime: bool = DEFAULT_DISPLAY_DATE_IN_LOCALTIME
@@ -256,7 +252,6 @@ class ModifiableDBSettings(NamedTuple):
     submit_usage_analytics: bool | None = None
     active_modules: list[ModuleName] | None = None
     frontend_settings: str | None = None
-    account_for_assets_movements: bool | None = None
     btc_derivation_gap_limit: int | None = None
     calculate_past_cost_basis: bool | None = None
     display_date_in_localtime: bool | None = None

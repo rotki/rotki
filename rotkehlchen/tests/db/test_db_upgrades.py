@@ -2646,6 +2646,8 @@ def test_upgrade_db_45_to_46(user_data_dir: 'Path', messages_aggregator):
             'type, subtype) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
             history_event_bindings,
         )
+        # Ensure account_for_assets_movements is set before upgrade
+        write_cursor.execute("INSERT OR IGNORE INTO settings(name, value) VALUES ('account_for_assets_movements', 'True')")  # noqa: E501
 
     # Execute upgrade
     db = _init_db_with_target_version(
@@ -2696,6 +2698,10 @@ def test_upgrade_db_45_to_46(user_data_dir: 'Path', messages_aggregator):
 
         assert table_exists(cursor, 'asset_movements') is False
         assert table_exists(cursor, 'asset_movement_category') is False
+
+        assert cursor.execute(
+            "SELECT COUNT(*) FROM settings WHERE name='account_for_assets_movements'",
+        ).fetchone()[0] == 0
 
     db.logout()
 
