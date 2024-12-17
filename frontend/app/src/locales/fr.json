@@ -90,7 +90,6 @@
       "title": "Paramètres d'exportation CSV"
     },
     "messages": {
-      "account_for_assets_movements": "Erreur lors du paramétrage du compte pour les mouvements d'actifs : {message}",
       "cost_basis": {
         "disabled": "Calcul du coût de base passé désactivé avec succès",
         "enabled": "Calcul du coût de base passé activé avec succès",
@@ -123,7 +122,6 @@
     }
   },
   "account_settings_display": {
-    "account_asset_movement": "Les frais de mouvement des actifs du compte ont été pris en compte :",
     "cost_basis_fees": "Les frais de coût de base ont été pris en compte :",
     "cost_basis_method": "Méthode de coût de base :",
     "crypto2crypto": "Les échanges crypto à crypto ont été pris en compte :",
@@ -187,7 +185,6 @@
     },
     "trade": {
       "labels": {
-        "account_for_assets_movements": "Prendre en compte les frais de mouvements d'actifs",
         "calculate_past_cost_basis": "Calculer le coût de base passé lors de la création du rapport",
         "include_fees_in_cost_basis": "Prendre en compte les frais dans le coût de base",
         "cost_basis_method": "Méthode de coût de base",

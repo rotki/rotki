@@ -72,7 +72,6 @@ export enum CostBasisMethod {
 export const CostBasisMethodEnum = z.nativeEnum(CostBasisMethod);
 
 export const BaseAccountingSettings = z.object({
-  accountForAssetsMovements: z.boolean(),
   calculatePastCostBasis: z.boolean(),
   costBasisMethod: CostBasisMethodEnum.nullish(),
   ethStakingTaxableAfterWithdrawalEnabled: z.boolean().nullish(),
@@ -121,7 +120,6 @@ type UserSettings = z.infer<typeof UserSettings>;
 
 function getAccountingSettings(settings: UserSettings): AccountingSettings {
   return {
-    accountForAssetsMovements: settings.accountForAssetsMovements,
     calculatePastCostBasis: settings.calculatePastCostBasis,
     costBasisMethod: settings.costBasisMethod,
     ethStakingTaxableAfterWithdrawalEnabled: settings.ethStakingTaxableAfterWithdrawalEnabled,

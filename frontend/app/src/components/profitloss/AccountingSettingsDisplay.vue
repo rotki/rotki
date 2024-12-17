@@ -52,10 +52,6 @@ const items = computed<Item[]>(() => {
       label: t('account_settings_display.profit_currency'),
     },
     {
-      data: settings.accountForAssetsMovements,
-      label: t('account_settings_display.account_asset_movement'),
-    },
-    {
       data: settings.taxfreeAfterPeriod ? taxFreePeriod(settings.taxfreeAfterPeriod) : false,
       label: t('account_settings_display.tax_free_period'),
     },
