@@ -736,3 +736,25 @@ def test_add_edit_asset_movements(rotkehlchen_api_server: 'APIServer') -> None:
                 expected_event.pop(field, None)
 
             assert serialized_event == expected_event
+
+    with db.db.conn.read_ctx() as cursor:
+        # edit the first event to add a fee
+        query_for_events = (
+            'SELECT COUNT(*) FROM history_events WHERE event_identifier IN (SELECT event_identifier FROM history_events WHERE identifier=?)',  # noqa: E501
+            (entries[0]['identifier'],),
+        )
+        assert cursor.execute(*query_for_events).fetchone()[0] == 1
+        entry = entries[0].copy()
+        entry['fee'], entry['fee_asset'] = '0.1', 'ETH'
+        response = requests.patch(
+            api_url_for(rotkehlchen_api_server, 'historyeventresource'),
+            json=entry,
+        )
+        assert cursor.execute(*query_for_events).fetchone()[0] == 2
+
+        # edit the same event to remove the fee
+        response = requests.patch(
+            api_url_for(rotkehlchen_api_server, 'historyeventresource'),
+            json=entries[0],
+        )
+        assert cursor.execute(*query_for_events).fetchone()[0] == 1

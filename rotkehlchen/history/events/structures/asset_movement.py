@@ -47,6 +47,9 @@ class AssetMovementExtraData(TypedDict):
     reference: NotRequired[str]
     # Internal use only. Used for matching the corresponding crypto_transaction. Removed before being saved to the DB.  # noqa: E501
     fee: NotRequired['Fee']
+    # blockchain where the transaction happened. We use string since
+    # it can be a non supported blockchain
+    blockchain: NotRequired[str]
 
 
 class AssetMovement(HistoryBaseEntry[AssetMovementExtraData | None]):
@@ -66,6 +69,7 @@ class AssetMovement(HistoryBaseEntry[AssetMovementExtraData | None]):
             unique_id: str | None = None,
             extra_data: AssetMovementExtraData | None = None,
             is_fee: bool = False,
+            location_label: str | None = None,
     ) -> None:
         """
         `unique_id`: Unique identifier for this asset movement.
@@ -106,6 +110,7 @@ class AssetMovement(HistoryBaseEntry[AssetMovementExtraData | None]):
             notes=notes,
             identifier=identifier,
             extra_data=extra_data,
+            location_label=location_label,
         )
 
     @staticmethod
@@ -227,6 +232,7 @@ def create_asset_movement_with_fee(
         amount: 'FVal',
         fee_asset: Asset,
         fee: 'FVal',
+        location_label: str | None = None,
         unique_id: str | None = None,
         identifier: int | None = None,
         fee_identifier: int | None = None,
@@ -244,6 +250,7 @@ def create_asset_movement_with_fee(
         unique_id=unique_id,
         identifier=identifier,
         extra_data=extra_data,
+        location_label=location_label,
     )]
     if fee != ZERO:
         events.append(AssetMovement(
@@ -255,6 +262,7 @@ def create_asset_movement_with_fee(
             asset=fee_asset,
             balance=Balance(fee),
             is_fee=True,
+            location_label=location_label,
         ))
 
     return events

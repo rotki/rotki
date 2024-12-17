@@ -956,6 +956,8 @@ class CreateHistoryEventSchema(Schema):
         )
         fee = FeeField(load_default=None, validate=validate.Range(min=ZERO, min_inclusive=False))
         location = LocationField(required=True)
+        location_label = fields.String(load_default=None)
+        blockchain = fields.String(load_default=None)
         unique_id = fields.String(required=False, load_default=None)
         address = fields.String(required=False, load_default=None)  # It can be an address for any chain not only the supported ones so we validate it as string.  # noqa: E501
         transaction_id = fields.String(required=False, load_default=None)  # It can be a transaction from any chain. We don't do any special validation on it.  # noqa: E501
@@ -975,10 +977,16 @@ class CreateHistoryEventSchema(Schema):
                     field_name='fee',
                 )
 
-            extra_data: AssetMovementExtraData = {
-                'address': data['address'],
-                'transaction_id': data['transaction_id'],
-            }
+            extra_data: AssetMovementExtraData = {}
+            if (address := data['address']) is not None:
+                extra_data['address'] = address
+
+            if (tx_id := data['transaction_id']) is not None:
+                extra_data['transaction_id'] = tx_id
+
+            if (blockchain := data['blockchain']) is not None:
+                extra_data['blockchain'] = blockchain
+
             events = create_asset_movement_with_fee(
                 fee=fee,
                 asset=data['asset'],
@@ -991,6 +999,7 @@ class CreateHistoryEventSchema(Schema):
                 amount=data['balance'].amount,
                 extra_data=extra_data,
                 fee_identifier=self.context['schema'].get_fee_event_identifier(data),
+                location_label=data['location_label'],
             ) if fee is not None else [AssetMovement(
                 is_fee=False,
                 asset=data['asset'],
@@ -1002,6 +1011,7 @@ class CreateHistoryEventSchema(Schema):
                 event_type=data['event_type'],
                 extra_data=extra_data,
                 event_identifier=data['event_identifier'],
+                location_label=data['location_label'],
             )]
 
             return {'events': events}
