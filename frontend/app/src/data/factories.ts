@@ -38,7 +38,6 @@ export function defaultGeneralSettings(mainCurrency: Currency): GeneralSettings 
 
 export function defaultAccountingSettings(): AccountingSettings {
   return {
-    accountForAssetsMovements: true,
     calculatePastCostBasis: true,
     costBasisMethod: CostBasisMethod.FIFO,
     ethStakingTaxableAfterWithdrawalEnabled: false,

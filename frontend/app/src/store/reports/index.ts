@@ -55,7 +55,6 @@ function defaultReport(): SelectedReport {
     overview: {},
     processedActions: 0,
     settings: {
-      accountForAssetsMovements: false,
       calculatePastCostBasis: false,
       includeCrypto2crypto: false,
       includeFeesInCostBasis: true,

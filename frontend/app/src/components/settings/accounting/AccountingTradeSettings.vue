@@ -3,7 +3,6 @@ import EthStakingTaxableAfterWithdrawalSetting from '@/components/settings/accou
 import CostBasisMethodSetting from '@/components/settings/accounting/CostBasisMethodSetting.vue';
 import CostBasisFeesSetting from '@/components/settings/accounting/CostBasisFeesSetting.vue';
 import CalculatePastCostBasisSetting from '@/components/settings/accounting/CalculatePastCostBasisSetting.vue';
-import AccountAssetMovementsSetting from '@/components/settings/accounting/AccountAssetMovementsSetting.vue';
 import TaxFreeSetting from '@/components/settings/accounting/TaxFreeSetting.vue';
 import GasCostSetting from '@/components/settings/accounting/GasCostSetting.vue';
 import CryptoToCryptoTradeSetting from '@/components/settings/accounting/CryptoToCryptoTradeSetting.vue';
@@ -21,7 +20,6 @@ const { t } = useI18n();
       <CryptoToCryptoTradeSetting />
       <GasCostSetting />
       <TaxFreeSetting />
-      <AccountAssetMovementsSetting />
       <CalculatePastCostBasisSetting />
       <CostBasisFeesSetting />
       <CostBasisMethodSetting />

@@ -125,7 +125,6 @@
       "title": "CSV export settings"
     },
     "messages": {
-      "account_for_assets_movements": "Error setting account for assets movements: {message}",
       "cost_basis": {
         "disabled": "Successfully disabled past cost basis calculation",
         "enabled": "Successfully enabled past cost basis calculation",
@@ -158,7 +157,6 @@
     }
   },
   "account_settings_display": {
-    "account_asset_movement": "Account asset movement fees were taken into account:",
     "cost_basis_fees": "Cost basis fees were taken into account:",
     "cost_basis_method": "Cost basis method:",
     "crypto2crypto": "Crypto to crypto trades were taken into account:",
@@ -225,7 +223,6 @@
     },
     "trade": {
       "labels": {
-        "account_for_assets_movements": "Take into account assets movements fees",
         "calculate_past_cost_basis": "Calculate past cost basis when creating the report",
         "include_fees_in_cost_basis": "Take into account cost basis fees",
         "cost_basis_method": "Cost basis method",

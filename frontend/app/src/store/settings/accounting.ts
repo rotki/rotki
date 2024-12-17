@@ -11,7 +11,6 @@ export const useAccountingSettingsStore = defineStore('settings/accounting', () 
   const includeFeesInCostBasis = useComputedRef(settings, 'includeFeesInCostBasis');
   const includeGasCosts = useComputedRef(settings, 'includeGasCosts');
   const taxfreeAfterPeriod = useComputedRef(settings, 'taxfreeAfterPeriod');
-  const accountForAssetsMovements = useComputedRef(settings, 'accountForAssetsMovements');
   const calculatePastCostBasis = useComputedRef(settings, 'calculatePastCostBasis');
   const ethStakingTaxableAfterWithdrawalEnabled = useComputedRef(settings, 'ethStakingTaxableAfterWithdrawalEnabled');
   const costBasisMethod = useComputedRef(settings, 'costBasisMethod');
@@ -24,7 +23,6 @@ export const useAccountingSettingsStore = defineStore('settings/accounting', () 
   };
 
   return {
-    accountForAssetsMovements,
     calculatePastCostBasis,
     costBasisMethod,
     ethStakingTaxableAfterWithdrawalEnabled,
