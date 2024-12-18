@@ -29,6 +29,8 @@ import type { PendingTask } from '@/types/task';
 import type { ActionResult } from '@rotki/common';
 import type { ActionDataEntry, ActionStatus } from '@/types/action';
 
+interface QueryExchangePayload { name: string; location: string }
+
 interface UseHistoryEventsApiReturn {
   fetchTransactionsTask: (payload: TransactionRequestPayload, type?: TransactionChainType) => Promise<PendingTask>;
   deleteTransactions: (chain: string, txHash?: string) => Promise<boolean>;
@@ -45,6 +47,7 @@ interface UseHistoryEventsApiReturn {
   getHistoryEventProductsData: () => Promise<HistoryEventProductData>;
   fetchHistoryEvents: (payload: HistoryEventRequestPayload) => Promise<CollectionResponse<HistoryEventEntryWithMeta>>;
   queryOnlineHistoryEvents: (payload: OnlineHistoryEventsRequestPayload) => Promise<PendingTask>;
+  queryExchangeEvents: (payload: QueryExchangePayload) => Promise<PendingTask>;
   exportHistoryEventsCSV: (filters: HistoryEventRequestPayload, directoryPath?: string) => Promise<PendingTask>;
   downloadHistoryEventsCSV: (filePath: string) => Promise<ActionStatus>;
 }
@@ -234,6 +237,20 @@ export function useHistoryEventsApi(): UseHistoryEventsApiReturn {
     return handleResponse(response);
   };
 
+  const queryExchangeEvents = async (payload: QueryExchangePayload): Promise<PendingTask> => {
+    const response = await api.instance.post(
+      '/history/events/query/exchange',
+      snakeCaseTransformer({
+        ...payload,
+        asyncQuery: true,
+      }),
+      {
+        validateStatus: validStatus,
+      },
+    );
+    return handleResponse(response);
+  };
+
   const exportHistoryEventsCSV = async (
     filters: HistoryEventRequestPayload,
     directoryPath?: string,
@@ -285,6 +302,7 @@ export function useHistoryEventsApi(): UseHistoryEventsApiReturn {
     getTransactionTypeMappings,
     getUndecodedTransactionsBreakdown,
     pullAndRecodeTransactionRequest,
+    queryExchangeEvents,
     queryOnlineHistoryEvents,
   };
 }

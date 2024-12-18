@@ -789,6 +789,16 @@
         }
       }
     },
+    "exchange_events": {
+      "error": {
+        "description": "Failed to query exchange events for {location} with name '{name}': {error}",
+        "title": "Exchange events query"
+      },
+      "task": {
+        "description": "Requesting new events for {location} with name '{name}'",
+        "title": "Querying exchange events"
+      }
+    },
     "reports": {
       "csv_export": {
         "message": {
