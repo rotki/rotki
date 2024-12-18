@@ -1164,29 +1164,11 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
         return returned_events, skipped, found_unknown_event
 
     def query_history_events(self) -> None:
-        self.msg_aggregator.add_message(
-            message_type=WSMessageType.HISTORY_EVENTS_STATUS,
-            data={
-                'status': str(HistoryEventsStep.QUERYING_EVENTS_STARTED),
-                'location': str(self.location),
-                'event_type': str(HistoryEventsQueryType.HISTORY_QUERY),
-                'name': self.name,
-            },
-        )
         with self.db.conn.read_ctx() as cursor:
             # We give the full range but internally it queries only for the missing time ranges
             self.query_kraken_ledgers(
                 cursor=cursor,
                 start_ts=Timestamp(0),
                 end_ts=ts_now(),
-                notify_events=True,
+                notify_events=False,  # TODO: Change back to True when converting all exchanges to notify about history query status  # noqa: E501
             )
-        self.msg_aggregator.add_message(
-            message_type=WSMessageType.HISTORY_EVENTS_STATUS,
-            data={
-                'status': str(HistoryEventsStep.QUERYING_EVENTS_FINISHED),
-                'location': str(self.location),
-                'event_type': str(HistoryEventsQueryType.HISTORY_QUERY),
-                'name': self.name,
-            },
-        )
