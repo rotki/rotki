@@ -4,6 +4,8 @@ FROM --platform=$BUILDPLATFORM node:20-buster AS frontend-build-stage
 ARG BUILDARCH
 ENV COREPACK_ENABLE_STRICT=0
 ENV CYPRESS_INSTALL_BINARY=0
+ENV NODE_OPTIONS="--max-old-space-size=4096"
+
 WORKDIR /app
 COPY frontend/ .
 RUN if [ "$BUILDARCH" != "amd64" ]; then apt-get update && apt-get install -y build-essential python3 --no-install-recommends; fi
