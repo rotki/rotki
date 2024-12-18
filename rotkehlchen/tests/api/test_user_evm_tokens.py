@@ -1,6 +1,6 @@
 from copy import deepcopy
 from http import HTTPStatus
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pytest
 import requests
@@ -11,7 +11,10 @@ from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_BAT
-from rotkehlchen.constants.resolver import ethaddress_to_identifier, evm_address_to_identifier
+from rotkehlchen.constants.resolver import (
+    ethaddress_to_identifier,
+    evm_address_to_identifier,
+)
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.tests.utils.api import (
@@ -34,10 +37,13 @@ from rotkehlchen.tests.utils.globaldb import (
 )
 from rotkehlchen.types import ChainID, EvmTokenKind, Location
 
+if TYPE_CHECKING:
+    from rotkehlchen.api.server import APIServer
+
 
 def assert_token_entry_exists_in_result(
         result: list[dict[str, Any]],
-        expected_result: list[dict[str, Any]]):
+        expected_result: list[dict[str, Any]]) -> None:
     """Make sure token entry exists in result.
 
     We append the identifier to each entry since it's returned
@@ -49,7 +55,7 @@ def assert_token_entry_exists_in_result(
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('generatable_user_ethereum_tokens', [True])
 @pytest.mark.parametrize('user_ethereum_tokens', [create_initial_globaldb_test_tokens])
-def test_query_user_tokens(rotkehlchen_api_server):
+def test_query_user_tokens(rotkehlchen_api_server: 'APIServer') -> None:
     """Test that using the query user ethereum tokens endpoint works"""
     expected_tokens = create_initial_expected_globaldb_test_tokens()
     # Test querying by address
@@ -60,7 +66,7 @@ def test_query_user_tokens(rotkehlchen_api_server):
         ),
         json={'address': user_token_address1, 'evm_chain': ChainID.ETHEREUM.to_name()},
     )
-    result = assert_proper_sync_response_with_result(response)['entries'][0]
+    result: Any = assert_proper_sync_response_with_result(response)['entries'][0]
     expected_result = expected_tokens[0].to_dict()
     expected_result['identifier'] = ethaddress_to_identifier(user_token_address1)
     assert result == expected_result
@@ -74,8 +80,8 @@ def test_query_user_tokens(rotkehlchen_api_server):
         json={'asset_type': 'evm token'},
     )
     result = assert_proper_sync_response_with_result(response)['entries']
-    expected_result = [x.to_dict() for x in expected_tokens]
-    assert_token_entry_exists_in_result(result, expected_result)
+    expected_result_2 = [x.to_dict() for x in expected_tokens]
+    assert_token_entry_exists_in_result(result, expected_result_2)
     # This check is to make sure the sqlite query works correctly and queries only for tokens
     assert all(x['address'] is not None for x in result), 'All returned tokens should have address'
 
@@ -100,7 +106,10 @@ def test_query_user_tokens(rotkehlchen_api_server):
     'internet-computer': {'symbol': 'ICP', 'name': 'Internet computer'},
 }])
 @pytest.mark.parametrize('cryptocompare_cache_coinlist', [{'ICP': {}}])
-def test_adding_user_tokens(rotkehlchen_api_server, cache_coinlist):  # pylint: disable=unused-argument
+def test_adding_user_tokens(
+        rotkehlchen_api_server: 'APIServer',
+        cache_coinlist: list[dict[str, dict]],
+) -> None:  # pylint: disable=unused-argument
     """Test that the endpoint for adding a user ethereum token works"""
     initial_tokens = create_initial_globaldb_test_tokens()
     expected_tokens = create_initial_expected_globaldb_test_tokens()
@@ -171,7 +180,7 @@ def test_adding_user_tokens(rotkehlchen_api_server, cache_coinlist):  # pylint: 
     assert result == 4
 
     # now test that adding a token with underlying tokens adding up to more than 100% is caught
-    bad_token = EvmToken.initialize(
+    bad_token: EvmToken = EvmToken.initialize(
         address=make_evm_address(),
         chain_id=ChainID.ETHEREUM,
         token_kind=EvmTokenKind.ERC20,
@@ -195,7 +204,7 @@ def test_adding_user_tokens(rotkehlchen_api_server, cache_coinlist):  # pylint: 
     )
     expected_msg = (
         f'The sum of underlying token weights for {bad_token.evm_address} is '
-        f'121.1000 and exceeds 100%'
+        f'121.1000 and exceeds 100%',
     )
     assert_error_response(
         response=response,
@@ -227,7 +236,7 @@ def test_adding_user_tokens(rotkehlchen_api_server, cache_coinlist):  # pylint: 
     )
     expected_msg = (
         f'The sum of underlying token weights for {bad_token.evm_address} is '
-        f'31.1000 and does not add up to 100%'
+        f'31.1000 and does not add up to 100%',
     )
     assert_error_response(
         response=response,
@@ -262,7 +271,7 @@ def test_adding_user_tokens(rotkehlchen_api_server, cache_coinlist):  # pylint: 
     )
     # test that adding invalid coingecko fails
     bad_identifier = 'INVALIDID'
-    bad_token = {
+    bad_token_2 = {
         'asset_type': 'evm token',
         'address': make_evm_address(),
         'evm_chain': 'ethereum',
@@ -277,7 +286,7 @@ def test_adding_user_tokens(rotkehlchen_api_server, cache_coinlist):  # pylint: 
             rotkehlchen_api_server,
             'allassetsresource',
         ),
-        json=bad_token,
+        json=bad_token_2,
     )
     assert_error_response(
         response=response,
@@ -285,14 +294,14 @@ def test_adding_user_tokens(rotkehlchen_api_server, cache_coinlist):  # pylint: 
         status_code=HTTPStatus.BAD_REQUEST,
     )
     # test that adding invalid cryptocompare fails
-    bad_token['cryptocompare'] = bad_identifier
-    bad_token['coingecko'] = None
+    bad_token_2['cryptocompare'] = bad_identifier
+    bad_token_2['coingecko'] = None
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
             'allassetsresource',
         ),
-        json=bad_token,
+        json=bad_token_2,
     )
     assert_error_response(
         response=response,
@@ -309,28 +318,31 @@ def test_adding_user_tokens(rotkehlchen_api_server, cache_coinlist):  # pylint: 
     'internet-computer': {'symbol': 'ICP', 'name': 'Internet computer'},
 }])
 @pytest.mark.parametrize('cryptocompare_cache_coinlist', [{'ICP': {}}])
-def test_editing_user_tokens(rotkehlchen_api_server, cache_coinlist):  # pylint: disable=unused-argument
+def test_editing_user_tokens(
+        rotkehlchen_api_server: 'APIServer',
+        cache_coinlist: list[dict[str, dict]],
+) -> None:  # pylint: disable=unused-argument
     """Test that the endpoint for editing a user ethereum token works"""
     expected_tokens = create_initial_expected_globaldb_test_tokens()
-    new_token1 = expected_tokens[0].to_dict()
-    del new_token1['identifier']
-    del new_token1['forked']
+    new_token: dict[str, Any] = expected_tokens[0].to_dict()
+    del new_token['identifier']
+    del new_token['forked']
     new_name = 'Edited token'
     new_symbol = 'ESMBL'
     new_protocol = 'curve'
     new_swapped_for = A_BAT.identifier
-    new_token1['name'] = new_name
-    new_token1['symbol'] = new_symbol
-    new_token1['swapped_for'] = new_swapped_for
-    new_token1['protocol'] = new_protocol
+    new_token['name'] = new_name
+    new_token['symbol'] = new_symbol
+    new_token['swapped_for'] = new_swapped_for
+    new_token['protocol'] = new_protocol
     response = requests.patch(
         api_url_for(
             rotkehlchen_api_server,
             'allassetsresource',
         ),
-        json=new_token1,
+        json=new_token,
     )
-    result = assert_proper_response(response)
+    assert_proper_response(response)
 
     response = requests.post(
         api_url_for(
@@ -372,7 +384,7 @@ def test_editing_user_tokens(rotkehlchen_api_server, cache_coinlist):  # pylint:
     )
 
     # test that editing with an invalid coingecko identifier is handled
-    bad_token = new_token1.copy()
+    bad_token = new_token.copy()
     bad_identifier = 'INVALIDID'
     bad_token['coingecko'] = bad_identifier
     response = requests.patch(
@@ -389,7 +401,7 @@ def test_editing_user_tokens(rotkehlchen_api_server, cache_coinlist):  # pylint:
     )
 
     # test that editing with an invalid cryptocompare identifier is handled
-    bad_token = new_token1.copy()
+    bad_token = new_token.copy()
     bad_identifier = 'INVALIDID'
     bad_token['cryptocompare'] = bad_identifier
     response = requests.patch(
@@ -410,10 +422,10 @@ def test_editing_user_tokens(rotkehlchen_api_server, cache_coinlist):  # pylint:
 @pytest.mark.parametrize('start_with_logged_in_user', [True])
 @pytest.mark.parametrize('generatable_user_ethereum_tokens', [True])
 @pytest.mark.parametrize('user_ethereum_tokens', [create_initial_globaldb_test_tokens])
-def test_deleting_user_tokens(rotkehlchen_api_server):
+def test_deleting_user_tokens(rotkehlchen_api_server: 'APIServer') -> None:
     """Test that the endpoint for deleting a user ethereum token works"""
     initial_tokens = create_initial_globaldb_test_tokens()
-    initial_expected_tokens = create_initial_expected_globaldb_test_tokens()
+    initial_expected_tokens: list[EvmToken] = create_initial_expected_globaldb_test_tokens()
     token0_id = ethaddress_to_identifier(initial_tokens[0].evm_address)
     token1_id = ethaddress_to_identifier(initial_tokens[1].evm_address)
     underlying1_id = ethaddress_to_identifier(underlying_address1)
@@ -553,9 +565,9 @@ def test_deleting_user_tokens(rotkehlchen_api_server):
 @pytest.mark.parametrize('start_with_logged_in_user', [True])
 @pytest.mark.parametrize('generatable_user_ethereum_tokens', [True])
 @pytest.mark.parametrize('user_ethereum_tokens', [create_initial_globaldb_test_tokens])
-def test_user_tokens_delete_guard(rotkehlchen_api_server):
+def test_user_tokens_delete_guard(rotkehlchen_api_server: 'APIServer') -> None:
     """Test that deleting an owned ethereum token is guarded against"""
-    expected_tokens = create_initial_expected_globaldb_test_tokens()
+    expected_tokens: list[EvmToken] = create_initial_expected_globaldb_test_tokens()
     user_db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
     token0_id = ethaddress_to_identifier(expected_tokens[0].evm_address)
     with user_db.user_write() as cursor:
@@ -585,7 +597,7 @@ def test_user_tokens_delete_guard(rotkehlchen_api_server):
     )
 
 
-def test_add_non_ethereum_token(rotkehlchen_api_server):
+def test_add_non_ethereum_token(rotkehlchen_api_server: 'APIServer') -> None:
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
@@ -620,7 +632,10 @@ def test_add_non_ethereum_token(rotkehlchen_api_server):
 @pytest.mark.parametrize('coingecko_cache_coinlist', [{
     'blackpool-token': {'symbol': 'BPT', 'name': 'Blackpool token'},
 }])
-def test_adding_evm_token_with_underlying_token(rotkehlchen_api_server, cache_coinlist):  # pylint: disable=unused-argument
+def test_adding_evm_token_with_underlying_token(
+        rotkehlchen_api_server: 'APIServer',
+        cache_coinlist: list[dict[str, dict]],
+) -> None:  # pylint: disable=unused-argument
     """
     Test that the adding an evm token with underlying tokens is correctly processed by the API
     """

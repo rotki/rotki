@@ -1,5 +1,6 @@
 import random
 from contextlib import ExitStack
+from typing import TYPE_CHECKING
 
 import pytest
 import requests
@@ -14,6 +15,10 @@ from rotkehlchen.tests.utils.api import (
     wait_for_async_task,
 )
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
+from rotkehlchen.types import ChecksumEvmAddress
+
+if TYPE_CHECKING:
+    from rotkehlchen.api.server import APIServer
 
 TEST_ACC1 = '0x7780E86699e941254c8f4D9b7eB08FF7e96BBE10'
 TEST_V2_ACC2 = '0x915C4580dFFD112db25a6cf06c76cDd9009637b7'
@@ -26,7 +31,7 @@ TEST_V2_ACC2 = '0x915C4580dFFD112db25a6cf06c76cDd9009637b7'
 @pytest.mark.parametrize('default_mock_price_value', [ONE])
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.freeze_time('2023-05-27 22:45:45 GMT')
-def test_query_yearn_vault_balances(rotkehlchen_api_server):
+def test_query_yearn_vault_balances(rotkehlchen_api_server: 'APIServer') -> None:
     async_query = random.choice([True, False])
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
@@ -54,7 +59,10 @@ def test_query_yearn_vault_balances(rotkehlchen_api_server):
 @pytest.mark.parametrize('should_mock_current_price_queries', [True])
 @pytest.mark.parametrize('should_mock_price_queries', [True])
 @pytest.mark.parametrize('default_mock_price_value', [ONE])
-def test_query_yearn_vault_v2_balances(rotkehlchen_api_server, ethereum_accounts):
+def test_query_yearn_vault_v2_balances(
+        rotkehlchen_api_server: 'APIServer',
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
     async_query = random.choice([True, False])
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     setup = setup_balances(

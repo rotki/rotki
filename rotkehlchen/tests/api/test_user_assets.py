@@ -43,7 +43,11 @@ from rotkehlchen.types import EvmTokenKind, Location
     'internet-computer': {'symbol': 'ICP', 'name': 'Internet computer'},
 }])
 @pytest.mark.parametrize('cryptocompare_cache_coinlist', [{'ICP': {}}])
-def test_add_user_assets(rotkehlchen_api_server, globaldb, cache_coinlist):  # pylint: disable=unused-argument
+def test_add_user_assets(
+        rotkehlchen_api_server: APIServer,
+        globaldb: GlobalDBHandler,
+        cache_coinlist: list[dict[str, dict]],
+) -> None:  # pylint: disable=unused-argument
     """Test that the endpoint for adding a user asset works"""
 
     user_asset1 = {
@@ -63,6 +67,7 @@ def test_add_user_assets(rotkehlchen_api_server, globaldb, cache_coinlist):  # p
     user_asset1_id = result['identifier']
 
     data = globaldb.get_asset_data(identifier=user_asset1_id, form_with_incomplete_data=False)
+    assert data is not None
     assert data.identifier == user_asset1_id
     assert data.asset_type == AssetType.OWN_CHAIN
     assert data.name == user_asset1['name']
@@ -90,6 +95,7 @@ def test_add_user_assets(rotkehlchen_api_server, globaldb, cache_coinlist):  # p
     user_asset2_id = result['identifier']
 
     data = globaldb.get_asset_data(identifier=user_asset2_id, form_with_incomplete_data=False)
+    assert data is not None
     assert data.identifier == user_asset2_id
     assert data.asset_type == AssetType.STELLAR_TOKEN
     assert data.name == user_asset2['name']
@@ -235,7 +241,11 @@ def test_add_user_assets(rotkehlchen_api_server, globaldb, cache_coinlist):  # p
     'internet-computer': {'symbol': 'ICP', 'name': 'Internet computer'},
 }])
 @pytest.mark.parametrize('cryptocompare_cache_coinlist', [{'ICP': {}}])
-def test_editing_user_assets(rotkehlchen_api_server, globaldb, cache_coinlist):  # pylint: disable=unused-argument
+def test_editing_user_assets(
+        rotkehlchen_api_server: APIServer,
+        globaldb: GlobalDBHandler,
+        cache_coinlist: list[dict[str, dict]],
+) -> None:  # pylint: disable=unused-argument
     """Test that the endpoint for editing user assets works"""
 
     user_asset1 = {
@@ -255,6 +265,7 @@ def test_editing_user_assets(rotkehlchen_api_server, globaldb, cache_coinlist): 
     user_asset1_id = result['identifier']
 
     data = globaldb.get_asset_data(identifier=user_asset1_id, form_with_incomplete_data=False)
+    assert data is not None
     assert data.identifier == user_asset1_id
     assert data.asset_type == AssetType.OWN_CHAIN
     assert data.name == user_asset1['name']
@@ -283,6 +294,7 @@ def test_editing_user_assets(rotkehlchen_api_server, globaldb, cache_coinlist): 
     assert result is True
 
     data = globaldb.get_asset_data(identifier=user_asset1_id, form_with_incomplete_data=False)
+    assert data is not None
     assert data.identifier == user_asset1_id
     assert data.asset_type == AssetType.STELLAR_TOKEN
     assert data.name == user_asset1_v2['name']
@@ -429,7 +441,11 @@ def test_editing_user_assets(rotkehlchen_api_server, globaldb, cache_coinlist): 
     'internet-computer': {'symbol': 'ICP', 'name': 'Internet computer'},
 }])
 @pytest.mark.parametrize('cryptocompare_cache_coinlist', [{'ICP': {}}])
-def test_deleting_user_assets(rotkehlchen_api_server, globaldb, cache_coinlist):  # pylint: disable=unused-argument
+def test_deleting_user_assets(
+        rotkehlchen_api_server: APIServer,
+        globaldb: GlobalDBHandler,
+        cache_coinlist: list[dict[str, dict]],
+) -> None:  # pylint: disable=unused-argument
     """Test that the endpoint for deleting a user asset works"""
     user_asset1 = {
         'asset_type': 'own chain',
@@ -504,7 +520,9 @@ def test_deleting_user_assets(rotkehlchen_api_server, globaldb, cache_coinlist):
     assert_proper_response(response)
     assert globaldb.get_asset_data(identifier=user_asset1_id, form_with_incomplete_data=False) is None  # noqa: E501
     # Also check that `forked` was updated
-    assert globaldb.get_asset_data(identifier=user_asset2_id, form_with_incomplete_data=False).forked is None  # noqa: E501
+
+    assert (asset_data := globaldb.get_asset_data(identifier=user_asset2_id, form_with_incomplete_data=False)) is not None  # noqa: E501
+    assert asset_data.forked is None
 
     # Delete user asset 2 and assert it works
     response = requests.delete(
@@ -535,7 +553,7 @@ def test_deleting_user_assets(rotkehlchen_api_server, globaldb, cache_coinlist):
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('start_with_logged_in_user', [True])
-def test_user_asset_delete_guard(rotkehlchen_api_server):
+def test_user_asset_delete_guard(rotkehlchen_api_server: APIServer) -> None:
     """Test that deleting an owned asset is guarded against"""
     user_db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
     user_asset1 = {
@@ -582,7 +600,7 @@ def test_user_asset_delete_guard(rotkehlchen_api_server):
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('start_with_logged_in_user', [False])
-def test_query_asset_types(rotkehlchen_api_server):
+def test_query_asset_types(rotkehlchen_api_server: APIServer) -> None:
     response = requests.get(
         api_url_for(
             rotkehlchen_api_server,
@@ -597,7 +615,11 @@ def test_query_asset_types(rotkehlchen_api_server):
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('start_with_logged_in_user', [True])
 @pytest.mark.parametrize('only_in_globaldb', [True, False])
-def test_replace_asset(rotkehlchen_api_server, globaldb, only_in_globaldb):
+def test_replace_asset(
+        rotkehlchen_api_server: APIServer,
+        globaldb: GlobalDBHandler,
+        only_in_globaldb: bool,
+) -> None:
     """Test that the endpoint for replacing an asset identifier works
 
     Test for both an asset owned by the user and not (the only_in_globaldb case)
@@ -725,7 +747,10 @@ def test_replace_asset(rotkehlchen_api_server, globaldb, only_in_globaldb):
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('start_with_logged_in_user', [True])
-def test_replace_asset_not_in_globaldb(rotkehlchen_api_server, globaldb):
+def test_replace_asset_not_in_globaldb(
+        rotkehlchen_api_server: APIServer,
+        globaldb: GlobalDBHandler,
+) -> None:
     """Test that the endpoint for replacing an asset identifier works even if
     the source asset identifier is not in the global DB"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
@@ -792,7 +817,10 @@ def test_replace_asset_not_in_globaldb(rotkehlchen_api_server, globaldb):
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('start_with_logged_in_user', [True])
-def test_replace_asset_edge_cases(rotkehlchen_api_server, globaldb):
+def test_replace_asset_edge_cases(
+        rotkehlchen_api_server: APIServer,
+        globaldb: GlobalDBHandler,
+) -> None:
     """Test that the edge cases/errors are treated properly in the replace assets endpoint"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     cursor = rotki.data.db.conn.cursor()
@@ -937,7 +965,7 @@ def test_exporting_user_assets_list(
         rotkehlchen_api_server: APIServer,
         globaldb: GlobalDBHandler,
         with_custom_path: bool,
-):
+) -> None:
     """Test that the endpoint for exporting user assets works correctly"""
     eth_address = make_evm_address()
     identifier = ethaddress_to_identifier(eth_address)
@@ -1028,7 +1056,7 @@ def test_importing_user_assets_list(
         rotkehlchen_api_server: APIServer,
         method: str,
         file_type: str,
-):
+) -> None:
     """Test that the endpoint for importing user assets works correctly"""
     async_query = random.choice((True, False))
     filepath = Path(__file__).resolve().parent.parent / 'data' / f'exported_assets.{file_type}'
