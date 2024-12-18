@@ -78,16 +78,38 @@ def upgrade_v45_to_v46(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
     @progress_step(description='Converting asset movements to history events')
     def move_asset_movements(write_cursor: 'DBCursor') -> None:
         new_events: list[AssetMovement] = []
+        # kraken events appear both as history events and asset movements.
+        # We get the event_identifiers mapped to labels and then delete the history
+        # events so they can be created as movements.
+        write_cursor.execute(
+            'SELECT event_identifier, location_label FROM history_events WHERE event_identifier '
+            'IN (SELECT link FROM asset_movements WHERE location=?)',
+            (Location.KRAKEN.serialize_for_db(),),
+        )
+        event_identifier_to_label = dict(write_cursor)
+        write_cursor.execute(
+            'DELETE FROM history_events WHERE event_identifier '
+            'IN (SELECT link FROM asset_movements WHERE location=?)',
+            (Location.KRAKEN.serialize_for_db(),),
+        )
+
         write_cursor.execute(
             'SELECT id, location, category, address, transaction_id, timestamp, asset, '
             'amount, fee_asset, fee, link FROM asset_movements',
         )
-
         for row in write_cursor:
+            location_label = None
+            if (
+                (location := Location.deserialize_from_db(row[1])) == Location.KRAKEN and
+                (label := event_identifier_to_label.get(row[10])) is not None
+            ):
+                location_label = label
+
             try:
                 new_events.extend(create_asset_movement_with_fee(
                     timestamp=ts_sec_to_ms(row[5]),
-                    location=Location.deserialize_from_db(row[1]),
+                    location=location,
+                    location_label=location_label,
                     event_type=HistoryEventType.DEPOSIT if row[2] == 'A' else HistoryEventType.WITHDRAWAL,  # noqa: E501
                     asset=Asset(row[6]),
                     amount=FVal(row[7]),
