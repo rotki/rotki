@@ -1,4 +1,5 @@
 import { groupBy } from 'lodash-es';
+import { objectOmit } from '@vueuse/shared';
 import { Section, Status } from '@/types/status';
 import {
   type AddTransactionHashPayload,
@@ -25,8 +26,10 @@ import { useStatusUpdater } from '@/composables/status';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
 import { useHistoryTransactionDecoding } from '@/composables/history/events/tx/decoding';
+import { useExchangesStore } from '@/store/exchanges/index';
 import type { ActionStatus } from '@/types/action';
 import type { Blockchain } from '@rotki/common';
+import type { Exchange } from '@/types/exchanges';
 
 export const useHistoryTransactions = createSharedComposable(() => {
   const { t } = useI18n();
@@ -36,10 +39,12 @@ export const useHistoryTransactions = createSharedComposable(() => {
   const {
     addTransactionHash: addTransactionHashCaller,
     fetchTransactionsTask,
+    queryExchangeEvents,
     queryOnlineHistoryEvents,
   } = useHistoryEventsApi();
 
   const { addresses } = storeToRefs(useBlockchainStore());
+  const { connectedExchanges } = storeToRefs(useExchangesStore());
   const { awaitTask, isTaskRunning } = useTaskStore();
   const { removeQueryStatus, resetQueryStatus } = useTxQueryStatusStore();
   const { getChainName, getEvmChainName, isEvmLikeChains, supportsTransactions } = useSupportedChains();
@@ -203,6 +208,50 @@ export const useHistoryTransactions = createSharedComposable(() => {
       setStatus(get(isTaskRunning(TaskType.TX, { isEvm })) ? Status.REFRESHING : Status.LOADED);
   };
 
+  const queryExchange = async (payload: Exchange): Promise<void> => {
+    const exchange = objectOmit(payload, ['krakenAccountType']);
+    const taskType = TaskType.QUERY_EXCHANGE_EVENTS;
+    const taskMeta = {
+      description: t('actions.exchange_events.task.description', exchange),
+      exchange,
+      title: t('actions.exchange_events.task.title'),
+    };
+
+    try {
+      const { taskId } = await queryExchangeEvents(exchange);
+      await awaitTask<boolean, TaskMeta>(taskId, taskType, taskMeta, true);
+    }
+    catch (error: any) {
+      if (!isTaskCancelled(error)) {
+        logger.error(error);
+        notify({
+          display: true,
+          message: t('actions.exchange_events.error.description', {
+            error,
+            exchange,
+          }),
+          title: t('actions.exchange_events.error.title'),
+        });
+      }
+    }
+  };
+
+  const queryAllExchangeEvents = async (): Promise<void> => {
+    const exchanges = get(connectedExchanges);
+    const groupedExchanges = Object.entries(groupBy(exchanges, exchange => exchange.location));
+
+    await awaitParallelExecution(
+      groupedExchanges,
+      ([group]) => group,
+      async ([_group, exchanges]) => {
+        for (const exchange of exchanges) {
+          await queryExchange(exchange);
+        }
+      },
+      2,
+    );
+  };
+
   const refreshTransactions = async (
     chains: Blockchain[] = [],
     disableEvmEvents = false,
@@ -232,6 +281,7 @@ export const useHistoryTransactions = createSharedComposable(() => {
         refreshTransactionsHandler(evmLikeAccounts, TransactionChainType.EVMLIKE),
         queryOnlineEvent(OnlineHistoryEventsQueryType.ETH_WITHDRAWALS),
         queryOnlineEvent(OnlineHistoryEventsQueryType.BLOCK_PRODUCTIONS),
+        queryAllExchangeEvents(),
       ]);
 
       if (!disableEvmEvents)
