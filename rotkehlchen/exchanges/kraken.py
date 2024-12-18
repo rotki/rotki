@@ -1066,7 +1066,8 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
                         group_events.extend(
                             (idx, event) for event in create_asset_movement_with_fee(
                                 timestamp=timestamp,
-                                location=Location.KRAKEN,
+                                location=self.location,
+                                location_label=self.name,
                                 event_type=event_type,  # type: ignore  # will be deposit or withdrawal
                                 asset=asset,
                                 amount=abs(raw_amount),

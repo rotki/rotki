@@ -399,7 +399,8 @@ class Woo(ExchangeInterface):
             address = movement['target_address']
             event_type = HistoryEventType.WITHDRAWAL
         return create_asset_movement_with_fee(
-            location=Location.WOO,
+            location=self.location,
+            location_label=self.name,
             event_type=event_type,
             timestamp=ts_sec_to_ms(deserialize_timestamp_from_floatstr(movement['created_time'])),
             asset=asset,

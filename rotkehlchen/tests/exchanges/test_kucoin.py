@@ -1,7 +1,9 @@
 import warnings as test_warnings
+from collections.abc import Generator
 from contextlib import ExitStack
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
+from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import pytest
@@ -24,6 +26,9 @@ from rotkehlchen.tests.utils.exchanges import get_exchange_asset_symbols
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import AssetAmount, Fee, Location, Price, Timestamp, TimestampMS
 from rotkehlchen.utils.serialization import jsonloads_dict
+
+if TYPE_CHECKING:
+    from rotkehlchen.inquirer import Inquirer
 
 
 def test_name():
@@ -344,7 +349,7 @@ def test_deserialize_v1_trade(mock_kucoin):
     assert trade == expected_trade
 
 
-def test_deserialize_asset_movement_deposit(mock_kucoin):
+def test_deserialize_asset_movement_deposit(mock_kucoin: 'Kucoin') -> None:
     raw_result = {
         'address': '0x5bedb060b8eb8d823e2414d82acce78d38be7fe9',
         'memo': '',
@@ -361,6 +366,7 @@ def test_deserialize_asset_movement_deposit(mock_kucoin):
     expected_asset_movement = [AssetMovement(
         timestamp=TimestampMS(1612556794259),
         location=Location.KUCOIN,
+        location_label=mock_kucoin.name,
         event_type=HistoryEventType.DEPOSIT,
         asset=A_ETH,
         balance=Balance(ONE),
@@ -372,6 +378,7 @@ def test_deserialize_asset_movement_deposit(mock_kucoin):
     ), AssetMovement(
         timestamp=TimestampMS(1612556794259),
         location=Location.KUCOIN,
+        location_label=mock_kucoin.name,
         event_type=HistoryEventType.DEPOSIT,
         asset=A_ETH,
         balance=Balance(FVal('0.01')),
@@ -385,7 +392,7 @@ def test_deserialize_asset_movement_deposit(mock_kucoin):
     assert asset_movement == expected_asset_movement
 
 
-def test_deserialize_asset_movement_withdrawal(mock_kucoin):
+def test_deserialize_asset_movement_withdrawal(mock_kucoin: 'Kucoin') -> None:
     raw_result = {
         'id': '5c2dc64e03aa675aa263f1ac',
         'address': '0x5bedb060b8eb8d823e2414d82acce78d38be7fe9',
@@ -403,6 +410,7 @@ def test_deserialize_asset_movement_withdrawal(mock_kucoin):
     expected_asset_movement = [AssetMovement(
         timestamp=TimestampMS(1612556794259),
         location=Location.KUCOIN,
+        location_label=mock_kucoin.name,
         event_type=HistoryEventType.WITHDRAWAL,
         asset=A_ETH,
         balance=Balance(ONE),
@@ -414,6 +422,7 @@ def test_deserialize_asset_movement_withdrawal(mock_kucoin):
     ), AssetMovement(
         timestamp=TimestampMS(1612556794259),
         location=Location.KUCOIN,
+        location_label=mock_kucoin.name,
         event_type=HistoryEventType.WITHDRAWAL,
         asset=A_ETH,
         balance=Balance(FVal('0.01')),
@@ -530,9 +539,9 @@ def test_query_trades_sandbox(sandbox_kucoin, inquirer):  # pylint: disable=unus
 
 @pytest.mark.parametrize('should_mock_current_price_queries', [True])
 def test_query_asset_movements_sandbox(
-        sandbox_kucoin,
-        inquirer,  # pylint: disable=unused-argument
-):
+        sandbox_kucoin: 'Kucoin',
+        inquirer: 'Inquirer',  # pylint: disable=unused-argument
+) -> None:
     """Unfortunately the sandbox environment does not support deposits and
     withdrawals, therefore they must be mocked.
 
@@ -708,6 +717,7 @@ def test_query_asset_movements_sandbox(
     )
     expected_asset_movements = [AssetMovement(
         location=Location.KUCOIN,
+        location_label=sandbox_kucoin.name,
         event_type=HistoryEventType.DEPOSIT,
         timestamp=TimestampMS(1612556652000),
         asset=A_KCS,
@@ -719,6 +729,7 @@ def test_query_asset_movements_sandbox(
         },
     ), AssetMovement(
         location=Location.KUCOIN,
+        location_label=sandbox_kucoin.name,
         event_type=HistoryEventType.DEPOSIT,
         timestamp=TimestampMS(1612556652000),
         asset=A_KCS,
@@ -727,6 +738,7 @@ def test_query_asset_movements_sandbox(
         is_fee=True,
     ), AssetMovement(
         location=Location.KUCOIN,
+        location_label=sandbox_kucoin.name,
         event_type=HistoryEventType.DEPOSIT,
         timestamp=TimestampMS(1612556651000),
         asset=A_LINK,
@@ -738,6 +750,7 @@ def test_query_asset_movements_sandbox(
         },
     ), AssetMovement(
         location=Location.KUCOIN,
+        location_label=sandbox_kucoin.name,
         event_type=HistoryEventType.DEPOSIT,
         timestamp=TimestampMS(1612556651000),
         asset=A_LINK,
@@ -746,6 +759,7 @@ def test_query_asset_movements_sandbox(
         is_fee=True,
     ), AssetMovement(
         location=Location.KUCOIN,
+        location_label=sandbox_kucoin.name,
         event_type=HistoryEventType.WITHDRAWAL,
         timestamp=TimestampMS(1612556652000),
         asset=A_BSV,
@@ -757,6 +771,7 @@ def test_query_asset_movements_sandbox(
         },
     ), AssetMovement(
         location=Location.KUCOIN,
+        location_label=sandbox_kucoin.name,
         event_type=HistoryEventType.WITHDRAWAL,
         timestamp=TimestampMS(1612556652000),
         asset=A_BSV,
@@ -765,7 +780,7 @@ def test_query_asset_movements_sandbox(
         is_fee=True,
     )]
 
-    def get_endpoints_response():
+    def get_endpoints_response() -> Generator[str, None, None]:
         results = [
             f'{deposits_response_1}',
             f'{deposits_response_2}',

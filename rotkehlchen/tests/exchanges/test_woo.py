@@ -374,7 +374,7 @@ def test_deserialize_trade_sell(mock_woo):
     )
 
 
-def test_deserialize_asset_movement_deposit(mock_woo):
+def test_deserialize_asset_movement_deposit(mock_woo: 'Woo') -> None:
     mock_deposit = {
         'created_time': '1579399877.041',
         'updated_time': '1579399877.041',
@@ -398,6 +398,7 @@ def test_deserialize_asset_movement_deposit(mock_woo):
     result = mock_woo._deserialize_asset_movement(mock_deposit)
     assert result == [AssetMovement(
         location=Location.WOO,
+        location_label=mock_woo.name,
         event_type=HistoryEventType.DEPOSIT,
         timestamp=TimestampMS(1579399877000),
         asset=A_ETH,
@@ -410,7 +411,7 @@ def test_deserialize_asset_movement_deposit(mock_woo):
     )]
 
 
-def test_deserialize_asset_movement_withdrawal(mock_woo):
+def test_deserialize_asset_movement_withdrawal(mock_woo: 'Woo') -> None:
     mock_withdrawal = {
         'id': '23061317355600291',
         'token': 'SOL',
@@ -434,6 +435,7 @@ def test_deserialize_asset_movement_withdrawal(mock_woo):
     result = mock_woo._deserialize_asset_movement(mock_withdrawal)
     assert result == [AssetMovement(
         location=Location.WOO,
+        location_label=mock_woo.name,
         event_type=HistoryEventType.WITHDRAWAL,
         timestamp=TimestampMS(1686677756000),
         asset=A_SOL,

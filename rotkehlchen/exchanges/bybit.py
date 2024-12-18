@@ -526,6 +526,7 @@ class Bybit(ExchangeInterface):
                 movements.extend(create_asset_movement_with_fee(
                     timestamp=ts_sec_to_ms(timestamp),
                     location=Location.BYBIT,
+                    location_label=self.name,
                     event_type=query_for,
                     asset=coin,
                     amount=deserialize_asset_amount(movement['amount']),

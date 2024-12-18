@@ -524,6 +524,7 @@ class Bitfinex(ExchangeInterface):
 
         return create_asset_movement_with_fee(
             location=self.location,
+            location_label=self.name,
             event_type=event_type,
             timestamp=TimestampMS(deserialize_timestamp(raw_result[5])),
             asset=asset,

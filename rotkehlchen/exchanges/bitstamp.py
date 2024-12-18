@@ -666,8 +666,8 @@ class Bitstamp(ExchangeInterface):
 
         return results
 
-    @staticmethod
     def _deserialize_asset_movement_from_user_transaction(
+            self,
             raw_movement: dict[str, Any],
     ) -> list[AssetMovement]:
         """Process a deposit/withdrawal user transaction from Bitstamp and
@@ -719,7 +719,8 @@ class Bitstamp(ExchangeInterface):
         # Using this temporary fee entry in the extra_data is rather hacky.
         # See: https://github.com/orgs/rotki/projects/11/views/2?pane=issue&itemId=90720824
         return create_asset_movement_with_fee(
-            location=Location.BITSTAMP,
+            location=self.location,
+            location_label=self.name,
             event_type=event_type,
             timestamp=timestamp,
             asset=fee_asset,
