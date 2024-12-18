@@ -4966,16 +4966,17 @@
     "message": "rotki's minimum supported Windows version is Windows 8(6.2)"
   },
   "wrapped": {
-    "title": "Year wrapped",
+    "title": "rotki Wrapped",
     "subtitle": "Your year with Rotki",
     "year_subtitle": "Your DeFi journey in numbers",
     "tooltip": "View your 2024 Wrapped",
     "premium_required_tooltip": "Upgrade to premium to access your personalized Rotki Wrapped report",
     "exchange_activity": "Exchange Activity",
-    "transactions_by_chain": "Transactions by Chain",
-    "protocol_activity": "Protocol Activity",
-    "gas_spent": "Gas Spent",
-    "gnosis_payments": "Gnosis Pay Activity",
+    "transactions_by_chain": "Total amount of transcations per chain",
+    "protocol_activity": "Number of transactions by protocol",
+    "gas_spent": "ETH spent on gas per address",
+    "gas_spent_total": "ETH spent on gas total",
+    "gnosis_payments": "Gnosis Pay highest payments per currency",
     "top_days": "Most Active Days"
   },
   "yearn_asset_table": {
