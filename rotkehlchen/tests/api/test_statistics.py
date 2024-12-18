@@ -465,7 +465,7 @@ def test_query_wrap(
         rotkehlchen_api_server: 'APIServer',
         ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
-    """Test that information returned by recap endpoint is correct.
+    """Test that information returned by the yearly wrap endpoint is correct.
     It adds:
     - transactions
     - evm events (for fees)
