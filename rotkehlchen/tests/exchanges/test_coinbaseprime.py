@@ -207,7 +207,7 @@ def test_process_movements(function_scope_coinbaseprime: Coinbaseprime):
     withdrawal = {
         'amount': '-250',
         'blockchain_ids': [icp_tx_hash],
-        'completed_at': '2024-10-12T08:16:26.717Z',
+        'completed_at': None,
         'created_at': '2024-10-12T06:14:12.857Z',
         'destination_symbol': '',
         'estimated_asset_changes': [],
@@ -234,7 +234,7 @@ def test_process_movements(function_scope_coinbaseprime: Coinbaseprime):
     assert processed_withdrawal.event_type == HistoryEventType.WITHDRAWAL
     assert processed_withdrawal.asset == Asset('ICP')
     assert processed_withdrawal.balance.amount == FVal(250)
-    assert processed_withdrawal.timestamp == 1728720987000
+    assert processed_withdrawal.timestamp == 1728713653000
     assert processed_withdrawal.extra_data == {
         'transaction_id': icp_tx_hash,
         'address': icp_address,
@@ -253,7 +253,7 @@ def test_history_events(function_scope_coinbaseprime: Coinbaseprime):
     raw_data = [{
         'amount': '50',
         'blockchain_ids': [],
-        'completed_at': '2024-07-24T20:50:21.849Z',
+        'completed_at': None,
         'created_at': '2024-07-24T20:50:19.484Z',
         'destination_symbol': 'USDC',
         'estimated_asset_changes': [],
@@ -390,7 +390,7 @@ def test_history_events(function_scope_coinbaseprime: Coinbaseprime):
             identifier=1,
             event_identifier=first_id,
             sequence_index=0,
-            timestamp=TimestampMS(1721854222000),
+            timestamp=TimestampMS(1721854219000),
             location=Location.COINBASEPRIME,
             event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
@@ -401,7 +401,7 @@ def test_history_events(function_scope_coinbaseprime: Coinbaseprime):
             identifier=2,
             event_identifier=first_id,
             sequence_index=1,
-            timestamp=TimestampMS(1721854222000),
+            timestamp=TimestampMS(1721854219000),
             location=Location.COINBASEPRIME,
             event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,

@@ -147,7 +147,7 @@ def _process_deposit_withdrawal(event_data: dict[str, Any]) -> list[AssetMovemen
 
         amount = deserialize_asset_amount_force_positive(event_data['amount'])
         fee = deserialize_fee(event_data['fees'])
-        timestamp = iso8601ts_to_timestamp(event_data['completed_at'])
+        timestamp = iso8601ts_to_timestamp(event_data['completed_at'] or event_data['created_at'])
         try:
             fee_asset = asset_from_coinbase(event_data['fee_symbol'])
             asset = asset_from_coinbase(event_data['symbol'])
@@ -189,7 +189,9 @@ def _process_conversions(raw_data: dict[str, Any]) -> list[HistoryEvent]:
         name='history_event',
         location='coinbase prime',
     )
-    timestamp_ms = ts_sec_to_ms(iso8601ts_to_timestamp(raw_data['completed_at']))
+    # If `completed_at` is missing, fall back to `created_at`.
+    # We found cases where `completed_at` was None, so this ensures we always have a timestamp.
+    timestamp_ms = ts_sec_to_ms(iso8601ts_to_timestamp(raw_data['completed_at'] or raw_data['created_at']))  # noqa: E501
 
     conversion_events = [
         HistoryEvent(
@@ -247,7 +249,7 @@ def _process_reward(raw_data: dict[str, Any]) -> list[HistoryEvent]:
     return [HistoryEvent(
         event_identifier=raw_data['id'],
         sequence_index=0,
-        timestamp=ts_sec_to_ms(iso8601ts_to_timestamp(raw_data['completed_at'])),
+        timestamp=ts_sec_to_ms(iso8601ts_to_timestamp(raw_data['completed_at'] or raw_data['created_at'])),  # noqa: E501
         location=Location.COINBASEPRIME,
         event_type=HistoryEventType.STAKING,
         event_subtype=HistoryEventSubType.REWARD,
