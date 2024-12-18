@@ -198,9 +198,6 @@ class DBHistoryEvents:
 
         If any identifier is missing the entire call fails and an error message
         is returned. Otherwise None is returned.
-
-        For asset movements the fee and the main event are linked. Deleting one of them
-        means deleting them both.
         """
         for identifier in identifiers:
             if force_delete is False:
@@ -876,10 +873,3 @@ class DBHistoryEvents:
             'top_days_by_number_of_transactions': top_days_by_number_of_transactions,
             'transactions_per_protocol': transactions_per_protocol,
         }
-
-    def count_number_of_events_by_event_identifier(self, event_identifier: str) -> int:
-        with self.db.conn.read_ctx() as cursor:
-            return cursor.execute(
-                'SELECT COUNT(*) FROM history_events WHERE event_identifier=?',
-                (event_identifier,),
-            ).fetchone()[0]

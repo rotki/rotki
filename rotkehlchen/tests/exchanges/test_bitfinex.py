@@ -1,7 +1,9 @@
 import datetime
 import warnings as test_warnings
+from collections.abc import Generator
 from contextlib import ExitStack
 from http import HTTPStatus
+from typing import TYPE_CHECKING, Any
 from unittest.mock import MagicMock, call, patch
 
 import pytest
@@ -9,6 +11,7 @@ import pytest
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.converters import BITFINEX_EXCHANGE_TEST_ASSETS, asset_from_bitfinex
 from rotkehlchen.assets.utils import get_or_create_evm_token
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR, A_GLM, A_LINK, A_USD, A_USDT, A_WBTC
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import RemoteError
@@ -38,6 +41,10 @@ from rotkehlchen.types import (
     Timestamp,
     TimestampMS,
 )
+
+if TYPE_CHECKING:
+    from rotkehlchen.globaldb.handler import GlobalDBHandler
+    from rotkehlchen.inquirer import Inquirer
 
 
 def test_name():
@@ -142,7 +149,7 @@ def test_first_connection(mock_bitfinex, globaldb):
     assert mock_bitfinex.first_connection_made is True
 
 
-def test_api_key_err_auth_nonce(mock_bitfinex):
+def test_api_key_err_auth_nonce(mock_bitfinex: 'Bitfinex') -> None:
     """Test the error code related with the nonce authentication is properly handled"""
     def mock_api_query_response(endpoint, options=None):  # pylint: disable=unused-argument
         return MockResponse(
@@ -160,13 +167,13 @@ def test_api_key_err_auth_nonce(mock_bitfinex):
         assert result is False
         assert msg == API_ERR_AUTH_NONCE_MESSAGE
 
-        movements = mock_bitfinex.query_online_history_events(0, 1)
+        movements = mock_bitfinex.query_online_history_events(Timestamp(0), Timestamp(1))
         assert movements == []
         errors = mock_bitfinex.msg_aggregator.consume_errors()
         assert len(errors) == 1
         assert API_ERR_AUTH_NONCE_MESSAGE in errors[0]
 
-        trades, _ = mock_bitfinex.query_online_trade_history(0, 1)
+        trades, _ = mock_bitfinex.query_online_trade_history(Timestamp(0), Timestamp(1))
         assert trades == []
         errors = mock_bitfinex.msg_aggregator.consume_errors()
         assert len(errors) == 1
@@ -191,7 +198,11 @@ def test_validate_api_key_invalid_key(mock_bitfinex):
 
 
 @pytest.mark.parametrize('should_mock_current_price_queries', [True])
-def test_query_balances_asset_balance(mock_bitfinex, inquirer, globaldb):  # pylint: disable=unused-argument
+def test_query_balances_asset_balance(
+        mock_bitfinex: 'Bitfinex',
+        inquirer: 'Inquirer',  # pylint: disable=unused-argument
+        globaldb: 'GlobalDBHandler',
+):
     """Test the balances of the assets are returned as expected.
 
     Also test the following logic:
@@ -200,7 +211,7 @@ def test_query_balances_asset_balance(mock_bitfinex, inquirer, globaldb):  # pyl
       - The balance of an asset in location_unsupported_assets is skipped.
       - The asset ticker is standardized (e.g. WBT to WBTC, UST to USDT).
     """
-    mock_bitfinex.first_connection = MagicMock()
+    mock_bitfinex.first_connection = MagicMock()  # type: ignore
     globaldb.add_location_asset_mappings([
         LocationAssetMappingUpdateEntry(
             location=Location.BITFINEX,
@@ -268,7 +279,7 @@ def test_query_balances_asset_balance(mock_bitfinex, inquirer, globaldb):  # pyl
         assert msg == ''
 
 
-def test_api_query_paginated_stops_requesting(mock_bitfinex):
+def test_api_query_paginated_stops_requesting(mock_bitfinex: 'Bitfinex') -> None:
     """Test requests are stopped after retry limit is reached.
     """
     def mock_api_query_response(endpoint, options):  # pylint: disable=unused-argument
@@ -302,14 +313,14 @@ def test_api_query_paginated_stops_requesting(mock_bitfinex):
         assert result == []
 
 
-def test_api_query_paginated_retries_request(mock_bitfinex):
+def test_api_query_paginated_retries_request(mock_bitfinex: 'Bitfinex') -> None:
     """Test retry logic works as expected.
 
     It also tests that that trying to decode first the unsuccessful response
     JSON as a dict and later as a list (via `_process_unsuccessful_response()`)
     works as expected.
     """
-    def get_paginated_response():
+    def get_paginated_response() -> Generator[str, None, None]:
         results = [
             f'{{"error":"{API_RATE_LIMITS_ERROR_MESSAGE}"}}',
             '["error", 10000, "unknown error"]',
@@ -408,7 +419,7 @@ def test_deserialize_trade_sell(mock_bitfinex):
     assert trade == expected_trade
 
 
-def test_delisted_pair_trades_work(mock_bitfinex):
+def test_delisted_pair_trades_work(mock_bitfinex: 'Bitfinex') -> None:
     """A user reported inability to deserialize trades from delisted pairs
 
     This is a regression test for this. RLC was delisted and as such is no
@@ -416,7 +427,7 @@ def test_delisted_pair_trades_work(mock_bitfinex):
     """
     rlc = get_or_create_evm_token(
         userdb=mock_bitfinex.db,
-        evm_address='0x607F4C5BB672230e8672085532f7e901544a7375',
+        evm_address=string_to_evm_address('0x607F4C5BB672230e8672085532f7e901544a7375'),
         chain_id=ChainID.ETHEREUM,
         token_kind=EvmTokenKind.ERC20,
     )
@@ -452,7 +463,7 @@ def test_delisted_pair_trades_work(mock_bitfinex):
 
 
 @pytest.mark.freeze_time(datetime.datetime(2020, 12, 3, 12, 0, 0, tzinfo=datetime.UTC))
-def test_query_online_trade_history_case_1(mock_bitfinex):
+def test_query_online_trade_history_case_1(mock_bitfinex: 'Bitfinex') -> None:
     """Test pagination logic for trades works as expected when each request
     does not return a result already processed.
 
@@ -468,7 +479,7 @@ def test_query_online_trade_history_case_1(mock_bitfinex):
     Trades with id 1 to 4 are expected to be returned.
     """
     api_limit = 2
-    mock_bitfinex.first_connection = MagicMock()
+    mock_bitfinex.first_connection = MagicMock()  # type: ignore
     mock_bitfinex.pair_bfx_symbols_map = {
         'ETHUST': ('ETH', 'UST'),
         'WBTUSD': ('WBT', 'USD'),
@@ -584,7 +595,7 @@ def test_query_online_trade_history_case_1(mock_bitfinex):
         ),
     ]
 
-    def get_paginated_response():
+    def get_paginated_response() -> Generator[str, None, None]:
         results = [
             f'[{trade_1},{trade_2}]',
             f'[{trade_3},{trade_4}]',
@@ -843,7 +854,7 @@ def test_query_online_trade_history_case_2(mock_bitfinex):
         assert trades == expected_trades
 
 
-def test_deserialize_asset_movement_deposit(mock_bitfinex):
+def test_deserialize_asset_movement_deposit(mock_bitfinex: 'Bitfinex') -> None:
     raw_result = [
         13105603,
         'WBT',
@@ -872,6 +883,7 @@ def test_deserialize_asset_movement_deposit(mock_bitfinex):
     expected_asset_movement = [AssetMovement(
         timestamp=TimestampMS(1569348774000),
         location=Location.BITFINEX,
+        location_label=mock_bitfinex.name,
         event_type=HistoryEventType.DEPOSIT,
         asset=fee_asset,
         balance=Balance(FVal('0.26300954')),
@@ -884,6 +896,7 @@ def test_deserialize_asset_movement_deposit(mock_bitfinex):
     ), AssetMovement(
         timestamp=TimestampMS(1569348774000),
         location=Location.BITFINEX,
+        location_label=mock_bitfinex.name,
         event_type=HistoryEventType.DEPOSIT,
         asset=fee_asset,
         balance=Balance(FVal('0.00135')),
@@ -894,7 +907,7 @@ def test_deserialize_asset_movement_deposit(mock_bitfinex):
     assert asset_movement == expected_asset_movement
 
 
-def test_deserialize_asset_movement_withdrawal(mock_bitfinex):
+def test_deserialize_asset_movement_withdrawal(mock_bitfinex: 'Bitfinex') -> None:
     """Test also both 'address' and 'transaction_id' are None for fiat
     movements.
     """
@@ -926,6 +939,7 @@ def test_deserialize_asset_movement_withdrawal(mock_bitfinex):
     expected_asset_movement = [AssetMovement(
         timestamp=TimestampMS(1569348774000),
         location=Location.BITFINEX,
+        location_label=mock_bitfinex.name,
         event_type=HistoryEventType.WITHDRAWAL,
         asset=fee_asset,
         balance=Balance(FVal('0.26300954')),
@@ -934,6 +948,7 @@ def test_deserialize_asset_movement_withdrawal(mock_bitfinex):
     ), AssetMovement(
         timestamp=TimestampMS(1569348774000),
         location=Location.BITFINEX,
+        location_label=mock_bitfinex.name,
         event_type=HistoryEventType.WITHDRAWAL,
         asset=fee_asset,
         balance=Balance(FVal('0.00135')),
@@ -945,7 +960,7 @@ def test_deserialize_asset_movement_withdrawal(mock_bitfinex):
 
 
 @pytest.mark.freeze_time(datetime.datetime(2020, 12, 3, 12, 0, 0, tzinfo=datetime.UTC))
-def test_query_online_deposits_withdrawals_case_1(mock_bitfinex):
+def test_query_online_deposits_withdrawals_case_1(mock_bitfinex: 'Bitfinex') -> None:
     """Test pagination logic for asset movements works as expected when each
     request does not return a result already processed.
 
@@ -963,7 +978,7 @@ def test_query_online_deposits_withdrawals_case_1(mock_bitfinex):
     Movements with id 1, 2 and 4 are expected to be returned.
     """
     api_limit = 2
-    mock_bitfinex.first_connection = MagicMock()
+    mock_bitfinex.first_connection = MagicMock()  # type: ignore
     # Deposit WBTC
     movement_1 = """
     [
@@ -1126,7 +1141,7 @@ def test_query_online_deposits_withdrawals_case_1(mock_bitfinex):
         ),
     ]
 
-    def get_paginated_response():
+    def get_paginated_response() -> Generator[str, None, None]:
         results = [
             f'[{movement_2},{movement_1}]',
             f'[{movement_4},{movement_3}]',
@@ -1134,7 +1149,7 @@ def test_query_online_deposits_withdrawals_case_1(mock_bitfinex):
         ]
         yield from results
 
-    def mock_api_query_response(endpoint, options):  # pylint: disable=unused-argument
+    def mock_api_query_response(endpoint: str, options: dict[str, Any]) -> MockResponse:  # pylint: disable=unused-argument
         return MockResponse(HTTPStatus.OK, next(get_response))
 
     get_response = get_paginated_response()
@@ -1162,6 +1177,7 @@ def test_query_online_deposits_withdrawals_case_1(mock_bitfinex):
             AssetMovement(
                 timestamp=TimestampMS(1606899600000),
                 location=Location.BITFINEX,
+                location_label=mock_bitfinex.name,
                 event_type=HistoryEventType.DEPOSIT,
                 asset=wbtc_fee_asset,
                 balance=Balance(FVal('0.26300954')),
@@ -1175,6 +1191,7 @@ def test_query_online_deposits_withdrawals_case_1(mock_bitfinex):
             AssetMovement(
                 timestamp=TimestampMS(1606899600000),
                 location=Location.BITFINEX,
+                location_label=mock_bitfinex.name,
                 event_type=HistoryEventType.DEPOSIT,
                 asset=wbtc_fee_asset,
                 balance=Balance(FVal('0.00135')),
@@ -1184,6 +1201,7 @@ def test_query_online_deposits_withdrawals_case_1(mock_bitfinex):
             AssetMovement(
                 timestamp=TimestampMS(1606901400000),
                 location=Location.BITFINEX,
+                location_label=mock_bitfinex.name,
                 event_type=HistoryEventType.WITHDRAWAL,
                 asset=wbtc_fee_asset,
                 balance=Balance(FVal('0.26300954')),
@@ -1197,6 +1215,7 @@ def test_query_online_deposits_withdrawals_case_1(mock_bitfinex):
             AssetMovement(
                 timestamp=TimestampMS(1606901400000),
                 location=Location.BITFINEX,
+                location_label=mock_bitfinex.name,
                 event_type=HistoryEventType.WITHDRAWAL,
                 asset=wbtc_fee_asset,
                 balance=Balance(FVal('0.00135')),
@@ -1206,6 +1225,7 @@ def test_query_online_deposits_withdrawals_case_1(mock_bitfinex):
             AssetMovement(
                 timestamp=TimestampMS(1606986000000),
                 location=Location.BITFINEX,
+                location_label=mock_bitfinex.name,
                 event_type=HistoryEventType.WITHDRAWAL,
                 asset=eur_fee_asset,
                 balance=Balance(FVal('0.26300954')),
@@ -1215,6 +1235,7 @@ def test_query_online_deposits_withdrawals_case_1(mock_bitfinex):
             AssetMovement(
                 timestamp=TimestampMS(1606986000000),
                 location=Location.BITFINEX,
+                location_label=mock_bitfinex.name,
                 event_type=HistoryEventType.WITHDRAWAL,
                 asset=eur_fee_asset,
                 balance=Balance(FVal('0.00135')),
@@ -1226,7 +1247,7 @@ def test_query_online_deposits_withdrawals_case_1(mock_bitfinex):
 
 
 @pytest.mark.freeze_time(datetime.datetime(2020, 12, 3, 12, 0, 0, tzinfo=datetime.UTC))
-def test_query_online_deposits_withdrawals_case_2(mock_bitfinex):
+def test_query_online_deposits_withdrawals_case_2(mock_bitfinex: 'Bitfinex') -> None:
     """Test pagination logic for asset movements works as expected when a
     request returns a result already processed in the previous request.
 
@@ -1241,7 +1262,7 @@ def test_query_online_deposits_withdrawals_case_2(mock_bitfinex):
     Trades with id 1 to 4 are expected to be returned.
     """
     api_limit = 2
-    mock_bitfinex.first_connection = MagicMock()
+    mock_bitfinex.first_connection = MagicMock()  # type: ignore
     # Deposit WBTC
     movement_1 = """
     [
@@ -1351,7 +1372,7 @@ def test_query_online_deposits_withdrawals_case_2(mock_bitfinex):
     ]
     """
 
-    def get_paginated_response():
+    def get_paginated_response() -> Generator[str, None, None]:
         results = [
             f'[{movement_2},{movement_1}]',
             f'[{movement_2},{movement_1}]',
@@ -1386,6 +1407,7 @@ def test_query_online_deposits_withdrawals_case_2(mock_bitfinex):
             AssetMovement(
                 timestamp=TimestampMS(1606899600000),
                 location=Location.BITFINEX,
+                location_label=mock_bitfinex.name,
                 event_type=HistoryEventType.DEPOSIT,
                 asset=wbtc_fee_asset,
                 balance=Balance(FVal('0.26300954')),
@@ -1399,6 +1421,7 @@ def test_query_online_deposits_withdrawals_case_2(mock_bitfinex):
             AssetMovement(
                 timestamp=TimestampMS(1606899600000),
                 location=Location.BITFINEX,
+                location_label=mock_bitfinex.name,
                 event_type=HistoryEventType.DEPOSIT,
                 asset=wbtc_fee_asset,
                 balance=Balance(FVal('0.00135')),
@@ -1408,6 +1431,7 @@ def test_query_online_deposits_withdrawals_case_2(mock_bitfinex):
             AssetMovement(
                 timestamp=TimestampMS(1606901400000),
                 location=Location.BITFINEX,
+                location_label=mock_bitfinex.name,
                 event_type=HistoryEventType.WITHDRAWAL,
                 asset=wbtc_fee_asset,
                 balance=Balance(FVal('0.26300954')),
@@ -1421,6 +1445,7 @@ def test_query_online_deposits_withdrawals_case_2(mock_bitfinex):
             AssetMovement(
                 timestamp=TimestampMS(1606901400000),
                 location=Location.BITFINEX,
+                location_label=mock_bitfinex.name,
                 event_type=HistoryEventType.WITHDRAWAL,
                 asset=wbtc_fee_asset,
                 balance=Balance(FVal('0.00135')),
@@ -1430,6 +1455,7 @@ def test_query_online_deposits_withdrawals_case_2(mock_bitfinex):
             AssetMovement(
                 timestamp=TimestampMS(1606986000000),
                 location=Location.BITFINEX,
+                location_label=mock_bitfinex.name,
                 event_type=HistoryEventType.WITHDRAWAL,
                 asset=eur_fee_asset,
                 balance=Balance(FVal('0.26300954')),
@@ -1439,6 +1465,7 @@ def test_query_online_deposits_withdrawals_case_2(mock_bitfinex):
             AssetMovement(
                 timestamp=TimestampMS(1606986000000),
                 location=Location.BITFINEX,
+                location_label=mock_bitfinex.name,
                 event_type=HistoryEventType.WITHDRAWAL,
                 asset=eur_fee_asset,
                 balance=Balance(FVal('0.00135')),
@@ -1448,6 +1475,7 @@ def test_query_online_deposits_withdrawals_case_2(mock_bitfinex):
             AssetMovement(
                 timestamp=TimestampMS(1606996800000),
                 location=Location.BITFINEX,
+                location_label=mock_bitfinex.name,
                 event_type=HistoryEventType.DEPOSIT,
                 asset=wbtc_fee_asset,
                 balance=Balance(FVal('0.26300954')),
@@ -1461,6 +1489,7 @@ def test_query_online_deposits_withdrawals_case_2(mock_bitfinex):
             AssetMovement(
                 timestamp=TimestampMS(1606996800000),
                 location=Location.BITFINEX,
+                location_label=mock_bitfinex.name,
                 event_type=HistoryEventType.DEPOSIT,
                 asset=wbtc_fee_asset,
                 balance=Balance(FVal('0.00135')),

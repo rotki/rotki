@@ -4,7 +4,7 @@ import hmac
 import os
 import warnings as test_warnings
 from contextlib import ExitStack
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 from unittest.mock import call, patch
 from urllib.parse import urlencode
 
@@ -47,6 +47,7 @@ from rotkehlchen.types import ApiKey, ApiSecret, Timestamp
 from rotkehlchen.utils.misc import ts_now_in_ms
 
 if TYPE_CHECKING:
+    from rotkehlchen.history.events.structures.asset_movement import AssetMovement
     from rotkehlchen.history.price import PriceHistorian
 
 
@@ -370,7 +371,7 @@ def test_binance_query_trade_history_unexpected_data(function_scope_binance):
     query_binance_and_test(input_str)
 
 
-def test_binance_query_deposits_withdrawals(function_scope_binance):
+def test_binance_query_deposits_withdrawals(function_scope_binance: 'Binance') -> None:
     """Test the happy case of binance deposit withdrawal query
 
     NB: set `start_ts` and `end_ts` with a difference less than 90 days to
@@ -422,7 +423,7 @@ def test_binance_query_deposits_withdrawals(function_scope_binance):
     assert len(errors) == 0
     assert len(warnings) == 0
     assert_binance_asset_movements_result(
-        movements=movements,
+        movements=cast('list[AssetMovement]', movements),
         location=Location.BINANCE,
         got_fiat=True,
     )

@@ -129,7 +129,10 @@ def _process_trade(trade_data: dict[str, Any]) -> Trade | None:
         ) from e
 
 
-def _process_deposit_withdrawal(event_data: dict[str, Any]) -> list[AssetMovement]:
+def _process_deposit_withdrawal(
+        exchange_name: str,
+        event_data: dict[str, Any],
+) -> list[AssetMovement]:
     """Process asset movement from coinbase prime.
     Returns an empty list if the event can't be processed
     May raise:
@@ -158,6 +161,7 @@ def _process_deposit_withdrawal(event_data: dict[str, Any]) -> list[AssetMovemen
 
         return create_asset_movement_with_fee(
             location=Location.COINBASEPRIME,
+            location_label=exchange_name,
             event_type=event_type,
             timestamp=ts_sec_to_ms(timestamp),
             asset=asset,
@@ -261,28 +265,6 @@ def _process_reward(raw_data: dict[str, Any]) -> list[HistoryEvent]:
     )]
 
 
-def _decode_history_events(raw_data: dict[str, Any]) -> Sequence[HistoryEvent | AssetMovement]:
-    """Process transaction as history events from coinbase prime
-    May raise:
-    - DeserializationError
-    """
-    try:
-        if (tx_type := raw_data['type']) == 'CONVERSION':
-            return _process_conversions(raw_data)
-        elif tx_type == 'REWARD':
-            return _process_reward(raw_data)
-        elif tx_type in ['DEPOSIT', 'WITHDRAWAL', 'COINBASE_DEPOSIT']:
-            return _process_deposit_withdrawal(raw_data)
-    except KeyError as e:
-        log.error(f'Missing key {e} when processing history events at coinbase prime')
-        raise DeserializationError(
-            'Unexpected format in coinbase prime event. Check logs for more details',
-        ) from e
-
-    log.error(f'Unknown tx_type in {raw_data} at coinbase prime')
-    raise DeserializationError(f'Unknown transaction type in coinbase prime {tx_type}')
-
-
 class Coinbaseprime(ExchangeInterface):
 
     def __init__(
@@ -364,6 +346,30 @@ class Coinbaseprime(ExchangeInterface):
             raise RemoteError(f'Coinbase Prime returned invalid json {response.text}') from e
 
         return data
+
+    def _decode_history_events(
+            self,
+            raw_data: dict[str, Any],
+    ) -> Sequence[HistoryEvent | AssetMovement]:
+        """Process transaction as history events from coinbase prime
+        May raise:
+        - DeserializationError
+        """
+        try:
+            if (tx_type := raw_data['type']) == 'CONVERSION':
+                return _process_conversions(raw_data)
+            elif tx_type == 'REWARD':
+                return _process_reward(raw_data)
+            elif tx_type in ['DEPOSIT', 'WITHDRAWAL', 'COINBASE_DEPOSIT']:
+                return _process_deposit_withdrawal(exchange_name=self.name, event_data=raw_data)
+        except KeyError as e:
+            log.error(f'Missing key {e} when processing history events at coinbase prime')
+            raise DeserializationError(
+                'Unexpected format in coinbase prime event. Check logs for more details',
+            ) from e
+
+        log.error(f'Unknown tx_type in {raw_data} at coinbase prime')
+        raise DeserializationError(f'Unknown transaction type in coinbase prime {tx_type}')
 
     @overload
     def _query_paginated_endpoint(
@@ -561,7 +567,7 @@ class Coinbaseprime(ExchangeInterface):
                     query_params=query_params,
                     portfolio_id=portfolio_id,
                     method='transactions',
-                    decoding_logic=_decode_history_events,
+                    decoding_logic=self._decode_history_events,
                 )
                 history_events.extend(
                     [event for sublist in new_events_list for event in sublist],

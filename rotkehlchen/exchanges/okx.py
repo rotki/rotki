@@ -454,7 +454,8 @@ class Okx(ExchangeInterface):
                 fee = deserialize_fee(raw_movement['fee'])
 
             return create_asset_movement_with_fee(
-                location=Location.OKX,
+                location=self.location,
+                location_label=self.name,
                 event_type=event_type,
                 timestamp=timestamp,
                 asset=asset,

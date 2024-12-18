@@ -249,6 +249,7 @@ def test_deposit_withdrawals(bybit_exchange: Bybit) -> None:
         AssetMovement(
             timestamp=TimestampMS(1701200911000),
             location=Location.BYBIT,
+            location_label=bybit_exchange.name,
             event_type=HistoryEventType.DEPOSIT,
             asset=A_USDC,
             balance=Balance(FVal('79.993947')),
@@ -257,6 +258,7 @@ def test_deposit_withdrawals(bybit_exchange: Bybit) -> None:
         ), AssetMovement(
             timestamp=TimestampMS(1701200780000),
             location=Location.BYBIT,
+            location_label=bybit_exchange.name,
             event_type=HistoryEventType.DEPOSIT,
             asset=A_USDC,
             balance=Balance(FVal('20')),

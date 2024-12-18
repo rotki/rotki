@@ -1405,6 +1405,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
         else:
             return create_asset_movement_with_fee(
                 location=self.location,
+                location_label=self.name,
                 event_type=event_type,
                 timestamp=timestamp,
                 asset=asset,
@@ -1473,6 +1474,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
         else:
             return create_asset_movement_with_fee(
                 location=self.location,
+                location_label=self.name,
                 event_type=event_type,
                 timestamp=timestamp,
                 asset=asset,

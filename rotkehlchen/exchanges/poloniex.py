@@ -523,7 +523,8 @@ class Poloniex(ExchangeInterface):
 
             asset = asset_from_poloniex(movement_data['currency'])
             return create_asset_movement_with_fee(
-                location=Location.POLONIEX,
+                location=self.location,
+                location_label=self.name,
                 event_type=movement_type,
                 timestamp=ts_sec_to_ms(deserialize_timestamp(movement_data['timestamp'])),
                 asset=asset,

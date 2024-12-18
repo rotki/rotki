@@ -190,11 +190,15 @@ def test_process_movements(function_scope_coinbaseprime: Coinbaseprime):
         'type': 'DEPOSIT',
         'wallet_id': uuid.uuid4(),
     }
-    deposit_movements = _process_deposit_withdrawal(deposit)
+    deposit_movements = _process_deposit_withdrawal(
+        exchange_name=function_scope_coinbaseprime.name,
+        event_data=deposit,
+    )
     assert len(deposit_movements) == 1
     processed_deposited = deposit_movements[0]
     assert processed_deposited.event_type == HistoryEventType.DEPOSIT
     assert processed_deposited.asset == A_ETH
+    assert processed_deposited.location_label == function_scope_coinbaseprime.name
     assert processed_deposited.balance.amount == FVal(100)
     assert processed_deposited.timestamp == 1697050985000
     assert processed_deposited.extra_data == {
@@ -228,11 +232,15 @@ def test_process_movements(function_scope_coinbaseprime: Coinbaseprime):
         'type': 'WITHDRAWAL',
         'wallet_id': uuid.uuid4(),
     }
-    withdrawal_movements = _process_deposit_withdrawal(withdrawal)
+    withdrawal_movements = _process_deposit_withdrawal(
+        exchange_name=function_scope_coinbaseprime.name,
+        event_data=withdrawal,
+    )
     assert len(withdrawal_movements) == 1
     processed_withdrawal = withdrawal_movements[0]
     assert processed_withdrawal.event_type == HistoryEventType.WITHDRAWAL
     assert processed_withdrawal.asset == Asset('ICP')
+    assert processed_deposited.location_label == function_scope_coinbaseprime.name
     assert processed_withdrawal.balance.amount == FVal(250)
     assert processed_withdrawal.timestamp == 1728720987000
     assert processed_withdrawal.extra_data == {

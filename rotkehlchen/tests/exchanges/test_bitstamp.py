@@ -807,7 +807,7 @@ def test_query_online_trade_history(mock_bitstamp, start_ts, since_id):
         assert mock_api_query_paginated.call_args == expected_call
 
 
-def test_deserialize_asset_movement_deposit(mock_bitstamp):
+def test_deserialize_asset_movement_deposit(mock_bitstamp: 'Bitstamp') -> None:
     raw_movement = {
         'id': 2,
         'type': '0',
@@ -823,17 +823,19 @@ def test_deserialize_asset_movement_deposit(mock_bitstamp):
     movement = [AssetMovement(
         timestamp=TimestampMS(1606901400000),
         location=Location.BITSTAMP,
+        location_label=mock_bitstamp.name,
         event_type=HistoryEventType.DEPOSIT,
         asset=asset,
         balance=Balance(FVal('0.50000000')),
         unique_id='2',
         extra_data={
             'reference': '2',
-            'fee': FVal('0.00050000'),
+            'fee': Fee(FVal('0.00050000')),
         },
     ), AssetMovement(
         timestamp=TimestampMS(1606901400000),
         location=Location.BITSTAMP,
+        location_label=mock_bitstamp.name,
         event_type=HistoryEventType.DEPOSIT,
         asset=asset,
         balance=Balance(FVal('0.00050000')),
@@ -858,6 +860,7 @@ def test_deserialize_asset_movement_deposit(mock_bitstamp):
     movement = [AssetMovement(
         timestamp=TimestampMS(1521614766000),
         location=Location.BITSTAMP,
+        location_label=mock_bitstamp.name,
         event_type=HistoryEventType.DEPOSIT,
         asset=asset,
         balance=Balance(FVal('1000.51')),
@@ -869,6 +872,7 @@ def test_deserialize_asset_movement_deposit(mock_bitstamp):
     ), AssetMovement(
         timestamp=TimestampMS(1521614766000),
         location=Location.BITSTAMP,
+        location_label=mock_bitstamp.name,
         event_type=HistoryEventType.DEPOSIT,
         asset=asset,
         balance=Balance(FVal('0.1')),
@@ -893,6 +897,7 @@ def test_deserialize_asset_movement_deposit(mock_bitstamp):
     movement = [AssetMovement(
         timestamp=TimestampMS(1521614766000),
         location=Location.BITSTAMP,
+        location_label=mock_bitstamp.name,
         event_type=HistoryEventType.DEPOSIT,
         asset=asset,
         balance=Balance(FVal('1000.51')),
@@ -904,6 +909,7 @@ def test_deserialize_asset_movement_deposit(mock_bitstamp):
     ), AssetMovement(
         timestamp=TimestampMS(1521614766000),
         location=Location.BITSTAMP,
+        location_label=mock_bitstamp.name,
         event_type=HistoryEventType.DEPOSIT,
         asset=asset,
         balance=Balance(FVal('0.1')),
@@ -914,7 +920,7 @@ def test_deserialize_asset_movement_deposit(mock_bitstamp):
     assert movement == expected_movement
 
 
-def test_deserialize_asset_movement_withdrawal(mock_bitstamp):
+def test_deserialize_asset_movement_withdrawal(mock_bitstamp: 'Bitstamp') -> None:
     raw_movement = {
         'id': 5,
         'type': '1',
@@ -930,6 +936,7 @@ def test_deserialize_asset_movement_withdrawal(mock_bitstamp):
     movement = [AssetMovement(
         timestamp=TimestampMS(1606901400000),
         location=Location.BITSTAMP,
+        location_label=mock_bitstamp.name,
         event_type=HistoryEventType.WITHDRAWAL,
         asset=asset,
         balance=Balance(FVal('10000.00000000')),
@@ -941,6 +948,7 @@ def test_deserialize_asset_movement_withdrawal(mock_bitstamp):
     ), AssetMovement(
         timestamp=TimestampMS(1606901400000),
         location=Location.BITSTAMP,
+        location_label=mock_bitstamp.name,
         event_type=HistoryEventType.WITHDRAWAL,
         asset=asset,
         balance=Balance(FVal('50.00000000')),
@@ -965,6 +973,7 @@ def test_deserialize_asset_movement_withdrawal(mock_bitstamp):
     movement = [AssetMovement(
         timestamp=TimestampMS(1521614766000),
         location=Location.BITSTAMP,
+        location_label=mock_bitstamp.name,
         event_type=HistoryEventType.WITHDRAWAL,
         asset=asset,
         balance=Balance(FVal('500')),
@@ -976,6 +985,7 @@ def test_deserialize_asset_movement_withdrawal(mock_bitstamp):
     ), AssetMovement(
         timestamp=TimestampMS(1521614766000),
         location=Location.BITSTAMP,
+        location_label=mock_bitstamp.name,
         event_type=HistoryEventType.WITHDRAWAL,
         asset=asset,
         balance=Balance(FVal('0.1')),

@@ -531,8 +531,8 @@ class Kucoin(ExchangeInterface):
 
         return dict(assets_balance)
 
-    @staticmethod
     def _deserialize_asset_movement(
+            self,
             raw_result: dict[str, Any],
             case: Literal[KucoinCase.DEPOSITS, KucoinCase.WITHDRAWALS],
     ) -> list[AssetMovement]:
@@ -567,7 +567,8 @@ class Kucoin(ExchangeInterface):
 
         return create_asset_movement_with_fee(
             timestamp=timestamp,
-            location=Location.KUCOIN,
+            location=self.location,
+            location_label=self.name,
             event_type=event_type,
             asset=fee_asset,
             amount=amount,

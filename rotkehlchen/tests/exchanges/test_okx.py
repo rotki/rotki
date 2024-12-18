@@ -646,7 +646,7 @@ def test_okx_query_trades(mock_okx: Okx):
     assert trades == expected_trades
 
 
-def test_okx_query_deposits_withdrawals(mock_okx: Okx):
+def test_okx_query_deposits_withdrawals(mock_okx: 'Okx') -> None:
     def mock_okx_deposits_withdrawals(method, url):     # pylint: disable=unused-argument
         if 'deposit' in url:
             data = """
@@ -745,6 +745,7 @@ def test_okx_query_deposits_withdrawals(mock_okx: Okx):
     expected_asset_movements = [
         AssetMovement(
             location=Location.OKX,
+            location_label=mock_okx.name,
             event_type=HistoryEventType.DEPOSIT,
             timestamp=TimestampMS(1669963555000),
             asset=A_USDT,
@@ -757,6 +758,7 @@ def test_okx_query_deposits_withdrawals(mock_okx: Okx):
         ),
         AssetMovement(
             location=Location.OKX,
+            location_label=mock_okx.name,
             event_type=HistoryEventType.DEPOSIT,
             timestamp=TimestampMS(1669405596000),
             asset=A_USDC,
@@ -769,6 +771,7 @@ def test_okx_query_deposits_withdrawals(mock_okx: Okx):
         ),
         AssetMovement(
             location=Location.OKX,
+            location_label=mock_okx.name,
             event_type=HistoryEventType.WITHDRAWAL,
             timestamp=TimestampMS(1671542569000),
             asset=A_SOL,
@@ -781,6 +784,7 @@ def test_okx_query_deposits_withdrawals(mock_okx: Okx):
         ),
         AssetMovement(
             location=Location.OKX,
+            location_label=mock_okx.name,
             event_type=HistoryEventType.WITHDRAWAL,
             timestamp=TimestampMS(1671542569000),
             asset=A_SOL,
@@ -790,6 +794,7 @@ def test_okx_query_deposits_withdrawals(mock_okx: Okx):
         ),
         AssetMovement(
             location=Location.OKX,
+            location_label=mock_okx.name,
             event_type=HistoryEventType.WITHDRAWAL,
             timestamp=TimestampMS(1670953159000),
             asset=A_USDT,
@@ -802,6 +807,7 @@ def test_okx_query_deposits_withdrawals(mock_okx: Okx):
         ),
         AssetMovement(
             location=Location.OKX,
+            location_label=mock_okx.name,
             event_type=HistoryEventType.WITHDRAWAL,
             timestamp=TimestampMS(1670953159000),
             asset=A_USDT,

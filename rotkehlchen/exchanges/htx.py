@@ -308,7 +308,8 @@ class Htx(ExchangeInterface):
                 coin = asset_from_htx(movement['currency'])
                 movements.extend(create_asset_movement_with_fee(
                     timestamp=ts_sec_to_ms(timestamp),
-                    location=Location.HTX,
+                    location=self.location,
+                    location_label=self.name,
                     event_type=event_type,
                     asset=coin,
                     amount=deserialize_asset_amount(movement['amount']),

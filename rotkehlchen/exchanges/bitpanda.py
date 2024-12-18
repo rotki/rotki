@@ -215,6 +215,7 @@ class Bitpanda(ExchangeInterface):
 
         return create_asset_movement_with_fee(
             location=self.location,
+            location_label=self.name,
             event_type=event_type,
             timestamp=ts_sec_to_ms(time),
             asset=asset,

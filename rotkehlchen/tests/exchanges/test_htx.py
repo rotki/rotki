@@ -121,6 +121,7 @@ def test_deposit_withdrawals(htx_exchange: Htx) -> None:
     expected_movements = [
         AssetMovement(
             location=Location.HTX,
+            location_label=htx_exchange.name,
             event_type=HistoryEventType.DEPOSIT,
             timestamp=TimestampMS(1612820394000),
             asset=A_ZRX,
@@ -132,6 +133,7 @@ def test_deposit_withdrawals(htx_exchange: Htx) -> None:
             },
         ), AssetMovement(
             location=Location.HTX,
+            location_label=htx_exchange.name,
             event_type=HistoryEventType.DEPOSIT,
             timestamp=TimestampMS(1710153143000),
             asset=A_DAI,
@@ -143,6 +145,7 @@ def test_deposit_withdrawals(htx_exchange: Htx) -> None:
             },
         ), AssetMovement(
             location=Location.HTX,
+            location_label=htx_exchange.name,
             event_type=HistoryEventType.WITHDRAWAL,
             timestamp=TimestampMS(1631140110000),
             asset=A_ZRX,
@@ -154,6 +157,7 @@ def test_deposit_withdrawals(htx_exchange: Htx) -> None:
             },
         ), AssetMovement(
             location=Location.HTX,
+            location_label=htx_exchange.name,
             event_type=HistoryEventType.WITHDRAWAL,
             timestamp=TimestampMS(1631140110000),
             asset=A_ZRX,
