@@ -4973,12 +4973,12 @@
     "year_subtitle": "Your DeFi journey in Numbers",
     "tooltip": "View your {year} Wrapped",
     "premium_required_tooltip": "Upgrade to premium to access your personalized Rotki Wrapped report",
-    "exchange_activity": "Exchange Activity",
+    "exchange_activity": "Trades by exchange",
     "transactions_by_chain": "Transactions per chain",
     "protocol_activity": "Number of transactions by protocol",
     "gas_spent": "ETH spent on gas per address",
     "gas_spent_total": "ETH spent on gas total",
-    "gnosis_payments": "Gnosis Pay highest payments per currency",
+    "gnosis_payments": "Gnosis Pay payments by currency",
     "top_days": "Top days with more transactions"
   },
   "yearn_asset_table": {

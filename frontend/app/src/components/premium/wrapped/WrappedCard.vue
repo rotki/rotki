@@ -22,7 +22,7 @@ defineProps<{
       </h3>
     </div>
     <WrappedItem
-      v-for="(item, index) in items"
+      v-for="(item, index) in items.slice(0, 5)"
       :key="index"
     >
       <template #label>

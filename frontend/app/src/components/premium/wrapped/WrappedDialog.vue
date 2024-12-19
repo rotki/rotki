@@ -54,35 +54,42 @@ const isDecoding = computed(() => get(isTaskRunning(TaskType.TRANSACTIONS_DECODI
 const sectionLoading = computed(() => isSectionLoading(Section.HISTORY_EVENT));
 const refreshing = computed(() => get(sectionLoading) || get(isDecoding));
 
-const currencyDisplayInfo = computed(() => {
+const gnosisPayResult = computed(() => {
   const gnosisMaxPaymentsByCurrency = get(summary)?.gnosisMaxPaymentsByCurrency;
   if (!gnosisMaxPaymentsByCurrency) {
     return [];
   }
 
-  const result: Array<{
+  const result: {
     amount: BigNumber;
     code: string;
     name: string;
     symbol: string;
-  }> = [];
+  }[] = [];
 
   for (const [code, amount] of Object.entries(gnosisMaxPaymentsByCurrency)) {
     try {
       const currency = findCurrency(code);
+      if (currency) {
+        result.push({
+          amount,
+          code,
+          name: currency.name,
+          symbol: currency.unicodeSymbol,
+        });
+      }
+    }
+    catch {
       result.push({
         amount,
         code,
-        name: currency.name,
-        symbol: currency.unicodeSymbol,
+        name: code,
+        symbol: code,
       });
-    }
-    catch {
-      continue;
     }
   }
 
-  return result;
+  return result.sort((a, b) => sortDesc(a.amount, b.amount));
 });
 
 async function fetchData() {
@@ -125,6 +132,11 @@ function formatDate(timestamp: number) {
   return dayjs(timestamp * 1000).format('dddd, MMMM D, YYYY');
 }
 
+function calculateFontSize(symbol: string) {
+  const length = symbol.length;
+  return `${1.8 - length * 0.4}em`;
+}
+
 const currentYear = computed(() => new Date().getFullYear());
 
 const invalidRange = computed(
@@ -155,263 +167,269 @@ watch(() => props.display, async (display) => {
     @cancel="closeDialog()"
     @close="closeDialog()"
   >
-    <template v-if="premium">
-      <div v-if="!summary && !loading">
-        <div class="p-4 text-center">
-          <p>{{ t('common.no_data') }}</p>
-          <p class="mt-4 text-xs">
-            {{ t('common.status') }}: {{ JSON.stringify({
-              loading,
-              premium: get(premium),
-              summaryExists: !!summary,
-            }, null, 2) }}
-          </p>
-        </div>
+    <div
+      class="flex flex-col gap-6 py-4 px-2"
+    >
+      <div class="py-8 w-full rounded-lg flex flex-col items-center bg-gradient-to-b from-transparent to-rui-primary/[0.05]">
+        <RotkiLogo
+          :size="3"
+          class="mb-4"
+        />
+        <h2 class="text-4xl font-bold mb-2">
+          {{ t('wrapped.title') }}
+        </h2>
+        <p class="text-xl text-rui-text-secondary">
+          {{ t('wrapped.year_subtitle') }}
+        </p>
       </div>
-      <div
-        v-else
-        class="flex flex-col gap-6 py-4 px-2"
+
+      <div class="flex gap-2 -mb-4 items-start">
+        <div class="mt-2 mr-4 font-semibold">
+          {{ t('wrapped.filter_by_date') }}
+        </div>
+        <DateTimePicker
+          v-model="start"
+          dense
+          :disabled="loading"
+          class="flex-1"
+          :label="t('generate.labels.start_date')"
+          allow-empty
+        />
+        <DateTimePicker
+          v-model="end"
+          dense
+          :disabled="loading"
+          class="flex-1"
+          :label="t('generate.labels.end_date')"
+        />
+        <RuiButton
+          color="primary"
+          class="h-10"
+          :loading="get(refreshing)"
+          :disabled="get(refreshing)"
+          @click="fetchData()"
+        >
+          <template #prepend>
+            <RuiIcon name="lu-send-horizontal" />
+          </template>
+          {{ t('wrapped.get_data') }}
+        </RuiButton>
+      </div>
+
+      <RuiAlert
+        v-if="invalidRange"
+        type="error"
       >
-        <div class="py-8 w-full rounded-lg flex flex-col items-center bg-gradient-to-b from-transparent to-rui-primary/[0.05]">
-          <RotkiLogo
-            :size="3"
-            class="mb-4"
-          />
-          <h2 class="text-4xl font-bold mb-2">
-            {{ t('wrapped.title') }}
-          </h2>
-          <p class="text-xl text-rui-text-secondary">
-            {{ t('wrapped.year_subtitle') }}
-          </p>
-        </div>
-
-        <div class="flex gap-2 -mb-4 items-start">
-          <div class="mt-2 mr-4 font-semibold">
-            {{ t('wrapped.filter_by_date') }}
-          </div>
-          <DateTimePicker
-            v-model="start"
-            dense
-            class="flex-1"
-            :label="t('generate.labels.start_date')"
-            allow-empty
-          />
-          <DateTimePicker
-            v-model="end"
-            dense
-            class="flex-1"
-            :label="t('generate.labels.end_date')"
-          />
-          <RuiButton
-            color="primary"
-            class="h-10"
-            :loading="get(refreshing)"
-            :disabled="get(refreshing)"
-            @click="fetchData()"
-          >
-            <template #prepend>
-              <RuiIcon name="lu-send-horizontal" />
-            </template>
-            {{ t('wrapped.get_data') }}
-          </RuiButton>
-        </div>
-
-        <template v-if="summary">
-          <WrappedCard
-            v-if="summary.ethOnGas"
-            :items="[{ label: t('backend_mappings.events.type.gas_fee'), value: summary.ethOnGas }]"
-          >
-            <template #header-icon>
-              <RuiIcon
-                name="lu-fuel"
-                class="text-rui-primary"
-                size="12"
-              />
-            </template>
-            <template #header>
-              {{ t('wrapped.gas_spent_total') }}
-            </template>
-            <template #value="{ item }">
-              <AmountDisplay
-                :value="item.value"
-                asset="ETH"
-              />
-            </template>
-          </WrappedCard>
-
-          <WrappedCard
-            v-if="hasSectionData(summary.ethOnGasPerAddress)"
-            :items="Object.entries(summary.ethOnGasPerAddress).sort((a, b) => sortDesc(a[1], b[1]))"
-          >
-            <template #header-icon>
-              <RuiIcon
-                name="lu-fuel"
-                class="text-rui-primary"
-                size="12"
-              />
-            </template>
-            <template #header>
-              {{ t('wrapped.gas_spent') }}
-            </template>
-            <template #label="{ item }">
-              <HashLink
-                class="bg-rui-grey-200 dark:bg-rui-grey-800 rounded-full pr-1"
-                :text="item[0]"
-                copy-only
-              />
-            </template>
-            <template #value="{ item }">
-              <AmountDisplay
-                :value="item[1]"
-                asset="ETH"
-              />
-            </template>
-          </WrappedCard>
-
-          <WrappedCard
-            v-if="hasSectionData(summary.tradesByExchange)"
-            :items="Object.entries(summary.tradesByExchange).sort((a, b) => sortDesc(a[1], b[1]))"
-          >
-            <template #header-icon>
-              <RuiIcon
-                name="exchange-line"
-                class="text-rui-primary"
-                size="12"
-              />
-            </template>
-            <template #header>
-              {{ t('wrapped.exchange_activity') }}
-            </template>
-            <template #label="{ item }">
-              <LocationDisplay :identifier="item[0]" />
-            </template>
-            <template #value="{ item }">
-              {{ item[1] }} {{ t('actions.trades.task.title') }}
-            </template>
-          </WrappedCard>
-
-          <WrappedCard
-            v-if="hasSectionData(summary.transactionsPerChain)"
-            :items="Object.entries(summary.transactionsPerChain).sort((a, b) => sortDesc(a[1], b[1]))"
-          >
-            <template #header-icon>
-              <RuiIcon
-                name="git-branch-line"
-                class="text-rui-primary"
-                size="12"
-              />
-            </template>
-            <template #header>
-              {{ t('wrapped.transactions_by_chain') }}
-            </template>
-            <template #label="{ item }">
-              <ChainDisplay
-                dense
-                :chain="getChain(item[0].toLowerCase())"
-              />
-            </template>
-            <template #value="{ item }">
-              {{ item[1] }} {{ t('explorers.tx') }}
-            </template>
-          </WrappedCard>
-
-          <WrappedCard
-            v-if="showGnosisData && hasSectionData(summary.gnosisMaxPaymentsByCurrency)"
-            :items="currencyDisplayInfo.slice(0, 3)"
-          >
-            <template #header-icon>
-              <AppImage
-                src="./assets/images/services/gnosispay.png"
-                width="24px"
-                height="24px"
-                contain
-              />
-            </template>
-            <template #header>
-              {{ t('wrapped.gnosis_payments') }}
-            </template>
-            <template #label="{ item }">
-              <span class="text-xl">{{ item.symbol }}</span>
-              <span class="font-medium">{{ item.name }}</span>
-            </template>
-            <template #value="{ item }">
-              <AmountDisplay
-                :value="item.amount"
-                :integer="false"
-                :floating-precision="2"
-                show-currency="none"
-                class="font-semibold"
-              />
-              <span class="text-sm text-rui-text-secondary">{{ item.code }}</span>
-            </template>
-          </WrappedCard>
-
-          <WrappedCard
-            v-if="hasSectionData(summary.topDaysByNumberOfTransactions)"
-            :items="summary.topDaysByNumberOfTransactions.sort((a, b) => sortDesc(a.amount, b.amount)).slice(0, 3)"
-          >
-            <template #header-icon>
-              <RuiIcon
-                name="lu-calendar-days"
-                class="text-rui-primary"
-                size="12"
-              />
-            </template>
-            <template #header>
-              {{ t('wrapped.top_days') }}
-            </template>
-            <template #label="{ item, index }">
-              <span class="mr-2">{{ index + 1 }}.</span>
-              {{ formatDate(item.timestamp) }}
-            </template>
-            <template #value="{ item }">
-              {{ item.amount }} {{ t('explorers.tx') }}
-            </template>
-          </WrappedCard>
-
-          <WrappedCard
-            v-if="hasSectionData(summary.transactionsPerProtocol)"
-            :items="summary.transactionsPerProtocol.sort((a, b) => sortDesc(a.transactions, b.transactions))"
-          >
-            <template #header-icon>
-              <RuiIcon
-                name="lu-blockchain"
-                class="text-rui-primary"
-                size="12"
-              />
-            </template>
-            <template #header>
-              {{ t('wrapped.protocol_activity') }}
-            </template>
-            <template #label="{ item }">
-              <CounterpartyDisplay :counterparty="item.protocol" />
-            </template>
-            <template #value="{ item }">
-              {{ item.transactions }} {{ t('explorers.tx') }}
-            </template>
-          </WrappedCard>
+        <template #title>
+          {{ t('generate.validation.end_after_start') }}
         </template>
-        <template v-else>
-          <WrappedCard
-            v-for="i in 3"
-            :key="i"
-            :items="new Array(3).fill({})"
-          >
-            <template #header-icon>
-              <RuiSkeletonLoader class="size-6" />
-            </template>
-            <template #header>
-              <RuiSkeletonLoader class="w-60" />
-            </template>
-            <template #label>
-              <RuiSkeletonLoader class="w-20" />
-            </template>
-            <template #value>
-              <RuiSkeletonLoader class="w-20" />
-            </template>
-          </WrappedCard>
-        </template>
+      </RuiAlert>
+
+      <template v-if="loading">
+        <WrappedCard
+          v-for="i in 3"
+          :key="i"
+          :items="new Array(3).fill({})"
+        >
+          <template #header-icon>
+            <RuiSkeletonLoader class="size-6" />
+          </template>
+          <template #header>
+            <RuiSkeletonLoader class="w-60" />
+          </template>
+          <template #label>
+            <RuiSkeletonLoader class="w-20" />
+          </template>
+          <template #value>
+            <RuiSkeletonLoader class="w-20" />
+          </template>
+        </WrappedCard>
+      </template>
+      <div
+        v-else-if="!summary"
+        class="p-4 text-center"
+      >
+        {{ t('common.no_data') }}
       </div>
-    </template>
+      <template v-else>
+        <WrappedCard
+          v-if="summary.ethOnGas"
+          :items="[{ label: t('backend_mappings.events.type.gas_fee'), value: summary.ethOnGas }]"
+        >
+          <template #header-icon>
+            <RuiIcon
+              name="lu-fuel"
+              class="text-rui-primary"
+              size="12"
+            />
+          </template>
+          <template #header>
+            {{ t('wrapped.gas_spent_total') }}
+          </template>
+          <template #value="{ item }">
+            <AmountDisplay
+              :value="item.value"
+              asset="ETH"
+            />
+          </template>
+        </WrappedCard>
+
+        <WrappedCard
+          v-if="hasSectionData(summary.ethOnGasPerAddress)"
+          :items="Object.entries(summary.ethOnGasPerAddress).sort((a, b) => sortDesc(a[1], b[1]))"
+        >
+          <template #header-icon>
+            <RuiIcon
+              name="lu-fuel"
+              class="text-rui-primary"
+              size="12"
+            />
+          </template>
+          <template #header>
+            {{ t('wrapped.gas_spent') }}
+          </template>
+          <template #label="{ item }">
+            <HashLink
+              class="bg-rui-grey-200 dark:bg-rui-grey-800 rounded-full pr-1"
+              :text="item[0]"
+            />
+          </template>
+          <template #value="{ item }">
+            <AmountDisplay
+              :value="item[1]"
+              asset="ETH"
+            />
+          </template>
+        </WrappedCard>
+
+        <WrappedCard
+          v-if="hasSectionData(summary.tradesByExchange)"
+          :items="Object.entries(summary.tradesByExchange).sort((a, b) => sortDesc(a[1], b[1]))"
+        >
+          <template #header-icon>
+            <RuiIcon
+              name="exchange-line"
+              class="text-rui-primary"
+              size="12"
+            />
+          </template>
+          <template #header>
+            {{ t('wrapped.exchange_activity') }}
+          </template>
+          <template #label="{ item }">
+            <LocationDisplay horizontal class="[&_span]:!text-rui-text" :identifier="item[0]" />
+          </template>
+          <template #value="{ item }">
+            {{ item[1] }} {{ t('actions.trades.task.title') }}
+          </template>
+        </WrappedCard>
+
+        <WrappedCard
+          v-if="hasSectionData(summary.transactionsPerChain)"
+          :items="Object.entries(summary.transactionsPerChain).sort((a, b) => sortDesc(a[1], b[1]))"
+        >
+          <template #header-icon>
+            <RuiIcon
+              name="git-branch-line"
+              class="text-rui-primary"
+              size="12"
+            />
+          </template>
+          <template #header>
+            {{ t('wrapped.transactions_by_chain') }}
+          </template>
+          <template #label="{ item }">
+            <ChainDisplay
+              dense
+              :chain="getChain(item[0].toLowerCase())"
+            />
+          </template>
+          <template #value="{ item }">
+            {{ item[1] }} {{ t('explorers.tx') }}
+          </template>
+        </WrappedCard>
+
+        <WrappedCard
+          v-if="showGnosisData && hasSectionData(summary.gnosisMaxPaymentsByCurrency)"
+          :items="gnosisPayResult"
+        >
+          <template #header-icon>
+            <AppImage
+              src="./assets/images/services/gnosispay.png"
+              width="24px"
+              height="24px"
+              contain
+            />
+          </template>
+          <template #header>
+            {{ t('wrapped.gnosis_payments') }}
+          </template>
+          <template #label="{ item }">
+            <div
+              class="flex items-center justify-center gap-2 size-6 rounded-full bg-rui-grey-300 dark:bg-rui-grey-800"
+              :style="{ fontSize: calculateFontSize(item.symbol) }"
+            >
+              {{ item.symbol }}
+            </div>
+            <div>
+              {{ item.code }} - {{ item.name }}
+            </div>
+          </template>
+          <template #value="{ item }">
+            <AmountDisplay
+              force-currency
+              :value="item.amount"
+            />
+            {{ item.symbol }}
+          </template>
+        </WrappedCard>
+
+        <WrappedCard
+          v-if="hasSectionData(summary.topDaysByNumberOfTransactions)"
+          :items="summary.topDaysByNumberOfTransactions.sort((a, b) => sortDesc(a.amount, b.amount))"
+        >
+          <template #header-icon>
+            <RuiIcon
+              name="lu-calendar-days"
+              class="text-rui-primary"
+              size="12"
+            />
+          </template>
+          <template #header>
+            {{ t('wrapped.top_days') }}
+          </template>
+          <template #label="{ item, index }">
+            <span>{{ index + 1 }}.</span>
+            {{ formatDate(item.timestamp) }}
+          </template>
+          <template #value="{ item }">
+            {{ item.amount }} {{ t('explorers.tx') }}
+          </template>
+        </WrappedCard>
+
+        <WrappedCard
+          v-if="hasSectionData(summary.transactionsPerProtocol)"
+          :items="summary.transactionsPerProtocol.sort((a, b) => sortDesc(a.transactions, b.transactions))"
+        >
+          <template #header-icon>
+            <RuiIcon
+              name="lu-blockchain"
+              class="text-rui-primary"
+              size="12"
+            />
+          </template>
+          <template #header>
+            {{ t('wrapped.protocol_activity') }}
+          </template>
+          <template #label="{ item, index }">
+            <span>{{ index + 1 }}.</span>
+            <CounterpartyDisplay :counterparty="item.protocol" />
+          </template>
+          <template #value="{ item }">
+            {{ item.transactions }} {{ t('explorers.tx') }}
+          </template>
+        </WrappedCard>
+      </template>
+    </div>
   </BigDialog>
 </template>
