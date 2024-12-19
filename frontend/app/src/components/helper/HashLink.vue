@@ -30,7 +30,7 @@ const props = withDefaults(
     buttons?: boolean;
     size?: number | string;
     truncateLength?: number;
-    type?: keyof ExplorerUrls;
+    type?: keyof ExplorerUrls | 'label';
     disableScramble?: boolean;
     hideAliasName?: boolean;
     location?: string;
@@ -119,9 +119,10 @@ const base = computed<string>(() => {
 
   const selectedChain = get(blockchain);
   let base: string | undefined;
-  if (isChains(selectedChain)) {
+
+  const linkType = get(type);
+  if (isChains(selectedChain) && linkType !== 'label') {
     const defaultExplorer: ExplorerUrls = explorerUrls[selectedChain];
-    const linkType = get(type);
 
     const explorerSetting = get(explorers)[selectedChain];
 
