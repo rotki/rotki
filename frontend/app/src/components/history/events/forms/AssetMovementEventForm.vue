@@ -160,16 +160,16 @@ function applyEditableData(entry: AssetMovementEvent, feeEvent?: AssetMovementEv
   set(eventIdentifier, entry.eventIdentifier);
   set(datetime, convertFromTimestamp(entry.timestamp, DateFormat.DateMonthYearHourMinuteSecond, true));
   set(location, entry.location);
-  set(locationLabel, entry.locationLabel);
+  set(locationLabel, entry.locationLabel ?? '');
   set(eventType, entry.eventType);
-  set(asset, entry.asset);
+  set(asset, entry.asset ?? '');
   set(amount, entry.balance.amount.toFixed());
   set(usdValue, entry.balance.usdValue.toFixed());
   set(notes, entry.notes ?? '');
 
   if (feeEvent) {
     set(fee, feeEvent.balance.amount.toFixed());
-    set(feeAsset, feeEvent.asset);
+    set(feeAsset, feeEvent.asset ?? '');
     set(hasFee, true);
   }
   else {
