@@ -2627,9 +2627,6 @@ def test_upgrade_db_45_to_46(user_data_dir: 'Path', messages_aggregator):
         assert cursor.execute(
             "SELECT COUNT(*) FROM pragma_table_info('evm_events_info') WHERE name='extra_data'",
         ).fetchone()[0] == 1
-        events_with_extra_data = [row[0] for row in cursor.execute(
-            "SELECT identifier FROM evm_events_info WHERE extra_data != '';",
-        )]
         existing_evm_event = cursor.execute('SELECT * FROM history_events WHERE identifier = "35"').fetchone()  # noqa: E501
         existing_evm_event_extra_data = cursor.execute('SELECT extra_data FROM evm_events_info WHERE identifier = "35"').fetchone()[0]  # noqa: E501
         assert existing_evm_event_extra_data == '{"airdrop_identifier": "elfi"}'
@@ -2649,6 +2646,11 @@ def test_upgrade_db_45_to_46(user_data_dir: 'Path', messages_aggregator):
         )
         # Ensure account_for_assets_movements is set before upgrade
         write_cursor.execute("INSERT OR IGNORE INTO settings(name, value) VALUES ('account_for_assets_movements', 'True')")  # noqa: E501
+        # Make the existing evm event customized so it isn't removed during the upgrade
+        write_cursor.execute(
+            "INSERT INTO history_events_mappings(parent_identifier, name, value) VALUES ('35', ?, ?)",  # noqa: E501
+            (HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED),
+        )
 
     # Execute upgrade
     db = _init_db_with_target_version(
@@ -2670,9 +2672,6 @@ def test_upgrade_db_45_to_46(user_data_dir: 'Path', messages_aggregator):
         assert cursor.execute(
             "SELECT COUNT(*) FROM pragma_table_info('evm_events_info') WHERE name='extra_data'",
         ).fetchone()[0] == 0
-        assert events_with_extra_data == [row[0] for row in cursor.execute(
-            "SELECT identifier FROM history_events WHERE extra_data != '' AND entry_type != 6;",  # 6 is the entry type for the new asset movements  # noqa: E501
-        )]
 
         # Confirm an evm event with extra data has been migrated correctly
         assert (*existing_evm_event, existing_evm_event_extra_data) == cursor.execute(
