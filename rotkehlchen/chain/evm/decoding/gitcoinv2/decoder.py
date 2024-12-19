@@ -275,6 +275,7 @@ class GitcoinV2CommonDecoder(DecoderInterface, ABC):
                 event.event_subtype = HistoryEventSubType.DONATE
                 event.counterparty = CPT_GITCOIN
                 event.notes = notes
+                event.address = origin
                 break
 
         else:  # no event found. Comes afterwards. Find it with ActionItem
@@ -286,6 +287,7 @@ class GitcoinV2CommonDecoder(DecoderInterface, ABC):
                 to_event_type=new_type,
                 to_event_subtype=HistoryEventSubType.DONATE,
                 to_notes=notes,
+                to_address=origin,
                 to_counterparty=CPT_GITCOIN,
             )
             return DecodingOutput(action_items=[action_item])
@@ -352,6 +354,7 @@ class GitcoinV2CommonDecoder(DecoderInterface, ABC):
                 event.event_subtype = HistoryEventSubType.DONATE
                 event.counterparty = CPT_GITCOIN
                 event.notes = f'Receive a gitcoin donation of {amount} {asset.symbol} from {donator}'  # noqa: E501
+                event.address = donator
                 break
         else:
             log.error(

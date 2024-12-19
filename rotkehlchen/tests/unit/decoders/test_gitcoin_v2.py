@@ -19,7 +19,7 @@ def test_optimism_donation_received(optimism_inquirer, optimism_accounts):
         evm_inquirer=optimism_inquirer,
         tx_hash=tx_hash,
     )
-    user_address, timestamp, amount_str = optimism_accounts[0], TimestampMS(1692176477000), '0.00122'  # noqa: E501
+    user_address, timestamp, amount_str, donator = optimism_accounts[0], TimestampMS(1692176477000), '0.00122', '0xf0C2007aD05a8d66e98be932C698c232292eC8eA'  # noqa: E501
     expected_events = [EvmEvent(
         tx_hash=tx_hash,
         sequence_index=0,
@@ -30,9 +30,9 @@ def test_optimism_donation_received(optimism_inquirer, optimism_accounts):
         asset=A_ETH,
         balance=Balance(amount=FVal(amount_str)),
         location_label=user_address,
-        notes=f'Receive a gitcoin donation of {amount_str} ETH from 0xf0C2007aD05a8d66e98be932C698c232292eC8eA',  # noqa: E501
+        notes=f'Receive a gitcoin donation of {amount_str} ETH from {donator}',
         counterparty=CPT_GITCOIN,
-        address='0x99906Ea77C139000681254966b397a98E4bFdE21',
+        address=donator,
     )]
     assert events == expected_events
 
@@ -42,7 +42,7 @@ def test_optimism_donation_received(optimism_inquirer, optimism_accounts):
 def test_ethereum_donation_received(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0x71fc406467f342f5801560a326aa29ac424381daf17cc04b5573960425ba605b')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    amount_str = '0.001'
+    amount_str, donator = '0.001', '0xc191a29203a83eec8e846c26340f828C68835715'
     expected_events = [EvmEvent(
         tx_hash=tx_hash,
         sequence_index=0,
@@ -53,9 +53,9 @@ def test_ethereum_donation_received(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         balance=Balance(amount=FVal(amount_str)),
         location_label=ethereum_accounts[0],
-        notes=f'Receive a gitcoin donation of {amount_str} ETH from 0xc191a29203a83eec8e846c26340f828C68835715',  # noqa: E501
+        notes=f'Receive a gitcoin donation of {amount_str} ETH from {donator}',
         counterparty=CPT_GITCOIN,
-        address='0xDA2F26B30e8f5aa9cbE9c5B7Ed58E1cA81D0EbF2',
+        address=donator,
     )]
     assert events == expected_events
 
@@ -336,7 +336,7 @@ def test_polygon_donation_matic_received(polygon_pos_inquirer, polygon_pos_accou
         evm_inquirer=polygon_pos_inquirer,
         tx_hash=tx_hash,
     )
-    user_address, timestamp, amount_str = polygon_pos_accounts[0], TimestampMS(1700595622000), '4'
+    user_address, timestamp, amount_str, donator = polygon_pos_accounts[0], TimestampMS(1700595622000), '4', '0x6017B1d17f4D7547dC4aac88fbD0AA1826e7e6CE'  # noqa: E501
     expected_events = [EvmEvent(
         tx_hash=tx_hash,
         sequence_index=0,
@@ -347,9 +347,9 @@ def test_polygon_donation_matic_received(polygon_pos_inquirer, polygon_pos_accou
         asset=A_POLYGON_POS_MATIC,
         balance=Balance(amount=FVal(amount_str)),
         location_label=user_address,
-        notes=f'Receive a gitcoin donation of {amount_str} POL from 0x6017B1d17f4D7547dC4aac88fbD0AA1826e7e6CE',  # noqa: E501
+        notes=f'Receive a gitcoin donation of {amount_str} POL from {donator}',
         counterparty=CPT_GITCOIN,
-        address='0x03e50B688beB7c0E5e90F51188D0fa38c9152f9d',
+        address=donator,
     )]
     assert events == expected_events
 
@@ -362,7 +362,7 @@ def test_polygon_donation_token_received(polygon_pos_inquirer, polygon_pos_accou
         evm_inquirer=polygon_pos_inquirer,
         tx_hash=tx_hash,
     )
-    user_address, timestamp, amount_str = polygon_pos_accounts[0], TimestampMS(1700593336000), '1.5'  # noqa: E501
+    user_address, timestamp, amount_str, donator = polygon_pos_accounts[0], TimestampMS(1700593336000), '1.5', '0x3d1f546F05834423Acc7e4CA1169ae320cee9AF0'  # noqa: E501
     expected_events = [EvmEvent(
         tx_hash=tx_hash,
         sequence_index=236,
@@ -373,9 +373,9 @@ def test_polygon_donation_token_received(polygon_pos_inquirer, polygon_pos_accou
         asset=Asset('eip155:137/erc20:0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359'),
         balance=Balance(amount=FVal(amount_str)),
         location_label=user_address,
-        notes=f'Receive a gitcoin donation of {amount_str} USDC from 0x3d1f546F05834423Acc7e4CA1169ae320cee9AF0',  # noqa: E501
+        notes=f'Receive a gitcoin donation of {amount_str} USDC from {donator}',
         counterparty=CPT_GITCOIN,
-        address='0xe04d9e9CcDf65EB1Db51E56C04beE4c8582edB73',
+        address=donator,
     )]
     assert events == expected_events
 
@@ -427,7 +427,7 @@ def test_ethereum_voted_without_application_index(ethereum_inquirer, ethereum_ac
         evm_inquirer=ethereum_inquirer,
         tx_hash=tx_hash,
     )
-    user_address, timestamp, amount = ethereum_accounts[0], TimestampMS(1673960015000), '0.0035'
+    user_address, timestamp, amount, donator = ethereum_accounts[0], TimestampMS(1673960015000), '0.0035', '0xcD9a4e7C2ad6AAae7Ac25c2139d71739d9Fa2284'  # noqa: E501
     expected_events = [EvmEvent(
         tx_hash=tx_hash,
         sequence_index=0,
@@ -438,9 +438,9 @@ def test_ethereum_voted_without_application_index(ethereum_inquirer, ethereum_ac
         asset=A_ETH,
         balance=Balance(amount=FVal(amount)),
         location_label=user_address,
-        notes=f'Receive a gitcoin donation of {amount} ETH from 0xcD9a4e7C2ad6AAae7Ac25c2139d71739d9Fa2284',  # noqa: E501
+        notes=f'Receive a gitcoin donation of {amount} ETH from {donator}',
         counterparty=CPT_GITCOIN,
-        address='0x8fBEa07446DdF4518b1a7BA2B4f11Bd140a8DF41',
+        address=donator,
     )]
     assert events == expected_events
 
@@ -453,7 +453,7 @@ def test_allocated_receive_token(arbitrum_one_inquirer, arbitrum_one_accounts):
         evm_inquirer=arbitrum_one_inquirer,
         tx_hash=tx_hash,
     )
-    user_address, timestamp, amount = arbitrum_one_accounts[0], TimestampMS(1729693571000), '1.77'
+    user_address, timestamp, amount, donator = arbitrum_one_accounts[0], TimestampMS(1729693571000), '1.77', '0x830862F98399520f351273B12FD3C622a226bDfE'  # noqa: E501
     expected_events = [EvmEvent(
         tx_hash=tx_hash,
         sequence_index=81,
@@ -464,9 +464,9 @@ def test_allocated_receive_token(arbitrum_one_inquirer, arbitrum_one_accounts):
         asset=A_ARB,
         balance=Balance(amount=FVal(amount)),
         location_label=user_address,
-        notes=f'Receive a gitcoin donation of {amount} ARB from 0x830862F98399520f351273B12FD3C622a226bDfE',  # noqa: E501
+        notes=f'Receive a gitcoin donation of {amount} ARB from {donator}',
         counterparty=CPT_GITCOIN,
-        address='0x8e1bD5Da87C14dd8e08F7ecc2aBf9D1d558ea174',
+        address=donator,
     )]
     assert events == expected_events
 
