@@ -1,9 +1,25 @@
 <script setup lang="ts">
 import WrappedItem from '@/components/premium/wrapped/WrappedItem.vue';
 
-defineProps<{
+const props = defineProps<{
   items: any[];
 }>();
+
+const { t } = useI18n();
+
+const INITIAL_LENGTH = 5;
+
+const showMoreButton = computed(() => props.items.length > INITIAL_LENGTH);
+
+const showAll = ref(false);
+
+const itemsToUse = computed(() => {
+  const items = props.items;
+  if (get(showAll))
+    return items;
+
+  return items.slice(0, INITIAL_LENGTH);
+});
 </script>
 
 <template>
@@ -22,7 +38,7 @@ defineProps<{
       </h3>
     </div>
     <WrappedItem
-      v-for="(item, index) in items.slice(0, 5)"
+      v-for="(item, index) in itemsToUse"
       :key="index"
     >
       <template #label>
@@ -42,5 +58,12 @@ defineProps<{
         </slot>
       </template>
     </WrappedItem>
+    <div
+      v-if="showMoreButton"
+      class="px-4 h-[3.25rem] text-rui-primary cursor-pointer flex items-center text-sm"
+      @click="showAll = !showAll"
+    >
+      {{ showAll ? t('liquity_statistic.view.hide') : t('liquity_statistic.view.show') }}
+    </div>
   </RuiCard>
 </template>

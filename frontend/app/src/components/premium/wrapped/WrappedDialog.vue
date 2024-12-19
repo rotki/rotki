@@ -158,7 +158,7 @@ watch(() => props.display, async (display) => {
 <template>
   <BigDialog
     :display="display"
-    :title="t('wrapped.title')"
+    :title="t('wrapped.title', { year: currentYear })"
     :subtitle="t('wrapped.subtitle')"
     :loading="loading"
     :action-hidden="true"
@@ -176,7 +176,7 @@ watch(() => props.display, async (display) => {
           class="mb-4"
         />
         <h2 class="text-4xl font-bold mb-2">
-          {{ t('wrapped.title') }}
+          {{ t('wrapped.title', { year: currentYear }) }}
         </h2>
         <p class="text-xl text-rui-text-secondary">
           {{ t('wrapped.year_subtitle') }}
@@ -190,6 +190,7 @@ watch(() => props.display, async (display) => {
         <DateTimePicker
           v-model="start"
           dense
+          hide-timezone-selector
           :disabled="loading"
           class="flex-1"
           :label="t('generate.labels.start_date')"
@@ -198,6 +199,7 @@ watch(() => props.display, async (display) => {
         <DateTimePicker
           v-model="end"
           dense
+          hide-timezone-selector
           :disabled="loading"
           class="flex-1"
           :label="t('generate.labels.end_date')"
@@ -317,7 +319,11 @@ watch(() => props.display, async (display) => {
             {{ t('wrapped.exchange_activity') }}
           </template>
           <template #label="{ item }">
-            <LocationDisplay horizontal class="[&_span]:!text-rui-text" :identifier="item[0]" />
+            <LocationDisplay
+              horizontal
+              class="[&_span]:!text-rui-text"
+              :identifier="item[0]"
+            />
           </template>
           <template #value="{ item }">
             {{ item[1] }} {{ t('actions.trades.task.title') }}

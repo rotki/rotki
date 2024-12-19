@@ -24,6 +24,7 @@ const props = withDefaults(
     hideDetails?: boolean;
     dateOnly?: boolean;
     inputOnly?: boolean;
+    hideTimezoneSelector?: boolean;
     dense?: boolean;
   }>(),
   {
@@ -33,6 +34,7 @@ const props = withDefaults(
     disabled: false,
     errorMessages: () => [],
     hideDetails: false,
+    hideTimezoneSelector: false,
     hint: '',
     inputOnly: false,
     label: '',
@@ -354,6 +356,7 @@ defineExpose({
       #append
     >
       <RuiMenu
+        v-if="!hideTimezoneSelector"
         :popper="{ placement: 'bottom-end' }"
         menu-class="date-time-picker w-[20rem]"
       >
