@@ -44,6 +44,16 @@ const displayText = computed(() => (get(truncate) ? truncateAddress(get(text)) :
     @click="onLinkClick()"
   >
     <slot>{{ displayText }}</slot>
+    <template
+      v-for="(_, name) in $slots"
+      #[name]="slotData"
+      :key="name"
+    >
+      <slot
+        :name="name"
+        v-bind="slotData"
+      />
+    </template>
   </RuiButton>
   <a
     v-else-if="url || premium"

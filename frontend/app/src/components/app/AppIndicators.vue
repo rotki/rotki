@@ -23,8 +23,6 @@ const { isSmAndUp } = useBreakpoint();
 
 const { darkModeEnabled } = useDarkMode();
 const { showHelpBar, showNotesSidebar, showNotificationBar, showPinned } = storeToRefs(useAreaVisibilityStore());
-
-const route = useRoute();
 </script>
 
 <template>
@@ -33,7 +31,7 @@ const route = useRoute();
     <GlobalSearch v-if="isSmAndUp" />
     <BackButton />
   </div>
-  <WrappedIndicator v-if="route.path === '/dashboard' || route.path === '/history/transactions'" />
+  <WrappedIndicator />
   <div class="flex overflow-hidden h-full items-center">
     <GetPremiumButton />
     <RouterLink

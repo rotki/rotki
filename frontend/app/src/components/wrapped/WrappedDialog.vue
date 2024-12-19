@@ -10,7 +10,6 @@ import { useExternalApiKeys } from '@/composables/settings/api-keys/external';
 import { useTaskStore } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
 import { Section } from '@/types/status';
-import { useStatusStore } from '@/store/status';
 import { useCurrencies } from '@/types/currencies';
 import WrappedCard from '@/components/wrapped/WrappedCard.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
@@ -22,6 +21,9 @@ import { sortDesc } from '@/utils/bignumbers';
 import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 import { usePremium } from '@/composables/premium';
+import ExternalLink from '@/components/helper/ExternalLink.vue';
+import { useStatusUpdater } from '@/composables/status';
+import { Routes } from '@/router/routes';
 import type { BigNumber } from '@rotki/common';
 
 const props = defineProps<{
@@ -37,7 +39,6 @@ const { t } = useI18n();
 const premium = usePremium();
 const { apiKey } = useExternalApiKeys(t);
 const { isTaskRunning } = useTaskStore();
-const { isLoading: isSectionLoading } = useStatusStore();
 const { findCurrency } = useCurrencies();
 const { fetchWrapStatistics } = useWrapStatisticsApi();
 const { getChain } = useSupportedChains();
@@ -50,9 +51,12 @@ const end = ref('');
 const start = ref('');
 const summary = ref<WrapStatisticsResult | null>(null);
 
-const isDecoding = computed(() => get(isTaskRunning(TaskType.TRANSACTIONS_DECODING)));
-const sectionLoading = computed(() => isSectionLoading(Section.HISTORY_EVENT));
-const refreshing = computed(() => get(sectionLoading) || get(isDecoding));
+const { isFirstLoad, loading: sectionLoading } = useStatusUpdater(Section.HISTORY_EVENT);
+const eventTaskLoading = isTaskRunning(TaskType.TRANSACTIONS_DECODING);
+const protocolCacheUpdatesLoading = isTaskRunning(TaskType.REFRESH_GENERAL_CACHE);
+const onlineHistoryEventsLoading = isTaskRunning(TaskType.QUERY_ONLINE_EVENTS);
+
+const refreshing = logicOr(sectionLoading, eventTaskLoading, onlineHistoryEventsLoading, protocolCacheUpdatesLoading);
 
 const gnosisPayResult = computed(() => {
   const gnosisMaxPaymentsByCurrency = get(summary)?.gnosisMaxPaymentsByCurrency;
@@ -155,6 +159,12 @@ watchImmediate(() => props.display, async (display) => {
     await fetchData();
   }
 });
+
+watch(refreshing, async (curr, old) => {
+  if (old && !curr) {
+    await fetchData();
+  }
+});
 </script>
 
 <template>
@@ -185,6 +195,53 @@ watchImmediate(() => props.display, async (display) => {
         </p>
       </div>
 
+      <RuiAlert
+        v-if="isFirstLoad()"
+        type="info"
+      >
+        <i18n-t
+          keypath="wrapped.history_events_nudge"
+        >
+          <template #link>
+            <RouterLink
+              :to="Routes.HISTORY_EVENTS"
+            >
+              <span class="underline">{{ t('transactions.title') }}</span>
+            </RouterLink>
+          </template>
+        </i18n-t>
+      </RuiAlert>
+
+      <RuiAlert
+        v-if="refreshing"
+        type="info"
+      >
+        {{ t('wrapped.loading') }}
+      </RuiAlert>
+      <RuiAlert
+        v-if="!premium"
+        type="info"
+        class="py-1 [&>div]:items-center"
+      >
+        <div class="flex justify-between items-center">
+          {{ t('wrapped.premium_nudge') }}
+          <ExternalLink
+            :text="t('wrapped.get_rotki_premium')"
+            variant="default"
+            premium
+            class="!flex [&_span]:!no-underline !px-3 !py-2"
+            color="primary"
+          >
+            <template #append>
+              <RuiIcon
+                name="external-link-line"
+                size="12"
+              />
+            </template>
+          </ExternalLink>
+        </div>
+      </RuiAlert>
+
       <div class="flex gap-2 -mb-4 items-start">
         <div class="mt-2 mr-4 font-semibold">
           {{ t('wrapped.filter_by_date') }}
@@ -209,8 +266,7 @@ watchImmediate(() => props.display, async (display) => {
         <RuiButton
           color="primary"
           class="h-10"
-          :loading="get(refreshing)"
-          :disabled="get(refreshing)"
+          :disabled="refreshing"
           @click="fetchData()"
         >
           <template #prepend>
