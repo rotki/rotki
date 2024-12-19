@@ -516,6 +516,7 @@ class Gemini(ExchangeInterface):
                 # Gemini does not include withdrawal fees neither in the API nor in their UI
                 movement = AssetMovement(
                     location=Location.GEMINI,
+                    location_label=self.name,
                     event_type=deserialize_asset_movement_event_type(entry['type']),
                     timestamp=ts_sec_to_ms(timestamp),
                     asset=asset,

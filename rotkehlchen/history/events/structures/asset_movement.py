@@ -157,6 +157,7 @@ class AssetMovement(HistoryBaseEntry[AssetMovementExtraData | None]):
             event_identifier=entry[1],
             timestamp=TimestampMS(entry[3]),
             location=Location.deserialize_from_db(entry[4]),
+            location_label=entry[5],
             event_type=HistoryEventType.deserialize(entry[10]),  # type: ignore  # should always be correct from the DB
             is_fee=(HistoryEventSubType.deserialize(entry[11]) == HistoryEventSubType.FEE),
             asset=Asset(entry[6]).check_existence(),
@@ -181,6 +182,7 @@ class AssetMovement(HistoryBaseEntry[AssetMovementExtraData | None]):
             event_identifier=base_data['event_identifier'],
             timestamp=base_data['timestamp'],
             location=base_data['location'],
+            location_label=base_data['location_label'],
             event_type=event_type,  # type: ignore  # just confirmed it's a DEPOSIT or WITHDRAWAL above
             is_fee=(base_data['event_subtype'] == HistoryEventSubType.FEE),
             asset=base_data['asset'],

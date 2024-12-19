@@ -394,6 +394,7 @@ def test_kraken_query_deposit_withdrawals_unknown_asset(kraken):
     assert movements[0].sequence_index == 0
     assert movements[0].timestamp == TimestampMS(1439994442000)
     assert movements[0].location == Location.KRAKEN
+    assert movements[0].location_label == kraken.name
     assert movements[0].asset == A_ETH
     assert movements[0].balance.amount == ONE
     assert movements[0].event_type == HistoryEventType.WITHDRAWAL
@@ -402,6 +403,7 @@ def test_kraken_query_deposit_withdrawals_unknown_asset(kraken):
     assert movements[1].sequence_index == 1
     assert movements[1].timestamp == TimestampMS(1439994442000)
     assert movements[1].location == Location.KRAKEN
+    assert movements[1].location_label == kraken.name
     assert movements[1].asset == A_ETH
     assert movements[1].balance.amount == FVal('0.0035')
     assert movements[1].event_type == HistoryEventType.WITHDRAWAL
