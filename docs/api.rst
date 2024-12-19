@@ -13802,7 +13802,8 @@ Managing calendar reminders
               "OPTIMISM": 283,
               "POLYGON_POS": 186,
               "SCROLL": 17
-          }
+          },
+          "score": 1631
         },
         "status_code": 200
       }
@@ -13814,6 +13815,7 @@ Managing calendar reminders
   :resjson list transactions_per_protocol: Sorted list of per protocol interactions by number of transactions.
   :resjson object trades_by_exchange: number of trades executed on every tracked exchange.
   :resjson object transactions_per_chain: number of transactions that rotki tracks by chain for the user.
+  :resjson int score: Score assigned to the stats.
   :statuscode 200: Data queried correctly.
   :statuscode 401: No user is currently logged in.
   :statuscode 500: Internal rotki error.

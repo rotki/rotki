@@ -648,3 +648,4 @@ def test_query_wrap(
     ]
     assert result['gnosis_max_payments_by_currency'] == {'EUR': '42.24'}
     assert result['transactions_per_protocol'] == [{'protocol': 'ens', 'transactions': 1}]
+    assert result['score'] == 1631
