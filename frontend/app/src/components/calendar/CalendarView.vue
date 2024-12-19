@@ -307,7 +307,7 @@ onMounted(async () => {
           </div>
           <div
             v-else
-            class="text-body-2 pb-2"
+            class="text-body-2 text-rui-text-secondary -mt-2"
           >
             {{ t('calendar.no_events') }}
           </div>
@@ -317,11 +317,18 @@ onMounted(async () => {
             {{ t('calendar.upcoming_events') }}
           </template>
           <CalendarUpcomingEventList
+            v-if="upcomingEvents.length > 0"
             v-model:selected-date="selectedDate"
             :events="upcomingEvents"
             :visible-date="visibleDate"
             @edit="edit($event)"
           />
+          <div
+            v-else
+            class="text-body-2 text-rui-text-secondary -mt-2"
+          >
+            {{ t('calendar.no_events') }}
+          </div>
         </RuiCard>
       </div>
     </div>

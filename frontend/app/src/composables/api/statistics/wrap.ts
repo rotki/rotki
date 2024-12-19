@@ -1,0 +1,53 @@
+import { z } from 'zod';
+import { api } from '@/services/rotkehlchen-api';
+import { snakeCaseTransformer } from '@/services/axios-tranformers';
+import { nonEmptyProperties } from '@/utils/data';
+import type { ActionResult } from '@rotki/common';
+
+export const WrapStatisticsSchema = z.object({
+  ethOnGas: NumericString,
+  ethOnGasPerAddress: z.record(NumericString),
+  gnosisMaxPaymentsByCurrency: z.record(NumericString),
+  topDaysByNumberOfTransactions: z.array(
+    z.object({
+      amount: NumericString,
+      timestamp: z.number(),
+    }),
+  ),
+  tradesByExchange: z.record(NumericString),
+  transactionsPerChain: z.record(NumericString),
+  transactionsPerProtocol: z.array(
+    z.object({
+      protocol: z.string(),
+      transactions: NumericString,
+    }),
+  ),
+});
+
+export type WrapStatisticsResult = z.infer<typeof WrapStatisticsSchema>;
+
+interface WrapStatisticsApi {
+  fetchWrapStatistics: (params: { end: number; start: number }) => Promise<WrapStatisticsResult>;
+}
+
+export function useWrapStatisticsApi(): WrapStatisticsApi {
+  const fetchWrapStatistics = async ({ end, start }: { end: number; start: number }): Promise<WrapStatisticsResult> => {
+    const response = await api.instance.post<ActionResult<WrapStatisticsResult>>(
+      '/statistics/wrap',
+      snakeCaseTransformer(nonEmptyProperties({
+        from_timestamp: start,
+        to_timestamp: end,
+      })),
+    );
+
+    if (!response?.data?.result) {
+      throw new Error('Invalid response format');
+    }
+
+    return WrapStatisticsSchema.parse(response.data.result);
+  };
+
+  return {
+    fetchWrapStatistics,
+  };
+}

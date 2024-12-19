@@ -12,13 +12,11 @@ const { t } = useI18n();
     offset-y="12"
     offset-x="-10"
     size="sm"
-    color="default"
   >
     <template #icon>
       <RuiIcon
         name="lock-line"
-        color="primary"
-        size="14"
+        size="10"
       />
     </template>
     <MenuTooltipButton
