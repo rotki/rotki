@@ -41,6 +41,7 @@ from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet, Bal
 from rotkehlchen.accounting.structures.processed_event import AccountingEventExportType
 from rotkehlchen.accounting.structures.types import ActionType
 from rotkehlchen.api.rest_helpers.history_events import edit_asset_movements
+from rotkehlchen.api.rest_helpers.wrap import calculate_wrap_score
 from rotkehlchen.api.v1.schemas import TradeSchema
 from rotkehlchen.api.v1.types import IncludeExcludeFilterData
 from rotkehlchen.assets.asset import (
@@ -5270,7 +5271,13 @@ class RestAPI:
         This endpoint is temporary and will be removed.
         """
         db = DBHistoryEvents(self.rotkehlchen.data.db)
-        return api_response(_wrap_in_ok_result(
-            result=db.query_wrap_stats(from_ts=from_ts, to_ts=to_ts),
-            status_code=HTTPStatus.OK,
-        ))
+        stats = db.query_wrap_stats(from_ts=from_ts, to_ts=to_ts)
+        score = calculate_wrap_score(
+            num_of_trades=sum(stats['trades_by_exchange'].values()),
+            num_of_transactions=sum(stats['transactions_per_chain'].values()),
+            num_of_chains=len(stats['transactions_per_chain']),
+            eth_spent_on_gas=FVal(stats['eth_on_gas']),
+            gnosis_user=len(stats['gnosis_max_payments_by_currency']) > 0,
+        )
+        stats['score'] = score
+        return api_response(_wrap_in_ok_result(result=stats, status_code=HTTPStatus.OK))
