@@ -24,22 +24,19 @@ const amount = defineModel<string>('amount', { required: true });
 
 const usdValue = defineModel<string>('usdValue', { required: true });
 
-const props = withDefaults(
-  defineProps<{
-    datetime: string;
-    asset: string;
-    disableAsset?: boolean;
-    v$: Validation;
-    hidePriceFields?: boolean;
-  }>(),
-  {
-    disableAsset: false,
-    hidePriceFields: false,
-  },
-);
+const props = withDefaults(defineProps<{
+  datetime: string;
+  asset?: string;
+  disableAsset?: boolean;
+  v$: Validation;
+  hidePriceFields?: boolean;
+}>(), {
+  disableAsset: false,
+  hidePriceFields: false,
+});
 
 const emit = defineEmits<{
-  (e: 'update:asset', asset: string): void;
+  (e: 'update:asset', asset?: string): void;
 }>();
 
 const { asset, datetime, disableAsset, hidePriceFields } = toRefs(props);
@@ -48,7 +45,7 @@ const assetModel = computed({
   get() {
     return get(asset);
   },
-  set(asset: string) {
+  set(asset?: string) {
     if (get(disableAsset))
       return;
 
@@ -203,6 +200,7 @@ async function submitPrice(payload: NewHistoryEventPayload): Promise<ActionStatu
     return { success: true };
 
   const assetVal = get(asset);
+  assert(assetVal);
   const timestamp = convertToTimestamp(get(datetime), DateFormat.DateMonthYearHourMinuteSecond);
 
   try {
