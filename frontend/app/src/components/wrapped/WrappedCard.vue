@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import WrappedItem from '@/components/premium/wrapped/WrappedItem.vue';
+import WrappedItem from '@/components/wrapped/WrappedItem.vue';
 
 const props = defineProps<{
   items: any[];

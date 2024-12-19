@@ -15,7 +15,7 @@ import GetPremiumButton from '@/components/premium/GetPremiumButton.vue';
 import BackButton from '@/components/helper/BackButton.vue';
 import GlobalSearch from '@/components/GlobalSearch.vue';
 import SyncIndicator from '@/components/status/sync/SyncIndicator.vue';
-import WrappedIndicator from '../premium/wrapped/WrappedIndicator.vue';
+import WrappedIndicator from '@/components/wrapped/WrappedIndicator.vue';
 
 const isDevelopment = checkIfDevelopment();
 

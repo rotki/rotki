@@ -4972,7 +4972,6 @@
     "subtitle": "Your year with rotki",
     "year_subtitle": "Your DeFi journey in Numbers",
     "tooltip": "View your {year} Wrapped",
-    "premium_required_tooltip": "Upgrade to premium to access your personalized rotki Wrapped report",
     "exchange_activity": "Trades by exchange",
     "transactions_by_chain": "Transactions per chain",
     "protocol_activity": "Number of transactions by protocol",

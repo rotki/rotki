@@ -5,7 +5,6 @@ import RotkiLogo from '@/components/common/RotkiLogo.vue';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import HashLink from '@/components/helper/HashLink.vue';
 import AppImage from '@/components/common/AppImage.vue';
-import { usePremium } from '@/composables/premium';
 import { type WrapStatisticsResult, useWrapStatisticsApi } from '@/composables/api/statistics/wrap';
 import { useExternalApiKeys } from '@/composables/settings/api-keys/external';
 import { useTaskStore } from '@/store/tasks';
@@ -13,7 +12,7 @@ import { TaskType } from '@/types/task-type';
 import { Section } from '@/types/status';
 import { useStatusStore } from '@/store/status';
 import { useCurrencies } from '@/types/currencies';
-import WrappedCard from '@/components/premium/wrapped/WrappedCard.vue';
+import WrappedCard from '@/components/wrapped/WrappedCard.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import CounterpartyDisplay from '@/components/history/CounterpartyDisplay.vue';
 import { useSupportedChains } from '@/composables/info/chains';
@@ -22,7 +21,8 @@ import { logger } from '@/utils/logging';
 import { sortDesc } from '@/utils/bignumbers';
 import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
-import type BigNumber from 'bignumber.js';
+import { usePremium } from '@/composables/premium';
+import type { BigNumber } from '@rotki/common';
 
 const props = defineProps<{
   display: boolean;
@@ -93,7 +93,7 @@ const gnosisPayResult = computed(() => {
 });
 
 async function fetchData() {
-  if (!get(premium) || get(loading))
+  if (get(loading))
     return;
 
   try {
@@ -146,10 +146,12 @@ const invalidRange = computed(
     && convertToTimestamp(get(start)) > convertToTimestamp(get(end)),
 );
 
-watch(() => props.display, async (display) => {
+watchImmediate(() => props.display, async (display) => {
   if (display) {
-    set(start, convertFromTimestamp(dayjs().year(get(currentYear)).startOf('year').unix()));
-    set(end, convertFromTimestamp(dayjs().year(get(currentYear)).endOf('year').unix()));
+    if (!get(start) && !get(end)) {
+      set(start, convertFromTimestamp(dayjs().year(get(currentYear)).startOf('year').unix()));
+      set(end, convertFromTimestamp(dayjs().year(get(currentYear)).endOf('year').unix()));
+    }
     await fetchData();
   }
 });
@@ -251,7 +253,7 @@ watch(() => props.display, async (display) => {
         v-else-if="!summary"
         class="p-4 text-center"
       >
-        {{ t('common.no_data') }}
+        {{ t('data_table.no_data') }}
       </div>
       <template v-else>
         <WrappedCard
