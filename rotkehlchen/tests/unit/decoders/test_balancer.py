@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
@@ -14,6 +16,10 @@ from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import ChainID, EvmTokenKind, Location, TimestampMS, deserialize_evm_tx_hash
+
+if TYPE_CHECKING:
+    from rotkehlchen.chain.arbitrum_one.node_inquirer import ArbitrumOneInquirer
+    from rotkehlchen.types import ChecksumEvmAddress
 
 A_BPT = Asset('eip155:1/erc20:0x59A19D8c652FA0284f44113D0ff9aBa70bd46fB4')
 
@@ -788,6 +794,73 @@ def test_balancer_v2_join_gnosis(gnosis_inquirer, gnosis_accounts):
             location_label=user_address,
             counterparty=CPT_BALANCER_V2,
             notes=f'Receive {receive_amt} crvUSD/sDAI from a Balancer v2 pool',
+            address=ZERO_ADDRESS,
+            extra_data={'deposit_events_num': 1},
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('arbitrum_one_accounts', [['0x5dCFE1fb21Fb50fA793de3bA8519e6F9Be6C0617']])
+def test_reth_arb(
+        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
+        arbitrum_one_accounts: list['ChecksumEvmAddress'],
+):
+    """Test the case of rETH on arb where the order of events is not the usual one"""
+    tx_hash = deserialize_evm_tx_hash('0x6b380e483cb301cb060434e31bf053c0b55cd357e8c18f01d3573d850273954e')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=arbitrum_one_inquirer, tx_hash=tx_hash)  # noqa: E501
+    user_address, timestamp, gas_str, receive_amt, deposit_reth_amt = arbitrum_one_accounts[0], TimestampMS(1733867520000), '0.00000838391546', '0.027783312185816836', '0.025'  # noqa: E501
+    expected_events = [
+        EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(FVal(gas_str)),
+            location_label=user_address,
+            notes=f'Burn {gas_str} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=5,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.APPROVE,
+            asset=Asset('eip155:42161/erc20:0xEC70Dcb4A1EFa46b8F2D97C310C9c4790ba5ffA8'),
+            balance=Balance(),
+            location_label=user_address,
+            notes='Revoke rETH spending approval of 0x5dCFE1fb21Fb50fA793de3bA8519e6F9Be6C0617 by 0xBA12222222228d8Ba445958a75a0704d566BF2C8',  # noqa: E501
+            address=string_to_evm_address('0xBA12222222228d8Ba445958a75a0704d566BF2C8'),
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=6,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+            asset=Asset('eip155:42161/erc20:0xEC70Dcb4A1EFa46b8F2D97C310C9c4790ba5ffA8'),
+            balance=Balance(FVal(deposit_reth_amt)),
+            location_label=user_address,
+            notes=f'Deposit {deposit_reth_amt} rETH to a Balancer v2 pool',
+            counterparty=CPT_BALANCER_V2,
+            address=VAULT_ADDRESS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=7,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+            asset=Asset('eip155:42161/erc20:0xd0EC47c54cA5e20aaAe4616c25C825c7f48D4069'),
+            balance=Balance(FVal(receive_amt)),
+            location_label=user_address,
+            counterparty=CPT_BALANCER_V2,
+            notes=f'Receive {receive_amt} rETH/wETH BPT from a Balancer v2 pool',
             address=ZERO_ADDRESS,
             extra_data={'deposit_events_num': 1},
         ),
