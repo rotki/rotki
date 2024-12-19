@@ -386,6 +386,7 @@ def test_history_events(function_scope_coinbaseprime: Coinbaseprime):
             identifier=7,
             timestamp=TimestampMS(1697050985000),
             location=Location.COINBASEPRIME,
+            location_label=function_scope_coinbaseprime.name,
             event_type=HistoryEventType.DEPOSIT,
             asset=A_ETH,
             balance=Balance(FVal(100)),

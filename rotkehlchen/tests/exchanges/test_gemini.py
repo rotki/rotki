@@ -282,6 +282,7 @@ def test_gemini_query_deposits_withdrawals(sandbox_gemini):
     expected_movements = [AssetMovement(
         identifier=1,
         location=Location.GEMINI,
+        location_label=sandbox_gemini.name,
         event_type=HistoryEventType.WITHDRAWAL,
         timestamp=TimestampMS(1535451930000),
         asset=A_USD,
@@ -294,6 +295,7 @@ def test_gemini_query_deposits_withdrawals(sandbox_gemini):
     ), AssetMovement(
         identifier=6,
         location=Location.GEMINI,
+        location_label=sandbox_gemini.name,
         event_type=HistoryEventType.DEPOSIT,
         timestamp=TimestampMS(1507913541000),
         asset=A_USD,
@@ -302,6 +304,7 @@ def test_gemini_query_deposits_withdrawals(sandbox_gemini):
     ), AssetMovement(
         identifier=5,
         location=Location.GEMINI,
+        location_label=sandbox_gemini.name,
         event_type=HistoryEventType.DEPOSIT,
         timestamp=TimestampMS(1499990797000),
         asset=A_ETH,
@@ -311,6 +314,7 @@ def test_gemini_query_deposits_withdrawals(sandbox_gemini):
     ), AssetMovement(
         identifier=4,
         location=Location.GEMINI,
+        location_label=sandbox_gemini.name,
         event_type=HistoryEventType.DEPOSIT,
         timestamp=TimestampMS(1495550176000),
         asset=A_BTC,
@@ -320,6 +324,7 @@ def test_gemini_query_deposits_withdrawals(sandbox_gemini):
     ), AssetMovement(
         identifier=3,
         location=Location.GEMINI,
+        location_label=sandbox_gemini.name,
         event_type=HistoryEventType.DEPOSIT,
         timestamp=TimestampMS(1458862076000),
         asset=A_USD,
@@ -328,6 +333,7 @@ def test_gemini_query_deposits_withdrawals(sandbox_gemini):
     ), AssetMovement(
         identifier=2,
         location=Location.GEMINI,
+        location_label=sandbox_gemini.name,
         event_type=HistoryEventType.WITHDRAWAL,
         timestamp=TimestampMS(1450403787000),
         asset=A_BTC,
