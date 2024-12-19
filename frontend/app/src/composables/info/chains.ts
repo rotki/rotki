@@ -1,4 +1,4 @@
-import { Blockchain } from '@rotki/common';
+import { Blockchain, getTextToken } from '@rotki/common';
 import { isBlockchain } from '@/types/blockchain/chains';
 import { useMainStore } from '@/store/main';
 import { useSupportedChainsApi } from '@/composables/api/info/chains';
@@ -110,11 +110,11 @@ export const useSupportedChains = createSharedComposable(() => {
     // note: we're using toSnakeCase here to always ensure that chains
     // with combined names gets parsed to match their chain name
     const chainData = get(supportedChains).find((item) => {
-      const transformed = toSnakeCase(location);
-      if ('evmChainName' in item && item.evmChainName === transformed)
+      const transformed = getTextToken(toSnakeCase(location));
+      if ('evmChainName' in item && getTextToken(item.evmChainName) === transformed)
         return true;
 
-      return item.id === transformed;
+      return getTextToken(item.id) === transformed;
     });
 
     if (chainData && isBlockchain(chainData.id))

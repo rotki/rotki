@@ -15,7 +15,7 @@ import GetPremiumButton from '@/components/premium/GetPremiumButton.vue';
 import BackButton from '@/components/helper/BackButton.vue';
 import GlobalSearch from '@/components/GlobalSearch.vue';
 import SyncIndicator from '@/components/status/sync/SyncIndicator.vue';
-import WrappedIndicator from '../premium/WrappedIndicator.vue';
+import WrappedIndicator from '../premium/wrapped/WrappedIndicator.vue';
 
 const isDevelopment = checkIfDevelopment();
 
@@ -33,12 +33,7 @@ const route = useRoute();
     <GlobalSearch v-if="isSmAndUp" />
     <BackButton />
   </div>
-  <div
-    v-if="route.path === '/dashboard' || route.path === '/history/transactions'"
-    class="flex overflow-hidden h-full items-center"
-  >
-    <WrappedIndicator />
-  </div>
+  <WrappedIndicator v-if="route.path === '/dashboard' || route.path === '/history/transactions'" />
   <div class="flex overflow-hidden h-full items-center">
     <GetPremiumButton />
     <RouterLink

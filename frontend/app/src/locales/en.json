@@ -4967,17 +4967,19 @@
   },
   "wrapped": {
     "title": "rotki Wrapped",
+    "get_data": "Get data",
+    "filter_by_date": "Filter by date",
     "subtitle": "Your year with Rotki",
-    "year_subtitle": "Your DeFi journey in numbers",
-    "tooltip": "View your 2024 Wrapped",
+    "year_subtitle": "Your DeFi journey in Numbers",
+    "tooltip": "View your {year} Wrapped",
     "premium_required_tooltip": "Upgrade to premium to access your personalized Rotki Wrapped report",
     "exchange_activity": "Exchange Activity",
-    "transactions_by_chain": "Total amount of transcations per chain",
+    "transactions_by_chain": "Transactions per chain",
     "protocol_activity": "Number of transactions by protocol",
     "gas_spent": "ETH spent on gas per address",
     "gas_spent_total": "ETH spent on gas total",
     "gnosis_payments": "Gnosis Pay highest payments per currency",
-    "top_days": "Most Active Days"
+    "top_days": "Top days with more transactions"
   },
   "yearn_asset_table": {
     "headers": {

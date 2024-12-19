@@ -15,6 +15,7 @@ const { isLgAndDown } = useBreakpoint();
     <RuiTooltip
       :popper="{ placement: 'bottom' }"
       :disabled="!isLgAndDown"
+      :open-delay="400"
     >
       <template #activator>
         <ExternalLink
@@ -22,16 +23,15 @@ const { isLgAndDown } = useBreakpoint();
           premium
         >
           <RuiButton
-            icon
-            class="lg:!py-2"
+            class="lg:!py-2 [&_span]:!hidden lg:[&_span]:!block"
             :rounded="false"
             color="primary"
             data-cy="get-premium-button"
           >
-            <span v-if="!isLgAndDown">{{ t('premium_settings.get') }}</span>
             <template #prepend>
               <RuiIcon name="vip-crown-line" />
             </template>
+            {{ t('premium_settings.get') }}
           </RuiButton>
         </ExternalLink>
       </template>
