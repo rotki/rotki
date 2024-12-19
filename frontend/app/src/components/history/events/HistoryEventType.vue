@@ -1,11 +1,16 @@
 <script setup lang="ts">
 import HistoryEventTypeCounterparty from '@/components/history/events/HistoryEventTypeCounterparty.vue';
-import { isEthDepositEventRef, isEvmEventRef, isOnlineHistoryEventRef } from '@/utils/history/events';
+import {
+  isAssetMovementEvent,
+  isEthDepositEventRef,
+  isEvmEventRef,
+  isOnlineHistoryEvent,
+} from '@/utils/history/events';
 import { useHistoryEventMappings } from '@/composables/history/events/mapping';
 import HashLink from '@/components/helper/HashLink.vue';
 import LocationIcon from '@/components/history/LocationIcon.vue';
 import HistoryEventTypeCombination from '@/components/history/events/HistoryEventTypeCombination.vue';
-import type { HistoryEventEntry } from '@/types/history/events';
+import type { AssetMovementEvent, HistoryEventEntry, OnlineHistoryEvent } from '@/types/history/events';
 import type { Blockchain } from '@rotki/common';
 
 const props = defineProps<{
@@ -20,7 +25,15 @@ const attrs = getEventTypeData(event);
 
 const { t } = useI18n();
 
-const onlineEvent = isOnlineHistoryEventRef(event);
+const exchangeEvent = computed<AssetMovementEvent | OnlineHistoryEvent | undefined>(() => {
+  const event = props.event;
+  if (isOnlineHistoryEvent(event) || isAssetMovementEvent(event)) {
+    return event;
+  }
+
+  return undefined;
+});
+
 const evmOrEthDepositEvent = computed(() => get(isEvmEventRef(event)) || get(isEthDepositEventRef(event)));
 </script>
 
@@ -46,19 +59,20 @@ const evmOrEthDepositEvent = computed(() => get(isEvmEventRef(event)) || get(isE
         class="text-rui-text-secondary flex items-center"
       >
         <LocationIcon
-          v-if="onlineEvent"
+          v-if="exchangeEvent"
           icon
-          :item="onlineEvent.location"
+          :item="exchangeEvent.location"
           size="16px"
           class="mr-2"
         />
         <HashLink
-          :show-icon="!onlineEvent"
-          :no-link="!!onlineEvent"
+          :show-icon="!exchangeEvent"
+          :no-link="!!exchangeEvent"
           :text="event.locationLabel"
           :chain="chain"
+          :type="exchangeEvent ? 'label' : 'address'"
           :location="event.location"
-          :disable-scramble="!!onlineEvent"
+          :disable-scramble="!!exchangeEvent"
         />
       </div>
       <RuiChip
