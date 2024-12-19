@@ -23,6 +23,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
     TransferEnrichmentOutput,
 )
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
+from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
@@ -66,6 +67,7 @@ class Balancerv2CommonDecoder(DecoderInterface, BalancerCommonAccountingMixin):
 
     def _decode_join_or_exit(self, context: DecoderContext) -> DecodingOutput:
         """Decodes and processes Balancer v2 pool join/exit events"""
+        send_events, receive_events = [], []
         for event in context.decoded_events:
             token = event.asset.resolve_to_asset_with_symbol()
             if (
@@ -76,6 +78,7 @@ class Balancerv2CommonDecoder(DecoderInterface, BalancerCommonAccountingMixin):
                 event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
                 event.notes = f'Return {event.balance.amount} {token.symbol} to a Balancer v2 pool'
                 event.counterparty = CPT_BALANCER_V2
+                send_events.append(event)
 
             if (
                 event.event_type == HistoryEventType.RECEIVE and
@@ -86,6 +89,7 @@ class Balancerv2CommonDecoder(DecoderInterface, BalancerCommonAccountingMixin):
                 event.event_subtype = HistoryEventSubType.REMOVE_ASSET
                 event.counterparty = CPT_BALANCER_V2
                 event.notes = f'Receive {event.balance.amount} {token.symbol} after removing liquidity from a Balancer v2 pool'  # noqa: E501
+                receive_events.append(event)
 
             if (
                 event.event_type == HistoryEventType.RECEIVE and
@@ -95,6 +99,7 @@ class Balancerv2CommonDecoder(DecoderInterface, BalancerCommonAccountingMixin):
                 event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
                 event.counterparty = CPT_BALANCER_V2
                 event.notes = f'Receive {event.balance.amount} {token.symbol} from a Balancer v2 pool'  # noqa: E501
+                receive_events.append(event)
 
             if (
                 event.event_type == HistoryEventType.SPEND and
@@ -105,7 +110,16 @@ class Balancerv2CommonDecoder(DecoderInterface, BalancerCommonAccountingMixin):
                 event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
                 event.counterparty = CPT_BALANCER_V2
                 event.notes = f'Deposit {event.balance.amount} {token.symbol} to a Balancer v2 pool'  # noqa: E501
+                send_events.append(event)
 
+        # in _check_deposits_withdrawals we expect the receive to be the last event.
+        # This happens almost always but there are some cases like rETH on arb where it doesn't.
+        # This reshuffle ensures that the receive event is always the last one before grouping
+        # them in _check_deposits_withdrawals.
+        maybe_reshuffle_events(
+            ordered_events=send_events + receive_events,
+            events_list=context.decoded_events,
+        )
         self._check_deposits_withdrawals(
             all_logs=context.all_logs,
             transaction=context.transaction,
