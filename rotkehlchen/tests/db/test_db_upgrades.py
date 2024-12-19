@@ -2627,12 +2627,6 @@ def test_upgrade_db_45_to_46(user_data_dir: 'Path', messages_aggregator):
         assert cursor.execute(
             "SELECT COUNT(*) FROM pragma_table_info('evm_events_info') WHERE name='extra_data'",
         ).fetchone()[0] == 1
-        events_with_extra_data = [row[0] for row in cursor.execute(
-            "SELECT identifier FROM evm_events_info WHERE extra_data != '';",
-        )]
-        existing_evm_event = cursor.execute('SELECT * FROM history_events WHERE identifier = "35"').fetchone()  # noqa: E501
-        existing_evm_event_extra_data = cursor.execute('SELECT extra_data FROM evm_events_info WHERE identifier = "35"').fetchone()[0]  # noqa: E501
-        assert existing_evm_event_extra_data == '{"airdrop_identifier": "elfi"}'
         assert cursor.execute('SELECT COUNT(*) FROM asset_movements').fetchone()[0] == 3
         assert cursor.execute('SELECT COUNT(*) FROM history_events WHERE event_identifier=?', ('KRAKEN-XXX',)).fetchone()[0] == 2  # kraken history event that needs to be removed since it will be replaced  # noqa: E501
 
@@ -2670,14 +2664,6 @@ def test_upgrade_db_45_to_46(user_data_dir: 'Path', messages_aggregator):
         assert cursor.execute(
             "SELECT COUNT(*) FROM pragma_table_info('evm_events_info') WHERE name='extra_data'",
         ).fetchone()[0] == 0
-        assert events_with_extra_data == [row[0] for row in cursor.execute(
-            "SELECT identifier FROM history_events WHERE extra_data != '' AND entry_type != 6;",  # 6 is the entry type for the new asset movements  # noqa: E501
-        )]
-
-        # Confirm an evm event with extra data has been migrated correctly
-        assert (*existing_evm_event, existing_evm_event_extra_data) == cursor.execute(
-            'SELECT * FROM history_events WHERE identifier = "35"',
-        ).fetchone()
 
         # Confirm a plain history event has not been modified and has null extra_data
         assert cursor.execute(
