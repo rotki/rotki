@@ -3,7 +3,12 @@ import pytest
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.arbitrum_one.modules.odos.v2.constants import ODOS_V2_ROUTER as ARB_ROUTER
-from rotkehlchen.chain.base.modules.odos.v2.constants import ODOS_V2_ROUTER as BASE_ROUTER
+from rotkehlchen.chain.base.modules.odos.v2.constants import (
+    ODOS_AIRDROP_DISTRIBUTOR,
+    ODOS_ASSET_ID,
+    ODOS_V2_ROUTER as BASE_ROUTER,
+)
+from rotkehlchen.chain.base.node_inquirer import BaseInquirer
 from rotkehlchen.chain.ethereum.modules.odos.v2.constants import ODOS_V2_ROUTER as ETH_ROUTER
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.odos.v2.constants import CPT_ODOS_V2
@@ -18,7 +23,7 @@ from rotkehlchen.tests.unit.decoders.test_aerodrome import A_AERO
 from rotkehlchen.tests.unit.decoders.test_metamask import A_OPTIMISM_USDC
 from rotkehlchen.tests.unit.decoders.test_zerox import A_ARBITRUM_USDC
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
-from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
+from rotkehlchen.types import ChecksumEvmAddress, Location, TimestampMS, deserialize_evm_tx_hash
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -780,3 +785,40 @@ def test_swap_on_scroll(scroll_inquirer, scroll_accounts):
         address=SCROLL_ROUTER,
     )]
     assert expected_events == events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('base_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
+def test_airdrop_claim(
+        base_inquirer: BaseInquirer,
+        base_accounts: list[ChecksumEvmAddress],
+) -> None:
+    tx_hash = deserialize_evm_tx_hash('0x7d78887e1f615d83e95d2fd2cddd72b1042131d8b194bceb9630580ea596a14c')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
+    timestamp, received_amount, gas_fees = TimestampMS(1734686937000), '1739.7281675210563', '0.000025147925631755'  # noqa: E501
+    assert events == [EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=0,
+        timestamp=timestamp,
+        location=Location.BASE,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        balance=Balance(amount=FVal(gas_fees)),
+        location_label=base_accounts[0],
+        notes=f'Burn {gas_fees} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=351,
+        timestamp=timestamp,
+        location=Location.BASE,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.AIRDROP,
+        asset=Asset(ODOS_ASSET_ID),
+        balance=Balance(amount=FVal(received_amount)),
+        location_label=base_accounts[0],
+        notes=f'Claim {received_amount} ODOS from Odos airdrop',
+        address=ODOS_AIRDROP_DISTRIBUTOR,
+        counterparty=CPT_ODOS_V2,
+    )]
