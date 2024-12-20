@@ -39,7 +39,9 @@ from rotkehlchen.types import (
 )
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.globaldb.handler import GlobalDBHandler
+    from rotkehlchen.types import ChecksumEvmAddress
 
 
 ADDY = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'
@@ -385,6 +387,126 @@ def test_register_v2(ethereum_inquirer, ethereum_accounts, add_subgraph_api_key)
         ),
     ]
     assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x706A70067BE19BdadBea3600Db0626859Ff25D74']])
+def test_register_v2_with_refund(
+        ethereum_inquirer: 'EthereumInquirer',
+        ethereum_accounts: list['ChecksumEvmAddress'],
+        add_subgraph_api_key: None,
+) -> None:
+    """Test that a registration with a refund on the new eth registar is decoded correctly."""
+    tx_hash = deserialize_evm_tx_hash('0x0aa66c2ca8d917c7b18a0ba022abcacdca6e50d10a941e6f57c58e329f448ee6')  # noqa: E501
+    events, decoder = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)  # noqa: E501
+    user_address, timestamp, expires_timestamp = ethereum_accounts[0], TimestampMS(1723826543000), Timestamp(1786898543)  # noqa: E501
+    assert events == [
+        EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(FVal('0.001694738163794328')),
+            location_label=user_address,
+            notes='Burn 0.001694738163794328 ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=2,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=A_ETH,
+            balance=Balance(FVal('0.003850422928533558')),
+            location_label=user_address,
+            notes=f'Register ENS name javxq.eth for 0.003850422928533558 ETH until {decoder.decoders["Ens"].timestamp_to_date(expires_timestamp)}',  # type: ignore[attr-defined]  # decoder will have date mixin  # noqa: E501
+            counterparty=CPT_ENS,
+            address=ENS_REGISTRAR_CONTROLLER_2,
+            extra_data={'name': 'javxq.eth', 'expires': expires_timestamp},
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=289,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            balance=Balance(),
+            location_label=user_address,
+            notes='Transfer eth node ownership of subnode javxq.eth to 0xD4416b13d2b3a9aBae7AcD5D6C2BbDBE25686401',  # noqa: E501
+            counterparty=CPT_ENS,
+            address=ENS_REGISTRY_WITH_FALLBACK,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=293,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            balance=Balance(),
+            location_label=user_address,
+            notes='Set ENS address for javxq.eth',
+            counterparty=CPT_ENS,
+            address=ENS_REGISTRAR_CONTROLLER_2,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=294,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            balance=Balance(),
+            location_label=user_address,
+            notes='Set ENS avatar to https://euc.li/javxq.eth attribute for javxq.eth',
+            counterparty=CPT_ENS,
+            address=ENS_REGISTRAR_CONTROLLER_2,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=296,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            balance=Balance(),
+            location_label=user_address,
+            notes=f'Address for javxq.eth changed to {user_address}',
+            counterparty=CPT_ENS,
+            address=ENS_PUBLIC_RESOLVER_3_ADDRESS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=298,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            balance=Balance(),
+            location_label=user_address,
+            notes=f'Transfer addr.reverse node ownership of subnode with label hash 0x1e5d04a39c97ae670c4612c7f1265a2839673d4f867820dab534e27d47d29e13 to {user_address}',  # noqa: E501
+            counterparty=CPT_ENS,
+            address=ENS_REGISTRY_WITH_FALLBACK,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=299,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            balance=Balance(),
+            location_label=user_address,
+            notes='Set ENS address for an ENS name',
+            counterparty=CPT_ENS,
+            address=ENS_REGISTRAR_CONTROLLER_2,
+        ),
+    ]
 
 
 @pytest.mark.vcr
