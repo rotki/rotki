@@ -110,7 +110,7 @@ def assert_proper_response_with_result(
 
 def _check_error_response_properties(
         response_data: dict[str, Any],
-        contained_in_msg: str | list[str] | None,
+        contained_in_msg: str | list[str] | tuple[str] | None,
         status_code: HTTPStatus | None,
         result_exists: bool,
 ):
@@ -129,7 +129,7 @@ def _check_error_response_properties(
 
 def assert_error_response(
         response: requests.Response | None,
-        contained_in_msg: str | list[str] | None = None,
+        contained_in_msg: str | list[str] | tuple[str] | None = None,
         status_code: HTTPStatus = HTTPStatus.BAD_REQUEST,
         result_exists: bool = False,
 ):

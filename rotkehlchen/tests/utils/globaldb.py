@@ -52,7 +52,7 @@ def create_initial_globaldb_test_tokens() -> list[EvmToken]:
     ]
 
 
-def create_initial_expected_globaldb_test_tokens():
+def create_initial_expected_globaldb_test_tokens() -> list[EvmToken]:
     initial_tokens = create_initial_globaldb_test_tokens()
     return [initial_tokens[0]] + [
         EvmToken.initialize(underlying_address1, chain_id=ChainID.ETHEREUM, token_kind=EvmTokenKind.ERC20),  # noqa: E501
