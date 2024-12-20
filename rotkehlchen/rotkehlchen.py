@@ -96,6 +96,7 @@ from rotkehlchen.types import (
     EVM_CHAINS_WITH_TRANSACTIONS,
     EVM_CHAINS_WITH_TRANSACTIONS_TYPE,
     SUPPORTED_BITCOIN_CHAINS,
+    SUPPORTED_EVM_CHAINS,
     SUPPORTED_EVM_CHAINS_TYPE,
     SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE,
     SUPPORTED_SUBSTRATE_CHAINS,
@@ -119,6 +120,7 @@ from rotkehlchen.utils.misc import combine_dicts
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.bitcoin.xpub import XpubData
+    from rotkehlchen.chain.evm.manager import EvmManager
     from rotkehlchen.db.drivers.gevent import DBCursor
     from rotkehlchen.exchanges.kraken import KrakenAccountType
 
@@ -1205,6 +1207,14 @@ class Rotkehlchen:
 
         with self.data.db.user_write() as cursor:
             self.data.db.set_settings(cursor, settings)
+
+        if settings.use_unified_etherscan_api is not None:
+            for chain in SUPPORTED_EVM_CHAINS:
+                if chain == SupportedBlockchain.AVALANCHE:
+                    continue  # Avalanche doesn't have etherscan
+                chain_manager: EvmManager = self.chains_aggregator.get_chain_manager(chain)
+                chain_manager.node_inquirer.etherscan.toggle_base_attributes()
+
         return True, ''
 
     def get_settings(self, cursor: 'DBCursor') -> DBSettings:
