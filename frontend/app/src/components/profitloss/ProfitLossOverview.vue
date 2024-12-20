@@ -29,7 +29,7 @@ const { t } = useI18n();
     <template #header>
       {{ t('profit_loss_overview.title') }}
     </template>
-    <div class="!rounded-md border border-rui-grey-300 dark:border-rui-grey-600 w-full">
+    <div class="!rounded-md border border-rui-grey-300 dark:border-rui-grey-800 w-full">
       <table class="w-full">
         <thead class="text-rui-text-secondary font-medium border-b border-default text-xs">
           <tr>

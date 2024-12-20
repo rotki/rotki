@@ -8,10 +8,6 @@ const currentYear = computed(() => new Date().getFullYear());
 function showDialog() {
   set(dialog, true);
 }
-
-function onClose() {
-  set(dialog, false);
-}
 </script>
 
 <template>
@@ -36,9 +32,6 @@ function onClose() {
       </template>
       {{ t('wrapped.tooltip', { year: get(currentYear) }) }}
     </RuiTooltip>
-    <WrappedDialog
-      v-model:display="dialog"
-      @close="onClose()"
-    />
+    <WrappedDialog v-model:display="dialog" />
   </div>
 </template>
