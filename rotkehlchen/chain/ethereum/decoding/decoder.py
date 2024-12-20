@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.airdrops import AIRDROP_IDENTIFIER_KEY
 from rotkehlchen.chain.ethereum.constants import CPT_KRAKEN
+from rotkehlchen.chain.ethereum.modules.monerium.constants import V1_TO_V2_MONERIUM_MAPPINGS
 from rotkehlchen.chain.evm.constants import MERKLE_CLAIM
 from rotkehlchen.chain.evm.decoding.base import BaseDecoderToolsWithDSProxy
 from rotkehlchen.chain.evm.decoding.decoder import EVMTransactionDecoderWithDSProxy
@@ -62,6 +63,7 @@ class EthereumTransactionDecoder(EVMTransactionDecoderWithDSProxy):
                 is_non_conformant_erc721_fn=self._is_non_conformant_erc721,
                 address_is_exchange_fn=self._address_is_exchange,
             ),
+            exceptions_mappings=V1_TO_V2_MONERIUM_MAPPINGS,
         )
 
     def _maybe_enrich_transfers(

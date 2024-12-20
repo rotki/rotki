@@ -1223,6 +1223,7 @@ class EVMTransactionDecoderWithDSProxy(EVMTransactionDecoder, ABC):
             event_rules: list[EventDecoderFunction],
             misc_counterparties: list[CounterpartyDetails],
             base_tools: BaseDecoderToolsWithDSProxy,
+            exceptions_mappings: dict[str, 'Asset'] | None = None,
     ):
         super().__init__(
             database=database,
@@ -1232,6 +1233,7 @@ class EVMTransactionDecoderWithDSProxy(EVMTransactionDecoder, ABC):
             event_rules=event_rules,
             misc_counterparties=misc_counterparties,
             base_tools=base_tools,
+            exceptions_mappings=exceptions_mappings,
         )
         self.evm_inquirer: EvmNodeInquirerWithDSProxy  # Set explicit type
         self.base: BaseDecoderToolsWithDSProxy  # Set explicit type
