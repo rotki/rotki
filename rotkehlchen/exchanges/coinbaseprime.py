@@ -10,6 +10,7 @@ from urllib.parse import urlparse
 import requests
 
 from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.api.websockets.typedefs import HistoryEventsStep
 from rotkehlchen.assets.converters import asset_from_coinbase
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
@@ -547,7 +548,11 @@ class Coinbaseprime(ExchangeInterface):
         ranges = DBQueryRanges(self.db)
         history_events_db = DBHistoryEvents(self.db)
         portfolio_ids = self._get_portfolio_ids()
-        for portfolio_id in portfolio_ids:
+        for idx, portfolio_id in enumerate(portfolio_ids):
+            self.send_history_events_status_msg(
+                step=HistoryEventsStep.QUERYING_EVENTS_STARTED,
+                name=(status_msg_name := f'{self.name} Portfolio {idx}'),
+            )
             range_query_name = f'{self.location}_history_events_{self.name}_{portfolio_id}'
             with self.db.conn.read_ctx() as cursor:
                 ranges_to_query = ranges.get_location_query_ranges(
@@ -558,6 +563,11 @@ class Coinbaseprime(ExchangeInterface):
                 )
 
             for start_ts, end_ts in ranges_to_query:
+                self.send_history_events_status_msg(
+                    step=HistoryEventsStep.QUERYING_EVENTS_STATUS_UPDATE,
+                    period=[start_ts, end_ts],
+                    name=status_msg_name,
+                )
                 history_events = []
                 query_params = {
                     'sort_direction': 'ASC',
@@ -584,6 +594,11 @@ class Coinbaseprime(ExchangeInterface):
                         location_string=range_query_name,
                         queried_ranges=[(start_ts, end_ts)],
                     )
+
+            self.send_history_events_status_msg(
+                step=HistoryEventsStep.QUERYING_EVENTS_FINISHED,
+                name=status_msg_name,
+            )
 
     def query_online_margin_history(
             self,

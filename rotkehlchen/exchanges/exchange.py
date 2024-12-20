@@ -4,7 +4,11 @@ from collections.abc import Callable, Sequence
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.api.websockets.typedefs import WSMessageType
+from rotkehlchen.api.websockets.typedefs import (
+    HistoryEventsQueryType,
+    HistoryEventsStep,
+    WSMessageType,
+)
 from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.db.filtering import TradesFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -329,9 +333,37 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
 
         return margin_positions
 
+    def send_history_events_status_msg(
+            self,
+            step: HistoryEventsStep,
+            period: list[Timestamp] | None = None,
+            name: str | None = None,
+    ) -> None:
+        """Send history events status WS message.
+        Args:
+            step (HistoryEventsStep): Current query step
+            period (list[Timestamp] | None): from/to timestamps of the range being queried
+            name (str | None): Used to identify multiple portfolios on the same exchange, in
+                coinbaseprime for example. Defaults to self.name when None.
+        """
+        data: dict[str, Any] = {
+            'status': str(step),
+            'location': str(self.location),
+            'event_type': str(HistoryEventsQueryType.HISTORY_QUERY),
+            'name': name or self.name,
+        }
+        if period is not None:
+            data['period'] = period
+
+        self.msg_aggregator.add_message(
+            message_type=WSMessageType.HISTORY_EVENTS_STATUS,
+            data=data,
+        )
+
     @protect_with_lock()
     def query_history_events(self) -> None:
         """Queries the exchange for new history events and saves them to the database."""
+        self.send_history_events_status_msg(step=HistoryEventsStep.QUERYING_EVENTS_STARTED)
         db = DBHistoryEvents(self.db)
         location_string = f'{self.location!s}_history_events_{self.name}'
         with self.db.conn.read_ctx() as cursor:
@@ -343,6 +375,10 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
             )
 
         for query_start_ts, query_end_ts in ranges_to_query:
+            self.send_history_events_status_msg(
+                step=HistoryEventsStep.QUERYING_EVENTS_STATUS_UPDATE,
+                period=[query_start_ts, query_end_ts],
+            )
             new_events = self.query_online_history_events(
                 start_ts=query_start_ts,
                 end_ts=query_end_ts,
@@ -355,6 +391,7 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
                     location_string=location_string,
                     queried_ranges=[(query_start_ts, query_end_ts)],
                 )
+        self.send_history_events_status_msg(step=HistoryEventsStep.QUERYING_EVENTS_FINISHED)
 
     def query_history_with_callbacks(
             self,
