@@ -18,11 +18,7 @@ from requests import Response
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.api.v1.types import IncludeExcludeFilterData
-from rotkehlchen.api.websockets.typedefs import (
-    HistoryEventsQueryType,
-    HistoryEventsStep,
-    WSMessageType,
-)
+from rotkehlchen.api.websockets.typedefs import HistoryEventsStep
 from rotkehlchen.assets.converters import asset_from_kraken
 from rotkehlchen.constants import KRAKEN_API_VERSION, KRAKEN_BASE_URL, ZERO
 from rotkehlchen.constants.assets import A_ETH2, A_KFEE, A_USD
@@ -914,15 +910,9 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
         for query_start_ts, query_end_ts in ranges_to_query:
             log.debug(f'Querying kraken ledger entries from {query_start_ts} to {query_end_ts}')
             if notify_events is True:
-                self.msg_aggregator.add_message(
-                    message_type=WSMessageType.HISTORY_EVENTS_STATUS,
-                    data={
-                        'status': str(HistoryEventsStep.QUERYING_EVENTS_STATUS_UPDATE),
-                        'location': str(self.location),
-                        'event_type': str(HistoryEventsQueryType.HISTORY_QUERY),
-                        'name': self.name,
-                        'period': [query_start_ts, query_end_ts],
-                    },
+                self.send_history_events_status_msg(
+                    step=HistoryEventsStep.QUERYING_EVENTS_STATUS_UPDATE,
+                    period=[query_start_ts, query_end_ts],
                 )
             try:
                 response, with_errors = self.query_until_finished(
@@ -1164,11 +1154,13 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
         return returned_events, skipped, found_unknown_event
 
     def query_history_events(self) -> None:
+        self.send_history_events_status_msg(step=HistoryEventsStep.QUERYING_EVENTS_STARTED)
         with self.db.conn.read_ctx() as cursor:
             # We give the full range but internally it queries only for the missing time ranges
             self.query_kraken_ledgers(
                 cursor=cursor,
                 start_ts=Timestamp(0),
                 end_ts=ts_now(),
-                notify_events=False,  # TODO: Change back to True when converting all exchanges to notify about history query status  # noqa: E501
+                notify_events=True,
             )
+        self.send_history_events_status_msg(step=HistoryEventsStep.QUERYING_EVENTS_FINISHED)
