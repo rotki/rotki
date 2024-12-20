@@ -68,7 +68,7 @@ class MoneriumCommonDecoder(DecoderInterface):
         # Not iterating over the events because the logic for decoding erc_20 transfers
         # has not been executed before calling this decoding logic
         event = None
-        if from_address == ZERO_ADDRESS:  # Create a mint event
+        if from_address == ZERO_ADDRESS and self.base.is_tracked(to_address):  # Create mint event
             event = self.base.make_event_from_transaction(
                 transaction=context.transaction,
                 tx_log=context.tx_log,
@@ -82,8 +82,9 @@ class MoneriumCommonDecoder(DecoderInterface):
             )
 
         elif (
-            to_address == ZERO_ADDRESS and
-            context.transaction.input_data.startswith((BURN_MONERIUM_SIGNATURE, BURNFROM_MONERIUM_SIGNATURE, BURN_MONERIUM_SIGNATURE_V2))  # noqa: E501
+                to_address == ZERO_ADDRESS and
+                self.base.is_tracked(from_address) and
+                context.transaction.input_data.startswith((BURN_MONERIUM_SIGNATURE, BURNFROM_MONERIUM_SIGNATURE, BURN_MONERIUM_SIGNATURE_V2))  # noqa: E501
         ):  # Create a burn event
             event = self.base.make_event_from_transaction(
                 transaction=context.transaction,
