@@ -31,6 +31,8 @@ const scoreCategory = computed(() => {
     .find(category => props.score >= category.min) ?? scoresData[0];
 });
 
+const zoomLevel = window.devicePixelRatio;
+
 async function downloadImage() {
   const wrapperVal = get(wrapper);
   if (!wrapperVal)
@@ -38,7 +40,10 @@ async function downloadImage() {
 
   const width = wrapperVal.offsetWidth;
   const height = wrapperVal.offsetHeight;
-  const scale = 2;
+
+  const scale = 2 * zoomLevel;
+
+  wrapperVal.style.transform = 'none';
 
   domtoimage
     .toPng(wrapperVal, {
@@ -63,7 +68,7 @@ async function downloadImage() {
 </script>
 
 <template>
-  <div class="rounded-lg relative">
+  <div class="rounded-lg relative whitespace-nowrap">
     <WrappedConfetti
       v-if="animationsEnabled"
       class="absolute top-0 left-0 w-full h-full"
