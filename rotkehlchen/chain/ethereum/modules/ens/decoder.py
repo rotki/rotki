@@ -209,7 +209,7 @@ class EnsDecoder(GovernableDecoderInterface, EnsCommonDecoder):
         to_remove_indices = []
         spend_event = receive_event = None
         for event_idx, event in enumerate(context.decoded_events):
-            if event.event_type == HistoryEventType.RECEIVE and event.asset == A_ETH and event.address == ENS_REGISTRAR_CONTROLLER_1:  # noqa: E501
+            if event.event_type == HistoryEventType.RECEIVE and event.asset == A_ETH and event.address in {ENS_REGISTRAR_CONTROLLER_1, ENS_REGISTRAR_CONTROLLER_2}:  # noqa: E501
                 # remove ETH refund event
                 refund_from_registrar = event.balance.amount
                 to_remove_indices.append(event_idx)
@@ -327,7 +327,7 @@ class EnsDecoder(GovernableDecoderInterface, EnsCommonDecoder):
         elif queried_graph:  # if we successfully asked the graph, save the mapping
             _save_hash_mappings_get_fullname(name=name_to_show[:-4], tx_hash=context.transaction.tx_hash)  # noqa: E501
 
-        return name_to_show
+        return name_to_show or None  # Return None if name_to_show is blank
 
     # -- DecoderInterface methods
 
