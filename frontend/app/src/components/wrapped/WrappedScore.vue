@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import domtoimage from 'dom-to-image';
+import domtoimage from '@/utils/dom-to-image';
 import AppImage from '@/components/common/AppImage.vue';
 import WrappedConfetti from '@/components/wrapped/WrappedConfetti.vue';
 import RotkiLogo from '@/components/common/RotkiLogo.vue';
