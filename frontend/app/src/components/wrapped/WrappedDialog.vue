@@ -24,16 +24,10 @@ import { usePremium } from '@/composables/premium';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
 import { useStatusUpdater } from '@/composables/status';
 import { Routes } from '@/router/routes';
+import WrappedScore from '@/components/wrapped/WrappedScore.vue';
 import type { BigNumber } from '@rotki/common';
 
-const props = defineProps<{
-  display: boolean;
-}>();
-
-const emit = defineEmits<{
-  (e: 'update:display', value: boolean): void;
-  (e: 'close'): void;
-}>();
+const display = defineModel<boolean>('display', { required: true });
 
 const { t } = useI18n();
 const premium = usePremium();
@@ -49,7 +43,7 @@ const showGnosisData = computed(() => get(premium) && get(gnosisPayKey));
 const loading = ref(false);
 const end = ref('');
 const start = ref('');
-const summary = ref<WrapStatisticsResult | null>(null);
+const summary = ref<WrapStatisticsResult>();
 
 const { isFirstLoad, loading: sectionLoading } = useStatusUpdater(Section.HISTORY_EVENT);
 const eventTaskLoading = isTaskRunning(TaskType.TRANSACTIONS_DECODING);
@@ -128,8 +122,7 @@ function hasSectionData(data: Record<string, any> | Array<any> | undefined): boo
 }
 
 function closeDialog() {
-  emit('update:display', false);
-  emit('close');
+  set(display, false);
 }
 
 function formatDate(timestamp: number) {
@@ -150,11 +143,24 @@ const invalidRange = computed(
     && convertToTimestamp(get(start)) > convertToTimestamp(get(end)),
 );
 
-watchImmediate(() => props.display, async (display) => {
+function getYearRange(year: number) {
+  return {
+    end: convertFromTimestamp(dayjs().year(year).endOf('year').unix()),
+    start: convertFromTimestamp(dayjs().year(year).startOf('year').unix()),
+  };
+}
+
+const isCurrentYear = computed(() => {
+  const range = getYearRange(get(currentYear));
+  return get(start) === range.start && get(end) === range.end;
+});
+
+watchImmediate(display, async (display) => {
   if (display) {
     if (!get(start) && !get(end)) {
-      set(start, convertFromTimestamp(dayjs().year(get(currentYear)).startOf('year').unix()));
-      set(end, convertFromTimestamp(dayjs().year(get(currentYear)).endOf('year').unix()));
+      const range = getYearRange(get(currentYear));
+      set(start, range.start);
+      set(end, range.end);
     }
     await fetchData();
   }
@@ -170,12 +176,12 @@ watch(refreshing, async (curr, old) => {
 <template>
   <BigDialog
     :display="display"
-    :title="t('wrapped.title', { year: currentYear })"
+    :title="t('wrapped.title', { year: isCurrentYear ? currentYear : undefined })"
     :subtitle="t('wrapped.subtitle')"
     :loading="loading"
     :action-hidden="true"
     :secondary-action="t('common.actions.close')"
-    max-width="1000px"
+    max-width="800px"
     @cancel="closeDialog()"
     @close="closeDialog()"
   >
@@ -188,7 +194,7 @@ watch(refreshing, async (curr, old) => {
           class="mb-4"
         />
         <h2 class="text-4xl font-bold mb-2">
-          {{ t('wrapped.title', { year: currentYear }) }}
+          {{ t('wrapped.title', { year: isCurrentYear ? currentYear : undefined }) }}
         </h2>
         <p class="text-xl text-rui-text-secondary">
           {{ t('wrapped.year_subtitle') }}
@@ -493,6 +499,11 @@ watch(refreshing, async (curr, old) => {
             {{ item.transactions }} {{ t('explorers.tx') }}
           </template>
         </WrappedCard>
+
+        <WrappedScore
+          :is-current-year="isCurrentYear"
+          :score="summary.score"
+        />
       </template>
     </div>
   </BigDialog>
