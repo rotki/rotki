@@ -1377,6 +1377,7 @@ class ModifiableSettingsSchema(Schema):
     ask_user_upon_size_discrepancy = fields.Boolean(load_default=None)
     auto_detect_tokens = fields.Boolean(load_default=None)
     csv_export_delimiter = fields.String(load_default=None)
+    use_unified_etherscan_api = fields.Boolean(load_default=None)
 
     @validates_schema
     def validate_settings_schema(
@@ -1439,6 +1440,7 @@ class ModifiableSettingsSchema(Schema):
             ask_user_upon_size_discrepancy=data['ask_user_upon_size_discrepancy'],
             auto_detect_tokens=data['auto_detect_tokens'],
             csv_export_delimiter=data['csv_export_delimiter'],
+            use_unified_etherscan_api=data['use_unified_etherscan_api'],
         )
 
 

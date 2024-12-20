@@ -108,16 +108,19 @@ class Etherscan(ExternalServiceWithApiKey, ABC):
     ) -> None:
         super().__init__(database=database, service_name=service)
         self.msg_aggregator = msg_aggregator
+        self.original_service = service  # Used to reset service_name when switching from unified api back to legacy api  # noqa: E501
         self.chain = chain
-        self.prefix_url = 'api.' if chain in (
+        self.legacy_api_domain = f'api.{base_url}' if chain in (
             SupportedBlockchain.ETHEREUM,
             SupportedBlockchain.POLYGON_POS,
             SupportedBlockchain.ARBITRUM_ONE,
             SupportedBlockchain.BASE,
             SupportedBlockchain.GNOSIS,
             SupportedBlockchain.SCROLL,
-        ) else 'api-'
-        self.base_url = base_url
+        ) else f'api-{base_url}'
+        self.api_url: str = ''
+        self.base_query_args: dict[str, str] = {}
+        self.toggle_base_attributes()
         self.session = requests.session()
         self.warning_given = False
         set_user_agent(self.session)
@@ -238,11 +241,6 @@ class Etherscan(ExternalServiceWithApiKey, ABC):
         an unexpected response is returned. Also in the case of exhausting the backoff time.
         """
         result = None
-        query_str = f'https://{self.prefix_url}{self.base_url}/api?module={module}&action={action}'
-        if options:
-            for name, value in options.items():
-                query_str += f'&{name}={value}'
-
         api_key = self._get_api_key()
         if api_key is None:
             if not self.warning_given:
@@ -258,16 +256,20 @@ class Etherscan(ExternalServiceWithApiKey, ABC):
             api_key = ApiKey(ROTKI_INCLUDED_KEYS[self.chain])
             log.debug(f'Using default etherscan key for {self.chain}')
 
-        query_str += f'&apikey={api_key}'
+        params = {'module': module, 'action': action, 'apikey': api_key}
+        params.update(self.base_query_args)
+        if options:
+            params.update(options)
+
         backoff = 1
         cached_settings = CachedSettings()
         timeout = timeout or cached_settings.get_timeout_tuple()
         backoff_limit = cached_settings.get_query_retry_limit()  # max time spent trying to get a response from etherscan in case of rate limits  # noqa: E501
         while backoff < backoff_limit:
             response = None
-            log.debug(f'Querying {self.chain} etherscan: {query_str}')
+            log.debug(f'Querying {self.chain} etherscan: {self.api_url} with params: {params}')
             try:
-                response = self.session.get(query_str, timeout=timeout)
+                response = self.session.get(url=self.api_url, params=params, timeout=timeout)
             except requests.exceptions.RequestException as e:
                 raise RemoteError(f'{self.chain} Etherscan API request failed due to {e!s}') from e
 
@@ -396,6 +398,19 @@ class Etherscan(ExternalServiceWithApiKey, ABC):
         last_block = result[-1]['blockNumber']
         options['startBlock'] = last_block
         return options
+
+    def toggle_base_attributes(self) -> None:
+        """Toggle url, arguments, and service name depending on the unified api setting."""
+        if CachedSettings().get_settings().use_unified_etherscan_api:
+            self.service_name = ExternalService.ETHERSCAN
+            self.api_url = 'https://api.etherscan.io/v2/api'
+            self.base_query_args = {'chainid': str(self.chain.to_chain_id().serialize())}
+        else:
+            self.service_name = self.original_service
+            self.api_url = f'https://{self.legacy_api_domain}/api'
+            self.base_query_args = {}
+
+        self.last_ts = Timestamp(0)  # force api key reload
 
     @overload
     def get_transactions(
