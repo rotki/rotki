@@ -3,6 +3,9 @@ from typing import TYPE_CHECKING
 
 from rotkehlchen.chain.ethereum.modules.curve.constants import VOTING_ESCROW
 from rotkehlchen.chain.ethereum.modules.makerdao.cache import ilk_cache_foreach
+from rotkehlchen.chain.ethereum.modules.monerium.constants import (
+    ETHEREUM_MONERIUM_LEGACY_ADDRESSES,
+)
 from rotkehlchen.chain.evm.tokens import EvmTokensWithDSProxy
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.structures import EvmTokenDetectionData
@@ -92,7 +95,7 @@ class EthereumTokens(EvmTokensWithDSProxy):
 
     # -- methods that need to be implemented per chain
     def _per_chain_token_exceptions(self) -> set[ChecksumEvmAddress]:
-        return ETH_TOKEN_EXCEPTIONS.copy()
+        return ETH_TOKEN_EXCEPTIONS.copy() | ETHEREUM_MONERIUM_LEGACY_ADDRESSES
 
     def maybe_detect_proxies_tokens(self, addresses: Sequence[ChecksumEvmAddress]) -> None:
         """Detect tokens for proxies that are owned by the given addresses"""
