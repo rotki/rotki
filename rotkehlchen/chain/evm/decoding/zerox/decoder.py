@@ -13,6 +13,7 @@ from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.uniswap.constants import UNISWAP_SIGNATURES
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.transactions import EvmTransactions
+from rotkehlchen.constants import ZERO
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
@@ -24,6 +25,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
+    from rotkehlchen.fval import FVal
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
     from rotkehlchen.user_messages import MessagesAggregator
 
@@ -80,6 +82,7 @@ class ZeroxCommonDecoder(DecoderInterface):
             send_events: list['EvmEvent'],
             receive_events: list['EvmEvent'],
             fee_event: 'EvmEvent | None' = None,
+            return_amount: 'FVal' = ZERO,
     ) -> None:
         """Sum the balances of the events, update them with the 0x values, replace them with the
         Merged Events in decoded_events list, and maybe shuffle them with proper order. This is
@@ -92,6 +95,7 @@ class ZeroxCommonDecoder(DecoderInterface):
             for event in send_events[1:]:
                 summed_send_event.balance += event.balance
                 events_to_remove.add(event)
+            summed_send_event.balance.amount -= return_amount
         if summed_receive_event is not None:
             for event in receive_events[1:]:
                 summed_receive_event.balance += event.balance
@@ -119,6 +123,7 @@ class ZeroxCommonDecoder(DecoderInterface):
         events interacted with the 0x router, and overwrites them if they did."""
         send_address_to_events: dict[ChecksumEvmAddress, EvmEvent] = {}
         receive_address_to_events: dict[ChecksumEvmAddress, EvmEvent] = {}
+        receive_events: list[EvmEvent] = []
         sent_asset = received_asset = None
         for event in decoded_events:
             if (
@@ -144,8 +149,16 @@ class ZeroxCommonDecoder(DecoderInterface):
                 event.event_type == HistoryEventType.RECEIVE and  # for token to eth
                 event.event_subtype == HistoryEventSubType.NONE
             )) and event.address is not None:
+                receive_events.append(event)
+
+        return_amount = ZERO
+        for event in receive_events:
+            if event.asset == sent_asset:
+                return_amount = event.balance.amount
+                decoded_events.remove(event)
+            else:
                 received_asset = event.asset
-                receive_address_to_events[event.address] = event
+                receive_address_to_events[event.address] = event  # type: ignore[index]  # address will not be None, checked when appending to receive_events
 
         if sent_asset is None or received_asset is None:
             return decoded_events  # not a 0x related transaction
@@ -195,6 +208,7 @@ class ZeroxCommonDecoder(DecoderInterface):
             decoded_events=decoded_events,
             send_events=list(send_address_to_events.values()),
             receive_events=list(receive_address_to_events.values()),
+            return_amount=return_amount,
         )
 
         return decoded_events

@@ -8,7 +8,7 @@ from rotkehlchen.chain.ethereum.modules.zerox.constants import ZEROX_ROUTER
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.zerox.constants import CPT_ZEROX
 from rotkehlchen.chain.optimism.modules.zerox.constants import ZEROX_ROUTER as OP_ZEROX_ROUTER
-from rotkehlchen.constants.assets import A_ETH, A_POLYGON_POS_MATIC, A_SNX, A_USDC, A_USDT
+from rotkehlchen.constants.assets import A_ETH, A_OP, A_POLYGON_POS_MATIC, A_SNX, A_USDC, A_USDT
 from rotkehlchen.constants.resolver import strethaddress_to_identifier
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
@@ -1140,3 +1140,53 @@ def test_swap_on_quickswap(polygon_pos_inquirer, polygon_pos_accounts):
         address=ZEROX_ROUTER,
     )]
     assert expected_events == events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('optimism_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
+def test_swap_optimism_with_return(optimism_inquirer, optimism_accounts):
+    """Check that a swap with an amount returned is decoded correctly.
+    Regression test for https://github.com/rotki/rotki/issues/9122
+    """
+    tx_hash = deserialize_evm_tx_hash('0x0745615163e01c8a446f2520d5fa008dd69f308f24bcc3d2fec2466c1a2bc25c')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
+    user_address, timestamp, gas_amount, swap_amount, received_amount = optimism_accounts[0], TimestampMS(1706654255000), '0.000527795236079617', '1813.728944336150781643', '5820.310306'  # noqa: E501
+    assert events == [EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=0,
+        timestamp=timestamp,
+        location=Location.OPTIMISM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        balance=Balance(amount=FVal(gas_amount)),
+        location_label=user_address,
+        notes=f'Burn {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.OPTIMISM,
+        event_type=HistoryEventType.TRADE,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_OP,
+        balance=Balance(FVal(swap_amount)),
+        location_label=user_address,
+        notes=f'Swap {swap_amount} OP via the 0x protocol',
+        counterparty=CPT_ZEROX,
+        address=OP_ZEROX_ROUTER,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=2,
+        timestamp=timestamp,
+        location=Location.OPTIMISM,
+        event_type=HistoryEventType.TRADE,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=Asset('eip155:10/erc20:0x7F5c764cBc14f9669B88837ca1490cCa17c31607'),
+        balance=Balance(FVal(received_amount)),
+        location_label=user_address,
+        notes=f'Receive {received_amount} USDC.e as the result of a swap via the 0x protocol',
+        counterparty=CPT_ZEROX,
+        address=OP_ZEROX_ROUTER,
+    )]
