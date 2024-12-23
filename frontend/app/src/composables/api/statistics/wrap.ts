@@ -15,7 +15,12 @@ export const scoresData = [
 export const WrapStatisticsSchema = z.object({
   ethOnGas: NumericString,
   ethOnGasPerAddress: z.record(NumericString),
-  gnosisMaxPaymentsByCurrency: z.record(NumericString),
+  gnosisMaxPaymentsByCurrency: z.array(
+    z.object({
+      amount: NumericString,
+      symbol: z.string(),
+    }),
+  ),
   score: z.number(),
   topDaysByNumberOfTransactions: z.array(
     z.object({
