@@ -477,7 +477,7 @@ def test_query_wrap(
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     db = rotki.data.db
 
-    response = requests.post(
+    response = requests.post(  # Test that there is no failure for no data
         url=api_url_for(rotkehlchen_api_server, 'statswrapresource'),
         json={'from_timestamp': 1704067200, 'to_timestamp': 1735689599},
     )
