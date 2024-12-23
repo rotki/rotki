@@ -9,10 +9,12 @@ from rotkehlchen.chain.ethereum.utils import (
     token_normalized_value_decimals,
 )
 from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS, ZERO_ADDRESS
+from rotkehlchen.chain.evm.decoding.balancer.balancer_cache import (
+    read_balancer_pools_and_gauges_from_cache,
+)
 from rotkehlchen.chain.evm.decoding.balancer.constants import BALANCER_LABEL, CPT_BALANCER_V2
-from rotkehlchen.chain.evm.decoding.balancer.mixins import BalancerCommonAccountingMixin
+from rotkehlchen.chain.evm.decoding.balancer.decoder import BalancerCommonDecoder
 from rotkehlchen.chain.evm.decoding.balancer.v2.constants import V2_SWAP, VAULT_ADDRESS
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     FAILED_ENRICHMENT_OUTPUT,
@@ -26,7 +28,7 @@ from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress
+from rotkehlchen.types import CacheType, ChecksumEvmAddress
 from rotkehlchen.utils.misc import bytes_to_address
 
 if TYPE_CHECKING:
@@ -41,7 +43,7 @@ log = RotkehlchenLogsAdapter(logger)
 POOL_BALANCE_CHANGED_TOPIC = b'\xe5\xce$\x90\x87\xce\x04\xf0Z\x95q\x92CT\x00\xfd\x97\x86\x8d\xba\x0ejKL\x04\x9a\xbf\x8a\xf8\r\xaex'  # noqa: E501
 
 
-class Balancerv2CommonDecoder(DecoderInterface, BalancerCommonAccountingMixin):
+class Balancerv2CommonDecoder(BalancerCommonDecoder):
 
     def __init__(
             self,
@@ -53,8 +55,14 @@ class Balancerv2CommonDecoder(DecoderInterface, BalancerCommonAccountingMixin):
             evm_inquirer=evm_inquirer,
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
+            counterparty=CPT_BALANCER_V2,
+            pool_cache_type=CacheType.BALANCER_V2_POOLS,
+            read_fn=lambda chain_id: read_balancer_pools_and_gauges_from_cache(
+                version='2',
+                chain_id=chain_id,
+                cache_type=CacheType.BALANCER_V2_POOLS,
+            ),
         )
-        BalancerCommonAccountingMixin.__init__(self, counterparty=CPT_BALANCER_V2)
 
     def decode_vault_events(self, context: DecoderContext) -> DecodingOutput:
         if context.tx_log.topics[0] == V2_SWAP:
@@ -126,6 +134,9 @@ class Balancerv2CommonDecoder(DecoderInterface, BalancerCommonAccountingMixin):
             decoded_events=context.decoded_events,
         )
         return DEFAULT_DECODING_OUTPUT
+
+    def _decode_pool_events(self, context: DecoderContext) -> DecodingOutput:
+        return DEFAULT_DECODING_OUTPUT  # no-op
 
     def _decode_swap_creation(self, context: DecoderContext) -> DecodingOutput:
         """Decode swaps in Balancer v2. A SWAP event is created at transaction start containing
@@ -232,7 +243,7 @@ class Balancerv2CommonDecoder(DecoderInterface, BalancerCommonAccountingMixin):
     # -- DecoderInterface methods
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
-        return {
+        return super().addresses_to_decoders() | {
             VAULT_ADDRESS: (self.decode_vault_events,),
         }
 
