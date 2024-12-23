@@ -31,6 +31,7 @@ Changelog
 * :feature:`9005` Automatically decode all giveth staking events in Optimism and Gnosis chains. Also detect staked GIV balances for those chains.
 * :feature:`-` Events related to more gitcoin rounds in Arbitrum are now properly decoded as donations.
 * :feature:`-` Support Monerium integration after the v2 contracts upgrade on Ethereum.
+* :bug:`9122` Properly decode 0x swaps with partial refund
 
 * :release:`1.36.1 <2024-11-29>`
 * :bug:`-` Coinbase deposits that appeared as withdrawals should now appear as deposits again. Would need to purge and requery coinbase to fix this.
