@@ -247,6 +247,7 @@ const syncSettingMenuOpen = ref<boolean>(false);
 
     <AskUserUponSizeDiscrepancySetting
       v-if="uploadStatus"
+      dialog
       confirm
     />
   </ConfirmDialog>
