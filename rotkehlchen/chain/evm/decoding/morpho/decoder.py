@@ -50,7 +50,7 @@ class MorphoCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
             base_tools: 'BaseDecoderTools',
             msg_aggregator: 'MessagesAggregator',
             bundlers: set['ChecksumEvmAddress'],
-            rewards_distributor: 'ChecksumEvmAddress',
+            rewards_distributors: list['ChecksumEvmAddress'],
             weth: 'Asset',
     ) -> None:
         super().__init__(
@@ -60,7 +60,7 @@ class MorphoCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
         )
         self.vaults: set[ChecksumEvmAddress] = set()
         self.bundlers = bundlers
-        self.rewards_distributor = rewards_distributor
+        self.rewards_distributors = rewards_distributors
         self.weth = weth
 
     def reload_data(self) -> Mapping['ChecksumEvmAddress', tuple[Any, ...]] | None:
@@ -258,14 +258,15 @@ class MorphoCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
         if context.tx_log.topics[0] != CLAIM_TOPIC:
             return DEFAULT_DECODING_OUTPUT
 
+        claimed_asset = self.base.get_or_create_evm_asset(
+            address=bytes_to_address(context.tx_log.topics[2]),
+        )
         for event in context.decoded_events:
             if (
-                event.event_type == HistoryEventType.RECEIVE and
-                event.event_subtype == HistoryEventSubType.NONE and
-                event.address == self.rewards_distributor and
-                event.asset == self.base.get_or_create_evm_asset(
-                    address=bytes_to_address(context.tx_log.topics[2]),
-                )
+                    event.event_type == HistoryEventType.RECEIVE and
+                    event.event_subtype == HistoryEventSubType.NONE and
+                    event.address == context.tx_log.address and
+                    event.asset == claimed_asset
             ):
                 event.event_subtype = HistoryEventSubType.REWARD
                 event.counterparty = CPT_MORPHO
@@ -296,9 +297,7 @@ class MorphoCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
     # -- DecoderInterface methods
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
-        return {
-            self.rewards_distributor: (self._decode_reward_claim,),
-        } | dict.fromkeys(self.vaults, (self._decode_vault_events,))
+        return dict.fromkeys(self.rewards_distributors, (self._decode_reward_claim,)) | dict.fromkeys(self.vaults, (self._decode_vault_events,))  # noqa: E501
 
     def addresses_to_counterparties(self) -> dict['ChecksumEvmAddress', str]:
         return dict.fromkeys(self.bundlers, CPT_MORPHO)
