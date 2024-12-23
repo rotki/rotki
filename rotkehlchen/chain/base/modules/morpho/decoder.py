@@ -28,6 +28,9 @@ class MorphoDecoder(MorphoCommonDecoder):
                 string_to_evm_address('0x1f8076e2EB6f10b12e6886f30D4909A91969F7dA'),  # CompoundV3MigrationBundlerV2  # noqa: E501
                 string_to_evm_address('0xcAe2929baBc60Be34818EaA5F40bF69265677108'),  # AaveV3MigrationBundlerV2  # noqa: E501
             },
-            rewards_distributor=string_to_evm_address('0x5400dBb270c956E8985184335A1C62AcA6Ce1333'),
+            rewards_distributors=[
+                string_to_evm_address('0x5400dBb270c956E8985184335A1C62AcA6Ce1333'),
+                string_to_evm_address('0x9e3380f8B29E8f85cA19EFFA80Fb41149417D943'),
+            ],
             weth=A_WETH_BASE,
         )
