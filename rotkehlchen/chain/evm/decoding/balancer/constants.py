@@ -1,5 +1,7 @@
 from typing import Final
 
+from eth_typing import ABI
+
 from rotkehlchen.types import ChainID
 
 BALANCER_LABEL = 'Balancer'
@@ -73,3 +75,17 @@ query UserGetPoolBalances($address: String, $chain: GqlChain!) {
     }
 }
 """
+
+BALANCER_POOL_ABI: ABI = [
+    {
+        'inputs': [],
+        'name': 'getPoolId',
+        'outputs': [
+            {
+            'name': '',
+            'type': 'bytes32',
+            },
+        ],
+        'type': 'function',
+    },
+]
