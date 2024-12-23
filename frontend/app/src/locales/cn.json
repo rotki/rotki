@@ -2192,7 +2192,7 @@
         "whitelisted_domains_hint": "输入单个或多个逗号分隔的域。按右侧的保存按钮保存更改",
         "whitelisted_domain_entries": "无条目 | {count} 唯一条目 | {count} 唯一条目"
       },
-      "title": "NFT setting",
+      "title": "NFT settings",
       "messages": {
         "error": "设置 NFT 图像渲染允许域时出错",
         "success": "成功保存 NFT 图像渲染的允许域"
