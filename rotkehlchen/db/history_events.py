@@ -817,7 +817,11 @@ class DBHistoryEvents:
                 'timestamp >= ? AND timestamp <= ?',
                 (from_ts_ms, to_ts_ms),
             )
-            eth_on_gas = str(cursor.fetchone()[0])
+            if (amount := cursor.fetchone()[0]) is not None:
+                eth_on_gas = str(amount)
+            else:
+                eth_on_gas = '0'
+
             cursor.execute(
                 'SELECT location_label, SUM(CAST(amount AS FLOAT)) FROM history_events JOIN evm_events_info '  # noqa: E501
                 'ON history_events.identifier=evm_events_info.identifier WHERE '
@@ -839,21 +843,37 @@ class DBHistoryEvents:
             )
             trades_by_exchange = {str(Location.deserialize_from_db(row[0])): row[1] for row in cursor}  # noqa: E501
             cursor.execute(
-                'SELECT transaction_symbol, CAST(MAX(CAST(transaction_amount AS FLOAT)) AS STRING)'
-                'from gnosispay_data WHERE timestamp >= ? AND timestamp <= ? '
-                'GROUP BY transaction_symbol',
+                """
+                SELECT transaction_symbol, transaction_amount FROM gnosispay_data
+                WHERE timestamp >= ? AND timestamp <= ?
+                GROUP BY transaction_symbol
+                ORDER BY MAX(
+                    CASE
+                        WHEN transaction_symbol = 'EUR' THEN CAST(transaction_amount AS FLOAT)
+                        ELSE CAST(billing_amount AS FLOAT)
+                    END
+                ) DESC
+                """,
                 (from_ts, to_ts),
             )
-            gnosis_max_payments_by_currency = {symbol: str(amount) for symbol, amount in cursor}
+            gnosis_max_payments_by_currency = [
+                {'symbol': symbol, 'amount': str(amount)}
+                for symbol, amount in cursor
+            ]
             cursor.execute(
-                'SELECT timestamp, COUNT(*) as tx_count FROM evm_transactions '
-                'WHERE timestamp >= ? AND timestamp <= ? GROUP BY timestamp ORDER BY '
+                "SELECT unixepoch(date(timestamp, 'unixepoch')), COUNT(*) as tx_count FROM "
+                'evm_transactions WHERE timestamp >= ? AND timestamp <= ? '
+                "GROUP BY date(timestamp, 'unixepoch') ORDER BY "
                 'tx_count DESC LIMIT 10',
                 (from_ts, to_ts),
             )
-            top_days_by_number_of_transactions = [{'timestamp': row[0], 'amount': str(row[1])} for row in cursor]  # noqa: E501
+            top_days_by_number_of_transactions = [{
+                'timestamp': row[0],
+                'amount': str(row[1]),
+            } for row in cursor]
+
             cursor.execute(
-                'SELECT counterparty,  COUNT(DISTINCT tx_hash) AS unique_transaction_count '
+                'SELECT counterparty, COUNT(DISTINCT tx_hash) AS unique_transaction_count '
                 'FROM evm_events_info JOIN history_events ON '
                 'evm_events_info.identifier = history_events.identifier '
                 "WHERE counterparty IS NOT NULL AND counterparty != 'gas' "

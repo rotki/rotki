@@ -65,13 +65,13 @@ const gnosisPayResult = computed(() => {
     symbol: string;
   }[] = [];
 
-  for (const [code, amount] of Object.entries(gnosisMaxPaymentsByCurrency)) {
+  for (const payment of gnosisMaxPaymentsByCurrency) {
     try {
-      const currency = findCurrency(code);
+      const currency = findCurrency(payment.symbol);
       if (currency) {
         result.push({
-          amount,
-          code,
+          amount: payment.amount,
+          code: payment.symbol,
           name: currency.name,
           symbol: currency.unicodeSymbol,
         });
@@ -79,15 +79,15 @@ const gnosisPayResult = computed(() => {
     }
     catch {
       result.push({
-        amount,
-        code,
-        name: code,
-        symbol: code,
+        amount: payment.amount,
+        code: payment.symbol,
+        name: payment.symbol,
+        symbol: payment.symbol,
       });
     }
   }
 
-  return result.sort((a, b) => sortDesc(a.amount, b.amount));
+  return result;
 });
 
 async function fetchData() {

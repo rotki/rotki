@@ -477,6 +477,12 @@ def test_query_wrap(
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     db = rotki.data.db
 
+    response = requests.post(
+        url=api_url_for(rotkehlchen_api_server, 'statswrapresource'),
+        json={'from_timestamp': 1704067200, 'to_timestamp': 1735689599},
+    )
+    result = assert_proper_sync_response_with_result(response)
+
     with db.conn.write_ctx() as write_cursor:
         db.add_trades(
             write_cursor=write_cursor,
@@ -644,8 +650,8 @@ def test_query_wrap(
         'BASE': 1,
     }
     assert result['top_days_by_number_of_transactions'] == [
-        {'timestamp': 1718562595, 'amount': '2'},
+        {'timestamp': 1718496000, 'amount': '2'},
     ]
-    assert result['gnosis_max_payments_by_currency'] == {'EUR': '42.24'}
+    assert result['gnosis_max_payments_by_currency'] == [{'symbol': 'EUR', 'amount': '42.24'}]
     assert result['transactions_per_protocol'] == [{'protocol': 'ens', 'transactions': 1}]
     assert result['score'] == 1631
