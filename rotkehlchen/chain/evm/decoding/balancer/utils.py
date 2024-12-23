@@ -6,6 +6,7 @@ import requests
 from rotkehlchen.chain.evm.decoding.balancer.constants import (
     BALANCER_API_CHUNK_SIZE,
     BALANCER_API_URL,
+    BALANCER_POOL_ABI,
     CHAIN_ID_TO_BALANCER_API_MAPPINGS,
     GET_POOL_PRICE_QUERY,
     GET_POOLS_COUNT_QUERY,
@@ -21,6 +22,7 @@ from rotkehlchen.types import Price
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import EvmToken
+    from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.types import ChainID
 
 logger = logging.getLogger(__name__)
@@ -101,16 +103,24 @@ def query_balancer_pools(chain: 'ChainID', version: Literal[1, 2]) -> list[dict[
     return all_pools
 
 
-def get_balancer_pool_price(pool_token: 'EvmToken') -> Price:
+def get_balancer_pool_price(
+        pool_token: 'EvmToken',
+        evm_inquirer: 'EvmNodeInquirer',
+) -> Price:
     """Get price for a Balancer pool token
     May raise:
     - RemoteError
     """
+    pool_id = evm_inquirer.call_contract(
+        abi=BALANCER_POOL_ABI,
+        method_name='getPoolId',
+        contract_address=pool_token.evm_address,
+    )
     data = query_balancer_api(
         query=GET_POOL_PRICE_QUERY,
         variables={
             'chain': CHAIN_ID_TO_BALANCER_API_MAPPINGS[pool_token.chain_id],
-            'poolId': pool_token.evm_address,
+            'poolId': '0x' + pool_id.hex(),
         },
     )
     try:

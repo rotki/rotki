@@ -234,7 +234,10 @@ def get_underlying_asset_price(token: EvmToken) -> tuple[Price | None, CurrentPr
             evm_inquirer=Inquirer.get_evm_manager(chain_id=token.chain_id).node_inquirer,
         )
     elif token.protocol in (CPT_BALANCER_V1, CPT_BALANCER_V2):
-        price = get_balancer_pool_price(token)
+        price = get_balancer_pool_price(
+            pool_token=token,
+            evm_inquirer=Inquirer.get_evm_manager(chain_id=token.chain_id).node_inquirer,
+        )
     elif token.protocol == CPT_AURA_FINANCE:
         price = get_aura_pool_price(
             inquirer=Inquirer(),

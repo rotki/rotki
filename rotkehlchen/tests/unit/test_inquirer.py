@@ -16,6 +16,7 @@ from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 from rotkehlchen.chain.evm.contracts import find_matching_event_abi
+from rotkehlchen.chain.evm.decoding.balancer.constants import CPT_BALANCER_V2
 from rotkehlchen.chain.evm.decoding.curve.constants import CURVE_CHAIN_ID
 from rotkehlchen.chain.evm.decoding.curve.curve_cache import (
     CurvePoolData,
@@ -949,6 +950,34 @@ def test_find_morpho_vault_price(database: 'DBHandler', inquirer_defi: 'Inquirer
     usual_boosted_usdc_vault = create_ethereum_morpho_vault_token(database=database)
     price = inquirer_defi.find_usd_price(asset=usual_boosted_usdc_vault)
     assert price.is_close(FVal(1.02611), max_diff=1e-5)
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+def test_find_balancer_pool_price(database: 'DBHandler', inquirer_defi: 'Inquirer') -> None:
+    """Test that we get the correct price for Balancer pool tokens."""
+    pufeth_wseth_token = get_or_create_evm_token(
+        userdb=database,
+        evm_address=string_to_evm_address('0x63E0d47A6964aD1565345Da9bfA66659F4983F02'),
+        chain_id=ChainID.ETHEREUM,
+        token_kind=EvmTokenKind.ERC20,
+        symbol='pufETH/wstETH',
+        name='Balancer pufETH/wstETH',
+        decimals=18,
+        protocol=CPT_BALANCER_V2,
+        underlying_tokens=[UnderlyingToken(
+            address=string_to_evm_address('0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0'),
+            token_kind=EvmTokenKind.ERC20,
+            weight=FVal('0.5'),
+        ), UnderlyingToken(
+            address=string_to_evm_address('0xD9A442856C234a39a81a089C06451EBAa4306a72'),
+            token_kind=EvmTokenKind.ERC20,
+            weight=FVal('0.5'),
+        )],
+    )
+    price = inquirer_defi.find_usd_price(asset=pufeth_wseth_token)
+    assert price.is_close(FVal('3400.8425'), max_diff=1e-5)
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
