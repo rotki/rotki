@@ -14,9 +14,13 @@ from rotkehlchen.chain.base.modules.aave.v3.constants import (
 )
 from rotkehlchen.chain.ethereum.modules.aave.v3.constants import (
     AAVE_V3_DATA_PROVIDER as AAVE_V3_DATA_PROVIDER_ETH,
+    AAVE_V3_DATA_PROVIDER_OLD as AAVE_V3_DATA_PROVIDER_ETH_OLD,
+    ETHERFI_AAVE_V3_DATA_PROVIDER as ETHERFI_AAVE_V3_DATA_PROVIDER_ETH,
+    LIDO_AAVE_V3_DATA_PROVIDER as LIDO_AAVE_V3_DATA_PROVIDER_ETH,
 )
 from rotkehlchen.chain.ethereum.utils import MULTICALL_CHUNKS
-from rotkehlchen.chain.evm.constants import EVM_ADDRESS_REGEX
+from rotkehlchen.chain.evm.constants import EVM_ADDRESS_REGEX, ZERO_ADDRESS
+from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE_V3
 from rotkehlchen.chain.evm.decoding.aave.v3.constants import (
     AAVE_V3_DATA_PROVIDER as AAVE_V3_DATA_PROVIDER_EVM,
@@ -70,6 +74,8 @@ from rotkehlchen.utils.misc import ts_now, ts_sec_to_ms
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.aggregator import ChainsAggregator
+    from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
+    from rotkehlchen.types import ChecksumEvmAddress
 
 
 logger = logging.getLogger(__name__)
@@ -196,10 +202,88 @@ def update_owned_assets(user_db: DBHandler) -> None:
         )
 
 
+def _find_missing_tokens(
+        token_to_underlying: dict['ChecksumEvmAddress', 'ChecksumEvmAddress'],
+        chain_id: ChainID,
+) -> tuple['ChecksumEvmAddress', ...]:
+    """Check if aave tokens are stored in the globaldb.
+    We consider a token as stored when it has the aave v3 protocol set. This means that
+    it was not added by decoders but by the logic of update_aave_v3_underlying_assets.
+
+    Returns all tokens that are not stored in the global db with the correct protocol set.
+    """
+    with GlobalDBHandler().conn.read_ctx() as cursor:
+        cursor.execute(
+            'SELECT address, protocol FROM evm_tokens '
+            f"WHERE address IN ({','.join('?' * len(token_to_underlying))}) "
+            'AND chain=?',
+            tuple(token_to_underlying.keys()) + (chain_id.serialize_for_db(),),
+        )
+
+        missing_tokens = set(token_to_underlying.keys())
+        for row in cursor:
+            if row[1] == CPT_AAVE_V3:
+                missing_tokens.remove(row[0])
+
+    return tuple(missing_tokens)
+
+
+def _batch_query_properties(
+        node_inquirer: 'EvmNodeInquirer',
+        addresses: tuple['ChecksumEvmAddress', ...],
+) -> dict['ChecksumEvmAddress', tuple[str, str, int]]:
+    """Query details for the provided addresses.
+    It queries each property for all the tokens in a multicall.
+
+    May raise:
+    - RemoteError
+    """
+    contract = EvmContract(
+        address=ZERO_ADDRESS,  # not important for the usage here
+        abi=node_inquirer.contracts.erc20_abi,
+        deployed_block=0,
+    )
+    enc_name = contract.encode(method_name='name')
+    enc_symbol = contract.encode(method_name='symbol')
+    enc_decimals = contract.encode(method_name='decimals')
+    values = []
+
+    for method_name, encoded in zip(
+        ('name', 'symbol', 'decimals'),
+        (enc_name, enc_symbol, enc_decimals),
+        strict=False,
+    ):
+        calls = [(address, encoded) for address in addresses]
+        values.append([
+            contract.decode(x, method_name)[0]
+            for x in node_inquirer.multicall(calls)
+        ])
+
+    return {
+        address: (values[0][idx], values[1][idx], values[2][idx])
+        for idx, address in enumerate(addresses)
+    }
+
+
 def update_aave_v3_underlying_assets(chains_aggregator: 'ChainsAggregator') -> None:
-    """Fetch the Aave v3 underlying assets and populate `underlying_tokens_list` in globaldb"""
+    """Fetch the Aave v3 underlying assets and populate `underlying_tokens_list` in globaldb
+
+    This function is heavy since it makes several queries to external nodes. The logic has
+    been refactored to do the following:
+
+    1. Query all the reserver tokens (getAllReservesTokens).
+    2. For each reserve token query the debt tokens (getReserveTokensAddresses).
+    3. Check if we have the addresses for the debt tokens in the db.
+    4. For the addresses we don't have in the db, query
+    their properties (name, symbol, decimals).
+    5. For each reserve token create it or ensure that the protocol is aave-v3 and the
+    underlying token is set properly.
+    """
     for chain_id, data_provider_address in (
         (ChainID.ETHEREUM, AAVE_V3_DATA_PROVIDER_ETH),
+        (ChainID.ETHEREUM, AAVE_V3_DATA_PROVIDER_ETH_OLD),
+        (ChainID.ETHEREUM, LIDO_AAVE_V3_DATA_PROVIDER_ETH),
+        (ChainID.ETHEREUM, ETHERFI_AAVE_V3_DATA_PROVIDER_ETH),
         (ChainID.OPTIMISM, AAVE_V3_DATA_PROVIDER_EVM),
         (ChainID.POLYGON_POS, AAVE_V3_DATA_PROVIDER_EVM),
         (ChainID.ARBITRUM_ONE, AAVE_V3_DATA_PROVIDER_EVM),
@@ -225,7 +309,7 @@ def update_aave_v3_underlying_assets(chains_aggregator: 'ChainsAggregator') -> N
                     log.error(f'Failed to deserialize Aave v3 underlying token address: {token_address} due to {e!s}')  # noqa: E501
                     continue
 
-            reserve_tokens_addresses = node_inquirer.multicall(
+            reserve_tokens_raw = node_inquirer.multicall(
                 calls=[(  # get all the reserve tokens for each underlying token
                     aave_data_provider.address,
                     aave_data_provider.encode(
@@ -239,41 +323,62 @@ def update_aave_v3_underlying_assets(chains_aggregator: 'ChainsAggregator') -> N
             log.error(f'Failed to query Aave v3 reserve tokens addresses due to {e!s}')
             continue
 
-        # add the mappings of underlying tokens to the globaldb
-        for underlying_idx, underlying_token_address in enumerate(underlying_tokens):
-            for decoded_reserve_token_address in aave_data_provider.decode(
+        # map debt tokens to underlying tokens. Underlying tokens have more than 1 debt token
+        reserve_to_underlying = {}
+        for underlying_token_address, tokens_raw in zip(underlying_tokens, reserve_tokens_raw, strict=False):  # noqa: E501
+            for reserve in aave_data_provider.decode(
                 method_name='getReserveTokensAddresses',
                 arguments=[underlying_token_address],
-                result=reserve_tokens_addresses[underlying_idx],
+                result=tokens_raw,
             ):
-                try:
-                    # calling get_or_create_evm_token along with the underlying_tokens attribute
-                    # will first ensure that both underlying and reserve tokens info is added,
-                    # then the mapping is saved. This order is necessary due to its FK relationship
-                    decoded_reserve_token = get_or_create_evm_token(
-                        evm_inquirer=node_inquirer,
-                        userdb=node_inquirer.database,
-                        evm_address=deserialize_evm_address(decoded_reserve_token_address),
-                        chain_id=chain_id,
-                        protocol=CPT_AAVE_V3,
-                        token_kind=EvmTokenKind.ERC20,
-                        underlying_tokens=[UnderlyingToken(
-                            address=underlying_token_address,
-                            token_kind=EvmTokenKind.ERC20,
-                            weight=ONE,
-                        )],
-                        encounter=TokenEncounterInfo(should_notify=False),
-                    )
-                except DeserializationError as e:
-                    log.error(
-                        'Failed to deserialize Aave v3 reserve token address: '
-                        f'{decoded_reserve_token_address} due to {e!s}',
-                    )
-                except NotERC20Conformant as e:
-                    log.error(
-                        f'Failed to add underlying token {underlying_token_address} for '
-                        f'{decoded_reserve_token.identifier} due to {e!s}',
-                    )
+                if (deserialized_reserve := deserialize_evm_address(reserve)) != ZERO_ADDRESS:
+                    if deserialized_reserve in reserve_to_underlying:
+                        continue  # the same token can appear multiple times
+                    reserve_to_underlying[deserialized_reserve] = underlying_token_address
+
+        # check the missing tokens and query their properties
+        missing_tokens = _find_missing_tokens(reserve_to_underlying, node_inquirer.chain_id)
+        try:
+            address_to_properties = _batch_query_properties(node_inquirer, missing_tokens)
+        except RemoteError as e:
+            log.error(f'Failed to query Aave v3 reserve tokens addresses due to {e!s}')
+            continue
+
+        # add the mappings of underlying tokens to the globaldb
+        encounter = TokenEncounterInfo(should_notify=False)
+        for reserve_address, underlying_address in reserve_to_underlying.items():
+            if (properties := address_to_properties.get(reserve_address)) is None:
+                name = symbol = decimals = None
+            else:
+                name, symbol, decimals = properties
+
+            try:
+                # calling get_or_create_evm_token along with the underlying_tokens attribute
+                # will first ensure that both underlying and reserve tokens info is added,
+                # then the mapping is saved. This order is necessary due to its FK relationship
+                # Here we provide name, symbol and decimals since we have queried them previously
+                get_or_create_evm_token(
+                    userdb=node_inquirer.database,
+                    evm_address=reserve_address,
+                    chain_id=chain_id,
+                    protocol=CPT_AAVE_V3,
+                    token_kind=EvmTokenKind.ERC20,
+                    underlying_tokens=[UnderlyingToken(address=underlying_address, token_kind=EvmTokenKind.ERC20, weight=ONE)],  # noqa: E501
+                    symbol=symbol,
+                    name=name,
+                    decimals=decimals,
+                    encounter=encounter,
+                )
+            except DeserializationError as e:
+                log.error(
+                    'Failed to deserialize Aave v3 reserve token address: '
+                    f'{reserve_address} at {node_inquirer.chain_name} due to {e!s}',
+                )
+            except NotERC20Conformant as e:
+                log.error(
+                    f'Failed to add underlying token {underlying_address} for '
+                    f'{reserve_address} at {node_inquirer.chain_name} due to {e!s}',
+                )
 
     with chains_aggregator.database.conn.write_ctx() as write_cursor:
         chains_aggregator.database.set_static_cache(  # remember last task ran

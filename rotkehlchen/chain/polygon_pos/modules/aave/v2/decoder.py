@@ -21,7 +21,7 @@ class Aavev2Decoder(Aavev2CommonDecoder):
             evm_inquirer=evm_inquirer,
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
-            pool_address=string_to_evm_address('0x8dFf5E27EA6b7AC08EbFdf9eB090F32ee9a30fcf'),
+            pool_addresses=(string_to_evm_address('0x8dFf5E27EA6b7AC08EbFdf9eB090F32ee9a30fcf'),),
             native_gateways=(string_to_evm_address('0xf1e6d4347105138B51E2bacA9A22fA228309ebB1'),),
             incentives=string_to_evm_address('0x357D51124f59836DeD84c8a1730D72B749d8BC23'),
             incentives_reward_token=string_to_evm_address('0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270'),  # wrapped Matic  # noqa: E501

@@ -14,7 +14,7 @@ from rotkehlchen.chain.ethereum.constants import LAST_GRAPH_DELEGATIONS
 from rotkehlchen.chain.ethereum.modules.thegraph.constants import CONTRACT_STAKING
 from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE_V3
 from rotkehlchen.chain.evm.decoding.thegraph.constants import CPT_THEGRAPH
-from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.chain.evm.types import NodeName, WeightedNode, string_to_evm_address
 from rotkehlchen.constants.assets import A_COMP, A_DAI, A_GRT, A_LUSD, A_USDC, A_USDT
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.constants.timing import DATA_UPDATES_REFRESH, DAY_IN_SECONDS, WEEK_IN_SECONDS
@@ -36,6 +36,7 @@ from rotkehlchen.premium.premium import (
     SubscriptionStatus,
 )
 from rotkehlchen.serialization.deserialize import deserialize_timestamp
+from rotkehlchen.tasks.assets import _find_missing_tokens
 from rotkehlchen.tasks.manager import PREMIUM_STATUS_CHECK, TaskManager
 from rotkehlchen.tasks.utils import should_run_periodic_task
 from rotkehlchen.tests.fixtures.websockets import WebsocketReader
@@ -669,6 +670,7 @@ def test_tasks_dont_schedule_if_no_eth_address(task_manager: TaskManager) -> Non
                 assert mocked_func.call_count == 0
 
 
+@pytest.mark.parametrize('vcr_cassette_name', ['test_aave_tokens_task'])
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('max_tasks_num', [5])
 @pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])
@@ -679,9 +681,17 @@ def test_tasks_dont_schedule_if_no_eth_address(task_manager: TaskManager) -> Non
 @pytest.mark.parametrize('scroll_accounts', [[make_evm_address()]])
 @pytest.mark.parametrize('arbitrum_one_accounts', [[make_evm_address()]])
 @pytest.mark.parametrize('polygon_pos_accounts', [[make_evm_address()]])
+@pytest.mark.parametrize('ethereum_manager_connect_at_start', [(WeightedNode(node_info=NodeName(name='merkle', endpoint='https://eth.merkle.io', owned=True, blockchain=SupportedBlockchain.ETHEREUM), active=True, weight=ONE),)])  # noqa: E501
+@pytest.mark.parametrize('gnosis_manager_connect_at_start', [(WeightedNode(node_info=NodeName(name='gnosis', endpoint='https://rpc.gnosischain.com', owned=True, blockchain=SupportedBlockchain.GNOSIS), active=True, weight=ONE),)])  # noqa: E501
+@pytest.mark.parametrize('polygon_pos_manager_connect_at_start', [(WeightedNode(node_info=NodeName(name='polygon', endpoint='https://polygon.drpc.org', owned=True, blockchain=SupportedBlockchain.POLYGON_POS), active=True, weight=ONE),)])  # noqa: E501
+@pytest.mark.parametrize('base_manager_connect_at_start', [(WeightedNode(node_info=NodeName(name='llama', endpoint='https://base.llamarpc.com', owned=True, blockchain=SupportedBlockchain.BASE), active=True, weight=ONE),)])  # noqa: E501
+@pytest.mark.parametrize('arbitrum_one_manager_connect_at_start', [(WeightedNode(node_info=NodeName(name='meow', endpoint='https://arbitrum.meowrpc.com', owned=True, blockchain=SupportedBlockchain.ARBITRUM_ONE), active=True, weight=ONE),)])  # noqa: E501
+@pytest.mark.parametrize('optimism_manager_connect_at_start', [(WeightedNode(node_info=NodeName(name='llama', endpoint='https://optimism.llamarpc.com', owned=True, blockchain=SupportedBlockchain.OPTIMISM), active=True, weight=ONE),)])  # noqa: E501
+@pytest.mark.parametrize('scroll_manager_connect_at_start', [(WeightedNode(node_info=NodeName(name='scroll', endpoint='https://rpc.scroll.io', owned=True, blockchain=SupportedBlockchain.SCROLL), active=True, weight=ONE),)])  # noqa: E501
 def test_maybe_update_aave_v3_underlying_assets(
         task_manager: TaskManager,
         globaldb: GlobalDBHandler,
+        vcr_cassette_name,  # pylint: disable=unused-argument
 ) -> None:
     """Test that the task updating the aave v3 underlying assets in globaldb works"""
     # check the aave v3 underlying assets table in globaldb before running the task
@@ -695,9 +705,22 @@ def test_maybe_update_aave_v3_underlying_assets(
             'SELECT COUNT(*) FROM evm_tokens WHERE protocol = ?;', (CPT_AAVE_V3,),
         ).fetchone()[0] == 0
 
+    original_find_missing_tokens = _find_missing_tokens
+
+    def wrapped_find_missing_tokens(*args, **kwargs):
+        """Sort the response of _find_missing_tokens to have the same order in cassettes"""
+        output = list(original_find_missing_tokens(*args, **kwargs))
+        output.sort()
+        return output
+
     task_manager.potential_tasks = [task_manager._maybe_update_aave_v3_underlying_assets]
-    task_manager.schedule()
-    gevent.joinall(task_manager.running_greenlets[task_manager._maybe_update_aave_v3_underlying_assets])  # wait for the task to finish since it might context switch while running  # noqa: E501
+
+    with patch(
+        'rotkehlchen.tasks.assets._find_missing_tokens',
+        new=wrapped_find_missing_tokens,
+    ):
+        task_manager.schedule()
+        gevent.joinall(task_manager.running_greenlets[task_manager._maybe_update_aave_v3_underlying_assets])  # wait for the task to finish since it might context switch while running  # noqa: E501
 
     # check the aave v3 underlying assets table in globaldb after running the task
     with globaldb.conn.read_ctx() as write_cursor:
@@ -713,6 +736,8 @@ def test_maybe_update_aave_v3_underlying_assets(
 
     # test some specific tokens for all the supported chains
     for chain_id, token_address, underlying_token_address in (
+        (ChainID.ETHEREUM, '0xdF7f48892244C6106EA784609f7de10AB36F9c7e', '0x6c3ea9036406852006290770BEdFcAbA0e23A0e8'),  # noqa: E501
+        (ChainID.ETHEREUM, '0x18eFE565A5373f430e2F809b97De30335B3ad96A', '0x40D16FC0246aD3160Ccc09B8D0D3A2cD28aE6C2f'),  # noqa: E501
         (ChainID.ETHEREUM, '0x102633152313C81cD80419b6EcF66d14Ad68949A', '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'),  # noqa: E501
         (ChainID.ETHEREUM, '0x98C23E9d8f34FEFb1B7BD6a91B7FF122F4e16F5c', '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'),  # noqa: E501
         (ChainID.OPTIMISM, '0x38d693cE1dF5AaDF7bC62595A37D667aD57922e5', '0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85'),  # noqa: E501
@@ -722,7 +747,7 @@ def test_maybe_update_aave_v3_underlying_assets(
         (ChainID.ARBITRUM_ONE, '0x6533afac2E7BCCB20dca161449A13A32D391fb00', '0x912CE59144191C1204E64559FE8253a0e49E6548'),  # noqa: E501
         (ChainID.ARBITRUM_ONE, '0x38d693cE1dF5AaDF7bC62595A37D667aD57922e5', '0x17FC002b466eEc40DaE837Fc4bE5c67993ddBd6F'),  # noqa: E501
         (ChainID.BASE, '0x4e65fE4DbA92790696d040ac24Aa414708F5c0AB', '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'),  # noqa: E501
-        (ChainID.BASE, '0x03506214379aA86ad1176af71c260278cfa10B38', '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'),  # noqa: E501
+        (ChainID.BASE, '0x59dca05b6c26dbd64b5381374aAaC5CD05644C28', '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'),  # noqa: E501
         (ChainID.GNOSIS, '0xa818F1B57c201E092C4A2017A91815034326Efd1', '0x6A023CCd1ff6F2045C3309768eAd9E68F978f6e1'),  # noqa: E501
         (ChainID.GNOSIS, '0x23e4E76D01B2002BE436CE8d6044b0aA2f68B68a', '0x6C76971f98945AE98dD7d4DFcA8711ebea946eA6'),  # noqa: E501
         (ChainID.SCROLL, '0x1D738a3436A8C49CefFbaB7fbF04B660fb528CbD', '0x06eFdBFf2a14a7c8E15944D1F4A48F9F95F663A4'),  # noqa: E501
@@ -731,12 +756,26 @@ def test_maybe_update_aave_v3_underlying_assets(
         assert (db_token := globaldb.get_evm_token(
             address=string_to_evm_address(token_address),
             chain_id=chain_id,
-        )) is not None
-        assert UnderlyingToken(
+        )) is not None, f'Expected token {token_address} but it does not exist'
+
+        if db_token.evm_address == '0xdF7f48892244C6106EA784609f7de10AB36F9c7e':
+            assert (
+                db_token.name == 'Aave Ethereum EtherFi PYUSD' and
+                db_token.symbol == 'aEthEtherFiPYUSD' and
+                db_token.decimals == 6
+            )
+        elif db_token.evm_address == '0xf301805bE1Df81102C957f6d4Ce29d2B8c056B2a':
+            assert (
+                db_token.name == 'Aave Scroll WETH' and
+                db_token.symbol == 'aScrWETH' and
+                db_token.decimals == 18
+            )
+
+        assert [UnderlyingToken(
             address=string_to_evm_address(underlying_token_address),
             token_kind=EvmTokenKind.ERC20,
             weight=ONE,
-        ) in db_token.underlying_tokens
+        )] == db_token.underlying_tokens
 
     with task_manager.database.conn.read_ctx() as cursor:
         assert task_manager.database.get_static_cache(

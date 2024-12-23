@@ -117,7 +117,7 @@ def test_query_aave_balances(rotkehlchen_api_server: APIServer) -> None:
                         amount=FVal('123'),
                         usd_value=FVal('12.3'),
                     ).serialize(),
-                    'apy': '2.02%',
+                    'apy': '1.83%',
                 },
             },
             'borrowing': {
@@ -127,7 +127,7 @@ def test_query_aave_balances(rotkehlchen_api_server: APIServer) -> None:
                         usd_value=FVal('4560'),
                     ).serialize(),
                     'stable_apr': '0.00%',
-                    'variable_apr': '10.21%',
+                    'variable_apr': '13.67%',
                 },
             },
         },

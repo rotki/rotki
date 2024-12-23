@@ -1,5 +1,5 @@
 import logging
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.accounting.structures.balance import Balance
@@ -39,7 +39,7 @@ class Aavev3CommonDecoder(Commonv2v3Decoder):
             evm_inquirer: 'EvmNodeInquirer',
             base_tools: 'BaseDecoderTools',
             msg_aggregator: 'MessagesAggregator',
-            pool_address: 'ChecksumEvmAddress',
+            pool_addresses: Sequence['ChecksumEvmAddress'],
             native_gateways: 'tuple[ChecksumEvmAddress, ...]',
             treasury: 'ChecksumEvmAddress',
             incentives: 'ChecksumEvmAddress',
@@ -48,7 +48,7 @@ class Aavev3CommonDecoder(Commonv2v3Decoder):
             self,
             counterparty=CPT_AAVE_V3,
             label='AAVE v3',
-            pool_address=pool_address,
+            pool_addresses=pool_addresses,
             deposit_signature=DEPOSIT,
             borrow_signature=BORROW,
             repay_signature=REPAY,
@@ -270,7 +270,7 @@ class Aavev3CommonDecoder(Commonv2v3Decoder):
         return dict.fromkeys(GlobalDBHandler.get_addresses_by_protocol(
             chain_id=self.evm_inquirer.chain_id,
             protocol=CPT_AAVE_V3,
-        ), CPT_AAVE_V3) | {self.pool_address: CPT_AAVE_V3}
+        ), CPT_AAVE_V3) | dict.fromkeys(self.pool_addresses, CPT_AAVE_V3)
 
     def post_decoding_rules(self) -> dict[str, list[tuple[int, Callable]]]:
         return {CPT_AAVE_V3: [(0, self._decode_interest)]}

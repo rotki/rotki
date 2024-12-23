@@ -1,10 +1,12 @@
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.assets.asset import Asset, EvmToken
+from rotkehlchen.assets.asset import Asset, EvmToken, UnderlyingToken
+from rotkehlchen.assets.utils import get_or_create_evm_token
+from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE_V3
-from rotkehlchen.chain.evm.decoding.aave.v3.constants import POOL_ADDRESS
+from rotkehlchen.chain.evm.decoding.aave.v3.constants import OLD_POOL_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.safe.constants import CPT_SAFE_MULTISIG
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -18,14 +20,22 @@ from rotkehlchen.constants.assets import (
     A_WETH,
     A_XDAI,
 )
+from rotkehlchen.constants.misc import ONE
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.tests.unit.decoders.test_paraswap import A_POLYGON_POS_USDC
 from rotkehlchen.tests.unit.decoders.test_zerox import A_POLYGON_POS_USDT
 from rotkehlchen.tests.utils.constants import A_OPTIMISM_USDT
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
-from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
+from rotkehlchen.types import (
+    ChecksumEvmAddress,
+    EvmTokenKind,
+    Location,
+    TimestampMS,
+    deserialize_evm_tx_hash,
+)
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -611,7 +621,7 @@ def test_aave_v3_enable_collateral_polygon(polygon_pos_inquirer, polygon_pos_acc
             location_label=polygon_pos_accounts[0],
             notes='Enable USDC as collateral on AAVE v3',
             counterparty=CPT_AAVE_V3,
-            address=POOL_ADDRESS,
+            address=OLD_POOL_ADDRESS,
         ), EvmEvent(
             tx_hash=tx_hash,
             sequence_index=575,
@@ -1370,6 +1380,72 @@ def test_aave_v3_interest_on_transfer(ethereum_inquirer, ethereum_accounts) -> N
             location_label=ethereum_accounts[0],
             notes=f'Send {transfer_amount} aEthUSDT from {ethereum_accounts[0]} to 0x9C9EF79aae8996c72eA8C374011D7ac1eB42c4Fc',  # noqa: E501
             address=string_to_evm_address('0x9C9EF79aae8996c72eA8C374011D7ac1eB42c4Fc'),
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x4F243B4b795502AA5Cf562cB42EccD444c0321b0']])
+def test_aave_v3_lido_pool(
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
+    tx_hash = deserialize_evm_tx_hash('0xd1e4360f6f7fb34f0f169aeb5e7d0ac0f025e3fed90903a50ee7b1bb694ac8d0')  # noqa: E501
+    get_or_create_evm_token(
+        evm_inquirer=ethereum_inquirer,
+        userdb=ethereum_inquirer.database,
+        evm_address=deserialize_evm_address('0x18eFE565A5373f430e2F809b97De30335B3ad96A'),
+        chain_id=ethereum_inquirer.chain_id,
+        protocol=CPT_AAVE_V3,
+        token_kind=EvmTokenKind.ERC20,
+        underlying_tokens=[UnderlyingToken(
+            address=string_to_evm_address('0x40D16FC0246aD3160Ccc09B8D0D3A2cD28aE6C2f'),
+            token_kind=EvmTokenKind.ERC20,
+            weight=ONE,
+        )],
+    )
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    borrow_amount, gas_fees, timestamp = '59000', '0.00170195956638183', TimestampMS(1734912023000)
+    expected_events = [
+        EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(gas_fees)),
+            location_label=ethereum_accounts[0],
+            notes=f'Burn {gas_fees} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=185,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+            asset=EvmToken('eip155:1/erc20:0x18577F0f4A0B2Ee6F4048dB51c7acd8699F97DB8'),
+            balance=Balance(amount=FVal(borrow_amount)),
+            location_label=ethereum_accounts[0],
+            notes=f'Receive {borrow_amount} variableDebtEthLidoGHO from AAVE v3',
+            counterparty=CPT_AAVE_V3,
+            address=ZERO_ADDRESS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=188,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.GENERATE_DEBT,
+            asset=EvmToken('eip155:1/erc20:0x40D16FC0246aD3160Ccc09B8D0D3A2cD28aE6C2f'),
+            balance=Balance(amount=FVal(borrow_amount)),
+            location_label=ethereum_accounts[0],
+            notes=f'Borrow {borrow_amount} GHO from AAVE v3 with variable APY 10.53%',
+            counterparty=CPT_AAVE_V3,
+            address=string_to_evm_address('0x18eFE565A5373f430e2F809b97De30335B3ad96A'),
         ),
     ]
     assert events == expected_events

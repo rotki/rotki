@@ -1,5 +1,6 @@
 import logging
 from abc import abstractmethod
+from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any, Literal, Optional
 
 from rotkehlchen.accounting.structures.balance import Balance
@@ -22,7 +23,6 @@ from rotkehlchen.chain.evm.decoding.structures import (
 )
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
-from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
@@ -47,7 +47,7 @@ class Commonv2v3Decoder(DecoderInterface):
             self,
             counterparty: Literal['aave-v2', 'aave-v3'],
             label: Literal['AAVE v2', 'AAVE v3'],
-            pool_address: 'ChecksumEvmAddress',
+            pool_addresses: Sequence['ChecksumEvmAddress'],
             deposit_signature: bytes,
             borrow_signature: bytes,
             repay_signature: bytes,
@@ -57,7 +57,7 @@ class Commonv2v3Decoder(DecoderInterface):
             msg_aggregator: 'MessagesAggregator',
     ):
         self.counterparty = counterparty
-        self.pool_address = pool_address
+        self.pool_addresses = pool_addresses
         self.deposit_signature = deposit_signature
         self.borrow_signature = borrow_signature
         self.repay_signature = repay_signature
@@ -487,6 +487,4 @@ class Commonv2v3Decoder(DecoderInterface):
 
     # DecoderInterface method
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
-        return {
-            string_to_evm_address(self.pool_address): (self._decode_lending_pool_events,),
-        }
+        return dict.fromkeys(self.pool_addresses, (self._decode_lending_pool_events,))
