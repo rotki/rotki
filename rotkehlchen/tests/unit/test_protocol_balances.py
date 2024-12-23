@@ -77,7 +77,10 @@ from rotkehlchen.constants.assets import (
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.fval import FVal
-from rotkehlchen.globaldb.cache import globaldb_get_unique_cache_last_queried_ts_by_key
+from rotkehlchen.globaldb.cache import (
+    globaldb_get_unique_cache_last_queried_ts_by_key,
+    globaldb_set_general_cache_values,
+)
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.tests.unit.decoders.test_curve_lend import (
     fixture_arbitrum_vault_token,  # noqa: F401
@@ -696,9 +699,6 @@ def test_compound_v3_token_balances_liabilities(
             target='rotkehlchen.chain.evm.decoding.morpho.decoder.should_update_protocol_cache',
         ),
         patch(
-            target='rotkehlchen.chain.evm.decoding.balancer.v1.decoder.should_update_protocol_cache',
-        ),
-        patch(
             target='rotkehlchen.chain.evm.decoding.curve_lend.decoder.should_update_protocol_cache',
         ),
     ):
@@ -1087,12 +1087,21 @@ def test_umami_balances(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('load_global_caches', [[CPT_BALANCER_V1]])
 @pytest.mark.parametrize('ethereum_accounts', [['0xF01adF04216C35448456fdaA6BBFff4055527Dd1']])
 def test_balancer_v1_balances(
+        globaldb,
+        load_global_caches,
         ethereum_inquirer: 'EthereumInquirer',
         ethereum_accounts: list[ChecksumEvmAddress],
         inquirer: 'Inquirer',  # pylint: disable=unused-argument
 ) -> None:
+    with globaldb.conn.write_ctx() as write_cursor:
+        globaldb_set_general_cache_values(
+            write_cursor=write_cursor,
+            key_parts=(CacheType.BALANCER_V1_POOLS, str(ethereum_inquirer.chain_id.value)),
+            values=['0x0ce69A796aBe0c0451585aA88F6F45ebaC9E12dc'],
+        )
     balancer_qqq_weth_pool_token = get_or_create_evm_token(
         userdb=ethereum_inquirer.database,
         evm_address=string_to_evm_address('0x0ce69A796aBe0c0451585aA88F6F45ebaC9E12dc'),
@@ -1113,6 +1122,7 @@ def test_balancer_v1_balances(
     amount, usd_value = FVal('4152.559258169060848717'), FVal('4214.758208714533361366494567184512985')  # noqa: E501
     _, tx_decoder = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
+        load_global_caches=load_global_caches,
         tx_hash=deserialize_evm_tx_hash('0xbba2e9e46c773b91b1528e48af1ed479132353473726d75e7a0f74bfb687613e'),
     )
     protocol_balances_inquirer = Balancerv1Balances(

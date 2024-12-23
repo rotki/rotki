@@ -2,6 +2,7 @@ from contextlib import ExitStack
 from unittest.mock import patch
 
 from rotkehlchen.chain.ethereum.modules.convex.constants import CPT_CONVEX
+from rotkehlchen.chain.evm.decoding.balancer.constants import CPT_BALANCER_V1, CPT_BALANCER_V2
 from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE
 from rotkehlchen.chain.evm.decoding.extrafi.constants import CPT_EXTRAFI
 from rotkehlchen.chain.evm.decoding.gearbox.constants import CPT_GEARBOX
@@ -24,10 +25,6 @@ def patch_decoder_reload_data(load_global_caches: list[str] | None = None) -> Ex
             new=lambda *args, **kwargs: False,
         ))
         stack.enter_context(patch(  # patch to not refresh cache by not downloading new data
-            target='rotkehlchen.chain.evm.decoding.balancer.v1.decoder.should_update_protocol_cache',
-            new=lambda *args, **kwargs: False,
-        ))
-        stack.enter_context(patch(  # patch to not refresh cache by not downloading new data
             target='rotkehlchen.chain.evm.decoding.curve_lend.decoder.should_update_protocol_cache',
             new=lambda *args, **kwargs: False,
         ))
@@ -39,6 +36,7 @@ def patch_decoder_reload_data(load_global_caches: list[str] | None = None) -> Ex
             ({CPT_GEARBOX}, 'rotkehlchen.chain.evm.decoding.gearbox.gearbox_cache', True, True),
             ({CPT_AERODROME, CPT_VELODROME}, 'rotkehlchen.chain.evm.decoding.velodrome.velodrome_cache', True, False),  # noqa: E501
             ({CPT_EXTRAFI}, 'rotkehlchen.chain.evm.decoding.extrafi.cache', True, True),
+            ({CPT_BALANCER_V1, CPT_BALANCER_V2}, 'rotkehlchen.chain.evm.decoding.balancer.balancer_cache', True, False),  # noqa: E501
         ):
             if load_global_caches is not None and any(cache in counterparties for cache in load_global_caches):  # noqa: E501
                 continue

@@ -1,13 +1,14 @@
 import logging
-from collections.abc import Callable, Mapping
+from collections.abc import Callable
 from typing import TYPE_CHECKING, Any, Final
 
-from rotkehlchen.chain.ethereum.utils import asset_normalized_value, should_update_protocol_cache
+from rotkehlchen.chain.ethereum.utils import asset_normalized_value
+from rotkehlchen.chain.evm.decoding.balancer.balancer_cache import (
+    read_balancer_pools_and_gauges_from_cache,
+)
 from rotkehlchen.chain.evm.decoding.balancer.constants import BALANCER_LABEL, CPT_BALANCER_V1
-from rotkehlchen.chain.evm.decoding.balancer.mixins import BalancerCommonAccountingMixin
+from rotkehlchen.chain.evm.decoding.balancer.decoder import BalancerCommonDecoder
 from rotkehlchen.chain.evm.decoding.balancer.types import BalancerV1EventTypes
-from rotkehlchen.chain.evm.decoding.balancer.utils import query_balancer_data
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface, ReloadableDecoderMixin
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     FAILED_ENRICHMENT_OUTPUT,
@@ -20,6 +21,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.globaldb.cache import globaldb_get_general_cache_values
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -40,7 +42,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class Balancerv1CommonDecoder(DecoderInterface, BalancerCommonAccountingMixin, ReloadableDecoderMixin):  # noqa: E501
+class Balancerv1CommonDecoder(BalancerCommonDecoder):
 
     def __init__(
             self,
@@ -52,9 +54,14 @@ class Balancerv1CommonDecoder(DecoderInterface, BalancerCommonAccountingMixin, R
             evm_inquirer=evm_inquirer,
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
+            counterparty=CPT_BALANCER_V1,
+            pool_cache_type=CacheType.BALANCER_V1_POOLS,
+            read_fn=lambda chain_id: read_balancer_pools_and_gauges_from_cache(
+                version='1',
+                chain_id=chain_id,
+                cache_type=CacheType.BALANCER_V1_POOLS,
+            ),
         )
-        BalancerCommonAccountingMixin.__init__(self, counterparty=CPT_BALANCER_V1)
-        self.pools: set[ChecksumEvmAddress] = set()
 
     def _decode_v1_pool_event(self, all_logs: list[EvmTxReceiptLog]) -> list[dict[str, Any]] | None:  # noqa: E501
         """Read the list of logs in search for a Balancer v1 event and return the information
@@ -143,7 +150,7 @@ class Balancerv1CommonDecoder(DecoderInterface, BalancerCommonAccountingMixin, R
 
         return FAILED_ENRICHMENT_OUTPUT
 
-    def _decode_non_proxy_events(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_pool_events(self, context: DecoderContext) -> DecodingOutput:
         """Not all balancer v1 pools are created via the UI. This method decodes the events of such pools."""  # noqa: E501
         if context.tx_log.topics[0] not in (JOIN_V1, EXIT_V1, TRANSFER_TOPIC):
             return DEFAULT_DECODING_OUTPUT
@@ -222,40 +229,7 @@ class Balancerv1CommonDecoder(DecoderInterface, BalancerCommonAccountingMixin, R
 
         return decoded_events
 
-    def reload_data(self) -> Mapping[ChecksumEvmAddress, tuple[Any, ...]] | None:
-        if should_update_protocol_cache(cache_key=CacheType.BALANCER_V1_POOLS, args=(self.evm_inquirer.chain_name, '1')) is True:  # noqa: E501
-            query_balancer_data(
-                version=1,
-                protocol=CPT_BALANCER_V1,
-                inquirer=self.evm_inquirer,
-                cache_type=CacheType.BALANCER_V1_POOLS,
-            )
-
-        with GlobalDBHandler().conn.read_ctx() as cursor:
-            query_body = """FROM evm_tokens AS et
-            INNER JOIN underlying_tokens_list AS utl
-            ON et.identifier = utl.parent_token_entry
-            WHERE et.protocol=? AND et.chain=?
-            """
-            bindings = (
-                CPT_BALANCER_V1,
-                self.evm_inquirer.chain_id.serialize_for_db(),
-            )
-            cursor.execute(f'SELECT COUNT(et.identifier) {query_body}', bindings)
-            if cursor.fetchone()[0] == len(self.pools):
-                return None  # up to date
-
-            self.pools = {
-                string_to_evm_address(row[1])
-                for row in cursor.execute(f'SELECT et.protocol, et.address {query_body}', bindings)
-            }
-
-        return self.addresses_to_decoders()
-
     # -- DecoderInterface methods
-
-    def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
-        return dict.fromkeys(self.pools, (self._decode_non_proxy_events,))
 
     def enricher_rules(self) -> list[Callable]:
         return [
@@ -271,11 +245,24 @@ class Balancerv1CommonDecoder(DecoderInterface, BalancerCommonAccountingMixin, R
         ),)
 
     def addresses_to_counterparties(self) -> dict['ChecksumEvmAddress', str]:
-        return dict.fromkeys(self.pools, CPT_BALANCER_V1)
+        with GlobalDBHandler().conn.read_ctx() as cursor:
+            return dict.fromkeys(
+                [
+                    string_to_evm_address(address)
+                    for address in globaldb_get_general_cache_values(
+                        cursor=cursor,
+                        key_parts=(
+                            CacheType.BALANCER_V1_POOLS,
+                            str(self.evm_inquirer.chain_id.value),
+                        ),
+                    )
+                ],
+                self.counterparty,
+            )
 
     def post_decoding_rules(self) -> dict[str, list[tuple[int, Callable]]]:
         return {
-            CPT_BALANCER_V1: [
+            self.counterparty: [
                 (0, self._check_refunds_v1),
                 (1, self._check_deposits_withdrawals),
             ],

@@ -18,6 +18,11 @@ from rotkehlchen.chain.ethereum.modules.convex.convex_cache import (
 )
 from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 from rotkehlchen.chain.ethereum.utils import should_update_protocol_cache
+from rotkehlchen.chain.evm.decoding.balancer.balancer_cache import (
+    query_balancer_data,
+    read_balancer_pools_and_gauges_from_cache,
+)
+from rotkehlchen.chain.evm.decoding.balancer.constants import CPT_BALANCER_V2
 from rotkehlchen.chain.evm.decoding.curve.constants import (
     CPT_CURVE,
     CURVE_ADDRESS_PROVIDER,
@@ -181,6 +186,10 @@ VELODROME_SOME_EXPECTED_ADDRESBOOK_ENTRIES = [
         blockchain=SupportedBlockchain.OPTIMISM,
     ),
 ]
+
+BALANCER_SOME_EXPECTED_POOLS = {string_to_evm_address('0xf01b0684C98CD7aDA480BFDF6e43876422fa1Fc1')}  # noqa: E501
+
+BALANCER_SOME_EXPECTED_GAUGES = {string_to_evm_address('0xdf54d2Dd06F8Be3B0c4FfC157bE54EC9cca91F3C')}  # noqa: E501
 
 
 def get_velodrome_addressbook_and_asset_identifiers(optimism_inquirer):
@@ -489,3 +498,38 @@ def test_reload_cache_timestamps(blockchain: ChainsAggregator, freezer):
         cache_key=CacheType.CURVE_LP_TOKENS,
         args=(str(ChainID.ETHEREUM.serialize_for_db()),),
     ) is False
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+def test_balancer_cache(ethereum_inquirer):
+    with GlobalDBHandler().conn.write_ctx() as write_cursor:
+        # make sure that balancer cache is clear of expected pools and gauges
+        for pool in BALANCER_SOME_EXPECTED_POOLS | BALANCER_SOME_EXPECTED_GAUGES:
+            write_cursor.execute(f"DELETE FROM general_cache WHERE value LIKE '%{pool}%'")
+            write_cursor.execute('DELETE FROM address_book WHERE address=?', (pool,))
+
+    pools, gauges = read_balancer_pools_and_gauges_from_cache(
+        version='2',
+        chain_id=ethereum_inquirer.chain_id,
+        cache_type=CacheType.BALANCER_V2_POOLS,
+    )
+    assert not pools & BALANCER_SOME_EXPECTED_POOLS
+    assert not gauges & BALANCER_SOME_EXPECTED_GAUGES
+
+    ethereum_inquirer.ensure_cache_data_is_updated(
+        cache_type=CacheType.BALANCER_V2_POOLS,
+        query_method=lambda inquirer, cache_type, msg_aggregator: query_balancer_data(
+            inquirer=inquirer,
+            cache_type=cache_type,
+            protocol=CPT_BALANCER_V2,
+            msg_aggregator=msg_aggregator,
+            version=2,
+        ),
+    )
+    pools, gauges = read_balancer_pools_and_gauges_from_cache(
+        version='2',
+        chain_id=ethereum_inquirer.chain_id,
+        cache_type=CacheType.BALANCER_V2_POOLS,
+    )
+    assert pools >= BALANCER_SOME_EXPECTED_POOLS
+    assert gauges >= BALANCER_SOME_EXPECTED_GAUGES

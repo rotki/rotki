@@ -26,12 +26,17 @@ query GetPools($skip: Int, $first: Int, $chain: GqlChain!, $version: Int!) {
         type
         symbol
         decimals
-        displayTokens {
+        poolTokens {
             id
             address
             symbol
             name
             weight
+        }
+        staking {
+            gauge {
+                gaugeAddress
+            }
         }
     }
 }

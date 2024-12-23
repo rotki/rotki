@@ -1155,6 +1155,7 @@ class CacheType(Enum):
     CURVE_LENDING_VAULT_COLLATERAL_TOKEN = auto()
     CURVE_LENDING_VAULT_BORROWED_TOKEN = auto()
     AURA_POOLS = auto()  # stores count of pools in db + chain_id (stringified)
+    BALANCER_GAUGES = auto()  # stores gauges + chain_id + version
 
     def serialize(self) -> str:
         # Using custom serialize method instead of SerializableEnumMixin since mixin replaces
@@ -1186,8 +1187,6 @@ UniqueCacheType = Literal[
     CacheType.EXTRAFI_NEXT_RESERVE_ID,
     CacheType.EFP_SLOT_ADDRESS,
     CacheType.MORPHO_VAULTS,
-    CacheType.BALANCER_V1_POOLS,
-    CacheType.BALANCER_V2_POOLS,
     CacheType.CURVE_LENDING_VAULTS,
     CacheType.CURVE_LENDING_VAULT_CONTROLLER,
     CacheType.CURVE_LENDING_VAULT_AMM,
@@ -1210,6 +1209,9 @@ GeneralCacheType = Literal[
     CacheType.GEARBOX_POOL_ADDRESS,
     CacheType.GEARBOX_POOL_LP_TOKENS,
     CacheType.EXTRAFI_REWARD_CONTRACTS,
+    CacheType.BALANCER_V1_POOLS,
+    CacheType.BALANCER_V2_POOLS,
+    CacheType.BALANCER_GAUGES,
 ]
 
 

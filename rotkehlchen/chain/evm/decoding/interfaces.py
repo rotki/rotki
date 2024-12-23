@@ -51,6 +51,13 @@ CACHE_QUERY_METHOD_TYPE = (
         ],
         list['VelodromePoolData'] | None] |
     Callable[
+        [
+            'EvmNodeInquirer',
+            Literal[CacheType.BALANCER_V1_POOLS, CacheType.BALANCER_V2_POOLS],
+            'MessagesAggregator',
+        ],
+        tuple[set['ChecksumEvmAddress'], set['ChecksumEvmAddress']] | None] |
+    Callable[
         ['EthereumInquirer', Literal[CacheType.CURVE_LP_TOKENS], 'MessagesAggregator'],
         list | None,
     ] |
