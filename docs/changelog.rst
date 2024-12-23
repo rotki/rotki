@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :bug:`-` Bitmex balances will now be queried correctly.
+* :feature:`-` Lido and EtherFI reserve tokens will now be automatically queried.
 
 * :release:`1.37.0 <2024-12-24>`
 * :feature:`7144` Users will be able to import multiple addresses into the address book via CSV.

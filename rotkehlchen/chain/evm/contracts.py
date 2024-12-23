@@ -221,7 +221,7 @@ class EvmContracts(Generic[T]):
         Missing contract is a programming error and should never happen.
         """
         contract = self.contract_by_address(address=address, fallback_to_packaged_db=True)
-        assert contract, f'No contract data for {address} found'
+        assert contract, f'No contract data for {address} found at chain {self.chain_id.to_name()}'
         return contract
 
     @classmethod
