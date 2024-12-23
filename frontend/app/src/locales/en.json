@@ -4982,7 +4982,7 @@
     "gnosis_payments": "Gnosis Pay top single payments by currency",
     "top_days": "Your busiest transaction days",
     "loading": "Hang on, we are refreshing your history events to make sure your wrapped data is up to date.",
-    "history_events_nudge": "Go to the {link} page to ensure your wrapped data is up to date.",
+    "history_events_nudge": "History events need to be queried and decoded. Navigate to {link} to ensure your wrapped data is up to date.",
     "score_title": "This year, you were a {name}",
     "score_title_period": "This period, you were a {name}",
     "score_header": "Your rotki score",
