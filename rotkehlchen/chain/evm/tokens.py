@@ -16,7 +16,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, Price, SupportedBlockchain, Timestamp
+from rotkehlchen.types import ChainID, ChecksumEvmAddress, Price, SupportedBlockchain, Timestamp
 from rotkehlchen.utils.misc import combine_dicts, get_chunks
 
 if TYPE_CHECKING:
@@ -71,6 +71,7 @@ OTHER_MAX_TOKEN_CHUNK_LENGTH = 460
 
 # maximum 32-bytes arguments in one call to a contract (either tokensBalance or multicall)
 ETHERSCAN_MAX_ARGUMENTS_TO_CONTRACT = 110
+ARBISCAN_MAX_ARGUMENTS_TO_CONTRACT = 25
 
 # this is a number of arguments that a pure tokensBalance contract occupies when is added
 # to multicall. In total, it occupies (7 + number of tokens passed) arguments.
@@ -118,7 +119,7 @@ def get_chunk_size_call_order(evm_inquirer: 'EvmNodeInquirer') -> tuple[int, lis
         chunk_size = OTHER_MAX_TOKEN_CHUNK_LENGTH
         call_order = evm_inquirer.default_call_order(skip_etherscan=True)
     else:
-        chunk_size = ETHERSCAN_MAX_ARGUMENTS_TO_CONTRACT
+        chunk_size = ETHERSCAN_MAX_ARGUMENTS_TO_CONTRACT if evm_inquirer.chain_id != ChainID.ARBITRUM_ONE else ARBISCAN_MAX_ARGUMENTS_TO_CONTRACT  # noqa: E501
         call_order = [evm_inquirer.etherscan_node]
 
     return chunk_size, call_order
