@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`7254` rotki will now correctly decode OpenOcean swaps in all supported EVM chains.
 * :bug:`-` Bitmex balances will now be queried correctly.
 * :feature:`-` Lido and EtherFI reserve tokens will now be automatically queried.
 

@@ -81,7 +81,10 @@ class MetamaskCommonDecoder(DecoderInterface):
                 event.notes = f'Swap {event.balance.amount} {event.asset.resolve_to_asset_with_symbol().symbol} in metamask'  # noqa: E501
                 event.address = self.router_address
                 out_event = event
-            elif event.event_type == HistoryEventType.RECEIVE and event.location_label == sender:  # find the receive event  # noqa: E501
+            elif (
+                    (event.event_type == HistoryEventType.TRADE and event.event_subtype == HistoryEventSubType.RECEIVE) or  # noqa: E501
+                    (event.event_type == HistoryEventType.RECEIVE and event.event_subtype == HistoryEventSubType.NONE and event.location_label == sender)  # noqa: E501
+            ):  # find the receive event
                 event.event_type = HistoryEventType.TRADE
                 event.event_subtype = HistoryEventSubType.RECEIVE
                 event.counterparty = CPT_METAMASK_SWAPS
