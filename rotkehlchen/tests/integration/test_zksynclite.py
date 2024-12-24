@@ -144,10 +144,10 @@ def test_fetch_transactions(zksync_lite_manager):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('should_mock_current_price_queries', [True])
 def test_balances(zksync_lite_manager, inquirer):  # pylint: disable=unused-argument
-    lefty, rotki = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12', '0x9531C059098e3d194fF87FebB587aB07B30B1306'  # noqa: E501
-    balances = zksync_lite_manager.get_balances(addresses=[lefty, rotki])
-    lefty_eth_amount = FVal('6.6308508258')
-    eth, mana, uni, wbtc, link, dai, frax, usdc, storj, lrc, snx, pan, usdt = FVal('0.20670353608092'), FVal('16.38'), FVal('2.1409'), FVal('0.00012076'), FVal('0.47523'), FVal('46.16024376'), FVal('2.4306'), FVal('98.233404'), FVal('4.1524'), FVal('0.95'), FVal('0.95'), FVal('9202.65'), FVal('4.1')  # noqa: E501
+    lefty, rotki, empty = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12', '0x9531C059098e3d194fF87FebB587aB07B30B1306', '0xB638e104563515a917025964ee874a484A489147'  # noqa: E501
+    balances = zksync_lite_manager.get_balances(addresses=[lefty, rotki, empty])
+    lefty_eth_amount = FVal('0.0004100008')
+    eth, mana, uni, wbtc, link, dai, frax, usdc, storj, lrc, snx, pan, usdt = FVal('0.00002036000092'), FVal('16.38'), FVal('2.1409'), FVal('0.00012076'), FVal('0.47523'), FVal('53.83503876'), FVal('2.4306'), FVal('98.233404'), FVal('2.2064'), FVal('0.95'), FVal('0.95'), FVal('9202.65'), FVal('4.1')  # noqa: E501
     assert balances == {
         lefty: {
             A_ETH: Balance(lefty_eth_amount, lefty_eth_amount * CURRENT_PRICE_MOCK),
@@ -167,6 +167,7 @@ def test_balances(zksync_lite_manager, inquirer):  # pylint: disable=unused-argu
             A_PAN: Balance(pan, pan * CURRENT_PRICE_MOCK),
             A_USDT: Balance(usdt, usdt * CURRENT_PRICE_MOCK),
         },
+        empty: {},
     }
 
 
