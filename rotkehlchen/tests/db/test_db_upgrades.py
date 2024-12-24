@@ -439,7 +439,7 @@ def test_upgrade_db_30_to_31(user_data_dir):  # pylint: disable=unused-argument
 
     cursor = db.conn.cursor()
     # Finally also make sure that we have updated to the target version
-    assert db.get_setting(cursor, 'version') == 32
+    assert db.get_setting(cursor, 'version') == 31
     cursor = db.conn.cursor()
     # Check that the new table is created
     assert table_exists(cursor, 'eth2_validators') is True

@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Any, Final
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS, ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.aura_finance.constants import CPT_AURA_FINANCE
+from rotkehlchen.chain.evm.decoding.balancer.constants import CPT_BALANCER_V2
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
@@ -168,8 +169,14 @@ class AuraFinanceCommonDecoder(DecoderInterface):
                 event.extra_data = {'deposit_events_num': len(deposit_events)}
                 event.counterparty = CPT_AURA_FINANCE
             elif (
-                event.event_type == HistoryEventType.SPEND and
-                event.event_subtype == HistoryEventSubType.NONE and
+                ((
+                    event.event_type == HistoryEventType.SPEND and
+                    event.event_subtype == HistoryEventSubType.NONE
+                ) or (
+                    event.event_type == HistoryEventType.DEPOSIT and
+                    event.event_subtype == HistoryEventSubType.DEPOSIT_ASSET and
+                    event.counterparty == CPT_BALANCER_V2
+                )) and
                 event.balance.amount == deposited_amount
             ):
                 event.event_type = HistoryEventType.DEPOSIT
