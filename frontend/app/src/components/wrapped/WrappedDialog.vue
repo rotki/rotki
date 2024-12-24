@@ -90,11 +90,27 @@ const gnosisPayResult = computed(() => {
   return result;
 });
 
+const currentYear = computed(() => new Date().getFullYear());
+
 async function fetchData() {
   if (get(loading))
     return;
 
   try {
+    const endVal = get(end);
+    const startVal = get(start);
+
+    if (!startVal || !endVal) {
+      const range = getYearRange(get(currentYear));
+
+      if (!startVal) {
+        set(start, range.start);
+      }
+      if (!endVal) {
+        set(end, range.end);
+      }
+    }
+
     set(loading, true);
     const response = await fetchWrapStatistics(
       {
@@ -134,8 +150,6 @@ function calculateFontSize(symbol: string) {
   return `${1.8 - length * 0.4}em`;
 }
 
-const currentYear = computed(() => new Date().getFullYear());
-
 const invalidRange = computed(
   () =>
     !!get(start)
@@ -157,11 +171,6 @@ const isCurrentYear = computed(() => {
 
 watchImmediate(display, async (display) => {
   if (display) {
-    if (!get(start) && !get(end)) {
-      const range = getYearRange(get(currentYear));
-      set(start, range.start);
-      set(end, range.end);
-    }
     await fetchData();
   }
 });

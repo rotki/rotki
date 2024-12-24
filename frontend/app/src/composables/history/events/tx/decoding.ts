@@ -29,8 +29,12 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
     = useHistoryEventsApi();
 
   const { awaitTask, isTaskRunning } = useTaskStore();
-  const { getUndecodedTransactionStatus, resetUndecodedTransactionsStatus, updateUndecodedTransactionsStatus }
-    = useHistoryStore();
+  const {
+    clearUndecodedTransactionsNumbers,
+    getUndecodedTransactionStatus,
+    resetUndecodedTransactionsStatus,
+    updateUndecodedTransactionsStatus,
+  } = useHistoryStore();
 
   const { getChain, getChainName, getEvmChainName, isEvmLikeChains, txChains } = useSupportedChains();
 
@@ -57,21 +61,28 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
 
       const breakdown = EvmUndecodedTransactionResponse.parse(snakeCaseTransformer(result));
 
-      updateUndecodedTransactionsStatus(
-        Object.fromEntries(
-          Object.entries(breakdown).map(([chain, entry]) => [
-            chain,
-            // The ws message assumes that total is the number of undecoded txs,
-            // For this reason we initialize the status similarly and ignore the total,
-            // which in this case is the total of all transactions.
-            {
+      if (Object.keys(breakdown).length > 0) {
+        updateUndecodedTransactionsStatus(
+          Object.fromEntries(
+            Object.entries(breakdown).map(([chain, entry]) => [
               chain,
-              processed: 0,
-              total: entry.undecoded,
-            },
-          ]),
-        ),
-      );
+              // The ws message assumes that total is the number of undecoded txs,
+              // For this reason we initialize the status similarly and ignore the total,
+              // which in this case is the total of all transactions.
+              {
+                chain,
+                processed: 0,
+                total: entry.undecoded,
+              },
+            ]),
+          ),
+        );
+      }
+      else {
+        // If the response is empty, it means all chains has been processed.
+        // We should set the processed equal to total, so it appears as completed.
+        clearUndecodedTransactionsNumbers(type);
+      }
     }
     catch (error: any) {
       if (isTaskCancelled(error))
