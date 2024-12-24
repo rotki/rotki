@@ -79,6 +79,11 @@ export const useHistoryStore = defineStore('history', () => {
           processed: value.total,
         };
       }
+      else {
+        newStatus[chain] = {
+          ...value,
+        };
+      }
     }
     set(undecodedTransactionsStatus, newStatus);
   };
