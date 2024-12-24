@@ -95,6 +95,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'Oneinchv4',
         'Oneinchv5',
         'Oneinchv6',
+        'OpenOcean',
         'SuperchainBridgebase',
         'SuperchainBridgeop',
         'Paraswap',
@@ -217,6 +218,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'odos-v2',
         'sky',
         'puffer',
+        'openocean',
     }
 
 
