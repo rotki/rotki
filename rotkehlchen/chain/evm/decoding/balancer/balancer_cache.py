@@ -100,9 +100,6 @@ def query_balancer_data(
                         address=get_or_create_evm_token(
                             userdb=inquirer.database,
                             chain_id=inquirer.chain_id,
-                            protocol=protocol,
-                            name=token['name'].strip(),
-                            symbol=token['symbol'].strip(),
                             evm_address=deserialize_evm_address(token['address']),
                             encounter=token_encounter_info,
                         ).evm_address,
