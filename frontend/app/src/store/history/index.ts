@@ -3,6 +3,8 @@ import { logger } from '@/utils/logging';
 import { useNotificationsStore } from '@/store/notifications';
 import { useTaskStore } from '@/store/tasks';
 import { useHistoryApi } from '@/composables/api/history';
+import { useSupportedChains } from '@/composables/info/chains';
+import { TransactionChainType } from '@/types/history/events';
 import type { EvmUnDecodedTransactionsData, ProtocolCacheUpdatesData } from '@/types/websocket-messages';
 
 export const useHistoryStore = defineStore('history', () => {
@@ -11,6 +13,9 @@ export const useHistoryStore = defineStore('history', () => {
   const protocolCacheUpdateStatus = ref<Record<string, ProtocolCacheUpdatesData>>({});
 
   const receivingProtocolCacheStatus = ref<boolean>(false);
+
+  const { isTaskRunning } = useTaskStore();
+  const { getChain, isEvmLikeChains } = useSupportedChains();
 
   const decodingStatus = computed<EvmUnDecodedTransactionsData[]>(() =>
     Object.values(get(undecodedTransactionsStatus)).filter(status => status.total > 0),
@@ -35,7 +40,6 @@ export const useHistoryStore = defineStore('history', () => {
     });
   };
 
-  const { isTaskRunning } = useTaskStore();
   const refreshProtocolCacheTaskRunning = isTaskRunning(TaskType.REFRESH_GENERAL_CACHE);
 
   const setProtocolCacheStatus = (data: ProtocolCacheUpdatesData): void => {
@@ -59,6 +63,24 @@ export const useHistoryStore = defineStore('history', () => {
 
   const resetUndecodedTransactionsStatus = (): void => {
     set(undecodedTransactionsStatus, {});
+  };
+
+  const clearUndecodedTransactionsNumbers = (type: TransactionChainType): void => {
+    const currentStatus = get(undecodedTransactionsStatus);
+    const newStatus: Record<string, EvmUnDecodedTransactionsData> = {};
+
+    for (const [chain, value] of Object.entries(currentStatus)) {
+      const blockchain = getChain(chain);
+      const isEvmLike = isEvmLikeChains(blockchain);
+
+      if ((isEvmLike && type === TransactionChainType.EVMLIKE) || (!isEvmLike && type === TransactionChainType.EVM)) {
+        newStatus[chain] = {
+          ...value,
+          processed: value.total,
+        };
+      }
+    }
+    set(undecodedTransactionsStatus, newStatus);
   };
 
   const resetProtocolCacheUpdatesStatus = (): void => {
@@ -96,6 +118,7 @@ export const useHistoryStore = defineStore('history', () => {
 
   return {
     associatedLocations,
+    clearUndecodedTransactionsNumbers,
     decodingStatus,
     fetchAssociatedLocations,
     getUndecodedTransactionStatus,
