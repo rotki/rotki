@@ -572,7 +572,8 @@ class ZksyncLiteManager:
         for address in addresses:
             result = self._query_api(url=f'accounts/{address}')
             if (finalized_result := result.get('finalized', None)) is None:
-                raise RemoteError(f'Unexpected zksync lite balances response. Missing finalized value {result}')  # noqa: E501
+                balances[address] = {}
+                continue
 
             try:
                 for symbol, raw_amount_str in finalized_result.get('balances', {}).items():
