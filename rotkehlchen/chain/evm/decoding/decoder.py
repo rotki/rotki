@@ -331,7 +331,18 @@ class EVMTransactionDecoder(ABC):
         if isinstance(decoder, CustomizableDateMixin):
             decoder.reload_settings(cursor)
         if isinstance(decoder, ReloadableDecoderMixin):
-            new_mappings = decoder.reload_data()
+            try:
+                new_mappings = decoder.reload_data()
+            except RemoteError as e:
+                counterparty = decoder.counterparties()[0].label
+                log.error(f'Failed to query remote information for {counterparty} due to {e}')
+                self.msg_aggregator.add_error(
+                    f'Failed to update cache for {counterparty} due to a '
+                    'network error. A re-decoding might be required if information '
+                    'was not up to date.',
+                )
+                return
+
             if new_mappings is not None:
                 self.rules.address_mappings.update(new_mappings)
                 self.rules.addresses_to_counterparties.update(decoder.addresses_to_counterparties())
