@@ -861,9 +861,9 @@ class DBHistoryEvents:
                 for symbol, amount in cursor
             ]
             cursor.execute(
-                "SELECT unixepoch(date(timestamp, 'unixepoch')), COUNT(*) as tx_count FROM "
+                "SELECT unixepoch(date(datetime(timestamp, 'unixepoch'), 'localtime'), 'utc'), COUNT(*) as tx_count FROM "  # noqa: E501
                 'evm_transactions WHERE timestamp >= ? AND timestamp <= ? '
-                "GROUP BY date(timestamp, 'unixepoch') ORDER BY "
+                "GROUP BY date(datetime(timestamp, 'unixepoch'), 'localtime') ORDER BY "
                 'tx_count DESC LIMIT 10',
                 (from_ts, to_ts),
             )
