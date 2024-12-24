@@ -111,25 +111,25 @@ def maybe_upgrade_globaldb(
             f'Tried to open a rotki version intended to work with GlobalDB v{GLOBAL_DB_VERSION} '
             f'but the GlobalDB found in the system is v{db_version}. Bailing ...',
         )
-
-    progress_handler = DBUpgradeProgressHandler(
-        messages_aggregator=msg_aggregator,
-        target_version=GLOBAL_DB_VERSION,
-    )
-    for upgrade in UPGRADES_LIST:
-        if globaldb is not None and upgrade.from_version in GLOBAL_DB_SCHEMA_BREAKING_CHANGES:
-            AssetsUpdater(
-                globaldb=globaldb,
-                msg_aggregator=msg_aggregator,
-            ).apply_pending_compatible_updates()
-
-        _perform_single_upgrade(
-            upgrade=upgrade,
-            connection=connection,
-            global_dir=global_dir,
-            db_filename=db_filename,
-            progress_handler=progress_handler,
+    elif db_version < GLOBAL_DB_VERSION:
+        progress_handler = DBUpgradeProgressHandler(
+            messages_aggregator=msg_aggregator,
+            target_version=GLOBAL_DB_VERSION,
         )
+        for upgrade in UPGRADES_LIST:
+            if globaldb is not None and upgrade.from_version in GLOBAL_DB_SCHEMA_BREAKING_CHANGES:
+                AssetsUpdater(
+                    globaldb=globaldb,
+                    msg_aggregator=msg_aggregator,
+                ).apply_pending_compatible_updates()
+
+            _perform_single_upgrade(
+                upgrade=upgrade,
+                connection=connection,
+                global_dir=global_dir,
+                db_filename=db_filename,
+                progress_handler=progress_handler,
+            )
 
     # Finally make sure to always have latest version in the DB
     with connection.write_ctx() as write_cursor:
