@@ -144,7 +144,12 @@ def read_gearbox_data_from_cache(chain_id: ChainID | None) -> tuple[dict[Checksu
     return (pools,)
 
 
-def register_token(evm_inquirer: 'EvmNodeInquirer', token_address: str, pool: GearboxPoolData) -> EvmToken:  # noqa: E501
+def register_token(
+        evm_inquirer: 'EvmNodeInquirer',
+        token_address: str,
+        pool: GearboxPoolData,
+        encounter: TokenEncounterInfo,
+) -> EvmToken:
     """Gets or creates a token in the database and returns the EvmToken object."""
     return get_or_create_evm_token(
         userdb=evm_inquirer.database,
@@ -156,10 +161,7 @@ def register_token(evm_inquirer: 'EvmNodeInquirer', token_address: str, pool: Ge
             [UnderlyingToken(address=pool.underlying_token, token_kind=EvmTokenKind.ERC20, weight=ONE)]  # noqa: E501
             if pool.underlying_token is not None else []
         ),
-        encounter=TokenEncounterInfo(
-            description='Querying gearbox pools',
-            should_notify=False,
-        ),
+        encounter=encounter,
     )
 
 
@@ -171,6 +173,10 @@ def ensure_gearbox_tokens_existence(
     """This function receives data about gearbox pools and ensures that lp tokens and pool coins
     exist in rotki's database."""
     verified_pools, all_pools_length, last_notified_ts = [], len(all_pools), Timestamp(0)
+    encounter = TokenEncounterInfo(
+        description=f'Querying gearbox pools for {evm_inquirer.chain_id.to_name()}',
+        should_notify=False,
+    )
     for idx, pool in enumerate(all_pools):
         last_notified_ts = maybe_notify_cache_query_status(
             msg_aggregator=msg_aggregator,
@@ -189,10 +195,7 @@ def ensure_gearbox_tokens_existence(
                     evm_address=pool.underlying_token,
                     chain_id=evm_inquirer.chain_id,
                     evm_inquirer=evm_inquirer,
-                    encounter=TokenEncounterInfo(
-                        description='Querying gearbox pools',
-                        should_notify=False,
-                    ),
+                    encounter=encounter,
                 )
             except NotERC20Conformant as e:
                 log.error(f'Skipping pool {pool} because {pool.underlying_token} is not a valid ERC20 token. {e}')  # noqa: E501
@@ -202,7 +205,12 @@ def ensure_gearbox_tokens_existence(
         lp_tokens_from_db = set()
         for token_address in pool.lp_tokens:
             try:
-                token = register_token(evm_inquirer, token_address, pool)
+                token = register_token(
+                    evm_inquirer=evm_inquirer,
+                    token_address=token_address,
+                    pool=pool,
+                    encounter=encounter,
+                )
                 lp_tokens_from_db.add(token.identifier)
             except NotERC20Conformant as e:
                 log.error(
@@ -212,7 +220,12 @@ def ensure_gearbox_tokens_existence(
                 continue
 
         # ensure the farm token exist in the db and get the identifier
-        pool.farming_pool_token = register_token(evm_inquirer, pool.farming_pool_token, pool).identifier  # noqa: E501
+        pool.farming_pool_token = register_token(
+            evm_inquirer=evm_inquirer,
+            token_address=pool.farming_pool_token,
+            pool=pool,
+            encounter=encounter,
+        ).identifier
         pool.lp_tokens = lp_tokens_from_db
         verified_pools.append(pool)
     return verified_pools
@@ -243,9 +256,7 @@ def ensure_gearbox_lp_underlying_tokens(
             userdb=node_inquirer.database,
             evm_address=underlying_token_address,
             chain_id=node_inquirer.chain_id,
-            encounter=TokenEncounterInfo(
-                description='Detecting Gearbox pool underlying tokens',
-            ),
+            encounter=TokenEncounterInfo(description='Detecting Gearbox pool underlying tokens'),
         )
     except NotERC20Conformant as e:
         log.error(f'Error fetching {node_inquirer.chain_name} token {underlying_token_address} while detecting underlying tokens of {lp_contract.address!s}: {e!s}')  # noqa: E501

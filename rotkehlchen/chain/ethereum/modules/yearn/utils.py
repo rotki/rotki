@@ -192,6 +192,10 @@ def query_yearn_vaults(db: 'DBHandler', ethereum_inquirer: 'EthereumInquirer') -
             log.error(f'Found yearn token with unknown version {vault}. Skipping...')
             continue
 
+        encounter = TokenEncounterInfo(
+            description=f'Querying {vault_type} balances',
+            should_notify=False,
+        )
         try:
             underlying_token = get_or_create_evm_token(
                 userdb=db,
@@ -200,7 +204,7 @@ def query_yearn_vaults(db: 'DBHandler', ethereum_inquirer: 'EthereumInquirer') -
                 decimals=vault['token']['decimals'],
                 name=vault['token']['name'],
                 symbol=vault['token']['symbol'],
-                encounter=TokenEncounterInfo(description=f'Querying {vault_type} balances', should_notify=False),  # noqa: E501
+                encounter=encounter,
             )
             vault_token = get_or_create_evm_token(
                 userdb=db,
@@ -215,7 +219,7 @@ def query_yearn_vaults(db: 'DBHandler', ethereum_inquirer: 'EthereumInquirer') -
                     token_kind=EvmTokenKind.ERC20,
                     weight=ONE,
                 )],
-                encounter=TokenEncounterInfo(description=f'Querying {vault_type} balances', should_notify=False),  # noqa: E501
+                encounter=encounter,
             )
             if (staking_address := vault.get('staking')) is not None:  # check if the vault has a staking contract where the user can deposit vault tokens. Shares are 1:1  # noqa: E501
                 get_or_create_evm_token(
@@ -232,7 +236,7 @@ def query_yearn_vaults(db: 'DBHandler', ethereum_inquirer: 'EthereumInquirer') -
                     fallback_name=f'Yearn staking {vault_token.name}',  # fallback in case for the vaults that aren't ERC20  # noqa: E501
                     fallback_symbol=f'YG-{vault_token.symbol}',
                     fallback_decimals=18,
-                    encounter=TokenEncounterInfo(description='Querying yearn vaults', should_notify=False),  # noqa: E501
+                    encounter=encounter,
                 )
 
         except KeyError as e:

@@ -453,6 +453,10 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
         underlying_tokens: list[AssetWithSymbol] = []
         underlying_amounts, calls = [], []
         beacon_eth_idx = -1
+        encounter = TokenEncounterInfo(
+            description='Eigenlayer strategy token',
+            should_notify=False,
+        )
         for idx, (strategy, shares) in enumerate(zip(strategies, shares_entries, strict=False)):
             if strategy == BEACON_ETH_STRATEGY:  # special address, not a contract:
                 beacon_eth_idx = idx
@@ -473,10 +477,7 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
         for raw_address, raw_amount in pairwise(output):
             underlying_tokens.append(underlying_token := self.base.get_or_create_evm_token(
                 address=bytes_to_address(raw_address),
-                encounter=TokenEncounterInfo(
-                    description='Eigenlayer strategy token',
-                    should_notify=False,
-                ),
+                encounter=encounter,
             ))
             underlying_amounts.append(token_normalized_value(
                 token_amount=int.from_bytes(raw_amount),

@@ -119,6 +119,10 @@ def _ensure_curve_tokens_existence(
     and return it.
     """
     verified_pools, last_notified_ts, all_pools_length = [], Timestamp(0), len(all_pools)
+    encounter = TokenEncounterInfo(
+        description=f'Querying curve pools for {evm_inquirer.chain_id.to_name()}',
+        should_notify=False,
+    )
     for idx, pool in enumerate(all_pools):
         last_notified_ts = maybe_notify_cache_query_status(
             msg_aggregator=msg_aggregator,
@@ -144,10 +148,7 @@ def _ensure_curve_tokens_existence(
                         evm_address=token_address,
                         chain_id=evm_inquirer.chain_id,
                         evm_inquirer=evm_inquirer,
-                        encounter=TokenEncounterInfo(
-                            description='Querying curve pools',
-                            should_notify=False,
-                        ),
+                        encounter=encounter,
                     )
                 except NotERC20Conformant as e:
                     log.error(
@@ -168,10 +169,7 @@ def _ensure_curve_tokens_existence(
                         evm_address=underlying_token_address,
                         chain_id=evm_inquirer.chain_id,
                         evm_inquirer=evm_inquirer,
-                        encounter=TokenEncounterInfo(
-                            description='Querying curve pools',
-                            should_notify=False,
-                        ),
+                        encounter=encounter,
                     )
                 except NotERC20Conformant as e:
                     log.error(
@@ -195,10 +193,7 @@ def _ensure_curve_tokens_existence(
                             token_kind=EvmTokenKind.ERC20,
                             weight=ONE,
                         )],
-                        encounter=TokenEncounterInfo(
-                            description='Querying curve pools',
-                            should_notify=False,
-                        ),
+                        encounter=encounter,
                     )
                 except NotERC20Conformant as e:
                     log.error(
@@ -217,10 +212,7 @@ def _ensure_curve_tokens_existence(
                         evm_address=token_address,
                         chain_id=evm_inquirer.chain_id,
                         evm_inquirer=evm_inquirer,
-                        encounter=TokenEncounterInfo(
-                            description='Querying curve pools',
-                            should_notify=False,
-                        ),
+                        encounter=encounter,
                     )
                 except NotERC20Conformant as e:
                     log.error(
@@ -238,10 +230,7 @@ def _ensure_curve_tokens_existence(
                 chain_id=evm_inquirer.chain_id,
                 evm_inquirer=evm_inquirer,
                 protocol=CURVE_POOL_PROTOCOL,
-                encounter=TokenEncounterInfo(
-                    description='Querying curve pools',
-                    should_notify=False,
-                ),
+                encounter=encounter,
             )
         except NotERC20Conformant as e:
             log.error(  # should only fail if the node is not up to date
@@ -261,10 +250,7 @@ def _ensure_curve_tokens_existence(
                     evm_address=pool.gauge_address,
                     chain_id=evm_inquirer.chain_id,
                     evm_inquirer=evm_inquirer,
-                    encounter=TokenEncounterInfo(
-                        description='Querying curve gauges',
-                        should_notify=False,
-                    ),
+                    encounter=encounter,
                     underlying_tokens=[UnderlyingToken(
                         address=pool.lp_token_address,
                         token_kind=EvmTokenKind.ERC20,

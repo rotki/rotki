@@ -252,6 +252,10 @@ def query_velodrome_data_from_chain_and_maybe_create_tokens(
     inquirer.get_multiple_erc20_contract_info(addresses)  # multicall for token info
 
     returned_pools = []
+    encounter = TokenEncounterInfo(
+        description=f'Querying velodrome pools for {inquirer.chain_name}',
+        should_notify=False,
+    )
     for entry in deserialized_pools:
         try:
             token0, token1 = (
@@ -260,10 +264,7 @@ def query_velodrome_data_from_chain_and_maybe_create_tokens(
                     evm_address=token,
                     chain_id=inquirer.chain_id,
                     evm_inquirer=inquirer,
-                    encounter=TokenEncounterInfo(
-                        description='Querying velodrome pools',
-                        should_notify=False,
-                    ),
+                    encounter=encounter,
                 )  # create the tokens for the new pools. Keep in mind that the pool address is the address of the lp token received when depositing to the pool  # noqa: E501
                 for token in (entry.token0_address, entry.token1_address)
             )
@@ -280,10 +281,7 @@ def query_velodrome_data_from_chain_and_maybe_create_tokens(
             evm_address=entry.pool_address,
             chain_id=inquirer.chain_id,
             evm_inquirer=inquirer,
-            encounter=TokenEncounterInfo(
-                description='Querying velodrome pools',
-                should_notify=False,
-            ),
+            encounter=encounter,
             protocol=protocol,  # mark the lp tokens with the protocol to identify them for special treatment for price calculation  # noqa: E501
             fallback_decimals=entry.pool_decimals,
             fallback_name=f'{pool_name} Pool',
