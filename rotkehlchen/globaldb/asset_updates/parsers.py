@@ -242,8 +242,8 @@ class AssetCollectionParser(BaseAssetParser[tuple[int, str, str] | tuple[int, st
         self._latest_collection_re = re.compile(r'.*INSERT +INTO +asset_collections\( *id *, *name *, *symbol, *main_asset *\) *VALUES +\(([^,]*?),([^,]*?),([^,]*?),([^,]*?)\).*?')  # noqa: E501
         self._legacy_collection_re = re.compile(r'.*INSERT +INTO +asset_collections\( *id *, *name *, *symbol *\) *VALUES +\(([^,]*?),([^,]*?),([^,]*?)\).*?')  # noqa: E501
         self._version_parsers = [
-            (VersionRange(16, 31), self._parse_legacy_format),
-            (VersionRange(32, None), self._parse_latest_format),
+            (VersionRange(16, 32), self._parse_legacy_format),
+            (VersionRange(33, None), self._parse_latest_format),
         ]
 
     def _parse_latest_format(self, connection: 'DBConnection', insert_text: str) -> tuple[int, str, str, str]:  # noqa: E501
