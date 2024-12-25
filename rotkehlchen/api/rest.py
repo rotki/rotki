@@ -65,25 +65,21 @@ from rotkehlchen.chain.accounts import SingleBlockchainAccountData
 from rotkehlchen.chain.bitcoin.xpub import XpubManager
 from rotkehlchen.chain.ethereum.airdrops import check_airdrops, fetch_airdrops_metadata
 from rotkehlchen.chain.ethereum.defi.protocols import DEFI_PROTOCOLS
-from rotkehlchen.chain.ethereum.modules.convex.convex_cache import (
-    query_convex_data,
-)
+from rotkehlchen.chain.ethereum.modules.convex.convex_cache import query_convex_data
 from rotkehlchen.chain.ethereum.modules.eth2.constants import FREE_VALIDATORS_LIMIT
 from rotkehlchen.chain.ethereum.modules.eth2.structures import PerformanceStatusFilter
 from rotkehlchen.chain.ethereum.modules.liquity.constants import CPT_LIQUITY
-from rotkehlchen.chain.ethereum.modules.liquity.statistics import get_stats as get_liquity_stats
+from rotkehlchen.chain.ethereum.modules.liquity.statistics import (
+    get_stats as get_liquity_stats,
+)
 from rotkehlchen.chain.ethereum.modules.makerdao.cache import (
     query_ilk_registry_and_maybe_update_cache,
 )
 from rotkehlchen.chain.ethereum.modules.nft.structures import NftLpHandling
 from rotkehlchen.chain.ethereum.utils import try_download_ens_avatar
 from rotkehlchen.chain.evm.accounting.aggregator import EVMAccountingAggregators
-from rotkehlchen.chain.evm.decoding.curve.curve_cache import (
-    query_curve_data,
-)
-from rotkehlchen.chain.evm.decoding.gearbox.gearbox_cache import (
-    query_gearbox_data,
-)
+from rotkehlchen.chain.evm.decoding.curve.curve_cache import query_curve_data
+from rotkehlchen.chain.evm.decoding.gearbox.gearbox_cache import query_gearbox_data
 from rotkehlchen.chain.evm.decoding.monerium.constants import CPT_MONERIUM
 from rotkehlchen.chain.evm.decoding.velodrome.velodrome_cache import (
     query_velodrome_like_data,
@@ -114,9 +110,17 @@ from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.constants.resolver import ChainID
 from rotkehlchen.constants.timing import ENS_AVATARS_REFRESH
 from rotkehlchen.data_import.manager import DataImportSource
-from rotkehlchen.db.accounting_rules import DBAccountingRules, query_missing_accounting_rules
+from rotkehlchen.db.accounting_rules import (
+    DBAccountingRules,
+    query_missing_accounting_rules,
+)
 from rotkehlchen.db.addressbook import DBAddressbook
-from rotkehlchen.db.calendar import CalendarEntry, CalendarFilterQuery, DBCalendar, ReminderEntry
+from rotkehlchen.db.calendar import (
+    CalendarEntry,
+    CalendarFilterQuery,
+    DBCalendar,
+    ReminderEntry,
+)
 from rotkehlchen.db.constants import (
     HISTORY_MAPPING_KEY_STATE,
     HISTORY_MAPPING_STATE_CUSTOMIZED,
@@ -174,17 +178,26 @@ from rotkehlchen.errors.misc import (
     SystemPermissionError,
     TagConstraintError,
 )
-from rotkehlchen.errors.price import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset
+from rotkehlchen.errors.price import (
+    NoPriceForGivenTimestamp,
+    PriceQueryUnsupportedAsset,
+)
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.constants import ALL_SUPPORTED_EXCHANGES
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.exchanges.utils import query_binance_exchange_pairs
 from rotkehlchen.externalapis.github import Github
-from rotkehlchen.externalapis.gnosispay import GNOSIS_PAY_TX_TIMESTAMP_RANGE, init_gnosis_pay
+from rotkehlchen.externalapis.gnosispay import (
+    GNOSIS_PAY_TX_TIMESTAMP_RANGE,
+    init_gnosis_pay,
+)
 from rotkehlchen.externalapis.monerium import init_monerium
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.asset_updates.manager import ASSETS_VERSION_KEY
-from rotkehlchen.globaldb.assets_management import export_assets_from_file, import_assets_from_file
+from rotkehlchen.globaldb.assets_management import (
+    export_assets_from_file,
+    import_assets_from_file,
+)
 from rotkehlchen.globaldb.cache import (
     globaldb_delete_general_cache_values,
     globaldb_get_general_cache_values,
@@ -197,7 +210,10 @@ from rotkehlchen.history.events.structures.base import (
     get_event_type_identifier,
 )
 from rotkehlchen.history.events.structures.evm_event import EvmProduct
-from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.history.events.structures.types import (
+    HistoryEventSubType,
+    HistoryEventType,
+)
 from rotkehlchen.history.events.utils import history_event_to_staking_for_api
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.history.skipped import (
@@ -205,7 +221,11 @@ from rotkehlchen.history.skipped import (
     get_skipped_external_events_summary,
     reprocess_skipped_external_events,
 )
-from rotkehlchen.history.types import NOT_EXPOSED_SOURCES, HistoricalPrice, HistoricalPriceOracle
+from rotkehlchen.history.types import (
+    NOT_EXPOSED_SOURCES,
+    HistoricalPrice,
+    HistoricalPriceOracle,
+)
 from rotkehlchen.icons import (
     check_if_image_is_cached,
     create_image_response,
@@ -4790,13 +4810,13 @@ class RestAPI:
                     message=f'Failed to refresh yearn vaults cache due to: {e!s}',
                     status_code=HTTPStatus.CONFLICT,
                 )
-            try:
-                query_ilk_registry_and_maybe_update_cache(eth_node_inquirer)
-            except RemoteError as e:
-                return wrap_in_fail_result(
-                    message=f'Failed to refresh makerdao vault ilk cache due to: {e!s}',
-                    status_code=HTTPStatus.CONFLICT,
-                )
+        try:
+            query_ilk_registry_and_maybe_update_cache(eth_node_inquirer)
+        except RemoteError as e:
+            return wrap_in_fail_result(
+                message=f'Failed to refresh makerdao vault ilk cache due to: {e!s}',
+                status_code=HTTPStatus.CONFLICT,
+            )
         return OK_RESULT
 
     def get_airdrops_metadata(self) -> Response:
