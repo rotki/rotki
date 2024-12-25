@@ -156,5 +156,5 @@ def test_general_cache_refresh(rotkehlchen_api_server: 'APIServer') -> None:
         assert patched_gearbox_query.call_count == 1, 'Gearbox pools should have been queried despite should_update_protocol_cache being False'  # noqa: E501
         # we query query_velodrome_like_data twice. First for velodrome and then for aerodrome
         assert patched_velodrome_query.call_count == 2, 'Velodrome pools should have been queried despite should_update_protocol_cache being False'  # noqa: E501
-        assert patched_query_yearn_vaults.call_count == 1, 'Yearn vaults refresh should have been triggered'  # noqa: E501
+        assert patched_query_yearn_vaults.call_count == 5, 'Yearn vaults refresh should have been triggered'  # noqa: E501
         assert patched_ilk_registry.call_count == 1, 'Ilk registry refresh should have been triggered'  # noqa: E501
