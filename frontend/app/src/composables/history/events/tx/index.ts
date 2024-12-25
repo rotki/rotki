@@ -201,7 +201,7 @@ export const useHistoryTransactions = createSharedComposable(() => {
       2,
     );
 
-    await fetchUndecodedTransactionsBreakdown(type);
+    queue.queue(type, async () => fetchUndecodedTransactionsBreakdown(type));
 
     const isEvm = type === TransactionChainType.EVM;
     if (addresses.length > 0)
@@ -285,7 +285,7 @@ export const useHistoryTransactions = createSharedComposable(() => {
       ]);
 
       if (!disableEvmEvents)
-        await fetchUndecodedTransactionsStatus();
+        queue.queue('undecoded-transactions-status-final', async () => fetchUndecodedTransactionsStatus());
     }
     catch (error) {
       logger.error(error);
