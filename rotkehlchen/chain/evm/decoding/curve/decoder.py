@@ -519,11 +519,11 @@ class CurveCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin)
 
         sold_asset = self._read_curve_asset(
             asset_address=sold_token_address,
-            encounter=TokenEncounterInfo(tx_hash=context.transaction.tx_hash),
+            encounter=(encounter := TokenEncounterInfo(tx_hash=context.transaction.tx_hash)),
         )
         bought_asset = self._read_curve_asset(
             asset_address=bought_token_address,
-            encounter=TokenEncounterInfo(tx_hash=context.transaction.tx_hash),
+            encounter=encounter,
         )
         spend_event: EvmEvent | None = None
         receive_event: EvmEvent | None = None

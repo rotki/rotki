@@ -45,24 +45,22 @@ def _process_aura_pool(database: 'DBHandler', vault: dict[str, Any]) -> None:
     """
     chain_id = vault['chain_id']
     chain_name = chain_id.to_name()
+    encounter = TokenEncounterInfo(
+        description=f'Querying {chain_name} aura finance balances',
+        should_notify=False,
+    )
     aura_pool_token = get_or_create_evm_token(
         userdb=database,
         evm_address=vault['aura_pool_token'],
         chain_id=chain_id,
-        encounter=TokenEncounterInfo(
-            description=f'Querying {chain_name} aura finance balances',
-            should_notify=False,
-        ),
+        encounter=encounter,
         underlying_tokens=[
             UnderlyingToken(
                 address=get_or_create_evm_token(
                     userdb=database,
                     chain_id=chain_id,
                     evm_address=vault['underlying_bpt_token'],
-                    encounter=TokenEncounterInfo(
-                        description=f'Querying {chain_name} aura finance balances',
-                        should_notify=False,
-                    ),
+                    encounter=encounter,
                 ).evm_address,
                 token_kind=EvmTokenKind.ERC20,
                 weight=ONE,

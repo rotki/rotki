@@ -73,7 +73,10 @@ def _process_morpho_vault(database: 'DBHandler', vault: dict[str, Any]) -> None:
         decimals=deserialize_int(vault['asset']['decimals']),
         name=vault['asset']['name'],
         symbol=vault['asset']['symbol'],
-        encounter=TokenEncounterInfo(description='Querying Morpho vaults', should_notify=False),
+        encounter=(encounter := TokenEncounterInfo(
+            description='Querying Morpho vaults',
+            should_notify=False,
+        )),
     )
     get_or_create_evm_token(
         userdb=database,
@@ -88,7 +91,7 @@ def _process_morpho_vault(database: 'DBHandler', vault: dict[str, Any]) -> None:
             token_kind=EvmTokenKind.ERC20,
             weight=ONE,
         )],
-        encounter=TokenEncounterInfo(description='Querying Morpho vaults', should_notify=False),
+        encounter=encounter,
     )
 
 
