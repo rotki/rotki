@@ -2,16 +2,17 @@ import hashlib
 import hmac
 import json
 import logging
-import time
 from collections.abc import Sequence
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Any, Literal
 from urllib.parse import urlencode
 
 import requests
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.assets.asset import Asset, AssetWithOracles
+from rotkehlchen.assets.asset import AssetWithOracles
+from rotkehlchen.assets.utils import symbol_to_asset_or_token
+from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.constants.assets import A_BTC
 from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
 from rotkehlchen.errors.asset import UnknownAsset
@@ -20,6 +21,7 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import Location, MarginPosition, Trade
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
 from rotkehlchen.exchanges.utils import deserialize_asset_movement_address, get_key_if_has_val
+from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.asset_movement import create_asset_movement_with_fee
 from rotkehlchen.history.events.structures.types import HistoryEventType
 from rotkehlchen.inquirer import Inquirer
@@ -38,7 +40,7 @@ from rotkehlchen.types import (
     Timestamp,
 )
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import iso8601ts_to_timestamp, satoshis_to_btc, ts_sec_to_ms
+from rotkehlchen.utils.misc import iso8601ts_to_timestamp, satoshis_to_btc, ts_now, ts_sec_to_ms
 from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
 from rotkehlchen.utils.mixins.lockable import protect_with_lock
 
@@ -52,6 +54,7 @@ log = RotkehlchenLogsAdapter(logger)
 BITMEX_PRIVATE_ENDPOINTS = (
     'user',
     'user/wallet',
+    'wallet/assets',
     'user/walletHistory',
 )
 
@@ -59,25 +62,29 @@ BITMEX_PRIVATE_ENDPOINTS = (
 def bitmex_to_world(symbol: str) -> AssetWithOracles:
     if symbol == 'XBt':
         return A_BTC.resolve_to_asset_with_oracles()
+
     # This shouldn't happen since all the trades in bitmex are against BTC
     # as for what @lefterisjp remembers in discord.
-    return Asset(symbol).resolve_to_asset_with_oracles()
+    return symbol_to_asset_or_token(GlobalDBHandler.get_assetid_from_exchange_name(
+        exchange=Location.BITMEX,
+        symbol=(symbol_upper := symbol.upper()),
+        default=symbol_upper,
+    ))
 
 
-def trade_from_bitmex(bitmex_trade: dict) -> MarginPosition:
-    """Turn a bitmex trade returned from bitmex trade history to our common trade
-    history format. This only returns margin positions as bitmex only deals in
-    margin trading. May raise:
+def margin_trade_from_bitmex(bitmex_trade: dict) -> MarginPosition:
+    """Turn a bitmex margin trade returned from bitmex trade history to our common margin trade
+    history format. This only returns margin positions. May raise:
 
     - KeyError
     - DeserializationError
+    - UnknownAsset
     """
     close_time = iso8601ts_to_timestamp(bitmex_trade['transactTime'])
     profit_loss = AssetAmount(satoshis_to_btc(deserialize_asset_amount(bitmex_trade['amount'])))
     currency = bitmex_to_world(bitmex_trade['currency'])
     fee = deserialize_fee(bitmex_trade['fee'])
     notes = bitmex_trade['address']
-    assert currency == A_BTC, 'Bitmex trade should only deal in BTC'
 
     log.debug(
         'Processing Bitmex Trade',
@@ -120,7 +127,7 @@ class Bitmex(ExchangeInterface):
         )
         self.uri = 'https://bitmex.com'
         self.session.headers.update({'api-key': api_key})
-        self.btc = A_BTC.resolve_to_crypto_asset()
+        self.asset_to_decimals: dict[str, int] = {}
 
     def edit_exchange_credentials(self, credentials: ExchangeAuthCredentials) -> bool:
         changed = super().edit_exchange_credentials(credentials)
@@ -129,11 +136,33 @@ class Bitmex(ExchangeInterface):
         return changed
 
     def first_connection(self) -> None:
+        if self.first_connection_made:
+            return
+        try:
+            self.get_assets_decimals()
+        except RemoteError as e:
+            log.error(f'Failed to obtain bitmex decimals due to: {e}. First connection not made')
+            return
+
         self.first_connection_made = True
+
+    def get_assets_decimals(self) -> None:
+        """Bitmex returns balances as integers and we need to convert them to real numbers
+        using the decimals provided by the exchange. Decimals are named `scale` in bitmex.
+        """
+        mappings = {}
+        for entry in self._api_query(path='wallet/assets'):
+            try:
+                mappings[entry['currency']] = entry['scale']
+            except KeyError as e:
+                log.error(f'Missing key {e} when querying decimals in {entry}')
+                raise RemoteError(f'Missing key {e} in assets response.') from e
+
+        self.asset_to_decimals = mappings
 
     def validate_api_key(self) -> tuple[bool, str]:
         try:
-            self._api_query('get', 'user')
+            self._api_query('user')
         except RemoteError as e:
             error = str(e)
             if 'Invalid API Key' in error:
@@ -146,31 +175,29 @@ class Bitmex(ExchangeInterface):
 
     def _generate_signature(self, verb: str, path: str, expires: int, data: str = '') -> str:
         signature = hmac.new(
-            self.secret,
-            (verb.upper() + path + str(expires) + data).encode(),
-            hashlib.sha256,
+            key=self.secret,
+            msg=(verb.upper() + path + str(expires) + data).encode(),
+            digestmod=hashlib.sha256,
         ).hexdigest()
-        self.session.headers.update({
-            'api-signature': signature,
-        })
+
+        self.session.headers.update({'api-signature': signature})
         return signature
 
     def _api_query(
             self,
-            verb: str,
-            path: str,
+            path: Literal[
+                'user',
+                'user/wallet',
+                'wallet/assets',
+                'user/walletHistory',
+            ],
             options: dict | None = None,
-    ) -> list | dict:
+    ) -> list:
         """
         Queries Bitmex with the given verb for the given path and options
         """
-        assert verb in {'get', 'post', 'push'}, (
-            f'Given verb {verb} is not a valid HTTP verb'
-        )
-
         # 20 seconds expiration
-        expires = int(time.time()) + 20
-
+        expires = ts_now() + 20
         request_path_no_args = '/api/v1/' + path
 
         data = ''
@@ -179,19 +206,17 @@ class Bitmex(ExchangeInterface):
             signature_path = request_path
         else:
             request_path = request_path_no_args + '?' + urlencode(options)
-            signature_path = request_path_no_args if path == 'user/wallet' else request_path
+            signature_path = request_path
 
         if path in BITMEX_PRIVATE_ENDPOINTS:
             self._generate_signature(
-                verb=verb,
+                verb='GET',
                 path=signature_path,
                 expires=expires,
                 data=data,
             )
 
-        self.session.headers.update({
-            'api-expires': str(expires),
-        })
+        self.session.headers.update({'api-expires': str(expires)})
         if data != '':
             self.session.headers.update({
                 'Content-Type': 'application/json',
@@ -199,9 +224,9 @@ class Bitmex(ExchangeInterface):
             })
 
         request_url = self.uri + request_path
-        log.debug('Bitmex API Query', verb=verb, request_url=request_url)
+        log.debug('Bitmex API Query', request_url=request_url)
         try:
-            response = getattr(self.session, verb)(request_url, data=data)
+            response = self.session.get(url=request_url, data=data)
         except requests.exceptions.RequestException as e:
             raise RemoteError(f'Bitmex API request failed due to {e!s}') from e
 
@@ -212,67 +237,50 @@ class Bitmex(ExchangeInterface):
             )
 
         try:
-            json_ret = json.loads(response.text)
+            json_ret: list = json.loads(response.text)
         except JSONDecodeError as e:
             raise RemoteError('Bitmex returned invalid JSON response') from e
 
-        if isinstance(json_ret, dict) and 'error' in json_ret:
-            raise RemoteError(json_ret['error']['message'])
-
         return json_ret
-
-    def _api_query_dict(
-            self,
-            verb: str,
-            path: str,
-            options: dict | None = None,
-    ) -> dict:
-        result = self._api_query(verb, path, options)
-        assert isinstance(result, dict)  # pylint: disable=isinstance-second-argument-not-valid-type
-        return result
-
-    def _api_query_list(
-            self,
-            verb: str,
-            path: str,
-            options: dict | None = None,
-    ) -> list:
-        result = self._api_query(verb, path, options)
-        assert isinstance(result, list)  # pylint: disable=isinstance-second-argument-not-valid-type
-        return result
 
     @protect_with_lock()
     @cache_response_timewise()
-    def query_balances(self) -> ExchangeQueryBalances:
+    def query_balances(self, **kwargs: Any) -> ExchangeQueryBalances:
+        self.first_connection()
         returned_balances: dict[AssetWithOracles, Balance] = {}
         try:
-            resp = self._api_query_dict('get', 'user/wallet', {'currency': 'XBt'})
-            # Bitmex shows only BTC balance
-            usd_price = Inquirer.find_usd_price(self.btc)
+            resp = self._api_query('user/wallet', {'currency': 'all'})
         except RemoteError as e:
             msg = f'Bitmex API request failed due to: {e!s}'
             log.error(msg)
             return None, msg
 
-        # result is in satoshis
-        try:
-            amount = satoshis_to_btc(deserialize_asset_amount(resp['amount']))
-        except DeserializationError as e:
-            msg = f'Bitmex API request failed. Failed to deserialized amount due to {e!s}'
-            log.error(msg)
-            return None, msg
+        for balance in resp:
+            try:
+                asset = bitmex_to_world(currency := balance['currency'])
+                raw_amount = balance['amount']
+            except (KeyError, UnknownAsset) as e:
+                msg = str(e) if not isinstance(e, KeyError) else f'missing key {e}'
+                log.error(f'Failed to process balance {balance} in bitmex due to {msg}')
+                continue
 
-        usd_value = amount * usd_price
-        returned_balances[self.btc] = Balance(
-            amount=amount,
-            usd_value=usd_value,
-        )
-        log.debug(
-            'Bitmex balance query result',
-            currency='BTC',
-            amount=amount,
-            usd_value=usd_value,
-        )
+            if (decimals := self.asset_to_decimals.get(currency)) is None:
+                log.error(f'Unknown decimals for asset balance {balance} in bitmex. Skipping')
+                continue
+
+            amount = token_normalized_value_decimals(
+                token_amount=raw_amount,
+                token_decimals=decimals,
+            )
+
+            usd_value = amount * Inquirer.find_usd_price(asset)
+            returned_balances[asset] = Balance(amount=amount, usd_value=usd_value)
+            log.debug(
+                'Bitmex balance query result',
+                currency=currency,
+                amount=amount,
+                usd_value=usd_value,
+            )
 
         return returned_balances, ''
 
@@ -283,22 +291,31 @@ class Bitmex(ExchangeInterface):
     ) -> list[MarginPosition]:
 
         # We know user/walletHistory returns a list
-        resp = self._api_query_list('get', 'user/walletHistory', {'currency': 'all'})
-        log.debug('Bitmex trade history query', results_num=len(resp))
+        resp = self._api_query('user/walletHistory', {'currency': 'all'})
+        log.debug(
+            'Bitmex trade history query',
+            results_num=len(resp),
+            start_ts=start_ts,
+            end_ts=end_ts,
+        )
 
         margin_trades = []
         for tx in resp:
-            if tx['timestamp'] is None:
-                timestamp = None
-            else:
-                timestamp = iso8601ts_to_timestamp(tx['timestamp'])
-            if tx['transactType'] != 'RealisedPNL':
+            timestamp = iso8601ts_to_timestamp(tx['timestamp']) if tx['timestamp'] is not None else None  # noqa: E501
+
+            if (
+                tx['transactType'] != 'RealisedPNL' or
+                (timestamp and not start_ts <= timestamp <= end_ts)
+            ):
                 continue
-            if timestamp and timestamp < start_ts:
-                continue
-            if timestamp and timestamp > end_ts:
-                continue
-            margin_trades.append(trade_from_bitmex(tx))
+
+            try:
+                margin_trades.append(margin_trade_from_bitmex(tx))
+            except (KeyError, UnknownAsset, DeserializationError) as e:
+                msg = str(e) if not isinstance(e, KeyError) else f'missing key {e}'
+                log.error(
+                    f'Failed to process margin trade from bitmex {tx} due to {msg}. Skipping ...',
+                )
 
         return margin_trades
 
@@ -307,7 +324,7 @@ class Bitmex(ExchangeInterface):
             start_ts: Timestamp,
             end_ts: Timestamp,
     ) -> Sequence['HistoryBaseEntry']:
-        resp = self._api_query_list('get', 'user/walletHistory', {'currency': 'all'})
+        resp = self._api_query('user/walletHistory', {'currency': 'all'})
 
         log.debug('Bitmex deposit/withdrawals query', results_num=len(resp))
         movements = []
