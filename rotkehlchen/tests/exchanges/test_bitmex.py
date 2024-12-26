@@ -5,7 +5,7 @@ import pytest
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import ZERO
-from rotkehlchen.constants.assets import A_BTC
+from rotkehlchen.constants.assets import A_BTC, A_USDT
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.exchanges.bitmex import Bitmex
@@ -14,7 +14,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.types import HistoryEventType
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import TimestampMS
+from rotkehlchen.types import Timestamp, TimestampMS
 from rotkehlchen.utils.misc import ts_now
 
 TEST_BITMEX_WITHDRAWAL = """[{
@@ -121,17 +121,22 @@ def test_bitmex_api_withdrawals_deposit_and_query_after_subquery(database, sandb
         assert isinstance(movement.asset, Asset)
 
 
-def test_bitmex_api_withdrawals_deposit_unexpected_data(sandbox_bitmex):
+def test_bitmex_api_withdrawals_deposit_unexpected_data(sandbox_bitmex: 'Bitmex') -> None:
     """Test getting unexpected data in bitmex withdrawals deposit query is handled gracefully"""
     original_input = TEST_BITMEX_WITHDRAWAL
     now = ts_now()
 
-    def query_bitmex_and_test(input_str, expected_warnings_num, expected_errors_num):
+    def query_bitmex_and_test(
+            input_str: str,
+            expected_warnings_num: int,
+            expected_errors_num: int,
+    ) -> None:
         def mock_get_history_events(url, data, **kwargs):  # pylint: disable=unused-argument
             return MockResponse(200, input_str)
+
         with patch.object(sandbox_bitmex.session, 'get', side_effect=mock_get_history_events):
             movements = sandbox_bitmex.query_online_history_events(
-                start_ts=0,
+                start_ts=Timestamp(0),
                 end_ts=now,
             )
 
@@ -153,8 +158,8 @@ def test_bitmex_api_withdrawals_deposit_unexpected_data(sandbox_bitmex):
     query_bitmex_and_test(given_input, expected_warnings_num=0, expected_errors_num=1)
 
     # invalid asset
-    given_input = original_input.replace('"XBt"', '[]')
-    query_bitmex_and_test(given_input, expected_warnings_num=0, expected_errors_num=1)
+    given_input = original_input.replace('"XBt"', '"XYX"')
+    query_bitmex_and_test(given_input, expected_warnings_num=0, expected_errors_num=0)
 
     # invalid amount
     given_input = original_input.replace('16960386', 'null')
@@ -178,20 +183,20 @@ def test_bitmex_api_withdrawals_deposit_unexpected_data(sandbox_bitmex):
 
 
 @pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])
-def test_bitmex_api_withdrawals_deposit_unknown_asset(mock_bitmex):
+def test_bitmex_api_withdrawals_deposit_unknown_asset(mock_bitmex: 'Bitmex') -> None:
     """Test getting unknown asset in bitmex withdrawals deposit query is handled gracefully"""
 
-    def mock_get_response(url, data, **kwargs):  # pylint: disable=unused-argument
+    def mock_get_response(method, url, data, **kwargs):  # pylint: disable=unused-argument
         return MockResponse(200, TEST_BITMEX_WITHDRAWAL.replace('"XBt"', '"dadsdsa"'))
 
-    with patch.object(mock_bitmex.session, 'get', side_effect=mock_get_response):
+    with patch.object(mock_bitmex.session, 'request', side_effect=mock_get_response):
         movements = mock_bitmex.query_online_history_events(
-            start_ts=0,
+            start_ts=Timestamp(0),
             end_ts=ts_now(),
         )
 
     assert len(movements) == 0
-    assert len(mock_bitmex.msg_aggregator.rotki_notifier.messages) == 1
+    assert len(mock_bitmex.msg_aggregator.rotki_notifier.messages) == 1  # type: ignore
 
 
 @pytest.mark.vcr
@@ -262,14 +267,20 @@ def test_bitmex_margin_history(sandbox_bitmex):
 
 
 def test_bitmex_query_balances(sandbox_bitmex):
-    mock_response = {'amount': 123456789}
-    with patch.object(sandbox_bitmex, '_api_query_dict', return_value=mock_response):
+    mock_response = [
+        {'currency': 'XBt', 'amount': 123456789},
+        {'currency': 'USDt', 'amount': 31164180},
+    ]
+    sandbox_bitmex.first_connection_made = True
+    sandbox_bitmex.asset_to_decimals = {'XBt': 8, 'USDt': 6}
+    with patch.object(sandbox_bitmex, '_api_query', return_value=mock_response):
         balances, msg = sandbox_bitmex.query_balances()
 
     assert msg == ''
-    assert len(balances) == 1
+    assert len(balances) == 2
     assert balances[A_BTC].amount == FVal('1.23456789')
     assert balances[A_BTC].usd_value == FVal('1.851851835')
+    assert balances[A_USDT].amount == FVal('31.164180')
 
     warnings = sandbox_bitmex.msg_aggregator.consume_warnings()
     assert len(warnings) == 0
