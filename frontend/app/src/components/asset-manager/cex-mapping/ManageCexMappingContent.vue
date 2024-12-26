@@ -3,8 +3,6 @@ import { omit } from 'lodash-es';
 import { useMessageStore } from '@/store/message';
 import { useConfirmStore } from '@/store/confirm';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
-import { useCexMappingForm } from '@/composables/assets/forms/cex-mapping-form';
-import { useCommonTableProps } from '@/composables/use-common-table-props';
 import { useAssetCexMappingApi } from '@/composables/api/assets/cex-mapping';
 import ManageCexMappingFormDialog from '@/components/asset-manager/cex-mapping/ManageCexMappingFormDialog.vue';
 import ManageCexMappingTable from '@/components/asset-manager/cex-mapping/ManageCexMappingTable.vue';
@@ -21,7 +19,7 @@ const selectedLocation = ref<string>('');
 const selectedSymbol = ref<string>('');
 const editMode = ref<boolean>(false);
 
-const { editableItem } = useCommonTableProps<CexMapping>();
+const modelValue = ref<CexMapping>();
 
 const extraParams = computed(() => {
   const location = get(selectedLocation);
@@ -64,19 +62,19 @@ onMounted(async () => {
   await fetchData();
 });
 
-const { setOpenDialog, setPostSubmitFunc } = useCexMappingForm();
-setPostSubmitFunc(fetchData);
-
 function add(payload?: Partial<CexMapping>) {
-  set(editableItem, payload || null);
+  set(modelValue, {
+    asset: '',
+    location: get(selectedLocation) || '',
+    locationSymbol: get(selectedSymbol) || '',
+    ...payload,
+  });
   set(editMode, false);
-  setOpenDialog(true);
 }
 
 function edit(editMapping: CexMapping) {
-  set(editableItem, editMapping);
+  set(modelValue, editMapping);
   set(editMode, true);
-  setOpenDialog(true);
 }
 
 const { show } = useConfirmStore();
@@ -109,10 +107,6 @@ function showDeleteConfirmation(item: CexMapping) {
     async () => await confirmDelete(item),
   );
 }
-
-const dialogTitle = computed<string>(() =>
-  get(editMode) ? t('asset_management.cex_mapping.edit_title') : t('asset_management.cex_mapping.add_title'),
-);
 </script>
 
 <template>
@@ -156,10 +150,9 @@ const dialogTitle = computed<string>(() =>
         @delete="showDeleteConfirmation($event)"
       />
       <ManageCexMappingFormDialog
-        :title="dialogTitle"
+        v-model="modelValue"
         :edit-mode="editMode"
-        :form="editableItem"
-        :selected-location="selectedLocation"
+        @refresh="fetchData()"
       />
     </RuiCard>
   </TablePageLayout>

@@ -1,16 +1,19 @@
 <script setup lang="ts">
 import { helpers, required } from '@vuelidate/validators';
+import useVuelidate from '@vuelidate/core';
 import { toMessages } from '@/utils/validation';
-import { usePropVModel } from '@/utils/model';
+import { useRefPropVModel } from '@/utils/model';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useEditLocationsSnapshotForm } from '@/composables/snapshots/edit-location/form';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import LocationSelector from '@/components/helper/LocationSelector.vue';
+import { useFormStateWatcher } from '@/composables/form';
 import type { LocationDataSnapshotPayload } from '@/types/snapshots';
 
-const props = withDefaults(
+const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
+const model = defineModel<LocationDataSnapshotPayload>({ required: true });
+
+withDefaults(
   defineProps<{
-    form: LocationDataSnapshotPayload;
     excludedLocations?: string[];
   }>(),
   {
@@ -18,12 +21,8 @@ const props = withDefaults(
   },
 );
 
-const emit = defineEmits<{
-  (e: 'update:form', payload: LocationDataSnapshotPayload): void;
-}>();
-
-const location = usePropVModel(props, 'form', 'location', emit);
-const value = usePropVModel(props, 'form', 'usdValue', emit);
+const location = useRefPropVModel(model, 'location');
+const value = useRefPropVModel(model, 'usdValue');
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
@@ -38,16 +37,21 @@ const rules = {
   },
 };
 
-const { setValidation } = useEditLocationsSnapshotForm();
+const states = {
+  location,
+  value,
+};
 
-const v$ = setValidation(
+const v$ = useVuelidate(
   rules,
-  {
-    location,
-    value,
-  },
+  states,
   { $autoDirty: true },
 );
+useFormStateWatcher(states, stateUpdated);
+
+defineExpose({
+  validate: () => get(v$).$validate(),
+});
 </script>
 
 <template>

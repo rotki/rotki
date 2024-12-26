@@ -17,7 +17,6 @@ import { useHistoryStore } from '@/store/history';
 import { useConfirmStore } from '@/store/confirm';
 import { useTaskStore } from '@/store/tasks';
 import { type Filters, type Matcher, useHistoryEventFilter } from '@/composables/filters/events';
-import { useHistoryEventsForm } from '@/composables/history/events/form';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import { useCommonTableProps } from '@/composables/use-common-table-props';
 import { useHistoryEventMappings } from '@/composables/history/events/mapping';
@@ -40,6 +39,7 @@ import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import type { AccountingRuleEntry } from '@/types/settings/accounting';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 import type {
+  AddTransactionHashPayload,
   HistoryEvent,
   HistoryEventEntry,
   HistoryEventRequestPayload,
@@ -109,6 +109,8 @@ const decodingStatusDialogOpen = ref<boolean>(false);
 const protocolCacheStatusDialogOpen = ref<boolean>(false);
 const currentAction = ref<'decode' | 'query'>('query');
 
+const addTransactionModelValue = ref<AddTransactionHashPayload>();
+
 const { isTaskRunning } = useTaskStore();
 const { show } = useConfirmStore();
 const { fetchAssociatedLocations, resetUndecodedTransactionsStatus } = useHistoryStore();
@@ -162,7 +164,7 @@ const identifiers = computed<string[] | undefined>(() => {
   return identifiers ? [identifiers as string] : undefined;
 });
 
-const { editableItem } = useCommonTableProps<HistoryEventEntry>();
+const { editableItem, openDialog } = useCommonTableProps<HistoryEventEntry>();
 
 const {
   fetchData,
@@ -292,12 +294,6 @@ async function forceRedecodeEvmEvents(data: PullEvmTransactionPayload): Promise<
   await fetchData();
 }
 
-const { setOpenDialog, setPostSubmitFunc } = useHistoryEventsForm();
-
-setPostSubmitFunc(() => {
-  fetchAndRedecodeEvents();
-});
-
 function showForm(payload: ShowEventHistoryForm): void {
   if (payload.type === 'event') {
     const {
@@ -311,7 +307,7 @@ function showForm(payload: ShowEventHistoryForm): void {
     set(editableItem, event);
     set(nextSequence, nextSequenceId);
     set(selectedGroupEvents, eventsInGroup);
-    setOpenDialog(true);
+    set(openDialog, true);
   }
   else {
     const { event, group } = payload.data;
@@ -380,6 +376,14 @@ function removeIdentifierParam() {
   router.push({ query });
 }
 
+function addTxHash() {
+  set(addTransactionModelValue, {
+    associatedAddress: '',
+    evmChain: '',
+    txHash: '',
+  });
+}
+
 watchImmediate(route, async (route) => {
   if (route.query.openDecodingStatusDialog) {
     set(decodingStatusDialogOpen, true);
@@ -440,8 +444,8 @@ onUnmounted(() => {
         :loading="eventTaskLoading"
         :include-evm-events="includes.evmEvents"
         @refresh="refresh(true)"
-        @reload="fetchAndRedecodeEvents({ transactions: [$event] })"
         @show:form="showForm($event)"
+        @show:add-transaction-form="addTxHash()"
       />
     </template>
 
@@ -514,13 +518,19 @@ onUnmounted(() => {
       </HistoryEventsTable>
 
       <HistoryEventFormDialog
+        v-model:open="openDialog"
         :editable-item="editableItem"
         :group-header="selectedGroupHeader"
         :next-sequence="nextSequence"
         :group-events="selectedGroupEvents"
+        @refresh="fetchAndRedecodeEvents()"
       />
 
-      <TransactionFormDialog :loading="sectionLoading" />
+      <TransactionFormDialog
+        v-model="addTransactionModelValue"
+        :loading="sectionLoading"
+        @reload="fetchAndRedecodeEvents({ transactions: [$event] })"
+      />
 
       <MissingRulesDialog
         v-model="eventWithMissingRules"

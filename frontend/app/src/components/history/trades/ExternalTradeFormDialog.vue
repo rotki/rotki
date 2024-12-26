@@ -1,47 +1,105 @@
 <script lang="ts" setup>
-import { useTradesForm } from '@/composables/history/trades/form';
+import { useTemplateRef } from 'vue';
+import { omit } from 'lodash-es';
 import ExternalTradeForm from '@/components/history/trades/ExternalTradeForm.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
+import { useMessageStore } from '@/store/message';
+import { useTrades } from '@/composables/history/trades';
 import type { Trade } from '@/types/history/trade';
 
-const props = withDefaults(
-  defineProps<{
-    editableItem?: Trade | null;
-    loading?: boolean;
-  }>(),
-  {
-    editableItem: null,
-    loading: false,
-  },
-);
+const modelValue = defineModel<Trade | undefined>({ required: true });
 
-const { editableItem } = toRefs(props);
+const props = defineProps<{
+  editMode: boolean;
+  loading: boolean;
+}>();
 
-const { closeDialog, openDialog, stateUpdated, submitting, trySubmit } = useTradesForm();
+const emit = defineEmits<{
+  (e: 'refresh'): void;
+}>();
 
 const { t } = useI18n();
 
-const title = computed<string>(() =>
-  get(editableItem) ? t('closed_trades.dialog.edit.title') : t('closed_trades.dialog.add.title'),
+const submitting = ref(false);
+const errorMessages = ref<Record<string, string[]>>({});
+const form = useTemplateRef<InstanceType<typeof ExternalTradeForm>>('form');
+const stateUpdated = ref(false);
+
+const dialogTitle = computed<string>(() =>
+  props.editMode ? t('closed_trades.dialog.edit.title') : t('closed_trades.dialog.add.title'),
 );
 
-const subtitle = computed<string>(() =>
-  get(editableItem) ? t('closed_trades.dialog.edit.subtitle') : '',
+const dialogSubtitle = computed<string>(() =>
+  props.editMode ? t('closed_trades.dialog.edit.subtitle') : '',
 );
+
+const { setMessage } = useMessageStore();
+
+const { addExternalTrade, editExternalTrade } = useTrades();
+
+async function save(): Promise<boolean> {
+  if (!isDefined(modelValue))
+    return false;
+
+  const formRef = get(form);
+  const valid = await formRef?.validate();
+  if (!valid)
+    return false;
+
+  const data = get(modelValue);
+  const editMode = props.editMode;
+  const payload = {
+    ...data,
+  };
+
+  set(submitting, true);
+  const result = !editMode
+    ? await addExternalTrade(omit(payload, 'tradeId'))
+    : await editExternalTrade(payload);
+
+  if (!result.success && result.message) {
+    if (typeof result.message === 'string') {
+      setMessage({
+        description: result.message,
+      });
+    }
+    else {
+      set(errorMessages, {
+        ...get(errorMessages),
+        ...result.message,
+      });
+      await formRef?.validate();
+    }
+  }
+
+  set(submitting, false);
+  if (result.success) {
+    set(modelValue, undefined);
+    emit('refresh');
+  }
+  return result.success;
+}
 </script>
 
 <template>
   <BigDialog
-    :display="openDialog"
-    :title="title"
-    :subtitle="subtitle"
+    :display="!!modelValue"
+    :title="dialogTitle"
+    :subtitle="dialogSubtitle"
     :primary-action="t('common.actions.save')"
     :action-disabled="loading"
     :loading="submitting"
     :prompt-on-close="stateUpdated"
-    @confirm="trySubmit()"
-    @cancel="closeDialog()"
+    @confirm="save()"
+    @cancel="modelValue = undefined"
   >
-    <ExternalTradeForm :editable-item="editableItem" />
+    <ExternalTradeForm
+      v-if="modelValue"
+      ref="form"
+      v-model="modelValue"
+      v-model:error-messages="errorMessages"
+      v-model:state-updated="stateUpdated"
+      :edit-mode="editMode"
+    />
   </BigDialog>
 </template>

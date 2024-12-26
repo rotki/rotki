@@ -3,7 +3,6 @@ import { CURRENCY_USD } from '@/types/currencies';
 import { useConfirmStore } from '@/store/confirm';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useEditLocationsSnapshotForm } from '@/composables/snapshots/edit-location/form';
 import EditLocationDataSnapshotForm from '@/components/dashboard/edit-snapshot/EditLocationDataSnapshotForm.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
@@ -27,18 +26,22 @@ const { t } = useI18n();
 
 type IndexedLocationDataSnapshot = LocationDataSnapshot & { index: number };
 
-const { closeDialog, openDialog, setOpenDialog, setSubmitFunc, stateUpdated, submitting, trySubmit } = useEditLocationsSnapshotForm();
-
 const { timestamp } = toRefs(props);
+
+const openDialog = ref<boolean>(false);
+const stateUpdated = ref<boolean>(false);
+const submitting = ref<boolean>(false);
+
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const editedIndex = ref<number | null>(null);
-const form = ref<LocationDataSnapshotPayload | null>(null);
+const modelValue = ref<LocationDataSnapshotPayload | null>(null);
 const excludedLocations = ref<string[]>([]);
 const tableRef = ref<any>();
 const sort = ref<DataTableSortData<LocationDataSnapshot>>({
   column: 'usdValue',
   direction: 'desc' as const,
 });
+const form = ref<InstanceType<typeof EditLocationDataSnapshotForm>>();
 
 const tableHeaders = computed<DataTableColumn<IndexedLocationDataSnapshot>[]>(() => [
   {
@@ -86,7 +89,7 @@ function editClick(item: IndexedLocationDataSnapshot) {
       ? item.usdValue.toFixed()
       : item.usdValue.multipliedBy(get(fiatExchangeRate)).toFixed();
 
-  set(form, {
+  set(modelValue, {
     ...item,
     usdValue: convertedFiatValue,
   });
@@ -96,12 +99,12 @@ function editClick(item: IndexedLocationDataSnapshot) {
     props.modelValue.map(item => item.location).filter(identifier => identifier !== item.location),
   );
 
-  setOpenDialog(true);
+  set(openDialog, true);
 }
 
 function add() {
   set(editedIndex, null);
-  set(form, {
+  set(modelValue, {
     location: '',
     timestamp: get(timestamp),
     usdValue: '',
@@ -110,27 +113,33 @@ function add() {
     excludedLocations,
     props.modelValue.map(item => item.location),
   );
-  setOpenDialog(true);
+  set(openDialog, true);
 }
 
-function save() {
-  const formVal = get(form);
+async function save() {
+  const formRef = get(form);
+  const valid = await formRef?.validate();
+  if (!valid)
+    return false;
 
-  if (!formVal)
-    return;
+  const data = get(modelValue);
 
+  if (!data)
+    return false;
+
+  set(submitting, true);
   const index = get(editedIndex);
   const val = props.modelValue;
   const timestampVal = get(timestamp);
 
   const convertedUsdValue
     = get(currencySymbol) === CURRENCY_USD
-      ? bigNumberify(formVal.usdValue)
-      : bigNumberify(formVal.usdValue).dividedBy(get(fiatExchangeRate));
+      ? bigNumberify(data.usdValue)
+      : bigNumberify(data.usdValue).dividedBy(get(fiatExchangeRate));
 
   const newValue = [...val];
   const payload = {
-    location: formVal.location,
+    location: data.location,
     timestamp: timestampVal,
     usdValue: convertedUsdValue,
   };
@@ -139,21 +148,17 @@ function save() {
     newValue[index] = payload;
   else newValue.unshift(payload);
 
+  set(submitting, false);
+
   input(newValue);
   clearEditDialog();
 }
 
-setSubmitFunc(save);
-
 function clearEditDialog() {
-  closeDialog();
+  set(openDialog, false);
   set(editedIndex, null);
-  set(form, null);
+  set(modelValue, null);
   set(excludedLocations, []);
-}
-
-function updateForm(newForm: LocationDataSnapshotPayload) {
-  set(form, newForm);
 }
 
 function confirmDelete(index: number) {
@@ -285,14 +290,15 @@ function showDeleteConfirmation(item: IndexedLocationDataSnapshot) {
       :primary-action="t('common.actions.save')"
       :loading="submitting"
       :prompt-on-close="stateUpdated"
-      @confirm="trySubmit()"
+      @confirm="save()"
       @cancel="clearEditDialog()"
     >
       <EditLocationDataSnapshotForm
-        v-if="form"
-        :form="form"
+        v-if="modelValue"
+        ref="form"
+        v-model="modelValue"
+        v-model:state-updated="stateUpdated"
         :excluded-locations="excludedLocations"
-        @update:form="updateForm($event)"
       />
     </BigDialog>
   </div>

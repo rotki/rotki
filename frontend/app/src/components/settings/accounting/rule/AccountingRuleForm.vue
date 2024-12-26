@@ -1,42 +1,28 @@
 <script setup lang="ts">
 import { required } from '@vuelidate/validators';
-import { omit } from 'lodash-es';
-import { objectOmit } from '@vueuse/core';
+import useVuelidate from '@vuelidate/core';
 import { type AccountingRuleEntry, AccountingTreatment } from '@/types/settings/accounting';
 import { toMessages } from '@/utils/validation';
-import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
-import { getPlaceholderRule } from '@/utils/settings';
-import { useMessageStore } from '@/store/message';
-import { useAccountingRuleForm } from '@/composables/settings/accounting/form';
-import { useAccountingApi } from '@/composables/api/settings/accounting-api';
 import AccountingRuleWithLinkedSetting from '@/components/settings/accounting/rule/AccountingRuleWithLinkedSetting.vue';
 import CounterpartyInput from '@/components/inputs/CounterpartyInput.vue';
 import HistoryEventTypeForm from '@/components/history/events/forms/HistoryEventTypeForm.vue';
+import { refOptional, useRefPropVModel } from '@/utils/model';
+import { useFormStateWatcher } from '@/composables/form';
+import type { ValidationErrors } from '@/types/api/errors';
 
-const props = withDefaults(
-  defineProps<{
-    editableItem?: AccountingRuleEntry | null;
-  }>(),
-  {
-    editableItem: null,
-  },
-);
+const modelValue = defineModel<AccountingRuleEntry>({ required: true });
+const errors = defineModel<ValidationErrors>('errorMessages', { required: true });
+const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
 
-const { editableItem } = toRefs(props);
+const { t } = useI18n();
 
-const state = ref<AccountingRuleEntry>(getPlaceholderRule());
-
-const counterparty = computed<string>({
-  get() {
-    return get(state).counterparty ?? '';
-  },
-  set(value?: string) {
-    set(state, {
-      ...objectOmit(get(state), ['counterparty']),
-      counterparty: value ?? null,
-    });
-  },
-});
+const counterparty = refOptional(useRefPropVModel(modelValue, 'counterparty'), '');
+const accountingTreatment = useRefPropVModel(modelValue, 'accountingTreatment');
+const eventType = useRefPropVModel(modelValue, 'eventType');
+const eventSubtype = useRefPropVModel(modelValue, 'eventSubtype');
+const taxable = useRefPropVModel(modelValue, 'taxable');
+const countEntireAmountSpend = useRefPropVModel(modelValue, 'countEntireAmountSpend');
+const countCostBasisPnl = useRefPropVModel(modelValue, 'countCostBasisPnl');
 
 const externalServerValidation = () => true;
 
@@ -47,90 +33,40 @@ const rules = {
   eventType: { required },
 };
 
-const { t } = useI18n();
+const states = {
+  accountingTreatment,
+  counterparty,
+  eventSubtype,
+  eventType,
+};
 
-const { setSubmitFunc, setValidation } = useAccountingRuleForm();
+const v$ = useVuelidate(
+  rules,
+  states,
+  {
+    $autoDirty: true,
+    $externalResults: errors,
+  },
+);
 
-const errorMessages = ref<ValidationErrors>({});
-
-const v$ = setValidation(rules, state, {
-  $autoDirty: true,
-  $externalResults: errorMessages,
-});
-
-onMounted(() => {
-  const editable = get(editableItem);
-  if (editable)
-    reset(editable);
-});
-
-watch(editableItem, (editableItem) => {
-  if (editableItem)
-    reset(editableItem);
-});
-
-function reset(newState?: AccountingRuleEntry) {
-  if (newState)
-    set(state, { ...newState });
-  else set(state, getPlaceholderRule());
-}
-
-const { addAccountingRule, editAccountingRule } = useAccountingApi();
-const { setMessage } = useMessageStore();
-
-async function save() {
-  const editing = Number(get(editableItem)?.identifier) > 0;
-  const stateVal = get(state);
-
-  const payload = {
-    ...stateVal,
-    counterparty: stateVal.counterparty || null,
-  };
-
-  try {
-    const result = editing ? await editAccountingRule(payload) : await addAccountingRule(omit(payload, 'identifier'));
-
-    if (result)
-      reset();
-
-    return result;
-  }
-  catch (error: any) {
-    const errorTitle = editing ? t('accounting_settings.rule.edit_error') : t('accounting_settings.rule.add_error');
-
-    let errors = error.message;
-    if (error instanceof ApiValidationError)
-      errors = error.getValidationErrors(payload);
-
-    if (typeof errors === 'string') {
-      setMessage({
-        description: errors,
-        success: false,
-        title: errorTitle,
-      });
-    }
-    else {
-      set(errorMessages, errors);
-    }
-
-    return false;
-  }
-}
-
-setSubmitFunc(save);
+useFormStateWatcher(states, stateUpdated);
 
 const accountingTreatments = Object.values(AccountingTreatment).map(identifier => ({
   identifier,
   label: toSentenceCase(identifier),
 }));
+
+defineExpose({
+  validate: () => get(v$).$validate(),
+});
 </script>
 
 <template>
   <form>
     <HistoryEventTypeForm
-      v-model:event-type="state.eventType"
-      v-model:event-subtype="state.eventSubtype"
-      :counterparty="state.counterparty"
+      v-model:event-type="eventType"
+      v-model:event-subtype="eventSubtype"
+      :counterparty="counterparty"
       :v$="v$"
       disable-warning
     />
@@ -144,7 +80,7 @@ const accountingTreatments = Object.values(AccountingTreatment).map(identifier =
     />
 
     <AccountingRuleWithLinkedSetting
-      v-model="state.taxable"
+      v-model="taxable"
       class="border-t border-default"
       identifier="taxable"
       :label="t('accounting_settings.rule.labels.taxable')"
@@ -152,7 +88,7 @@ const accountingTreatments = Object.values(AccountingTreatment).map(identifier =
     />
 
     <AccountingRuleWithLinkedSetting
-      v-model="state.countEntireAmountSpend"
+      v-model="countEntireAmountSpend"
       class="border-t border-default"
       identifier="countEntireAmountSpend"
       :label="t('accounting_settings.rule.labels.count_entire_amount_spend')"
@@ -160,7 +96,7 @@ const accountingTreatments = Object.values(AccountingTreatment).map(identifier =
     />
 
     <AccountingRuleWithLinkedSetting
-      v-model="state.countCostBasisPnl"
+      v-model="countCostBasisPnl"
       class="border-t border-default"
       identifier="countCostBasisPnl"
       :label="t('accounting_settings.rule.labels.count_cost_basis_pnl')"
@@ -170,7 +106,7 @@ const accountingTreatments = Object.values(AccountingTreatment).map(identifier =
     <RuiDivider class="mb-6" />
 
     <RuiAutoComplete
-      v-model="state.accountingTreatment"
+      v-model="accountingTreatment"
       class="md:w-1/2"
       variant="outlined"
       :options="accountingTreatments"

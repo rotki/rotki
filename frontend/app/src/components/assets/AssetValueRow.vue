@@ -2,7 +2,6 @@
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useConfirmStore } from '@/store/confirm';
 import { useBalancePricesStore } from '@/store/balances/prices';
-import { useLatestPriceForm } from '@/composables/price-manager/latest/form';
 import { useLatestPrices } from '@/composables/price-manager/latest';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useAggregatedBalances } from '@/composables/balances/aggregated';
@@ -31,9 +30,9 @@ const isManualPrice = isManualAssetPrice(identifier);
 
 const { t } = useI18n();
 
-const customPrice = ref<Partial<ManualPriceFormPayload> | null>(null);
+const openPriceDialog = ref<boolean>(false);
+const customPrice = ref<ManualPriceFormPayload | null>(null);
 
-const { setOpenDialog, setPostSubmitFunc } = useLatestPriceForm();
 const { show } = useConfirmStore();
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
@@ -42,7 +41,6 @@ const { exchangeRate } = useBalancePricesStore();
 
 function setPriceForm() {
   const toAsset = get(currencySymbol);
-  setOpenDialog(true);
   set(customPrice, {
     fromAsset: get(identifier),
     price: get(info)
@@ -51,6 +49,7 @@ function setPriceForm() {
       .toFixed(),
     toAsset,
   });
+  set(openPriceDialog, true);
 }
 
 const { deletePrice, refreshCurrentPrices, refreshing } = useLatestPrices(t);
@@ -67,10 +66,6 @@ function showDeleteConfirmation() {
     () => deletePrice({ fromAsset: identifierVal }),
   );
 }
-
-onMounted(() => {
-  setPostSubmitFunc(() => refreshCurrentPrices());
-});
 </script>
 
 <template>
@@ -131,9 +126,11 @@ onMounted(() => {
     </RuiCard>
 
     <LatestPriceFormDialog
-      :value="customPrice"
+      v-model:open="openPriceDialog"
+      :editable-item="customPrice"
       :edit-mode="isManualPrice"
       disable-from-asset
+      @refresh="refreshCurrentPrices()"
     />
   </div>
 </template>

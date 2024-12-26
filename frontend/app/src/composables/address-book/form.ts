@@ -1,26 +1,30 @@
-import { useForm } from '@/composables/form';
-import type { AddressBookSimplePayload } from '@/types/eth-names';
+import type { AddressBookPayload, AddressBookSimplePayload } from '@/types/eth-names';
 
-function defaultPayload(): AddressBookSimplePayload {
+function defaultPayload(): AddressBookPayload {
   return {
     address: '',
     blockchain: null,
+    location: 'private',
+    name: '',
   };
 }
 
 export const useAddressBookForm = createSharedComposable(() => {
-  const forms = useForm<boolean>();
+  const openDialog = ref<boolean>(false);
 
-  const globalPayload = ref<AddressBookSimplePayload>(defaultPayload());
+  const globalPayload = ref<AddressBookPayload>(defaultPayload());
 
   const showGlobalDialog = (newPayload: AddressBookSimplePayload): void => {
-    set(globalPayload, newPayload);
-    forms.setOpenDialog(true);
+    set(globalPayload, {
+      ...get(globalPayload),
+      ...newPayload,
+    });
+    set(openDialog, true);
   };
 
   return {
     globalPayload,
+    openDialog,
     showGlobalDialog,
-    ...forms,
   };
 });

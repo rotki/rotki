@@ -2,16 +2,14 @@
 import { helpers, required, requiredIf } from '@vuelidate/validators';
 import { omit } from 'lodash-es';
 import { externalLinks } from '@shared/external-links';
+import useVuelidate from '@vuelidate/core';
 import { evmTokenKindsData } from '@/types/blockchain/chains';
 import { CUSTOM_ASSET, EVM_TOKEN } from '@/types/asset';
-import { ApiValidationError } from '@/types/api/errors';
 import AssetIconForm from '@/components/asset-manager/AssetIconForm.vue';
 import { toMessages } from '@/utils/validation';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 import { useMessageStore } from '@/store/message';
-import { useAssetCacheStore } from '@/store/assets/asset-cache';
 import { useAssetManagementApi } from '@/composables/api/assets/management';
-import { useManagedAssetForm } from '@/composables/assets/forms/managed-asset-form';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import UnderlyingTokenManager from '@/components/asset-manager/UnderlyingTokenManager.vue';
@@ -19,41 +17,74 @@ import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
 import HelpLink from '@/components/helper/HelpLink.vue';
 import CopyButton from '@/components/helper/CopyButton.vue';
-import type { EvmTokenKind, SupportedAsset, UnderlyingToken } from '@rotki/common';
+import { refOptional, useRefPropVModel } from '@/utils/model';
+import { useFormStateWatcher } from '@/composables/form';
+import type { ValidationErrors } from '@/types/api/errors';
+import type { SupportedAsset, UnderlyingToken } from '@rotki/common';
 import type { SelectOption, SelectOptions } from '@/types/common';
+
+const modelValue = defineModel<SupportedAsset>({ required: true });
+const errors = defineModel<ValidationErrors>('errorMessages', { required: true });
+const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
 
 const props = withDefaults(
   defineProps<{
-    editableItem?: SupportedAsset | null;
+    editMode?: boolean;
+    loading?: boolean;
   }>(),
   {
-    editableItem: null,
+    editMode: false,
+    loading: false,
   },
 );
 
-function time(t: string): number | undefined {
-  return t ? convertToTimestamp(t) : undefined;
-}
-
 const { t } = useI18n();
-const { editableItem } = toRefs(props);
 const { fetchTokenDetails } = useAssetInfoRetrieval();
 
-const address = ref<string>('');
-const name = ref<string>('');
-const symbol = ref<string>('');
-const decimals = ref<string>('');
-const started = ref<string>('');
-const coingecko = ref<string>('');
-const cryptocompare = ref<string>('');
-const assetType = ref<string>(EVM_TOKEN);
-const evmChain = ref<string>();
-const tokenKind = ref<EvmTokenKind>();
 const types = ref<SelectOptions>([{ key: EVM_TOKEN, label: toSentenceCase(EVM_TOKEN) }]);
-const identifier = ref<string>('');
-const protocol = ref<string>('');
-const swappedFor = ref<string>('');
-const forked = ref<string>('');
+
+const identifier = useRefPropVModel(modelValue, 'identifier');
+const address = refOptional(useRefPropVModel(modelValue, 'address'), '');
+const name = refOptional(useRefPropVModel(modelValue, 'name'), '');
+const symbol = refOptional(useRefPropVModel(modelValue, 'symbol'), '');
+const decimals = useRefPropVModel(modelValue, 'decimals');
+const coingecko = refOptional(useRefPropVModel(modelValue, 'coingecko'), '');
+const cryptocompare = refOptional(useRefPropVModel(modelValue, 'cryptocompare'), '');
+const assetType = useRefPropVModel(modelValue, 'assetType');
+const evmChain = useRefPropVModel(modelValue, 'evmChain');
+const tokenKind = useRefPropVModel(modelValue, 'tokenKind');
+const protocol = refOptional(useRefPropVModel(modelValue, 'protocol'), '');
+const swappedFor = refOptional(useRefPropVModel(modelValue, 'swappedFor'), '');
+const forked = refOptional(useRefPropVModel(modelValue, 'forked'), '');
+const started = useRefPropVModel(modelValue, 'started');
+
+function parseDecimals(value?: string): number | null {
+  if (!value)
+    return null;
+
+  const parsedValue = Number.parseInt(value);
+  return Number.isNaN(parsedValue) ? null : parsedValue;
+}
+
+const startedModel = computed({
+  get: () => {
+    const startedVal = get(started);
+    return startedVal ? convertFromTimestamp(startedVal) : '';
+  },
+  set: (value?: string) => {
+    set(started, value ? convertToTimestamp(value) : undefined);
+  },
+});
+
+const decimalsModel = computed({
+  get() {
+    return `${get(decimals)}`;
+  },
+  set(value: string) {
+    set(decimals, parseDecimals(value));
+  },
+});
+
 const coingeckoEnabled = ref<boolean>(false);
 const cryptocompareEnabled = ref<boolean>(false);
 const fetching = ref<boolean>(false);
@@ -62,7 +93,6 @@ const dontAutoFetch = ref<boolean>(false);
 const underlyingTokens = ref<UnderlyingToken[]>([]);
 
 const assetIconFormRef = ref<InstanceType<typeof AssetIconForm> | null>(null);
-const errors = ref<Record<string, string[]>>({});
 
 const isEvmToken = computed<boolean>(() => get(assetType) === EVM_TOKEN);
 
@@ -72,11 +102,25 @@ const { setMessage } = useMessageStore();
 
 const { addAsset, editAsset, getAssetTypes } = useAssetManagementApi();
 
-const { setSubmitFunc, setValidation, submitting } = useManagedAssetForm();
-
 const externalServerValidation = () => true;
 
-const v$ = setValidation(
+const states = {
+  address,
+  assetType,
+  coingecko,
+  cryptocompare,
+  decimals,
+  evmChain,
+  forked,
+  name,
+  protocol,
+  started,
+  swappedFor,
+  symbol,
+  tokenKind,
+};
+
+const v$ = useVuelidate(
   {
     address: {
       required: requiredIf(isEvmToken),
@@ -98,23 +142,11 @@ const v$ = setValidation(
     symbol: { externalServerValidation },
     tokenKind: { externalServerValidation },
   },
-  {
-    address,
-    assetType,
-    coingecko,
-    cryptocompare,
-    decimals,
-    evmChain,
-    forked,
-    name,
-    protocol,
-    started,
-    swappedFor,
-    symbol,
-    tokenKind,
-  },
+  states,
   { $autoDirty: true, $externalResults: errors },
 );
+
+useFormStateWatcher(states, stateUpdated);
 
 function clearFieldError(field: keyof SupportedAsset) {
   set(errors, omit(get(errors), field));
@@ -140,9 +172,15 @@ watch([address, evmChain], async ([address, evmChain]) => {
 
     const { decimals: newDecimals, name: newName, symbol: newSymbol } = await fetchTokenDetails({ address, evmChain });
 
-    set(decimals, newDecimals ?? get(decimals));
-    set(name, newName || get(name));
-    set(symbol, newSymbol || get(symbol));
+    if (newDecimals)
+      set(decimals, newDecimals);
+
+    if (newName)
+      set(name, newName);
+
+    if (newSymbol)
+      set(symbol, newSymbol);
+
     set(fetching, false);
     clearFieldErrors(['decimals', 'name', 'symbol']);
   }
@@ -151,33 +189,6 @@ watch([address, evmChain], async ([address, evmChain]) => {
 watch(assetType, () => {
   // clearing errors because the errors are unique based on the asset type
   set(errors, {});
-});
-
-function parseDecimals(value?: string): number | null {
-  if (!value)
-    return null;
-
-  const parsedValue = Number.parseInt(value);
-  return Number.isNaN(parsedValue) ? null : parsedValue;
-}
-
-const asset = computed<Omit<SupportedAsset, 'identifier' | 'assetType'>>(() => {
-  const ut = get(underlyingTokens);
-
-  return {
-    address: get(address),
-    coingecko: get(coingeckoEnabled) ? onlyIfTruthy(get(coingecko)) : null,
-    cryptocompare: get(cryptocompareEnabled) ? onlyIfTruthy(get(cryptocompare)) : '',
-    decimals: parseDecimals(get(decimals)),
-    evmChain: get(evmChain) || null,
-    name: get(name),
-    protocol: onlyIfTruthy(get(protocol)),
-    started: time(get(started)),
-    swappedFor: onlyIfTruthy(get(swappedFor)),
-    symbol: get(symbol),
-    tokenKind: (get(tokenKind) as EvmTokenKind) || null,
-    underlyingTokens: ut.length > 0 ? ut : undefined,
-  };
 });
 
 onBeforeMount(async () => {
@@ -200,318 +211,239 @@ onBeforeMount(async () => {
 });
 
 onMounted(() => {
-  const token = get(editableItem);
-  set(dontAutoFetch, !!token);
-  if (!token)
-    return;
-
-  set(name, token.name ?? '');
-  set(symbol, token.symbol);
-  set(identifier, token.identifier ?? '');
-  set(swappedFor, token.swappedFor ?? '');
-  set(started, token.started ? convertFromTimestamp(token.started) : '');
-  set(coingecko, token.coingecko ?? '');
-  set(cryptocompare, token.cryptocompare ?? '');
-
-  set(coingeckoEnabled, token.coingecko !== null);
-  set(cryptocompareEnabled, token.cryptocompare !== '');
-
-  set(forked, token.forked ?? '');
-  set(assetType, token.assetType ?? EVM_TOKEN);
-  set(address, token.address);
-  set(decimals, token.decimals?.toString() ?? undefined);
-  set(protocol, token.protocol ?? '');
-  set(underlyingTokens, token.underlyingTokens ?? []);
-  set(evmChain, token.evmChain);
-  set(tokenKind, token.tokenKind);
+  set(dontAutoFetch, props.editMode);
 });
 
 async function saveAsset() {
   let newIdentifier: string;
-  const assetVal = get(asset);
+  const data = get(modelValue);
+
+  const payload: SupportedAsset = omit({
+    ...data,
+    coingecko: get(coingeckoEnabled) ? onlyIfTruthy(get(coingecko)) : null,
+    cryptocompare: get(cryptocompareEnabled) ? onlyIfTruthy(get(cryptocompare)) : '',
+    evmChain: get(evmChain) || null,
+    protocol: onlyIfTruthy(get(protocol)),
+    swappedFor: onlyIfTruthy(get(swappedFor)),
+    tokenKind: get(tokenKind) || null,
+    underlyingTokens: get(underlyingTokens).length > 0 ? get(underlyingTokens) : undefined,
+  }, ['ended', 'active', 'customAssetType']);
 
   const assetPayload = get(isEvmToken)
-    ? assetVal
-    : omit(assetVal, ['decimals', 'address', 'evmChain', 'type', 'tokenKind', 'underlyingTokens']);
+    ? payload
+    : omit(payload, ['decimals', 'address', 'evmChain', 'type', 'tokenKind', 'underlyingTokens']);
 
-  const payload = {
-    ...assetPayload,
-    assetType: get(assetType),
-  };
-
-  if (get(editableItem)) {
+  if (props.editMode) {
     newIdentifier = get(identifier);
-    await editAsset({ ...payload, identifier: newIdentifier });
+    await editAsset({ ...assetPayload, identifier: newIdentifier });
   }
   else {
-    ({ identifier: newIdentifier } = await addAsset(payload));
+    ({ identifier: newIdentifier } = await addAsset(omit(assetPayload, 'identifier')));
   }
   return newIdentifier;
 }
 
-function getUnderlyingTokenErrors(underlyingTokens: string | Record<string, { address: string[]; weight: string[] }>) {
-  if (typeof underlyingTokens === 'string')
-    return [underlyingTokens];
-
-  const messages: string[] = [];
-  for (const underlyingToken of Object.values(underlyingTokens)) {
-    const ut = underlyingToken;
-    if (ut.address)
-      messages.push(...ut.address);
-
-    if (underlyingTokens.weight)
-      messages.push(...ut.weight);
-  }
-  return messages;
+function saveIcon(identifier: string) {
+  get(assetIconFormRef)?.saveIcon(identifier);
 }
 
-function handleError(
-  message:
-    | {
-      underlyingTokens: string | Record<string, { address: string[]; weight: string[] }>;
-    }
-    | {
-      _schema: string[];
-    },
-) {
-  if ('underlyingTokens' in message) {
-    const messages = getUnderlyingTokenErrors(message.underlyingTokens);
-    setMessage({
-      description: messages.join(','),
-      title: t('asset_form.underlying_tokens'),
-    });
-  }
-  else {
-    setMessage({
-      description: message._schema[0],
-      title: t('asset_form.underlying_tokens'),
-    });
-  }
-}
-
-const { deleteCacheKey } = useAssetCacheStore();
-
-async function save() {
-  try {
-    const newIdentifier = await saveAsset();
-    set(identifier, newIdentifier);
-    await get(assetIconFormRef)?.saveIcon(newIdentifier);
-    deleteCacheKey(newIdentifier);
-    return true;
-  }
-  catch (error: any) {
-    let errorsMessage = error.message;
-    if (error instanceof ApiValidationError)
-      errorsMessage = error.getValidationErrors(get(asset));
-
-    if (typeof errorsMessage === 'string') {
-      setMessage({
-        description: errorsMessage,
-        title: get(editableItem) ? t('asset_form.edit_error') : t('asset_form.add_error'),
-      });
-    }
-    else {
-      if (errorsMessage.underlyingTokens || errorsMessage._schema)
-        handleError(errorsMessage);
-
-      set(errors, omit(errorsMessage, ['underlyingTokens', '_schema']));
-      await get(v$).$validate();
-    }
-
-    return false;
-  }
-}
-
-setSubmitFunc(save);
+defineExpose({
+  saveAsset,
+  saveIcon,
+  validate: () => get(v$).$validate(),
+});
 </script>
 
 <template>
-  <div
-    v-if="editableItem"
-    class="flex items-center text-caption text-rui-text-secondary -mt-2 mb-4 gap-2"
-  >
-    <span class="font-medium"> {{ t('asset_form.identifier') }}: </span>
-    <div class="flex items-center">
-      {{ editableItem.identifier }}
-      <CopyButton
-        class="ml-2"
-        size="sm"
-        :value="editableItem.identifier"
-        :tooltip="t('asset_form.identifier_copy')"
-      />
-    </div>
-  </div>
-  <div class="flex flex-col gap-2">
-    <div data-cy="type-select">
-      <RuiMenuSelect
-        v-model="assetType"
-        :label="t('asset_form.labels.asset_type')"
-        :options="types"
-        :disabled="types.length === 1 || !!editableItem"
-        :error-messages="toMessages(v$.assetType)"
-        class="mb-3"
-        key-attr="key"
-        text-attr="label"
-        variant="outlined"
-      />
-    </div>
-
+  <div class="flex flex-col gap-3">
     <div
-      v-if="isEvmToken"
-      class="grid md:grid-cols-2 gap-x-4 gap-y-2"
+      v-if="editMode"
+      class="flex items-center text-caption text-rui-text-secondary -mt-2 mb-4 gap-2"
     >
-      <div data-cy="chain-select">
-        <RuiMenuSelect
-          v-model="evmChain"
-          :label="t('asset_form.labels.chain')"
-          :options="allEvmChains"
-          :disabled="!!editableItem"
-          :error-messages="toMessages(v$.evmChain)"
-          key-attr="name"
-          text-attr="label"
-          variant="outlined"
-        />
-      </div>
-
-      <div data-cy="token-select">
-        <RuiMenuSelect
-          v-model="tokenKind"
-          :label="t('asset_form.labels.token_kind')"
-          :options="evmTokenKindsData"
-          :disabled="!!editableItem"
-          :error-messages="toMessages(v$.tokenKind)"
-          key-attr="identifier"
-          text-attr="label"
-          variant="outlined"
+      <span class="font-medium"> {{ t('asset_form.identifier') }}: </span>
+      <div class="flex items-center">
+        {{ identifier }}
+        <CopyButton
+          class="ml-2"
+          size="sm"
+          :value="identifier"
+          :tooltip="t('asset_form.identifier_copy')"
         />
       </div>
     </div>
-    <div data-cy="address-input">
-      <RuiTextField
-        v-if="isEvmToken"
-        v-model="address"
-        variant="outlined"
-        color="primary"
-        :loading="fetching"
-        :error-messages="toMessages(v$.address)"
-        :label="t('common.address')"
-        :disabled="submitting || fetching || !!editableItem"
-        @keydown.space.prevent
-      />
-    </div>
-
-    <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-2">
-      <RuiTextField
-        v-model="name"
-        data-cy="name-input"
-        class="md:col-span-2"
-        variant="outlined"
-        color="primary"
-        :error-messages="toMessages(v$.name)"
-        :label="t('common.name')"
-        :disabled="submitting || fetching"
-      />
-
-      <RuiTextField
-        v-model="symbol"
-        :class="isEvmToken ? 'md:col-span-1' : 'md:col-span-2'"
-        data-cy="symbol-input"
-        variant="outlined"
-        color="primary"
-        :error-messages="toMessages(v$.symbol)"
-        :label="t('asset_form.labels.symbol')"
-        :disabled="submitting || fetching"
-      />
+    <div class="grid md:grid-cols-2 gap-x-4 gap-y-3">
       <div
-        v-if="isEvmToken"
-        data-cy="decimal-input"
+        class="col-span-2"
+        data-cy="type-select"
       >
-        <RuiTextField
-          v-model="decimals"
+        <RuiMenuSelect
+          v-model="assetType"
+          :label="t('asset_form.labels.asset_type')"
+          :options="types"
+          :disabled="types.length === 1 || editMode"
+          :error-messages="toMessages(v$.assetType)"
+          key-attr="key"
+          text-attr="label"
           variant="outlined"
-          color="primary"
-          min="0"
-          max="18"
-          type="number"
-          :label="t('asset_form.labels.decimals')"
-          :error-messages="toMessages(v$.decimals)"
-          :disabled="submitting || fetching"
         />
       </div>
-      <div class="md:col-span-2 flex items-start gap-4">
+
+      <template v-if="isEvmToken">
+        <div data-cy="chain-select">
+          <RuiMenuSelect
+            v-model="evmChain"
+            :label="t('asset_form.labels.chain')"
+            :options="allEvmChains"
+            :disabled="editMode"
+            :error-messages="toMessages(v$.evmChain)"
+            key-attr="name"
+            text-attr="label"
+            variant="outlined"
+          />
+        </div>
+
+        <div data-cy="token-select">
+          <RuiMenuSelect
+            v-model="tokenKind"
+            :label="t('asset_form.labels.token_kind')"
+            :options="evmTokenKindsData"
+            :disabled="editMode"
+            :error-messages="toMessages(v$.tokenKind)"
+            key-attr="identifier"
+            text-attr="label"
+            variant="outlined"
+          />
+        </div>
+        <div
+          class="col-span-2"
+          data-cy="address-input"
+        >
+          <RuiTextField
+            v-model="address"
+            variant="outlined"
+            color="primary"
+            :loading="fetching"
+            :error-messages="toMessages(v$.address)"
+            :label="t('common.address')"
+            :disabled="loading || fetching || editMode"
+            @keydown.space.prevent
+          />
+        </div>
+      </template>
+
+      <div class="col-span-2 grid md:grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-3">
         <RuiTextField
-          v-model="coingecko"
+          v-model="name"
+          data-cy="name-input"
+          class="md:col-span-2"
           variant="outlined"
           color="primary"
-          clearable
-          class="flex-1"
-          :hint="t('asset_form.labels.coingecko_hint')"
-          :label="t('asset_form.labels.coingecko')"
-          :error-messages="toMessages(v$.coingecko)"
-          :disabled="submitting || !coingeckoEnabled"
-        >
-          <template #append>
-            <HelpLink
-              small
-              :url="externalLinks.contributeSection.coingecko"
-              :tooltip="t('asset_form.help_coingecko')"
-            />
-          </template>
-        </RuiTextField>
-        <RuiTooltip
-          :popper="{ placement: 'top' }"
-          :open-delay="400"
-        >
-          <template #activator>
-            <RuiCheckbox
-              v-model="coingeckoEnabled"
-              class="mt-2"
-              color="primary"
-            />
-          </template>
-          <span> {{ t('asset_form.oracle_disable') }}</span>
-        </RuiTooltip>
-      </div>
-      <div class="md:col-span-2 flex items-start gap-4">
+          :error-messages="toMessages(v$.name)"
+          :label="t('common.name')"
+          :disabled="loading || fetching"
+        />
+
         <RuiTextField
-          v-model="cryptocompare"
+          v-model="symbol"
+          :class="isEvmToken ? 'md:col-span-1' : 'md:col-span-2'"
+          data-cy="symbol-input"
           variant="outlined"
           color="primary"
-          clearable
-          class="flex-1"
-          :label="t('asset_form.labels.cryptocompare')"
-          :hint="t('asset_form.labels.cryptocompare_hint')"
-          :error-messages="toMessages(v$.cryptocompare)"
-          :disabled="submitting || !cryptocompareEnabled"
+          :error-messages="toMessages(v$.symbol)"
+          :label="t('asset_form.labels.symbol')"
+          :disabled="loading || fetching"
+        />
+        <div
+          v-if="isEvmToken"
+          data-cy="decimal-input"
         >
-          <template #append>
-            <HelpLink
-              small
-              :url="externalLinks.contributeSection.cryptocompare"
-              :tooltip="t('asset_form.help_cryptocompare')"
-            />
-          </template>
-        </RuiTextField>
-        <RuiTooltip
-          :popper="{ placement: 'top' }"
-          :open-delay="400"
-        >
-          <template #activator>
-            <RuiCheckbox
-              v-model="cryptocompareEnabled"
-              class="mt-2"
-              color="primary"
-            />
-          </template>
-          <span> {{ t('asset_form.oracle_disable') }}</span>
-        </RuiTooltip>
+          <RuiTextField
+            v-model="decimalsModel"
+            variant="outlined"
+            color="primary"
+            min="0"
+            max="18"
+            type="number"
+            :label="t('asset_form.labels.decimals')"
+            :error-messages="toMessages(v$.decimals)"
+            :disabled="loading || fetching"
+          />
+        </div>
+        <div class="md:col-span-2 flex items-start gap-3 pl-2">
+          <RuiTooltip
+            :popper="{ placement: 'top' }"
+            :open-delay="400"
+          >
+            <template #activator>
+              <RuiCheckbox
+                v-model="coingeckoEnabled"
+                class="mt-2"
+                color="primary"
+              />
+            </template>
+            <span> {{ t('asset_form.oracle_disable') }}</span>
+          </RuiTooltip>
+          <RuiTextField
+            v-model="coingecko"
+            variant="outlined"
+            color="primary"
+            clearable
+            class="flex-1"
+            :hint="t('asset_form.labels.coingecko_hint')"
+            :label="t('asset_form.labels.coingecko')"
+            :error-messages="toMessages(v$.coingecko)"
+            :disabled="loading || !coingeckoEnabled"
+          >
+            <template #append>
+              <HelpLink
+                small
+                :url="externalLinks.contributeSection.coingecko"
+                :tooltip="t('asset_form.help_coingecko')"
+              />
+            </template>
+          </RuiTextField>
+        </div>
+        <div class="md:col-span-2 flex items-start gap-3 pl-2">
+          <RuiTooltip
+            :popper="{ placement: 'top' }"
+            :open-delay="400"
+          >
+            <template #activator>
+              <RuiCheckbox
+                v-model="cryptocompareEnabled"
+                class="mt-2"
+                color="primary"
+              />
+            </template>
+            <span> {{ t('asset_form.oracle_disable') }}</span>
+          </RuiTooltip>
+          <RuiTextField
+            v-model="cryptocompare"
+            variant="outlined"
+            color="primary"
+            clearable
+            class="flex-1"
+            :label="t('asset_form.labels.cryptocompare')"
+            :hint="t('asset_form.labels.cryptocompare_hint')"
+            :error-messages="toMessages(v$.cryptocompare)"
+            :disabled="loading || !cryptocompareEnabled"
+          >
+            <template #append>
+              <HelpLink
+                small
+                :url="externalLinks.contributeSection.cryptocompare"
+                :tooltip="t('asset_form.help_cryptocompare')"
+              />
+            </template>
+          </RuiTextField>
+        </div>
       </div>
     </div>
 
     <RuiCard
       no-padding
       rounded="sm"
-      class="mt-2 mb-4 overflow-hidden"
+      class="col-span-2 mt-2 mb-4 overflow-hidden"
     >
       <RuiAccordions>
         <RuiAccordion
@@ -524,10 +456,10 @@ setSubmitFunc(save);
           <template #default>
             <div class="p-4">
               <DateTimePicker
-                v-model="started"
+                v-model="startedModel"
                 :label="t('asset_form.labels.started')"
                 :error-messages="toMessages(v$.started)"
-                :disabled="submitting"
+                :disabled="loading"
               />
               <div class="grid md:grid-cols-2 gap-x-4 gap-y-2">
                 <RuiTextField
@@ -539,7 +471,7 @@ setSubmitFunc(save);
                   class="asset-form__protocol"
                   :label="t('common.protocol')"
                   :error-messages="toMessages(v$.protocol)"
-                  :disabled="submitting"
+                  :disabled="loading"
                 />
                 <AssetSelect
                   v-model="swappedFor"
@@ -547,7 +479,7 @@ setSubmitFunc(save);
                   clearable
                   :label="t('asset_form.labels.swapped_for')"
                   :error-messages="toMessages(v$.swappedFor)"
-                  :disabled="submitting"
+                  :disabled="loading"
                 />
                 <AssetSelect
                   v-if="!isEvmToken && assetType"
@@ -556,12 +488,13 @@ setSubmitFunc(save);
                   clearable
                   :label="t('asset_form.labels.forked')"
                   :error-messages="toMessages(v$.forked)"
-                  :disabled="submitting"
+                  :disabled="loading"
                 />
               </div>
               <UnderlyingTokenManager
                 v-if="isEvmToken"
                 v-model="underlyingTokens"
+                class="border-t border-default pt-6 mt-2"
               />
             </div>
           </template>
@@ -570,6 +503,7 @@ setSubmitFunc(save);
     </RuiCard>
 
     <AssetIconForm
+      class="col-span-2"
       ref="assetIconFormRef"
       :identifier="identifier"
       refreshable

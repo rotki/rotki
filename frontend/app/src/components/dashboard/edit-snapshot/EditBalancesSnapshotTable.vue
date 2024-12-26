@@ -5,7 +5,6 @@ import { BalanceType } from '@/types/balances';
 import { bigNumberSum } from '@/utils/calculation';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useBalancePricesStore } from '@/store/balances/prices';
-import { useEditBalancesSnapshotForm } from '@/composables/snapshots/edit-balance/form';
 import EditBalancesSnapshotLocationSelector
   from '@/components/dashboard/edit-snapshot/EditBalancesSnapshotLocationSelector.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
@@ -36,22 +35,25 @@ const { t } = useI18n();
 
 type IndexedBalanceSnapshot = BalanceSnapshot & { index: number; categoryLabel: string };
 
-const { closeDialog, openDialog, setOpenDialog, setSubmitFunc, stateUpdated, submitting, trySubmit } = useEditBalancesSnapshotForm();
-
 const { timestamp } = toRefs(props);
+
+const openDialog = ref<boolean>(false);
+const stateUpdated = ref<boolean>(false);
+const submitting = ref<boolean>(false);
+
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const showDeleteConfirmation = ref<boolean>(false);
 const indexToEdit = ref<number | null>(null);
 const indexToDelete = ref<number | null>(null);
 const locationToDelete = ref<string>('');
-const form = ref<(BalanceSnapshotPayload & { location: string }) | null>(null);
+const modelValue = ref<(BalanceSnapshotPayload & { location: string }) | null>(null);
 const tableRef = ref<any>();
 const sort = ref<DataTableSortData<BalanceSnapshot>>({
   column: 'usdValue',
   direction: 'desc',
 });
 const assetSearch = ref<string>('');
-const snapshotForm = ref<InstanceType<typeof EditBalancesSnapshotForm>>();
+const form = ref<InstanceType<typeof EditBalancesSnapshotForm>>();
 
 const { exchangeRate } = useBalancePricesStore();
 const fiatExchangeRate = computed<BigNumber>(() => get(exchangeRate(get(currencySymbol))) ?? One);
@@ -138,8 +140,8 @@ function closeConvertToEditDialog() {
 }
 
 function cancelConvertToEdit() {
-  set(form, {
-    ...get(form),
+  set(modelValue, {
+    ...get(modelValue),
     assetIdentifier: '',
   });
 
@@ -166,14 +168,14 @@ function editClick(item: IndexedBalanceSnapshot) {
       ? item.usdValue.toFixed()
       : item.usdValue.multipliedBy(get(fiatExchangeRate)).toFixed();
 
-  set(form, {
+  set(modelValue, {
     ...item,
     amount: item.amount.toFixed(),
     location: '',
     usdValue: convertedFiatValue,
   });
 
-  setOpenDialog(true);
+  set(openDialog, true);
 }
 
 const existingLocations = computed<string[]>(() =>
@@ -188,7 +190,7 @@ function deleteClick(item: IndexedBalanceSnapshot) {
 
 function add() {
   set(indexToEdit, null);
-  set(form, {
+  set(modelValue, {
     amount: '',
     assetIdentifier: '',
     category: BalanceType.ASSET,
@@ -196,11 +198,11 @@ function add() {
     timestamp: get(timestamp),
     usdValue: '',
   });
-  setOpenDialog(true);
+  set(openDialog, true);
 }
 
 const previewLocationBalance = computed<Record<string, BigNumber> | null>(() => {
-  const formVal = get(form);
+  const formVal = get(modelValue);
 
   if (!formVal?.amount || !formVal.usdValue || !formVal.location)
     return null;
@@ -304,44 +306,46 @@ function updateData(
   });
 }
 
-function save() {
-  const formVal = get(form);
+async function save() {
+  const formRef = get(form);
+  const valid = await formRef?.validate();
+  if (!valid)
+    return false;
 
-  if (!formVal)
-    return;
+  const data = get(modelValue);
 
+  if (!data)
+    return false;
+
+  set(submitting, true);
   const index = get(indexToEdit);
   const val = props.modelValue;
   const timestampVal = get(timestamp);
 
   const balancesSnapshot = [...val.balancesSnapshot];
   const payload = {
-    amount: bigNumberify(formVal.amount),
-    assetIdentifier: formVal.assetIdentifier,
-    category: formVal.category,
+    amount: bigNumberify(data.amount),
+    assetIdentifier: data.assetIdentifier,
+    category: data.category,
     timestamp: timestampVal,
-    usdValue: bigNumberify(formVal.usdValue),
+    usdValue: bigNumberify(data.usdValue),
   };
 
   if (index !== null)
     balancesSnapshot[index] = payload;
   else balancesSnapshot.unshift(payload);
 
-  updateData(balancesSnapshot, formVal.location, get(previewLocationBalance));
-  get(snapshotForm)?.submitPrice();
+  set(submitting, false);
+
+  updateData(balancesSnapshot, data.location, get(previewLocationBalance));
+  formRef?.submitPrice();
   clearEditDialog();
 }
 
-setSubmitFunc(save);
-
 function clearEditDialog() {
-  closeDialog();
+  set(openDialog, false);
   set(indexToEdit, null);
-  set(form, null);
-}
-
-function updateForm(newForm: BalanceSnapshotPayload & { location: string }) {
-  set(form, newForm);
+  set(modelValue, null);
 }
 
 function clearDeleteDialog() {
@@ -479,18 +483,18 @@ function confirmDelete() {
       :primary-action="t('common.actions.save')"
       :loading="submitting"
       :prompt-on-close="stateUpdated"
-      @confirm="trySubmit()"
+      @confirm="save()"
       @cancel="clearEditDialog()"
     >
       <EditBalancesSnapshotForm
-        v-if="form"
-        ref="snapshotForm"
+        v-if="modelValue"
+        ref="form"
+        v-model="modelValue"
+        v-model:state-updated="stateUpdated"
         :edit="!!indexToEdit"
-        :form="form"
         :preview-location-balance="previewLocationBalance"
         :locations="indexToEdit !== null ? existingLocations : []"
         :timestamp="timestamp"
-        @update:form="updateForm($event)"
         @update:asset="checkAssetExist($event)"
       />
 

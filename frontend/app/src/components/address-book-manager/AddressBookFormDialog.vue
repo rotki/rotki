@@ -1,86 +1,93 @@
 <script setup lang="ts">
+import { useTemplateRef } from 'vue';
 import { ApiValidationError } from '@/types/api/errors';
 import { useMessageStore } from '@/store/message';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
-import { useAddressBookForm } from '@/composables/address-book/form';
 import AddressBookForm from '@/components/address-book-manager/AddressBookForm.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import type { AddressBookPayload } from '@/types/eth-names';
+import type LatestPriceForm from '@/components/price-manager/latest/LatestPriceForm.vue';
 
-const enableForAllChains = defineModel<boolean>('enableForAllChains', { default: false, required: false });
+const open = defineModel<boolean>('open', { required: true });
 
 const props = withDefaults(
   defineProps<{
+    editableItem?: AddressBookPayload | null;
     editMode?: boolean;
-    payload: Partial<AddressBookPayload>;
+    selectedChain?: string;
+    location?: 'global' | 'private';
     root?: boolean;
   }>(),
   {
-    editMode: false,
+    editableItem: null,
+    editMode: undefined,
     root: false,
   },
 );
 
 const emit = defineEmits<{
   (e: 'update:tab', tab: number): void;
+  (e: 'refresh'): void;
 }>();
 
-const { editMode, payload: passedPayload } = toRefs(props);
-
-const { openDialog, stateUpdated, submitting, trySubmit } = useAddressBookForm();
+const { editableItem, editMode, location, selectedChain } = toRefs(props);
 
 const { t } = useI18n();
 
+const modelValue = ref<AddressBookPayload>();
+const loading = ref(false);
+const errorMessages = ref<Record<string, string[]>>({});
+const form = useTemplateRef<InstanceType<typeof LatestPriceForm>>('form');
+const stateUpdated = ref(false);
+const forAllChains = ref<boolean>(false);
+
 const emptyForm: () => AddressBookPayload = () => ({
   address: '',
-  blockchain: null,
-  location: 'private',
+  blockchain: get(selectedChain) ?? null,
+  location: get(location) || 'private',
   name: '',
 });
 
-const formPayload = ref<AddressBookPayload>(emptyForm());
-const errorMessages = ref<{ address?: string[]; name?: string[] }>({});
-
-const { closeDialog, setSubmitFunc } = useAddressBookForm();
 const { addAddressBook, updateAddressBook } = useAddressesNamesStore();
 const { setMessage } = useMessageStore();
 
-const resetForm = function () {
-  closeDialog();
-  set(formPayload, emptyForm());
-  set(enableForAllChains, false);
-  set(errorMessages, {});
-};
-
 async function save() {
+  if (!isDefined(modelValue))
+    return false;
+
+  const formRef = get(form);
+  const valid = await formRef?.validate();
+  if (!valid)
+    return false;
+
+  const { address, blockchain, location, name } = get(modelValue);
+  let success;
+  const isEdit = get(editMode) ?? !!get(editableItem);
+  const payload = {
+    address: address.trim(),
+    blockchain: get(forAllChains) ? null : blockchain,
+    name: name.trim(),
+  };
+
+  set(loading, true);
   try {
-    const { address, blockchain, location, name } = get(formPayload);
-    const payload = {
-      address: address.trim(),
-      blockchain: get(enableForAllChains) ? null : blockchain,
-      name: name.trim(),
-    };
-    if (get(editMode))
-      await updateAddressBook(location, [payload]);
-    else await addAddressBook(location, [payload]);
-
-    emit('update:tab', location === 'global' ? 0 : 1);
-
-    closeDialog();
-    return true;
+    if (get(isEdit))
+      success = await updateAddressBook(location, [payload]);
+    else success = await addAddressBook(location, [payload]);
   }
   catch (error: any) {
+    success = false;
     let errors = error.message;
 
     if (error instanceof ApiValidationError)
-      errors = error.getValidationErrors(get(formPayload));
+      errors = error.getValidationErrors(get(modelValue));
 
     if (typeof errors === 'string') {
       const values = { message: error.message };
-      const title = get(editMode)
+      const title = get(isEdit)
         ? t('address_book.actions.edit.error.title')
         : t('address_book.actions.add.error.title');
-      const description = get(editMode)
+      const description = get(isEdit)
         ? t('address_book.actions.edit.error.description', values)
         : t('address_book.actions.add.error.description', values);
       setMessage({
@@ -92,40 +99,61 @@ async function save() {
     else {
       set(errorMessages, errors);
     }
-    return false;
   }
+
+  set(loading, false);
+  if (success) {
+    set(modelValue, undefined);
+    emit('update:tab', location === 'global' ? 0 : 1);
+    emit('refresh');
+  }
+  return success;
 }
 
-setSubmitFunc(save);
+const dialogTitle = computed<string>(() =>
+  get(editableItem)
+    ? t('address_book.dialog.edit_title')
+    : t('address_book.dialog.add_title'),
+);
 
-watchImmediate(passedPayload, () => {
-  set(formPayload, {
-    ...get(formPayload),
-    ...get(passedPayload),
-  });
-  setSubmitFunc(save);
+watch(modelValue, (oldValue, currValue) => {
+  if (currValue?.blockchain !== oldValue?.blockchain)
+    set(errorMessages, {});
 });
 
-watch(formPayload, ({ blockchain }, { blockchain: oldBlockchain }) => {
-  if (blockchain !== oldBlockchain)
-    set(errorMessages, {});
+watchImmediate([open, editableItem], ([open, editableItem]) => {
+  if (!open) {
+    set(modelValue, undefined);
+  }
+  else {
+    if (editableItem) {
+      set(modelValue, editableItem);
+    }
+    else {
+      set(modelValue, emptyForm());
+    }
+  }
 });
 </script>
 
 <template>
   <BigDialog
-    :display="openDialog"
-    :title="editMode ? t('address_book.dialog.edit_title') : t('address_book.dialog.add_title')"
-    :loading="submitting"
+    :display="!!modelValue"
+    :title="dialogTitle"
+    :primary-action="t('common.actions.save')"
+    :loading="loading"
     :prompt-on-close="stateUpdated"
-    @confirm="trySubmit()"
-    @cancel="resetForm()"
+    @confirm="save()"
+    @cancel="open = false"
   >
     <AddressBookForm
-      v-model="formPayload"
-      v-model:enable-for-all-chains="enableForAllChains"
-      :edit="editMode"
-      :error-messages="errorMessages"
+      v-if="modelValue"
+      ref="form"
+      v-model="modelValue"
+      v-model:error-messages="errorMessages"
+      v-model:state-updated="stateUpdated"
+      v-model:for-all-chains="forAllChains"
+      :edit-mode="editMode ?? !!editableItem"
     />
   </BigDialog>
 </template>

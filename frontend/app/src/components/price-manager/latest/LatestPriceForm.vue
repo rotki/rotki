@@ -1,35 +1,37 @@
 <script setup lang="ts">
 import { helpers, required } from '@vuelidate/validators';
+import useVuelidate from '@vuelidate/core';
 import { toMessages } from '@/utils/validation';
 import { bigNumberifyFromRef } from '@/utils/bignumbers';
-import { useSimplePropVModel } from '@/utils/model';
+import { useRefPropVModel } from '@/utils/model';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
-import { useLatestPriceForm } from '@/composables/price-manager/latest/form';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
+import { useFormStateWatcher } from '@/composables/form';
 import type { ManualPriceFormPayload } from '@/types/prices';
+import type { ValidationErrors } from '@/types/api/errors';
 
-const props = withDefaults(
+const modelValue = defineModel<ManualPriceFormPayload>({ required: true });
+const errors = defineModel<ValidationErrors>('errorMessages', { required: true });
+const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
+
+withDefaults(
   defineProps<{
-    modelValue: ManualPriceFormPayload;
-    edit: boolean;
     disableFromAsset?: boolean;
+    editMode?: boolean;
   }>(),
   {
     disableFromAsset: false,
+    editMode: false,
   },
 );
 
-const emit = defineEmits<{
-  (e: 'update:model-value', price: Partial<ManualPriceFormPayload>): void;
-}>();
-
 const { assetSymbol } = useAssetInfoRetrieval();
 
-const fromAsset = useSimplePropVModel(props, 'fromAsset', emit);
-const toAsset = useSimplePropVModel(props, 'toAsset', emit);
-const price = useSimplePropVModel(props, 'price', emit);
+const fromAsset = useRefPropVModel(modelValue, 'fromAsset');
+const toAsset = useRefPropVModel(modelValue, 'toAsset');
+const price = useRefPropVModel(modelValue, 'price');
 
 const fromAssetSymbol = assetSymbol(fromAsset);
 const toAssetSymbol = assetSymbol(toAsset);
@@ -50,17 +52,23 @@ const rules = {
   },
 };
 
-const { setValidation } = useLatestPriceForm();
+const states = {
+  fromAsset,
+  price,
+  toAsset,
+};
 
-const v$ = setValidation(
+const v$ = useVuelidate(
   rules,
-  {
-    fromAsset,
-    price,
-    toAsset,
-  },
-  { $autoDirty: true },
+  states,
+  { $autoDirty: true, $externalResults: errors },
 );
+
+useFormStateWatcher(states, stateUpdated);
+
+defineExpose({
+  validate: () => get(v$).$validate(),
+});
 </script>
 
 <template>
@@ -71,7 +79,7 @@ const v$ = setValidation(
         :label="t('price_form.from_asset')"
         outlined
         include-nfts
-        :disabled="edit || disableFromAsset"
+        :disabled="editMode || disableFromAsset"
         :error-messages="toMessages(v$.fromAsset)"
       />
       <AssetSelect

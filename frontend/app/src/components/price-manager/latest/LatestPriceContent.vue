@@ -4,7 +4,6 @@ import { isNft } from '@/utils/nft';
 import { useConfirmStore } from '@/store/confirm';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useLatestPrices } from '@/composables/price-manager/latest';
-import { useLatestPriceForm } from '@/composables/price-manager/latest/form';
 import LatestPriceFormDialog from '@/components/price-manager/latest/LatestPriceFormDialog.vue';
 import RowActions from '@/components/helper/RowActions.vue';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
@@ -12,14 +11,14 @@ import AssetDetails from '@/components/helper/AssetDetails.vue';
 import NftDetails from '@/components/helper/NftDetails.vue';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
+import { useCommonTableProps } from '@/composables/use-common-table-props';
 import type { ManualPriceFormPayload, ManualPriceWithUsd } from '@/types/prices';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 
 const { t } = useI18n();
 
-const price = ref<Partial<ManualPriceFormPayload> | null>(null);
 const filter = ref<string>();
-const editMode = ref<boolean>(false);
+const { editableItem, openDialog } = useCommonTableProps<ManualPriceFormPayload>();
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
@@ -65,7 +64,6 @@ const router = useRouter();
 const route = useRoute();
 const { deletePrice, items, loading, refreshCurrentPrices, refreshing } = useLatestPrices(t, filter);
 
-const { setOpenDialog, setPostSubmitFunc } = useLatestPriceForm();
 const { show } = useConfirmStore();
 
 function showDeleteConfirmation(item: ManualPriceWithUsd) {
@@ -78,30 +76,25 @@ function showDeleteConfirmation(item: ManualPriceWithUsd) {
   );
 }
 
-function openForm(selectedEntry: ManualPriceWithUsd | null = null) {
-  set(editMode, !!selectedEntry);
-  if (selectedEntry) {
-    set(price, objectOmit({
-      ...selectedEntry,
-      price: selectedEntry.price.toFixed() ?? '',
-    }, ['id', 'usdPrice']));
-  }
-  else {
-    set(price, {
-      fromAsset: get(filter) ?? '',
-    });
-  }
-  setOpenDialog(true);
+function add() {
+  set(editableItem, null);
+  set(openDialog, true);
+}
+
+function edit(item: ManualPriceWithUsd) {
+  set(editableItem, objectOmit({
+    ...item,
+    price: item.price.toFixed() ?? '',
+  }, ['id', 'usdPrice']));
+  set(openDialog, true);
 }
 
 onMounted(async () => {
   await refreshCurrentPrices();
-  setPostSubmitFunc(() => refreshCurrentPrices());
-
   const query = get(route).query;
 
   if (query.add) {
-    openForm();
+    add();
     await router.replace({ query: {} });
   }
 });
@@ -129,7 +122,7 @@ onMounted(async () => {
 
       <RuiButton
         color="primary"
-        @click="openForm()"
+        @click="add()"
       >
         <template #prepend>
           <RuiIcon name="lu-plus" />
@@ -195,15 +188,16 @@ onMounted(async () => {
             :delete-tooltip="t('price_table.actions.delete.tooltip')"
             :edit-tooltip="t('price_table.actions.edit.tooltip')"
             @delete-click="showDeleteConfirmation(row)"
-            @edit-click="openForm(row)"
+            @edit-click="edit(row)"
           />
         </template>
       </RuiDataTable>
     </RuiCard>
 
     <LatestPriceFormDialog
-      :value="price"
-      :edit-mode="editMode"
+      v-model:open="openDialog"
+      :editable-item="editableItem"
+      @refresh="refreshCurrentPrices()"
     />
   </TablePageLayout>
 </template>

@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { helpers, required } from '@vuelidate/validators';
+import useVuelidate from '@vuelidate/core';
 import { CURRENCY_USD } from '@/types/currencies';
 import { toMessages } from '@/utils/validation';
 import { bigNumberSum } from '@/utils/calculation';
 import { isNft } from '@/utils/nft';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useHistoricCachePriceStore } from '@/store/prices/historic';
-import { useEditTotalSnapshotForm } from '@/composables/snapshots/edit-total/form';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import type { BalanceSnapshot, LocationDataSnapshot } from '@/types/snapshots';
@@ -23,12 +23,13 @@ const emit = defineEmits<{
   (e: 'update:model-value', value: LocationDataSnapshot[]): void;
 }>();
 
+const { t } = useI18n();
+
 const { balancesSnapshot, timestamp } = toRefs(props);
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { createKey, historicPriceInCurrentCurrency, isPending } = useHistoricCachePriceStore();
 
 const total = ref<string>('');
-const { t } = useI18n();
 
 const isCurrencyCurrencyUsd = computed<boolean>(() => get(currencySymbol) === CURRENCY_USD);
 
@@ -131,32 +132,19 @@ function setTotal(number?: BigNumber) {
   set(total, convertedFiatValue);
 }
 
-const { setSubmitFunc, setValidation, trySubmit } = useEditTotalSnapshotForm();
-
-function save() {
-  const val = props.modelValue;
-  const index = val.findIndex(item => item.location === 'total')!;
-
-  const newValue = [...val];
-
-  newValue[index].usdValue = get(numericTotal);
-
-  input(newValue);
-}
-
-setSubmitFunc(save);
-
 const rules = {
   total: {
     required: helpers.withMessage(t('dashboard.snapshot.edit.dialog.total.rules.total'), required),
   },
 };
 
-const v$ = setValidation(
+const states = {
+  total,
+};
+
+const v$ = useVuelidate(
   rules,
-  {
-    total,
-  },
+  states,
   { $autoDirty: true },
 );
 
@@ -169,6 +157,20 @@ const suggestionsLabel = computed(() => ({
   }),
   total: t('dashboard.snapshot.edit.dialog.total.use_calculated_total'),
 }));
+
+async function save() {
+  if (!(await get(v$).$validate()))
+    return;
+
+  const val = props.modelValue;
+  const index = val.findIndex(item => item.location === 'total')!;
+
+  const newValue = [...val];
+
+  newValue[index].usdValue = get(numericTotal);
+
+  input(newValue);
+}
 </script>
 
 <template>
@@ -255,7 +257,7 @@ const suggestionsLabel = computed(() => ({
       </RuiButton>
       <RuiButton
         color="primary"
-        @click="trySubmit()"
+        @click="save()"
       >
         {{ t('common.actions.finish') }}
         <template #append>

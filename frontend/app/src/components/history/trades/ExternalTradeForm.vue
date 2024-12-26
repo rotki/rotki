@@ -1,15 +1,12 @@
 <script setup lang="ts">
 import { helpers, required, requiredIf } from '@vuelidate/validators';
-import dayjs from 'dayjs';
+import useVuelidate from '@vuelidate/core';
 import { TaskType } from '@/types/task-type';
 import { toMessages } from '@/utils/validation';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 import { bigNumberifyFromRef } from '@/utils/bignumbers';
 import { useBalancePricesStore } from '@/store/balances/prices';
-import { useMessageStore } from '@/store/message';
 import { useTaskStore } from '@/store/tasks';
-import { useTradesForm } from '@/composables/history/trades/form';
-import { useTrades } from '@/composables/history/trades';
 import { refIsTruthy } from '@/composables/ref';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
@@ -17,38 +14,53 @@ import AmountInput from '@/components/inputs/AmountInput.vue';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import TwoFieldsAmountInput from '@/components/inputs/TwoFieldsAmountInput.vue';
 import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
-import type { NewTrade, Trade, TradeType } from '@/types/history/trade';
-import type { Writeable } from '@rotki/common';
+import { refOptional, useBigNumberModel, useRefPropVModel } from '@/utils/model';
+import { useFormStateWatcher } from '@/composables/form';
+import type { Trade } from '@/types/history/trade';
+import type { ValidationErrors } from '@/types/api/errors';
 
-const props = withDefaults(
-  defineProps<{
-    editableItem?: Trade | null;
-  }>(),
-  {
-    editableItem: null,
-  },
-);
+const modelValue = defineModel<Trade>({ required: true });
+const errors = defineModel<ValidationErrors>('errorMessages', { required: true });
+const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
+
+const props = defineProps<{
+  editMode: boolean;
+}>();
 
 const { t } = useI18n();
-const { editableItem } = toRefs(props);
 
 const { isTaskRunning } = useTaskStore();
 const { getHistoricPrice } = useBalancePricesStore();
 
-const id = ref<string>('');
-const base = ref<string>('');
-const quote = ref<string>('');
-const datetime = ref<string>('');
-const amount = ref<string>('');
-const rate = ref<string>('');
-const quoteAmount = ref<string>('');
-const fee = ref<string>('');
-const feeCurrency = ref<string>('');
-const link = ref<string>('');
-const notes = ref<string>('');
-const type = ref<TradeType>('buy');
+const base = useRefPropVModel(modelValue, 'baseAsset');
+const quote = useRefPropVModel(modelValue, 'quoteAsset');
+const amount = useRefPropVModel(modelValue, 'amount');
+const rate = useRefPropVModel(modelValue, 'rate');
+const fee = useRefPropVModel(modelValue, 'fee');
+const feeCurrency = useRefPropVModel(modelValue, 'feeCurrency');
+const link = useRefPropVModel(modelValue, 'link');
+const notes = useRefPropVModel(modelValue, 'notes');
+const type = useRefPropVModel(modelValue, 'tradeType');
+const timestamp = useRefPropVModel(modelValue, 'timestamp');
 
-const errorMessages = ref<Record<string, string[]>>({});
+const amountModel = useBigNumberModel(amount);
+const feeModel = useBigNumberModel(fee);
+const rateModel = useBigNumberModel(rate);
+
+const notesModel = refOptional(notes, '');
+const linkModel = refOptional(link, '');
+const feeCurrencyModel = refOptional(feeCurrency, '');
+
+const quoteAmount = ref('');
+
+const numericQuoteAmount = bigNumberifyFromRef(quoteAmount);
+
+const datetime = computed({
+  get: () => convertFromTimestamp(get(timestamp)),
+  set: (value: string) => {
+    set(timestamp, convertToTimestamp(value));
+  },
+});
 
 const quoteAmountInputFocused = ref<boolean>(false);
 const feeInput = ref<any>(null);
@@ -57,6 +69,8 @@ const feeCurrencyInput = ref<any>(null);
 const { assetSymbol } = useAssetInfoRetrieval();
 const baseSymbol = assetSymbol(base);
 const quoteSymbol = assetSymbol(quote);
+
+const externalServerValidation = () => true;
 
 const rules = {
   amount: {
@@ -74,38 +88,40 @@ const rules = {
   feeCurrency: {
     required: helpers.withMessage(
       t('external_trade_form.validation.non_empty_fee_currency'),
-      requiredIf(refIsTruthy(fee)),
+      requiredIf(refIsTruthy(feeModel)),
     ),
   },
-  quoteAmount: {
-    required: helpers.withMessage(t('external_trade_form.validation.non_empty_quote_amount'), required),
-  },
+  quoteAmount: { externalServerValidation },
   quoteAsset: {
     required: helpers.withMessage(t('external_trade_form.validation.non_empty_quote'), required),
   },
   rate: {
     required: helpers.withMessage(t('external_trade_form.validation.non_empty_rate'), required),
   },
+  timestamp: { externalServerValidation },
 };
 
-const { setSubmitFunc, setValidation } = useTradesForm();
+const states = {
+  amount: amountModel,
+  baseAsset: base,
+  fee: feeModel,
+  feeCurrency,
+  quoteAmount,
+  quoteAsset: quote,
+  rate: rateModel,
+  timestamp: datetime,
+};
 
-const v$ = setValidation(
+const v$ = useVuelidate(
   rules,
-  {
-    amount,
-    baseAsset: base,
-    fee,
-    feeCurrency,
-    quoteAmount,
-    quoteAsset: quote,
-    rate,
-  },
+  states,
   {
     $autoDirty: true,
-    $externalResults: errorMessages,
+    $externalResults: errors,
   },
 );
+
+useFormStateWatcher(states, stateUpdated);
 
 function triggerFeeValidator() {
   get(feeInput)?.textInput?.validate(true);
@@ -117,106 +133,18 @@ const quoteHint = computed<string>(() =>
 );
 
 const shouldRenderSummary = computed<boolean>(
-  () => !!(get(type) && get(base) && get(quote) && get(amount) && get(rate)),
+  () => !!(get(type) && get(base) && get(quote) && get(amountModel) && get(rateModel)),
 );
 
 const fetching = isTaskRunning(TaskType.FETCH_HISTORIC_PRICE);
 
-const numericAmount = bigNumberifyFromRef(amount);
-const numericQuoteAmount = bigNumberifyFromRef(quoteAmount);
-const numericFee = bigNumberifyFromRef(fee);
-const numericRate = bigNumberifyFromRef(rate);
-
-function reset() {
-  set(id, '');
-  set(datetime, convertFromTimestamp(dayjs().unix()));
-  set(amount, '');
-  set(rate, '');
-  set(fee, '');
-  set(feeCurrency, '');
-  set(link, '');
-  set(notes, '');
-  set(type, 'buy');
-  set(errorMessages, {});
-}
-
-function setEditMode() {
-  const trade = get(editableItem);
-  if (!trade) {
-    reset();
-    return;
-  }
-
-  set(base, trade.baseAsset);
-  set(quote, trade.quoteAsset);
-  set(datetime, convertFromTimestamp(trade.timestamp));
-  set(amount, trade.amount.toFixed());
-  set(rate, trade.rate.toFixed());
-  set(fee, trade.fee?.toFixed() ?? '');
-  set(feeCurrency, trade.feeCurrency ?? '');
-  set(link, trade.link ?? '');
-  set(notes, trade.notes ?? '');
-  set(type, trade.tradeType);
-  set(id, trade.tradeId);
-}
-
-const { setMessage } = useMessageStore();
-
-const { addExternalTrade, editExternalTrade } = useTrades();
-
-async function save(): Promise<boolean> {
-  const amount = get(numericAmount);
-  const fee = get(numericFee);
-  const rate = get(numericRate);
-
-  const tradePayload: Writeable<NewTrade> = {
-    amount: amount.isNaN() ? Zero : amount,
-    baseAsset: get(base),
-    fee: fee.isNaN() || fee.isZero() ? null : fee,
-    feeCurrency: get(feeCurrency) || null,
-    link: get(link) || null,
-    location: 'external',
-    notes: get(notes) || null,
-    quoteAsset: get(quote),
-    rate: rate.isNaN() ? Zero : rate,
-    timestamp: convertToTimestamp(get(datetime)),
-    tradeType: get(type),
-  };
-
-  const identifier = get(id);
-  const result = !identifier
-    ? await addExternalTrade(tradePayload)
-    : await editExternalTrade({ ...tradePayload, tradeId: identifier });
-
-  if (result.success) {
-    reset();
-    return true;
-  }
-
-  if (result.message) {
-    if (typeof result.message === 'string') {
-      setMessage({
-        description: result.message,
-      });
-    }
-    else {
-      set(errorMessages, result.message);
-      await get(v$).$validate();
-    }
-  }
-
-  return false;
-}
-
-setSubmitFunc(save);
-
 function updateRate(forceUpdate = false) {
   if (get(amount) && get(rate) && (!get(quoteAmountInputFocused) || forceUpdate))
-    set(quoteAmount, get(numericAmount).multipliedBy(get(numericRate)).toFixed());
+    set(quoteAmount, get(amount).multipliedBy(get(rate)).toFixed());
 }
 
 async function fetchPrice() {
-  if ((get(rate) && get(editableItem)) || !get(datetime) || !get(base) || !get(quote))
+  if ((get(rate) && props.editMode) || !get(datetime) || !get(base) || !get(quote))
     return;
 
   const timestamp = convertToTimestamp(get(datetime));
@@ -230,23 +158,24 @@ async function fetchPrice() {
   });
 
   if (rateFromHistoricPrice.gt(0)) {
-    set(rate, rateFromHistoricPrice.toFixed());
+    set(rate, rateFromHistoricPrice);
     updateRate(true);
   }
   else if (!get(rate)) {
-    set(errorMessages, {
+    set(errors, {
+      ...get(errors),
       rate: [t('external_trade_form.rate_not_found')],
     });
     await get(v$).rate.$validate();
     useTimeoutFn(() => {
-      set(errorMessages, {});
+      set(errors, {});
     }, 4000);
   }
 }
 
 function onQuoteAmountChange() {
   if (get(amount) && get(quoteAmount) && get(quoteAmountInputFocused))
-    set(rate, get(numericQuoteAmount).div(get(numericAmount)).toFixed());
+    set(rate, get(numericQuoteAmount).div(get(amount)));
 }
 
 watch([datetime, quote, base], async () => {
@@ -266,8 +195,9 @@ watch(quoteAmount, () => {
   onQuoteAmountChange();
 });
 
-watch(editableItem, setEditMode);
-onMounted(setEditMode);
+defineExpose({
+  validate: () => get(v$).$validate(),
+});
 </script>
 
 <template>
@@ -282,7 +212,7 @@ onMounted(setEditMode);
       :label="t('common.datetime')"
       persistent-hint
       :hint="t('external_trade_form.date.hint')"
-      :error-messages="errorMessages.timestamp"
+      :error-messages="toMessages(v$.timestamp)"
     />
 
     <div class="grid md:grid-cols-4 gap-x-4 gap-y-2">
@@ -337,7 +267,7 @@ onMounted(setEditMode);
 
     <div class="mt-2">
       <AmountInput
-        v-model="amount"
+        v-model="amountModel"
         variant="outlined"
         class="mb-2"
         :error-messages="toMessages(v$.amount)"
@@ -347,7 +277,7 @@ onMounted(setEditMode);
         @blur="v$.amount.$touch()"
       />
       <TwoFieldsAmountInput
-        v-model:primary-value="rate"
+        v-model:primary-value="rateModel"
         v-model:secondary-value="quoteAmount"
         class="-mb-5"
         :loading="fetching"
@@ -381,7 +311,7 @@ onMounted(setEditMode);
           <template #amount>
             <strong>
               <AmountDisplay
-                :value="numericAmount"
+                :value="amount"
                 :tooltip="false"
               />
             </strong>
@@ -395,7 +325,7 @@ onMounted(setEditMode);
           <template #rate>
             <strong>
               <AmountDisplay
-                :value="numericRate"
+                :value="rate"
                 :tooltip="false"
               />
             </strong>
@@ -412,7 +342,7 @@ onMounted(setEditMode);
           <template #amount>
             <strong>
               <AmountDisplay
-                :value="numericAmount"
+                :value="amount"
                 :tooltip="false"
               />
             </strong>
@@ -426,7 +356,7 @@ onMounted(setEditMode);
           <template #rate>
             <strong>
               <AmountDisplay
-                :value="numericRate"
+                :value="rate"
                 :tooltip="false"
               />
             </strong>
@@ -440,7 +370,7 @@ onMounted(setEditMode);
     <div class="grid md:grid-cols-2 gap-x-4 gap-y-2 mb-2">
       <AmountInput
         ref="feeInput"
-        v-model="fee"
+        v-model="feeModel"
         class="external-trade-form__fee"
         variant="outlined"
         data-cy="fee"
@@ -452,7 +382,7 @@ onMounted(setEditMode);
       />
       <AssetSelect
         ref="feeCurrencyInput"
-        v-model="feeCurrency"
+        v-model="feeCurrencyModel"
         data-cy="fee-currency"
         outlined
         :label="t('external_trade_form.fee_currency.label')"
@@ -463,7 +393,7 @@ onMounted(setEditMode);
     </div>
 
     <RuiTextField
-      v-model="link"
+      v-model="linkModel"
       data-cy="link"
       variant="outlined"
       color="primary"
@@ -474,7 +404,7 @@ onMounted(setEditMode);
     />
 
     <RuiTextArea
-      v-model="notes"
+      v-model="notesModel"
       prepend-icon="lu-sticky-note"
       variant="outlined"
       color="primary"

@@ -1,18 +1,18 @@
 <script setup lang="ts">
 import { helpers, required } from '@vuelidate/validators';
+import useVuelidate from '@vuelidate/core';
 import { toMessages } from '@/utils/validation';
 import { refOptional, useRefPropVModel } from '@/utils/model';
-import { useUserNotesForm } from '@/composables/notes/form';
+import { useFormStateWatcher } from '@/composables/form';
 import type { UserNote } from '@/types/notes';
 
 const modelValue = defineModel<Partial<UserNote>>({ required: true });
+const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
 
 const { t } = useI18n();
 
 const title = refOptional(useRefPropVModel(modelValue, 'title'), '');
 const content = refOptional(useRefPropVModel(modelValue, 'content'), '');
-
-const { setValidation } = useUserNotesForm();
 
 const rules = {
   content: {
@@ -21,7 +21,15 @@ const rules = {
   title: {},
 };
 
-const v$ = setValidation(rules, { content, title }, { $autoDirty: true });
+const states = { content, title };
+
+const v$ = useVuelidate(rules, states, { $autoDirty: true });
+
+useFormStateWatcher(states, stateUpdated);
+
+defineExpose({
+  validate: () => get(v$).$validate(),
+});
 </script>
 
 <template>

@@ -1,9 +1,7 @@
 <script setup lang="ts">
-import { logger } from '@/utils/logging';
 import { getCollectionData, setupEntryLimit } from '@/utils/collection';
 import UserNotesFormDialog from '@/components/notes/UserNotesFormDialog.vue';
 import { useSessionAuthStore } from '@/store/session/auth';
-import { useUserNotesForm } from '@/composables/notes/form';
 import { usePremium } from '@/composables/premium';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import { useUserNotesApi } from '@/composables/api/session/user-notes';
@@ -11,6 +9,8 @@ import DateDisplay from '@/components/display/DateDisplay.vue';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
 import CollectionHandler from '@/components/helper/CollectionHandler.vue';
 import type { UserNote, UserNotesRequestPayload } from '@/types/notes';
+
+const open = defineModel<boolean>('open', { required: true });
 
 const props = withDefaults(defineProps<{ location?: string }>(), {
   location: '',
@@ -37,7 +37,7 @@ const loading = ref<boolean>(false);
 const search = ref<string>('');
 const titleSubstring = ref<string>('');
 
-const { addUserNote, deleteUserNote, fetchUserNotes, updateUserNote } = useUserNotesApi();
+const { deleteUserNote, fetchUserNotes, updateUserNote } = useUserNotesApi();
 
 const extraParams = computed(() => ({
   location: get(location),
@@ -94,46 +94,27 @@ async function togglePin(note: UserNote) {
   await callUpdateNote(payload);
 }
 
-const { closeDialog, setOpenDialog, setSubmitFunc } = useUserNotesForm();
-
 function resetForm() {
   set(editMode, false);
   set(form, getDefaultForm());
-  closeDialog();
+  set(open, false);
 }
 
 function addNote() {
   resetForm();
-  setOpenDialog(true);
+  set(open, true);
 }
 
 function editNote(note: UserNote) {
   set(editMode, true);
   set(form, { ...note });
-  setOpenDialog(true);
+  set(open, true);
 }
 
 async function callUpdateNote(payload: Partial<UserNote>) {
   await updateUserNote(payload);
   await fetchNotes();
 }
-
-async function save() {
-  try {
-    if (get(editMode)) {
-      await callUpdateNote(get(form));
-    }
-    else {
-      await addUserNote({ ...get(form), location: get(location) });
-      await fetchNotes();
-    }
-    resetForm();
-  }
-  catch (error) {
-    logger.error(error);
-  }
-}
-setSubmitFunc(save);
 
 function deleteNote(identifier: number) {
   set(showDeleteConfirmation, true);
@@ -396,9 +377,12 @@ watch(shouldIncreasePage, (increasePage) => {
   </div>
 
   <UserNotesFormDialog
+    v-model:open="open"
     v-model="form"
     :edit-mode="editMode"
+    :location="location"
     @reset="resetForm()"
+    @refresh="fetchNotes()"
   />
 </template>
 

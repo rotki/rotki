@@ -1,16 +1,15 @@
 <script setup lang="ts">
+import dayjs from 'dayjs';
 import { useRefPropVModel } from '@/utils/model';
 import { useConfirmStore } from '@/store/confirm';
-import { useHistoricPriceForm } from '@/composables/price-manager/historic/form';
 import { useHistoricPrices } from '@/composables/price-manager/historic';
-import HistoricPriceForm from '@/components/price-manager/historic/HistoricPriceForm.vue';
-import BigDialog from '@/components/dialogs/BigDialog.vue';
 import RowActions from '@/components/helper/RowActions.vue';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
+import HistoricPriceFormDialog from '@/components/price-manager/historic/HistoricPriceFormDialog.vue';
 import type { HistoricalPrice, HistoricalPriceFormPayload } from '@/types/prices';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 
@@ -65,47 +64,38 @@ const headers = computed<DataTableColumn<HistoricalPrice>[]>(() => [
 const emptyPrice: () => HistoricalPriceFormPayload = () => ({
   fromAsset: '',
   price: '',
-  timestamp: 0,
+  timestamp: dayjs().unix(),
   toAsset: '',
 });
 
-const price = ref<HistoricalPriceFormPayload>(emptyPrice());
+const modelValue = ref<HistoricalPriceFormPayload>();
+const editMode = ref<boolean>(false);
+
 const filter = ref<{ fromAsset?: string; toAsset?: string }>({});
 const fromAsset = useRefPropVModel(filter, 'fromAsset');
 const toAsset = useRefPropVModel(filter, 'toAsset');
 
-const update = ref(false);
-
 const router = useRouter();
 const route = useRoute();
 
-const { deletePrice, items, loading, refresh, save } = useHistoricPrices(filter, t);
+const { deletePrice, items, loading, refresh } = useHistoricPrices(t, filter);
 
-const { closeDialog, openDialog, setOpenDialog, setPostSubmitFunc, setSubmitFunc, stateUpdated, submitting, trySubmit }
-  = useHistoricPriceForm();
-
-function openForm(hPrice: HistoricalPrice | null = null) {
-  set(update, !!hPrice);
-  if (hPrice) {
-    set(price, {
-      ...hPrice,
-      price: hPrice.price.toFixed() ?? '',
-    });
-  }
-  else {
-    set(price, {
-      ...emptyPrice(),
-      fromAsset: get(fromAsset) ?? '',
-      toAsset: get(toAsset) ?? '',
-    });
-  }
-  setOpenDialog(true);
+function add() {
+  set(modelValue, {
+    ...emptyPrice(),
+    fromAsset: get(fromAsset) ?? '',
+    toAsset: get(toAsset) ?? '',
+  });
+  set(editMode, false);
 }
 
-const hideForm = function () {
-  closeDialog();
-  set(price, emptyPrice());
-};
+function edit(item: HistoricalPrice) {
+  set(modelValue, {
+    ...item,
+    price: item.price.toFixed() ?? '',
+  });
+  set(editMode, true);
+}
 
 const { show } = useConfirmStore();
 
@@ -120,16 +110,13 @@ function showDeleteConfirmation(item: HistoricalPrice) {
 }
 
 onMounted(async () => {
-  setSubmitFunc(() => save(get(price), get(update)));
   const query = get(route).query;
 
   if (query.add) {
-    openForm();
+    add();
     await router.replace({ query: {} });
   }
 });
-
-setPostSubmitFunc(() => refresh({ modified: true }));
 </script>
 
 <template>
@@ -155,7 +142,7 @@ setPostSubmitFunc(() => refresh({ modified: true }));
       </RuiTooltip>
       <RuiButton
         color="primary"
-        @click="openForm()"
+        @click="add()"
       >
         <template #prepend>
           <RuiIcon name="lu-plus" />
@@ -215,24 +202,16 @@ setPostSubmitFunc(() => refresh({ modified: true }));
             :delete-tooltip="t('price_table.actions.delete.tooltip')"
             :edit-tooltip="t('price_table.actions.edit.tooltip')"
             @delete-click="showDeleteConfirmation(row)"
-            @edit-click="openForm(row)"
+            @edit-click="edit(row)"
           />
         </template>
       </RuiDataTable>
     </RuiCard>
 
-    <BigDialog
-      :display="openDialog"
-      :title="update ? t('price_management.dialog.edit_title') : t('price_management.dialog.add_title')"
-      :loading="submitting"
-      :prompt-on-close="stateUpdated"
-      @confirm="trySubmit()"
-      @cancel="hideForm()"
-    >
-      <HistoricPriceForm
-        v-model="price"
-        :edit="update"
-      />
-    </BigDialog>
+    <HistoricPriceFormDialog
+      v-model="modelValue"
+      :edit-mode="editMode"
+      @refresh="refresh({ modified: true })"
+    />
   </TablePageLayout>
 </template>

@@ -44,6 +44,11 @@ async function save(): Promise<boolean> {
   if (!isDefined(modelValue))
     return false;
 
+  const formRef = get(form);
+  const valid = await formRef?.validate();
+  if (!valid)
+    return false;
+
   set(loading, true);
 
   await get(form)?.savePrice();
@@ -67,7 +72,7 @@ async function save(): Promise<boolean> {
   if (status.message) {
     if (typeof status.message !== 'string') {
       set(errorMessages, status.message);
-      await get(form)?.validate();
+      await formRef?.validate();
     }
     else {
       const obj = { message: status.message };

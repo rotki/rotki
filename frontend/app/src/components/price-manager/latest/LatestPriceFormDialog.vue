@@ -1,21 +1,38 @@
 <script setup lang="ts">
-import { useLatestPrices } from '@/composables/price-manager/latest';
-import { useLatestPriceForm } from '@/composables/price-manager/latest/form';
+import { useTemplateRef } from 'vue';
 import LatestPriceForm from '@/components/price-manager/latest/LatestPriceForm.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
+import { useLatestPrices } from '@/composables/price-manager/latest';
 import type { ManualPriceFormPayload } from '@/types/prices';
+
+const open = defineModel<boolean>('open', { required: true });
 
 const props = withDefaults(
   defineProps<{
-    editMode: boolean;
-    value?: Partial<ManualPriceFormPayload> | null;
+    editableItem?: ManualPriceFormPayload | null;
+    editMode?: boolean;
     disableFromAsset?: boolean;
   }>(),
   {
     disableFromAsset: false,
-    value: null,
+    editableItem: null,
+    editMode: undefined,
   },
 );
+
+const emit = defineEmits<{
+  (e: 'refresh'): void;
+}>();
+
+const { editableItem, editMode } = toRefs(props);
+
+const { t } = useI18n();
+
+const modelValue = ref<ManualPriceFormPayload>();
+const loading = ref(false);
+const errorMessages = ref<Record<string, string[]>>({});
+const form = useTemplateRef<InstanceType<typeof LatestPriceForm>>('form');
+const stateUpdated = ref(false);
 
 const emptyPrice: () => ManualPriceFormPayload = () => ({
   fromAsset: '',
@@ -23,38 +40,68 @@ const emptyPrice: () => ManualPriceFormPayload = () => ({
   toAsset: '',
 });
 
-const form = ref<ManualPriceFormPayload>(emptyPrice());
+const { save: saveAction } = useLatestPrices(t);
 
-const { editMode, value } = toRefs(props);
+async function save() {
+  if (!isDefined(modelValue))
+    return false;
 
-watchImmediate(value, (value) => {
-  if (value)
-    set(form, { ...emptyPrice(), ...value });
-});
+  const formRef = get(form);
+  const valid = await formRef?.validate();
+  if (!valid)
+    return false;
 
-const { closeDialog, openDialog, setSubmitFunc, stateUpdated, submitting, trySubmit } = useLatestPriceForm();
+  const data = get(modelValue);
+  const isEdit = get(editMode) ?? !!get(editableItem);
+  set(loading, true);
+  const success = await saveAction(data, isEdit);
 
-const { t } = useI18n();
+  set(loading, false);
+  if (success) {
+    set(modelValue, undefined);
+    emit('refresh');
+  }
+  return success;
+}
 
-const { save } = useLatestPrices(t);
+const dialogTitle = computed<string>(() =>
+  get(editableItem)
+    ? t('price_management.dialog.edit_title')
+    : t('price_management.dialog.add_title'),
+);
 
-onMounted(() => {
-  setSubmitFunc(() => save(get(form), get(editMode)));
+watchImmediate([open, editableItem], ([open, editableItem]) => {
+  if (!open) {
+    set(modelValue, undefined);
+  }
+  else {
+    if (editableItem) {
+      set(modelValue, editableItem);
+    }
+    else {
+      set(modelValue, emptyPrice());
+    }
+  }
 });
 </script>
 
 <template>
   <BigDialog
-    :display="openDialog"
-    :title="editMode ? t('price_management.dialog.edit_title') : t('price_management.dialog.add_title')"
-    :loading="submitting"
+    :display="!!modelValue"
+    :title="dialogTitle"
+    :primary-action="t('common.actions.save')"
+    :loading="loading"
     :prompt-on-close="stateUpdated"
-    @confirm="trySubmit()"
-    @cancel="closeDialog()"
+    @confirm="save()"
+    @cancel="open = false"
   >
     <LatestPriceForm
-      v-model="form"
-      :edit="editMode"
+      v-if="modelValue"
+      ref="form"
+      v-model="modelValue"
+      v-model:error-messages="errorMessages"
+      v-model:state-updated="stateUpdated"
+      :edit-mode="editMode ?? !!editableItem"
       :disable-from-asset="disableFromAsset"
     />
   </BigDialog>

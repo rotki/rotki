@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { useHistoryTransactionsForm } from '@/composables/history/events/tx/form';
-import type { EvmChainAndTxHash, ShowEventForm } from '@/types/history/events';
+import type { ShowEventForm } from '@/types/history/events';
 
 const openDecodingDialog = defineModel<boolean>('openDecodingDialog', { required: true });
 
@@ -11,23 +10,12 @@ defineProps<{
 }>();
 
 const emit = defineEmits<{
-  'refresh': [];
-  'reload': [payload: EvmChainAndTxHash];
-  'show:form': [payload: ShowEventForm];
+  (e: 'refresh'): void;
+  (e: 'show:form', payload: ShowEventForm): void;
+  (e: 'show:add-transaction-form'): void;
 }>();
 
 const { t } = useI18n();
-
-const { setOpenDialog: setTxFormOpenDialog, setPostSubmitFunc: setTxFormPostSubmitFunc } = useHistoryTransactionsForm();
-
-setTxFormPostSubmitFunc((payload) => {
-  if (payload)
-    emit('reload', payload);
-});
-
-function addTransactionHash(): void {
-  setTxFormOpenDialog(true);
-}
 </script>
 
 <template>
@@ -112,7 +100,7 @@ function addTransactionHash(): void {
         variant="list"
         data-cy="history-events__add_by_tx_hash"
         :disabled="loading"
-        @click="addTransactionHash()"
+        @click="emit('show:add-transaction-form')"
       >
         <template #prepend>
           <RuiIcon name="lu-plus" />

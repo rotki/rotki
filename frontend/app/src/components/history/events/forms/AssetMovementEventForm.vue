@@ -3,6 +3,7 @@ import { HistoryEventEntryType } from '@rotki/common';
 import dayjs from 'dayjs';
 import { helpers, required, requiredIf } from '@vuelidate/validators';
 import { isEmpty } from 'lodash-es';
+import useVuelidate from '@vuelidate/core';
 import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
 import { toMessages } from '@/utils/validation';
 import { DateFormat } from '@/types/date-format';
@@ -18,7 +19,10 @@ import AmountInput from '@/components/inputs/AmountInput.vue';
 import { refIsTruthy } from '@/composables/ref';
 import AutoCompleteWithSearchSync from '@/components/inputs/AutoCompleteWithSearchSync.vue';
 import { useSessionSettingsStore } from '@/store/settings/session';
+import { useFormStateWatcher } from '@/composables/form';
 import type { AssetMovementEvent, NewAssetMovementEventPayload } from '@/types/history/events';
+
+const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
 
 const props = withDefaults(defineProps<{
   editableItem?: AssetMovementEvent;
@@ -104,27 +108,31 @@ const rules = {
 };
 
 const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
-const { saveHistoryEventHandler, setSubmitFunc, setValidation } = useHistoryEventsForm();
-const v$ = setValidation(
+const { saveHistoryEventHandler } = useHistoryEventsForm();
+
+const states = {
+  amount,
+  asset,
+  eventIdentifier,
+  eventType,
+  fee,
+  feeAsset,
+  location,
+  locationLabel,
+  notes,
+  timestamp: datetime,
+  usdValue,
+};
+
+const v$ = useVuelidate(
   rules,
-  {
-    amount,
-    asset,
-    eventIdentifier,
-    eventType,
-    fee,
-    feeAsset,
-    location,
-    locationLabel,
-    notes,
-    timestamp: datetime,
-    usdValue,
-  },
+  states,
   {
     $autoDirty: true,
     $externalResults: errorMessages,
   },
 );
+useFormStateWatcher(states, stateUpdated);
 
 const lastLocation = useLocalStorage('rotki.history_event.location', TRADE_LOCATION_EXTERNAL);
 const numericAmount = bigNumberifyFromRef(amount);
@@ -178,6 +186,9 @@ function applyEditableData(entry: AssetMovementEvent, feeEvent?: AssetMovementEv
 }
 
 async function save(): Promise<boolean> {
+  if (!(await get(v$).$validate()))
+    return false;
+
   const timestamp = convertToTimestamp(get(datetime), DateFormat.DateMonthYearHourMinuteSecond, true);
 
   const editable = get(editableItem);
@@ -214,8 +225,6 @@ async function save(): Promise<boolean> {
   );
 }
 
-setSubmitFunc(save);
-
 function checkPropsData() {
   const editable = get(editableItem);
   const feeEvent = get(groupEvents).find(event => event.eventSubtype === 'fee');
@@ -237,6 +246,10 @@ watch(location, (location: string) => {
 watch(errorMessages, (errors) => {
   if (!isEmpty(errors))
     get(v$).$validate();
+});
+
+defineExpose({
+  save,
 });
 </script>
 
