@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :bug:`-` Bitmex balances will now be queried correctly.
+
 * :release:`1.37.0 <2024-12-24>`
 * :feature:`7144` Users will be able to import multiple addresses into the address book via CSV.
 * :feature:`5822` Users will be able to import and export blockchain accounts with the information (labels, tags).
