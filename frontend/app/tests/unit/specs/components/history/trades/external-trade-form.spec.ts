@@ -7,8 +7,9 @@ import ExternalTradeForm from '@/components/history/trades/ExternalTradeForm.vue
 import { setupDayjs } from '@/utils/date';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useAssetInfoApi } from '@/composables/api/assets/info';
+import { type Trade, TradeType } from '@/types/history/trade';
+import { createNewTrade } from '@/utils/history/trades';
 import type { AssetMap } from '@/types/asset';
-import type { Trade } from '@/types/history/trade';
 
 vi.mock('@/store/balances/prices', () => ({
   useBalancePricesStore: vi.fn().mockReturnValue({
@@ -45,7 +46,7 @@ describe('externalTradeForm.vue', () => {
     location: 'binance',
     baseAsset: 'eip155:1/erc20:0xdAC17F958D2ee523a2206206994597C13D831ec7',
     quoteAsset: 'USD',
-    tradeType: 'buy',
+    tradeType: TradeType.BUY,
     amount: BigNumber('164.02653038'),
     rate: BigNumber('1.0455016'),
     fee: BigNumber('3.51'),
@@ -83,8 +84,8 @@ describe('externalTradeForm.vue', () => {
     });
 
   describe('should prefill the fields based on the props', () => {
-    it('no `editableItem` passed', async () => {
-      wrapper = createWrapper();
+    it('empty trade data passed', async () => {
+      wrapper = createWrapper({ props: { modelValue: createNewTrade(), editMode: false, errorMessages: {} } });
       await nextTick();
 
       expect((wrapper.find('[data-cy=date] input').element as HTMLInputElement).value).toBeDefined();
@@ -102,15 +103,14 @@ describe('externalTradeForm.vue', () => {
       expect((wrapper.find('[data-cy=fee] input').element as HTMLInputElement).value).toBe('');
     });
 
-    it('`editableItem` passed', async () => {
-      wrapper = createWrapper();
+    it('filled trade data passed', async () => {
+      wrapper = createWrapper({ props: { modelValue: editableItem, editMode: true, errorMessages: {} } });
       await nextTick();
-      await wrapper.setProps({ editableItem });
 
       const buyRadio = wrapper.find('[data-cy=type] [data-cy=trade-input-buy] input');
       const sellRadio = wrapper.find('[data-cy=type] [data-cy=trade-input-sell] input');
 
-      const radioAttributes = editableItem.tradeType === 'buy' ? buyRadio.attributes() : sellRadio.attributes();
+      const radioAttributes = editableItem.tradeType === TradeType.BUY ? buyRadio.attributes() : sellRadio.attributes();
       expect(radioAttributes).toHaveProperty('checked');
 
       await wrapper.find('[data-cy=type] [data-cy=trade-input-sell] input').trigger('click');

@@ -6,13 +6,11 @@ import CalendarReminderEntry from '@/components/calendar/CalendarReminderEntry.v
 import type { CalendarEvent } from '@/types/history/calendar';
 import type { CalendarReminderTemporaryPayload, CalenderReminderPayload } from '@/types/history/calendar/reminder';
 
-const props = withDefaults(defineProps<{
-  editableItem?: CalendarEvent;
-}>(), {
-  editableItem: undefined,
-});
+const modelValue = defineModel<CalendarEvent>({ required: true });
 
-const { editableItem } = toRefs(props);
+const props = defineProps<{
+  editMode: boolean;
+}>();
 
 const { t } = useI18n();
 
@@ -73,10 +71,10 @@ async function addCalendarReminderHandler(reminders: CalenderReminderPayload[]) 
 }
 
 async function refreshTemporaryData() {
-  const item = get(editableItem);
-  if (!item)
+  if (!props.editMode) {
     return;
-
+  }
+  const item = get(modelValue);
   try {
     const identifier = item.identifier;
     const reminders = await fetchCalendarReminders({ identifier });
@@ -108,9 +106,9 @@ async function addReminder(secsBefore: number = 900, inTimeReminder = false) {
   if (!inTimeReminder)
     set(showReminders, true);
 
-  const item = get(editableItem);
+  const item = get(modelValue);
 
-  if (!item || isSameSecsBeforeExist(secsBefore) || inTimeReminder) {
+  if (!props.editMode || isSameSecsBeforeExist(secsBefore) || inTimeReminder) {
     const newId = Date.now();
     const newData: CalendarReminderTemporaryPayload = {
       identifier: newId,
@@ -139,11 +137,10 @@ function toggleReminder() {
 }
 
 async function deleteData(index: number) {
-  const item = get(editableItem);
   const temp = [...get(temporaryData)];
   const data = temp[index];
 
-  if (!data.isTemporary && item) {
+  if (!data.isTemporary && props.editMode) {
     try {
       await deleteCalendarReminder(data.identifier);
     }
@@ -166,11 +163,11 @@ async function deleteData(index: number) {
 }
 
 async function updateData(index: number, { secsBefore }: CalendarReminderTemporaryPayload) {
-  const item = get(editableItem);
+  const item = get(modelValue);
   const temp = [...get(temporaryData)];
   const data = temp[index];
 
-  if (item) {
+  if (props.editMode) {
     if (!data.isTemporary) {
       try {
         await editCalendarReminder({
@@ -227,7 +224,7 @@ async function saveTemporaryReminder(eventId: number) {
   }
 }
 
-watchImmediate(editableItem, refreshTemporaryData);
+onBeforeMount(() => refreshTemporaryData());
 
 defineExpose({
   saveTemporaryReminder,

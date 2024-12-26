@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { TradeType } from '@/types/history/trade';
+import { type TradeType, TradeTypeEnum } from '@/types/history/trade';
 import { getDateInputISOFormat } from '@/utils/date';
 import { useHistoryStore } from '@/store/history';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
@@ -64,8 +64,8 @@ export function useTradeFilters(): FilterSchema<Filters, Matcher> {
       key: TradeFilterKeys.ACTION,
       keyValue: TradeFilterValueKeys.ACTION,
       string: true,
-      suggestions: (): TradeType[] => TradeType.options,
-      validate: (type): boolean => (TradeType.options as string[]).includes(type),
+      suggestions: (): TradeType[] => Object.values(TradeTypeEnum),
+      validate: (type): boolean => Object.values(TradeTypeEnum).includes(type),
     },
     {
       description: t('closed_trades.filter.start_date'),
