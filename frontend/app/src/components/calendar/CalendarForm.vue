@@ -1,51 +1,82 @@
 <script setup lang="ts">
 import { helpers, required } from '@vuelidate/validators';
+import useVuelidate from '@vuelidate/core';
+import { useTemplateRef } from 'vue';
 import { toMessages } from '@/utils/validation';
-import { isBlockchain } from '@/types/blockchain/chains';
-import { ApiValidationError } from '@/types/api/errors';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 import { hasAccountAddress } from '@/utils/blockchain/accounts';
 import { useBlockchainStore } from '@/store/blockchain';
-import { useMessageStore } from '@/store/message';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useCalendarEventForm } from '@/composables/calendar/form';
-import { useCalendarApi } from '@/composables/history/calendar';
 import CounterpartyInput from '@/components/inputs/CounterpartyInput.vue';
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
 import CalendarColorInput from '@/components/calendar/CalendarColorInput.vue';
 import CalendarReminder from '@/components/calendar/CalendarReminder.vue';
 import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
+import { useFormStateWatcher } from '@/composables/form';
+import { isBlockchain } from '@/types/blockchain/chains';
+import { useRefPropVModel } from '@/utils/model';
+import type { ValidationErrors } from '@/types/api/errors';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
-import type { Dayjs } from 'dayjs';
-import type { Writeable } from '@rotki/common';
-import type { CalendarEvent, CalendarEventPayload } from '@/types/history/calendar';
+import type { CalendarEvent } from '@/types/history/calendar';
 
-const props = withDefaults(
-  defineProps<{
-    editableItem?: CalendarEvent;
-    selectedDate: Dayjs;
-  }>(),
-  {
-    editableItem: undefined,
-  },
-);
+const modelValue = defineModel<CalendarEvent>({ required: true });
+const errors = defineModel<ValidationErrors>('errorMessages', { required: true });
+const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
 
-const { editableItem, selectedDate } = toRefs(props);
+defineProps<{
+  editMode: boolean;
+}>();
 
 const { t } = useI18n();
-const { autoDeleteCalendarEntries } = storeToRefs(useGeneralSettingsStore());
 
-const name = ref<string>('');
-const description = ref<string>('');
-const counterparty = ref<string>('');
-const datetime = ref<string>('');
-const accounts = ref<BlockchainAccount<AddressData>[]>([]);
-const color = ref<string>('');
-const autoDelete = ref(get(autoDeleteCalendarEntries));
+const name = useRefPropVModel(modelValue, 'name');
+const description = useRefPropVModel(modelValue, 'description');
+const counterparty = useRefPropVModel(modelValue, 'counterparty');
+const color = useRefPropVModel(modelValue, 'color');
+const autoDelete = useRefPropVModel(modelValue, 'autoDelete');
+const timestamp = useRefPropVModel(modelValue, 'timestamp');
 
-const errorMessages = ref<Record<string, string[]>>({});
-const reminderRef = ref();
+const datetime = computed({
+  get: () => convertFromTimestamp(get(timestamp)),
+  set: (value: string) => {
+    set(timestamp, convertToTimestamp(value));
+  },
+});
+
+const { accounts: accountsPerChain } = storeToRefs(useBlockchainStore());
+
+const accounts = computed<BlockchainAccount<AddressData>[]>({
+  get: () => {
+    const model = get(modelValue);
+    const accountFound = Object.values(get(accountsPerChain))
+      .flatMap(x => x)
+      .filter(hasAccountAddress)
+      .find(
+        item =>
+          getAccountAddress(item) === model.address
+          && (!model.blockchain || model.blockchain === item.chain),
+      );
+
+    if (accountFound) {
+      return [accountFound];
+    }
+
+    return [];
+  },
+  set: (value: BlockchainAccount<AddressData>[]) => {
+    const account = value[0];
+    const address = account ? getAccountAddress(account) : undefined;
+    const blockchain = account && isBlockchain(account.chain) ? account.chain : undefined;
+
+    set(modelValue, {
+      ...get(modelValue),
+      address,
+      blockchain,
+    });
+  },
+});
+
+const reminderRef = useTemplateRef<InstanceType<typeof CalendarReminder>>('reminderRef');
 
 const externalServerValidation = () => true;
 
@@ -60,117 +91,31 @@ const rules = {
   timestamp: { externalServerValidation },
 };
 
-const { setSubmitFunc, setValidation } = useCalendarEventForm();
+const states = {
+  accounts,
+  autoDelete,
+  counterparty,
+  description,
+  name,
+  timestamp: datetime,
+};
 
-const v$ = setValidation(
+const v$ = useVuelidate(
   rules,
-  {
-    accounts,
-    autoDelete,
-    counterparty,
-    description,
-    name,
-    timestamp: datetime,
-  },
+  states,
   {
     $autoDirty: true,
-    $externalResults: errorMessages,
+    $externalResults: errors,
   },
 );
 
-watchImmediate(selectedDate, (selectedDate) => {
-  const startOfTheDate = selectedDate.set('hours', 0).set('minutes', 0).set('seconds', 0);
-  set(datetime, convertFromTimestamp(startOfTheDate.unix()));
+useFormStateWatcher(states, stateUpdated);
+
+defineExpose({
+  reset: () => get(v$).$reset(),
+  saveTemporaryReminder: (eventId: number) => get(reminderRef)?.saveTemporaryReminder(eventId),
+  validate: () => get(v$).$validate(),
 });
-
-const { accounts: accountsPerChain } = storeToRefs(useBlockchainStore());
-
-watchImmediate(editableItem, (editableItem) => {
-  if (editableItem) {
-    set(name, editableItem.name);
-    set(description, editableItem.description);
-    set(counterparty, editableItem.counterparty);
-    set(datetime, convertFromTimestamp(editableItem.timestamp));
-    set(color, editableItem.color);
-    set(autoDelete, editableItem.autoDelete);
-
-    if (editableItem.address && editableItem.blockchain) {
-      const accountFound = Object.values(get(accountsPerChain))
-        .flatMap(x => x)
-        .filter(hasAccountAddress)
-        .find(
-          item =>
-            getAccountAddress(item) === editableItem.address
-            && (!editableItem.blockchain || editableItem.blockchain === item.chain),
-        );
-
-      if (accountFound)
-        set(accounts, [accountFound]);
-    }
-  }
-});
-
-const { addCalendarEvent, editCalendarEvent } = useCalendarApi();
-const { setMessage } = useMessageStore();
-
-async function save() {
-  const accountVal = get(accounts)[0];
-  const payload: Writeable<CalendarEventPayload> = {
-    autoDelete: get(autoDelete),
-    color: get(color),
-    description: get(description),
-    name: get(name),
-    timestamp: convertToTimestamp(get(datetime)),
-  };
-
-  if (accountVal) {
-    payload.address = getAccountAddress(accountVal);
-    payload.blockchain = isBlockchain(accountVal.chain) ? accountVal.chain : undefined;
-  }
-
-  const counterpartyVal = get(counterparty);
-  if (counterpartyVal)
-    payload.counterparty = counterpartyVal;
-
-  const editableItemVal = get(editableItem);
-  const editing = !!editableItemVal;
-
-  try {
-    const result = !editing
-      ? await addCalendarEvent(payload)
-      : await editCalendarEvent({ ...payload, identifier: editableItemVal.identifier });
-
-    const eventId = result.entryId;
-    if (isDefined(eventId)) {
-      get(v$).$reset();
-      await get(reminderRef).saveTemporaryReminder(eventId);
-    }
-
-    return true;
-  }
-  catch (error: any) {
-    const errorTitle = editing ? t('calendar.edit_error') : t('calendar.add_error');
-
-    let errors = error.message;
-    if (error instanceof ApiValidationError)
-      errors = error.getValidationErrors(payload);
-
-    if (typeof errors === 'string') {
-      setMessage({
-        description: errors,
-        success: false,
-        title: errorTitle,
-      });
-    }
-    else {
-      set(errorMessages, errors);
-    }
-
-    return false;
-  }
-}
-
-setSubmitFunc(save);
 </script>
 
 <template>
@@ -187,8 +132,9 @@ setSubmitFunc(save);
 
       <CalendarReminder
         ref="reminderRef"
+        v-model="modelValue"
+        :edit-mode="editMode"
         class="pt-2"
-        :editable-item="editableItem"
       />
     </div>
 

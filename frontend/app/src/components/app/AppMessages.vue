@@ -21,13 +21,15 @@ const confirmStore = useConfirmStore();
 const { confirm, dismiss } = confirmStore;
 const { confirmation, visible } = storeToRefs(confirmStore);
 
-const { globalPayload } = useAddressBookForm();
+const { globalPayload, openDialog } = useAddressBookForm();
 </script>
 
 <template>
   <slot />
   <AddressBookFormDialog
-    :payload="globalPayload"
+    v-model:open="openDialog"
+    :editable-item="globalPayload"
+    :edit-mode="false"
     root
   />
   <MessageDialog

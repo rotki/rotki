@@ -1,23 +1,22 @@
 <script setup lang="ts">
 import { helpers, required } from '@vuelidate/validators';
+import useVuelidate from '@vuelidate/core';
 import { toMessages } from '@/utils/validation';
 import { isNft } from '@/utils/nft';
-import { usePropVModel } from '@/utils/model';
-import { useEditBalancesSnapshotForm } from '@/composables/snapshots/edit-balance/form';
 import BalanceTypeInput from '@/components/inputs/BalanceTypeInput.vue';
 import EditBalancesSnapshotLocationSelector from '@/components/dashboard/edit-snapshot/EditBalancesSnapshotLocationSelector.vue';
 import EditBalancesSnapshotAssetPriceForm from '@/components/dashboard/edit-snapshot/EditBalancesSnapshotAssetPriceForm.vue';
+import { useRefPropVModel } from '@/utils/model';
+import { useFormStateWatcher } from '@/composables/form';
 import type { BigNumber } from '@rotki/common';
 import type { BalanceSnapshotPayload } from '@/types/snapshots';
 
-interface BalanceSnapshotPayloadAndLocation extends BalanceSnapshotPayload {
-  location: string;
-}
+const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
+const model = defineModel<BalanceSnapshotPayloadAndLocation>({ required: true });
 
-const props = withDefaults(
+withDefaults(
   defineProps<{
     edit?: boolean;
-    form: BalanceSnapshotPayloadAndLocation;
     locations?: string[];
     previewLocationBalance?: Record<string, BigNumber> | null;
     timestamp: number;
@@ -30,17 +29,18 @@ const props = withDefaults(
 );
 
 const emit = defineEmits<{
-  (e: 'update:form', data: BalanceSnapshotPayloadAndLocation): void;
   (e: 'update:asset', asset: string): void;
 }>();
 
-const { form } = toRefs(props);
+interface BalanceSnapshotPayloadAndLocation extends BalanceSnapshotPayload {
+  location: string;
+}
 
-const category = usePropVModel(props, 'form', 'category', emit);
-const assetIdentifier = usePropVModel(props, 'form', 'assetIdentifier', emit);
-const amount = usePropVModel(props, 'form', 'amount', emit);
-const usdValue = usePropVModel(props, 'form', 'usdValue', emit);
-const location = usePropVModel(props, 'form', 'location', emit);
+const category = useRefPropVModel(model, 'category');
+const assetIdentifier = useRefPropVModel(model, 'assetIdentifier');
+const amount = useRefPropVModel(model, 'amount');
+const usdValue = useRefPropVModel(model, 'usdValue');
+const location = useRefPropVModel(model, 'location');
 
 const { t } = useI18n();
 
@@ -53,17 +53,18 @@ const rules = {
   },
 };
 
-const { setValidation } = useEditBalancesSnapshotForm();
+const states = {
+  category,
+};
 
-const v$ = setValidation(
+const v$ = useVuelidate(
   rules,
-  {
-    category,
-  },
+  states,
   {
     $autoDirty: true,
   },
 );
+useFormStateWatcher(states, stateUpdated);
 
 function updateAsset(asset: string) {
   emit('update:asset', asset);
@@ -85,12 +86,13 @@ watch(assetType, (assetType) => {
     set(amount, '1');
 });
 
-watchImmediate(form, () => {
+watchImmediate(model, () => {
   checkAssetType();
 });
 
 defineExpose({
   submitPrice,
+  validate: () => get(v$).$validate(),
 });
 </script>
 

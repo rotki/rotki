@@ -160,6 +160,8 @@ export class AssetsManagerPage {
 
     cy.get('[data-cy=address-input] input').as('addressInput');
 
+    cy.get('[data-cy=name-input] input').as('nameInput');
+
     cy.get('[data-cy=symbol-input] input').as('symbolInput');
 
     cy.get('[data-cy=decimal-input] input[type=number]').as('decimalInput');
@@ -202,6 +204,10 @@ export class AssetsManagerPage {
 
     // after loading, input should be enabled
     cy.get('@addressInput').should('be.enabled');
+
+    // enter name
+    cy.get('@nameInput').clear();
+    cy.get('@nameInput').type('ASSET NAME 1');
 
     const symbol = 'SYMBOL 1';
     // enter symbol

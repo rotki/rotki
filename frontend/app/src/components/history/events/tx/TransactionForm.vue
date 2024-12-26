@@ -1,26 +1,64 @@
 <script lang="ts" setup>
 import { helpers, required } from '@vuelidate/validators';
+import useVuelidate from '@vuelidate/core';
 import { toMessages } from '@/utils/validation';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
-import { useMessageStore } from '@/store/message';
 import { useSupportedChains } from '@/composables/info/chains';
-import { useHistoryTransactions } from '@/composables/history/events/tx';
-import { useHistoryTransactionsForm } from '@/composables/history/events/tx/form';
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
+import { useRefPropVModel } from '@/utils/model';
+import { useBlockchainStore } from '@/store/blockchain';
+import { hasAccountAddress } from '@/utils/blockchain/accounts';
+import { isBlockchain } from '@/types/blockchain/chains';
+import { useFormStateWatcher } from '@/composables/form';
+import type { ValidationErrors } from '@/types/api/errors';
+import type { AddTransactionHashPayload } from '@/types/history/events';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
-import type { AddTransactionHashPayload, EvmChainAndTxHash } from '@/types/history/events';
+
+const modelValue = defineModel<AddTransactionHashPayload>({ required: true });
+const errors = defineModel<ValidationErrors>('errorMessages', { required: true });
+const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
 
 const { t } = useI18n();
 
-const txHash = ref<string>('');
-const accounts = ref<BlockchainAccount<AddressData>[]>([]);
+const txHash = useRefPropVModel(modelValue, 'txHash');
 
-const errorMessages = ref<Record<string, string[]>>({});
+const { accounts: accountsPerChain } = storeToRefs(useBlockchainStore());
 
-function reset() {
-  set(txHash, '');
-  set(accounts, []);
-}
+const accounts = computed<BlockchainAccount<AddressData>[]>({
+  get: () => {
+    const model = get(modelValue);
+    const accountFound = Object.values(get(accountsPerChain))
+      .flatMap(x => x)
+      .filter(hasAccountAddress)
+      .find(
+        item =>
+          getAccountAddress(item) === model.associatedAddress
+          && (!model.evmChain || model.evmChain === item.chain),
+      );
+
+    if (accountFound) {
+      return [accountFound];
+    }
+
+    return [];
+  },
+  set: (value: BlockchainAccount<AddressData>[]) => {
+    const account = value[0];
+    const associatedAddress = account
+      ? getAccountAddress(account)
+      : '';
+    const evmChain = account && isBlockchain(account.chain) ? account.chain : '';
+
+    set(modelValue, {
+      ...get(modelValue),
+      associatedAddress,
+      evmChain,
+    });
+  },
+});
+
+const { txEvmChains } = useSupportedChains();
+const txChains = useArrayMap(txEvmChains, x => x.id);
 
 const rules = {
   associatedAddress: {
@@ -35,69 +73,25 @@ const rules = {
   },
 };
 
-const { setSubmitFunc, setValidation } = useHistoryTransactionsForm();
+const states = {
+  associatedAddress: accounts,
+  txHash,
+};
 
-const v$ = setValidation(
+const v$ = useVuelidate(
   rules,
-  {
-    associatedAddress: accounts,
-    txHash,
-  },
-
+  states,
   {
     $autoDirty: true,
-    $externalResults: errorMessages,
+    $externalResults: errors,
   },
 );
 
-const { getEvmChainName, txEvmChains } = useSupportedChains();
-const txChains = useArrayMap(txEvmChains, x => x.id);
+useFormStateWatcher(states, stateUpdated);
 
-const { setMessage } = useMessageStore();
-const { addTransactionHash } = useHistoryTransactions();
-
-async function save(): Promise<EvmChainAndTxHash | null> {
-  const accountsVal = get(accounts);
-  if (accountsVal.length === 0)
-    return null;
-
-  const evmChain = getEvmChainName(accountsVal[0].chain);
-  assert(evmChain);
-
-  const txHashVal = get(txHash);
-
-  const payload: AddTransactionHashPayload = {
-    associatedAddress: getAccountAddress(accountsVal[0]),
-    evmChain,
-    txHash: txHashVal,
-  };
-
-  const result = await addTransactionHash(payload);
-
-  if (result.success) {
-    reset();
-    return {
-      evmChain,
-      txHash: txHashVal,
-    };
-  }
-
-  if (result.message) {
-    if (typeof result.message === 'string') {
-      setMessage({
-        description: result.message,
-      });
-    }
-    else {
-      set(errorMessages, result.message);
-      await get(v$).$validate();
-    }
-  }
-
-  return null;
-}
-
-setSubmitFunc(save);
+defineExpose({
+  validate: () => get(v$).$validate(),
+});
 </script>
 
 <template>

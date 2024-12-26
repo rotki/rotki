@@ -1,38 +1,161 @@
 <script setup lang="ts">
-import { useManagedAssetForm } from '@/composables/assets/forms/managed-asset-form';
+import { useTemplateRef } from 'vue';
+import { omit } from 'lodash-es';
 import ManagedAssetForm from '@/components/asset-manager/managed/ManagedAssetForm.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
+import { useAssetCacheStore } from '@/store/assets/asset-cache';
+import { ApiValidationError } from '@/types/api/errors';
+import { useMessageStore } from '@/store/message';
 import type { SupportedAsset } from '@rotki/common';
+
+const modelValue = defineModel<SupportedAsset | undefined>({ required: true });
 
 const props = withDefaults(
   defineProps<{
-    title: string;
-    subtitle?: string;
-    editableItem?: SupportedAsset | null;
+    editMode: boolean;
   }>(),
   {
-    editableItem: null,
-    subtitle: '',
+    editMode: false,
   },
 );
 
-const { editableItem } = toRefs(props);
+const emit = defineEmits<{
+  (e: 'refresh'): void;
+}>();
+
 const { t } = useI18n();
 
-const { closeDialog, openDialog, stateUpdated, submitting, trySubmit } = useManagedAssetForm();
+const loading = ref(false);
+const errorMessages = ref<Record<string, string[]>>({});
+const form = useTemplateRef<InstanceType<typeof ManagedAssetForm>>('form');
+const stateUpdated = ref(false);
+
+const dialogTitle = computed<string>(() =>
+  props.editMode ? t('asset_management.edit_title') : t('asset_management.add_title'),
+);
+
+const { setMessage } = useMessageStore();
+
+function getUnderlyingTokenErrors(underlyingTokens: string | Record<string, { address: string[]; weight: string[] }>) {
+  if (typeof underlyingTokens === 'string')
+    return [underlyingTokens];
+
+  const messages: string[] = [];
+  for (const underlyingToken of Object.values(underlyingTokens)) {
+    const ut = underlyingToken;
+    if (ut.address)
+      messages.push(...ut.address);
+
+    if (underlyingTokens.weight)
+      messages.push(...ut.weight);
+  }
+  return messages;
+}
+
+function handleError(
+  message:
+    | {
+      underlyingTokens: string | Record<string, { address: string[]; weight: string[] }>;
+    }
+    | {
+      _schema: string[];
+    },
+) {
+  if ('underlyingTokens' in message) {
+    const messages = getUnderlyingTokenErrors(message.underlyingTokens);
+    setMessage({
+      description: messages.join(','),
+      title: t('asset_form.underlying_tokens'),
+    });
+  }
+  else {
+    setMessage({
+      description: message._schema[0],
+      title: t('asset_form.underlying_tokens'),
+    });
+  }
+}
+
+const { deleteCacheKey } = useAssetCacheStore();
+
+async function save(): Promise<boolean> {
+  if (!isDefined(modelValue))
+    return false;
+
+  const formRef = get(form);
+  const valid = await formRef?.validate();
+  if (!valid)
+    return false;
+
+  let success;
+  let identifier;
+
+  set(loading, true);
+
+  try {
+    identifier = await formRef?.saveAsset();
+    if (identifier) {
+      success = true;
+
+      deleteCacheKey(identifier);
+
+      if (identifier) {
+        formRef?.saveIcon(identifier);
+      }
+    }
+    else {
+      success = false;
+    }
+  }
+  catch (error: any) {
+    success = false;
+
+    let errors = error.message;
+    if (error instanceof ApiValidationError)
+      errors = error.getValidationErrors({});
+
+    if (typeof errors === 'string') {
+      setMessage({
+        description: errors,
+        title: props.editMode ? t('asset_form.edit_error') : t('asset_form.add_error'),
+      });
+    }
+    else {
+      if (errors.underlyingTokens || errors._schema)
+        handleError(errors);
+
+      set(errorMessages, omit(errors, ['underlyingTokens', '_schema']));
+      formRef?.validate();
+    }
+  }
+
+  set(loading, false);
+  if (success) {
+    set(modelValue, undefined);
+    emit('refresh');
+  }
+  return success;
+}
 </script>
 
 <template>
   <BigDialog
-    :display="openDialog"
-    :title="title"
-    :subtitle="subtitle"
+    :display="!!modelValue"
+    :title="dialogTitle"
     :primary-action="t('common.actions.save')"
-    :loading="submitting"
+    :loading="loading"
     :prompt-on-close="stateUpdated"
-    @confirm="trySubmit()"
-    @cancel="closeDialog()"
+    @confirm="save()"
+    @cancel="modelValue = undefined"
   >
-    <ManagedAssetForm :editable-item="editableItem" />
+    <ManagedAssetForm
+      v-if="modelValue"
+      ref="form"
+      v-model="modelValue"
+      v-model:error-messages="errorMessages"
+      v-model:state-updated="stateUpdated"
+      :loading="loading"
+      :edit-mode="editMode"
+    />
   </BigDialog>
 </template>

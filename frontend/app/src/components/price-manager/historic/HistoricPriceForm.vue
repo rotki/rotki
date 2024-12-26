@@ -1,44 +1,45 @@
 <script setup lang="ts">
 import { helpers, required } from '@vuelidate/validators';
+import useVuelidate from '@vuelidate/core';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 import { toMessages } from '@/utils/validation';
-import { useSimplePropVModel } from '@/utils/model';
+import { useRefPropVModel } from '@/utils/model';
 import { bigNumberifyFromRef } from '@/utils/bignumbers';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
-import { useHistoricPriceForm } from '@/composables/price-manager/historic/form';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
+import { useFormStateWatcher } from '@/composables/form';
 import type { HistoricalPriceFormPayload } from '@/types/prices';
+import type { ValidationErrors } from '@/types/api/errors';
 
-const props = defineProps<{
-  modelValue: HistoricalPriceFormPayload;
-  edit: boolean;
-}>();
+const modelValue = defineModel<HistoricalPriceFormPayload>({ required: true });
+const errors = defineModel<ValidationErrors>('errorMessages', { required: true });
+const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
 
-const emit = defineEmits<{
-  (e: 'update:model-value', price: Partial<HistoricalPriceFormPayload>): void;
-}>();
+withDefaults(
+  defineProps<{
+    editMode?: boolean;
+  }>(),
+  {
+    editMode: false,
+  },
+);
 
 const { assetSymbol } = useAssetInfoRetrieval();
 
-const date = computed({
-  get() {
-    const timestamp = props.modelValue.timestamp;
-    return timestamp ? convertFromTimestamp(timestamp) : '';
-  },
-  set(date: string) {
-    emit('update:model-value', {
-      ...props.modelValue,
-      timestamp: convertToTimestamp(date),
-    });
+const fromAsset = useRefPropVModel(modelValue, 'fromAsset');
+const toAsset = useRefPropVModel(modelValue, 'toAsset');
+const price = useRefPropVModel(modelValue, 'price');
+const timestamp = useRefPropVModel(modelValue, 'timestamp');
+
+const datetime = computed({
+  get: () => convertFromTimestamp(get(timestamp)),
+  set: (value: string) => {
+    set(timestamp, convertToTimestamp(value));
   },
 });
-
-const fromAsset = useSimplePropVModel(props, 'fromAsset', emit);
-const toAsset = useSimplePropVModel(props, 'toAsset', emit);
-const price = useSimplePropVModel(props, 'price', emit);
 
 const fromAssetSymbol = assetSymbol(fromAsset);
 const toAssetSymbol = assetSymbol(toAsset);
@@ -48,57 +49,63 @@ const numericPrice = bigNumberifyFromRef(price);
 const { t } = useI18n();
 
 const rules = {
-  date: {
-    required: helpers.withMessage(t('price_form.date_non_empty'), required),
-  },
   fromAsset: {
     required: helpers.withMessage(t('price_form.from_non_empty'), required),
   },
   price: {
     required: helpers.withMessage(t('price_form.price_non_empty'), required),
   },
+  timestamp: {
+    required: helpers.withMessage(t('price_form.date_non_empty'), required),
+  },
   toAsset: {
     required: helpers.withMessage(t('price_form.to_non_empty'), required),
   },
 };
 
-const { setValidation } = useHistoricPriceForm();
+const states = {
+  fromAsset,
+  price,
+  timestamp: datetime,
+  toAsset,
+};
 
-const v$ = setValidation(
+const v$ = useVuelidate(
   rules,
-  {
-    date,
-    fromAsset,
-    price,
-    toAsset,
-  },
-  { $autoDirty: true },
+  states,
+  { $autoDirty: true, $externalResults: errors },
 );
+
+useFormStateWatcher(states, stateUpdated);
+
+defineExpose({
+  validate: () => get(v$).$validate(),
+});
 </script>
 
 <template>
-  <form class="flex flex-col gap-4">
+  <div class="flex flex-col gap-4">
     <div class="grid md:grid-cols-2 gap-x-4 gap-y-2">
       <AssetSelect
         v-model="fromAsset"
         :label="t('price_form.from_asset')"
         outlined
-        :disabled="edit"
+        :disabled="editMode"
         :error-messages="toMessages(v$.fromAsset)"
       />
       <AssetSelect
         v-model="toAsset"
         :label="t('price_form.to_asset')"
-        :disabled="edit"
+        :disabled="editMode"
         outlined
         :error-messages="toMessages(v$.toAsset)"
       />
     </div>
     <DateTimePicker
-      v-model="date"
+      v-model="datetime"
       :label="t('common.datetime')"
-      :disabled="edit"
-      :error-messages="toMessages(v$.date)"
+      :disabled="editMode"
+      :error-messages="toMessages(v$.timestamp)"
     />
     <AmountInput
       v-model="price"
@@ -131,5 +138,5 @@ const v$ = setValidation(
         </strong>
       </template>
     </i18n-t>
-  </form>
+  </div>
 </template>

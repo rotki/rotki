@@ -2083,7 +2083,6 @@
       "non_empty_fee": "输入费用币种时费用不能为空",
       "non_empty_fee_currency": "输入费用时费用货币不能为空",
       "non_empty_quote": "报价资产不能为空",
-      "non_empty_quote_amount": "报价金额不能为空",
       "non_empty_rate": "费率不能为空"
     }
   },

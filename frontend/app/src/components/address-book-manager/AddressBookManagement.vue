@@ -2,7 +2,6 @@
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import { type Filters, type Matcher, useAddressBookFilter } from '@/composables/filters/address-book';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
-import { useAddressBookForm } from '@/composables/address-book/form';
 import AddressBookFormDialog from '@/components/address-book-manager/AddressBookFormDialog.vue';
 import AddressBookTable from '@/components/address-book-manager/AddressBookTable.vue';
 import EthNamesHint from '@/components/EthNamesHint.vue';
@@ -10,6 +9,7 @@ import TableFilter from '@/components/table-filter/TableFilter.vue';
 import ChainSelect from '@/components/accounts/blockchain/ChainSelect.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import AddressBookManagementMore from '@/components/address-book-manager/AddressBookManagementMore.vue';
+import { useCommonTableProps } from '@/composables/use-common-table-props';
 import type {
   AddressBookEntry,
   AddressBookLocation,
@@ -17,24 +17,16 @@ import type {
   AddressBookRequestPayload,
 } from '@/types/eth-names';
 
-const selectedChain = ref<string>();
-const enableForAllChains = ref<boolean>(false);
-
-const tab = ref<number>(0);
-const locations: AddressBookLocation[] = ['global', 'private'];
 const { t } = useI18n();
+
+const selectedChain = ref<string>();
+const tab = ref<number>(0);
+
+const locations: AddressBookLocation[] = ['global', 'private'];
 
 const location = computed<AddressBookLocation>(() => locations[get(tab)]);
 
-const emptyForm: () => Partial<AddressBookPayload> = () => ({
-  blockchain: get(selectedChain) ?? null,
-  location: get(location),
-});
-
-const { setOpenDialog, setPostSubmitFunc } = useAddressBookForm();
-
-const editMode = ref<boolean>(false);
-const formPayload = ref<Partial<AddressBookPayload>>(emptyForm());
+const { editableItem, openDialog } = useCommonTableProps<AddressBookPayload>();
 
 const { getAddressBook } = useAddressesNamesStore();
 
@@ -63,30 +55,22 @@ const {
   history: 'router',
 });
 
-function openForm(item: AddressBookEntry | null = null) {
-  set(editMode, !!item);
-  if (item) {
-    set(formPayload, {
-      ...item,
-      location: get(location),
-    });
-    set(enableForAllChains, !item.blockchain);
-  }
-  else {
-    set(formPayload, emptyForm());
-  }
-  setOpenDialog(true);
+function add() {
+  set(editableItem, null);
+  set(openDialog, true);
 }
 
-onMounted(async () => {
-  await fetchData();
-});
+function edit(item: AddressBookEntry) {
+  set(editableItem, {
+    ...item,
+    location: get(location),
+  });
+  set(openDialog, true);
+}
 
 watchImmediate(location, async () => {
   await fetchData();
 });
-
-setPostSubmitFunc(fetchData);
 </script>
 
 <template>
@@ -97,7 +81,7 @@ setPostSubmitFunc(fetchData);
     <template #buttons>
       <RuiButton
         color="primary"
-        @click="openForm()"
+        @click="add()"
       >
         <template #prepend>
           <RuiIcon name="lu-plus" />
@@ -158,7 +142,7 @@ setPostSubmitFunc(fetchData);
               :location="loc"
               :loading="isLoading"
               :blockchain="selectedChain"
-              @edit="openForm($event)"
+              @edit="edit($event)"
               @refresh="fetchData()"
             />
           </template>
@@ -167,10 +151,12 @@ setPostSubmitFunc(fetchData);
     </RuiCard>
 
     <AddressBookFormDialog
-      v-model:enable-for-all-chains="enableForAllChains"
-      :payload="formPayload"
-      :edit-mode="editMode"
+      v-model:open="openDialog"
+      :editable-item="editableItem"
+      :selected-chain="selectedChain"
+      :location="location"
       @update-tab="tab = $event"
+      @refresh="fetchData()"
     />
   </TablePageLayout>
 </template>

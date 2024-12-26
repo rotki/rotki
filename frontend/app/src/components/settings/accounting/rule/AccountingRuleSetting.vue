@@ -5,11 +5,9 @@ import { getPlaceholderRule } from '@/utils/settings';
 import { useMessageStore } from '@/store/message';
 import { useTaskStore } from '@/store/tasks';
 import { useConfirmStore } from '@/store/confirm';
-import { useAccountingRuleForm } from '@/composables/settings/accounting/form';
 import { useAccountingApi } from '@/composables/api/settings/accounting-api';
 import { useHistoryEventMappings } from '@/composables/history/events/mapping';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
-import { useCommonTableProps } from '@/composables/use-common-table-props';
 import { useAccountingSettings } from '@/composables/settings/accounting';
 import { type Filters, type Matcher, useAccountingRuleFilter } from '@/composables/filters/accounting-rule';
 import AccountingRuleImportDialog from '@/components/settings/accounting/rule/AccountingRuleImportDialog.vue';
@@ -32,7 +30,10 @@ const router = useRouter();
 const route = useRoute();
 
 const { exportJSON, getAccountingRule, getAccountingRules, getAccountingRulesConflicts } = useAccountingSettings();
-const { editableItem } = useCommonTableProps<AccountingRuleEntry>();
+
+const editMode = ref<boolean>(false);
+
+const modelValue = ref<AccountingRuleEntry>();
 
 const {
   fetchData,
@@ -138,19 +139,36 @@ function getHistoryEventSubTypeName(eventSubtype: string): string {
   );
 }
 
-const { setOpenDialog, setPostSubmitFunc } = useAccountingRuleForm();
+function createNewEntry() {
+  return (
+    {
+      accountingTreatment: null,
+      countCostBasisPnl: {
+        value: false,
+      },
+      countEntireAmountSpend: {
+        value: false,
+      },
+      counterparty: null,
+      eventSubtype: '',
+      eventType: '',
+      identifier: -1,
+      taxable: {
+        value: false,
+      },
+    }
+  );
+}
 
 function add() {
-  set(editableItem, null);
-  setOpenDialog(true);
+  set(modelValue, createNewEntry());
+  set(editMode, false);
 }
 
 function edit(rule: AccountingRuleEntry) {
-  set(editableItem, rule);
-  setOpenDialog(true);
+  set(modelValue, rule);
+  set(editMode, true);
 }
-
-setPostSubmitFunc(fetchData);
 
 const { show } = useConfirmStore();
 const { setMessage } = useMessageStore();
@@ -205,10 +223,11 @@ onMounted(async () => {
   };
 
   async function openDialog(rule?: AccountingRuleEntry) {
-    set(editableItem, rule);
-    startPromise(nextTick(() => {
-      setOpenDialog(!!rule);
-    }));
+    if (rule) {
+      startPromise(nextTick(() => {
+        edit(rule);
+      }));
+    }
     await router.replace({ query: {} });
   }
 
@@ -490,8 +509,9 @@ const importFileDialog = ref<boolean>(false);
       </CollectionHandler>
 
       <AccountingRuleFormDialog
-        :loading="isLoading"
-        :editable-item="editableItem"
+        v-model="modelValue"
+        :edit-mode="editMode"
+        @refresh="fetchData()"
       />
 
       <AccountingRuleImportDialog

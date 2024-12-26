@@ -3,6 +3,7 @@ import { Blockchain, HistoryEventEntryType } from '@rotki/common';
 import dayjs from 'dayjs';
 import { helpers, required, requiredIf } from '@vuelidate/validators';
 import { isEmpty } from 'lodash-es';
+import useVuelidate from '@vuelidate/core';
 import { toMessages } from '@/utils/validation';
 import { DateFormat } from '@/types/date-format';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
@@ -15,7 +16,10 @@ import JsonInput from '@/components/inputs/JsonInput.vue';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import AutoCompleteWithSearchSync from '@/components/inputs/AutoCompleteWithSearchSync.vue';
 import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
+import { useFormStateWatcher } from '@/composables/form';
 import type { EthDepositEvent, NewEthDepositEventPayload } from '@/types/history/events';
+
+const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
 
 const props = withDefaults(
   defineProps<{
@@ -91,25 +95,28 @@ const rules = {
 const numericAmount = bigNumberifyFromRef(amount);
 const numericUsdValue = bigNumberifyFromRef(usdValue);
 
-const { saveHistoryEventHandler, setSubmitFunc, setValidation } = useHistoryEventsForm();
+const { saveHistoryEventHandler } = useHistoryEventsForm();
 
-const v$ = setValidation(
+const states = {
+  amount,
+  depositor,
+  eventIdentifier,
+  sequenceIndex,
+  timestamp: datetime,
+  txHash,
+  usdValue,
+  validatorIndex,
+};
+
+const v$ = useVuelidate(
   rules,
-  {
-    amount,
-    depositor,
-    eventIdentifier,
-    sequenceIndex,
-    timestamp: datetime,
-    txHash,
-    usdValue,
-    validatorIndex,
-  },
+  states,
   {
     $autoDirty: true,
     $externalResults: errorMessages,
   },
 );
+useFormStateWatcher(states, stateUpdated);
 
 function reset() {
   set(sequenceIndex, get(nextSequence) || '0');
@@ -154,6 +161,9 @@ watch(errorMessages, (errors) => {
 });
 
 async function save(): Promise<boolean> {
+  if (!(await get(v$).$validate()))
+    return false;
+
   const timestamp = convertToTimestamp(get(datetime), DateFormat.DateMonthYearHourMinuteSecond, true);
 
   const payload: NewEthDepositEventPayload = {
@@ -181,8 +191,6 @@ async function save(): Promise<boolean> {
   );
 }
 
-setSubmitFunc(save);
-
 function checkPropsData() {
   const editable = get(editableItem);
   if (editable) {
@@ -205,6 +213,10 @@ onMounted(() => {
 const { getAddresses } = useBlockchainStore();
 
 const depositorSuggestions = computed(() => getAddresses(Blockchain.ETH));
+
+defineExpose({
+  save,
+});
 </script>
 
 <template>

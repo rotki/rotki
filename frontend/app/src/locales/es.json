@@ -2027,7 +2027,6 @@
       "non_empty_fee": "The fee cannot be empty when fee currency is inputted",
       "non_empty_fee_currency": "The fee currency cannot be empty when fee is inputted",
       "non_empty_quote": "The quote asset cannot be empty",
-      "non_empty_quote_amount": "The quote amount cannot be empty",
       "non_empty_rate": "The rate cannot be empty"
     }
   },

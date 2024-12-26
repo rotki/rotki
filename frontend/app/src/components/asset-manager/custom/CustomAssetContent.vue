@@ -4,7 +4,6 @@ import { useMessageStore } from '@/store/message';
 import { type Filters, type Matcher, useCustomAssetFilter } from '@/composables/filters/custom-assets';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import { useCommonTableProps } from '@/composables/use-common-table-props';
-import { useCustomAssetForm } from '@/composables/assets/forms/custom-asset-form';
 import { useAssetManagementApi } from '@/composables/api/assets/management';
 import CustomAssetFormDialog from '@/components/asset-manager/custom/CustomAssetFormDialog.vue';
 import CustomAssetTable from '@/components/asset-manager/custom/CustomAssetTable.vue';
@@ -32,8 +31,8 @@ const route = useRoute();
 const { setMessage } = useMessageStore();
 const { show } = useConfirmStore();
 const { deleteCustomAsset, getCustomAssetTypes, queryAllCustomAssets } = useAssetManagementApi();
-const { setOpenDialog, setPostSubmitFunc } = useCustomAssetForm();
 const { editableItem, expanded } = useCommonTableProps<CustomAsset>();
+const openCustomAssetDialog = ref<boolean>(false);
 
 async function deleteAsset(assetId: string) {
   try {
@@ -73,18 +72,14 @@ const {
   history: get(mainPage) ? 'router' : false,
 });
 
-const dialogTitle = computed<string>(() =>
-  get(editableItem) ? t('asset_management.edit_title') : t('asset_management.add_title'),
-);
-
 function add() {
   set(editableItem, null);
-  setOpenDialog(true);
+  set(openCustomAssetDialog, true);
 }
 
 function edit(editAsset: CustomAsset) {
   set(editableItem, editAsset);
-  setOpenDialog(true);
+  set(openCustomAssetDialog, true);
 }
 
 function editAsset(assetId: Nullable<string>) {
@@ -102,8 +97,6 @@ async function refreshTypes() {
 async function refresh() {
   await Promise.all([fetchData(), refreshTypes()]);
 }
-
-setPostSubmitFunc(refresh);
 
 function showDeleteConfirmation(item: CustomAsset) {
   show(
@@ -172,9 +165,10 @@ watch(identifier, (assetId) => {
       @delete-asset="showDeleteConfirmation($event)"
     />
     <CustomAssetFormDialog
-      :title="dialogTitle"
+      v-model:open="openCustomAssetDialog"
       :types="types"
       :editable-item="editableItem"
+      @refresh="refresh()"
     />
   </TablePageLayout>
 </template>

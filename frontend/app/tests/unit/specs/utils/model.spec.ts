@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { usePropVModel, useRefPropVModel, useSimplePropVModel, useSimpleVModel } from '@/utils/model';
+import { usePropVModel, useRefPropVModel, useSimplePropVModel } from '@/utils/model';
 
 describe('model utilities', () => {
   describe('useSimplePropVModel', () => {
@@ -58,19 +58,6 @@ describe('model utilities', () => {
         counter: 12,
       });
     });
-  });
-
-  it('useVModel wrapper emits the proper event', () => {
-    const props = {
-      modelValue: 'name',
-    };
-
-    const emit = vi.fn();
-    const model = useSimpleVModel(props, emit);
-    expect(get(model)).toBe('name');
-    set(model, 'test');
-
-    expect(emit).toHaveBeenCalledWith('update:model-value', 'test');
   });
 
   it('properly map computed property to parent ref', () => {

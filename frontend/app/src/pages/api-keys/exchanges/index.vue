@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { externalLinks } from '@shared/external-links';
-import { startPromise } from '@shared/utils';
 import { useNotificationsStore } from '@/store/notifications';
 import { useConfirmStore } from '@/store/confirm';
 import { useSettingsStore } from '@/store/settings';
@@ -159,8 +158,8 @@ onBeforeMount(() => {
 onMounted(async () => {
   const { query } = get(route);
   if (query.add) {
+    addExchange();
     await router.replace({ query: {} });
-    startPromise(nextTick(() => addExchange()));
   }
 });
 </script>

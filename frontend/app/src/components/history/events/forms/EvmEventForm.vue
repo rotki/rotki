@@ -3,6 +3,7 @@ import { Blockchain, HistoryEventEntryType } from '@rotki/common';
 import dayjs from 'dayjs';
 import { helpers, required, requiredIf } from '@vuelidate/validators';
 import { isEmpty } from 'lodash-es';
+import useVuelidate from '@vuelidate/core';
 import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
 import { toMessages } from '@/utils/validation';
 import { DateFormat } from '@/types/date-format';
@@ -22,7 +23,10 @@ import AutoCompleteWithSearchSync from '@/components/inputs/AutoCompleteWithSear
 import HistoryEventTypeForm from '@/components/history/events/forms/HistoryEventTypeForm.vue';
 import LocationSelector from '@/components/helper/LocationSelector.vue';
 import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
+import { useFormStateWatcher } from '@/composables/form';
 import type { EvmHistoryEvent, NewEvmHistoryEventPayload } from '@/types/history/events';
+
+const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
 
 const props = withDefaults(
   defineProps<{
@@ -146,32 +150,35 @@ const rules = {
 const numericAmount = bigNumberifyFromRef(amount);
 const numericUsdValue = bigNumberifyFromRef(usdValue);
 
-const { getPayloadNotes, saveHistoryEventHandler, setSubmitFunc, setValidation } = useHistoryEventsForm();
+const { getPayloadNotes, saveHistoryEventHandler } = useHistoryEventsForm();
 
-const v$ = setValidation(
+const states = {
+  address,
+  amount,
+  asset,
+  counterparty,
+  eventIdentifier,
+  eventSubtype,
+  eventType,
+  location,
+  locationLabel,
+  notes,
+  product,
+  sequenceIndex,
+  timestamp: datetime,
+  txHash,
+  usdValue,
+};
+
+const v$ = useVuelidate(
   rules,
-  {
-    address,
-    amount,
-    asset,
-    counterparty,
-    eventIdentifier,
-    eventSubtype,
-    eventType,
-    location,
-    locationLabel,
-    notes,
-    product,
-    sequenceIndex,
-    timestamp: datetime,
-    txHash,
-    usdValue,
-  },
+  states,
   {
     $autoDirty: true,
     $externalResults: errorMessages,
   },
 );
+useFormStateWatcher(states, stateUpdated);
 
 function reset() {
   set(sequenceIndex, get(nextSequence) || '0');
@@ -231,6 +238,9 @@ watch(errorMessages, (errors) => {
 });
 
 async function save(): Promise<boolean> {
+  if (!(await get(v$).$validate()))
+    return false;
+
   const timestamp = convertToTimestamp(get(datetime), DateFormat.DateMonthYearHourMinuteSecond, true);
 
   const editable = get(editableItem);
@@ -265,8 +275,6 @@ async function save(): Promise<boolean> {
     reset,
   );
 }
-
-setSubmitFunc(save);
 
 watch(location, (location: string) => {
   if (location)
@@ -304,6 +312,10 @@ const { txChainsToLocation } = useSupportedChains();
 const { getAddresses } = useBlockchainStore();
 
 const addressSuggestions = computed(() => getAddresses(Blockchain.ETH));
+
+defineExpose({
+  save,
+});
 </script>
 
 <template>

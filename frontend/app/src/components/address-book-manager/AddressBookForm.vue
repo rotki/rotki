@@ -2,44 +2,46 @@
 import { each } from 'lodash-es';
 import { Blockchain } from '@rotki/common';
 import { helpers, required, requiredIf } from '@vuelidate/validators';
+import useVuelidate from '@vuelidate/core';
 import { toMessages } from '@/utils/validation';
-import { nullDefined, useSimplePropVModel } from '@/utils/model';
+import { nullDefined, useRefPropVModel } from '@/utils/model';
 import { useBlockchainStore } from '@/store/blockchain';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
-import { useAddressBookForm } from '@/composables/address-book/form';
 import { useBlockie } from '@/composables/accounts/blockie';
 import AppImage from '@/components/common/AppImage.vue';
 import AutoCompleteWithSearchSync from '@/components/inputs/AutoCompleteWithSearchSync.vue';
 import ChainSelect from '@/components/accounts/blockchain/ChainSelect.vue';
+import { useFormStateWatcher } from '@/composables/form';
 import type { AddressBookLocation, AddressBookPayload } from '@/types/eth-names';
 import type { SelectOptions } from '@/types/common';
+import type { ValidationErrors } from '@/types/api/errors';
 
-const enabledForAllChains = defineModel<boolean>('enableForAllChains', { default: false, required: true });
+const modelValue = defineModel<AddressBookPayload>({ required: true });
+const forAllChains = defineModel<boolean>('forAllChains', { required: true });
+const errors = defineModel<ValidationErrors>('errorMessages', { required: true });
+const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
 
-const props = defineProps<{
-  modelValue: AddressBookPayload;
-  edit: boolean;
-  errorMessages: { address?: string[]; name?: string[] };
-}>();
-
-const emit = defineEmits<{
-  (e: 'update:model-value', value: AddressBookPayload): void;
-  (e: 'valid', valid: boolean): void;
-}>();
+withDefaults(
+  defineProps<{
+    editMode?: boolean;
+  }>(),
+  {
+    editMode: false,
+  },
+);
 
 const { t } = useI18n();
-const { errorMessages } = toRefs(props);
 
-const name = useSimplePropVModel(props, 'name', emit);
-const address = useSimplePropVModel(props, 'address', emit);
-const location = useSimplePropVModel(props, 'location', emit);
-const chain = useSimplePropVModel(props, 'blockchain', emit);
-const blockchain = nullDefined(chain);
+const name = useRefPropVModel(modelValue, 'name');
+const location = useRefPropVModel(modelValue, 'location');
+const address = useRefPropVModel(modelValue, 'address');
+const blockchain = useRefPropVModel(modelValue, 'blockchain');
+const blockchainModel = nullDefined(blockchain);
 const { addresses } = useBlockchainStore();
 const addressesNamesStore = useAddressesNamesStore();
 const { addressNameSelector, getAddressesWithoutNames } = addressesNamesStore;
 
-const addressSuggestions = getAddressesWithoutNames(chain);
+const addressSuggestions = getAddressesWithoutNames(blockchain);
 const locations = computed<SelectOptions<AddressBookLocation>>(() => [
   { key: 'global', label: t('address_book.hint.global') },
   { key: 'private', label: t('address_book.hint.private') },
@@ -50,24 +52,36 @@ const rules = {
     required: helpers.withMessage(t('address_book.form.validation.address'), required),
   },
   blockchain: {
-    required: helpers.withMessage(t('address_book.form.validation.chain'), requiredIf(logicNot(enabledForAllChains))),
+    required: helpers.withMessage(t('address_book.form.validation.chain'), requiredIf(logicNot(forAllChains))),
   },
   name: {
     required: helpers.withMessage(t('address_book.form.validation.name'), required),
   },
 };
 
-const { setValidation } = useAddressBookForm();
+const states = {
+  address,
+  blockchain,
+  name,
+};
 
-const v$ = setValidation(
+const v$ = useVuelidate(
   rules,
-  {
-    address,
-    blockchain,
-    name,
-  },
-  { $autoDirty: true, $externalResults: errorMessages },
+  states,
+  { $autoDirty: true, $externalResults: errors },
 );
+
+useFormStateWatcher(states, stateUpdated);
+
+function checkPassedForm() {
+  const data = get(modelValue);
+  if (data) {
+    set(forAllChains, !data.blockchain);
+  }
+  else {
+    set(forAllChains, false);
+  }
+}
 
 const { getBlockie } = useBlockie();
 
@@ -90,6 +104,14 @@ watch(addressSuggestions, (suggestions, oldSuggestions) => {
 
 watchEffect(fetchNames);
 onMounted(fetchNames);
+
+onBeforeMount(() => {
+  checkPassedForm();
+});
+
+defineExpose({
+  validate: () => get(v$).$validate(),
+});
 </script>
 
 <template>
@@ -98,20 +120,20 @@ onMounted(fetchNames);
       v-model="location"
       :label="t('common.location')"
       :options="locations"
-      :disabled="edit"
+      :disabled="editMode"
       key-attr="key"
       text-attr="label"
       variant="outlined"
     />
     <RuiSwitch
-      v-model="enabledForAllChains"
-      :disabled="edit"
+      v-model="forAllChains"
+      :disabled="editMode"
       color="primary"
       :label="t('address_book.form.labels.for_all_chain')"
     />
     <ChainSelect
-      v-model="blockchain"
-      :disabled="edit || enabledForAllChains"
+      v-model="blockchainModel"
+      :disabled="editMode || forAllChains"
       exclude-eth-staking
       :error-messages="toMessages(v$.blockchain)"
     />
@@ -129,7 +151,7 @@ onMounted(fetchNames);
         :label="t('address_book.form.labels.address')"
         :items="addressSuggestions"
         :no-data-text="t('address_book.form.no_suggestions_available')"
-        :disabled="edit"
+        :disabled="editMode"
         :error-messages="toMessages(v$.address)"
         clearable
       >

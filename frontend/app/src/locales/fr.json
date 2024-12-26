@@ -2276,7 +2276,6 @@
       "non_empty_fee": "Les frais ne peuvent être vides lorsque la devise des frais est entrée",
       "non_empty_fee_currency": "La devise des frais ne peut être vide lorsque les frais sont entrés",
       "non_empty_quote": "L'actif de cotation ne peut être vide",
-      "non_empty_quote_amount": "Le montant de l'actif de cotation ne peut être vide",
       "non_empty_rate": "Le taux ne peut être vide"
     }
   },

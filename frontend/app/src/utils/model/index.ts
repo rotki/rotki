@@ -1,5 +1,20 @@
 import { kebabCase } from 'lodash-es';
+import type BigNumber from 'bignumber.js';
 import type { Ref, WritableComputedRef } from 'vue';
+
+export function useBigNumberModel(model: WritableComputedRef<BigNumber | null | undefined>): WritableComputedRef<string> {
+  return computed<string>({
+    get() {
+      const modelVal = get(model);
+      if (!modelVal || modelVal.isNaN())
+        return '';
+      return modelVal.toString();
+    },
+    set(value: string) {
+      set(model, value ? bigNumberify(value) : null);
+    },
+  });
+}
 
 export function usePropVModel<
   P extends object,
@@ -38,7 +53,7 @@ export function nullDefined<T>(comp: WritableComputedRef<T | null>): WritableCom
   });
 }
 
-export function refOptional<T>(comp: WritableComputedRef<T | undefined>, defaultValue: T): WritableComputedRef<T> {
+export function refOptional<T>(comp: WritableComputedRef<T | undefined | null>, defaultValue: T): WritableComputedRef<T> {
   return computed<T>({
     get() {
       return get(comp) ?? defaultValue;
@@ -46,15 +61,6 @@ export function refOptional<T>(comp: WritableComputedRef<T | undefined>, default
     set(value?: T) {
       set(comp, value ?? undefined);
     },
-  });
-}
-
-export function useSimpleVModel<T, P extends { modelValue: T }, Name extends string>(
-  props: P,
-  emit?: (name: Name, ...args: any[]) => void,
-): WritableComputedRef<P['modelValue']> {
-  return useVModel(props, 'modelValue', emit, {
-    eventName: 'update:model-value',
   });
 }
 

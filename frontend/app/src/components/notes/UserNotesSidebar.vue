@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { useAppRoutes } from '@/router/routes';
 import { NoteLocation } from '@/types/notes';
-import { useUserNotesForm } from '@/composables/notes/form';
 import UserNotesList from '@/components/notes/UserNotesList.vue';
 
 const display = defineModel<boolean>({ required: true });
@@ -12,7 +11,7 @@ const tab = ref<number>(0);
 
 const route = useRoute();
 
-const { openDialog } = useUserNotesForm();
+const openDialog = ref<boolean>(false);
 
 const location = computed<string>(() => {
   const meta = get(route).meta;
@@ -110,6 +109,7 @@ watch(locationName, (locationName) => {
     <UserNotesList
       v-if="display"
       :key="location + tab"
+      v-model:open="openDialog"
       :location="tab === 0 ? '' : location"
     />
   </RuiNavigationDrawer>

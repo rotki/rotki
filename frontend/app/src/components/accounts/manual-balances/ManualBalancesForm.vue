@@ -2,10 +2,8 @@
 import { helpers, required } from '@vuelidate/validators';
 import useVuelidate from '@vuelidate/core';
 import { toMessages } from '@/utils/validation';
-import { useSimplePropVModel } from '@/utils/model';
 import ManualBalancesPriceForm from '@/components/accounts/manual-balances/ManualBalancesPriceForm.vue';
 import { useManualBalancesStore } from '@/store/balances/manual';
-import { useCustomAssetForm } from '@/composables/assets/forms/custom-asset-form';
 import { useAssetManagementApi } from '@/composables/api/assets/management';
 import { useFormStateWatcher } from '@/composables/form';
 import CustomAssetFormDialog from '@/components/asset-manager/custom/CustomAssetFormDialog.vue';
@@ -15,54 +13,42 @@ import AmountInput from '@/components/inputs/AmountInput.vue';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import BalanceTypeInput from '@/components/inputs/BalanceTypeInput.vue';
 import RuiForm from '@/components/helper/RuiForm.vue';
+import { useBigNumberModel, useRefPropVModel } from '@/utils/model';
 import type { ValidationErrors } from '@/types/api/errors';
 import type { ManualBalance, RawManualBalance } from '@/types/manual-balances';
 
 const errors = defineModel<ValidationErrors>('errorMessages', { required: true });
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
+const modelValue = defineModel<RawManualBalance | ManualBalance>({ required: true });
 
-const props = defineProps<{
-  modelValue: RawManualBalance | ManualBalance;
+defineProps<{
   submitting: boolean;
-}>();
-
-const emit = defineEmits<{
-  (e: 'update:model-value', value: RawManualBalance | ManualBalance): void;
 }>();
 
 const { t } = useI18n();
 
 const priceForm = ref<InstanceType<typeof ManualBalancesPriceForm>>();
+const openCustomAssetDialog = ref<boolean>(false);
 
-const asset = useSimplePropVModel(props, 'asset', emit);
-const label = useSimplePropVModel(props, 'label', emit);
-const balanceType = useSimplePropVModel(props, 'balanceType', emit);
-const location = useSimplePropVModel(props, 'location', emit);
+const asset = useRefPropVModel(modelValue, 'asset');
+const label = useRefPropVModel(modelValue, 'label');
+const balanceType = useRefPropVModel(modelValue, 'balanceType');
+const location = useRefPropVModel(modelValue, 'location');
+const rawAmount = useRefPropVModel(modelValue, 'amount');
 
 const tags = computed<string[]>({
   get() {
-    return props.modelValue.tags ?? [];
+    return get(modelValue).tags ?? [];
   },
   set(tags: string[]) {
-    emit('update:model-value', {
-      ...props.modelValue,
+    set(modelValue, {
+      ...get(modelValue),
       tags: tags.length > 0 ? tags : null,
     });
   },
 });
 
-const amount = computed({
-  get() {
-    return props.modelValue.amount.toString();
-  },
-  set(amount: string) {
-    emit('update:model-value', {
-      ...props.modelValue,
-      amount: bigNumberify(amount),
-    });
-  },
-});
-
+const amount = useBigNumberModel(rawAmount);
 const { manualLabels } = useManualBalancesStore();
 
 const rules = {
@@ -79,7 +65,7 @@ const rules = {
         t('manual_balances_form.validation.label_exists', {
           label,
         }),
-      (label: string) => !get(manualLabels).includes(label),
+      (label: string) => 'identifier' in get(modelValue) || !get(manualLabels).includes(label),
     ),
     required: helpers.withMessage(t('manual_balances_form.validation.label_empty'), required),
   },
@@ -106,14 +92,6 @@ const v$ = useVuelidate(
 
 useFormStateWatcher(states, stateUpdated);
 
-const { setOpenDialog, setPostSubmitFunc } = useCustomAssetForm();
-
-function postSubmit(assetId: string) {
-  set(asset, assetId);
-}
-
-setPostSubmitFunc(postSubmit);
-
 const customAssetTypes = ref<string[]>([]);
 
 const { getCustomAssetTypes } = useAssetManagementApi();
@@ -122,11 +100,11 @@ async function openCustomAssetForm() {
   if (get(customAssetTypes).length === 0)
     set(customAssetTypes, await getCustomAssetTypes());
 
-  setOpenDialog(true);
+  set(openCustomAssetDialog, true);
 }
 
-async function validate() {
-  await get(v$).$validate();
+async function validate(): Promise<boolean> {
+  return await get(v$).$validate();
 }
 
 async function savePrice() {
@@ -234,7 +212,8 @@ defineExpose({
     />
 
     <CustomAssetFormDialog
-      :title="t('asset_management.add_title')"
+      v-model:open="openCustomAssetDialog"
+      v-model:saved-asset-id="asset"
       :types="customAssetTypes"
     />
   </RuiForm>

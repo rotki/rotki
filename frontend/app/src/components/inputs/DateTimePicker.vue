@@ -20,7 +20,7 @@ const props = withDefaults(
     allowEmpty?: boolean;
     milliseconds?: boolean;
     disabled?: boolean;
-    errorMessages?: string[];
+    errorMessages?: string[] | string;
     hideDetails?: boolean;
     dateOnly?: boolean;
     inputOnly?: boolean;

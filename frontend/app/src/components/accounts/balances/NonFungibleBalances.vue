@@ -9,7 +9,6 @@ import { useNotificationsStore } from '@/store/notifications';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useNonFungibleBalancesStore } from '@/store/balances/non-fungible';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
-import { useLatestPriceForm } from '@/composables/price-manager/latest/form';
 import { useAssetPricesApi } from '@/composables/api/assets/prices';
 import LatestPriceFormDialog from '@/components/price-manager/latest/LatestPriceFormDialog.vue';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
@@ -38,7 +37,8 @@ const { t } = useI18n();
 const { notify } = useNotificationsStore();
 const { deleteLatestPrice } = useAssetPricesApi();
 
-const customPrice = ref<Partial<ManualPriceFormPayload> | null>(null);
+const openPriceDialog = ref<boolean>(false);
+const customPrice = ref<ManualPriceFormPayload | null>(null);
 
 const selected = ref<string[]>([]);
 const ignoredAssetsHandling = ref<IgnoredAssetsHandlingType>('exclude');
@@ -118,7 +118,6 @@ const {
   },
 });
 
-const { setOpenDialog, setPostSubmitFunc } = useLatestPriceForm();
 const { show } = useConfirmStore();
 
 const isIgnored = (identifier: string) => isAssetIgnored(identifier);
@@ -190,12 +189,12 @@ async function deletePrice(toDeletePrice: NonFungibleBalance) {
 }
 
 function setPriceForm(item: NonFungibleBalance) {
-  setOpenDialog(true);
   set(customPrice, {
     fromAsset: item.id,
     price: item.priceInAsset.toFixed(),
     toAsset: item.priceAsset,
   });
+  set(openPriceDialog, true);
 }
 
 function showDeleteConfirmation(item: NonFungibleBalance) {
@@ -213,8 +212,6 @@ function showDeleteConfirmation(item: NonFungibleBalance) {
 onMounted(async () => {
   await fetchData();
   await refreshNonFungibleBalances();
-
-  setPostSubmitFunc(fetchData);
 });
 
 watch(ignoredAssetsHandling, () => {
@@ -347,8 +344,9 @@ watch(loading, async (isLoading, wasLoading) => {
     </RuiCard>
 
     <LatestPriceFormDialog
-      :value="customPrice"
-      edit-mode
+      v-model:open="openPriceDialog"
+      :editable-item="customPrice"
+      @refresh="fetchData()"
     />
   </TablePageLayout>
 </template>

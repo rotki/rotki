@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { omit } from 'lodash-es';
 import { Routes } from '@/router/routes';
 import { Section } from '@/types/status';
 import { IgnoreActionType } from '@/types/history/ignored';
@@ -6,7 +7,6 @@ import { SavedFilterLocation } from '@/types/filtering';
 import { useConfirmStore } from '@/store/confirm';
 import { useStatusStore } from '@/store/status';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useTradesForm } from '@/composables/history/trades/form';
 import { useIgnore } from '@/composables/history';
 import { useHistoryAutoRefresh } from '@/composables/history/auto-refresh';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
@@ -32,8 +32,9 @@ import HistoryTableActions from '@/components/history/HistoryTableActions.vue';
 import NavigatorLink from '@/components/helper/NavigatorLink.vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
+import { createNewTrade } from '@/utils/history/trades';
+import type { Trade, TradeEntry, TradeRequestPayload } from '@/types/history/trade';
 import type { DataTableColumn } from '@rotki/ui-library';
-import type { TradeEntry, TradeRequestPayload } from '@/types/history/trade';
 import type { Writeable } from '@rotki/common';
 
 const props = withDefaults(
@@ -146,7 +147,10 @@ const extraParams = computed(() => ({
 const assetInfoRetrievalStore = useAssetInfoRetrieval();
 const { assetSymbol } = assetInfoRetrievalStore;
 const { deleteExternalTrade, fetchTrades, refreshTrades } = useTrades();
-const { confirmationMessage, editableItem, expanded, itemsToDelete: tradesToDelete, selected } = useCommonTableProps<TradeEntry>();
+const { confirmationMessage, expanded, itemsToDelete: tradesToDelete, selected } = useCommonTableProps<TradeEntry>();
+
+const editMode = ref<boolean>(false);
+const modelValue = ref<Trade>();
 
 const {
   fetchData,
@@ -184,18 +188,14 @@ const {
 
 useHistoryAutoRefresh(fetchData);
 
-const { setOpenDialog, setPostSubmitFunc } = useTradesForm();
-
-setPostSubmitFunc(fetchData);
-
 function newExternalTrade() {
-  set(editableItem, null);
-  setOpenDialog(true);
+  set(modelValue, createNewTrade());
+  set(editMode, false);
 }
 
 function editTradeHandler(trade: TradeEntry) {
-  set(editableItem, trade);
-  setOpenDialog(true);
+  set(modelValue, omit(trade, 'ignoredInAccounting'));
+  set(editMode, true);
 }
 
 const { floatingPrecision } = storeToRefs(useGeneralSettingsStore());
@@ -532,8 +532,10 @@ watch(loading, async (isLoading, wasLoading) => {
         </template>
       </CollectionHandler>
       <ExternalTradeFormDialog
+        v-model="modelValue"
+        :edit-mode="editMode"
         :loading="loading"
-        :editable-item="editableItem"
+        @refresh="fetchData()"
       />
     </RuiCard>
   </TablePageLayout>

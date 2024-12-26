@@ -16,8 +16,8 @@ interface UseHistoricPricesReturn {
 }
 
 export function useHistoricPrices(
-  filter: Ref<{ fromAsset?: string; toAsset?: string }>,
   t: ReturnType<typeof useI18n>['t'],
+  filter?: Ref<{ fromAsset?: string; toAsset?: string }>,
 ): UseHistoricPricesReturn {
   const loading = ref(false);
   const items = ref<HistoricalPrice[]>([]);
@@ -107,13 +107,15 @@ export function useHistoricPrices(
     }
   };
 
-  watch(
-    filter,
-    async () => {
-      await refresh();
-    },
-    { deep: true },
-  );
+  if (filter) {
+    watch(
+      filter,
+      async () => {
+        await refresh();
+      },
+      { deep: true },
+    );
+  }
 
   onBeforeMount(() => {
     startPromise(refresh());

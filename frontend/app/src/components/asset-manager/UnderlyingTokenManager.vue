@@ -4,21 +4,12 @@ import useVuelidate from '@vuelidate/core';
 import { between, helpers, numeric, required } from '@vuelidate/validators';
 import { evmTokenKindsData } from '@/types/blockchain/chains';
 import { toMessages } from '@/utils/validation';
-import { useSimpleVModel } from '@/utils/model';
 import RowActions from '@/components/helper/RowActions.vue';
 import SimpleTable from '@/components/common/SimpleTable.vue';
 
-const props = defineProps<{
-  modelValue: UnderlyingToken[];
-}>();
-
-const emit = defineEmits<{
-  (e: 'update:model-value', value: UnderlyingToken[]): void;
-}>();
+const modelValue = defineModel<UnderlyingToken[]>({ required: true });
 
 const { t } = useI18n();
-
-const model = useSimpleVModel(props, emit);
 
 const underlyingAddress = ref<string>('');
 const tokenKind = ref<EvmTokenKind>(EvmTokenKind.ERC20);
@@ -46,7 +37,7 @@ const v$ = useVuelidate(
 );
 
 function addToken() {
-  const underlyingTokens = [...get(model)];
+  const underlyingTokens = [...get(modelValue)];
   const index = underlyingTokens.findIndex(({ address }) => address === get(underlyingAddress));
 
   const token = {
@@ -61,7 +52,7 @@ function addToken() {
 
   resetForm();
   get(v$).$reset();
-  set(model, underlyingTokens);
+  set(modelValue, underlyingTokens);
 }
 
 function editToken(token: UnderlyingToken) {
@@ -72,9 +63,9 @@ function editToken(token: UnderlyingToken) {
 }
 
 function deleteToken(address: string) {
-  const underlyingTokens = [...get(model)];
+  const underlyingTokens = [...get(modelValue)];
   set(
-    model,
+    modelValue,
     underlyingTokens.filter(({ address: tokenAddress }) => tokenAddress !== address),
   );
 }
@@ -151,6 +142,7 @@ function resetForm() {
 
       <RuiButton
         color="primary"
+        class="col-span-2 lg:col-span-4"
         :disabled="v$.$invalid"
         @click="addToken()"
       >
@@ -178,7 +170,7 @@ function resetForm() {
       </thead>
       <tbody>
         <tr
-          v-for="token in model"
+          v-for="token in modelValue"
           :key="token.address"
         >
           <td class="grow">

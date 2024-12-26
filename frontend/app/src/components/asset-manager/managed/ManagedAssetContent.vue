@@ -4,7 +4,6 @@ import { useAssetCacheStore } from '@/store/assets/asset-cache';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useConfirmStore } from '@/store/confirm';
 import { useMessageStore } from '@/store/message';
-import { useManagedAssetForm } from '@/composables/assets/forms/managed-asset-form';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import { useAssetManagementApi } from '@/composables/api/assets/management';
 import { useCommonTableProps } from '@/composables/use-common-table-props';
@@ -14,7 +13,7 @@ import ManagedAssetTable from '@/components/asset-manager/managed/ManagedAssetTa
 import MergeDialog from '@/components/asset-manager/MergeDialog.vue';
 import RestoreAssetDbButton from '@/components/asset-manager/RestoreAssetDbButton.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
-import type { AssetRequestPayload, IgnoredAssetsHandlingType } from '@/types/asset';
+import { type AssetRequestPayload, EVM_TOKEN, type IgnoredAssetsHandlingType } from '@/types/asset';
 import type { Nullable, SupportedAsset } from '@rotki/common';
 
 const props = withDefaults(
@@ -40,7 +39,10 @@ const ignoredFilter = ref<{
   onlyShowWhitelisted: false,
 });
 
-const { editableItem, expanded, selected } = useCommonTableProps<SupportedAsset>();
+const modelValue = ref<SupportedAsset>();
+const editMode = ref<boolean>(false);
+
+const { expanded, selected } = useCommonTableProps<SupportedAsset>();
 
 const extraParams = computed(() => {
   const { ignoredAssetsHandling, onlyShowOwned, onlyShowWhitelisted } = get(ignoredFilter);
@@ -57,8 +59,6 @@ const { deleteAsset, queryAllAssets } = useAssetManagementApi();
 const { setMessage } = useMessageStore();
 const { show } = useConfirmStore();
 const { ignoredAssets } = storeToRefs(useIgnoredAssetsStore());
-
-const { setOpenDialog, setPostSubmitFunc } = useManagedAssetForm();
 
 const { deleteCacheKey } = useAssetCacheStore();
 
@@ -97,18 +97,25 @@ const {
   },
 });
 
-const dialogTitle = computed<string>(() =>
-  get(editableItem) ? t('asset_management.edit_title') : t('asset_management.add_title'),
-);
-
 function add() {
-  set(editableItem, null);
-  setOpenDialog(true);
+  set(modelValue, {
+    active: true,
+    address: '',
+    assetType: EVM_TOKEN,
+    customAssetType: '',
+    decimals: null,
+    ended: null,
+    forked: null,
+    identifier: '',
+    protocol: '',
+    underlyingTokens: null,
+  });
+  set(editMode, false);
 }
 
 function edit(editAsset: SupportedAsset) {
-  set(editableItem, editAsset);
-  setOpenDialog(true);
+  set(modelValue, editAsset);
+  set(editMode, true);
 }
 
 async function editAsset(assetId: Nullable<string>) {
@@ -142,8 +149,6 @@ async function deleteAssetHandler(identifier: string) {
     });
   }
 }
-
-setPostSubmitFunc(fetchData);
 
 const assetsMap = computed(() => keyBy(get(assets).data, 'identifier'));
 
@@ -279,8 +284,9 @@ watch(ignoredFilter, (oldValue, newValue) => {
       />
 
       <ManagedAssetFormDialog
-        :title="dialogTitle"
-        :editable-item="editableItem"
+        v-model="modelValue"
+        :edit-mode="editMode"
+        @refresh="fetchData()"
       />
     </RuiCard>
   </TablePageLayout>
