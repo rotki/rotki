@@ -89,6 +89,7 @@ class DBToken:
 def test_asset_updates_consistency_with_packaged_db(
         tmpdir_factory: 'pytest.TempdirFactory',
         messages_aggregator: 'MessagesAggregator',
+        db_writer_port: int,
 ):
     """Test that the globalDB updates are consistent with the packaged one.
     - All assets are present in both cases.
@@ -112,6 +113,7 @@ def test_asset_updates_consistency_with_packaged_db(
         sql_vm_instructions_cb=0,
         perform_assets_updates=True,
         messages_aggregator=messages_aggregator,
+        db_writer_port=db_writer_port,
     )
 
     with (
@@ -454,6 +456,7 @@ def test_remote_updates_consistency_with_packaged_db(
         tmpdir_factory: 'pytest.TempdirFactory',
         messages_aggregator: 'MessagesAggregator',
         database: 'DBHandler',
+        db_writer_port: int,
 ):
     """Test that the remote updates are consistent with the packaged db for:
     - Location asset mappings
@@ -469,6 +472,7 @@ def test_remote_updates_consistency_with_packaged_db(
         data_directory=temp_data_dir,
         sql_vm_instructions_cb=0,
         messages_aggregator=messages_aggregator,
+        db_writer_port=db_writer_port,
     )
     rotki_updater = RotkiDataUpdater(msg_aggregator=messages_aggregator, user_db=database)
     rotki_updater.check_for_updates(updates=[

@@ -35,7 +35,7 @@ from rotkehlchen.types import (
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.client import DBCursor
 
 
 @pytest.mark.parametrize('added_exchanges', [(Location.BINANCE, Location.POLONIEX)])
@@ -130,10 +130,9 @@ def test_purge_blockchain_transaction_data(rotkehlchen_api_server: 'APIServer') 
         result = db.get_evm_transactions(cursor, EvmTransactionsFilterQuery.make(chain_id=ChainID.ETHEREUM), True)  # noqa: E501
         assert len(result) == 0
 
-    def _add_zksynclitetxs(write_cursor: 'DBCursor') -> None:
+    def _add_zksynclitetxs() -> None:
         for i in range(2):
             rotki.chains_aggregator.zksync_lite._add_zksynctxs_db(
-                write_cursor=write_cursor,
                 transactions=[ZKSyncLiteTransaction(
                     tx_hash=make_evm_tx_hash(),
                     tx_type=ZKSyncLiteTXType.TRANSFER if i == 0 else ZKSyncLiteTXType.SWAP,
@@ -153,9 +152,9 @@ def test_purge_blockchain_transaction_data(rotkehlchen_api_server: 'APIServer') 
         assert cursor.execute('SELECT COUNT(*) FROM zksynclite_swaps').fetchone()[0] == swap_num
 
     # now add a few zksync lite transactions
-    with rotki.data.db.user_write() as write_cursor:
-        _add_zksynclitetxs(write_cursor)
-        _assert_zksynclite_txs_num(write_cursor, tx_num=2, swap_num=1)
+    _add_zksynclitetxs()
+    with rotki.data.db.conn.read_ctx() as cursor:
+        _assert_zksynclite_txs_num(cursor, tx_num=2, swap_num=1)
 
     # see that purging without arguments removes the remaining
     # optimism, gnosis and zksync_lite transactions
@@ -172,9 +171,9 @@ def test_purge_blockchain_transaction_data(rotkehlchen_api_server: 'APIServer') 
         _assert_zksynclite_txs_num(cursor, tx_num=0, swap_num=0)
 
     # re-add a few zksync lite transactions
-    with rotki.data.db.user_write() as write_cursor:
-        _add_zksynclitetxs(write_cursor)
-        _assert_zksynclite_txs_num(write_cursor, tx_num=2, swap_num=1)
+    _add_zksynclitetxs()
+    with rotki.data.db.conn.read_ctx() as cursor:
+        _assert_zksynclite_txs_num(cursor, tx_num=2, swap_num=1)
 
     # and check removing only zksync_lite by argument works
     response = requests.delete(

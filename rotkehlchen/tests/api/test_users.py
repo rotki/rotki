@@ -14,7 +14,7 @@ from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.constants.misc import USERDB_NAME, USERSDIR_NAME
 from rotkehlchen.db.cache import DBCacheStatic
-from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType
+from rotkehlchen.db.drivers.client import DBConnection, DBConnectionType
 from rotkehlchen.db.settings import ROTKEHLCHEN_DB_VERSION, DBSettings
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.inquirer import Inquirer
@@ -795,6 +795,7 @@ def test_user_login(
         path=str(backup_path),
         connection_type=DBConnectionType.USER,
         sql_vm_instructions_cb=0,
+        db_writer_port=5555,
     )
     backup_connection.executescript(f"PRAGMA key='{db_password}'")  # unlock
     with backup_connection.write_ctx() as write_cursor:

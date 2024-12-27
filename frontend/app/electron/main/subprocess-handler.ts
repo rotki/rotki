@@ -211,7 +211,7 @@ export class SubprocessHandler {
       this.logToFile('Checking for running rotki-core processes');
       const runningProcesses = await psList({ all: true });
       const matches = runningProcesses.filter(
-        process => process.cmd?.includes('-m rotkehlchen') || process.cmd?.includes('rotki-core'),
+        process => process.cmd?.includes('-m rotkehlchen.start') || process.cmd?.includes('rotki-core'),
       );
       return matches.map(p => p.pid);
     }
@@ -411,7 +411,7 @@ export class SubprocessHandler {
       ...(profilingArgs ? profilingArgs.split(' ') : []),
       ...(profilingCmd ? ['python'] : []),
       '-m',
-      'rotkehlchen',
+      'rotkehlchen.start',
       '--rest-api-port',
       port.toString(),
     ];

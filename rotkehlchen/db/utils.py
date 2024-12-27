@@ -23,7 +23,7 @@ from rotkehlchen.utils.misc import pairwise_longest, rgetattr, timestamp_to_date
 if TYPE_CHECKING:
     from rotkehlchen.balances.manual import ManuallyTrackedBalance
     from rotkehlchen.chain.bitcoin.xpub import XpubData
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.client import DBCursor, DBWriterClient
 
 TAG_REFERENCE_ENTRY_TYPE = Union[
     'ManuallyTrackedBalance',
@@ -215,7 +215,7 @@ def _prepare_tag_mappings(
 
 
 def insert_tag_mappings(
-        write_cursor: 'DBCursor',
+        write_cursor: 'DBWriterClient',
         data: list['ManuallyTrackedBalance'] | (list[BlockchainAccountData] | list['XpubData'] | list['SingleBlockchainAccountData']),  # noqa: E501
         object_reference_keys: list[
             Literal['identifier', 'chain', 'address', 'xpub.xpub', 'derivation_path'],
@@ -236,7 +236,7 @@ def insert_tag_mappings(
 
 
 def replace_tag_mappings(
-        write_cursor: 'DBCursor',
+        write_cursor: 'DBWriterClient',
         data: list['ManuallyTrackedBalance'] | (list[BlockchainAccountData] | list['XpubData'] | list['SingleBlockchainAccountData']),  # noqa: E501
         object_reference_keys: list[
             Literal['identifier', 'chain', 'address', 'xpub.xpub', 'derivation_path'],

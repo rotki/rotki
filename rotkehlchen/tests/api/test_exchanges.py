@@ -763,12 +763,18 @@ def test_delete_external_exchange_data_works(
         rotki.data.db.add_trades(write_cursor, trades)
         history_db.add_history_events(write_cursor=write_cursor, history=events)
 
-        assert len(rotki.data.db.get_trades(cursor=write_cursor, filter_query=TradesFilterQuery.make(), has_premium=True)) == 2  # noqa: E501
+    with rotki.data.db.conn.read_ctx() as cursor:
+        assert len(rotki.data.db.get_trades(
+            cursor=cursor,
+            filter_query=TradesFilterQuery.make(),
+            has_premium=True,
+        )) == 2
         assert len(history_db.get_history_events(
-            cursor=write_cursor,
+            cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(),
             has_premium=True,
         )) == 2
+
     response = requests.delete(
         api_url_for(
             server,

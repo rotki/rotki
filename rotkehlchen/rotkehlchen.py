@@ -127,7 +127,7 @@ from rotkehlchen.utils.misc import combine_dicts
 if TYPE_CHECKING:
     from rotkehlchen.chain.bitcoin.xpub import XpubData
     from rotkehlchen.chain.evm.manager import EvmManager
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.client import DBCursor, DBWriterClient
     from rotkehlchen.exchanges.kraken import KrakenAccountType
 
 logger = logging.getLogger(__name__)
@@ -178,6 +178,7 @@ class Rotkehlchen:
             perform_assets_updates=True,
             sql_vm_instructions_cb=self.args.sqlite_instructions,
             msg_aggregator=self.msg_aggregator,
+            db_writer_port=self.args.db_api_port,
         )
         if globaldb.used_backup is True:
             self.msg_aggregator.add_warning(
@@ -188,6 +189,7 @@ class Rotkehlchen:
             self.data_dir,
             self.msg_aggregator,
             sql_vm_instructions_cb=args.sqlite_instructions,
+            db_writer_port=self.args.db_api_port,
         )
         self.cryptocompare = Cryptocompare(database=None)
         self.coingecko = Coingecko(database=None)
@@ -795,7 +797,7 @@ class Rotkehlchen:
 
     def edit_single_blockchain_accounts(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: 'DBWriterClient',
             blockchain: SupportedBlockchain,
             account_data: list[SingleBlockchainAccountData],
     ) -> None:
@@ -816,12 +818,13 @@ class Rotkehlchen:
                 f'Tried to edit unknown {blockchain!s} accounts {",".join(unknown_accounts)}',
             )
 
-        self.data.db.ensure_tags_exist(
-            cursor=write_cursor,
-            given_data=account_data,
-            action='editing',
-            data_type='blockchain accounts',
-        )
+        with self.data.db.conn.read_ctx() as cursor:
+            self.data.db.ensure_tags_exist(
+                cursor=cursor,
+                given_data=account_data,
+                action='editing',
+                data_type='blockchain accounts',
+            )
         # Finally edit the accounts
         self.data.db.edit_blockchain_accounts(
             write_cursor=write_cursor,

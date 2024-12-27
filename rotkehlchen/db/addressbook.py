@@ -15,7 +15,7 @@ from rotkehlchen.types import (
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.client import DBCursor, DBWriterClient
     from rotkehlchen.db.filtering import AddressbookFilterQuery
 
 
@@ -35,7 +35,7 @@ class DBAddressbook:
             yield cursor
 
     @contextmanager
-    def write_ctx(self, book_type: AddressbookType) -> Generator['DBCursor', None, None]:
+    def write_ctx(self, book_type: AddressbookType) -> Generator['DBWriterClient', None, None]:
         if book_type == AddressbookType.GLOBAL:
             with GlobalDBHandler().conn.write_ctx() as cursor:
                 yield cursor
@@ -71,7 +71,7 @@ class DBAddressbook:
 
     def add_or_update_addressbook_entries(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: 'DBWriterClient',
             entries: list[AddressbookEntry],
     ) -> None:
         """Adds new or updates existing addressbook entries.
