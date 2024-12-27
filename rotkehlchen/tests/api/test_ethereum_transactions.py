@@ -708,24 +708,24 @@ def test_transaction_same_hash_same_nonce_two_tracked_accounts(
             etherscan: Etherscan,
             eth_accounts: list['ChecksumEvmAddress'],
     ) -> _patch:
-        def mocked_request_dict(url: str, *_args: Any, **_kwargs: Any) -> MockResponse:
+        def mocked_request_dict(url: str, params: dict[str, str], *_args: Any, **_kwargs: Any) -> MockResponse:  # noqa: E501
 
             addr1_tx = f"""{{"blockNumber":"1","timeStamp":"1","hash":"0x9c81f44c29ff0226f835cd0a8a2f2a7eca6db52a711f8211b566fd15d3e0e8d4","nonce":"0","blockHash":"0xd3cabad6adab0b52ea632c386ea19403680571e682c62cb589b5abcd76de2159","transactionIndex":"0","from":"{eth_accounts[0]}","to":"{eth_accounts[1]}","value":"1","gas":"2000000","gasPrice":"10000000000000","isError":"0","txreceipt_status":"","input":"0x","contractAddress":"","cumulativeGasUsed":"1436963","gasUsed":"1436963","confirmations":"1"}}"""  # noqa: E501
             addr2_txs = f"""{addr1_tx}, {{"blockNumber":"2","timeStamp":"2","hash":"0x1c81f54c29ff0226f835cd0a2a2f2a7eca6db52a711f8211b566fd15d3e0e8d4","nonce":"1","blockHash":"0xd1cabad2adab0b56ea632c386ea19403680571e682c62cb589b5abcd76de2159","transactionIndex":"0","from":"{eth_accounts[1]}","to":"{make_evm_address()}","value":"1","gas":"2000000","gasPrice":"10000000000000","isError":"0","txreceipt_status":"","input":"0x","contractAddress":"","cumulativeGasUsed":"1436963","gasUsed":"1436963","confirmations":"1"}}"""  # noqa: E501
-            if '=txlistinternal&' in url or 'action=tokentx&' in url:
+            if (action := params.get('action')) in ('txlistinternal', 'tokentx'):
                 # don't return any internal or token transactions
                 payload = '{"status":"1","message":"OK","result":[]}'
-            elif '=txlist&' in url:
-                if eth_accounts[0] in url:
+            elif action == 'txlist':
+                if (address := params.get('address')) == eth_accounts[0]:
                     tx_str = addr1_tx
-                elif eth_accounts[1] in url:
+                elif address == eth_accounts[1]:
                     tx_str = addr2_txs
                 else:
                     raise AssertionError(
                         'Requested etherscan transactions for unknown address in tests',
                     )
                 payload = f'{{"status":"1","message":"OK","result":[{tx_str}]}}'
-            elif '=getblocknobytime&' in url:
+            elif action == 'getblocknobytime':
                 # we don't really care about this so just return whatever
                 payload = '{"status":"1","message":"OK","result": "1"}'
             else:

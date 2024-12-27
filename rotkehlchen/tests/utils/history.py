@@ -718,7 +718,7 @@ def mock_history_processing(
 
 
 def mock_etherscan_transaction_response(etherscan: Etherscan, remote_errors: bool):
-    def mocked_request_dict(url, *_args, **_kwargs):
+    def mocked_request_dict(url, params, *_args, **_kwargs):
         if remote_errors:
             return MockResponse(200, '[{')
 
@@ -728,16 +728,17 @@ def mock_etherscan_transaction_response(etherscan: Etherscan, remote_errors: boo
         addr2_receipt = f"""{{"blockHash":"0xd3cabad6adab0b52ea632c386ea19403680571e682c62cb589b5abcd76de2159","blockNumber":"0xdd1987","contractAddress":null,"cumulativeGasUsed":"0x1ba9a3f","effectiveGasPrice":"0xd4026e5de","from":"0x1627158aca8a8e2039f5ba3023c04a2129c634f1","gasUsed":"0x3251a","logs":[],"status":"0x1","to":"0xf8fdc3aa1f5a1ac20dd8596cd3d5b471ad305de1","transactionHash":"{TX_HASH_STR2}","transactionIndex":"0x12c","type":"0x2"}}"""  # noqa: E501
         addr3_tx = f"""{{"blockNumber":"54094","timeStamp":"1439048645","hash":"{TX_HASH_STR3}","nonce":"0","blockHash":"0xe3cabad6adab0b52eb632c3165a194036805713682c62cb589b5abcd76de2159","transactionIndex":"0","from":"{ETH_ADDRESS3}","to":"{ETH_ADDRESS1}","value":"500520300","gas":"2000000","gasPrice":"10000000000000","isError":"0","txreceipt_status":"","input":"{MOCK_INPUT_DATA_HEX}","contractAddress":"0xde0b295669a9fd93d5f28d9ec85e40f4cb697bae","cumulativeGasUsed":"1436963","gasUsed":"1436963","confirmations":"8569454"}}"""  # noqa: E501
         addr3_receipt = f"""{{"blockHash":"0xd3cabad6adab0b52ea632c386ea19403680571e682c62cb589b5abcd76de2159","blockNumber":"0xdd1987","contractAddress":null,"cumulativeGasUsed":"0x1ba9a3f","effectiveGasPrice":"0xd4026e5de","from":"0x1627158aca8a8e2039f5ba3023c04a2129c634f1","gasUsed":"0x3251a","logs":[],"status":"0x1","to":"0xf8fdc3aa1f5a1ac20dd8596cd3d5b471ad305de1","transactionHash":"{TX_HASH_STR3}","transactionIndex":"0x12c","type":"0x2"}}"""  # noqa: E501
-        if '=txlistinternal&' in url:
+        action = params.get('action')
+        if action == 'txlistinternal':
             # don't return any internal transactions
             payload = '{"status":"1","message":"OK","result":[]}'
-        elif '=txlist&' in url:
+        elif action == 'txlist':
             # And depending on the given query return corresponding mock transactions for address
-            if ETH_ADDRESS1 in url:
+            if (address := params.get('address')) == ETH_ADDRESS1:
                 tx_str = addr1_tx
-            elif ETH_ADDRESS2 in url:
+            elif address == ETH_ADDRESS2:
                 tx_str = addr2_tx
-            elif ETH_ADDRESS3 in url:
+            elif address == ETH_ADDRESS3:
                 tx_str = addr3_tx
             else:
                 raise AssertionError(
@@ -745,18 +746,18 @@ def mock_etherscan_transaction_response(etherscan: Etherscan, remote_errors: boo
                 )
 
             payload = f'{{"status":"1","message":"OK","result":[{tx_str}]}}'
-        elif '=tokentx&' in url:
+        elif action == 'tokentx':
             # don't return any token transactions
             payload = '{"status":"1","message":"OK","result":[]}'
-        elif '=getblocknobytime&' in url:
+        elif action == 'getblocknobytime':
             # we don't really care about this in the history tests so just return whatever
             payload = '{"status":"1","message":"OK","result": "1"}'
-        elif 'eth_getTransactionReceipt&txhash=' in url:
-            if TX_HASH_STR1 in url:
+        elif action == 'eth_getTransactionReceipt' and 'txhash' in params:
+            if (tx_hash := params.get('txhash')) == TX_HASH_STR1:
                 receipt_str = addr1_receipt
-            elif TX_HASH_STR2 in url:
+            elif tx_hash == TX_HASH_STR2:
                 receipt_str = addr2_receipt
-            elif TX_HASH_STR3 in url:
+            elif tx_hash == TX_HASH_STR3:
                 receipt_str = addr3_receipt
             else:
                 raise AssertionError(

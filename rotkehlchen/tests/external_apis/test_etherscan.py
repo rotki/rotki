@@ -59,7 +59,7 @@ def fixture_temp_etherscan(function_scope_messages_aggregator, tmpdir_factory, s
 def patch_etherscan(etherscan, response_msg):
     count = 0
 
-    def mock_requests_get(_url, timeout):  # pylint: disable=unused-argument
+    def mock_requests_get(*args, **kwargs):  # pylint: disable=unused-argument
         nonlocal count
         if count == 0:
             response = f'{{"status":"0","message":"NOTOK","result":"{response_msg}"}}'

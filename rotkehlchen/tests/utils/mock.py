@@ -132,13 +132,16 @@ ETHERSCAN_ETH_CALL_RE = re.compile(r'&to=(.*)&data=(.*)&.*')
 ETHERSCAN_BLOCKNOBYTIME_RE = re.compile(r'&timestamp=(.*)&closest=(.*)&.*')
 
 
-def _mock_etherscan_eth_call(counter, url, eth_call_data):
-    match = ETHERSCAN_ETH_CALL_RE.search(url)
-    if match is None:
-        raise AssertionError(f'Could not parse etherscan query: {url} for eth call')
+def _mock_etherscan_eth_call(counter, url, params, eth_call_data):
+    if (
+        (contract_to := params.get('to')) is None or
+        (data := params.get('data')) is None
+    ):
+        raise AssertionError(
+            'Could not find parameters "to" and "data" '
+            f'in etherscan query: {url} {params} for eth call',
+        )
 
-    contract_to = match.group(1)
-    data = match.group(2)
     if eth_call_data is None:
         raise AssertionError(f'No eth_call mock data given in test for {contract_to=} and {data=}')
 
@@ -157,13 +160,16 @@ def _mock_etherscan_eth_call(counter, url, eth_call_data):
     return f'{{"id": {counter}, "jsonrpc": "2.0", "result": "{result}"}}'
 
 
-def _mock_etherscan_getblocknobytime(url, data):
-    match = ETHERSCAN_BLOCKNOBYTIME_RE.search(url)
-    if match is None:
-        raise AssertionError(f'Could not parse etherscan query: {url} for blocknobytime')
+def _mock_etherscan_getblocknobytime(url, params, data):
+    if (
+        (timestamp := params.get('timestamp')) is None or
+        (closest := params.get('closest')) is None
+    ):
+        raise AssertionError(
+            'Could not find parameters "timestamp" and "closest" '
+            f'in etherscan query: {url} {params} for blocknobytime',
+        )
 
-    timestamp = match.group(1)
-    closest = match.group(2)
     if data is None:
         raise AssertionError('No blocknobytime mock data given in test')
 
@@ -179,19 +185,17 @@ def patch_etherscan_request(etherscan, mock_data: dict[str, Any]):
     """Patches all requests going to the passed etherscan object with the given data"""
     counter = 0
 
-    def mock_etherscan_query(url, **kwargs):  # pylint: disable=unused-argument
+    def mock_etherscan_query(url, params, **kwargs):  # pylint: disable=unused-argument
         nonlocal counter
-        match = ETHERSCAN_ACTION_RE.search(url)
-        if match is None:
-            raise AssertionError(f'Could not parse etherscan query: {url}')
+        if (action := params.get('action')) is None:
+            raise AssertionError(f'Could not get action from etherscan query: {url} {params}')
 
-        action = match.group(1)
         if action == 'eth_call':
-            contents = _mock_etherscan_eth_call(counter, url, mock_data.get(action))
+            contents = _mock_etherscan_eth_call(counter, url, params, mock_data.get(action))
         elif action == 'getblocknobytime':
-            contents = _mock_etherscan_getblocknobytime(url, mock_data.get(action))
+            contents = _mock_etherscan_getblocknobytime(url, params, mock_data.get(action))
         else:
-            raise AssertionError(f'Unexpected action {action} at etherscan query parsing: {url}')
+            raise AssertionError(f'Unexpected action {action} at etherscan query parsing: {url} {params}')  # noqa: E501
 
         counter += 1
         return MockResponse(200, contents)
