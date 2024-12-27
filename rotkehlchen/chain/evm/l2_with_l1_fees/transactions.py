@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.evm.l2_with_l1_fees.types import L2WithL1FeesTransaction
     from rotkehlchen.chain.evm.structures import EvmTxReceipt
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.client import DBCursor
     from rotkehlchen.types import ChecksumEvmAddress, EVMTxHash
 
 logger = logging.getLogger(__name__)

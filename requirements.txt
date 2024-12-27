@@ -52,3 +52,4 @@ pycparser<=2.17 # ugly -- to avoid https://github.com/eliben/pycparser/pull/198
 
 # To build JWT for coinbase exchange key validation
 PyJWT==2.10.1
+pyzmq==26.0.3
