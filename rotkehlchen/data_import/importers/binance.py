@@ -9,7 +9,7 @@ from rotkehlchen.assets.converters import asset_from_binance
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.data_import.utils import BaseExchangeImporter, UnsupportedCSVEntry, hash_csv_row
-from rotkehlchen.db.drivers.gevent import DBCursor
+from rotkehlchen.db.drivers.client import DBWriterClient
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp
@@ -82,7 +82,7 @@ class BinanceSingleEntry(BinanceEntry, abc.ABC):
     @abc.abstractmethod
     def process_entry(
             self,
-            write_cursor: DBCursor,
+            write_cursor: DBWriterClient,
             importer: BaseExchangeImporter,
             timestamp: Timestamp,
             data: BinanceCsvRow,
@@ -100,7 +100,7 @@ class BinanceMultipleEntry(BinanceEntry, abc.ABC):
     @abc.abstractmethod
     def process_entries(
             self,
-            write_cursor: DBCursor,
+            write_cursor: DBWriterClient,
             importer: BaseExchangeImporter,
             timestamp: Timestamp,
             data: list[BinanceCsvRow],
@@ -147,7 +147,7 @@ class BinanceTransferEntry(BinanceMultipleEntry):
 
     def process_entries(
             self,
-            write_cursor: DBCursor,
+            write_cursor: DBWriterClient,
             importer: BaseExchangeImporter,
             timestamp: Timestamp,
             data: list[BinanceCsvRow],
@@ -352,7 +352,7 @@ class BinanceTradeEntry(BinanceMultipleEntry):
 
     def process_entries(
             self,
-            write_cursor: DBCursor,
+            write_cursor: DBWriterClient,
             importer: BaseExchangeImporter,
             timestamp: Timestamp,
             data: list[BinanceCsvRow],
@@ -376,7 +376,7 @@ class BinanceDepositWithdrawEntry(BinanceSingleEntry):
 
     def process_entry(
             self,
-            write_cursor: DBCursor,
+            write_cursor: DBWriterClient,
             importer: BaseExchangeImporter,
             timestamp: Timestamp,
             data: BinanceCsvRow,
@@ -400,7 +400,7 @@ class BinanceDistributionEntry(BinanceSingleEntry):
 
     def process_entry(
             self,
-            write_cursor: DBCursor,
+            write_cursor: DBWriterClient,
             importer: BaseExchangeImporter,
             timestamp: Timestamp,
             data: BinanceCsvRow,
@@ -441,7 +441,7 @@ class BinanceStakingRewardsEntry(BinanceSingleEntry):
 
     def process_entry(
             self,
-            write_cursor: DBCursor,
+            write_cursor: DBWriterClient,
             importer: BaseExchangeImporter,
             timestamp: Timestamp,
             data: BinanceCsvRow,
@@ -476,7 +476,7 @@ class BinanceEarnProgram(BinanceSingleEntry):
 
     def process_entry(
             self,
-            write_cursor: DBCursor,
+            write_cursor: DBWriterClient,
             importer: BaseExchangeImporter,
             timestamp: Timestamp,
             data: BinanceCsvRow,
@@ -595,7 +595,7 @@ class BinanceUSDMProgram(BinanceSingleEntry):
 
     def process_entry(
             self,
-            write_cursor: DBCursor,
+            write_cursor: DBWriterClient,
             importer: BaseExchangeImporter,
             timestamp: Timestamp,
             data: BinanceCsvRow,
@@ -621,7 +621,7 @@ class BinancePOSEntry(BinanceSingleEntry):
 
     def process_entry(
             self,
-            write_cursor: DBCursor,
+            write_cursor: DBWriterClient,
             importer: BaseExchangeImporter,
             timestamp: Timestamp,
             data: BinanceCsvRow,
@@ -710,7 +710,7 @@ class BinanceImporter(BaseExchangeImporter):
 
     def _process_single_binance_entries(
             self,
-            write_cursor: DBCursor,
+            write_cursor: DBWriterClient,
             timestamp: Timestamp,
             rows: list[BinanceCsvRow],
     ) -> tuple[int, dict[BinanceSingleEntry, int], list[BinanceCsvRow]]:
@@ -759,7 +759,7 @@ class BinanceImporter(BaseExchangeImporter):
 
     def _process_multiple_binance_entries(
             self,
-            write_cursor: DBCursor,
+            write_cursor: DBWriterClient,
             timestamp: Timestamp,
             rows: list[BinanceCsvRow],
     ) -> tuple[BinanceEntry | None, int]:
@@ -788,7 +788,7 @@ class BinanceImporter(BaseExchangeImporter):
 
     def _process_binance_rows(
             self,
-            write_cursor: DBCursor,
+            write_cursor: DBWriterClient,
             multi: dict[Timestamp, list[BinanceCsvRow]],
     ) -> int:
         """Process binance entries grouped by timestamp
@@ -842,7 +842,7 @@ class BinanceImporter(BaseExchangeImporter):
 
         return skipped_count
 
-    def _import_csv(self, write_cursor: DBCursor, filepath: Path, **kwargs: Any) -> None:
+    def _import_csv(self, write_cursor: DBWriterClient, filepath: Path, **kwargs: Any) -> None:
         """
         Group and process binance CSV entries. May raise:
         - InputError

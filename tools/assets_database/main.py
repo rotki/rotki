@@ -81,6 +81,7 @@ def populate_location_mappings():
                 initial_settings=None,
                 sql_vm_instructions_cb=0,
                 resume_from_backup=False,
+                db_writer_port=4000,  # TODO: FIX THIS
             ),
         )
         print('Applying remote updates...')

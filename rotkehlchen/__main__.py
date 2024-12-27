@@ -1,5 +1,3 @@
-from gevent import monkey  # isort:skip
-monkey.patch_all()  # isort:skip
 import logging
 import sys
 import traceback

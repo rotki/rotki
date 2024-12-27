@@ -13,7 +13,7 @@ from rotkehlchen.logging import enter_exit_debug_log
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBConnection
+    from rotkehlchen.db.drivers.client import DBConnection
     from rotkehlchen.db.upgrade_manager import DBUpgradeProgressHandler
 
 
@@ -97,8 +97,8 @@ def perform_userdb_upgrade_steps(
     NB: The function definition order is the function calling order"""
     step_functions = gather_caller_functions(depth=2)
     progress_handler.set_total_steps(len(step_functions) + (1 if should_vacuum else 0))
-    with db.user_write() as write_cursor:
-        for function, original_function in step_functions:
+    for function, original_function in step_functions:
+        with db.user_read_write() as write_cursor:
             progress_handler.new_step(original_function._description)  # type: ignore  # we do confirm all gathered functions have the attribute
             function(write_cursor)
 
@@ -119,7 +119,7 @@ def perform_globaldb_upgrade_steps(
     """
     step_functions = gather_caller_functions(depth=2)
     progress_handler.set_total_steps(len(step_functions) + (1 if should_vacuum else 0))
-    with connection.write_ctx() as write_cursor:
+    with connection.read_write_ctx() as write_cursor:
         for function, original_function in step_functions:
             progress_handler.new_step(original_function._description)  # type: ignore  # we do confirm all gathered functions have the attribute
             function(write_cursor)

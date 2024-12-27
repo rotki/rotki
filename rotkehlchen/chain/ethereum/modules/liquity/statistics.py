@@ -20,7 +20,7 @@ from rotkehlchen.utils.misc import ts_ms_to_sec
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.client import DBCursor
 
 # This queries for events having a specific combination of asset + staking type + reward and
 # being from liquity. This helps to filter if they are from the stability pool or the LQTY

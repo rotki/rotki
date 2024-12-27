@@ -53,7 +53,7 @@ from .utils import create_profit_filter_queries
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.client import DBCursor
     from rotkehlchen.db.filtering import Eth2DailyStatsFilterQuery
     from rotkehlchen.externalapis.beaconchain.service import BeaconChain
 
@@ -618,30 +618,32 @@ class Eth2(EthereumModule):
                     tx_hash,
                 ))
 
-        with self.database.user_write() as write_cursor:
+        with self.database.conn.read_ctx() as cursor:
             for changes_entry in changes:
-                result = write_cursor.execute(
+                result = cursor.execute(
                     'SELECT COUNT(*) FROM history_events HE LEFT JOIN evm_events_info EE ON '
                     'HE.identifier = EE.identifier WHERE HE.event_identifier=? AND EE.tx_hash=?',
                     (changes_entry[0], changes_entry[7]),
                 ).fetchone()[0]
-                if result == 1:  # Has already been moved.
-                    log.debug(f'Did not move history event with {changes_entry} in combine_block_with_tx_events since event with same tx_hash already combined in the block')  # noqa: E501
-                    write_cursor.execute('DELETE FROM history_events WHERE identifier=?', (changes_entry[6],))  # noqa: E501
-                    continue
 
-                try:
-                    write_cursor.execute(
-                        'UPDATE history_events '
-                        'SET event_identifier=?, sequence_index=('
-                        'SELECT MAX(sequence_index) FROM history_events E2 WHERE E2.event_identifier=?)+1, '  # noqa: E501
-                        'notes=?, type=?, subtype=?, extra_data=? WHERE identifier=?',
-                        changes_entry[:-1],
-                    )
-                except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
-                    log.warning(f'Could not update history events with {changes_entry} in combine_block_with_tx_events due to {e!s}')  # noqa: E501
-                    # already exists. Probably right after resetting events? Delete old one
-                    write_cursor.execute('DELETE FROM history_events WHERE identifier=?', (changes_entry[6],))  # noqa: E501
+                with self.database.user_write() as write_cursor:
+                    if result == 1:  # Has already been moved.
+                        log.debug(f'Did not move history event with {changes_entry} in combine_block_with_tx_events since event with same tx_hash already combined in the block')  # noqa: E501
+                        write_cursor.execute('DELETE FROM history_events WHERE identifier=?', (changes_entry[6],))  # noqa: E501
+                        continue
+
+                    try:
+                        write_cursor.execute(
+                            'UPDATE history_events '
+                            'SET event_identifier=?, sequence_index=('
+                            'SELECT MAX(sequence_index) FROM history_events E2 WHERE E2.event_identifier=?)+1, '  # noqa: E501
+                            'notes=?, type=?, subtype=?, extra_data=? WHERE identifier=?',
+                            changes_entry[:-1],
+                        )
+                    except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
+                        log.warning(f'Could not update history events with {changes_entry} in combine_block_with_tx_events due to {e!s}')  # noqa: E501
+                        # already exists. Probably right after resetting events? Delete old one
+                        write_cursor.execute('DELETE FROM history_events WHERE identifier=?', (changes_entry[6],))  # noqa: E501
 
     def detect_exited_validators(self) -> None:
         """This function will detect any validators that have exited from the ones that

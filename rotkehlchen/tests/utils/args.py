@@ -18,6 +18,7 @@ class ConfigurationArgs(NamedTuple):
     max_logfiles_num: int = DEFAULT_MAX_LOG_BACKUP_FILES
     sqlite_instructions: int = DEFAULT_SQL_VM_INSTRUCTIONS_CB
     disable_task_manager: bool = False
+    db_api_port: int = 5555
 
 
 def default_args(

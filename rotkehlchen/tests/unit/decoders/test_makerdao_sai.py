@@ -379,7 +379,7 @@ def test_makerdao_sai_close_cdp(ethereum_transaction_decoder):
         ],
     )
     dbevmtx = DBEvmTx(ethereum_transaction_decoder.database)
-    with dbevmtx.db.user_write() as cursor, patch_decoder_reload_data():
+    with dbevmtx.db.conn.read_ctx() as cursor, patch_decoder_reload_data():
         dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
         ethereum_transaction_decoder.reload_data(cursor)
     events, _, _ = ethereum_transaction_decoder._decode_transaction(
@@ -1016,7 +1016,7 @@ def test_makerdao_sai_collateral_removal(ethereum_transaction_decoder):
         ],
     )
     dbevmtx = DBEvmTx(ethereum_transaction_decoder.database)
-    with dbevmtx.db.user_write() as cursor, patch_decoder_reload_data():
+    with dbevmtx.db.conn.read_ctx() as cursor, patch_decoder_reload_data():
         dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
         ethereum_transaction_decoder.reload_data(cursor)
     events, _, _ = ethereum_transaction_decoder._decode_transaction(
@@ -1116,7 +1116,7 @@ def test_makerdao_sai_underlying_collateral_removal(ethereum_transaction_decoder
         ],
     )
     dbevmtx = DBEvmTx(ethereum_transaction_decoder.database)
-    with dbevmtx.db.user_write() as cursor, patch_decoder_reload_data():
+    with dbevmtx.db.conn.read_ctx() as cursor, patch_decoder_reload_data():
         dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
         ethereum_transaction_decoder.reload_data(cursor)
     events, _, _ = ethereum_transaction_decoder._decode_transaction(

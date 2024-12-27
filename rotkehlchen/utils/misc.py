@@ -3,7 +3,9 @@ import datetime
 import functools
 import logging
 import operator
+import os
 import re
+import signal
 import sys
 import time
 from binascii import unhexlify
@@ -14,6 +16,7 @@ from typing import TYPE_CHECKING, Any, TypeVar, overload
 
 from eth_utils import is_hexstr
 from eth_utils.address import to_checksum_address
+from gevent import hub
 
 from rotkehlchen.errors.serialization import ConversionError, DeserializationError
 from rotkehlchen.fval import FVal
@@ -369,3 +372,18 @@ def is_production() -> bool:
         return False
 
     return get_current_version().our_version.dev is None
+
+
+def set_signal_handlers(termination_callback: Callable) -> None:
+    """Set the signal handlers for the process that is started by the orchestrator."""
+    hub.signal(signal.SIGINT, termination_callback)
+    if os.name != 'nt':
+        hub.signal(signal.SIGTERM, termination_callback)
+        hub.signal(signal.SIGQUIT, termination_callback)
+    else:
+        # Handle the windows control signal as stated here: https://pyinstaller.org/en/stable/feature-notes.html#signal-handling-in-console-windows-applications-and-onefile-application-cleanup  # noqa: E501
+        # This logic handles the signal sent from the bootloader equivalent to sigterm in
+        # addition to the signals sent by windows's taskkill.
+        # Research documented in https://github.com/yabirgb/rotki-python-research
+        import win32api  # pylint: disable=import-outside-toplevel  # isort:skip
+        win32api.SetConsoleCtrlHandler(termination_callback, True)
