@@ -1,7 +1,7 @@
 import json
 import re
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Final
 from unittest.mock import patch
 
 from eth_utils.abi import get_abi_input_types, get_abi_output_types
@@ -39,6 +39,8 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.chain.evm.types import WeightedNode
     from rotkehlchen.db.dbhandler import DBHandler
+
+ETHERSCAN_API_URL: Final = 'https://api.etherscan.io/api'
 
 
 def assert_btc_balances_result(
@@ -221,21 +223,41 @@ def mock_etherscan_query(
     original_queries = [] if original_queries is None else original_queries
     extra_flags = [] if extra_flags is None else extra_flags
 
-    def mock_requests_get(url, *args, **kwargs):
-        if 'etherscan.io/api?module=account&action=balance&address' in url:
+    def mock_requests_get(url, params, *args, **kwargs):
+
+        def check_params(
+                values: dict[str, str] | None = None,
+                keys: list[str] | None = None,
+        ) -> bool:
+            if url != ETHERSCAN_API_URL:
+                return False
+
+            if values is not None:
+                for key, value in values.items():
+                    if params.get(key) != value:
+                        return False
+
+            if keys is not None:
+                for key in keys:
+                    if key not in params:
+                        return False
+
+            return True
+
+        if check_params(values={'module': 'account', 'action': 'balance'}, keys=['address']):
             addr = url[67:109]
             value = eth_map[addr].get('ETH', '0')
             response = f'{{"status":"1","message":"OK","result":{value}}}'
-        elif 'https://api.etherscan.io/api?module=proxy&action=eth_call&to=0xeefBa1e63905eF1D7ACbA5a8513c70307C1cE441&data=0x252dba4200000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000002000000000000000000000000086f25b64e1fe4c5162cdeed5245575d32ec549db00000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000084e5da1b6800000000000000000000000001471db828cfb96dcf215c57a7a6493702031ec100000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000001000000000000000000000000255aa6df07540cb5d3d297f0d0d4d84cb52bc8e600000000000000000000000000000000000000000000000000000000' in url:  # noqa: E501
+        elif check_params(values={'module': 'proxy', 'action': 'eth_call', 'to': '0xeefBa1e63905eF1D7ACbA5a8513c70307C1cE441', 'data': '0x252dba4200000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000002000000000000000000000000086f25b64e1fe4c5162cdeed5245575d32ec549db00000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000084e5da1b6800000000000000000000000001471db828cfb96dcf215c57a7a6493702031ec100000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000001000000000000000000000000255aa6df07540cb5d3d297f0d0d4d84cb52bc8e600000000000000000000000000000000000000000000000000000000'}):   # noqa: E501
             # This is querying ethscan for the aave balances
             response = '{"jsonrpc":"2.0","id":1,"result":"0x0000000000000000000000000000000000000000000000000000000000f371750000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000060000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000"}'  # noqa: E501
-        elif 'https://api.etherscan.io/api?module=proxy&action=eth_call&to=0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9&data=0x35ea6a75000000000000000000000000dac17f958d2ee523a2206206994597c13d831ec7' in url:  # noqa: E501
+        elif check_params(values={'module': 'proxy', 'action': 'eth_call', 'to': '0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9', 'data': '0x35ea6a75000000000000000000000000dac17f958d2ee523a2206206994597c13d831ec7'}):  # noqa: E501
             # aave lending pool status
             response = '{"jsonrpc":"2.0","id":1,"result":"0x0000000000000000000000000000000000000000000003e80d060000000000000000000000000000000000000000000000000000038b5d0d773318cf7f0e9085000000000000000000000000000000000000000003b4c95d5d2bb343a6b392450000000000000000000000000000000000000000001edaad248f1f7bbdaff8da0000000000000000000000000000000000000000001f015a6650fa9124a311000000000000000000000000000000000000000000006238800ff08a1b7651888000000000000000000000000000000000000000000000000000000000637392830000000000000000000000003ed3b47dd13ec9a98b44e6204a523e766b225811000000000000000000000000e91d55ab2240594855abd11b3faae801fd4c4687000000000000000000000000531842cebbdd378f8ee36d171d6cc9c4fcf475ec000000000000000000000000515e87cb3fec986050f202a2bbfa362a2188bc3f0000000000000000000000000000000000000000000000000000000000000000"}'  # noqa: E501
-        elif 'https://api.etherscan.io/api?module=proxy&action=eth_call&to=0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9&data=0x35ea6a750000000000000000000000002260fac5e5542a773aa44fbcfedf7c193bc2c599' in url:  # noqa: E501
+        elif check_params(values={'module': 'proxy', 'action': 'eth_call', 'to': '0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9', 'data': '0x35ea6a750000000000000000000000002260fac5e5542a773aa44fbcfedf7c193bc2c599'}):  # noqa: E501
             # This is querying aave for the status of the pool
             response = '{"jsonrpc":"2.0","id":1,"result":"0x0000000000000000000000000000000000000000000007d00d08290420081c200000000000000000000000000000000000000000033d6d8eaa28625ea2840ba4000000000000000000000000000000000000000003471d710caeed5ae821e50400000000000000000000000000000000000000000000f487b0cec3822e8c80a60000000000000000000000000000000000000000000aa1b430cd04910319afff000000000000000000000000000000000000000000261ae07f3c498e21e01bfe00000000000000000000000000000000000000000000000000000000636f9edb0000000000000000000000009ff58f4ffb29fa2266ab25e75e2a8b350331165600000000000000000000000051b039b9afe64b78758f8ef091211b5387ea717c0000000000000000000000009c39809dec7f95f5e0713634a4d0701329b3b4d2000000000000000000000000f41e8f817e6c399d1ade102059c454093b24f35b0000000000000000000000000000000000000000000000000000000000000001"}'  # noqa: E501
-        elif 'etherscan.io/api?module=account&action=balancemulti' in url:
+        elif check_params(values={'module': 'account', 'action': 'balancemulti'}):
             queried_accounts = []
             length = 72
             # process url and get the accounts
@@ -252,7 +274,7 @@ def mock_etherscan_query(
                 accounts.append({'account': addr, 'balance': eth_map[addr]['ETH']})
             response = f'{{"status":"1","message":"OK","result":{json.dumps(accounts)}}}'
 
-        elif 'api.etherscan.io/api?module=account&action=tokenbalance' in url:
+        elif check_params(values={'module': 'account', 'action': 'tokenbalance'}):
             token_address = url[80:122]
             msg = 'token address missing from test mapping'
             assert token_address in CONTRACT_ADDRESS_TO_TOKEN, msg
@@ -261,32 +283,32 @@ def mock_etherscan_query(
             account = url[131:173]
             value = eth_map[account].get(token.identifier, 0)
             response = f'{{"status":"1","message":"OK","result":"{value}"}}'
-        elif ('api.etherscan.io/api?module=account&action=txlistinternal&' in url or 'api.etherscan.io/api?module=account&action=txlist&' in url):  # noqa: E501
+        elif (
+            check_params(values={'module': 'account', 'action': 'txlistinternal'}) or
+            check_params(values={'module': 'account', 'action': 'txlist'})
+        ):
             if 'transactions' in original_queries:
-                return original_requests_get(url, *args, **kwargs)
+                return original_requests_get(url, params, *args, **kwargs)
             # By default when mocking, don't query for transactions
             response = '{"status":"1","message":"OK","result":[]}'
-        elif 'api.etherscan.io/api?module=logs&action=getLogs&' in url:
+        elif check_params(values={'module': 'logs', 'action': 'getLogs'}):
             if 'logs' in original_queries:
-                return original_requests_get(url, *args, **kwargs)
+                return original_requests_get(url, params, *args, **kwargs)
             # By default when mocking, don't query logs
             response = '{"status":"1","message":"OK","result":[]}'
-        elif 'api.etherscan.io/api?module=block&action=getblocknobytime&' in url:
+        elif check_params(values={'module': 'block', 'action': 'getblocknobytime'}):
             if 'blocknobytime' in original_queries:
-                return original_requests_get(url, *args, **kwargs)
+                return original_requests_get(url, params, *args, **kwargs)
             # By default when mocking don't query blocknobytime
             response = '{"status":"1","message":"OK","result":"1"}'
-        elif f'api.etherscan.io/api?module=proxy&action=eth_call&to={ZERION_ADAPTER_ADDRESS}' in url:  # noqa: E501
+        elif check_params(values={'module': 'proxy', 'action': 'eth_call', 'to': ZERION_ADAPTER_ADDRESS}):  # noqa: E501
             if 'zerion' in original_queries:
-                return original_requests_get(url, *args, **kwargs)
+                return original_requests_get(url, params, *args, **kwargs)
 
             web3 = Web3()
             contract = web3.eth.contract(address=ZERION_ADAPTER_ADDRESS, abi=ethereum.contracts.abi('ZERION_ADAPTER'))  # noqa: E501
-            if 'data=0xc84aae17' in url:  # getBalances
-                data = url.split('data=')[1]
-                if '&apikey' in data:
-                    data = data.split('&apikey')[0]
-
+            data = params.get('data') or ''
+            if data.startswith('0xc84aae17'):  # getBalances
                 fn_abi = contract._find_matching_fn_abi(
                     'getBalances',
                     *['address'],
@@ -299,11 +321,7 @@ def mock_etherscan_query(
                 args = []
                 result = '0x' + web3.codec.encode(output_types, [args]).hex()
                 response = f'{{"jsonrpc":"2.0","id":1,"result":"{result}"}}'
-            elif 'data=0x85c6a7930' in url:  # getProtocolBalances
-                data = url.split('data=')[1]
-                if '&apikey' in data:
-                    data = data.split('&apikey')[0]
-
+            elif data.startswith('0x85c6a7930'):  # getProtocolBalances
                 fn_abi = contract._find_matching_fn_abi(
                     'getProtocolBalances',
                     *['address', ['some', 'protocol', 'names']],
@@ -316,11 +334,7 @@ def mock_etherscan_query(
                 args = []
                 result = '0x' + web3.codec.encode(output_types, [args]).hex()
                 response = f'{{"jsonrpc":"2.0","id":1,"result":"{result}"}}'
-            elif 'data=0x3b692f52' in url:  # getProtocolNames
-                data = url.split('data=')[1]
-                if '&apikey' in data:
-                    data = data.split('&apikey')[0]
-
+            elif data.startswith('0x3b692f52'):  # getProtocolNames
                 fn_abi = contract._find_matching_fn_abi('getProtocolNames')
                 input_types = get_abi_input_types(fn_abi)
                 output_types = get_abi_output_types(fn_abi)
@@ -333,29 +347,26 @@ def mock_etherscan_query(
             else:
                 raise AssertionError(f'Unexpected etherscan call during tests: {url}')
 
-        elif f'api.etherscan.io/api?module=proxy&action=eth_call&to={eth_multicall.address}' in url:  # noqa: E501
+        elif check_params(values={'module': 'proxy', 'action': 'eth_call', 'to': eth_multicall.address}):  # noqa: E501
             web3 = Web3()
             contract = web3.eth.contract(address=eth_multicall.address, abi=eth_multicall.abi)
-            if 'c2cb1040220768554cf699b0d863a3cd4324ce3' in url:
+            data = params.get('data') or ''
+            if 'c2cb1040220768554cf699b0d863a3cd4324ce3' in data:
                 multicall_purpose = 'ds_proxy'
-            elif '2bdded18e2ca464355091266b7616956944ee7e' in url:
+            elif '2bdded18e2ca464355091266b7616956944ee7e' in data:
                 multicall_purpose = 'compound_balances'
-            elif '5f3b5dfeb7b28cdbd7faba78963ee202a494e2a2' in url:
+            elif '5f3b5dfeb7b28cdbd7faba78963ee202a494e2a2' in data:
                 multicall_purpose = 'vecrv'
-            elif '54ecf3f6f61f63fdfe7c27ee8a86e54899600c92' in url:
+            elif '54ecf3f6f61f63fdfe7c27ee8a86e54899600c92' in data:
                 multicall_purpose = 'multibalance_query'
             else:
                 raise AssertionError('Unknown multicall in mocked tests')
 
-            if '54ecf3f6f61f63fdfe7c27ee8a86e54899600c92' in url:
+            if '54ecf3f6f61f63fdfe7c27ee8a86e54899600c92' in data:
                 # can appear mixed with above so multibalance can trump the rest since actionable
                 multicall_purpose = 'multibalance_query'
 
-            if 'data=0x252dba42' in url:  # aggregate
-                data = url.split('data=')[1]
-                if '&apikey' in data:
-                    data = data.split('&apikey')[0]
-
+            if data.startswith('0x252dba42'):  # aggregate
                 # Get the multicall aggregate input data
                 fn_abi = contract.functions.abi[0]
                 assert fn_abi['name'] == 'aggregate', 'Abi position of multicall aggregate changed'
@@ -409,18 +420,15 @@ def mock_etherscan_query(
             else:
                 raise AssertionError(f'Unexpected etherscan multicall during tests: {url}')
 
-        elif f'api.etherscan.io/api?module=proxy&action=eth_call&to={eth_scan.address}' in url:
+        elif check_params(values={'module': 'proxy', 'action': 'eth_call', 'to': eth_scan.address}):  # noqa: E501
             if 'ethscan' in original_queries:
-                return original_requests_get(url, *args, **kwargs)
+                return original_requests_get(url, params, *args, **kwargs)
 
             web3 = Web3()
             contract = eth_scan
             ethscan_contract = web3.eth.contract(address=contract.address, abi=contract.abi)
-            if 'data=0xee1806d2' in url:  # Eth balance query
-                data = url.split('data=')[1]
-                if '&apikey' in data:
-                    data = data.split('&apikey')[0]
-
+            data = params.get('data') or ''
+            if data.startswith('0xee1806d2'):  # Eth balance query
                 fn_abi = ethscan_contract._find_matching_fn_abi(
                     'ether_balances',
                     *[list(eth_map.keys())],
@@ -434,10 +442,7 @@ def mock_etherscan_query(
                     args.append(int(eth_map[account_address]['ETH']))
                 result = '0x' + web3.codec.encode(output_types, [args]).hex()
                 response = f'{{"jsonrpc":"2.0","id":1,"result":"{result}"}}'
-            elif 'data=0x665bb79e' in url:  # Multi token multiaddress balance query
-                data = url.split('data=')[1]
-                if '&apikey' in data:
-                    data = data.split('&apikey')[0]
+            elif data.startswith('0x665bb79e'):  # Multi token multiaddress balance query
                 # not really the given args, but we just want the fn abi
                 args = [list(eth_map.keys()), list(eth_map.keys())]
                 fn_abi = ethscan_contract._find_matching_fn_abi(
@@ -469,10 +474,7 @@ def mock_etherscan_query(
                 result = '0x' + web3.codec.encode(output_types, [args]).hex()
                 response = f'{{"jsonrpc":"2.0","id":1,"result":"{result}"}}'
 
-            elif 'data=0xb0d861b8' in url:  # Multi token balance query
-                data = url.split('data=')[1]
-                if '&apikey' in data:
-                    data = data.split('&apikey')[0]
+            elif data.startswith('0xb0d861b8'):  # Multi token balance query
                 # not really the given args, but we just want the fn abi
                 args = ['str', list(eth_map.keys())]
                 fn_abi = ethscan_contract._find_matching_fn_abi(
@@ -502,20 +504,20 @@ def mock_etherscan_query(
 
                 result = '0x' + web3.codec.encode(output_types, [args]).hex()
                 response = f'{{"jsonrpc":"2.0","id":1,"result":"{result}"}}'
-            elif 'https://api.etherscan.io/api?module=proxy&action=eth_call&to=0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9&data=0x35ea6a75000000000000000000000000dac17f958d2ee523a2206206994597c13d831ec7' in url:  # noqa: E501
+            elif data == '0x35ea6a75000000000000000000000000dac17f958d2ee523a2206206994597c13d831ec7':  # noqa: E501
                 # This is querying ethscan for the aave balances
                 if 'ethscan' in original_queries:
-                    return original_requests_get(url, *args, **kwargs)
+                    return original_requests_get(url, params, *args, **kwargs)
                 response = '{"jsonrpc":"2.0","id":1,"result":"0x0000000000000000000000000000000000000000000000000000000000f370be0000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000060000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000"}'  # noqa: E501
-            elif 'https://api.etherscan.io/api?module=proxy&action=eth_call&to=0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9&data=0x35ea6a75000000000000000000000000dac17f958d2ee523a2206206994597c13d831ec7' in url:  # noqa: E501
+            elif data == '0x35ea6a75000000000000000000000000dac17f958d2ee523a2206206994597c13d831ec7':  # noqa: E501
                 # This is querying aave for the status of the pool
                 if 'ethscan' in original_queries:
-                    return original_requests_get(url, *args, **kwargs)
+                    return original_requests_get(url, params, *args, **kwargs)
                 response = '{"jsonrpc":"2.0","id":1,"result":"0x0000000000000000000000000000000000000000000003e80d060000000000000000000000000000000000000000000000000000038af6b55802f0e1cb76bbb2000000000000000000000000000000000000000003b458a890598cb1c935e9630000000000000000000000000000000000000000003f555421b1abbbff673b900000000000000000000000000000000000000000004949192d990ec458441edc0000000000000000000000000000000000000000008b75c1de391906a8441edc00000000000000000000000000000000000000000000000000000000636f9f470000000000000000000000003ed3b47dd13ec9a98b44e6204a523e766b225811000000000000000000000000e91d55ab2240594855abd11b3faae801fd4c4687000000000000000000000000531842cebbdd378f8ee36d171d6cc9c4fcf475ec000000000000000000000000515e87cb3fec986050f202a2bbfa362a2188bc3f0000000000000000000000000000000000000000000000000000000000000000"}'  # noqa: E501
             else:
                 raise AssertionError(f'Unexpected etherscan call during tests: {url}')
         else:
-            return original_requests_get(url, *args, **kwargs)
+            return original_requests_get(url, params, *args, **kwargs)
 
         return MockResponse(200, response)
 

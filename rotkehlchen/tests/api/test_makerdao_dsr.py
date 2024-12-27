@@ -25,6 +25,7 @@ from rotkehlchen.tests.utils.api import (
     assert_proper_response,
     assert_proper_response_with_result,
 )
+from rotkehlchen.tests.utils.blockchain import ETHERSCAN_API_URL
 from rotkehlchen.tests.utils.checks import assert_serialized_lists_equal
 from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.tests.utils.mock import MockResponse
@@ -144,14 +145,14 @@ def mock_etherscan_for_dsr(
     proxy1_contents = proxy1[2:].lower()
     proxy2_contents = proxy2[2:].lower()
 
-    def mock_requests_get(url: str, *args: Any, **kwargs) -> _patch | MockResponse:
-        if 'etherscan.io/api?module=proxy&action=eth_blockNumber' in url:
+    dsr_params = params
+
+    def mock_requests_get(url: str, params: dict[str, str], *args: Any, **kwargs) -> _patch | MockResponse:  # noqa: E501
+        if url == ETHERSCAN_API_URL and {'module': 'proxy', 'action': 'eth_blockNumber'}.items() <= params.items():  # noqa: E501
             response = f'{{"status":"1","message":"OK","result":"{TEST_LATEST_BLOCKNUMBER_HEX}"}}'
-        elif 'etherscan.io/api?module=proxy&action=eth_call' in url:
-            to_address = url.split(
-                'https://api.etherscan.io/api?module=proxy&action=eth_call&to=',
-            )[1][:42]
-            input_data = url.split('data=')[1].split('&apikey')[0]
+        elif url == ETHERSCAN_API_URL and {'module': 'proxy', 'action': 'eth_call'}.items() <= params.items():  # noqa: E501
+            to_address = params.get('to')
+            input_data = params.get('data', '')
             if to_address == ds_proxy_registry.address:
                 if not input_data.startswith('0xc4552791'):
                     raise AssertionError(
@@ -169,10 +170,6 @@ def mock_etherscan_for_dsr(
             elif to_address == eth_multicall.address:
                 web3 = Web3()
                 contract = web3.eth.contract(address=eth_multicall.address, abi=eth_multicall.abi)
-                data = url.split('data=')[1]
-                if '&apikey' in data:
-                    data = data.split('&apikey')[0]
-
                 fn_abi: Any = contract.functions.abi[0]
                 assert fn_abi['name'] == 'aggregate', 'Abi position of multicall aggregate changed'
                 output_types = get_abi_output_types(fn_abi)
@@ -182,15 +179,15 @@ def mock_etherscan_for_dsr(
             elif to_address == makerdao_pot.address:
                 if input_data.startswith('0x0bebac86'):  # pie
                     if proxy1_contents in input_data:
-                        result = int_to_32byteshexstr(params.account1_current_normalized_balance)
+                        result = int_to_32byteshexstr(dsr_params.account1_current_normalized_balance)  # noqa: E501
                     elif proxy2_contents in input_data:
-                        result = int_to_32byteshexstr(params.account2_current_normalized_balance)
+                        result = int_to_32byteshexstr(dsr_params.account2_current_normalized_balance)  # noqa: E501
                     else:
                         raise AssertionError('Pie call for unexpected account during tests')
                 elif input_data.startswith('0xc92aecc4'):  # chi
-                    result = int_to_32byteshexstr(params.current_chi)
+                    result = int_to_32byteshexstr(dsr_params.current_chi)
                 elif input_data.startswith('0x487bf082'):  # dsr
-                    result = int_to_32byteshexstr(params.current_dsr)
+                    result = int_to_32byteshexstr(dsr_params.current_dsr)
                 else:
                     raise AssertionError(
                         'Call to unexpected method of MakerDao pot during tests',
@@ -202,27 +199,25 @@ def mock_etherscan_for_dsr(
                 raise AssertionError(
                     f'Etherscan call to unknown contract {to_address} during tests',
                 )
-        elif 'etherscan.io/api?module=logs&action=getLogs' in url:
-            contract_address = url.split('&address=')[1].split('&topic0')[0]
-            topic0 = url.split('&topic0=')[1].split('&topic0_1')[0]
-            topic1 = url.split('&topic1=')[1].split('&topic1_2')[0]
-            topic2 = ''
-            if '&topic2=' in url:
-                topic2 = url.split('&topic2=')[1].split('&')[0]
-            from_block = int(url.split('&fromBlock=')[1].split('&')[0])
-            to_block = int(url.split('&toBlock=')[1].split('&')[0])
+        elif url == ETHERSCAN_API_URL and {'module': 'logs', 'action': 'getLogs'}.items() <= params.items():  # noqa: E501
+            contract_address = params.get('address')
+            topic0 = params.get('topic0', '')
+            topic1 = params.get('topic1', '')
+            topic2 = params.get('topic1', '')
+            from_block = int(params.get('fromBlock', ''))
+            to_block = int(params.get('toBlock', ''))
 
             if contract_address == makerdao_pot.address:
                 if topic0.startswith('0x049878f3'):  # join
 
                     events = []
                     if proxy1_contents in topic1:
-                        if from_block <= params.account1_join1_blocknumber <= to_block:
+                        if from_block <= dsr_params.account1_join1_blocknumber <= to_block:
                             events.append(account1_join1_event)
-                        if from_block <= params.account1_join2_blocknumber <= to_block:
+                        if from_block <= dsr_params.account1_join2_blocknumber <= to_block:
                             events.append(account1_join2_event)
                     elif proxy2_contents in topic1:
-                        if from_block <= params.account2_join1_blocknumber <= to_block:
+                        if from_block <= dsr_params.account2_join1_blocknumber <= to_block:
                             events.append(account2_join1_event)
                     else:
                         raise AssertionError(
@@ -233,7 +228,7 @@ def mock_etherscan_for_dsr(
 
                 elif topic0.startswith('0x7f8661a1'):  # exit
                     events = []
-                    if proxy1_contents in topic1 and from_block <= params.account1_exit1_blocknumber <= to_block:  # noqa: E501
+                    if proxy1_contents in topic1 and from_block <= dsr_params.account1_exit1_blocknumber <= to_block:  # noqa: E501
                         events.append(account1_exit1_event)
 
                     response = f'{{"status":"1","message":"OK","result":[{",".join(events)}]}}'
@@ -244,13 +239,13 @@ def mock_etherscan_for_dsr(
                 if topic0.startswith('0xbb35783b'):  # move
                     events = []
                     if proxy1_contents in topic1:  # deposit from acc1
-                        if from_block <= params.account1_join1_blocknumber <= to_block:
+                        if from_block <= dsr_params.account1_join1_blocknumber <= to_block:
                             events.append(account1_join1_move_event)
-                        if from_block <= params.account1_join2_blocknumber <= to_block:
+                        if from_block <= dsr_params.account1_join2_blocknumber <= to_block:
                             events.append(account1_join2_move_event)
-                    elif proxy2_contents in topic1 and from_block <= params.account2_join1_blocknumber <= to_block:  # deposit from acc2  # noqa: E501
+                    elif proxy2_contents in topic1 and from_block <= dsr_params.account2_join1_blocknumber <= to_block:  # deposit from acc2  # noqa: E501
                         events.append(account2_join1_move_event)
-                    elif proxy1_contents in topic2 and from_block <= params.account1_exit1_blocknumber <= to_block:  # withdrawal from acc1  # noqa: E501
+                    elif proxy1_contents in topic2 and from_block <= dsr_params.account1_exit1_blocknumber <= to_block:  # withdrawal from acc1  # noqa: E501
 
                         events.append(account1_exit1_move_event)
 
@@ -261,14 +256,14 @@ def mock_etherscan_for_dsr(
                 events = []
                 if topic0.startswith('0x3b4da69f'):  # join
                     if proxy1_contents in topic1:  # deposit from acc1
-                        if from_block <= params.account1_join1_blocknumber <= to_block:
+                        if from_block <= dsr_params.account1_join1_blocknumber <= to_block:
                             events.append(account1_join1_move_event)
-                        if from_block <= params.account1_join2_blocknumber <= to_block:
+                        if from_block <= dsr_params.account1_join2_blocknumber <= to_block:
                             events.append(account1_join2_move_event)
-                    elif proxy2_contents in topic1 and from_block <= params.account2_join1_blocknumber <= to_block:  # deposit from acc2  # noqa: E501
+                    elif proxy2_contents in topic1 and from_block <= dsr_params.account2_join1_blocknumber <= to_block:  # deposit from acc2  # noqa: E501
                         events.append(account2_join1_move_event)
                 elif topic0.startswith('0xef693bed'):  # exit
-                    if from_block <= params.account1_exit1_blocknumber <= to_block:
+                    if from_block <= dsr_params.account1_exit1_blocknumber <= to_block:
                         events.append(account1_exit1_move_event)
                 else:
                     raise AssertionError('Etherscan unknown call to makerdao DAIJOIN contract')
