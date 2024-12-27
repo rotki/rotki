@@ -56,6 +56,8 @@ from rotkehlchen.utils.mixins.penalizable_oracle import PenalizablePriceOracleMi
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from rotkehlchen.db.dbhandler import DBHandler
 
 logger = logging.getLogger(__name__)
@@ -345,6 +347,25 @@ class Cryptocompare(
 
         raise AssertionError('We should never get here')
 
+    @overload
+    def _special_case_handling(
+            self,
+            method_name: Literal['query_endpoint_histohour'],
+            from_asset: AssetWithOracles,
+            to_asset: AssetWithOracles,
+            **kwargs: Any,
+    ) -> list[dict[str, Any]]: ...
+
+    @overload
+    def _special_case_handling(
+            self,
+            method_name: Literal['query_current_price', 'query_endpoint_pricehistorical'],
+            from_asset: AssetWithOracles,
+            to_asset: AssetWithOracles,
+            **kwargs: Any,
+    ) -> Price:
+        ...
+
     def _special_case_handling(
             self,
             method_name: Literal[
@@ -355,14 +376,21 @@ class Cryptocompare(
             from_asset: AssetWithOracles,
             to_asset: AssetWithOracles,
             **kwargs: Any,
-    ) -> Any:
+    ) -> Price | list[dict[str, str]]:
         """Special case handling for queries that need combination of multiple asset queries
 
         This is hopefully temporary and can be taken care of by cryptocompare itself in the future.
 
         For some assets cryptocompare can only figure out the price via intermediaries.
         This function takes care of these special cases."""
-        method = getattr(self, method_name)
+        match method_name:
+            case 'query_endpoint_histohour':
+                method: Callable = self.query_endpoint_histohour
+            case 'query_current_price':
+                method = self.query_current_price
+            case 'query_endpoint_pricehistorical':
+                method = self.query_endpoint_pricehistorical
+
         intermediate_asset = CRYPTOCOMPARE_SPECIAL_CASES_MAPPING[from_asset.identifier]
         try:
             intermediate_asset = intermediate_asset.resolve_to_asset_with_oracles()
@@ -394,12 +422,7 @@ class Cryptocompare(
                 })
             return data
 
-        if method_name == 'query_current_price':
-            return result1[0] * result2[0]
-        if method_name == 'query_endpoint_pricehistorical':
-            return result1 * result2
-
-        raise RuntimeError(f'Illegal method_name: {method_name}. Should never happen')
+        return Price(result1 * result2)
 
     def query_endpoint_histohour(
             self,
