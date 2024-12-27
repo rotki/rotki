@@ -217,6 +217,8 @@ def test_gnosis_pay_refund(gnosis_inquirer, gnosis_accounts):
             write_cursor=write_cursor,
             credentials=[ExternalServiceApiCredentials(service=ExternalService.GNOSIS_PAY, api_key=ApiKey('foo'))],  # noqa: E501
         )
+
+    with gnosis_inquirer.database.user_write() as write_cursor:
         gnosispay_decoder.reload_data()
         write_cursor.execute(
             'INSERT OR REPLACE INTO gnosispay_data(tx_hash, timestamp, merchant_name, '

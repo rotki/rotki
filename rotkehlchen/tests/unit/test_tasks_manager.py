@@ -346,6 +346,9 @@ def test_premium_status_error_conditions(
 def test_update_snapshot_balances(rotkehlchen_instance: 'Rotkehlchen'):
     database = rotkehlchen_instance.data.db
     db_history_events = DBHistoryEvents(database)
+    with db_history_events.db.conn.read_ctx() as cursor:
+        accounts = database.get_blockchain_accounts(cursor).get(SupportedBlockchain.ETHEREUM)
+
     with db_history_events.db.user_write() as write_cursor:
         database.add_multiple_location_data(
             write_cursor=write_cursor,
@@ -355,7 +358,6 @@ def test_update_snapshot_balances(rotkehlchen_instance: 'Rotkehlchen'):
                 usd_value='',
             )],
         )
-        accounts = database.get_blockchain_accounts(write_cursor).get(SupportedBlockchain.ETHEREUM)
         db_history_events.add_history_events(
             write_cursor=write_cursor,
             history=[
@@ -817,7 +819,8 @@ def test_update_lending_protocol_underlying_assets_task(
                 '(SELECT identifier FROM evm_tokens WHERE protocol = ?);',
                 (counterparty,),
             )
-            assert write_cursor.execute(
+        with globaldb.conn.read_ctx() as cursor:
+            assert cursor.execute(
                 'SELECT COUNT(*) FROM evm_tokens WHERE protocol = ?;', (counterparty,),
             ).fetchone()[0] == 0
 
@@ -836,12 +839,12 @@ def test_update_lending_protocol_underlying_assets_task(
             gevent.joinall(task_manager.running_greenlets[task_to_run])  # wait for the task to finish since it might context switch while running  # noqa: E501
 
         # check the aave v3 like underlying assets table in globaldb after running the task
-        with globaldb.conn.read_ctx() as write_cursor:
-            assert write_cursor.execute(
+        with globaldb.conn.read_ctx() as cursor:
+            assert cursor.execute(
                 'SELECT COUNT(*) FROM evm_tokens WHERE protocol = ?;',
                 (counterparty,),
             ).fetchone()[0] > 0
-            assert write_cursor.execute(
+            assert cursor.execute(
                 'SELECT COUNT(*) FROM underlying_tokens_list WHERE parent_token_entry IN '
                 '(SELECT identifier FROM evm_tokens WHERE protocol = ?);',
                 (counterparty,),

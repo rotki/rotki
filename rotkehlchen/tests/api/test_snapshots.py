@@ -37,7 +37,7 @@ from rotkehlchen.utils.misc import ts_now
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.client import DBWriterClient
 
 BALANCES_IMPORT_HEADERS = ['timestamp', 'category', 'asset_identifier', 'amount', 'usd_value']
 BALANCES_IMPORT_INVALID_HEADERS = ['timestamp', 'category', 'asset', 'amount', 'value']
@@ -47,7 +47,11 @@ LOCATION_DATA_IMPORT_INVALID_HEADERS = ['timestamp', 'location', 'value']
 NFT_TOKEN_ID = '_nft_0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85_11'
 
 
-def _populate_db_with_balances(write_cursor: 'DBCursor', db: 'DBHandler', ts: Timestamp) -> None:
+def _populate_db_with_balances(
+        write_cursor: 'DBWriterClient',
+        db: 'DBHandler',
+        ts: Timestamp,
+) -> None:
     db.add_multiple_balances(
         write_cursor=write_cursor,
         balances=[
@@ -68,7 +72,10 @@ def _populate_db_with_balances(write_cursor: 'DBCursor', db: 'DBHandler', ts: Ti
         ])
 
 
-def _populate_db_with_balances_unknown_asset(write_cursor: 'DBCursor', ts: Timestamp) -> None:
+def _populate_db_with_balances_unknown_asset(
+        write_cursor: 'DBWriterClient',
+        ts: Timestamp,
+) -> None:
     write_cursor.execute('INSERT INTO assets(identifier) VALUES (?)', ('YABIRXROTKI',))
     serialized_balances = [
         (ts, 'BTC', '1.00', '178.44', BalanceType.ASSET.serialize_for_db()),
@@ -83,7 +90,7 @@ def _populate_db_with_balances_unknown_asset(write_cursor: 'DBCursor', ts: Times
 
 
 def _populate_db_with_location_data(
-        write_cursor: 'DBCursor',
+        write_cursor: 'DBWriterClient',
         db: 'DBHandler',
         ts: Timestamp,
     ) -> None:
@@ -703,10 +710,10 @@ def test_import_snapshot(
 def test_delete_snapshot(rotkehlchen_api_server: 'APIServer') -> None:
     db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
     ts = ts_now()
-    with db.user_write() as cursor:
-        _populate_db_with_balances(cursor, db, ts)
-        _populate_db_with_location_data(cursor, db, ts)
-        db.set_settings(cursor, ModifiableDBSettings(
+    with db.user_write() as write_cursor:
+        _populate_db_with_balances(write_cursor, db, ts)
+        _populate_db_with_location_data(write_cursor, db, ts)
+        db.set_settings(write_cursor, ModifiableDBSettings(
             main_currency=A_EUR.resolve_to_asset_with_oracles()),
         )
 

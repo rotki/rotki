@@ -1,5 +1,5 @@
 from contextlib import ExitStack
-from typing import Any, NamedTuple
+from typing import TYPE_CHECKING, Any, NamedTuple
 from unittest.mock import _patch, patch
 
 import requests
@@ -8,7 +8,7 @@ from rotkehlchen.accounting.structures.balance import Balance, BalanceType
 from rotkehlchen.assets.asset import Asset, AssetWithOracles, EvmToken
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.ethereum.defi.structures import DefiProtocolBalances
-from rotkehlchen.constants import ZERO
+from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
 from rotkehlchen.db.utils import DBAssetBalance, LocationData
 from rotkehlchen.fval import FVal
@@ -32,6 +32,9 @@ from rotkehlchen.types import (
     SupportedBlockchain,
     Timestamp,
 )
+
+if TYPE_CHECKING:
+    from rotkehlchen.data_handler import DataHandler
 
 
 class BalancesTestSetup(NamedTuple):
@@ -342,33 +345,33 @@ def add_starting_balances(datahandler) -> list[DBAssetBalance]:
     return balances
 
 
-def add_starting_nfts(datahandler):
+def add_starting_nfts(datahandler: 'DataHandler'):
     """Adds a time series for an account owning a NFT"""
     balances = [
         DBAssetBalance(
             category=BalanceType.ASSET,
             time=Timestamp(1488326400),
             asset=Asset('_nft_pickle'),
-            amount='1',
-            usd_value='1000',
+            amount=ONE,
+            usd_value=FVal('1000'),
         ), DBAssetBalance(
             category=BalanceType.ASSET,
             time=Timestamp(1488426400),
             asset=Asset('_nft_pickle'),
-            amount='1',
-            usd_value='1000',
+            amount=ONE,
+            usd_value=FVal('1000'),
         ), DBAssetBalance(
             category=BalanceType.ASSET,
             time=Timestamp(1488526400),
             asset=Asset('_nft_pickle'),
-            amount='2',
-            usd_value='2000',
+            amount=FVal('2'),
+            usd_value=FVal('2000'),
         ), DBAssetBalance(
             category=BalanceType.ASSET,
             time=Timestamp(1488626400),
             asset=Asset('_nft_pickle'),
-            amount='1',
-            usd_value='1000',
+            amount=ONE,
+            usd_value=FVal('1000'),
         ),
     ]
     with datahandler.db.user_write() as cursor:

@@ -185,6 +185,8 @@ def setup_starting_environment(
             rotkehlchen_instance.data.db.set_rotkehlchen_premium(premium_credentials)
 
         rotkehlchen_instance.data.db.set_setting(cursor, name='premium_should_sync', value=db_can_sync_setting)  # noqa: E501
+
+    with rotkehlchen_instance.data.db.conn.read_ctx() as cursor:
         our_last_write_ts = rotkehlchen_instance.data.db.get_setting(cursor, name='last_write_ts')
         assert rotkehlchen_instance.data.db.get_setting(cursor, name='main_currency') == DEFAULT_TESTS_MAIN_CURRENCY  # noqa: E501
 

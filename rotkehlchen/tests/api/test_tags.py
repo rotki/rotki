@@ -759,10 +759,10 @@ def test_editing_chain_type_tags(rotkehlchen_api_server: 'APIServer') -> None:
     """
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     # setup tags and addresses
-    with rotki.data.db.conn.read_ctx() as cursor:
+    with rotki.data.db.conn.write_ctx() as write_cursor:
         for key in ('public', 'ledger', 'validators'):
             rotki.data.db.add_tag(
-                write_cursor=cursor,
+                write_cursor=write_cursor,
                 name=f'tag_{key}',
                 description=f'My {key} accounts',
                 background_color=HexColorCode('ffffff'),

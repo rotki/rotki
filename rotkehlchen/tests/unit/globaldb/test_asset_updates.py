@@ -407,16 +407,17 @@ INSERT INTO assets(identifier, name, type) VALUES('NEW-ASSET-2', 'name4', 'B'); 
     )
 
     # Should have stayed unchanged since one of the insertions was incorrect
-    assert connection.execute("SELECT name FROM assets WHERE identifier='ETH'").fetchone()[0] == 'Ethereum'  # noqa: E501
-    assert connection.execute("SELECT symbol FROM common_asset_details WHERE identifier='ETH'").fetchone()[0] == 'ETH'  # noqa: E501
-    # BTC should have been updated since the insertion were correct
-    assert connection.execute("SELECT name FROM assets WHERE identifier='BTC'").fetchone()[0] == 'name2'  # noqa: E501
-    assert connection.execute("SELECT symbol FROM common_asset_details WHERE identifier='BTC'").fetchone()[0] == 'symbol2'  # noqa: E501
-    # NEW-ASSET-1 should have not been added since the insertions were incorrect
-    assert connection.execute("SELECT * FROM assets WHERE identifier='NEW-ASSET-1'").fetchone() is None  # noqa: E501
-    # NEW-ASSET-2 should have been added since the insertions were correct
-    assert connection.execute("SELECT name FROM assets WHERE identifier='NEW-ASSET-2'").fetchone()[0] == 'name4'  # noqa: E501
-    assert connection.execute("SELECT symbol FROM common_asset_details WHERE identifier='NEW-ASSET-2'").fetchone()[0] == 'symbol4'  # noqa: E501
+    with connection.read_ctx() as cursor:
+        assert cursor.execute("SELECT name FROM assets WHERE identifier='ETH'").fetchone()[0] == 'Ethereum'  # noqa: E501
+        assert cursor.execute("SELECT symbol FROM common_asset_details WHERE identifier='ETH'").fetchone()[0] == 'ETH'  # noqa: E501
+        # BTC should have been updated since the insertion were correct
+        assert cursor.execute("SELECT name FROM assets WHERE identifier='BTC'").fetchone()[0] == 'name2'  # noqa: E501
+        assert cursor.execute("SELECT symbol FROM common_asset_details WHERE identifier='BTC'").fetchone()[0] == 'symbol2'  # noqa: E501
+        # NEW-ASSET-1 should have not been added since the insertions were incorrect
+        assert cursor.execute("SELECT * FROM assets WHERE identifier='NEW-ASSET-1'").fetchone() is None  # noqa: E501
+        # NEW-ASSET-2 should have been added since the insertions were correct
+        assert cursor.execute("SELECT name FROM assets WHERE identifier='NEW-ASSET-2'").fetchone()[0] == 'name4'  # noqa: E501
+        assert cursor.execute("SELECT symbol FROM common_asset_details WHERE identifier='NEW-ASSET-2'").fetchone()[0] == 'symbol4'  # noqa: E501
 
 
 def test_updates_assets_collections_errors(assets_updater: AssetsUpdater):
@@ -530,12 +531,12 @@ def test_conflict_updates(assets_updater: AssetsUpdater, globaldb: GlobalDBHandl
     in the globaldb assets updates. Also test a bug in asset updates where the foreign key entries
     are removed when an asset update conflict is resolved through 'remote' option.
     """
-    with globaldb.conn.write_ctx() as write_cursor:
-        assert write_cursor.execute(
+    with globaldb.conn.read_ctx() as cursor:
+        assert cursor.execute(
             'SELECT COUNT(*) FROM underlying_tokens_list WHERE parent_token_entry=?;',
             ('eip155:42161/erc20:0xA5EDBDD9646f8dFF606d7448e414884C7d905dCA',),
         ).fetchone()[0] == 1
-        assert write_cursor.execute(
+        assert cursor.execute(
             'SELECT COUNT(*) FROM multiasset_mappings WHERE asset=?;',
             ('eip155:42161/erc20:0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8',),
         ).fetchone()[0] == 1

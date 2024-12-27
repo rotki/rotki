@@ -72,6 +72,12 @@ def app_args(prog: str, description: str) -> argparse.ArgumentParser:
         default=5042,
     )
     p.add_argument(
+        '--db-api-port',
+        help='The port on which the db writer process will listen',
+        type=int,
+        default=5555,
+    )
+    p.add_argument(
         '--websockets-api-port',
         help='The port on which the websockets API will run',
         type=int,
@@ -141,5 +147,10 @@ def app_args(prog: str, description: str) -> argparse.ArgumentParser:
         help="If given then task manager won't schedule new tasks",
         action='store_true',
     )
-
+    p.add_argument(
+        '--process',
+        help='Choose the process to run',
+        choices=['all', 'api_server', 'db_writer', 'bg_worker'],
+        default='all',
+    )
     return p

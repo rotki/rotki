@@ -1,10 +1,10 @@
 """Functions dealing with the general_cache table of the Global DB"""
 import operator
 from collections.abc import Iterable
+from typing import TYPE_CHECKING
 
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.db.drivers.gevent import DBCursor
 from rotkehlchen.types import (
     UNIQUE_CACHE_KEYS,
     CacheType,
@@ -15,6 +15,9 @@ from rotkehlchen.types import (
     UniqueCacheType,
 )
 from rotkehlchen.utils.misc import ts_now
+
+if TYPE_CHECKING:
+    from rotkehlchen.db.drivers.client import DBCursor, DBWriterClient
 
 
 def compute_cache_key(key_parts: Iterable[str | CacheType]) -> str:
@@ -37,7 +40,7 @@ def base_pool_tokens_key_length(chain_id: ChainID) -> int:
 
 
 def globaldb_set_general_cache_values_at_ts(
-        write_cursor: DBCursor,
+        write_cursor: 'DBWriterClient',
         key_parts: Iterable[str | GeneralCacheType],
         values: Iterable[str],
         timestamp: Timestamp,
@@ -54,7 +57,7 @@ def globaldb_set_general_cache_values_at_ts(
 
 
 def globaldb_set_general_cache_values(
-        write_cursor: DBCursor,
+        write_cursor: 'DBWriterClient',
         key_parts: Iterable[str | GeneralCacheType],
         values: Iterable[str],
 ) -> None:
@@ -69,7 +72,7 @@ def globaldb_set_general_cache_values(
 
 
 def globaldb_delete_general_cache_values(
-        write_cursor: DBCursor,
+        write_cursor: 'DBWriterClient',
         key_parts: Iterable[str | GeneralCacheType],
         values: tuple[str, ...] | None = None,
 ) -> None:
@@ -88,7 +91,7 @@ def globaldb_delete_general_cache_values(
 
 
 def globaldb_get_general_cache_values(
-        cursor: DBCursor,
+        cursor: 'DBCursor',
         key_parts: Iterable[str | GeneralCacheType],
 ) -> list[str]:
     """Function that reads from the general cache table.
@@ -98,7 +101,7 @@ def globaldb_get_general_cache_values(
 
 
 def globaldb_general_cache_exists(
-        cursor: DBCursor,
+        cursor: 'DBCursor',
         key_parts: Iterable[str | GeneralCacheType],
         value: str,
 ) -> bool:
@@ -110,7 +113,7 @@ def globaldb_general_cache_exists(
 
 
 def globaldb_set_unique_cache_value_at_ts(
-        write_cursor: DBCursor,
+        write_cursor: 'DBWriterClient',
         key_parts: Iterable[str | UniqueCacheType],
         value: str,
         timestamp: Timestamp,
@@ -126,7 +129,7 @@ def globaldb_set_unique_cache_value_at_ts(
 
 
 def globaldb_set_unique_cache_value(
-        write_cursor: DBCursor,
+        write_cursor: 'DBWriterClient',
         key_parts: Iterable[str | UniqueCacheType],
         value: str,
 ) -> None:
@@ -142,7 +145,7 @@ def globaldb_set_unique_cache_value(
 
 
 def globaldb_get_unique_cache_value(
-        cursor: DBCursor,
+        cursor: 'DBCursor',
         key_parts: Iterable[str | UniqueCacheType],
 ) -> str | None:
     """Function that reads from the unique cache table.
@@ -156,7 +159,7 @@ def globaldb_get_unique_cache_value(
 
 
 def globaldb_get_general_cache_like(
-        cursor: DBCursor,
+        cursor: 'DBCursor',
         key_parts: Iterable[str | GeneralCacheType],
 ) -> list[str]:
     """
@@ -173,7 +176,7 @@ def globaldb_get_general_cache_like(
 
 
 def globaldb_get_general_cache_keys_and_values_like(
-        cursor: DBCursor,
+        cursor: 'DBCursor',
         key_parts: Iterable[str | GeneralCacheType],
 ) -> list[tuple[str, str]]:
     """
@@ -190,7 +193,7 @@ def globaldb_get_general_cache_keys_and_values_like(
 
 
 def globaldb_get_general_cache_last_queried_ts_by_key(
-        cursor: DBCursor,
+        cursor: 'DBCursor',
         key_parts: Iterable[str | GeneralCacheType],
 ) -> Timestamp:
     """
@@ -210,7 +213,7 @@ def globaldb_get_general_cache_last_queried_ts_by_key(
 
 
 def globaldb_get_unique_cache_last_queried_ts_by_key(
-        cursor: DBCursor,
+        cursor: 'DBCursor',
         key_parts: Iterable[str | UniqueCacheType],
 ) -> Timestamp:
     """
@@ -230,7 +233,7 @@ def globaldb_get_unique_cache_last_queried_ts_by_key(
 
 
 def globaldb_update_cache_last_ts(
-        write_cursor: DBCursor,
+        write_cursor: 'DBWriterClient',
         cache_type: UniqueCacheType | GeneralCacheType,
         key_parts: Iterable[str] | None,
 ) -> None:

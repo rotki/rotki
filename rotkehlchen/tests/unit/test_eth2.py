@@ -1373,8 +1373,10 @@ def test_clean_cache_on_account_removal(
             blockchain=SupportedBlockchain.ETHEREUM,
             accounts=ethereum_accounts,
         )
+
+    with database.conn.read_ctx() as read_cursor:
         assert database.get_dynamic_cache(
-            cursor=write_cursor,
+            cursor=read_cursor,
             name=DBCacheDynamic.WITHDRAWALS_TS,
             address=ethereum_accounts[0],
         ) is None

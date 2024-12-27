@@ -13,7 +13,7 @@ from rotkehlchen.types import (
 )
 
 if TYPE_CHECKING:
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.client import DBWriterClient
 
 from rotkehlchen.constants.limits import FREE_ETH_TX_LIMIT
 
@@ -26,7 +26,7 @@ class DBL2WithL1FeesTx(DBEvmTx):
 
     def add_evm_transactions(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: 'DBWriterClient',
             evm_transactions: list[L2WithL1FeesTransaction],  # type: ignore[override]
             relevant_address: ChecksumEvmAddress | None,
     ) -> None:

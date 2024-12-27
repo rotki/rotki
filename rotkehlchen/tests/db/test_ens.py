@@ -16,9 +16,11 @@ def _simple_ens_setup(database, freezer) -> tuple[DBEns, ChecksumEvmAddress, Che
     freezer.move_to(datetime.datetime.fromtimestamp(START_TS, tz=datetime.UTC))
     addy1 = make_evm_address()
     addy2 = make_evm_address()
-    with database.user_write() as cursor:
-        dbens.add_ens_mapping(cursor, addy1, 'addy1', ts_now())
-        dbens.add_ens_mapping(cursor, addy2, 'addy2', ts_now())
+    with database.user_write() as write_cursor:
+        dbens.add_ens_mapping(write_cursor, addy1, 'addy1', ts_now())
+        dbens.add_ens_mapping(write_cursor, addy2, 'addy2', ts_now())
+
+    with database.conn.read_ctx() as cursor:
         mappings = dbens.get_reverse_ens(cursor, [addy1, addy2])
     assert mappings == {
         addy1: EnsMapping(
@@ -54,8 +56,10 @@ def test_update_ens_mapping(database, freezer):
 
     ts2 = START_TS + 3600
     freezer.move_to(datetime.datetime.fromtimestamp(ts2, tz=datetime.UTC))
-    with database.user_write() as cursor:
-        dbens.add_ens_mapping(cursor, addy1, None, ts_now())
+    with database.user_write() as write_cursor:
+        dbens.add_ens_mapping(write_cursor, addy1, None, ts_now())
+
+    with database.conn.read_ctx() as cursor:
         mappings = dbens.get_reverse_ens(cursor, [addy1, addy2])
         assert mappings == {
             addy1: ts2,
@@ -68,7 +72,9 @@ def test_update_ens_mapping(database, freezer):
 
         ts3 = ts2 + 3600
         freezer.move_to(datetime.datetime.fromtimestamp(ts3, tz=datetime.UTC))
-        dbens.add_ens_mapping(cursor, addy1, 'new addy1 name', ts_now())
+        with database.user_write() as write_cursor:
+            dbens.add_ens_mapping(write_cursor, addy1, 'new addy1 name', ts_now())
+
         mappings = dbens.get_reverse_ens(cursor, [addy1, addy2])
         assert mappings == {
             addy1: EnsMapping(
@@ -85,7 +91,9 @@ def test_update_ens_mapping(database, freezer):
 
         ts4 = ts3 + 3600
         freezer.move_to(datetime.datetime.fromtimestamp(ts4, tz=datetime.UTC))
-        dbens.add_ens_mapping(cursor, addy2, 'new addy2 name', ts_now())
+        with database.user_write() as write_cursor:
+            dbens.add_ens_mapping(write_cursor, addy2, 'new addy2 name', ts_now())
+
         mappings = dbens.get_reverse_ens(cursor, [addy1, addy2])
 
     assert mappings == {
@@ -109,8 +117,10 @@ def test_multiple_ens_mapping_none(database, freezer):
     # set one to None
     ts2 = START_TS + 3600
     freezer.move_to(datetime.datetime.fromtimestamp(ts2, tz=datetime.UTC))
-    with database.user_write() as cursor:
-        dbens.add_ens_mapping(cursor, addy1, None, ts_now())
+    with database.user_write() as write_cursor:
+        dbens.add_ens_mapping(write_cursor, addy1, None, ts_now())
+
+    with database.conn.read_ctx() as cursor:
         mappings = dbens.get_reverse_ens(cursor, [addy1, addy2])
         assert mappings == {
             addy1: ts2,
@@ -124,7 +134,8 @@ def test_multiple_ens_mapping_none(database, freezer):
         # set another to None at the same time
         ts3 = START_TS + 3600
         freezer.move_to(datetime.datetime.fromtimestamp(ts3, tz=datetime.UTC))
-        dbens.add_ens_mapping(cursor, addy2, None, ts_now())
+        with database.user_write() as write_cursor:
+            dbens.add_ens_mapping(write_cursor, addy2, None, ts_now())
         mappings = dbens.get_reverse_ens(cursor, [addy1, addy2])
 
     assert mappings == {
@@ -137,15 +148,18 @@ def test_multiple_ens_mapping_none(database, freezer):
 def test_conflict(database, freezer):
     dbens, addy1, addy2 = _simple_ens_setup(database, freezer)
     addy3 = make_evm_address()
-    with database.user_write() as cursor:
-        dbens.add_ens_mapping(cursor, addy1, 'addy1', ts_now())  # adding existing mapping == noop
+    with database.user_write() as write_cursor:
+        dbens.add_ens_mapping(write_cursor, addy1, 'addy1', ts_now())  # adding existing mapping == noop  # noqa: E501
 
         # Check that simply adding existing name for other address raises
         ts2 = START_TS + 3600
         freezer.move_to(datetime.datetime.fromtimestamp(ts2, tz=datetime.UTC))
         with pytest.raises(sqlcipher.IntegrityError):  # pylint: disable=no-member
-            dbens.add_ens_mapping(cursor, addy3, 'addy1', ts_now())
+            dbens.add_ens_mapping(write_cursor, addy3, 'addy1', ts_now())
+
+    with database.conn.read_ctx() as cursor:
         mappings = dbens.get_reverse_ens(cursor, [addy1, addy2, addy3])
+
         assert mappings == {
             addy1: EnsMapping(
                 address=addy1,

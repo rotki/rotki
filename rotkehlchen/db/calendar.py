@@ -248,14 +248,19 @@ class DBCalendar:
             try:
                 write_cursor.execute(
                     'INSERT OR IGNORE INTO calendar(name, timestamp, description, counterparty, '
-                    'address, blockchain, color, auto_delete) VALUES (?, ?, ?, ?, ?, ?, ?, ?) '
-                    'RETURNING identifier',
+                    'address, blockchain, color, auto_delete) VALUES (?, ?, ?, ?, ?, ?, ?, ?);',
                     calendar.serialize_for_db()[:-1],  # exclude the default identifier since we need to create it  # noqa: E501
                 )
             except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
                 raise InputError(f'Could not add calendar entry due to {e}') from e
 
-            if (identifier_row := write_cursor.fetchone()) is None:
+            row_id = write_cursor.lastrowid
+
+        with self.db.conn.read_ctx() as cursor:
+            if (identifier_row := cursor.execute(
+                'SELECT identifier FROM calendar WHERE rowid=?',
+                (row_id,),
+            ).fetchone()) is None:
                 raise InputError(
                     'Could not add the calendar entry because an event with the same name, '
                     'address and blockchain already exist',

@@ -338,13 +338,16 @@ class Bitstamp(ExchangeInterface):
         serialized_location = Location.BITSTAMP.serialize_for_db()
         history_db = DBHistoryEvents(self.db)
         indices_to_delete = []
-        with self.db.user_write() as write_cursor:
+        with (
+            self.db.user_write() as write_cursor,
+            self.db.conn.read_ctx() as cursor,
+        ):
             for idx, crypto_movement in enumerate(crypto_asset_movements):
-                write_cursor.execute(
+                cursor.execute(
                     'SELECT * from history_events WHERE location=? AND type=? AND subtype=? AND timestamp=? AND asset=?',  # noqa: E501
                     (serialized_location, crypto_movement.event_type.serialize(), crypto_movement.event_subtype.serialize(), crypto_movement.timestamp, crypto_movement.asset.identifier),  # noqa: E501
                 )
-                if (result := write_cursor.fetchone()) is not None:
+                if (result := cursor.fetchone()) is not None:
                     try:
                         matched_movement = AssetMovement.deserialize_from_db(entry=result)
                     except (DeserializationError, UnknownAsset) as e:

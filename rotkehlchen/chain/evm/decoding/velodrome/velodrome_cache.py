@@ -340,14 +340,15 @@ def query_velodrome_like_data(
         reload_all: bool,
 ) -> list[VelodromePoolData] | None:
     """Queries velodrome pools and tokens."""
-    with GlobalDBHandler().conn.write_ctx() as write_cursor:
+    with GlobalDBHandler().conn.read_ctx() as cursor:
         existing_pools = [
             string_to_evm_address(address)
             for address in globaldb_get_general_cache_like(
-                cursor=write_cursor,
+                cursor=cursor,
                 key_parts=(cache_type,),
             )
         ]
+    with GlobalDBHandler().conn.write_ctx() as write_cursor:
         globaldb_update_cache_last_ts(  # update the last_queried_ts of db entries
             write_cursor=write_cursor,
             cache_type=cache_type,

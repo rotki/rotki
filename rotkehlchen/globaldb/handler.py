@@ -31,7 +31,7 @@ from rotkehlchen.constants.misc import (
     NFT_DIRECTIVE,
 )
 from rotkehlchen.constants.resolver import evm_address_to_identifier
-from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType, DBCursor
+from rotkehlchen.db.drivers.client import DBConnection, DBConnectionType, DBCursor, DBWriterClient
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset, WrongAssetType
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -106,6 +106,7 @@ class GlobalDBHandler:
     __instance: Optional['GlobalDBHandler'] = None
     _data_directory: Path | None = None
     _packaged_db_conn: DBConnection | None = None
+    _db_writer_port: int
     conn: DBConnection
     used_backup: bool  # specifies if the global DB was restored from a backup
     packaged_db_lock: Semaphore
@@ -117,6 +118,7 @@ class GlobalDBHandler:
             sql_vm_instructions_cb: int | None = None,
             perform_assets_updates: bool | None = None,
             msg_aggregator: 'MessagesAggregator | None' = None,
+            db_writer_port: int | None = None,
     ) -> 'GlobalDBHandler':
         """
         Initializes the GlobalDB.
@@ -136,10 +138,12 @@ class GlobalDBHandler:
         assert sql_vm_instructions_cb is not None, 'First instantiation of GlobalDBHandler should have a sql_vm_instructions_cb'  # noqa: E501
         assert msg_aggregator is not None, 'First instantiation of GlobalDBHandler should have a messages_aggregator'  # noqa: E501
         assert perform_assets_updates is not None, 'First instantiation of GlobalDBHandler should have a perform_assets_updates'  # noqa: E501
+        assert db_writer_port is not None, 'First instantiation of GlobalDBHandler should have a db_writer_port'  # noqa: E501
 
         GlobalDBHandler.__instance = object.__new__(cls)
         GlobalDBHandler.__instance._data_directory = data_dir
         GlobalDBHandler.__instance.msg_aggregator = msg_aggregator
+        GlobalDBHandler.__instance._db_writer_port = db_writer_port
 
         global_dir = data_dir / GLOBALDIR_NAME
         global_dir.mkdir(parents=True, exist_ok=True)
@@ -153,6 +157,7 @@ class GlobalDBHandler:
             global_dir=global_dir,
             db_filename=GLOBALDB_NAME,
             sql_vm_instructions_cb=sql_vm_instructions_cb,
+            db_writer_port=db_writer_port,
         )
         GlobalDBHandler.__instance.packaged_db_lock = Semaphore()
 
@@ -179,17 +184,18 @@ class GlobalDBHandler:
     @staticmethod
     def packaged_db_conn() -> DBConnection:
         """Return a DBConnection instance for the packaged global db."""
-        if GlobalDBHandler()._packaged_db_conn is not None:
+        if (globaldb := GlobalDBHandler())._packaged_db_conn is not None:
             # mypy does not recognize the initialization as that of a singleton
-            return GlobalDBHandler()._packaged_db_conn  # type: ignore
+            return globaldb._packaged_db_conn
 
         packaged_db_path = Path(__file__).resolve().parent.parent / 'data' / GLOBALDB_NAME
         packaged_db_conn = DBConnection(
             path=packaged_db_path,
             connection_type=DBConnectionType.GLOBAL,
             sql_vm_instructions_cb=DEFAULT_SQL_VM_INSTRUCTIONS_CB,
+            db_writer_port=globaldb._db_writer_port,
         )
-        GlobalDBHandler()._packaged_db_conn = packaged_db_conn
+        globaldb._packaged_db_conn = packaged_db_conn
         return packaged_db_conn
 
     @staticmethod
@@ -668,7 +674,7 @@ class GlobalDBHandler:
 
     @staticmethod
     def _add_underlying_tokens(
-            write_cursor: DBCursor,
+            write_cursor: DBWriterClient,
             parent_token_identifier: str,
             underlying_tokens: list[UnderlyingToken],
             chain_id: ChainID,
@@ -686,11 +692,13 @@ class GlobalDBHandler:
                 raise InputError(f'{parent_token_identifier} cannot be its own underlying token')
 
             # make sure underlying token address is tracked if not already there
-            asset_id = GlobalDBHandler.get_evm_token_identifier(
-                cursor=write_cursor,
-                address=underlying_token.address,
-                chain_id=chain_id,
-            )
+            with GlobalDBHandler().conn.read_ctx() as cursor:
+                asset_id = GlobalDBHandler.get_evm_token_identifier(
+                    cursor=cursor,
+                    address=underlying_token.address,
+                    chain_id=chain_id,
+                )
+
             if asset_id is None:
                 try:  # underlying token does not exist. Track it
                     asset_id = underlying_token.get_identifier(parent_chain=chain_id)
@@ -929,7 +937,7 @@ class GlobalDBHandler:
             return result if result is None else result[0]
 
     @staticmethod
-    def add_evm_token_data(write_cursor: DBCursor, entry: EvmToken) -> None:
+    def add_evm_token_data(write_cursor: DBWriterClient, entry: EvmToken) -> None:
         """Adds ethereum token specific information into the global DB
 
         May raise InputError if the token already exists or we fail to add the underlying tokens
@@ -977,7 +985,7 @@ class GlobalDBHandler:
         Returns the token's rotki identifier and clears the cache of the asset resolver
         """
         try:
-            with GlobalDBHandler().conn.write_ctx() as write_cursor:
+            with (conn := GlobalDBHandler().conn).write_ctx() as write_cursor:
                 write_cursor.execute(
                     'UPDATE common_asset_details SET symbol=?, coingecko=?, '
                     'cryptocompare=?, forked=?, started=?, swapped_for=? WHERE identifier=?;',
@@ -1029,13 +1037,17 @@ class GlobalDBHandler:
                         chain_id=entry.chain_id,
                     )
 
-                rotki_id = GlobalDBHandler.get_evm_token_identifier(write_cursor, entry.evm_address, entry.chain_id)  # noqa: E501
-                if rotki_id is None:
-                    raise InputError(
-                        f'Unexpected DB state. EVM token {entry.evm_address} at chain '
-                        f'{entry.chain_id} exists in the DB but its corresponding asset '
-                        f'entry was not found.',
-                    )
+                with conn.read_ctx() as cursor:
+                    if (rotki_id := GlobalDBHandler.get_evm_token_identifier(
+                        cursor=cursor,
+                        address=entry.evm_address,
+                        chain_id=entry.chain_id,
+                    )) is None:
+                        raise InputError(
+                            f'Unexpected DB state. EVM token {entry.evm_address} at chain '
+                            f'{entry.chain_id} exists in the DB but its corresponding asset '
+                            'entry was not found.',
+                        )
 
         except sqlite3.IntegrityError as e:
             raise InputError(
@@ -1364,7 +1376,7 @@ class GlobalDBHandler:
         May raise:
         - InputError if some db constraint was hit. Probably means manual price duplication.
         """
-        with GlobalDBHandler().conn.write_ctx() as write_cursor:
+        with (globaldb := GlobalDBHandler()).conn.write_ctx() as write_cursor:
             try:
                 write_cursor.execute(
                     'UPDATE price_history SET source_type=? WHERE source_type=? AND from_asset=?',
@@ -1377,7 +1389,7 @@ class GlobalDBHandler:
             except sqlite3.IntegrityError as e:
                 # if we got an error, do an extra query to give more information to the user.
                 # In case of an error there has to be a corresponding entry in the db.
-                with GlobalDBHandler().conn.read_ctx() as cursor:
+                with globaldb.conn.read_ctx() as cursor:
                     timestamp = cursor.execute(
                         'SELECT timestamp FROM price_history WHERE source_type=? AND from_asset=?',
                         (
@@ -1408,11 +1420,12 @@ class GlobalDBHandler:
 
             #  invalidate the cached price for the assets that are using manual current as type and
             # and that are connected to the given asset
-            write_cursor.execute(
-                'SELECT from_asset, to_asset FROM price_history WHERE source_type=? AND (from_asset=? OR to_asset=?)',  # noqa: E501
-                (HistoricalPriceOracle.MANUAL_CURRENT.serialize_for_db(), from_asset.identifier, from_asset.identifier),  # noqa: E501
-            )
-            return {Asset(asset) for entry in write_cursor for asset in entry}
+            with globaldb.conn.read_ctx() as cursor:
+                cursor.execute(
+                    'SELECT from_asset, to_asset FROM price_history WHERE source_type=? AND (from_asset=? OR to_asset=?)',  # noqa: E501
+                    (HistoricalPriceOracle.MANUAL_CURRENT.serialize_for_db(), from_asset.identifier, from_asset.identifier),  # noqa: E501
+                )
+                return {Asset(asset) for entry in cursor for asset in entry}
 
     @staticmethod
     def get_manual_current_price(asset: Asset) -> tuple[Asset, Price] | None:
@@ -1455,15 +1468,16 @@ class GlobalDBHandler:
         May raise:
         - InputError if asset was not found in the price_history table
         """
-        with GlobalDBHandler().conn.write_ctx() as write_cursor:
+        with (conn := GlobalDBHandler().conn).read_ctx() as cursor:
             # get asset pairs to invalidate their prices from cache after deletion
-            write_cursor.execute(
+            cursor.execute(
                 'SELECT from_asset, to_asset FROM price_history WHERE source_type=? AND (from_asset=? OR to_asset=?);',  # noqa: E501
                 (HistoricalPriceOracle.MANUAL_CURRENT.serialize_for_db(), asset.identifier, asset.identifier),  # noqa: E501
             )
-            assets_to_invalidate = {Asset(asset) for entry in write_cursor for asset in entry}
+            assets_to_invalidate = {Asset(asset) for entry in cursor for asset in entry}
 
-            # Execute the deletion
+        # Execute the deletion
+        with conn.write_ctx() as write_cursor:
             write_cursor.execute(
                 'DELETE FROM price_history WHERE source_type=? AND from_asset=?',
                 (HistoricalPriceOracle.MANUAL_CURRENT.serialize_for_db(), asset.identifier),
@@ -1642,10 +1656,10 @@ class GlobalDBHandler:
         with self.conn.read_ctx() as read_cursor:
             # First check that the operation can be made. If the difference is not the
             # empty set the operation is dangerous and the user should be notified.
-            with user_db.user_write() as user_db_cursor:
+            with user_db.conn.read_ctx() as user_db_cursor:
                 diff_ids = self.get_user_added_assets(
                     cursor=read_cursor,
-                    user_db_write_cursor=user_db_cursor,
+                    user_db_cursor=user_db_cursor,
                     user_db=user_db,
                     only_owned=True,
                 )
@@ -1685,8 +1699,8 @@ class GlobalDBHandler:
                             user_db_cursor.switch_foreign_keys('OFF')
                             user_db_cursor.execute('DELETE FROM assets;')
                             # Get ids for assets to insert them in the user db
-                            write_cursor.execute('SELECT identifier from assets')
-                            ids = write_cursor.fetchall()
+                            read_cursor.execute('SELECT identifier from assets')
+                            ids = read_cursor.fetchall()
                             ids_processed = ', '.join([f"('{identifier[0]}')" for identifier in ids])  # noqa: E501
                             user_db_cursor.execute(f'INSERT INTO assets(identifier) VALUES {ids_processed};')  # noqa: E501
                             user_db_cursor.switch_foreign_keys('ON')
@@ -1764,7 +1778,7 @@ class GlobalDBHandler:
     @staticmethod
     def get_user_added_assets(
             cursor: DBCursor,
-            user_db_write_cursor: DBCursor,
+            user_db_cursor: DBCursor,
             user_db: 'DBHandler',
             only_owned: bool = False,
     ) -> set[str]:
@@ -1778,7 +1792,7 @@ class GlobalDBHandler:
         - sqlite3.Error if the user_db couldn't be correctly attached
         """
         # Update the list of owned assets
-        user_db.update_owned_assets_in_globaldb(user_db_write_cursor)
+        user_db.update_owned_assets_in_globaldb(user_db_cursor)
         if only_owned:
             query = cursor.execute('SELECT asset_id from user_owned_assets;')
         else:

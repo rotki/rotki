@@ -14,6 +14,7 @@ from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.accounts import BlockchainAccounts
 from rotkehlchen.constants.misc import DEFAULT_SQL_VM_INSTRUCTIONS_CB, USERSDIR_NAME
 from rotkehlchen.db.dbhandler import DBHandler
+from rotkehlchen.db.drivers.server import DEFAULT_DB_WRITER_PORT
 from rotkehlchen.tests.utils.database import (
     _use_prepared_db,
     add_blockchain_accounts_to_db,
@@ -75,6 +76,11 @@ def fixture_sql_vm_instructions_cb() -> int:
     return DEFAULT_SQL_VM_INSTRUCTIONS_CB
 
 
+@pytest.fixture(name='db_writer_port')
+def fixture_db_writer_port() -> int:
+    return DEFAULT_DB_WRITER_PORT
+
+
 def _init_database(
         user_data_dir: Path,
         password: str,
@@ -91,6 +97,7 @@ def _init_database(
         sql_vm_instructions_cb: int,
         perform_upgrades_at_unlock: bool,
         skip_sync_globaldb_assets: bool,
+        db_writer_port: int,
 ) -> DBHandler:
     if use_custom_database is not None:
         _use_prepared_db(user_data_dir, use_custom_database)
@@ -114,6 +121,7 @@ def _init_database(
             initial_settings=None,
             sql_vm_instructions_cb=sql_vm_instructions_cb,
             resume_from_backup=False,
+            db_writer_port=db_writer_port,
         )
     # Make sure that the fixture provided data are included in the DB
     add_settings_to_test_db(db, db_settings, ignored_assets, data_migration_version)
@@ -146,6 +154,7 @@ def database(
         sql_vm_instructions_cb,
         perform_upgrades_at_unlock,
         skip_sync_globaldb_assets,
+        db_writer_port,
 ) -> Generator[DBHandler | None, None, None]:
     if not start_with_logged_in_user:
         yield None
@@ -166,6 +175,7 @@ def database(
             sql_vm_instructions_cb=sql_vm_instructions_cb,
             perform_upgrades_at_unlock=perform_upgrades_at_unlock,
             skip_sync_globaldb_assets=skip_sync_globaldb_assets,
+            db_writer_port=db_writer_port,
         )
         if new_db_unlock_actions is not None:
             perform_new_db_unlock_actions(db=db_handler, new_db_unlock_actions=new_db_unlock_actions)  # noqa: E501

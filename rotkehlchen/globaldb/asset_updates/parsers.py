@@ -15,7 +15,7 @@ from .types import VersionRange
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from rotkehlchen.db.drivers.gevent import DBConnection
+    from rotkehlchen.db.drivers.client import DBConnection
 
 T = TypeVar('T')
 

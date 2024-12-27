@@ -189,13 +189,14 @@ def test_upload_data_to_server_same_hash(rotkehlchen_instance):
 ])
 def test_upload_data_to_server_smaller_db(rotkehlchen_instance, db_settings: dict[str, bool]):
     """Test that if the server has bigger DB size no upload happens"""
-    with rotkehlchen_instance.data.db.user_write() as cursor:
-        last_ts = rotkehlchen_instance.data.db.get_static_cache(
+    with rotkehlchen_instance.data.db.conn.read_ctx() as cursor:
+        assert rotkehlchen_instance.data.db.get_static_cache(
             cursor=cursor, name=DBCacheStatic.LAST_DATA_UPLOAD_TS,
-        )
-        assert last_ts is None
+        ) is None
+
+    with rotkehlchen_instance.data.db.user_write() as write_cursor:
         # Write anything in the DB to set a non-zero last_write_ts
-        rotkehlchen_instance.data.db.set_settings(cursor, ModifiableDBSettings(main_currency=A_EUR.resolve_to_asset_with_oracles()))  # noqa: E501
+        rotkehlchen_instance.data.db.set_settings(write_cursor, ModifiableDBSettings(main_currency=A_EUR.resolve_to_asset_with_oracles()))  # noqa: E501
 
     with tempfile.NamedTemporaryFile(delete=False, suffix='.db') as tempdbfile:
         tempdbpath = rotkehlchen_instance.data.db.export_unencrypted(tempdbfile)
@@ -520,13 +521,14 @@ def test_upload_data_to_server_db_already_in_use(rotkehlchen_instance):
     operations in a different threadpool greenlet. The fix was to move only the compressing and
     encrypting into that thread greenlet but not the DB reading.
     """
-    with rotkehlchen_instance.data.db.user_write() as cursor:
-        last_ts = rotkehlchen_instance.data.db.get_static_cache(
+    with rotkehlchen_instance.data.db.conn.read_ctx() as cursor:
+        assert rotkehlchen_instance.data.db.get_static_cache(
             cursor=cursor, name=DBCacheStatic.LAST_DATA_UPLOAD_TS,
-        )
-        assert last_ts is None
+        ) is None
+
+    with rotkehlchen_instance.data.db.user_write() as write_cursor:
         # Write anything in the DB to set a non-zero last_write_ts
-        rotkehlchen_instance.data.db.set_settings(cursor, ModifiableDBSettings(main_currency=A_EUR))  # noqa: E501
+        rotkehlchen_instance.data.db.set_settings(write_cursor, ModifiableDBSettings(main_currency=A_EUR))  # noqa: E501
     with tempfile.NamedTemporaryFile(delete=False, suffix='.db') as tempdbfile:
         tempdbpath = rotkehlchen_instance.data.db.export_unencrypted(tempdbfile)
         _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db(tempdbpath)
@@ -606,16 +608,18 @@ def test_upload_data_to_server_db_locked(rotkehlchen_instance):
         the plaintext DB is not attached. Which is also the fix. To make that
         export occur under a critical section
         """
-        result = db.conn.execute('SELECT * FROM pragma_database_list;')
+        result = db.conn._conn.execute('SELECT * FROM pragma_database_list;')
         assert len(result.fetchall()) == 1, 'the plaintext DB should not be attached here'
 
-    with db.user_write() as cursor:
+    with db.conn.read_ctx() as cursor:
         last_ts = rotkehlchen_instance.data.db.get_static_cache(
             cursor=cursor, name=DBCacheStatic.LAST_DATA_UPLOAD_TS,
         )
         assert last_ts is None
+
+    with db.user_write() as write_cursor:
         # Write anything in the DB to set a non-zero last_write_ts
-        rotkehlchen_instance.data.db.set_settings(cursor, ModifiableDBSettings(main_currency=A_EUR))  # noqa: E501
+        rotkehlchen_instance.data.db.set_settings(write_cursor, ModifiableDBSettings(main_currency=A_EUR))  # noqa: E501
 
     with tempfile.NamedTemporaryFile(delete=False, suffix='.db') as tempdbfile:
         tempdbpath = rotkehlchen_instance.data.db.export_unencrypted(tempdbfile)

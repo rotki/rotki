@@ -2,7 +2,7 @@ import logging
 import random
 from collections import defaultdict
 from collections.abc import Callable
-from typing import TYPE_CHECKING, NamedTuple
+from typing import TYPE_CHECKING, Any, NamedTuple
 
 import gevent
 
@@ -164,6 +164,7 @@ class TaskManager:
         self.premium_sync_manager: Optional[PremiumSyncManager] = premium_sync_manager
         self.data_updater = data_updater
         self.username = username
+        self.base_entries_ignore_set: set[Any] = set()
 
         self.potential_tasks: list[Callable[[], Optional[list[gevent.Greenlet]]]] = [
             self._maybe_schedule_cryptocompare_query,

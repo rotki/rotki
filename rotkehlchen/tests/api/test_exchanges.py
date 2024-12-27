@@ -636,11 +636,13 @@ def test_delete_external_exchange_data_works(
     with rotki.data.db.user_write() as write_cursor:
         history_db.add_history_events(write_cursor=write_cursor, history=events)
 
+    with rotki.data.db.conn.read_ctx() as cursor:
         assert len(history_db.get_history_events(
-            cursor=write_cursor,
+            cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(),
             has_premium=True,
         )) == 2
+
     response = requests.delete(
         api_url_for(
             server,

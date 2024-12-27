@@ -54,7 +54,7 @@ from rotkehlchen.db.constants import (
     KRAKEN_ACCOUNT_TYPE_KEY,
     USER_CREDENTIAL_MAPPING_KEYS,
 )
-from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType, DBCursor
+from rotkehlchen.db.drivers.client import DBConnection, DBConnectionType, DBCursor, DBWriterClient
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import UserNotesFilterQuery
 from rotkehlchen.db.loopring import DBLoopring
@@ -179,6 +179,7 @@ class DBHandler:
             initial_settings: ModifiableDBSettings | None,
             sql_vm_instructions_cb: int,
             resume_from_backup: bool,
+            db_writer_port: int,
     ):
         """Database constructor
 
@@ -210,14 +211,15 @@ class DBHandler:
         # Lock to make sure that 2 callers of get_or_create_evm_token do not go in at the same time
         self.get_or_create_evm_token_lock = Semaphore()
         self.password = password
+        self._db_writer_port = db_writer_port
         self._connect()
         self._check_unfinished_upgrades(resume_from_backup=resume_from_backup)
         self._run_actions_after_first_connection()
-        with self.user_write() as cursor:
+        with self.user_read_write() as writer_cursor:
             if initial_settings is not None:
-                self.set_settings(cursor, initial_settings)
-            self.update_owned_assets_in_globaldb(cursor)
-            self.sync_globaldb_assets(cursor)
+                self.set_settings(writer_cursor, initial_settings)  # type: ignore[arg-type]  # here we can use DBCursor because no other process will be writing
+            self.update_owned_assets_in_globaldb(writer_cursor)
+            self.sync_globaldb_assets(writer_cursor)  # type: ignore[arg-type]  # same reason as above
 
     def _check_unfinished_upgrades(self, resume_from_backup: bool) -> None:
         """
@@ -328,12 +330,12 @@ class DBHandler:
         # Run upgrades if needed -- only for user DB
         fresh_db = DBUpgradeManager(self).run_upgrades()
         if fresh_db:  # create tables during the first run and add the DB version
-            self.conn.executescript(DB_SCRIPT_CREATE_TABLES)
-            cursor = self.conn.cursor()
-            cursor.execute(
-                'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
-                ('version', str(ROTKEHLCHEN_DB_VERSION)),
-            )
+            with self.user_write() as write_cursor:
+                write_cursor.executescript(DB_SCRIPT_CREATE_TABLES)
+                write_cursor.execute(
+                    'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
+                    ('version', str(ROTKEHLCHEN_DB_VERSION)),
+                )
 
         # run checks on the database
         self.conn.schema_sanity_check()
@@ -342,24 +344,26 @@ class DBHandler:
         # This logic executes only for the transient db
         self._connect(conn_attribute='conn_transient')
         transient_version = 0
-        cursor = self.conn_transient.cursor()
-        with suppress(sqlcipher.DatabaseError):  # pylint: disable=no-member  # not created yet
-            result = cursor.execute('SELECT value FROM settings WHERE name=?', ('version',)).fetchone()  # noqa: E501
-            if result is not None:
-                transient_version = int(result[0])
+        with (
+            self.conn_transient.read_ctx() as cursor,
+            self.conn_transient.write_ctx() as write_cursor,
+        ):
+            with suppress(sqlcipher.DatabaseError):  # pylint: disable=no-member  # not created yet
+                result = cursor.execute('SELECT value FROM settings WHERE name=?', ('version',)).fetchone()  # noqa: E501
+                if result is not None:
+                    transient_version = int(result[0])
 
-        if transient_version != ROTKEHLCHEN_TRANSIENT_DB_VERSION:
-            # "upgrade" transient DB
-            tables = list(cursor.execute("SELECT name FROM sqlite_master WHERE type IS 'table'"))
-            cursor.executescript('PRAGMA foreign_keys = OFF;')
-            cursor.executescript(';'.join([f'DROP TABLE IF EXISTS {name[0]}' for name in tables]))
-            cursor.executescript('PRAGMA foreign_keys = ON;')
-        self.conn_transient.executescript(DB_SCRIPT_CREATE_TRANSIENT_TABLES)
-        cursor.execute(
-            'INSERT OR IGNORE INTO settings(name, value) VALUES(?, ?)',
-            ('version', str(ROTKEHLCHEN_TRANSIENT_DB_VERSION)),
-        )
-        self.conn_transient.commit()
+            if transient_version != ROTKEHLCHEN_TRANSIENT_DB_VERSION:
+                # "upgrade" transient DB
+                tables = list(cursor.execute('select name from sqlite_master where type is "table"'))  # noqa: E501
+                write_cursor.executescript('PRAGMA foreign_keys = OFF;')
+                write_cursor.executescript(';'.join([f'DROP TABLE IF EXISTS {name[0]}' for name in tables]))  # noqa: E501
+                write_cursor.executescript('PRAGMA foreign_keys = ON;')
+            self.conn_transient.executescript(DB_SCRIPT_CREATE_TRANSIENT_TABLES)
+            write_cursor.execute(
+                'INSERT OR IGNORE INTO settings(name, value) VALUES(?, ?)',
+                ('version', str(ROTKEHLCHEN_TRANSIENT_DB_VERSION)),
+            )
 
     def get_md5hash(self, transient: bool = False) -> str:
         """Get the md5hash of the DB
@@ -435,7 +439,7 @@ class DBHandler:
 
     def set_setting(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: 'DBWriterClient',
             name: Literal[
                 'version',
                 'last_write_ts',
@@ -472,6 +476,7 @@ class DBHandler:
                 path=str(fullpath),
                 connection_type=connection_type,
                 sql_vm_instructions_cb=self.sql_vm_instructions_cb,
+                db_writer_port=self._db_writer_port,
             )
         except sqlcipher.OperationalError as e:  # pylint: disable=no-member
             raise SystemPermissionError(
@@ -483,15 +488,16 @@ class DBHandler:
         if self.sqlcipher_version == 3:
             script += f'PRAGMA kdf_iter={KDF_ITER};'
         try:
-            conn.executescript(script)
-            conn.execute('PRAGMA foreign_keys=ON')
-            # Optimizations for the combined trades view
-            # the following will fail with DatabaseError in case of wrong password.
-            # If this goes away at any point it needs to be replaced by something
-            # that checks the password is correct at this same point in the code
-            conn.execute('PRAGMA cache_size = -32768')
-            # switch to WAL mode: https://www.sqlite.org/wal.html
-            conn.execute('PRAGMA journal_mode=WAL;')
+            for _conn in (conn._conn, conn):  # both reader and writer
+                _conn.executescript(script)
+                _conn.execute('PRAGMA foreign_keys=ON')
+                # Optimizations for the combined trades view
+                # the following will fail with DatabaseError in case of wrong password.
+                # If this goes away at any point it needs to be replaced by something
+                # that checks the password is correct at this same point in the code
+                _conn.execute('PRAGMA cache_size = -32768')
+                # switch to WAL mode: https://www.sqlite.org/wal.html
+                _conn.execute('PRAGMA journal_mode=WAL;')
         except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
             conn.close()
             raise AuthenticationError(
@@ -517,7 +523,8 @@ class DBHandler:
         if self.sqlcipher_version == 3:
             script += f'PRAGMA kdf_iter={KDF_ITER};'
         try:
-            conn.executescript(script)
+            for _conn in (conn._conn, conn):  # both reader and writer connections
+                _conn.executescript(script)
         except sqlcipher.OperationalError as e:  # pylint: disable=no-member
             log.error(
                 f'At change password could not re-key the open {conn_attribute} '
@@ -542,6 +549,10 @@ class DBHandler:
             conn.close()
             setattr(self, conn_attribute, None)
 
+    def __del__(self) -> None:
+        self.disconnect()
+        self.disconnect(conn_attribute='conn_transient')
+
     def export_unencrypted(self, tempdbfile: 'tempfile._TemporaryFileWrapper[bytes]') -> Path:
         """Export the unencrypted DB to the temppath as plaintext DB
 
@@ -558,8 +569,8 @@ class DBHandler:
         tempdbfile.close()  # close the file to allow re-opening by export_unencrypted in windows https://github.com/rotki/rotki/issues/5051  # noqa: E501
         with self.conn.critical_section():
             # flush the wal file to have up to date information when exporting data
-            self.conn.execute('PRAGMA wal_checkpoint;')
-            self.conn.executescript(
+            self.conn._conn.execute('PRAGMA wal_checkpoint;')
+            self.conn._conn.executescript(
                 f"ATTACH DATABASE '{tempdbpath}' AS plaintext KEY '';"
                 "SELECT sqlcipher_export('plaintext');"
                 "DETACH DATABASE plaintext;",
@@ -595,6 +606,7 @@ class DBHandler:
                 path=tempdbpath,
                 connection_type=DBConnectionType.USER,
                 sql_vm_instructions_cb=self.sql_vm_instructions_cb,
+                db_writer_port=self._db_writer_port,
             )
             password_for_sqlcipher = protect_password_sqlcipher(self.password)
             script = f"ATTACH DATABASE '{rdbpath}' AS encrypted KEY '{password_for_sqlcipher}';"
@@ -615,7 +627,7 @@ class DBHandler:
         (self.user_data_dir / 'rotkehlchen_temp_backup.db').unlink()
 
     @contextmanager
-    def user_write(self) -> Iterator[DBCursor]:
+    def user_write(self) -> Iterator[DBWriterClient]:
         """Get a write context for the user db and after write is finished
         also update the last write timestamp
         """
@@ -624,7 +636,18 @@ class DBHandler:
             yield cursor
 
     @contextmanager
-    def transient_write(self) -> Iterator[DBCursor]:
+    def user_read_write(self) -> Iterator[DBCursor]:
+        """Get a read/write context for the user db and after write is finished
+        also update the last write timestamp
+
+        WARNING: This function is not thread safe. It should only be used in places where no other
+        thread is writing to the DB, for example DB upgrades.
+        """
+        with self.conn.read_write_ctx(commit_ts=True) as cursor:
+            yield cursor
+
+    @contextmanager
+    def transient_write(self) -> Iterator[DBWriterClient]:
         """Get a write context for the transient user db and after write is finished
         also commit
         """
@@ -642,7 +665,7 @@ class DBHandler:
         settings_dict['have_premium'] = have_premium
         return db_settings_from_dict(settings_dict, self.msg_aggregator)
 
-    def set_settings(self, write_cursor: 'DBCursor', settings: ModifiableDBSettings) -> None:
+    def set_settings(self, write_cursor: 'DBWriterClient', settings: ModifiableDBSettings) -> None:
         settings_dict = settings.serialize()
         write_cursor.executemany(
             'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
@@ -677,7 +700,7 @@ class DBHandler:
 
     def set_static_cache(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: 'DBWriterClient',
             name: DBCacheStatic,
             value: Timestamp,
     ) -> None:
@@ -784,7 +807,7 @@ class DBHandler:
 
     def delete_dynamic_cache(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: 'DBWriterClient',
             name: DBCacheDynamic,
             **kwargs: str,
     ) -> None:
@@ -792,11 +815,11 @@ class DBHandler:
         according to the given `name` and `kwargs` if it exists"""
         write_cursor.execute(
             'DELETE FROM key_value_cache WHERE name=?;', (name.get_db_key(**kwargs),),
-        ).fetchone()
+        )
 
     @staticmethod
     def delete_dynamic_caches(
-            write_cursor: 'DBCursor',
+            write_cursor: 'DBWriterClient',
             key_parts: Sequence[str],
     ) -> None:
         """Delete cache entries whose names start with any of the given `key_parts`"""
@@ -809,7 +832,7 @@ class DBHandler:
     @overload
     def set_dynamic_cache(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: 'DBWriterClient',
             name: Literal[DBCacheDynamic.LAST_CRYPTOTX_OFFSET],
             value: int,
             **kwargs: Unpack[LabeledLocationArgsType],
@@ -819,7 +842,7 @@ class DBHandler:
     @overload
     def set_dynamic_cache(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: 'DBWriterClient',
             name: Literal[DBCacheDynamic.BINANCE_PAIR_LAST_ID],
             value: int,
             **kwargs: Unpack[BinancePairLastTradeArgsType],
@@ -829,7 +852,7 @@ class DBHandler:
     @overload
     def set_dynamic_cache(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: 'DBWriterClient',
             name: Literal[DBCacheDynamic.LAST_QUERY_TS],
             value: Timestamp,
             **kwargs: Unpack[LabeledLocationIdArgsType],
@@ -839,7 +862,7 @@ class DBHandler:
     @overload
     def set_dynamic_cache(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: 'DBWriterClient',
             name: Literal[DBCacheDynamic.LAST_QUERY_ID],
             value: int,
             **kwargs: Unpack[LabeledLocationIdArgsType],
@@ -849,7 +872,7 @@ class DBHandler:
     @overload
     def set_dynamic_cache(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: 'DBWriterClient',
             name: Literal[DBCacheDynamic.LAST_BLOCK_ID],
             value: int,
             **kwargs: Unpack[LabeledLocationIdArgsType],
@@ -859,7 +882,7 @@ class DBHandler:
     @overload
     def set_dynamic_cache(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: 'DBWriterClient',
             name: Literal[DBCacheDynamic.WITHDRAWALS_TS],
             value: Timestamp,
             **kwargs: Unpack[AddressArgType],
@@ -869,7 +892,7 @@ class DBHandler:
     @overload
     def set_dynamic_cache(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: 'DBWriterClient',
             name: Literal[DBCacheDynamic.WITHDRAWALS_IDX],
             value: int,
             **kwargs: Unpack[AddressArgType],
@@ -879,7 +902,7 @@ class DBHandler:
     @overload
     def set_dynamic_cache(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: 'DBWriterClient',
             name: Literal[DBCacheDynamic.EXTRA_INTERNAL_TX],
             value: ChecksumEvmAddress,
             **kwargs: Unpack[ExtraTxArgType],
@@ -889,7 +912,7 @@ class DBHandler:
     @overload
     def set_dynamic_cache(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: 'DBWriterClient',
             name: Literal[DBCacheDynamic.LAST_PRODUCED_BLOCKS_QUERY_TS],
             value: Timestamp,
             **kwargs: Unpack[IndexArgType],
@@ -898,7 +921,7 @@ class DBHandler:
 
     def set_dynamic_cache(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: 'DBWriterClient',
             name: DBCacheDynamic,
             value: int | Timestamp | ChecksumEvmAddress,
             **kwargs: Any,
@@ -911,7 +934,7 @@ class DBHandler:
 
     def add_external_service_credentials(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: 'DBWriterClient',
             credentials: list[ExternalServiceApiCredentials],
     ) -> None:
         write_cursor.executemany(
@@ -962,7 +985,7 @@ class DBHandler:
             # There can only be 1 result, since name is the primary key of the table
             return ExternalServiceApiCredentials(service=service_name, api_key=result[0], api_secret=result[1])  # noqa: E501
 
-    def add_to_ignored_assets(self, write_cursor: 'DBCursor', asset: Asset) -> None:
+    def add_to_ignored_assets(self, write_cursor: 'DBWriterClient', asset: Asset) -> None:
         """Add a new asset to the set of ignored assets. If the asset was already marked as
         ignored then we don't do anything. Also ignore history events with this asset.
         """
@@ -975,7 +998,7 @@ class DBHandler:
             (1, asset.identifier),
         )
 
-    def ignore_multiple_assets(self, write_cursor: 'DBCursor', assets: list[str]) -> None:
+    def ignore_multiple_assets(self, write_cursor: 'DBWriterClient', assets: list[str]) -> None:
         """Add the provided identifiers to the list of ignored assets. If any asset was already
         marked as ignored then we don't do anything. Also ignore history events with these assets.
         """
@@ -990,7 +1013,7 @@ class DBHandler:
                 chunk,
             )
 
-    def remove_from_ignored_assets(self, write_cursor: 'DBCursor', asset: Asset) -> None:
+    def remove_from_ignored_assets(self, write_cursor: 'DBWriterClient', asset: Asset) -> None:
         """Remove an asset from the ignored assets and un-ignore history events with this asset."""
         write_cursor.execute(
             "DELETE FROM multisettings WHERE name='ignored_asset' AND value=?;",
@@ -1017,7 +1040,7 @@ class DBHandler:
 
     def add_to_ignored_action_ids(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: 'DBWriterClient',
             identifiers: list[str],
     ) -> None:
         """Adds a list of identifiers to be ignored.
@@ -1035,7 +1058,7 @@ class DBHandler:
 
     def remove_from_ignored_action_ids(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: 'DBWriterClient',
             identifiers: list[str],
     ) -> None:
         """Removes a list of identifiers to be ignored.
@@ -1060,7 +1083,7 @@ class DBHandler:
     ) -> set[str]:
         return {entry[0] for entry in cursor.execute('SELECT identifier from ignored_actions;')}
 
-    def add_multiple_balances(self, write_cursor: 'DBCursor', balances: list[DBAssetBalance]) -> None:  # noqa: E501
+    def add_multiple_balances(self, write_cursor: 'DBWriterClient', balances: list[DBAssetBalance]) -> None:  # noqa: E501
         """Execute addition of multiple balances in the DB"""
         serialized_balances = [balance.serialize_for_db() for balance in balances]
         try:
@@ -1075,15 +1098,15 @@ class DBHandler:
                 'or an entry for the given timestamp already exists',
             ) from e
 
-    def delete_eth2_daily_stats(self, write_cursor: 'DBCursor') -> None:
+    def delete_eth2_daily_stats(self, write_cursor: 'DBWriterClient') -> None:
         """Delete all historical ETH2 eth2_daily_staking_details data"""
         write_cursor.execute('DELETE FROM eth2_daily_staking_details;')
 
-    def delete_cowswap_trade_data(self, write_cursor: 'DBCursor') -> None:
+    def delete_cowswap_trade_data(self, write_cursor: 'DBWriterClient') -> None:
         """Delete all cowswap trade/orders data from the DB"""
         write_cursor.execute('DELETE FROM cowswap_orders;')
 
-    def delete_gnosispay_data(self, write_cursor: 'DBCursor') -> None:
+    def delete_gnosispay_data(self, write_cursor: 'DBWriterClient') -> None:
         """Delete all saved gnosispay merchant data from the DB"""
         write_cursor.execute(
             'DELETE FROM key_value_cache WHERE name=?;',
@@ -1114,7 +1137,7 @@ class DBHandler:
 
             log.debug(f'Purged {module_name} data from the DB')
 
-    def delete_loopring_data(self, write_cursor: 'DBCursor') -> None:
+    def delete_loopring_data(self, write_cursor: 'DBWriterClient') -> None:
         """Delete all loopring related data"""
         write_cursor.execute(
             'DELETE FROM multisettings WHERE name LIKE ? ESCAPE ?',
@@ -1139,7 +1162,7 @@ class DBHandler:
 
     def delete_used_query_range_for_exchange(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: 'DBWriterClient',
             location: Location,
             exchange_name: str | None = None,
     ) -> None:
@@ -1156,12 +1179,12 @@ class DBHandler:
             (names_to_delete, '\\'),
         )
 
-    def purge_exchange_data(self, write_cursor: 'DBCursor', location: Location) -> None:
+    def purge_exchange_data(self, write_cursor: 'DBWriterClient', location: Location) -> None:
         self.delete_used_query_range_for_exchange(write_cursor=write_cursor, location=location)
         serialized_location = location.serialize_for_db()
         write_cursor.execute('DELETE FROM history_events WHERE location = ?;', (serialized_location,))  # noqa: E501
 
-    def update_used_query_range(self, write_cursor: 'DBCursor', name: str, start_ts: Timestamp, end_ts: Timestamp) -> None:  # noqa: E501
+    def update_used_query_range(self, write_cursor: 'DBWriterClient', name: str, start_ts: Timestamp, end_ts: Timestamp) -> None:  # noqa: E501
         write_cursor.execute(
             'INSERT OR REPLACE INTO used_query_ranges(name, start_ts, end_ts) VALUES (?, ?, ?)',
             (name, str(start_ts), str(end_ts)),
@@ -1177,7 +1200,7 @@ class DBHandler:
 
         return Timestamp(int(result[0]))
 
-    def add_multiple_location_data(self, write_cursor: 'DBCursor', location_data: list[LocationData]) -> None:  # noqa: E501
+    def add_multiple_location_data(self, write_cursor: 'DBWriterClient', location_data: list[LocationData]) -> None:  # noqa: E501
         """Execute addition of multiple location data in the DB"""
         for entry in location_data:
             try:
@@ -1196,7 +1219,7 @@ class DBHandler:
 
     def add_blockchain_accounts(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: 'DBWriterClient',
             account_data: list[BlockchainAccountData],
     ) -> None:
         # Insert the blockchain account addresses and labels to the DB
@@ -1224,7 +1247,7 @@ class DBHandler:
 
     def edit_blockchain_accounts(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: 'DBWriterClient',
             account_data: list[BlockchainAccountData],
     ) -> None:
         """Edit the given blockchain accounts
@@ -1280,7 +1303,7 @@ class DBHandler:
 
     def remove_single_blockchain_accounts(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: 'DBWriterClient',
             blockchain: SupportedBlockchain,
             accounts: ListOfBlockchainAddresses,
     ) -> None:
@@ -1290,11 +1313,13 @@ class DBHandler:
         - InputError if any of the given accounts to delete did not exist
         """
         # Assure all are there
-        accounts_number = write_cursor.execute(
-            f'SELECT COUNT(*) from blockchain_accounts WHERE blockchain = ? '
-            f'AND account IN ({",".join("?" * len(accounts))})',
-            (blockchain.value, *accounts),
-        ).fetchone()[0]
+        with self.conn.read_ctx() as cursor:
+            accounts_number = cursor.execute(
+                f'SELECT COUNT(*) from blockchain_accounts WHERE blockchain = ? '
+                f'AND account IN ({",".join("?" * len(accounts))})',
+                (blockchain.value, *accounts),
+            ).fetchone()[0]
+
         if accounts_number != len(accounts):
             raise InputError(
                 f'Tried to remove {len(accounts) - accounts_number} '
@@ -1375,7 +1400,7 @@ class DBHandler:
 
     def save_tokens_for_address(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: 'DBWriterClient',
             address: ChecksumEvmAddress,
             blockchain: SupportedBlockchain,
             tokens: Sequence[Asset],
@@ -1604,7 +1629,7 @@ class DBHandler:
 
         return data
 
-    def add_manually_tracked_balances(self, write_cursor: 'DBCursor', data: list[ManuallyTrackedBalance]) -> None:  # noqa: E501
+    def add_manually_tracked_balances(self, write_cursor: 'DBWriterClient', data: list[ManuallyTrackedBalance]) -> None:  # noqa: E501
         """Adds manually tracked balances in the DB
 
         May raise:
@@ -1628,7 +1653,7 @@ class DBHandler:
         # make sure assets are included in the global db user owned assets
         GlobalDBHandler.add_user_owned_assets([x.asset for x in data])
 
-    def edit_manually_tracked_balances(self, write_cursor: 'DBCursor', data: list[ManuallyTrackedBalance]) -> None:  # noqa: E501
+    def edit_manually_tracked_balances(self, write_cursor: 'DBWriterClient', data: list[ManuallyTrackedBalance]) -> None:  # noqa: E501
         """Edits manually tracked balances
 
         Edits the manually tracked balances for each of the given balance labels.
@@ -1659,7 +1684,11 @@ class DBHandler:
             raise InputError(msg)
         replace_tag_mappings(write_cursor=write_cursor, data=data, object_reference_keys=['identifier'])  # noqa: E501
 
-    def remove_manually_tracked_balances(self, write_cursor: 'DBCursor', ids: list[int]) -> None:
+    def remove_manually_tracked_balances(
+            self,
+            write_cursor: 'DBWriterClient',
+            ids: list[int],
+    ) -> None:
         """
         Removes manually tracked balances for the given ids
 
@@ -1681,7 +1710,7 @@ class DBHandler:
                 f'manually tracked balance ids that do not exist',
             )
 
-    def save_balances_data(self, write_cursor: 'DBCursor', data: dict[str, Any], timestamp: Timestamp) -> None:  # noqa: E501
+    def save_balances_data(self, write_cursor: 'DBWriterClient', data: dict[str, Any], timestamp: Timestamp) -> None:  # noqa: E501
         """The keys of the data dictionary can be any kind of asset plus 'location'
         and 'net_usd'. This gives us the balance data per assets, the balance data
         per location and finally the total balance
@@ -1764,7 +1793,7 @@ class DBHandler:
 
     def edit_exchange(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: 'DBWriterClient',
             name: str,
             location: Location,
             new_name: str | None,
@@ -1837,24 +1866,28 @@ class DBHandler:
 
         if new_name is not None:
             exchange_re = re.compile(r'(.*?)_(margins|history_events).*')
-            used_ranges = write_cursor.execute(
-                'SELECT * from used_query_ranges WHERE name LIKE ?',
-                (f'{location!s}_%_{name}',),
-            )
-            entry_types = set()
-            for used_range in used_ranges:
-                range_name = used_range[0]
-                match = exchange_re.search(range_name)
-                if match is None:
-                    continue
-                entry_types.add(match.group(2))
-            write_cursor.executemany(
-                'UPDATE used_query_ranges SET name=? WHERE name=?',
-                [
-                    (f'{location!s}_{entry_type}_{new_name}', f'{location!s}_{entry_type}_{name}')
-                    for entry_type in entry_types
-                ],
-            )
+            with self.conn.read_ctx() as cursor:
+                used_ranges = cursor.execute(
+                    'SELECT * from used_query_ranges WHERE name LIKE ?',
+                    (f'{location!s}_%_{name}',),
+                )
+                entry_types = set()
+                for used_range in used_ranges:
+                    range_name = used_range[0]
+                    match = exchange_re.search(range_name)
+                    if match is None:
+                        continue
+                    entry_types.add(match.group(2))
+                write_cursor.executemany(
+                    'UPDATE used_query_ranges SET name=? WHERE name=?',
+                    [
+                        (
+                            f'{location!s}_{entry_type}_{new_name}',
+                            f'{location!s}_{entry_type}_{name}',
+                        )
+                        for entry_type in entry_types
+                    ],
+                )
 
             # also update the name of the events related to this exchange
             write_cursor.execute(
@@ -1862,7 +1895,12 @@ class DBHandler:
                 (new_name, location.serialize_for_db(), name),
             )
 
-    def remove_exchange(self, write_cursor: 'DBCursor', name: str, location: Location) -> None:
+    def remove_exchange(
+            self,
+            write_cursor: 'DBWriterClient',
+            name: str,
+            location: Location,
+    ) -> None:
         """
         Removes the exchange location from user_credentials and from
         `the non_syncing_exchanges`setting.
@@ -1872,7 +1910,9 @@ class DBHandler:
             (name, location.serialize_for_db()),
         )
 
-        settings = self.get_settings(write_cursor)
+        with self.conn.read_ctx() as cursor:
+            settings = self.get_settings(cursor)
+
         if len(ignored_locations_settings := settings.non_syncing_exchanges) == 0:
             return
 
@@ -1966,7 +2006,7 @@ class DBHandler:
 
         return extras
 
-    def set_binance_pairs(self, write_cursor: 'DBCursor', name: str, pairs: list[str], location: Location) -> None:  # noqa: E501
+    def set_binance_pairs(self, write_cursor: 'DBWriterClient', name: str, pairs: list[str], location: Location) -> None:  # noqa: E501
         """Sets the market pairs used by the user on a specific binance exchange"""
         data = json.dumps(pairs)
         write_cursor.execute(
@@ -1996,7 +2036,7 @@ class DBHandler:
 
     def write_tuples(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: 'DBWriterClient',
             tuple_type: DBTupleType,
             query: str,
             tuples: Sequence[tuple[Any, ...]],
@@ -2048,9 +2088,9 @@ class DBHandler:
                 f' DB. Tuples: {tuples} with query: {query}',
             )
 
-    @staticmethod
     def write_single_tuple(
-            write_cursor: 'DBCursor',
+            self,
+            write_cursor: 'DBWriterClient',
             tuple_type: DBTupleType,
             query: str,
             entry: tuple[Any, ...],
@@ -2059,11 +2099,13 @@ class DBHandler:
         """Helper to write an entry of a tuple type and handle address mapping"""
         try:
             write_cursor.execute(query, entry)
+            write_cursor.commit()
             if tuple_type == 'evm_transaction':
-                tx_id = write_cursor.execute(
-                    'SELECT identifier FROM evm_transactions WHERE tx_hash=? AND chain_id=?',
-                    (entry[0], entry[1]),
-                ).fetchone()[0]
+                with self.conn.read_ctx() as cursor:
+                    tx_id = cursor.execute(
+                        'SELECT identifier FROM evm_transactions WHERE tx_hash=? AND chain_id=?',
+                        (entry[0], entry[1]),
+                    ).fetchone()[0]
 
                 # add address mapping if relevant_address is provided and transaction exists
                 if relevant_address is not None and tx_id is not None:
@@ -2084,7 +2126,7 @@ class DBHandler:
 
         return None
 
-    def add_margin_positions(self, write_cursor: 'DBCursor', margin_positions: list[MarginPosition]) -> None:  # noqa: E501
+    def add_margin_positions(self, write_cursor: 'DBWriterClient', margin_positions: list[MarginPosition]) -> None:  # noqa: E501
         margin_tuples: list[tuple[Any, ...]] = []
         for margin in margin_positions:
             open_time = 0 if margin.open_time is None else margin.open_time
@@ -2191,7 +2233,7 @@ class DBHandler:
 
     def delete_data_for_evm_address(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: 'DBWriterClient',
             address: ChecksumEvmAddress,
             blockchain: SUPPORTED_EVM_CHAINS_TYPE,
     ) -> None:
@@ -2228,7 +2270,7 @@ class DBHandler:
 
     def delete_data_for_evmlike_address(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: 'DBWriterClient',
             address: ChecksumEvmAddress,
             blockchain: SUPPORTED_EVMLIKE_CHAINS_TYPE,  # pylint: disable=unused-argument
     ) -> None:
@@ -2236,22 +2278,24 @@ class DBHandler:
 
         For now it's always gonna be only zksync lite.
         """
-        other_addresses = self.get_single_blockchain_addresses(
-            cursor=write_cursor,
-            blockchain=SupportedBlockchain.ZKSYNC_LITE,
-        )
-        other_addresses.remove(address)  # exclude the address in question so it's only the others
+        with self.conn.read_ctx() as cursor:
+            other_addresses = self.get_single_blockchain_addresses(
+                cursor=cursor,
+                blockchain=SupportedBlockchain.ZKSYNC_LITE,
+            )
+            other_addresses.remove(address)  # exclude the address in question so it's only the others  # noqa: E501
 
-        # delete events by tx_hash
-        write_cursor.execute(
-            'SELECT tx_hash, from_address, to_address FROM zksynclite_transactions WHERE '
-            'from_address=? OR to_address=?',
-            (address, address),
-        )
-        hashes_to_remove = [
-            x[0] for x in write_cursor
-            if x[1] not in other_addresses and x[2] not in other_addresses  # pylint: disable=unsupported-membership-test
-        ]
+            # delete events by tx_hash
+            cursor.execute(
+                'SELECT tx_hash, from_address, to_address FROM zksynclite_transactions WHERE '
+                'from_address=? OR to_address=?',
+                (address, address),
+            )
+            hashes_to_remove = [
+                x[0] for x in cursor
+                if x[1] not in other_addresses and x[2] not in other_addresses  # pylint: disable=unsupported-membership-test
+            ]
+
         for hashes_chunk in get_chunks(hashes_to_remove, n=1000):  # limit num of hashes in a query
             write_cursor.execute(  # delete transactions themselves
                 f'DELETE FROM zksynclite_transactions WHERE tx_hash IN '
@@ -2606,14 +2650,14 @@ class DBHandler:
         assets = self.query_owned_assets(cursor)
         GlobalDBHandler.add_user_owned_assets(assets)
 
-    def add_asset_identifiers(self, write_cursor: 'DBCursor', asset_identifiers: list[str]) -> None:  # noqa: E501
+    def add_asset_identifiers(self, write_cursor: 'DBWriterClient', asset_identifiers: list[str]) -> None:  # noqa: E501
         """Adds an asset to the user db asset identifier table"""
         write_cursor.executemany(
             'INSERT OR IGNORE INTO assets(identifier) VALUES(?);',
             [(x,) for x in asset_identifiers],
         )
 
-    def sync_globaldb_assets(self, write_cursor: 'DBCursor') -> None:
+    def sync_globaldb_assets(self, write_cursor: 'DBWriterClient') -> None:
         """Makes sure that:
         - all the GlobalDB asset identifiers are mirrored in the user DB
         - all the assets set to have the SPAM_PROTOCOL in the global DB
@@ -2635,7 +2679,11 @@ class DBHandler:
                 assets=[identifier[0] for identifier in globaldb_spam],
             )
 
-    def delete_asset_identifier(self, write_cursor: 'DBCursor', asset_id: str) -> None:
+    def delete_asset_identifier(
+            self,
+            write_cursor: 'DBWriterClient',
+            asset_id: str,
+    ) -> None:
         """Deletes an asset identifier from the user db asset identifier table
 
         May raise:
@@ -2844,7 +2892,7 @@ class DBHandler:
 
     def add_tag(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: 'DBWriterClient',
             name: str,
             description: str | None,
             background_color: HexColorCode,
@@ -2874,7 +2922,7 @@ class DBHandler:
 
     def edit_tag(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: 'DBWriterClient',
             name: str,
             description: str | None,
             background_color: HexColorCode | None,
@@ -2909,7 +2957,7 @@ class DBHandler:
                 f'Tried to edit tag with name "{name}" which does not exist',
             )
 
-    def delete_tag(self, write_cursor: 'DBCursor', name: str) -> None:
+    def delete_tag(self, write_cursor: 'DBWriterClient', name: str) -> None:
         """Deletes a tag already existing in the DB
 
         Raises:
@@ -2963,7 +3011,7 @@ class DBHandler:
 
     def add_bitcoin_xpub(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: 'DBWriterClient',
             xpub_data: XpubData,
     ) -> None:
         """Add the xpub to the DB
@@ -2990,7 +3038,7 @@ class DBHandler:
 
     def delete_bitcoin_xpub(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: 'DBWriterClient',
             xpub_data: XpubData,
     ) -> None:
         """Deletes an xpub from the DB. Also deletes all derived addresses and mappings
@@ -2998,23 +3046,24 @@ class DBHandler:
         May raise:
         - InputError if the xpub does not exist in the DB
         """
-        write_cursor.execute(
-            'SELECT COUNT(*) FROM xpubs WHERE xpub=? AND derivation_path IS ? AND blockchain=?;',
-            (
-                xpub_data.xpub.xpub,
-                xpub_data.serialize_derivation_path_for_db(),
-                xpub_data.blockchain.value,
-            ),
-        )
-        if write_cursor.fetchone()[0] == 0:
-            derivation_str = (
-                'no derivation path' if xpub_data.derivation_path is None else
-                f'derivation path {xpub_data.derivation_path}'
+        with self.conn.read_ctx() as cursor:
+            cursor.execute(
+                'SELECT COUNT(*) FROM xpubs WHERE xpub=? AND derivation_path IS ? AND blockchain=?;',  # noqa: E501
+                (
+                    xpub_data.xpub.xpub,
+                    xpub_data.serialize_derivation_path_for_db(),
+                    xpub_data.blockchain.value,
+                ),
             )
-            raise InputError(
-                f'Tried to remove non existing xpub {xpub_data.xpub.xpub} '
-                f'for {xpub_data.blockchain!s} with {derivation_str}',
-            )
+            if cursor.fetchone()[0] == 0:
+                derivation_str = (
+                    'no derivation path' if xpub_data.derivation_path is None else
+                    f'derivation path {xpub_data.derivation_path}'
+                )
+                raise InputError(
+                    f'Tried to remove non existing xpub {xpub_data.xpub.xpub} '
+                    f'for {xpub_data.blockchain!s} with {derivation_str}',
+                )
 
         # Delete the tag mappings for all derived addresses
         write_cursor.execute(
@@ -3051,14 +3100,14 @@ class DBHandler:
             ),
         )
 
-    def edit_bitcoin_xpub(self, write_cursor: 'DBCursor', xpub_data: XpubData) -> None:
+    def edit_bitcoin_xpub(self, write_cursor: 'DBWriterClient', xpub_data: XpubData) -> None:
         """Edit the xpub tags and label
 
         May raise:
         - InputError if the xpub data already exist
         """
-        try:
-            write_cursor.execute(
+        with self.conn.read_ctx() as cursor:
+            cursor.execute(
                 'SELECT address from xpub_mappings WHERE xpub=? AND derivation_path IS ? AND blockchain=?',  # noqa: E501
                 (
                     xpub_data.xpub.xpub,
@@ -3072,8 +3121,10 @@ class DBHandler:
                     address=x[0],
                     tags=xpub_data.tags,
                 )
-                for x in write_cursor
+                for x in cursor
             ]
+
+        try:
             # Update tag mappings of the derived addresses
             replace_tag_mappings(
                 write_cursor=write_cursor,
@@ -3189,7 +3240,7 @@ class DBHandler:
 
     def ensure_xpub_mappings_exist(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: 'DBWriterClient',
             xpub_data: XpubData,
             derived_addresses_data: list[XpubDerivedAddressData],
     ) -> None:
@@ -3323,7 +3374,7 @@ class DBHandler:
 
     def rebalance_rpc_nodes_weights(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: 'DBWriterClient',
             proportion_to_share: FVal,
             exclude_identifier: int | None,
             blockchain: SupportedBlockchain,
@@ -3335,15 +3386,17 @@ class DBHandler:
         exclude_identifier is the identifier of the node whose weight we add or edit.
         In case of deletion it's omitted and `None`is passed.
         """
-        if exclude_identifier is None:
-            write_cursor.execute('SELECT identifier, weight FROM rpc_nodes WHERE owned=0 AND blockchain=?', (blockchain.value,))  # noqa: E501
-        else:
-            write_cursor.execute(
-                'SELECT identifier, weight FROM rpc_nodes WHERE identifier !=? AND owned=0 AND blockchain=?',  # noqa: E501
-                (exclude_identifier, blockchain.value),
-            )
         new_weights = []
-        nodes_weights = write_cursor.fetchall()
+        with self.conn.read_ctx() as cursor:
+            if exclude_identifier is None:
+                cursor.execute('SELECT identifier, weight FROM rpc_nodes WHERE owned=0 AND blockchain=?', (blockchain.value,))  # noqa: E501
+            else:
+                cursor.execute(
+                    'SELECT identifier, weight FROM rpc_nodes WHERE identifier !=? AND owned=0 AND blockchain=?',  # noqa: E501
+                    (exclude_identifier, blockchain.value),
+                )
+            nodes_weights = cursor.fetchall()
+
         weight_sum = sum(FVal(node[1]) for node in nodes_weights)
         for node_id, weight in nodes_weights:
 
@@ -3475,10 +3528,10 @@ class DBHandler:
             has_premium: bool,
     ) -> int:
         """Add a user_note entry to the DB"""
-        with self.user_write() as write_cursor:
-            if has_premium is False:
+        if has_premium is False:
+            with self.conn.read_ctx() as cursor:
                 num_user_notes = self.get_entries_count(
-                    cursor=write_cursor,
+                    cursor=cursor,
                     entries_table='user_notes',
                 )
                 if num_user_notes >= FREE_USER_NOTES_LIMIT:
@@ -3489,6 +3542,7 @@ class DBHandler:
                     )
                     raise InputError(msg)
 
+        with self.user_write() as write_cursor:
             write_cursor.execute(
                 'INSERT INTO user_notes(title, content, location, last_update_timestamp, is_pinned) VALUES(?, ?, ?, ?, ?)',  # noqa: E501
                 (title, content, location, ts_now(), is_pinned),
@@ -3547,7 +3601,7 @@ class DBHandler:
 
     def add_skipped_external_event(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: 'DBWriterClient',
             location: Location,
             data: dict[str, Any],
             extra_data: dict[str, Any] | None,

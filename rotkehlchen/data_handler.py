@@ -30,12 +30,14 @@ class DataHandler:
             data_directory: Path,
             msg_aggregator: MessagesAggregator,
             sql_vm_instructions_cb: int,
+            db_writer_port: int,
     ):
         self.logged_in = False
         self.data_directory = data_directory
         self.username = 'no_user'
         self.msg_aggregator = msg_aggregator
         self.sql_vm_instructions_cb = sql_vm_instructions_cb
+        self.db_writer_port = db_writer_port
 
     def logout(self) -> None:
         if self.logged_in:
@@ -115,6 +117,7 @@ class DataHandler:
             initial_settings=initial_settings,
             sql_vm_instructions_cb=self.sql_vm_instructions_cb,
             resume_from_backup=resume_from_backup,
+            db_writer_port=self.db_writer_port,
         )
         self.user_data_dir = user_data_dir
         self.logged_in = True

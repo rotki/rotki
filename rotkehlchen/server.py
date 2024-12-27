@@ -6,7 +6,7 @@ import gevent
 
 from rotkehlchen.api.server import APIServer, RestAPI
 from rotkehlchen.args import app_args
-from rotkehlchen.logging import TRACE, RotkehlchenLogsAdapter, add_logging_level, configure_logging
+from rotkehlchen.logging import RotkehlchenLogsAdapter, configure_logging
 from rotkehlchen.rotkehlchen import Rotkehlchen
 
 logger = logging.getLogger(__name__)
@@ -27,7 +27,6 @@ class RotkehlchenServer:
             ),
         )
         self.args = arg_parser.parse_args()
-        add_logging_level('TRACE', TRACE)
         configure_logging(self.args)
         self.rotkehlchen = Rotkehlchen(self.args)
         self.stop_event = gevent.event.Event()

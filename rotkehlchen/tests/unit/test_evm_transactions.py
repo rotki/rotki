@@ -43,7 +43,7 @@ def test_delete_transactions_by_chain(
     )
     ethereum_events, gnosis_events = 3, 2
     dbevmtx = DBEvmTx(database)
-    with database.user_write() as write_cursor:
+    with database.conn.read_ctx() as write_cursor:
         events = DBHistoryEvents(database).get_history_events(
             cursor=write_cursor,
             filter_query=EvmEventFilterQuery.make(),

@@ -668,11 +668,11 @@ def test_add_get_edit_delete_eth2_validators(
             block_number=42,
             is_mev_reward=True,
         )]
-    with database.user_write() as cursor:
-        dbevents.add_history_events(cursor, events)
+    with database.user_write() as write_cursor:
+        dbevents.add_history_events(write_cursor, events)
         assert validators[0].validator_index is not None
         database.set_dynamic_cache(
-            write_cursor=cursor,
+            write_cursor=write_cursor,
             name=DBCacheDynamic.LAST_PRODUCED_BLOCKS_QUERY_TS,
             value=Timestamp(1739807677),
             index=validators[0].validator_index,

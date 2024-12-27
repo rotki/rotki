@@ -48,7 +48,7 @@ def get_identifier_from_stdout(stdout: str) -> str | None:
     return None
 
 
-def test_db_persistence_after_search(messages_aggregator):
+def test_db_persistence_after_search(messages_aggregator, db_writer_port):
     """Test that manual prices of a newly added asset are saved in the global database,
     when doing an asset search before the price is added.
     Issue tested: https://github.com/orgs/rotki/projects/11/views/2?pane=issue&itemId=69334133
@@ -77,6 +77,7 @@ def test_db_persistence_after_search(messages_aggregator):
         data_directory=default_data_directory().parent / 'test_data',
         sql_vm_instructions_cb=0,
         messages_aggregator=messages_aggregator,
+        db_writer_port=db_writer_port,
     )
     assert globaldb.get_manual_current_price(Asset(custom_asset_identifier)) == (A_USD, Price(FVal(123)))  # noqa: E501
     globaldb.delete_asset_by_identifier(custom_asset_identifier)

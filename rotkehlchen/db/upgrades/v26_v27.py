@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.client import DBCursor
     from rotkehlchen.db.upgrade_manager import DBUpgradeProgressHandler
 
 
@@ -99,5 +99,5 @@ def upgrade_v26_to_v27(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
     - Deletes and recreates the tables that were changed after removing UnknownEthereumToken
     """
     progress_handler.set_total_steps(3)
-    with db.user_write() as cursor:
+    with db.user_read_write() as cursor:
         _do_upgrade(cursor=cursor, progress_handler=progress_handler)

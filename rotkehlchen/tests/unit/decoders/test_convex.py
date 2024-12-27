@@ -235,7 +235,7 @@ def test_cvxcrv_get_reward(database, ethereum_inquirer, eth_transactions):
         ethereum_inquirer=ethereum_inquirer,
         transactions=eth_transactions,
     )
-    with dbevmtx.db.user_write() as cursor, patch_decoder_reload_data():
+    with dbevmtx.db.conn.read_ctx() as cursor, patch_decoder_reload_data():
         dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
         decoder.reload_data(cursor)
 
@@ -464,7 +464,7 @@ def test_cvx_stake(database, ethereum_inquirer, eth_transactions):
         ethereum_inquirer=ethereum_inquirer,
         transactions=eth_transactions,
     )
-    with dbevmtx.db.user_write() as cursor, patch_decoder_reload_data():
+    with dbevmtx.db.conn.read_ctx() as cursor, patch_decoder_reload_data():
         dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
         decoder.reload_data(cursor)
 
@@ -606,7 +606,7 @@ def test_cvx_get_reward(database, ethereum_inquirer, eth_transactions):
         ethereum_inquirer=ethereum_inquirer,
         transactions=eth_transactions,
     )
-    with dbevmtx.db.user_write() as cursor, patch_decoder_reload_data():
+    with dbevmtx.db.conn.read_ctx() as cursor, patch_decoder_reload_data():
         dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
         decoder.reload_data(cursor)
 
@@ -697,7 +697,7 @@ def test_cvx_withdraw(database, ethereum_inquirer, eth_transactions):
         ethereum_inquirer=ethereum_inquirer,
         transactions=eth_transactions,
     )
-    with dbevmtx.db.user_write() as cursor, patch_decoder_reload_data():
+    with dbevmtx.db.conn.read_ctx() as cursor, patch_decoder_reload_data():
         dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
         decoder.reload_data(cursor)
 
@@ -780,7 +780,7 @@ def test_claimzap_abracadabras(database, ethereum_inquirer, eth_transactions):
         ethereum_inquirer=ethereum_inquirer,
         transactions=eth_transactions,
     )
-    with dbevmtx.db.user_write() as cursor, patch_decoder_reload_data():
+    with dbevmtx.db.conn.read_ctx() as cursor, patch_decoder_reload_data():
         dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
         decoder.reload_data(cursor)
 
@@ -872,7 +872,7 @@ def test_claimzap_cvx_locker(database, ethereum_inquirer, eth_transactions):
         ethereum_inquirer=ethereum_inquirer,
         transactions=eth_transactions,
     )
-    with dbevmtx.db.user_write() as cursor, patch_decoder_reload_data():
+    with dbevmtx.db.conn.read_ctx() as cursor, patch_decoder_reload_data():
         dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
         decoder.reload_data(cursor)
 

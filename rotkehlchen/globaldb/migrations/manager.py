@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 if TYPE_CHECKING:
-    from rotkehlchen.db.drivers.gevent import DBConnection
+    from rotkehlchen.db.drivers.client import DBConnection
 
 
 class MigrationRecord(NamedTuple):

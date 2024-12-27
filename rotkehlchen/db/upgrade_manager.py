@@ -153,7 +153,7 @@ class DBUpgradeManager:
         upgrade to or if there is a problem during upgrade or if the version is older
         than the one supported.
         """
-        with self.db.conn.write_ctx() as cursor:
+        with self.db.conn.read_ctx() as cursor:
             try:
                 our_version = self.db.get_setting(cursor, 'version')
             except sqlcipher.OperationalError:  # pylint: disable=no-member

@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.converters import asset_from_kucoin
 from rotkehlchen.data_import.utils import BaseExchangeImporter, hash_csv_row
-from rotkehlchen.db.drivers.gevent import DBCursor
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.utils import get_key_if_has_val
@@ -24,6 +23,7 @@ from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.db.drivers.client import DBWriterClient
 
 
 class KucoinImporter(BaseExchangeImporter):
@@ -34,7 +34,7 @@ class KucoinImporter(BaseExchangeImporter):
 
     def _import_csv(
             self,
-            write_cursor: DBCursor,
+            write_cursor: 'DBWriterClient',
             filepath: Path,
             **kwargs: Any,
     ) -> None:

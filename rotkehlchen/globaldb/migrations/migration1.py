@@ -7,7 +7,7 @@ from rotkehlchen.types import CacheType, Timestamp
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
-    from rotkehlchen.db.drivers.gevent import DBConnection
+    from rotkehlchen.db.drivers.client import DBConnection
 
 ilk_mapping = {  # ilk to (ilk_class, underlying_asset, join address)
     'BAT-A': (1, 'eip155:1/erc20:0x0D8775F648430679A709E98d2b0Cb6250d2887EF', '0x3D0B1912B66114d4096F48A8CEe3A56C231772cA'),  # noqa: E501

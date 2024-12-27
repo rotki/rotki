@@ -486,9 +486,9 @@ def test_get_events(rotkehlchen_api_server: 'APIServer') -> None:
 
     # add one event to the list of ignored events to check that the field ignored_in_accounting
     # gets correctly populated
-    with rotki.data.db.conn.write_ctx() as cursor:
+    with rotki.data.db.conn.write_ctx() as write_cursor:
         rotki.data.db.add_to_ignored_action_ids(
-            write_cursor=cursor,
+            write_cursor=write_cursor,
             identifiers=[f'{entries[0].event_identifier}'],
         )
 
@@ -640,7 +640,7 @@ def test_get_events(rotkehlchen_api_server: 'APIServer') -> None:
 
     # test pagination works fine with/without exclude_ignored_assets filter with/without premium
     db_history_events = DBHistoryEvents(rotkehlchen_api_server.rest_api.rotkehlchen.data.db)
-    with db_history_events.db.user_write() as cursor:
+    with db_history_events.db.conn.read_ctx() as cursor:
         for limit, exclude_ignored, total, found in (
             (None, False, 8, 8),  # premium without ignoring assets, we get all the events
             (None, True, 3, 3),  # premium with ignoring assets (ETH), we get only 3 events

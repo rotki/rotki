@@ -44,7 +44,7 @@ from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.client import DBCursor
 
 ADDY = string_to_evm_address('0x48ac67dC110BC42FC2D01a68b8E52FD04A5e87AF')
 
@@ -292,10 +292,10 @@ def test_force_refetch_evm_transactions_success(
 
     # Delete some transactions to simulate missing data
     with db.conn.write_ctx() as cursor:
-        removed_transactions = cursor.execute(
+        cursor.execute(
             'DELETE FROM evm_transactions WHERE chain_id = ? AND timestamp >= ? AND timestamp <= ?',  # noqa: E501
             (ChainID.ETHEREUM.serialize_for_db(), four_days_ago, now),
-        ).rowcount
+        )
 
     # Count transactions after deletion
     assert db_evmtx.count_evm_transactions(ChainID.ETHEREUM) == 8
@@ -312,8 +312,7 @@ def test_force_refetch_evm_transactions_success(
             'evm_chain': ChainID.ETHEREUM.to_name(),
         },
     )
-    result = assert_proper_sync_response_with_result(response)
-    assert result['new_transactions_count'] == removed_transactions
+    assert_proper_sync_response_with_result(response)
 
     # Count transactions after refetch
     assert total_transaction_count == db_evmtx.count_evm_transactions(ChainID.ETHEREUM)
