@@ -98,7 +98,6 @@ from rotkehlchen.errors.misc import (
 )
 from rotkehlchen.errors.price import PriceQueryUnsupportedAsset
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.externalapis.bisq_market import get_bisq_market_price
 from rotkehlchen.externalapis.xratescom import (
     get_current_xratescom_exchange_rates,
     get_historical_xratescom_exchange_rates,
@@ -154,7 +153,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 CURRENT_PRICE_CACHE_SECS = 300  # 5 mins
 DEFAULT_RATE_LIMIT_WAITING_TIME = 60  # seconds
-BTC_PER_BSQ = FVal('0.00000100')
+BTC_PER_BSQ = FVal('0.00000100')  # 1 BST == 100 satoshi https://docs.bisq.network/dao/specification#bsq-token
 
 ASSETS_UNDERLYING_BTC = (
     A_YV1_RENWSBTC,
@@ -865,32 +864,12 @@ class Inquirer:
                         return usd_price, oracle
                 # else known protocol on-chain query failed. Continue to external oracles
 
-        # BSQ is a special asset that doesn't have oracle information but its custom API
         if asset == A_BSQ:
-            try:
-                bsq = A_BSQ.resolve_to_crypto_asset()
-            except (UnknownAsset, WrongAssetType):
-                log.error('Asked for BSQ price but BSQ is missing or misclassified in the global DB')  # noqa: E501
-                return ZERO_PRICE, oracle
-
-            try:
-                price_in_btc = get_bisq_market_price(bsq)
-                btc_price, oracle, _ = Inquirer.find_usd_price_and_oracle(A_BTC)
-                usd_price = Price(price_in_btc * btc_price)
-                Inquirer.set_cached_price(
-                    cache_key=cache_key,
-                    cached_price=CachedPriceEntry(
-                        price=usd_price,
-                        time=ts_now(),
-                        oracle=oracle,
-                    ),
-                )
-            except (RemoteError, DeserializationError) as e:
-                msg = f'Could not find price for BSQ. {e!s}'
-                Inquirer._msg_aggregator.add_warning(msg)
-                return Price(BTC_PER_BSQ * price_in_btc), CurrentPriceOracle.BLOCKCHAIN
-            else:
-                return usd_price, oracle
+            # BSQ is defined as 100 satohis but can be traded. Before we were using an api
+            # to query the BSQ market but it isn't available anymore so we assume BTC_PER_BSQ
+            # to obtain a price based on BTC price.
+            btc_price = Inquirer.find_usd_price(A_BTC)
+            return Price(BTC_PER_BSQ * btc_price), CurrentPriceOracle.BLOCKCHAIN
 
         if asset == A_KFEE:
             # KFEE is a kraken special asset where 1000 KFEE = 10 USD
