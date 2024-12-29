@@ -31,6 +31,7 @@ from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import (
     A_1INCH,
     A_AAVE,
+    A_BSQ,
     A_BTC,
     A_CRV,
     A_DAI,
@@ -57,6 +58,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.inquirer import (
+    BTC_PER_BSQ,
     CURRENT_PRICE_CACHE_SECS,
     DEFAULT_RATE_LIMIT_WAITING_TIME,
     CurrentPriceOracle,
@@ -1073,3 +1075,12 @@ def test_errors_web3_logs():
             initial_block_range=20000,
         )
         assert count == math.ceil((end_block - start_block) / 999) + 1  # + 1 is the failed request
+
+
+@pytest.mark.vcr
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+def test_bsq_price(inquirer: 'Inquirer') -> None:
+    """Test that we can query bisq for market prices"""
+    btc_price = Inquirer.find_usd_price(A_BTC)
+    bsq_price = Inquirer.find_usd_price(A_BSQ.resolve_to_crypto_asset())
+    assert bsq_price.is_close(btc_price * BTC_PER_BSQ)

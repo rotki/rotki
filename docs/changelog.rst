@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :bug:`9163` Cryptocompare will handle correctly price queries again.
+* :bug:`-` When querying the price of BSQ rotki will define it as the price of 100 satoshi.
 
 * :release:`1.37.0 <2024-12-24>`
 * :feature:`7144` Users will be able to import multiple addresses into the address book via CSV.
