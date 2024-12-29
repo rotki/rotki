@@ -3,8 +3,6 @@ from abc import abstractmethod
 from collections.abc import Callable, Sequence
 from typing import TYPE_CHECKING, Any
 
-import requests
-
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import AssetWithOracles
@@ -27,6 +25,7 @@ from rotkehlchen.types import (
 from rotkehlchen.utils.misc import set_user_agent, ts_now
 from rotkehlchen.utils.mixins.cacheable import CacheableMixIn
 from rotkehlchen.utils.mixins.lockable import LockableQueryMixIn, protect_with_lock
+from rotkehlchen.utils.network import create_session
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -89,7 +88,7 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
         self.secret = secret
         self.msg_aggregator = msg_aggregator
         self.first_connection_made = False
-        self.session = requests.session()
+        self.session = create_session()
         set_user_agent(self.session)
         log.info(f'Initialized {location!s} exchange {name}')
 

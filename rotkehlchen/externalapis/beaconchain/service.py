@@ -35,6 +35,7 @@ from rotkehlchen.utils.misc import (
     ts_now,
     ts_sec_to_ms,
 )
+from rotkehlchen.utils.network import create_session
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 if TYPE_CHECKING:
@@ -52,7 +53,7 @@ class BeaconChain(ExternalServiceWithApiKey):
     def __init__(self, database: 'DBHandler', msg_aggregator: MessagesAggregator) -> None:
         super().__init__(database=database, service_name=ExternalService.BEACONCHAIN)
         self.msg_aggregator = msg_aggregator
-        self.session = requests.session()
+        self.session = create_session()
         self.warning_given = False
         set_user_agent(self.session)
         self.url = f'{BEACONCHAIN_ROOT_URL}/api/v1/'

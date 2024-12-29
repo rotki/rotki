@@ -22,6 +22,7 @@ from rotkehlchen.serialization.deserialize import (
 )
 from rotkehlchen.types import ChecksumEvmAddress, Eth2PubKey, Timestamp
 from rotkehlchen.utils.misc import from_gwei
+from rotkehlchen.utils.network import create_session
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 from .constants import BEACONCHAIN_MAX_EPOCH, DEFAULT_VALIDATOR_CHUNK_SIZE, FREE_VALIDATORS_LIMIT
@@ -44,7 +45,7 @@ class BeaconNode:
         May raise:
         - RemoteError if we can't connect to the given rpc endpoint
         """
-        self.session = requests.session()
+        self.session = create_session()
         self.set_rpc_endpoint(rpc_endpoint)
 
     def set_rpc_endpoint(self, rpc_endpoint: str) -> None:

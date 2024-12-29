@@ -16,7 +16,6 @@ from urllib.parse import urlencode
 
 import machineid
 import requests
-from urllib3.util.retry import Retry
 
 from rotkehlchen.constants import ROTKEHLCHEN_SERVER_TIMEOUT
 from rotkehlchen.constants.timing import ROTKEHLCHEN_SERVER_BACKUP_TIMEOUT
@@ -29,6 +28,7 @@ from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import Timestamp
 from rotkehlchen.utils.misc import is_production, set_user_agent
+from rotkehlchen.utils.network import create_session
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 logger = logging.getLogger(__name__)
@@ -166,22 +166,7 @@ class Premium:
 
     def __init__(self, credentials: PremiumCredentials, username: str):
         self.status = SubscriptionStatus.UNKNOWN
-        self.session = requests.session()
-        # Make sure to have 3 retries on read/connect/other errors for all requests
-        # The reason for this is that we have noticed that in unstable/slow connections
-        # rotki.com server will close/cause the connection to result to a read timeout
-        # At the moment this only happens for the backup upload endpoint. More info:
-        # https://github.com/rotki/rotki/pull/6423
-        adapter = requests.adapters.HTTPAdapter()
-        # Have to set retries like this, since this granularity is not given by HTTPAdapter ctor
-        adapter.max_retries = Retry(
-            total=3,  # have to set each one individually as the code checks them all
-            read=3,
-            connect=3,
-            other=3,
-            allowed_methods=False,  # retry on all method verbs
-        )
-        self.session.mount('https://', adapter)
+        self.session = create_session()
         self.apiversion = '1'
         rotki_base_url = 'rotki.com'
         if is_production() is False and os.environ.get('ROTKI_API_ENVIRONMENT') == 'staging':

@@ -22,6 +22,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChainID, EvmTokenKind, ExternalService, Price, Timestamp
 from rotkehlchen.utils.misc import create_timestamp, set_user_agent, timestamp_to_date, ts_now
 from rotkehlchen.utils.mixins.penalizable_oracle import PenalizablePriceOracleMixin
+from rotkehlchen.utils.network import create_session
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -526,7 +527,7 @@ class Coingecko(
         ExternalServiceWithApiKeyOptionalDB.__init__(self, database=database, service_name=ExternalService.COINGECKO)  # noqa: E501
         HistoricalPriceOracleWithCoinListInterface.__init__(self, oracle_name='coingecko')
         PenalizablePriceOracleMixin.__init__(self)
-        self.session = requests.session()
+        self.session = create_session()
         set_user_agent(self.session)
         self.last_rate_limit = 0
         self.db: DBHandler | None  # type: ignore  # "solve" the self.db discrepancy
