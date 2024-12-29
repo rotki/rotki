@@ -99,8 +99,7 @@ class BlockchainBalances:
         """
         for supported_chain in (SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH):
             chain_key = supported_chain.get_key()
-            # mypy fails to see it
-            yield (supported_chain, getattr(self, chain_key))  # type: ignore
+            yield (supported_chain, getattr(self, chain_key))
 
     def copy(self) -> 'BlockchainBalances':
         balances = BlockchainBalances(db=self.db)
