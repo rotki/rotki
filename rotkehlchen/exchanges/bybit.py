@@ -61,7 +61,7 @@ PAGINATION_LIMIT: Final = 50
 # RECEIVE_WINDOW specifies how long an HTTP request is valid.
 # It is also used to prevent replay attacks. its unit in ms
 # https://bybit-exchange.github.io/docs/v5/guide#parameters-for-authenticated-endpoints
-RECEIVE_WINDOW: Final = '5000'
+RECEIVE_WINDOW: Final = '10000'
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
