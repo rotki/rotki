@@ -39,6 +39,7 @@ from rotkehlchen.types import (
     deserialize_evm_tx_hash,
 )
 from rotkehlchen.utils.misc import iso8601ts_to_timestamp, set_user_agent, ts_sec_to_ms
+from rotkehlchen.utils.network import create_session
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 if TYPE_CHECKING:
@@ -61,7 +62,7 @@ class ZksyncLiteManager:
             database: 'DBHandler',
     ) -> None:
         self.database = database
-        self.session = requests.session()
+        self.session = create_session()
         set_user_agent(self.session)
         self.id_to_token: dict[int, CryptoAsset] = {}
         self.symbol_to_token: dict[str, CryptoAsset] = {}

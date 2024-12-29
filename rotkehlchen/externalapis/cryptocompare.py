@@ -53,6 +53,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ExternalService, Price, Timestamp
 from rotkehlchen.utils.misc import pairwise, set_user_agent, ts_now
 from rotkehlchen.utils.mixins.penalizable_oracle import PenalizablePriceOracleMixin
+from rotkehlchen.utils.network import create_session
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 if TYPE_CHECKING:
@@ -206,7 +207,7 @@ class Cryptocompare(
             service_name=ExternalService.CRYPTOCOMPARE,
         )
         PenalizablePriceOracleMixin.__init__(self)
-        self.session = requests.session()
+        self.session = create_session()
         set_user_agent(self.session)
         self.last_histohour_query_ts = 0
         self.last_rate_limit = 0

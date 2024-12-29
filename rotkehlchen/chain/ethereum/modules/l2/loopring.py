@@ -129,6 +129,7 @@ from rotkehlchen.serialization.deserialize import deserialize_int_from_str
 from rotkehlchen.types import ChecksumEvmAddress, ExternalService
 from rotkehlchen.utils.interfaces import EthereumModule
 from rotkehlchen.utils.mixins.lockable import LockableQueryMixIn, protect_with_lock
+from rotkehlchen.utils.network import create_session
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
@@ -162,7 +163,7 @@ class Loopring(ExternalServiceWithApiKey, EthereumModule, LockableQueryMixIn):
         LockableQueryMixIn.__init__(self)
         api_key = self._get_api_key()
         self.msg_aggregator = msg_aggregator
-        self.session = requests.session()
+        self.session = create_session()
         if api_key:
             self.session.headers.update({'X-API-KEY': api_key})
         self.base_url = 'https://api3.loopring.io/api/v3/'

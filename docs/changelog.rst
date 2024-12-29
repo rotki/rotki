@@ -2,7 +2,7 @@
 Changelog
 =========
 
-* :bug:`9163` Cryptocompare will handle correctly price queries again.
+* :bug:`9163` Cryptocompare price queries will be handled correctly again. Fixes "the 'FVal' object is not subscriptable".
 * :bug:`-` When querying the price of BSQ rotki will define it as the price of 100 satoshi.
 
 * :release:`1.37.0 <2024-12-24>`
