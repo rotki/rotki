@@ -56,7 +56,7 @@ export const useHistoryEventCounterpartyMappings = createSharedComposable(() => 
       if (data) {
         return {
           ...data,
-          label: counterparty.toUpperCase(),
+          label: data.label || toHumanReadable(counterparty, 'capitalize'),
         };
       }
 
