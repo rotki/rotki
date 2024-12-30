@@ -287,3 +287,257 @@ def test_aura_finance_booster_deposit_ethereum(ethereum_inquirer, ethereum_accou
         ),
     ]
     assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('arbitrum_one_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
+def test_aura_finance_claim_rewards_arb(arbitrum_one_inquirer, arbitrum_one_accounts):
+    tx_hash = deserialize_evm_tx_hash('0x3ee95df7dfb12a183ef7ccb408e320a6a909561fe8da5408b3897ebd336b5420')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=arbitrum_one_inquirer, tx_hash=tx_hash)  # noqa: E501
+    user_address, timestamp, gas_str, claim_amount_1, claim_amount_2, claim_amount_3 = arbitrum_one_accounts[0], TimestampMS(1735459868000), '0.00000266091', '0.096740702346661316', '0.097900452506457258', '0.14964073351979476'  # noqa: E501
+    expected_events = [
+        EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(FVal(gas_str)),
+            location_label=user_address,
+            notes=f'Burn {gas_str} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=8,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.REWARD,
+            asset=Asset('eip155:42161/erc20:0x040d1EdC9569d4Bab2D15287Dc5A4F10F56a56B8'),
+            balance=Balance(FVal(claim_amount_1)),
+            location_label=user_address,
+            notes=f'Claim {claim_amount_1} BAL from Aura Finance',
+            address=string_to_evm_address('0xAc7025Dec5E216025C76414f6ac1976227c20Ff0'),
+            counterparty=CPT_AURA_FINANCE,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=9,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.REWARD,
+            asset=Asset('eip155:42161/erc20:0x1509706a6c66CA549ff0cB464de88231DDBe213B'),
+            balance=Balance(FVal(claim_amount_2)),
+            location_label=user_address,
+            notes=f'Claim {claim_amount_2} AURA from Aura Finance',
+            counterparty=CPT_AURA_FINANCE,
+            address=string_to_evm_address('0xeC1c780A275438916E7CEb174D80878f29580606'),
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=11,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.REWARD,
+            asset=Asset('eip155:42161/erc20:0x1509706a6c66CA549ff0cB464de88231DDBe213B'),
+            balance=Balance(FVal(claim_amount_3)),
+            location_label=user_address,
+            notes=f'Claim {claim_amount_3} AURA from Aura Finance',
+            counterparty=CPT_AURA_FINANCE,
+            address=string_to_evm_address('0xE26200262c84444F7fFf83443B3Cf956Ec680325'),
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('base_accounts', [['0x19e4057A38a730be37c4DA690b103267AAE1d75d']])
+def test_aura_finance_get_rewards_base(base_inquirer, base_accounts):
+    tx_hash = deserialize_evm_tx_hash('0xc54f5bc1b45b151dd7e106a45fea82a0bbb0dd1a48b5e71be2d8b9f36fbcb704')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
+    user_address, timestamp, gas_str, claim_amount_1, claim_amount_2, claim_amount_3 = base_accounts[0], TimestampMS(1733666205000), '0.000003758872604736', '0.016918933596764049', '0.018407669504926201', '0.018747704109670571'  # noqa: E501
+    expected_events = [
+        EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.BASE,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(FVal(gas_str)),
+            location_label=user_address,
+            notes=f'Burn {gas_str} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=1063,
+            timestamp=timestamp,
+            location=Location.BASE,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.REWARD,
+            asset=Asset('eip155:8453/erc20:0x4158734D47Fc9692176B5085E0F52ee0Da5d47F1'),
+            balance=Balance(FVal(claim_amount_1)),
+            location_label=user_address,
+            notes=f'Claim {claim_amount_1} BAL from Aura Finance',
+            address=string_to_evm_address('0x636fCa3ADC5D614E15F5C5a574fFd2CAEE578126'),
+            counterparty=CPT_AURA_FINANCE,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=1064,
+            timestamp=timestamp,
+            location=Location.BASE,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.REWARD,
+            asset=Asset('eip155:8453/erc20:0x1509706a6c66CA549ff0cB464de88231DDBe213B'),
+            balance=Balance(FVal(claim_amount_2)),
+            location_label=user_address,
+            notes=f'Claim {claim_amount_2} AURA from Aura Finance',
+            counterparty=CPT_AURA_FINANCE,
+            address=string_to_evm_address('0x8b2970c237656d3895588B99a8bFe977D5618201'),
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=1066,
+            timestamp=timestamp,
+            location=Location.BASE,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.REWARD,
+            asset=Asset('eip155:8453/erc20:0x1509706a6c66CA549ff0cB464de88231DDBe213B'),
+            balance=Balance(FVal(claim_amount_3)),
+            location_label=user_address,
+            notes=f'Claim {claim_amount_3} AURA from Aura Finance',
+            counterparty=CPT_AURA_FINANCE,
+            address=string_to_evm_address('0xB8d8674a6a7BaA9D2aEE2dfE4b50Da5095Ee1ed4'),
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0xbA3C494F3b3937d1C8101ffBe1588023ad5Ea0A2']])
+def test_aura_finance_claim_rewards_eth(ethereum_inquirer, ethereum_accounts):
+    tx_hash = deserialize_evm_tx_hash('0xefc4dac1c3cf3b7058ae35427edeb984286ade8097717479294999992c508aee')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    user_address, timestamp, gas_str, claim_amount_1, claim_amount_2, claim_amount_3, claim_amount_4, claim_amount_5, claim_amount_6, claim_amount_7, claim_amount_8 = ethereum_accounts[0], TimestampMS(1735498547000), '0.002203275422715936', '112.627896656336279713', '114.159636050862453116', '77.020600939024296766', '8.274820603749552408', '184.126157708212142242', '186.630273453043827374', '170.528893362154769237', '216.7944203094842023'  # noqa: E501
+    expected_events = [
+        EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(FVal(gas_str)),
+            location_label=user_address,
+            notes=f'Burn {gas_str} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=175,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.REWARD,
+            asset=Asset('eip155:1/erc20:0xba100000625a3754423978a60c9317c58a424e3D'),
+            balance=Balance(FVal(claim_amount_1)),
+            location_label=user_address,
+            notes=f'Claim {claim_amount_1} BAL from Aura Finance',
+            address=string_to_evm_address('0xDd1fE5AD401D4777cE89959b7fa587e569Bf125D'),
+            counterparty=CPT_AURA_FINANCE,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=176,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.REWARD,
+            asset=Asset('eip155:1/erc20:0xC0c293ce456fF0ED870ADd98a0828Dd4d2903DBF'),
+            balance=Balance(FVal(claim_amount_2)),
+            location_label=user_address,
+            notes=f'Claim {claim_amount_2} AURA from Aura Finance',
+            counterparty=CPT_AURA_FINANCE,
+            address=ZERO_ADDRESS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=178,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.REWARD,
+            asset=Asset('eip155:1/erc20:0xC0c293ce456fF0ED870ADd98a0828Dd4d2903DBF'),
+            balance=Balance(FVal(claim_amount_3)),
+            location_label=user_address,
+            notes=f'Claim {claim_amount_3} AURA from Aura Finance',
+            counterparty=CPT_AURA_FINANCE,
+            address=string_to_evm_address('0xc6065734B898eEdCf450b28Ec2fC5a45a7DCdb2b'),
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=180,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.REWARD,
+            asset=Asset('eip155:1/erc20:0xD33526068D116cE69F19A9ee46F0bd304F21A51f'),
+            balance=Balance(FVal(claim_amount_4)),
+            location_label=user_address,
+            notes=f'Claim {claim_amount_4} RPL from Aura Finance',
+            counterparty=CPT_AURA_FINANCE,
+            address=string_to_evm_address('0xcaB7Ee4EFae2D27add6f5EBB64cdef9d74Beba21'),
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=182,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.REWARD,
+            asset=Asset('eip155:1/erc20:0xba100000625a3754423978a60c9317c58a424e3D'),
+            balance=Balance(FVal(claim_amount_5)),
+            location_label=user_address,
+            notes=f'Claim {claim_amount_5} BAL from Aura Finance',
+            counterparty=CPT_AURA_FINANCE,
+            address=string_to_evm_address('0x2a14dB8D09dB0542f6A371c0cB308A768227D67D'),
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=183,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.REWARD,
+            asset=Asset('eip155:1/erc20:0xC0c293ce456fF0ED870ADd98a0828Dd4d2903DBF'),
+            balance=Balance(FVal(claim_amount_6)),
+            location_label=user_address,
+            notes=f'Claim {claim_amount_6} AURA from Aura Finance',
+            counterparty=CPT_AURA_FINANCE,
+            address=ZERO_ADDRESS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=185,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.REWARD,
+            asset=Asset('eip155:1/erc20:0xC0c293ce456fF0ED870ADd98a0828Dd4d2903DBF'),
+            balance=Balance(FVal(claim_amount_7)),
+            location_label=user_address,
+            notes=f'Claim {claim_amount_7} AURA from Aura Finance',
+            counterparty=CPT_AURA_FINANCE,
+            address=string_to_evm_address('0xBA45e6500c49570C3C3e3a83C000e47ae1D4C095'),
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=187,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.REWARD,
+            asset=Asset('eip155:1/erc20:0xC0c293ce456fF0ED870ADd98a0828Dd4d2903DBF'),
+            balance=Balance(FVal(claim_amount_8)),
+            location_label=user_address,
+            notes=f'Claim {claim_amount_8} AURA from Aura Finance',
+            counterparty=CPT_AURA_FINANCE,
+            address=string_to_evm_address('0xAc16927429c5c7Af63dD75BC9d8a58c63FfD0147'),
+        ),
+    ]
+    assert events == expected_events
