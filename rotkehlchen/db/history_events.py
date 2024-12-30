@@ -831,9 +831,12 @@ class DBHistoryEvents:
             )
             eth_on_gas_per_address = {row[0]: str(row[1]) for row in cursor}
             cursor.execute(
-                'SELECT chain_id, COUNT(*) FROM evm_transactions '
-                'WHERE timestamp >= ? AND timestamp <= ? GROUP BY chain_id',
-                (from_ts, to_ts),
+                'SELECT chain_id, COUNT(DISTINCT event_identifier) as tx_count FROM evm_events_info '  # noqa: E501
+                'JOIN history_events ON evm_events_info.identifier = history_events.identifier '
+                'JOIN evm_transactions ON evm_transactions.tx_hash = evm_events_info.tx_hash '
+                'WHERE history_events.timestamp >= ? AND history_events.timestamp <= ? AND history_events.asset NOT IN '  # noqa: E501
+                "(SELECT value FROM multisettings WHERE name = 'ignored_asset') GROUP BY chain_id",
+                (from_ts_ms, to_ts_ms),
             )
             transactions_per_chain = {ChainID.deserialize_from_db(row[0]).name: row[1] for row in cursor}  # noqa: E501
             cursor.execute(
@@ -861,11 +864,13 @@ class DBHistoryEvents:
                 for symbol, amount in cursor
             ]
             cursor.execute(
-                "SELECT unixepoch(date(datetime(timestamp, 'unixepoch'), 'localtime'), 'utc'), COUNT(*) as tx_count FROM "  # noqa: E501
-                'evm_transactions WHERE timestamp >= ? AND timestamp <= ? '
-                "GROUP BY date(datetime(timestamp, 'unixepoch'), 'localtime') ORDER BY "
+                "SELECT unixepoch(date(datetime(timestamp/1000, 'unixepoch'), 'localtime'), 'utc'), COUNT(DISTINCT event_identifier) as tx_count "  # noqa: E501
+                'FROM evm_events_info JOIN history_events ON evm_events_info.identifier = history_events.identifier '  # noqa: E501
+                'WHERE timestamp >= ? AND timestamp <= ? AND history_events.asset NOT IN '
+                "(SELECT value FROM multisettings WHERE name = 'ignored_asset') "
+                "GROUP BY date(datetime(timestamp/1000, 'unixepoch'), 'localtime') ORDER BY "
                 'tx_count DESC LIMIT 10',
-                (from_ts, to_ts),
+                (from_ts_ms, to_ts_ms),
             )
             top_days_by_number_of_transactions = [{
                 'timestamp': row[0],
