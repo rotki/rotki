@@ -11,8 +11,10 @@ import requests
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet, BalanceType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
+from rotkehlchen.chain.aggregator import CHAIN_TO_BALANCE_PROTOCOLS
 from rotkehlchen.chain.bitcoin import get_bitcoin_addresses_balances
 from rotkehlchen.chain.ethereum.modules.makerdao.vaults import MakerdaoVault
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import (
     A_AVAX,
@@ -52,7 +54,15 @@ from rotkehlchen.tests.utils.exchanges import (
 from rotkehlchen.tests.utils.factories import UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2
 from rotkehlchen.tests.utils.rotkehlchen import BalancesTestSetup, setup_balances
 from rotkehlchen.tests.utils.substrate import KUSAMA_TEST_NODES, SUBSTRATE_ACC1_KSM_ADDR
-from rotkehlchen.types import ChainID, Location, Price, SupportedBlockchain, Timestamp
+from rotkehlchen.types import (
+    CHAIN_IDS_WITH_BALANCE_PROTOCOLS,
+    SUPPORTED_EVM_CHAINS,
+    ChainID,
+    Location,
+    Price,
+    SupportedBlockchain,
+    Timestamp,
+)
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
@@ -510,6 +520,38 @@ def test_query_all_balances_errors(rotkehlchen_api_server: 'APIServer') -> None:
         contained_in_msg='Not a valid boolean',
         status_code=HTTPStatus.BAD_REQUEST,
     )
+
+
+def test_protocol_balances_all_chains(rotkehlchen_api_server: 'APIServer') -> None:
+    """Test that all chains in CHAIN_TO_BALANCE_PROTOCOLS get their protocol balances queried.
+    Regression test for https://github.com/rotki/rotki/pull/9173
+    """
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    for chain in SUPPORTED_EVM_CHAINS:
+        rotki.chains_aggregator.accounts.add(
+            blockchain=chain,
+            address=string_to_evm_address('0x706A70067BE19BdadBea3600Db0626859Ff25D74'),
+        )
+
+    queried_chains = []
+
+    def mock_query_protocols_with_balance(chain_id: CHAIN_IDS_WITH_BALANCE_PROTOCOLS) -> None:
+        queried_chains.append(chain_id)
+
+    # patch _query_protocols_with_balance to record chains queried,
+    # and also patch a couple other functions since we don't need them taking time here.
+    with (patch.object(
+            rotki.chains_aggregator,
+            '_query_protocols_with_balance',
+            side_effect=mock_query_protocols_with_balance,
+        ),
+        patch.object(rotki.chains_aggregator, 'query_evm_chain_balances'),
+        patch.object(rotki.chains_aggregator, 'query_defi_balances'),
+    ):
+        rotki.chains_aggregator.query_balances()
+
+    for key in CHAIN_TO_BALANCE_PROTOCOLS:
+        assert key in queried_chains
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
