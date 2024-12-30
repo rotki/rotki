@@ -63,7 +63,8 @@
     "autoCreateCalendarReminders": true,
     "askUserUponSizeDiscrepancy": true,
     "autoDetectTokens": true,
-    "csvExportDelimiter": ","
+    "csvExportDelimiter": ",",
+    "use_unified_etherscan_api": false
   },
   "message": ""
 }

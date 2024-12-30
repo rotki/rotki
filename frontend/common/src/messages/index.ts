@@ -23,6 +23,7 @@ export enum NotificationGroup {
 export const NotificationCategory = {
   ADDRESS_MIGRATION: 'address_migration',
   DEFAULT: 'default',
+  ETHERSCAN: 'etherscan',
 } as const;
 
 export type NotificationCategory = (typeof NotificationCategory)[keyof typeof NotificationCategory];

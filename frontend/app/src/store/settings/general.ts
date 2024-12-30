@@ -36,6 +36,7 @@ export const useGeneralSettingsStore = defineStore('settings/general', () => {
   const askUserUponSizeDiscrepancy = useComputedRef(settings, 'askUserUponSizeDiscrepancy');
   const autoDetectTokens = useComputedRef(settings, 'autoDetectTokens');
   const csvExportDelimiter = useComputedRef(settings, 'csvExportDelimiter');
+  const useUnifiedEtherscanApi = useComputedRef(settings, 'useUnifiedEtherscanApi');
 
   const currencySymbol = computed<SupportedCurrency>(() => {
     const currency = get(mainCurrency);
@@ -82,6 +83,7 @@ export const useGeneralSettingsStore = defineStore('settings/general', () => {
     submitUsageAnalytics,
     treatEth2AsEth,
     update,
+    useUnifiedEtherscanApi,
   };
 });
 

@@ -6,8 +6,8 @@ const value = ref<boolean>(false);
 
 const { unifyAccountsTable: enabled } = storeToRefs(useFrontendSettingsStore());
 
-watchImmediate(enabled, () => {
-  set(value, get(enabled));
+watchImmediate(enabled, (enabled) => {
+  set(value, enabled);
 });
 
 const { t } = useI18n();

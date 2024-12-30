@@ -163,7 +163,7 @@ export const useExchangeBalancesStore = defineStore('balances/exchanges', () => 
           location,
         });
         const title = t('actions.balances.exchange_balances.error.title', {
-          location,
+          location: toSentenceCase(location),
         });
 
         notify({
