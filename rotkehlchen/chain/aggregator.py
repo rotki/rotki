@@ -1062,6 +1062,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         Same potential exceptions as ethereum
         """
         self.query_evm_chain_balances(chain=SupportedBlockchain.POLYGON_POS)
+        self._query_protocols_with_balance(chain_id=ChainID.POLYGON_POS)
 
     @protect_with_lock()
     @cache_response_timewise()
@@ -1103,6 +1104,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         Same potential exceptions as ethereum
         """
         self.query_evm_chain_balances(chain=SupportedBlockchain.GNOSIS)
+        self._query_protocols_with_balance(chain_id=ChainID.GNOSIS)
 
     @protect_with_lock()
     @cache_response_timewise()
@@ -1116,6 +1118,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         Same potential exceptions as ethereum
         """
         self.query_evm_chain_balances(chain=SupportedBlockchain.SCROLL)
+        self._query_protocols_with_balance(chain_id=ChainID.SCROLL)
 
     @protect_with_lock()
     @cache_response_timewise()
