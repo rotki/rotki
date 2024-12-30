@@ -1,10 +1,10 @@
 from typing import TYPE_CHECKING
 
-from rotkehlchen.chain.base.modules.paraswap.constants import (
+from rotkehlchen.chain.base.modules.paraswap.v5.constants import (
     PARASWAP_AUGUSTUS_ROUTER,
     PARASWAP_FEE_CLAIMER,
 )
-from rotkehlchen.chain.evm.decoding.paraswap.decoder import ParaswapCommonDecoder
+from rotkehlchen.chain.evm.decoding.paraswap.v5.decoder import Paraswapv5CommonDecoder
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from rotkehlchen.user_messages import MessagesAggregator
 
 
-class ParaswapDecoder(ParaswapCommonDecoder):
+class Paraswapv5Decoder(Paraswapv5CommonDecoder):
 
     def __init__(
             self,

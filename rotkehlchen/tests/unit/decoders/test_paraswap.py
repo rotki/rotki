@@ -2,10 +2,10 @@ import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.chain.base.modules.paraswap.constants import (
+from rotkehlchen.chain.base.modules.paraswap.v5.constants import (
     PARASWAP_AUGUSTUS_ROUTER as PARASWAP_AUGUSTUS_ROUTER_BASE,
 )
-from rotkehlchen.chain.ethereum.modules.paraswap.constants import (
+from rotkehlchen.chain.ethereum.modules.paraswap.v5.constants import (
     PARASWAP_AUGUSTUS_ROUTER,
     PARASWAP_TOKEN_TRANSFER_PROXY,
 )
@@ -161,7 +161,7 @@ def test_simple_swap_eth_fee(ethereum_inquirer, ethereum_accounts):
         sequence_index=3,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.SPEND,
+        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
         balance=Balance(amount=FVal(paraswap_fee)),
@@ -237,7 +237,7 @@ def test_simple_swap_token_fee(ethereum_inquirer, ethereum_accounts):
         sequence_index=4,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.SPEND,
+        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_USDC,
         balance=Balance(amount=FVal(paraswap_fee)),
@@ -400,7 +400,7 @@ def test_multi_swap_token_fee(ethereum_inquirer, ethereum_accounts):
         sequence_index=3,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.SPEND,
+        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_TKST,
         balance=Balance(amount=FVal(paraswap_fee)),
@@ -526,7 +526,7 @@ def test_mega_swap_token_fee(ethereum_inquirer, ethereum_accounts):
         sequence_index=3,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.SPEND,
+        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_USDC,
         balance=Balance(amount=FVal(paraswap_fee)),
@@ -1007,7 +1007,7 @@ def test_simple_buy_fee_arbitrum_one(arbitrum_one_inquirer, arbitrum_one_account
         sequence_index=28,
         timestamp=timestamp,
         location=Location.ARBITRUM_ONE,
-        event_type=HistoryEventType.SPEND,
+        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_BRIDGED_USDC,
         balance=Balance(amount=FVal(paraswap_fee)),
@@ -1139,7 +1139,7 @@ def test_direct_curve_v1_swap_optimism(optimism_inquirer, optimism_accounts):
         sequence_index=16,
         timestamp=timestamp,
         location=Location.OPTIMISM,
-        event_type=HistoryEventType.SPEND,
+        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_sUSD,
         balance=Balance(amount=FVal(paraswap_fee)),
@@ -1205,7 +1205,7 @@ def test_direct_uniswap_v3_swap_polygon(polygon_pos_inquirer, polygon_pos_accoun
         sequence_index=3,
         timestamp=timestamp,
         location=Location.POLYGON_POS,
-        event_type=HistoryEventType.SPEND,
+        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_POLYGON_POS_DAI,
         balance=Balance(amount=FVal(paraswap_fee)),
