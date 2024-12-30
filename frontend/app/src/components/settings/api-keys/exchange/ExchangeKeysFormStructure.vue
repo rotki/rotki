@@ -29,6 +29,14 @@ const COINBASE_FORMATS = {
 };
 
 const customLabel: Record<string, LocationConfig> = {
+  bitmex: {
+    apiKey: {
+      label: t('exchange_settings.inputs.id'),
+    },
+    apiSecret: {
+      label: t('exchange_settings.inputs.secret'),
+    },
+  },
   coinbase: {
     apiKey: {
       hint: `${t('exchange_settings.inputs.format')}: ${COINBASE_FORMATS.apiKeyNameFormat}`,
