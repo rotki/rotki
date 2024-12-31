@@ -895,7 +895,7 @@ def test_genesis_transaction_no_address(ethereum_inquirer):
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
-def test_phising_zero_transfers(database, ethereum_inquirer):
+def test_phishing_zero_transfers(database, ethereum_inquirer):
     """Checks that zero transfer phishing transactions are marked as ignored."""
     tx_hex = '0xb45ef1a202a8d9e983cf59129d28f79057969bb822f62e4b7d9f1ac8853d23ed'
     evmhash = deserialize_evm_tx_hash(tx_hex)
