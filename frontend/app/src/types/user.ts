@@ -58,6 +58,7 @@ const GeneralSettings = z.object({
   submitUsageAnalytics: z.boolean(),
   treatEth2AsEth: z.boolean(),
   uiFloatingPrecision: z.number(),
+  useUnifiedEtherscanApi: z.boolean(),
 });
 
 export type GeneralSettings = z.infer<typeof GeneralSettings>;
@@ -163,6 +164,7 @@ function getGeneralSettings(settings: UserSettings): GeneralSettings {
     submitUsageAnalytics: settings.submitUsageAnalytics,
     treatEth2AsEth: settings.treatEth2AsEth,
     uiFloatingPrecision: settings.uiFloatingPrecision,
+    useUnifiedEtherscanApi: settings.useUnifiedEtherscanApi,
   };
 }
 
