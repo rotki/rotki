@@ -680,7 +680,7 @@ class CurveCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin)
         gauge_address = context.tx_log.address
         raw_amount = int.from_bytes(context.tx_log.data)
         found_event_modifying_balances = False
-        gauge_event = None
+        gauge_events = []
         # get pool tokens for this gauge
         lp_and_gauge_token_addresses = get_lp_and_gauge_token_addresses(
             pool_address=context.tx_log.address,
@@ -728,7 +728,7 @@ class CurveCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin)
                 event.counterparty = CPT_CURVE
                 event.product = EvmProduct.GAUGE
                 found_event_modifying_balances = True
-                gauge_event = event
+                gauge_events.append(event)
                 if context.tx_log.topics[0] == GAUGE_DEPOSIT:
                     event.event_type = HistoryEventType.DEPOSIT
                     event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
@@ -748,7 +748,7 @@ class CurveCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin)
 
         # `pair_note` is formatted twice, first below with `symbol` and `address`. `amount` is left
         # due to double {}. Then later in the action item `amount` is replaced by its value.
-        action_items = [] if gauge_token is None or gauge_event is None else [ActionItem(
+        action_items = [] if gauge_token is None or len(gauge_events) == 0 else [ActionItem(
             action='transform',
             from_event_type=from_event_type,
             from_event_subtype=HistoryEventSubType.NONE,
@@ -759,7 +759,7 @@ class CurveCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin)
                 address=gauge_address,
             ),  # amount set at action item process
             to_counterparty=CPT_CURVE,
-            paired_events_data=((gauge_event,), from_event_type == HistoryEventType.RECEIVE),
+            paired_events_data=(gauge_events, from_event_type == HistoryEventType.RECEIVE),
         )]
 
         return DecodingOutput(
