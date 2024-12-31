@@ -888,6 +888,26 @@ def test_recursion_in_inquirer(inquirer: Inquirer, globaldb: GlobalDBHandler):
     assert inquirer.find_usd_price(A_USDT) != ZERO
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+def test_recursion_handling_in_inquirer(inquirer: Inquirer, globaldb: GlobalDBHandler):
+    """This is a regression test that checks for the handling of the recursion error in the inquirer."""  # noqa: E501
+    a_usdt = A_USDT.resolve_to_evm_token()
+    with globaldb.conn.write_ctx() as write_cursor:
+        write_cursor.execute(
+            'INSERT INTO price_history(from_asset, to_asset, source_type, price, timestamp) VALUES(?, ?, ?, ?, ?)',  # noqa: E501
+            (a_usdt.identifier, A_BTC.identifier, 'E', '5', ts_now()),
+        )
+        write_cursor.execute(
+            'INSERT INTO price_history(from_asset, to_asset, source_type, price, timestamp) VALUES(?, ?, ?, ?, ?)',  # noqa: E501
+            (A_BTC.identifier, a_usdt.identifier, 'E', '2', ts_now()),
+        )
+
+    price, oracle = inquirer.find_usd_price_and_oracle(A_USDT)
+    assert oracle == CurrentPriceOracle.MANUALCURRENT
+    assert price == Price(FVal('10.010'))
+
+
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 def test_recursion_decorator(inquirer: Inquirer):
     """Test that the decorator handle_recursion_error works properly"""

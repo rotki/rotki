@@ -331,7 +331,7 @@ def handle_recursion_error(return_price_only: bool = False) -> Callable:
                 if return_price_only:
                     return Price(ZERO)
 
-                return Price(ZERO), CurrentPriceOracle.BLOCKCHAIN, True
+                return Price(ZERO), CurrentPriceOracle.BLOCKCHAIN
             return result
         return wrapper  # type: ignore
     return decorator

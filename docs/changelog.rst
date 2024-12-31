@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Recursion errors during price inquiry are now handled properly.
 * :bug:`-` rotki Wrapped will no longer count transactions with ignored assets
 * :bug:`-` rotki will correctly decode all the Aura rewards claim events.
 * :bug:`-` rotki will now properly detect supported protocol balances in Polygon PoS, Gnosis, and Scroll.
