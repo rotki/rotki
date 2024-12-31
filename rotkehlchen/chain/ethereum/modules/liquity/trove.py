@@ -217,8 +217,8 @@ class Liquity(HasDSProxy):
                 calls=calls,
             )
         except (RemoteError, BlockchainQueryError) as e:
-            self.msg_aggregator.add_error(
-                f'Failed to query information about stability pool {e!s}',
+            log.error(
+                f'Failed to query information about liquity stability pool. {e!s}',
             )
             return {}
 
