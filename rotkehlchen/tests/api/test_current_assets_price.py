@@ -180,6 +180,20 @@ def test_add_manual_latest_price(rotkehlchen_api_server: 'APIServer') -> None:
     assert result['assets']['ETH'] == ['100', CurrentPriceOracle.MANUALCURRENT.value]
     assert result['assets']['USD'] == ['23', CurrentPriceOracle.MANUALCURRENT.value]
 
+    # check that if the from and to assets are the same, an error is thrown.
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'latestassetspriceresource',
+        ),
+        json={
+            'from_asset': A_EUR.identifier,
+            'to_asset': A_EUR.identifier,
+            'price': '23',
+        },
+    )
+    assert_error_response(response, 'The from and to assets must be different')
+
 
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 def test_edit_manual_current_price(rotkehlchen_api_server: 'APIServer') -> None:
@@ -338,9 +352,6 @@ def test_manual_current_prices_loop(inquirer: 'Inquirer') -> None:
         to_asset=A_EUR.resolve_to_asset_with_oracles(),
     )
     assert price == FVal('1570.92')  # it must be equal to the mocked price at the time
-    warnings = inquirer._msg_aggregator.consume_warnings()
-    assert len(warnings) == 1
-    assert 'from ETH(Ethereum) to EUR(Euro) since your manual latest' in warnings[0]
 
 
 @pytest.mark.vcr

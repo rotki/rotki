@@ -2628,6 +2628,18 @@ class ManualPriceSchema(Schema):
     to_asset = AssetField(expected_type=Asset, required=True)
     price = PriceField(required=True)
 
+    @validates_schema
+    def validate_manual_price_schema(
+            self,
+            data: dict[str, Any],
+            **_kwargs: Any,
+    ) -> None:
+        if data['from_asset'] == data['to_asset']:
+            raise ValidationError(
+                message='The from and to assets must be different',
+                field_name='from_asset',
+            )
+
 
 class TimedManualPriceSchema(ManualPriceSchema):
     timestamp = TimestampField(required=True)
