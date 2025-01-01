@@ -16,6 +16,7 @@ from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.errors.misc import NotERC20Conformant, NotERC721Conformant
+from rotkehlchen.globaldb.cache import globaldb_get_general_cache_values
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -23,7 +24,7 @@ from rotkehlchen.types import MORPHO_VAULT_PROTOCOL, CacheType, ChecksumEvmAddre
 from rotkehlchen.utils.misc import bytes_to_address
 
 from .constants import CPT_MORPHO
-from .utils import query_morpho_vaults
+from .utils import query_morpho_reward_distributors, query_morpho_vaults
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import Asset, EvmToken
@@ -50,7 +51,6 @@ class MorphoCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
             base_tools: 'BaseDecoderTools',
             msg_aggregator: 'MessagesAggregator',
             bundlers: set['ChecksumEvmAddress'],
-            rewards_distributors: list['ChecksumEvmAddress'],
             weth: 'Asset',
     ) -> None:
         super().__init__(
@@ -60,16 +60,21 @@ class MorphoCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
         )
         self.vaults: set[ChecksumEvmAddress] = set()
         self.bundlers = bundlers
-        self.rewards_distributors = rewards_distributors
+        self.rewards_distributors: list[ChecksumEvmAddress] = []
         self.weth = weth
 
     def reload_data(self) -> Mapping['ChecksumEvmAddress', tuple[Any, ...]] | None:
         """Check that cache is up to date and refresh cache from db.
         Returns a fresh addresses to decoders mapping.
         """
+        updated = False
         if should_update_protocol_cache(CacheType.MORPHO_VAULTS) is True:
             query_morpho_vaults(database=self.evm_inquirer.database)
-        elif len(self.vaults) != 0:
+            updated = True
+        if should_update_protocol_cache(CacheType.MORPHO_REWARD_DISTRIBUTORS) is True:
+            query_morpho_reward_distributors()
+            updated = True
+        if updated is False and len(self.vaults) != 0 and len(self.rewards_distributors) != 0:
             return None  # we didn't update the globaldb cache, and we have the data already
 
         with GlobalDBHandler().conn.read_ctx() as cursor:
@@ -77,12 +82,20 @@ class MorphoCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
             bindings = (MORPHO_VAULT_PROTOCOL, self.evm_inquirer.chain_id.serialize_for_db())
 
             cursor.execute(f'SELECT COUNT(*) {query_body}', bindings)
-            if cursor.fetchone()[0] == len(self.vaults):
-                return None  # up to date
+            if cursor.fetchone()[0] != len(self.vaults):
+                # we are missing new vaults. Populate the cache
+                cursor.execute(f'SELECT protocol, address {query_body}', bindings)
+                self.vaults = {string_to_evm_address(row[1]) for row in cursor}
 
-            # we are missing new vaults. Populate the cache
-            cursor.execute(f'SELECT protocol, address {query_body}', bindings)
-            self.vaults = {string_to_evm_address(row[1]) for row in cursor}
+            self.rewards_distributors = [
+                string_to_evm_address(address) for address in globaldb_get_general_cache_values(
+                    cursor=cursor,
+                    key_parts=(
+                        CacheType.MORPHO_REWARD_DISTRIBUTORS,
+                        str(self.evm_inquirer.chain_id),
+                    ),
+                )
+            ]
 
         return self.addresses_to_decoders()
 
