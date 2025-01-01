@@ -86,15 +86,19 @@ export function userSettings(): UserSettingsApi {
   } = storeToRefs(useSessionSettingsStore());
   const {
     dateInputFormat,
+    decimalSeparator,
     graphZeroBased,
     selectedTheme,
     showGraphRangeSelector,
+    subscriptDecimals,
+    thousandSeparator,
   } = storeToRefs(useFrontendSettingsStore());
   const { currencySymbol, floatingPrecision } = storeToRefs(useGeneralSettingsStore());
 
   return {
     currencySymbol,
     dateInputFormat,
+    decimalSeparator,
     floatingPrecision,
     graphZeroBased,
     privacyMode,
@@ -104,6 +108,8 @@ export function userSettings(): UserSettingsApi {
     shouldShowAmount,
     shouldShowPercentage,
     showGraphRangeSelector,
+    subscriptDecimals,
+    thousandSeparator,
   };
 }
 

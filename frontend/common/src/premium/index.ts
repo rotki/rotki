@@ -83,6 +83,9 @@ export interface DataUtilities {
 export interface UserSettingsApi {
   currencySymbol: Ref<string>;
   floatingPrecision: Ref<number>;
+  decimalSeparator: Ref<string>;
+  thousandSeparator: Ref<string>;
+  subscriptDecimals: Ref<boolean>;
   shouldShowAmount: Ref<boolean>;
   shouldShowPercentage: Ref<boolean>;
   scrambleData: Ref<boolean>;
