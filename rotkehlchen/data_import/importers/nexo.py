@@ -57,18 +57,23 @@ class NexoImporter(BaseExchangeImporter):
         - DeserializationError
         """
         ignored_entries = (
-            'ExchangeToWithdraw',
-            'DepositToExchange',
+            'Exchange To Withdraw',
+            'Deposit To Exchange',  # this is the same as "Exchange Deposited On"
             'Repayment',  # informational loan operation
-            'UnlockingTermDeposit',  # Move between nexo wallets
-            'LockingTermDeposit',  # Move between nexo wallets
-            'TransferIn',  # Transfer between nexo wallets
-            'TransferOut',  # Transfer between nexo wallets
+            'Unlocking Term Deposit',  # Move between nexo wallets
+            'Locking Term Deposit',  # Move between nexo wallets
+            'Transfer In',  # Transfer between nexo wallets
+            'Transfer Out',  # Transfer between nexo wallets
+            'Transfer From Pro Wallet',  # Transfer between nexo wallets
+            'Transfer To Pro Wallet',  # Transfer between nexo wallets
+            'Nexo Card Purchase',  # this is the same as "Withdraw Exchanged"
+            'Credit Card Fiatx Exchange To Withdraw',  # internal conversion
+            'Top up Crypto',  # this is the same as "Exchange Deposited On"
         )
 
         if 'rejected' not in csv_row['Details']:
             timestamp = deserialize_timestamp_from_date(
-                date=csv_row['Date / Time'],
+                date=csv_row['Date / Time (UTC)'],
                 formatstr=timestamp_format,
                 location='NEXO',
             )
@@ -80,12 +85,12 @@ class NexoImporter(BaseExchangeImporter):
         entry_type = csv_row['Type']
         transaction = csv_row['Transaction']
 
-        if entry_type in {'Exchange', 'CreditCardStatus'}:
+        if entry_type in {'Exchange', 'Credit Card Status'}:
             raise UnsupportedCSVEntry(
                 'Found exchange/credit card status transaction in nexo csv import but the entry '
                 'will be ignored since not enough information is provided about the trade.',
             )
-        if entry_type in {'Deposit', 'ExchangeDepositedOn'}:
+        if entry_type in {'Deposit', 'Exchange Deposited On'}:
             self.add_history_events(write_cursor, [AssetMovement(
                 timestamp=ts_sec_to_ms(timestamp),
                 location=Location.NEXO,
@@ -94,7 +99,7 @@ class NexoImporter(BaseExchangeImporter):
                 balance=Balance(amount),
                 unique_id=transaction,
             )])
-        elif entry_type in {'Withdrawal', 'WithdrawExchanged'}:
+        elif entry_type in {'Withdrawal', 'Withdraw Exchanged'}:
             self.add_history_events(write_cursor, [AssetMovement(
                 timestamp=ts_sec_to_ms(timestamp),
                 location=Location.NEXO,
@@ -113,7 +118,7 @@ class NexoImporter(BaseExchangeImporter):
                 unique_id=transaction,
                 is_fee=True,
             )])
-        elif entry_type in {'Interest', 'Bonus', 'Dividend', 'FixedTermInterest', 'Cashback', 'ReferralBonus'}:  # noqa: E501
+        elif entry_type in {'Interest', 'Bonus', 'Dividend', 'Fixed Term Interest', 'Cashback', 'Exchange Cashback', 'Referral Bonus'}:  # noqa: E501
             # A user shared a CSV file where some entries marked as interest had negative amounts.
             # we couldn't find information about this since they seem internal transactions made
             # by nexo but they appear like a trade from asset -> nexo in order to gain interest
