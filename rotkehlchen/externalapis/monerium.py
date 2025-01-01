@@ -14,6 +14,7 @@ from rotkehlchen.history.events.structures.types import HistoryEventSubType, His
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import EVMTxHash, Location, deserialize_evm_tx_hash
 from rotkehlchen.utils.misc import set_user_agent, ts_now
+from rotkehlchen.utils.network import create_session
 from rotkehlchen.utils.serialization import jsonloads_list
 
 if TYPE_CHECKING:
@@ -32,7 +33,7 @@ class Monerium:
 
     def __init__(self, database: 'DBHandler', user: str, password: str) -> None:
         self.database = database
-        self.session = requests.session()
+        self.session = create_session()
         self.user = user
         self.password = password
         set_user_agent(self.session)

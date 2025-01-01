@@ -27,6 +27,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChainID, ExternalService, Price, Timestamp
 from rotkehlchen.utils.misc import create_timestamp, timestamp_to_date, ts_now
 from rotkehlchen.utils.mixins.penalizable_oracle import PenalizablePriceOracleMixin
+from rotkehlchen.utils.network import create_session
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -50,7 +51,7 @@ class Defillama(
         )
         HistoricalPriceOracleInterface.__init__(self, oracle_name='defillama')
         PenalizablePriceOracleMixin.__init__(self)
-        self.session = requests.session()
+        self.session = create_session()
         self.session.headers.update({'User-Agent': 'rotkehlchen'})
         self.last_rate_limit = 0
         self.db: DBHandler | None  # type: ignore  # "solve" the self.db discrepancy

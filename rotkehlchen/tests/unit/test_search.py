@@ -17,8 +17,8 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-def test_search_assets_levensthein_multiple(globaldb, database):  # pylint: disable=unused-argument
-    """Test that parallel access to levensthein search does not raise any errors"""
+def test_search_assets_levenshtein_multiple(globaldb, database):  # pylint: disable=unused-argument
+    """Test that parallel access to levenshtein search does not raise any errors"""
     filter_query = LevenshteinFilterQuery.make(substring_search='ETH')
 
     def do_search():

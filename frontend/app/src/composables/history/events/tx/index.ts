@@ -228,7 +228,7 @@ export const useHistoryTransactions = createSharedComposable(() => {
           display: true,
           message: t('actions.exchange_events.error.description', {
             error,
-            exchange,
+            ...exchange,
           }),
           title: t('actions.exchange_events.error.title'),
         });

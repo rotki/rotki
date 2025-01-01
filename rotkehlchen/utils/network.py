@@ -6,6 +6,7 @@ from typing import Any, Literal, overload
 
 import gevent
 import requests
+from requests.adapters import HTTPAdapter
 
 from rotkehlchen.constants import GLOBAL_REQUESTS_TIMEOUT
 from rotkehlchen.db.settings import CachedSettings
@@ -14,6 +15,22 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+
+def create_session() -> requests.Session:
+    """Create a requests session with the configuration to retry a maximum
+    of 3 times on connection errors or DNS resolution errors.
+
+    From the requests docs about max_retries:
+    The maximum number of retries each connection should attempt. Note, this applies only
+    to failed DNS lookups, socket connections and connection timeouts, never to requests
+    where data has made it to the server.
+    """
+    session = requests.Session()
+    adapter = HTTPAdapter(max_retries=5)
+    session.mount('http://', adapter)
+    session.mount('https://', adapter)
+    return session
 
 
 def request_get(

@@ -24,6 +24,7 @@ from rotkehlchen.utils.misc import (
     timestamp_to_iso8601,
     ts_now,
 )
+from rotkehlchen.utils.network import create_session
 from rotkehlchen.utils.serialization import jsonloads_list
 
 if TYPE_CHECKING:
@@ -83,7 +84,7 @@ class GnosisPay:
 
     def __init__(self, database: 'DBHandler', session_token: str) -> None:
         self.database = database
-        self.session = requests.session()
+        self.session = create_session()
         self.session_token = session_token
         set_user_agent(self.session)
 

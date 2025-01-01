@@ -2376,9 +2376,11 @@
       "api_key_name": "API Key Name",
       "api_secret": "API Secret",
       "format": "Format",
+      "id": "ID",
       "kraken_account": "Select the type of your Kraken account",
       "passphrase": "Passphrase",
       "private_key": "Private Key",
+      "secret": "Secret",
       "signing_key": "Signing Key"
     },
     "keys": "Keys",

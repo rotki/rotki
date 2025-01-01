@@ -11,7 +11,7 @@ from rotkehlchen.accounting.structures.balance import Balance, BalanceType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.ethereum.modules.ens.constants import CPT_ENS
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
-from rotkehlchen.constants.assets import A_BTC, A_ETH, A_ETH2, A_EUR
+from rotkehlchen.constants.assets import A_BTC, A_ETH, A_ETH2, A_EUR, A_USDC
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -539,12 +539,19 @@ def test_query_wrap(
             ],
         )
 
+        db.add_to_ignored_assets(write_cursor=write_cursor, asset=A_USDC)
+        tx_hash1, tx_hash2, tx_hash3 = make_evm_tx_hash(), make_evm_tx_hash(), make_evm_tx_hash()
+        tx_hash_to_chain = {
+            make_evm_tx_hash(): Location.ETHEREUM,
+            make_evm_tx_hash(): Location.BASE,
+            make_evm_tx_hash(): Location.ARBITRUM_ONE,
+        }
         events_db = DBHistoryEvents(db)
         events_db.add_history_events(
             write_cursor=write_cursor,
             history=[
                 EvmEvent(
-                    tx_hash=make_evm_tx_hash(),
+                    tx_hash=tx_hash,
                     sequence_index=1,
                     timestamp=TimestampMS(1734373795000),
                     location=chain,
@@ -555,9 +562,9 @@ def test_query_wrap(
                     counterparty=CPT_GAS,
                     location_label=ethereum_accounts[0],
                 )
-            for chain in (Location.ETHEREUM, Location.GNOSIS, Location.ARBITRUM_ONE)] + [
+            for tx_hash, chain in tx_hash_to_chain.items()] + [
                 EvmEvent(  # event happening last year
-                    tx_hash=make_evm_tx_hash(),
+                    tx_hash=tx_hash1,
                     sequence_index=1,
                     timestamp=TimestampMS(1702751395000),
                     location=Location.BASE,
@@ -568,8 +575,8 @@ def test_query_wrap(
                     counterparty=CPT_GAS,
                     location_label=ethereum_accounts[0],
                 ),
-                EvmEvent(  # example transactions to test counterparties
-                    tx_hash=make_evm_tx_hash(),
+                EvmEvent(  # event to test counterparties
+                    tx_hash=tx_hash2,
                     sequence_index=1,
                     timestamp=TimestampMS(1734373795000),
                     location=Location.ETHEREUM,
@@ -580,6 +587,28 @@ def test_query_wrap(
                     counterparty=CPT_ENS,
                     location_label=ethereum_accounts[0],
                 ),
+                EvmEvent(  # second event with the same tx hash - should not be counted separately
+                    tx_hash=tx_hash2,
+                    sequence_index=2,
+                    timestamp=TimestampMS(1734373795000),
+                    location=Location.ETHEREUM,
+                    event_type=HistoryEventType.SPEND,
+                    event_subtype=HistoryEventSubType.FEE,
+                    asset=A_ETH,
+                    balance=Balance(amount=FVal(0.1)),
+                    location_label=ethereum_accounts[0],
+                ),
+                EvmEvent(  # event with ignored asset
+                    tx_hash=tx_hash3,
+                    sequence_index=1,
+                    timestamp=TimestampMS(1734373795000),
+                    location=Location.GNOSIS,
+                    event_type=HistoryEventType.SPEND,
+                    event_subtype=HistoryEventSubType.NONE,
+                    asset=A_USDC,
+                    balance=Balance(amount=FVal(5)),
+                    location_label=ethereum_accounts[0],
+                ),
             ],
         )
 
@@ -587,8 +616,8 @@ def test_query_wrap(
         dbevmtx.add_evm_transactions(
             write_cursor=write_cursor,
             evm_transactions=[EvmTransaction(
-                tx_hash=make_evm_tx_hash(),
-                chain_id=chain,
+                tx_hash=tx_hash,
+                chain_id=ChainID(chain.to_chain_id()),
                 timestamp=Timestamp(1718562595),
                 block_number=3,
                 from_address=make_evm_address(),
@@ -599,14 +628,14 @@ def test_query_wrap(
                 gas_used=25000000,
                 input_data=b'',
                 nonce=1,
-            ) for chain in (ChainID.ETHEREUM, ChainID.BASE)],
+            ) for tx_hash, chain in tx_hash_to_chain.items()],
             relevant_address=ethereum_accounts[0],
         )
 
         dbevmtx.add_evm_transactions(
             write_cursor=write_cursor,
             evm_transactions=[EvmTransaction(
-                tx_hash=make_evm_tx_hash(),
+                tx_hash=tx_hash1,
                 chain_id=chain,
                 timestamp=Timestamp(1702751395),  # timestamp outside the range
                 block_number=3,
@@ -619,6 +648,25 @@ def test_query_wrap(
                 input_data=b'',
                 nonce=1,
             ) for chain in (ChainID.ETHEREUM,)],
+            relevant_address=ethereum_accounts[0],
+        )
+
+        dbevmtx.add_evm_transactions(
+            write_cursor=write_cursor,
+            evm_transactions=[EvmTransaction(
+                tx_hash=tx_hash3,  # tx corresponding to the event with an ignored asset
+                chain_id=ChainID.GNOSIS,
+                timestamp=Timestamp(1718562595),
+                block_number=3,
+                from_address=make_evm_address(),
+                to_address=make_evm_address(),
+                value=4000000,
+                gas=5000000,
+                gas_price=2000000000,
+                gas_used=25000000,
+                input_data=b'',
+                nonce=1,
+            )],
             relevant_address=ethereum_accounts[0],
         )
 
@@ -646,12 +694,13 @@ def test_query_wrap(
     assert FVal(result['eth_on_gas']).is_close('0.3')
     assert FVal(result['eth_on_gas_per_address'][ethereum_accounts[0]]).is_close('0.3')
     assert result['transactions_per_chain'] == {
+        'ARBITRUM_ONE': 1,
         'ETHEREUM': 1,
         'BASE': 1,
     }
     assert result['top_days_by_number_of_transactions'] == [
-        {'timestamp': 1718496000, 'amount': '2'},
+        {'timestamp': 1734307200, 'amount': '4'},
     ]
     assert result['gnosis_max_payments_by_currency'] == [{'symbol': 'EUR', 'amount': '42.24'}]
     assert result['transactions_per_protocol'] == [{'protocol': 'ens', 'transactions': 1}]
-    assert result['score'] == 1631
+    assert result['score'] == 1684

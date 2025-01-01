@@ -27,6 +27,7 @@ from rotkehlchen.types import (
 )
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import from_wei, iso8601ts_to_timestamp, set_user_agent, ts_sec_to_ms
+from rotkehlchen.utils.network import create_session
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 if TYPE_CHECKING:
@@ -51,7 +52,7 @@ class Blockscout(ExternalServiceWithApiKey):
             service_name={v: k for k, v in BLOCKSCOUT_TO_CHAINID.items()}[self.chain_id],
         )
         self.msg_aggregator = msg_aggregator
-        self.session = requests.session()
+        self.session = create_session()
         set_user_agent(self.session)
         match blockchain:
             case SupportedBlockchain.ETHEREUM:

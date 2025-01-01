@@ -32,6 +32,7 @@ from rotkehlchen.serialization.deserialize import (
 )
 from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind, ExternalService
 from rotkehlchen.user_messages import MessagesAggregator
+from rotkehlchen.utils.network import create_session
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -139,7 +140,7 @@ class Opensea(ExternalServiceWithApiKey):
     ) -> None:
         super().__init__(database=database, service_name=ExternalService.OPENSEA)
         self.msg_aggregator = msg_aggregator
-        self.session = requests.session()
+        self.session = create_session()
         self.session.headers.update({
             'Content-Type': 'application/json',
         })

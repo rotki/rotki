@@ -1,7 +1,10 @@
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any, Final
 
-from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
+from rotkehlchen.chain.ethereum.utils import (
+    asset_normalized_value,
+    token_normalized_value_decimals,
+)
 from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS, ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.aura_finance.constants import CPT_AURA_FINANCE
 from rotkehlchen.chain.evm.decoding.balancer.constants import CPT_BALANCER_V2
@@ -20,13 +23,16 @@ from rotkehlchen.types import ChainID, ChecksumEvmAddress
 from rotkehlchen.utils.misc import bytes_to_address
 
 if TYPE_CHECKING:
+    from rotkehlchen.assets.asset import Asset
     from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
     from rotkehlchen.user_messages import MessagesAggregator
 
 LOCK_4BYTE: Final = b'K\xbc\x17\n'
-CLAIM_REWARD_4BYTE: Final = b'\xc6\xa0y`'
+GET_REWARD_4BYTE: Final = b'pP\xcc\xd9'
+CLAIM_REWARDS_L1_4BYTE: Final = b'\xd3F@\xb2'
+CLAIM_REWARDS_L2_4BYTE: Final = b'\xc6\xa0y`'
 LOCK_ETHEREUM_AND_BASE_4BYTE: Final = b'(-?\xdf'
 
 LOCKED_TOPIC: Final = b'\x9f\x1e\xc8\xc8\x80\xf7g\x98\xe7\xb7\x932]b^\x9b`\xe4\x08*U<\x98\xf4+l\xda6\x8d\xd6\x00\x08'  # noqa: E501
@@ -48,6 +54,7 @@ class AuraFinanceCommonDecoder(DecoderInterface):
             base_tools: 'BaseDecoderTools',
             msg_aggregator: 'MessagesAggregator',
             claim_zap_address: ChecksumEvmAddress,
+            base_reward_tokens: tuple['Asset', 'Asset'],  # this is always the AURA and BAL tokens of the chain  # noqa: E501
     ) -> None:
         super().__init__(
             evm_inquirer=evm_inquirer,
@@ -55,6 +62,7 @@ class AuraFinanceCommonDecoder(DecoderInterface):
             msg_aggregator=msg_aggregator,
         )
         self.claim_zap_address = claim_zap_address
+        self.base_reward_tokens = base_reward_tokens
 
     def _decode_lock_aura(self, context: DecoderContext) -> DecodingOutput:
         """Decodes locking AURA events on Ethereum and Base (vlAURA)."""
@@ -117,21 +125,35 @@ class AuraFinanceCommonDecoder(DecoderInterface):
         return DEFAULT_DECODING_OUTPUT
 
     def _decode_reward_claims(self, context: DecoderContext) -> DecodingOutput:
-        """Decodes Aura Finance reward claiming events."""
+        """Decodes Aura Finance reward claiming events.
+
+        It handles two types of reward transactions: 'getReward' and 'claimRewards'.
+
+        `getReward` transactions are to only claim AURA and BAL rewards.
+        `claimRewards` transactions handle other reward tokens (including AURA and BAL).
+        """
         if (
-            context.tx_log.topics[0] != REWARD_PAID_TOPIC and
+            (is_claims_reward := context.transaction.input_data[:4] in {CLAIM_REWARDS_L1_4BYTE, CLAIM_REWARDS_L2_4BYTE}) is True and  # noqa: E501
             context.transaction.to_address != self.claim_zap_address
         ):
             return DEFAULT_DECODING_OUTPUT
 
         recipient = bytes_to_address(context.tx_log.topics[1])
+        amount_paid = int.from_bytes(context.tx_log.data[:32])
         for event in context.decoded_events:
             if (
                 event.event_type == HistoryEventType.RECEIVE and
                 event.event_subtype == HistoryEventSubType.NONE and
+                ((crypto_asset := event.asset.resolve_to_crypto_asset()) in self.base_reward_tokens or is_claims_reward) and  # noqa: E501
+                (
+                    # there's an aura token transfer as reward but the RewardPaid
+                    # event is not emitted for that so that's handled here.
+                    event.balance.amount == asset_normalized_value(amount=amount_paid, asset=crypto_asset) or  # noqa: E501
+                    event.asset in self.base_reward_tokens
+                ) and
                 event.location_label == recipient
             ):
-                event.notes = f'Claim {event.balance.amount} {event.asset.resolve_to_asset_with_symbol().symbol} from Aura Finance'  # noqa: E501
+                event.notes = f'Claim {event.balance.amount} {crypto_asset.symbol} from Aura Finance'  # noqa: E501
                 event.event_subtype = HistoryEventSubType.REWARD
                 event.counterparty = CPT_AURA_FINANCE
 
@@ -230,7 +252,11 @@ class AuraFinanceCommonDecoder(DecoderInterface):
         }
 
     def decoding_by_input_data(self) -> dict[bytes, dict[bytes, Callable]]:
-        decoders = {CLAIM_REWARD_4BYTE: {REWARD_PAID_TOPIC: self._decode_reward_claims}}
+        decoders = {
+            GET_REWARD_4BYTE: {REWARD_PAID_TOPIC: self._decode_reward_claims},
+            CLAIM_REWARDS_L1_4BYTE: {REWARD_PAID_TOPIC: self._decode_reward_claims},
+            CLAIM_REWARDS_L2_4BYTE: {REWARD_PAID_TOPIC: self._decode_reward_claims},
+        }
         if self.evm_inquirer.chain_id in (ChainID.ETHEREUM, ChainID.BASE):
             decoders[LOCK_ETHEREUM_AND_BASE_4BYTE] = {STAKED_TOPIC: self._decode_lock_aura}
         if self.evm_inquirer.chain_id != ChainID.ETHEREUM:

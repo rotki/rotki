@@ -10,6 +10,7 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import SupportedBlockchain, Timestamp
 from rotkehlchen.utils.misc import iso8601ts_to_timestamp
+from rotkehlchen.utils.network import create_session
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -38,7 +39,7 @@ class CowswapAPI:
 
     def __init__(self, database: 'DBHandler', chain: SUPPORTED_COWSWAP_BLOCKCHAIN) -> None:
         self.database = database
-        self.session = requests.session()
+        self.session = create_session()
         self.api_url = f'https://api.cow.fi/{CHAIN_MAPPING[chain]}/api/v1'
 
     def _query(self, endpoint: str) -> dict[str, Any]:

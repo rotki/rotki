@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING
 
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.evm.decoding.aura_finance.decoder import AuraFinanceCommonDecoder
 from rotkehlchen.chain.evm.types import string_to_evm_address
 
@@ -22,4 +23,8 @@ class AuraFinanceDecoder(AuraFinanceCommonDecoder):
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
             claim_zap_address=string_to_evm_address('0x617963D46B882ecE880Ab18Bc232f513E91FDd47'),
+            base_reward_tokens=(
+                Asset('eip155:100/erc20:0x1509706a6c66CA549ff0cB464de88231DDBe213B'),  # Aura
+                Asset('eip155:100/erc20:0xFE8B128bA8C78aabC59d4c64cEE7fF28e9379921'),  # BAL
+            ),
         )

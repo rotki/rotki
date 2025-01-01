@@ -14,6 +14,7 @@ from rotkehlchen.constants.assets import (
     A_CUSDC,
     A_CWBTC,
     A_CZRX,
+    A_DPI,
     A_ETH,
     A_EUR,
     A_USD,
@@ -330,7 +331,7 @@ def test_cryptocompare_query_with_api_key(cryptocompare):
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_starknet_historical_price_after_ticker_change(cryptocompare):
+def test_starknet_historical_price_after_ticker_change(cryptocompare: 'Cryptocompare') -> None:
     """Check that Starknet token price query after Cryptocompare ticker change is accurate.
 
     It checks that price queries work properly after the May 9, 2024, switch
@@ -342,3 +343,30 @@ def test_starknet_historical_price_after_ticker_change(cryptocompare):
         timestamp=Timestamp(1708510318),
     )
     assert price == Price(FVal('1.75404934188528'))
+
+
+@pytest.mark.vcr
+def test_special_cases(cryptocompare: 'Cryptocompare') -> None:
+    a_eur, a_dpi = A_EUR.resolve_to_asset_with_oracles(), A_DPI.resolve_to_asset_with_oracles()
+    current_price = cryptocompare._special_case_handling(
+        method_name='query_current_price',
+        from_asset=a_dpi,
+        to_asset=a_eur,
+    )
+    historical_price = cryptocompare._special_case_handling(
+        method_name='query_endpoint_pricehistorical',
+        from_asset=a_dpi,
+        to_asset=a_eur,
+        timestamp=Timestamp(1732728240),
+    )
+    historical_data = cryptocompare._special_case_handling(
+        method_name='query_endpoint_histohour',
+        from_asset=a_dpi,
+        to_asset=a_eur,
+        limit=10,
+        to_timestamp=Timestamp(1732728240),
+    )
+
+    assert current_price == FVal(325.97568)
+    assert historical_price.is_close(FVal(116.3550477885))
+    assert historical_data[0]['TIMESTAMP'] == 1732694400

@@ -43,6 +43,7 @@ from rotkehlchen.types import (
 )
 from rotkehlchen.utils.data_structures import LRUCacheWithRemove
 from rotkehlchen.utils.misc import hexstr_to_int, set_user_agent
+from rotkehlchen.utils.network import create_session
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 if TYPE_CHECKING:
@@ -121,7 +122,7 @@ class Etherscan(ExternalServiceWithApiKey, ABC):
         self.api_url: str = ''
         self.base_query_args: dict[str, str] = {}
         self.toggle_base_attributes()
-        self.session = requests.session()
+        self.session = create_session()
         self.warning_given = False
         set_user_agent(self.session)
         self.timestamp_to_block_cache: LRUCacheWithRemove[Timestamp, int] = LRUCacheWithRemove(maxsize=32)  # noqa: E501
