@@ -780,8 +780,8 @@ def assert_nexo_results(rotki: Rotkehlchen, websocket_connection: WebsocketReade
         'type': 'csv_import_result',
         'data': {
             'source_name': 'Nexo',
-            'total_entries': 23,
-            'imported_entries': 19,
+            'total_entries': 31,
+            'imported_entries': 27,
             'messages': [
                 {'msg': 'Ignoring rejected entry.', 'rows': [2, 8]},
                 {'msg': 'Found exchange/credit card status transaction in nexo csv import but the entry will be ignored since not enough information is provided about the trade.', 'rows': [7, 15], 'is_error': True},  # noqa: E501
@@ -800,7 +800,7 @@ def assert_nexo_results(rotki: Rotkehlchen, websocket_connection: WebsocketReade
         balance=Balance(FVal('5000')),
     ), HistoryEvent(
         identifier=1,
-        event_identifier='NEXO_2d5982954882e11e51eb48b57dee0cfcdb81a694566ebec9ca676c1f98324549',
+        event_identifier='NEXO_df0cd4ec1cfef6d56ecdc864d71e41f6629074b6453b78cadd67cef214ad3997',
         sequence_index=0,
         timestamp=TimestampMS(1643698860000),
         location=Location.NEXO,
@@ -809,10 +809,10 @@ def assert_nexo_results(rotki: Rotkehlchen, websocket_connection: WebsocketReade
         balance=Balance(FVal('127.5520683')),
         asset=A_GBP,
         location_label='NXTZOvzs3be6e',
-        notes='FixedTermInterest from Nexo',
+        notes='Fixed Term Interest from Nexo',
     ), HistoryEvent(
         identifier=4,
-        event_identifier='NEXO_94e18e416d15dc105fd81b7ae9521f3fb786893b6f9c0d5e82c1c7d1c3780b8d',
+        event_identifier='NEXO_3c65434b92f9e41a5274160c861ebb51890a3bb9246982d18cb0500b3babb4f9',
         sequence_index=0,
         timestamp=TimestampMS(1646092800000),
         location=Location.NEXO,
@@ -840,7 +840,7 @@ def assert_nexo_results(rotki: Rotkehlchen, websocket_connection: WebsocketReade
         balance=Balance(FVal('3050.00000000')),
     ), HistoryEvent(
         identifier=5,
-        event_identifier='NEXO_bbc830740a414967910f96e18d7cffe0d1374a88ad8e75da592e29379e4b6d2c',
+        event_identifier='NEXO_f5c25b7009473f1ed6fb48c0ed42c3febf0703883740ba2a1862953d71b1e8db',
         sequence_index=0,
         timestamp=TimestampMS(1649462400000),
         location=Location.NEXO,
@@ -852,7 +852,7 @@ def assert_nexo_results(rotki: Rotkehlchen, websocket_connection: WebsocketReade
         notes='Liquidation from Nexo',
     ), HistoryEvent(
         identifier=6,
-        event_identifier='NEXO_c8f26485f6117a1065b3dbf0b37ed387e930b3ce36598132800a788661a0ca93',
+        event_identifier='NEXO_178eb80900dce91bc7230e95d86bf63d5a16451edfde20336915209e0cf66244',
         sequence_index=0,
         timestamp=TimestampMS(1649548800000),
         location=Location.NEXO,
@@ -861,7 +861,7 @@ def assert_nexo_results(rotki: Rotkehlchen, websocket_connection: WebsocketReade
         balance=Balance(FVal('0.00999999')),
         asset=A_BTC,
         location_label='NXTabcdefghij',
-        notes='ReferralBonus from Nexo',
+        notes='Referral Bonus from Nexo',
     ), AssetMovement(
         identifier=7,
         event_identifier='44082c1422aea2a9e03665529115684e81d37f04cf5ed4c112efc956c22a3aea',
@@ -888,7 +888,7 @@ def assert_nexo_results(rotki: Rotkehlchen, websocket_connection: WebsocketReade
         balance=Balance(FVal('0.0017316')),
     ), HistoryEvent(
         identifier=9,
-        event_identifier='NEXO_935f100260ccb46dca16fe73f73e403bc87980d73de4def178b41afea7f9b3a8',
+        event_identifier='NEXO_d31d7ee1cab8bcda90e3021abd70b578209414ac7d36d078072d8cbd052fa287',
         sequence_index=0,
         timestamp=TimestampMS(1650438000000),
         location=Location.NEXO,
@@ -900,7 +900,7 @@ def assert_nexo_results(rotki: Rotkehlchen, websocket_connection: WebsocketReade
         notes='Interest from Nexo',
     ), HistoryEvent(
         identifier=10,
-        event_identifier='NEXO_ed51354616d9959a07babb6dbbc86903fbb03375fd5796e87694688148ff3ee7',
+        event_identifier='NEXO_e8137e27e69bc848578349c0dece234fd4af50487ecfdf42518de3246f900b23',
         sequence_index=0,
         timestamp=TimestampMS(1657782007000),
         location=Location.NEXO,
@@ -909,6 +909,50 @@ def assert_nexo_results(rotki: Rotkehlchen, websocket_connection: WebsocketReade
         balance=Balance(FVal('0.00178799')),
         asset=A_ETH,
         location_label='NXT1isX0Refua',
+        notes='Interest from Nexo',
+    ), AssetMovement(
+        identifier=16,
+        event_identifier='c64cd362e062eba2958f2656ebb63ebb22107650e88c7a04c401687d81220056',
+        location=Location.NEXO,
+        event_type=HistoryEventType.WITHDRAWAL,
+        timestamp=TimestampMS(1707003036000),
+        asset=A_EUR,
+        balance=Balance(FVal('47.99000000')),
+    ), HistoryEvent(
+        identifier=15,
+        event_identifier='NEXO_05be9cf28e8f09148ffb0d1f7280419118aa19803dd13c6bdcdf71e7bc8e3e9d',
+        sequence_index=0,
+        timestamp=TimestampMS(1734971539000),
+        location=Location.NEXO,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.NONE,
+        balance=Balance(FVal('1.28539200')),
+        asset=A_USDC,
+        location_label='NXT44OjpCjxegVqhfHj3ZmeAa',
+        notes='Exchange Cashback from Nexo',
+    ), HistoryEvent(
+        identifier=13,
+        event_identifier='NEXO_4cf8625c0bd44e83aab18c3f380f0de765ce52174806f71a232fd16492adcba8',
+        sequence_index=0,
+        timestamp=TimestampMS(1735365600000),
+        location=Location.NEXO,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.NONE,
+        balance=Balance(FVal('5.37250072')),
+        asset=Asset('eip155:1/erc20:0xB62132e35a6c13ee1EE0f84dC5d40bad8d815206'),
+        location_label='NXT5Gz0cNLEHLbYtc3xDkZ8eR',
+        notes='Fixed Term Interest from Nexo',
+    ), HistoryEvent(
+        identifier=14,
+        event_identifier='NEXO_a1ef61959184d70ed118df337ddae6c1c63538989cd3438ab663b7ca9dc29538',
+        sequence_index=0,
+        timestamp=TimestampMS(1735365600000),
+        location=Location.NEXO,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.NONE,
+        balance=Balance(FVal('0.12179800')),
+        asset=A_USDC,
+        location_label='NXT4OTjYHHRW6xseMpUarHKKT',
         notes='Interest from Nexo',
     )]
     assert events == expected_events
