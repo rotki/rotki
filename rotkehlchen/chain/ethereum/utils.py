@@ -48,6 +48,10 @@ def token_normalized_value_decimals(token_amount: int, token_decimals: int | Non
     return token_amount / (FVal(10) ** FVal(token_decimals))
 
 
+def normalized_fval_value_decimals(amount: FVal, decimals: int) -> FVal:
+    return amount / (FVal(10) ** FVal(decimals))
+
+
 def token_raw_value_decimals(token_amount: FVal, token_decimals: int | None) -> int:
     if token_decimals is None:  # if somehow no info on decimals ends up here assume 18
         token_decimals = 18

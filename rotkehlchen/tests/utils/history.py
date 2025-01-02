@@ -415,7 +415,7 @@ def mock_exchange_responses(rotki: Rotkehlchen, remote_errors: bool):
             )
         return MockResponse(200, payload)
 
-    def mock_bitmex_api_queries(url, data):  # pylint: disable=unused-argument
+    def mock_bitmex_api_queries(url):
         if remote_errors:
             payload = invalid_payload
         elif 'user/walletHistory' in url:

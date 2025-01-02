@@ -4,7 +4,7 @@ import json
 import logging
 from collections.abc import Sequence
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Literal, overload
 from urllib.parse import urlencode
 
 import requests
@@ -12,8 +12,11 @@ import requests
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.assets.utils import symbol_to_asset_or_token
-from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
-from rotkehlchen.constants.assets import A_BTC
+from rotkehlchen.chain.ethereum.utils import (
+    normalized_fval_value_decimals,
+)
+from rotkehlchen.constants.assets import A_BTC, A_ETH
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
@@ -21,15 +24,15 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import Location, MarginPosition, Trade
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
 from rotkehlchen.exchanges.utils import deserialize_asset_movement_address, get_key_if_has_val
+from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.asset_movement import create_asset_movement_with_fee
 from rotkehlchen.history.events.structures.types import HistoryEventType
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
-    deserialize_asset_amount,
-    deserialize_asset_amount_force_positive,
     deserialize_fee,
+    deserialize_fval,
 )
 from rotkehlchen.types import (
     ApiKey,
@@ -40,7 +43,7 @@ from rotkehlchen.types import (
     Timestamp,
 )
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import iso8601ts_to_timestamp, satoshis_to_btc, ts_now, ts_sec_to_ms
+from rotkehlchen.utils.misc import iso8601ts_to_timestamp, ts_now, ts_sec_to_ms
 from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
 from rotkehlchen.utils.mixins.lockable import protect_with_lock
 
@@ -62,6 +65,8 @@ BITMEX_PRIVATE_ENDPOINTS = (
 def bitmex_to_world(symbol: str) -> AssetWithOracles:
     if symbol == 'XBt':
         return A_BTC.resolve_to_asset_with_oracles()
+    elif symbol == 'Gwei':
+        return A_ETH.resolve_to_asset_with_oracles()
 
     # This shouldn't happen since all the trades in bitmex are against BTC
     # as for what @lefterisjp remembers in discord.
@@ -72,7 +77,7 @@ def bitmex_to_world(symbol: str) -> AssetWithOracles:
     ))
 
 
-def margin_trade_from_bitmex(bitmex_trade: dict) -> MarginPosition:
+def margin_trade_from_bitmex(bitmex_trade: dict, decimals: dict[str, int]) -> MarginPosition:
     """Turn a bitmex margin trade returned from bitmex trade history to our common margin trade
     history format. This only returns margin positions. May raise:
 
@@ -81,8 +86,16 @@ def margin_trade_from_bitmex(bitmex_trade: dict) -> MarginPosition:
     - UnknownAsset
     """
     close_time = iso8601ts_to_timestamp(bitmex_trade['transactTime'])
-    profit_loss = AssetAmount(satoshis_to_btc(deserialize_asset_amount(bitmex_trade['amount'])))
     currency = bitmex_to_world(bitmex_trade['currency'])
+    profit_loss = AssetAmount(normalized_fval_value_decimals(
+        amount=deserialize_fval(
+            value=bitmex_trade['amount'],
+            location='bitmex margin trade',
+            name='profit loss',
+        ),
+        decimals=decimals[bitmex_trade['currency']],
+    ))
+
     fee = deserialize_fee(bitmex_trade['fee'])
     notes = bitmex_trade['address']
 
@@ -125,7 +138,7 @@ class Bitmex(ExchangeInterface):
             database=database,
             msg_aggregator=msg_aggregator,
         )
-        self.uri = 'https://bitmex.com'
+        self.uri = 'https://www.bitmex.com'
         self.session.headers.update({'api-key': api_key})
         self.asset_to_decimals: dict[str, int] = {}
 
@@ -138,6 +151,7 @@ class Bitmex(ExchangeInterface):
     def first_connection(self) -> None:
         if self.first_connection_made:
             return
+
         try:
             self.get_assets_decimals()
         except RemoteError as e:
@@ -174,14 +188,31 @@ class Bitmex(ExchangeInterface):
         return True, ''
 
     def _generate_signature(self, verb: str, path: str, expires: int, data: str = '') -> str:
-        signature = hmac.new(
+        return hmac.new(
             key=self.secret,
             msg=(verb.upper() + path + str(expires) + data).encode(),
             digestmod=hashlib.sha256,
         ).hexdigest()
 
-        self.session.headers.update({'api-signature': signature})
-        return signature
+    @overload
+    def _api_query(
+            self,
+            path: Literal['user'],
+            options: dict | None = None,
+    ) -> dict:
+        ...
+
+    @overload
+    def _api_query(
+            self,
+            path: Literal[
+                'user/wallet',
+                'wallet/assets',
+                'user/walletHistory',
+            ],
+            options: dict | None = None,
+    ) -> list:
+        ...
 
     def _api_query(
             self,
@@ -192,41 +223,31 @@ class Bitmex(ExchangeInterface):
                 'user/walletHistory',
             ],
             options: dict | None = None,
-    ) -> list:
+    ) -> list | dict:
         """
         Queries Bitmex with the given verb for the given path and options
         """
         # 20 seconds expiration
-        expires = ts_now() + 20
-        request_path_no_args = '/api/v1/' + path
+        request_path = f'/api/v1/{path}'
+        self.session.headers.pop('api-signature', None)
+        self.session.headers.pop('api-expires', None)
 
-        data = ''
-        if not options:
-            request_path = request_path_no_args
-            signature_path = request_path
-        else:
-            request_path = request_path_no_args + '?' + urlencode(options)
-            signature_path = request_path
+        if options is not None:
+            request_path += '?' + urlencode(options)
 
         if path in BITMEX_PRIVATE_ENDPOINTS:
-            self._generate_signature(
+            signature = self._generate_signature(
                 verb='GET',
-                path=signature_path,
-                expires=expires,
-                data=data,
+                path=request_path,
+                expires=(expires := ts_now() + 20),
+                data='',
             )
-
-        self.session.headers.update({'api-expires': str(expires)})
-        if data != '':
-            self.session.headers.update({
-                'Content-Type': 'application/json',
-                'Content-Length': str(len(data)),
-            })
+            self.session.headers.update({'api-signature': signature, 'api-expires': str(expires)})
 
         request_url = self.uri + request_path
         log.debug('Bitmex API Query', request_url=request_url)
         try:
-            response = self.session.get(url=request_url, data=data)
+            response = self.session.get(url=request_url)
         except requests.exceptions.RequestException as e:
             raise RemoteError(f'Bitmex API request failed due to {e!s}') from e
 
@@ -237,9 +258,16 @@ class Bitmex(ExchangeInterface):
             )
 
         try:
-            json_ret: list = json.loads(response.text)
+            json_ret: list | dict = json.loads(response.text)
         except JSONDecodeError as e:
             raise RemoteError('Bitmex returned invalid JSON response') from e
+
+        if (
+            isinstance(json_ret, dict) and
+            (error := json_ret.get('error')) is not None
+        ):
+            log.error(f'Error response from bitmex: {json_ret}')
+            raise RemoteError(f'Request to bitmex {request_url} failed due to {error}')
 
         return json_ret
 
@@ -268,11 +296,7 @@ class Bitmex(ExchangeInterface):
                 log.error(f'Unknown decimals for asset balance {balance} in bitmex. Skipping')
                 continue
 
-            amount = token_normalized_value_decimals(
-                token_amount=raw_amount,
-                token_decimals=decimals,
-            )
-
+            amount = normalized_fval_value_decimals(amount=FVal(raw_amount), decimals=decimals)
             usd_value = amount * Inquirer.find_usd_price(asset)
             returned_balances[asset] = Balance(amount=amount, usd_value=usd_value)
             log.debug(
@@ -291,6 +315,7 @@ class Bitmex(ExchangeInterface):
     ) -> list[MarginPosition]:
 
         # We know user/walletHistory returns a list
+        self.first_connection()
         resp = self._api_query('user/walletHistory', {'currency': 'all'})
         log.debug(
             'Bitmex trade history query',
@@ -310,7 +335,10 @@ class Bitmex(ExchangeInterface):
                 continue
 
             try:
-                margin_trades.append(margin_trade_from_bitmex(tx))
+                margin_trades.append(margin_trade_from_bitmex(
+                    bitmex_trade=tx,
+                    decimals=self.asset_to_decimals,
+                ))
             except (KeyError, UnknownAsset, DeserializationError) as e:
                 msg = str(e) if not isinstance(e, KeyError) else f'missing key {e}'
                 log.error(
@@ -324,12 +352,17 @@ class Bitmex(ExchangeInterface):
             start_ts: Timestamp,
             end_ts: Timestamp,
     ) -> Sequence['HistoryBaseEntry']:
+        self.first_connection()
         resp = self._api_query('user/walletHistory', {'currency': 'all'})
 
         log.debug('Bitmex deposit/withdrawals query', results_num=len(resp))
         movements = []
         for movement in resp:
             try:
+                timestamp = iso8601ts_to_timestamp(movement['timestamp'])
+                if not start_ts <= timestamp <= end_ts:
+                    continue
+
                 transaction_type = movement['transactType']
                 if transaction_type == 'Deposit':
                     event_type: Literal[HistoryEventType.DEPOSIT, HistoryEventType.WITHDRAWAL] = HistoryEventType.DEPOSIT  # noqa: E501
@@ -338,20 +371,36 @@ class Bitmex(ExchangeInterface):
                 else:
                     continue
 
-                timestamp = iso8601ts_to_timestamp(movement['timestamp'])
-                if timestamp < start_ts:
-                    continue
-                if timestamp > end_ts:
+                asset = bitmex_to_world(currency := movement['currency'])
+                if (decimals := self.asset_to_decimals.get(currency)) is None:
+                    log.error(
+                        f'Unknown decimals for asset movement {movement} in bitmex. Skipping',
+                    )
                     continue
 
-                asset = bitmex_to_world(movement['currency'])
-                amount = deserialize_asset_amount_force_positive(movement['amount'])
-                fee = deserialize_fee(movement.get('fee', 0))  # deposit has no fees
+                if (amount_str := movement['amount']) is None:
+                    log.error(f'Found non valid amount in asset movement {movement} at bitmex. Skipping')  # noqa: E501
+                    continue
 
-                if asset == A_BTC:
-                    # bitmex stores amounts in satoshis
-                    amount = AssetAmount(satoshis_to_btc(amount))
-                    fee = Fee(satoshis_to_btc(fee))
+                if (fee_str := movement.get('fee', 0)) is None:
+                    fee = Fee(ZERO)
+                else:  # deposit has no fees
+                    fee = Fee(normalized_fval_value_decimals(
+                        amount=deserialize_fval(fee_str, location='btimex asset movements', name='fee'),  # noqa: E501
+                        decimals=decimals,
+                    ))
+
+                if (raw_amount := deserialize_fval(
+                    value=amount_str,
+                    location='btimex asset movements',
+                    name='raw_amount',
+                )) < ZERO:
+                    raw_amount = -raw_amount
+
+                amount = AssetAmount(normalized_fval_value_decimals(
+                    amount=raw_amount,
+                    decimals=decimals,
+                ))
 
                 movements.extend(create_asset_movement_with_fee(
                     location=self.location,
