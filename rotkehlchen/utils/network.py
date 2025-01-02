@@ -7,6 +7,7 @@ from typing import Any, Literal, overload
 import gevent
 import requests
 from requests.adapters import HTTPAdapter
+from urllib3.util import Retry
 
 from rotkehlchen.constants import GLOBAL_REQUESTS_TIMEOUT
 from rotkehlchen.db.settings import CachedSettings
@@ -27,7 +28,15 @@ def create_session() -> requests.Session:
     where data has made it to the server.
     """
     session = requests.Session()
-    adapter = HTTPAdapter(max_retries=5)
+    # we don't use total in the adapter because it seems to trigger on certain bad status codes
+    # like too many requests even when status_forcelist is set to an empty list. This
+    # configuration worked fine for what we could test in real scenarios in the e2e tests.
+    adapter = HTTPAdapter(max_retries=Retry(
+        connect=3,
+        read=2,
+        status=0,
+        status_forcelist=[],  # by default urllib retries on 413, 429 (rate limit) and 503
+    ))
     session.mount('http://', adapter)
     session.mount('https://', adapter)
     return session
