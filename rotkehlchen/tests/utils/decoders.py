@@ -6,7 +6,10 @@ from rotkehlchen.chain.evm.decoding.balancer.constants import CPT_BALANCER_V1, C
 from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE
 from rotkehlchen.chain.evm.decoding.extrafi.constants import CPT_EXTRAFI
 from rotkehlchen.chain.evm.decoding.gearbox.constants import CPT_GEARBOX
-from rotkehlchen.chain.evm.decoding.velodrome.constants import CPT_AERODROME, CPT_VELODROME
+from rotkehlchen.chain.evm.decoding.velodrome.constants import (
+    CPT_AERODROME,
+    CPT_VELODROME,
+)
 
 
 def patch_decoder_reload_data(load_global_caches: list[str] | None = None) -> ExitStack:
@@ -17,7 +20,7 @@ def patch_decoder_reload_data(load_global_caches: list[str] | None = None) -> Ex
             new=lambda *args, **kwargs: False,
         ))
         stack.enter_context(patch(  # patch to not refresh cache by not downloading new data
-            target='rotkehlchen.chain.ethereum.modules.yearn.decoder.should_update_protocol_cache',
+            target='rotkehlchen.chain.evm.decoding.yearn.decoder.should_update_protocol_cache',
             new=lambda *args, **kwargs: False,
         ))
         stack.enter_context(patch(  # patch to not refresh cache by not downloading new data

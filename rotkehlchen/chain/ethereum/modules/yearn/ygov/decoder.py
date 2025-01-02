@@ -1,7 +1,6 @@
 import logging
 from typing import TYPE_CHECKING, Any
 
-from rotkehlchen.chain.ethereum.modules.yearn.constants import CPT_YGOV, YEARN_ICON
 from rotkehlchen.chain.ethereum.modules.yearn.ygov.constants import (
     REWARD_PAID_TOPIC,
     YGOV_ADDRESS,
@@ -11,8 +10,12 @@ from rotkehlchen.chain.evm.decoding.constants import STAKED, WITHDRAWN
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import DEFAULT_DECODING_OUTPUT
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
+from rotkehlchen.chain.evm.decoding.yearn.constants import CPT_YGOV, YEARN_ICON
 from rotkehlchen.constants.assets import A_CRVP_DAIUSDCTTUSD, A_YFI
-from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.history.events.structures.types import (
+    HistoryEventSubType,
+    HistoryEventType,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
 if TYPE_CHECKING:

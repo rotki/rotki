@@ -1,13 +1,16 @@
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.chain.ethereum.modules.yearn.constants import CPT_YGOV
 from rotkehlchen.chain.ethereum.modules.yearn.ygov.constants import YGOV_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
+from rotkehlchen.chain.evm.decoding.yearn.constants import CPT_YGOV
 from rotkehlchen.constants.assets import A_CRVP_DAIUSDCTTUSD, A_ETH, A_YFI
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
-from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.history.events.structures.types import (
+    HistoryEventSubType,
+    HistoryEventType,
+)
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 

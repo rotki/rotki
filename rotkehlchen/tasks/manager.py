@@ -12,9 +12,9 @@ from rotkehlchen.chain.bitcoin.xpub import XpubManager
 from rotkehlchen.chain.ethereum.modules.makerdao.cache import (
     query_ilk_registry_and_maybe_update_cache,
 )
-from rotkehlchen.chain.ethereum.modules.yearn.utils import query_yearn_vaults
 from rotkehlchen.chain.ethereum.utils import should_update_protocol_cache
 from rotkehlchen.chain.evm.decoding.morpho.utils import query_morpho_vaults
+from rotkehlchen.chain.evm.decoding.yearn.utils import query_yearn_vaults
 from rotkehlchen.constants.timing import (
     AAVE_V3_ASSETS_UPDATE,
     DATA_UPDATES_REFRESH,
@@ -38,7 +38,11 @@ from rotkehlchen.externalapis.monerium import init_monerium
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.premium.premium import Premium, has_premium_check, premium_create_and_verify
+from rotkehlchen.premium.premium import (
+    Premium,
+    has_premium_check,
+    premium_create_and_verify,
+)
 from rotkehlchen.serialization.deserialize import deserialize_timestamp
 from rotkehlchen.tasks.assets import (
     autodetect_spam_assets_in_db,
@@ -52,7 +56,10 @@ from rotkehlchen.tasks.calendar import (
     maybe_create_calendar_reminders,
     notify_reminders,
 )
-from rotkehlchen.tasks.utils import query_missing_prices_of_base_entries, should_run_periodic_task
+from rotkehlchen.tasks.utils import (
+    query_missing_prices_of_base_entries,
+    should_run_periodic_task,
+)
 from rotkehlchen.types import (
     EVM_CHAINS_WITH_TRANSACTIONS,
     SUPPORTED_BITCOIN_CHAINS,

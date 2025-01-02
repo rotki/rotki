@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset, EvmToken
+from rotkehlchen.chain.evm.decoding.yearn.constants import BLOCKS_PER_YEAR
 from rotkehlchen.constants.misc import EXP18
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.errors.misc import RemoteError
@@ -12,7 +13,6 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import YEARN_VAULTS_V2_PROTOCOL, ChecksumEvmAddress
 from rotkehlchen.utils.interfaces import EthereumModule
 
-from .constants import BLOCKS_PER_YEAR
 from .vaults import YearnVaultBalance
 
 if TYPE_CHECKING:

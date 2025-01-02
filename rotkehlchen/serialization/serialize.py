@@ -9,7 +9,10 @@ from rotkehlchen.accounting.structures.balance import AssetBalance, Balance, Bal
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.balances.manual import ManuallyTrackedBalanceWithValue
-from rotkehlchen.chain.accounts import BlockchainAccountData, SingleBlockchainAccountData
+from rotkehlchen.chain.accounts import (
+    BlockchainAccountData,
+    SingleBlockchainAccountData,
+)
 from rotkehlchen.chain.bitcoin.xpub import XpubData
 from rotkehlchen.chain.ethereum.defi.structures import (
     DefiBalance,
@@ -29,7 +32,10 @@ from rotkehlchen.chain.ethereum.modules.aave.aave import (
 from rotkehlchen.chain.ethereum.modules.aave.common import AaveStats
 from rotkehlchen.chain.ethereum.modules.compound.utils import CompoundBalance
 from rotkehlchen.chain.ethereum.modules.liquity.trove import Trove
-from rotkehlchen.chain.ethereum.modules.makerdao.dsr import DSRAccountReport, DSRCurrentBalances
+from rotkehlchen.chain.ethereum.modules.makerdao.dsr import (
+    DSRAccountReport,
+    DSRCurrentBalances,
+)
 from rotkehlchen.chain.ethereum.modules.makerdao.vaults import (
     MakerdaoVault,
     MakerdaoVaultDetails,

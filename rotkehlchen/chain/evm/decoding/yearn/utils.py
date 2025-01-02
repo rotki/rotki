@@ -29,7 +29,7 @@ from rotkehlchen.types import (
 )
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
+    from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.db.dbhandler import DBHandler
 
 YDAEMON_API: Final[str] = 'https://ydaemon.yearn.fi/rotki'  # contains v2 and v3 vaults
@@ -110,11 +110,11 @@ def _query_ydaemon(endpoint: str, params: str) -> list[dict[str, Any]] | dict[st
     return data
 
 
-def _query_yearn_vaults() -> list[dict[str, Any]]:
+def _query_yearn_vaults(chain_id: ChainID) -> list[dict[str, Any]]:
     """Query list of yearn v2 and v3 vaults from the ydaemon api.
     Returns the list of vaults.
 
-    At the moment this logic queries only ethereum vaults.
+    At the moment this logic queries ethereum, optimism, base, arbitrum_one and polygon vaults.
     May raise:
         - RemoteError
     """
@@ -122,7 +122,7 @@ def _query_yearn_vaults() -> list[dict[str, Any]]:
     while True:
         data = _query_ydaemon(
             endpoint='list/vaults',
-            params=f'chainIDs=1&limit={YDAEMON_PAGE_SIZE}&skip={offset}',
+            params=f'chainIDs={chain_id.serialize_for_db()}&limit={YDAEMON_PAGE_SIZE}&skip={offset}',
         )
         all_vaults.extend(data)
         offset += YDAEMON_PAGE_SIZE
@@ -132,14 +132,14 @@ def _query_yearn_vaults() -> list[dict[str, Any]]:
     return all_vaults
 
 
-def _query_yearn_vault_count() -> int:
+def _query_yearn_vault_count(chain_id: ChainID) -> int:
     """Query count of yearn v2 and v3 vaults from the ydaemon api.
     Returns total vault count.
 
     May raise:
     - RemoteError
     """
-    data = _query_ydaemon(endpoint='count/vaults', params='chainIDs=1')
+    data = _query_ydaemon(endpoint='count/vaults', params=f'chainIDs={chain_id.serialize_for_db()}')  # noqa: E501
     if 'numberOfVaults' not in data:
         msg = 'Unexpected format from yearn vault count response.'
         log.error(f'{msg} Expected a dict containing numberOfVaults integer, got {data}')
@@ -154,7 +154,7 @@ def _query_yearn_vault_count() -> int:
         ) from e
 
 
-def query_yearn_vaults(db: 'DBHandler', ethereum_inquirer: 'EthereumInquirer') -> None:
+def query_yearn_vaults(db: 'DBHandler', evm_inquirer: 'EvmNodeInquirer') -> None:
     """Query yearn API and ensure that all the tokens exist locally. If they exist but the protocol
     is not the correct one, then the asset will be edited.
 
@@ -162,11 +162,11 @@ def query_yearn_vaults(db: 'DBHandler', ethereum_inquirer: 'EthereumInquirer') -
     - RemoteError
     """
     try:
-        count = _query_yearn_vault_count()
+        count = _query_yearn_vault_count(chain_id=evm_inquirer.chain_id)
         if _maybe_reset_yearn_cache_timestamp(count=count):
             return  # no new vaults
 
-        data = _query_yearn_vaults()
+        data = _query_yearn_vaults(chain_id=evm_inquirer.chain_id)
     except RemoteError as e:
         log.error(f'Failed to query yearn vaults due to {e}. Resetting yearn cache ts')
         _maybe_reset_yearn_cache_timestamp(count=None)  # reset timestamp to prevent repeated errors  # noqa: E501
@@ -200,7 +200,7 @@ def query_yearn_vaults(db: 'DBHandler', ethereum_inquirer: 'EthereumInquirer') -
             underlying_token = get_or_create_evm_token(
                 userdb=db,
                 evm_address=string_to_evm_address(vault['token']['address']),
-                chain_id=ChainID.ETHEREUM,
+                chain_id=evm_inquirer.chain_id,
                 decimals=vault['token']['decimals'],
                 name=vault['token']['name'],
                 symbol=vault['token']['symbol'],
@@ -209,7 +209,7 @@ def query_yearn_vaults(db: 'DBHandler', ethereum_inquirer: 'EthereumInquirer') -
             vault_token = get_or_create_evm_token(
                 userdb=db,
                 evm_address=string_to_evm_address(vault['address']),
-                chain_id=ChainID.ETHEREUM,
+                chain_id=evm_inquirer.chain_id,
                 protocol=vault_type,
                 decimals=vault['decimals'],
                 name=vault['name'],
@@ -221,12 +221,12 @@ def query_yearn_vaults(db: 'DBHandler', ethereum_inquirer: 'EthereumInquirer') -
                 )],
                 encounter=encounter,
             )
-            if (staking_address := vault.get('staking')) is not None:  # check if the vault has a staking contract where the user can deposit vault tokens. Shares are 1:1  # noqa: E501
+            if isinstance(staking_address := vault.get('staking'), str):  # and staking_address['address'] != '':  # check if the vault has a staking contract where the user can deposit vault tokens. Shares are 1:1  # noqa: E501
                 get_or_create_evm_token(
                     userdb=db,
-                    evm_address=staking_address,
-                    evm_inquirer=ethereum_inquirer,
-                    chain_id=ChainID.ETHEREUM,
+                    evm_address=string_to_evm_address(staking_address),
+                    evm_inquirer=evm_inquirer,
+                    chain_id=evm_inquirer.chain_id,
                     protocol=YEARN_STAKING_PROTOCOL,
                     underlying_tokens=[UnderlyingToken(
                         address=vault_token.evm_address,
@@ -239,6 +239,23 @@ def query_yearn_vaults(db: 'DBHandler', ethereum_inquirer: 'EthereumInquirer') -
                     encounter=encounter,
                 )
 
+            elif isinstance(staking_dict := vault.get('staking'), dict) and staking_dict['address'] != '':  # and staking_address['address'] != '':  # check if the vault has a staking contract where the user can deposit vault tokens. Shares are 1:1  # noqa: E501
+                get_or_create_evm_token(
+                    userdb=db,
+                    evm_address=string_to_evm_address(staking_dict['address']),
+                    evm_inquirer=evm_inquirer,
+                    chain_id=evm_inquirer.chain_id,
+                    protocol=YEARN_STAKING_PROTOCOL,
+                    underlying_tokens=[UnderlyingToken(
+                        address=vault_token.evm_address,
+                        token_kind=EvmTokenKind.ERC20,
+                        weight=ONE,
+                    )],
+                    fallback_name=f'Yearn staking {vault_token.name}',  # fallback in case for the vaults that aren't ERC20  # noqa: E501
+                    fallback_symbol=f'YG-{vault_token.symbol}',
+                    fallback_decimals=18,
+                    encounter=TokenEncounterInfo(description='Querying yearn vaults', should_notify=False),  # noqa: E501
+                )
         except KeyError as e:
             log.error(
                 f'Failed to store token information for yearn {vault_type} vault due to '

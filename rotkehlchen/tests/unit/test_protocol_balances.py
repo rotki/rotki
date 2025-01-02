@@ -21,12 +21,17 @@ from rotkehlchen.chain.arbitrum_one.modules.thegraph.balances import (
     ThegraphBalances as ThegraphBalancesArbitrumOne,
 )
 from rotkehlchen.chain.arbitrum_one.modules.umami.balances import UmamiBalances
-from rotkehlchen.chain.base.modules.extrafi.balances import ExtrafiBalances as ExtrafiBalancesBase
+from rotkehlchen.chain.base.modules.extrafi.balances import (
+    ExtrafiBalances as ExtrafiBalancesBase,
+)
 from rotkehlchen.chain.ethereum.interfaces.balances import ProtocolWithBalance
 from rotkehlchen.chain.ethereum.modules.aave.balances import AaveBalances
 from rotkehlchen.chain.ethereum.modules.blur.balances import BlurBalances
 from rotkehlchen.chain.ethereum.modules.blur.constants import BLUR_IDENTIFIER
-from rotkehlchen.chain.ethereum.modules.convex.balances import CPT_CONVEX, ConvexBalances
+from rotkehlchen.chain.ethereum.modules.convex.balances import (
+    CPT_CONVEX,
+    ConvexBalances,
+)
 from rotkehlchen.chain.ethereum.modules.curve.balances import CurveBalances
 from rotkehlchen.chain.ethereum.modules.eigenlayer.balances import EigenlayerBalances
 from rotkehlchen.chain.ethereum.modules.gearbox.balances import GearboxBalances
@@ -59,7 +64,9 @@ from rotkehlchen.chain.optimism.modules.giveth.balances import (
     GivethBalances as GivethOptimismBalances,
 )
 from rotkehlchen.chain.optimism.modules.velodrome.balances import VelodromeBalances
-from rotkehlchen.chain.optimism.modules.walletconnect.balances import WalletconnectBalances
+from rotkehlchen.chain.optimism.modules.walletconnect.balances import (
+    WalletconnectBalances,
+)
 from rotkehlchen.chain.optimism.modules.walletconnect.constants import WCT_TOKEN_ID
 from rotkehlchen.constants.assets import (
     A_AAVE,
@@ -82,9 +89,9 @@ from rotkehlchen.globaldb.cache import (
     globaldb_set_general_cache_values,
 )
 from rotkehlchen.globaldb.handler import GlobalDBHandler
-from rotkehlchen.tests.unit.decoders.test_curve_lend import (
-    fixture_arbitrum_vault_token,  # noqa: F401
-    fixture_arbitrum_vault_underlying_token,  # noqa: F401
+from rotkehlchen.tests.unit.decoders.test_curve_lend import (  # noqa: F401  # noqa: F401
+    fixture_arbitrum_vault_token,
+    fixture_arbitrum_vault_underlying_token,
 )
 from rotkehlchen.tests.utils.arbitrum_one import get_arbitrum_allthatnode
 from rotkehlchen.tests.utils.balances import find_inheriting_classes
@@ -106,7 +113,9 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
 
     from rotkehlchen.chain.aggregator import ChainsAggregator
-    from rotkehlchen.chain.arbitrum_one.decoding.decoder import ArbitrumOneTransactionDecoder
+    from rotkehlchen.chain.arbitrum_one.decoding.decoder import (
+        ArbitrumOneTransactionDecoder,
+    )
     from rotkehlchen.chain.arbitrum_one.node_inquirer import ArbitrumOneInquirer
     from rotkehlchen.chain.base.node_inquirer import BaseInquirer
     from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
@@ -693,7 +702,7 @@ def test_compound_v3_token_balances_liabilities(
             target='rotkehlchen.chain.ethereum.node_inquirer.EthereumInquirer.ensure_cache_data_is_updated',
         ),
         patch(
-            target='rotkehlchen.chain.ethereum.modules.yearn.decoder.should_update_protocol_cache',
+            target='rotkehlchen.chain.evm.decoding.yearn.decoder.should_update_protocol_cache',
         ),
         patch(
             target='rotkehlchen.chain.evm.decoding.morpho.decoder.should_update_protocol_cache',
