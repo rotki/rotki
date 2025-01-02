@@ -166,6 +166,7 @@ class Okx(ExchangeInterface):
         })
         url = urljoin(self.base_uri, path)
 
+        log.debug(f'Querying OKX {url} with {method=}')
         try:
             response = self.session.request(method=method, url=url)
         except requests.exceptions.RequestException as e:
