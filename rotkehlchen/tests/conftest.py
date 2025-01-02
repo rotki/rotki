@@ -218,6 +218,20 @@ def vcr_fixture(vcr: 'VCR') -> 'VCR':
 
         return r1.uri == r2.uri and r1.method == r2.method  # normal check
 
+    def alchemy_api_matcher(r1, r2):
+        """Match Alchemy price API paths, ignoring API key."""
+        if (
+            (base_url := 'https://api.g.alchemy.com/prices/v1/') and
+            r1.uri.startswith(base_url) and
+            r2.uri.startswith(base_url)
+        ):
+            # Extract everything after API key by finding second '/' after base_url
+            path1 = r1.uri[r1.uri.find('/', len(base_url)) + 1:]
+            path2 = r2.uri[r2.uri.find('/', len(base_url)) + 1:]
+            return path1 == path2 and r1.method == r2.method
+        return r1.uri == r2.uri and r1.method == r2.method
+
+    vcr.register_matcher('alchemy_api_matcher', alchemy_api_matcher)
     vcr.register_matcher('beaconchain_matcher', beaconchain_matcher)
     return vcr
 

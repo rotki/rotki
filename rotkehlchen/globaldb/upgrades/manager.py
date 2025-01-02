@@ -11,9 +11,6 @@ from rotkehlchen.globaldb.migrations.manager import (
     maybe_apply_globaldb_migrations,
 )
 from rotkehlchen.globaldb.schema import DB_SCRIPT_CREATE_TABLES
-from rotkehlchen.globaldb.upgrades.v6_v7 import migrate_to_v7
-from rotkehlchen.globaldb.upgrades.v7_v8 import migrate_to_v8
-from rotkehlchen.globaldb.upgrades.v8_v9 import migrate_to_v9
 from rotkehlchen.globaldb.utils import (
     GLOBAL_DB_SCHEMA_BREAKING_CHANGES,
     GLOBAL_DB_VERSION,
@@ -28,7 +25,11 @@ from .v2_v3 import migrate_to_v3
 from .v3_v4 import migrate_to_v4
 from .v4_v5 import migrate_to_v5
 from .v5_v6 import migrate_to_v6
+from .v6_v7 import migrate_to_v7
+from .v7_v8 import migrate_to_v8
+from .v8_v9 import migrate_to_v9
 from .v9_v10 import migrate_to_v10
+from .v10_11 import migrate_to_v11
 
 if TYPE_CHECKING:
     from rotkehlchen.db.drivers.gevent import DBConnection
@@ -72,6 +73,10 @@ UPGRADES_LIST = [
     UpgradeRecord(
         from_version=9,
         function=migrate_to_v10,
+    ),
+    UpgradeRecord(
+        from_version=10,
+        function=migrate_to_v11,
     ),
 ]
 

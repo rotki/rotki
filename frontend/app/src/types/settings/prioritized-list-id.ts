@@ -45,6 +45,11 @@ export const DEFILAMA_PRIO_LIST_ITEM: PrioritizedListItemData<PriceOracle> = {
   identifier: PriceOracle.DEFILLAMA,
 };
 
+export const ALCHEMY_PRIO_LIST_ITEM: PrioritizedListItemData<PriceOracle> = {
+  icon: './assets/images/services/alchemy.svg',
+  identifier: PriceOracle.ALCHEMY,
+};
+
 export const UNISWAP2_PRIO_LIST_ITEM: PrioritizedListItemData<PriceOracle> = {
   icon: './assets/images/protocols/uniswap.svg',
   identifier: PriceOracle.UNISWAP2,

@@ -529,7 +529,6 @@ class Coingecko(
         PenalizablePriceOracleMixin.__init__(self)
         self.session = create_session()
         set_user_agent(self.session)
-        self.last_rate_limit = 0
         self.db: DBHandler | None  # type: ignore  # "solve" the self.db discrepancy
 
     @overload
@@ -745,15 +744,6 @@ class Coingecko(
             seconds: int | None = None,
     ) -> bool:
         return not self.is_penalized()
-
-    def rate_limited_in_last(
-            self,
-            seconds: int | None = None,
-    ) -> bool:
-        if seconds is None:
-            return False
-
-        return ts_now() - self.last_rate_limit <= seconds
 
     def query_historical_price(
             self,

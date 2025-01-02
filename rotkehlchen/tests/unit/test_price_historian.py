@@ -8,6 +8,7 @@ from rotkehlchen.chain.ethereum.oracles.uniswap import UniswapV2Oracle, UniswapV
 from rotkehlchen.constants.assets import A_BTC, A_USD
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset
+from rotkehlchen.externalapis.alchemy import Alchemy
 from rotkehlchen.externalapis.coingecko import Coingecko
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.externalapis.defillama import Defillama
@@ -38,6 +39,7 @@ def fixture_fake_price_historian(historical_price_oracles_order):
         cryptocompare=MagicMock(spec=Cryptocompare),
         coingecko=MagicMock(spec=Coingecko),
         defillama=MagicMock(spec=Defillama),
+        alchemy=MagicMock(spec=Alchemy),
         uniswapv2=MagicMock(spec=UniswapV2Oracle),
         uniswapv3=MagicMock(spec=UniswapV3Oracle),
     )
@@ -61,6 +63,8 @@ def test_all_common_methods_implemented():
             instance = UniswapV2Oracle
         elif oracle == HistoricalPriceOracle.UNISWAPV3:
             instance = UniswapV3Oracle
+        elif oracle == HistoricalPriceOracle.ALCHEMY:
+            instance = Alchemy
         else:
             raise AssertionError(
                 f'Unexpected historical price oracle: {oracle}. Update this test',

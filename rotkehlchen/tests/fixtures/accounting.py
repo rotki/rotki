@@ -16,6 +16,7 @@ from rotkehlchen.config import default_data_directory
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.misc import USERSDIR_NAME
 from rotkehlchen.db.updates import RotkiDataUpdater
+from rotkehlchen.externalapis.alchemy import Alchemy
 from rotkehlchen.externalapis.coingecko import Coingecko
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.externalapis.defillama import Defillama
@@ -259,6 +260,7 @@ def _create_inquirer(
         cryptocompare=Cryptocompare(database=None),
         coingecko=Coingecko(database=None),
         defillama=Defillama(database=None),
+        alchemy=Alchemy(database=None),
         manualcurrent=ManualCurrentOracle(),
         msg_aggregator=MessagesAggregator(),
     )
