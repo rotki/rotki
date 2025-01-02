@@ -7,7 +7,7 @@ from rotkehlchen.assets.converters import asset_from_okx
 from rotkehlchen.constants.assets import A_ETH, A_SOL, A_USDC, A_USDT
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.exchanges.data_structures import Trade
-from rotkehlchen.exchanges.okx import Okx
+from rotkehlchen.exchanges.okx import Okx, OkxEndpoint
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.types import HistoryEventType
@@ -31,7 +31,7 @@ def test_name():
 
 
 def test_assets_are_known(mock_okx: Okx, globaldb):
-    currencies = mock_okx._api_query('currencies')
+    currencies = mock_okx._api_query(OkxEndpoint.CURRENCIES)
     okx_assets = {currency['ccy'] for currency in currencies['data']}
 
     for okx_asset in okx_assets:
@@ -62,6 +62,9 @@ def test_okx_api_signature(mock_okx: Okx):
 
 def test_okx_query_balances(mock_okx: Okx):
     def mock_okx_balances(method, url):     # pylint: disable=unused-argument
+        if '/api/v5/asset/balances' in url:
+            return MockResponse(200, '{"code":"0","data":[{"availBal":"25","bal":"25","ccy":"USDT","frozenBal":"0"},{"availBal":"30","bal":"30","ccy":"USDC","frozenBal":"0"}],"msg":""}')  # noqa: E501
+
         return MockResponse(
             200,
             """
@@ -173,10 +176,11 @@ def test_okx_query_balances(mock_okx: Okx):
 
     assert msg == ''
     assert balances is not None
-    assert len(balances) == 3
+    assert len(balances) == 4
     assert (balances[A_XMR.resolve_to_asset_with_oracles()]).amount == FVal('0.027846')
     assert (balances[A_SOL.resolve_to_asset_with_oracles()]).amount == FVal('299.9920000068')
-    assert (balances[A_USDT.resolve_to_asset_with_oracles()]).amount == FVal('50.00000065312')
+    assert (balances[A_USDT.resolve_to_asset_with_oracles()]).amount == FVal('75.00000065312')
+    assert (balances[A_USDC.resolve_to_asset_with_oracles()]).amount == FVal('30')
 
     warnings = mock_okx.msg_aggregator.consume_warnings()
     errors = mock_okx.msg_aggregator.consume_errors()
