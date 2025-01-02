@@ -1,7 +1,7 @@
 {
   "name": "rotki-workspace",
   "version": "1.0.0",
-  "packageManager": "pnpm@9.14.4",
+  "packageManager": "pnpm@9.15.2",
   "description": "A portfolio tracking, asset analytics and tax reporting application specializing in Cryptoassets that protects your privacy",
   "type": "module",
   "license": "AGPL-3.0",
@@ -36,19 +36,19 @@
     "lint-staged": "lint-staged"
   },
   "devDependencies": {
-    "@intlify/eslint-plugin-vue-i18n": "3.1.0",
+    "@intlify/eslint-plugin-vue-i18n": "3.2.0",
     "@rotki/eslint-config": "3.6.0",
     "@rotki/eslint-plugin": "0.6.1",
     "argparse": "2.0.1",
-    "consola": "3.2.3",
+    "consola": "3.3.3",
     "dotenv": "16.4.7",
-    "eslint": "9.16.0",
+    "eslint": "9.17.0",
     "eslint-plugin-cypress": "4.1.0",
     "flag-icons": "7.2.3",
     "husky": "9.1.7",
     "jsdom": "25.0.1",
-    "lint-staged": "15.2.10",
-    "npm-run-all2": "7.0.1",
+    "lint-staged": "15.3.0",
+    "npm-run-all2": "7.0.2",
     "rimraf": "6.0.1",
     "semver": "7.6.3",
     "typescript": "5.6.3"
@@ -61,9 +61,6 @@
     "patchedDependencies": {
       "bignumber.js@9.1.2": "patches/bignumber.js@9.1.2.patch"
     }
-  },
-  "resolutions": {
-    "vite": "6.0.2"
   },
   "lint-staged": {
     "*": "eslint"
