@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { PrioritizedListData, type PrioritizedListItemData } from '@/types/settings/prioritized-list-data';
 import {
+  ALCHEMY_PRIO_LIST_ITEM,
   COINGECKO_PRIO_LIST_ITEM,
   CRYPTOCOMPARE_PRIO_LIST_ITEM,
   DEFILAMA_PRIO_LIST_ITEM,
@@ -29,6 +30,7 @@ const baseAvailableOraclesTyped: Array<PrioritizedListItemData<PrioritizedListId
   CRYPTOCOMPARE_PRIO_LIST_ITEM,
   COINGECKO_PRIO_LIST_ITEM,
   DEFILAMA_PRIO_LIST_ITEM,
+  ALCHEMY_PRIO_LIST_ITEM,
   UNISWAP2_PRIO_LIST_ITEM,
   UNISWAP3_PRIO_LIST_ITEM,
 ];
