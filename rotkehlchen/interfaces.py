@@ -28,16 +28,20 @@ class CurrentPriceOracleInterface(abc.ABC):
 
     def __init__(self, oracle_name: str) -> None:
         self.name = oracle_name
+        self.last_rate_limit = 0
 
     def __str__(self) -> str:
         return self.name
 
-    @abc.abstractmethod
     def rate_limited_in_last(
             self,
             seconds: int | None = None,
     ) -> bool:
         """Denotes if the oracles has been rate limited in the last ``seconds``"""
+        if seconds is None:
+            return False
+
+        return ts_now() - self.last_rate_limit <= seconds
 
     @abc.abstractmethod
     def query_current_price(

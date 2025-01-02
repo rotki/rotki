@@ -141,6 +141,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.gnosis.manager import GnosisManager
     from rotkehlchen.chain.optimism.manager import OptimismManager
     from rotkehlchen.chain.polygon_pos.manager import PolygonPOSManager
+    from rotkehlchen.externalapis.alchemy import Alchemy
     from rotkehlchen.externalapis.coingecko import Coingecko
     from rotkehlchen.externalapis.cryptocompare import Cryptocompare
     from rotkehlchen.externalapis.defillama import Defillama
@@ -350,6 +351,7 @@ class Inquirer:
     _data_directory: Path
     _cryptocompare: 'Cryptocompare'
     _coingecko: 'Coingecko'
+    _alchemy: 'Alchemy'
     _defillama: 'Defillama'
     _manualcurrent: 'ManualCurrentOracle'
     _uniswapv2: Optional['UniswapV2Oracle'] = None
@@ -371,6 +373,7 @@ class Inquirer:
             cryptocompare: Optional['Cryptocompare'] = None,
             coingecko: Optional['Coingecko'] = None,
             defillama: Optional['Defillama'] = None,
+            alchemy: Optional['Alchemy'] = None,
             manualcurrent: Optional['ManualCurrentOracle'] = None,
             msg_aggregator: Optional['MessagesAggregator'] = None,
     ) -> 'Inquirer':
@@ -382,6 +385,7 @@ class Inquirer:
         assert cryptocompare, error_msg
         assert coingecko, error_msg
         assert defillama, error_msg
+        assert alchemy, error_msg
         assert manualcurrent, error_msg
         assert msg_aggregator, error_msg
 
@@ -391,6 +395,7 @@ class Inquirer:
         Inquirer._cryptocompare = cryptocompare
         Inquirer._coingecko = coingecko
         Inquirer._defillama = defillama
+        Inquirer._alchemy = alchemy
         Inquirer._manualcurrent = manualcurrent
         Inquirer._cached_current_price = LRUCacheWithRemove(maxsize=1024)
         Inquirer._evm_managers = {}
