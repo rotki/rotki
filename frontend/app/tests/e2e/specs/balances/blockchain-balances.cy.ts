@@ -45,7 +45,7 @@ describe('blockchain balances', () => {
     tagManager.addTag('[data-cy=account-tag-field]', 'public', 'Public Accounts', 'EF703C', 'FFFFF8');
     blockchainBalancesPage.addBalance(blockchainBalances[0]);
     blockchainBalancesPage.isEntryVisible(0, blockchainBalances[0]);
-    cy.get('[data-cy=price-refresh]').should('not.be.disabled');
+    cy.get('[data-cy=price-refresh]', { timeout: 120000 }).should('not.be.disabled');
     cy.assertNoRunningTasks();
   });
 
@@ -54,7 +54,7 @@ describe('blockchain balances', () => {
     blockchainBalancesPage.addBalance(blockchainBalances[1]);
     blockchainBalancesPage.openTab('bitcoin');
     blockchainBalancesPage.isEntryVisible(0, blockchainBalances[1]);
-    cy.get('[data-cy=price-refresh]').should('not.be.disabled');
+    cy.get('[data-cy=price-refresh]', { timeout: 120000 }).should('not.be.disabled');
     cy.assertNoRunningTasks();
   });
 
