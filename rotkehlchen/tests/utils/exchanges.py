@@ -749,6 +749,7 @@ def create_test_bitmex(
         msg_aggregator=msg_aggregator,
     )
     bitmex.first_connection_made = True
+    bitmex.asset_to_decimals = {'XBt': 8, 'USDt': 6}
     return bitmex
 
 
