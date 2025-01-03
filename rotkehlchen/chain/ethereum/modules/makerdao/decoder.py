@@ -6,7 +6,6 @@ from rotkehlchen.chain.ethereum.constants import RAY_DIGITS
 from rotkehlchen.chain.ethereum.defi.defisaver_proxy import HasDSProxy
 from rotkehlchen.chain.ethereum.utils import (
     asset_normalized_value,
-    token_normalized_value,
     token_normalized_value_decimals,
 )
 from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS
@@ -212,10 +211,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
         if context.tx_log.topics[0] == GENERIC_JOIN:
             join_user_address = bytes_to_address(context.tx_log.topics[2])
             raw_amount = int.from_bytes(context.tx_log.topics[3])
-            amount = token_normalized_value(
-                token_amount=raw_amount,
-                token=self.dai,
-            )
+            amount = asset_normalized_value(amount=raw_amount, asset=self.dai)
             # The transfer comes right before, but we don't have enough information
             # yet to make sure that this transfer is indeed a vault payback debt. We
             # need to get a cdp frob event and compare vault id to address matches
@@ -255,10 +251,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
                 return DEFAULT_DECODING_OUTPUT  # no matching daijoin for potjoin
 
             raw_amount = int.from_bytes(daijoin_log.topics[3])
-            amount = token_normalized_value(
-                token_amount=raw_amount,
-                token=self.dai,
-            )
+            amount = asset_normalized_value(amount=raw_amount, asset=self.dai)
 
             # The transfer event should be right before
             for event in context.decoded_events:
@@ -292,10 +285,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
                 return DEFAULT_DECODING_OUTPUT  # no matching daiexit for potexit
 
             raw_amount = int.from_bytes(daiexit_log.topics[3])
-            amount = token_normalized_value(
-                token_amount=raw_amount,
-                token=self.dai,
-            )
+            amount = asset_normalized_value(amount=raw_amount, asset=self.dai)
             # The transfer event will be in a subsequent logs
             action_item = ActionItem(
                 action='transform',
@@ -372,10 +362,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
         # but it's part of the data location after the first 132 bytes.
         # also need to shift by ray since it's in rad
         raw_amount = shift_num_right_by(int.from_bytes(context.tx_log.data[132:164]), RAY_DIGITS)
-        amount = token_normalized_value(
-            token_amount=raw_amount,
-            token=self.dai,
-        )
+        amount = asset_normalized_value(amount=raw_amount, asset=self.dai)
 
         # The transfer event appears after the debt generation event, so we need to transform it
         action_item = ActionItem(

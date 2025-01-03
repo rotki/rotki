@@ -17,7 +17,7 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.types import ActionType
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token, get_token
-from rotkehlchen.chain.ethereum.utils import token_normalized_value
+from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.decoding.interfaces import ReloadableDecoderMixin
 from rotkehlchen.chain.evm.decoding.oneinch.v5.decoder import Oneinchv5Decoder
 from rotkehlchen.chain.evm.decoding.oneinch.v6.decoder import Oneinchv6Decoder
@@ -921,7 +921,7 @@ class EVMTransactionDecoder(ABC):
         if not self.base.any_tracked([owner_address, spender_address]):
             return DEFAULT_DECODING_OUTPUT
 
-        amount = token_normalized_value(token_amount=amount_raw, token=token)
+        amount = asset_normalized_value(amount=amount_raw, asset=token)
         if amount == ZERO:
             notes = f'Revoke {token.symbol} spending approval of {owner_address} by {spender_address}'  # noqa: E501
         else:

@@ -10,7 +10,7 @@ from rotkehlchen.accounting.structures.defi import DefiEvent, DefiEventType
 from rotkehlchen.assets.asset import CryptoAsset
 from rotkehlchen.chain.ethereum.constants import RAY, RAY_DIGITS
 from rotkehlchen.chain.ethereum.defi.defisaver_proxy import HasDSProxy
-from rotkehlchen.chain.ethereum.utils import asset_normalized_value, token_normalized_value
+from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_DAI
@@ -427,10 +427,7 @@ class MakerdaoVaults(HasDSProxy):
         for event in events:
             given_amount = shift_num_right_by(hexstr_to_int(event['topics'][3]), RAY_DIGITS)
             total_dai_wei += given_amount
-            amount = token_normalized_value(
-                token_amount=given_amount,
-                token=self.dai,
-            )
+            amount = asset_normalized_value(amount=given_amount, asset=self.dai)
             timestamp = self.ethereum.get_event_timestamp(event)
             usd_price = query_usd_price_or_use_default(
                 asset=A_DAI,
@@ -459,10 +456,7 @@ class MakerdaoVaults(HasDSProxy):
         for event in events:
             given_amount = hexstr_to_int(event['topics'][3])
             total_dai_wei -= given_amount
-            amount = token_normalized_value(
-                token_amount=given_amount,
-                token=self.dai,
-            )
+            amount = asset_normalized_value(amount=given_amount, asset=self.dai)
             if amount == ZERO:
                 # it seems there is a zero DAI value transfer from the urn when
                 # withdrawing ETH. So we should ignore these as events
@@ -518,9 +512,9 @@ class MakerdaoVaults(HasDSProxy):
                 tx_hash=event['transactionHash'],
             ))
 
-        total_interest_owed = vault.debt.amount - token_normalized_value(
-            token_amount=total_dai_wei,
-            token=self.dai,
+        total_interest_owed = vault.debt.amount - asset_normalized_value(
+            amount=total_dai_wei,
+            asset=self.dai,
         )
         # sort vault events by timestamp
         vault_events.sort(key=lambda event: event.timestamp)

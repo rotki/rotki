@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any, Final, Literal
 
 from eth_utils import to_checksum_address
 
-from rotkehlchen.chain.ethereum.utils import should_update_protocol_cache, token_normalized_value
+from rotkehlchen.chain.ethereum.utils import asset_normalized_value, should_update_protocol_cache
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE
 from rotkehlchen.chain.evm.decoding.interfaces import (
@@ -129,13 +129,13 @@ class CurveLendCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
             log.error(f'Failed to get tokens for Curve lending vault {vault_address} due to {e!s}')
             return None
 
-        assets_amount = token_normalized_value(
-            token_amount=int.from_bytes(context.tx_log.data[0:32]),
-            token=underlying_token,
+        assets_amount = asset_normalized_value(
+            amount=int.from_bytes(context.tx_log.data[0:32]),
+            asset=underlying_token,
         )
-        shares_amount = token_normalized_value(
-            token_amount=int.from_bytes(context.tx_log.data[32:64]),
-            token=vault_token,
+        shares_amount = asset_normalized_value(
+            amount=int.from_bytes(context.tx_log.data[32:64]),
+            asset=vault_token,
         )
         return vault_token, underlying_token, shares_amount, assets_amount
 
@@ -372,13 +372,13 @@ class CurveLendCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
         return (
             collateral_token,
             borrowed_token,
-            token_normalized_value(
-                token_amount=int.from_bytes(context.tx_log.data[0:32]),
-                token=collateral_token,
+            asset_normalized_value(
+                amount=int.from_bytes(context.tx_log.data[0:32]),
+                asset=collateral_token,
             ),
-            token_normalized_value(
-                token_amount=int.from_bytes(context.tx_log.data[32:64]),
-                token=borrowed_token,
+            asset_normalized_value(
+                amount=int.from_bytes(context.tx_log.data[32:64]),
+                asset=borrowed_token,
             ),
         )
 
@@ -402,13 +402,13 @@ class CurveLendCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
                 tx_log.topics[0] == LEVERAGE_ZAP_DEPOSIT_TOPIC and
                 self.base.is_tracked(bytes_to_address(tx_log.topics[1]))
             ):
-                collateral_amount = token_normalized_value(
-                    token_amount=int.from_bytes(tx_log.data[0:32]),
-                    token=collateral_token,
+                collateral_amount = asset_normalized_value(
+                    amount=int.from_bytes(tx_log.data[0:32]),
+                    asset=collateral_token,
                 )
-                borrowed_amount = token_normalized_value(
-                    token_amount=int.from_bytes(tx_log.data[32:64]),
-                    token=borrowed_token,
+                borrowed_amount = asset_normalized_value(
+                    amount=int.from_bytes(tx_log.data[32:64]),
+                    asset=borrowed_token,
                 )
                 break
         else:
@@ -587,9 +587,9 @@ class CurveLendCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
             )
             return DEFAULT_DECODING_OUTPUT
 
-        collateral_amount = token_normalized_value(
-            token_amount=int.from_bytes(context.tx_log.data[0:32]),
-            token=collateral_token,
+        collateral_amount = asset_normalized_value(
+            amount=int.from_bytes(context.tx_log.data[0:32]),
+            asset=collateral_token,
         )
         return DecodingOutput(action_items=[ActionItem(
             action='transform',

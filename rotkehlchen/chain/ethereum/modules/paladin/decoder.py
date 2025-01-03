@@ -2,7 +2,7 @@ import logging
 from typing import Any
 
 from rotkehlchen.assets.utils import get_or_create_evm_token
-from rotkehlchen.chain.ethereum.utils import token_normalized_value
+from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
@@ -40,7 +40,7 @@ class PaladinDecoder(DecoderInterface):
             chain_id=ChainID.ETHEREUM,
             evm_inquirer=self.evm_inquirer,
         )
-        normalized_amount = token_normalized_value(amount, claimed_token)
+        normalized_amount = asset_normalized_value(amount, claimed_token)
         for event in context.decoded_events:
             if event.event_type == HistoryEventType.RECEIVE and event.event_subtype == HistoryEventSubType.NONE and event.asset == claimed_token and event.balance.amount == normalized_amount and event.location_label == user_address:  # noqa: E501
                 event.event_subtype = HistoryEventSubType.REWARD

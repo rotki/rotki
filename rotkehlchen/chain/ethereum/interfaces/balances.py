@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Literal
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.assets.asset import Asset, EvmToken
-from rotkehlchen.chain.ethereum.utils import token_normalized_value
+from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.tokens import get_chunk_size_call_order
 from rotkehlchen.chain.evm.types import WeightedNode, string_to_evm_address
 from rotkehlchen.db.filtering import EvmEventFilterQuery
@@ -214,7 +214,7 @@ class ProtocolWithGauges(ProtocolWithBalance):
                 if token_balance == 0:
                     continue
 
-                normalized_balance = token_normalized_value(token_balance, token)
+                normalized_balance = asset_normalized_value(token_balance, token)
                 balances[token] += normalized_balance
         except ValueError as e:
             raise RemoteError('tokensBalance query returned less tokens than expected') from e

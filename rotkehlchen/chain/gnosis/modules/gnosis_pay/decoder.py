@@ -2,7 +2,7 @@ import logging
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any
 
-from rotkehlchen.chain.ethereum.utils import token_normalized_value
+from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface, ReloadableDecoderMixin
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
@@ -121,7 +121,7 @@ class GnosisPayDecoder(DecoderInterface, ReloadableDecoderMixin):
         # hex_or_bytes_to_address(context.tx_log.data[32:64])  # noqa: ERA001
         # should we use it?
         raw_amount = int.from_bytes(context.tx_log.data[96:128])
-        amount = token_normalized_value(raw_amount, token)
+        amount = asset_normalized_value(raw_amount, token)
 
         for event in context.decoded_events:
             if (

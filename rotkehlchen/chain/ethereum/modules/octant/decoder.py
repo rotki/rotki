@@ -2,7 +2,7 @@ import logging
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.chain.ethereum.utils import (
-    token_normalized_value,
+    asset_normalized_value,
     token_normalized_value_decimals,
 )
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
@@ -66,7 +66,7 @@ class OctantDecoder(DecoderInterface):
         if self.base.is_tracked(address) is False:
             return DEFAULT_DECODING_OUTPUT
 
-        amount = token_normalized_value(raw_amount, self.glm)
+        amount = asset_normalized_value(raw_amount, self.glm)
 
         for event in context.decoded_events:
             if (

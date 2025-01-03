@@ -7,7 +7,7 @@ from rotkehlchen.chain.ethereum.modules.compound.constants import (
     COMPTROLLER_PROXY_ADDRESS,
     CPT_COMPOUND,
 )
-from rotkehlchen.chain.ethereum.utils import asset_normalized_value, token_normalized_value
+from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
@@ -83,7 +83,7 @@ class Compoundv2Decoder(DecoderInterface):
             return DEFAULT_DECODING_OUTPUT
 
         mint_amount = asset_normalized_value(mint_amount_raw, underlying_asset)
-        minted_amount = token_normalized_value(minted_amount_raw, compound_token)
+        minted_amount = asset_normalized_value(minted_amount_raw, compound_token)
         out_event = None
         for event in decoded_events:
             # Find the transfer event which should have come before the minting
@@ -135,7 +135,7 @@ class Compoundv2Decoder(DecoderInterface):
             return DEFAULT_DECODING_OUTPUT
 
         redeem_amount = asset_normalized_value(redeem_amount_raw, underlying_asset)
-        redeem_tokens = token_normalized_value(redeem_tokens_raw, compound_token)
+        redeem_tokens = asset_normalized_value(redeem_tokens_raw, compound_token)
         out_event = in_event = None
         for event in decoded_events:
             # Find the transfer event which should have come before the redeeming

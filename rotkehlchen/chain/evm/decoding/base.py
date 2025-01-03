@@ -23,7 +23,7 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
 
-from rotkehlchen.chain.ethereum.utils import asset_normalized_value, token_normalized_value
+from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import EvmTokenKind, EvmTransaction, EVMTxHash, Location
@@ -171,7 +171,7 @@ class BaseDecoderTools:
         counterparty_or_address = counterparty or address
         amount_raw_or_token_id = int.from_bytes(tx_log.data)
         if token.token_kind == EvmTokenKind.ERC20:
-            amount = token_normalized_value(token_amount=amount_raw_or_token_id, token=token)
+            amount = asset_normalized_value(amount=amount_raw_or_token_id, asset=token)
             if event_type in OUTGOING_EVENT_TYPES:
                 notes = f'{verb} {amount} {token.symbol} from {location_label} to {counterparty_or_address}'  # noqa: E501
             else:

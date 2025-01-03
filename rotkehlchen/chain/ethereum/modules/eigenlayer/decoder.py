@@ -38,7 +38,7 @@ from rotkehlchen.chain.ethereum.modules.eigenlayer.constants import (
     WITHDRAWAL_QUEUED,
 )
 from rotkehlchen.chain.ethereum.modules.eigenlayer.utils import get_eigenpods_to_owners_mapping
-from rotkehlchen.chain.ethereum.utils import token_normalized_value
+from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.decoding.clique.decoder import CliqueAirdropDecoderInterface
 from rotkehlchen.chain.evm.decoding.interfaces import ReloadableDecoderMixin
@@ -479,9 +479,9 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
                 address=bytes_to_address(raw_address),
                 encounter=encounter,
             ))
-            underlying_amounts.append(token_normalized_value(
-                token_amount=int.from_bytes(raw_amount),
-                token=underlying_token,
+            underlying_amounts.append(asset_normalized_value(
+                amount=int.from_bytes(raw_amount),
+                asset=underlying_token,
             ))
 
         if beacon_eth_idx != -1:  # it's just ETH. Insert at same position
@@ -615,7 +615,7 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
             ),
         )
         amount_raw = int.from_bytes(context.tx_log.data[64:96])
-        amount = token_normalized_value(token_amount=amount_raw, token=token)
+        amount = asset_normalized_value(amount=amount_raw, asset=token)
 
         for event in context.decoded_events:
             if event.event_type == HistoryEventType.RECEIVE and event.event_subtype == HistoryEventSubType.NONE and event.asset == token and event.balance.amount == amount:  # noqa: E501

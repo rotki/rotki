@@ -6,7 +6,7 @@ from eth_typing import ABI
 
 from rotkehlchen.assets.asset import AssetWithSymbol
 from rotkehlchen.assets.utils import get_token
-from rotkehlchen.chain.ethereum.utils import token_normalized_value
+from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.errors.misc import NotERC20Conformant, NotERC721Conformant, RemoteError
@@ -238,8 +238,8 @@ def get_vault_price(
         )
         return ZERO_PRICE
 
-    formatted_pps = token_normalized_value(
-        token_amount=price_per_share,
-        token=underlying_token,
+    formatted_pps = asset_normalized_value(
+        amount=price_per_share,
+        asset=underlying_token,
     )
     return Price(inquirer.find_usd_price(asset=underlying_token) * formatted_pps)

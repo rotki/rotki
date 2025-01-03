@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.ethereum.airdrops import AIRDROP_IDENTIFIER_KEY
 from rotkehlchen.chain.ethereum.modules.diva.decoder import DELEGATE_CHANGED
-from rotkehlchen.chain.ethereum.utils import token_normalized_value
+from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
@@ -68,7 +68,7 @@ class ShutterDecoder(DecoderInterface):
                 bytes_to_address(tx_log.topics[1]) == SHUTTER_AIDROP_CONTRACT and
                 bytes_to_address(tx_log.topics[2]) == vesting_contract_address
             ):
-                amount = token_normalized_value(token_amount=int.from_bytes(tx_log.data), token=self.shu)  # noqa: E501
+                amount = asset_normalized_value(amount=int.from_bytes(tx_log.data), asset=self.shu)
                 break
         else:
             log.error(f'Could not find the SHU transfer in {context.transaction.tx_hash.hex()}')

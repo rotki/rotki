@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, TypeVar
 
 from rotkehlchen.assets.asset import Asset, EvmToken, Nft
 from rotkehlchen.chain.ethereum.utils import (
-    token_normalized_value,
+    asset_normalized_value,
     token_normalized_value_decimals,
 )
 from rotkehlchen.chain.evm.types import WeightedNode, asset_id_is_evm_token
@@ -230,7 +230,7 @@ class EvmTokens(ABC):
                 if token_balance == 0:
                     continue
 
-                normalized_balance = token_normalized_value(token_balance, token)
+                normalized_balance = asset_normalized_value(amount=token_balance, asset=token)
                 log.debug(
                     f'Found {self.evm_inquirer.chain_name} {token.symbol}({token.evm_address}) '
                     f'token balance for {address} and balance {normalized_balance}',
