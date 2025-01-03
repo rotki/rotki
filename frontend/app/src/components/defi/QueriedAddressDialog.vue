@@ -116,7 +116,7 @@ function close() {
             icon
             @click="close()"
           >
-            <RuiIcon name="close-line" />
+            <RuiIcon name="lu-x" />
           </RuiButton>
         </div>
       </template>
@@ -138,7 +138,7 @@ function close() {
           icon
           @click="addAddress()"
         >
-          <RuiIcon name="add-line" />
+          <RuiIcon name="lu-plus" />
         </RuiButton>
       </div>
       <div
@@ -176,7 +176,7 @@ function close() {
               >
                 <RuiIcon
                   size="16"
-                  name="delete-bin-line"
+                  name="lu-trash-2"
                 />
               </RuiButton>
             </template>

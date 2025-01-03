@@ -56,7 +56,7 @@ onMounted(() => {
         >
           <span class="text-rui-text-primary">{{ example.original }}</span>
           <RuiIcon
-            name="arrow-right-line"
+            name="lu-arrow-right"
             class="text-rui-text-secondary"
           />
           <AmountDisplay

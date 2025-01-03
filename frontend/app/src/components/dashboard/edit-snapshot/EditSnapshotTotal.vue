@@ -249,7 +249,7 @@ const suggestionsLabel = computed(() => ({
         @click="updateStep(2)"
       >
         <template #prepend>
-          <RuiIcon name="arrow-left-line" />
+          <RuiIcon name="lu-arrow-left" />
         </template>
         {{ t('common.actions.back') }}
       </RuiButton>
@@ -259,7 +259,7 @@ const suggestionsLabel = computed(() => ({
       >
         {{ t('common.actions.finish') }}
         <template #append>
-          <RuiIcon name="arrow-right-line" />
+          <RuiIcon name="lu-arrow-right" />
         </template>
       </RuiButton>
     </div>

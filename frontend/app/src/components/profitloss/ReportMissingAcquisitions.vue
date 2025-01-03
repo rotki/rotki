@@ -222,7 +222,7 @@ async function showInHistoryEvent(identifier: number) {
               >
                 <RuiIcon
                   size="20"
-                  name="more-2-fill"
+                  name="lu-ellipsis-vertical"
                 />
               </RuiButton>
             </template>
@@ -232,7 +232,7 @@ async function showInHistoryEvent(identifier: number) {
                 @click="ignoreAsset(row.asset)"
               >
                 <template #prepend>
-                  <RuiIcon name="eye-off-line" />
+                  <RuiIcon name="lu-eye-off" />
                   {{ t('assets.ignore') }}
                 </template>
               </RuiButton>
@@ -250,7 +250,7 @@ async function showInHistoryEvent(identifier: number) {
               >
                 <RuiIcon
                   size="18"
-                  name="eye-off-line"
+                  name="lu-eye-off"
                 />
               </BadgeDisplay>
             </template>
@@ -296,7 +296,7 @@ async function showInHistoryEvent(identifier: number) {
             >
               {{ t('profit_loss_report.actionable.missing_acquisitions.show_in_history_event') }}
               <template #append>
-                <RuiIcon name="arrow-right-s-line" />
+                <RuiIcon name="lu-chevron-right" />
               </template>
             </RuiButton>
           </template>

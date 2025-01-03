@@ -113,9 +113,7 @@ async function importSnapshot() {
         custom-color
         v-bind="attrs"
       >
-        <slot name="button-icon">
-          <RuiIcon name="screenshot-2-line" />
-        </slot>
+        <RuiIcon name="lu-chevron-down" />
       </MenuTooltipButton>
     </template>
     <div class="p-4 md:w-[16rem] w-full">
@@ -143,7 +141,7 @@ async function importSnapshot() {
           @click="refreshAllAndSave()"
         >
           <template #prepend>
-            <RuiIcon name="save-line" />
+            <RuiIcon name="lu-save" />
           </template>
           {{ t('snapshot_action_button.force_save') }}
         </RuiButton>
@@ -154,7 +152,7 @@ async function importSnapshot() {
         >
           <template #activator>
             <RuiIcon
-              name="information-line"
+              name="lu-info"
               color="primary"
             />
           </template>

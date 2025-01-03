@@ -73,7 +73,7 @@ function handleCreateTagClick() {
         @click="handleCreateTagClick()"
       >
         <template #prepend>
-          <RuiIcon name="add-line" />
+          <RuiIcon name="lu-plus" />
         </template>
         {{ t('tag_manager.create_tag.title') }}
       </RuiButton>
@@ -86,7 +86,7 @@ function handleCreateTagClick() {
         color="primary"
         dense
         clearable
-        prepend-icon="search-line"
+        prepend-icon="lu-search"
         :label="t('common.actions.search')"
         hide-details
       />

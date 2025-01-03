@@ -144,7 +144,7 @@ onMounted(async () => {
       <div class="flex items-center justify-center md:justify-end mt-2 md:mr-6 text-rui-text-secondary gap-2">
         <RuiIcon
           class="shrink-0"
-          name="corner-left-up-line"
+          name="lu-corner-left-up"
         />
         <div class="pt-3">
           {{ t('staking_page.dropdown_hint') }}

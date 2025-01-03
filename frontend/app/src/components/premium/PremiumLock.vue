@@ -20,6 +20,6 @@ const { href, onLinkClick } = useLinks();
     v-bind="$attrs"
     @click="onLinkClick()"
   >
-    <RuiIcon name="lock-line" />
+    <RuiIcon name="lu-lock-keyhole" />
   </MenuTooltipButton>
 </template>

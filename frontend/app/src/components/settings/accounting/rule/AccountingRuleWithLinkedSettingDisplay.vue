@@ -55,7 +55,7 @@ const value = computed<boolean>(() => {
         <template #activator>
           <RuiIcon
             size="12"
-            name="links-line"
+            name="lu-link"
           />
         </template>
         <div>{{ t('accounting_settings.rule.value_overwritten') }}</div>

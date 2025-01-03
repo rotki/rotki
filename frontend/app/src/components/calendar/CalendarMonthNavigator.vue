@@ -24,7 +24,7 @@ const readableMonthAndYear = computed(() => get(model).format('MMMM YYYY'));
       class="!p-2"
       @click="prevMonth()"
     >
-      <RuiIcon name="arrow-left-s-line" />
+      <RuiIcon name="lu-chevron-left" />
     </RuiButton>
     <RuiButton
       variant="text"
@@ -32,7 +32,7 @@ const readableMonthAndYear = computed(() => get(model).format('MMMM YYYY'));
       class="!p-2"
       @click="nextMonth()"
     >
-      <RuiIcon name="arrow-right-s-line" />
+      <RuiIcon name="lu-chevron-right" />
     </RuiButton>
     <div class="pl-4">
       <RuiTextField
@@ -43,7 +43,7 @@ const readableMonthAndYear = computed(() => get(model).format('MMMM YYYY'));
         readonly
         dense
         hide-details
-        append-icon="calendar-line"
+        append-icon="lu-calendar-days"
       />
     </div>
   </div>

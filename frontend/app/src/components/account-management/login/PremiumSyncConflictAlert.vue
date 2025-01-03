@@ -26,7 +26,7 @@ const lastModified = useRefMap(syncConflict, (conflict) => {
   <Transition name="bounce">
     <LoginActionAlert
       v-if="syncConflict"
-      icon="download-cloud-line"
+      icon="lu-cloud-download"
       @cancel="emit('proceed', 'no')"
       @confirm="emit('proceed', 'yes')"
     >

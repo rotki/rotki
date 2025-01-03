@@ -240,7 +240,7 @@ watch(loading, async (isLoading, wasLoading) => {
               @click="refreshNonFungibleBalances(true)"
             >
               <template #prepend>
-                <RuiIcon name="refresh-line" />
+                <RuiIcon name="lu-refresh-ccw" />
               </template>
               {{ t('common.refresh') }}
             </RuiButton>

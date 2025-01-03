@@ -205,7 +205,7 @@ watch(ignoredFilter, (oldValue, newValue) => {
         @click="fetchData()"
       >
         <template #prepend>
-          <RuiIcon name="refresh-line" />
+          <RuiIcon name="lu-refresh-ccw" />
         </template>
         {{ t('common.refresh') }}
       </RuiButton>
@@ -216,7 +216,7 @@ watch(ignoredFilter, (oldValue, newValue) => {
         @click="add()"
       >
         <template #prepend>
-          <RuiIcon name="add-line" />
+          <RuiIcon name="lu-plus" />
         </template>
         {{ t('managed_asset_content.add_asset') }}
       </RuiButton>
@@ -229,7 +229,7 @@ watch(ignoredFilter, (oldValue, newValue) => {
             class="!p-2"
             v-bind="attrs"
           >
-            <RuiIcon name="more-2-fill" />
+            <RuiIcon name="lu-ellipsis-vertical" />
           </RuiButton>
         </template>
         <div class="py-2">
@@ -246,7 +246,7 @@ watch(ignoredFilter, (oldValue, newValue) => {
                 @click="mergeTool = true"
               >
                 <template #prepend>
-                  <RuiIcon name="git-merge-line" />
+                  <RuiIcon name="lu-combine" />
                 </template>
                 {{ t('asset_management.merge_assets') }}
               </RuiButton>

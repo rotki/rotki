@@ -61,7 +61,7 @@ const selections: { value: RoundingMode; text: string; description: string }[] =
         <RuiIcon
           v-if="active"
           class="transition"
-          name="check-line"
+          name="lu-check"
           size="24"
         />
       </template>

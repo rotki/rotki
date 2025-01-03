@@ -244,7 +244,7 @@ defineExpose({
           >
             <RuiIcon
               size="20"
-              :name="!editKeys ? 'pencil-line' : 'close-line'"
+              :name="!editKeys ? 'lu-pencil' : 'lu-x'"
             />
           </RuiButton>
         </template>
@@ -263,7 +263,7 @@ defineExpose({
           :disabled="editMode && !editKeys"
           :error-messages="toMessages(v$.apiKey)"
           data-cy="api-key"
-          prepend-icon="key-line"
+          prepend-icon="lu-key"
           :label="label"
           :hint="hint"
           :class="className"
@@ -279,7 +279,7 @@ defineExpose({
           :disabled="editMode && !editKeys"
           :error-messages="toMessages(v$.apiSecret)"
           data-cy="api-secret"
-          prepend-icon="lock-line"
+          prepend-icon="lu-lock-keyhole"
           :label="label"
           :hint="hint"
           :class="className"
@@ -294,7 +294,7 @@ defineExpose({
           variant="outlined"
           color="primary"
           :error-messages="toMessages(v$.passphrase)"
-          prepend-icon="key-line"
+          prepend-icon="lu-key"
           data-cy="passphrase"
           :label="label"
           :hint="hint"

@@ -93,7 +93,7 @@ const sources = computed<ImportSource[]>(() => [
   },
   {
     form: markRaw(defineAsyncComponent(() => import('@/components/import/CustomImport.vue'))),
-    icon: 'file-text-line',
+    icon: 'lu-file-text',
     key: 'custom',
     label: t('import_data.custom.name'),
   },

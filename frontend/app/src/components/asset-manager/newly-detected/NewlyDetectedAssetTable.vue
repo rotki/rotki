@@ -148,7 +148,7 @@ async function markAsSpam(identifiers?: string | string[]): Promise<void> {
                   class="w-12 h-12"
                   @click="removeTokens()"
                 >
-                  <RuiIcon name="check-line" />
+                  <RuiIcon name="lu-check" />
                 </RuiButton>
               </template>
 
@@ -167,7 +167,7 @@ async function markAsSpam(identifiers?: string | string[]): Promise<void> {
                   class="w-12 h-12"
                   @click="markAsSpam()"
                 >
-                  <RuiIcon name="spam-line" />
+                  <RuiIcon name="lu-octagon-alert" />
                 </RuiButton>
               </template>
 
@@ -237,7 +237,7 @@ async function markAsSpam(identifiers?: string | string[]): Promise<void> {
                 class="m-auto !rounded-none"
                 @click="removeTokens(row.tokenIdentifier)"
               >
-                <RuiIcon name="check-line" />
+                <RuiIcon name="lu-check" />
               </RuiButton>
             </template>
             {{ t('asset_table.newly_detected.accept') }}
@@ -254,7 +254,7 @@ async function markAsSpam(identifiers?: string | string[]): Promise<void> {
                 class="m-auto !rounded-none"
                 @click="markAsSpam(row.tokenIdentifier)"
               >
-                <RuiIcon name="spam-line" />
+                <RuiIcon name="lu-octagon-alert" />
               </RuiButton>
             </template>
             {{ t('asset_table.newly_detected.mark_as_spam') }}

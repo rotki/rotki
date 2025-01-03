@@ -85,7 +85,7 @@ onMounted(() => {
               icon
               @click="formatHelp = true"
             >
-              <RuiIcon name="information-line" />
+              <RuiIcon name="lu-info" />
             </RuiButton>
           </template>
         </RuiTextField>
@@ -101,7 +101,7 @@ onMounted(() => {
               icon
               @click="updateImmediate(defaultDateDisplayFormat)"
             >
-              <RuiIcon name="history-line" />
+              <RuiIcon name="lu-history" />
             </RuiButton>
           </template>
           {{ t('general_settings.date_display_tooltip') }}

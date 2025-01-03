@@ -93,7 +93,7 @@ const operations = computed<WatcherOperation[]>(() => {
 
 function existingWatchersIcon(identifier: string): RuiIcons {
   const edit = get(existingWatchersEdit);
-  return edit[identifier] ? 'check-line' : 'pencil-line';
+  return edit[identifier] ? 'lu-check' : 'lu-pencil';
 }
 
 function validateSettingChange(targetState: string, message = '', timeOut = 5500) {
@@ -322,7 +322,7 @@ const [CreateLabel, ReuseLabel] = createReusableTemplate<{ label: string }>();
                 @click="deleteWatcher(watcher.identifier)"
               >
                 <RuiIcon
-                  name="delete-bin-5-line"
+                  name="lu-trash-2"
                   size="20"
                 />
               </RuiButton>
@@ -367,7 +367,7 @@ const [CreateLabel, ReuseLabel] = createReusableTemplate<{ label: string }>();
               icon
               @click="addWatcher()"
             >
-              <RuiIcon name="add-line" />
+              <RuiIcon name="lu-plus" />
             </RuiButton>
           </div>
         </div>

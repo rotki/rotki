@@ -176,7 +176,7 @@ const [DefineButton, ReuseButton] = createReusableTemplate();
     >
       <template #prepend>
         <RuiIcon
-          name="pencil-line"
+          name="lu-pencil"
           size="16"
           class="!text-rui-grey-400"
         />
@@ -260,7 +260,7 @@ const [DefineButton, ReuseButton] = createReusableTemplate();
             @click="copy(text)"
           >
             <RuiIcon
-              name="file-copy-line"
+              name="lu-copy"
               :size="size"
             />
           </RuiButton>
@@ -288,7 +288,7 @@ const [DefineButton, ReuseButton] = createReusableTemplate();
             @click="onLinkClick()"
           >
             <RuiIcon
-              name="external-link-line"
+              name="lu-external-link"
               :size="size"
             />
           </RuiButton>

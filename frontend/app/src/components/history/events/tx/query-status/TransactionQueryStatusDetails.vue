@@ -29,7 +29,7 @@ defineProps<{ item: EvmTransactionQueryData }>();
       <template #activator>
         <RuiIcon
           class="text-rui-text-secondary"
-          name="question-line"
+          name="lu-circle-help"
         />
       </template>
 

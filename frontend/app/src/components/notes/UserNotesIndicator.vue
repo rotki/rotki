@@ -22,7 +22,7 @@ function toggleVisibility() {
   >
     <RuiIcon
       :class="visible ? 'help--visible' : null"
-      name="sticky-note-line"
+      name="lu-notebook"
     />
   </MenuTooltipButton>
 </template>

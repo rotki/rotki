@@ -148,7 +148,7 @@ const autoCompleteHint = computed<string>(() => {
           @click="addItem()"
         >
           <div class="flex items-center gap-2">
-            <RuiIcon name="add-line" />
+            <RuiIcon name="lu-plus" />
             {{ t('common.actions.add') }}
           </div>
         </RuiButton>
@@ -195,7 +195,7 @@ const autoCompleteHint = computed<string>(() => {
                   @click="move(identifier, false)"
                 >
                   <RuiIcon
-                    name="arrow-up-line"
+                    name="lu-arrow-up"
                     size="16"
                   />
                 </RuiButton>
@@ -207,7 +207,7 @@ const autoCompleteHint = computed<string>(() => {
                   @click="move(identifier, true)"
                 >
                   <RuiIcon
-                    name="arrow-down-line"
+                    name="lu-arrow-down"
                     size="16"
                   />
                 </RuiButton>
@@ -236,7 +236,7 @@ const autoCompleteHint = computed<string>(() => {
                     variant="text"
                     @click="remove(identifier)"
                   >
-                    <RuiIcon name="close-line" />
+                    <RuiIcon name="lu-x" />
                   </RuiButton>
                 </template>
                 <span>

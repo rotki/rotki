@@ -15,7 +15,7 @@ export function usePrivacyMode(): UsePrivacyModeReturn {
   const { privacyMode } = storeToRefs(store);
 
   const privacyModeIcon = computed<RuiIcons>(() => {
-    const icons = ['eye-line', 'eye-2-line', 'eye-off-line'] as const;
+    const icons = ['lu-eye', 'lu-eye-off', 'lu-eye-closed'] as const;
     return icons[get(privacyMode)];
   });
 

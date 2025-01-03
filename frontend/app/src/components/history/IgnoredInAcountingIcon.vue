@@ -22,7 +22,7 @@ const { t } = useI18n();
     >
       <RuiIcon
         size="18"
-        name="eye-off-line"
+        name="lu-eye-off"
       />
       {{ t('common.ignored_in_accounting') }}
     </BadgeDisplay>
@@ -38,7 +38,7 @@ const { t } = useI18n();
         >
           <RuiIcon
             size="18"
-            name="eye-off-line"
+            name="lu-eye-off"
           />
         </BadgeDisplay>
       </template>

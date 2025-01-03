@@ -57,7 +57,7 @@ function hideAddAction(item: HistoryEventEntry): boolean {
           v-bind="attrs"
         >
           <RuiIcon
-            name="more-2-fill"
+            name="lu-ellipsis-vertical"
             size="20"
           />
         </RuiButton>
@@ -69,7 +69,7 @@ function hideAddAction(item: HistoryEventEntry): boolean {
           @click="addEvent(event)"
         >
           <template #prepend>
-            <RuiIcon name="add-line" />
+            <RuiIcon name="lu-plus" />
           </template>
           {{ t('transactions.actions.add_event_here') }}
         </RuiButton>
@@ -78,7 +78,7 @@ function hideAddAction(item: HistoryEventEntry): boolean {
           @click="toggleIgnore(event)"
         >
           <template #prepend>
-            <RuiIcon :name="event.ignoredInAccounting ? 'eye-line' : 'eye-off-line'" />
+            <RuiIcon :name="event.ignoredInAccounting ? 'lu-eye' : 'lu-eye-off'" />
           </template>
           {{ event.ignoredInAccounting ? t('transactions.unignore') : t('transactions.ignore') }}
         </RuiButton>
@@ -89,7 +89,7 @@ function hideAddAction(item: HistoryEventEntry): boolean {
             @click="redecode(toEvmChainAndTxHash(evmEvent))"
           >
             <template #prepend>
-              <RuiIcon name="restart-line" />
+              <RuiIcon name="lu-rotate-ccw" />
             </template>
             {{ t('transactions.actions.redecode_events') }}
           </RuiButton>
@@ -100,7 +100,7 @@ function hideAddAction(item: HistoryEventEntry): boolean {
             @click="deleteTxAndEvents(evmEvent)"
           >
             <template #prepend>
-              <RuiIcon name="delete-bin-line" />
+              <RuiIcon name="lu-trash-2" />
             </template>
             {{ t('transactions.actions.delete_transaction') }}
           </RuiButton>

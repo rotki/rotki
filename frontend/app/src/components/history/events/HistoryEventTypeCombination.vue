@@ -17,11 +17,11 @@ const { type } = toRefs(props);
 const directionIcon = computed<RuiIcons>(() => {
   switch (get(type).direction) {
     case 'in':
-      return 'arrow-down-line';
+      return 'lu-arrow-down';
     case 'out':
-      return 'arrow-up-line';
+      return 'lu-arrow-up';
     default:
-      return 'arrow-up-down-line';
+      return 'lu-arrow-up-down';
   }
 });
 

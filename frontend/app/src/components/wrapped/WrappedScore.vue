@@ -83,7 +83,7 @@ async function downloadImage() {
     >
       <template #prepend>
         <RuiIcon
-          name="external-link-line"
+          name="lu-external-link"
           size="12"
         />
       </template>

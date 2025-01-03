@@ -53,7 +53,7 @@ const { t } = useI18n();
             size="sm"
             v-bind="attrs"
           >
-            <RuiIcon name="information-line" />
+            <RuiIcon name="lu-info" />
           </RuiButton>
         </template>
         {{ t('common.details') }}
@@ -71,7 +71,7 @@ const { t } = useI18n();
               variant="text"
               @click="close()"
             >
-              <RuiIcon name="close-line" />
+              <RuiIcon name="lu-x" />
             </RuiButton>
           </div>
         </template>

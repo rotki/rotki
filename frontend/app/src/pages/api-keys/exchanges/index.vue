@@ -181,7 +181,7 @@ onMounted(async () => {
         @click="addExchange()"
       >
         <template #prepend>
-          <RuiIcon name="add-line" />
+          <RuiIcon name="lu-plus" />
         </template>
         {{ t('exchange_settings.dialog.add.title') }}
       </RuiButton>

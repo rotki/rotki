@@ -165,7 +165,7 @@ defineExpose({
             >
               <template #activator>
                 <RuiIcon
-                  name="earth-line"
+                  name="lu-earth"
                   class="text-rui-text-secondary"
                 />
               </template>
@@ -178,7 +178,7 @@ defineExpose({
             >
               <template #activator>
                 <RuiIcon
-                  name="user-2-line"
+                  name="lu-user"
                   class="text-rui-text-secondary"
                 />
               </template>
@@ -212,7 +212,7 @@ defineExpose({
             <RuiIcon
               color="success"
               size="16"
-              name="wifi-line"
+              name="lu-wifi"
             />
             <span>
               {{ t('evm_rpc_node_manager.connected.true') }}
@@ -226,7 +226,7 @@ defineExpose({
             <RuiIcon
               color="error"
               size="16"
-              name="wifi-off-line"
+              name="lu-wifi-off"
             />
             <span>
               {{ t('evm_rpc_node_manager.connected.false') }}

@@ -35,7 +35,7 @@ const { href, onLinkClick } = useLinks(url);
         </span>
         <template #append>
           <RuiIcon
-            name="external-link-line"
+            name="lu-external-link"
             :size="16"
           />
         </template>

@@ -20,7 +20,7 @@ function navigate() {
       @click="navigate()"
     >
       <div class="flex flex-col gap-2 items-center">
-        <RuiIcon name="add-circle-line" />
+        <RuiIcon name="lu-circle-plus" />
         <span>
           <slot />
         </span>

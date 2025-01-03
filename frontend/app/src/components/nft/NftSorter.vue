@@ -45,7 +45,7 @@ const sortProperties = [
           class="rounded-r-none"
           @click="toggleSortDesc()"
         >
-          <RuiIcon :name="sortDescending ? 'sort-desc' : 'sort-asc'" />
+          <RuiIcon :name="sortDescending ? 'lu-arrow-down-a-z' : 'lu-arrow-down-a-z'" />
         </RuiButton>
       </template>
       <span v-if="sortDescending">

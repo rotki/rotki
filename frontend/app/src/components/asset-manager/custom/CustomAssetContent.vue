@@ -143,7 +143,7 @@ watch(identifier, (assetId) => {
         @click="refresh()"
       >
         <template #prepend>
-          <RuiIcon name="refresh-line" />
+          <RuiIcon name="lu-refresh-ccw" />
         </template>
         {{ t('common.refresh') }}
       </RuiButton>
@@ -154,7 +154,7 @@ watch(identifier, (assetId) => {
         @click="add()"
       >
         <template #prepend>
-          <RuiIcon name="add-line" />
+          <RuiIcon name="lu-plus" />
         </template>
         {{ t('managed_asset_content.add_asset') }}
       </RuiButton>

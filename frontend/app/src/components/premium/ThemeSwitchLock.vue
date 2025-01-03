@@ -15,7 +15,7 @@ const { t } = useI18n();
   >
     <template #icon>
       <RuiIcon
-        name="lock-line"
+        name="lu-lock-keyhole"
         size="10"
       />
     </template>
@@ -24,7 +24,7 @@ const { t } = useI18n();
       :href="href"
       @click="onLinkClick()"
     >
-      <RuiIcon name="sun-line" />
+      <RuiIcon name="lu-sun" />
     </MenuTooltipButton>
   </RuiBadge>
 </template>

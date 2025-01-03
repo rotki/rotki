@@ -286,7 +286,7 @@ const totalPnl = computed<BigNumber | null>(() => {
                       tooltip-class="max-w-[10rem]"
                     >
                       <template #activator>
-                        <RuiIcon name="information-line" />
+                        <RuiIcon name="lu-info" />
                       </template>
                       <span>
                         {{ t('liquity_statistic.estimated_pnl_warning') }}

@@ -125,7 +125,7 @@ const excluded = computed(() => {
           @blur="v$.sourceIdentifier.$touch()"
         />
         <div class="my-4 flex justify-center">
-          <RuiIcon name="arrow-down-line" />
+          <RuiIcon name="lu-arrow-down" />
         </div>
         <AssetSelect
           v-model="targetIdentifier"

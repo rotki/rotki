@@ -54,7 +54,7 @@ const { t } = useI18n();
             <template #activator>
               <RuiIcon
                 size="20"
-                name="information-line"
+                name="lu-info"
               />
             </template>
             <span>{{ t('kraken_staking_overview.hint.historical') }}</span>
@@ -80,7 +80,7 @@ const { t } = useI18n();
             <template #activator>
               <RuiIcon
                 size="20"
-                name="information-line"
+                name="lu-info"
               />
             </template>
             <span>{{ t('kraken_staking_overview.hint.current') }}</span>

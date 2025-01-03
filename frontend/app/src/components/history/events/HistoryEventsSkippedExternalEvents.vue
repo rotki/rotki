@@ -178,7 +178,7 @@ async function reProcessSkippedEvents() {
           @click="exportCSV()"
         >
           <template #prepend>
-            <RuiIcon name="file-download-line" />
+            <RuiIcon name="lu-file-down" />
           </template>
           {{ t('common.actions.export_csv') }}
         </RuiButton>
@@ -188,7 +188,7 @@ async function reProcessSkippedEvents() {
           @click="reProcessSkippedEvents()"
         >
           <template #prepend>
-            <RuiIcon name="refresh-line" />
+            <RuiIcon name="lu-refresh-ccw" />
           </template>
           {{ t('transactions.events.skipped.reprocess.action') }}
         </RuiButton>

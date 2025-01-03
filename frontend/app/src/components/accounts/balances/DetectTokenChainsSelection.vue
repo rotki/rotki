@@ -104,7 +104,7 @@ watch(open, (open) => {
           color="primary"
           variant="outlined"
           :label="t('account_balances.detect_tokens.selection.type')"
-          prepend-icon="search-line"
+          prepend-icon="lu-search"
           hide-details
           clearable
         />
@@ -149,7 +149,7 @@ watch(open, (open) => {
             >
               <div class="flex items-center gap-1.5">
                 <RuiIcon
-                  name="refresh-line"
+                  name="lu-refresh-ccw"
                   size="16"
                 />
                 {{ t('account_balances.detect_tokens.selection.redetect') }}

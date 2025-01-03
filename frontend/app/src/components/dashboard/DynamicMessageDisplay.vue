@@ -67,7 +67,7 @@ const activeItem = computed<DashboardMessage>(() => props.messages[get(step) - 1
       size="sm"
       @click="emit('dismiss')"
     >
-      <RuiIcon name="close-line" />
+      <RuiIcon name="lu-x" />
     </RuiButton>
   </div>
 </template>

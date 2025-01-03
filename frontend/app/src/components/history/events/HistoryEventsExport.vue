@@ -120,7 +120,7 @@ const taskRunning = isTaskRunning(TaskType.EXPORT_HISTORY_EVENTS);
     @click="showConfirmation()"
   >
     <template #prepend>
-      <RuiIcon name="file-download-line" />
+      <RuiIcon name="lu-file-down" />
     </template>
     {{ t('common.actions.export_csv') }}
   </RuiButton>

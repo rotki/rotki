@@ -231,7 +231,7 @@ onMounted(async () => {
         @click="add()"
       >
         <template #prepend>
-          <RuiIcon name="add-line" />
+          <RuiIcon name="lu-plus" />
         </template>
         {{ t('calendar.add_event') }}
       </RuiButton>

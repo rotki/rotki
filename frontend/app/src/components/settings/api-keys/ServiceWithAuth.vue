@@ -124,7 +124,7 @@ defineExpose({
         :success-messages="successMessages"
         :disabled="!editMode"
         :label="t('external_services.credential.username')"
-        prepend-icon="user-line"
+        prepend-icon="lu-user"
       />
 
       <RuiRevealableTextField
@@ -138,7 +138,7 @@ defineExpose({
         :success-messages="successMessages.length > 0 ? [' '] : undefined"
         :disabled="!editMode"
         :label="t('external_services.credential.password')"
-        prepend-icon="key-line"
+        prepend-icon="lu-key"
       />
 
       <RuiTooltip
@@ -156,7 +156,7 @@ defineExpose({
             color="primary"
             @click="emit('delete-key', name)"
           >
-            <RuiIcon name="delete-bin-line" />
+            <RuiIcon name="lu-trash-2" />
           </RuiButton>
         </template>
         {{ tooltip }}

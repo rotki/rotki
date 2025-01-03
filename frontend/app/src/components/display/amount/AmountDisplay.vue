@@ -417,7 +417,7 @@ const [DefineSymbol, ReuseSymbol] = createReusableTemplate<{ name: string }>();
         <RuiIcon
           size="16"
           color="warning"
-          name="sparkling-line"
+          name="lu-sparkles"
         />
       </template>
 

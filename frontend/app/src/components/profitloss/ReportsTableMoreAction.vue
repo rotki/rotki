@@ -26,7 +26,7 @@ const { t } = useI18n();
         v-bind="attrs"
       >
         <RuiIcon
-          name="more-2-fill"
+          name="lu-ellipsis-vertical"
           size="20"
         />
       </RuiButton>
@@ -44,7 +44,7 @@ const { t } = useI18n();
         <template #prepend>
           <RuiIcon
             size="20"
-            name="delete-bin-5-line"
+            name="lu-trash-2"
           />
         </template>
 

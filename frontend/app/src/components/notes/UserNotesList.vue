@@ -205,7 +205,7 @@ watch(shouldIncreasePage, (increasePage) => {
       color="primary"
       dense
       class="flex-1"
-      prepend-icon="search-line"
+      prepend-icon="lu-search"
       :label="t('notes_menu.search')"
       clearable
       hide-details
@@ -218,7 +218,7 @@ watch(shouldIncreasePage, (increasePage) => {
       @click="addNote()"
     >
       <template #prepend>
-        <RuiIcon name="add-line" />
+        <RuiIcon name="lu-plus" />
       </template>
     </RuiButton>
   </div>
@@ -294,12 +294,13 @@ watch(shouldIncreasePage, (increasePage) => {
                       v-if="note.isPinned"
                       color="primary"
                       size="20"
-                      name="pushpin-fill"
+                      name="lu-pin"
+                      class="[&_path]:fill-rui-primary"
                     />
                     <RuiIcon
                       v-else
                       size="20"
-                      name="unpin-line"
+                      name="lu-pin"
                     />
                   </RuiButton>
                 </div>
@@ -325,7 +326,7 @@ watch(shouldIncreasePage, (increasePage) => {
                     <RuiIcon
                       size="16"
                       color="error"
-                      name="close-line"
+                      name="lu-x"
                     />
                   </RuiButton>
 
@@ -338,7 +339,7 @@ watch(shouldIncreasePage, (increasePage) => {
                     <RuiIcon
                       size="16"
                       color="success"
-                      name="check-line"
+                      name="lu-check"
                     />
                   </RuiButton>
                 </div>
@@ -363,7 +364,7 @@ watch(shouldIncreasePage, (increasePage) => {
                   >
                     <RuiIcon
                       size="16"
-                      name="pencil-line"
+                      name="lu-pencil"
                     />
                   </RuiButton>
 
@@ -375,7 +376,7 @@ watch(shouldIncreasePage, (increasePage) => {
                   >
                     <RuiIcon
                       size="16"
-                      name="delete-bin-line"
+                      name="lu-trash-2"
                     />
                   </RuiButton>
                 </div>

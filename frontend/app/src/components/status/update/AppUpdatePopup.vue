@@ -87,13 +87,13 @@ onMounted(async () => {
             v-else-if="!downloadReady && !downloading"
             size="40"
             color="primary"
-            name="arrow-up-circle-line"
+            name="lu-circle-arrow-up"
           />
           <RuiIcon
             v-else
             size="40"
             color="primary"
-            name="arrow-down-circle-line"
+            name="lu-circle-arrow-down"
           />
         </div>
         <div class="text-body-2">

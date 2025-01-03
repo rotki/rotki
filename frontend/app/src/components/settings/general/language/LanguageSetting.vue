@@ -83,7 +83,7 @@ const { t } = useI18n();
             {{ t('general_settings.language.click_here') }}
             <template #append>
               <RuiIcon
-                name="external-link-line"
+                name="lu-external-link"
                 size="16"
               />
             </template>

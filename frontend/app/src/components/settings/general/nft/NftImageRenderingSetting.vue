@@ -116,7 +116,7 @@ onMounted(() => {
         icon
         @click="showUpdateWhitelistConfirmation = true"
       >
-        <RuiIcon name="save-line" />
+        <RuiIcon name="lu-save" />
       </RuiButton>
     </div>
 

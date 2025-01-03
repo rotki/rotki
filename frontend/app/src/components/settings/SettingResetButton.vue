@@ -15,7 +15,7 @@ const { t } = useI18n();
         icon
         @click="emit('click')"
       >
-        <RuiIcon name="loop-left-line" />
+        <RuiIcon name="lu-refresh-ccw" />
       </RuiButton>
     </template>
     <span>{{ t('backend_settings.actions.reset') }}</span>

@@ -453,7 +453,7 @@ function confirmDelete() {
           @click="add()"
         >
           <template #prepend>
-            <RuiIcon name="add-circle-line" />
+            <RuiIcon name="lu-circle-plus" />
           </template>
           {{ t('dashboard.snapshot.edit.dialog.actions.add_new_entry') }}
         </RuiButton>
@@ -463,7 +463,7 @@ function confirmDelete() {
         >
           {{ t('common.actions.next') }}
           <template #append>
-            <RuiIcon name="arrow-right-line" />
+            <RuiIcon name="lu-arrow-right" />
           </template>
         </RuiButton>
       </div>

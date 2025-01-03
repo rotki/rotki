@@ -16,7 +16,7 @@ export interface DialogTheme {
 export type DialogThemes = { [type in DialogType]: DialogTheme };
 
 export const themes: DialogThemes = {
-  info: { color: 'primary', icon: 'information-line' },
+  info: { color: 'primary', icon: 'lu-info' },
   success: { color: 'success', icon: 'lu-circle-check' },
   warning: { color: 'error', icon: 'lu-circle-alert' },
 } as const;

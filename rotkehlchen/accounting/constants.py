@@ -123,168 +123,168 @@ EVENT_CATEGORY_MAPPINGS = {  # possible combinations of types and subtypes mappe
 EVENT_CATEGORY_DETAILS = {
     EventCategory.SEND: {DEFAULT: EventCategoryDetails(
         label='send',
-        icon='arrow-up-line',
+        icon='lu-arrow-up',
     )}, EventCategory.RECEIVE: {DEFAULT: EventCategoryDetails(
         label='receive',
-        icon='arrow-down-line',
+        icon='lu-arrow-down',
         color='success',
     )}, EventCategory.SWAP_OUT: {DEFAULT: EventCategoryDetails(
         label='swap',
-        icon='arrow-go-forward-line',
+        icon='lu-redo-2',
     )}, EventCategory.SWAP_IN: {DEFAULT: EventCategoryDetails(
         label='swap',
-        icon='arrow-go-back-line',
+        icon='lu-undo-2',
         color='success',
     )}, EventCategory.MIGRATE_OUT: {DEFAULT: EventCategoryDetails(
         label='migrate',
-        icon='arrow-go-forward-line',
+        icon='lu-redo-2',
     )}, EventCategory.MIGRATE_IN: {DEFAULT: EventCategoryDetails(
         label='migrate',
-        icon='arrow-go-back-line',
+        icon='lu-undo-2',
         color='success',
     )}, EventCategory.APPROVAL: {DEFAULT: EventCategoryDetails(
         label='approval',
-        icon='lock-unlock-line',
+        icon='lu-lock-keyhole-open',
     )}, EventCategory.DEPOSIT: {DEFAULT: EventCategoryDetails(
         label='deposit',
-        icon='upload-line',
+        icon='lu-upload',
         color='success',
     )}, EventCategory.WITHDRAW: {DEFAULT: EventCategoryDetails(
         label='withdraw',
-        icon='download-line',
+        icon='lu-download',
     )}, EventCategory.CEX_DEPOSIT: {DEFAULT: EventCategoryDetails(
         label='exchange deposit',
-        icon='upload-line',
+        icon='lu-upload',
         color='success',
     )}, EventCategory.CEX_WITHDRAWAL: {DEFAULT: EventCategoryDetails(
         label='exchange withdraw',
-        icon='download-line',
+        icon='lu-download',
     )}, EventCategory.AIRDROP: {DEFAULT: EventCategoryDetails(
         label='airdrop',
-        icon='gift-line',
+        icon='lu-gift',
     )}, EventCategory.BORROW: {DEFAULT: EventCategoryDetails(
         label='borrow',
-        icon='hand-coin-line',
+        icon='lu-hand-coins',
     )}, EventCategory.REPAY: {DEFAULT: EventCategoryDetails(
         label='repay',
-        icon='history-line',
+        icon='lu-history',
     )}, EventCategory.DEPLOY: {DEFAULT: EventCategoryDetails(
         label='deploy',
-        icon='rocket-line',
+        icon='lu-rocket',
     )}, EventCategory.DEPLOY_WITH_SPEND: {DEFAULT: EventCategoryDetails(
         label='deploy with spend',
-        icon='rocket-2-line',
+        icon='lu-rocket',
     )}, EventCategory.BRIDGE_DEPOSIT: {DEFAULT: EventCategoryDetails(
         label='bridge',
-        icon='upload-line',
+        icon='lu-upload',
         color='error',
     )}, EventCategory.BRIDGE_WITHDRAWAL: {DEFAULT: EventCategoryDetails(
         label='bridge',
-        icon='download-line',
+        icon='lu-download',
         color='success',
     )}, EventCategory.GOVERNANCE: {DEFAULT: EventCategoryDetails(
         label='governance',
-        icon='government-line',
+        icon='lu-scale',
     )}, EventCategory.DONATE: {DEFAULT: EventCategoryDetails(
         label='donate',
-        icon='hand-heart-line',
+        icon='lu-heart-handshake',
     )}, EventCategory.RECEIVE_DONATION: {DEFAULT: EventCategoryDetails(
         label='receive donation',
-        icon='heart-2-line',
+        icon='lu-hand-heart',
     )}, EventCategory.RENEW: {DEFAULT: EventCategoryDetails(
         label='renew',
-        icon='loop-right-line',
+        icon='lu-refresh-cw',
     )}, EventCategory.PLACE_ORDER: {DEFAULT: EventCategoryDetails(
         label='place order',
-        icon='briefcase-line',
+        icon='lu-briefcase',
     )}, EventCategory.TRANSFER: {DEFAULT: EventCategoryDetails(
         label='transfer',
-        icon='swap-box-line',
+        icon='lu-arrow-up-down',
     )}, EventCategory.STAKING_REWARD: {DEFAULT: EventCategoryDetails(
         label='staking reward',
-        icon='trophy-line',
+        icon='lu-trophy',
     )}, EventCategory.CLAIM_REWARD: {DEFAULT: EventCategoryDetails(
         label='claim reward',
-        icon='gift-2-line',
+        icon='lu-gift',
     )}, EventCategory.LIQUIDATION_REWARD: {DEFAULT: EventCategoryDetails(
         label='liquidation reward',
-        icon='drop-fill',
+        icon='lu-droplet-fill',
     )}, EventCategory.LIQUIDATION_LOSS: {DEFAULT: EventCategoryDetails(
         label='liquidation loss',
-        icon='contrast-drop-fill',
+        icon='lu-droplet-half-fill',
     )}, EventCategory.INFORMATIONAL: {DEFAULT: EventCategoryDetails(
         label='informational',
-        icon='information-line',
+        icon='lu-info',
     )}, EventCategory.CANCEL_ORDER: {DEFAULT: EventCategoryDetails(
         label='cancel order',
-        icon='file-close-line',
+        icon='lu-file-x',
         color='error',
     )}, EventCategory.REFUND: {DEFAULT: EventCategoryDetails(
         label='refund',
-        icon='refund-2-line',
+        icon='lu-refund',
     )}, EventCategory.FEE: {
-        DEFAULT: EventCategoryDetails(label='fee', icon='cash-line'),
-        CPT_GAS: EventCategoryDetails(label='gas fee', icon='fire-line'),
+        DEFAULT: EventCategoryDetails(label='fee', icon='lu-receipt-cent'),
+        CPT_GAS: EventCategoryDetails(label='gas fee', icon='lu-flame'),
     }, EventCategory.FAIL: {DEFAULT: EventCategoryDetails(
         label='Failed',
         icon='lu-circle-x',
         color='error',
     )}, EventCategory.MEV_REWARD: {DEFAULT: EventCategoryDetails(
         label='mev',
-        icon='medal-line',
+        icon='lu-medal',
     )}, EventCategory.CREATE_BLOCK: {DEFAULT: EventCategoryDetails(
         label='new block',
-        icon='box-3-line',
+        icon='lu-box',
     )}, EventCategory.CREATE_PROJECT: {DEFAULT: EventCategoryDetails(
         label='new project',
-        icon='file-add-line',
+        icon='lu-file-plus',
     )}, EventCategory.UPDATE_PROJECT: {DEFAULT: EventCategoryDetails(
         label='update project',
-        icon='file-edit-line',
+        icon='lu-square-pen',
     )}, EventCategory.APPLY: {DEFAULT: EventCategoryDetails(
         label='apply',
-        icon='share-circle-line',
+        icon='lu-circle-arrow-out-up-right',
     )}, EventCategory.STAKE_DEPOSIT: {DEFAULT: EventCategoryDetails(
         label='Stake',
-        icon='archive-stack-add-line',
+        icon='lu-layers-in',
     )}, EventCategory.UNSTAKE: {DEFAULT: EventCategoryDetails(
         label='Unstake',
-        icon='archive-stack-reduce-line',
+        icon='lu-layers-out',
     )}, EventCategory.STAKE_EXIT: {DEFAULT: EventCategoryDetails(
         label='exit',
-        icon='archive-stack-reduce-line',
+        icon='lu-layers-out',
     )}, EventCategory.ATTEST: {DEFAULT: EventCategoryDetails(
         label='Attest',
-        icon='quill-pen-line',
+        icon='lu-feather',
     )}, EventCategory.PAY: {DEFAULT: EventCategoryDetails(
         label='pay',
-        icon='upload-line',
+        icon='lu-upload',
     )}, EventCategory.RECEIVE_PAYMENT: {DEFAULT: EventCategoryDetails(
         label='receive payment',
-        icon='download-line',
+        icon='lu-download',
     )}, EventCategory.RECEIVE_GRANT: {DEFAULT: EventCategoryDetails(
         label='receive grant',
-        icon='hand-coin-line',
+        icon='lu-hand-coins',
     )}, EventCategory.INTEREST: {DEFAULT: EventCategoryDetails(
         label='receive interest',
-        icon='funds-line',
+        icon='lu-sprout',
     )}, EventCategory.CASHBACK: {DEFAULT: EventCategoryDetails(
         label='Cashback',
-        icon='exchange-dollar-line',
+        icon='lu-badge-dollar-sign',
     )}, EventCategory.HACK_LOSS: {DEFAULT: EventCategoryDetails(
         label='Hack',
-        icon='skull-line',
+        icon='lu-skull',
     )},
 }
 
 ACCOUNTING_EVENTS_ICONS = {
-    AccountingEventType.TRADE: 'swap-box-line',
-    AccountingEventType.FEE: 'price-tag-line',
-    AccountingEventType.ASSET_MOVEMENT: 'token-swap-line',
-    AccountingEventType.MARGIN_POSITION: 'percent-line',
-    AccountingEventType.LOAN: 'shake-hands-line',
-    AccountingEventType.PREFORK_ACQUISITION: 'git-branch-line',
-    AccountingEventType.STAKING: 'seedling-line',
-    AccountingEventType.HISTORY_EVENT: 'exchange-box-line',
-    AccountingEventType.TRANSACTION_EVENT: 'arrow-left-right-line',
+    AccountingEventType.TRADE: 'lu-send-to-back',
+    AccountingEventType.FEE: 'lu-receipt-cent',
+    AccountingEventType.ASSET_MOVEMENT: 'lu-coins-exchange',
+    AccountingEventType.MARGIN_POSITION: 'lu-percent',
+    AccountingEventType.LOAN: 'lu-handshake',
+    AccountingEventType.PREFORK_ACQUISITION: 'lu-git-branch',
+    AccountingEventType.STAKING: 'lu-layers',
+    AccountingEventType.HISTORY_EVENT: 'lu-file-clock',
+    AccountingEventType.TRANSACTION_EVENT: 'lu-arrow-left-right',
 }

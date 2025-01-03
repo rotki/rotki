@@ -250,7 +250,7 @@ function showDeleteConfirmation(item: IndexedLocationDataSnapshot) {
           @click="add()"
         >
           <template #prepend>
-            <RuiIcon name="add-circle-line" />
+            <RuiIcon name="lu-circle-plus" />
           </template>
           {{ t('dashboard.snapshot.edit.dialog.actions.add_new_entry') }}
         </RuiButton>
@@ -259,7 +259,7 @@ function showDeleteConfirmation(item: IndexedLocationDataSnapshot) {
           @click="updateStep(1)"
         >
           <template #prepend>
-            <RuiIcon name="arrow-left-line" />
+            <RuiIcon name="lu-arrow-left" />
           </template>
           {{ t('common.actions.back') }}
         </RuiButton>
@@ -269,7 +269,7 @@ function showDeleteConfirmation(item: IndexedLocationDataSnapshot) {
         >
           {{ t('common.actions.next') }}
           <template #append>
-            <RuiIcon name="arrow-right-line" />
+            <RuiIcon name="lu-arrow-right" />
           </template>
         </RuiButton>
       </div>

@@ -184,7 +184,7 @@ watch(search, () => setPage(1));
         variant="outlined"
         color="primary"
         dense
-        prepend-icon="search-line"
+        prepend-icon="lu-search"
         :label="t('common.actions.search')"
         :class="$style['dashboard-asset-table__search']"
         hide-details

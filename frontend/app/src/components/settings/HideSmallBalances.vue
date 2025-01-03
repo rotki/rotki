@@ -83,7 +83,7 @@ watchImmediate([balanceUsdValueThreshold, open], ([balanceUsdValueThreshold]) =>
       >
         <RuiIcon
           color="primary"
-          name="settings-4-line"
+          name="lu-settings"
         />
       </RuiButton>
     </template>

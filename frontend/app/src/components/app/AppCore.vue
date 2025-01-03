@@ -46,14 +46,14 @@ onMounted(() => {
     <header
       class="app__app-bar fixed top-0 left-0 w-full bg-white dark:bg-[#1E1E1E] md:h-16 h-[3.5rem] border-b border-rui-grey-300 dark:border-rui-grey-800"
     >
-      <nav class="flex items-center md:h-16 h-[3.5rem] px-2">
+      <nav class="flex items-center md:h-16 h-[3.5rem] pl-2 px-4">
         <RuiButton
           icon
           variant="text"
           class="!text-rui-text-secondary"
           @click="toggleDrawer()"
         >
-          <RuiIcon name="menu-line" />
+          <RuiIcon name="lu-menu" />
         </RuiButton>
         <AppIndicators />
       </nav>
@@ -113,7 +113,7 @@ onMounted(() => {
           icon
           @click="scrollToTop()"
         >
-          <RuiIcon name="arrow-up-line" />
+          <RuiIcon name="lu-arrow-up" />
         </RuiButton>
       </Transition>
     </div>

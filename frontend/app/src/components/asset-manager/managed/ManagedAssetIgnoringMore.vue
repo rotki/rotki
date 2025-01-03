@@ -56,7 +56,7 @@ function toggleSpam() {
             class="dark:!bg-rui-grey-800 dark:!text-white"
           >
             <RuiIcon
-              name="arrow-down-s-line"
+              name="lu-chevron-down"
               size="20"
             />
           </RuiButton>

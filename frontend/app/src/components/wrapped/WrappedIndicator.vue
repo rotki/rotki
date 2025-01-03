@@ -25,7 +25,7 @@ function showDialog() {
           @click="showDialog()"
         >
           <template #prepend>
-            <RuiIcon name="gift-2-line" />
+            <RuiIcon name="lu-gift" />
           </template>
           {{ t('wrapped.title') }}
         </RuiButton>

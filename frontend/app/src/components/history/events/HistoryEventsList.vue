@@ -125,7 +125,7 @@ const buttonText = computed(() => {
       <template #append>
         <RuiIcon
           class="transition-all"
-          name="arrow-down-s-line"
+          name="lu-chevron-down"
           :class="{ 'transform -rotate-180': !hasMoreEvents }"
         />
       </template>

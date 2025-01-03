@@ -7,7 +7,7 @@ from rotkehlchen.exchanges.constants import (
 from rotkehlchen.types import Location
 
 LOCATION_DETAILS: dict = {
-    Location.EXTERNAL: {'icon': 'book-2-line'},
+    Location.EXTERNAL: {'icon': 'lu-book-text'},
     Location.KRAKEN: {'image': 'kraken.svg'},
     Location.POLONIEX: {'image': 'poloniex.svg'},
     Location.BITTREX: {'image': 'bittrex.svg'},
@@ -15,16 +15,16 @@ LOCATION_DETAILS: dict = {
     Location.BITMEX: {'image': 'bitmex.svg'},
     Location.COINBASE: {'image': 'coinbase.svg'},
     Location.COINBASEPRIME: {'image': 'coinbaseprime.svg', 'label': 'Coinbase Prime'},
-    Location.BANKS: {'icon': 'bank-line'},
-    Location.BLOCKCHAIN: {'icon': 'link'},
+    Location.BANKS: {'icon': 'lu-landmark'},
+    Location.BLOCKCHAIN: {'icon': 'lu-link'},
     Location.COINBASEPRO: {
         'image': 'coinbasepro.svg',
         'label': 'Coinbase Pro',
     },
     Location.GEMINI: {'image': 'gemini.svg'},
-    Location.EQUITIES: {'icon': 'suitcase-2-line'},
-    Location.REALESTATE: {'icon': 'home-3-line'},
-    Location.COMMODITIES: {'icon': 'leaf-line'},
+    Location.EQUITIES: {'icon': 'lu-luggage'},
+    Location.REALESTATE: {'icon': 'lu-house'},
+    Location.COMMODITIES: {'icon': 'lu-leaf'},
     Location.CRYPTOCOM: {'image': 'crypto_com.svg'},
     Location.UNISWAP: {'image': 'uniswap.svg'},
     Location.BITSTAMP: {'image': 'bitstamp.svg'},

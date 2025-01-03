@@ -152,7 +152,7 @@ const sort = ref<DataTableSortColumn<Report>>({
               <template #prepend>
                 <RuiIcon
                   size="20"
-                  name="file-text-line"
+                  name="lu-file-text"
                 />
               </template>
               {{ t('reports_table.load') }}

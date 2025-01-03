@@ -124,7 +124,7 @@ defineExpose({
             >
               <RuiIcon
                 size="20"
-                name="refresh-line"
+                name="lu-refresh-ccw"
               />
             </RuiButton>
           </template>

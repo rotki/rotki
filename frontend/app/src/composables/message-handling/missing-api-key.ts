@@ -36,7 +36,7 @@ export function useMissingApiKeyHandler(t: ReturnType<typeof useI18n>['t']): Com
 
       actions.push({
         action: () => openUrl(external),
-        icon: 'external-link-line',
+        icon: 'lu-external-link',
         label: t('notification_messages.missing_api_key.get_key'),
         persist: true,
       });

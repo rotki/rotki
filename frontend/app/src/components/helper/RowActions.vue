@@ -66,7 +66,7 @@ const justify = computed(() => {
         >
           <RuiIcon
             size="16"
-            name="pencil-line"
+            name="lu-pencil"
           />
         </RuiButton>
       </template>
@@ -88,7 +88,7 @@ const justify = computed(() => {
         >
           <RuiIcon
             size="16"
-            name="delete-bin-line"
+            name="lu-trash-2"
           />
         </RuiButton>
       </template>

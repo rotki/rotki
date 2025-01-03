@@ -56,7 +56,7 @@ function openWatcherDialog() {
       <template #prepend>
         <RuiIcon
           class="my-1"
-          name="notification-line"
+          name="lu-bell"
         />
       </template>
 

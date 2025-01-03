@@ -23,7 +23,7 @@ export const useHistoryEventCounterpartyMappings = createSharedComposable(() => 
         action: [
           {
             action: async (): Promise<void> => fetchCounterparties(),
-            icon: 'refresh-line',
+            icon: 'lu-refresh-ccw',
             label: t('actions.fetch_counterparties.actions.fetch_again'),
           },
         ],
@@ -62,7 +62,7 @@ export const useHistoryEventCounterpartyMappings = createSharedComposable(() => 
 
       return {
         color: 'error',
-        icon: 'question-line',
+        icon: 'lu-circle-help',
         identifier: '',
         label: counterparty,
       };
@@ -97,7 +97,7 @@ export const useHistoryEventCounterpartyMappings = createSharedComposable(() => 
 
     return {
       color: 'error',
-      icon: 'question-line',
+      icon: 'lu-circle-help',
       identifier: counterpartyVal,
       label: counterpartyVal,
     };

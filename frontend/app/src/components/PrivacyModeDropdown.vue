@@ -76,7 +76,7 @@ watch([enabled, multiplier], setData);
         >
           <RuiIcon
             size="16"
-            name="arrow-down-s-line"
+            name="lu-chevron-down"
           />
         </RuiButton>
       </template>
@@ -167,7 +167,7 @@ watch([enabled, multiplier], setData);
                   icon
                   @click="updateMultiplier(randomMultiplier())"
                 >
-                  <RuiIcon name="shuffle-line" />
+                  <RuiIcon name="lu-shuffle" />
                 </RuiButton>
               </template>
             </AmountInput>

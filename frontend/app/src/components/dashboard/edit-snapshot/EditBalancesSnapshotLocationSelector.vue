@@ -71,7 +71,7 @@ const showOnlyExisting = ref<boolean>(true);
           />
         </div>
         <div class="px-8 text-rui-text-secondary">
-          <RuiIcon name="arrow-right-line" />
+          <RuiIcon name="lu-arrow-right" />
         </div>
         <div>
           <div class="text-overline text-rui-text-secondary -mb-2">

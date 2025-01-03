@@ -143,7 +143,7 @@ function showDeleteConfirmation(item: UserDbBackupWithId) {
           >
             <RuiIcon
               size="16"
-              name="delete-bin-line"
+              name="lu-trash-2"
             />
           </RuiButton>
         </template>
@@ -165,7 +165,7 @@ function showDeleteConfirmation(item: UserDbBackupWithId) {
           >
             <RuiIcon
               size="16"
-              name="file-download-line"
+              name="lu-file-down"
             />
           </RuiButton>
         </template>

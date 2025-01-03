@@ -42,7 +42,7 @@ async function doImport() {
           class="!p-2"
           v-bind="attrs"
         >
-          <RuiIcon name="more-2-fill" />
+          <RuiIcon name="lu-ellipsis-vertical" />
         </RuiButton>
       </template>
       <div class="py-2">
@@ -51,7 +51,7 @@ async function doImport() {
           @click="exportAccounts()"
         >
           <template #prepend>
-            <RuiIcon name="file-download-line" />
+            <RuiIcon name="lu-file-down" />
           </template>
           {{ t('blockchain_balances.export_blockchain_accounts') }}
         </RuiButton>
@@ -60,7 +60,7 @@ async function doImport() {
           @click="importDialogOpen = true;"
         >
           <template #prepend>
-            <RuiIcon name="file-upload-line" />
+            <RuiIcon name="lu-file-up" />
           </template>
           {{ t('blockchain_balances.import_blockchain_accounts') }}
         </RuiButton>

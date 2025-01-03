@@ -27,7 +27,7 @@ const { t } = useI18n();
         class="!p-2"
         v-bind="attrs"
       >
-        <RuiIcon name="settings-3-line" />
+        <RuiIcon name="lu-settings" />
       </RuiButton>
     </template>
 

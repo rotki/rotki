@@ -57,7 +57,7 @@ const complete = logicAnd(balanceFile, locationFile);
         v-bind="attrs"
       >
         <template #prepend>
-          <RuiIcon name="folder-received-line" />
+          <RuiIcon name="lu-folder-input" />
         </template>
         {{ t('common.actions.import') }}
       </RuiButton>

@@ -50,9 +50,9 @@ const { counter, pause, resume } = useInterval(600, {
 const icon = computed(() => {
   const tick = get(counter) % 2 === 0;
   if (get(isDownload))
-    return tick ? 'download-cloud-2-line' : 'download-cloud-line';
+    return tick ? 'lu-cloud-download-2' : 'lu-cloud-download';
 
-  return tick ? 'upload-cloud-2-line' : 'upload-cloud-line';
+  return tick ? 'lu-cloud-upload-2' : 'lu-cloud-upload';
 });
 
 const tooltip = computed<string>(() => {
@@ -117,12 +117,12 @@ const syncSettingMenuOpen = ref<boolean>(false);
           >
             <RuiIcon
               v-if="uploadStatus"
-              name="cloud-off-line"
+              name="lu-cloud-off"
               color="warning"
             />
             <RuiIcon
               v-else-if="!premiumSync"
-              name="cloud-off-line"
+              name="lu-cloud-off"
             />
             <RuiIcon
               v-else-if="isSyncing"
@@ -131,7 +131,7 @@ const syncSettingMenuOpen = ref<boolean>(false);
             />
             <RuiIcon
               v-else
-              name="cloud-line"
+              name="lu-cloud"
             />
           </RuiBadge>
         </MenuTooltipButton>
@@ -185,7 +185,7 @@ const syncSettingMenuOpen = ref<boolean>(false);
               class="-mt-1 -mr-1"
               @click="clearUploadStatus()"
             >
-              <RuiIcon name="close-line" />
+              <RuiIcon name="lu-x" />
             </RuiButton>
           </div>
         </RuiAlert>
@@ -205,7 +205,7 @@ const syncSettingMenuOpen = ref<boolean>(false);
     >
       <template #icon>
         <RuiIcon
-          name="lock-line"
+          name="lu-lock-keyhole"
           size="10"
         />
       </template>
@@ -214,7 +214,7 @@ const syncSettingMenuOpen = ref<boolean>(false);
         :href="href"
         @click="onLinkClick()"
       >
-        <RuiIcon name="cloud-line" />
+        <RuiIcon name="lu-cloud" />
       </MenuTooltipButton>
     </RuiBadge>
   </template>

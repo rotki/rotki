@@ -31,7 +31,7 @@ function toggleVisibility() {
     >
       <RuiIcon
         :class="{ [$style.visible]: visible }"
-        name="pushpin-line"
+        name="lu-pin"
       />
     </RuiBadge>
   </MenuTooltipButton>

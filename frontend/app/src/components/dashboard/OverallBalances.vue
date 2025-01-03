@@ -77,12 +77,12 @@ const percentage = computed(() => {
 const indicator = computed(() => {
   const delta = get(balanceDelta);
   if (delta.isNegative())
-    return 'arrow-down-line';
+    return 'lu-arrow-down';
 
   if (delta.isZero())
-    return 'git-commit-line';
+    return 'lu-git-commit-horizontal';
 
-  return 'arrow-up-line';
+  return 'lu-arrow-up';
 });
 
 const balanceClass = computed(() => {

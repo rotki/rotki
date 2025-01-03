@@ -57,7 +57,7 @@ const imageUrl = getDefiImage(protocol);
             <RuiIcon
               size="16"
               color="primary"
-              name="external-link-line"
+              name="lu-external-link"
             />
           </RuiButton>
         </RouterLink>
@@ -92,7 +92,7 @@ const imageUrl = getDefiImage(protocol);
             <RuiIcon
               size="16"
               color="primary"
-              name="external-link-line"
+              name="lu-external-link"
             />
           </RuiButton>
         </RouterLink>
@@ -142,7 +142,7 @@ const imageUrl = getDefiImage(protocol);
               <RuiIcon
                 size="16"
                 color="primary"
-                name="external-link-line"
+                name="lu-external-link"
               />
             </template>
           </RuiButton>

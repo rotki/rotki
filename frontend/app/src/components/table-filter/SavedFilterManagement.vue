@@ -107,7 +107,7 @@ async function addToSavedFilter() {
         >
           <RuiIcon
             size="20"
-            name="play-list-add-line"
+            name="lu-list-plus"
           />
         </RuiButton>
       </template>
@@ -150,7 +150,7 @@ async function addToSavedFilter() {
             >
               <RuiIcon
                 size="20"
-                name="filter-line"
+                name="lu-filter"
               />
             </RuiButton>
           </template>
@@ -200,7 +200,7 @@ async function addToSavedFilter() {
                   >
                     <RuiIcon
                       size="16"
-                      name="corner-left-up-line"
+                      name="lu-corner-left-up"
                     />
                   </RuiButton>
                 </template>
@@ -224,7 +224,7 @@ async function addToSavedFilter() {
                   >
                     <RuiIcon
                       size="16"
-                      name="delete-bin-5-line"
+                      name="lu-trash-2"
                     />
                   </RuiButton>
                 </template>
@@ -251,7 +251,7 @@ async function addToSavedFilter() {
             >
               <RuiIcon
                 size="16"
-                name="play-list-add-line"
+                name="lu-list-plus"
               />
             </RuiButton>
           </template>

@@ -29,7 +29,7 @@ const { isLgAndDown } = useBreakpoint();
             data-cy="get-premium-button"
           >
             <template #prepend>
-              <RuiIcon name="vip-crown-line" />
+              <RuiIcon name="lu-crown" />
             </template>
             {{ t('premium_settings.get') }}
           </RuiButton>

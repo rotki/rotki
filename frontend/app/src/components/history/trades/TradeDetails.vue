@@ -59,7 +59,7 @@ const { hasLink, href, onLinkClick } = useLinks(link);
               @click="onLinkClick()"
             >
               <RuiIcon
-                name="external-link-line"
+                name="lu-external-link"
                 size="12"
               />
             </RuiButton>

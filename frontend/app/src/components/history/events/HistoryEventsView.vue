@@ -548,7 +548,7 @@ onUnmounted(() => {
           icon
           @click="decodingStatusDialogOpen = false"
         >
-          <RuiIcon name="close-line" />
+          <RuiIcon name="lu-x" />
         </RuiButton>
       </HistoryEventsDecodingStatus>
     </RuiDialog>
@@ -566,7 +566,7 @@ onUnmounted(() => {
           icon
           @click="protocolCacheStatusDialogOpen = false"
         >
-          <RuiIcon name="close-line" />
+          <RuiIcon name="lu-x" />
         </RuiButton>
       </HistoryEventsProtocolCacheUpdateStatus>
     </RuiDialog>

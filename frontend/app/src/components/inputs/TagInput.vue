@@ -148,7 +148,7 @@ watch(tags, () => {
       :disabled="disabled"
       @click="handleCreateNewTag()"
     >
-      <RuiIcon name="add-line" />
+      <RuiIcon name="lu-plus" />
     </RuiButton>
 
     <TagFormDialog v-model="newTag" />
