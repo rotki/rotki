@@ -3,7 +3,7 @@ from collections.abc import Callable, Mapping
 from typing import TYPE_CHECKING, Any, Final
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.chain.ethereum.utils import should_update_protocol_cache, token_normalized_value
+from rotkehlchen.chain.ethereum.utils import asset_normalized_value, should_update_protocol_cache
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface, ReloadableDecoderMixin
 from rotkehlchen.chain.evm.decoding.structures import (
@@ -117,13 +117,13 @@ class MorphoCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
             log.error(f'Failed to get tokens for Morpho vault {context.tx_log.address} due to {e!s}')  # noqa: E501
             return None
 
-        assets_amount = token_normalized_value(
-            token_amount=int.from_bytes(context.tx_log.data[0:32]),
-            token=underlying_token,
+        assets_amount = asset_normalized_value(
+            amount=int.from_bytes(context.tx_log.data[0:32]),
+            asset=underlying_token,
         )
-        shares_amount = token_normalized_value(
-            token_amount=int.from_bytes(context.tx_log.data[32:64]),
-            token=vault_token,
+        shares_amount = asset_normalized_value(
+            amount=int.from_bytes(context.tx_log.data[32:64]),
+            asset=vault_token,
         )
 
         return vault_token, underlying_token, shares_amount, assets_amount

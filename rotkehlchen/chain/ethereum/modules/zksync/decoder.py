@@ -1,6 +1,6 @@
 from typing import Any, Final
 
-from rotkehlchen.chain.ethereum.utils import asset_raw_value
+from rotkehlchen.chain.ethereum.utils import get_decimals, normalized_fval_value_decimals
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
@@ -53,10 +53,10 @@ class ZksyncDecoder(DecoderInterface):
         for event in context.decoded_events:
             if event.event_type == HistoryEventType.SPEND and event.location_label == user_address:
                 resolved_event_asset = event.asset.resolve_to_crypto_asset()
-                event_raw_amount = asset_raw_value(
+                event_raw_amount = normalized_fval_value_decimals(
                     amount=event.balance.amount,
-                    asset=resolved_event_asset,
-                )
+                    decimals=-get_decimals(resolved_event_asset),
+                ).to_int(exact=False)
                 if event_raw_amount != amount_raw:
                     continue
 

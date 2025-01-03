@@ -9,7 +9,7 @@ from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.ethereum.interfaces.balances import BalancesSheetType, ProtocolWithBalance
 from rotkehlchen.chain.ethereum.utils import (
-    token_normalized_value,
+    asset_normalized_value,
     token_normalized_value_decimals,
 )
 from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS
@@ -140,7 +140,7 @@ class ExtrafiCommonBalances(ProtocolWithBalance):
                 evm_inquirer=self.evm_inquirer,
             )
 
-            lp_amount = token_normalized_value(lp_amount_raw, lp_token)
+            lp_amount = asset_normalized_value(lp_amount_raw, lp_token)
             lp_price = Inquirer.find_usd_price(lp_token)
             balances[address].assets[lp_token] += Balance(
                 amount=lp_amount,
@@ -151,7 +151,7 @@ class ExtrafiCommonBalances(ProtocolWithBalance):
                 if debt_amount == 0:
                     continue
 
-                amount = token_normalized_value(debt_amount, debt_token)
+                amount = asset_normalized_value(debt_amount, debt_token)
                 price = Inquirer.find_usd_price(debt_token)
                 balances[address].liabilities[debt_token] += Balance(
                     amount=amount,
@@ -289,9 +289,9 @@ class ExtrafiCommonBalances(ProtocolWithBalance):
                 )
                 continue
 
-            reserve_to_balance[reserve_token] += token_normalized_value(
-                token_amount=result[-1],
-                token=reserve_token,
+            reserve_to_balance[reserve_token] += asset_normalized_value(
+                amount=result[-1],
+                asset=reserve_token,
             )
 
         return reserve_to_balance

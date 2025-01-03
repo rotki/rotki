@@ -2,7 +2,7 @@ import logging
 from collections.abc import Sequence
 from http import HTTPStatus
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Literal, Optional, overload
 
 import requests
 from ens.abis import PUBLIC_RESOLVER_2 as ENS_RESOLVER_ABI
@@ -41,29 +41,59 @@ ENS_METADATA_URL = 'https://metadata.ens.domains/mainnet'
 MULTICALL_CHUNKS = 20
 
 
-def token_normalized_value_decimals(token_amount: int, token_decimals: int | None) -> FVal:
-    if token_decimals is None:  # if somehow no info on decimals ends up here assume 18
-        token_decimals = 18
+@overload
+def _normalize_value(
+        amount: int | FVal,
+        decimals: int | None,
+        as_int: Literal[True],
+) -> int:
+    ...
 
-    return token_amount / (FVal(10) ** FVal(token_decimals))
+
+@overload
+def _normalize_value(
+        amount: int | FVal,
+        decimals: int | None,
+        as_int: Literal[False],
+) -> FVal:
+    ...
+
+
+def _normalize_value(
+        amount: int | FVal,
+        decimals: int | None,
+        as_int: bool,
+) -> FVal | int:
+    if decimals is None:  # if somehow no info on decimals ends up here assume 18
+        decimals = 18
+
+    value = amount / (FVal(10) ** FVal(decimals))
+    if as_int:
+        return value.to_int(exact=False)
+
+    return value
+
+
+def token_normalized_value_decimals(token_amount: int, token_decimals: int | None) -> FVal:
+    return _normalize_value(amount=token_amount, decimals=token_decimals, as_int=False)
 
 
 def normalized_fval_value_decimals(amount: FVal, decimals: int) -> FVal:
-    return amount / (FVal(10) ** FVal(decimals))
+    return _normalize_value(amount=amount, decimals=decimals, as_int=False)
 
 
-def token_raw_value_decimals(token_amount: FVal, token_decimals: int | None) -> int:
-    if token_decimals is None:  # if somehow no info on decimals ends up here assume 18
-        token_decimals = 18
+def asset_normalized_value(amount: int, asset: CryptoAsset | EvmToken) -> FVal:
+    """Takes in an amount and an asset and returns its normalized value
 
-    return (token_amount * (FVal(10) ** FVal(token_decimals))).to_int(exact=False)
+    May raise:
+    - UnsupportedAsset if the given asset is not ETH or an ethereum token
+    """
+    if isinstance(asset, EvmToken):  # using isinstance instead of get_asset_type since it is slightly faster  # noqa: E501
+        decimals = asset.get_decimals()
+    else:
+        decimals = get_decimals(asset)
 
-
-def token_normalized_value(
-        token_amount: int,
-        token: EvmToken,
-) -> FVal:
-    return token_normalized_value_decimals(token_amount, token.decimals)
+    return token_normalized_value_decimals(amount, decimals)
 
 
 def get_decimals(asset: CryptoAsset) -> int:
@@ -79,24 +109,6 @@ def get_decimals(asset: CryptoAsset) -> int:
         raise UnsupportedAsset(asset.identifier) from e
 
     return token.get_decimals()
-
-
-def asset_normalized_value(amount: int, asset: CryptoAsset) -> FVal:
-    """Takes in an amount and an asset and returns its normalized value
-
-    May raise:
-    - UnsupportedAsset if the given asset is not ETH or an ethereum token
-    """
-    return token_normalized_value_decimals(amount, get_decimals(asset))
-
-
-def asset_raw_value(amount: FVal, asset: CryptoAsset) -> int:
-    """Takes in an amount and an asset and returns its raw(wei equivalent) value
-
-    May raise:
-    - UnsupportedAsset if the given asset is not ETH or an ethereum token
-    """
-    return token_raw_value_decimals(amount, get_decimals(asset))
 
 
 def generate_address_via_create2(

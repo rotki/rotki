@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.chain.ethereum.utils import (
-    token_normalized_value,
+    asset_normalized_value,
     token_normalized_value_decimals,
 )
 from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS
@@ -114,13 +114,13 @@ class GearboxCommonDecoder(DecoderInterface, ReloadableCacheDecoderMixin):
         if not self.base.is_tracked(user_address := bytes_to_address(context.transaction.input_data[4 + address_offset: 36 + address_offset])):  # noqa: E501
             return None
 
-        amount = token_normalized_value(
-            token_amount=int.from_bytes(context.tx_log.data[:32]),
-            token=token,
+        amount = asset_normalized_value(
+            amount=int.from_bytes(context.tx_log.data[:32]),
+            asset=token,
         )
-        shares = token_normalized_value(
-            token_amount=int.from_bytes(context.tx_log.data[32:64]),
-            token=token,
+        shares = asset_normalized_value(
+            amount=int.from_bytes(context.tx_log.data[32:64]),
+            asset=token,
         )
         return user_address, pool_info, amount, shares
 

@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.interfaces.balances import BalancesSheetType, ProtocolWithBalance
-from rotkehlchen.chain.ethereum.utils import token_normalized_value
+from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.decoding.hop.constants import CPT_HOP
 from rotkehlchen.chain.evm.tokens import get_chunk_size_call_order
@@ -132,9 +132,9 @@ class HopBalances(ProtocolWithBalance):
                         result=lp,
                         method_name='balanceOf',
                         arguments=[user],
-                    )[0]) != ZERO and (balance_norm := token_normalized_value(
-                        token_amount=balance,
-                        token=staking_token,
+                    )[0]) != ZERO and (balance_norm := asset_normalized_value(
+                        amount=balance,
+                        asset=staking_token,
                     )) > ZERO:
                         balances[user].assets[staking_token] += Balance(
                             amount=balance_norm,
@@ -149,9 +149,9 @@ class HopBalances(ProtocolWithBalance):
                         result=reward,
                         method_name='earned',
                         arguments=[user],
-                    )[0]) != ZERO and (reward_norm := token_normalized_value(
-                        token_amount=rewards,
-                        token=rewards_token,
+                    )[0]) != ZERO and (reward_norm := asset_normalized_value(
+                        amount=rewards,
+                        asset=rewards_token,
                     )) > ZERO:
                         balances[user].assets[rewards_token] += Balance(
                             amount=reward_norm,
