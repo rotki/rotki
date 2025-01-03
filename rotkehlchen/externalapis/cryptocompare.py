@@ -210,7 +210,6 @@ class Cryptocompare(
         self.session = create_session()
         set_user_agent(self.session)
         self.last_histohour_query_ts = 0
-        self.last_rate_limit = 0
         self.db: DBHandler | None  # type: ignore  # "solve" the self.db discrepancy
 
     def can_query_history(
@@ -243,16 +242,6 @@ class Cryptocompare(
             f' rate_limited in last {seconds} seconds: {rate_limited}',
         )
         return can_query
-
-    def rate_limited_in_last(
-            self,
-            seconds: int | None = CRYPTOCOMPARE_RATE_LIMIT_WAIT_TIME,
-    ) -> bool:
-        """Checks when we were last rate limited by CC and if it was within the given seconds"""
-        if seconds is None:
-            return False
-
-        return ts_now() - self.last_rate_limit <= seconds
 
     @overload
     def _api_query(

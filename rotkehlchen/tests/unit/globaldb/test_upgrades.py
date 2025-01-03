@@ -913,6 +913,29 @@ def test_upgrade_v9_v10(globaldb: GlobalDBHandler, messages_aggregator):
                 assert result[0] == first_asset
 
 
+@pytest.mark.parametrize('custom_globaldb', ['v10_global.db'])
+@pytest.mark.parametrize('target_globaldb_version', [10])
+@pytest.mark.parametrize('reload_user_assets', [False])
+def test_upgrade_v10_v11(globaldb: GlobalDBHandler, messages_aggregator):
+    with globaldb.conn.read_ctx() as cursor:
+        cursor.execute('SELECT COUNT(*) FROM price_history_source_types WHERE seq = 9')
+        assert cursor.fetchone()[0] == 0
+
+    with ExitStack() as stack:
+        patch_for_globaldb_upgrade_to(stack, 11)
+        maybe_upgrade_globaldb(
+            connection=globaldb.conn,
+            global_dir=globaldb._data_directory / GLOBALDIR_NAME,  # type: ignore
+            db_filename=GLOBALDB_NAME,
+            msg_aggregator=messages_aggregator,
+        )
+
+    assert globaldb.get_setting_value('version', 0) == 11
+    with globaldb.conn.read_ctx() as cursor:
+        cursor.execute('SELECT COUNT(*) FROM price_history_source_types WHERE seq = 9')
+        assert cursor.fetchone()[0] == 1
+
+
 @pytest.mark.parametrize('custom_globaldb', ['v2_global.db'])
 @pytest.mark.parametrize('target_globaldb_version', [2])
 @pytest.mark.parametrize('reload_user_assets', [False])

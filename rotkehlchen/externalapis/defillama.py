@@ -53,7 +53,6 @@ class Defillama(
         PenalizablePriceOracleMixin.__init__(self)
         self.session = create_session()
         self.session.headers.update({'User-Agent': 'rotkehlchen'})
-        self.last_rate_limit = 0
         self.db: DBHandler | None  # type: ignore  # "solve" the self.db discrepancy
 
     def _query(
@@ -220,15 +219,6 @@ class Defillama(
             seconds: int | None = None,
     ) -> bool:
         return not self.is_penalized()
-
-    def rate_limited_in_last(
-            self,
-            seconds: int | None = None,
-    ) -> bool:
-        if seconds is None:
-            return False
-
-        return ts_now() - self.last_rate_limit <= seconds
 
     def query_historical_price(
             self,

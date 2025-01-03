@@ -26,6 +26,7 @@ const labels: { [keys in PrioritizedListId]: string } = {
   [AddressNamePriority.GLOBAL_ADDRESSBOOK]: t('address_book.hint.priority.list.global_address_book'),
   [AddressNamePriority.HARDCODED_MAPPINGS]: t('address_book.hint.priority.list.hardcoded_mappings'),
   [AddressNamePriority.PRIVATE_ADDRESSBOOK]: t('address_book.hint.priority.list.private_address_book'),
+  alchemy: '',
   blockchain: '',
   coingecko: '',
   cryptocompare: '',

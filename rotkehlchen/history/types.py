@@ -8,12 +8,13 @@ from .deserialization import deserialize_price
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.oracles.uniswap import UniswapV2Oracle, UniswapV3Oracle
+    from rotkehlchen.externalapis.alchemy import Alchemy
     from rotkehlchen.externalapis.coingecko import Coingecko
     from rotkehlchen.externalapis.cryptocompare import Cryptocompare
     from rotkehlchen.externalapis.defillama import Defillama
     from rotkehlchen.globaldb.manual_price_oracles import ManualPriceOracle
 
-HistoricalPriceOracleInstance = Union['Coingecko', 'Cryptocompare', 'ManualPriceOracle', 'Defillama', 'UniswapV2Oracle', 'UniswapV3Oracle']  # noqa: E501
+HistoricalPriceOracleInstance = Union['Coingecko', 'Cryptocompare', 'ManualPriceOracle', 'Defillama', 'Alchemy', 'UniswapV2Oracle', 'UniswapV3Oracle']  # noqa: E501
 
 
 class HistoricalPriceOracle(DBCharEnumMixIn, OracleSource):
@@ -26,6 +27,7 @@ class HistoricalPriceOracle(DBCharEnumMixIn, OracleSource):
     DEFILLAMA = 6
     UNISWAPV2 = 7
     UNISWAPV3 = 8
+    ALCHEMY = 9
 
 
 NOT_EXPOSED_SOURCES = (
@@ -37,6 +39,7 @@ DEFAULT_HISTORICAL_PRICE_ORACLES_ORDER = (
     HistoricalPriceOracle.CRYPTOCOMPARE,
     HistoricalPriceOracle.COINGECKO,
     HistoricalPriceOracle.DEFILLAMA,
+    HistoricalPriceOracle.ALCHEMY,
     HistoricalPriceOracle.UNISWAPV3,
     HistoricalPriceOracle.UNISWAPV2,
 )

@@ -69,6 +69,7 @@ from rotkehlchen.errors.misc import (
     SystemPermissionError,
 )
 from rotkehlchen.exchanges.manager import ExchangeManager
+from rotkehlchen.externalapis.alchemy import Alchemy
 from rotkehlchen.externalapis.beaconchain.service import BeaconChain
 from rotkehlchen.externalapis.coingecko import Coingecko
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
@@ -186,6 +187,7 @@ class Rotkehlchen:
         self.cryptocompare = Cryptocompare(database=None)
         self.coingecko = Coingecko(database=None)
         self.defillama = Defillama(database=None)
+        self.alchemy = Alchemy(database=None)
         self.icon_manager = IconManager(
             data_dir=self.data_dir,
             coingecko=self.coingecko,
@@ -198,6 +200,7 @@ class Rotkehlchen:
             cryptocompare=self.cryptocompare,
             coingecko=self.coingecko,
             defillama=self.defillama,
+            alchemy=self.alchemy,
             manualcurrent=ManualCurrentOracle(),
             msg_aggregator=self.msg_aggregator,
         )
@@ -438,6 +441,7 @@ class Rotkehlchen:
             cryptocompare=self.cryptocompare,
             coingecko=self.coingecko,
             defillama=self.defillama,
+            alchemy=self.alchemy,
             uniswapv2=uniswap_v2_oracle,
             uniswapv3=uniswap_v3_oracle,
         )
