@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import dayjs, { type Dayjs } from 'dayjs';
-import { isEqual } from 'lodash-es';
+import { isEqual, omit } from 'lodash-es';
 import { RouterAccountsSchema } from '@/types/route';
 import { isBlockchain } from '@/types/blockchain/chains';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
@@ -10,8 +10,6 @@ import { useConfirmStore } from '@/store/confirm';
 import { useMessageStore } from '@/store/message';
 import { useBlockchainStore } from '@/store/blockchain';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
-import { useCalendarEventForm } from '@/composables/calendar/form';
-import { useCommonTableProps } from '@/composables/use-common-table-props';
 import { useCalendarApi } from '@/composables/history/calendar';
 import CalendarEventList from '@/components/calendar/CalendarEventList.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
@@ -22,6 +20,7 @@ import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSele
 import HistoryTableActions from '@/components/history/HistoryTableActions.vue';
 import CalendarSettingsMenu from '@/components/calendar/CalendarSettingsMenu.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 import type { Writeable } from '@rotki/common';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 import type { CalendarEvent, CalendarEventRequestPayload } from '@/types/history/calendar';
@@ -35,9 +34,30 @@ const today = ref<Dayjs>(dayjs());
 const range = ref<[number, number]>([0, 0]);
 const selectedDateEvents = ref<CalendarEvent[]>([]);
 const upcomingEvents = ref<CalendarEvent[]>([]);
+const accounts = ref<BlockchainAccount<AddressData>[]>([]);
+const modelValue = ref<CalendarEvent>();
+const editMode = ref<boolean>(false);
 
 const { deleteCalendarEvent, fetchCalendarEvents } = useCalendarApi();
-const accounts = ref<BlockchainAccount<AddressData>[]>([]);
+const { getAccountByAddress } = useBlockchainStore();
+const { autoDeleteCalendarEntries } = storeToRefs(useGeneralSettingsStore());
+
+function emptyEventForm() {
+  const startOfTheDate = selectedDate.value.set('hours', 0).set('minutes', 0).set('seconds', 0);
+  const timestamp = startOfTheDate.unix();
+
+  return {
+    address: undefined,
+    autoDelete: get(autoDeleteCalendarEntries),
+    blockchain: undefined,
+    color: '',
+    counterparty: undefined,
+    description: '',
+    identifier: 0,
+    name: '',
+    timestamp,
+  };
+}
 
 const extraParams = computed(() => {
   const rangeVal = get(range);
@@ -47,9 +67,6 @@ const extraParams = computed(() => {
     toTimestamp: rangeVal[1].toString(),
   };
 });
-
-const { getAccountByAddress } = useBlockchainStore();
-const { editableItem } = useCommonTableProps<CalendarEvent>();
 
 const {
   fetchData,
@@ -146,29 +163,26 @@ function setToday() {
   setSelectedDate(now);
 }
 
-const { setOpenDialog, setPostSubmitFunc } = useCalendarEventForm();
-
 function add() {
-  set(editableItem, null);
-  setOpenDialog(true);
+  set(modelValue, emptyEventForm());
+  set(editMode, false);
 }
 
 function edit(event: CalendarEvent) {
-  set(editableItem, event);
-  setOpenDialog(true);
+  set(modelValue, omit(event, 'date'));
+  set(editMode, true);
 }
 
 const { show } = useConfirmStore();
 const { setMessage } = useMessageStore();
 
 async function deleteClicked() {
-  const item = get(editableItem);
+  const item = get(modelValue);
   if (item) {
     try {
       await deleteCalendarEvent(item.identifier);
       await fetchData();
-      setOpenDialog(false);
-      set(editableItem, null);
+      set(modelValue, null);
     }
     catch (error: any) {
       setMessage({
@@ -189,8 +203,6 @@ function deleteEvent() {
     deleteClicked,
   );
 }
-
-setPostSubmitFunc(fetchData);
 
 watch(selectedDate, (selected) => {
   set(visibleDate, selected);
@@ -271,10 +283,12 @@ onMounted(async () => {
         />
 
         <CalendarFormDialog
-          :editable-item="editableItem"
+          v-model="modelValue"
           :loading="isLoading"
           :selected-date="selectedDate"
+          :edit-mode="editMode"
           @delete="deleteEvent()"
+          @refresh="fetchData()"
         />
       </RuiCard>
       <div class="flex flex-col gap-4 h-auto">

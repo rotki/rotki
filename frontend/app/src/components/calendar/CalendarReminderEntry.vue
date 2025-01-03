@@ -2,23 +2,20 @@
 import { helpers, maxValue, minValue, required } from '@vuelidate/validators';
 import useVuelidate from '@vuelidate/core';
 import { toMessages } from '@/utils/validation';
-import { useSimpleVModel } from '@/utils/model';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import type { CalendarReminderTemporaryPayload } from '@/types/history/calendar/reminder';
 
+const modelValue = defineModel<CalendarReminderTemporaryPayload>({ required: true });
+
 const props = defineProps<{
-  modelValue: CalendarReminderTemporaryPayload;
   latest: boolean;
 }>();
 
 const emit = defineEmits<{
-  (e: 'update:model-value', value: CalendarReminderTemporaryPayload): void;
   (e: 'delete'): void;
 }>();
 
 const { latest } = toRefs(props);
-
-const vModel = useSimpleVModel(props, emit);
 
 const { t } = useI18n();
 
@@ -137,7 +134,7 @@ function calculateAmountAndUnit(seconds: number) {
   };
 }
 
-watchImmediate(vModel, (value) => {
+watchImmediate(modelValue, (value) => {
   const currentSeconds = calculateCurrentSeconds();
   const seconds = value.secsBefore;
 
@@ -155,8 +152,8 @@ function triggerUpdate() {
 
   if (amountVal && unitVal && !get(v$).$invalid) {
     const currentSeconds = calculateCurrentSeconds();
-    set(vModel, {
-      ...get(vModel),
+    set(modelValue, {
+      ...get(modelValue),
       secsBefore: currentSeconds,
     });
   }
