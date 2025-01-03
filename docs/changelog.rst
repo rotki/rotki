@@ -5,12 +5,16 @@ Changelog
 * :feature:`9083` rotki will now correctly decode ParaSwap v6 swaps in all supported EVM chains.
 * :feature:`9120` rotki will now correctly decode Firebird Finance swaps in all supported EVM chains.
 * :feature:`7254` rotki will now correctly decode OpenOcean swaps in all supported EVM chains.
-* :bug:`-` Bitmex balances will now be queried correctly.
 * :feature:`-` Lido and EtherFI reserve tokens will now be automatically queried.
-* :bug:`-` rotki Wrapped will no longer count transactions with ignored assets
+* :bug:`-` Bitmex balances will now be queried correctly.
+* :bug:`-` OKX balances will now include assets in the funding account.
+* :bug:`9184` Nexo importer now supports updated format.
+* :bug:`-` Recursion errors during price inquiry are now handled properly.
+* :bug:`-` rotki Wrapped will no longer count transactions with ignored assets.
 * :bug:`-` rotki will correctly decode all the Aura rewards claim events.
 * :bug:`-` rotki will now properly detect supported protocol balances in Polygon PoS, Gnosis, and Scroll.
 * :bug:`9163` Cryptocompare price queries will be handled correctly again. Fixes "the 'FVal' object is not subscriptable".
+* :bug:`-` Fix a rare incorrect order when depositing and staking in curve gauges.
 * :bug:`-` When querying the price of BSQ rotki will define it as the price of 100 satoshi.
 
 * :release:`1.37.0 <2024-12-24>`

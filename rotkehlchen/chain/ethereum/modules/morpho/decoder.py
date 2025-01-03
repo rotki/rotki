@@ -31,14 +31,5 @@ class MorphoDecoder(MorphoCommonDecoder):
                 string_to_evm_address('0x26bf52a84360ad3d01d7cdc28fc2ddc04d8c8647'),  # CompoundV2MigrationBundler  # noqa: E501
                 string_to_evm_address('0x3a0e2e9fb9c95fbc843daf166276c90b6c479558'),  # CompoundV3MigrationBundler  # noqa: E501
             },
-            rewards_distributors=[
-                string_to_evm_address('0x330eefa8a787552DC5cAd3C3cA644844B1E61Ddb'),
-                string_to_evm_address('0x678dDC1d07eaa166521325394cDEb1E4c086DF43'),
-                string_to_evm_address('0x2EfD4625d0c149EbADf118EC5446c6de24d916A4'),
-                string_to_evm_address('0xfD9B178257ae397a674698834628262fd858aaD3'),
-                string_to_evm_address('0xB5b17231E2C89Ca34CE94B8CB895A9B124BB466e'),
-                string_to_evm_address('0x7815CAb40D9b83021f55418a013cceC3813646FB'),
-                string_to_evm_address('0xfD5Ee44774a162Ec25Dbf3a4cFf6242A1fA5E338'),
-            ],
             weth=A_WETH,
         )

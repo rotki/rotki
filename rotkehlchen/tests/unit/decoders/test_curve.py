@@ -2314,7 +2314,7 @@ def test_gauge_deposit_and_stake_multiple(gnosis_inquirer, gnosis_accounts, load
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=1502,
+            sequence_index=1,
             timestamp=timestamp,
             location=Location.GNOSIS,
             event_type=HistoryEventType.DEPOSIT,
@@ -2328,7 +2328,7 @@ def test_gauge_deposit_and_stake_multiple(gnosis_inquirer, gnosis_accounts, load
             product=EvmProduct.GAUGE,
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=1503,
+            sequence_index=2,
             timestamp=timestamp,
             location=Location.GNOSIS,
             event_type=HistoryEventType.DEPOSIT,
@@ -2342,7 +2342,7 @@ def test_gauge_deposit_and_stake_multiple(gnosis_inquirer, gnosis_accounts, load
             product=EvmProduct.GAUGE,
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=1504,
+            sequence_index=3,
             timestamp=timestamp,
             location=Location.GNOSIS,
             event_type=HistoryEventType.RECEIVE,
@@ -2470,5 +2470,94 @@ def test_monerium_eure_v2(gnosis_inquirer, gnosis_accounts, load_global_caches):
             notes=f'Remove {removed_amount} EURe from 0x056C6C5e684CeC248635eD86033378Cc444459B0 curve pool',  # noqa: E501
             counterparty=CPT_CURVE,
             address=string_to_evm_address('0xE3FFF29d4DC930EBb787FeCd49Ee5963DADf60b6'),
+        ),
+    ]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('load_global_caches', [[CPT_CURVE]])
+@pytest.mark.parametrize('gnosis_accounts', [['0x3Ba6eB0e4327B96aDe6D4f3b578724208a590CEF']])
+def test_deposit_order(gnosis_inquirer, gnosis_accounts, load_global_caches):
+    """Ensure that multiple deposits when depositing and staking keep the correct order.
+    This is a regression test for an issue where the approval was in between the other deposits.
+    """
+    tx_hash = deserialize_evm_tx_hash('0x2b2999cee4447d27e27abe7ad926c12a875e296ddc4ad7af77ff52b13e74d39f')  # noqa: E501
+    timestamp, deposited_eure, deposited_usdc, gas_fees, received_amount, user, contract = TimestampMS(1735459260000), '2.234019807771402726', '1.580616', '0.0011870912', '1.902024272971248158', gnosis_accounts[0], string_to_evm_address('0x37c5ab57AF7100Bdc9B668d766e193CCbF6614FD')  # noqa: E501
+    gauge_address = string_to_evm_address('0xd91770E868c7471a9585d1819143063A40c54D00')
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=gnosis_inquirer,
+        tx_hash=tx_hash,
+        load_global_caches=load_global_caches,
+    )
+
+    assert events == [
+        EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_XDAI,
+            balance=Balance(amount=FVal(gas_fees)),
+            location_label=gnosis_accounts[0],
+            notes=f'Burn {gas_fees} XDAI for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=9,
+            timestamp=timestamp,
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.APPROVE,
+            asset=EvmToken('eip155:100/erc20:0xDDAfbb505ad214D7b80b1f830fcCc89B60fb7A83'),
+            balance=Balance(amount=FVal('8.419384')),
+            location_label=gnosis_accounts[0],
+            notes=(
+                f'Set USDC spending approval of {user} by '
+                f'{contract} to 8.419384'
+            ),
+            address=contract,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=11,
+            timestamp=timestamp,
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+            asset=Asset('eip155:100/erc20:0x420CA0f9B9b604cE0fd9C18EF134C705e5Fa3430'),
+            balance=Balance(amount=FVal(deposited_eure)),
+            location_label=gnosis_accounts[0],
+            notes=f'Deposit {deposited_eure} EURe into {gauge_address} curve gauge',
+            counterparty=CPT_CURVE,
+            address=contract,
+            product=EvmProduct.GAUGE,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=12,
+            timestamp=timestamp,
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+            asset=Asset('eip155:100/erc20:0xDDAfbb505ad214D7b80b1f830fcCc89B60fb7A83'),
+            balance=Balance(amount=FVal(deposited_usdc)),
+            location_label=gnosis_accounts[0],
+            notes=f'Deposit {deposited_usdc} USDC into {gauge_address} curve gauge',
+            counterparty=CPT_CURVE,
+            address=contract,
+            product=EvmProduct.GAUGE,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=13,
+            timestamp=timestamp,
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+            asset=Asset(f'eip155:100/erc20:{gauge_address}'),
+            balance=Balance(amount=FVal(received_amount)),
+            location_label=gnosis_accounts[0],
+            notes=f'Receive {received_amount} crvEUReUSD-gauge after depositing in {gauge_address} curve gauge',  # noqa: E501
+            counterparty=CPT_CURVE,
+            address=ZERO_ADDRESS,
         ),
     ]

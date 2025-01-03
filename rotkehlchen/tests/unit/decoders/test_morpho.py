@@ -9,6 +9,8 @@ from rotkehlchen.chain.evm.decoding.morpho.constants import CPT_MORPHO
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH, A_USDC, A_USDT, A_WETH_BASE
 from rotkehlchen.fval import FVal
+from rotkehlchen.globaldb.cache import globaldb_set_general_cache_values
+from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.unit.decoders.test_zerox import A_BASE_USDC
@@ -19,6 +21,8 @@ from rotkehlchen.tests.utils.morpho import (
     create_ethereum_morpho_vault_token,
 )
 from rotkehlchen.types import (
+    CacheType,
+    ChainID,
     Location,
     TimestampMS,
     deserialize_evm_tx_hash,
@@ -28,6 +32,19 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.base.node_inquirer import BaseInquirer
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.types import ChecksumEvmAddress
+
+
+def _add_morpho_reward_distributor(chain_id: ChainID, address: str):
+    """Add Morpho reward distributor address to cache for proper decoding."""
+    with GlobalDBHandler().conn.write_ctx() as write_cursor:
+        globaldb_set_general_cache_values(
+            write_cursor=write_cursor,
+            key_parts=(
+                CacheType.MORPHO_REWARD_DISTRIBUTORS,
+                str(chain_id),
+            ),
+            values=[address],
+        )
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -251,6 +268,7 @@ def test_morpho_claim_reward_base(
         base_accounts: list['ChecksumEvmAddress'],
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0xf1c08fcee3717217b30cbd5e120a4079837e319064d8c01a28d9fb7f44fcb88b')  # noqa: E501
+    _add_morpho_reward_distributor(chain_id=ChainID.BASE, address='0x5400dBb270c956E8985184335A1C62AcA6Ce1333')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
     timestamp, user_address, gas_amount, reward_amount = TimestampMS(1731272621000), base_accounts[0], '0.000024248426432951', '0.033158'  # noqa: E501
     assert events == [
@@ -423,6 +441,7 @@ def test_morpho_claim_reward_ethereum(
         ethereum_accounts: list['ChecksumEvmAddress'],
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x1a6775590dfffdc2da036ec280627a65c57140b921d5afd11cabe913c78edcba')  # noqa: E501
+    _add_morpho_reward_distributor(chain_id=ChainID.ETHEREUM, address='0x330eefa8a787552DC5cAd3C3cA644844B1E61Ddb')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     timestamp, user_address, reward_amount = TimestampMS(1730476199000), ethereum_accounts[0], '13.56253'  # noqa: E501
     assert events == [

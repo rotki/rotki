@@ -5,6 +5,7 @@ import hmac
 import logging
 from collections import defaultdict
 from collections.abc import Sequence
+from enum import Enum
 from typing import TYPE_CHECKING, Any, Literal
 from urllib.parse import urlencode, urljoin
 
@@ -49,6 +50,15 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+
+class OkxEndpoint(Enum):
+    CURRENCIES = '/api/v5/asset/currencies'
+    TRADING_BALANCE = '/api/v5/account/balance'
+    FUNDING_BALANCE = '/api/v5/asset/balances'
+    TRADES = '/api/v5/trade/orders-history-archive'
+    DEPOSITS = '/api/v5/asset/deposit-history'
+    WITHDRAWALS = '/api/v5/asset/withdrawal-history'
 
 
 class Okx(ExchangeInterface):
@@ -107,7 +117,7 @@ class Okx(ExchangeInterface):
 
     def _api_query(
             self,
-            endpoint: Literal['currencies', 'balance', 'trades', 'deposits', 'withdrawals'],
+            endpoint: OkxEndpoint,
             options: dict | None = None,
     ) -> dict:
         """
@@ -120,17 +130,14 @@ class Okx(ExchangeInterface):
         options = options.copy() if options else {}
 
         params = {}
-        if endpoint == 'currencies':
-            path = '/api/v5/asset/currencies'
-        elif endpoint == 'balance':
-            path = '/api/v5/account/balance'
-        elif endpoint == 'trades':
-            path = '/api/v5/trade/orders-history-archive'
+        if endpoint in {OkxEndpoint.TRADES, OkxEndpoint.DEPOSITS, OkxEndpoint.WITHDRAWALS}:
             # supports pagination
             params.update({
                 'limit': options.get('limit', ''),
                 'after': options.get('after', ''),
             })
+
+        if endpoint == OkxEndpoint.TRADES:
             params.update({
                 'instType': 'SPOT',
                 'state': 'filled',
@@ -139,22 +146,8 @@ class Okx(ExchangeInterface):
                 params['begin'] = str(ts_sec_to_ms(Timestamp(int(options['start_ts']))))
             if options.get('end_ts'):
                 params['end'] = str(ts_sec_to_ms(Timestamp(int(options['end_ts']))))
-        elif endpoint == 'deposits':
-            path = '/api/v5/asset/deposit-history'
-            # supports pagination
-            params.update({
-                'limit': options.get('limit', ''),
-                'after': options.get('after', ''),
-            })
-        else:
-            assert endpoint == 'withdrawals', 'only case left, should be withdrawals'
-            path = '/api/v5/asset/withdrawal-history'
-            # supports pagination
-            params.update({
-                'limit': options.get('limit', ''),
-                'after': options.get('after', ''),
-            })
 
+        path = endpoint.value
         if len(params) != 0:
             path += f'?{urlencode(params)}'
 
@@ -166,6 +159,7 @@ class Okx(ExchangeInterface):
         })
         url = urljoin(self.base_uri, path)
 
+        log.debug(f'Querying OKX {url} with {method=}')
         try:
             response = self.session.request(method=method, url=url)
         except requests.exceptions.RequestException as e:
@@ -181,7 +175,7 @@ class Okx(ExchangeInterface):
 
     def _api_query_list(
             self,
-            endpoint: Literal['currencies', 'balance', 'trades', 'deposits', 'withdrawals'],
+            endpoint: OkxEndpoint,
             options: dict | None = None,
     ) -> list:
         """
@@ -200,7 +194,7 @@ class Okx(ExchangeInterface):
 
     def _api_query_list_paginated(
             self,
-            endpoint: Literal['currencies', 'balance', 'trades', 'deposits', 'withdrawals'],
+            endpoint: OkxEndpoint,
             pagination_key: str,
             options: dict | None = None,
     ) -> list:
@@ -227,30 +221,34 @@ class Okx(ExchangeInterface):
         return all_items
 
     def validate_api_key(self) -> tuple[bool, str]:
-        response = self._api_query(endpoint='balance')
+        response = self._api_query(endpoint=OkxEndpoint.TRADING_BALANCE)
         if response.get('code') != '0':
             return False, 'Error validating API credentials'
         return True, ''
 
     def query_balances(self, **kwargs: Any) -> ExchangeQueryBalances:
         """
-        https://www.okx.com/docs-v5/en/#rest-api-account-get-balance
+        https://www.okx.com/docs-v5/en/#trading-account-rest-api-get-balance
+        https://www.okx.com/docs-v5/en/#funding-account-rest-api-get-balance
 
         May raise
         - RemoteError if the OKX API or price oracle returns an unexpected response
         """
-        data = self._api_query_list(endpoint='balance')
+        currencies_data: list[dict] = []
+        data = self._api_query_list(endpoint=OkxEndpoint.TRADING_BALANCE)
         if not (len(data) == 1 and isinstance(data[0], dict)):
             raise RemoteError(
-                f'{self.name} balance response does not contain dict data[0]',
+                f'{self.name} trading balance response does not contain dict data[0]',
             )
         try:
-            currencies_data = data[0]['details']
+            currencies_data.extend(data[0]['details'])
         except KeyError as e:
             msg = f'Missing key: {e!s}'
             raise RemoteError(
-                f'{self.name} balance API request failed due to unexpected response {msg}',
+                f'{self.name} trading balance API request failed due to unexpected response {msg}',
             ) from e
+
+        currencies_data.extend(self._api_query_list(endpoint=OkxEndpoint.FUNDING_BALANCE))
 
         assets_balance: defaultdict[AssetWithOracles, Balance] = defaultdict(Balance)
         for currency_data in currencies_data:
@@ -306,7 +304,7 @@ class Okx(ExchangeInterface):
         - RemoteError from _api_query_list_paginated
         """
         raw_trades = self._api_query_list_paginated(
-            endpoint='trades',
+            endpoint=OkxEndpoint.TRADES,
             pagination_key='ordId',
             options={
                 'start_ts': start_ts,
@@ -342,7 +340,7 @@ class Okx(ExchangeInterface):
         - RemoteError from _api_query_list_paginated
         """
         deposits = self._api_query_list_paginated(
-            endpoint='deposits',
+            endpoint=OkxEndpoint.DEPOSITS,
             pagination_key='ts',
             options={
                 'start_ts': start_ts,
@@ -350,7 +348,7 @@ class Okx(ExchangeInterface):
             },
         )
         withdrawals = self._api_query_list_paginated(
-            endpoint='withdrawals',
+            endpoint=OkxEndpoint.WITHDRAWALS,
             pagination_key='ordId',
             options={
                 'start_ts': start_ts,

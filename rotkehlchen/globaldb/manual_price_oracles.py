@@ -61,6 +61,7 @@ class ManualCurrentOracle(CurrentPriceOracleInterface, DBSetterMixin):
     def __init__(self) -> None:
         super().__init__(oracle_name='manual current price oracle')
         self.db: DBHandler | None = None
+        self.processing_pairs: set[tuple[Asset, Asset]] = set()
 
     def _get_name(self) -> str:
         return self.name
@@ -75,22 +76,32 @@ class ManualCurrentOracle(CurrentPriceOracleInterface, DBSetterMixin):
     ) -> Price:
         """Searches for a manually specified current price for the `from_asset`.
         If found, converts it to a price in `to_asset` and returns it.
+        Avoids recursion by skipping already processing asset pairs.
         """
-        manual_current_result = GlobalDBHandler.get_manual_current_price(
-            asset=from_asset,
-        )
-        if manual_current_result is None:
+        if (from_asset, to_asset) in self.processing_pairs:
+            log.warning(f'Recursive price query detected for {from_asset=} -> {to_asset=}. Skipping.')  # noqa: E501
             return ZERO_PRICE
-        current_to_asset, current_price = manual_current_result
 
-        # we call _find_price to avoid catching the recursion error at `find_price_and_oracle`.
-        # ManualCurrentOracle does a special handling of RecursionError using
-        # `coming_from_latest_price` to detect recursions on the manual prices and break
-        # it to continue to the next oracle.
-        current_to_asset_price, _ = Inquirer._find_price(
-            from_asset=current_to_asset,
-            to_asset=to_asset,
-            coming_from_latest_price=True,
-        )
+        self.processing_pairs.add((from_asset, to_asset))
+        try:
+            if (manual_current_result := GlobalDBHandler.get_manual_current_price(
+                    asset=from_asset,
+            )) is None:
+                return ZERO_PRICE
 
-        return Price(current_price * current_to_asset_price)
+            current_to_asset, current_price = manual_current_result
+
+            # we call _find_price to avoid catching the recursion error at `find_price_and_oracle`.
+            # ManualCurrentOracle does a special handling of RecursionError using
+            # `coming_from_latest_price` to detect recursions on the manual prices and break
+            # it to continue to the next oracle.
+            current_to_asset_price, _ = Inquirer._find_price(
+                from_asset=current_to_asset,
+                to_asset=to_asset,
+                coming_from_latest_price=True,
+            )
+
+            return Price(current_price * current_to_asset_price)
+        finally:
+            # Ensure we remove the pair after processing, even if an error occurs
+            self.processing_pairs.remove((from_asset, to_asset))

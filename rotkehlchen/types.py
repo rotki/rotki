@@ -1148,6 +1148,7 @@ class CacheType(Enum):
     EXTRAFI_NEXT_RESERVE_ID = auto()
     EFP_SLOT_ADDRESS = auto()
     MORPHO_VAULTS = auto()
+    MORPHO_REWARD_DISTRIBUTORS = auto()
     BALANCER_V1_POOLS = auto()
     BALANCER_V2_POOLS = auto()
     CURVE_LENDING_VAULTS = auto()
@@ -1213,6 +1214,7 @@ GeneralCacheType = Literal[
     CacheType.BALANCER_V1_POOLS,
     CacheType.BALANCER_V2_POOLS,
     CacheType.BALANCER_GAUGES,
+    CacheType.MORPHO_REWARD_DISTRIBUTORS,
 ]
 
 

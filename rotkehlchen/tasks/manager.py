@@ -14,7 +14,10 @@ from rotkehlchen.chain.ethereum.modules.makerdao.cache import (
 )
 from rotkehlchen.chain.ethereum.modules.yearn.utils import query_yearn_vaults
 from rotkehlchen.chain.ethereum.utils import should_update_protocol_cache
-from rotkehlchen.chain.evm.decoding.morpho.utils import query_morpho_vaults
+from rotkehlchen.chain.evm.decoding.morpho.utils import (
+    query_morpho_reward_distributors,
+    query_morpho_vaults,
+)
 from rotkehlchen.constants.timing import (
     AAVE_V3_ASSETS_UPDATE,
     DATA_UPDATES_REFRESH,
@@ -145,6 +148,7 @@ class TaskManager:
         self.query_balances = query_balances
         self.query_yearn_vaults = query_yearn_vaults
         self.query_morpho_vaults = query_morpho_vaults
+        self.query_morpho_reward_distributors = query_morpho_reward_distributors
         self.query_aura_pools = query_aura_pools
         self.last_premium_status_check = ts_now()
         self.last_calendar_reminder_check = Timestamp(0)
@@ -166,7 +170,7 @@ class TaskManager:
             self._maybe_check_data_updates,
             self._maybe_update_snapshot_balances,
             self._maybe_update_yearn_vaults,
-            self._maybe_update_morpho_vaults,
+            self._maybe_update_morpho_cache,
             self._maybe_update_aura_pools,
             self._maybe_detect_evm_accounts,
             self._maybe_update_ilk_cache,
@@ -692,7 +696,7 @@ class TaskManager:
 
         return None
 
-    def _maybe_update_morpho_vaults(self) -> Optional[list[gevent.Greenlet]]:
+    def _maybe_update_morpho_cache(self) -> Optional[list[gevent.Greenlet]]:
         with self.database.conn.read_ctx() as cursor:
             if (
                 len(self.database.get_single_blockchain_addresses(cursor, SupportedBlockchain.ETHEREUM)) == 0 and  # noqa: E501
@@ -700,16 +704,25 @@ class TaskManager:
             ):
                 return None
 
+        greenlets = []
         if should_update_protocol_cache(CacheType.MORPHO_VAULTS) is True:
-            return [self.greenlet_manager.spawn_and_track(
+            greenlets.append(self.greenlet_manager.spawn_and_track(
                 after_seconds=None,
                 task_name='Update Morpho vaults',
                 exception_is_error=False,
                 method=self.query_morpho_vaults,
                 database=self.database,
-            )]
+            ))
 
-        return None
+        if should_update_protocol_cache(CacheType.MORPHO_REWARD_DISTRIBUTORS) is True:
+            greenlets.append(self.greenlet_manager.spawn_and_track(
+                after_seconds=None,
+                task_name='Update Morpho reward distributors',
+                exception_is_error=False,
+                method=self.query_morpho_reward_distributors,
+            ))
+
+        return greenlets if len(greenlets) > 0 else None
 
     def _maybe_update_aura_pools(self) -> Optional[list[gevent.Greenlet]]:
         with self.database.conn.read_ctx() as cursor:
