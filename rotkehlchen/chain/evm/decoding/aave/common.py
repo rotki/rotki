@@ -8,6 +8,7 @@ from rotkehlchen.chain.ethereum.constants import RAY
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.aave.constants import (
+    CPT_AAVE_V3,
     DISABLE_COLLATERAL,
     ENABLE_COLLATERAL,
     LIQUIDATION_CALL,
@@ -150,7 +151,7 @@ class Commonv2v3Decoder(DecoderInterface):
             if (
                 event.address is not None and
                 (event.location_label == user or (event.location_label == on_behalf_of and user in self.native_gateways)) and  # noqa: E501
-                event.balance.amount == amount and
+                (self.counterparty == CPT_AAVE_V3 or event.balance.amount == amount) and  # For aave v3 we can't match amounts exactly  # noqa: E501
                 event.event_subtype == HistoryEventSubType.NONE and (
                     self._address_is_aave_contract(queried_address=event.address) or
                     event.address == ZERO_ADDRESS or
@@ -423,7 +424,7 @@ class Commonv2v3Decoder(DecoderInterface):
         if None in paired_events:
             log.error(
                 f'Could not find all paired events in aave tx {context.transaction.tx_hash.hex()}'
-                f' on chain {self.evm_inquirer.chain_id}.',
+                f' on {self.evm_inquirer.chain_name}.',
             )
 
         maybe_reshuffle_events(  # Make sure that the paired events are in order
