@@ -19,11 +19,13 @@ from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import bytes_to_address
 
 from .constants import (
+    ADDED_VESTING,
     CLAIMED_VESTING,
     CPT_SAFE,
     LOCKED,
     SAFE_LOCKING,
     SAFE_VESTING,
+    SAFEPASS_AIRDROP,
     UNLOCKED,
     WITHDRAWN,
 )
@@ -160,12 +162,34 @@ class SafeDecoder(DecoderInterface):
 
         return DEFAULT_DECODING_OUTPUT
 
+    def _decode_safpass_claim(self, context: DecoderContext) -> DecodingOutput:
+        if context.tx_log.topics[0] != ADDED_VESTING:
+            return DEFAULT_DECODING_OUTPUT
+
+        if not self.base.is_tracked(account := bytes_to_address(context.tx_log.topics[2])):
+            return DEFAULT_DECODING_OUTPUT
+
+        event = self.base.make_event_from_transaction(
+            transaction=context.transaction,
+            tx_log=context.tx_log,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=self.safe_token,
+            balance=Balance(),
+            location_label=account,
+            notes='Claim and start vesting of SAFE tokens from Safe{Pass}',
+            address=context.tx_log.address,
+            counterparty=CPT_SAFE,
+        )
+        return DecodingOutput(event=event)
+
     # -- DecoderInterface methods
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {
             SAFE_VESTING: (self._decode_safe_vesting,),
             SAFE_LOCKING: (self._decode_safe_locker,),
+            SAFEPASS_AIRDROP: (self._decode_safpass_claim,),
         }
 
     @staticmethod
