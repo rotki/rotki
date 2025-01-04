@@ -952,6 +952,86 @@ def test_non_aave_tx(ethereum_inquirer, ethereum_accounts) -> None:
     assert events == expected_events
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [[
+    '0xfB9922C154aF5131C341d537d07e1068368bf3F1',
+    '0xD99697546891EE4C20b9A3C65fBfbC356353BEFB',
+]])
+def test_safe_interaction_interest(ethereum_inquirer, ethereum_accounts) -> None:
+    """Test that safe interactions with aave v3 also display interest.
+    Regression test for aave post decoding not firing."""
+    tx_hash = deserialize_evm_tx_hash('0x01ac87a1fe87913f54153a85f9657359387b82f374cb81132f5ccb30b3bddfbb')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    timestamp, signer, multisig, gas_fees, deposit_amount, interest_amount = TimestampMS(1736015087000), ethereum_accounts[0], ethereum_accounts[1], '0.00184223005590466', '8000', '0.534728'  # noqa: E501
+    expected_events = [
+        EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(gas_fees)),
+            location_label=signer,
+            notes=f'Burn {gas_fees} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            balance=Balance(),
+            location_label=ethereum_accounts[0],
+            notes=f'Successfully executed safe transaction 0x2dcf5b7be25bd993ca1dfe4cce66226a081b59e8e3f1b5e9f808ad7ec210f326 for multisig {multisig}',  # noqa: E501
+            counterparty=CPT_SAFE_MULTISIG,
+            address=string_to_evm_address(multisig),
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=2,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+            asset=A_USDC,
+            balance=Balance(amount=FVal(deposit_amount)),
+            location_label=multisig,
+            notes=f'Deposit {deposit_amount} USDC into AAVE v3',
+            counterparty=CPT_AAVE_V3,
+            address=string_to_evm_address('0x98C23E9d8f34FEFb1B7BD6a91B7FF122F4e16F5c'),
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=3,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+            asset=EvmToken('eip155:1/erc20:0x98C23E9d8f34FEFb1B7BD6a91B7FF122F4e16F5c'),  # aEthUSDC  # noqa: E501
+            balance=Balance(amount=FVal(deposit_amount)),
+            location_label=multisig,
+            notes=f'Receive {deposit_amount} aEthUSDC from AAVE v3',
+            counterparty=CPT_AAVE_V3,
+            address=ZERO_ADDRESS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=4,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.INTEREST,
+            asset=EvmToken('eip155:1/erc20:0x98C23E9d8f34FEFb1B7BD6a91B7FF122F4e16F5c'),  # aEthUSDC  # noqa: E501
+            balance=Balance(amount=FVal(interest_amount)),
+            location_label=multisig,
+            notes=f'Receive {interest_amount} aEthUSDC as interest earned from AAVE v3',
+            counterparty=CPT_AAVE_V3,
+        ),
+    ]
+    assert events == expected_events
+
+
 @pytest.mark.vcr(filter_query_parameters=['apikey'])(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('optimism_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
 def test_claim_incentives_reward(optimism_inquirer, optimism_accounts) -> None:
