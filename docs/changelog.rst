@@ -6,6 +6,7 @@ Changelog
 * :feature:`9120` rotki will now correctly decode Firebird Finance swaps in all supported EVM chains.
 * :feature:`7254` rotki will now correctly decode OpenOcean swaps in all supported EVM chains.
 * :feature:`-` Lido and EtherFI reserve tokens will now be automatically queried.
+* :feature:`-` Safepass vesting claim start events will now be properly decoded.
 * :bug:`-` Bitmex balances will now be queried correctly.
 * :bug:`-` OKX balances will now include assets in the funding account.
 * :bug:`9184` Nexo importer now supports updated format.

@@ -2,7 +2,12 @@ import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset, EvmToken
-from rotkehlchen.chain.ethereum.modules.safe.constants import CPT_SAFE, SAFE_LOCKING, SAFE_VESTING
+from rotkehlchen.chain.ethereum.modules.safe.constants import (
+    CPT_SAFE,
+    SAFE_LOCKING,
+    SAFE_VESTING,
+    SAFEPASS_AIRDROP,
+)
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.safe.constants import CPT_SAFE_MULTISIG
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -552,6 +557,59 @@ def test_safe_withdraw_unlocked(ethereum_inquirer, ethereum_accounts):
             notes=f'Withdraw {amount} SAFE from Safe{{Pass}} locking',
             counterparty=CPT_SAFE,
             address=SAFE_LOCKING,
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [[
+    '0xd52623EE9A40402A5a9ED82Bb0417e04d88A778C',
+    '0x89C5d54C979f682F40b73a9FC39F338C88B434c6',
+]])
+def test_safepass_start_vesting_claim(ethereum_inquirer, ethereum_accounts):
+    tx_hash = deserialize_evm_tx_hash('0xfd07173651763370557d8300a8f5891d26ec7055238d6daf4f53c3f060d0f42d')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    user_address, multisig_address, timestamp, gas = ethereum_accounts[0], ethereum_accounts[1], TimestampMS(1735818059000), '0.00149046414099075'  # noqa: E501
+    expected_events = [
+        EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(gas)),
+            location_label=user_address,
+            notes=f'Burn {gas} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            balance=Balance(),
+            location_label=user_address,
+            notes=f'Successfully executed safe transaction 0x8e01ca76365b063a7628f0072527f51579660103276990ab4f2b97e2de26e04b for multisig {multisig_address}',  # noqa: E501
+            counterparty=CPT_SAFE_MULTISIG,
+            address=multisig_address,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=118,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=EvmToken('eip155:1/erc20:0x5aFE3855358E112B5647B952709E6165e1c1eEEe'),
+            balance=Balance(),
+            location_label=multisig_address,
+            notes='Claim and start vesting of SAFE tokens from Safe{Pass}',
+            counterparty=CPT_SAFE,
+            address=SAFEPASS_AIRDROP,
         ),
     ]
     assert events == expected_events
