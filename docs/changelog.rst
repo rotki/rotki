@@ -12,6 +12,7 @@ Changelog
 * :bug:`-` Fix a rare incorrect order when depositing and staking in curve gauges.
 * :bug:`-` When querying the price of BSQ rotki will define it as the price of 100 satoshi.
 * :bug:`-` Bitmex balances will now be queried correctly.
+* :bug:`-` Interactions with aave via safe should no longer be missing interest events.
 
 * :release:`1.37.0 <2024-12-24>`
 * :feature:`7144` Users will be able to import multiple addresses into the address book via CSV.

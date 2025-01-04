@@ -410,7 +410,7 @@ class Commonv2v3Decoder(DecoderInterface):
 
         if context.tx_log.topics[0] in (ENABLE_COLLATERAL, DISABLE_COLLATERAL):
             event = self._decode_collateral_events(token, context.transaction, context.tx_log)
-            return DecodingOutput(event=event)
+            return DecodingOutput(event=event, matched_counterparty=self.counterparty)
         if context.tx_log.topics[0] == self.deposit_signature:
             paired_events = self._decode_deposit(token, context.tx_log, context.decoded_events)
         elif context.tx_log.topics[0] == WITHDRAW:
@@ -431,7 +431,7 @@ class Commonv2v3Decoder(DecoderInterface):
             events_list=context.decoded_events,
         )
         self._maybe_decode_mint_events(context)
-        return DEFAULT_DECODING_OUTPUT
+        return DecodingOutput(matched_counterparty=self.counterparty)
 
     def _decode_incentives_common(
             self,
@@ -482,8 +482,9 @@ class Commonv2v3Decoder(DecoderInterface):
             log.error(
                 f'Failed to find the aave incentive reward transfer for {self.evm_inquirer.chain_name} transaction {context.transaction.tx_hash.hex()}.',  # noqa: E501
             )
+            return DEFAULT_DECODING_OUTPUT
 
-        return DEFAULT_DECODING_OUTPUT
+        return DecodingOutput(matched_counterparty=self.counterparty)
 
     # DecoderInterface method
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
