@@ -14,6 +14,7 @@ Changelog
 * :bug:`-` Bitmex balances will now be queried correctly.
 * :bug:`-` Interactions with aave via safe should no longer be missing interest events.
 * :bug:`-` Aave v3 withdrawals of native assets should now have proper ordering and include interest earned.
+* :bug:`9200` Editing a Kraken event to include a custom asset should no longer botch history events retrieval.
 
 * :release:`1.37.0 <2024-12-24>`
 * :feature:`7144` Users will be able to import multiple addresses into the address book via CSV.

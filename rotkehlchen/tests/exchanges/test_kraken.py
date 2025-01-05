@@ -4,6 +4,7 @@ from http import HTTPStatus
 from pathlib import Path
 from typing import TYPE_CHECKING, cast
 from unittest.mock import patch
+from uuid import uuid4
 
 import gevent
 import pytest
@@ -13,7 +14,7 @@ from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.api.v1.types import IncludeExcludeFilterData
 from rotkehlchen.api.websockets.typedefs import WSMessageType
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import Asset, CustomAsset
 from rotkehlchen.assets.converters import asset_from_kraken
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import (
@@ -34,6 +35,7 @@ from rotkehlchen.constants.assets import (
 )
 from rotkehlchen.constants.limits import FREE_HISTORY_EVENTS_LIMIT
 from rotkehlchen.constants.resolver import strethaddress_to_identifier
+from rotkehlchen.db.custom_assets import DBCustomAssets
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import ModifiableDBSettings
@@ -1106,3 +1108,36 @@ def test_kraken_informational_fees(rotkehlchen_api_server_with_exchanges: 'APISe
             notes='margin',
         ),
     ]
+
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_kraken_event_serialization_with_custom_asset(database):
+    """Regression test for https://github.com/rotki/rotki/issues/9200"""
+    custom_asset = CustomAsset.initialize(
+        identifier=str(uuid4()),
+        name='Gold Bar',
+        custom_asset_type='inheritance',
+    )
+    DBCustomAssets(database).add_custom_asset(custom_asset)
+    for event_type, event_subtype, expected_notes in (
+            (HistoryEventType.TRADE, HistoryEventSubType.SPEND, 'Swap 1 Gold Bar in Kraken'),
+            (HistoryEventType.TRADE, HistoryEventSubType.RECEIVE, 'Receive 1 Gold Bar as a result of a Kraken swap'),  # noqa: E501
+            (HistoryEventType.TRADE, HistoryEventSubType.FEE, 'Spend 1 Gold Bar as Kraken trading fee'),  # noqa: E501
+            (HistoryEventType.STAKING, HistoryEventSubType.REWARD, 'Gain 1 Gold Bar from Kraken staking'),  # noqa: E501
+            (HistoryEventType.STAKING, HistoryEventSubType.FEE, 'Spend 1 Gold Bar as Kraken staking fee'),  # noqa: E501
+            (HistoryEventType.WITHDRAWAL, HistoryEventSubType.REMOVE_ASSET, 'Withdraw 1 Gold Bar from Kraken'),  # noqa: E501
+            (HistoryEventType.WITHDRAWAL, HistoryEventSubType.FEE, 'Spend 1 Gold Bar as Kraken withdrawal fee'),  # noqa: E501
+            (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET, 'Deposit 1 Gold Bar to Kraken'),  # noqa: E501
+    ):
+        event = HistoryEvent(
+            event_identifier='foo',
+            sequence_index=1,
+            timestamp=TimestampMS(10000000000),
+            location=Location.KRAKEN,
+            event_type=event_type,
+            event_subtype=event_subtype,
+            asset=custom_asset,
+            balance=Balance(amount=FVal(1)),
+            location_label='my kraken',
+        )
+        assert event.serialize()['notes'] == expected_notes
