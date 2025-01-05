@@ -228,7 +228,7 @@ def setup_ethereum_transactions_test(
         block_number=13142218,
         from_address=TEST_ADDR1,
         to_address=string_to_evm_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
-        value=int(10 * 10**18),
+        value=10 * 10**18,
         gas=194928,
         gas_price=int(0.000000204 * 10**18),
         gas_used=136675,
