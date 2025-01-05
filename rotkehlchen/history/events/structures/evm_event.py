@@ -16,7 +16,6 @@ from rotkehlchen.history.events.structures.base import (
     get_event_type_identifier,
 )
 from rotkehlchen.history.events.structures.types import (
-    EVM_EVENT_DB_TUPLE_READ,
     EVM_EVENT_FIELDS,
     HistoryEventSubType,
     HistoryEventType,
@@ -37,6 +36,7 @@ if TYPE_CHECKING:
 
     from rotkehlchen.accounting.mixins.event import AccountingEventMixin
     from rotkehlchen.accounting.pot import AccountingPot
+    from rotkehlchen.history.events.structures.types import EVM_EVENT_DB_TUPLE_READ
 
 
 logger = logging.getLogger(__name__)

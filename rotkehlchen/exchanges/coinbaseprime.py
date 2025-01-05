@@ -302,9 +302,6 @@ class Coinbaseprime(ExchangeInterface):
         else:
             return True, ''
 
-    def update_passphrase(self, new_passphrase: str) -> None:
-        self.api_passphrase = new_passphrase
-
     def edit_exchange_credentials(self, credentials: 'ExchangeAuthCredentials') -> bool:
         if super().edit_exchange_credentials(credentials) is False:
             return False
