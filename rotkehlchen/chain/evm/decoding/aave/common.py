@@ -12,7 +12,6 @@ from rotkehlchen.chain.evm.decoding.aave.constants import (
     DISABLE_COLLATERAL,
     ENABLE_COLLATERAL,
     LIQUIDATION_CALL,
-    MINT,
     WITHDRAW,
 )
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
@@ -202,6 +201,7 @@ class Commonv2v3Decoder(DecoderInterface):
         notes = f'Withdraw {amount} {symbol} from {self.label}'
         if to != user:
             notes += f' to {to}'
+
         for event in decoded_events:
             if (
                 event.address is not None and
@@ -338,53 +338,6 @@ class Commonv2v3Decoder(DecoderInterface):
 
         return return_event, repay_event
 
-    def _maybe_decode_mint_events(self, context: DecoderContext) -> None:
-        """Decode possible mint events in transactions. Those are result of the aW(NATIVE)
-        contract minting and transferring before withdrawing the native asset. Code at
-        https://scrollscan.com/address/0xFF75A4B698E3Ec95E608ac0f22A03B8368E05F5D#code
-
-        Example tx: https://scrollscan.com/tx/0x65cd06fd54a10052c3d9084d14d28c06e2bb328b1ec39730fab9284cb529d068
-        """
-        mint = None
-        for tx_log in context.all_logs:
-            if tx_log.log_index >= context.tx_log.log_index:
-                break  # it is possible to not have mint events. Also don't query after the pool event  # noqa: E501
-
-            if tx_log.topics[0] == MINT:
-                token = EvmToken(evm_address_to_identifier(
-                    address=tx_log.address,
-                    token_type=EvmTokenKind.ERC20,
-                    chain_id=self.evm_inquirer.chain_id,
-                ))
-                mint = (
-                    bytes_to_address(tx_log.topics[2]),  # onBehalfOf
-                    asset_normalized_value(  # amount minted
-                        amount=int.from_bytes(tx_log.data[0:32]),
-                        asset=token,
-                    ),
-                    token,
-                )
-                break
-
-        else:  # not found, so just stop here
-            return
-
-        for event in context.decoded_events:
-            if (
-                (event.location_label, event.balance.amount, event.asset) == mint and
-                event.event_type == HistoryEventType.RECEIVE and
-                event.event_subtype == HistoryEventSubType.NONE and
-                event.counterparty is None
-            ):
-                event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
-                resolved_asset = event.asset.resolve_to_asset_with_symbol()
-                event.notes = f'Receive {event.balance.amount} {resolved_asset.symbol} from {self.label}'  # noqa: E501
-                event.counterparty = self.counterparty
-                break
-
-        else:
-            log.error(f'Did not find expected AAVE mint event in {context.transaction}. Continuing')  # noqa: E501
-
     def _decode_lending_pool_events(self, context: DecoderContext) -> DecodingOutput:
         """Decodes AAVE v2/v3 Lending Pool events"""
         if context.tx_log.topics[0] not in (
@@ -412,6 +365,7 @@ class Commonv2v3Decoder(DecoderInterface):
         if context.tx_log.topics[0] in (ENABLE_COLLATERAL, DISABLE_COLLATERAL):
             event = self._decode_collateral_events(token, context.transaction, context.tx_log)
             return DecodingOutput(event=event, matched_counterparty=self.counterparty)
+
         if context.tx_log.topics[0] == self.deposit_signature:
             paired_events = self._decode_deposit(token, context.tx_log, context.decoded_events)
         elif context.tx_log.topics[0] == WITHDRAW:
@@ -422,7 +376,7 @@ class Commonv2v3Decoder(DecoderInterface):
             paired_events = self._decode_repay(token, context.tx_log, context.decoded_events)
 
         if None in paired_events:
-            log.error(
+            log.warning(  # can happen in cases where one of the events comes later such as in test_aave_v3_withdraw_with_bigger_interest  # noqa: E501
                 f'Could not find all paired events in aave tx {context.transaction.tx_hash.hex()}'
                 f' on {self.evm_inquirer.chain_name}.',
             )
@@ -431,7 +385,6 @@ class Commonv2v3Decoder(DecoderInterface):
             ordered_events=paired_events,
             events_list=context.decoded_events,
         )
-        self._maybe_decode_mint_events(context)
         return DecodingOutput(matched_counterparty=self.counterparty)
 
     def _decode_incentives_common(
