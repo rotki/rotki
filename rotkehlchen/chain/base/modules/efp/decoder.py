@@ -31,7 +31,6 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 UPDATE_ACCOUNT_METADATA: Final = b"\xb0bt$-\xd2\xa5/\xd1\x8f\xff\x98=Z\xd9\xb3\x12.\x1ee\xc4\xa3\xcf\x9b\xd6\xbb'+G\xf0\x111"  # noqa: E501
-UPDATE_LIST_STORAGE_LOCATION: Final = b'\xe6PM\xf8\xb7bT\xe82m\xba\x1d\x1f\xd1\xacI6\xde(\xca\xf5e\xb9\xc5\xa1\xad\x0f\x10\xd6\xc9\x8e\xc2'  # noqa: E501
 
 
 class EfpDecoder(EfpCommonDecoder):

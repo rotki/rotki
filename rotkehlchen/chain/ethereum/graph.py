@@ -27,16 +27,9 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
-
-GRAPH_QUERY_LIMIT: Final = 1000
 RE_MULTIPLE_WHITESPACE: Final = re.compile(r'\s+')
 RETRY_BACKOFF_FACTOR: Final = 0.2
 THEGRAPH_BASE_URL: Final = 'https://gateway-arbitrum.network.thegraph.com/api/'
-SUBGRAPH_REMOTE_ERROR_MSG = (
-    'Failed to request the {protocol} subgraph due to {error_msg}. '
-    'All the deposits and withdrawals history queries are not functioning until this is fixed. '
-    "Probably will get fixed with time. If not report it to rotki's support channel"
-)
 
 
 class Graph(ExternalServiceWithApiKey):
