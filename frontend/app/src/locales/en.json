@@ -4755,7 +4755,8 @@
       "confirmation": "This action will redecode all the events except the customized ones, and may take a long time depending on the amount of transactions to process. Are you sure you want to continue?",
       "decoded": {
         "true": "All transactions have been processed.",
-        "false": "Some transactions need to be processed."
+        "false": "Some transactions need to be processed.",
+        "not_started": "The decoding process will start after transaction querying is done."
       },
       "fetching": "Checking transaction decoding status",
       "transactions_processed": "{processed} / {total} transactions processed",
