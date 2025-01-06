@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :bug:`-` OKX balances will now include assets in the funding account.
+* :bug:`-` Bybit balances in the funding account will now be queried.
 * :bug:`9184` Nexo importer now supports updated format.
 * :bug:`-` Recursion errors during price inquiry are now handled properly.
 * :bug:`-` rotki Wrapped will no longer count transactions with ignored assets.
