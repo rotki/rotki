@@ -1,4 +1,4 @@
-import { cloneDeep } from 'lodash-es';
+import { cloneDeep } from 'es-toolkit';
 import type { MaybeRef } from '@vueuse/core';
 import type { Balances, BlockchainAssetBalances } from '@/types/blockchain/balances';
 import type { AssetPrices } from '@/types/prices';

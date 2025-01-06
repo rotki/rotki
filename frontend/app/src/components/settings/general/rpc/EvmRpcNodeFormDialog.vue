@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { omit } from 'lodash-es';
+import { omit } from 'es-toolkit';
 import { Blockchain } from '@rotki/common';
 import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
 import { isBlockchain } from '@/types/blockchain/chains';
@@ -69,7 +69,7 @@ async function save() {
   try {
     if (editing)
       await api.editEvmNode(node);
-    else await api.addEvmNode(omit(node, 'identifier'));
+    else await api.addEvmNode(omit(node, ['identifier']));
     resetForm();
     emit('complete');
   }

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { groupBy } from 'lodash-es';
+import { groupBy } from 'es-toolkit';
 import { IgnoreActionType } from '@/types/history/ignored';
 import { Section } from '@/types/status';
 import { isTaskCancelled } from '@/utils';

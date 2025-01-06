@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { isEqual } from 'lodash-es';
+import { isEqual } from 'es-toolkit';
 import { useMessageStore } from '@/store/message';
 import { useSavedFilter } from '@/composables/filters/saved';
 import SuggestedItem from '@/components/table-filter/SuggestedItem.vue';

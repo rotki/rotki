@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useTemplateRef } from 'vue';
-import { omit } from 'lodash-es';
+import { omit } from 'es-toolkit';
 import CalendarForm from '@/components/calendar/CalendarForm.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import { ApiValidationError } from '@/types/api/errors';
@@ -49,7 +49,7 @@ async function save() {
   let success;
   try {
     const result = !editMode
-      ? await addCalendarEvent(omit(payload, 'identifier'))
+      ? await addCalendarEvent(omit(payload, ['identifier']))
       : await editCalendarEvent(payload);
 
     const eventId = result.entryId;

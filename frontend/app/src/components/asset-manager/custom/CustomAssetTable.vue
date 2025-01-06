@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { some } from 'lodash-es';
+import { some } from 'es-toolkit/compat';
 import CopyButton from '@/components/helper/CopyButton.vue';
 import RowActions from '@/components/helper/RowActions.vue';
 import BadgeDisplay from '@/components/history/BadgeDisplay.vue';

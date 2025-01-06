@@ -1,7 +1,7 @@
 // TODO: Split class
 /* eslint-disable max-lines */
 import { type AaveHistoryTotal, type AaveLending, type Balance, BigNumber, type Writeable, assetSymbolToIdentifierMap } from '@rotki/common';
-import { sortBy } from 'lodash-es';
+import { sortBy } from 'es-toolkit';
 import { type Collateral, type DefiLoan, ProtocolVersion } from '@/types/defi';
 import { Section, Status } from '@/types/status';
 import { DefiProtocol } from '@/types/modules';
@@ -139,7 +139,7 @@ export function useDefiLending(): UseDefiLendingReturn {
       );
     }
 
-    return sortBy(loans, 'identifier');
+    return sortBy(loans, ['identifier']);
   });
 
   const loan = (identifier?: string): ComputedRef<NullableLoan> => computed<NullableLoan>(() => {
@@ -385,7 +385,7 @@ export function useDefiLending(): UseDefiLendingReturn {
       }
     }
 
-    return sortBy(balances, 'asset');
+    return sortBy(balances, ['asset']);
   });
 
   const fetchLending = async (refresh = false): Promise<void> => {

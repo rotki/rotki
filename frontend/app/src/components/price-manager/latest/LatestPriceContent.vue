@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { objectOmit } from '@vueuse/core';
+import { omit } from 'es-toolkit';
 import { isNft } from '@/utils/nft';
 import { useConfirmStore } from '@/store/confirm';
 import { useGeneralSettingsStore } from '@/store/settings/general';
@@ -82,7 +82,7 @@ function add() {
 }
 
 function edit(item: ManualPriceWithUsd) {
-  set(editableItem, objectOmit({
+  set(editableItem, omit({
     ...item,
     price: item.price.toFixed() ?? '',
   }, ['id', 'usdPrice']));

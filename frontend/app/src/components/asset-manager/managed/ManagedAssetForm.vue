@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { helpers, required, requiredIf } from '@vuelidate/validators';
-import { omit } from 'lodash-es';
+import { omit } from 'es-toolkit';
 import { externalLinks } from '@shared/external-links';
 import useVuelidate from '@vuelidate/core';
 import { evmTokenKindsData } from '@/types/blockchain/chains';
@@ -149,7 +149,7 @@ const v$ = useVuelidate(
 useFormStateWatcher(states, stateUpdated);
 
 function clearFieldError(field: keyof SupportedAsset) {
-  set(errors, omit(get(errors), field));
+  set(errors, omit(get(errors), [field]));
 }
 
 function clearFieldErrors(fields: Array<keyof SupportedAsset>) {
@@ -231,14 +231,14 @@ async function saveAsset() {
 
   const assetPayload = get(isEvmToken)
     ? payload
-    : omit(payload, ['decimals', 'address', 'evmChain', 'type', 'tokenKind', 'underlyingTokens']);
+    : omit(payload, ['decimals', 'address', 'evmChain', 'tokenKind', 'underlyingTokens']);
 
   if (props.editMode) {
     newIdentifier = get(identifier);
     await editAsset({ ...assetPayload, identifier: newIdentifier });
   }
   else {
-    ({ identifier: newIdentifier } = await addAsset(omit(assetPayload, 'identifier')));
+    ({ identifier: newIdentifier } = await addAsset(omit(assetPayload, ['identifier'])));
   }
   return newIdentifier;
 }
@@ -503,8 +503,8 @@ defineExpose({
     </RuiCard>
 
     <AssetIconForm
-      class="col-span-2"
       ref="assetIconFormRef"
+      class="col-span-2"
       :identifier="identifier"
       refreshable
     />

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useTemplateRef } from 'vue';
-import { omit } from 'lodash-es';
+import { omit } from 'es-toolkit';
 import ManagedAssetForm from '@/components/asset-manager/managed/ManagedAssetForm.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import { useAssetCacheStore } from '@/store/assets/asset-cache';

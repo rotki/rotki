@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { each } from 'lodash-es';
+import { each } from 'es-toolkit/compat';
 import { Blockchain } from '@rotki/common';
 import { helpers, required, requiredIf } from '@vuelidate/validators';
 import useVuelidate from '@vuelidate/core';

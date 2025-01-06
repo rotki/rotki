@@ -1,4 +1,4 @@
-import { cloneDeep } from 'lodash-es';
+import { cloneDeep } from 'es-toolkit';
 import type { PiniaPluginContext, StoreGeneric } from 'pinia';
 
 export function StoreResetPlugin({ store }: PiniaPluginContext): void {

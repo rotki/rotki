@@ -1,4 +1,4 @@
-import { cloneDeep } from 'lodash-es';
+import { cloneDeep } from 'es-toolkit';
 import { balanceSum } from '@/utils/calculation';
 import type {
   Writeable,

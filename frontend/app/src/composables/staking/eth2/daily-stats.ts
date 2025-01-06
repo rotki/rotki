@@ -1,4 +1,4 @@
-import { type MaybeRef, objectOmit } from '@vueuse/core';
+import { omit } from 'es-toolkit';
 import { TaskType } from '@/types/task-type';
 import { Section, Status } from '@/types/status';
 import { isTaskCancelled } from '@/utils';
@@ -9,6 +9,7 @@ import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useEth2Api } from '@/composables/api/staking/eth2';
 import { useStatusUpdater } from '@/composables/status';
 import { usePremium } from '@/composables/premium';
+import type { MaybeRef } from '@vueuse/core';
 import type { Eth2DailyStats, Eth2DailyStatsPayload, EthStakingDailyStatData } from '@rotki/common';
 import type { TaskMeta } from '@/types/task';
 import type { ComputedRef, Ref } from 'vue';
@@ -123,7 +124,7 @@ export function useEth2DailyStats(): UseEthStakingDailyStatsReturn {
     const dailyStats = get(state);
     const validators = get(ethStakingValidators);
     return {
-      ...objectOmit(dailyStats, ['entries']),
+      ...omit(dailyStats, ['entries']),
       entries: dailyStats.entries.map((stat) => {
         const ownershipPercentage = validators.find(({ index }) => index === stat.validatorIndex)
           ?.ownershipPercentage;

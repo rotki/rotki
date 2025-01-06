@@ -1,4 +1,4 @@
-import { kebabCase } from 'lodash-es';
+import { kebabCase } from 'es-toolkit';
 import type BigNumber from 'bignumber.js';
 import type { Ref, WritableComputedRef } from 'vue';
 

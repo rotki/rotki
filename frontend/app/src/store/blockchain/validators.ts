@@ -1,5 +1,5 @@
 import { Blockchain } from '@rotki/common';
-import { type MaybeRef, objectPick } from '@vueuse/core';
+import { pick } from 'es-toolkit';
 import { Module } from '@/types/modules';
 import { createValidatorAccount } from '@/utils/blockchain/accounts/create';
 import { logger } from '@/utils/logging';
@@ -12,6 +12,7 @@ import { useSupportedChains } from '@/composables/info/chains';
 import { usePremium } from '@/composables/premium';
 import { useBlockchainAccountsApi } from '@/composables/api/blockchain/accounts';
 import { useBlockchainBalances } from '@/composables/blockchain/balances';
+import type { MaybeRef } from '@vueuse/core';
 import type { EthereumValidator, EthereumValidatorRequestPayload } from '@/types/blockchain/accounts';
 import type { Collection } from '@/types/collection';
 
@@ -37,7 +38,7 @@ export const useBlockchainValidatorsStore = defineStore('blockchain/validators',
   const ethStakingValidators = computed<EthereumValidator[]>(() => {
     const validatorAccounts = get(blockchainAccounts)[Blockchain.ETH2] ?? [];
     return validatorAccounts.filter(isAccountWithBalanceValidator).map(validator => ({
-      ...objectPick(validator, ['usdValue', 'amount']),
+      ...pick(validator, ['usdValue', 'amount']),
       ...validator.data,
     }));
   });

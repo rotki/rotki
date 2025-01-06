@@ -1,5 +1,4 @@
-import camelCase from 'lodash-es/camelCase';
-import lowerCase from 'lodash-es/lowerCase';
+import { camelCase, lowerCase } from 'es-toolkit';
 
 export class CSVMissingHeadersError extends Error {
   constructor(message: string) {

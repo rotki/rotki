@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { camelCase } from 'lodash-es';
+import { camelCase } from 'es-toolkit';
 import { etherscanLinks } from '@shared/external-links';
 import { isEtherscanKey } from '@/types/external';
 import { useNotificationsStore } from '@/store/notifications';

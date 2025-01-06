@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common';
 import { helpers, required } from '@vuelidate/validators';
-import { isEmpty } from 'lodash-es';
+import { isEmpty } from 'es-toolkit/compat';
 import useVuelidate from '@vuelidate/core';
 import { XpubPrefix, type XpubType, getKeyType, getPrefix, isPrefixed, keyType } from '@/utils/xpub';
 import { toMessages } from '@/utils/validation';

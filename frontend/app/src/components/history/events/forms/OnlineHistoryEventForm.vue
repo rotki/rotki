@@ -2,7 +2,7 @@
 import { HistoryEventEntryType } from '@rotki/common';
 import dayjs from 'dayjs';
 import { helpers, required } from '@vuelidate/validators';
-import { isEmpty } from 'lodash-es';
+import { isEmpty } from 'es-toolkit/compat';
 import useVuelidate from '@vuelidate/core';
 import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
 import { toMessages } from '@/utils/validation';

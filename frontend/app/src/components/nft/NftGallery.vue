@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { BigNumber, Blockchain } from '@rotki/common';
 import { type TablePaginationData, useBreakpoint } from '@rotki/ui-library';
-import { keyBy } from 'lodash-es';
+import { keyBy } from 'es-toolkit';
 import { Routes } from '@/router/routes';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
 import { uniqueStrings } from '@/utils/data';
@@ -179,7 +179,7 @@ const { fetchNftsPrices } = useAssetPricesApi();
 async function fetchPrices() {
   try {
     const data = await fetchNftsPrices();
-    set(prices, keyBy(data, 'asset'));
+    set(prices, keyBy(data, item => item.asset));
   }
   catch (error_: any) {
     set(priceError, error_.message);

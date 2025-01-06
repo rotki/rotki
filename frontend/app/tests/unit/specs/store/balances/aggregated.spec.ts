@@ -1,5 +1,5 @@
 import { type AssetBalanceWithPrice, Blockchain } from '@rotki/common';
-import { sortBy } from 'lodash-es';
+import { sortBy } from 'es-toolkit';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { convertBtcAccounts, convertBtcBalances } from '@/utils/blockchain/accounts';
 import { TRADE_LOCATION_BANKS } from '@/data/defaults';
@@ -120,7 +120,7 @@ describe('store::balances/aggregated', () => {
       },
     });
 
-    const actualResult = sortBy(get(balances()), 'asset');
+    const actualResult = sortBy(get(balances()), ['asset']);
 
     const expectedResult = sortBy(
       [
@@ -155,7 +155,7 @@ describe('store::balances/aggregated', () => {
           usdPrice: bigNumberify(1),
         },
       ] satisfies AssetBalanceWithPrice[],
-      'asset',
+      ['asset'],
     );
 
     expect(actualResult).toMatchObject(expectedResult);
@@ -417,7 +417,7 @@ describe('store::balances/aggregated', () => {
       },
     });
     adjustPrices(get(prices));
-    const actualResult = sortBy(get(balances()), 'asset');
+    const actualResult = sortBy(get(balances()), ['asset']);
     const expectedResult = sortBy(
       [
         {
@@ -451,7 +451,7 @@ describe('store::balances/aggregated', () => {
           usdPrice: bigNumberify(1),
         },
       ] as AssetBalanceWithPrice[],
-      'asset',
+      ['asset'],
     );
 
     expect(actualResult).toMatchObject(expectedResult);

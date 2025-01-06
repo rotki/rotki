@@ -1,4 +1,4 @@
-import { sortBy } from 'lodash-es';
+import { sortBy } from 'es-toolkit';
 import { Section, Status } from '@/types/status';
 import { DefiProtocol, isDefiProtocol } from '@/types/modules';
 import { useDefiStore } from '@/store/defi/index';
@@ -174,7 +174,7 @@ export const useDefiOverviewStore = defineStore('defi/store', () => {
         summary[DefiProtocol.YEARN_VAULTS_V2] = yearnV2Summary;
     }
 
-    return sortBy(Object.values(summary), summary => summary.protocol).filter(
+    return sortBy(Object.values(summary), ['protocol']).filter(
       value => value.balanceUsd || value.deposits || value.liabilities,
     );
   });

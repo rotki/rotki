@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { HistoryEventEntryType } from '@rotki/common';
-import { objectPick } from '@vueuse/shared';
+import { pick } from 'es-toolkit';
 import {
   isAssetMovementEvent,
   isEventAccountingRuleProcessed,
@@ -80,7 +80,7 @@ function getEventNoteAttrs(event: HistoryEventEntry) {
     data.counterparty = event.counterparty;
 
   // todo: validate optional or nullable state of schema
-  const { asset, notes } = objectPick(event, ['notes', 'asset']);
+  const { asset, notes } = pick(event, ['notes', 'asset']);
 
   return {
     asset,

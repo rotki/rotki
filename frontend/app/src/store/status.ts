@@ -1,4 +1,4 @@
-import { isEmpty } from 'lodash-es';
+import { isEmpty } from 'es-toolkit/compat';
 import { Section, Status, defiSections } from '@/types/status';
 import type { StatusPayload } from '@/types/action';
 

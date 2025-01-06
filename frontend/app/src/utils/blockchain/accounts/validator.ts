@@ -1,4 +1,4 @@
-import { camelCase } from 'lodash-es';
+import { camelCase } from 'es-toolkit';
 import { sum } from '@/utils/balances';
 import { includes, isFilterEnabled, sortBy } from '@/utils/blockchain/accounts/common';
 import type { EthereumValidator, EthereumValidatorRequestPayload } from '@/types/blockchain/accounts';

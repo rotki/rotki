@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { isEqual } from 'lodash-es';
+import { isEqual } from 'es-toolkit';
 import { uniqueStrings } from '@/utils/data';
 import { getDomain } from '@/utils/url';
 import { useConfirmStore } from '@/store/confirm';
