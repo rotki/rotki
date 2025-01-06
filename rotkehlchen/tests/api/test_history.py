@@ -467,6 +467,7 @@ def test_history_debug_import(rotkehlchen_api_server: 'APIServer') -> None:
     )
 
 
+@pytest.mark.freeze_time('2023-05-11 15:06:00 GMT')  # set to make sure coingecko queries history ( < 1 year from events)  # noqa: E501
 @pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('should_mock_price_queries', [False])
