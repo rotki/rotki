@@ -50,7 +50,7 @@ from rotkehlchen.types import (
     TimestampMS,
     TradeType,
 )
-from rotkehlchen.utils.misc import ts_ms_to_sec, ts_now, ts_now_in_ms, ts_sec_to_ms
+from rotkehlchen.utils.misc import combine_dicts, ts_ms_to_sec, ts_now, ts_now_in_ms, ts_sec_to_ms
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -139,6 +139,7 @@ class Bybit(ExchangeInterface):
             'user/query-api',
             'asset/deposit/query-record',
             'asset/withdraw/query-record',
+            'asset/transfer/query-account-coins-balance',
         }
         self.is_unified_account = False
         self.history_events_db = DBHistoryEvents(self.db)
@@ -190,6 +191,7 @@ class Bybit(ExchangeInterface):
                 'user/query-api',
                 'asset/deposit/query-record',
                 'asset/withdraw/query-record',
+                'asset/transfer/query-account-coins-balance',
                 'market/tickers',
             ],
             options: dict | None = None,
@@ -419,6 +421,120 @@ class Bybit(ExchangeInterface):
         else:
             return True, ''
 
+    def _query_balances_or_error(
+            self,
+            path: Literal[
+                'account/wallet-balance',
+                'asset/transfer/query-account-coins-balance',
+            ],
+            options: dict[str, str],
+    ) -> tuple[dict[str, Any], str | None]:
+        """Auxiliary function to handle queries of balances to the api.
+        Returns a tuple of the response with the balances and a string or None depending
+        on whether there was an error.
+        """
+        try:
+            return self._api_query(path=path, options=options), None
+        except RemoteError as e:
+            msg = f'Bybit request failed. Could not reach the exchange due to {e!s}'
+            log.error(msg)
+            return {}, msg
+        except KeyError as e:
+            log.error('Could not query balances for bybit. Check logs for more details')
+            return {}, f'Key {e} missing in response'
+
+    def _process_wallet_balances(
+            self,
+            entries: Sequence[dict[str, Any]],
+    ) -> dict[AssetWithOracles, Balance]:
+        """Common logic to process balances from the funding and wallet endpoints
+        May raise:
+        - DeserializationError
+        """
+        assets_balance: defaultdict[AssetWithOracles, Balance] = defaultdict(Balance)
+        for coin_data in entries:
+            try:
+                asset = asset_from_bybit(coin_data['coin'])
+                if (amount := deserialize_fval(
+                    value=coin_data['walletBalance'],
+                    name=f'Bybit wallet balance for {asset}',
+                    location='bybit',
+                )) == ZERO:
+                    continue
+
+                if coin_data.get('usdValue', '') != '':
+                    usd_value = deserialize_fval(coin_data['usdValue'], name=f'Bybit usd value for {asset}', location='bybit')  # we don't need to calculate it since it is provided by bybit  # noqa: E501
+                else:
+                    usd_value = Inquirer.find_usd_price(asset=asset) * amount
+            except UnknownAsset as e:
+                self.send_unknown_asset_message(
+                    asset_identifier=e.identifier,
+                    details='balance query',
+                )
+                continue
+
+            except (DeserializationError, KeyError) as e:
+                msg = str(e)
+                if isinstance(e, KeyError):
+                    msg = f'Missing key entry for {msg}.'
+                raise DeserializationError(f'Error processing Bybit balance entry {coin_data}. {msg}') from e  # noqa: E501
+
+            assets_balance[asset] += Balance(amount=amount, usd_value=usd_value)
+
+        return assets_balance
+
+    def _query_account_balances(self) -> tuple[dict[AssetWithOracles, Balance], str | None]:
+        """
+        Query balances in wallet. It queries the unified and spot accounts.
+        This call assumes that the first connection has been made to identify the account type.
+
+        Returns the a tuple of balances and None if there wasn't any error or a string
+        message with a description of what went wrong.
+        """
+        asset_balances = {}
+        response, error = self._query_balances_or_error(
+            path='account/wallet-balance',
+            options={'accountType': 'UNIFIED' if self.is_unified_account else 'SPOT'},
+        )
+
+        if error is not None:
+            return {}, error
+
+        for account in response.get('list', []):
+            if (account_coin_data := account.get('coin')) is None:
+                log.error(f'There is no information about coins for the bybit account {account}')
+                continue
+
+            try:
+                asset_balances = self._process_wallet_balances(account_coin_data)
+            except DeserializationError as e:
+                return {}, str(e)
+
+        return asset_balances, None
+
+    def _query_funding_balances(self) -> tuple[dict[AssetWithOracles, Balance], str | None]:
+        """
+        Query balances in the funding wallet.
+        This call assumes that the first connection has been made to identify the account type.
+
+        Returns the a tuple of balances and None if there wasn't any error or a string
+        message with a description of what went wrong.
+        """
+        asset_balances: dict[AssetWithOracles, Balance] = {}
+        response, error = self._query_balances_or_error(
+            path='asset/transfer/query-account-coins-balance',
+            options={'accountType': 'FUND'},
+        )
+        if error is not None:
+            return {}, error
+
+        try:
+            asset_balances = self._process_wallet_balances(response.get('balance', []))
+        except DeserializationError as e:
+            return {}, str(e)
+
+        return asset_balances, None
+
     def query_balances(self, **kwargs: Any) -> ExchangeQueryBalances:
         """
         Query balances at bybit.
@@ -427,52 +543,16 @@ class Bybit(ExchangeInterface):
         - It can't query balance deposited in bots. The API doesn't provide this information
         """
         self.first_connection()
-        assets_balance: defaultdict[AssetWithOracles, Balance] = defaultdict(Balance)
 
-        try:
-            response = self._api_query(
-                path='account/wallet-balance',
-                options={
-                    'accountType': 'UNIFIED' if self.is_unified_account else 'SPOT',
-                },
-            )['list']
-        except RemoteError as e:
-            msg = f'Bybit request failed. Could not reach the exchange due to {e!s}'
-            log.error(msg)
-            return None, msg
-        except KeyError as e:
-            log.error('Could not query balances for bybit. Check logs for more details')
-            return None, f'Key {e} missing in response'
+        account_assets_balance, err = self._query_account_balances()
+        if err is not None:
+            return None, err
 
-        for account in response:
-            if (account_coin_data := account.get('coin')) is None:
-                log.error(f'There is no information about coins for the bybit account {account}')
-                continue
+        account_funding_balance, err = self._query_funding_balances()
+        if err is not None:
+            return None, err
 
-            for coin_data in account_coin_data:
-                try:
-                    asset = asset_from_bybit(coin_data['coin'])
-                    amount = deserialize_fval(coin_data['walletBalance'], name=f'Bybit wallet balance for {asset}', location='bybit')  # noqa: E501
-                    if coin_data['usdValue'] != '':
-                        usd_value = deserialize_fval(coin_data['usdValue'], name=f'Bybit usd value for {asset}', location='bybit')  # we don't need to calculate it since it is provided by bybit  # noqa: E501
-                    else:
-                        usd_price = Inquirer.find_usd_price(asset=asset)
-                        usd_value = usd_price * amount
-                except UnknownAsset as e:
-                    self.send_unknown_asset_message(
-                        asset_identifier=e.identifier,
-                        details='balance query',
-                    )
-                    continue
-                except (DeserializationError, KeyError) as e:
-                    msg = str(e)
-                    if isinstance(e, KeyError):
-                        msg = f'Missing key entry for {msg}.'
-                    return None, f'Error processing Bybit balance entry {coin_data}. {msg}'
-
-                assets_balance[asset] += Balance(amount=amount, usd_value=usd_value)
-
-        return assets_balance, ''
+        return combine_dicts(a=account_assets_balance, b=account_funding_balance), ''
 
     def _query_deposits_withdrawals(
             self,
