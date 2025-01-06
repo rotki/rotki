@@ -1,4 +1,4 @@
-import { objectOmit } from '@vueuse/shared';
+import { omit } from 'es-toolkit';
 import { Section, Status } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import { logger } from '@/utils/logging';
@@ -103,7 +103,7 @@ export const useKrakenStakingStore = defineStore('staking/kraken', () => {
       if (refresh || firstLoad) {
         if (firstLoad) {
           set(rawEvents, await api.fetchKrakenStakingEvents({
-            ...objectOmit(get(pagination), ['fromTimestamp', 'toTimestamp']),
+            ...omit(get(pagination), ['fromTimestamp', 'toTimestamp']),
             ...dateFilter,
           }));
         }
@@ -112,7 +112,7 @@ export const useKrakenStakingStore = defineStore('staking/kraken', () => {
         await refreshEvents();
       }
       set(rawEvents, await api.fetchKrakenStakingEvents({
-        ...objectOmit(get(pagination), ['fromTimestamp', 'toTimestamp']),
+        ...omit(get(pagination), ['fromTimestamp', 'toTimestamp']),
         ...dateFilter,
       }));
 

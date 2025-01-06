@@ -3,7 +3,7 @@ import dayjs from 'dayjs';
 import IMask, { type InputMask, MaskedRange } from 'imask';
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
-import { isEmpty } from 'lodash-es';
+import { isEmpty } from 'es-toolkit/compat';
 import { DateFormat } from '@/types/date-format';
 import { toMessages } from '@/utils/validation';
 import { timezones } from '@/data/timezones';

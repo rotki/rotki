@@ -1,4 +1,4 @@
-import { isEqual } from 'lodash-es';
+import { isEqual } from 'es-toolkit';
 import { TaskType } from '@/types/task-type';
 import { awaitParallelExecution } from '@/utils/await-parallel-execution';
 import { logger } from '@/utils/logging';

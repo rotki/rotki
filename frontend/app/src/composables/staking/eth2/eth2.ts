@@ -1,10 +1,10 @@
-import { type MaybeRef, objectOmit } from '@vueuse/core';
 import {
   Blockchain,
   type EthStakingPayload,
   type EthStakingPerformance,
   type EthStakingPerformanceResponse,
 } from '@rotki/common';
+import { omit } from 'es-toolkit';
 import { Section, Status } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import { logger } from '@/utils/logging';
@@ -16,6 +16,7 @@ import { useTaskStore } from '@/store/tasks';
 import { useEth2Api } from '@/composables/api/staking/eth2';
 import { useStatusUpdater } from '@/composables/status';
 import { usePremium } from '@/composables/premium';
+import type { MaybeRef } from '@vueuse/core';
 import type { TaskMeta } from '@/types/task';
 import type { ComputedRef, Ref } from 'vue';
 
@@ -119,7 +120,7 @@ export function useEth2Staking(): UseEthStakingReturn {
     const performance = get(state);
     const accounts = getBlockchainAccounts(Blockchain.ETH2).filter(isAccountWithBalanceValidator);
     return {
-      ...objectOmit(performance, ['validators']),
+      ...omit(performance, ['validators']),
       validators: Object.entries(performance.validators).map(([idx, value]) => {
         const index = parseInt(idx);
 

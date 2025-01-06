@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { objectOmit } from '@vueuse/shared';
-import { isEqual } from 'lodash-es';
+import { isEqual, omit } from 'es-toolkit';
 import { Section } from '@/types/status';
 import { uniqueStrings } from '@/utils/data';
 import { useStatusStore } from '@/store/status';
@@ -91,7 +90,7 @@ async function refresh() {
 }
 
 function edit(balance: ManualBalanceWithPrice) {
-  emit('edit', objectOmit(balance, ['usdValue', 'usdPrice']));
+  emit('edit', omit(balance, ['usdValue', 'usdPrice']));
 }
 
 function getRowClass(item: ManualBalance) {

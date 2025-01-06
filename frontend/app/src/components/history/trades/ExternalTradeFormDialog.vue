@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import { useTemplateRef } from 'vue';
-import { omit } from 'lodash-es';
+import { omit } from 'es-toolkit';
 import ExternalTradeForm from '@/components/history/trades/ExternalTradeForm.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import { useMessageStore } from '@/store/message';
@@ -54,7 +54,7 @@ async function save(): Promise<boolean> {
 
   set(submitting, true);
   const result = !editMode
-    ? await addExternalTrade(omit(payload, 'tradeId'))
+    ? await addExternalTrade(omit(payload, ['tradeId']))
     : await editExternalTrade(payload);
 
   if (!result.success && result.message) {

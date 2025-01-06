@@ -1,4 +1,4 @@
-import { groupBy } from 'lodash-es';
+import { groupBy } from 'es-toolkit';
 import { TaskType } from '@/types/task-type';
 import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { Section } from '@/types/status';
@@ -246,7 +246,7 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
   const pullAndRedecodeTransactions = async ({ deleteCustom, transactions }: PullEvmTransactionPayload): Promise<void> => {
     resetUndecodedTransactionsStatus();
 
-    const grouped = groupBy(transactions, 'evmChain');
+    const grouped = groupBy(transactions, item => item.evmChain);
     Object.entries(grouped).forEach(([chain, transactions]) => {
       updateUndecodedTransactionsStatus({
         [chain]: {

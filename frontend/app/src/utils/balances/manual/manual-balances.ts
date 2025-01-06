@@ -1,4 +1,4 @@
-import { camelCase } from 'lodash-es';
+import { camelCase } from 'es-toolkit';
 import { includes } from '@/utils/blockchain/accounts/common';
 import type {
   ManualBalance,

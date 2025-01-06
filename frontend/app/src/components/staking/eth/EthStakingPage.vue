@@ -7,10 +7,10 @@ import {
   type EthStakingCombinedFilter,
   type EthStakingFilter,
 } from '@rotki/common';
-import { objectOmit } from '@vueuse/core';
-import { isEmpty } from 'lodash-es';
+import { isEmpty } from 'es-toolkit/compat';
 import dayjs from 'dayjs';
 import { startPromise } from '@shared/utils';
+import { omit } from 'es-toolkit';
 import { EthStaking } from '@/premium/premium';
 import { Module } from '@/types/modules';
 import { Section } from '@/types/status';
@@ -147,7 +147,7 @@ watch([selection, filter], async () => {
 async function fetchValidatorsWithFilter() {
   const filterVal = get(filter);
   const selectionVal = get(selection);
-  const statusFilter = filterVal ? objectOmit(filterVal, ['fromTimestamp', 'toTimestamp']) : {};
+  const statusFilter = filterVal ? omit(filterVal, ['fromTimestamp', 'toTimestamp']) : {};
   const accounts
     = 'accounts' in selectionVal
       ? { addresses: selectionVal.accounts.map(account => account.address) }

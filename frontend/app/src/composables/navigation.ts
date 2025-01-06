@@ -1,4 +1,4 @@
-import { isEqual } from 'lodash-es';
+import { isEqual } from 'es-toolkit';
 import { Routes } from '@/router/routes';
 
 interface UseAppNavigationReturn {

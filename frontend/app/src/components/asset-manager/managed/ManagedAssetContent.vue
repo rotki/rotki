@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { isEqual, keyBy } from 'lodash-es';
+import { isEqual, keyBy } from 'es-toolkit';
 import { useAssetCacheStore } from '@/store/assets/asset-cache';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useConfirmStore } from '@/store/confirm';
@@ -150,7 +150,7 @@ async function deleteAssetHandler(identifier: string) {
   }
 }
 
-const assetsMap = computed(() => keyBy(get(assets).data, 'identifier'));
+const assetsMap = computed(() => keyBy(get(assets).data, item => item.identifier));
 
 const selectedRows = computed({
   get() {

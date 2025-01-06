@@ -1,6 +1,6 @@
-import { camelCase, isEmpty } from 'lodash-es';
+import { camelCase, omit } from 'es-toolkit';
+import { isEmpty } from 'es-toolkit/compat';
 import { type AssetBalance, type Balance, Blockchain } from '@rotki/common';
-import { type MaybeRef, objectOmit } from '@vueuse/core';
 import { aggregateTotals, getAccountBalance, hasAccountAddress, hasTokens, sortAndFilterAccounts } from '@/utils/blockchain/accounts';
 import { mergeAssociatedAssets, sum } from '@/utils/balances';
 import { updateBlockchainAssetBalances } from '@/utils/prices';
@@ -13,6 +13,7 @@ import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-na
 import { useSupportedChains } from '@/composables/info/chains';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { createAccountWithBalance } from '@/utils/blockchain/accounts/create-account-with-balance';
+import type { MaybeRef } from '@vueuse/core';
 import type {
   AccountPayload,
   Accounts,
@@ -55,8 +56,8 @@ export const useBlockchainStore = defineStore('blockchain', () => {
   const aggregatedTotalsWithFilter = (chains: MaybeRef<string[]>): Readonly<Ref<AssetBalances>> => aggregateTotals(balances, 'assets', chains);
 
   const groups = computed<BlockchainAccountGroupWithBalance[]>(() => {
-    const accountData = objectOmit(get(accounts), [Blockchain.ETH2]);
-    const balanceData = objectOmit(get(balances), [Blockchain.ETH2]);
+    const accountData = omit(get(accounts), [Blockchain.ETH2]);
+    const balanceData = omit(get(balances), [Blockchain.ETH2]);
 
     const nonGroupAccounts = Object.values(accountData).flatMap(accounts => accounts.filter(account => !account.groupId));
     const nonGroupAccountAddresses = nonGroupAccounts.map(account => getAccountAddress(account));
@@ -110,7 +111,7 @@ export const useBlockchainStore = defineStore('blockchain', () => {
           balance.usdValue = balance.usdValue.plus(subBalance.usdValue);
         }
         return {
-          ...objectOmit(account, ['chain', 'groupId', 'groupHeader']),
+          ...omit(account, ['chain', 'groupId', 'groupHeader']),
           ...balance,
           category: getChainAccountType(account.chain),
           chains: [account.chain],

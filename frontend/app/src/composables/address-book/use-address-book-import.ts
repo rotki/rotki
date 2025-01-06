@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { groupBy, omit } from 'lodash-es';
+import { groupBy, omit } from 'es-toolkit';
 import { logger } from '@/utils/logging';
 import { CSVMissingHeadersError, useCsvImportExport } from '@/composables/common/use-csv-import-export';
 import { useNotificationsStore } from '@/store/notifications';
@@ -27,13 +27,13 @@ export function useAddressBookImport(): UseAddressBookImport {
   const { addAddressBook } = useAddressesNamesStore();
 
   async function handleAddressBookImport(rows: CSVRow[]): Promise<number> {
-    const groupedByLocation = groupBy(rows, 'location');
+    const groupedByLocation = groupBy(rows, item => item.location);
     const locationPromises: { promise: Promise<boolean>; rowCount: number }[] = [];
 
     Object.entries(groupedByLocation)
       .forEach(([location, items]) => {
         if (location === 'global' || location === 'private') {
-          const formattedRows = items.map(item => omit(item, 'location'));
+          const formattedRows = items.map(item => omit(item, ['location']));
           if (formattedRows.length > 0) {
             locationPromises.push({
               promise: addAddressBook(location, formattedRows),

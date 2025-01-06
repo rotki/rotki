@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import dayjs, { type Dayjs } from 'dayjs';
-import { isEqual, omit } from 'lodash-es';
+import { isEqual, omit } from 'es-toolkit';
 import { RouterAccountsSchema } from '@/types/route';
 import { isBlockchain } from '@/types/blockchain/chains';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
@@ -168,8 +168,8 @@ function add() {
   set(editMode, false);
 }
 
-function edit(event: CalendarEvent) {
-  set(modelValue, omit(event, 'date'));
+function edit(event: CalendarEvent & { date?: string }) {
+  set(modelValue, omit(event, ['date']));
   set(editMode, true);
 }
 

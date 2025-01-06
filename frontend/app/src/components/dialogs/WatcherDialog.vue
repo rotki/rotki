@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { cloneDeep } from 'lodash-es';
+import { cloneDeep } from 'es-toolkit';
 import { type Watcher, type WatcherOpTypes, WatcherType } from '@/types/session';
 import { useWatchersStore } from '@/store/session/watchers';
 import type { RuiIcons } from '@rotki/ui-library';

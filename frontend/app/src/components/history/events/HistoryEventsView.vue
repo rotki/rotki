@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { isEqual } from 'lodash-es';
+import { isEqual } from 'es-toolkit';
 import { not } from '@vueuse/math';
 import { type Account, type Blockchain, HistoryEventEntryType, type Writeable } from '@rotki/common';
 import { startPromise } from '@shared/utils';

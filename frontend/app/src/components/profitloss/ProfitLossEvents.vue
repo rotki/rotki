@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { some } from 'lodash-es';
+import { some } from 'es-toolkit/compat';
 import { isTransactionEvent } from '@/utils/report';
 import { usePremium } from '@/composables/premium';
 import { useSupportedChains } from '@/composables/info/chains';
@@ -44,7 +44,7 @@ type PnLItem = ProfitLossEvent & { id: number; groupLine: GroupLine };
 const { report } = toRefs(props);
 
 const tablePagination = ref<DataTableOptions<PnLItem>['pagination']>();
-const expanded = ref([]);
+const expanded = ref<PnLItem[]>([]);
 
 const sort = ref<DataTableSortData<PnLItem>>({
   column: 'timestamp',

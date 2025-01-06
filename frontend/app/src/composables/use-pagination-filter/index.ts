@@ -1,6 +1,7 @@
 /* eslint-disable max-lines */
 import { Severity } from '@rotki/common';
-import { isEmpty, isEqual } from 'lodash-es';
+import { isEqual } from 'es-toolkit';
+import { isEmpty } from 'es-toolkit/compat';
 import { FilterBehaviour, type MatchedKeywordWithBehaviour, type SearchMatcher } from '@/types/filtering';
 import { defaultCollectionState } from '@/utils/collection';
 import { logger } from '@/utils/logging';

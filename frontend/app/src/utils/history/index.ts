@@ -1,4 +1,4 @@
-import { snakeCase } from 'lodash-es';
+import { snakeCase } from 'es-toolkit';
 import { uniqueStrings } from '@/utils/data';
 import type { EntryMeta, EntryWithMeta } from '@/types/history/meta';
 import type { EvmChainAndTxHash } from '@/types/history/events';

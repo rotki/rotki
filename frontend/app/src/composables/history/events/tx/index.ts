@@ -1,5 +1,4 @@
-import { groupBy } from 'lodash-es';
-import { objectOmit } from '@vueuse/shared';
+import { groupBy, omit } from 'es-toolkit';
 import { Section, Status } from '@/types/status';
 import {
   type AddTransactionHashPayload,
@@ -209,7 +208,7 @@ export const useHistoryTransactions = createSharedComposable(() => {
   };
 
   const queryExchange = async (payload: Exchange): Promise<void> => {
-    const exchange = objectOmit(payload, ['krakenAccountType']);
+    const exchange = omit(payload, ['krakenAccountType']);
     const taskType = TaskType.QUERY_EXCHANGE_EVENTS;
     const taskMeta = {
       description: t('actions.exchange_events.task.description', exchange),

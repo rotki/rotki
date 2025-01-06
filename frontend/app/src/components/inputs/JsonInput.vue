@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { debounce } from 'lodash-es';
+import { debounce } from 'es-toolkit';
 import { type Content, type JSONContent, type JsonEditor, type TextContent, createJSONEditor } from 'vanilla-jsoneditor';
 
 const modelValue = defineModel<Record<string, any>>({ required: true });

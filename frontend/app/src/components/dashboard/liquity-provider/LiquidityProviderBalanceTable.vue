@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { isEqual } from 'lodash-es';
+import { isEqual } from 'es-toolkit';
 import { type BigNumber, Blockchain, type XSwapLiquidityBalance, type XswapAsset } from '@rotki/common';
 import { Routes } from '@/router/routes';
 import { DashboardTableType, type DashboardTablesVisibleColumns } from '@/types/settings/frontend-settings';

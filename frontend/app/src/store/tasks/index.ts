@@ -1,5 +1,5 @@
 import dayjs from 'dayjs';
-import { find, toArray } from 'lodash-es';
+import { find, toArray } from 'es-toolkit/compat';
 import { AxiosError } from 'axios';
 import { checkIfDevelopment } from '@shared/utils';
 import { TaskType } from '@/types/task-type';
@@ -115,7 +115,7 @@ export const useTaskStore = defineStore('tasks', () => {
   );
 
   const metadata = <T extends TaskMeta>(type: TaskType): T | undefined => {
-    const task = find(get(tasks), item => item.type === type);
+    const task = find(Object.values(get(tasks)), item => item.type === type);
     if (task)
       return task.meta as T;
 

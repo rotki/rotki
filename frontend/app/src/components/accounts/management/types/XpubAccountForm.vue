@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { objectOmit } from '@vueuse/core';
+import { omit } from 'es-toolkit';
 import XpubInput from '@/components/accounts/blockchain/XpubInput.vue';
 import AccountDataInput from '@/components/accounts/management/inputs/AccountDataInput.vue';
 import type { ValidationErrors } from '@/types/api/errors';
@@ -59,7 +59,7 @@ const label = computed<string>({
     set(modelValue, {
       ...model,
       data: {
-        ...objectOmit(model.data, ['label']),
+        ...omit(model.data, ['label']),
         ...labelData,
       },
     });

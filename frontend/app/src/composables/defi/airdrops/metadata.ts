@@ -1,4 +1,4 @@
-import { camelCase } from 'lodash-es';
+import { camelCase } from 'es-toolkit';
 import { useMainStore } from '@/store/main';
 import { useRefMap } from '@/composables/utils/useRefMap';
 import { useValueOrDefault } from '@/composables/utils/useValueOrDefault';

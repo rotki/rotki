@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { HistoryEventEntryType } from '@rotki/common';
-import { isEqual } from 'lodash-es';
+import { isEqual } from 'es-toolkit';
 import { uniqueStrings } from '@/utils/data';
 import { arrayify } from '@/utils/array';
 import { isEthBlockEventType, isEthDepositEventType, isEvmEventType, isOnlineHistoryEventType, isWithdrawalEventType } from '@/utils/history/events';

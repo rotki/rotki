@@ -1,4 +1,4 @@
-import { cloneDeep } from 'lodash-es';
+import { cloneDeep } from 'es-toolkit';
 import { HistoryEventEntryType } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { uniqueStrings } from '@/utils/data';

@@ -1,5 +1,5 @@
 import { BigNumber } from '@rotki/common';
-import { isString, isUndefined } from 'lodash-es';
+import { isString, isUndefined } from 'es-toolkit';
 
 export function chunkArray<T>(myArray: T[], size: number): T[][] {
   const results: T[][] = [];

@@ -1,4 +1,4 @@
-import { objectOmit, objectPick } from '@vueuse/shared';
+import { omit, pick } from 'es-toolkit';
 import type { SetupContext } from 'vue';
 
 type SetupContextAttrs = SetupContext['attrs'];
@@ -23,7 +23,7 @@ export function getRootKeys(data: SetupContextAttrs): SetupContextAttrsKeys {
  * @returns {Pick<SetupContextAttrs, any>}
  */
 export function getRootAttrs(data: SetupContextAttrs, include: SetupContextAttrsKeys = ['class']): Pick<SetupContextAttrs, typeof include[number]> {
-  return objectPick(data, [...getRootKeys(data), ...include]);
+  return pick(data, [...getRootKeys(data), ...include]);
 }
 
 /**
@@ -33,5 +33,5 @@ export function getRootAttrs(data: SetupContextAttrs, include: SetupContextAttrs
  * @returns {Omit<SetupContextAttrs, any>}
  */
 export function getNonRootAttrs(data: SetupContextAttrs, exclude: SetupContextAttrsKeys = ['class']): Omit<SetupContextAttrs, typeof exclude[number]> {
-  return objectOmit(data, [...getRootKeys(data), ...exclude]);
+  return omit(data, [...getRootKeys(data), ...exclude]);
 }

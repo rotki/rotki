@@ -1,5 +1,5 @@
 <script setup lang="ts" generic="T extends BlockchainAccountWithBalance | BlockchainAccountGroupWithBalance">
-import { isEmpty, some } from 'lodash-es';
+import { isEmpty } from 'es-toolkit/compat';
 import { TaskType } from '@/types/task-type';
 import { Section } from '@/types/status';
 import { getAccountAddress, getAccountId, getGroupId } from '@/utils/blockchain/accounts/utils';
@@ -180,12 +180,13 @@ function isRowLoading(row: DataRow) {
     return row.chains.some(chain => get(isLoading(Section.BLOCKCHAIN, chain)));
 }
 
-function getId(row: DataRow) {
+function getId(row: DataRow): string {
   return row.type === 'group' ? getGroupId(row) : getAccountId(row);
 }
 
 function isExpanded(row: DataRow) {
-  return some(get(expanded), { id: getId(row) });
+  const rowId = getId(row);
+  return get(expanded).some(item => item.id === rowId);
 }
 
 function expand(item: DataRow) {

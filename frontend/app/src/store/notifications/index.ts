@@ -9,7 +9,7 @@ import {
   assert,
 } from '@rotki/common';
 import { useSessionStorage } from '@vueuse/core';
-import { orderBy } from 'lodash-es';
+import { orderBy } from 'es-toolkit';
 import { createNotification } from '@/utils/notifications';
 
 function notificationDefaults(): NotificationPayload {
@@ -29,8 +29,8 @@ export const useNotificationsStore = defineStore('notifications', () => {
   const { t } = useI18n();
 
   const prioritized = computed<NotificationData[]>(() => {
-    const byDate = orderBy(get(data), n => n.date, 'desc');
-    return orderBy(byDate, (n: NotificationData) => n.priority ?? Priority.NORMAL, 'desc');
+    const byDate = orderBy(get(data), ['date'], ['desc']);
+    return orderBy(byDate, [(n: NotificationData): Priority => n.priority ?? Priority.NORMAL], ['desc']);
   });
   const count = computed(() => get(data).length);
   const nextId = computed(() => {

@@ -1,4 +1,4 @@
-import { camelCase } from 'lodash-es';
+import { camelCase } from 'es-toolkit';
 import { etherscanLinks, externalLinks } from '@shared/external-links';
 import { pslSuffixes } from '@/data/psl';
 import { isEtherscanKey } from '@/types/external';

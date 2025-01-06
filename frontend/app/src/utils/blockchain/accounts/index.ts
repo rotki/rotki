@@ -1,11 +1,12 @@
-import { camelCase, isEmpty } from 'lodash-es';
-import { type MaybeRef, objectOmit } from '@vueuse/core';
+import { camelCase, omit } from 'es-toolkit';
+import { isEmpty } from 'es-toolkit/compat';
 import { assetSum, balanceSum } from '@/utils/calculation';
 import { uniqueStrings } from '@/utils/data';
 import { sum } from '@/utils/balances';
 import { createAccount, createXpubAccount } from '@/utils/blockchain/accounts/create';
 import { includes, isFilterEnabled, sortBy } from '@/utils/blockchain/accounts/common';
 import { getAccountAddress, getChain, getGroupId } from '@/utils/blockchain/accounts/utils';
+import type { MaybeRef } from '@vueuse/core';
 import type { Balance } from '@rotki/common';
 import type {
   BlockchainAssetBalances,
@@ -297,7 +298,7 @@ export function hasTokens(nativeAsset: string, assetBalances?: AssetBalances): b
   if (!assetBalances || isEmpty(assetBalances))
     return false;
 
-  return !isEmpty(objectOmit(assetBalances, [nativeAsset]));
+  return !isEmpty(omit(assetBalances, [nativeAsset]));
 }
 
 export function getAccountBalance(account: BlockchainAccount, chainBalances: BlockchainAssetBalances): AccountBalance {

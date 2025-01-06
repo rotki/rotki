@@ -1,4 +1,4 @@
-import { omit } from 'lodash-es';
+import { omit } from 'es-toolkit';
 import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
 import {
@@ -252,7 +252,7 @@ export function useHistoryEventsApi(): UseHistoryEventsApiReturn {
   };
 
   const exportHistoryEventsCSV = async (
-    filters: HistoryEventRequestPayload,
+    filters: HistoryEventRequestPayload & { accounts?: [] },
     directoryPath?: string,
   ): Promise<PendingTask> => {
     const func = directoryPath

@@ -1,4 +1,4 @@
-import { isEmpty } from 'lodash-es';
+import { isEmpty } from 'es-toolkit/compat';
 import { TaskNotFoundError, type TaskResultResponse, type TaskStatus } from '@/types/task';
 import { handleResponse, validTaskStatus } from '@/services/utils';
 import { IncompleteUpgradeError, SyncConflictError, SyncConflictPayload } from '@/types/login';

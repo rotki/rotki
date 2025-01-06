@@ -1,4 +1,4 @@
-import { groupBy } from 'lodash-es';
+import { groupBy } from 'es-toolkit';
 import { sortDesc, zeroBalance } from '@/utils/bignumbers';
 import { balanceSum } from '@/utils/calculation';
 import { useAssetCacheStore } from '@/store/assets/asset-cache';

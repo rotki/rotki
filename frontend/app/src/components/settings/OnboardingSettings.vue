@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import useVuelidate from '@vuelidate/core';
 import { and, helpers, minValue, numeric, required } from '@vuelidate/validators';
-import { isEqual } from 'lodash-es';
+import { isEqual } from 'es-toolkit';
 import { LogLevel } from '@shared/log-level';
 import { toMessages } from '@/utils/validation';
 import { useMainStore } from '@/store/main';

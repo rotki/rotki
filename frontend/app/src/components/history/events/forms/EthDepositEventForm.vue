@@ -2,7 +2,7 @@
 import { Blockchain, HistoryEventEntryType } from '@rotki/common';
 import dayjs from 'dayjs';
 import { helpers, required, requiredIf } from '@vuelidate/validators';
-import { isEmpty } from 'lodash-es';
+import { isEmpty } from 'es-toolkit/compat';
 import useVuelidate from '@vuelidate/core';
 import { toMessages } from '@/utils/validation';
 import { DateFormat } from '@/types/date-format';

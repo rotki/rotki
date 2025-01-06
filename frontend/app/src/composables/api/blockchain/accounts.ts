@@ -1,5 +1,5 @@
 import { type ActionResult, type Eth2ValidatorEntry, Eth2Validators, type EthValidatorFilter, type Nullable, onlyIfTruthy } from '@rotki/common';
-import { objectOmit } from '@vueuse/shared';
+import { omit } from 'es-toolkit';
 import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
 import {
@@ -76,7 +76,7 @@ interface UseBlockchainAccountsApiReturn {
 export function useBlockchainAccountsApi(): UseBlockchainAccountsApiReturn {
   const addBlockchainAccount = async (chain: string, pay: XpubAccountPayload | AccountPayload[]): Promise<PendingTask> => {
     const url = !Array.isArray(pay) ? `/blockchains/${chain}/xpub` : `/blockchains/${chain}/accounts`;
-    const payload = Array.isArray(pay) ? { accounts: pay } : { ...objectOmit(pay, ['xpub']), ...pay.xpub };
+    const payload = Array.isArray(pay) ? { accounts: pay } : { ...omit(pay, ['xpub']), ...pay.xpub };
     return performAsyncQuery(url, nonEmptyProperties(payload, true));
   };
 

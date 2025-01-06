@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useTemplateRef } from 'vue';
-import { omit } from 'lodash-es';
+import { omit } from 'es-toolkit';
 import CustomAssetForm from '@/components/asset-manager/custom/CustomAssetForm.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import { useMessageStore } from '@/store/message';
@@ -64,7 +64,7 @@ async function save() {
       success = await editCustomAsset(data);
     }
     else {
-      identifier = await addCustomAsset(omit(data, 'identifier'));
+      identifier = await addCustomAsset(omit(data, ['identifier']));
       success = !!identifier;
     }
 

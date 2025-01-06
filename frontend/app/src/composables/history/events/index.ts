@@ -1,5 +1,5 @@
-import { omit } from 'lodash-es';
 import { startPromise } from '@shared/utils';
+import { omit } from 'es-toolkit';
 import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
 import { logger } from '@/utils/logging';
 import { defaultCollectionState, mapCollectionResponse } from '@/utils/collection';
@@ -44,10 +44,11 @@ export function useHistoryEvents(): UseHistoryEventsReturn {
   const { getChain } = useSupportedChains();
 
   const fetchHistoryEvents = async (
-    payload: MaybeRef<HistoryEventRequestPayload>,
+    payload: MaybeRef<HistoryEventRequestPayload & { accounts?: [] }>,
   ): Promise<Collection<HistoryEventEntry>> => {
     try {
-      const result = await fetchHistoryEventsCaller(omit(get(payload), 'accounts'));
+      const formattedPayload = omit(get(payload), ['accounts']);
+      const result = await fetchHistoryEventsCaller(formattedPayload);
 
       const { data, ...other } = mapCollectionResponse<HistoryEventEntryWithMeta, HistoryEventsCollectionResponse>(
         result,

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { camelCase } from 'lodash-es';
+import { camelCase } from 'es-toolkit';
 import {
   type EvmRpcNode,
   type EvmRpcNodeList,

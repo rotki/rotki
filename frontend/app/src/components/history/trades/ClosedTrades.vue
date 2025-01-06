@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { omit } from 'lodash-es';
+import { omit } from 'es-toolkit';
 import { Routes } from '@/router/routes';
 import { Section } from '@/types/status';
 import { IgnoreActionType } from '@/types/history/ignored';
@@ -194,7 +194,7 @@ function newExternalTrade() {
 }
 
 function editTradeHandler(trade: TradeEntry) {
-  set(modelValue, omit(trade, 'ignoredInAccounting'));
+  set(modelValue, omit(trade, ['ignoredInAccounting']));
   set(editMode, true);
 }
 

@@ -1,5 +1,5 @@
 import { startPromise } from '@shared/utils';
-import { isEqual } from 'lodash-es';
+import { isEqual } from 'es-toolkit';
 import { logger } from '@/utils/logging';
 import { BalanceSource } from '@/types/settings/frontend-settings';
 import { useExchangeBalancesStore } from '@/store/balances/exchanges';

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { some } from 'lodash-es';
+import { some } from 'es-toolkit/compat';
 import { CUSTOM_ASSET, EVM_TOKEN, IgnoredAssetHandlingType, type IgnoredAssetsHandlingType } from '@/types/asset';
 import { uniqueStrings } from '@/utils/data';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';

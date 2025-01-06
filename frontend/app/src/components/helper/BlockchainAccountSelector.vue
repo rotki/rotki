@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import { uniqBy } from 'lodash-es';
+import { omit, uniqBy } from 'es-toolkit';
 import { type Account, Blockchain } from '@rotki/common';
-import { objectOmit } from '@vueuse/core';
 import { getNonRootAttrs, getRootAttrs } from '@/utils/attrs';
 import { getAccountAddress, getAccountId } from '@/utils/blockchain/accounts/utils';
 import { createAccount } from '@/utils/blockchain/accounts/create';
@@ -193,7 +192,7 @@ function input(nextValue?: AccountWithExtra | AccountWithExtra[]) {
     result = nextValue ? [nextValue] : [];
   }
 
-  set(modelValue, result.map(item => objectOmit(item, ['address', 'key'])));
+  set(modelValue, result.map(item => omit(item, ['address', 'key'])));
 }
 
 function getAccount(account: AccountWithAddressData): Account {

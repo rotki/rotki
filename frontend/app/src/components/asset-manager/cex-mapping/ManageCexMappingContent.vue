@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { omit } from 'lodash-es';
+import { omit } from 'es-toolkit';
 import { useMessageStore } from '@/store/message';
 import { useConfirmStore } from '@/store/confirm';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
@@ -82,7 +82,7 @@ const { setMessage } = useMessageStore();
 
 async function confirmDelete(mapping: CexMapping) {
   try {
-    const success = await deleteCexMapping(omit(mapping, 'asset'));
+    const success = await deleteCexMapping(omit(mapping, ['asset']));
     if (success)
       await fetchData();
   }

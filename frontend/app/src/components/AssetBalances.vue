@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { some } from 'lodash-es';
+import { some } from 'es-toolkit/compat';
 import { isEvmNativeToken } from '@/types/asset';
 import { TableColumn } from '@/types/table-column';
 import { bigNumberSum, calculatePercentage } from '@/utils/calculation';
