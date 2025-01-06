@@ -365,7 +365,6 @@ function forceRedecode(): void {
           <slot
             name="query-status"
             :colspan="colspan"
-            :events-loading="eventsLoading"
           />
           <UpgradeRow
             v-if="showUpgradeRow"

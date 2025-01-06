@@ -499,13 +499,13 @@ onUnmounted(() => {
         @refresh="fetchAndRedecodeEvents($event)"
         @set-page="setPage($event)"
       >
-        <template #query-status="{ colspan, eventsLoading }">
+        <template #query-status="{ colspan }">
           <HistoryQueryStatus
             v-model:current-action="currentAction"
             :only-chains="onlyChains"
             :locations="locations"
             :decoding-status="decodingStatus"
-            :decoding="eventsLoading"
+            :decoding="eventTaskLoading"
             :colspan="colspan"
             :loading="processing"
             @show:dialog="onShowDialog($event)"
