@@ -525,7 +525,7 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
         The first node in the call order that gets a successful response returns.
         If none get a result then RemoteError is raised
         """
-        for weighted_node in call_order:
+        for node_idx, weighted_node in enumerate(call_order):
             node_info = weighted_node.node_info
             web3node = self.web3_mapping.get(node_info, None)
             if (
@@ -569,7 +569,10 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
                     TypeError,  # happened at the web3 level calling `apply_result_formatters` when the RPC node returned `None` in the response's result # noqa: E501
                     ValueError,  # not removing yet due to possibility of raising from missing trie error  # noqa: E501
             ) as e:
-                log.warning(f'Failed to query {node_info.name} for {method!s} due to {e!s}')
+                log.warning(
+                    f'Failed to query {node_info.name} with position on the query list {node_idx} '
+                    f'for {method.__name__} due to {e!s}',
+                )
                 # Catch all possible errors here and just try next node call
                 continue
 
@@ -577,12 +580,10 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
 
         # no node in the call order list was successfully queried
         log.error(
-            f'Failed to query {method!s} after trying the following '
-            f'nodes: {[x.node_info.name for x in call_order]}',
+            f'Failed to query {method.__name__} after trying the following '
+            f'nodes: {[x.node_info.name for x in call_order]}. Call parameters were {kwargs}',
         )
-        raise RemoteError(
-            f'Please check your network and confirm sufficient nodes are connected for {self.blockchain!s}.',  # noqa: E501
-        )
+        raise RemoteError(f'Error querying information from {self.blockchain!s}. Checks logs to obtain more information')  # noqa: E501
 
     def _get_latest_block_number(self, web3: Web3 | None) -> int:
         if web3 is not None:
