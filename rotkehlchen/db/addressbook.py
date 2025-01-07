@@ -1,9 +1,6 @@
-import sqlite3
 from collections.abc import Generator
-from contextlib import contextmanager, suppress
+from contextlib import contextmanager
 from typing import TYPE_CHECKING
-
-from pysqlcipher3 import dbapi2
 
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -72,37 +69,31 @@ class DBAddressbook:
         ]
         return entries, total_found_result
 
-    def add_addressbook_entries(
+    def add_or_update_addressbook_entries(
             self,
             write_cursor: 'DBCursor',
             entries: list[AddressbookEntry],
     ) -> None:
-        """
-        Add every entry of entries to the address book table.
+        """Adds new or updates existing addressbook entries.
+
         If blockchain is None then make sure that the same address doesn't appear in combination
         with other blockchain values.
         """
         # We iterate here with for loop instead of executemany in order to catch
         # which identifier is duplicated
         for entry in entries:
-            try:
-                # in the case of given blockchain being None delete any other entry for that
-                # address since they are rendered redundant
-                if entry.blockchain is None:
-                    write_cursor.execute(
-                        'DELETE FROM address_book where address=? AND blockchain IS NOT ?',
-                        (entry.address, ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE),
-                    )
-
+            # in the case of given blockchain being None delete any other entry for that
+            # address since they are rendered redundant
+            if entry.blockchain is None:
                 write_cursor.execute(
-                    'INSERT INTO address_book (address, name, blockchain) VALUES (?, ?, ?)',
-                    entry.serialize_for_db(),
+                    'DELETE FROM address_book where address=? AND blockchain IS NOT ?',
+                    (entry.address, ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE),
                 )
-            # Handling both private db (pysqlcipher) and global db (raw sqlite3)
-            except (dbapi2.IntegrityError, sqlite3.IntegrityError) as e:  # pylint: disable=no-member
-                raise InputError(
-                    f'{entry} already exists in the address book. Identifier must be unique.',
-                ) from e
+
+            write_cursor.execute(
+                'INSERT OR REPLACE INTO address_book (address, name, blockchain) VALUES (?, ?, ?)',
+                entry.serialize_for_db(),
+            )
 
     def update_addressbook_entries(
             self,
@@ -116,41 +107,22 @@ class DBAddressbook:
         """
         with self.write_ctx(book_type) as write_cursor:
             for entry in entries:
-                entry_bockchain_value = entry.blockchain.value if entry.blockchain else ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE  # noqa: E501
-                if (
-                    entry.blockchain is None and
-                    write_cursor.execute(
-                        'SELECT COUNT(*) FROM address_book WHERE address = ? AND blockchain IS NOT ?',  # noqa: E501
-                        (entry.address, ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE),
-                    ).fetchone()[0] > 0
-                ):
-                    with suppress(InputError):
-                        # Use add_addressbook_entries to delete blockchain specific entries
-                        # and replace them with a single entry.
-                        self.add_addressbook_entries(write_cursor, [entry])
-                        continue  # skip update query, we just added a new entry instead
-                    # InputError: single entry already exists, it must be updated using query below
-                elif (
-                    write_cursor.execute(
-                        'SELECT COUNT(*) FROM address_book WHERE address = ? AND blockchain = ?',
-                        (entry.address, entry_bockchain_value),
-                    ).fetchone()[0] == 0
-                ):  # Add entry if it doesn't exist
-                    self.add_addressbook_entries(write_cursor, [entry])
-
-                if entry.name == '':
-                    query = 'DELETE FROM address_book where address=? AND blockchain=?'
-                    bindings = [entry.address, entry_bockchain_value]
-                else:
-                    query = 'UPDATE address_book SET name=? WHERE address=? AND blockchain=?'
-                    bindings = [entry.name, entry.address, entry_bockchain_value]
-
-                write_cursor.execute(query, bindings)
-                if write_cursor.rowcount == 0:
-                    raise InputError(
-                        f'Entry with address "{entry.address}" and blockchain {entry.blockchain} '
-                        f"doesn't exist in the address book. So it cannot be modified.",
+                if entry.name == '':   # Handle deletion case
+                    entry_blockchain_value = (
+                        entry.blockchain.value if entry.blockchain
+                        else ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE
                     )
+                    write_cursor.execute(
+                        'DELETE FROM address_book WHERE address = ? AND blockchain = ?',
+                        (entry.address, entry_blockchain_value),
+                    )
+                    if write_cursor.rowcount == 0:
+                        raise InputError(
+                            f'Entry with address "{entry.address}" and blockchain {entry.blockchain} '  # noqa: E501
+                            f"doesn't exist in the address book. So it cannot be modified.",
+                        )
+                else:  # insert or update
+                    self.add_or_update_addressbook_entries(write_cursor, [entry])
 
     def delete_addressbook_entries(
             self,

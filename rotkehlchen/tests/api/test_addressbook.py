@@ -57,7 +57,10 @@ def test_get_addressbook(
     entries_set = generated_entries + [KELSOS_BOOK_ENTRY]
     db_addressbook = DBAddressbook(rotkehlchen_api_server.rest_api.rotkehlchen.data.db)
     with db_addressbook.write_ctx(book_type=book_type) as write_cursor:
-        db_addressbook.add_addressbook_entries(write_cursor=write_cursor, entries=entries_set)
+        db_addressbook.add_or_update_addressbook_entries(
+            write_cursor=write_cursor,
+            entries=entries_set,
+        )
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
@@ -230,7 +233,10 @@ def test_insert_into_addressbook(
     generated_entries = make_addressbook_entries()
     db_addressbook = DBAddressbook(rotkehlchen_api_server.rest_api.rotkehlchen.data.db)
     with db_addressbook.write_ctx(book_type=book_type) as write_cursor:
-        db_addressbook.add_addressbook_entries(write_cursor=write_cursor, entries=generated_entries)  # noqa: E501
+        db_addressbook.add_or_update_addressbook_entries(
+            write_cursor=write_cursor,
+            entries=generated_entries,
+        )
     new_entries = [
         AddressbookEntry(
             address=generated_entries[0].address,
@@ -274,7 +280,6 @@ def test_insert_into_addressbook(
                 blockchain=SupportedBlockchain.ETHEREUM,
             ),
         ]
-        entries_in_db_before_bad_put = db_addressbook.get_addressbook_entries(cursor, filter_query=AddressbookFilterQuery.make())[0]  # noqa: E501
         response = requests.put(
             api_url_for(
                 rotkehlchen_api_server,
@@ -285,12 +290,12 @@ def test_insert_into_addressbook(
                 'entries': [entry.serialize() for entry in existing_entries],
             },
         )
-        assert_error_response(
-            response=response,
-            contained_in_msg=f'address "{ADDRESS_ETH}" and blockchain {SupportedBlockchain.ETHEREUM!s} already exists in the address book.',  # noqa: E501
-            status_code=HTTPStatus.CONFLICT,
-        )
-        assert db_addressbook.get_addressbook_entries(cursor, filter_query=AddressbookFilterQuery.make())[0] == entries_in_db_before_bad_put  # noqa: E501
+        assert_proper_response(response=response)
+        addressbook_entries = db_addressbook.get_addressbook_entries(
+            cursor=cursor,
+            filter_query=AddressbookFilterQuery.make(),
+        )[0]
+        assert all(entry in addressbook_entries for entry in existing_entries)
 
     # test to insert a name for an address that is recorded with two names in two different
     # evm chains a new name but this time valid for all addresses
@@ -375,7 +380,10 @@ def test_update_addressbook(
     generated_entries = make_addressbook_entries()
     db_addressbook = DBAddressbook(rotkehlchen_api_server.rest_api.rotkehlchen.data.db)
     with db_addressbook.write_ctx(book_type=book_type) as write_cursor:
-        db_addressbook.add_addressbook_entries(write_cursor=write_cursor, entries=generated_entries)  # noqa: E501
+        db_addressbook.add_or_update_addressbook_entries(
+            write_cursor=write_cursor,
+            entries=generated_entries,
+        )
     entries_to_update = [
         AddressbookEntry(
             address=ADDRESS_ETH,
@@ -461,7 +469,10 @@ def test_update_addressbook(
         blockchain=None,
     )
     with db_addressbook.write_ctx(book_type=book_type) as write_cursor:
-        db_addressbook.add_addressbook_entries(write_cursor=write_cursor, entries=[new_entry])
+        db_addressbook.add_or_update_addressbook_entries(
+            write_cursor=write_cursor,
+            entries=[new_entry],
+        )
 
     # edit it without the blockchain argument
     response = requests.patch(
@@ -493,7 +504,10 @@ def test_delete_addressbook(
     generated_entries = make_addressbook_entries()
     db_addressbook = DBAddressbook(rotkehlchen_api_server.rest_api.rotkehlchen.data.db)
     with db_addressbook.write_ctx(book_type=book_type) as write_cursor:
-        db_addressbook.add_addressbook_entries(write_cursor=write_cursor, entries=generated_entries)  # noqa: E501
+        db_addressbook.add_or_update_addressbook_entries(
+            write_cursor=write_cursor,
+            entries=generated_entries,
+        )
 
     btc_address = BTCAddress('bc1qamhqfr5z2ypehv0sqq784hzgd6ws2rjf6v46w8')
     addresses_to_delete = [ADDRESS_ETH, ADDRESS_OP]
@@ -600,7 +614,7 @@ def test_delete_addressbook(
 
     # add entry with no blockchain to check that it can be deleted
     with db_addressbook.write_ctx(book_type=book_type) as write_cursor:
-        db_addressbook.add_addressbook_entries(
+        db_addressbook.add_or_update_addressbook_entries(
             write_cursor=write_cursor,
             entries=[KELSOS_BOOK_ENTRY],
         )
@@ -663,7 +677,7 @@ def test_names_compilation(rotkehlchen_api_server: 'APIServer') -> None:
             now=Timestamp(1),
         )
     with GlobalDBHandler().conn.write_ctx() as write_cursor:
-        db_addressbook.add_addressbook_entries(  # add an entry for all chains
+        db_addressbook.add_or_update_addressbook_entries(  # add an entry for all chains
             write_cursor=write_cursor,
             entries=[AddressbookEntry(address=address_titan, name='Titan Builder', blockchain=None)],  # noqa: E501
         )
@@ -698,7 +712,7 @@ def test_names_compilation(rotkehlchen_api_server: 'APIServer') -> None:
     }
 
     with db_addressbook.write_ctx(book_type=AddressbookType.GLOBAL) as write_cursor:
-        db_addressbook.add_addressbook_entries(
+        db_addressbook.add_or_update_addressbook_entries(
             write_cursor=write_cursor,
             entries=[
                 AddressbookEntry(
@@ -746,7 +760,7 @@ def test_names_compilation(rotkehlchen_api_server: 'APIServer') -> None:
     assert {AddressbookEntry.deserialize(x) for x in result} == labels_expected
 
     with db_addressbook.write_ctx(book_type=AddressbookType.PRIVATE) as write_cursor:
-        db_addressbook.add_addressbook_entries(
+        db_addressbook.add_or_update_addressbook_entries(
             write_cursor=write_cursor,
             entries=[
                 AddressbookEntry(
@@ -861,7 +875,7 @@ def test_edit_multichain_address_label(rotkehlchen_api_server: 'APIServer') -> N
     test_address = to_checksum_address('0xc37b40ABdB939635068d3c5f13E7faF686F03B65')
     db_addressbook = DBAddressbook(rotkehlchen_api_server.rest_api.rotkehlchen.data.db)
     with db_addressbook.write_ctx(book_type=AddressbookType.PRIVATE) as write_cursor:
-        db_addressbook.add_addressbook_entries(
+        db_addressbook.add_or_update_addressbook_entries(
             write_cursor=write_cursor,
             entries=[AddressbookEntry(
                 address=test_address,

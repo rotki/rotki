@@ -30,7 +30,7 @@ from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.db.addressbook import DBAddressbook
 from rotkehlchen.db.cache import DBCacheDynamic, DBCacheStatic
 from rotkehlchen.db.dbhandler import DBHandler
-from rotkehlchen.db.filtering import TradesFilterQuery
+from rotkehlchen.db.filtering import AddressbookFilterQuery, TradesFilterQuery
 from rotkehlchen.db.misc import detect_sqlcipher_version
 from rotkehlchen.db.queried_addresses import QueriedAddresses
 from rotkehlchen.db.schema import DB_CREATE_ETH2_DAILY_STAKING_DETAILS
@@ -1914,7 +1914,7 @@ def test_startup_check_settings(database: 'DBHandler') -> None:
 
 def test_address_book_primary_key(database: DBHandler):
     """Test that adding the same address twice to the database having
-    the blockchain value as None fails because duplicates can't be added.
+    the blockchain value as None replaces the existing entry.
 
     Regression test for https://github.com/rotki/rotki/issues/8350
     """
@@ -1924,8 +1924,13 @@ def test_address_book_primary_key(database: DBHandler):
         AddressbookEntry(address=address, name='yabir.eth', blockchain=None),
         AddressbookEntry(address=address, name='yabirgb.eth', blockchain=None),
     ]
-    with (
-        database.user_write() as write_cursor,
-        pytest.raises(InputError),
-    ):
-        db_addressbook.add_addressbook_entries(write_cursor=write_cursor, entries=entries)
+    with database.user_write() as write_cursor:
+        db_addressbook.add_or_update_addressbook_entries(
+            write_cursor=write_cursor,
+            entries=entries,
+        )
+
+        assert db_addressbook.get_addressbook_entries(
+            cursor=write_cursor,
+            filter_query=AddressbookFilterQuery.make(),
+        )[0] == [entries[1]]

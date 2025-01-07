@@ -11651,7 +11651,7 @@ Insert mappings into addressbook
     :statuscode 200: Entries were added successfully.
     :statuscode 400: Provided JSON is in some way malformed.
     :statuscode 401: No user is currently logged in.
-    :statuscode 409: Some of the provided entries already exist in the addressbook or addresses have incorrect format.
+    :statuscode 409: Some of the provided entries' addresses have incorrect format.
     :statuscode 500: Internal rotki error.
 
 
