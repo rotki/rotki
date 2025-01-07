@@ -329,7 +329,7 @@ class RotkiDataUpdater:
                 continue
 
         with GlobalDBHandler().conn.write_ctx() as write_cursor:
-            db_addressbook.add_addressbook_entries(
+            db_addressbook.add_or_update_addressbook_entries(
                 write_cursor=write_cursor,
                 entries=entries_to_add,
             )

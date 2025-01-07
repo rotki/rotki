@@ -21,7 +21,6 @@ from rotkehlchen.chain.evm.utils import (
 from rotkehlchen.constants import ONE
 from rotkehlchen.db.addressbook import DBAddressbook
 from rotkehlchen.errors.misc import (
-    InputError,
     NotERC20Conformant,
     RemoteError,
     UnableToDecryptRemoteData,
@@ -288,16 +287,10 @@ def _save_curve_data_to_cache(
                 blockchain=chain_id.to_blockchain(),
             ))
         with GlobalDBHandler().conn.write_ctx() as write_cursor:
-            try:
-                db_addressbook.add_addressbook_entries(
-                    write_cursor=write_cursor,
-                    entries=addresbook_entries,
-                )
-            except InputError as e:
-                log.debug(
-                    f'Curve address book names for pool {pool.pool_address} were not added. '
-                    f'Probably names were added by the user earlier. {e}')
-
+            db_addressbook.add_or_update_addressbook_entries(
+                write_cursor=write_cursor,
+                entries=addresbook_entries,
+            )
             globaldb_set_general_cache_values(
                 write_cursor=write_cursor,
                 key_parts=(CacheType.CURVE_LP_TOKENS, chain_id_str),
