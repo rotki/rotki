@@ -47,13 +47,15 @@ import type {
   ShowEventHistoryForm,
 } from '@/types/history/events';
 
+type Period = { fromTimestamp?: string; toTimestamp?: string } | { fromTimestamp?: number; toTimestamp?: number };
+
 const props = withDefaults(defineProps<{
   location?: string;
   protocols?: string[];
   eventTypes?: string[];
   eventSubTypes?: string[];
   entryTypes?: HistoryEventEntryType[];
-  period?: { fromTimestamp?: string; toTimestamp?: string };
+  period?: Period;
   validators?: number[];
   externalAccountFilter?: Account[];
   useExternalAccountFilter?: boolean;
