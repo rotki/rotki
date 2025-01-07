@@ -149,7 +149,10 @@ onMounted(async () => {
           <AmountDisplay :value="row.amount" />
         </template>
         <template #item.usdValue="{ row }">
-          <AmountDisplay :value="row.usdValue" />
+          <AmountDisplay
+            :value="row.usdValue"
+            :fiat-currency="CURRENCY_USD"
+          />
         </template>
         <template
           v-if="savingsReceived.length > 0"
@@ -198,7 +201,10 @@ onMounted(async () => {
               <AmountDisplay :value="row.amount" />
             </template>
             <template #item.usdValue="{ row }">
-              <AmountDisplay :value="row.usdValue" />
+              <AmountDisplay
+                :value="row.usdValue"
+                :fiat-currency="CURRENCY_USD"
+              />
             </template>
             <template #item.timestamp="{ row }">
               <DateDisplay :timestamp="row.timestamp" />
