@@ -2368,8 +2368,6 @@
       "btc_derivation_gap": "Limite d'écart de dérivation BTC",
       "date_display_format": "Format d'affichage de la date",
       "date_input_format": "Format d'entrée de la date",
-      "dot_rpc_endpoint": "Point de terminaison RPC du nœud Polkadot",
-      "ksm_rpc_endpoint": "Point de terminaison RPC du nœud Kusama",
       "treat_eth2_as_eth": "Faut-il traiter ETH2 (ETH en jeu) comme ETH",
       "chains_to_skip_detection": "Réseaux EVM pour lesquels la détection automatique des jetons doit être ignorée"
     },
@@ -2439,20 +2437,10 @@
         "error": "Erreur lors de la configuration du séparateur décimal",
         "success": "Le séparateur décimal est défini sur {decimalSeparator}"
       },
-      "dot_rpc": {
-        "error": "Erreur lors de la configuration du point de terminaison RPC du nœud Polkadot",
-        "success_set": "Le point de terminaison RPC du nœud Polkadot est défini sur {endpoint}",
-        "success_unset": "Le point de terminaison RPC du nœud Polkadot a été supprimé avec succès"
-      },
       "floating_precision": {
         "error": "Erreur lors de la configuration de la précision flottante sur {precision}",
         "non_empty": "Veuillez entrer la précision flottante",
         "success": "La précision flottante est définie sur {precision}"
-      },
-      "ksm_rpc": {
-        "error": "Erreur lors de la configuration du point de terminaison RPC du nœud Kusama",
-        "success_set": "Le point de terminaison RPC du nœud Kusama est défini sur {endpoint}",
-        "success_unset": "Le point de terminaison RPC du nœud Kusama a été supprimé avec succès"
       },
       "thousand_separator": {
         "error": "Erreur lors de la configuration du séparateur de milliers",

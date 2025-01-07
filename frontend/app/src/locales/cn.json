@@ -2175,8 +2175,6 @@
       "btc_derivation_gap": "BTC衍生差距限制",
       "date_display_format": "日期显示格式",
       "date_input_format": "日期输入格式",
-      "dot_rpc_endpoint": "Polkadot 节点 RPC 端点",
-      "ksm_rpc_endpoint": "Kusama 节点 RPC 端点",
       "treat_eth2_as_eth": "应将 ETH2 (Staked ETH) 视为 ETH",
       "chains_to_skip_detection": "跳过自动检测的 EVM 链"
     },
@@ -2234,20 +2232,10 @@
         "error": "设置小数点分隔符错误",
         "success": "十进制分隔符设置为 {decimalSeparator}"
       },
-      "dot_rpc": {
-        "error": "设置 Polkadot 节点 RPC 端点时出错",
-        "success_set": "Polkadot 节点 RPC 端点被设置为 {endpoint}",
-        "success_unset": "Polkadot 节点 RPC 端点已成功取消设置"
-      },
       "floating_precision": {
         "error": "将浮动精度设置为 {precision} 时出错",
         "non_empty": "请输入浮动精度",
         "success": "浮动精度设置为{precision}"
-      },
-      "ksm_rpc": {
-        "error": "设置 Kusama 节点 RPC 端点时出错",
-        "success_set": "Kusama 节点 RPC 端点被设置为 {endpoint}",
-        "success_unset": "Kusama 节点 RPC 端点已成功取消设置"
       },
       "thousand_separator": {
         "error": "千位分隔符设置错误",

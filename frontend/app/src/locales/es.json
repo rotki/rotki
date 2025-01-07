@@ -2119,8 +2119,6 @@
       "btc_derivation_gap": "BTC derivation gap limit",
       "date_display_format": "Date display format",
       "date_input_format": "Date input format",
-      "dot_rpc_endpoint": "Polkadot Node RPC Endpoint",
-      "ksm_rpc_endpoint": "Kusama Node RPC Endpoint",
       "treat_eth2_as_eth": "Should treat ETH2 (Staked ETH) as ETH",
       "chains_to_skip_detection": "Cadenas EVM para las que omitir la detección automática"
     },
@@ -2178,20 +2176,10 @@
         "error": "Error setting decimal separator",
         "success": "Decimal separator set to {decimalSeparator}"
       },
-      "dot_rpc": {
-        "error": "There was an error setting the Polkadot node RPC endpoint",
-        "success_set": "The Polkadot node RPC endpoint was set to {endpoint}",
-        "success_unset": "The Polkadot node RPC endpoint was successfully unset"
-      },
       "floating_precision": {
         "error": "Error setting floating precision to {precision}",
         "non_empty": "Please input the floating precision",
         "success": "Floating precision set to {precision}"
-      },
-      "ksm_rpc": {
-        "error": "There was an error setting the Kusama node RPC endpoint",
-        "success_set": "The Kusama node RPC endpoint was set to {endpoint}",
-        "success_unset": "The Kusama node RPC endpoint was successfully unset"
       },
       "thousand_separator": {
         "error": "Error setting thousand separator",
