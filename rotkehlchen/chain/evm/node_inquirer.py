@@ -240,6 +240,9 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
         # To force the app to retry a node a restart is needed.
         self.failed_to_connect_nodes: set[str] = set()
         LockableQueryMixIn.__init__(self)
+        # Log the available nodes so we have extra information when debugging connection errors.
+        nodes = '\n'.join([str(x.serialize()) for x in self.default_call_order()])  # variable because \ is not valid in f-strings  # noqa: E501
+        log.debug(f'RPC nodes at startup {nodes}')
 
     def maybe_connect_to_nodes(self, when_tracked_accounts: bool) -> None:
         """Start async connect to the saved nodes for the given evm chain if needed.

@@ -948,7 +948,7 @@ Adding information for web3 nodes
 
    .. http:example:: curl wget httpie python-requests
 
-      PUT /api/1/blockchains/eth/nodes HTTP/1.1
+      DELETE /api/1/blockchains/eth/nodes HTTP/1.1
       Host: localhost:5042
       Content-Type: application/json
 
@@ -960,6 +960,53 @@ Adding information for web3 nodes
 
    :statuscode 200: Deletion was successful.
    :statuscode 409: No user is logged or failed to delete because the node name is not in the database.
+   :statuscode 500: Internal rotki error
+
+.. http:post:: /api/(version)/blockchains/(blockchain)/nodes
+
+   By doing a POST on this endpoint the app will try to connect to the provided node. If no node is provided then the app will try to connect to all the nodes tracked for the chain.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      POST /api/1/blockchains/eth/nodes HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json
+
+      {
+        "identifier": 8
+      }
+
+   :resjson int identifier[optional]: Id of the node that will be connected.
+
+   **Example Response**:
+
+      The following is an example response of querying Ethereum nodes information.
+
+      .. sourcecode:: http
+
+         HTTP/1.1 200 OK
+         Content-Type: application/json
+
+         {
+         "result": {
+            errors: [{
+                  "name": "Cloudflare",
+                  "error": "Example error"
+               }]
+            },
+         },
+         "message": ""
+         }
+
+      :resjson list errors: A list with information about the web3 nodes that couldn't be connected. Empty if all the nodes were connected.
+      :resjson string name: Name of the node.
+      :resjson string error: Reason why the node wasn't connected.
+
+   :statuscode 200: Connection logic executed.
+   :statuscode 400: Wrong blockchain provided.
+   :statuscode 409: No user is logged or failed because the blockchain is not valid or the node identifier is not in the database.
    :statuscode 500: Internal rotki error
 
 
