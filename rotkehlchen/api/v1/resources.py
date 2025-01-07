@@ -62,6 +62,7 @@ from rotkehlchen.api.v1.schemas import (
     ClearAvatarsCacheSchema,
     ClearCacheSchema,
     ClearIconsCacheSchema,
+    ConnectToRPCNodes,
     CreateAccountingRuleSchema,
     CreateHistoryEventSchema,
     CurrentAssetsPriceSchema,
@@ -742,6 +743,7 @@ class RpcNodesResource(BaseMethodView):
 
     get_schema = RpcNodeSchema()
     put_schema = RpcAddNodeSchema()
+    post_schema = ConnectToRPCNodes()
 
     def make_patch_schema(self) -> RpcNodeEditSchema:
         return RpcNodeEditSchema(
@@ -804,7 +806,7 @@ class RpcNodesResource(BaseMethodView):
             weight=weight,
             active=active,
         )
-        return self.rest_api.update_rpc_node(node=node)
+        return self.rest_api.update_and_connect_rpc_node(node=node)
 
     @require_loggedin_user()
     @resource_parser.use_kwargs(make_delete_schema, location='json_and_query_and_view_args')
@@ -814,6 +816,11 @@ class RpcNodesResource(BaseMethodView):
             identifier: int,
     ) -> Response:
         return self.rest_api.delete_rpc_node(identifier=identifier, blockchain=blockchain)
+
+    @require_loggedin_user()
+    @use_kwargs(post_schema, location='json_and_query_and_view_args')
+    def post(self, identifier: int | None, blockchain: SupportedBlockchain) -> Response:
+        return self.rest_api.connect_rpc_node(identifier=identifier, blockchain=blockchain)
 
 
 class ExternalServicesResource(BaseMethodView):
