@@ -17,6 +17,8 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.history.price import PriceHistorian
+from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.tests.utils.accounting import (
     accounting_history_process,
     check_pnls_and_csv,
@@ -372,18 +374,17 @@ def test_other_currency_fiat_trades(accountant, google_service):
     check_pnls_and_csv(accountant, expected_pnls, google_service)
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('should_mock_price_queries', [False])
 def test_asset_and_price_not_found_in_history_processing(accountant):
     """
     Make sure that in history processing if no price is found for a trade it's added to a
     `missing_prices` list and no error is logged.
 
-    Not VCRed since it randomly goes through any oracles we have
-    to exhaust them and make sure there is no price found.
-
     Regression for https://github.com/rotki/rotki/issues/432
     Updated with https://github.com/rotki/rotki/pull/4196
     """
+    PriceHistorian().set_oracles_order([HistoricalPriceOracle.CRYPTOCOMPARE])  # enforce single oracle for VCR  # noqa: E501
     fgp = EvmToken('eip155:1/erc20:0xd9A8cfe21C232D485065cb62a96866799d4645f7')
     time = Timestamp(1492685761)
     trade = Trade(
