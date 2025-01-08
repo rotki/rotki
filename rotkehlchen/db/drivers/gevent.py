@@ -203,10 +203,10 @@ def _progress_callback(connection: Optional['DBConnection']) -> int:
     # without this rotkehlchen/tests/db/test_async.py::test_async_segfault fails
     with connection.in_callback:
         if __debug__:
-            logger.trace(f'Got in locked section of the progress callback for {connection.connection_type} with id {identifier}')  # noqa: E501
+            logger.trace(f'Got in locked section of the progress callback for {connection.connection_type} with id {identifier}')  # noqa: E501  # pyright: ignore  # if debug identifier is set
         gevent.sleep(0)
         if __debug__:
-            logger.trace(f'Going out of the progress callback for {connection.connection_type} with id {identifier}')  # noqa: E501
+            logger.trace(f'Going out of the progress callback for {connection.connection_type} with id {identifier}')  # noqa: E501  # pyright: ignore  # if debug identifier is set
         return 0
 
 

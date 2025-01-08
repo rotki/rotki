@@ -369,22 +369,24 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
 
         `new_step_data` argument contains callback and exchange name to be used for steps.
         """
+        new_step_callback, exchange_name = None, None
         if new_step_data is not None:
             new_step_callback, exchange_name = new_step_data
             new_step_callback(f'Querying {exchange_name} trades history')
+
         try:
             self.query_trade_history(
                 start_ts=start_ts,
                 end_ts=end_ts,
                 only_cache=False,
             )
-            if new_step_data is not None:
+            if new_step_callback is not None:
                 new_step_callback(f'Querying {exchange_name} margin history')
             self.query_margin_history(
                 start_ts=start_ts,
                 end_ts=end_ts,
             )
-            if new_step_data is not None:
+            if new_step_callback is not None:
                 new_step_callback(f'Querying {exchange_name} events history')
             self.query_history_events()
             # No new step for exchange_specific_history since it is not used in any exchange atm.

@@ -1142,6 +1142,8 @@ class Inquirer:
                     f'Error fetching ethereum token {underlying_token_address} while '
                     f'detecting underlying tokens of {token.evm_address!s}: {e!s}',
                 )
+                return None
+
             # store it in the DB, so next time no need to query chain
             with globaldb.conn.write_ctx() as write_cursor:
                 try:

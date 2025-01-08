@@ -250,7 +250,7 @@ def update_aave_v3_underlying_assets(chains_aggregator: 'ChainsAggregator') -> N
                     # calling get_or_create_evm_token along with the underlying_tokens attribute
                     # will first ensure that both underlying and reserve tokens info is added,
                     # then the mapping is saved. This order is necessary due to its FK relationship
-                    decoded_reserve_token = get_or_create_evm_token(
+                    get_or_create_evm_token(
                         evm_inquirer=node_inquirer,
                         userdb=node_inquirer.database,
                         evm_address=deserialize_evm_address(decoded_reserve_token_address),
@@ -266,13 +266,13 @@ def update_aave_v3_underlying_assets(chains_aggregator: 'ChainsAggregator') -> N
                     )
                 except DeserializationError as e:
                     log.error(
-                        'Failed to deserialize Aave v3 reserve token address: '
-                        f'{decoded_reserve_token_address} due to {e!s}',
+                        f'Failed to deserialize {node_inquirer.chain_name} Aave v3 reserve '
+                        f'token address: {decoded_reserve_token_address} due to {e!s}',
                     )
                 except NotERC20Conformant as e:
                     log.error(
                         f'Failed to add underlying token {underlying_token_address} for '
-                        f'{decoded_reserve_token.identifier} due to {e!s}',
+                        f'{decoded_reserve_token_address} in {node_inquirer.chain_name} due to {e!s}',  # noqa: E501
                     )
 
     with chains_aggregator.database.conn.write_ctx() as write_cursor:

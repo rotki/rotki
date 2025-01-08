@@ -2327,8 +2327,7 @@ class DBHandler:
     ) -> tuple[list[str], list[str]]:
         """Get all entries of net value data from the DB"""
         with self.conn.read_ctx() as cursor:
-            # Get the total location ("H") entries in ascending time
-            cursor.execute(
+            cursor.execute(  # Get the total location ("H") entries in ascending time
                 "SELECT timestamp, usd_value FROM timed_location_data "
                 "WHERE location='H' AND timestamp >= ? ORDER BY timestamp ASC;",
                 (from_ts,),
@@ -2342,15 +2341,16 @@ class DBHandler:
                     )
                     nft_values = dict(nft_cursor)
 
-            data = []
-            times_int = []
+            data, times_int = [], []
             for entry in cursor:
                 times_int.append(entry[0])
                 if include_nfts:
                     total = entry[1]
                 else:
-                    total = str(FVal(entry[1]) - FVal(nft_values.get(entry[0], 0)))
+                    total = str(FVal(entry[1]) - FVal(nft_values.get(entry[0], 0)))  # pyright: ignore  # nft_values is populated when include_nfts is False
+
                 data.append(total)
+
         return times_int, data
 
     @staticmethod

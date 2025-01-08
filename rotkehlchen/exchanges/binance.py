@@ -595,9 +595,9 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
         - RemoteError
         """
         all_positions = []
+        timestamp = ts_now_in_ms()
+        current = 1
         try:
-            timestamp = ts_now_in_ms()
-            current = 1
             while True:  # query all flexible positions
                 if len(positions := self.api_query_list(
                     api_type='sapi',

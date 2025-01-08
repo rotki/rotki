@@ -197,10 +197,8 @@ def have_bitcoin_transactions(accounts: list[BTCAddress]) -> dict[BTCAddress, tu
     """
     try:
         if _have_bc1_accounts(accounts):
-            source = 'blockstream'
             have_transactions = _check_blockstream_for_transactions(accounts)
         else:
-            source = 'blockchain.info'
             have_transactions = _check_blockchaininfo_for_transactions(accounts)
     except (
             requests.exceptions.RequestException,
@@ -210,7 +208,7 @@ def have_bitcoin_transactions(accounts: list[BTCAddress]) -> dict[BTCAddress, tu
         raise RemoteError(f'bitcoin external API request for transactions failed due to {e!s}') from e  # noqa: E501
     except KeyError as e:
         raise RemoteError(
-            f'Malformed response when querying bitcoin blockchain via {source}.'
+            'Malformed response when querying the bitcoin blockchain.'
             f'Did not find key {e!s}',
         ) from e
     except DeserializationError as e:

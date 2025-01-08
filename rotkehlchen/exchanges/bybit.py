@@ -205,6 +205,7 @@ class Bybit(ExchangeInterface):
         timeout = CachedSettings().get_timeout_tuple()
         tries = CachedSettings().get_query_retry_limit()
         requires_auth = path in self.authenticated_methods
+        headers = None
 
         while True:
             log.debug('Bybit API Query', url=url, options=options)
@@ -239,7 +240,7 @@ class Bybit(ExchangeInterface):
                     url=url,
                     params=options,
                     timeout=timeout,
-                    headers=headers if requires_auth is True else None,
+                    headers=headers,
                 )
             except requests.exceptions.RequestException as e:
                 raise RemoteError(f'Bybit API request failed due to {e}') from e
