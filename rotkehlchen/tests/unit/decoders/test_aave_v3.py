@@ -1472,19 +1472,24 @@ def test_aave_v3_lido_pool(
         ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0xd1e4360f6f7fb34f0f169aeb5e7d0ac0f025e3fed90903a50ee7b1bb694ac8d0')  # noqa: E501
-    get_or_create_evm_token(
-        evm_inquirer=ethereum_inquirer,
-        userdb=ethereum_inquirer.database,
-        evm_address=deserialize_evm_address('0x18eFE565A5373f430e2F809b97De30335B3ad96A'),
-        chain_id=ethereum_inquirer.chain_id,
-        protocol=CPT_AAVE_V3,
-        token_kind=EvmTokenKind.ERC20,
-        underlying_tokens=[UnderlyingToken(
-            address=string_to_evm_address('0x40D16FC0246aD3160Ccc09B8D0D3A2cD28aE6C2f'),
+    for address in (
+            deserialize_evm_address('0x18577F0f4A0B2Ee6F4048dB51c7acd8699F97DB8'),  # variableDebtEthLidoGHO  # noqa: E501
+            deserialize_evm_address('0x18eFE565A5373f430e2F809b97De30335B3ad96A'),  # aEthLidoGHO
+    ):
+        get_or_create_evm_token(
+            evm_inquirer=ethereum_inquirer,
+            userdb=ethereum_inquirer.database,
+            evm_address=address,
+            chain_id=ethereum_inquirer.chain_id,
+            protocol=CPT_AAVE_V3,
             token_kind=EvmTokenKind.ERC20,
-            weight=ONE,
-        )],
-    )
+            underlying_tokens=[UnderlyingToken(
+                address=string_to_evm_address('0x40D16FC0246aD3160Ccc09B8D0D3A2cD28aE6C2f'),
+                token_kind=EvmTokenKind.ERC20,
+                weight=ONE,
+            )],
+        )
+
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     borrow_amount, gas_fees, timestamp = '59000', '0.00170195956638183', TimestampMS(1734912023000)
     expected_events = [
@@ -1502,7 +1507,7 @@ def test_aave_v3_lido_pool(
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=185,
+            sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
@@ -1515,7 +1520,7 @@ def test_aave_v3_lido_pool(
             address=ZERO_ADDRESS,
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=188,
+            sequence_index=2,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
