@@ -2709,6 +2709,34 @@ def test_upgrade_db_45_to_46(user_data_dir: 'Path', messages_aggregator):
     db.logout()
 
 
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_upgrade_db_46_to_47(user_data_dir, messages_aggregator):
+    """Test upgrading the DB from version 46 to version 47"""
+    _use_prepared_db(user_data_dir, 'v45_rotkehlchen.db')
+    db_v46 = _init_db_with_target_version(
+        target_version=46,
+        user_data_dir=user_data_dir,
+        msg_aggregator=messages_aggregator,
+        resume_from_backup=False,
+    )
+    with db_v46.conn.read_ctx() as cursor:
+        cursor.execute("SELECT COUNT(*) FROM location WHERE location='v'")
+        assert cursor.fetchone()[0] == 0
+
+    # Execute upgrade
+    db = _init_db_with_target_version(
+        target_version=47,
+        user_data_dir=user_data_dir,
+        msg_aggregator=messages_aggregator,
+        resume_from_backup=False,
+    )
+    with db.conn.read_ctx() as cursor:
+        cursor.execute("SELECT seq FROM location WHERE location='v'")
+        assert cursor.fetchone() == (54,)
+
+    db.logout()
+
+
 def test_latest_upgrade_correctness(user_data_dir):
     """
     This is a test that we can only do for the last upgrade.
