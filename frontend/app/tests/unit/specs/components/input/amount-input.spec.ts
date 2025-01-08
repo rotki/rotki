@@ -98,6 +98,21 @@ describe('amountInput.vue', () => {
     expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual(['500000.123']);
   });
 
+  it('should remove leading zeros', async () => {
+    wrapper = createWrapper({
+      props: { modelValue: '' },
+    });
+    await nextTick();
+
+    await wrapper.setProps({ modelValue: '0123' });
+    await nextTick();
+
+    expect((wrapper.find('input').element as HTMLInputElement).value).toBe('123');
+
+    expect(wrapper.emitted()).toHaveProperty('update:modelValue');
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual(['123']);
+  });
+
   it('should emit correct value', async () => {
     wrapper = createWrapper({
       props: { modelValue: '' },

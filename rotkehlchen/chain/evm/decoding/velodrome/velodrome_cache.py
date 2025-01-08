@@ -10,7 +10,7 @@ from rotkehlchen.chain.evm.utils import (
     maybe_notify_new_pools_status,
 )
 from rotkehlchen.db.addressbook import DBAddressbook
-from rotkehlchen.errors.misc import InputError, NotERC20Conformant, RemoteError
+from rotkehlchen.errors.misc import NotERC20Conformant, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.globaldb.cache import (
     globaldb_get_general_cache_like,
@@ -83,15 +83,10 @@ def save_velodrome_data_to_cache(
             ))
 
         with globaldb.conn.write_ctx() as write_cursor:
-            try:
-                db_addressbook.add_addressbook_entries(
-                    write_cursor=write_cursor,
-                    entries=addresbook_entries,
-                )
-            except InputError as e:
-                log.debug(
-                    f'Velodrome address book names for pool {pool.pool_address} were not added. '
-                    f'Probably names were added by the user earlier. {e}')
+            db_addressbook.add_or_update_addressbook_entries(
+                write_cursor=write_cursor,
+                entries=addresbook_entries,
+            )
 
             if pool.chain_id == ChainID.OPTIMISM:
                 pool_key = (CacheType.VELODROME_POOL_ADDRESS,)

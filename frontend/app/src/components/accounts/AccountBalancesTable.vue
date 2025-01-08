@@ -89,7 +89,7 @@ const anyExpansion = computed(() => get(rows).some(item => item.expansion));
 
 const expanded = computed<DataRow[]>(({
   get() {
-    return get(rows).filter(row => get(expandedIds).includes(row.id));
+    return get(rows).filter(row => get(expandedIds).includes(row.id) && row.expansion);
   },
   set(value: DataRow[]) {
     set(expandedIds, get(value).map(row => row.id));

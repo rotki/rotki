@@ -259,7 +259,7 @@ class Poloniex(ExchangeInterface):
             post_data=req,
         )
 
-        tries = CachedSettings().get_query_retry_limit()
+        tries, response = CachedSettings().get_query_retry_limit(), None
         while tries >= 0:
             try:
                 response = self._single_query(command, req)

@@ -267,7 +267,7 @@ class Woo(ExchangeInterface):
             raise RemoteError(f'{error_prefix} connection error: {e}.') from e
         except JSONDecodeError as e:
             raise RemoteError(
-                f'{error_prefix} returned invalid JSON response: {response.text}.',
+                f'{error_prefix} failed to decode JSON response.',
             ) from e
 
         if response.status_code != HTTPStatus.OK:

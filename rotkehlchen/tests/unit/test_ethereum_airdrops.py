@@ -167,7 +167,7 @@ MOCK_AIRDROP_INDEX = {'airdrops': {
         'new_asset_data': {
             'asset_type': 'OTHER',
             'name': 'Eigen',
-            'symbol': 'EIGEN',
+            'symbol': 'EIGEN',  # do not include chainid on purpose to see code handles it properly
         },
     },
 }, 'poap_airdrops': {

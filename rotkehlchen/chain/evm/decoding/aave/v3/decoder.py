@@ -138,7 +138,7 @@ class Aavev3CommonDecoder(Commonv2v3Decoder):
            receive/return amount, because the interest event is created separately.
 
         Returns the final list of the decoded events."""
-        supply_event, withdraw_event, return_event, receive_event = None, None, None, None
+        supply_event, withdraw_event, return_event, receive_event, maybe_earned_event = None, None, None, None, None  # noqa: E501
         for event in decoded_events:  # identify the events decoded till now
             if (
                 event.event_type == HistoryEventType.DEPOSIT and
@@ -169,6 +169,7 @@ class Aavev3CommonDecoder(Commonv2v3Decoder):
                 event.event_subtype = HistoryEventSubType.INTEREST
                 event.notes = f'Receive {event.balance.amount} {event.asset.symbol_or_name()} as interest earned from {self.label}'  # noqa: E501
                 event.counterparty = CPT_AAVE_V3
+                maybe_earned_event = event  # this may also be the mint transfer event which was already decoded (for some chains and assets) -- remember it to check it down later  # noqa: E501
 
         # categorize the events, based on token_event and wrapped_event
         if supply_event is not None and receive_event is not None:
@@ -180,10 +181,18 @@ class Aavev3CommonDecoder(Commonv2v3Decoder):
                 wrapped_event = return_event
             elif receive_event is not None:
                 wrapped_event = receive_event
+            elif maybe_earned_event is not None:
+                wrapped_event = maybe_earned_event
+                receive_event = maybe_earned_event
+            else:
+                log.error(f'Could not categorize the aave v3 events during interest decoding for transaction {transaction}')  # noqa: E501
+                return decoded_events
+
         else:  # if not identified, return the decoded events
             return decoded_events
 
-        token = token_event.asset.resolve_to_evm_token()
+        withdrawing_native_token = withdraw_event is not None and withdraw_event.asset == self.evm_inquirer.native_token  # noqa: E501
+        token = token_event.asset.resolve_to_evm_token() if token_event.asset != self.evm_inquirer.native_token else self.evm_inquirer.native_token  # noqa: E501
         a_token = wrapped_event.asset.resolve_to_evm_token()
         earned_event, corrected_amount = None, None
         for _log in all_logs:
@@ -198,31 +207,54 @@ class Aavev3CommonDecoder(Commonv2v3Decoder):
                     )
                 ) > 0
             ):  # parse the mint amount and balance_increase
-                earned_token_address = a_token.evm_address
-                if _log.topics[0] == BURN:
-                    # when we get some interest less than the total token to be returned, the net
-                    # burned token is slightly less. So save its corrected amount and assign it later  # noqa: E501
-                    corrected_amount = asset_normalized_value(
-                        amount=int.from_bytes(_log.data[:32]),
-                        asset=token,
-                    )
-                    earned_token_address = token.evm_address
-                decoded_events.append(earned_event := self.base.make_event_from_transaction(
-                    transaction=transaction,
-                    tx_log=_log,
-                    event_type=HistoryEventType.RECEIVE,
-                    event_subtype=HistoryEventSubType.INTEREST,
-                    asset=(earned_token := get_or_create_evm_token(
+                if withdrawing_native_token:
+                    earned_token = self.evm_inquirer.native_token
+                else:
+                    earned_token_address = a_token.evm_address
+                    if _log.topics[0] == BURN:
+                        # when we get some interest less than the total token to be returned,
+                        # the net burned token is slightly less. So save its corrected
+                        # amount and assign it later
+                        corrected_amount = asset_normalized_value(
+                            amount=int.from_bytes(_log.data[:32]),
+                            asset=token,
+                        )
+                        if not isinstance(token, EvmToken):
+                            log.error(f'At aave {transaction} got a BURN event for a native token. Should not happen')  # noqa: E501
+                            return decoded_events  # error out
+
+                        earned_token_address = token.evm_address
+
+                    earned_token = get_or_create_evm_token(
                         userdb=self.evm_inquirer.database,
                         evm_address=earned_token_address,
                         chain_id=self.evm_inquirer.chain_id,
                         evm_inquirer=self.evm_inquirer,
-                    )),
-                    balance=Balance(amount=balance_increase),
-                    location_label=token_event.location_label,
-                    notes=f'Receive {balance_increase} {earned_token.symbol} as interest earned from {self.label}',  # noqa: E501
-                    counterparty=self.counterparty,
-                ))
+                    )
+
+                if (  # check if the earned event was already detected
+                        maybe_earned_event and
+                        withdrawing_native_token and
+                        a_token == maybe_earned_event.asset and
+                        balance_increase == maybe_earned_event.balance.amount and
+                        token_event.location_label == maybe_earned_event.location_label
+                ):
+                    earned_event = maybe_earned_event  # and since this is native token edit it
+                    earned_event.asset = self.evm_inquirer.native_token
+                    earned_event.notes = f'Receive {earned_event.balance.amount} {earned_token.symbol} as interest earned from {self.label}'  # noqa: E501
+
+                else:  # if not, create it
+                    decoded_events.append(earned_event := self.base.make_event_from_transaction(
+                        transaction=transaction,
+                        tx_log=_log,
+                        event_type=HistoryEventType.RECEIVE,
+                        event_subtype=HistoryEventSubType.INTEREST,
+                        asset=earned_token,
+                        balance=Balance(amount=balance_increase),
+                        location_label=token_event.location_label,
+                        notes=f'Receive {balance_increase} {earned_token.symbol} as interest earned from {self.label}',  # noqa: E501
+                        counterparty=self.counterparty,
+                    ))
 
         if supply_event is not None and receive_event is not None:  # re-assign the receive amount
             receive_event.balance.amount = supply_event.balance.amount

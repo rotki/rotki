@@ -11,6 +11,7 @@ from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.chain.ethereum.constants import ETHEREUM_ETHERSCAN_NODE_NAME
 from rotkehlchen.chain.ethereum.modules.convex.constants import CPT_CONVEX
 from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE
+from rotkehlchen.chain.evm.types import NodeName
 from rotkehlchen.constants.misc import DEFAULT_MAX_LOG_BACKUP_FILES, DEFAULT_SQL_VM_INSTRUCTIONS_CB
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmProduct
@@ -20,6 +21,7 @@ from rotkehlchen.tests.utils.api import (
     assert_proper_response,
     assert_proper_sync_response_with_result,
 )
+from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.types import ChainID, Location, SupportedBlockchain
 from rotkehlchen.utils.misc import get_system_spec
 
@@ -516,3 +518,69 @@ def test_counterparties(rotkehlchen_api_server_with_exchanges: 'APIServer') -> N
         assert 'icon' in counterparty_details or 'image' in counterparty_details
         if counterparty_details['identifier'] == 'gas':
             assert counterparty_details['icon'] == 'lu-flame'
+
+
+@pytest.mark.parametrize('base_manager_connect_at_start', ['DEFAULT'])
+@pytest.mark.parametrize('ethereum_accounts', [[make_evm_address()]])
+def test_connecting_to_node(rotkehlchen_api_server: 'APIServer') -> None:
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    base = rotki.chains_aggregator.base
+    patched_connection = patch.object(
+        base.node_inquirer,
+        'attempt_connect',
+        lambda *args, **kwargs: (True, ''),
+    )
+    assert len(base.node_inquirer.get_connected_nodes()) == 0
+
+    with patched_connection:
+        rpc_url = api_url_for(rotkehlchen_api_server, 'rpcnodesresource', blockchain='base')
+        response = requests.post(url=rpc_url, json={'identifier': 24})
+        assert_proper_sync_response_with_result(response)
+
+        # check case of a bad identifier
+        response = requests.post(url=rpc_url, json={'identifier': 999})
+        assert_error_response(
+            response=response,
+            contained_in_msg='RPC node not found',
+            status_code=HTTPStatus.BAD_REQUEST,
+        )
+
+        # check connecting to a non evm node
+        response = requests.post(
+            url=api_url_for(rotkehlchen_api_server, 'rpcnodesresource', blockchain='ksm'),
+            json={'identifier': 999},
+        )
+        assert_error_response(
+            response=response,
+            contained_in_msg='kusama nodes are connected at login',
+            status_code=HTTPStatus.BAD_REQUEST,
+        )
+
+    connected_nodes = []
+
+    def custom_connect(node: NodeName) -> tuple[bool, str]:
+        connected_nodes.append(node.name)
+        return True, ''
+
+    with patch.object(
+        base.node_inquirer,
+        'attempt_connect',
+        custom_connect,
+    ):  # connect to all the nodes
+        rpc_url = api_url_for(rotkehlchen_api_server, 'rpcnodesresource', blockchain='base')
+        response = requests.post(url=rpc_url)
+        assert_proper_sync_response_with_result(response)
+        assert len(connected_nodes) >= 4
+
+    with patch.object(
+        base.node_inquirer,
+        'attempt_connect',
+        lambda *args, **kwargs: (False, 'Custom error'),
+    ):
+        # check error during connection
+        rpc_url = api_url_for(rotkehlchen_api_server, 'rpcnodesresource', blockchain='base')
+        response = requests.post(url=rpc_url, json={'identifier': 24})
+        assert response.json()['result'] == {
+            'errors': [{'name': 'base BlockPi', 'error': 'Custom error'}],
+        }
+        assert response.status_code == HTTPStatus.OK

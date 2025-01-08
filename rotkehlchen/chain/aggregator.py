@@ -540,7 +540,8 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
     ) -> None:
         """Checks if any of the accounts already exist or don't exist
         (depending on `append_or_remove`) and may raise an InputError"""
-        if blockchain == SupportedBlockchain.BITCOIN_CASH and append_or_remove == 'append':
+        forced_bch_legacy_addresses = set()
+        if (append_bch_case := blockchain == SupportedBlockchain.BITCOIN_CASH and append_or_remove == 'append'):  # noqa: E501
             with self.database.conn.read_ctx() as cursor:
                 bch_accounts = self.database.get_blockchain_account_data(
                     cursor=cursor,
@@ -553,7 +554,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
 
         bad_accounts = []
         for account in accounts:
-            if blockchain == SupportedBlockchain.BITCOIN_CASH and append_or_remove == 'append':
+            if append_bch_case:
                 # an already existing bch address can be added but in a different format
                 # so convert all bch addresses to the same format and compare.
                 existent = account in self.accounts.bch or force_address_to_legacy_address(account) in forced_bch_legacy_addresses  # noqa: E501

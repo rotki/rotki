@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Literal
 from eth_utils import to_hex
 from web3 import Web3
 
-from rotkehlchen.assets.asset import CryptoAsset, EvmToken, UnderlyingToken
+from rotkehlchen.assets.asset import Asset, CryptoAsset, EvmToken, UnderlyingToken
 from rotkehlchen.assets.utils import (
     TokenEncounterInfo,
     edit_token_and_clean_cache,
@@ -207,6 +207,8 @@ def decode_uniswap_like_deposit_and_withdrawals(
 
     token0: EvmToken | None = None
     token1: EvmToken | None = None
+    asset_0: Asset | None = None
+    asset_1: Asset | None = None
     event0_idx = event1_idx = None
 
     if event_action_type == 'addition':
@@ -244,7 +246,7 @@ def decode_uniswap_like_deposit_and_withdrawals(
             )
             asset_1 = resolved_eth if token1 == A_WETH else token1
 
-    if token0 is None or token1 is None:
+    if token0 is None or token1 is None or asset_0 is None or asset_1 is None:
         return DEFAULT_DECODING_OUTPUT
 
     # determine the pool address from the pair of token addresses, if it matches
@@ -347,6 +349,7 @@ def decode_uniswap_like_deposit_and_withdrawals(
     new_action_items = []
     extra_data = {'pool_address': pool_address}
     for asset, decoded_event_idx, amount in ((asset_0, event0_idx, amount0), (asset_1, event1_idx, amount1)):  # noqa: E501
+        asset_symbol = asset.resolve_to_asset_with_symbol().symbol
         if decoded_event_idx is None:
             action_item = ActionItem(
                 action='transform',
@@ -358,7 +361,7 @@ def decode_uniswap_like_deposit_and_withdrawals(
                 to_event_subtype=to_event_type[1],
                 to_notes=notes.format(
                     amount=amount,
-                    asset=asset.symbol,
+                    asset=asset_symbol,
                     counterparty=counterparty,
                     pool_address=pool_address,
                 ),
@@ -373,7 +376,7 @@ def decode_uniswap_like_deposit_and_withdrawals(
         decoded_events[decoded_event_idx].event_subtype = to_event_type[1]
         decoded_events[decoded_event_idx].notes = notes.format(
             amount=amount,
-            asset=asset.symbol,
+            asset=asset_symbol,
             counterparty=counterparty,
             pool_address=pool_address,
         )

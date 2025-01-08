@@ -5,14 +5,16 @@ import { useSupportedChains } from '@/composables/info/chains';
 import AppImage from '@/components/common/AppImage.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import SettingCategoryHeader from '@/components/settings/SettingCategoryHeader.vue';
-import type EvmRpcNodeManager from '@/components/settings/general/rpc/EvmRpcNodeManager.vue';
 import type { Component } from 'vue';
+import type EvmRpcNodeManager from '@/components/settings/general/rpc/EvmRpcNodeManager.vue';
+import type SimpleRpcNodeManager from '@/components/settings/general/rpc/simple/SimpleRpcNodeManager.vue';
 
 const { t } = useI18n();
 
 interface ChainRpcSettingTab {
   chain: Blockchain;
   component: Component;
+  setting?: string;
 }
 
 interface CustomRpcSettingTab {
@@ -20,12 +22,13 @@ interface CustomRpcSettingTab {
   name: string;
   image: string;
   component: Component;
+  setting?: string;
 }
 
 type RpcSettingTab = ChainRpcSettingTab | CustomRpcSettingTab;
 
 const rpcSettingTab = ref<number>(0);
-const evmRpcNodeManagerRef = ref<InstanceType<typeof EvmRpcNodeManager>[]>();
+const evmRpcNodeManagerRef = ref<InstanceType<typeof EvmRpcNodeManager | typeof SimpleRpcNodeManager>[]>();
 
 const { txEvmChains } = useSupportedChains();
 const evmChainTabs = useArrayMap(txEvmChains, (chain) => {
@@ -40,26 +43,25 @@ const rpcSettingTabs = computed<RpcSettingTab[]>(() => [
   ...get(evmChainTabs),
   {
     chain: Blockchain.KSM,
-    component: defineAsyncComponent(() => import('@/components/settings/general/rpc/KsmRpcSetting.vue')),
+    component: defineAsyncComponent(() => import('@/components/settings/general/rpc/simple/SimpleRpcNodeManager.vue')),
+    setting: 'ksmRpcEndpoint',
   },
   {
     chain: Blockchain.DOT,
-    component: defineAsyncComponent(() => import('@/components/settings/general/rpc/DotRpcSetting.vue')),
+    component: defineAsyncComponent(() => import('@/components/settings/general/rpc/simple/SimpleRpcNodeManager.vue')),
+    setting: 'dotRpcEndpoint',
   },
   {
-    component: defineAsyncComponent(() => import('@/components/settings/general/rpc/BeaconchainRpcSetting.vue')),
+    component: defineAsyncComponent(() => import('@/components/settings/general/rpc/simple/SimpleRpcNodeManager.vue')),
     id: 'eth_consensus_layer',
     image: './assets/images/protocols/ethereum.svg',
     name: 'ETH Beacon Node',
+    setting: 'beaconRpcEndpoint',
   },
 ]);
 
 function isChain(item: RpcSettingTab): item is ChainRpcSettingTab {
   return 'chain' in item;
-}
-
-function isTxEvmChain(index: number) {
-  return index < get(evmChainTabs).length;
 }
 
 function addNodeClick() {
@@ -82,11 +84,16 @@ function addNodeClick() {
         </template>
       </SettingCategoryHeader>
       <RuiButton
-        v-if="isTxEvmChain(rpcSettingTab)"
         color="primary"
         data-cy="add-node"
         @click="addNodeClick()"
       >
+        <template #prepend>
+          <RuiIcon
+            name="lu-plus"
+            size="16"
+          />
+        </template>
         {{ t('evm_rpc_node_manager.add_button') }}
       </RuiButton>
     </div>
@@ -132,13 +139,15 @@ function addNodeClick() {
         >
           <Component
             :is="tab.component"
-            v-if="isChain(tab)"
+            v-if="!tab.setting && 'chain' in tab"
             ref="evmRpcNodeManagerRef"
             :chain="tab.chain"
           />
           <Component
             :is="tab.component"
             v-else
+            ref="evmRpcNodeManagerRef"
+            :setting="tab.setting"
           />
         </RuiTabItem>
       </RuiTabItems>

@@ -26,11 +26,11 @@ const emit = defineEmits<{
 
 const { isTaskRunning } = useTaskStore();
 const fetching = isTaskRunning(TaskType.FETCH_UNDECODED_TXS);
-const eventTaskLoading = isTaskRunning(TaskType.TRANSACTIONS_DECODING);
-const partialEventTaskLoading = isTaskRunning(TaskType.TRANSACTIONS_DECODING, {
-  all: false,
-});
-const allEventTaskLoading = isTaskRunning(TaskType.TRANSACTIONS_DECODING, {
+const isDecoding = isTaskRunning(TaskType.TRANSACTIONS_DECODING);
+const debouncedIsDecoding = refDebounced(isDecoding, 500);
+const usedIsDecoding = logicOr(isDecoding, debouncedIsDecoding);
+const isTransactionsLoading = isTaskRunning(TaskType.TX);
+const isFullyDecoding = isTaskRunning(TaskType.TRANSACTIONS_DECODING, {
   all: true,
 });
 
@@ -80,7 +80,7 @@ const [DefineProgress, ReuseProgress] = createReusableTemplate<{
   };
 }>();
 
-watch(allEventTaskLoading, (loading) => {
+watch(isFullyDecoding, (loading) => {
   if (!loading) {
     refresh();
     emit('reset-undecoded-transactions');
@@ -132,7 +132,7 @@ onMounted(() => refresh());
 
       <DefineProgress #default="{ data }">
         <div
-          v-if="refreshing || eventTaskLoading"
+          v-if="refreshing || usedIsDecoding"
           class="flex flex-col justify-center gap-3"
         >
           <RuiProgress
@@ -211,7 +211,7 @@ onMounted(() => refresh());
       class="mb-4 flex items-center gap-4"
     >
       <RuiProgress
-        v-if="fetching || eventTaskLoading"
+        v-if="fetching || usedIsDecoding || isTransactionsLoading"
         color="primary"
         variant="indeterminate"
         circular
@@ -226,8 +226,11 @@ onMounted(() => refresh());
       <template v-if="fetching">
         {{ t('transactions.events_decoding.fetching') }}
       </template>
-      <template v-else-if="eventTaskLoading">
+      <template v-else-if="usedIsDecoding">
         {{ t('transactions.events_decoding.preparing') }}
+      </template>
+      <template v-else-if="isTransactionsLoading">
+        {{ t('transactions.events_decoding.decoded.not_started') }}
       </template>
       <template v-else>
         {{ t('transactions.events_decoding.decoded.true') }}
@@ -239,7 +242,7 @@ onMounted(() => refresh());
       <RuiButton
         v-if="total"
         color="primary"
-        :disabled="refreshing || eventTaskLoading"
+        :disabled="refreshing || isDecoding"
         @click="checkMissingEventsAndRedecode()"
       >
         <template #prepend>
@@ -251,7 +254,7 @@ onMounted(() => refresh());
             v-else
             circular
             variant="indeterminate"
-            size="24"
+            size="18"
             thickness="2"
           />
         </template>
@@ -259,7 +262,7 @@ onMounted(() => refresh());
       </RuiButton>
       <RuiButton
         color="error"
-        :disabled="refreshing || eventTaskLoading"
+        :disabled="refreshing || isDecoding"
         @click="redecodeAllEvents()"
       >
         <template #prepend>

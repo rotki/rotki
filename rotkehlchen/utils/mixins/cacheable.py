@@ -68,14 +68,10 @@ def _cache_response_timewise_base(
         **kwargs,
     )
     now = ts_now()
-    if ignore_cache is False and cache_key in wrappingobj.results_cache:
-        # Check the cache
-        cache_life_secs = now - wrappingobj.results_cache[cache_key].timestamp
-
     cache_miss = (
         ignore_cache is True or
         cache_key not in wrappingobj.results_cache or
-        cache_life_secs >= wrappingobj.cache_ttl_secs
+        now - wrappingobj.results_cache[cache_key].timestamp >= wrappingobj.cache_ttl_secs
     )
     return cache_miss, cache_key, now, kwargs
 

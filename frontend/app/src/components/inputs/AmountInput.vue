@@ -26,39 +26,90 @@ const textInput = ref<any>(null);
 const imask = ref<InputMask<any> | null>(null);
 const currentValue = ref<string>('');
 
+function removeLeadingZeros(
+  value?: string,
+  decimalSep: string = '.',
+): string {
+  if (!value)
+    return '';
+
+  // Special case: single "0" should stay as "0"
+  if (value === '0')
+    return value;
+
+  // Split the number into parts before and after decimal separator
+  const parts = value.split(decimalSep);
+
+  if (parts.length === 0)
+    return value;
+
+  if (parts.length === 1) {
+    // Check if there are leading zeros
+    if (!/^0+/.test(parts[0])) {
+      // No leading zeros, return the original value
+      return parts[0];
+    }
+
+    // Has leading zeros - only remove the leading zeros
+    return parts[0].replace(/^0+/, '') || '0'; // Return '0' if all zeros
+  }
+
+  // For numbers with decimal parts
+  if (!/^0+/.test(parts[0])) {
+    // No leading zeros before decimal, return original format
+    return value;
+  }
+
+  // Has leading zeros before decimal - only remove the leading zeros
+  return (parts[0].replace(/^0+/, '') || '0') + decimalSep + parts[1];
+}
+
 onMounted(() => {
   const inputWrapper = get(textInput)!;
   const input = inputWrapper.$el.querySelector('input') as HTMLInputElement;
 
+  const decimal = get(decimalSeparator);
+  const thousand = get(thousandSeparator);
+
   const newImask = IMask(input, {
     mask: Number,
-    radix: get(decimalSeparator),
+    radix: decimal,
     scale: get(integer) ? 0 : 100,
-    thousandsSeparator: get(thousandSeparator),
+    thousandsSeparator: thousand,
   });
 
   newImask.on('accept', () => {
     const mask = get(imask);
     if (mask) {
-      set(currentValue, mask?.value || '');
       set(model, mask?.unmaskedValue || '');
+      setCurrentValue(mask.value);
     }
   });
 
   const propValue = get(model);
   if (propValue) {
     newImask.unmaskedValue = propValue;
-    set(currentValue, newImask.value);
+    setCurrentValue(newImask.value);
   }
 
   set(imask, newImask);
 });
 
+function setCurrentValue(value?: string) {
+  const formattedValue = removeLeadingZeros(value, get(decimalSeparator));
+  set(currentValue, formattedValue);
+  const imaskVal = get(imask);
+  if (formattedValue !== value && imaskVal) {
+    imaskVal.value = formattedValue;
+    get(imask)?.updateValue();
+  }
+}
+
 watch(model, (value) => {
   const imaskVal = get(imask);
   if (imaskVal) {
     imaskVal.unmaskedValue = value;
-    set(currentValue, imaskVal.value);
+    setCurrentValue(imaskVal.value);
   }
 });
 

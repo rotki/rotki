@@ -90,7 +90,7 @@ from rotkehlchen.chain.evm.decoding.velodrome.velodrome_cache import (
     query_velodrome_like_data,
 )
 from rotkehlchen.chain.evm.names import find_ens_mappings, search_for_addresses_names
-from rotkehlchen.chain.evm.types import EvmlikeAccount, WeightedNode
+from rotkehlchen.chain.evm.types import EvmlikeAccount, NodeName, WeightedNode
 from rotkehlchen.chain.gnosis.modules.gnosis_pay.constants import CPT_GNOSIS_PAY
 from rotkehlchen.chain.zksync_lite.constants import ZKL_IDENTIFIER
 from rotkehlchen.constants import ONE
@@ -227,6 +227,7 @@ from rotkehlchen.types import (
     SPAM_PROTOCOL,
     SUPPORTED_BITCOIN_CHAINS,
     SUPPORTED_CHAIN_IDS,
+    SUPPORTED_EVM_CHAINS,
     SUPPORTED_EVM_CHAINS_TYPE,
     SUPPORTED_EVM_EVMLIKE_CHAINS,
     SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE,
@@ -2522,18 +2523,46 @@ class RestAPI:
         manager.node_inquirer.connect_to_multiple_nodes(nodes_to_connect)
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
-    def update_rpc_node(self, node: WeightedNode) -> Response:
+    def update_and_connect_rpc_node(self, node: WeightedNode) -> Response:
+        """
+        Updates the RPC node matching the provided identifier in the database, then
+        forces a reconnection by clearing the cached Web3 object and re-establishing
+        connections to all nodes.
+        """
+        with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
+            # get the current rpc endpoint so we can identify the node and remove it
+            # from node_inquirer.web3_mapping
+            if (old_endpoint := cursor.execute(
+                'SELECT endpoint FROM rpc_nodes WHERE identifier=?',
+                (node.identifier,),
+            ).fetchone()) is None:
+                return api_response(
+                    wrap_in_fail_result(message=f"Node with identifier {node.identifier} doesn't exist"),  # noqa: E501
+                    status_code=HTTPStatus.CONFLICT,
+                )
+
         try:
             self.rotkehlchen.data.db.update_rpc_node(node)
         except InputError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
 
-        # Update the connected nodes
         nodes_to_connect = self.rotkehlchen.data.db.get_rpc_nodes(
             blockchain=node.node_info.blockchain,
             only_active=True,
         )
-        manager = self.rotkehlchen.chains_aggregator.get_chain_manager(node.node_info.blockchain)
+
+        manager: EvmManager = self.rotkehlchen.chains_aggregator.get_chain_manager(
+            blockchain=node.node_info.blockchain,
+        )
+        for entry in list(manager.node_inquirer.web3_mapping):  # remove old node from memory
+            if entry.endpoint == old_endpoint:
+                manager.node_inquirer.web3_mapping.pop(entry, None)
+                break
+        else:
+            log.debug(
+                f'Failed to find node with endpoint {old_endpoint} in web3 mappings. Skipping',
+            )
+
         manager.node_inquirer.connect_to_multiple_nodes(nodes_to_connect)
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
@@ -2551,6 +2580,52 @@ class RestAPI:
         manager = self.rotkehlchen.chains_aggregator.get_chain_manager(blockchain)  # type: ignore
         manager.node_inquirer.connect_to_multiple_nodes(nodes_to_connect)
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
+
+    @async_api_call()
+    def connect_rpc_node(
+            self,
+            identifier: int | None,
+            blockchain: SupportedBlockchain,
+    ) -> dict[str, Any]:
+        """Attempt a connection to a node and return status"""
+        if blockchain not in SUPPORTED_EVM_CHAINS:
+            return {
+                'result': None,
+                'message': f'{blockchain} nodes are connected at login',
+                'status_code': HTTPStatus.BAD_REQUEST,
+            }
+
+        bindings: tuple[Any]
+        if identifier is not None:
+            query, bindings = 'SELECT name, endpoint, owned, blockchain FROM rpc_nodes WHERE identifier=?', (identifier,)  # noqa: E501
+        else:
+            query, bindings = 'SELECT name, endpoint, owned, blockchain FROM rpc_nodes WHERE blockchain=?', (blockchain.value,)  # noqa: E501
+
+        with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
+            if len(db_entries := cursor.execute(query, bindings).fetchall()) == 0:
+                return {
+                    'result': None,
+                    'message': 'RPC node not found',
+                    'status_code': HTTPStatus.BAD_REQUEST,
+                }
+
+        manager: EvmManager = self.rotkehlchen.chains_aggregator.get_chain_manager(blockchain)  # type: ignore
+        errors = []
+        for row in db_entries:
+            node = NodeName(
+                name=row[0],
+                endpoint=row[1],
+                owned=bool(row[2]),
+                blockchain=blockchain,  # type: ignore  # we have already limited the set of blockchains
+            )
+            if node.name == manager.node_inquirer.etherscan_node_name:
+                continue
+
+            success, msg = manager.node_inquirer.attempt_connect(node=node)
+            if success is False:
+                errors.append({'name': node.name, 'error': msg})
+
+        return {'result': {'errors': errors}, 'status_code': HTTPStatus.OK}
 
     def purge_module_data(self, module_name: PurgeableModuleName | None) -> Response:
         self.rotkehlchen.data.db.purge_module_data(module_name)
@@ -4221,16 +4296,13 @@ class RestAPI:
             entries: list[AddressbookEntry],
     ) -> Response:
         db_addressbook = DBAddressbook(self.rotkehlchen.data.db)
-        try:
-            with db_addressbook.write_ctx(book_type) as write_cursor:
-                db_addressbook.add_addressbook_entries(write_cursor=write_cursor, entries=entries)
-        except InputError as e:
-            return api_response(
-                result=wrap_in_fail_result(str(e)),
-                status_code=HTTPStatus.CONFLICT,
+        with db_addressbook.write_ctx(book_type) as write_cursor:
+            db_addressbook.add_or_update_addressbook_entries(
+                write_cursor=write_cursor,
+                entries=entries,
             )
-        else:
-            return api_response(result=OK_RESULT)
+
+        return api_response(result=OK_RESULT)
 
     def update_addressbook_entries(
             self,

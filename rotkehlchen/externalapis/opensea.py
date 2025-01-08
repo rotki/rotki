@@ -173,6 +173,7 @@ class Opensea(ExternalServiceWithApiKey):
         backoff = 1
         backoff_limit = 33
         timeout = timeout or CachedSettings().get_timeout_tuple()
+        response = None
         while backoff < backoff_limit:
             log.debug(f'Querying opensea: {query_str}')
             try:
@@ -205,6 +206,7 @@ class Opensea(ExternalServiceWithApiKey):
 
             break  # else we found response so let's break off the loop
 
+        assert response is not None  # if we get here response is populated
         if response.status_code != 200:
             raise RemoteError(
                 f'Opensea API request {response.url} failed '

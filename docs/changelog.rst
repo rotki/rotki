@@ -10,6 +10,7 @@ Changelog
 * :feature:`-` Safepass vesting claim start events will now be properly decoded.
 * :bug:`-` Bitmex balances will now be queried correctly.
 * :bug:`-` OKX balances will now include assets in the funding account.
+* :bug:`-` Bybit balances in the funding account will now be queried.
 * :bug:`9184` Nexo importer now supports updated format.
 * :bug:`-` Recursion errors during price inquiry are now handled properly.
 * :bug:`-` rotki Wrapped will no longer count transactions with ignored assets.
@@ -19,6 +20,9 @@ Changelog
 * :bug:`-` Fix a rare incorrect order when depositing and staking in curve gauges.
 * :bug:`-` When querying the price of BSQ rotki will define it as the price of 100 satoshi.
 * :bug:`-` Bitmex balances will now be queried correctly.
+* :bug:`-` Interactions with aave via safe should no longer be missing interest events.
+* :bug:`-` Aave v3 withdrawals of native assets should now have proper ordering and include interest earned.
+* :bug:`9200` Editing a Kraken event to include a custom asset should no longer botch history events retrieval.
 
 * :release:`1.37.0 <2024-12-24>`
 * :feature:`7144` Users will be able to import multiple addresses into the address book via CSV.

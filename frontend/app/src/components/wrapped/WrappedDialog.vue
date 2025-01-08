@@ -90,7 +90,7 @@ const gnosisPayResult = computed(() => {
   return result;
 });
 
-const currentYear = computed(() => new Date().getFullYear());
+const highlightedYear = 2024;
 
 async function fetchData() {
   if (get(loading))
@@ -101,7 +101,7 @@ async function fetchData() {
     const startVal = get(start);
 
     if (!startVal || !endVal) {
-      const range = getYearRange(get(currentYear));
+      const range = getYearRange(get(highlightedYear));
 
       if (!startVal) {
         set(start, range.start);
@@ -164,8 +164,8 @@ function getYearRange(year: number) {
   };
 }
 
-const isCurrentYear = computed(() => {
-  const range = getYearRange(get(currentYear));
+const isHighlightedYear = computed(() => {
+  const range = getYearRange(get(highlightedYear));
   return get(start) === range.start && get(end) === range.end;
 });
 
@@ -185,7 +185,7 @@ watch(refreshing, async (curr, old) => {
 <template>
   <BigDialog
     :display="display"
-    :title="t('wrapped.title', { year: isCurrentYear ? currentYear : undefined })"
+    :title="t('wrapped.title', { year: isHighlightedYear ? highlightedYear : undefined })"
     :subtitle="t('wrapped.subtitle')"
     :loading="loading"
     :action-hidden="true"
@@ -203,7 +203,7 @@ watch(refreshing, async (curr, old) => {
           class="mb-4"
         />
         <h2 class="text-4xl font-bold mb-2">
-          {{ t('wrapped.title', { year: isCurrentYear ? currentYear : undefined }) }}
+          {{ t('wrapped.title', { year: isHighlightedYear ? highlightedYear : undefined }) }}
         </h2>
         <p class="text-xl text-rui-text-secondary">
           {{ t('wrapped.year_subtitle') }}
@@ -510,7 +510,7 @@ watch(refreshing, async (curr, old) => {
         </WrappedCard>
 
         <WrappedScore
-          :is-current-year="isCurrentYear"
+          :is-current-year="isHighlightedYear"
           :score="summary.score"
         />
       </template>

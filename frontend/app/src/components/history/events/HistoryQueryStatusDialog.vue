@@ -17,7 +17,7 @@ import type {
   HistoryEventsQueryData,
 } from '@/types/websocket-messages';
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
     onlyChains?: Blockchain[];
     locations?: string[];
@@ -25,6 +25,7 @@ withDefaults(
     decodingStatus: EvmUnDecodedTransactionsData[];
     events?: HistoryEventsQueryData[];
     getKey: (item: EvmTransactionQueryData | HistoryEventsQueryData) => string;
+    loading: boolean;
   }>(),
   {
     events: () => [],
@@ -35,6 +36,11 @@ withDefaults(
 );
 
 const { t } = useI18n();
+
+const { loading } = toRefs(props);
+
+const loadingDebounced = refDebounced(loading, 500);
+const usedLoading = logicOr(loading, loadingDebounced);
 </script>
 
 <template>
@@ -115,6 +121,8 @@ const { t } = useI18n();
             </div>
           </div>
 
+          <RuiDivider class="-my-2" />
+
           <div>
             <h6 class="text-body-1 font-medium mb-2">
               {{ t('transactions.events_decoding.title') }}
@@ -127,8 +135,18 @@ const { t } = useI18n();
                 :item="item"
               />
             </template>
+            <template v-else-if="usedLoading">
+              <div class="flex gap-2 text-sm">
+                <RuiIcon
+                  color="primary"
+                  name="lu-hourglass"
+                  size="22"
+                />
+                {{ t('transactions.events_decoding.decoded.not_started') }}
+              </div>
+            </template>
             <template v-else>
-              <div class="flex gap-2">
+              <div class="flex gap-2 text-sm">
                 <SuccessDisplay
                   success
                   size="22"

@@ -3115,6 +3115,10 @@ class RpcNodeSchema(Schema):
     blockchain = BlockchainField(required=True, exclude_types=(SupportedBlockchain.ETHEREUM_BEACONCHAIN,))  # noqa: E501
 
 
+class ConnectToRPCNodes(RpcNodeSchema):
+    identifier = fields.Integer(load_default=None)
+
+
 class RpcAddNodeSchema(Schema):
     blockchain = BlockchainField(required=True, exclude_types=(SupportedBlockchain.ETHEREUM_BEACONCHAIN,))  # noqa: E501
     name = fields.String(

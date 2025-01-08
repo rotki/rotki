@@ -97,6 +97,7 @@ import {
   LuHeartHandshake,
   LuHistoricPrices,
   LuHistory,
+  LuHourglass,
   LuHouse,
   LuImage,
   LuInfo,
@@ -217,6 +218,7 @@ export function createRuiPlugin(defaults: Partial<RuiOptions['defaults']>): RuiP
       icons: [
         LuLayoutDashboard,
         LuHistory,
+        LuHourglass,
         LuImage,
         LuLayers,
         LuFileChartColumn,

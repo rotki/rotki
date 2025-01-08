@@ -33,7 +33,7 @@ const emit = defineEmits<{
   'show:dialog': [type: 'decode' | 'protocol-refresh'];
 }>();
 
-const { locations, onlyChains } = toRefs(props);
+const { decoding, loading, locations, onlyChains } = toRefs(props);
 
 const { t } = useI18n();
 
@@ -60,6 +60,10 @@ const refreshProtocolCacheTaskRunning = isTaskRunning(TaskType.REFRESH_GENERAL_C
 const items = computed(() => [...get(transactions), ...get(events)]);
 const isQuery = computed(() => get(currentAction) === 'query');
 
+const show = computed(() => get(loading) || get(decoding) || get(receivingProtocolCacheStatus) || get(items).length > 0);
+const showDebounced = refDebounced(show, 400);
+const usedShow = logicOr(show, showDebounced);
+
 function getItemKey(item: EvmTransactionQueryData | HistoryEventsQueryData) {
   if ('eventType' in item)
     return getEventKey(item);
@@ -84,7 +88,7 @@ function resetQueryStatus() {
 
 <template>
   <HistoryQueryStatusBar
-    v-if="loading || decoding || receivingProtocolCacheStatus || items.length > 0"
+    v-if="usedShow"
     :colspan="colspan"
     :finished="isQuery ? !loading : !receivingProtocolCacheStatus && !decoding"
     @reset="resetQueryStatus()"
@@ -109,6 +113,7 @@ function resetQueryStatus() {
         :events="events"
         :transactions="transactions"
         :decoding-status="decodingStatus"
+        :loading="loading"
         :protocol-cache-status="protocolCacheStatus"
         :get-key="getItemKey"
         :is-item-finished="isItemQueryFinished"

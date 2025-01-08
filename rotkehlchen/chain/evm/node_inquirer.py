@@ -141,7 +141,7 @@ def _query_web3_get_logs(
 
                 block_range = initial_block_range = 9999  # ensure that block range doesn't get reset to a range bigger than what is allowed for this node  # noqa: E501
                 continue
-            elif 'eth_getLogs is limited to a 1000 blocks range':  # seen in https://1rpc.io/gnosis  # noqa: E501
+            elif msg == 'eth_getLogs is limited to a 1000 blocks range':  # seen in https://1rpc.io/gnosis  # noqa: E501
                 if (until_block - start_block) // 1_000 > MAX_NODE_LOG_QUERY_CALLS:
                     log.debug(f'Querying logs with a range of 1000 from {web3} will take too much time. Stopping here')  # noqa: E501
                     raise
@@ -240,6 +240,9 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
         # To force the app to retry a node a restart is needed.
         self.failed_to_connect_nodes: set[str] = set()
         LockableQueryMixIn.__init__(self)
+        # Log the available nodes so we have extra information when debugging connection errors.
+        nodes = '\n'.join([str(x.serialize()) for x in self.default_call_order()])  # variable because \ is not valid in f-strings  # noqa: E501
+        log.debug(f'RPC nodes at startup {nodes}')
 
     def maybe_connect_to_nodes(self, when_tracked_accounts: bool) -> None:
         """Start async connect to the saved nodes for the given evm chain if needed.
@@ -525,7 +528,7 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
         The first node in the call order that gets a successful response returns.
         If none get a result then RemoteError is raised
         """
-        for weighted_node in call_order:
+        for node_idx, weighted_node in enumerate(call_order):
             node_info = weighted_node.node_info
             web3node = self.web3_mapping.get(node_info, None)
             if (
@@ -569,7 +572,10 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
                     TypeError,  # happened at the web3 level calling `apply_result_formatters` when the RPC node returned `None` in the response's result # noqa: E501
                     ValueError,  # not removing yet due to possibility of raising from missing trie error  # noqa: E501
             ) as e:
-                log.warning(f'Failed to query {node_info.name} for {method!s} due to {e!s}')
+                log.warning(
+                    f'Failed to query {node_info.name} with position on the query list {node_idx} '
+                    f'for {method.__name__} due to {e!s}',
+                )
                 # Catch all possible errors here and just try next node call
                 continue
 
@@ -577,12 +583,10 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
 
         # no node in the call order list was successfully queried
         log.error(
-            f'Failed to query {method!s} after trying the following '
-            f'nodes: {[x.node_info.name for x in call_order]}',
+            f'Failed to query {method.__name__} after trying the following '
+            f'nodes: {[x.node_info.name for x in call_order]}. Call parameters were {kwargs}',
         )
-        raise RemoteError(
-            f'Please check your network and confirm sufficient nodes are connected for {self.blockchain!s}.',  # noqa: E501
-        )
+        raise RemoteError(f'Error querying information from {self.blockchain!s}. Checks logs to obtain more information')  # noqa: E501
 
     def _get_latest_block_number(self, web3: Web3 | None) -> int:
         if web3 is not None:

@@ -8,7 +8,7 @@ import requests
 from rotkehlchen.assets.asset import Asset, AssetWithOracles
 from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.constants.resolver import evm_address_to_identifier, strethaddress_to_identifier
-from rotkehlchen.constants.timing import DAY_IN_SECONDS
+from rotkehlchen.constants.timing import DAY_IN_SECONDS, YEAR_IN_SECONDS
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import RemoteError
@@ -743,6 +743,11 @@ class Coingecko(
             timestamp: Timestamp,
             seconds: int | None = None,
     ) -> bool:
+        """Apart from penalization, for coingecko if there is no paid API key then it won't
+        allow you to query further than a year in history. So let's save ourselves network calls"""
+        if self.api_key is None and ts_now() - timestamp > YEAR_IN_SECONDS:
+            return False
+
         return not self.is_penalized()
 
     def query_historical_price(

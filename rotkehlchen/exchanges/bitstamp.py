@@ -693,7 +693,7 @@ class Bitstamp(ExchangeInterface):
 
         timestamp = ts_sec_to_ms(deserialize_timestamp_from_bitstamp_date(raw_movement['datetime']))  # noqa: E501
         amount: FVal = ZERO
-        fee_asset: AssetWithOracles
+        fee_asset: AssetWithOracles | None = None
         for raw_movement_key, value in raw_movement.items():
             if raw_movement_key in KNOWN_NON_ASSET_KEYS_FOR_MOVEMENTS:
                 continue
@@ -709,7 +709,7 @@ class Bitstamp(ExchangeInterface):
                 fee_asset = candidate_fee_asset
                 break
 
-        if amount == ZERO:
+        if amount == ZERO or fee_asset is None:
             raise DeserializationError(
                 'Could not deserialize Bitstamp asset movement from user transaction. '
                 f'Unexpected asset amount combination found in: {raw_movement}.',

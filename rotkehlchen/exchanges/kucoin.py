@@ -280,7 +280,7 @@ class Kucoin(ExchangeInterface):
 
             break
 
-        return response
+        return response  # pyright: ignore  # we get in the loop at least once
 
     @overload
     def _api_query_paginated(
@@ -698,12 +698,12 @@ class Kucoin(ExchangeInterface):
 
             raise AssertionError(f'Unexpected case: {case}') from e
 
-        try:
-            error_code = response_dict.get('code', None)
-            if error_code is not None:
+        error_code = response_dict.get('code', None)
+        if error_code is not None:
+            try:
                 error_code = deserialize_int_from_str(error_code, 'kucoin response parsing')
-        except DeserializationError as e:
-            raise RemoteError(f'Could not read Kucoin error code {error_code} as an int') from e
+            except DeserializationError as e:
+                raise RemoteError(f'Could not read Kucoin error code {error_code} as an int') from e  # noqa: E501
 
         if error_code in API_KEY_ERROR_CODE_ACTION:
             msg = API_KEY_ERROR_CODE_ACTION[error_code]

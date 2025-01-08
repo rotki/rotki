@@ -104,7 +104,7 @@ class Graph(ExternalServiceWithApiKey):
         are no retries left.
         - APIKeyNotConfigured
         """
-        prefix = ''
+        prefix, result = '', None
         if param_types is not None:
             prefix = 'query '
             prefix += json.dumps(param_types).replace('"', '').replace('{', '(').replace('}', ')')
@@ -154,5 +154,6 @@ class Graph(ExternalServiceWithApiKey):
             else:
                 break
 
-        log.debug('Got result from The Graph query')
+        assert result  # result will always exist here.
+        log.debug(f'Got result {result} from The Graph query')
         return result

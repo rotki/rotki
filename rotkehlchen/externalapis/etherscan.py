@@ -266,8 +266,8 @@ class Etherscan(ExternalServiceWithApiKey, ABC):
         cached_settings = CachedSettings()
         timeout = timeout or cached_settings.get_timeout_tuple()
         backoff_limit = cached_settings.get_query_retry_limit()  # max time spent trying to get a response from etherscan in case of rate limits  # noqa: E501
+        response = None
         while backoff < backoff_limit:
-            response = None
             log.debug(f'Querying {self.chain} etherscan: {self.api_url} with params: {params}')
             try:
                 response = self.session.get(url=self.api_url, params=params, timeout=timeout)
@@ -464,8 +464,11 @@ class Etherscan(ExternalServiceWithApiKey, ABC):
         chain_id = self.chain.to_chain_id()
         while True:
             result = self._query(module='account', action=action, options=options)
-            if len(result) != 0:
-                last_ts = deserialize_timestamp(result[0]['timeStamp'])
+            if len(result) == 0:
+                log.debug('Length of etherscan account result is 0. Breaking out of the query')
+                break
+
+            last_ts = deserialize_timestamp(result[0]['timeStamp'])
             for entry in result:
                 try:  # Handle normal transactions. Internal dict does not contain a hash sometimes
                     if is_internal or entry['hash'].startswith('GENESIS') is False:

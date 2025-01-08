@@ -52,7 +52,9 @@ class WethDecoder(EthBaseWethDecoder):
         return DEFAULT_DECODING_OUTPUT
 
     def _decode_withdrawal_event(self, context: 'DecoderContext') -> 'DecodingOutput':
-        withdrawer = bytes_to_address(context.tx_log.topics[1])
+        if not self.base.is_tracked(withdrawer := bytes_to_address(context.tx_log.topics[1])):
+            return DEFAULT_DECODING_OUTPUT
+
         withdrawn_amount_raw = int.from_bytes(context.tx_log.data[:32])
         withdrawn_amount = asset_normalized_value(
             amount=withdrawn_amount_raw,
