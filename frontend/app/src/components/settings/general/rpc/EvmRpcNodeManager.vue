@@ -28,6 +28,7 @@ const { chain } = toRefs(props);
 
 const nodes = ref<EvmRpcNodeList>([]);
 const state = ref<EvmRpcNodeManageState>();
+const reconnecting = ref<boolean>(false);
 
 const { notify } = useNotificationsStore();
 const { setMessage } = useMessageStore();
@@ -130,6 +131,18 @@ function showDeleteConfirmation(item: EvmRpcNode) {
   );
 }
 
+const anyDisconnected = computed(() => get(nodes).some(node => !isNodeConnected(node) && node.active));
+
+async function reConnect(identifier?: number) {
+  set(reconnecting, true);
+  const success = await api.reConnectNode(identifier);
+  set(reconnecting, false);
+
+  if (success) {
+    await loadNodes();
+  }
+}
+
 onMounted(async () => {
   await loadNodes();
 });
@@ -145,7 +158,34 @@ defineExpose({
       <tr>
         <th>{{ t('evm_rpc_node_manager.node') }}</th>
         <th>{{ t('evm_rpc_node_manager.node_weight') }}</th>
-        <th>{{ t('evm_rpc_node_manager.connectivity') }}</th>
+        <th>
+          <div class="flex items-center gap-2">
+            <div class="w-6">
+              <RuiTooltip
+                v-if="anyDisconnected"
+                :open-delay="400"
+              >
+                <template #activator>
+                  <RuiButton
+                    :disabled="reconnecting"
+                    icon
+                    color="primary"
+                    variant="text"
+                    size="sm"
+                    @click="reConnect()"
+                  >
+                    <RuiIcon
+                      name="lu-rotate-cw"
+                      size="16"
+                    />
+                  </RuiButton>
+                </template>
+                {{ t('evm_rpc_node_manager.reconnect.all') }}
+              </RuiTooltip>
+            </div>
+            {{ t('evm_rpc_node_manager.connectivity') }}
+          </div>
+        </th>
         <th />
       </tr>
     </thead>
@@ -204,34 +244,59 @@ defineExpose({
           </span>
         </td>
         <td>
-          <BadgeDisplay
-            v-if="isNodeConnected(item)"
-            color="green"
-            class="items-center gap-2 !leading-6"
-          >
-            <RuiIcon
-              color="success"
-              size="16"
-              name="wifi-line"
-            />
-            <span>
-              {{ t('evm_rpc_node_manager.connected.true') }}
-            </span>
-          </BadgeDisplay>
-          <BadgeDisplay
-            v-else
-            color="red"
-            class="items-center gap-2 !leading-6"
-          >
-            <RuiIcon
-              color="error"
-              size="16"
-              name="wifi-off-line"
-            />
-            <span>
-              {{ t('evm_rpc_node_manager.connected.false') }}
-            </span>
-          </BadgeDisplay>
+          <div class="flex items-center gap-2">
+            <div class="w-6">
+              <RuiTooltip
+                v-if="!isNodeConnected(item) && item.active"
+                :open-delay="400"
+              >
+                <template #activator>
+                  <RuiButton
+                    :disabled="reconnecting"
+                    icon
+                    color="primary"
+                    variant="text"
+                    size="sm"
+                    @click="reConnect(item.identifier)"
+                  >
+                    <RuiIcon
+                      name="lu-rotate-cw"
+                      size="16"
+                    />
+                  </RuiButton>
+                </template>
+                {{ t('evm_rpc_node_manager.reconnect.single') }}
+              </RuiTooltip>
+            </div>
+            <BadgeDisplay
+              v-if="isNodeConnected(item)"
+              color="green"
+              class="items-center gap-2 !leading-6"
+            >
+              <RuiIcon
+                color="success"
+                size="16"
+                name="wifi-line"
+              />
+              <span>
+                {{ t('evm_rpc_node_manager.connected.true') }}
+              </span>
+            </BadgeDisplay>
+            <BadgeDisplay
+              v-else
+              color="red"
+              class="items-center gap-2 !leading-6"
+            >
+              <RuiIcon
+                color="error"
+                size="16"
+                name="wifi-off-line"
+              />
+              <span>
+                {{ t('evm_rpc_node_manager.connected.false') }}
+              </span>
+            </BadgeDisplay>
+          </div>
         </td>
         <td>
           <div class="flex items-center gap-2 justify-end">
