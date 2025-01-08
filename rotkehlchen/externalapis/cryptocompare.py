@@ -412,7 +412,7 @@ class Cryptocompare(
                 })
             return data
 
-        return Price(result1 * result2)
+        return Price(result1 * result2)  # pyright: ignore  # pyright does not see the if above
 
     def query_endpoint_histohour(
             self,
