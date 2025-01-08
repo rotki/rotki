@@ -1,3 +1,4 @@
+import { objectOmit } from '@vueuse/shared';
 import { Section, Status } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import { logger } from '@/utils/logging';
@@ -8,7 +9,12 @@ import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useStatusUpdater } from '@/composables/status';
 import { useKrakenApi } from '@/composables/api/staking/kraken';
-import type { KrakenStakingEvents, KrakenStakingPagination, ReceivedAmount } from '@/types/staking';
+import type {
+  KrakenStakingDateFilter,
+  KrakenStakingEvents,
+  KrakenStakingPagination,
+  ReceivedAmount,
+} from '@/types/staking';
 import type { TaskMeta } from '@/types/task';
 
 function defaultPagination(): KrakenStakingPagination {
@@ -82,7 +88,10 @@ export const useKrakenStakingStore = defineStore('staking/kraken', () => {
     await awaitTask<KrakenStakingEvents, TaskMeta>(taskId, TaskType.STAKING_KRAKEN, taskMeta, true);
   };
 
-  const fetchEvents = async (refresh = false): Promise<void> => {
+  const fetchEvents = async (
+    refresh = false,
+    dateFilter?: KrakenStakingDateFilter,
+  ): Promise<void> => {
     const taskType = TaskType.STAKING_KRAKEN;
     try {
       const firstLoad = isFirstLoad();
@@ -92,13 +101,20 @@ export const useKrakenStakingStore = defineStore('staking/kraken', () => {
       setStatus(firstLoad ? Status.LOADING : Status.REFRESHING);
 
       if (refresh || firstLoad) {
-        if (firstLoad)
-          set(rawEvents, await api.fetchKrakenStakingEvents(get(pagination)));
+        if (firstLoad) {
+          set(rawEvents, await api.fetchKrakenStakingEvents({
+            ...objectOmit(get(pagination), ['fromTimestamp', 'toTimestamp']),
+            ...dateFilter,
+          }));
+        }
 
         setStatus(Status.REFRESHING);
         await refreshEvents();
       }
-      set(rawEvents, await api.fetchKrakenStakingEvents(get(pagination)));
+      set(rawEvents, await api.fetchKrakenStakingEvents({
+        ...objectOmit(get(pagination), ['fromTimestamp', 'toTimestamp']),
+        ...dateFilter,
+      }));
 
       setStatus(get(isTaskRunning(taskType)) ? Status.REFRESHING : Status.LOADED);
     }

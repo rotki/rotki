@@ -11,36 +11,15 @@ import AppImage from '@/components/common/AppImage.vue';
 import FullSizeContent from '@/components/common/FullSizeContent.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import type { RouteLocationRaw } from 'vue-router';
+import type { KrakenStakingDateFilter } from '@/types/staking';
+
+const filters = ref<KrakenStakingDateFilter>({});
 
 const { isLoading, shouldShowLoadingScreen } = useStatusStore();
 const { $reset, load } = useKrakenStakingStore();
-
 const { connectedExchanges } = storeToRefs(useExchangesStore());
-const isKrakenConnected = computed(() => {
-  const exchanges = get(connectedExchanges);
-  return exchanges.some(({ location }) => location === 'kraken');
-});
-
-onMounted(async () => {
-  if (get(isKrakenConnected))
-    await load(false);
-});
-
-onUnmounted(() => {
-  $reset();
-});
-
-watch(isKrakenConnected, async (isKrakenConnected) => {
-  if (isKrakenConnected)
-    await load(false);
-});
-
-const loading = shouldShowLoadingScreen(Section.STAKING_KRAKEN);
-const refreshing = isLoading(Section.STAKING_KRAKEN);
 
 const { t } = useI18n();
-
-const refresh = () => load(true);
 
 const addKrakenApiKeysLink: RouteLocationRaw = {
   path: `${Routes.API_KEYS_EXCHANGES}`,
@@ -48,6 +27,35 @@ const addKrakenApiKeysLink: RouteLocationRaw = {
     add: 'true',
   },
 };
+
+const loading = shouldShowLoadingScreen(Section.STAKING_KRAKEN);
+const refreshing = isLoading(Section.STAKING_KRAKEN);
+
+const isKrakenConnected = computed(() => {
+  const exchanges = get(connectedExchanges);
+  return exchanges.some(({ location }) => location === 'kraken');
+});
+
+const refresh = () => load(true, get(filters));
+
+watch(isKrakenConnected, async (isKrakenConnected) => {
+  if (isKrakenConnected)
+    await load(false, get(filters));
+});
+
+watch(filters, async () => {
+  if (get(isKrakenConnected))
+    await load(false, get(filters));
+});
+
+onMounted(async () => {
+  if (get(isKrakenConnected))
+    await load(false, get(filters));
+});
+
+onUnmounted(() => {
+  $reset();
+});
 </script>
 
 <template>
@@ -110,6 +118,9 @@ const addKrakenApiKeysLink: RouteLocationRaw = {
         {{ t('kraken_page.loading') }}
       </template>
     </ProgressScreen>
-    <KrakenStaking v-else />
+    <KrakenStaking
+      v-else
+      v-model="filters"
+    />
   </TablePageLayout>
 </template>

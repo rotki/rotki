@@ -1,7 +1,7 @@
 =========
 Changelog
 =========
-
+* :feature:`-` Adds filtering by date for kraken staking rewards.
 * :feature:`-` Current and historical token prices will now also be queryable via Alchemy.
 * :feature:`9083` rotki will now correctly decode ParaSwap v6 swaps in all supported EVM chains.
 * :feature:`9120` rotki will now correctly decode Firebird Finance swaps in all supported EVM chains.

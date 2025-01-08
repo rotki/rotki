@@ -45,12 +45,14 @@ export interface KrakenStakingPagination {
   offset: number;
   orderByAttributes: (keyof KrakenStakingEvent)[];
   ascending: boolean[];
-  fromTimestamp?: string;
-  toTimestamp?: string;
+  fromTimestamp?: number;
+  toTimestamp?: number;
   asset?: string;
   eventSubtypes?: string[];
   onlyCache?: boolean;
 }
+
+export type KrakenStakingDateFilter = Pick<KrakenStakingPagination, 'fromTimestamp' | 'toTimestamp'>;
 
 export function emptyPagination(): KrakenStakingPagination {
   return {
