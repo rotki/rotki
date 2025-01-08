@@ -25,6 +25,14 @@ class GeolocationData(NamedTuple):
     country_code: str
 
 
+def _handle_retrieval_error(geoip_dir: Path, message: str) -> Path | None:
+    log.error(message)
+    if len(old_files := list(geoip_dir.glob('*.mmdb'))) == 0:
+        return None
+
+    return old_files[0]
+
+
 def retrieve_location_data(data_dir: Path) -> GeolocationData | None:
     """This functions tries to get the country of the user based on the ip.
     To do that it makes use of an open ip to country database and tries to obtain
@@ -36,8 +44,7 @@ def retrieve_location_data(data_dir: Path) -> GeolocationData | None:
     """
     geoip_dir = data_dir / APPDIR_NAME / MISCDIR_NAME
     geoip_dir.mkdir(parents=True, exist_ok=True)
-    # get latest database version
-    metadata_query_failed = False
+
     try:
         response = requests.get(
             url='https://api.github.com/repos/geoacumen/geoacumen-country/branches/master',
@@ -50,22 +57,16 @@ def retrieve_location_data(data_dir: Path) -> GeolocationData | None:
             location='Analytics',
         )
     except requests.exceptions.RequestException as e:
-        log.debug(f'Failed to get metadata information for geoip file. {e!s}')
-        metadata_query_failed = True
+        filename = _handle_retrieval_error(geoip_dir, f'Failed to get metadata information for geoip file. {e!s}')  # noqa: E501
     except (DeserializationError, JSONDecodeError) as e:
-        log.debug(f'Failed to deserialize date in metadata information for geoip file. {e!s}')
-        metadata_query_failed = True
+        filename = _handle_retrieval_error(geoip_dir, f'Failed to deserialize date in metadata information for geoip file. {e!s}')  # noqa: E501
     except KeyError as e:
-        log.debug(f'Github response for geoip file had missing key {e!s}')
-        metadata_query_failed = True
-
-    if metadata_query_failed:
-        old_files = list(geoip_dir.glob('*.mmdb'))
-        if len(old_files) == 0:
-            return None
-        filename = old_files[0]
+        filename = _handle_retrieval_error(geoip_dir, f'Github response for geoip file had missing key {e!s}')  # noqa: E501
     else:
         filename = geoip_dir / f'geoip-{date}.mmdb'
+
+    if filename is None:
+        return None
 
     if not filename.is_file():
         # Remove old files

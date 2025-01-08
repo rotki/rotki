@@ -116,7 +116,12 @@ def _parse_airdrops(database: 'DBHandler', airdrops_data: dict[str, Any]) -> dic
                 try:
                     if (chain_id_raw := new_asset_data.get('chain_id')) is not None:
                         chain_id = ChainID.deserialize(chain_id_raw)
+                    else:
+                        log.warning(f'Airdrops Index contains no ChainID of a token for {protocol_name}. Assuming mainnet')  # noqa: E501
+                        chain_id = ChainID.ETHEREUM
+
                     new_asset_type = AssetType.deserialize(new_asset_data['asset_type'])
+
                 except DeserializationError as e:
                     log.error(f'Airdrops Index contains an invalid ChainID or AssetType of a token for {protocol_name}. {e!s}')  # noqa: E501
                     continue
@@ -380,6 +385,7 @@ def calculate_claimed_airdrops(
                         f'Failed to read extra_data when reading EvmEvent entry '
                         f'{db_extra_data} from the DB due to {e!s}. Skipping airdrop claim check.',
                     )
+                    continue
 
                 if AIRDROP_IDENTIFIER_KEY not in extra_data:
                     log.warning(
@@ -426,8 +432,7 @@ def process_airdrop_with_api_data(
             data: dict[str, Any] = response.json()
         except requests.exceptions.RequestException as e:
             log.error(
-                f'Failed to query {protocol_name} airdrop API for address {address} due to {e}. '
-                f'{response.text=}',
+                f'Failed to query {protocol_name} airdrop API for address {address} due to {e}. ',
             )
             continue
 

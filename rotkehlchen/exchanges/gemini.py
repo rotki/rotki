@@ -206,7 +206,7 @@ class Gemini(ExchangeInterface):
                 # get out of the retry loop, we did not get 429 complaint
                 break
 
-        return response
+        return response  # pyright: ignore # we get in the loop at least once
 
     def _public_api_query(
             self,
@@ -338,7 +338,7 @@ class Gemini(ExchangeInterface):
                 continue
             except UnsupportedAsset as e:
                 self.msg_aggregator.add_warning(
-                    f'Found gemini {balance_type} balance result with unsupported '
+                    f'Found gemini balance result with unsupported '
                     f'asset {e.identifier}. Ignoring it.',
                 )
                 continue
@@ -347,13 +347,10 @@ class Gemini(ExchangeInterface):
                 if isinstance(e, KeyError):
                     msg = f'Missing key entry for {msg}.'
                 self.msg_aggregator.add_error(
-                    f'Error processing a gemini {balance_type} balance. Check logs '
-                    f'for details. Ignoring it.',
+                    'Error processing a gemini balance. Check logs '
+                    'for details. Ignoring it.',
                 )
-                log.error(
-                    f'Error processing a gemini {balance_type} balance',
-                    error=msg,
-                )
+                log.error('Error processing a gemini balance', error=msg)
                 continue
 
         return returned_balances, ''

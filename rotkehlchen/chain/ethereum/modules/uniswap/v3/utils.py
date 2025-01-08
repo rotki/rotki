@@ -503,6 +503,8 @@ def _decode_uniswap_v3_result(
                 f'Error fetching ethereum token {token.address!s} while decoding Uniswap V3 LP '
                 f'position due to: {e!s}',
             )
+            continue
+
         # Classify the asset either as price known or unknown
         if asset.has_oracle():
             price_known_tokens.add(asset)

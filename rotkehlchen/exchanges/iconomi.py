@@ -67,6 +67,8 @@ def trade_from_iconomi(raw_trade: dict) -> Trade:
         tx_amount = deserialize_asset_amount(raw_trade['source_amount'])
         native_amount = deserialize_asset_amount(raw_trade['target_amount'])
         native_asset = asset_from_iconomi(raw_trade['target_ticker'])
+    else:
+        raise DeserializationError(f'Unexpected Iconomi trade type {raw_trade["type"]}')
 
     amount = tx_amount
     rate = Price(native_amount / tx_amount)

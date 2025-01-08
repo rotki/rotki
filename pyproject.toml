@@ -348,3 +348,38 @@ known-third-party = ["packaging"]  # packaging is otherwise detected as first-pa
 
 ignore_names = ["fixture_*", "*Accountant", "*Decoder"]
 sort_by_size = true
+
+
+[tool.pyright]
+
+reportUndefinedVariable = "error"
+reportGeneralTypeIssues = false
+reportUnknownParameterType = false
+reportMissingTypeStubs = false
+reportMissingImports = false
+reportUnknownMemberType = false
+reportUnknownVariableType = false
+reportUntypedFunctionDecorator = false
+reportUnknownArgumentType = false
+reportMissingTypeArgument = false
+reportInvalidTypeVarUse = false
+reportCallInDefaultInitializer = false
+reportAttributeAccessIssue = false
+reportPrivateImportUsage = false
+reportArgumentType = false
+reportIncompatibleMethodOverride = false
+reportOperatorIssue = false
+reportIndexIssue = false
+reportOptionalMemberAccess = false
+reportCallIssue = false
+reportOptionalSubscript = false
+reportInvalidTypeForm = false
+reportIncompatibleVariableOverride = false
+reportReturnType = false
+reportOverlappingOverload = false
+reportTypedDictNotRequiredAccess = false
+reportOptionalContextManager = false
+reportAssignmentType = false
+
+exclude = ["**/tests"]
+pythonVersion = "3.11"

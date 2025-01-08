@@ -234,41 +234,42 @@ class CurveCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin)
                 )
             ]
 
-        # Make sure that the order is the following:
-        # 1. Return pool token event
-        # 2. Withdrawal 1
-        # 3. Withdrawal 2
-        # etc.
-        if return_event is not None and len(withdrawn_assets) > 0:
-            return_event.extra_data = {'withdrawal_events_num': len(withdrawn_assets)}
-            # for deposit zap contracts, this is handled using an action item
-            if (
-                user_or_contract_address in self.curve_deposit_contracts or
-                self.base.is_tracked(user_or_contract_address) is False
-            ):
-                action_items = [ActionItem(
-                    action='transform',
-                    from_event_type=HistoryEventType.RECEIVE,
-                    from_event_subtype=HistoryEventSubType.NONE,
-                    asset=withdrawal_asset,
-                    to_event_type=HistoryEventType.WITHDRAWAL,
-                    to_event_subtype=HistoryEventSubType.REMOVE_ASSET,
-                    to_notes=f'Remove {{amount}} {{symbol}} from {tx_log.address} curve pool',  # amount and symbol set at actionitem process  # noqa: E501
-                    to_counterparty=CPT_CURVE,
-                ) for withdrawal_asset in withdrawn_assets]
-                action_items[0].paired_events_data = ((return_event,), True)
-                return DecodingOutput(action_items=action_items)
+            # Make sure that the order is the following:
+            # 1. Return pool token event
+            # 2. Withdrawal 1
+            # 3. Withdrawal 2
+            # etc.
+            if len(withdrawn_assets) > 0:
+                return_event.extra_data = {'withdrawal_events_num': len(withdrawn_assets)}
+                # for deposit zap contracts, this is handled using an action item
+                if (
+                    user_or_contract_address in self.curve_deposit_contracts or
+                    self.base.is_tracked(user_or_contract_address) is False
+                ):
+                    action_items = [ActionItem(
+                        action='transform',
+                        from_event_type=HistoryEventType.RECEIVE,
+                        from_event_subtype=HistoryEventSubType.NONE,
+                        asset=withdrawal_asset,
+                        to_event_type=HistoryEventType.WITHDRAWAL,
+                        to_event_subtype=HistoryEventSubType.REMOVE_ASSET,
+                        to_notes=f'Remove {{amount}} {{symbol}} from {tx_log.address} curve pool',  # amount and symbol set at actionitem process  # noqa: E501
+                        to_counterparty=CPT_CURVE,
+                    ) for withdrawal_asset in withdrawn_assets]
+                    action_items[0].paired_events_data = ((return_event,), True)
+                    return DecodingOutput(action_items=action_items)
 
-            self._set_extra_data(
-                action_type='removal',
-                return_or_receive_event=return_event,
-                withdrawal_or_deposit_events=withdrawal_events,
-                all_events=decoded_events,
-            )
-            maybe_reshuffle_events(
-                ordered_events=[return_event] + withdrawal_events,
-                events_list=decoded_events,
-            )
+                self._set_extra_data(
+                    action_type='removal',
+                    return_or_receive_event=return_event,
+                    withdrawal_or_deposit_events=withdrawal_events,
+                    all_events=decoded_events,
+                )
+                maybe_reshuffle_events(
+                    ordered_events=[return_event] + withdrawal_events,
+                    events_list=decoded_events,
+                )
+
         else:
             log.error(
                 f'Expected to see a return pool token event and '
@@ -464,6 +465,8 @@ class CurveCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin)
         # is a swap in a metapool (TOKEN_EXCHANGE_UNDERLYING) we will skip token check.
         sold_token_address: ChecksumEvmAddress | None = None
         bought_token_address: ChecksumEvmAddress | None = None
+        # Spender/receiver and raw bought amount should be found below or else we error
+        spender_address, receiver_address, raw_bought_amount = None, None, None
 
         swapping_contracts: set[ChecksumEvmAddress] = set()
         # we check if before using the router any pool is used separately, by checking all the logs
@@ -486,6 +489,7 @@ class CurveCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin)
                     sold_token_address = self.pools[pool_address][sold_token_id]
                     bought_token_address = self.pools[pool_address][bought_token_id]
                 break  # As soon as we find the info, we break out of the loop.
+
         else:  # only the router is used
             raw_sold_amount = None
 
@@ -516,6 +520,13 @@ class CurveCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin)
                 if address == ZERO_ADDRESS:
                     break
                 bought_token_address = address
+
+        if spender_address is None or receiver_address is None or raw_bought_amount is None:
+            log.error(
+                f'Did not find spend or receive addresses or raw bought amount for a curve swap. '
+                f'{context.transaction.tx_hash.hex()}.',
+            )
+            return DEFAULT_DECODING_OUTPUT
 
         sold_asset = self._read_curve_asset(
             asset_address=sold_token_address,
@@ -750,16 +761,16 @@ class CurveCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin)
         # due to double {}. Then later in the action item `amount` is replaced by its value.
         action_items = [] if gauge_token is None or len(gauge_events) == 0 else [ActionItem(
             action='transform',
-            from_event_type=from_event_type,
+            from_event_type=from_event_type,  # pyright: ignore  # the above if check makes sure this exists
             from_event_subtype=HistoryEventSubType.NONE,
             asset=gauge_token,
-            to_event_subtype=pair_subtype,
-            to_notes=pair_note.format(
+            to_event_subtype=pair_subtype,  # pyright: ignore  # the above if check makes sure this exists
+            to_notes=pair_note.format(  # pyright: ignore  # the above if check makes sure pair_node exists
                 symbol=gauge_token.symbol,
                 address=gauge_address,
             ),  # amount set at action item process
             to_counterparty=CPT_CURVE,
-            paired_events_data=(gauge_events, from_event_type == HistoryEventType.RECEIVE),
+            paired_events_data=(gauge_events, from_event_type == HistoryEventType.RECEIVE),  # pyright: ignore  # the above if check makes sure from_event_type exists
         )]
 
         return DecodingOutput(
