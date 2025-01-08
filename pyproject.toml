@@ -377,7 +377,7 @@ reportInvalidTypeForm = false
 reportIncompatibleVariableOverride = false
 reportReturnType = false
 reportOverlappingOverload = false
-reportTypedDictNotRequiredAccess = false
+reportTypedDictNotRequiredAccess = "error"
 reportOptionalContextManager = false
 reportAssignmentType = false
 

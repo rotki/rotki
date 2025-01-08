@@ -975,9 +975,9 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
             to_block=to_block,
         )
 
-        if event_abi['anonymous']:
+        if event_abi.get('anonymous', False):
             # web3.py does not handle the anonymous events correctly and adds the first topic
-            filter_args['topics'] = filter_args['topics'][1:]
+            filter_args['topics'] = filter_args['topics'][1:]  # pyright: ignore  # I think FilterParams is not well defined. It always has topics
         events: list[dict[str, Any]] = []
         start_block = from_block
 
