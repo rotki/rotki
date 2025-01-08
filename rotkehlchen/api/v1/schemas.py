@@ -22,6 +22,7 @@ from rotkehlchen.assets.types import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.arbitrum_one.constants import ARBITRUM_ONE_ETHERSCAN_NODE_NAME
 from rotkehlchen.chain.base.constants import BASE_ETHERSCAN_NODE_NAME
+from rotkehlchen.chain.binance_sc.constants import BINANCE_SC_ETHERSCAN_NODE_NAME
 from rotkehlchen.chain.bitcoin.bch.utils import (
     is_valid_bitcoin_cash_address,
     validate_bch_address_input,
@@ -3169,6 +3170,7 @@ class RpcNodeEditSchema(RpcAddNodeSchema):
                 BASE_ETHERSCAN_NODE_NAME,
                 GNOSIS_ETHERSCAN_NODE_NAME,
                 SCROLL_ETHERSCAN_NODE_NAME,
+                BINANCE_SC_ETHERSCAN_NODE_NAME,
             ):
                 raise ValidationError(
                     message="Can't change the etherscan node name",

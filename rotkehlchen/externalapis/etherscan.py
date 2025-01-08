@@ -12,6 +12,7 @@ import gevent
 import requests
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
+from rotkehlchen.chain.binance_sc.constants import BINANCE_SC_GENESIS
 from rotkehlchen.chain.evm.constants import GENESIS_HASH, ZERO_ADDRESS
 from rotkehlchen.chain.scroll.constants import SCROLL_GENESIS
 from rotkehlchen.chain.structures import TimestampOrBlockRange
@@ -86,6 +87,7 @@ ROTKI_INCLUDED_KEYS: Final = {
     SupportedBlockchain.POLYGON_POS: 'BGT3NM5T4UWNETFWITQWZQWFGZMF8MFAZF',
     SupportedBlockchain.SCROLL: '5EBTU13S94SNPR77TUXMD8944ADFD5ZY15',
     SupportedBlockchain.GNOSIS: 'SPF6XYXSKY7Y2IK9KHVAA25DQW35ZRQC39',
+    SupportedBlockchain.BINANCE_SC: 'IWEN68QT1H18TS9N39VRVSV9XGX37UN7NN',
 }
 
 
@@ -105,6 +107,7 @@ class Etherscan(ExternalServiceWithApiKey, ABC):
                 ExternalService.BASE_ETHERSCAN,
                 ExternalService.GNOSIS_ETHERSCAN,
                 ExternalService.SCROLL_ETHERSCAN,
+                ExternalService.BINANCE_SC_ETHERSCAN,
             ],
     ) -> None:
         super().__init__(database=database, service_name=service)
@@ -118,6 +121,7 @@ class Etherscan(ExternalServiceWithApiKey, ABC):
             SupportedBlockchain.BASE,
             SupportedBlockchain.GNOSIS,
             SupportedBlockchain.SCROLL,
+            SupportedBlockchain.BINANCE_SC,
         ) else f'api-{base_url}'
         self.api_url: str = ''
         self.base_query_args: dict[str, str] = {}
@@ -139,6 +143,8 @@ class Etherscan(ExternalServiceWithApiKey, ABC):
             self.earliest_ts = 1539024185
         elif service == ExternalService.SCROLL_ETHERSCAN:
             self.earliest_ts = SCROLL_GENESIS
+        elif service == ExternalService.BINANCE_SC_ETHERSCAN:
+            self.earliest_ts = BINANCE_SC_GENESIS
         else:  # Polygon POS
             self.earliest_ts = 1590856200
 

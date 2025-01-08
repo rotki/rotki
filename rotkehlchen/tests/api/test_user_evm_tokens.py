@@ -612,7 +612,7 @@ def test_add_non_ethereum_token(rotkehlchen_api_server: 'APIServer') -> None:
             'started': 1599646888,
             'swapped_for': None,
             'address': '0xC88eA7a5df3A7BA59C72393C5b2dc2CE260ff04D',
-            'evm_chain': 'binance',  # important that is not `ethereum` here
+            'evm_chain': 'binance_sc',  # important that is not `ethereum` here
             'token_kind': 'erc20',
             'decimals': 18,
             'protocol': 'my-own-protocol',
@@ -624,7 +624,7 @@ def test_add_non_ethereum_token(rotkehlchen_api_server: 'APIServer') -> None:
     token = EvmToken(identifier)
     assert token.name == 'Some random name'
     assert token.symbol == 'XYZ'
-    assert token.chain_id == ChainID.BINANCE
+    assert token.chain_id == ChainID.BINANCE_SC
     assert token.protocol == 'my-own-protocol'
 
 

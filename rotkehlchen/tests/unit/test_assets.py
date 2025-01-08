@@ -312,7 +312,7 @@ def test_cryptocompare_asset_support(cryptocompare):
         evm_address_to_identifier(address='0x9bf1D7D63dD7a4ce167CF4866388226EEefa702E', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # eaglegx but cc has EagleCoin
         evm_address_to_identifier(address='0x6589fe1271A0F29346796C6bAf0cdF619e25e58e', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # grain(farm) but cc has Granary
         evm_address_to_identifier(address='0x6589fe1271A0F29346796C6bAf0cdF619e25e58e', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # grain(farm) but cc has Granary
-        evm_address_to_identifier(address='0x24086EAb82DBDaa4771d0A5D66B0D810458b0E86', chain_id=ChainID.BINANCE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # we have an older meme coin pepeai
+        evm_address_to_identifier(address='0x24086EAb82DBDaa4771d0A5D66B0D810458b0E86', chain_id=ChainID.BINANCE_SC, token_type=EvmTokenKind.ERC20),  # noqa: E501  # we have an older meme coin pepeai
         evm_address_to_identifier(address='0x3007083EAA95497cD6B2b809fB97B6A30bdF53D3', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # address doesn't match
         'ANDY',  # we have andy on sol but cc has andy
         evm_address_to_identifier(address='0x22B6C31c2bEB8f2d0d5373146Eed41Ab9eDe3caf', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # we have cocktailbar and cc has coin of champions
@@ -342,7 +342,7 @@ def test_cryptocompare_asset_support(cryptocompare):
         evm_address_to_identifier(address='0x3108ccFd96816F9E663baA0E8c5951D229E8C6da', chain_id=ChainID.BASE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # cc has a dark without any address info
         'SBF',  # we have sam token but cc has sam in jail
         evm_address_to_identifier(address='0x79F05c263055BA20EE0e814ACD117C20CAA10e0c', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # different ICE
-        evm_address_to_identifier(address='0xc335Df7C25b72eEC661d5Aa32a7c2B7b2a1D1874', chain_id=ChainID.BINANCE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # different ice
+        evm_address_to_identifier(address='0xc335Df7C25b72eEC661d5Aa32a7c2B7b2a1D1874', chain_id=ChainID.BINANCE_SC, token_type=EvmTokenKind.ERC20),  # noqa: E501  # different ice
         evm_address_to_identifier(address='0xa8a8d0373642977CD491e29572484012174ADfBd', chain_id=ChainID.BASE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # Jesus on base but cc doesn't have any
         evm_address_to_identifier(address='0x12E8E49A585123F85b08Fe4114443f9E7dbe0746', chain_id=ChainID.BASE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # fake jesus on base
         evm_address_to_identifier(address='0x348Fdfe2c35934A96C1353185F09D0F9efBAdA86', chain_id=ChainID.BASE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # trove on base but trove isn't listed on base
@@ -695,11 +695,11 @@ def test_coingecko_identifiers_are_reachable(socket_enabled):  # pylint: disable
         'RVR',  # revolutionVR but coingecko has reality vr
         'BTG-2',  # bitgem but coingecko has bitcoin gold
         # karate but coingecko has karate combat
-        evm_address_to_identifier(address='0xAcf79C09Fff518EcBe2A96A2c4dA65B68fEDF6D3', chain_id=ChainID.BINANCE, token_type=EvmTokenKind.ERC20),  # noqa: E501
+        evm_address_to_identifier(address='0xAcf79C09Fff518EcBe2A96A2c4dA65B68fEDF6D3', chain_id=ChainID.BINANCE_SC, token_type=EvmTokenKind.ERC20),  # noqa: E501
         # simp but coingecko has socol
-        evm_address_to_identifier(address='0xD0ACCF05878caFe24ff8b3F82F194C62Ed755707', chain_id=ChainID.BINANCE, token_type=EvmTokenKind.ERC20),  # noqa: E501
+        evm_address_to_identifier(address='0xD0ACCF05878caFe24ff8b3F82F194C62Ed755707', chain_id=ChainID.BINANCE_SC, token_type=EvmTokenKind.ERC20),  # noqa: E501
         # coingecko has a turbos in sui
-        evm_address_to_identifier(address='0x0678Ca162E737C44cab2Ea31b4bbA78482E1313d', chain_id=ChainID.BINANCE, token_type=EvmTokenKind.ERC20),  # noqa: E501
+        evm_address_to_identifier(address='0x0678Ca162E737C44cab2Ea31b4bbA78482E1313d', chain_id=ChainID.BINANCE_SC, token_type=EvmTokenKind.ERC20),  # noqa: E501
         # inx but coingecko has different address
         evm_address_to_identifier(address='0x84fE25f3921f3426395c883707950d0c00367576', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501
         # monfter but coingecko doesn't match any

@@ -33,6 +33,11 @@ export const explorerUrls: AssetExplorerUrls = {
     block: 'https://www.blockchain.com/explorer/blocks/bch/',
     transaction: 'https://www.blockchain.com/explorer/transactions/bch/',
   },
+  [Blockchain.BSC]: {
+    address: 'https://bscscan.com/address/',
+    block: 'https://bscscan.com/block/',
+    transaction: 'https://bscscan.com/tx/',
+  },
   [Blockchain.BTC]: {
     address: 'https://www.blockchain.com/explorer/addresses/btc/',
     block: 'https://www.blockchain.com/explorer/blocks/btc/',

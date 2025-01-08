@@ -126,6 +126,8 @@ INSERT OR IGNORE INTO location(location, seq) VALUES ('s', 51);
 INSERT OR IGNORE INTO location(location, seq) VALUES ('t', 52);
 /* Coinbase Prime */
 INSERT OR IGNORE INTO location(location, seq) VALUES ('u', 53);
+/* Binance Smart Chain */
+INSERT OR IGNORE INTO location(location, seq) VALUES ('v', 54);
 """
 
 # Custom enum table for Balance categories (asset/liability)

@@ -550,12 +550,12 @@ def test_price_non_ethereum_evm_token(inquirer_defi, globaldb):
     address = string_to_evm_address('0x2656f02bc30427Ed9d380E20CEc5E04F5a7A50FE')
     evm_address_to_identifier(
         address=address,
-        chain_id=ChainID.BINANCE,
+        chain_id=ChainID.BINANCE_SC,
         token_type=EvmTokenKind.ERC20,
     )
     token = EvmToken.initialize(
         address=address,
-        chain_id=ChainID.BINANCE,
+        chain_id=ChainID.BINANCE_SC,
         token_kind=EvmTokenKind.ERC20,
         decimals=18,
         name='SLOUGI',

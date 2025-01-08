@@ -354,7 +354,7 @@ def test_get_asset_with_symbol(globaldb):
         forked=None,
         swapped_for=None,
         address='0xfCe146bF3146100cfe5dB4129cf6C82b0eF4Ad8c',
-        chain_id=ChainID.BINANCE,
+        chain_id=ChainID.BINANCE_SC,
         token_kind=EvmTokenKind.ERC20,
         decimals=8,
         cryptocompare='',

@@ -142,6 +142,7 @@ class ExternalService(SerializableEnumNameMixin):
     BASE_ETHERSCAN = auto()
     GNOSIS_ETHERSCAN = auto()
     SCROLL_ETHERSCAN = auto()
+    BINANCE_SC_ETHERSCAN = auto()
     BLOCKSCOUT = auto()
     MONERIUM = auto()
     THEGRAPH = auto()
@@ -249,7 +250,7 @@ class ChainID(Enum):
     """
     ETHEREUM = 1
     OPTIMISM = 10
-    BINANCE = 56
+    BINANCE_SC = 56
     GNOSIS = 100
     POLYGON_POS = 137
     FANTOM = 250
@@ -299,7 +300,7 @@ class ChainID(Enum):
             label = 'zkSync Era'
         elif self == ChainID.POLYGON_ZKEVM:
             label = 'Polygon zkEVM'
-        elif self == ChainID.BINANCE:
+        elif self == ChainID.BINANCE_SC:
             label = 'Binance Smart Chain'
         elif self == ChainID.ARBITRUM_ONE:
             label = 'Arbitrum One'
@@ -346,6 +347,7 @@ SUPPORTED_CHAIN_IDS = Literal[
     ChainID.BASE,
     ChainID.GNOSIS,
     ChainID.SCROLL,
+    ChainID.BINANCE_SC,
 ]
 
 
@@ -366,6 +368,7 @@ ETHERSCAN_TO_CHAINID = {
     ExternalService.BASE_ETHERSCAN: ChainID.BASE,
     ExternalService.GNOSIS_ETHERSCAN: ChainID.GNOSIS,
     ExternalService.SCROLL_ETHERSCAN: ChainID.SCROLL,
+    ExternalService.BINANCE_SC_ETHERSCAN: ChainID.BINANCE_SC,
 }
 
 
@@ -488,6 +491,7 @@ class SupportedBlockchain(SerializableEnumValueMixin):
     BASE = 'BASE'
     GNOSIS = 'GNOSIS'
     SCROLL = 'SCROLL'
+    BINANCE_SC = 'BINANCE_SC'
     ZKSYNC_LITE = 'ZKSYNC_LITE'
 
     def __str__(self) -> str:
@@ -530,6 +534,8 @@ class SupportedBlockchain(SerializableEnumValueMixin):
             return 'eip155:137/erc20:0x0000000000000000000000000000000000001010'
         if self == SupportedBlockchain.GNOSIS:
             return 'XDAI'
+        if self == SupportedBlockchain.BINANCE_SC:
+            return 'BNB'
 
         return self.value
 
@@ -595,6 +601,7 @@ SUPPORTED_BLOCKCHAIN_NAMES_MAPPING = {
     SupportedBlockchain.ARBITRUM_ONE: 'Arbitrum One',
     SupportedBlockchain.GNOSIS: 'Gnosis',
     SupportedBlockchain.ZKSYNC_LITE: 'ZKSync Lite',
+    SupportedBlockchain.BINANCE_SC: 'Binance Smart Chain',
 }
 
 SUPPORTED_BLOCKCHAIN_IMAGE_NAME_MAPPING = {
@@ -612,6 +619,7 @@ SUPPORTED_BLOCKCHAIN_IMAGE_NAME_MAPPING = {
     SupportedBlockchain.GNOSIS: 'gnosis.svg',
     SupportedBlockchain.SCROLL: 'scroll.svg',
     SupportedBlockchain.ZKSYNC_LITE: 'zksync_lite.svg',
+    SupportedBlockchain.BINANCE_SC: 'binance_sc.svg',
 }
 
 EVM_CHAINS_WITH_TRANSACTIONS_TYPE = Literal[
@@ -622,6 +630,7 @@ EVM_CHAINS_WITH_TRANSACTIONS_TYPE = Literal[
     SupportedBlockchain.BASE,
     SupportedBlockchain.GNOSIS,
     SupportedBlockchain.SCROLL,
+    SupportedBlockchain.BINANCE_SC,
 ]
 
 EVM_CHAINS_WITH_TRANSACTIONS: tuple[EVM_CHAINS_WITH_TRANSACTIONS_TYPE, ...] = typing.get_args(EVM_CHAINS_WITH_TRANSACTIONS_TYPE)  # noqa: E501
@@ -634,6 +643,7 @@ EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE = Literal[
     ChainID.BASE,
     ChainID.GNOSIS,
     ChainID.SCROLL,
+    ChainID.BINANCE_SC,
 ]
 
 EVM_CHAIN_IDS_WITH_TRANSACTIONS: tuple[EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE, ...] = typing.get_args(EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE)  # noqa: E501
@@ -657,6 +667,7 @@ SUPPORTED_EVM_CHAINS_TYPE = Literal[
     SupportedBlockchain.BASE,
     SupportedBlockchain.GNOSIS,
     SupportedBlockchain.SCROLL,
+    SupportedBlockchain.BINANCE_SC,
 ]
 SUPPORTED_EVM_CHAINS: tuple[SUPPORTED_EVM_CHAINS_TYPE, ...] = typing.get_args(SUPPORTED_EVM_CHAINS_TYPE)  # noqa: E501
 
@@ -679,6 +690,7 @@ SUPPORTED_NON_BITCOIN_CHAINS = Literal[
     SupportedBlockchain.GNOSIS,
     SupportedBlockchain.SCROLL,
     SupportedBlockchain.ZKSYNC_LITE,
+    SupportedBlockchain.BINANCE_SC,
 ]
 
 SUPPORTED_BITCOIN_CHAINS = Literal[
@@ -700,6 +712,7 @@ SUPPORTED_BLOCKCHAIN_TO_CHAINID = {
     SupportedBlockchain.BASE: ChainID.BASE,
     SupportedBlockchain.GNOSIS: ChainID.GNOSIS,
     SupportedBlockchain.SCROLL: ChainID.SCROLL,
+    SupportedBlockchain.BINANCE_SC: ChainID.BINANCE_SC,
 }
 CHAINID_TO_SUPPORTED_BLOCKCHAIN = {
     value: key
@@ -719,6 +732,7 @@ CHAINS_WITH_CHAIN_MANAGER = Literal[
     SupportedBlockchain.GNOSIS,
     SupportedBlockchain.SCROLL,
     SupportedBlockchain.ZKSYNC_LITE,
+    SupportedBlockchain.BINANCE_SC,
 ]
 
 
@@ -809,6 +823,7 @@ class Location(DBCharEnumMixIn):
     POLKADOT = 51
     KUSAMA = 52
     COINBASEPRIME = 53
+    BINANCE_SC = 54  # on-chain Binance Smart Chain events
 
     @staticmethod
     def from_chain_id(chain_id: EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE) -> 'EVM_LOCATIONS_TYPE':
@@ -829,6 +844,9 @@ class Location(DBCharEnumMixIn):
 
         if chain_id == ChainID.SCROLL:
             return Location.SCROLL
+
+        if chain_id == ChainID.BINANCE_SC:
+            return Location.BINANCE_SC
 
         # else
         return Location.POLYGON_POS
@@ -851,6 +869,8 @@ class Location(DBCharEnumMixIn):
             return ChainID.GNOSIS.value
         if self == Location.SCROLL:
             return ChainID.SCROLL.value
+        if self == Location.BINANCE_SC:
+            return ChainID.BINANCE_SC.value
         assert self == Location.POLYGON_POS, 'should have only been polygon pos here'
         return ChainID.POLYGON_POS.value
 
@@ -872,13 +892,15 @@ class Location(DBCharEnumMixIn):
                 return Location.GNOSIS
             case SupportedBlockchain.SCROLL:
                 return Location.SCROLL
+            case SupportedBlockchain.BINANCE_SC:
+                return Location.BINANCE_SC
             case SupportedBlockchain.ZKSYNC_LITE:
                 return Location.ZKSYNC_LITE
             case _:  # should never happen
                 raise AssertionError(f'Got in Location.from_chain for {chain}')
 
 
-EVM_LOCATIONS_TYPE = Literal[Location.ETHEREUM, Location.OPTIMISM, Location.POLYGON_POS, Location.ARBITRUM_ONE, Location.BASE, Location.GNOSIS, Location.SCROLL]  # noqa: E501
+EVM_LOCATIONS_TYPE = Literal[Location.ETHEREUM, Location.OPTIMISM, Location.POLYGON_POS, Location.ARBITRUM_ONE, Location.BASE, Location.GNOSIS, Location.SCROLL, Location.BINANCE_SC]  # noqa: E501
 EVM_LOCATIONS: tuple[EVM_LOCATIONS_TYPE, ...] = typing.get_args(EVM_LOCATIONS_TYPE)
 EVMLIKE_LOCATIONS_TYPE = Literal[Location.ZKSYNC_LITE]
 EVMLIKE_LOCATIONS: tuple[EVMLIKE_LOCATIONS_TYPE, ...] = typing.get_args(EVMLIKE_LOCATIONS_TYPE)

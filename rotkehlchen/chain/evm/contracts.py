@@ -272,23 +272,7 @@ class EvmContracts(Generic[T]):
         ...
 
     @overload
-    def abi(self: 'EvmContracts[Literal[ChainID.POLYGON_POS]]', name: Literal['']) -> ABI:
-        ...
-
-    @overload
-    def abi(self: 'EvmContracts[Literal[ChainID.ARBITRUM_ONE]]', name: Literal['']) -> ABI:
-        ...
-
-    @overload
-    def abi(self: 'EvmContracts[Literal[ChainID.BASE]]', name: Literal['']) -> ABI:
-        ...
-
-    @overload
-    def abi(self: 'EvmContracts[Literal[ChainID.GNOSIS]]', name: Literal['']) -> ABI:
-        ...
-
-    @overload
-    def abi(self: 'EvmContracts[Literal[ChainID.SCROLL]]', name: Literal['']) -> ABI:
+    def abi(self: 'EvmContracts[Literal[ChainID.POLYGON_POS, ChainID.ARBITRUM_ONE, ChainID.BASE, ChainID.GNOSIS, ChainID.SCROLL, ChainID.BINANCE_SC]]', name: Literal['']) -> ABI:  # noqa: E501
         ...
 
     def abi(self, name: str) -> ABI:

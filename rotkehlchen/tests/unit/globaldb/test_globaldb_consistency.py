@@ -121,8 +121,8 @@ def test_asset_updates_consistency_with_packaged_db(
         # normally this would be 15, but since we check for compatible asset updates
         # while upgrading the globaldb schema, it becomes 31 meaning we have all
         # asset updates before schema-breaking changes
-        assert old_db_cursor.execute("SELECT value FROM settings WHERE name='assets_version'").fetchone()[0] == '33'  # noqa: E501
-        assert packaged_db_cursor.execute("SELECT value FROM settings WHERE name='assets_version'").fetchone()[0] == '32'  # noqa: E501
+        assert old_db_cursor.execute("SELECT value FROM settings WHERE name='assets_version'").fetchone()[0] == '32'  # noqa: E501
+        assert packaged_db_cursor.execute("SELECT value FROM settings WHERE name='assets_version'").fetchone()[0] == '33'  # noqa: E501
 
     assets_updater = AssetsUpdater(
         globaldb=globaldb,
@@ -432,6 +432,7 @@ def test_oracle_ids_in_asset_collections(globaldb: 'GlobalDBHandler'):
         40,  # btc and wrapped bitcoin
         52,  # pol-matic. Have different oracle ids
         155,  # wLUNA and LUNA
+        348,  # BNB and WBNB
     }
     mismatches = []
     group_id_to_oracle_ids: dict[str, dict[str, str]] = defaultdict(dict)

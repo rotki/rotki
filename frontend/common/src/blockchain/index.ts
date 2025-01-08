@@ -5,6 +5,7 @@ export enum Blockchain {
   BCH = 'bch',
   KSM = 'ksm',
   DOT = 'dot',
+  BSC = 'binance_sc',
   AVAX = 'avax',
   OPTIMISM = 'optimism',
   POLYGON_POS = 'polygon_pos',

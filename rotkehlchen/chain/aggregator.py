@@ -125,6 +125,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.arbitrum_one.manager import ArbitrumOneManager
     from rotkehlchen.chain.avalanche.manager import AvalancheManager
     from rotkehlchen.chain.base.manager import BaseManager
+    from rotkehlchen.chain.binance_sc.manager import BinanceSCManager
     from rotkehlchen.chain.ethereum.interfaces.balances import ProtocolWithBalance
     from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.chain.ethereum.modules.aave.aave import Aave
@@ -286,6 +287,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             base_manager: 'BaseManager',
             gnosis_manager: 'GnosisManager',
             scroll_manager: 'ScrollManager',
+            binance_sc_manager: 'BinanceSCManager',
             kusama_manager: 'SubstrateManager',
             polkadot_manager: 'SubstrateManager',
             avalanche_manager: 'AvalancheManager',
@@ -308,6 +310,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         self.base = base_manager
         self.gnosis = gnosis_manager
         self.scroll = scroll_manager
+        self.binance_sc = binance_sc_manager
         self.kusama = kusama_manager
         self.polkadot = polkadot_manager
         self.avalanche = avalanche_manager
@@ -335,6 +338,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         self.base_lock = Semaphore()
         self.gnosis_lock = Semaphore()
         self.scroll_lock = Semaphore()
+        self.binance_sc_lock = Semaphore()
         self.zksync_lite_lock = Semaphore()
 
         # Per account balances
@@ -1120,6 +1124,19 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         """
         self.query_evm_chain_balances(chain=SupportedBlockchain.SCROLL)
         self._query_protocols_with_balance(chain_id=ChainID.SCROLL)
+
+    @protect_with_lock()
+    @cache_response_timewise()
+    def query_binance_sc_balances(
+            self,  # pylint: disable=unused-argument
+            # Kwargs here is so linters don't complain when the "magic" ignore_cache kwarg is given
+            **kwargs: Any,
+    ) -> None:
+        """
+        Queries all the binance smart chain balances and populates the state.
+        Same potential exceptions as ethereum
+        """
+        self.query_evm_chain_balances(chain=SupportedBlockchain.BINANCE_SC)
 
     @protect_with_lock()
     @cache_response_timewise()

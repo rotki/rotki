@@ -1,5 +1,5 @@
 import logging
-from abc import ABC, abstractmethod
+from abc import ABC
 from collections import defaultdict
 from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING, TypeVar
@@ -125,7 +125,7 @@ def get_chunk_size_call_order(evm_inquirer: 'EvmNodeInquirer') -> tuple[int, lis
     return chunk_size, call_order
 
 
-class EvmTokens(ABC):
+class EvmTokens(ABC):  # noqa: B024
     def __init__(
             self,
             database: 'DBHandler',
@@ -413,7 +413,7 @@ class EvmTokens(ABC):
         return exceptions | self._per_chain_token_exceptions()
 
     # -- methods to be implemented by child classes
-    @abstractmethod
+
     def _per_chain_token_exceptions(self) -> set[ChecksumEvmAddress]:
         """
         Returns a list of token addresses that will not be taken into account
@@ -421,6 +421,7 @@ class EvmTokens(ABC):
 
         Each chain needs to implement any chain-specific exceptions here.
         """
+        return set()
 
 
 class EvmTokensWithDSProxy(EvmTokens, ABC):

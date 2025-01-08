@@ -5,6 +5,7 @@ from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.chain.arbitrum_one.constants import ARBITRUM_ONE_GENESIS
 from rotkehlchen.chain.base.constants import BASE_GENESIS
+from rotkehlchen.chain.binance_sc.constants import BINANCE_SC_GENESIS
 from rotkehlchen.chain.ethereum.constants import ETHEREUM_GENESIS
 from rotkehlchen.chain.evm.constants import GENESIS_HASH, ZERO_ADDRESS
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
@@ -594,6 +595,8 @@ class DBEvmTx:
                 timestamp = GNOSIS_GENESIS
             elif chain_id == ChainID.SCROLL:
                 timestamp = SCROLL_GENESIS
+            elif chain_id == ChainID.BINANCE_SC:
+                timestamp = BINANCE_SC_GENESIS
             else:
                 timestamp = POLYGON_POS_GENESIS
             tx = EvmTransaction(

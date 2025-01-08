@@ -2,6 +2,7 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import (
     A_AVAX,
     A_BCH,
+    A_BSC_BNB,
     A_BTC,
     A_DOT,
     A_ETH,
@@ -29,6 +30,7 @@ def test_supported_blockchain_native_token():
         SupportedBlockchain.BASE: A_ETH,
         SupportedBlockchain.GNOSIS: A_XDAI,
         SupportedBlockchain.SCROLL: A_ETH,
+        SupportedBlockchain.BINANCE_SC: A_BSC_BNB,
         SupportedBlockchain.ZKSYNC_LITE: A_ETH,
     }
     for chain in SupportedBlockchain:
