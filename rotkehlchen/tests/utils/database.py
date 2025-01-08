@@ -81,6 +81,12 @@ def maybe_include_etherscan_key(db: DBHandler, include_etherscan_key: bool) -> N
                 service=ExternalService.SCROLL_ETHERSCAN,
                 api_key=ApiKey('W7QNAANTDB92HZ8ZSYEH8AU33HDZIE3MD4'),
             )])
+        db.add_external_service_credentials(
+            write_cursor=write_cursor,  # Added by nicholasyoder on 2025-01-03
+            credentials=[ExternalServiceApiCredentials(
+                service=ExternalService.BINANCE_SC_ETHERSCAN,
+                api_key=ApiKey('RPPD2UX7CAR89FPITMP3QDEX1I9Z7PCV4S'),
+            )])
 
 
 def maybe_include_cryptocompare_key(db: DBHandler, include_cryptocompare_key: bool) -> None:

@@ -98,6 +98,7 @@ def test_detect_evm_accounts(blockchain: 'ChainsAggregator') -> None:
         (SupportedBlockchain.BASE, everywhere_addy),
         (SupportedBlockchain.GNOSIS, everywhere_addy),
         (SupportedBlockchain.SCROLL, everywhere_addy),
+        (SupportedBlockchain.BINANCE_SC, everywhere_addy),
     ]
 
     for chain, addy in addies_to_start_with:
@@ -130,6 +131,7 @@ def test_detect_evm_accounts(blockchain: 'ChainsAggregator') -> None:
             base_addresses=[everywhere_addy, addy_eoa_3],
             gnosis_addresses=[everywhere_addy, addy_eoa_3],
             scroll_addresses=[everywhere_addy, addy_eoa_3],
+            binance_sc_addresses=[everywhere_addy, addy_eoa_3],
         )
 
         blockchain.detect_evm_accounts()
@@ -142,6 +144,7 @@ def test_detect_evm_accounts(blockchain: 'ChainsAggregator') -> None:
     assert set(blockchain.accounts.base) == {addy_eoa_3, everywhere_addy}
     assert set(blockchain.accounts.gnosis) == {addy_eoa_3, everywhere_addy}
     assert set(blockchain.accounts.scroll) == {addy_eoa_3, everywhere_addy}
+    assert set(blockchain.accounts.binance_sc) == {addy_eoa_3, everywhere_addy}
 
     # Also check the db
     expected_accounts_data = initial_accounts_data + [
@@ -175,6 +178,10 @@ def test_detect_evm_accounts(blockchain: 'ChainsAggregator') -> None:
         ),
         BlockchainAccountData(
             chain=SupportedBlockchain.SCROLL,
+            address=addy_eoa_3,
+        ),
+        BlockchainAccountData(
+            chain=SupportedBlockchain.BINANCE_SC,
             address=addy_eoa_3,
         ),
     ]
@@ -213,6 +220,10 @@ def test_detect_evm_accounts(blockchain: 'ChainsAggregator') -> None:
             chain=SupportedBlockchain.SCROLL,
             address=account,
         ) for account in raw_accounts.scroll])
+        accounts_in_db.extend([BlockchainAccountData(
+            chain=SupportedBlockchain.BINANCE_SC,
+            address=account,
+        ) for account in raw_accounts.binance_sc])
 
     assert set(accounts_in_db) == set(expected_accounts_data)
     assert len(accounts_in_db) == len(expected_accounts_data)

@@ -742,7 +742,7 @@ def test_search_assets(rotkehlchen_api_server: 'APIServer') -> None:
         assert entry['symbol'] == 'ETH'
         assert entry['identifier'] != 'ETH2'
         if entry['name'] == 'Binance-Peg Ethereum Token':
-            assert entry['evm_chain'] == 'binance'
+            assert entry['evm_chain'] == 'binance_sc'
         elif entry['name'] == 'Ether':
             assert entry['evm_chain'] == 'optimism'
         elif entry['identifier'].startswith('eip155:8453'):
@@ -793,7 +793,7 @@ def test_search_assets(rotkehlchen_api_server: 'APIServer') -> None:
         'optimism',
         'ethereum',
         'arbitrum_one',
-        'binance',
+        'binance_sc',
         'base',
         'scroll',
         'gnosis',

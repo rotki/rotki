@@ -28,6 +28,8 @@ from rotkehlchen.chain.arbitrum_one.node_inquirer import ArbitrumOneInquirer
 from rotkehlchen.chain.avalanche.manager import AvalancheManager
 from rotkehlchen.chain.base.manager import BaseManager
 from rotkehlchen.chain.base.node_inquirer import BaseInquirer
+from rotkehlchen.chain.binance_sc.manager import BinanceSCManager
+from rotkehlchen.chain.binance_sc.node_inquirer import BinanceSCInquirer
 from rotkehlchen.chain.ethereum.manager import EthereumManager
 from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 from rotkehlchen.chain.ethereum.oracles.uniswap import UniswapV2Oracle, UniswapV3Oracle
@@ -377,62 +379,6 @@ class Rotkehlchen:
             greenlet_manager=self.greenlet_manager,
             database=self.data.db,
         )
-        ethereum_manager = EthereumManager(ethereum_inquirer)
-        optimism_inquirer = OptimismInquirer(
-            greenlet_manager=self.greenlet_manager,
-            database=self.data.db,
-        )
-        optimism_manager = OptimismManager(optimism_inquirer)
-        polygon_pos_inquirer = PolygonPOSInquirer(
-            greenlet_manager=self.greenlet_manager,
-            database=self.data.db,
-        )
-        polygon_pos_manager = PolygonPOSManager(polygon_pos_inquirer)
-        arbitrum_one_inquirer = ArbitrumOneInquirer(
-            greenlet_manager=self.greenlet_manager,
-            database=self.data.db,
-        )
-        arbitrum_one_manager = ArbitrumOneManager(arbitrum_one_inquirer)
-        base_inquirer = BaseInquirer(
-            greenlet_manager=self.greenlet_manager,
-            database=self.data.db,
-        )
-        base_manager = BaseManager(base_inquirer)
-        gnosis_inquirer = GnosisInquirer(
-            greenlet_manager=self.greenlet_manager,
-            database=self.data.db,
-        )
-        gnosis_manager = GnosisManager(gnosis_inquirer)
-        scroll_inquirer = ScrollInquirer(
-            greenlet_manager=self.greenlet_manager,
-            database=self.data.db,
-        )
-        scroll_manager = ScrollManager(scroll_inquirer)
-        kusama_manager = SubstrateManager(
-            chain=SupportedBlockchain.KUSAMA,
-            msg_aggregator=self.msg_aggregator,
-            greenlet_manager=self.greenlet_manager,
-            connect_at_start=KUSAMA_NODES_TO_CONNECT_AT_START,
-            connect_on_startup=len(blockchain_accounts.ksm) != 0,
-            own_rpc_endpoint=settings.ksm_rpc_endpoint,
-        )
-        polkadot_manager = SubstrateManager(
-            chain=SupportedBlockchain.POLKADOT,
-            msg_aggregator=self.msg_aggregator,
-            greenlet_manager=self.greenlet_manager,
-            connect_at_start=POLKADOT_NODES_TO_CONNECT_AT_START,
-            connect_on_startup=len(blockchain_accounts.dot) != 0,
-            own_rpc_endpoint=settings.dot_rpc_endpoint,
-        )
-        avalanche_manager = AvalancheManager(
-            avaxrpc_endpoint='https://api.avax.network/ext/bc/C/rpc',
-            msg_aggregator=self.msg_aggregator,
-        )
-        zksync_lite_manager = ZksyncLiteManager(
-            ethereum_inquirer=ethereum_inquirer,
-            database=self.data.db,
-        )
-
         uniswap_v2_oracle = UniswapV2Oracle(ethereum_inquirer)
         uniswap_v3_oracle = UniswapV3Oracle(ethereum_inquirer)
 
@@ -455,17 +401,59 @@ class Rotkehlchen:
 
         self.chains_aggregator = ChainsAggregator(
             blockchain_accounts=blockchain_accounts,
-            ethereum_manager=ethereum_manager,
-            optimism_manager=optimism_manager,
-            polygon_pos_manager=polygon_pos_manager,
-            arbitrum_one_manager=arbitrum_one_manager,
-            base_manager=base_manager,
-            gnosis_manager=gnosis_manager,
-            scroll_manager=scroll_manager,
-            kusama_manager=kusama_manager,
-            polkadot_manager=polkadot_manager,
-            avalanche_manager=avalanche_manager,
-            zksync_lite_manager=zksync_lite_manager,
+            ethereum_manager=EthereumManager(ethereum_inquirer),
+            optimism_manager=OptimismManager(OptimismInquirer(
+                greenlet_manager=self.greenlet_manager,
+                database=self.data.db,
+            )),
+            polygon_pos_manager=PolygonPOSManager(PolygonPOSInquirer(
+                greenlet_manager=self.greenlet_manager,
+                database=self.data.db,
+            )),
+            arbitrum_one_manager=ArbitrumOneManager(ArbitrumOneInquirer(
+                greenlet_manager=self.greenlet_manager,
+                database=self.data.db,
+            )),
+            base_manager=BaseManager(BaseInquirer(
+                greenlet_manager=self.greenlet_manager,
+                database=self.data.db,
+            )),
+            gnosis_manager=GnosisManager(GnosisInquirer(
+                greenlet_manager=self.greenlet_manager,
+                database=self.data.db,
+            )),
+            scroll_manager=ScrollManager(ScrollInquirer(
+                greenlet_manager=self.greenlet_manager,
+                database=self.data.db,
+            )),
+            binance_sc_manager=BinanceSCManager(BinanceSCInquirer(
+                greenlet_manager=self.greenlet_manager,
+                database=self.data.db,
+            )),
+            kusama_manager=SubstrateManager(
+                chain=SupportedBlockchain.KUSAMA,
+                msg_aggregator=self.msg_aggregator,
+                greenlet_manager=self.greenlet_manager,
+                connect_at_start=KUSAMA_NODES_TO_CONNECT_AT_START,
+                connect_on_startup=len(blockchain_accounts.ksm) != 0,
+                own_rpc_endpoint=settings.ksm_rpc_endpoint,
+            ),
+            polkadot_manager=SubstrateManager(
+                chain=SupportedBlockchain.POLKADOT,
+                msg_aggregator=self.msg_aggregator,
+                greenlet_manager=self.greenlet_manager,
+                connect_at_start=POLKADOT_NODES_TO_CONNECT_AT_START,
+                connect_on_startup=len(blockchain_accounts.dot) != 0,
+                own_rpc_endpoint=settings.dot_rpc_endpoint,
+            ),
+            avalanche_manager=AvalancheManager(
+                avaxrpc_endpoint='https://api.avax.network/ext/bc/C/rpc',
+                msg_aggregator=self.msg_aggregator,
+            ),
+            zksync_lite_manager=ZksyncLiteManager(
+                ethereum_inquirer=ethereum_inquirer,
+                database=self.data.db,
+            ),
             msg_aggregator=self.msg_aggregator,
             database=self.data.db,
             greenlet_manager=self.greenlet_manager,

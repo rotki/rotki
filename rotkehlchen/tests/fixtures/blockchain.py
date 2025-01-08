@@ -16,6 +16,8 @@ from rotkehlchen.chain.base.decoding.decoder import BaseTransactionDecoder
 from rotkehlchen.chain.base.manager import BaseManager
 from rotkehlchen.chain.base.node_inquirer import BaseInquirer
 from rotkehlchen.chain.base.transactions import BaseTransactions
+from rotkehlchen.chain.binance_sc.manager import BinanceSCManager
+from rotkehlchen.chain.binance_sc.node_inquirer import BinanceSCInquirer
 from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
 from rotkehlchen.chain.ethereum.manager import EthereumManager
 from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
@@ -80,6 +82,8 @@ def _initialize_and_yield_evm_inquirer_fixture(
         blockchain = SupportedBlockchain.GNOSIS
     elif klass == ScrollInquirer:
         blockchain = SupportedBlockchain.SCROLL
+    elif klass == BinanceSCInquirer:
+        blockchain = SupportedBlockchain.BINANCE_SC
 
     EvmContracts.initialize_common_abis()
     nodes_to_connect_to = maybe_modify_rpc_nodes(database, blockchain, manager_connect_at_start)
@@ -147,6 +151,11 @@ def fixture_scroll_accounts() -> list[ChecksumEvmAddress]:
     return []
 
 
+@pytest.fixture(name='binance_sc_accounts')
+def fixture_binance_sc_accounts() -> list[ChecksumEvmAddress]:
+    return []
+
+
 @pytest.fixture(name='zksync_lite_accounts')
 def fixture_zksync_lite_accounts() -> list[ChecksumEvmAddress]:
     return []
@@ -196,6 +205,7 @@ def fixture_blockchain_accounts(
         base_accounts: list[ChecksumEvmAddress],
         gnosis_accounts: list[ChecksumEvmAddress],
         scroll_accounts: list[ChecksumEvmAddress],
+        binance_sc_accounts: list[ChecksumEvmAddress],
         zksync_lite_accounts: list[ChecksumEvmAddress],
         avax_accounts: list[ChecksumEvmAddress],
         btc_accounts: list[BTCAddress],
@@ -211,6 +221,7 @@ def fixture_blockchain_accounts(
         base=tuple(base_accounts),
         gnosis=tuple(gnosis_accounts),
         scroll=tuple(scroll_accounts),
+        binance_sc=tuple(binance_sc_accounts),
         zksync_lite=tuple(zksync_lite_accounts),
         avax=tuple(avax_accounts),
         btc=tuple(btc_accounts),
@@ -621,6 +632,42 @@ def fixture_scroll_manager(scroll_inquirer):
     return ScrollManager(node_inquirer=scroll_inquirer)
 
 
+@pytest.fixture(name='binance_sc_manager_connect_at_start')
+def fixture_binance_sc_manager_connect_at_start() -> Literal['DEFAULT'] | Sequence[NodeName]:
+    """A sequence of nodes to connect to at the start of the test.
+    Can be either a sequence of nodes to connect to for this chain.
+    Or an empty sequence to connect to no nodes for this chain.
+    Or the DEFAULT string literal meaning to connect to the built-in default nodes.
+    """
+    return ()
+
+
+@pytest.fixture(name='binance_sc_inquirer')
+def fixture_binance_sc_inquirer(
+        binance_sc_manager_connect_at_start,
+        greenlet_manager,
+        database,
+        mock_other_web3,
+):
+    with ExitStack() as stack:
+        yield _initialize_and_yield_evm_inquirer_fixture(
+            parent_stack=stack,
+            klass=BinanceSCInquirer,
+            class_path='rotkehlchen.chain.binance_sc.node_inquirer.BinanceSCInquirer',
+            manager_connect_at_start=binance_sc_manager_connect_at_start,
+            greenlet_manager=greenlet_manager,
+            database=database,
+            mock_other_web3=mock_other_web3,
+            mock_data={},  # Not used in bsc. TODO: remove it for all other chains too since we now have vcr  # noqa: E501
+            mocked_proxies=None,
+        )
+
+
+@pytest.fixture(name='binance_sc_manager')
+def fixture_binance_sc_manager(binance_sc_inquirer):
+    return BinanceSCManager(node_inquirer=binance_sc_inquirer)
+
+
 @pytest.fixture(name='ksm_rpc_endpoint')
 def fixture_ksm_rpc_endpoint() -> str | None:
     return None
@@ -789,6 +836,7 @@ def fixture_blockchain(
         base_manager,
         gnosis_manager,
         scroll_manager,
+        binance_sc_manager,
         kusama_manager,
         polkadot_manager,
         avalanche_manager,
@@ -819,6 +867,7 @@ def fixture_blockchain(
         base_manager=base_manager,
         gnosis_manager=gnosis_manager,
         scroll_manager=scroll_manager,
+        binance_sc_manager=binance_sc_manager,
         kusama_manager=kusama_manager,
         polkadot_manager=polkadot_manager,
         avalanche_manager=avalanche_manager,

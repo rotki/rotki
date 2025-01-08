@@ -245,7 +245,7 @@ class Alchemy(
                 network = 'polygon-mainnet'
             elif asset.chain_id == ChainID.ARBITRUM_ONE:
                 network = 'arb-mainnet'
-            elif asset.chain_id == ChainID.BINANCE:
+            elif asset.chain_id == ChainID.BINANCE_SC:
                 network = 'bnb-mainnet'
             elif asset.chain_id == ChainID.AVALANCHE:
                 network = 'avax-mainnet'

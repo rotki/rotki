@@ -22,6 +22,7 @@ class BlockchainAccounts:
     base: tuple[ChecksumEvmAddress, ...] = field(default_factory=tuple)
     gnosis: tuple[ChecksumEvmAddress, ...] = field(default_factory=tuple)
     scroll: tuple[ChecksumEvmAddress, ...] = field(default_factory=tuple)
+    binance_sc: tuple[ChecksumEvmAddress, ...] = field(default_factory=tuple)
     btc: tuple[BTCAddress, ...] = field(default_factory=tuple)
     bch: tuple[BTCAddress, ...] = field(default_factory=tuple)
     ksm: tuple[SubstrateAddress, ...] = field(default_factory=tuple)
