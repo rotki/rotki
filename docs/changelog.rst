@@ -1,6 +1,8 @@
 =========
 Changelog
 =========
+
+* :feature:`1573` rotki will now support Binance Smart Chain. Balances will be shown and transactions will be decoded.
 * :feature:`-` Adds filtering by date for kraken staking rewards.
 * :feature:`-` Current and historical token prices will now also be queryable via Alchemy.
 * :feature:`9083` rotki will now correctly decode ParaSwap v6 swaps in all supported EVM chains.
