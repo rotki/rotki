@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
@@ -10,12 +12,15 @@ from rotkehlchen.chain.evm.decoding.aave.v3.constants import OLD_POOL_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.safe.constants import CPT_SAFE_MULTISIG
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import (
+    A_BSC_BNB,
     A_ETH,
     A_OP,
     A_POLYGON_POS_MATIC,
     A_USDC,
     A_USDT,
+    A_WBNB,
     A_WBTC,
     A_WETH,
     A_XDAI,
@@ -36,6 +41,9 @@ from rotkehlchen.types import (
     TimestampMS,
     deserialize_evm_tx_hash,
 )
+
+if TYPE_CHECKING:
+    from rotkehlchen.chain.binance_sc.node_inquirer import BinanceSCInquirer
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -1534,3 +1542,66 @@ def test_aave_v3_lido_pool(
         ),
     ]
     assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('binance_sc_accounts', [['0x706A70067BE19BdadBea3600Db0626859Ff25D74']])
+def test_aave_v3_deposit_bnb(
+        binance_sc_inquirer: 'BinanceSCInquirer',
+        binance_sc_accounts: list['ChecksumEvmAddress'],
+) -> None:
+    tx_hash = deserialize_evm_tx_hash('0x07b14d73cf0b4ca453883178c6521a6c6fd21cd7ee2bf7650badc8be61d9c76e')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=binance_sc_inquirer, tx_hash=tx_hash)  # noqa: E501
+    user_address, timestamp, gas_amount, deposit_amount, gateway_address = binance_sc_accounts[0], TimestampMS(1736455901000), '0.000624072', '0.005', string_to_evm_address('0xe63eAf6DAb1045689BD3a332bC596FfcF54A5C88')  # noqa: E501
+    assert events == [EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=0,
+        timestamp=timestamp,
+        location=Location.BINANCE_SC,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_BSC_BNB,
+        balance=Balance(FVal(gas_amount)),
+        location_label=user_address,
+        notes=f'Burn {gas_amount} BNB for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=23,
+        timestamp=timestamp,
+        location=Location.BINANCE_SC,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=A_WBNB,
+        balance=Balance(ZERO),
+        location_label=user_address,
+        notes='Enable WBNB as collateral on AAVE v3',
+        counterparty=CPT_AAVE_V3,
+        address=gateway_address,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=24,
+        timestamp=timestamp,
+        location=Location.BINANCE_SC,
+        event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+        asset=A_BSC_BNB,
+        balance=Balance(FVal(deposit_amount)),
+        location_label=user_address,
+        notes=f'Deposit {deposit_amount} WBNB into AAVE v3',
+        counterparty=CPT_AAVE_V3,
+        address=gateway_address,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=25,
+        timestamp=timestamp,
+        location=Location.BINANCE_SC,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+        asset=Asset('eip155:56/erc20:0x9B00a09492a626678E5A3009982191586C444Df9'),
+        balance=Balance(FVal(deposit_amount)),
+        location_label=user_address,
+        notes=f'Receive {deposit_amount} aBnbWBNB from AAVE v3',
+        counterparty=CPT_AAVE_V3,
+        address=ZERO_ADDRESS,
+    )]
