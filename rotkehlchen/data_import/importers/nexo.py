@@ -62,8 +62,7 @@ class NexoImporter(BaseExchangeImporter):
             'Credit Card Status',  # same as "Withdraw Exchanged"
             'Deposit To Exchange',  # this is the same as "Exchange Deposited On"
             'Repayment',  # informational loan operation
-            'Manual Repayment',  # this is the same as "Liquidation"
-            'Manual Sell Order',  # this is the same as "Liquidation"
+            'Manual Repayment',  # this is the same as "Manual Sell Order"
             'Unlocking Term Deposit',  # Move between nexo wallets
             'Locking Term Deposit',  # Move between nexo wallets
             'Transfer In',  # Transfer between nexo wallets
@@ -163,6 +162,20 @@ class NexoImporter(BaseExchangeImporter):
                 balance=Balance(amount=input_amount),
                 asset=input_asset,
                 location_label=transaction,
+                notes=f'{entry_type} from Nexo',
+            )
+            self.add_history_events(write_cursor, [event])
+        elif entry_type == 'Manual Sell Order':
+            event = HistoryEvent(
+                event_identifier=f'{NEXO_PREFIX}{hash_csv_row(csv_row)}',
+                sequence_index=0,
+                timestamp=ts_sec_to_ms(timestamp),
+                location=Location.NEXO,
+                asset=asset,
+                balance=Balance(amount=amount),
+                event_type=HistoryEventType.SPEND,
+                location_label=transaction,
+                event_subtype=HistoryEventSubType.PAYBACK_DEBT,
                 notes=f'{entry_type} from Nexo',
             )
             self.add_history_events(write_cursor, [event])
