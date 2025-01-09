@@ -30,6 +30,9 @@ const isDecoding = isTaskRunning(TaskType.TRANSACTIONS_DECODING);
 const debouncedIsDecoding = refDebounced(isDecoding, 500);
 const usedIsDecoding = logicOr(isDecoding, debouncedIsDecoding);
 const isTransactionsLoading = isTaskRunning(TaskType.TX);
+const isPartiallyDecoding = isTaskRunning(TaskType.TRANSACTIONS_DECODING, {
+  all: false,
+});
 const isFullyDecoding = isTaskRunning(TaskType.TRANSACTIONS_DECODING, {
   all: true,
 });
@@ -247,7 +250,7 @@ onMounted(() => refresh());
       >
         <template #prepend>
           <RuiIcon
-            v-if="!partialEventTaskLoading"
+            v-if="!isPartiallyDecoding"
             name="lu-layout-list"
           />
           <RuiProgress
@@ -267,7 +270,7 @@ onMounted(() => refresh());
       >
         <template #prepend>
           <RuiIcon
-            v-if="!allEventTaskLoading"
+            v-if="!isFullyDecoding"
             name="lu-rotate-ccw"
           />
           <RuiProgress
