@@ -15,6 +15,7 @@ from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.constants.assets import (
     A_ETH,
+    A_WBNB,
     A_WETH,
     A_WETH_ARB,
     A_WETH_BASE,
@@ -454,4 +455,5 @@ CHAIN_TO_WRAPPED_TOKEN: Final = {
     SupportedBlockchain.BASE: A_WETH_BASE,
     SupportedBlockchain.GNOSIS: A_WXDAI,
     SupportedBlockchain.POLYGON_POS: A_WETH_POLYGON,
+    SupportedBlockchain.BINANCE_SC: A_WBNB,
 }

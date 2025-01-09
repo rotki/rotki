@@ -9,6 +9,8 @@ from rotkehlchen.chain.arbitrum_one.decoding.decoder import ArbitrumOneTransacti
 from rotkehlchen.chain.arbitrum_one.transactions import ArbitrumOneTransactions
 from rotkehlchen.chain.base.decoding.decoder import BaseTransactionDecoder
 from rotkehlchen.chain.base.transactions import BaseTransactions
+from rotkehlchen.chain.binance_sc.decoding.decoder import BinanceSCTransactionDecoder
+from rotkehlchen.chain.binance_sc.transactions import BinanceSCTransactions
 from rotkehlchen.chain.ethereum.constants import ETHEREUM_ETHERSCAN_NODE
 from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
 from rotkehlchen.chain.ethereum.transactions import EthereumTransactions
@@ -42,6 +44,7 @@ from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 if TYPE_CHECKING:
     from rotkehlchen.chain.arbitrum_one.node_inquirer import ArbitrumOneInquirer
     from rotkehlchen.chain.base.node_inquirer import BaseInquirer
+    from rotkehlchen.chain.binance_sc.node_inquirer import BinanceSCInquirer
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.chain.evm.decoding.decoder import EVMTransactionDecoder
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
@@ -414,6 +417,17 @@ def get_decoded_events_of_transaction(
     ...
 
 
+@overload
+def get_decoded_events_of_transaction(
+        evm_inquirer: 'BinanceSCInquirer',
+        tx_hash: EVMTxHash,
+        transactions: EvmTransactions | None = None,
+        relevant_address: ChecksumAddress | None = None,
+        load_global_caches: list[str] | None = None,
+) -> tuple[list['EvmEvent'], BinanceSCTransactionDecoder]:
+    ...
+
+
 def get_decoded_events_of_transaction(
         evm_inquirer: 'EvmNodeInquirer',
         tx_hash: EVMTxHash,
@@ -441,6 +455,7 @@ def get_decoded_events_of_transaction(
         ChainID.BASE: (BaseTransactions, BaseTransactionDecoder),
         ChainID.GNOSIS: (GnosisTransactions, GnosisTransactionDecoder),
         ChainID.SCROLL: (ScrollTransactions, ScrollTransactionDecoder),
+        ChainID.BINANCE_SC: (BinanceSCTransactions, BinanceSCTransactionDecoder),
     }
     mappings_result = chain_mappings.get(evm_inquirer.chain_id)
     if mappings_result is not None:

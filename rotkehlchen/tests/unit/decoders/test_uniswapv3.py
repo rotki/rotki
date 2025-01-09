@@ -1,8 +1,13 @@
+from typing import TYPE_CHECKING
+
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.chain.base.modules.uniswap.v3.constants import UNISWAP_UNIVERSAL_ROUTER
+from rotkehlchen.chain.binance_sc.modules.uniswap.v3.constants import (
+    UNISWAP_UNIVERSAL_ROUTER as UNISWAP_UNIVERSAL_ROUTER_BINANCE_SC,
+)
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.cowswap.constants import CPT_COWSWAP
@@ -12,6 +17,7 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import (
     A_ARB,
+    A_BSC_BNB,
     A_DAI,
     A_ETH,
     A_LUSD,
@@ -28,7 +34,10 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
-from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
+from rotkehlchen.types import ChecksumEvmAddress, Location, TimestampMS, deserialize_evm_tx_hash
+
+if TYPE_CHECKING:
+    from rotkehlchen.chain.binance_sc.node_inquirer import BinanceSCInquirer
 
 ADDY = string_to_evm_address('0xb63e0C506dDBa7b0dd106d1937d6D13BE2C62aE2')
 ADDY_2 = string_to_evm_address('0xeB312F4921aEbbE99faCaCFE92f22b942Cbd7599')
@@ -969,3 +978,55 @@ def test_add_liquidity_on_optimism(optimism_inquirer, optimism_accounts):
         ),
     ]
     assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('binance_sc_accounts', [['0xEF575087F1e7BeC54046F98119c8C392a37c51dd']])
+def test_swap_on_binance_sc(
+        binance_sc_inquirer: 'BinanceSCInquirer',
+        binance_sc_accounts: list['ChecksumEvmAddress'],
+) -> None:
+    tx_hash = deserialize_evm_tx_hash('0x3cfb94c6c4a3ba05759cab565148fe5a0c1894479603c29c6c2201dbed943365')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=binance_sc_inquirer, tx_hash=tx_hash)  # noqa: E501
+    user_address, timestamp, gas_amount, swap_amount, receive_amount = binance_sc_accounts[0], TimestampMS(1736264377000), '0.000675955', '0.671147484158020414', '3.3'  # noqa: E501
+    assert events == [
+        EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.BINANCE_SC,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_BSC_BNB,
+            balance=Balance(FVal(gas_amount)),
+            location_label=user_address,
+            notes=f'Burn {gas_amount} BNB for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.BINANCE_SC,
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=Asset('eip155:56/erc20:0x2170Ed0880ac9A755fd29B2688956BD959F933F8'),
+            balance=Balance(FVal(swap_amount)),
+            location_label=user_address,
+            notes=f'Swap {swap_amount} ETH via {CPT_UNISWAP_V3} auto router',
+            counterparty=CPT_UNISWAP_V3,
+            address=UNISWAP_UNIVERSAL_ROUTER_BINANCE_SC,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=2,
+            timestamp=timestamp,
+            location=Location.BINANCE_SC,
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=A_BSC_BNB,
+            balance=Balance(FVal(receive_amount)),
+            location_label=user_address,
+            notes=f'Receive {receive_amount} BNB as the result of a swap via {CPT_UNISWAP_V3} auto router',  # noqa: E501
+            counterparty=CPT_UNISWAP_V3,
+            address=UNISWAP_UNIVERSAL_ROUTER_BINANCE_SC,
+        ),
+    ]
