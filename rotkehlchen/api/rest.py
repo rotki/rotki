@@ -54,6 +54,7 @@ from rotkehlchen.assets.asset import (
 )
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.types import ASSET_TYPES_EXCLUDED_FOR_USERS, AssetType
+from rotkehlchen.balances.historical import HistoricalBalancesManager
 from rotkehlchen.balances.manual import (
     ManuallyTrackedBalance,
     add_manually_tracked_balances,
@@ -170,6 +171,7 @@ from rotkehlchen.errors.misc import (
     GreenletKilledError,
     InputError,
     ModuleInactive,
+    NotFoundError,
     RemoteError,
     SystemPermissionError,
     TagConstraintError,
@@ -5353,3 +5355,33 @@ class RestAPI:
         )
         stats['score'] = score
         return api_response(_wrap_in_ok_result(result=stats, status_code=HTTPStatus.OK))
+
+    @async_api_call()
+    def get_historical_balance(self, timestamp: Timestamp) -> dict[str, Any]:
+        """Query historical balances for all assets at a given timestamp
+        by processing historical events
+        """
+        try:
+            balances = HistoricalBalancesManager(self.rotkehlchen.data.db).get_balances(timestamp)
+        except NotFoundError as e:
+            return wrap_in_fail_result(str(e), status_code=HTTPStatus.NOT_FOUND)
+
+        return _wrap_in_ok_result(
+            result=process_result(balances),
+            status_code=HTTPStatus.OK,
+        )
+
+    @async_api_call()
+    def get_historical_asset_balance(self, asset: Asset, timestamp: Timestamp) -> dict[str, Any]:
+        """Query historical balance of a specific asset at a given timestamp
+        by processing historical events
+        """
+        try:
+            balance = HistoricalBalancesManager(self.rotkehlchen.data.db).get_asset_balance(
+                asset=asset,
+                timestamp=timestamp,
+            )
+        except NotFoundError as e:
+            return wrap_in_fail_result(str(e), status_code=HTTPStatus.NOT_FOUND)
+
+        return _wrap_in_ok_result(result=balance)

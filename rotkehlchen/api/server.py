@@ -145,6 +145,7 @@ from rotkehlchen.api.v1.resources import (
     StatsWrapResource,
     SupportedChainsResource,
     TagsResource,
+    TimestampHistoricalBalanceResource,
     TradesResource,
     TypesMappingsResource,
     UserAssetsResource,
@@ -333,6 +334,7 @@ URLS_V1: URLS = [
     ('/defi/metadata', DefiMetadataResource),
     ('/calendar', CalendarResource),
     ('/calendar/reminders', CalendarRemindersResource),
+    ('/balances/historical', TimestampHistoricalBalanceResource),
 ]
 
 logger = logging.getLogger(__name__)

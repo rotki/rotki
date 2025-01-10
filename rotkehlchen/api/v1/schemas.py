@@ -3853,3 +3853,7 @@ class UpdateCalendarReminderSchema(NewCalendarReminderSchema, IntegerIdentifierS
     @post_load
     def make_calendar_entry(self, data: dict[str, Any], **_kwargs: dict[str, Any]) -> dict[str, Any]:  # noqa: E501
         return {'reminder': self._process_reminder(data)}
+
+
+class HistoricalPerAssetBalanceSchema(SnapshotTimestampQuerySchema, AsyncQueryArgumentSchema):
+    asset = AssetField(expected_type=Asset, load_default=None)

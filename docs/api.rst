@@ -13866,3 +13866,88 @@ Managing calendar reminders
   :statuscode 200: Data queried correctly.
   :statuscode 401: No user is currently logged in.
   :statuscode 500: Internal rotki error.
+
+Historical Balance Queries
+==============================
+
+  .. http:post:: /api/(version)/balances/historical
+
+    Gets historical balance data at a specific timestamp, calculated from processing of historical events.
+    If asset is provided, returns balance for that specific asset. Otherwise returns balances for all assets.
+
+    .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``.
+
+    **Example Request (All Assets):**
+
+      .. http:example:: curl wget httpie python-requests
+
+        PUT /api/(version)/balances/historical HTTP/1.1
+        Host: localhost:5042
+        Content-Type: application/json;charset=UTF-8
+
+        { "timestamp": 1672531200 }
+
+    **Example Request (Single Asset):**
+
+      .. http:example:: curl wget httpie python-requests
+
+      PUT /api/(version)/balances/historical HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {
+        "timestamp": 1672531200,
+        "asset": "BTC"
+      }
+
+      :reqjsonarr integer timestamp: The timestamp to query the balance for
+      :reqjsonarr string asset: (Optional) The asset identifier to query balance for. If not provided, returns balances for all assets.
+
+    **Example Response (All Assets):**
+
+      .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        {
+          "message": "",
+          "result": {
+            "BTC": {
+              "amount": "2.0",
+              "price": "20000"
+            },
+            "ETH": {
+              "amount": "10.0",
+              "price": "1500"
+            }
+          },
+          "status_code": 200
+        }
+
+    **Example Response (Single Asset):**
+
+      .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "message": "",
+        "result": {
+          "amount": "2.0",
+          "price": "20000"
+        },
+        "status_code": 200
+      }
+
+      :resjson object result: Either a mapping of all assets to their balance info, or single asset balance info if asset was provided
+      :resjson string amount: The amount of the asset held at the timestamp
+      :resjson string price: The price of the asset at the timestamp in the user's profit currency
+      :statuscode 200: Historical balances returned
+      :statuscode 400: Malformed query
+      :statuscode 404: No historical data found for the timestamp
+      :statuscode 403: User does not have premium access
+      :statuscode 409: User is not logged in
+      :statuscode 500: Internal Rotki error

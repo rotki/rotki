@@ -26,6 +26,10 @@ class AlreadyExists(Exception):
     pass
 
 
+class NotFoundError(Exception):
+    pass
+
+
 class RemoteError(Exception):
     """Thrown when a remote API can't be reached or throws unexpected error"""
 
