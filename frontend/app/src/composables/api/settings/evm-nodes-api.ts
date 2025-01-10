@@ -10,6 +10,7 @@ interface UseEvmNodesApiReturn {
   addEvmNode: (node: Omit<EvmRpcNode, 'identifier'>) => Promise<boolean>;
   editEvmNode: (node: EvmRpcNode) => Promise<boolean>;
   deleteEvmNode: (identifier: number) => Promise<boolean>;
+  reConnectNode: (identifier?: number) => Promise<boolean>;
 }
 
 export function useEvmNodesApi(chain: Ref<Blockchain> = ref(Blockchain.ETH)): UseEvmNodesApiReturn {
@@ -42,10 +43,18 @@ export function useEvmNodesApi(chain: Ref<Blockchain> = ref(Blockchain.ETH)): Us
     return handleResponse(response);
   };
 
+  const reConnectNode = async (identifier?: number): Promise<boolean> => {
+    const response = await api.instance.post<ActionResult<boolean>>(get(url), snakeCaseTransformer({ identifier }), {
+      validateStatus: validStatus,
+    });
+    return handleResponse(response);
+  };
+
   return {
     addEvmNode,
     deleteEvmNode,
     editEvmNode,
     fetchEvmNodes,
+    reConnectNode,
   };
 }

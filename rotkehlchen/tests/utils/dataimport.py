@@ -932,6 +932,18 @@ def assert_nexo_results(rotki: Rotkehlchen, websocket_connection: WebsocketReade
         location_label='NXTslZ5J6wqqmKalgCjpDEQd',
         notes='Interest from Nexo',
     ), HistoryEvent(
+        identifier=24,
+        event_identifier='NEXO_6ca2336b08501cf491bc3a62e8c289f2de0d303fa605ab0eb8c5ff8ed5386dbe',
+        sequence_index=0,
+        timestamp=TimestampMS(1656702227000),
+        location=Location.NEXO,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.PAYBACK_DEBT,
+        balance=Balance(FVal('0.16962900')),
+        asset=A_USDC,
+        location_label='NXT53Q6ioNttPkX91sNAWbbnQ',
+        notes='Manual Sell Order from Nexo',
+    ), HistoryEvent(
         identifier=12,
         event_identifier='NEXO_e8137e27e69bc848578349c0dece234fd4af50487ecfdf42518de3246f900b23',
         sequence_index=0,

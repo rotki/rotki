@@ -2317,6 +2317,10 @@
     "node_weight": "Node Weight",
     "private_node": "This is a private node added by the user. It takes priority over public nodes",
     "public_node": "This is a public node",
+    "reconnect": {
+      "single": "Re-connect this node",
+      "all": "Re-connect all disconnected nodes"
+    },
     "weight": "{weight}%"
   },
   "exchange_balances": {

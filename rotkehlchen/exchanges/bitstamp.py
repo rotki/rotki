@@ -295,10 +295,11 @@ class Bitstamp(ExchangeInterface):
 
             for idx, crypto_movement in enumerate(crypto_asset_movements):
                 if (
-                    crypto_movement.event_type == asset_movement.event_type and
-                    crypto_movement.asset == asset_movement.asset and
-                    crypto_movement.balance.amount == asset_movement.balance.amount + asset_movement.extra_data['fee'] and  # noqa: E501
-                    abs(crypto_movement.timestamp - asset_movement.timestamp) <= BITSTAMP_MATCHING_TOLERANCE  # noqa: E501
+                        crypto_movement.event_type == asset_movement.event_type and
+                        crypto_movement.asset == asset_movement.asset and
+                        'fee' in asset_movement.extra_data and
+                        crypto_movement.balance.amount == asset_movement.balance.amount + asset_movement.extra_data['fee'] and  # noqa: E501
+                        abs(crypto_movement.timestamp - asset_movement.timestamp) <= BITSTAMP_MATCHING_TOLERANCE  # noqa: E501
                 ):
                     asset_movement.extra_data.update(crypto_movement.extra_data)  # type: ignore  # crypto_movement.extra_data should always be set here
                     del asset_movement.extra_data['fee']  # no need to save this to the DB

@@ -57,7 +57,7 @@ def decode_event_data_abi(
     May raise:
     - DeserializationError if the abi string is invalid or abi or log topics/data do not match
     """
-    if event_abi['anonymous']:
+    if event_abi.get('anonymous', False):
         topics = tx_log.topics
     elif len(tx_log.topics) == 0:
         raise DeserializationError('Expected non-anonymous event to have 1 or more topics')

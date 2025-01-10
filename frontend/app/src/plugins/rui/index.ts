@@ -153,6 +153,7 @@ import {
   LuRepeat,
   LuRocket,
   LuRotateCcw,
+  LuRotateCw,
   LuSave,
   LuScale,
   LuScrollText,
@@ -218,7 +219,6 @@ export function createRuiPlugin(defaults: Partial<RuiOptions['defaults']>): RuiP
       icons: [
         LuLayoutDashboard,
         LuHistory,
-        LuHourglass,
         LuImage,
         LuLayers,
         LuFileChartColumn,
@@ -410,6 +410,9 @@ export function createRuiPlugin(defaults: Partial<RuiOptions['defaults']>): RuiP
         LuSun,
         LuPalette,
         LuCornerLeftUp,
+        LuHourglass,
+        LuPlus,
+        LuRotateCw,
         // remaining from prev version of premium components
         RiEqualLine,
         RiMoonLine,
