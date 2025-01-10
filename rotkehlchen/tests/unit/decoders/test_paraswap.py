@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
@@ -11,7 +13,9 @@ from rotkehlchen.chain.ethereum.modules.paraswap.v5.constants import (
 )
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.paraswap.constants import CPT_PARASWAP
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import (
+    A_BSC_BNB,
     A_ENS,
     A_ETH,
     A_KP3R,
@@ -29,6 +33,10 @@ from rotkehlchen.history.events.structures.types import HistoryEventSubType, His
 from rotkehlchen.tests.utils.constants import A_OPTIMISM_USDT
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
+
+if TYPE_CHECKING:
+    from rotkehlchen.chain.binance_sc.node_inquirer import BinanceSCInquirer
+    from rotkehlchen.types import ChecksumEvmAddress
 
 A_PSP = Asset('eip155:1/erc20:0xcAfE001067cDEF266AfB7Eb5A286dCFD277f3dE5')
 A_ROUTE = Asset('eip155:1/erc20:0x16ECCfDbb4eE1A85A33f3A9B21175Cd7Ae753dB4')
@@ -1278,3 +1286,80 @@ def test_paraswap_fork_with_factory(ethereum_inquirer, ethereum_accounts):
         address='0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57',
     )]
     assert expected_events == events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('binance_sc_accounts', [['0x92dD70347F1f7F9Feb3385131e0C875D96c5269e']])
+def test_multi_swap_token_fee_binance_sc(
+        binance_sc_inquirer: 'BinanceSCInquirer',
+        binance_sc_accounts: list['ChecksumEvmAddress'],
+) -> None:
+    tx_hash = deserialize_evm_tx_hash('0xdbad52c68bd2d736ad38560cab087785086c3e86ab4b685251cba9898639a592')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=binance_sc_inquirer, tx_hash=tx_hash)  # noqa: E501
+    user_address, timestamp = binance_sc_accounts[0], TimestampMS(1736461652000)
+    gas_amount, swap_amount, received_amount, fee_amount, approve_amount = '0.000686569', '25', '898.294085817726117778', '8.533793815268398118', '115792089237316195423570985008687907853269984665640564039432.584007913129639935'  # noqa: E501
+    a_bsc_avax, a_bsc_usdc = Asset('eip155:56/erc20:0x1CE0c2827e2eF14D5C4f29a091d735A204794041'), Asset('eip155:56/erc20:0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d')  # noqa: E501
+    assert events == [EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=0,
+        timestamp=timestamp,
+        location=Location.BINANCE_SC,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_BSC_BNB,
+        balance=Balance(FVal(gas_amount)),
+        location_label=user_address,
+        notes=f'Burn {gas_amount} BNB for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=273,
+        timestamp=timestamp,
+        location=Location.BINANCE_SC,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.APPROVE,
+        asset=a_bsc_avax,
+        balance=Balance(FVal(approve_amount)),
+        location_label=user_address,
+        notes=f'Set AVAX spending approval of {user_address} by 0x216B4B4Ba9F3e719726886d34a177484278Bfcae to {approve_amount}',  # noqa: E501
+        address=string_to_evm_address('0x216B4B4Ba9F3e719726886d34a177484278Bfcae'),
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=274,
+        timestamp=timestamp,
+        location=Location.BINANCE_SC,
+        event_type=HistoryEventType.TRADE,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=a_bsc_avax,
+        balance=Balance(FVal(swap_amount)),
+        location_label=user_address,
+        notes=f'Swap {swap_amount} AVAX in paraswap',
+        counterparty=CPT_PARASWAP,
+        address=PARASWAP_AUGUSTUS_ROUTER,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=275,
+        timestamp=timestamp,
+        location=Location.BINANCE_SC,
+        event_type=HistoryEventType.TRADE,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=a_bsc_usdc,
+        balance=Balance(FVal(received_amount)),
+        location_label=user_address,
+        notes=f'Receive {received_amount} USDC as the result of a swap in paraswap',
+        counterparty=CPT_PARASWAP,
+        address=PARASWAP_AUGUSTUS_ROUTER,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=276,
+        timestamp=timestamp,
+        location=Location.BINANCE_SC,
+        event_type=HistoryEventType.TRADE,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=a_bsc_usdc,
+        balance=Balance(FVal(fee_amount)),
+        location_label=user_address,
+        notes=f'Spend {fee_amount} USDC as a paraswap fee',
+        counterparty=CPT_PARASWAP,
+        address=PARASWAP_AUGUSTUS_ROUTER,
+    )]
