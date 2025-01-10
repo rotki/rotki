@@ -1,9 +1,14 @@
+from typing import TYPE_CHECKING
+
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.arbitrum_one.modules.metamask.constants import (
     METAMASK_ROUTER as METAMASK_ROUTER_ARB,
+)
+from rotkehlchen.chain.binance_sc.modules.metamask.constants import (
+    METAMASK_ROUTER as METAMASK_ROUTER_BSC,
 )
 from rotkehlchen.chain.ethereum.modules.metamask.constants import (
     METAMASK_ROUTER as METAMASK_ROUTER_ETH,
@@ -16,13 +21,24 @@ from rotkehlchen.chain.optimism.modules.metamask.constants import (
 from rotkehlchen.chain.polygon_pos.modules.metamask.constants import (
     METAMASK_ROUTER as METAMASK_ROUTER_MATIC,
 )
-from rotkehlchen.constants.assets import A_AAVE, A_ETH, A_POLYGON_POS_MATIC, A_USDC, A_USDT
+from rotkehlchen.constants.assets import (
+    A_AAVE,
+    A_BSC_BNB,
+    A_ETH,
+    A_POLYGON_POS_MATIC,
+    A_USDC,
+    A_USDT,
+)
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.constants import A_OPTIMISM_USDT
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
+
+if TYPE_CHECKING:
+    from rotkehlchen.chain.binance_sc.node_inquirer import BinanceSCInquirer
+    from rotkehlchen.types import ChecksumEvmAddress
 
 A_LUX = Asset('eip155:1/erc20:0x88dafebb769311d7fbbeb9a21431fa026d4100d0')
 A_OTACON = Asset('eip155:1/erc20:0x0F17eeCcc84739b9450C88dE0429020e2DEC05eb')
@@ -594,3 +610,80 @@ def test_metamask_swap_polygon(polygon_pos_inquirer, polygon_pos_accounts):
         address=METAMASK_ROUTER_MATIC,
     )]
     assert expected_events == events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('binance_sc_accounts', [['0x113A6424CF48C467EDF367973B8Dfb4A18a0623A']])
+def test_metamask_swap_binance_sc(
+        binance_sc_inquirer: 'BinanceSCInquirer',
+        binance_sc_accounts: list['ChecksumEvmAddress'],
+):
+    tx_hash = deserialize_evm_tx_hash('0xa08ff8cf928f0d1c5731b8320bf9055c2adf11dc9e8343ce6e5ff6c570330e14')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=binance_sc_inquirer, tx_hash=tx_hash)  # noqa: E501
+    user_address, timestamp = binance_sc_accounts[0], TimestampMS(1736517910000)
+    gas_amount, swap_amount, received_amount, fee_amount, approve_amount = '0.000596574', '10', '0.014389342482790536', '0.000125906746724417', '115792089237316195423570985008687907853269984665640564039447.584007913129639935'  # noqa: E501
+    a_bsc_usd = Asset('eip155:56/erc20:0x55d398326f99059fF775485246999027B3197955')
+    assert events == [EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=0,
+        timestamp=timestamp,
+        location=Location.BINANCE_SC,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_BSC_BNB,
+        balance=Balance(FVal(gas_amount)),
+        location_label=user_address,
+        notes=f'Burn {gas_amount} BNB for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=71,
+        timestamp=timestamp,
+        location=Location.BINANCE_SC,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.APPROVE,
+        asset=a_bsc_usd,
+        balance=Balance(FVal(approve_amount)),
+        location_label=user_address,
+        notes=f'Set BSC-USD spending approval of {user_address} by {METAMASK_ROUTER_BSC} to {approve_amount}',  # noqa: E501
+        address=METAMASK_ROUTER_BSC,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=72,
+        timestamp=timestamp,
+        location=Location.BINANCE_SC,
+        event_type=HistoryEventType.TRADE,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=a_bsc_usd,
+        balance=Balance(FVal(swap_amount)),
+        location_label=user_address,
+        notes=f'Swap {swap_amount} BSC-USD in metamask',
+        counterparty=CPT_METAMASK_SWAPS,
+        address=METAMASK_ROUTER_BSC,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=73,
+        timestamp=timestamp,
+        location=Location.BINANCE_SC,
+        event_type=HistoryEventType.TRADE,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_BSC_BNB,
+        balance=Balance(FVal(received_amount)),
+        location_label=user_address,
+        notes=f'Receive {received_amount} BNB as the result of a metamask swap',
+        counterparty=CPT_METAMASK_SWAPS,
+        address=METAMASK_ROUTER_BSC,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=80,
+        timestamp=timestamp,
+        location=Location.BINANCE_SC,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_BSC_BNB,
+        balance=Balance(FVal(fee_amount)),
+        location_label=user_address,
+        notes=f'Spend {fee_amount} BNB as metamask fees',
+        counterparty=CPT_METAMASK_SWAPS,
+        address=METAMASK_ROUTER_BSC,
+    )]
