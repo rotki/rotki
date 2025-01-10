@@ -34,7 +34,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class OpenOceanCommonDecoder(DecoderInterface, ABC):
+class OpenOceanDecoder(DecoderInterface, ABC):
 
     def _get_asset_and_amount(
             self,
