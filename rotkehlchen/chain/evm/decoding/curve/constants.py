@@ -44,6 +44,7 @@ CURVE_CHAIN_ID = {
     ChainID.ARBITRUM_ONE: 'arbitrum',
     ChainID.GNOSIS: 'xdai',
     ChainID.BASE: 'base',
+    ChainID.BINANCE_SC: 'bsc',
 }
 CURVE_CHAIN_ID_TYPE = Literal[
     ChainID.ETHEREUM,
@@ -52,6 +53,7 @@ CURVE_CHAIN_ID_TYPE = Literal[
     ChainID.ARBITRUM_ONE,
     ChainID.GNOSIS,
     ChainID.BASE,
+    ChainID.BINANCE_SC,
 ]
 CURVE_CHAIN_IDS: tuple[CURVE_CHAIN_ID_TYPE, ...] = get_args(CURVE_CHAIN_ID_TYPE)
 CURVE_METAREGISTRY_METHODS = [

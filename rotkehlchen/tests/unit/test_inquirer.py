@@ -453,17 +453,19 @@ def test_find_velodrome_v2_lp_token_price(inquirer, optimism_manager):
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 def test_find_curve_lp_token_price(inquirer: 'Inquirer', blockchain: 'ChainsAggregator'):
     tested_tokens: dict[ChainID, tuple[str, FVal]] = {
-        ChainID.ETHEREUM: ('0xA3D87FffcE63B53E0d54fAa1cc983B7eB0b74A9c', FVal('3584.181065')),
+        ChainID.ETHEREUM: ('0xA3D87FffcE63B53E0d54fAa1cc983B7eB0b74A9c', FVal('4062.365420')),
         # 3CRV-OP-gauge
-        ChainID.OPTIMISM: ('0x4456d13Fc6736e8e8330394c0C622103E06ea419', FVal('1864.150003')),
+        ChainID.OPTIMISM: ('0x4456d13Fc6736e8e8330394c0C622103E06ea419', FVal('2058.823988')),
         # Curve.fi amDAI/amUSDC/amUSDT (am3CRV)
-        ChainID.POLYGON_POS: ('0xE7a24EF0C5e95Ffb0f6684b813A78F2a3AD7D171', FVal('1.129260')),
+        ChainID.POLYGON_POS: ('0xE7a24EF0C5e95Ffb0f6684b813A78F2a3AD7D171', FVal('1.139456')),
         # crvUSDT-gauge
-        ChainID.ARBITRUM_ONE: ('0xB08FEf57bFcc5f7bF0EF69C0c090849d497C8F8A', FVal('2.025168')),
+        ChainID.ARBITRUM_ONE: ('0xB08FEf57bFcc5f7bF0EF69C0c090849d497C8F8A', FVal('2.671811')),
         # tricrypto
-        ChainID.BASE: ('0x63Eb7846642630456707C3efBb50A03c79B89D81', FVal('1.011604')),
+        ChainID.BASE: ('0x63Eb7846642630456707C3efBb50A03c79B89D81', FVal('1.028638')),
         # crvusdusdt-gauge
-        ChainID.GNOSIS: ('0xC2EfDbC1a21D82A677380380eB282a963A6A6ada', FVal('0.997623')),
+        ChainID.GNOSIS: ('0xC2EfDbC1a21D82A677380380eB282a963A6A6ada', FVal('1.001272')),
+        # crvUSD/USDT gauge
+        ChainID.BINANCE_SC: ('0x6c816d6Ed4b2B77e121aD7951841A7D0711561b3', FVal('1.004242')),
     }
 
     inquirer.inject_evm_managers([
