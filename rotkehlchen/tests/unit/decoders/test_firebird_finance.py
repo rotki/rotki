@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
@@ -5,12 +7,16 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.firebird_finance.constants import CPT_FIREBIRD_FINANCE
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.constants.assets import A_BSC_BNB, A_ETH
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
+
+if TYPE_CHECKING:
+    from rotkehlchen.chain.binance_sc.node_inquirer import BinanceSCInquirer
+    from rotkehlchen.types import ChecksumEvmAddress
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -173,3 +179,66 @@ def test_swap_erc20_token_for_eth(optimism_inquirer, optimism_accounts):
         ),
     ]
     assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('binance_sc_accounts', [['0x887e8b6119B38C60cb03CAb204C0A704c6E0A473']])
+def test_swap_erc20_token_for_bnb(
+        binance_sc_inquirer: 'BinanceSCInquirer',
+        binance_sc_accounts: list['ChecksumEvmAddress'],
+) -> None:
+    tx_hash = deserialize_evm_tx_hash('0x38196d5c4c890ba5fbc897868da0fba917394f64daedb95c494fbf2c4da1145a')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=binance_sc_inquirer, tx_hash=tx_hash)  # noqa: E501
+    user_address, timestamp, gas_amount, out_amount, in_amount, approve_amount = binance_sc_accounts[0], TimestampMS(1708623602000), '0.0003746295', '2.643598626182094592', '0.006965207273931161', '115792089237316195423570985008687907853269984665640564039454.940409286947545343'  # noqa: E501
+    a_frax = Asset('eip155:56/erc20:0x90C97F71E18723b0Cf0dfa30ee176Ab653E89F40')
+    assert events == [EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=0,
+        timestamp=timestamp,
+        location=Location.BINANCE_SC,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_BSC_BNB,
+        balance=Balance(FVal(gas_amount)),
+        location_label=user_address,
+        notes=f'Burn {gas_amount} BNB for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=265,
+        timestamp=timestamp,
+        location=Location.BINANCE_SC,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.APPROVE,
+        asset=a_frax,
+        balance=Balance(FVal(approve_amount)),
+        location_label=user_address,
+        notes=f'Set FRAX spending approval of {user_address} by 0x92e4F29Be975C1B1eB72E77De24Dccf11432a5bd to {approve_amount}',  # noqa: E501
+        address=string_to_evm_address('0x92e4F29Be975C1B1eB72E77De24Dccf11432a5bd'),
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=266,
+        timestamp=timestamp,
+        location=Location.BINANCE_SC,
+        event_type=HistoryEventType.TRADE,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=a_frax,
+        balance=Balance(FVal(out_amount)),
+        location_label=user_address,
+        notes=f'Swap {out_amount} FRAX in Firebird Finance',
+        counterparty=CPT_FIREBIRD_FINANCE,
+        address=string_to_evm_address('0x0852Dba413446B2fd8Cc0e45c96b7F226b09e992'),
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=267,
+        timestamp=timestamp,
+        location=Location.BINANCE_SC,
+        event_type=HistoryEventType.TRADE,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_BSC_BNB,
+        balance=Balance(FVal(in_amount)),
+        location_label=user_address,
+        notes=f'Receive {in_amount} BNB as the result of a swap in Firebird Finance',
+        counterparty=CPT_FIREBIRD_FINANCE,
+        address=string_to_evm_address('0x0852Dba413446B2fd8Cc0e45c96b7F226b09e992'),
+    )]
