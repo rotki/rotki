@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
@@ -9,13 +11,21 @@ from rotkehlchen.chain.base.modules.odos.v2.constants import (
     ODOS_V2_ROUTER as BASE_ROUTER,
 )
 from rotkehlchen.chain.base.node_inquirer import BaseInquirer
+from rotkehlchen.chain.binance_sc.modules.odos.v2.constants import ODOS_V2_ROUTER as BSC_ROUTER
 from rotkehlchen.chain.ethereum.modules.odos.v2.constants import ODOS_V2_ROUTER as ETH_ROUTER
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.odos.v2.constants import CPT_ODOS_V2
 from rotkehlchen.chain.optimism.modules.odos.v2.constants import ODOS_V2_ROUTER as OP_ROUTER
 from rotkehlchen.chain.polygon_pos.modules.odos.v2.constants import ODOS_V2_ROUTER as MATIC_ROUTER
 from rotkehlchen.chain.scroll.modules.odos.v2.constants import ODOS_V2_ROUTER as SCROLL_ROUTER
-from rotkehlchen.constants.assets import A_ARB, A_ETH, A_POLYGON_POS_MATIC, A_USDC, A_WETH
+from rotkehlchen.constants.assets import (
+    A_ARB,
+    A_BSC_BNB,
+    A_ETH,
+    A_POLYGON_POS_MATIC,
+    A_USDC,
+    A_WETH,
+)
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -24,6 +34,9 @@ from rotkehlchen.tests.unit.decoders.test_metamask import A_OPTIMISM_USDC
 from rotkehlchen.tests.unit.decoders.test_zerox import A_ARBITRUM_USDC
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import ChecksumEvmAddress, Location, TimestampMS, deserialize_evm_tx_hash
+
+if TYPE_CHECKING:
+    from rotkehlchen.chain.binance_sc.node_inquirer import BinanceSCInquirer
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -785,6 +798,70 @@ def test_swap_on_scroll(scroll_inquirer, scroll_accounts):
         address=SCROLL_ROUTER,
     )]
     assert expected_events == events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('binance_sc_accounts', [['0x4d29a5fdB0787690bd1c68e0107753c3ad1cF67B']])
+def test_swap_on_binance_sc(
+        binance_sc_inquirer: 'BinanceSCInquirer',
+        binance_sc_accounts: list['ChecksumEvmAddress'],
+) -> None:
+    tx_hash = deserialize_evm_tx_hash('0x21d24bd239db461b7fe53aef5b82d0d3b7c3a62241a3a3fd3a2ba9434bf4a53d')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=binance_sc_inquirer, tx_hash=tx_hash)  # noqa: E501
+    user_address, timestamp, gas_amount, swap_amount, receive_amount, fee_amount = binance_sc_accounts[0], TimestampMS(1736524750000), '0.000168374', '0.003', '2.07239458068046454', '0.001247178283258054'  # noqa: E501
+    a_bsc_usdc = Asset('eip155:56/erc20:0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d')
+    assert events == [EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=0,
+        timestamp=timestamp,
+        location=Location.BINANCE_SC,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_BSC_BNB,
+        balance=Balance(FVal(gas_amount)),
+        location_label=user_address,
+        notes=f'Burn {gas_amount} BNB for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.BINANCE_SC,
+        event_type=HistoryEventType.TRADE,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_BSC_BNB,
+        balance=Balance(FVal(swap_amount)),
+        location_label=user_address,
+        notes=f'Swap {swap_amount} BNB in Odos v2',
+        counterparty=CPT_ODOS_V2,
+        address=BSC_ROUTER,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=2,
+        timestamp=timestamp,
+        location=Location.BINANCE_SC,
+        event_type=HistoryEventType.TRADE,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=a_bsc_usdc,
+        balance=Balance(FVal(receive_amount)),
+        location_label=user_address,
+        notes=f'Receive {receive_amount} USDC as the result of a swap in Odos v2',
+        counterparty=CPT_ODOS_V2,
+        address=BSC_ROUTER,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=3,
+        timestamp=timestamp,
+        location=Location.BINANCE_SC,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=a_bsc_usdc,
+        balance=Balance(FVal(fee_amount)),
+        location_label=user_address,
+        notes=f'Spend {fee_amount} USDC as an Odos v2 fee',
+        counterparty=CPT_ODOS_V2,
+        address=BSC_ROUTER,
+    )]
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])

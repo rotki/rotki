@@ -1,19 +1,33 @@
+from typing import TYPE_CHECKING
+
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.arbitrum_one.modules.odos.v1.constants import ODOS_V1_ROUTER as ARB_ROUTER
+from rotkehlchen.chain.binance_sc.modules.odos.v1.constants import ODOS_V1_ROUTER as BSC_ROUTER
 from rotkehlchen.chain.ethereum.modules.odos.v1.constants import ODOS_V1_ROUTER as ETH_ROUTER
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.odos.v1.constants import CPT_ODOS_V1
 from rotkehlchen.chain.optimism.modules.odos.v1.constants import ODOS_V1_ROUTER as OPT_ROUTER
 from rotkehlchen.chain.polygon_pos.modules.odos.v1.constants import ODOS_V1_ROUTER as POL_ROUTER
-from rotkehlchen.constants.assets import A_ETH, A_LUSD, A_POLYGON_POS_MATIC, A_WETH, A_WETH_ARB
+from rotkehlchen.constants.assets import (
+    A_BSC_BNB,
+    A_ETH,
+    A_LUSD,
+    A_POLYGON_POS_MATIC,
+    A_WETH,
+    A_WETH_ARB,
+)
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
+
+if TYPE_CHECKING:
+    from rotkehlchen.chain.binance_sc.node_inquirer import BinanceSCInquirer
+    from rotkehlchen.types import ChecksumEvmAddress
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -275,3 +289,53 @@ def test_swap_matic_to_token_polygon(polygon_pos_inquirer, polygon_pos_accounts)
         address=POL_ROUTER,
     )]
     assert expected_events == events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('binance_sc_accounts', [['0xC5E943D372Da091a7ff9632ea13d7e8d3a6a1494']])
+def test_swap_bnb_to_token_binance_sc(
+        binance_sc_inquirer: 'BinanceSCInquirer',
+        binance_sc_accounts: list['ChecksumEvmAddress'],
+) -> None:
+    tx_hash = deserialize_evm_tx_hash('0xd8a005930d1926b47bee9b440ff62f5af3ab36b77234247146ee3188af901462')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=binance_sc_inquirer, tx_hash=tx_hash)  # noqa: E501
+    user_address, timestamp, gas_amount, swap_amount, receive_amount = binance_sc_accounts[0], TimestampMS(1693386073000), '0.000979203', '0.005', '362.301589519456297536'  # noqa: E501
+    assert events == [EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=0,
+        timestamp=timestamp,
+        location=Location.BINANCE_SC,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_BSC_BNB,
+        balance=Balance(FVal(gas_amount)),
+        location_label=user_address,
+        notes=f'Burn {gas_amount} BNB for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.BINANCE_SC,
+        event_type=HistoryEventType.TRADE,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_BSC_BNB,
+        balance=Balance(FVal(swap_amount)),
+        location_label=user_address,
+        notes=f'Swap {swap_amount} BNB in Odos v1',
+        counterparty=CPT_ODOS_V1,
+        address=BSC_ROUTER,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=2,
+        timestamp=timestamp,
+        location=Location.BINANCE_SC,
+        event_type=HistoryEventType.TRADE,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=Asset('eip155:56/erc20:0x1e32B79d8203AC691499fBFbB02c07A9C9850Dd7'),
+        balance=Balance(FVal(receive_amount)),
+        location_label=user_address,
+        notes=f'Receive {receive_amount} VEP as the result of a swap in Odos v1',
+        counterparty=CPT_ODOS_V1,
+        address=BSC_ROUTER,
+    )]
