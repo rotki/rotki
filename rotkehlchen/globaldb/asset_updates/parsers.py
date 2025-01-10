@@ -1,7 +1,6 @@
 import abc
 import logging
 import re
-from collections.abc import Callable
 from typing import TYPE_CHECKING, Generic, TypeVar
 
 from rotkehlchen.assets.types import AssetData, AssetType
