@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.ethereum.modules.thegraph.constants import CONTRACT_STAKING
 from rotkehlchen.chain.ethereum.utils import (
-    token_normalized_value,
+    asset_normalized_value,
     token_normalized_value_decimals,
 )
 from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS
@@ -64,9 +64,9 @@ class ThegraphDecoder(ThegraphCommonDecoder):
 
         indexer = bytes_to_address(context.tx_log.topics[3])
         indexer_l2 = bytes_to_address(context.tx_log.data[:32])
-        transferred_delegation_tokens = token_normalized_value(
-            token_amount=int.from_bytes(context.tx_log.data[32:]),
-            token=self.token,
+        transferred_delegation_tokens = asset_normalized_value(
+            amount=int.from_bytes(context.tx_log.data[32:]),
+            asset=self.token,
         )
         event = self.base.make_event_from_transaction(
             transaction=context.transaction,

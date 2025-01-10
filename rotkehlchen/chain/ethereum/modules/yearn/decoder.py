@@ -14,7 +14,7 @@ from rotkehlchen.chain.ethereum.modules.yearn.constants import (
     YEARN_PARTNER_TRACKER,
 )
 from rotkehlchen.chain.ethereum.modules.yearn.utils import query_yearn_vaults
-from rotkehlchen.chain.ethereum.utils import should_update_protocol_cache, token_normalized_value
+from rotkehlchen.chain.ethereum.utils import asset_normalized_value, should_update_protocol_cache
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface, ReloadableDecoderMixin
@@ -208,9 +208,9 @@ class YearnDecoder(DecoderInterface, ReloadableDecoderMixin):
             log.error(f'Failed to find underlying token for yearn vault {vault_address}')
             return DEFAULT_DECODING_OUTPUT
 
-        vault_amount = token_normalized_value(
-            token_amount=int.from_bytes(context.tx_log.data[0:32]),
-            token=vault_token,
+        vault_amount = asset_normalized_value(
+            amount=int.from_bytes(context.tx_log.data[0:32]),
+            asset=vault_token,
         )
 
         for tx_log in context.all_logs:
@@ -225,9 +225,9 @@ class YearnDecoder(DecoderInterface, ReloadableDecoderMixin):
             log.error(f'Failed to find transfer of yearn vault underlying token for {context.transaction}')  # noqa: E501
             return DEFAULT_DECODING_OUTPUT
 
-        underlying_amount = token_normalized_value(
-            token_amount=int.from_bytes(underlying_transfer_tx_log.data[0:32]),
-            token=underlying_vault_token,
+        underlying_amount = asset_normalized_value(
+            amount=int.from_bytes(underlying_transfer_tx_log.data[0:32]),
+            asset=underlying_vault_token,
         )
 
         if bytes_to_address(context.tx_log.topics[1]) == ZERO_ADDRESS:  # deposit
