@@ -25,14 +25,14 @@ if TYPE_CHECKING:
 
 @pytest.mark.vcr(match_on=['alchemy_api_matcher'])
 @pytest.mark.parametrize('should_mock_price_queries', [False])
-def test_alchemy_historical_prices(price_historian: 'PriceHistorian', session_alchemy: 'Alchemy'):  # pylint: disable=unused-argument
+def test_alchemy_historical_prices(price_historian: 'PriceHistorian', alchemy: 'Alchemy'):  # pylint: disable=unused-argument
     eur = A_EUR.resolve_to_asset_with_oracles()
     eth = A_ETH.resolve_to_asset_with_oracles()
     usd = A_USD.resolve_to_asset_with_oracles()
     dai = A_DAI.resolve_to_asset_with_oracles()
 
     # First query usd price
-    price = session_alchemy.query_historical_price(
+    price = alchemy.query_historical_price(
         from_asset=eth,
         to_asset=usd,
         timestamp=Timestamp(1597024800),
@@ -40,7 +40,7 @@ def test_alchemy_historical_prices(price_historian: 'PriceHistorian', session_al
     assert price == Price(FVal('394.3572783286'))
 
     # Query EUR price
-    price = session_alchemy.query_historical_price(
+    price = alchemy.query_historical_price(
         from_asset=eth,
         to_asset=eur,
         timestamp=Timestamp(1597024800),
@@ -48,7 +48,7 @@ def test_alchemy_historical_prices(price_historian: 'PriceHistorian', session_al
     assert price == Price(FVal('394.3572783286') * FVal('0.850618'))
 
     # Query an evm token
-    price = session_alchemy.query_historical_price(
+    price = alchemy.query_historical_price(
         from_asset=dai,
         to_asset=usd,
         timestamp=Timestamp(1597024800),
@@ -58,18 +58,18 @@ def test_alchemy_historical_prices(price_historian: 'PriceHistorian', session_al
 
 @pytest.mark.vcr(match_on=['alchemy_api_matcher'])
 @pytest.mark.parametrize('should_mock_price_queries', [False])
-def test_alchemy_current_prices(price_historian: 'PriceHistorian', session_alchemy: 'Alchemy'):  # pylint: disable=unused-argument
+def test_alchemy_current_prices(price_historian: 'PriceHistorian', alchemy: 'Alchemy'):  # pylint: disable=unused-argument
     eth = A_ETH.resolve_to_asset_with_oracles()
     usd = A_USD.resolve_to_asset_with_oracles()
     dai = A_DAI.resolve_to_asset_with_oracles()
 
-    price = session_alchemy.query_current_price(
+    price = alchemy.query_current_price(
         from_asset=eth,
         to_asset=usd,
     )
     assert price == Price(FVal('3425.0697715654'))
 
-    price = session_alchemy.query_current_price(
+    price = alchemy.query_current_price(
         from_asset=dai,
         to_asset=usd,
     )
@@ -80,7 +80,7 @@ def test_alchemy_current_prices(price_historian: 'PriceHistorian', session_alche
 @pytest.mark.parametrize('should_mock_price_queries', [False])
 def test_alchemy_api_errors(
         price_historian: 'PriceHistorian',  # pylint: disable=unused-argument
-        session_alchemy: 'Alchemy',
+        alchemy: 'Alchemy',
         database: 'DBHandler',
 ):
     usd = A_USD.resolve_to_asset_with_oracles()
@@ -91,7 +91,7 @@ def test_alchemy_api_errors(
     )
 
     # fetch the current price of a token that is not supported.
-    price = session_alchemy.query_current_price(
+    price = alchemy.query_current_price(
         from_asset=sample_token,
         to_asset=usd,
     )
@@ -99,7 +99,7 @@ def test_alchemy_api_errors(
 
     # fetch the historical price of a token that is not supported.
     with pytest.raises(RemoteError, match='Token address not found'):
-        session_alchemy.query_historical_price(
+        alchemy.query_historical_price(
             from_asset=sample_token,
             to_asset=usd,
             timestamp=Timestamp(1697024800),

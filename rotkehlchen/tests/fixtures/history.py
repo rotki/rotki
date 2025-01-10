@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 import pytest
 
 from rotkehlchen.chain.ethereum.oracles.uniswap import UniswapV2Oracle, UniswapV3Oracle
@@ -9,6 +11,10 @@ from rotkehlchen.history.manager import HistoryQueryingManager
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.history.types import DEFAULT_HISTORICAL_PRICE_ORACLES_ORDER
 from rotkehlchen.tests.utils.history import maybe_mock_historical_price_queries
+from rotkehlchen.types import ApiKey, ExternalService, ExternalServiceApiCredentials
+
+if TYPE_CHECKING:
+    from rotkehlchen.db.dbhandler import DBHandler
 
 
 @pytest.fixture(name='cryptocompare')
@@ -21,9 +27,17 @@ def fixture_session_coingecko():
     return Coingecko(database=None)
 
 
-@pytest.fixture(scope='session', name='session_alchemy')
-def fixture_session_alchemy():
-    return Alchemy(database=None)
+@pytest.fixture(name='alchemy')
+def fixture_alchemy(database: 'DBHandler'):
+    with database.user_write() as write_cursor:
+        database.add_external_service_credentials(
+            write_cursor=write_cursor,
+            credentials=[ExternalServiceApiCredentials(
+                service=ExternalService.ALCHEMY,
+                api_key=ApiKey('dummy-api-key'),
+            )],
+        )
+    return Alchemy(database=database)
 
 
 @pytest.fixture(scope='session', name='session_defillama')
@@ -64,7 +78,7 @@ def price_historian(
         mocked_price_queries,
         cryptocompare,
         session_coingecko,
-        session_alchemy,
+        alchemy,
         session_defillama,
         uniswapv2_inquirer,
         uniswapv3_inquirer,
@@ -80,7 +94,7 @@ def price_historian(
         data_directory=data_dir,
         cryptocompare=cryptocompare,
         coingecko=session_coingecko,
-        alchemy=session_alchemy,
+        alchemy=alchemy,
         defillama=session_defillama,
         uniswapv2=uniswapv2_inquirer,
         uniswapv3=uniswapv3_inquirer,

@@ -1940,6 +1940,11 @@
       "hint": "Enter your CryptoCompare API key",
       "title": "CryptoCompare"
     },
+    "alchemy": {
+      "description": "rotki uses alchemy to obtain price information about assets in your portfolio. An API key is needed if you want it included in your list of oracles.",
+      "hint": "Enter your Alchemy API key",
+      "title": "Alchemy"
+    },
     "delete_error": {
       "description": "Error while removing the external service api keys: {message}"
     },

@@ -214,6 +214,7 @@ const Auth = z.object({
 export type Auth = z.infer<typeof Auth>;
 
 export const ExternalServiceKeys = z.object({
+  alchemy: ApiKey.optional(),
   beaconchain: ApiKey.optional(),
   blockscout: z.record(ApiKey.nullable()).optional(),
   coingecko: ApiKey.optional(),

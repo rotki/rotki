@@ -30,9 +30,12 @@ from rotkehlchen.tests.utils.constants import A_JPY
 from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.tests.utils.mock import MockWeb3
 from rotkehlchen.types import (
+    ApiKey,
     ChecksumEvmAddress,
     CostBasisMethod,
     ExchangeLocationID,
+    ExternalService,
+    ExternalServiceApiCredentials,
     Location,
     ModuleName,
     SupportedBlockchain,
@@ -721,3 +724,31 @@ def test_etherscan_unified_api_setting(
                 account=string_to_evm_address('0x95e62E8FF84ed8456fDc9739eE4A9597Bb6E4c1f'),
             ) == HasChainActivity.TRANSACTIONS
             assert request_count == 1  # confirm the asserts in mock_request were hit
+
+
+def test_update_oracles_order_settings(rotkehlchen_api_server: 'APIServer') -> None:
+    response = requests.put(
+        api_url_for(rotkehlchen_api_server, 'settingsresource'),
+        json={'settings': {'current_price_oracles': ['alchemy']}},
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='You have enabled the Alchemy price oracle but you do not have an API key set',  # noqa: E501
+        status_code=HTTPStatus.CONFLICT,
+    )
+
+    # add the api key and see that if passes.
+    with rotkehlchen_api_server.rest_api.rotkehlchen.data.db.user_write() as write_cursor:
+        rotkehlchen_api_server.rest_api.rotkehlchen.data.db.add_external_service_credentials(
+            write_cursor=write_cursor,
+            credentials=[ExternalServiceApiCredentials(
+                service=ExternalService.ALCHEMY,
+                api_key=ApiKey('123totallyrealapikey123'),
+            )],
+        )
+    response = requests.put(
+        api_url_for(rotkehlchen_api_server, 'settingsresource'),
+        json={'settings': {'current_price_oracles': ['alchemy']}},
+    )
+    result = assert_proper_sync_response_with_result(response=response)
+    assert result['current_price_oracles'] == ['alchemy']
