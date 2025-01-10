@@ -11,7 +11,7 @@ from rotkehlchen.chain.evm.decoding.open_ocean.constants import (
     OPENOCEAN_LABEL,
 )
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants.assets import A_ARB, A_ETH, A_POLYGON_POS_MATIC, A_WETH
+from rotkehlchen.constants.assets import A_ARB, A_BSC_BNB, A_ETH, A_POLYGON_POS_MATIC, A_WETH
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -21,6 +21,7 @@ from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 if TYPE_CHECKING:
     from rotkehlchen.chain.arbitrum_one.node_inquirer import ArbitrumOneInquirer
     from rotkehlchen.chain.base.node_inquirer import BaseInquirer
+    from rotkehlchen.chain.binance_sc.node_inquirer import BinanceSCInquirer
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
     from rotkehlchen.chain.polygon_pos.node_inquirer import PolygonPOSInquirer
@@ -375,3 +376,66 @@ def test_openocean_swap_uniswapv3(
             address=OPENOCEAN_EXCHANGE_ADDRESS,
         ),
     ]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('binance_sc_accounts', [['0xbF10AEcf9b1D6EbBF3d23237BA90d74600a7Cb3e']])
+def test_openocean_swap_on_binance_sc(
+        binance_sc_inquirer: 'BinanceSCInquirer',
+        binance_sc_accounts: list['ChecksumEvmAddress'],
+) -> None:
+    tx_hash = deserialize_evm_tx_hash('0x401b2209ef972bf9f3e77b743df65b9a0057e21e3a325b790811902d6faa6f2f')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=binance_sc_inquirer, tx_hash=tx_hash)  # noqa: E501
+    user_address, timestamp, gas_amount, spend_amount, receive_amount, approve_amount = binance_sc_accounts[0], TimestampMS(1736523190000), '0.000261305', '0.006797769273691619', '0.031725949469604878', '115792089237316195423570985008687907853269984665640564039457.577210143855948316'  # noqa: E501
+    a_bsc_eth = Asset('eip155:56/erc20:0x2170Ed0880ac9A755fd29B2688956BD959F933F8')
+    assert events == [EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=0,
+        timestamp=timestamp,
+        location=Location.BINANCE_SC,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_BSC_BNB,
+        balance=Balance(FVal(gas_amount)),
+        location_label=user_address,
+        notes=f'Burn {gas_amount} BNB for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=338,
+        timestamp=timestamp,
+        location=Location.BINANCE_SC,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.APPROVE,
+        asset=a_bsc_eth,
+        balance=Balance(FVal(approve_amount)),
+        location_label=user_address,
+        notes=f'Set ETH spending approval of {user_address} by 0x000000000022D473030F116dDEE9F6B43aC78BA3 to {approve_amount}',  # noqa: E501
+        address=string_to_evm_address('0x000000000022D473030F116dDEE9F6B43aC78BA3'),
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=339,
+        timestamp=timestamp,
+        location=Location.BINANCE_SC,
+        event_type=HistoryEventType.TRADE,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=a_bsc_eth,
+        balance=Balance(FVal(spend_amount)),
+        location_label=user_address,
+        notes=f'Swap {spend_amount} ETH in {OPENOCEAN_LABEL}',
+        counterparty=CPT_OPENOCEAN,
+        address=string_to_evm_address('0x55877bD7F2EE37BDe55cA4B271A3631f3A7ef121'),
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=340,
+        timestamp=timestamp,
+        location=Location.BINANCE_SC,
+        event_type=HistoryEventType.TRADE,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_BSC_BNB,
+        balance=Balance(FVal(receive_amount)),
+        location_label=user_address,
+        notes=f'Receive {receive_amount} BNB from {OPENOCEAN_LABEL} swap',
+        counterparty=CPT_OPENOCEAN,
+        address=string_to_evm_address('0x55877bD7F2EE37BDe55cA4B271A3631f3A7ef121'),
+    )]
