@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from rotkehlchen.chain.evm.manager import EvmManager
+from rotkehlchen.chain.evm.manager import CurveManagerMixin, EvmManager
 
 from .accountant import BinanceSCAccountingAggregator
 from .decoding.decoder import BinanceSCTransactionDecoder
@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from .node_inquirer import BinanceSCInquirer
 
 
-class BinanceSCManager(EvmManager):
+class BinanceSCManager(EvmManager, CurveManagerMixin):
 
     def __init__(self, node_inquirer: 'BinanceSCInquirer') -> None:
         super().__init__(
