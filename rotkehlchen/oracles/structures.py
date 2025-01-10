@@ -20,7 +20,6 @@ DEFAULT_CURRENT_PRICE_ORACLES_ORDER = (
     CurrentPriceOracle.COINGECKO,
     CurrentPriceOracle.DEFILLAMA,
     CurrentPriceOracle.CRYPTOCOMPARE,
-    CurrentPriceOracle.ALCHEMY,
     CurrentPriceOracle.UNISWAPV2,
     CurrentPriceOracle.UNISWAPV3,
 )

@@ -1,6 +1,6 @@
 import logging
 from http import HTTPStatus
-from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple
+from typing import TYPE_CHECKING, Any, Literal, NamedTuple
 
 import requests
 
@@ -21,7 +21,7 @@ from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.interfaces import HistoricalPriceOracleInterface
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ApiKey, ChainID, ExternalService, Price, Timestamp
+from rotkehlchen.types import ChainID, ExternalService, Price, Timestamp
 from rotkehlchen.utils.misc import iso8601ts_to_timestamp, set_user_agent, ts_now
 from rotkehlchen.utils.mixins.penalizable_oracle import PenalizablePriceOracleMixin
 from rotkehlchen.utils.network import create_session
@@ -97,8 +97,6 @@ class Alchemy(
     HistoricalPriceOracleInterface,
     PenalizablePriceOracleMixin,
 ):
-    # this was added by Isaac, and it is scoped to just price queries.
-    default_api_key: Final[ApiKey] = ApiKey('Y_nFGh5UCi30NzRWOAam0gsVpQrjDXZX')
 
     def __init__(self, database: 'DBHandler | None') -> None:
         ExternalServiceWithApiKeyOptionalDB.__init__(
@@ -123,7 +121,7 @@ class Alchemy(
             https://docs.alchemy.com/reference/get-token-prices-by-address
 
         May raise:
-        - RemoteError if there is a problem querying Alchemy
+        - RemoteError if there is a problem querying Alchemy.
         """
         try:
             alchemy_asset_data = self._get_alchemy_asset_data(from_asset)
@@ -387,8 +385,7 @@ class Alchemy(
         May raise:
         - RemoteError
         """
-        if (api_key := self._get_api_key()) is None:
-            api_key = self.default_api_key
+        assert (api_key := self._get_api_key()) is not None, "Can't be None since Alchemy is added as an oracle only if there is an api key"  # noqa: E501, RUF018
 
         url = f'https://api.g.alchemy.com/prices/v1/{api_key}/tokens/{endpoint}'
         log.debug(f'Querying alchemy api: {url=} with {payload=} and {params=}')

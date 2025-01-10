@@ -52,6 +52,10 @@ const services = [
     component: defineAsyncComponent(() => import('@/components/settings/api-keys/external/CoinGeckoApiKey.vue')),
     name: 'coingecko',
   },
+  {
+    component: defineAsyncComponent(() => import('@/components/settings/api-keys/external/AlchemyApiKey.vue')),
+    name: 'alchemy',
+  },
 ];
 
 // Update the filteredServices computed property

@@ -39,7 +39,6 @@ DEFAULT_HISTORICAL_PRICE_ORACLES_ORDER = (
     HistoricalPriceOracle.CRYPTOCOMPARE,
     HistoricalPriceOracle.COINGECKO,
     HistoricalPriceOracle.DEFILLAMA,
-    HistoricalPriceOracle.ALCHEMY,
     HistoricalPriceOracle.UNISWAPV3,
     HistoricalPriceOracle.UNISWAPV2,
 )

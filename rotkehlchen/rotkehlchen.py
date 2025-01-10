@@ -6,6 +6,7 @@ import logging
 import os
 import time
 from collections import defaultdict
+from collections.abc import Callable, Sequence
 from pathlib import Path
 from types import FunctionType
 from typing import TYPE_CHECKING, Any, Literal, Optional, cast, overload
@@ -87,6 +88,7 @@ from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.icons import IconManager
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.oracles.structures import CurrentPriceOracle
 from rotkehlchen.premium.premium import (
     Premium,
     PremiumCredentials,
@@ -110,6 +112,7 @@ from rotkehlchen.types import (
     BTCAddress,
     ChainType,
     ChecksumEvmAddress,
+    ExternalService,
     ListOfBlockchainAddresses,
     Location,
     SubstrateAddress,
@@ -251,7 +254,7 @@ class Rotkehlchen:
         self.cryptocompare.db = None
         self.exchange_manager.delete_all_exchanges()
         self.data.logout()
-        for instance in (self.cryptocompare, self.defillama, self.coingecko, Inquirer()._manualcurrent):  # noqa: E501
+        for instance in (self.cryptocompare, self.defillama, self.coingecko, self.alchemy, Inquirer()._manualcurrent):  # noqa: E501
             if instance.db is not None:  # unset DB if needed
                 instance.unset_database()
         CachedSettings().reset()
@@ -330,6 +333,7 @@ class Rotkehlchen:
         self.cryptocompare.set_database(self.data.db)
         self.defillama.set_database(self.data.db)
         self.coingecko.set_database(self.data.db)
+        self.alchemy.set_database(self.data.db)
         Inquirer()._manualcurrent.set_database(database=self.data.db)
 
         # Anything that was set above here has to be cleaned in case of failure in the next step
@@ -541,6 +545,7 @@ class Rotkehlchen:
         self.cryptocompare.unset_database()
         self.defillama.unset_database()
         self.coingecko.unset_database()
+        self.alchemy.unset_database()
         Inquirer()._manualcurrent.unset_database()
         CachedSettings().reset()
 
@@ -1188,11 +1193,21 @@ class Rotkehlchen:
         if settings.btc_derivation_gap_limit is not None:
             self.chains_aggregator.btc_derivation_gap_limit = settings.btc_derivation_gap_limit
 
-        if settings.current_price_oracles is not None:
-            Inquirer().set_oracles_order(settings.current_price_oracles)
+        success, msg = self._validate_and_set_oracles(
+            oracle_type=CurrentPriceOracle,
+            oracles=settings.current_price_oracles,
+            set_oracles_order_method=Inquirer().set_oracles_order,
+        )
+        if not success:
+            return False, msg
 
-        if settings.historical_price_oracles is not None:
-            PriceHistorian().set_oracles_order(settings.historical_price_oracles)
+        success, msg = self._validate_and_set_oracles(
+            oracle_type=HistoricalPriceOracle,
+            oracles=settings.historical_price_oracles,
+            set_oracles_order_method=PriceHistorian().set_oracles_order,
+        )
+        if not success:
+            return False, msg
 
         if settings.active_modules is not None:
             self.chains_aggregator.process_new_modules_list(settings.active_modules)
@@ -1207,6 +1222,27 @@ class Rotkehlchen:
                 chain_manager: EvmManager = self.chains_aggregator.get_chain_manager(chain)
                 chain_manager.node_inquirer.etherscan.toggle_base_attributes()
 
+        return True, ''
+
+    def _validate_and_set_oracles(
+            self,
+            oracle_type: type[CurrentPriceOracle | HistoricalPriceOracle],
+            oracles: Sequence[CurrentPriceOracle] | Sequence[HistoricalPriceOracle] | None,
+            set_oracles_order_method: Callable,
+    ) -> tuple[bool, str]:
+        if oracles is None:
+            return True, ''
+
+        if (
+            oracle_type.ALCHEMY in oracles and
+            self.data.db.get_external_service_credentials(ExternalService.ALCHEMY) is None
+        ):
+            return False, (
+                'You have enabled the Alchemy price oracle but you do not have an API key '
+                'set. Please go to API Keys -> External Services and add one.'
+            )
+
+        set_oracles_order_method(oracles)
         return True, ''
 
     def get_settings(self, cursor: 'DBCursor') -> DBSettings:
