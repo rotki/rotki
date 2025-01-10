@@ -7,6 +7,9 @@ from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.base.modules.curve.constants import CURVE_SWAP_ROUTER_NG
+from rotkehlchen.chain.binance_sc.modules.curve.constants import (
+    CURVE_SWAP_ROUTER_NG as CURVE_SWAP_ROUTER_NG_BSC,
+)
 from rotkehlchen.chain.ethereum.modules.curve.constants import (
     FEE_DISTRIBUTOR,
     GAUGE_BRIBE_V2,
@@ -19,6 +22,7 @@ from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import (
+    A_BSC_BNB,
     A_CRV,
     A_CRV_3CRV,
     A_DAI,
@@ -52,7 +56,9 @@ from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 from rotkehlchen.utils.misc import timestamp_to_date
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.binance_sc.node_inquirer import BinanceSCInquirer
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
+    from rotkehlchen.types import ChecksumEvmAddress
 
 
 @pytest.mark.parametrize('load_global_caches', [[CPT_CURVE]])
@@ -2561,3 +2567,66 @@ def test_deposit_order(gnosis_inquirer, gnosis_accounts, load_global_caches):
             address=ZERO_ADDRESS,
         ),
     ]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('binance_sc_accounts', [['0x1b414E1977EAA94FA57c3e669683769aD19E88D5']])
+def test_curve_swap_router_binance_sc(
+        binance_sc_inquirer: 'BinanceSCInquirer',
+        binance_sc_accounts: list['ChecksumEvmAddress'],
+):
+    tx_hash = deserialize_evm_tx_hash('0x79bda33cfae80c8d7b26def223f409e54cfddc33ec7e009523fb5bc708e85042')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=binance_sc_inquirer, tx_hash=tx_hash)  # noqa: E501
+    user_address, timestamp, gas_amount, swap_amount, receive_amount = binance_sc_accounts[0], TimestampMS(1735287841000), '0.000226961', '50.400357174206099256', '50.337143372227800304'  # noqa: E501
+    a_bsc_usd = Asset('eip155:56/erc20:0x55d398326f99059fF775485246999027B3197955')
+    assert events == [EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=0,
+        timestamp=timestamp,
+        location=Location.BINANCE_SC,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_BSC_BNB,
+        balance=Balance(FVal(gas_amount)),
+        location_label=user_address,
+        notes=f'Burn {gas_amount} BNB for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=77,
+        timestamp=timestamp,
+        location=Location.BINANCE_SC,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.APPROVE,
+        asset=a_bsc_usd,
+        balance=Balance(ZERO),
+        location_label=user_address,
+        notes=f'Revoke BSC-USD spending approval of {user_address} by {CURVE_SWAP_ROUTER_NG_BSC}',
+        address=CURVE_SWAP_ROUTER_NG_BSC,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=78,
+        timestamp=timestamp,
+        location=Location.BINANCE_SC,
+        event_type=HistoryEventType.TRADE,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=a_bsc_usd,
+        balance=Balance(FVal(swap_amount)),
+        location_label=user_address,
+        notes=f'Swap {swap_amount} BSC-USD in curve',
+        counterparty=CPT_CURVE,
+        address=CURVE_SWAP_ROUTER_NG_BSC,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=79,
+        timestamp=timestamp,
+        location=Location.BINANCE_SC,
+        event_type=HistoryEventType.TRADE,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=Asset('eip155:56/erc20:0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d'),
+        balance=Balance(FVal(receive_amount)),
+        location_label=user_address,
+        notes=f'Receive {receive_amount} USDC as the result of a swap in curve',
+        counterparty=CPT_CURVE,
+        address=CURVE_SWAP_ROUTER_NG_BSC,
+    )]
