@@ -312,7 +312,7 @@ def fixture_vcr_base_dir() -> Path:
         current_branch = os.popen('git rev-parse --abbrev-ref HEAD').read().rstrip('\n')
     log.debug(f'At VCR setup, {current_branch=} {root_dir=}')
 
-    checkout_proc = Popen(f'cd "{root_dir}" && git fetch {depth_arg} origin && git checkout {current_branch}', shell=True, stdout=PIPE, stderr=PIPE)  # noqa: E501
+    checkout_proc = Popen(f'cd "{root_dir}" && git fetch {depth_arg} origin && git checkout {current_branch}', env=dict(os.environ, LANG='en_US.UTF-8'), shell=True, stdout=PIPE, stderr=PIPE)  # noqa: E501
     _, stderr = checkout_proc.communicate(timeout=SUBPROCESS_TIMEOUT)
 
     if (
