@@ -16,6 +16,7 @@ from rotkehlchen.constants.assets import (
     A_USDT,
     A_WBTC,
     A_WETH,
+    A_WETH_ARB,
     A_XDAI,
 )
 from rotkehlchen.fval import FVal
@@ -1450,6 +1451,223 @@ def test_aave_v3_interest_on_transfer(ethereum_inquirer, ethereum_accounts) -> N
             location_label=ethereum_accounts[0],
             notes=f'Send {transfer_amount} aEthUSDT from {ethereum_accounts[0]} to 0x9C9EF79aae8996c72eA8C374011D7ac1eB42c4Fc',  # noqa: E501
             address=string_to_evm_address('0x9C9EF79aae8996c72eA8C374011D7ac1eB42c4Fc'),
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('arbitrum_one_accounts', [['0x57D4bEb0fD4438b8910fEf03a961131742D845E2', '0x1cdC859a9685103A0791075B6c365e2D583BC236']])   # noqa: E501
+def test_aave_v3_close_position_with_safe(arbitrum_one_inquirer, arbitrum_one_accounts) -> None:
+    tx_hash = deserialize_evm_tx_hash('0x56c57b83508f46d45af6b3230ee882f99df315c089af3250fbe5494ea59e5624')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=arbitrum_one_inquirer,
+        tx_hash=tx_hash,
+    )
+    timestamp, user_eoa_account, user_safe_proxy, eth_interest_amount, eth_withdraw_amount, usd_paid_back_amount, gas_fees = TimestampMS(1736028280000), arbitrum_one_accounts[0], arbitrum_one_accounts[1], '0.031127570161941882', '3.007038496271076913', '2353.18136', '0.00000658667'  # noqa: E501
+
+    expected_events = [
+        EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(gas_fees)),
+            location_label=user_eoa_account,
+            notes=f'Burn {gas_fees} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.TRANSFER,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(eth_withdraw_amount) + FVal(eth_interest_amount)),
+            location_label=user_safe_proxy,
+            notes=f'Transfer {FVal(eth_withdraw_amount) + FVal(eth_interest_amount)} ETH to {user_eoa_account}',  # noqa: E501
+            counterparty=None,
+            address=user_eoa_account,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=2,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(eth_withdraw_amount) + FVal(eth_interest_amount)),
+            location_label=user_safe_proxy,
+            # New bug, this event should detected as WETH unwrapping and not as a receive
+            notes=f'Receive {FVal(eth_withdraw_amount) + FVal(eth_interest_amount)} ETH from 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1',  # noqa: E501
+            counterparty=None,
+            address=A_WETH_ARB.resolve_to_evm_token().evm_address,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=3,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            balance=Balance(),
+            location_label=user_eoa_account,
+            notes=f'Successfully executed safe transaction 0xd7a87c1f11f5cbe9685d1e0627ea5ba8cf7373ec738cb2da4e345b836b67c2ef for multisig {user_safe_proxy}',  # noqa: E501
+            counterparty=CPT_SAFE_MULTISIG,
+            address=user_safe_proxy,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=4,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.TRANSFER,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=Asset('eip155:42161/erc20:0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9'),
+            balance=Balance(amount=FVal(usd_paid_back_amount)),
+            location_label=user_eoa_account,
+            notes=f'Transfer {usd_paid_back_amount} USDT from {user_eoa_account} to {user_safe_proxy}',  # noqa: E501
+            address=user_safe_proxy,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=5,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.APPROVE,
+            asset=Asset('eip155:42161/erc20:0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9'),
+            balance=Balance(amount=FVal('0.234868')),
+            location_label=user_eoa_account,
+            notes=f'Set USDT spending approval of {user_eoa_account} by {user_safe_proxy} to 0.234868',  # noqa: E501
+            address=user_safe_proxy,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=6,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.APPROVE,
+            asset=Asset('eip155:42161/erc20:0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9'),
+            balance=Balance(),
+            location_label=user_safe_proxy,
+            notes=f'Revoke USDT spending approval of {user_safe_proxy} by 0x794a61358D6845594F94dc1DB02A252b5b4814aD',  # noqa: E501
+            address=string_to_evm_address('0x794a61358D6845594F94dc1DB02A252b5b4814aD'),
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=7,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.APPROVE,
+            asset=Asset('eip155:42161/erc20:0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9'),
+            balance=Balance(amount=FVal(usd_paid_back_amount)),
+            location_label=user_safe_proxy,
+            notes=f'Set USDT spending approval of {user_safe_proxy} by 0x794a61358D6845594F94dc1DB02A252b5b4814aD to {usd_paid_back_amount}',   # noqa: E501
+            address=string_to_evm_address('0x794a61358D6845594F94dc1DB02A252b5b4814aD'),
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=8,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=EvmToken('eip155:42161/erc20:0xfb00AC187a8Eb5AFAE4eACE434F493Eb62672df7'),
+            balance=Balance(amount=FVal('2251.145752')),
+            location_label=user_safe_proxy,
+            notes=f'Send 2251.145752 variableDebtArbUSDT from {user_safe_proxy} to 0x0000000000000000000000000000000000000000',  # noqa: E501
+            address=ZERO_ADDRESS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=11,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.PAYBACK_DEBT,
+            asset=Asset('eip155:42161/erc20:0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9'),
+            balance=Balance(amount=FVal(usd_paid_back_amount)),
+            location_label=user_safe_proxy,
+            notes=f'Repay {usd_paid_back_amount} USDT on AAVE v3',
+            counterparty=CPT_AAVE_V3,
+            address=string_to_evm_address('0x6ab707Aca953eDAeFBc4fD23bA73294241490620'),
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=12,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.APPROVE,
+            asset=Asset('eip155:42161/erc20:0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9'),
+            balance=Balance(),
+            location_label=user_safe_proxy,
+            notes=f'Revoke USDT spending approval of {user_safe_proxy} by 0x794a61358D6845594F94dc1DB02A252b5b4814aD',  # noqa: E501
+            address=string_to_evm_address('0x794a61358D6845594F94dc1DB02A252b5b4814aD'),
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=16,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_WETH_ARB,
+            balance=Balance(),
+            location_label=user_safe_proxy,
+            notes='Disable WETH as collateral on AAVE v3',
+            counterparty=CPT_AAVE_V3,
+            address=user_safe_proxy,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=22,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_WETH_ARB,
+            balance=Balance(amount=FVal(eth_withdraw_amount) + FVal(eth_interest_amount)),
+            location_label=user_safe_proxy,
+            # TODO: https://github.com/orgs/rotki/projects/11?pane=issue&itemId=95697078 . This is not a spend but a WETH wrapping  # noqa: E501
+            notes=f'Send {FVal(eth_withdraw_amount) + FVal(eth_interest_amount)} WETH from {user_safe_proxy} to 0x0000000000000000000000000000000000000000',  # noqa: E501
+            address=ZERO_ADDRESS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=23,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.RETURN_WRAPPED,
+            asset=EvmToken('eip155:42161/erc20:0xe50fA9b3c56FfB159cB0FCA61F5c9D750e8128c8'),
+            balance=Balance(amount=FVal(eth_withdraw_amount)),
+            location_label=user_safe_proxy,
+            notes=f'Return {eth_withdraw_amount} aArbWETH to AAVE v3',
+            counterparty=CPT_AAVE_V3,
+            address=ZERO_ADDRESS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=24,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.REMOVE_ASSET,
+            asset=A_WETH_ARB,
+            balance=Balance(amount=FVal(eth_withdraw_amount)),
+            location_label=user_safe_proxy,
+            notes=f'Withdraw {eth_withdraw_amount} WETH from AAVE v3',
+            counterparty=CPT_AAVE_V3,
+            address=string_to_evm_address('0xe50fA9b3c56FfB159cB0FCA61F5c9D750e8128c8'),
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=25,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.INTEREST,
+            asset=A_WETH_ARB,
+            balance=Balance(amount=FVal(eth_interest_amount)),
+            location_label=user_safe_proxy,
+            notes=f'Receive {eth_interest_amount} WETH as interest earned from AAVE v3',
+            counterparty=CPT_AAVE_V3,
         ),
     ]
     assert events == expected_events
