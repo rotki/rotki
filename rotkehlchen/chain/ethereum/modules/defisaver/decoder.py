@@ -1,8 +1,5 @@
 import logging
-from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
-
-from eth_utils import to_checksum_address
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
@@ -12,18 +9,17 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
+from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import bytes_to_address
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
-    from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
-    from rotkehlchen.history.events.structures.evm_event import EvmEvent
     from rotkehlchen.user_messages import MessagesAggregator
 
 from .constants import (
@@ -145,31 +141,18 @@ class DefisaverDecoder(DecoderInterface):
 
         return DEFAULT_DECODING_OUTPUT
 
-    def _decode_defisaver_events(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_flashloan_events(self, context: DecoderContext) -> DecodingOutput:
         """
         Decodes DeFi Saver events from the given context.
-
-        This method specifically matches the counterparty
-        so to trigger the post-decoding rules.
         """
         # We want only to remap the ERC20 transfers, so
         # we just match the counterparty for triggering the post-decoding rules
-        return DecodingOutput(matched_counterparty=CPT_DEFISAVER)
-
-    def _decode_flashloan(
-            self,
-            decoded_events: list['EvmEvent'],
-            transaction: 'EvmTransaction',
-            all_logs: list['EvmTxReceiptLog'],
-    ) -> list['EvmEvent']:
-        """
-        Decodes flashloan events from the given decoded events.
-
-        This method identifies flashloan ERC20 transfer events originating from DefiSaver flashloan
-        contracts and sets the appropriate event subtype.
-        """
-        for event in decoded_events:
-            if event.address in self.flashloan_addresses and event.location_label is not None and self.base.is_tracked(to_checksum_address(event.location_label)):  # noqa: E501
+        for event in context.decoded_events:
+            if (
+                event.address in self.flashloan_addresses and
+                event.location_label is not None and
+                self.base.is_tracked(string_to_evm_address(event.location_label))
+            ):
                 if (
                     event.event_type == HistoryEventType.RECEIVE and
                     event.event_subtype == HistoryEventSubType.NONE
@@ -185,23 +168,18 @@ class DefisaverDecoder(DecoderInterface):
                     event.counterparty = CPT_DEFISAVER
                     event.notes = f'Repaid flashloan of {event.balance.amount} {event.asset.symbol_or_name()} via DefiSaver'  # noqa: E501
 
-        return decoded_events
+        return DEFAULT_DECODING_OUTPUT
 
     # -- DecoderInterface methods
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
-        dfs_automation_decoders = {
-            SUB_STORAGE: (self._decode_substorage_action,),
-            }
-        flashloan_decoders = dict.fromkeys(self.flashloan_addresses, (self._decode_defisaver_events,))  # noqa: E501
+        dfs_automation_decoders = {SUB_STORAGE: (self._decode_substorage_action,)}
+        flashloan_decoders = dict.fromkeys(self.flashloan_addresses, (self._decode_flashloan_events,))  # noqa: E501
         # We intercept DFS generic logger events to capture transactions from DFS contracts
         # that do not emit any log events (e.g. FL_DYDX_VPREV_1 and FL_DYDX_VPREV_2)
-        logevent_decoders = dict.fromkeys(self.dfs_logger_addresses, (self._decode_defisaver_events,))  # noqa: E501
+        logevent_decoders = dict.fromkeys(self.dfs_logger_addresses, (self._decode_flashloan_events,))  # noqa: E501
         # TODO: defisaver swap decoders
         return dfs_automation_decoders | flashloan_decoders | logevent_decoders
-
-    def post_decoding_rules(self) -> dict[str, list[tuple[int, Callable]]]:
-        return {CPT_DEFISAVER: [(0, self._decode_flashloan)]}
 
     def addresses_to_counterparties(self) -> dict[ChecksumEvmAddress, str]:
         return dict.fromkeys(GlobalDBHandler.get_addresses_by_protocol(

@@ -138,6 +138,9 @@ def test_defisaver_fl_action_v1_0_3(ethereum_inquirer, ethereum_accounts):
             address=FL_ACTION_V1_0_3,
         ),
     ]
+    # We assert here only that flashloan events are present in the decoded events
+    # because transtactions containing flashloans are complex (contain many events)
+    # and not all the possible events are currently supported by rotki
     assert set(expected_events).issubset(set(events))
 
 
@@ -190,4 +193,7 @@ def test_defisaver_fl_action_v1_0_3_bis(ethereum_inquirer, ethereum_accounts):
             address=FL_ACTION_V1_0_3_BIS,
         ),
     ]
+    # We assert here only that flashloan events are present in the decoded events
+    # because transtactions containing flashloans are complex (contain many events)
+    # and not all the possible events are currently supported by rotki
     assert set(expected_events).issubset(set(events))
