@@ -13,8 +13,8 @@ jobs:
     runs-on: ubuntu-latest
     environment: docker
     env:
-      REGCTL: v0.4.4
-      REGCTL_SUM: 'bafe0048e1b5e8112dfb416e733bb9994b74de6973999a7fb5473ab4125a9eda74df367d5324c2e94726ac0dbfd0445f4b0102f2e43ba5136bedc05b690271c2'
+      REGCTL: v0.8.0
+      REGCTL_SUM: 'df25ceaadf190ec73804023657673128a62d909cca12ccd7a9a727a0b6df84b846b00a89ae581bf179528d74dce6a12fb8b7f5e55e546615b75e0a5e5c56c227'
     steps:
       - name: Login to DockerHub
         uses: docker/login-action@v3
@@ -32,8 +32,8 @@ jobs:
       - name: Publish ${{ github.repository }}:latest from ${{ steps.rotki_version.outputs.version }}
         run: |
           if [[ ! -f "regctl-linux-amd64" ]]; then
-            echo "downloading regctl"
-            curl -LO "https://github.com/regclient/regclient/releases/download/${REGCT}/regctl-linux-amd64"            
+            echo "downloading regctl ${REGCTL}"
+            curl -LO --fail-with-body "https://github.com/regclient/regclient/releases/download/${REGCTL}/regctl-linux-amd64"            
           fi
           chmod u+x regctl-linux-amd64
           echo "${REGCTL_SUM} regctl-linux-amd64" > regctl-linux-amd64.sha512
