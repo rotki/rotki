@@ -2,6 +2,7 @@ from collections import defaultdict
 from typing import TYPE_CHECKING, TypedDict
 
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -11,9 +12,11 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.types import EventDirection
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.types import Timestamp
+from rotkehlchen.utils.misc import ts_ms_to_sec
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.history.events.structures.base import HistoryBaseEntry
 
 
 class HistoricalBalance(TypedDict):
@@ -33,7 +36,7 @@ class HistoricalBalancesManager:
         May raise:
         - NotFoundError if balance for the given timestamp does not exist.
         """
-        events, main_currency = self._get_events_and_currency(timestamp)
+        events, main_currency = self._get_events_and_currency(to_ts=timestamp)
         if len(events) == 0:
             raise NotFoundError('No historical data found until the given timestamp.')
 
@@ -59,7 +62,7 @@ class HistoricalBalancesManager:
         May raise:
         - NotFoundError if balance for the asset at the given timestamp does not exist.
         """
-        events, main_currency = self._get_events_and_currency(timestamp, (asset,))
+        events, main_currency = self._get_events_and_currency(to_ts=timestamp, assets=(asset,))
         if len(events) == 0:
             raise NotFoundError(f'No historical data found for {asset} until the given timestamp.')
 
@@ -75,18 +78,56 @@ class HistoricalBalancesManager:
 
         return {'amount': amounts[asset], 'price': price}
 
+    def get_asset_amounts(
+            self,
+            asset: Asset,
+            from_ts: Timestamp,
+            to_ts: Timestamp,
+    ) -> dict[Timestamp, FVal]:
+        """Get historical balance amounts for the given asset within the given time range.
+
+        It does not include the value of the balances in the user's profit currency as
+        that is handled separately by the frontend in a different request.
+
+        May raise:
+        - NotFoundError if no events exist for the asset in the specified time period.
+        """
+        events, _ = self._get_events_and_currency(from_ts=from_ts, to_ts=to_ts, assets=(asset,))
+        if len(events) == 0:
+            raise NotFoundError(f'No historical data found for {asset} within {from_ts=} and {to_ts=}.')  # noqa: E501
+
+        total_amount = ZERO
+        amounts: dict[Timestamp, FVal] = defaultdict(lambda: ZERO)
+        for event in events:
+            if (
+                (direction := event.maybe_get_direction()) is None or
+                direction == EventDirection.NEUTRAL
+            ):
+                continue
+
+            if direction == EventDirection.IN:
+                total_amount += event.balance.amount
+            else:  # EventDirection.OUT
+                total_amount -= event.balance.amount
+
+            amounts[ts_ms_to_sec(event.timestamp)] = total_amount
+
+        return amounts
+
     def _get_events_and_currency(
             self,
-            timestamp: Timestamp,
+            from_ts: Timestamp | None = None,
+            to_ts: Timestamp | None = None,
             assets: tuple[Asset, ...] | None = None,
-    ) -> tuple[list, Asset]:
+    ) -> tuple[list['HistoryBaseEntry'], Asset]:
         """Helper method to get historical events and main currency from DB"""
         db_history_events = DBHistoryEvents(database=self.db)
         with self.db.conn.read_ctx() as cursor:
             events = db_history_events.get_history_events(
                 cursor=cursor,
                 filter_query=HistoryEventFilterQuery.make(
-                    to_ts=timestamp,
+                    from_ts=from_ts,
+                    to_ts=to_ts,
                     assets=assets,
                 ),
                 has_premium=True,
