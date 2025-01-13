@@ -18,12 +18,14 @@ const props = defineProps<{
   groupId: string;
   chains: string[];
   tags?: string[];
-  isEvm: boolean;
+  category: string;
 }>();
 
 const emit = defineEmits<{
   (e: 'edit', account: AccountManageState): void;
 }>();
+
+const { category } = toRefs(props);
 
 const expanded = ref<string[]>([]);
 
@@ -55,7 +57,7 @@ const {
   })),
 });
 
-useBlockchainAccountLoading(fetchData);
+useBlockchainAccountLoading(category);
 
 onMounted(() => {
   nextTick(() => fetchData());
@@ -73,7 +75,7 @@ defineExpose({
     v-model:expanded-ids="expanded"
     class="bg-white dark:bg-[#1E1E1E]"
     :accounts="accounts"
-    :is-evm="isEvm"
+    :category="category"
     @edit="emit('edit', $event)"
     @refresh="fetchData()"
   >

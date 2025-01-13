@@ -181,7 +181,7 @@ export interface ExchangeBalancePayload {
 }
 
 export interface BlockchainBalancePayload {
-  readonly blockchain?: string;
+  readonly blockchain?: string | string[];
   readonly ignoreCache: boolean;
 }
 

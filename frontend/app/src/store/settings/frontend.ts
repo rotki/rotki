@@ -48,7 +48,6 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
   const enableAliasNames = useComputedRef(settings, 'enableAliasNames');
   const blockchainRefreshButtonBehaviour = useComputedRef(settings, 'blockchainRefreshButtonBehaviour');
   const shouldRefreshValidatorDailyStats = useComputedRef(settings, 'shouldRefreshValidatorDailyStats');
-  const unifyAccountsTable = useComputedRef(settings, 'unifyAccountsTable');
   const savedFilters = useComputedRef(settings, 'savedFilters');
   const balanceUsdValueThreshold = useComputedRef(settings, 'balanceUsdValueThreshold');
 
@@ -146,7 +145,6 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
     subscriptDecimals,
     thousandSeparator,
     timeframeSetting,
-    unifyAccountsTable,
     update,
     updateSetting,
     valueRoundingMode,

@@ -18,11 +18,11 @@ import AccountTopTokens from '@/components/accounts/AccountTopTokens.vue';
 import TagDisplay from '@/components/tags/TagDisplay.vue';
 import AccountChains from '@/components/accounts/AccountChains.vue';
 import LabeledAddressDisplay from '@/components/display/LabeledAddressDisplay.vue';
+import { useBlockchainAccountLoading } from '@/composables/accounts/blockchain/use-account-loading';
 import type { BlockchainAccountGroupWithBalance, BlockchainAccountWithBalance } from '@/types/blockchain/accounts';
 import type { BigNumber } from '@rotki/common';
 import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import type { Collection } from '@/types/collection';
-import type { TableRowKey } from '@/composables/use-pagination-filter/types';
 
 type DataRow = T & { id: string };
 
@@ -41,20 +41,17 @@ const expandedIds = defineModel<string[]>('expandedIds', { required: true });
 const props = withDefaults(defineProps<{
   accounts: Collection<T>;
   group?: boolean;
-  loading?: boolean;
-  showGroupLabel?: boolean;
-  isEvm?: boolean;
+  category: string;
 }>(), {
   group: false,
-  isEvm: false,
-  loading: false,
-  showGroupLabel: false,
 });
 
 const emit = defineEmits<{
   (e: 'edit', account: AccountManageState): void;
   (e: 'refresh'): void;
 }>();
+
+const { category } = toRefs(props);
 
 const { t } = useI18n();
 
@@ -67,7 +64,7 @@ const { isLoading } = useStatusStore();
 const { supportsTransactions } = useSupportedChains();
 const { showConfirmation } = useAccountDelete();
 
-const loading = isLoading(Section.BLOCKCHAIN);
+const { isSectionLoading } = useBlockchainAccountLoading(category);
 
 const totalValue = computed<BigNumber | undefined>(() => {
   const totalUsdValue = props.accounts.totalUsdValue;
@@ -98,7 +95,7 @@ const expanded = computed<DataRow[]>(({
 
 const cols = computed<DataTableColumn<DataRow>[]>(() => {
   const currency = { symbol: get(currencySymbol) };
-  const isEvm = props.isEvm;
+  const group = props.group;
   const headers: DataTableColumn<T>[] = [
     ...(get(anyExpansion)
       ? [{
@@ -109,7 +106,7 @@ const cols = computed<DataTableColumn<DataRow>[]>(() => {
           sortable: false,
         }]
       : []),
-    ...(isEvm
+    ...(!group
       ? []
       : [{
           cellClass: 'py-0 !px-3',
@@ -125,7 +122,7 @@ const cols = computed<DataTableColumn<DataRow>[]>(() => {
       label: t('common.chain'),
       sortable: false,
     },
-    ...(isEvm
+    ...(!group
       ? []
       : [{
           cellClass: 'py-0',
@@ -158,20 +155,13 @@ const cols = computed<DataTableColumn<DataRow>[]>(() => {
   return headers;
 });
 
-const groupBy = computed<TableRowKey<T>[] | undefined>(() => {
-  if (!props.group || !props.showGroupLabel)
-    return undefined;
-
-  return ['category' as TableRowKey<T>];
-});
-
 const accountOperation = logicOr(
   isTaskRunning(TaskType.ADD_ACCOUNT),
   isTaskRunning(TaskType.REMOVE_ACCOUNT),
-  loading,
+  isSectionLoading,
 );
 
-const isAnyLoading = logicOr(accountOperation, loading);
+const isAnyLoading = logicOr(accountOperation, isSectionLoading);
 
 function isRowLoading(row: DataRow) {
   if (row.type === 'account')
@@ -258,7 +248,6 @@ defineExpose({
     data-cy="account-table"
     single-expand
     outlined
-    :group="groupBy"
     sticky-header
     dense
   >
@@ -318,7 +307,7 @@ defineExpose({
           v-if="showTokenDetection(row)"
           class="ms-2"
           :address="getAccountAddress(row)"
-          :loading="loading"
+          :loading="isSectionLoading"
           :chain="row.type === 'group' ? row.chains[0] : row.chain"
         />
         <RowActions
@@ -326,7 +315,7 @@ defineExpose({
           class="account-balance-table__actions"
           :edit-tooltip="t('account_balances.edit_tooltip')"
           :disabled="accountOperation"
-          :no-edit="isEvm"
+          :no-edit="!group"
           @edit-click="edit(row)"
           @delete-click="confirmDelete(row)"
         />
@@ -339,14 +328,14 @@ defineExpose({
       <RowAppend
         :label="t('common.total')"
         :left-patch-colspan="anyExpansion ? 1 : 0"
-        :label-colspan="isEvm ? 2 : 4"
+        :label-colspan="group ? 4 : 2"
         :is-mobile="false"
         class-name="[&>td]:p-4 text-sm"
       >
         <template #custom-columns>
           <td class="text-end">
             <AmountDisplay
-              :loading="loading"
+              :loading="isSectionLoading"
               fiat-currency="USD"
               show-currency="symbol"
               :value="totalValue"
@@ -399,7 +388,7 @@ defineExpose({
           fiat-currency="USD"
           :value="getCategoryTotal(header.group.category)"
           show-currency="symbol"
-          :loading="loading"
+          :loading="isSectionLoading"
         />
       </td>
       <td />

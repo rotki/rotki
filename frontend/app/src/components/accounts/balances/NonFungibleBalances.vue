@@ -225,7 +225,7 @@ watch(loading, async (isLoading, wasLoading) => {
 </script>
 
 <template>
-  <TablePageLayout :title="[t('navigation_menu.accounts_balances'), t('non_fungible_balances.title')]">
+  <TablePageLayout :title="[t('navigation_menu.balances'), t('navigation_menu.balances_sub.non_fungible_balances')]">
     <template #buttons>
       <div class="flex flex-row items-center justify-end gap-2">
         <RuiTooltip>

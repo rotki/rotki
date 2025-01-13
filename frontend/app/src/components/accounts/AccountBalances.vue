@@ -17,10 +17,7 @@ import AccountGroupDetails from '@/components/accounts/AccountGroupDetails.vue';
 import TableFilter from '@/components/table-filter/TableFilter.vue';
 import TagFilter from '@/components/inputs/TagFilter.vue';
 import DetectEvmAccounts from '@/components/accounts/balances/DetectEvmAccounts.vue';
-import CardTitle from '@/components/typography/CardTitle.vue';
-import BlockchainBalanceRefreshBehaviourMenu
-  from '@/components/dashboard/blockchain-balance/BlockchainBalanceRefreshBehaviourMenu.vue';
-import SummaryCardRefreshMenu from '@/components/dashboard/summary-card/SummaryCardRefreshMenu.vue';
+import { useAccountCategoryHelper } from '@/composables/accounts/use-account-category-helper';
 import type { LocationQuery } from '@/types/route';
 import type { ComponentExposed } from 'vue-component-type-helpers';
 import type {
@@ -51,7 +48,7 @@ const query = ref<LocationQuery>({});
 const blockchainStore = useBlockchainStore();
 const { fetchAccounts: fetchAccountsPage } = blockchainStore;
 const { groups } = storeToRefs(blockchainStore);
-const { handleBlockchainRefresh } = useRefresh();
+const { handleBlockchainRefresh, refreshBlockchainBalances } = useRefresh();
 const { fetchAccounts } = useBlockchains();
 
 const {
@@ -72,8 +69,8 @@ const {
     direction: 'desc',
   },
   extraParams: computed(() => ({
+    category: get(category),
     tags: get(visibleTags),
-    ...(get(category) !== 'all' ? { category: get(category) } : {}),
   })),
   filterSchema: () => useBlockchainAccountFilter(t, category),
   history: 'router',
@@ -106,14 +103,16 @@ const {
   })),
 });
 
-const isEvm = computed(() => get(category) === 'evm');
-const showEvmElements = computed(() => get(isEvm) || get(category) === 'all');
+const { isDetectingTokens, isSectionLoading, operationRunning, refreshDisabled } = useBlockchainAccountLoading(category);
 
-const { isDetectingTokens, refreshDisabled } = useBlockchainAccountLoading(fetchData);
+const { chainIds, isEvm } = useAccountCategoryHelper(category);
 
 async function refreshClick() {
-  await fetchAccounts(undefined, true);
-  await handleBlockchainRefresh();
+  await fetchAccounts(get(chainIds), true);
+  if (get(isEvm))
+    await handleBlockchainRefresh();
+  else
+    await refreshBlockchainBalances(get(chainIds));
   await fetchData();
 }
 
@@ -127,6 +126,17 @@ watchImmediate(groups, async () => {
   await fetchData();
 });
 
+watchDebounced(
+  logicOr(isDetectingTokens, isSectionLoading, operationRunning),
+  async (isLoading, wasLoading) => {
+    if (!isLoading && wasLoading)
+      await fetchData();
+  },
+  {
+    debounce: 800,
+  },
+);
+
 defineExpose({
   refresh: async () => {
     await fetchData();
@@ -135,39 +145,22 @@ defineExpose({
 
     await get(detailsTable).refresh();
   },
+  refreshClick,
 });
 </script>
 
 <template>
   <RuiCard data-cy="account-balances">
     <template #header>
-      <div class="flex flex-row items-center gap-2">
-        <SummaryCardRefreshMenu
-          data-cy="account-balances-refresh-menu"
-          :disabled="refreshDisabled"
-          :loading="isDetectingTokens"
-          :tooltip="t('account_balances.refresh_tooltip')"
-          @refresh="refreshClick()"
-        >
-          <template
-            v-if="showEvmElements"
-            #refreshMenu
-          >
-            <BlockchainBalanceRefreshBehaviourMenu />
-          </template>
-        </SummaryCardRefreshMenu>
-        <CardTitle class="ml-2">
-          {{ t('account_balances.data_table.group', { type: isEvm ? 'EVM' : toSentenceCase(category) }) }}
-        </CardTitle>
-      </div>
+      {{ t('account_balances.data_table.group', { type: isEvm ? 'EVM' : toSentenceCase(category) }) }}
     </template>
 
     <div class="flex flex-col md:flex-row md:items-center gap-4 flex-wrap">
       <div
         class="flex items-center gap-2 flex-1"
-        :class="{ 'hidden lg:block': !showEvmElements }"
+        :class="{ 'hidden lg:block': !isEvm }"
       >
-        <template v-if="showEvmElements">
+        <template v-if="isEvm">
           <RuiButtonGroup
             variant="outlined"
             color="primary"
@@ -223,10 +216,10 @@ defineExpose({
       v-model:chain-filter="chainExclusionFilter"
       v-model:expanded-ids="expanded"
       :data-category="category"
+      :category="category"
       class="mt-4"
       group
       :accounts="accounts"
-      :show-group-label="category === 'all'"
       @edit="emit('edit', $event)"
       @refresh="fetchData()"
     >
@@ -244,7 +237,7 @@ defineExpose({
               :chains="getChains(row)"
               :tags="visibleTags"
               :group-id="getGroupId(row)"
-              :is-evm="row.category === 'evm'"
+              :category="row.category || ''"
               @edit="emit('edit', $event)"
             />
           </template>

@@ -2023,7 +2023,6 @@
     "public_key": "Clé publique"
   },
   "eth2_page": {
-    "no_premium": "Le staking ETH est",
     "toggle": {
       "withdrawal": "Dépositaire",
       "hint": "Changer le mode de filtrage et d'affichage entre les validateurs ETH2 et les adresses ETH1",
@@ -2085,8 +2084,7 @@
     "tabs": {
       "balances": "Soldes",
       "savings_interest_history": "Historique des intérêts d'épargne"
-    },
-    "title": "Soldes des plateformes d'échange"
+    }
   },
   "exchange_keys_form": {
     "edit": {
@@ -3018,8 +3016,8 @@
     "title": "Paramètres du module"
   },
   "navigation_menu": {
-    "accounts_balances": "Comptes & Soldes",
-    "accounts_balances_sub": {
+    "balances": "Soldes",
+    "balances_sub": {
       "blockchain_balances": "Soldes de la blockchain",
       "exchange_balances": "Soldes d'échange",
       "manual_balances": "Soldes manuels",
@@ -3121,8 +3119,7 @@
       "price_in_asset": "Prix dans l'actif"
     },
     "ignore": "Ignorer NFT",
-    "refresh": "Actualiser les soldes",
-    "title": "Soldes non fongibles"
+    "refresh": "Actualiser les soldes"
   },
   "notes_menu": {
     "delete_confirmation": "Êtes-vous sûr de vouloir supprimer cette note?",

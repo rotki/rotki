@@ -9,7 +9,7 @@ export const samePriceAssets: Record<string, string[]> = {
 
 export const SupportedSubBlockchainProtocolData: ActionDataEntry[] = [
   {
-    detailPath: Routes.ACCOUNTS_BALANCES_BLOCKCHAIN.toString(),
+    detailPath: Routes.BALANCES_BLOCKCHAIN.toString(),
     identifier: L2_LOOPRING,
     image: './assets/images/protocols/loopring.svg',
     label: 'Loopring',

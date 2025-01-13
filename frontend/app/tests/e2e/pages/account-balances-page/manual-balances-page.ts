@@ -14,7 +14,7 @@ export interface FixtureManualBalance {
 
 export class ManualBalancesPage {
   visit() {
-    RotkiApp.navigateTo('accounts-balances', 'accounts-balances-manual');
+    RotkiApp.navigateTo('balances', 'balances-manual');
   }
 
   addBalance(balance: FixtureManualBalance) {

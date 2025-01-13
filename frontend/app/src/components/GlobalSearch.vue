@@ -91,20 +91,32 @@ function getRoutes(keyword: string): SearchItemWithoutValue[] {
   const routeItems: SearchItemWithoutValue[] = [
     { ...Routes.DASHBOARD },
     {
-      ...Routes.ACCOUNTS_BALANCES_BLOCKCHAIN,
-      texts: [Routes.ACCOUNTS_BALANCES.text, Routes.ACCOUNTS_BALANCES_BLOCKCHAIN.text],
+      ...Routes.ACCOUNTS_EVM,
+      texts: [Routes.ACCOUNTS.text, Routes.ACCOUNTS_EVM.text],
     },
     {
-      ...Routes.ACCOUNTS_BALANCES_EXCHANGE,
-      texts: [Routes.ACCOUNTS_BALANCES.text, Routes.ACCOUNTS_BALANCES_EXCHANGE.text],
+      ...Routes.ACCOUNTS_BITCOIN,
+      texts: [Routes.ACCOUNTS.text, Routes.ACCOUNTS_BITCOIN.text],
     },
     {
-      ...Routes.ACCOUNTS_BALANCES_MANUAL,
-      texts: [Routes.ACCOUNTS_BALANCES.text, Routes.ACCOUNTS_BALANCES_MANUAL.text],
+      ...Routes.ACCOUNTS_SUBSTRATE,
+      texts: [Routes.ACCOUNTS.text, Routes.ACCOUNTS_SUBSTRATE.text],
     },
     {
-      ...Routes.ACCOUNTS_BALANCES_NON_FUNGIBLE,
-      texts: [Routes.ACCOUNTS_BALANCES.text, Routes.ACCOUNTS_BALANCES_NON_FUNGIBLE.text],
+      ...Routes.BALANCES_BLOCKCHAIN,
+      texts: [Routes.BALANCES.text, Routes.BALANCES_BLOCKCHAIN.text],
+    },
+    {
+      ...Routes.BALANCES_EXCHANGE,
+      texts: [Routes.BALANCES.text, Routes.BALANCES_EXCHANGE.text],
+    },
+    {
+      ...Routes.BALANCES_MANUAL,
+      texts: [Routes.BALANCES.text, Routes.BALANCES_MANUAL.text],
+    },
+    {
+      ...Routes.BALANCES_NON_FUNGIBLE,
+      texts: [Routes.BALANCES.text, Routes.BALANCES_NON_FUNGIBLE.text],
     },
     { ...Routes.NFTS },
     {
@@ -146,6 +158,10 @@ function getRoutes(keyword: string): SearchItemWithoutValue[] {
     {
       ...Routes.ASSET_MANAGER_CUSTOM,
       texts: [Routes.ASSET_MANAGER.text, Routes.ASSET_MANAGER_CUSTOM.text],
+    },
+    {
+      ...Routes.ASSET_MANAGER_CEX_MAPPING,
+      texts: [Routes.ASSET_MANAGER.text, Routes.ASSET_MANAGER_CEX_MAPPING.text],
     },
     {
       ...Routes.ASSET_MANAGER_NEWLY_DETECTED,
@@ -221,8 +237,8 @@ function getExchanges(keyword: string): SearchItemWithoutValue[] {
 
     return {
       location: getLocationData(identifier) ?? undefined,
-      route: `${Routes.ACCOUNTS_BALANCES_EXCHANGE.route}/${identifier}`,
-      texts: [Routes.ACCOUNTS_BALANCES.text, Routes.ACCOUNTS_BALANCES_EXCHANGE.text, name],
+      route: `${Routes.BALANCES_EXCHANGE.route}/${identifier}`,
+      texts: [Routes.BALANCES.text, Routes.BALANCES_EXCHANGE.text, name],
     };
   });
 
@@ -236,11 +252,11 @@ function getActions(keyword: string): SearchItemWithoutValue[] {
       text: t('exchange_settings.dialog.add.title'),
     },
     {
-      route: `${Routes.ACCOUNTS_BALANCES_BLOCKCHAIN.route}?add=true`,
+      route: `${Routes.ACCOUNTS_EVM.route}?add=true`,
       text: t('blockchain_balances.form_dialog.add_title'),
     },
     {
-      route: `${Routes.ACCOUNTS_BALANCES_MANUAL.route}?add=true`,
+      route: `${Routes.BALANCES_MANUAL.route}?add=true`,
       text: t('manual_balances.dialog.add.title'),
     },
     {
@@ -258,6 +274,14 @@ function getActions(keyword: string): SearchItemWithoutValue[] {
     {
       route: `${Routes.PRICE_MANAGER_HISTORIC.route}?add=true`,
       text: t('price_management.historic.add_title'),
+    },
+    {
+      route: `${Routes.ASSET_MANAGER_CEX_MAPPING.route}?add=true`,
+      text: t('asset_management.cex_mapping.add_title'),
+    },
+    {
+      route: `${Routes.TAG_MANAGER.route}?add=true`,
+      text: t('tag_manager.create_tag.title'),
     },
   ].map(item => ({ ...item, icon: 'lu-circle-plus' }));
 

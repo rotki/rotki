@@ -8,16 +8,19 @@ import TagIcon from '@/components/tags/TagIcon.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import type { DataTableColumn } from '@rotki/ui-library';
 
-const store = useTagStore();
-const { deleteTag } = store;
-const { tags } = storeToRefs(store);
-const { show } = useConfirmStore();
+const { t } = useI18n();
 
 const tag = ref<Tag | undefined>(undefined);
 const editMode = ref<boolean>(false);
 const search = ref<string>('');
 
-const { t } = useI18n();
+const route = useRoute();
+const router = useRouter();
+
+const store = useTagStore();
+const { deleteTag } = store;
+const { tags } = storeToRefs(store);
+const { show } = useConfirmStore();
 
 const headers = computed<DataTableColumn<Tag>[]>(() => [
   {
@@ -62,6 +65,14 @@ function handleCreateTagClick() {
   set(editMode, false);
   set(tag, defaultTag());
 }
+
+onMounted(async () => {
+  const { query } = get(route);
+  if (query.add) {
+    handleCreateTagClick();
+    await router.replace({ query: {} });
+  }
+});
 </script>
 
 <template>

@@ -46,29 +46,51 @@ const navItems: MenuItem[] = [
     ...Routes.DASHBOARD,
   },
   {
-    class: 'accounts-balances',
+    class: 'accounts',
     type: 'group',
-    ...Routes.ACCOUNTS_BALANCES,
+    ...Routes.ACCOUNTS,
     items: [
       {
-        class: 'accounts-balances-blockchain',
+        class: 'accounts-evm',
         type: 'item',
-        ...Routes.ACCOUNTS_BALANCES_BLOCKCHAIN,
+        ...Routes.ACCOUNTS_EVM,
       },
       {
-        class: 'accounts-balances-exchange',
+        class: 'accounts-bitcoin',
         type: 'item',
-        ...Routes.ACCOUNTS_BALANCES_EXCHANGE,
+        ...Routes.ACCOUNTS_BITCOIN,
       },
       {
-        class: 'accounts-balances-manual',
+        class: 'accounts-substrate',
         type: 'item',
-        ...Routes.ACCOUNTS_BALANCES_MANUAL,
+        ...Routes.ACCOUNTS_SUBSTRATE,
+      },
+    ],
+  },
+  {
+    class: 'balances',
+    type: 'group',
+    ...Routes.BALANCES,
+    items: [
+      {
+        class: 'balances-blockchain',
+        type: 'item',
+        ...Routes.BALANCES_BLOCKCHAIN,
       },
       {
-        class: 'accounts-balances-non-fungible',
+        class: 'balances-exchange',
         type: 'item',
-        ...Routes.ACCOUNTS_BALANCES_NON_FUNGIBLE,
+        ...Routes.BALANCES_EXCHANGE,
+      },
+      {
+        class: 'balances-manual',
+        type: 'item',
+        ...Routes.BALANCES_MANUAL,
+      },
+      {
+        class: 'balances-non-fungible',
+        type: 'item',
+        ...Routes.BALANCES_NON_FUNGIBLE,
       },
     ],
   },

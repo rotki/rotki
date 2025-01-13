@@ -44,7 +44,7 @@ const { t } = useI18n();
           keypath="import_data.cryptocom.line_four"
           tag="span"
         >
-          <InternalLink :to="Routes.ACCOUNTS_BALANCES_MANUAL">
+          <InternalLink :to="Routes.BALANCES_MANUAL">
             {{ t('import_data.cryptocom.line_four_link') }}
           </InternalLink>
         </i18n-t>

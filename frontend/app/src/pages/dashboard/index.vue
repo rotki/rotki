@@ -94,7 +94,7 @@ const Type = DashboardTableType;
               :name="t('dashboard.exchange_balances.title')"
               can-refresh
               :is-loading="isExchangeLoading"
-              :navigates-to="Routes.ACCOUNTS_BALANCES_EXCHANGE"
+              :navigates-to="Routes.BALANCES_EXCHANGE"
               @refresh="refreshBalance($event)"
             >
               <SummaryCardCreateButton
@@ -126,7 +126,7 @@ const Type = DashboardTableType;
               :name="t('dashboard.blockchain_balances.title')"
               :is-loading="isBlockchainLoading || isTokenDetecting"
               can-refresh
-              :navigates-to="Routes.ACCOUNTS_BALANCES"
+              :navigates-to="Routes.BALANCES"
               @refresh="refreshBalance($event)"
             >
               <template #refreshMenu>
@@ -135,7 +135,7 @@ const Type = DashboardTableType;
               <SummaryCardCreateButton
                 v-if="blockchainTotals.length === 0"
                 :to="{
-                  path: '/balances',
+                  path: '/accounts/evm',
                   query: {
                     add: 'true',
                   },
@@ -161,7 +161,7 @@ const Type = DashboardTableType;
               :tooltip="t('dashboard.manual_balances.card_tooltip')"
               :is-loading="isManualBalancesLoading"
               can-refresh
-              :navigates-to="Routes.ACCOUNTS_BALANCES_MANUAL"
+              :navigates-to="Routes.BALANCES_MANUAL"
               @refresh="fetchManualBalances(true)"
             >
               <SummaryCardCreateButton

@@ -16,7 +16,7 @@ const { name } = toRefs(props);
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
-const manualBalancesRoute = Routes.ACCOUNTS_BALANCES_MANUAL;
+const manualBalancesRoute = Routes.BALANCES_MANUAL;
 
 const { locationData } = useLocations();
 const location = locationData(name);

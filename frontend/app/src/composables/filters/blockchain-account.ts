@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { CommaSeparatedStringSchema, RouterExpandedIdsSchema } from '@/types/route';
 import { arrayify } from '@/utils/array';
-import { useSupportedChains } from '@/composables/info/chains';
+import { useAccountCategoryHelper } from '@/composables/accounts/use-account-category-helper';
 import type { MaybeRef } from '@vueuse/core';
 import type { MatchedKeywordWithBehaviour, SearchMatcher } from '@/types/filtering';
 import type { FilterSchema } from '@/composables/use-pagination-filter/types';
@@ -25,18 +25,19 @@ export type Filters = MatchedKeywordWithBehaviour<BlockchainAccountFilterValueKe
 export function useBlockchainAccountFilter(t: ReturnType<typeof useI18n>['t'], category: MaybeRef<string>): FilterSchema<Filters, Matcher> {
   const filters = ref<Filters>({});
 
-  const { supportedChains: allChains } = useSupportedChains();
+  const { chainIds, isEvm } = useAccountCategoryHelper(category);
 
-  const chainIds = computed<string[]>(() => {
-    const chains = get(allChains);
-    const categoryVal = get(category);
-    if (categoryVal === 'all')
-      return chains.map(chain => chain.id);
-
-    return chains.filter(item => item.type === categoryVal || (categoryVal === 'evm' && item.type === 'evmlike')).map(chain => chain.id);
+  const filterableChains = computed(() => {
+    const evm = get(isEvm);
+    const ids = get(chainIds);
+    if (!evm)
+      return ids;
+    return [
+      ...ids,
+      'looopring',
+    ];
   });
 
-  const filterableChains = [...get(chainIds), 'loopring'];
   const matchers = computed<Matcher[]>(() => [
     {
       description: t('common.address'),
@@ -52,8 +53,8 @@ export function useBlockchainAccountFilter(t: ReturnType<typeof useI18n>['t'], c
       keyValue: BlockchainAccountFilterValueKeys.CHAIN,
       multiple: true,
       string: true,
-      suggestions: (): string[] => filterableChains,
-      validate: (id: string): boolean => filterableChains.some(chainId => chainId.toLocaleLowerCase() === id.toLocaleLowerCase()),
+      suggestions: (): string[] => get(filterableChains),
+      validate: (id: string): boolean => get(filterableChains).some(chainId => chainId.toLocaleLowerCase() === id.toLocaleLowerCase()),
     },
     {
       description: t('common.label'),

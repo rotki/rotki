@@ -26,7 +26,7 @@ export const useLocations = createSharedComposable(() => {
     if (isBlockchain(blockchainId)) {
       const type = blockchainId === Blockchain.ETH2 ? 'validators' : getChainAccountType(blockchainId);
       return {
-        detailPath: `${Routes.ACCOUNTS_BALANCES_BLOCKCHAIN.toString()}/${type}`,
+        detailPath: `${Routes.BALANCES_BLOCKCHAIN.toString()}/${type}`,
         identifier: blockchainId,
         image: get(getChainImageUrl(blockchainId)),
         name: get(getChainName(blockchainId)),
