@@ -5385,3 +5385,23 @@ class RestAPI:
             return wrap_in_fail_result(str(e), status_code=HTTPStatus.NOT_FOUND)
 
         return _wrap_in_ok_result(result=balance)
+
+    def get_historical_asset_amounts(
+            self,
+            asset: Asset,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+    ) -> Response:
+        try:
+            balances = HistoricalBalancesManager(self.rotkehlchen.data.db).get_asset_amounts(
+                asset=asset,
+                from_ts=from_timestamp,
+                to_ts=to_timestamp,
+            )
+        except NotFoundError as e:
+            return api_response(wrap_in_fail_result(str(e), status_code=HTTPStatus.NOT_FOUND))
+
+        return api_response(_wrap_in_ok_result(result={
+            'times': list(balances),
+            'values': [str(x) for x in balances.values()],
+        }))

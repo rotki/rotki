@@ -103,6 +103,7 @@ from rotkehlchen.api.v1.schemas import (
     ExternalServicesResourceDeleteSchema,
     FileListSchema,
     HistoricalAssetsPriceSchema,
+    HistoricalPerAssetAmountsSchema,
     HistoricalPerAssetBalanceSchema,
     HistoryEventSchema,
     HistoryEventsDeletionSchema,
@@ -3403,4 +3404,23 @@ class TimestampHistoricalBalanceResource(BaseMethodView):
             asset=asset,
             timestamp=timestamp,
             async_query=async_query,
+        )
+
+
+class HistoricalAssetAmountsResource(BaseMethodView):
+
+    post_schema = HistoricalPerAssetAmountsSchema()
+
+    @require_premium_user(active_check=False)
+    @use_kwargs(post_schema, location='json')
+    def post(
+            self,
+            asset: Asset,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+    ) -> Response:
+        return self.rest_api.get_historical_asset_amounts(
+            asset=asset,
+            to_timestamp=to_timestamp,
+            from_timestamp=from_timestamp,
         )

@@ -13951,3 +13951,51 @@ Historical Balance Queries
       :statuscode 403: User does not have premium access
       :statuscode 409: User is not logged in
       :statuscode 500: Internal Rotki error
+
+  .. http:post:: /api/(version)/balances/historical/asset
+
+    Gets historical balance amounts for a specific asset within a given time range, calculated from processing of historical events.
+    It's the total amount of asset held at each timestamp where a change occurred.
+
+    **Example Request:**
+
+      .. http:example:: curl wget httpie python-requests
+
+        POST /api/(version)/balances/historical/asset HTTP/1.1
+        Host: localhost:5042
+        Content-Type: application/json;charset=UTF-8
+
+        {
+          "asset": "BTC",
+          "from_timestamp": 1672531200,
+          "to_timestamp": 1675209600
+        }
+
+      :reqjsonarr string asset: The asset identifier to query balances for
+      :reqjsonarr integer from_timestamp: The start timestamp of the query range
+      :reqjsonarr integer to_timestamp: The end timestamp of the query range
+
+    **Example Response:**
+
+      .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        {
+          "message": "",
+          "result": {
+            "times": [1672531200, 1673308800, 1674518400],
+            "values": ["1.5", "2.0", "1.8"],
+          },
+          "status_code": 200
+        }
+
+        :resjson list[integer] times: Timestamps of balance changes.
+        :resjson list[string] values: Net asset balance amount at each corresponding timestamp.
+        :statuscode 200: Historical balances returned
+        :statuscode 400: Malformed query
+        :statuscode 401: User is not logged in
+        :statuscode 404: No historical data found for the asset in the given time range
+        :statuscode 403: User does not have premium access
+        :statuscode 500: Internal Rotki error

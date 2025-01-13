@@ -3857,3 +3857,7 @@ class UpdateCalendarReminderSchema(NewCalendarReminderSchema, IntegerIdentifierS
 
 class HistoricalPerAssetBalanceSchema(SnapshotTimestampQuerySchema, AsyncQueryArgumentSchema):
     asset = AssetField(expected_type=Asset, load_default=None)
+
+
+class HistoricalPerAssetAmountsSchema(TimestampRangeSchema):
+    asset = AssetField(expected_type=Asset, required=True)

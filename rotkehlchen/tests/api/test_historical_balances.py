@@ -143,6 +143,30 @@ def test_get_historical_asset_balance(
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
+def test_get_historical_asset_amounts_over_time(
+        rotkehlchen_api_server: 'APIServer',
+        setup_historical_data: None,
+) -> None:
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'historicalassetamountsresource',
+        ),
+        json={
+            'asset': 'BTC',
+            'from_timestamp': START_TS,
+            'to_timestamp': START_TS + DAY_IN_SECONDS * 10,
+        },
+    )
+    result = assert_proper_sync_response_with_result(response)
+    # Check all balance amount change points are present with correct amounts
+    assert len(result['times']) == len(result['values'])
+    for ts, amount in zip(result['times'], result['values'], strict=True):
+        assert ts in {START_TS, START_TS + DAY_IN_SECONDS * 2}
+        assert amount in {'2', '1.5'}
+
+
+@pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('should_mock_price_queries', [False])
 def test_get_historical_balance_before_first_event(
         rotkehlchen_api_server: 'APIServer',
