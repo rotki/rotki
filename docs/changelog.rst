@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :bug:`-` Fixed an issue in Aave V3 decoder where it could erroneously decode non-aave return wrapped events as aave ones (eg. weth unwrapping in the same transaction).
+
 * :release:`1.37.1 <2025-01-10>`
 * :bug:`-` OKX balances will now include assets in the funding account.
 * :bug:`-` Bybit balances in the funding account will now be queried.
