@@ -16,7 +16,7 @@ const { location } = toRefs(props);
 const { exchangeName } = useLocations();
 
 const exchangeLocationRoute = computed(() => {
-  const route = Routes.ACCOUNTS_BALANCES_EXCHANGE;
+  const route = Routes.BALANCES_EXCHANGE;
   return `${route}/${get(location)}`;
 });
 </script>

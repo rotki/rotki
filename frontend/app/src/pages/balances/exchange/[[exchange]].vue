@@ -20,9 +20,9 @@ import type { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
 
 definePage({
   meta: {
-    noteLocation: NoteLocation.ACCOUNTS_BALANCES_EXCHANGE,
+    noteLocation: NoteLocation.BALANCES_EXCHANGE,
   },
-  name: 'accounts-balances-exchange',
+  name: 'balances-exchange',
   props: true,
 });
 
@@ -78,7 +78,7 @@ const sortedExchanges = computed(() =>
 
 function openExchangeDetails() {
   router.push({
-    name: 'accounts-balances-exchange',
+    name: 'balances-exchange',
     params: {
       exchange: get(selectedExchange),
     },
@@ -136,7 +136,7 @@ function isBinance(exchange?: string): exchange is 'binance' | 'binanceus' {
 </script>
 
 <template>
-  <TablePageLayout :title="[t('navigation_menu.accounts_balances'), t('exchange_balances.title')]">
+  <TablePageLayout :title="[t('navigation_menu.balances'), t('navigation_menu.balances_sub.exchange_balances')]">
     <template #buttons>
       <RuiTooltip :open-delay="400">
         <template #activator>
@@ -208,7 +208,7 @@ function isBinance(exchange?: string): exchange is 'binance' | 'binanceus' {
               link
               class="h-[8rem]"
               :to="{
-                name: 'accounts-balances-exchange',
+                name: 'balances-exchange',
                 params: {
                   exchange: usedExchange,
                 },

@@ -144,7 +144,6 @@ export const FrontendSettings = z.object({
   subscriptDecimals: z.boolean().default(false),
   thousandSeparator: z.string().default(Defaults.DEFAULT_THOUSAND_SEPARATOR),
   timeframeSetting: TimeFrameSetting.default(TimeFramePersist.REMEMBER),
-  unifyAccountsTable: z.boolean().default(false),
   valueRoundingMode: RoundingMode.default(BigNumber.ROUND_DOWN),
   versionUpdateCheckFrequency: z.preprocess(
     versionUpdateCheckFrequency =>

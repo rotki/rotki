@@ -28,7 +28,7 @@ const ignoredAssetsHandling: IgnoredAssetsHandlingType = 'exclude';
 
 const extraParams = computed(() => ({ ignoredAssetsHandling }));
 
-const nonFungibleRoute = Routes.ACCOUNTS_BALANCES_NON_FUNGIBLE;
+const nonFungibleRoute = Routes.BALANCES_NON_FUNGIBLE;
 
 const statistics = useStatisticsStore();
 const { totalNetWorthUsd } = storeToRefs(statistics);

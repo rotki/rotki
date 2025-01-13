@@ -85,7 +85,6 @@ describe('settings:frontend', () => {
       enableAliasNames: true,
       blockchainRefreshButtonBehaviour: BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES,
       shouldRefreshValidatorDailyStats: false,
-      unifyAccountsTable: false,
       savedFilters: {},
       balanceUsdValueThreshold: {
         [BalanceSource.BLOCKCHAIN]: '0',
@@ -164,7 +163,6 @@ describe('settings:frontend', () => {
       enableAliasNames: true,
       blockchainRefreshButtonBehaviour: BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES,
       shouldRefreshValidatorDailyStats: false,
-      unifyAccountsTable: false,
       subscriptDecimals: false,
       savedFilters: {},
       balanceUsdValueThreshold: {
