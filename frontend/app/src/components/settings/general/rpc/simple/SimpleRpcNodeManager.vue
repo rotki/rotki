@@ -36,8 +36,8 @@ function edit(item: string) {
   set(inputUrl, item);
 }
 
-async function save() {
-  if (!(await get(form)?.validate()))
+async function save(force: boolean = false) {
+  if (!(await get(form)?.validate()) && !force)
     return;
 
   const value = get(inputUrl);
@@ -63,7 +63,7 @@ const { show } = useConfirmStore();
 
 async function deleteNode() {
   set(inputUrl, '');
-  await save();
+  await save(true);
 }
 
 function showDeleteConfirmation() {

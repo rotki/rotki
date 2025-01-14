@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Fix issue when user tries to delete Kusama, Polkadot, or Beaconchain RPC URL.
 * :bug:`-` rotki should now warn you again when gnosis pay authentication token expires.
 
 * :release:`1.37.1 <2025-01-10>`
