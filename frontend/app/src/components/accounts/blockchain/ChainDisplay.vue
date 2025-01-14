@@ -2,6 +2,7 @@
 import { useSupportedChains } from '@/composables/info/chains';
 import ChainIcon from '@/components/helper/display/icons/ChainIcon.vue';
 import ListItem from '@/components/common/ListItem.vue';
+import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 
 const props = withDefaults(
   defineProps<{
@@ -16,7 +17,13 @@ const props = withDefaults(
 const { chain } = toRefs(props);
 
 const { getChainName } = useSupportedChains();
-const name = getChainName(chain);
+const name = computed(() => {
+  const chainVal = get(chain);
+  if (chainVal === 'evm')
+    return 'All Supported Chains';
+
+  return get(getChainName(chain));
+});
 </script>
 
 <template>
@@ -28,7 +35,15 @@ const name = getChainName(chain);
     class="!py-0"
   >
     <template #avatar>
+      <AdaptiveWrapper v-if="chain === 'evm'">
+        <RuiIcon
+          name="lu-link"
+          color="primary"
+        />
+      </AdaptiveWrapper>
+
       <ChainIcon
+        v-else
         :chain="chain"
         :size="dense ? '20px' : '26px'"
       />

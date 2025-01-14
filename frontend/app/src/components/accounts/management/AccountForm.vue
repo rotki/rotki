@@ -16,7 +16,6 @@ import ValidatorAccountForm from '@/components/accounts/management/types/Validat
 import XpubAccountForm from '@/components/accounts/management/types/XpubAccountForm.vue';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useExternalApiKeys } from '@/composables/settings/api-keys/external';
-import AllEvmChainsSelector from '@/components/accounts/management/inputs/AllEvmChainsSelector.vue';
 import AgnosticAddressAccountForm from '@/components/accounts/management/types/AgnosticAddressAccountForm.vue';
 import AccountSelector from '@/components/accounts/management/inputs/AccountSelector.vue';
 import type { ValidationErrors } from '@/types/api/errors';
@@ -105,9 +104,6 @@ watch(chain, (chain) => {
   }
   else {
     const account = createNewBlockchainAccount();
-    if (!get(isEvm(chain)))
-      delete account.evm;
-
     set(modelValue, {
       ...account,
       chain,
@@ -138,9 +134,6 @@ watch(inputMode, (mode) => {
   }
   else {
     const account = createNewBlockchainAccount();
-    if (!get(isEvm(selectedChain)))
-      delete account.evm;
-
     set(modelValue, {
       ...account,
       chain: selectedChain,
@@ -212,13 +205,6 @@ defineExpose({
       v-model="modelValue"
       v-model:error-messages="errors"
       :loading="loading"
-    >
-      <template #selector="{ disabled, attrs }">
-        <AllEvmChainsSelector
-          v-bind="attrs"
-          :disabled="disabled"
-        />
-      </template>
-    </AddressAccountForm>
+    />
   </div>
 </template>

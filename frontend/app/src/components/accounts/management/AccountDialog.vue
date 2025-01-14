@@ -9,7 +9,7 @@ const model = defineModel<AccountManageState | undefined>({ required: true });
 
 defineProps<{
   chainIds: string[];
-}>();
+}>()
 
 const emit = defineEmits<{
   (e: 'complete'): void;

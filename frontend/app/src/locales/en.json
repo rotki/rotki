@@ -1007,10 +1007,6 @@
     },
     "view_addresses": "View the queried addresses for {name}"
   },
-  "address_account_form": {
-    "hint": "When checked this address will be tracked for all supported evm chains (Ethereum, Optimism etc)",
-    "label": "Add to all supported EVM chains"
-  },
   "address_book": {
     "actions": {
       "add": {
