@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.chain.ethereum.utils import (
-    token_normalized_value,
+    asset_normalized_value,
     token_normalized_value_decimals,
 )
 from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS, ZERO_ADDRESS
@@ -87,7 +87,7 @@ class HopCommonDecoder(DecoderInterface):
         if identifier == A_ETH.identifier:
             return token_normalized_value_decimals(amount_raw, DEFAULT_TOKEN_DECIMALS)
 
-        return token_normalized_value(amount_raw, Asset(identifier).resolve_to_evm_token())
+        return asset_normalized_value(amount_raw, Asset(identifier).resolve_to_evm_token())
 
     def _generate_bridge_note(
             self,
@@ -165,8 +165,9 @@ class HopCommonDecoder(DecoderInterface):
             asset = Asset(bridge.identifier)
             amount = int.from_bytes(context.transaction.input_data[36:68])
             bonder_fee = int.from_bytes(context.transaction.input_data[100:132])
-            norm_amount = token_normalized_value(
-                token_amount=amount - bonder_fee, token=asset.resolve_to_evm_token(),
+            norm_amount = asset_normalized_value(
+                amount=amount - bonder_fee,
+                asset=asset.resolve_to_evm_token(),
             )
             action_item = ActionItem(
                 action='transform',
@@ -282,8 +283,9 @@ class HopCommonDecoder(DecoderInterface):
             asset = Asset(bridge.identifier)
             amount_raw = int.from_bytes(context.transaction.input_data[36:68])
             bonder_fee = int.from_bytes(context.transaction.input_data[100:132])
-            norm_amount = token_normalized_value(
-                token_amount=amount_raw - bonder_fee, token=asset.resolve_to_evm_token(),
+            norm_amount = asset_normalized_value(
+                amount=amount_raw - bonder_fee,
+                asset=asset.resolve_to_evm_token(),
             )
             action_item = ActionItem(
                 action='transform',
@@ -329,7 +331,7 @@ class HopCommonDecoder(DecoderInterface):
             if item.to_event_subtype == HistoryEventSubType.BRIDGE:
                 tokens_bought = int.from_bytes(context.tx_log.data[32:64])
                 asset = item.asset.resolve_to_evm_token()
-                amount = token_normalized_value(tokens_bought, asset)
+                amount = asset_normalized_value(tokens_bought, asset)
                 item.to_notes = self._generate_bridge_note(amount=amount, asset=asset)
                 break
         return DEFAULT_DECODING_OUTPUT

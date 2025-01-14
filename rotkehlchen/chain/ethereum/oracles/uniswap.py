@@ -8,7 +8,7 @@ from eth_utils import to_checksum_address
 from web3.types import BlockIdentifier
 
 from rotkehlchen.assets.asset import Asset, AssetWithOracles, EvmToken
-from rotkehlchen.chain.ethereum.utils import token_normalized_value
+from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -553,9 +553,9 @@ class UniswapV2Oracle(UniswapOracle):
         # pylint: disable=unexpected-keyword-arg  # no idea why pylint sees this here
         price_0 = Inquirer.find_usd_price(token_0, skip_onchain=True)
         price_1 = Inquirer.find_usd_price(token_1, skip_onchain=True)
-        if price_0 != ZERO and price_0 * token_normalized_value(token_amount=reserve_0, token=token_0) < SINGLE_SIDE_USD_POOL_LIMIT:  # noqa: E501
+        if price_0 != ZERO and price_0 * asset_normalized_value(amount=reserve_0, asset=token_0) < SINGLE_SIDE_USD_POOL_LIMIT:  # noqa: E501
             raise DefiPoolError(f'Uniswap pool for {token_0}/{token_1} has too low reserves')
-        if price_1 != ZERO and price_1 * token_normalized_value(token_amount=reserve_1, token=token_1) < SINGLE_SIDE_USD_POOL_LIMIT:  # noqa: E501
+        if price_1 != ZERO and price_1 * asset_normalized_value(amount=reserve_1, asset=token_1) < SINGLE_SIDE_USD_POOL_LIMIT:  # noqa: E501
             raise DefiPoolError(f'Uniswap pool for {token_0}/{token_1} has too low reserves')
 
         price = FVal((reserve_1 / reserve_0) * decimals_constant)

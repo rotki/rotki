@@ -7,7 +7,6 @@ from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.ethereum.utils import (
     asset_normalized_value,
-    token_normalized_value,
     token_normalized_value_decimals,
 )
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
@@ -195,7 +194,7 @@ class ExtrafiCommonDecoder(DecoderInterface, ReloadableCacheDecoderMixin):
             if (
                 event.location_label == user and
                 event.asset == token_identifier and
-                event.balance.amount == token_normalized_value(token_amount=amount, token=(token := EvmToken(token_identifier))) and  # noqa: E501
+                event.balance.amount == asset_normalized_value(amount=amount, asset=(token := EvmToken(token_identifier))) and  # noqa: E501
                 event.maybe_get_direction() == EventDirection.IN
             ):
                 event.event_type = HistoryEventType.RECEIVE
@@ -431,7 +430,7 @@ class ExtrafiCommonDecoder(DecoderInterface, ReloadableCacheDecoderMixin):
             if (
                 event.event_type == HistoryEventType.RECEIVE and
                 event.asset == token and
-                token_normalized_value(token_amount=claimed, token=token) == event.balance.amount
+                asset_normalized_value(amount=claimed, asset=token) == event.balance.amount
             ):
                 event.event_subtype = HistoryEventSubType.REWARD
                 event.counterparty = CPT_EXTRAFI

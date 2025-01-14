@@ -5,7 +5,7 @@ from eth_typing.abi import ABI
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.chain.ethereum.utils import token_normalized_value
+from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
@@ -99,10 +99,7 @@ class ThegraphCommonDecoder(DecoderInterface):
 
         indexer = bytes_to_address(context.tx_log.topics[1])
         stake_amount = int.from_bytes(context.tx_log.data[:32])
-        stake_amount_norm = token_normalized_value(
-            token_amount=stake_amount,
-            token=self.token,
-        )
+        stake_amount_norm = asset_normalized_value(amount=stake_amount, asset=self.token)
         # identify and override the original stake Transfer event
         for event in context.decoded_events:
             if (
@@ -163,10 +160,7 @@ class ThegraphCommonDecoder(DecoderInterface):
         indexer = bytes_to_address(context.tx_log.topics[1])
         tokens_amount = int.from_bytes(context.tx_log.data[:32])
         lock_timeout_secs = int.from_bytes(context.tx_log.data[64:128])
-        tokens_amount_norm = token_normalized_value(
-            token_amount=tokens_amount,
-            token=self.token,
-        )
+        tokens_amount_norm = asset_normalized_value(amount=tokens_amount, asset=self.token)
         # create a new informational event about undelegation and the expiring lock on tokens
         event = self.base.make_event_from_transaction(
             transaction=context.transaction,
@@ -191,9 +185,9 @@ class ThegraphCommonDecoder(DecoderInterface):
             return DEFAULT_DECODING_OUTPUT
 
         indexer = bytes_to_address(context.tx_log.topics[1])
-        tokens_amount_norm = token_normalized_value(
-            token_amount=int.from_bytes(context.tx_log.data[:32]),
-            token=self.token,
+        tokens_amount_norm = asset_normalized_value(
+            amount=int.from_bytes(context.tx_log.data[:32]),
+            asset=self.token,
         )
         # create action item that will modify the relevant Transfer event that will appear later
         action_item = ActionItem(

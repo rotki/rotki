@@ -8,7 +8,7 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.chain.arbitrum_one.node_inquirer import ArbitrumOneInquirer
 from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
-from rotkehlchen.chain.ethereum.utils import asset_normalized_value, token_normalized_value
+from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.constants import ETH_SPECIAL_ADDRESS
 from rotkehlchen.chain.evm.decoding.airdrops import match_airdrop_claim
 from rotkehlchen.chain.evm.decoding.cowswap.constants import COWSWAP_CPT_DETAILS, CPT_COWSWAP
@@ -464,7 +464,7 @@ class CowswapCommonDecoderWithVCOW(CowswapCommonDecoder):
 
         # in gnosis chain the Vested log event has no amount in data. So we don't
         # match on amount for action items and in post decoding fix notes instead of here
-        amount = token_normalized_value(int.from_bytes(context.tx_log.data), self.vcow_token) if self.evm_inquirer.chain_id != ChainID.GNOSIS else None  # noqa: E501
+        amount = asset_normalized_value(int.from_bytes(context.tx_log.data), self.vcow_token) if self.evm_inquirer.chain_id != ChainID.GNOSIS else None  # noqa: E501
         return DecodingOutput(
             action_items=[
                 ActionItem(

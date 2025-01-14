@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.ethereum.interfaces.balances import BalancesSheetType, ProtocolWithBalance
-from rotkehlchen.chain.ethereum.utils import token_normalized_value
+from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE
@@ -70,10 +70,7 @@ class CurveLendBalances(ProtocolWithBalance):
             return None
 
         return Balance(
-            amount=(normalized_amount := token_normalized_value(
-                token_amount=amount,
-                token=token,
-            )),
+            amount=(normalized_amount := asset_normalized_value(amount=amount, asset=token)),
             usd_value=normalized_amount * token_prices[token],
         )
 
