@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING
 
 from rotkehlchen.chain.evm.decoding.aave.v3.constants import EVM_POOLS
-from rotkehlchen.chain.evm.decoding.aave.v3.decoder import Aavev3CommonDecoder
+from rotkehlchen.chain.evm.decoding.aave.v3.decoder import Aavev3LikeCommonDecoder
 from rotkehlchen.chain.evm.types import string_to_evm_address
 
 if TYPE_CHECKING:
@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from rotkehlchen.user_messages import MessagesAggregator
 
 
-class Aavev3Decoder(Aavev3CommonDecoder):
+class Aavev3Decoder(Aavev3LikeCommonDecoder):
 
     def __init__(
             self,

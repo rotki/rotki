@@ -1,13 +1,13 @@
 import logging
 from collections.abc import Callable, Sequence
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
-from rotkehlchen.chain.evm.decoding.aave.common import Commonv2v3Decoder
+from rotkehlchen.chain.evm.decoding.aave.common import Commonv2v3LikeDecoder
 from rotkehlchen.chain.evm.decoding.structures import DEFAULT_DECODING_OUTPUT, DecodingOutput
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class Aavev3CommonDecoder(Commonv2v3Decoder):
+class Aavev3LikeCommonDecoder(Commonv2v3LikeDecoder):
     def __init__(
             self,
             evm_inquirer: 'EvmNodeInquirer',
@@ -43,11 +43,13 @@ class Aavev3CommonDecoder(Commonv2v3Decoder):
             native_gateways: 'tuple[ChecksumEvmAddress, ...]',
             treasury: 'ChecksumEvmAddress',
             incentives: 'ChecksumEvmAddress',
+            label: Literal['AAVE v3', 'Spark'] = 'AAVE v3',
+            counterparty: Literal['aave-v3', 'spark'] = CPT_AAVE_V3,
     ):
-        Commonv2v3Decoder.__init__(
+        Commonv2v3LikeDecoder.__init__(
             self,
-            counterparty=CPT_AAVE_V3,
-            label='AAVE v3',
+            counterparty=counterparty,
+            label=label,
             pool_addresses=pool_addresses,
             deposit_signature=DEPOSIT,
             borrow_signature=BORROW,
@@ -71,20 +73,20 @@ class Aavev3CommonDecoder(Commonv2v3Decoder):
 
         amounts = [  # payback amount and liquidation amount
             asset_normalized_value(
-                amount=int.from_bytes(log.data[:32]),
+                amount=int.from_bytes(tx_log.data[:32]),
                 asset=EvmToken(evm_address_to_identifier(
-                    address=log.address,
+                    address=tx_log.address,
                     token_type=EvmTokenKind.ERC20,
                     chain_id=self.evm_inquirer.chain_id,
                 )),
-            ) for log in context.all_logs
-            if log.topics[0] == BURN and log.topics[1] == context.tx_log.topics[3]
+            ) for tx_log in context.all_logs
+            if tx_log.topics[0] == BURN and tx_log.topics[1] == context.tx_log.topics[3]
         ]
 
         if len(amounts) != 2:
             log.warning(
                 f'Found invalid number of payback and liquidation amounts '
-                f'in AAVE v3 liquidation: {context.transaction.tx_hash.hex()}',
+                f'in {self.label} liquidation: {context.transaction.tx_hash.hex()}',
             )
             return
 
@@ -98,19 +100,19 @@ class Aavev3CommonDecoder(Commonv2v3Decoder):
                 event.event_type = HistoryEventType.LOSS
                 event.event_subtype = HistoryEventSubType.LIQUIDATE
                 event.notes = f'An {self.label} position got liquidated for {event.balance.amount} {asset.symbol}'  # noqa: E501
-                event.counterparty = CPT_AAVE_V3
+                event.counterparty = self.counterparty
                 event.address = context.tx_log.address
             elif amounts[0] == event.balance.amount and event.address == ZERO_ADDRESS:
                 # we are transferring the aTOKEN
                 event.event_subtype = HistoryEventSubType.PAYBACK_DEBT
                 event.notes = f'Payback {event.balance.amount} {asset.symbol} for an {self.label} position'  # noqa: E501
-                event.counterparty = CPT_AAVE_V3
+                event.counterparty = self.counterparty
                 event.address = context.tx_log.address
                 event.extra_data = {'is_liquidation': True}  # adding this field to the decoded event to differentiate paybacks happening in liquidations.  # noqa: E501
             elif event.address == self.treasury:  # fee
                 event.event_subtype = HistoryEventSubType.FEE
                 event.notes = f'Spend {event.balance.amount} {asset.symbol} as an {self.label} fee'
-                event.counterparty = CPT_AAVE_V3
+                event.counterparty = self.counterparty
 
     def _decode_incentives(self, context: 'DecoderContext') -> DecodingOutput:
         if context.tx_log.topics[0] != REWARDS_CLAIMED:
@@ -168,7 +170,7 @@ class Aavev3CommonDecoder(Commonv2v3Decoder):
             ):  # we received aTokens when transferring, so it's an interest event
                 event.event_subtype = HistoryEventSubType.INTEREST
                 event.notes = f'Receive {event.balance.amount} {event.asset.symbol_or_name()} as interest earned from {self.label}'  # noqa: E501
-                event.counterparty = CPT_AAVE_V3
+                event.counterparty = self.counterparty
                 maybe_earned_event = event  # this may also be the mint transfer event which was already decoded (for some chains and assets) -- remember it to check it down later  # noqa: E501
 
         # categorize the events, based on token_event and wrapped_event
@@ -185,7 +187,7 @@ class Aavev3CommonDecoder(Commonv2v3Decoder):
                 wrapped_event = maybe_earned_event
                 receive_event = maybe_earned_event
             else:
-                log.error(f'Could not categorize the aave v3 events during interest decoding for transaction {transaction}')  # noqa: E501
+                log.error(f'Could not categorize the {self.label} events during interest decoding for transaction {transaction}')  # noqa: E501
                 return decoded_events
 
         else:  # if not identified, return the decoded events
@@ -220,7 +222,7 @@ class Aavev3CommonDecoder(Commonv2v3Decoder):
                             asset=token,
                         )
                         if not isinstance(token, EvmToken):
-                            log.error(f'At aave {transaction} got a BURN event for a native token. Should not happen')  # noqa: E501
+                            log.error(f'At {self.label} {transaction} got a BURN event for a native token. Should not happen')  # noqa: E501
                             return decoded_events  # error out
 
                         earned_token_address = token.evm_address
@@ -299,10 +301,10 @@ class Aavev3CommonDecoder(Commonv2v3Decoder):
         ),)
 
     def addresses_to_counterparties(self) -> dict[ChecksumEvmAddress, str]:
-        return dict.fromkeys(GlobalDBHandler.get_addresses_by_protocol(
+        return dict.fromkeys(GlobalDBHandler.get_addresses_by_protocol(  # type: ignore[return-value]  # they are inherently strings
             chain_id=self.evm_inquirer.chain_id,
-            protocol=CPT_AAVE_V3,
-        ), CPT_AAVE_V3) | dict.fromkeys(self.pool_addresses, CPT_AAVE_V3)
+            protocol=self.counterparty,
+        ), self.counterparty) | dict.fromkeys(self.pool_addresses, self.counterparty)
 
     def post_decoding_rules(self) -> dict[str, list[tuple[int, Callable]]]:
         return {CPT_AAVE_V3: [(0, self._decode_interest)]}
