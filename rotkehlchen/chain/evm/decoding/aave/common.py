@@ -42,11 +42,11 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class Commonv2v3Decoder(DecoderInterface):
+class Commonv2v3LikeDecoder(DecoderInterface):
     def __init__(
             self,
-            counterparty: Literal['aave-v2', 'aave-v3'],
-            label: Literal['AAVE v2', 'AAVE v3'],
+            counterparty: Literal['aave-v2', 'aave-v3', 'spark'],
+            label: Literal['AAVE v2', 'AAVE v3', 'Spark'],
             pool_addresses: Sequence['ChecksumEvmAddress'],
             deposit_signature: bytes,
             borrow_signature: bytes,
@@ -377,7 +377,7 @@ class Commonv2v3Decoder(DecoderInterface):
 
         if None in paired_events:
             log.warning(  # can happen in cases where one of the events comes later such as in test_aave_v3_withdraw_with_bigger_interest  # noqa: E501
-                f'Could not find all paired events in aave tx {context.transaction.tx_hash.hex()}'
+                f'Could not find all paired events in {self.counterparty} tx {context.transaction.tx_hash.hex()}'  # noqa: E501
                 f' on {self.evm_inquirer.chain_name}.',
             )
 
@@ -427,14 +427,14 @@ class Commonv2v3Decoder(DecoderInterface):
                 else:
                     event.location_label = to_address
 
-                event.notes += ' from Aave incentives'
+                event.notes += f' from {self.label} incentives'
                 event.address = context.tx_log.address
 
                 break
 
         else:
             log.error(
-                f'Failed to find the aave incentive reward transfer for {self.evm_inquirer.chain_name} transaction {context.transaction.tx_hash.hex()}.',  # noqa: E501
+                f'Failed to find the {self.label} incentive reward transfer for {self.evm_inquirer.chain_name} transaction {context.transaction.tx_hash.hex()}.',  # noqa: E501
             )
             return DEFAULT_DECODING_OUTPUT
 

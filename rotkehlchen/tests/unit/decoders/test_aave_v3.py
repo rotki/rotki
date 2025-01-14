@@ -1080,7 +1080,7 @@ def test_claim_incentives_reward(optimism_inquirer, optimism_accounts) -> None:
             asset=A_OP,
             balance=Balance(amount=FVal(amount)),
             location_label=user,
-            notes=f'Claim {amount} OP from Aave incentives',
+            notes=f'Claim {amount} OP from AAVE v3 incentives',
             counterparty=CPT_AAVE_V3,
             address=string_to_evm_address('0x929EC64c34a17401F460460D4B9390518E5B473e'),
         ),

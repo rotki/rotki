@@ -1,6 +1,7 @@
 import logging
 from collections import defaultdict
-from typing import TYPE_CHECKING, Final
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Final, Literal
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import Asset, UnderlyingToken
@@ -18,6 +19,9 @@ from rotkehlchen.chain.ethereum.modules.aave.v3.constants import (
     ETHERFI_AAVE_V3_DATA_PROVIDER as ETHERFI_AAVE_V3_DATA_PROVIDER_ETH,
     LIDO_AAVE_V3_DATA_PROVIDER as LIDO_AAVE_V3_DATA_PROVIDER_ETH,
 )
+from rotkehlchen.chain.ethereum.modules.spark.constants import (
+    SPARK_DATA_PROVIDER as SPARK_DATA_PROVIDER_ETH,
+)
 from rotkehlchen.chain.ethereum.utils import MULTICALL_CHUNKS
 from rotkehlchen.chain.evm.constants import EVM_ADDRESS_REGEX, ZERO_ADDRESS
 from rotkehlchen.chain.evm.contracts import EvmContract
@@ -25,6 +29,7 @@ from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE_V3
 from rotkehlchen.chain.evm.decoding.aave.v3.constants import (
     AAVE_V3_DATA_PROVIDER as AAVE_V3_DATA_PROVIDER_EVM,
 )
+from rotkehlchen.chain.evm.decoding.spark.constants import CPT_SPARK
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.gnosis.modules.aave.v3.constants import (
     AAVE_V3_DATA_PROVIDER as AAVE_V3_DATA_PROVIDER_GNO,
@@ -32,6 +37,9 @@ from rotkehlchen.chain.gnosis.modules.aave.v3.constants import (
 from rotkehlchen.chain.gnosis.modules.monerium.constants import (
     GNOSIS_MONERIUM_LEGACY_ADDRESSES,
     V1_TO_V2_MONERIUM_MAPPINGS as GNOSIS_MONERIUM_MAPPINGS,
+)
+from rotkehlchen.chain.gnosis.modules.spark.constants import (
+    SPARK_DATA_PROVIDER as SPARK_DATA_PROVIDER_GNOSIS,
 )
 from rotkehlchen.chain.polygon_pos.modules.monerium.constants import (
     POLYGON_MONERIUM_LEGACY_ADDRESSES,
@@ -265,8 +273,13 @@ def _batch_query_properties(
     }
 
 
-def update_aave_v3_underlying_assets(chains_aggregator: 'ChainsAggregator') -> None:
-    """Fetch the Aave v3 underlying assets and populate `underlying_tokens_list` in globaldb
+def _update_lending_protocol_underlying_assets(
+        chains_aggregator: 'ChainsAggregator',
+        providers_info: Sequence[tuple[ChainID, 'ChecksumEvmAddress']],
+        cache_key: DBCacheStatic,
+        protocol: Literal['aave-v3', 'spark'],
+) -> None:
+    """Common logic to fetch the Aave v3 like underlying assets and populate `underlying_tokens_list` in globaldb
 
     This function is heavy since it makes several queries to external nodes. The logic has
     been refactored to do the following:
@@ -278,41 +291,30 @@ def update_aave_v3_underlying_assets(chains_aggregator: 'ChainsAggregator') -> N
     their properties (name, symbol, decimals).
     5. For each reserve token create it or ensure that the protocol is aave-v3 and the
     underlying token is set properly.
-    """
-    for chain_id, data_provider_address in (
-        (ChainID.ETHEREUM, AAVE_V3_DATA_PROVIDER_ETH),
-        (ChainID.ETHEREUM, AAVE_V3_DATA_PROVIDER_ETH_OLD),
-        (ChainID.ETHEREUM, LIDO_AAVE_V3_DATA_PROVIDER_ETH),
-        (ChainID.ETHEREUM, ETHERFI_AAVE_V3_DATA_PROVIDER_ETH),
-        (ChainID.OPTIMISM, AAVE_V3_DATA_PROVIDER_EVM),
-        (ChainID.POLYGON_POS, AAVE_V3_DATA_PROVIDER_EVM),
-        (ChainID.ARBITRUM_ONE, AAVE_V3_DATA_PROVIDER_EVM),
-        (ChainID.BASE, AAVE_V3_DATA_PROVIDER_BASE),
-        (ChainID.GNOSIS, AAVE_V3_DATA_PROVIDER_GNO),
-        (ChainID.SCROLL, AAVE_V3_DATA_PROVIDER_SCRL),
-    ):
+    """  # noqa: E501
+    for chain_id, data_provider_address in providers_info:
         if len(chains_aggregator.accounts.get(chain_id.to_blockchain())) == 0:
             continue  # avoid querying chains without nodes connected
 
         node_inquirer = chains_aggregator.get_evm_manager(chain_id=chain_id).node_inquirer  # type: ignore[arg-type]  # all iterated ChainIDs are supported
-        aave_data_provider = node_inquirer.contracts.contract(address=data_provider_address)
+        data_provider = node_inquirer.contracts.contract(address=data_provider_address)
         underlying_tokens = []
 
         try:
-            for _, token_address in aave_data_provider.call(
+            for _, token_address in data_provider.call(
                 node_inquirer=node_inquirer,
                 method_name='getAllReservesTokens',
-            ):  # get all the underlying tokens in aave v3
+            ):  # get all the underlying tokens
                 try:
                     underlying_tokens.append(deserialize_evm_address(token_address))
                 except DeserializationError as e:
-                    log.error(f'Failed to deserialize Aave v3 underlying token address: {token_address} due to {e!s}')  # noqa: E501
+                    log.error(f'Failed to deserialize {protocol} underlying token address: {token_address} due to {e!s}')  # noqa: E501
                     continue
 
             reserve_tokens_raw = node_inquirer.multicall(
                 calls=[(  # get all the reserve tokens for each underlying token
-                    aave_data_provider.address,
-                    aave_data_provider.encode(
+                    data_provider.address,
+                    data_provider.encode(
                         method_name='getReserveTokensAddresses',
                         arguments=[underlying_token],
                     ),
@@ -320,13 +322,13 @@ def update_aave_v3_underlying_assets(chains_aggregator: 'ChainsAggregator') -> N
                 calls_chunk_size=4 if chain_id in {ChainID.ARBITRUM_ONE, ChainID.BASE} else MULTICALL_CHUNKS,  # arbiscan and basescan API breaks with chunk_size > 4  # noqa: E501
             )
         except RemoteError as e:
-            log.error(f'Failed to query Aave v3 reserve tokens addresses due to {e!s}')
+            log.error(f'Failed to query {protocol} reserve tokens addresses due to {e!s}')
             continue
 
         # map debt tokens to underlying tokens. Underlying tokens have more than 1 debt token
         reserve_to_underlying = {}
         for underlying_token_address, tokens_raw in zip(underlying_tokens, reserve_tokens_raw, strict=False):  # noqa: E501
-            for reserve in aave_data_provider.decode(
+            for reserve in data_provider.decode(
                 method_name='getReserveTokensAddresses',
                 arguments=[underlying_token_address],
                 result=tokens_raw,
@@ -341,7 +343,7 @@ def update_aave_v3_underlying_assets(chains_aggregator: 'ChainsAggregator') -> N
         try:
             address_to_properties = _batch_query_properties(node_inquirer, missing_tokens)
         except RemoteError as e:
-            log.error(f'Failed to query Aave v3 reserve tokens addresses due to {e!s}')
+            log.error(f'Failed to query {protocol} reserve tokens addresses due to {e!s}')
             continue
 
         # add the mappings of underlying tokens to the globaldb
@@ -361,7 +363,7 @@ def update_aave_v3_underlying_assets(chains_aggregator: 'ChainsAggregator') -> N
                     userdb=node_inquirer.database,
                     evm_address=reserve_address,
                     chain_id=chain_id,
-                    protocol=CPT_AAVE_V3,
+                    protocol=protocol,
                     token_kind=EvmTokenKind.ERC20,
                     underlying_tokens=[UnderlyingToken(address=underlying_address, token_kind=EvmTokenKind.ERC20, weight=ONE)],  # noqa: E501
                     symbol=symbol,
@@ -371,7 +373,7 @@ def update_aave_v3_underlying_assets(chains_aggregator: 'ChainsAggregator') -> N
                 )
             except DeserializationError as e:
                 log.error(
-                    'Failed to deserialize Aave v3 reserve token address: '
+                    f'Failed to deserialize {protocol} reserve token address: '
                     f'{reserve_address} at {node_inquirer.chain_name} due to {e!s}',
                 )
             except NotERC20Conformant as e:
@@ -383,9 +385,43 @@ def update_aave_v3_underlying_assets(chains_aggregator: 'ChainsAggregator') -> N
     with chains_aggregator.database.conn.write_ctx() as write_cursor:
         chains_aggregator.database.set_static_cache(  # remember last task ran
             write_cursor=write_cursor,
-            name=DBCacheStatic.LAST_AAVE_V3_ASSETS_UPDATE,
+            name=cache_key,
             value=ts_now(),
         )
+
+
+def update_aave_v3_underlying_assets(chains_aggregator: 'ChainsAggregator') -> None:
+    """Fetch the Aave V3 underlying assets and populate `underlying_tokens_list` in globaldb"""
+    _update_lending_protocol_underlying_assets(
+        chains_aggregator=chains_aggregator,
+        providers_info=(
+            (ChainID.ETHEREUM, AAVE_V3_DATA_PROVIDER_ETH),
+            (ChainID.ETHEREUM, AAVE_V3_DATA_PROVIDER_ETH_OLD),
+            (ChainID.ETHEREUM, LIDO_AAVE_V3_DATA_PROVIDER_ETH),
+            (ChainID.ETHEREUM, ETHERFI_AAVE_V3_DATA_PROVIDER_ETH),
+            (ChainID.OPTIMISM, AAVE_V3_DATA_PROVIDER_EVM),
+            (ChainID.POLYGON_POS, AAVE_V3_DATA_PROVIDER_EVM),
+            (ChainID.ARBITRUM_ONE, AAVE_V3_DATA_PROVIDER_EVM),
+            (ChainID.BASE, AAVE_V3_DATA_PROVIDER_BASE),
+            (ChainID.GNOSIS, AAVE_V3_DATA_PROVIDER_GNO),
+            (ChainID.SCROLL, AAVE_V3_DATA_PROVIDER_SCRL),
+        ),
+        protocol=CPT_AAVE_V3,
+        cache_key=DBCacheStatic.LAST_AAVE_V3_ASSETS_UPDATE,
+    )
+
+
+def update_spark_underlying_assets(chains_aggregator: 'ChainsAggregator') -> None:
+    """Fetch the Spark underlying assets and populate `underlying_tokens_list` in globaldb"""
+    _update_lending_protocol_underlying_assets(
+        chains_aggregator=chains_aggregator,
+        providers_info=(
+            (ChainID.ETHEREUM, SPARK_DATA_PROVIDER_ETH),
+            (ChainID.GNOSIS, SPARK_DATA_PROVIDER_GNOSIS),
+        ),
+        protocol=CPT_SPARK,
+        cache_key=DBCacheStatic.LAST_SPARK_ASSETS_UPDATE,
+    )
 
 
 def maybe_detect_new_tokens(database: 'DBHandler') -> None:

@@ -14,10 +14,13 @@ from rotkehlchen.chain.ethereum.modules.makerdao.cache import (
 )
 from rotkehlchen.chain.ethereum.modules.yearn.utils import query_yearn_vaults
 from rotkehlchen.chain.ethereum.utils import should_update_protocol_cache
+from rotkehlchen.chain.evm.decoding.aura_finance.constants import CHAIN_ID_TO_BOOSTER_ADDRESSES
+from rotkehlchen.chain.evm.decoding.aura_finance.utils import query_aura_pools
 from rotkehlchen.chain.evm.decoding.morpho.utils import (
     query_morpho_reward_distributors,
     query_morpho_vaults,
 )
+from rotkehlchen.constants import WEEK_IN_SECONDS
 from rotkehlchen.constants.timing import (
     AAVE_V3_ASSETS_UPDATE,
     DATA_UPDATES_REFRESH,
@@ -48,6 +51,7 @@ from rotkehlchen.tasks.assets import (
     maybe_detect_new_tokens,
     update_aave_v3_underlying_assets,
     update_owned_assets,
+    update_spark_underlying_assets,
 )
 from rotkehlchen.tasks.calendar import (
     CalendarNotification,
@@ -70,8 +74,6 @@ from rotkehlchen.types import (
 )
 from rotkehlchen.utils.misc import ts_now
 
-from ..chain.evm.decoding.aura_finance.constants import CHAIN_ID_TO_BOOSTER_ADDRESSES
-from ..chain.evm.decoding.aura_finance.utils import query_aura_pools
 from .events import process_events
 
 if TYPE_CHECKING:
@@ -182,6 +184,7 @@ class TaskManager:
             self._maybe_query_monerium,
             self._maybe_update_owned_assets,
             self._maybe_update_aave_v3_underlying_assets,
+            self._maybe_update_spark_underlying_assets,
             self._maybe_create_calendar_reminder,
             self._maybe_trigger_calendar_reminder,
             self._maybe_delete_past_calendar_events,
@@ -841,6 +844,25 @@ class TaskManager:
             task_name='Update aave v3 underlying assets in globaldb',
             exception_is_error=True,
             method=update_aave_v3_underlying_assets,
+            chains_aggregator=self.chains_aggregator,
+        )]
+
+    def _maybe_update_spark_underlying_assets(self) -> Optional[list[gevent.Greenlet]]:
+        """This function runs the logic to query the Spark contracts to get all the
+        underlying assets supported by them and save them in the globaldb.
+        """
+        if should_run_periodic_task(
+            database=self.database,
+            refresh_period=WEEK_IN_SECONDS,
+            key_name=DBCacheStatic.LAST_SPARK_ASSETS_UPDATE,
+        ) is False:
+            return None
+
+        return [self.greenlet_manager.spawn_and_track(
+            after_seconds=None,
+            task_name='Update Spark underlying assets in globaldb',
+            exception_is_error=True,
+            method=update_spark_underlying_assets,
             chains_aggregator=self.chains_aggregator,
         )]
 

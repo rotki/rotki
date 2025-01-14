@@ -2,7 +2,7 @@ from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
-from rotkehlchen.chain.evm.decoding.aave.common import Commonv2v3Decoder
+from rotkehlchen.chain.evm.decoding.aave.common import Commonv2v3LikeDecoder
 from rotkehlchen.chain.evm.decoding.structures import DEFAULT_DECODING_OUTPUT, DecodingOutput
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     from rotkehlchen.user_messages import MessagesAggregator
 
 
-class Aavev2CommonDecoder(Commonv2v3Decoder):
+class Aavev2CommonDecoder(Commonv2v3LikeDecoder):
     def __init__(
             self,
             evm_inquirer: 'EvmNodeInquirer',
@@ -30,7 +30,7 @@ class Aavev2CommonDecoder(Commonv2v3Decoder):
             incentives: 'ChecksumEvmAddress',
             incentives_reward_token: 'ChecksumEvmAddress',
     ):
-        Commonv2v3Decoder.__init__(
+        Commonv2v3LikeDecoder.__init__(
             self,
             counterparty=CPT_AAVE_V2,
             label='AAVE v2',
