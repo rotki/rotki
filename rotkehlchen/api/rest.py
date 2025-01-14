@@ -5393,7 +5393,7 @@ class RestAPI:
             to_timestamp: Timestamp,
     ) -> Response:
         try:
-            balances = HistoricalBalancesManager(self.rotkehlchen.data.db).get_asset_amounts(
+            balances, last_event_identifier = HistoricalBalancesManager(self.rotkehlchen.data.db).get_asset_amounts(  # noqa: E501
                 asset=asset,
                 from_ts=from_timestamp,
                 to_ts=to_timestamp,
@@ -5401,7 +5401,11 @@ class RestAPI:
         except NotFoundError as e:
             return api_response(wrap_in_fail_result(str(e), status_code=HTTPStatus.NOT_FOUND))
 
-        return api_response(_wrap_in_ok_result(result={
+        result = {
             'times': list(balances),
             'values': [str(x) for x in balances.values()],
-        }))
+        }
+        if last_event_identifier is not None:
+            result['last_event_identifier'] = last_event_identifier
+
+        return api_response(_wrap_in_ok_result(result=result))

@@ -83,8 +83,11 @@ class HistoricalBalancesManager:
             asset: Asset,
             from_ts: Timestamp,
             to_ts: Timestamp,
-    ) -> dict[Timestamp, FVal]:
+    ) -> tuple[dict[Timestamp, FVal], str | None]:
         """Get historical balance amounts for the given asset within the given time range.
+
+        If a negative amount is encountered in the time range, the event_identifier of the
+        event that caused it is returned alongside the balances.
 
         It does not include the value of the balances in the user's profit currency as
         that is handled separately by the frontend in a different request.
@@ -97,6 +100,7 @@ class HistoricalBalancesManager:
             raise NotFoundError(f'No historical data found for {asset} within {from_ts=} and {to_ts=}.')  # noqa: E501
 
         total_amount = ZERO
+        last_event_id = None
         amounts: dict[Timestamp, FVal] = defaultdict(lambda: ZERO)
         for event in events:
             if (
@@ -111,8 +115,11 @@ class HistoricalBalancesManager:
                 total_amount -= event.balance.amount
 
             amounts[ts_ms_to_sec(event.timestamp)] = total_amount
+            if total_amount < ZERO:
+                last_event_id = event.event_identifier
+                break
 
-        return amounts
+        return amounts, last_event_id
 
     def _get_events_and_currency(
             self,
