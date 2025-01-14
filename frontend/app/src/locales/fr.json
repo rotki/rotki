@@ -912,10 +912,6 @@
     },
     "view_addresses": "Voir les adresses demandées pour {name}"
   },
-  "address_account_form": {
-    "hint": "Lorsqu'il est coché, cette adresse sera suivie pour toutes les chaînes EVM prises en charge (Ethereum, Optimism, etc.)",
-    "label": "Ajouter à toutes les chaînes EVM prises en charge"
-  },
   "address_book": {
     "actions": {
       "add": {

@@ -58,7 +58,17 @@ const filteredItems = computed(() => {
 
 const mappedOptions = computed(() => {
   const filtered = get(filteredItems);
-  return get(supportedChains).filter(item => filtered.includes(item.id));
+  const chains = get(supportedChains).filter(item => filtered.includes(item.id));
+  if (get(items).includes('evm')) {
+    chains.unshift({
+      id: 'evm',
+      image: '',
+      name: '',
+      type: 'evm',
+    });
+  }
+
+  return chains;
 });
 
 const autoCompleteProps: AutoCompleteProps<string, ChainInfo> = {

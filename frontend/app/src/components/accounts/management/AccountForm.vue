@@ -16,9 +16,9 @@ import ValidatorAccountForm from '@/components/accounts/management/types/Validat
 import XpubAccountForm from '@/components/accounts/management/types/XpubAccountForm.vue';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useExternalApiKeys } from '@/composables/settings/api-keys/external';
-import AllEvmChainsSelector from '@/components/accounts/management/inputs/AllEvmChainsSelector.vue';
 import AgnosticAddressAccountForm from '@/components/accounts/management/types/AgnosticAddressAccountForm.vue';
 import AccountSelector from '@/components/accounts/management/inputs/AccountSelector.vue';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 import type { ValidationErrors } from '@/types/api/errors';
 
 const modelValue = defineModel<AccountManageState>({ required: true });
@@ -43,6 +43,7 @@ const chain = useRefPropVModel(modelValue, 'chain');
 const { isEvm } = useSupportedChains();
 const { t } = useI18n();
 const { apiKey, load: loadApiKeys } = useExternalApiKeys(t);
+const { useUnifiedEtherscanApi } = storeToRefs(useGeneralSettingsStore());
 const router = useRouter();
 
 const etherscanApiKeyAlert = computed(() => {
@@ -51,14 +52,14 @@ const etherscanApiKeyAlert = computed(() => {
 
   if (
     selectedChain
-    && get(isEvm(selectedChain))
+    && (selectedChain === 'evm' || get(isEvm(selectedChain)))
     && currentModelValue.mode === 'add'
-    && 'evm' in currentModelValue
-    && !currentModelValue.evm
   ) {
-    const chainName = selectedChain === 'eth' ? 'ethereum' : selectedChain;
-    const displayChain = toHumanReadable(selectedChain, 'sentence');
-    if (!get(apiKey('etherscan', chainName))) {
+    const unified = get(useUnifiedEtherscanApi);
+    const chainName = [Blockchain.ETH, 'evm'].includes(selectedChain) ? 'ethereum' : selectedChain;
+    const displayChain = unified ? undefined : toHumanReadable(selectedChain, 'sentence');
+
+    if (!get(apiKey('etherscan', unified ? 'ethereum' : chainName))) {
       return {
         action: t('notification_messages.missing_api_key.action'),
         chainName,
@@ -105,9 +106,6 @@ watch(chain, (chain) => {
   }
   else {
     const account = createNewBlockchainAccount();
-    if (!get(isEvm(chain)))
-      delete account.evm;
-
     set(modelValue, {
       ...account,
       chain,
@@ -138,9 +136,6 @@ watch(inputMode, (mode) => {
   }
   else {
     const account = createNewBlockchainAccount();
-    if (!get(isEvm(selectedChain)))
-      delete account.evm;
-
     set(modelValue, {
       ...account,
       chain: selectedChain,
@@ -212,13 +207,6 @@ defineExpose({
       v-model="modelValue"
       v-model:error-messages="errors"
       :loading="loading"
-    >
-      <template #selector="{ disabled, attrs }">
-        <AllEvmChainsSelector
-          v-bind="attrs"
-          :disabled="disabled"
-        />
-      </template>
-    </AddressAccountForm>
+    />
   </div>
 </template>
