@@ -379,33 +379,12 @@ class Rotkehlchen:
             blockchain_accounts = self.data.db.get_blockchain_accounts(cursor)
 
         # Initialize blockchain querying modules
-        ethereum_inquirer = EthereumInquirer(
-            greenlet_manager=self.greenlet_manager,
-            database=self.data.db,
-        )
-        uniswap_v2_oracle = UniswapV2Oracle(ethereum_inquirer)
-        uniswap_v3_oracle = UniswapV3Oracle(ethereum_inquirer)
-
-        price_historian = PriceHistorian(  # Initialize the price historian singleton
-            data_directory=self.data_dir,
-            cryptocompare=self.cryptocompare,
-            coingecko=self.coingecko,
-            defillama=self.defillama,
-            alchemy=self.alchemy,
-            uniswapv2=uniswap_v2_oracle,
-            uniswapv3=uniswap_v3_oracle,
-        )
-        price_historian.set_oracles_order(settings.historical_price_oracles)
-
-        Inquirer().add_defi_oracles(
-            uniswap_v2=uniswap_v2_oracle,
-            uniswap_v3=uniswap_v3_oracle,
-        )
-        Inquirer().set_oracles_order(settings.current_price_oracles)
-
         self.chains_aggregator = ChainsAggregator(
             blockchain_accounts=blockchain_accounts,
-            ethereum_manager=EthereumManager(ethereum_inquirer),
+            ethereum_manager=EthereumManager(ethereum_inquirer := EthereumInquirer(
+                greenlet_manager=self.greenlet_manager,
+                database=self.data.db,
+            )),
             optimism_manager=OptimismManager(OptimismInquirer(
                 greenlet_manager=self.greenlet_manager,
                 database=self.data.db,
@@ -471,6 +450,23 @@ class Rotkehlchen:
             (chain.to_chain_id(), self.chains_aggregator.get_chain_manager(chain))
             for chain in EVM_CHAINS_WITH_TRANSACTIONS
         ])
+
+        price_historian = PriceHistorian(  # Initialize the price historian singleton
+            data_directory=self.data_dir,
+            cryptocompare=self.cryptocompare,
+            coingecko=self.coingecko,
+            defillama=self.defillama,
+            alchemy=self.alchemy,
+            uniswapv2=(uniswap_v2_oracle := UniswapV2Oracle()),
+            uniswapv3=(uniswap_v3_oracle := UniswapV3Oracle()),
+        )
+        price_historian.set_oracles_order(settings.historical_price_oracles)
+
+        Inquirer().add_defi_oracles(
+            uniswap_v2=uniswap_v2_oracle,
+            uniswap_v3=uniswap_v3_oracle,
+        )
+        Inquirer().set_oracles_order(settings.current_price_oracles)
 
         self.accountant = Accountant(
             db=self.data.db,

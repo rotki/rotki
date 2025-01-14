@@ -46,13 +46,13 @@ def fixture_defillama():
 
 
 @pytest.fixture(name='uniswapv2_inquirer')
-def fixture_uniswapv2(ethereum_inquirer):
-    return UniswapV2Oracle(ethereum_inquirer=ethereum_inquirer)
+def fixture_uniswapv2():
+    return UniswapV2Oracle()
 
 
 @pytest.fixture(name='uniswapv3_inquirer')
-def fixture_uniswapv3(ethereum_inquirer):
-    return UniswapV3Oracle(ethereum_inquirer=ethereum_inquirer)
+def fixture_uniswapv3():
+    return UniswapV3Oracle()
 
 
 @pytest.fixture(name='historical_price_oracles_order')
@@ -73,7 +73,7 @@ def fixture_force_no_price_found_for():
 @pytest.fixture
 def price_historian(
         data_dir,
-        inquirer,  # pylint: disable=unused-argument
+        inquirer_defi,  # pylint: disable=unused-argument
         should_mock_price_queries,
         mocked_price_queries,
         cryptocompare,

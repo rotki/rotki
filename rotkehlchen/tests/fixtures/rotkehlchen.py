@@ -38,7 +38,7 @@ from rotkehlchen.tests.utils.decoders import patch_decoder_reload_data
 from rotkehlchen.tests.utils.evm import maybe_mock_evm_inquirer
 from rotkehlchen.tests.utils.factories import make_random_b64bytes
 from rotkehlchen.tests.utils.history import maybe_mock_historical_price_queries
-from rotkehlchen.tests.utils.inquirer import inquirer_inject_ethereum_set_order
+from rotkehlchen.tests.utils.inquirer import inquirer_inject_evm_managers_set_order
 from rotkehlchen.tests.utils.mock import mock_proxies
 from rotkehlchen.tests.utils.substrate import wait_until_all_substrate_nodes_connected
 from rotkehlchen.types import (
@@ -370,11 +370,11 @@ def initialize_mock_rotkehlchen_instance(
         )
 
     rotki.task_manager.should_schedule = True
-    inquirer_inject_ethereum_set_order(
+    inquirer_inject_evm_managers_set_order(
         inquirer=Inquirer(),
         add_defi_oracles=False,
         current_price_oracles_order=current_price_oracles_order,
-        ethereum_manager=rotki.chains_aggregator.ethereum,
+        evm_managers=[rotki.chains_aggregator.ethereum],
     )
     # configure when task manager should run for tests
     rotki.task_manager.max_tasks_num = max_tasks_num
