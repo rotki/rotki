@@ -5,9 +5,26 @@ import pytest
 
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.assets.resolver import AssetResolver
-from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.chain.ethereum.oracles.constants import (
+    A_ARBITRUM_USDC,
+    A_BASE_USDC,
+    A_BSC_USDT,
+    A_OPTIMISM_USDT,
+    A_POLYGON_USDC,
+)
+from rotkehlchen.chain.evm.types import NodeName, WeightedNode, string_to_evm_address
 from rotkehlchen.constants import ONE
-from rotkehlchen.constants.assets import A_1INCH, A_BTC, A_DOGE, A_ETH, A_LINK, A_USDC, A_WETH
+from rotkehlchen.constants.assets import (
+    A_1INCH,
+    A_BSC_BNB,
+    A_BTC,
+    A_DOGE,
+    A_ETH,
+    A_LINK,
+    A_POLYGON_POS_MATIC,
+    A_USDC,
+    A_WETH,
+)
 from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.errors.defi import DefiPoolError
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset
@@ -16,7 +33,7 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.inquirer import CurrentPriceOracle
 from rotkehlchen.tests.utils.ethereum import INFURA_ETH_NODE
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import ChainID, EvmTokenKind, Price
+from rotkehlchen.types import ChainID, EvmTokenKind, Price, SupportedBlockchain, Timestamp
 
 if TYPE_CHECKING:
     from rotkehlchen.inquirer import Inquirer
@@ -92,6 +109,49 @@ def test_uniswap_oracles_historic_price(inquirer_defi, socket_enabled):  # pylin
             to_asset=A_DOGE,
             timestamp=1653454800,
         )
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+@pytest.mark.parametrize('base_manager_connect_at_start', [(WeightedNode(node_info=NodeName(name='llama', endpoint='https://base.llamarpc.com', owned=True, blockchain=SupportedBlockchain.BASE), active=True, weight=ONE),)])  # noqa: E501
+@pytest.mark.parametrize('polygon_pos_manager_connect_at_start', [(WeightedNode(node_info=NodeName(name='polygon', endpoint='https://polygon.drpc.org', owned=True, blockchain=SupportedBlockchain.POLYGON_POS), active=True, weight=ONE),)])  # noqa: E501
+def test_uniswap_oracles_evm(inquirer_defi: 'Inquirer') -> None:
+    """Test that Uniswap V2 and V3 oracles return correct prices in evm chains"""
+    assert inquirer_defi._uniswapv2 is not None
+    assert inquirer_defi._uniswapv3 is not None
+
+    # v2 historical on base
+    assert inquirer_defi._uniswapv2.query_historical_price(
+        from_asset=A_ETH,
+        to_asset=A_BASE_USDC,
+        timestamp=Timestamp(1725944400),
+    ) == Price(FVal('2340.829327449607'))
+
+    # v2 current on arbitrum
+    assert inquirer_defi._uniswapv2.query_current_price(
+        from_asset=A_ETH,
+        to_asset=A_ARBITRUM_USDC,
+    ) == Price(FVal('3212.0656284514484'))
+
+    # v3 historical on polygon
+    assert inquirer_defi._uniswapv3.query_historical_price(
+        from_asset=A_POLYGON_POS_MATIC,
+        to_asset=A_POLYGON_USDC,
+        timestamp=Timestamp(1725944400),
+    ) == Price(FVal('0.3785896756190174'))
+
+    # v3 current on optimism
+    assert inquirer_defi._uniswapv3.query_current_price(
+        from_asset=A_ETH,
+        to_asset=A_OPTIMISM_USDT,
+    ) == Price(FVal('3214.5282531850976'))
+
+    # v3 current on bsc
+    assert inquirer_defi._uniswapv3.query_current_price(
+        from_asset=A_BSC_USDT,
+        to_asset=A_BSC_BNB,
+    ) == Price(FVal('0.001433422881060733'))
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])

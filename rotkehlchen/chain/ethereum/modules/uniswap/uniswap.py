@@ -89,10 +89,7 @@ class Uniswap(AMMSwapPlatform, EthereumModule):
         )
 
         unknown_asset_price: AssetToPrice = {}
-        unknown_asset_price = get_unknown_asset_price_chain(
-            ethereum=self.ethereum,
-            unknown_tokens=unknown_assets,
-        )
+        unknown_asset_price = get_unknown_asset_price_chain(unknown_tokens=unknown_assets)
 
         update_asset_price_in_uniswap_v3_lp_balances(
             address_balances=protocol_balance.address_balances,

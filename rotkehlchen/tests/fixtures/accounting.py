@@ -26,7 +26,7 @@ from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.oracles.structures import DEFAULT_CURRENT_PRICE_ORACLES_ORDER, CurrentPriceOracle
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.tests.utils.constants import CURRENT_PRICE_MOCK
-from rotkehlchen.tests.utils.inquirer import inquirer_inject_ethereum_set_order
+from rotkehlchen.tests.utils.inquirer import inquirer_inject_evm_managers_set_order
 from rotkehlchen.types import Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 
@@ -246,7 +246,7 @@ def _create_inquirer(
         mocked_prices,
         mocked_current_prices_with_oracles,
         current_price_oracles_order,
-        ethereum_manager,
+        evm_managers,
         add_defi_oracles,
         ignore_mocked_prices_for=None,
 ) -> Inquirer:
@@ -272,12 +272,12 @@ def _create_inquirer(
             setattr(Inquirer, x, staticmethod(original_method))
             delattr(Inquirer, old)
 
-    if ethereum_manager is not None:
-        inquirer_inject_ethereum_set_order(
+    if len(evm_managers) > 0:
+        inquirer_inject_evm_managers_set_order(
             inquirer=inquirer,
             add_defi_oracles=add_defi_oracles,
             current_price_oracles_order=current_price_oracles_order,
-            ethereum_manager=ethereum_manager,
+            evm_managers=evm_managers,
         )
 
     inquirer.set_oracles_order(current_price_oracles_order)
@@ -440,7 +440,7 @@ def fixture_inquirer(
         mocked_current_prices_with_oracles=mocked_current_prices_with_oracles,
         current_price_oracles_order=current_price_oracles_order,
         add_defi_oracles=False,
-        ethereum_manager=None,
+        evm_managers=[],
         ignore_mocked_prices_for=ignore_mocked_prices_for,
     )
 
@@ -455,6 +455,11 @@ def fixture_inquirer_defi(
         current_price_oracles_order,
         ignore_mocked_prices_for,
         ethereum_manager,
+        polygon_pos_manager,
+        arbitrum_one_manager,
+        optimism_manager,
+        base_manager,
+        binance_sc_manager,
 ):
     """This fixture is different from `inquirer` just in the use of defi oracles to query
     prices. If you don't need to use the defi oracles it is faster to use the `inquirer` fixture.
@@ -465,7 +470,14 @@ def fixture_inquirer_defi(
         mocked_prices=mocked_current_prices,
         mocked_current_prices_with_oracles=mocked_current_prices_with_oracles,
         current_price_oracles_order=current_price_oracles_order,
-        ethereum_manager=ethereum_manager,
+        evm_managers=[
+            ethereum_manager,
+            polygon_pos_manager,
+            arbitrum_one_manager,
+            optimism_manager,
+            base_manager,
+            binance_sc_manager,
+        ],
         add_defi_oracles=True,
         ignore_mocked_prices_for=ignore_mocked_prices_for,
     )
