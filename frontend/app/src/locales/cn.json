@@ -1855,7 +1855,6 @@
     "public_key": "公钥"
   },
   "eth2_page": {
-    "no_premium": "ETH 質押是",
     "toggle": {
       "withdrawal": "提币地址",
       "hint": "在 ETH 抵押驗證器和 ETH1 地址之間切換過濾和顯示模式",
@@ -1910,8 +1909,7 @@
     "click_here": "点击这里",
     "no_connected_exchanges": "你没有任何连接的交易所。{0} 建立一个交易所连接。",
     "select_exchange": "选择交易所",
-    "select_hint": "选择交易所查看资产详情。",
-    "title": "外汇余额"
+    "select_hint": "选择交易所查看资产详情。"
   },
   "exchange_keys_form": {
     "edit": {
@@ -2759,8 +2757,8 @@
     "title": "模块设置"
   },
   "navigation_menu": {
-    "accounts_balances": "账户与余额",
-    "accounts_balances_sub": {
+    "balances": "余额",
+    "balances_sub": {
       "blockchain_balances": "区块链余额",
       "exchange_balances": "外汇余额",
       "manual_balances": "手动余额",
@@ -2857,8 +2855,7 @@
       "price_in_asset": "资产价格"
     },
     "ignore": "忽略 NFT",
-    "refresh": "刷新余额",
-    "title": "不可替代余额"
+    "refresh": "刷新余额"
   },
   "notes_menu": {
     "delete_confirmation": "你确定要删除这条笔记吗？",

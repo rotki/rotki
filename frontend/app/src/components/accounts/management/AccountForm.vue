@@ -27,6 +27,7 @@ const errors = defineModel<ValidationErrors>('errorMessages', { required: true }
 
 defineProps<{
   loading: boolean;
+  chainIds: string[];
 }>();
 
 const inputMode = ref<InputMode>(InputMode.MANUAL_ADD);
@@ -177,6 +178,7 @@ defineExpose({
       v-if="chain"
       v-model:input-mode="inputMode"
       v-model:chain="chain"
+      :chain-ids="chainIds"
       :edit-mode="modelValue.mode === 'edit'"
     />
 

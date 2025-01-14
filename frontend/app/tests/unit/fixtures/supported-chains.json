@@ -100,6 +100,14 @@
       "evm_chain_name": "scroll"
     },
     {
+      "id": "binance_sc",
+      "name": "Binance Smart Chain",
+      "type": "evm",
+      "native_token": "BNB",
+      "image": "binance_sc.svg",
+      "evm_chain_name": "binance_sc"
+    },
+    {
       "id": "zksync_lite",
       "name": "ZKSync Lite",
       "type": "evmlike",

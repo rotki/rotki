@@ -1,0 +1,20 @@
+<script setup lang="ts">
+import { NoteLocation } from '@/types/notes';
+import AccountBalancesDefaultPage from '@/components/accounts/AccountBalancesDefaultPage.vue';
+
+definePage({
+  meta: {
+    noteLocation: NoteLocation.ACCOUNTS_SUBSTRATE,
+  },
+  name: 'accounts-substrate',
+});
+
+const { t } = useI18n();
+</script>
+
+<template>
+  <AccountBalancesDefaultPage
+    category="substrate"
+    :title="t('navigation_menu.accounts_sub.substrate')"
+  />
+</template>

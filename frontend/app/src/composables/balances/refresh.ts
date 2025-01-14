@@ -17,8 +17,8 @@ export const useRefresh = createSharedComposable(() => {
   const { massDetecting } = storeToRefs(useBlockchainTokensStore());
   const { txEvmChains } = useSupportedChains();
 
-  const refreshBlockchainBalances = async (blockchain?: string): Promise<void> => {
-    const chain = get(blockchain);
+  const refreshBlockchainBalances = async (blockchain?: string | string[]): Promise<void> => {
+    const chain = blockchain ? arrayify(blockchain) : undefined;
     const pending: Promise<any>[] = [
       fetchBlockchainBalances({
         blockchain: chain,
@@ -26,7 +26,7 @@ export const useRefresh = createSharedComposable(() => {
       }),
     ];
 
-    if (!chain || chain === Blockchain.ETH)
+    if (!chain || chain.includes(Blockchain.ETH))
       pending.push(fetchLoopringBalances(true));
 
     await Promise.allSettled(pending);

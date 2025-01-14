@@ -172,7 +172,7 @@ export function useBlockchainAccountsApi(): UseBlockchainAccountsApiReturn {
 
   const queryAccounts = async (blockchain: string): Promise<BlockchainAccounts> => {
     const response = await api.instance.get<ActionResult<BlockchainAccounts>>(
-      `/blockchains/${blockchain.toString()}/accounts`,
+      `/blockchains/${blockchain}/accounts`,
       {
         validateStatus: validWithSessionStatus,
       },

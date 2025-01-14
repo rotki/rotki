@@ -1854,8 +1854,7 @@
     "click_here": "Click here",
     "no_connected_exchanges": "You do not have any connected exchanges. {0} to set up an Exchange Connection.",
     "select_exchange": "Elegir exchange",
-    "select_hint": "Select an exchange to view asset details.",
-    "title": "Balances en exchanges"
+    "select_hint": "Select an exchange to view asset details."
   },
   "exchange_keys_form": {
     "edit": {
@@ -2684,8 +2683,8 @@
     "title": "Module Settings"
   },
   "navigation_menu": {
-    "accounts_balances": "Cuentas y balances",
-    "accounts_balances_sub": {
+    "balances": "Balances",
+    "balances_sub": {
       "blockchain_balances": "Balances en blockchains",
       "exchange_balances": "Balances en exchanges",
       "manual_balances": "Balances manuales",
@@ -2771,8 +2770,7 @@
       "price_in_asset": "Price in Asset"
     },
     "ignore": "Ignore NFT",
-    "refresh": "Refresh the balances",
-    "title": "Non Fungible Balances"
+    "refresh": "Refresh the balances"
   },
   "notes_menu": {
     "delete_confirmation": "Are you sure you want to delete this note?",

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 definePage({
-  name: 'balances',
-  redirect: '/balances/blockchain',
+  name: 'accounts',
+  redirect: '/accounts/evm',
 });
 </script>
 

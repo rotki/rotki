@@ -2,7 +2,6 @@
 import { Blockchain } from '@rotki/common';
 import { Routes } from '@/router/routes';
 import { type BlockchainTotal, SupportedSubBlockchainProtocolData } from '@/types/blockchain';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useRefMap } from '@/composables/utils/useRefMap';
 import BlockchainBalanceCardDetails from '@/components/dashboard/blockchain-balance/BlockchainBalanceCardDetails.vue';
@@ -26,24 +25,18 @@ const loading = useRefMap(total, ({ loading }) => loading);
 const chain = useRefMap(total, ({ chain }) => chain);
 const name = getChainName(chain);
 
-const { unifyAccountsTable } = storeToRefs(useFrontendSettingsStore());
-
 const navTarget = computed<RouteLocationRaw>(() => {
-  let target: string;
   const balanceChain = get(chain);
   if (balanceChain === Blockchain.ETH2) {
-    target = 'validators';
-  }
-  else {
-    if (get(unifyAccountsTable))
-      target = 'all';
-    else
-      target = getChainAccountType(balanceChain) ?? 'evm';
+    return {
+      path: `${Routes.STAKING}/eth`,
+    };
   }
 
+  const target = getChainAccountType(balanceChain) ?? 'evm';
   return {
     hash: '#accounts-section',
-    path: `${Routes.ACCOUNTS_BALANCES_BLOCKCHAIN}/${target}`,
+    path: `${Routes.BALANCES_BLOCKCHAIN}/${target}`,
   };
 });
 

@@ -1861,8 +1861,7 @@
     "click_here": "Κάντε κλίκ εδώ",
     "no_connected_exchanges": "Δέν έχετε συνδεδεμένα ανταλλακτήρια. You do not have any connected exchanges. {0} για να συνδέσετε ένα ανταλλακτήριο.",
     "select_exchange": "Επιλογή ανταλλακτηρίου",
-    "select_hint": "Επιλέξτε ένα ανταλλακτήριο για να δείτε λεπτομέρεις περιουσιακών στοιχείων.",
-    "title": "Υπόλοιπο Ανταλλακτηρίων"
+    "select_hint": "Επιλέξτε ένα ανταλλακτήριο για να δείτε λεπτομέρεις περιουσιακών στοιχείων."
   },
   "exchange_keys_form": {
     "edit": {
@@ -2699,8 +2698,8 @@
     "title": "Module Settings"
   },
   "navigation_menu": {
-    "accounts_balances": "Λογαριασμοί & Υπόλοιπα",
-    "accounts_balances_sub": {
+    "balances": "Υπόλοιπα",
+    "balances_sub": {
       "blockchain_balances": "Υπόλοιπα Blockchain",
       "exchange_balances": "Υπόλοιπα Ανταλλακτηρίων",
       "manual_balances": "Χειροκίνητα Υπόλοιπα",
@@ -2794,8 +2793,7 @@
       "price_in_asset": "Price in Asset"
     },
     "ignore": "Ignore NFT",
-    "refresh": "Refresh the balances",
-    "title": "Non Fungible Balances"
+    "refresh": "Refresh the balances"
   },
   "notes_menu": {
     "delete_confirmation": "Are you sure you want to delete this note?",

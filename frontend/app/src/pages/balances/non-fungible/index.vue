@@ -7,9 +7,9 @@ import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
 
 definePage({
   meta: {
-    noteLocation: NoteLocation.ACCOUNTS_BALANCES_NON_FUNGIBLE,
+    noteLocation: NoteLocation.BALANCES_NON_FUNGIBLE,
   },
-  name: 'accounts-balances-non-fungible',
+  name: 'balances-non-fungible',
 });
 
 const { isModuleEnabled } = useModules();

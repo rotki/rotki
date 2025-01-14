@@ -20,8 +20,6 @@ import RowAppend from '@/components/helper/RowAppend.vue';
 import Eth2ValidatorLimitRow from '@/components/accounts/blockchain/eth2/Eth2ValidatorLimitRow.vue';
 import RowActions from '@/components/helper/RowActions.vue';
 import TableFilter from '@/components/table-filter/TableFilter.vue';
-import CardTitle from '@/components/typography/CardTitle.vue';
-import RefreshButton from '@/components/helper/RefreshButton.vue';
 import type { EthereumValidator, EthereumValidatorRequestPayload } from '@/types/blockchain/accounts';
 import type { ContextColorsType, DataTableColumn } from '@rotki/ui-library';
 import type { StakingValidatorManage } from '@/composables/accounts/blockchain/use-account-manage';
@@ -177,22 +175,16 @@ const total = computed(() => {
 watchImmediate(ethStakingValidators, async () => {
   await fetchData();
 });
+
+defineExpose({
+  refresh,
+});
 </script>
 
 <template>
   <RuiCard>
     <template #header>
-      <div class="flex flex-row items-center gap-2">
-        <RefreshButton
-          :disabled="loading"
-          :loading="loading"
-          :tooltip="t('account_balances.refresh_tooltip')"
-          @refresh="refresh()"
-        />
-        <CardTitle class="ml-2">
-          {{ t('blockchain_balances.validators') }}
-        </CardTitle>
-      </div>
+      {{ t('blockchain_balances.validators') }}
     </template>
     <div class="flex w-full">
       <div class="grow" />

@@ -9,11 +9,10 @@ function ensureRoute(route: RouteLocationRaw): RouteLocationRaw {
 }
 
 export const Routes = {
-  ACCOUNTS_BALANCES: ensureRoute('/balances'),
-  ACCOUNTS_BALANCES_BLOCKCHAIN: ensureRoute('/balances/blockchain'),
-  ACCOUNTS_BALANCES_EXCHANGE: ensureRoute('/balances/exchange'),
-  ACCOUNTS_BALANCES_MANUAL: ensureRoute('/balances/manual'),
-  ACCOUNTS_BALANCES_NON_FUNGIBLE: ensureRoute('/balances/non-fungible'),
+  ACCOUNTS: ensureRoute('/accounts'),
+  ACCOUNTS_BITCOIN: ensureRoute('/accounts/bitcoin'),
+  ACCOUNTS_EVM: ensureRoute('/accounts/evm'),
+  ACCOUNTS_SUBSTRATE: ensureRoute('/accounts/substrate'),
   ADDRESS_BOOK_MANAGER: ensureRoute('/address-book-manager'),
   API_KEYS: ensureRoute('/api-keys'),
   API_KEYS_EXCHANGES: ensureRoute('/api-keys/exchanges'),
@@ -26,6 +25,11 @@ export const Routes = {
   ASSET_MANAGER_MORE: ensureRoute('/asset-manager/more'),
   ASSET_MANAGER_NEWLY_DETECTED: ensureRoute('/asset-manager/more/newly-detected'),
   ASSETS: ensureRoute('/assets/:identifier'),
+  BALANCES: ensureRoute('/balances'),
+  BALANCES_BLOCKCHAIN: ensureRoute('/balances/blockchain'),
+  BALANCES_EXCHANGE: ensureRoute('/balances/exchange'),
+  BALANCES_MANUAL: ensureRoute('/balances/manual'),
+  BALANCES_NON_FUNGIBLE: ensureRoute('/balances/non-fungible'),
   CALENDAR: ensureRoute('/calendar'),
   DASHBOARD: ensureRoute('/dashboard'),
   DEFI: ensureRoute('/defi'),
@@ -65,30 +69,25 @@ export const Routes = {
 export const useAppRoutes = createSharedComposable(() => {
   const { t } = useI18n();
   const appRoutes = computed(() => ({
-    ACCOUNTS_BALANCES: {
-      icon: 'lu-accounts-and-balances' as const,
-      route: Routes.ACCOUNTS_BALANCES,
-      text: t('navigation_menu.accounts_balances'),
+    ACCOUNTS: {
+      icon: 'lu-wallet' as const,
+      route: Routes.ACCOUNTS,
+      text: t('navigation_menu.accounts'),
     },
-    ACCOUNTS_BALANCES_BLOCKCHAIN: {
-      icon: 'lu-blockchain-balances' as const,
-      route: Routes.ACCOUNTS_BALANCES_BLOCKCHAIN,
-      text: t('navigation_menu.accounts_balances_sub.blockchain_balances'),
+    ACCOUNTS_BITCOIN: {
+      icon: 'lu-bitcoin-accounts' as const,
+      route: Routes.ACCOUNTS_BITCOIN,
+      text: t('navigation_menu.accounts_sub.bitcoin'),
     },
-    ACCOUNTS_BALANCES_EXCHANGE: {
-      icon: 'lu-exchange-balances' as const,
-      route: Routes.ACCOUNTS_BALANCES_EXCHANGE,
-      text: t('navigation_menu.accounts_balances_sub.exchange_balances'),
+    ACCOUNTS_EVM: {
+      icon: 'lu-evm-accounts' as const,
+      route: Routes.ACCOUNTS_EVM,
+      text: t('navigation_menu.accounts_sub.evm'),
     },
-    ACCOUNTS_BALANCES_MANUAL: {
-      icon: 'lu-manual-balances' as const,
-      route: Routes.ACCOUNTS_BALANCES_MANUAL,
-      text: t('navigation_menu.accounts_balances_sub.manual_balances'),
-    },
-    ACCOUNTS_BALANCES_NON_FUNGIBLE: {
-      icon: 'lu-non-fungible-balances' as const,
-      route: Routes.ACCOUNTS_BALANCES_NON_FUNGIBLE,
-      text: t('navigation_menu.accounts_balances_sub.non_fungible_balances'),
+    ACCOUNTS_SUBSTRATE: {
+      icon: 'lu-substrate-accounts' as const,
+      route: Routes.ACCOUNTS_SUBSTRATE,
+      text: t('navigation_menu.accounts_sub.substrate'),
     },
     ADDRESS_BOOK_MANAGER: {
       icon: 'lu-book-text' as const,
@@ -148,6 +147,31 @@ export const useAppRoutes = createSharedComposable(() => {
     ASSETS: {
       route: Routes.ASSETS,
       text: t('common.assets'),
+    },
+    BALANCES: {
+      icon: 'lu-accounts-and-balances' as const,
+      route: Routes.BALANCES,
+      text: t('navigation_menu.balances'),
+    },
+    BALANCES_BLOCKCHAIN: {
+      icon: 'lu-blockchain' as const,
+      route: Routes.BALANCES_BLOCKCHAIN,
+      text: t('navigation_menu.balances_sub.blockchain_balances'),
+    },
+    BALANCES_EXCHANGE: {
+      icon: 'lu-coins-exchange' as const,
+      route: Routes.BALANCES_EXCHANGE,
+      text: t('navigation_menu.balances_sub.exchange_balances'),
+    },
+    BALANCES_MANUAL: {
+      icon: 'lu-notebook-pen' as const,
+      route: Routes.BALANCES_MANUAL,
+      text: t('navigation_menu.balances_sub.manual_balances'),
+    },
+    BALANCES_NON_FUNGIBLE: {
+      icon: 'lu-image' as const,
+      route: Routes.BALANCES_NON_FUNGIBLE,
+      text: t('navigation_menu.balances_sub.non_fungible_balances'),
     },
     CALENDAR: {
       icon: 'lu-calendar-days' as const,

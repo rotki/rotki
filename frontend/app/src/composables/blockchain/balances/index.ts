@@ -20,6 +20,7 @@ import { useUsdValueThreshold } from '@/composables/usd-value-threshold';
 import { useStatusUpdater } from '@/composables/status';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useBlockchainBalancesApi } from '@/composables/api/balances/blockchain';
+import { arrayify } from '@/utils/array';
 import type { BlockchainMetadata, TaskMeta } from '@/types/task';
 import type { BlockchainAccount, BlockchainBalancePayload } from '@/types/blockchain/accounts';
 
@@ -132,7 +133,7 @@ export function useBlockchainBalances(): UseBlockchainbalancesReturn {
   ): Promise<void> => {
     const { blockchain, ignoreCache } = payload;
 
-    const chains: string[] = blockchain ? [blockchain] : get(supportedChains).map(chain => chain.id);
+    const chains: string[] = blockchain ? arrayify(blockchain) : get(supportedChains).map(chain => chain.id);
 
     try {
       await awaitParallelExecution(

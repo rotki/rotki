@@ -7,6 +7,10 @@ import AccountForm from '@/components/accounts/management/AccountForm.vue';
 
 const model = defineModel<AccountManageState | undefined>({ required: true });
 
+defineProps<{
+  chainIds: string[];
+}>();
+
 const emit = defineEmits<{
   (e: 'complete'): void;
 }>();
@@ -79,6 +83,7 @@ watch(model, (model, oldModel) => {
       ref="form"
       v-model="model"
       v-model:error-messages="errorMessages"
+      :chain-ids="chainIds"
       :loading="loading"
     />
   </BigDialog>

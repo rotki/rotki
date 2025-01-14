@@ -20,6 +20,7 @@ import { useBlockchainAccountsApi } from '@/composables/api/blockchain/accounts'
 import { useAccountAdditionNotifications } from '@/composables/blockchain/use-account-addition-notifications';
 import { useBlockchainBalances } from '@/composables/blockchain/balances';
 import { useBlockchainAccounts } from '@/composables/blockchain/accounts';
+import { arrayify } from '@/utils/array';
 import type { MaybeRef } from '@vueuse/core';
 import type { AccountPayload, AddAccountsPayload, XpubAccountPayload } from '@/types/blockchain/accounts';
 import type { TaskMeta } from '@/types/task';
@@ -56,7 +57,7 @@ interface UseBlockchainsReturn {
   addAccounts: (chain: string, data: AddAccountsPayload | XpubAccountPayload, options?: AddAccountsOption) => Promise<void>;
   addEvmAccounts: (payload: AddAccountsPayload, options?: AddAccountsOption) => Promise<void>;
   detectEvmAccounts: () => Promise<void>;
-  fetchAccounts: (blockchain?: string, refreshEns?: boolean) => Promise<void>;
+  fetchAccounts: (blockchain?: string | string[], refreshEns?: boolean) => Promise<void>;
   refreshAccounts: (blockchain?: MaybeRef<string>, periodic?: boolean) => Promise<void>;
 }
 
@@ -98,8 +99,8 @@ export function useBlockchains(): UseBlockchainsReturn {
     });
   };
 
-  const fetchAccounts = async (blockchain?: string, refreshEns: boolean = false): Promise<void> => {
-    const chains = blockchain ? [blockchain] : get(supportedChains).map(chain => chain.id);
+  const fetchAccounts = async (blockchain?: string | string[], refreshEns: boolean = false): Promise<void> => {
+    const chains = blockchain ? arrayify(blockchain) : get(supportedChains).map(chain => chain.id);
     await awaitParallelExecution(chains, chain => chain, fetch, 2);
 
     const namesPayload: AddressBookSimplePayload[] = [];

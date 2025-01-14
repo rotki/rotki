@@ -15,19 +15,21 @@ import type { ManualBalance, RawManualBalance } from '@/types/manual-balances';
 
 definePage({
   meta: {
-    noteLocation: NoteLocation.ACCOUNTS_BALANCES_MANUAL,
+    noteLocation: NoteLocation.BALANCES_MANUAL,
   },
-  name: 'accounts-balances-manual',
+  name: 'balances-manual',
   props: true,
 });
 
-const props = defineProps<{ tab: string }>();
+const props = defineProps<{
+  tab: string;
+}>();
 
 const balance = ref<ManualBalance | RawManualBalance>();
 
 const { t } = useI18n();
 const router = useRouter();
-const route = useRoute('accounts-balances-manual');
+const route = useRoute('balances-manual');
 
 const { fetchManualBalances } = useManualBalancesStore();
 const { fetchAssociatedLocations } = useHistoryStore();
@@ -71,8 +73,8 @@ onBeforeMount(async () => {
 <template>
   <TablePageLayout
     :title="[
-      t('navigation_menu.accounts_balances'),
-      t('navigation_menu.accounts_balances_sub.manual_balances'),
+      t('navigation_menu.balances'),
+      t('navigation_menu.balances_sub.manual_balances'),
     ]"
   >
     <template #buttons>

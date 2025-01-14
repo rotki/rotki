@@ -1532,8 +1532,11 @@
       "edit_title": "Edit blockchain account"
     },
     "group_label": "Blockchain balances",
-    "title": "Blockchain Balances per asset",
-    "unify_accounts_table": "Unify accounts table"
+    "tabs": {
+      "accounts": "Accounts",
+      "validators": "Validators"
+    },
+    "title": "Blockchain Balances per asset"
   },
   "borrowing": {
     "header": "Collateralized Loans",
@@ -2258,7 +2261,7 @@
     "public_key": "Public Key"
   },
   "eth2_page": {
-    "no_premium": "ETH Staking is",
+    "no_premium": "ETH Staking statistic is",
     "toggle": {
       "withdrawal": "Withdrawal Address",
       "hint": "Switch the filtering and display mode between ETH staking validators and ETH1 Addresses",
@@ -2266,7 +2269,7 @@
     },
     "setting": {
       "refresh_validator_daily_stats_on_load": {
-        "hint": "Disable this setting to avoid getting rate limited. Rotki will only show cached data.",
+        "hint": "Disable this setting to avoid getting rate limited. rotki will only show cached data.",
         "title": "Sync daily stats data from beaconcha.in by default."
       }
     }
@@ -2335,8 +2338,7 @@
     "tabs": {
       "balances": "Balances",
       "savings_interest_history": "Savings Interest History"
-    },
-    "title": "Exchange Balances"
+    }
   },
   "exchange_keys_form": {
     "edit": {
@@ -3536,8 +3538,14 @@
     "title": "Module Settings"
   },
   "navigation_menu": {
-    "accounts_balances": "Accounts & Balances",
-    "accounts_balances_sub": {
+    "accounts": "Accounts",
+    "accounts_sub": {
+      "bitcoin": "Bitcoin @:navigation_menu.accounts",
+      "evm": "EVM @:navigation_menu.accounts",
+      "substrate": "Substrate @:navigation_menu.accounts"
+    },
+    "balances": "Balances",
+    "balances_sub": {
       "blockchain_balances": "Blockchain Balances",
       "exchange_balances": "Exchange Balances",
       "manual_balances": "Manual Balances",
@@ -3649,8 +3657,7 @@
       "price_in_asset": "Price in Asset"
     },
     "ignore": "Ignore NFT",
-    "refresh": "Refresh the balances",
-    "title": "Non Fungible Balances"
+    "refresh": "Refresh the balances"
   },
   "notes_menu": {
     "delete_confirmation": "Are you sure you want to delete this note?",
