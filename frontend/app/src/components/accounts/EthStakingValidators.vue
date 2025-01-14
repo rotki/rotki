@@ -178,7 +178,6 @@ watchImmediate(ethStakingValidators, async () => {
 
 defineExpose({
   refresh,
-  refreshing: loading,
 });
 </script>
 

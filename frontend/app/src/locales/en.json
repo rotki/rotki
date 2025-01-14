@@ -1532,6 +1532,10 @@
       "edit_title": "Edit blockchain account"
     },
     "group_label": "Blockchain balances",
+    "tabs": {
+      "accounts": "Accounts",
+      "validators": "Validators"
+    },
     "title": "Blockchain Balances per asset"
   },
   "borrowing": {
@@ -3533,8 +3537,7 @@
     "accounts_sub": {
       "bitcoin": "Bitcoin @:navigation_menu.accounts",
       "evm": "EVM @:navigation_menu.accounts",
-      "substrate": "Substrate @:navigation_menu.accounts",
-      "validator": "ETH Validators"
+      "substrate": "Substrate @:navigation_menu.accounts"
     },
     "balances": "Balances",
     "balances_sub": {

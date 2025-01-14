@@ -55,6 +55,7 @@ function refresh() {
   >
     <template #buttons>
       <RuiButton
+        data-cy="blockchain-account-refresh"
         variant="outlined"
         color="primary"
         :disabled="refreshDisabled"

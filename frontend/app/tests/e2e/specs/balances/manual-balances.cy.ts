@@ -1,4 +1,4 @@
-import { type FixtureManualBalance, ManualBalancesPage } from '../../pages/account-balances-page/manual-balances-page';
+import { type FixtureManualBalance, ManualBalancesPage } from '../../pages/balances-page/manual-balances-page';
 import { DashboardPage } from '../../pages/dashboard-page';
 import { RotkiApp } from '../../pages/rotki-app';
 import { createUser } from '../../utils/user';

@@ -1,19 +1,21 @@
 import { Blockchain } from '@rotki/common';
 import {
   BlockchainBalancesPage,
-  type FixtureBlockchainBalance,
-} from '../../pages/account-balances-page/blockchain-balances-page';
+} from '../../pages/balances-page/blockchain-balances-page';
 import { DashboardPage } from '../../pages/dashboard-page';
 import { RotkiApp } from '../../pages/rotki-app';
 import { TagManager } from '../../pages/tag-manager';
 import { createUser } from '../../utils/user';
+import { BlockchainAccountsPage } from '../../pages/accounts-page/blockchain-accounts-page';
+import type { FixtureBlockchainAccount } from '../../support/types';
 
 const PRECISION = 0.1;
 
 describe('blockchain balances', () => {
-  let blockchainBalances: FixtureBlockchainBalance[];
+  let blockchainAccounts: FixtureBlockchainAccount[];
   let username: string;
   let app: RotkiApp;
+  let blockchainAccountsPage: BlockchainAccountsPage;
   let blockchainBalancesPage: BlockchainBalancesPage;
   let dashboardPage: DashboardPage;
   let tagManager: TagManager;
@@ -21,45 +23,46 @@ describe('blockchain balances', () => {
   before(() => {
     username = createUser();
     app = new RotkiApp();
+    blockchainAccountsPage = new BlockchainAccountsPage();
     blockchainBalancesPage = new BlockchainBalancesPage();
     dashboardPage = new DashboardPage();
     tagManager = new TagManager();
 
     app.fasterLogin(username, '1234', true);
 
-    cy.fixture('account-balances/blockchain-balances').then((balances) => {
-      blockchainBalances = balances.map((balance: { blockchain: string }) => {
+    cy.fixture('account-balances/blockchain-accounts').then((accounts) => {
+      blockchainAccounts = accounts.map((account: { blockchain: string }) => {
         const address = {
           [Blockchain.ETH]: Cypress.env('ETH_ADDRESS'),
           [Blockchain.BTC]: Cypress.env('BTC_ADDRESS'),
-        }[balance.blockchain];
+        }[account.blockchain];
 
-        return { ...balance, address };
+        return { ...account, address };
       });
     });
-    blockchainBalancesPage.visit();
   });
 
   it('add an ETH account and view the account balance', () => {
-    blockchainBalancesPage.openAddDialog();
+    blockchainAccountsPage.visit();
+    blockchainAccountsPage.openAddDialog();
     tagManager.addTag('[data-cy=account-tag-field]', 'public', 'Public Accounts', 'EF703C', 'FFFFF8');
-    blockchainBalancesPage.addBalance(blockchainBalances[0]);
-    blockchainBalancesPage.isEntryVisible(0, blockchainBalances[0]);
-    cy.get('[data-cy=price-refresh]').should('not.be.disabled');
+    blockchainAccountsPage.addAccount(blockchainAccounts[0]);
+    blockchainAccountsPage.isEntryVisible(0, blockchainAccounts[0]);
+    cy.get('[data-cy=blockchain-account-refresh]').should('not.be.disabled');
     cy.assertNoRunningTasks();
   });
 
   it('add a BTC account and view the account balance', () => {
-    blockchainBalancesPage.openAddDialog();
-    blockchainBalancesPage.addBalance(blockchainBalances[1]);
-    blockchainBalancesPage.openTab('bitcoin');
-    blockchainBalancesPage.isEntryVisible(0, blockchainBalances[1]);
-    cy.get('[data-cy=price-refresh]').should('not.be.disabled');
+    blockchainAccountsPage.visit('bitcoin');
+    blockchainAccountsPage.openAddDialog();
+    blockchainAccountsPage.addAccount(blockchainAccounts[1]);
+    blockchainAccountsPage.isEntryVisible(0, blockchainAccounts[1]);
+    cy.get('[data-cy=blockchain-account-refresh]').should('not.be.disabled');
     cy.assertNoRunningTasks();
   });
 
   it('data is reflected in dashboard', () => {
-    blockchainBalancesPage.getTotals().then(({ total, balances }) => {
+    blockchainAccountsPage.getTotals().then(({ total, balances }) => {
       dashboardPage.visit();
       dashboardPage.getOverallBalance().then(($overallBalance) => {
         dashboardPage.getNonFungibleBalances().then(($nonFungibleBalance) => {
@@ -93,30 +96,36 @@ describe('blockchain balances', () => {
             expect(dashboardBalance, label).to.be.undefined;
           }
         });
+
+        blockchainBalancesPage.getTotals().then(($blockchainBalancesTotal) => {
+          expect($blockchainBalancesTotal.toNumber(), 'overall balance').to.be.within(
+            total.minus(PRECISION).toNumber(),
+            total.plus(PRECISION).toNumber(),
+          );
+        });
       });
     });
   });
 
   it('edit', () => {
     const newLabel = 'New ETH label';
-    blockchainBalancesPage.visit();
-    blockchainBalancesPage.editBalance(0, newLabel);
+    blockchainAccountsPage.visit();
+    blockchainAccountsPage.editAccount(0, newLabel);
 
-    blockchainBalancesPage.isEntryVisible(0, {
-      ...blockchainBalances[0],
+    blockchainAccountsPage.isEntryVisible(0, {
+      ...blockchainAccounts[0],
       label: newLabel,
     });
   });
 
   it('delete', () => {
-    blockchainBalancesPage.visit();
+    blockchainAccountsPage.visit();
 
     // Delete ETH entry
-    blockchainBalancesPage.openTab('evm');
-    blockchainBalancesPage.deleteBalance(0);
+    blockchainAccountsPage.deleteAccount(0);
 
     // Delete BTC entry
-    blockchainBalancesPage.openTab('bitcoin');
-    blockchainBalancesPage.deleteBalance(0);
+    blockchainAccountsPage.visit('bitcoin');
+    blockchainAccountsPage.deleteAccount(0);
   });
 });

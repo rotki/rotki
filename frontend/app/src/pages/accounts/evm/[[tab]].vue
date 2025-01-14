@@ -11,7 +11,13 @@ import BlockchainBalanceRefreshBehaviourMenu
 import AccountDialog from '@/components/accounts/management/AccountDialog.vue';
 import AccountImportProgress from '@/components/accounts/AccountImportProgress.vue';
 import AccountBalances from '@/components/accounts/AccountBalances.vue';
+import { useModules } from '@/composables/session/modules';
+import EthStakingValidators from '@/components/accounts/EthStakingValidators.vue';
+import { Section } from '@/types/status';
+import { useStatusStore } from '@/store/status';
+import { Module } from '@/types/modules';
 import type { AccountManageState } from '@/composables/accounts/blockchain/use-account-manage';
+import type { RouteLocationRaw } from 'vue-router';
 
 definePage({
   meta: {
@@ -19,9 +25,18 @@ definePage({
     noteLocation: NoteLocation.ACCOUNTS_EVM,
   },
   name: 'accounts-evm',
+  props: true,
 });
 
+const props = defineProps<{
+  tab: string;
+}>();
+
+const { tab } = toRefs(props);
+
 const { t } = useI18n();
+const router = useRouter();
+const route = useRoute('accounts-evm');
 
 const account = ref<AccountManageState>();
 const table = useTemplateRef<InstanceType<typeof AccountBalances>>('table');
@@ -29,15 +44,22 @@ const table = useTemplateRef<InstanceType<typeof AccountBalances>>('table');
 const category = 'evm';
 const { importingAccounts } = storeToRefs(useAccountImportProgressStore());
 const { isSectionLoading, refreshDisabled } = useBlockchainAccountLoading(category);
-
-const router = useRouter();
-const route = useRoute();
+const { isModuleEnabled } = useModules();
+const { isLoading } = useStatusStore();
+const isEth2Enabled = isModuleEnabled(Module.ETH2);
 
 const { chainIds } = useAccountCategoryHelper(category);
+const usedChainIds = computed(() => {
+  if (get(tab) === 'accounts') {
+    return get(chainIds);
+  }
+
+  return [Blockchain.ETH2];
+});
 
 function createNewBlockchainAccount(): void {
   set(account, {
-    chain: get(chainIds)[0],
+    chain: get(usedChainIds)[0],
     data: [
       {
         address: '',
@@ -55,6 +77,18 @@ function refresh() {
     get(table).refresh();
 }
 
+function getTabLink(category: string): RouteLocationRaw {
+  return {
+    name: 'accounts-evm',
+    params: {
+      tab: category,
+    },
+    query: {
+      keepScrollPosition: 'true',
+    },
+  };
+}
+
 onMounted(async () => {
   const { query } = get(route);
   if (query.add) {
@@ -62,6 +96,16 @@ onMounted(async () => {
     await router.replace({ query: {} });
   }
 });
+
+watchImmediate(route, (route) => {
+  const { params } = route;
+
+  if (!params.tab) {
+    router.replace(getTabLink('accounts'));
+  }
+}, { deep: true });
+
+const isEth2Loading = isLoading(Section.BLOCKCHAIN, Blockchain.ETH2);
 </script>
 
 <template>
@@ -73,13 +117,14 @@ onMounted(async () => {
   >
     <template #buttons>
       <RuiButtonGroup
+        v-if="tab === 'accounts'"
         variant="outlined"
         color="primary"
       >
         <RuiButton
           :disabled="refreshDisabled"
           :loading="isSectionLoading"
-          @click="table?.refreshClick()"
+          @click="get(table)?.refreshClick()"
         >
           <template #prepend>
             <RuiIcon name="lu-refresh-ccw" />
@@ -89,7 +134,10 @@ onMounted(async () => {
         <RuiMenu>
           <template #activator="{ attrs }">
             <RuiButton
-              v-bind="attrs"
+              v-bind="{
+                ...attrs,
+                'data-cy': 'blockchain-account-refresh',
+              }"
               color="primary"
               variant="outlined"
               class="!outline-0 px-2"
@@ -101,6 +149,19 @@ onMounted(async () => {
           <BlockchainBalanceRefreshBehaviourMenu />
         </RuiMenu>
       </RuiButtonGroup>
+
+      <RuiButton
+        v-else
+        color="primary"
+        variant="outlined"
+        :loading="isEth2Loading"
+        @click="get(table)?.refresh()"
+      >
+        <template #prepend>
+          <RuiIcon name="lu-refresh-ccw" />
+        </template>
+        {{ t('common.refresh') }}
+      </RuiButton>
 
       <RuiButton
         data-cy="add-blockchain-account"
@@ -115,23 +176,52 @@ onMounted(async () => {
 
       <AccountBalancesExportImport />
     </template>
-    <div>
-      <AccountImportProgress
-        v-if="importingAccounts"
-        class="-mb-4 -mt-1"
-      />
 
+    <RuiTabs
+      color="primary"
+      class="border border-default rounded bg-white dark:bg-rui-grey-900 flex max-w-min"
+    >
+      <RuiTab
+        link
+        :to="getTabLink('accounts')"
+      >
+        {{ t('blockchain_balances.tabs.accounts') }}
+      </RuiTab>
+      <RuiTab
+        v-if="isEth2Enabled"
+        link
+        :to="getTabLink('validators')"
+      >
+        {{ t('blockchain_balances.tabs.validators') }}
+      </RuiTab>
+    </RuiTabs>
+
+    <AccountImportProgress
+      v-if="importingAccounts"
+      class="-mb-4 -mt-1"
+    />
+    <Transition
+      enter-from-class="opacity-0 translate-x-8"
+      enter-active-class="w-full transform duration-300 transition"
+      enter-to-class="opacity-100 translate-x-0"
+      leave-active-class="hidden"
+    >
       <AccountBalances
+        v-if="tab === 'accounts'"
         ref="table"
         :category="category"
         @edit="account = $event"
       />
-
-      <AccountDialog
-        v-model="account"
-        :chain-ids="chainIds"
-        @complete="refresh()"
+      <EthStakingValidators
+        v-else
+        ref="table"
+        @edit="account = $event"
       />
-    </div>
+    </Transition>
+    <AccountDialog
+      v-model="account"
+      :chain-ids="usedChainIds"
+      @complete="refresh()"
+    />
   </TablePageLayout>
 </template>
