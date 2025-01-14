@@ -2,6 +2,8 @@
 import {
   LuBlockchain,
   LuCalendarDays,
+  LuChartBar,
+  LuChartLine,
   LuCheckboxBlankCircle,
   LuCircleAlert,
   LuCircleCheck,
@@ -449,6 +451,8 @@ export function createRuiPlugin(defaults: Partial<RuiOptions['defaults']>): RuiP
         LuHourglass,
         LuPlus,
         LuRotateCw,
+        LuChartLine,
+        LuChartBar,
       ],
       mode: ThemeMode.light,
     },

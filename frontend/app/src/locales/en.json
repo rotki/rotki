@@ -3597,6 +3597,10 @@
     },
     "staking": "Staking",
     "statistics": "Statistics",
+    "statistics_sub": {
+      "graphs": "Graphs",
+      "history_events": "History Events Wrapped"
+    },
     "tag_manager": "Tag Manager"
   },
   "net_worth_chart": {
