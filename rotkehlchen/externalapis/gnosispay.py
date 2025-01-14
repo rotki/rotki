@@ -98,7 +98,7 @@ class GnosisPay:
         May raise:
         - RemoteError if there is a problem querying the API
         """
-        querystr = 'https://app.gnosispay.com/api/v1/' + endpoint
+        querystr = 'https://api.gnosispay.com/api/v1/' + endpoint
         log.debug(f'Querying Gnosis Pay API {querystr} with {params=}')
         timeout = CachedSettings().get_timeout_tuple()
         try:

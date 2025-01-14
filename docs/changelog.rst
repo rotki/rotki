@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :bug:`-` rotki should now warn you again when gnosis pay authentication token expires.
+
 * :release:`1.37.1 <2025-01-10>`
 * :bug:`-` OKX balances will now include assets in the funding account.
 * :bug:`-` Bybit balances in the funding account will now be queried.
