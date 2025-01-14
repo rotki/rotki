@@ -13957,6 +13957,10 @@ Historical Balance Queries
     Gets historical balance amounts for a specific asset within a given time range, calculated from processing of historical events.
     It's the total amount of asset held at each timestamp where a change occurred.
 
+    .. note::
+        If processing reveals a negative total balance amount at any point, the response will include amounts up to
+        (and including) the event that caused the negative balance. No amounts after this point are returned.
+
     **Example Request:**
 
       .. http:example:: curl wget httpie python-requests
@@ -13992,6 +13996,7 @@ Historical Balance Queries
         }
 
         :resjson list[integer] times: Timestamps of balance changes.
+        :resjson string last_event_identifier: (Optional) The event identifier of the event that caused the negative balance amount.
         :resjson list[string] values: Net asset balance amount at each corresponding timestamp.
         :statuscode 200: Historical balances returned
         :statuscode 400: Malformed query
