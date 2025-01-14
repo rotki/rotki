@@ -22,6 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       backend_tasks: ${{ steps.checker.outputs.backend_tasks }}
+      colibri_tasks: ${{ steps.checker.outputs.colibri_tasks }}
       frontend_tasks: ${{ steps.checker.outputs.frontend_tasks }}
       e2e_tasks: ${{ steps.checker.outputs.e2e_tasks }}
       documentation_tasks: ${{ steps.checker.outputs.documentation_tasks }}
@@ -38,6 +39,8 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           documentation_paths: |
             docs
+          colibri_paths: |
+            colibri
           backend_paths: |
             rotkehlchen
             requirements.txt
@@ -127,7 +130,7 @@ jobs:
             frontend/.eslintcache
           key: ${{ runner.os }}-eslint-${{ github.ref_name }}
           restore-keys: |
-            ${{ runner.os }}-eslint-${{ github.ref_name }}          
+            ${{ runner.os }}-eslint-${{ github.ref_name }}
             ${{ runner.os }}-eslint-${{ github.base_ref || github.ref_name }}
       - name: Install dependencies
         working-directory: ./frontend
@@ -135,11 +138,11 @@ jobs:
       - name: Build
         working-directory: ./frontend
         run: |
-          if [ ${{ github.event_name }} != 'push' ]; then                    
+          if [ ${{ github.event_name }} != 'push' ]; then
             pnpm run build
           fi
       - name: Lint code
-        working-directory: ./frontend
+        working-directory: ./colibri
         run: pnpm run lint:all
 
   unittest-frontend:
@@ -201,6 +204,22 @@ jobs:
         with:
           category: "/language:python"
 
+  lint-colibri:
+    name: 'Colibri lint'
+    needs: ['check-changes', 'check-typos']
+    if: ${{ github.event_name != 'push' && needs.check-changes.outputs.colibri_tasks }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@clippy
+      - uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+      - run: cargo check --workspace && cargo clippy --workspace
+        working-directory: ./colibri
+        env:
+          RUSTFLAGS: -Dwarnings
+
   lint-backend:
     name: 'Backend lint'
     needs: ['check-changes', 'check-typos']
@@ -248,7 +267,7 @@ jobs:
   done:
     name: 'Success check'
     if: ${{ always() }}
-    needs: [ 'check-changes', 'lint-frontend', 'unittest-frontend', 'docs', 'lint-backend', 'test-backend', 'test-e2e' ]
+    needs: [ 'check-changes', 'lint-frontend', 'unittest-frontend', 'docs', 'lint-colibri', 'lint-backend', 'test-backend', 'test-e2e' ]
     runs-on: ubuntu-latest
     steps:
       - name: Check if any task failed
