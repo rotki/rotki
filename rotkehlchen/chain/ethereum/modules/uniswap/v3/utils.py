@@ -531,7 +531,7 @@ def get_unknown_asset_price_chain(
         unknown_tokens: set[EvmToken],
 ) -> AssetToPrice:
     """Get token price using Uniswap V3 Oracle."""
-    oracle = UniswapV3Oracle(ethereum_inquirer=ethereum)
+    oracle = UniswapV3Oracle(evm_inquirer=ethereum)
     asset_price: AssetToPrice = {}
     for from_token in unknown_tokens:
         try:

@@ -541,7 +541,7 @@ def test_find_asset_with_no_api_oracles(inquirer_defi):
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_price_non_ethereum_evm_token(inquirer_defi, globaldb):
+def test_price_non_ethereum_evm_token(inquirer_defi_evm, globaldb):
     """
     This test checks that `inquirer.find_usd_price` does not fail with
     "'NoneType' object has no attribute 'underlying_tokens'" when an evm token
@@ -567,7 +567,7 @@ def test_price_non_ethereum_evm_token(inquirer_defi, globaldb):
     globaldb.add_asset(token)
 
     # Since the asset is not from a valid chain the query will fail and return zero
-    assert inquirer_defi.find_usd_price(EvmToken(token.identifier)) == ZERO
+    assert inquirer_defi_evm.find_usd_price(EvmToken(token.identifier)) == ZERO
 
 
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
