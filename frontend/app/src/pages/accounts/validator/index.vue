@@ -4,49 +4,41 @@ import { NoteLocation } from '@/types/notes';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import { useAccountImportProgressStore } from '@/store/use-account-import-progress-store';
 import { useBlockchainAccountLoading } from '@/composables/accounts/blockchain/use-account-loading';
-import { useAccountCategoryHelper } from '@/composables/accounts/use-account-category-helper';
 import AccountBalancesExportImport from '@/components/accounts/AccountBalancesExportImport.vue';
-import BlockchainBalanceRefreshBehaviourMenu
-  from '@/components/dashboard/blockchain-balance/BlockchainBalanceRefreshBehaviourMenu.vue';
 import AccountDialog from '@/components/accounts/management/AccountDialog.vue';
 import AccountImportProgress from '@/components/accounts/AccountImportProgress.vue';
-import AccountBalances from '@/components/accounts/AccountBalances.vue';
+import EthStakingValidators from '@/components/accounts/EthStakingValidators.vue';
 import type { AccountManageState } from '@/composables/accounts/blockchain/use-account-manage';
 
 definePage({
   meta: {
     canNavigateBack: true,
-    noteLocation: NoteLocation.ACCOUNTS_EVM,
+    noteLocation: NoteLocation.ACCOUNTS_VALIDATOR,
   },
-  name: 'accounts-evm',
+  name: 'accounts-validator',
 });
 
 const { t } = useI18n();
 
 const account = ref<AccountManageState>();
-const table = useTemplateRef<InstanceType<typeof AccountBalances>>('table');
+const table = useTemplateRef<InstanceType<typeof EthStakingValidators>>('table');
 
-const category = 'evm';
 const { importingAccounts } = storeToRefs(useAccountImportProgressStore());
-const { isSectionLoading, refreshDisabled } = useBlockchainAccountLoading(category);
+const { isSectionLoading, refreshDisabled } = useBlockchainAccountLoading();
 
 const router = useRouter();
 const route = useRoute();
 
-const { chainIds } = useAccountCategoryHelper(category);
-
 function createNewBlockchainAccount(): void {
   set(account, {
-    chain: get(chainIds)[0],
-    data: [
-      {
-        address: '',
-        tags: null,
-      },
-    ],
-    evm: true,
+    chain: Blockchain.ETH2,
+    data: {
+      ownershipPercentage: '',
+      publicKey: '',
+      validatorIndex: '',
+    },
     mode: 'add',
-    type: 'account',
+    type: 'validator',
   });
 }
 
@@ -68,7 +60,7 @@ onMounted(async () => {
   <TablePageLayout
     :title="[
       t('navigation_menu.accounts'),
-      t('navigation_menu.accounts_sub.evm'),
+      t('navigation_menu.accounts_sub.validator'),
     ]"
   >
     <template #buttons>
@@ -79,27 +71,13 @@ onMounted(async () => {
         <RuiButton
           :disabled="refreshDisabled"
           :loading="isSectionLoading"
-          @click="table?.refreshClick()"
+          @click="refresh()"
         >
           <template #prepend>
             <RuiIcon name="lu-refresh-ccw" />
           </template>
           {{ t('common.refresh') }}
         </RuiButton>
-        <RuiMenu>
-          <template #activator="{ attrs }">
-            <RuiButton
-              v-bind="attrs"
-              color="primary"
-              variant="outlined"
-              class="!outline-0 px-2"
-            >
-              <RuiIcon name="lu-chevron-down" />
-            </RuiButton>
-          </template>
-
-          <BlockchainBalanceRefreshBehaviourMenu />
-        </RuiMenu>
       </RuiButtonGroup>
 
       <RuiButton
@@ -121,15 +99,14 @@ onMounted(async () => {
         class="-mb-4 -mt-1"
       />
 
-      <AccountBalances
+      <EthStakingValidators
         ref="table"
-        :category="category"
         @edit="account = $event"
       />
 
       <AccountDialog
         v-model="account"
-        :chain-ids="chainIds"
+        :chain-ids="[Blockchain.ETH2]"
         @complete="refresh()"
       />
     </div>

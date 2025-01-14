@@ -9,6 +9,7 @@ const props = defineProps<{
   chain: string;
   inputMode: InputMode;
   editMode: boolean;
+  chainIds: string[];
 }>();
 
 const emit = defineEmits<{
@@ -36,6 +37,7 @@ function updateModelValue(value?: string) {
   <ChainSelect
     :disabled="loading || editMode"
     :model-value="chain"
+    :items="chainIds"
     @update:model-value="updateModelValue($event)"
   />
 

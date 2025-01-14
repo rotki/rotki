@@ -13,6 +13,7 @@ export const Routes = {
   ACCOUNTS_BITCOIN: ensureRoute('/accounts/bitcoin'),
   ACCOUNTS_EVM: ensureRoute('/accounts/evm'),
   ACCOUNTS_SUBSTRATE: ensureRoute('/accounts/substrate'),
+  ACCOUNTS_VALIDATOR: ensureRoute('/accounts/validator'),
   ADDRESS_BOOK_MANAGER: ensureRoute('/address-book-manager'),
   API_KEYS: ensureRoute('/api-keys'),
   API_KEYS_EXCHANGES: ensureRoute('/api-keys/exchanges'),
@@ -88,6 +89,11 @@ export const useAppRoutes = createSharedComposable(() => {
       icon: 'lu-substrate-accounts' as const,
       route: Routes.ACCOUNTS_SUBSTRATE,
       text: t('navigation_menu.accounts_sub.substrate'),
+    },
+    ACCOUNTS_VALIDATOR: {
+      icon: 'lu-list-checks' as const,
+      route: Routes.ACCOUNTS_VALIDATOR,
+      text: t('navigation_menu.accounts_sub.validator'),
     },
     ADDRESS_BOOK_MANAGER: {
       icon: 'lu-book-text' as const,

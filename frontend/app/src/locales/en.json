@@ -1532,8 +1532,7 @@
       "edit_title": "Edit blockchain account"
     },
     "group_label": "Blockchain balances",
-    "title": "Blockchain Balances per asset",
-    "unify_accounts_table": "Unify accounts table"
+    "title": "Blockchain Balances per asset"
   },
   "borrowing": {
     "header": "Collateralized Loans",
@@ -2269,11 +2268,6 @@
         "hint": "Disable this setting to avoid getting rate limited. rotki will only show cached data.",
         "title": "Sync daily stats data from beaconcha.in by default."
       }
-    },
-    "refresh_validator": "Refresh validators",
-    "tabs": {
-      "statistic": "Statistic",
-      "validators": "Validators"
     }
   },
   "eth2_validator_filter": {
@@ -3539,7 +3533,8 @@
     "accounts_sub": {
       "bitcoin": "Bitcoin @:navigation_menu.accounts",
       "evm": "EVM @:navigation_menu.accounts",
-      "substrate": "Substrate @:navigation_menu.accounts"
+      "substrate": "Substrate @:navigation_menu.accounts",
+      "validator": "ETH Validators"
     },
     "balances": "Balances",
     "balances_sub": {

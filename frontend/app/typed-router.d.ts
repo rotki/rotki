@@ -23,6 +23,7 @@ declare module 'vue-router/auto-routes' {
     'accounts-bitcoin': RouteRecordInfo<'accounts-bitcoin', '/accounts/bitcoin', Record<never, never>, Record<never, never>>,
     'accounts-evm': RouteRecordInfo<'accounts-evm', '/accounts/evm', Record<never, never>, Record<never, never>>,
     'accounts-substrate': RouteRecordInfo<'accounts-substrate', '/accounts/substrate', Record<never, never>, Record<never, never>>,
+    'accounts-validator': RouteRecordInfo<'accounts-validator', '/accounts/validator', Record<never, never>, Record<never, never>>,
     '/address-book-manager/': RouteRecordInfo<'/address-book-manager/', '/address-book-manager', Record<never, never>, Record<never, never>>,
     '/api-keys/': RouteRecordInfo<'/api-keys/', '/api-keys', Record<never, never>, Record<never, never>>,
     '/api-keys/exchanges/': RouteRecordInfo<'/api-keys/exchanges/', '/api-keys/exchanges', Record<never, never>, Record<never, never>>,

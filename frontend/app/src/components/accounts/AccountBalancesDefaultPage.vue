@@ -93,6 +93,7 @@ function refresh() {
 
       <AccountDialog
         v-model="account"
+        :chain-ids="chainIds"
         @complete="refresh()"
       />
     </div>

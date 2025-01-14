@@ -3,25 +3,14 @@ import ExternalLink from '@/components/helper/ExternalLink.vue';
 import RotkiLogo from '@/components/common/RotkiLogo.vue';
 import FullSizeContent from '@/components/common/FullSizeContent.vue';
 
-withDefaults(
-  defineProps<{
-    text?: string;
-    child?: boolean;
-  }>(),
-  {
-    child: false,
-  },
-);
+defineProps<{ text: string }>();
 
 const { t } = useI18n();
 const { isMdAndUp } = useBreakpoint();
 </script>
 
 <template>
-  <Component
-    :is="child ? 'div' : FullSizeContent"
-    class="flex flex-col items-center justify-center text-center gap-4 p-2"
-  >
+  <FullSizeContent class="gap-4">
     <div class="flex items-center justify-center">
       <div
         class="bg-rui-grey-200 dark:bg-rui-grey-900 rounded-full mb-8"
@@ -53,5 +42,5 @@ const { isMdAndUp } = useBreakpoint();
         premium
       />
     </i18n-t>
-  </Component>
+  </FullSizeContent>
 </template>

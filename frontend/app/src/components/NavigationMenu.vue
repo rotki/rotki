@@ -65,6 +65,11 @@ const navItems: MenuItem[] = [
         type: 'item',
         ...Routes.ACCOUNTS_SUBSTRATE,
       },
+      {
+        class: 'accounts-validators',
+        type: 'item',
+        ...Routes.ACCOUNTS_VALIDATOR,
+      },
     ],
   },
   {

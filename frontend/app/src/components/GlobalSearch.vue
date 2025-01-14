@@ -103,6 +103,10 @@ function getRoutes(keyword: string): SearchItemWithoutValue[] {
       texts: [Routes.ACCOUNTS.text, Routes.ACCOUNTS_SUBSTRATE.text],
     },
     {
+      ...Routes.ACCOUNTS_VALIDATOR,
+      texts: [Routes.ACCOUNTS.text, Routes.ACCOUNTS_VALIDATOR.text],
+    },
+    {
       ...Routes.BALANCES_BLOCKCHAIN,
       texts: [Routes.BALANCES.text, Routes.BALANCES_BLOCKCHAIN.text],
     },

@@ -117,6 +117,7 @@ import {
   LuLink,
   LuLink2,
   LuList,
+  LuListChecks,
   LuListPlus,
   LuListTodo,
   LuLockKeyhole,
@@ -415,6 +416,7 @@ export function createRuiPlugin(defaults: Partial<RuiOptions['defaults']>): RuiP
         LuBitcoinAccounts,
         LuSubstrateAccounts,
         LuNotebookPen,
+        LuListChecks,
         // remaining from prev version of premium components
         RiEqualLine,
         RiMoonLine,
