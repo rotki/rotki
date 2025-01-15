@@ -43,10 +43,6 @@ export interface AccountManageAdd extends AccountManageMode {
   /**
    * Adds from all evm addresses if enabled.
    */
-  evm?: boolean;
-  /**
-   * The specified modules will be enabled for the account.
-   */
   modules?: Module[];
 }
 
@@ -71,14 +67,13 @@ export type AccountManageState = AccountManage | StakingValidatorManage | XpubMa
 
 export function createNewBlockchainAccount(): AccountManageAdd {
   return {
-    chain: Blockchain.ETH,
+    chain: 'evm',
     data: [
       {
         address: '',
         tags: null,
       },
     ],
-    evm: true,
     mode: 'add',
     type: 'account',
   };
@@ -196,7 +191,7 @@ export function useAccountManage(): UseAccountManageReturn {
         updateAccounts(state.chain, await editAccount(state.data, state.chain));
       }
       else {
-        if (state.evm) {
+        if (state.chain === 'evm') {
           await addEvmAccounts({
             modules: state.modules,
             payload: state.data,
