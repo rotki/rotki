@@ -55,7 +55,7 @@ Please remember that if you send the ``"async_query": true`` parameter as the bo
 Endpoints
 ***********
 
-In this section we will see the information about the individual endpoints of the API and detailed explanation of how each one can be used to interact with rotki.
+In this section we will see the information about the individual endpoints of the API and a detailed explanation of how each one can be used to interact with rotki.
 
 Handling user creation, sign-in, log-out and querying
 =======================================================

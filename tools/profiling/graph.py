@@ -272,7 +272,7 @@ def latency_scatter(output, data_list):
 
 
 def objcount_data(filepath):
-    # the file dosn't contain just one pickled object, but a sequence of
+    # the file doesn't contain just one pickled object, but a sequence of
     # pickled dictionaries (look at the sample_objects for details)
     #
     # note: this only works with objects that keep track of the reading
