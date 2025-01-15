@@ -7,10 +7,10 @@ import {
   validWithSessionAndExternalService,
   validWithoutSessionStatus,
 } from '@/services/utils';
+import { HistoricPrices, type HistoricPricesPayload, type OracleCacheMeta } from '@/types/prices';
 import type { ActionResult } from '@rotki/common';
 import type { SupportedCurrency } from '@/types/currencies';
 import type { PriceOracle } from '@/types/settings/price-oracle';
-import type { HistoricPricesPayload, OracleCacheMeta } from '@/types/prices';
 import type { PendingTask } from '@/types/task';
 
 interface UsePriceApiReturn {
@@ -18,6 +18,7 @@ interface UsePriceApiReturn {
   queryFiatExchangeRates: (currencies: SupportedCurrency[]) => Promise<PendingTask>;
   queryHistoricalRate: (fromAsset: string, toAsset: string, timestamp: number) => Promise<PendingTask>;
   queryHistoricalRates: (payload: HistoricPricesPayload) => Promise<PendingTask>;
+  queryOnlyCacheHistoricalRates: (payload: Required<HistoricPricesPayload>) => Promise<HistoricPrices>;
   getPriceCache: (source: PriceOracle) => Promise<OracleCacheMeta[]>;
   createPriceCache: (source: PriceOracle, fromAsset: string, toAsset: string, purgeOld?: boolean) => Promise<PendingTask>;
   deletePriceCache: (source: PriceOracle, fromAsset: string, toAsset: string) => Promise<boolean>;
@@ -82,11 +83,13 @@ export function usePriceApi(): UsePriceApiReturn {
     return handleResponse(response);
   };
 
-  const queryHistoricalRates = async (payload: HistoricPricesPayload): Promise<PendingTask> => {
-    const response = await api.instance.post<ActionResult<PendingTask>>(
+  const internalQueryHistoricalRates = async <T>(
+    payload: HistoricPricesPayload,
+  ): Promise<T> => {
+    const response = await api.instance.post<ActionResult<T>>(
       '/assets/prices/historical',
       snakeCaseTransformer({
-        asyncQuery: true,
+        asyncQuery: !payload.onlyCachePeriod,
         ...payload,
       }),
       {
@@ -95,6 +98,13 @@ export function usePriceApi(): UsePriceApiReturn {
     );
 
     return handleResponse(response);
+  };
+
+  const queryHistoricalRates = async (payload: HistoricPricesPayload): Promise<PendingTask> => internalQueryHistoricalRates<PendingTask>(payload);
+
+  const queryOnlyCacheHistoricalRates = async (payload: Required<HistoricPricesPayload>): Promise<HistoricPrices> => {
+    const response = await internalQueryHistoricalRates<HistoricPrices>(payload);
+    return HistoricPrices.parse(response);
   };
 
   const queryPrices = async (assets: string[], targetAsset: string, ignoreCache: boolean): Promise<PendingTask> => {
@@ -134,6 +144,7 @@ export function usePriceApi(): UsePriceApiReturn {
     queryFiatExchangeRates,
     queryHistoricalRate,
     queryHistoricalRates,
+    queryOnlyCacheHistoricalRates,
     queryPrices,
   };
 }

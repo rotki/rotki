@@ -69,6 +69,7 @@ export interface HistoricPricePayload extends AssetPair {
 export interface HistoricPricesPayload {
   readonly assetsTimestamp: string[][];
   readonly targetAsset: string;
+  readonly onlyCachePeriod?: number;
 }
 
 export interface AssetPriceInfo extends Balance {

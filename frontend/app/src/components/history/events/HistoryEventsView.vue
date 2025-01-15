@@ -166,6 +166,12 @@ const identifiers = computed<string[] | undefined>(() => {
   return identifiers ? [identifiers as string] : undefined;
 });
 
+const eventIdentifiers = computed<string[] | undefined>(() => {
+  const { eventIdentifiers } = get(route).query;
+
+  return eventIdentifiers ? [eventIdentifiers as string] : undefined;
+});
+
 const { editableItem, openDialog } = useCommonTableProps<HistoryEventEntry>();
 
 const {
@@ -199,6 +205,7 @@ const {
   extraParams: computed(() => ({
     accounts: get(usedAccounts).map(account => `${account.address}#${account.chain}`),
     customizedEventsOnly: get(toggles, 'customizedEventsOnly'),
+    eventIdentifiers: get(eventIdentifiers),
     excludeIgnoredAssets: !get(toggles, 'showIgnoredAssets'),
     identifiers: get(identifiers),
   })),
@@ -378,6 +385,12 @@ function removeIdentifierParam() {
   router.push({ query });
 }
 
+function removeEventIdentifierParam() {
+  const query = { ...route.query };
+  delete query.eventIdentifiers;
+  router.push({ query });
+}
+
 function addTxHash() {
   set(addTransactionModelValue, {
     associatedAddress: '',
@@ -494,6 +507,20 @@ onUnmounted(() => {
         </RuiChip>
       </div>
 
+      <div
+        v-if="route.query.eventIdentifiers"
+        class="mb-4"
+      >
+        <RuiChip
+          closeable
+          color="primary"
+          size="sm"
+          variant="outlined"
+          @click:close="removeEventIdentifierParam()"
+        >
+          {{ t('transactions.events.show_negative_balance') }}
+        </RuiChip>
+      </div>
       <HistoryEventsTable
         v-model:sort="sort"
         v-model:pagination="pagination"
