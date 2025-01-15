@@ -221,6 +221,7 @@ function createDatasets(isRange = false) {
     backgroundColor: () => (!isRange ? get(gradient) : 'transparent'),
     borderColor,
     borderWidth: 2,
+    cubicInterpolationMode: 'monotone',
     data: [],
     fill: true,
     pointBackgroundColor: 'transparent',

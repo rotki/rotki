@@ -84,6 +84,7 @@ describe('types/user', () => {
         [BalanceSource.BLOCKCHAIN]: '0',
         [BalanceSource.MANUAL]: '0',
       },
+      useHistoricalAssetBalances: false,
     };
 
     const raw = {

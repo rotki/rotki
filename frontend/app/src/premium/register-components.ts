@@ -49,6 +49,7 @@ import RowAppend from '@/components/helper/RowAppend.vue';
 import UniswapPoolAssetBalance from '@/components/defi/uniswap/UniswapPoolAssetBalance.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import { logger } from '@/utils/logging';
+import AssetBalanceStatisticSourceSetting from '@/components/settings/AssetBalanceStatisticSourceSetting.vue';
 import type { App } from 'vue';
 
 function ruiRegister(app: App): void {
@@ -126,6 +127,7 @@ export function registerComponents(app: App): void {
   app.component('UniswapPoolAssetBalance', UniswapPoolAssetBalance);
   // Version 26 - 1.34
   app.component('RefreshButton', RefreshButton);
+  app.component('AssetBalanceStatisticSourceSetting', AssetBalanceStatisticSourceSetting);
   ruiRegister(app);
   logger.info('Components registered');
 }
