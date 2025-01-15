@@ -91,7 +91,7 @@ def test_swap_token_to_token_limit_order(ethereum_inquirer, ethereum_accounts):
     evmhash = deserialize_evm_tx_hash(tx_hex)
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hex)
-    timestamp, spend_amount, receive_amount, fee_amount, a_pendle = TimestampMS(1726757699000), '300', '1145.856590417709400049', '4.833981233668562588', Asset('eip155:1/erc20:0x808507121B80c02388fAd14726482e061B8da827')  # noqa: E501
+    timestamp, spend_amount, receive_amount, fee_amount, a_pendle = TimestampMS(1726757699000), '295.166018766331437412', '1145.856590417709400049', '4.833981233668562588', Asset('eip155:1/erc20:0x808507121B80c02388fAd14726482e061B8da827')  # noqa: E501
     assert events == [
         EvmEvent(
             tx_hash=tx_hex,
@@ -214,7 +214,7 @@ def test_swap_token_to_eth_with_other_trade(ethereum_inquirer, ethereum_accounts
     evmhash = deserialize_evm_tx_hash(tx_hex)
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hex)
-    timestamp, approval, amount_out, amount_in, fee_amount = TimestampMS(1718357603000), '115792089237316195423570985008687907853269984665640564039457.584007913129639935', '5000', '0.861165556733956932', '12.168486608328488389'  # noqa: E501
+    timestamp, approval, amount_out, amount_in, fee_amount = TimestampMS(1718357603000), '115792089237316195423570985008687907853269984665640564039457.584007913129639935', '4987.831513391671511611', '0.861165556733956932', '12.168486608328488389'  # noqa: E501
     expected_events = [
         EvmEvent(
             tx_hash=evmhash,
@@ -1012,7 +1012,7 @@ def test_swap_token_to_token_arb(arbitrum_one_inquirer, arbitrum_one_accounts):
         evm_inquirer=arbitrum_one_inquirer,
         tx_hash=tx_hex,
     )
-    swapped_amount, received_amount, fee_amount, timestamp = '0.219694007376947474', '0.228831', '0.011665366552986548', TimestampMS(1717523107000)  # noqa: E501
+    swapped_amount, received_amount, fee_amount, timestamp = '0.208028640823960926', '0.228831', '0.011665366552986548', TimestampMS(1717523107000)  # noqa: E501
     expected_events = [
         EvmEvent(  # approval
             tx_hash=evmhash,
@@ -1079,7 +1079,7 @@ def test_gnosis_eure_v2(
 ):
     tx_hash = deserialize_evm_tx_hash('0xf751e1aa988888ab9edfa14ac98022c7d8241664f481fde40a418723b0fed009')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
-    timestamp, swap_amount, received_amount, fee_amount, user_address = TimestampMS(1725445370000), '0.0001', '0.254038701346779266', '0.00000025134485375', gnosis_accounts[0]  # noqa: E501
+    timestamp, swap_amount, received_amount, fee_amount, user_address = TimestampMS(1725445370000), '0.00009974865514625', '0.254038701346779266', '0.00000025134485375', gnosis_accounts[0]  # noqa: E501
     assert events == [EvmEvent(
         sequence_index=33,
         timestamp=timestamp,

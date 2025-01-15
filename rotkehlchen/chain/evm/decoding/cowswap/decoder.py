@@ -263,6 +263,7 @@ class CowswapCommonDecoder(DecoderInterface, abc.ABC):
                     amount=raw_fee_amount,
                     asset=swap_data.from_asset.resolve_to_crypto_asset(),
                 )
+                swap_data.from_amount -= swap_data.fee_amount  # fee is taken as part of from asset
 
             fee_event = None
             if swap_data.fee_amount != ZERO:
