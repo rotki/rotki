@@ -27,7 +27,7 @@ from rotkehlchen.oracles.structures import DEFAULT_CURRENT_PRICE_ORACLES_ORDER, 
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.tests.utils.constants import CURRENT_PRICE_MOCK
 from rotkehlchen.tests.utils.inquirer import inquirer_inject_ethereum_set_order
-from rotkehlchen.types import Timestamp
+from rotkehlchen.types import ChainID, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 
 
@@ -469,3 +469,23 @@ def fixture_inquirer_defi(
         add_defi_oracles=True,
         ignore_mocked_prices_for=ignore_mocked_prices_for,
     )
+
+
+@pytest.fixture(name='inquirer_defi_evm')
+def fixture_inquirer_defi_evm(
+        inquirer_defi,
+        polygon_pos_manager,
+        arbitrum_one_manager,
+        optimism_manager,
+        base_manager,
+        binance_sc_manager,
+):
+    """This fixture adds evm managers to the inquirer for chains supported by the defi oracles."""
+    inquirer_defi.inject_evm_managers([
+        (ChainID.POLYGON_POS, polygon_pos_manager),
+        (ChainID.ARBITRUM_ONE, arbitrum_one_manager),
+        (ChainID.OPTIMISM, optimism_manager),
+        (ChainID.BASE, base_manager),
+        (ChainID.BINANCE_SC, binance_sc_manager),
+    ])
+    return inquirer_defi

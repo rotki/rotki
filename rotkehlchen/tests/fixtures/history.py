@@ -47,12 +47,12 @@ def fixture_defillama():
 
 @pytest.fixture(name='uniswapv2_inquirer')
 def fixture_uniswapv2(ethereum_inquirer):
-    return UniswapV2Oracle(ethereum_inquirer=ethereum_inquirer)
+    return UniswapV2Oracle(evm_inquirer=ethereum_inquirer)
 
 
 @pytest.fixture(name='uniswapv3_inquirer')
 def fixture_uniswapv3(ethereum_inquirer):
-    return UniswapV3Oracle(ethereum_inquirer=ethereum_inquirer)
+    return UniswapV3Oracle(evm_inquirer=ethereum_inquirer)
 
 
 @pytest.fixture(name='historical_price_oracles_order')
