@@ -57,6 +57,8 @@ export const Routes = {
   SETTINGS_RPC: ensureRoute('/settings/rpc'),
   STAKING: ensureRoute('/staking/:location*'),
   STATISTICS: ensureRoute('/statistics'),
+  STATISTICS_GRAPHS: ensureRoute('/statistics/graphs'),
+  STATISTICS_HISTORY_EVENTS: ensureRoute('/statistics/history-events'),
   TAG_MANAGER: ensureRoute('/tag-manager'),
   USER_CREATE: ensureRoute('/user/create'),
   USER_LOGIN: ensureRoute('/user/login'),
@@ -302,6 +304,16 @@ export const useAppRoutes = createSharedComposable(() => {
       icon: 'file-chart-line' as const,
       route: Routes.STATISTICS,
       text: t('navigation_menu.statistics'),
+    },
+    STATISTICS_GRAPHS: {
+      icon: 'lu-chart-line' as const,
+      route: Routes.STATISTICS_GRAPHS,
+      text: t('navigation_menu.statistics_sub.graphs'),
+    },
+    STATISTICS_HISTORY_EVENTS: {
+      icon: 'lu-chart-bar' as const,
+      route: Routes.STATISTICS_HISTORY_EVENTS,
+      text: t('navigation_menu.statistics_sub.history_events'),
     },
     TAG_MANAGER: {
       icon: 'lu-tag-manager' as const,
