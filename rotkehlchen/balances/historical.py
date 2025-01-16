@@ -78,13 +78,13 @@ class HistoricalBalancesManager:
 
         return {'amount': amounts[asset], 'price': price}
 
-    def get_asset_amounts(
+    def get_assets_amounts(
             self,
-            asset: Asset,
+            assets: tuple[Asset, ...],
             from_ts: Timestamp,
             to_ts: Timestamp,
     ) -> tuple[dict[Timestamp, FVal], str | None]:
-        """Get historical balance amounts for the given asset within the given time range.
+        """Get historical balance amounts for the given assets within the given time range.
 
         If a negative amount is encountered in the time range, the event_identifier of the
         event that caused it is returned alongside the balances.
@@ -93,14 +93,13 @@ class HistoricalBalancesManager:
         that is handled separately by the frontend in a different request.
 
         May raise:
-        - NotFoundError if no events exist for the asset in the specified time period.
+        - NotFoundError if no events exist for the assets in the specified time period.
         """
-        events, _ = self._get_events_and_currency(from_ts=from_ts, to_ts=to_ts, assets=(asset,))
+        events, _ = self._get_events_and_currency(from_ts=from_ts, to_ts=to_ts, assets=assets)
         if len(events) == 0:
-            raise NotFoundError(f'No historical data found for {asset} within {from_ts=} and {to_ts=}.')  # noqa: E501
+            raise NotFoundError(f'No historical data found for {assets} within {from_ts=} and {to_ts=}.')  # noqa: E501
 
-        total_amount = ZERO
-        last_event_id = None
+        total_amount, last_event_id = ZERO, None
         amounts: dict[Timestamp, FVal] = defaultdict(lambda: ZERO)
         for event in events:
             if (

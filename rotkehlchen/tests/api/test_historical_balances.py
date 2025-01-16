@@ -5,6 +5,7 @@ import pytest
 import requests
 
 from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import DAY_IN_SECONDS
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -211,6 +212,66 @@ def test_get_historical_asset_amounts_over_time_with_negative_amount(
         ),
         json={
             'asset': 'BTC',
+            'from_timestamp': START_TS,
+            'to_timestamp': four_days_after_start,
+        },
+    )
+    result = assert_proper_sync_response_with_result(response)
+    assert len(result['times']) == len(result['values'])
+    assert len(result['times']) == 3
+
+    assert result['last_event_identifier'] == events[0].event_identifier
+    assert result['times'][0] == START_TS  # Initial timestamp
+    assert result['times'][1] == START_TS + DAY_IN_SECONDS * 2  # First spend
+    assert result['times'][2] == three_days_after_start  # First negative event
+    assert result['values'][0] == '2'  # Initial balance
+    assert result['values'][1] == '1.5'  # Balance after first spend
+    assert result['values'][2] == '-0.1'  # Balance after first negative event
+
+
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+def test_get_historical_assets_in_collection_amounts_over_time(
+        rotkehlchen_api_server: 'APIServer',
+        setup_historical_data: None,
+) -> None:
+    db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
+    events = [
+        HistoryEvent(
+            event_identifier='btc_spend_2',
+            sequence_index=3,
+            timestamp=ts_sec_to_ms(three_days_after_start := Timestamp(START_TS + DAY_IN_SECONDS * 3)),  # noqa: E501
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.NONE,
+            location=Location.BLOCKCHAIN,
+            asset=Asset('eip155:1/erc20:0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599'),
+            balance=Balance(amount=FVal('1.6')),  # spending more than remaining balance  # noqa: E501
+            notes='BTC first overspend attempt',
+        ),
+        HistoryEvent(
+            event_identifier='btc_spend_3',
+            sequence_index=4,
+            timestamp=ts_sec_to_ms(four_days_after_start := Timestamp(START_TS + DAY_IN_SECONDS * 4)),  # noqa: E501
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.NONE,
+            location=Location.BLOCKCHAIN,
+            asset=Asset('eip155:100/erc20:0x8e5bBbb09Ed1ebdE8674Cda39A0c169401db4252'),
+            balance=Balance(amount=FVal('0.7')),
+            notes='BTC second overspend attempt',
+        ),
+    ]
+    with db.user_write() as write_cursor:
+        DBHistoryEvents(database=db).add_history_events(
+            write_cursor=write_cursor,
+            history=events,
+        )
+
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'historicalassetamountsresource',
+        ),
+        json={
+            'collection_id': 40,
             'from_timestamp': START_TS,
             'to_timestamp': four_days_after_start,
         },

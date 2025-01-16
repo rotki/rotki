@@ -5388,16 +5388,29 @@ class RestAPI:
 
     def get_historical_asset_amounts(
             self,
-            asset: Asset,
+            asset: Asset | None,
+            collection_id: int | None,
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
     ) -> Response:
+        assets: tuple[Asset, ...]
         try:
-            balances, last_event_identifier = HistoricalBalancesManager(self.rotkehlchen.data.db).get_asset_amounts(  # noqa: E501
-                asset=asset,
+            if asset is not None:
+                assets = (asset,)
+            else:  # collection_id is present due to validation.
+                with GlobalDBHandler().conn.read_ctx() as cursor:
+                    cursor.execute(
+                        'SELECT asset FROM multiasset_mappings WHERE collection_id=?',
+                        (collection_id,),
+                    )
+                    assets = tuple(Asset(row[0]) for row in cursor)
+
+            balances, last_event_identifier = HistoricalBalancesManager(self.rotkehlchen.data.db).get_assets_amounts(  # noqa: E501
+                assets=assets,
                 from_ts=from_timestamp,
                 to_ts=to_timestamp,
             )
+
         except NotFoundError as e:
             return api_response(wrap_in_fail_result(str(e), status_code=HTTPStatus.NOT_FOUND))
 
