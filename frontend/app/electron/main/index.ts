@@ -3,19 +3,21 @@ import process from 'node:process';
 import { BrowserWindow, Menu, MenuItem, app, protocol, screen } from 'electron';
 import windowStateKeeper from 'electron-window-state';
 import { type Nullable, assert } from '@rotki/common';
-import { ipcSetup } from '@electron/main/ipc-setup';
+import { IpcManager } from '@electron/main/ipc-setup';
 import { getUserMenu } from '@electron/main/menu';
 import { TrayManager } from '@electron/main/tray-manager';
 import { startPromise } from '@shared/utils';
 import { createProtocol } from '@electron/main/create-protocol';
 import { SubprocessHandler } from '@electron/main/subprocess-handler';
+import { LogService } from '@electron/main/log-service';
 
 let trayManager: Nullable<TrayManager> = null;
 let forceQuit = false;
 let win: BrowserWindow | null;
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
-const pyHandler = new SubprocessHandler(app);
+const logger = new LogService(app);
+const subprocessHandler = new SubprocessHandler(logger);
 
 const isMac = process.platform === 'darwin';
 
@@ -87,7 +89,27 @@ async function onReady(): Promise<void> {
   };
 
   trayManager = new TrayManager(getWindow, closeApp);
-  ipcSetup(pyHandler, getWindow, closeApp, trayManager, menuActions, ensureSafeUpdateRestart);
+  const ipcManager = new IpcManager(logger, {
+    closeApp,
+    ensureSafeUpdateRestart,
+    updateTray: params => trayManager?.update(params),
+    updatePremiumMenu: (showPremium) => {
+      Menu.setApplicationMenu(Menu.buildFromTemplate(getUserMenu(!showPremium, menuActions)));
+    },
+    restartSubprocesses: async (options) => {
+      await subprocessHandler.terminateProcesses(true);
+      await subprocessHandler.startProcesses(getWindow(), options);
+    },
+    terminateSubprocesses: async () => {
+      await subprocessHandler.terminateProcesses();
+    },
+    updateDownloadProgress: (progress) => {
+      win?.setProgressBar(progress);
+    },
+    getRunningCorePIDs: async () => subprocessHandler.checkForBackendProcess(),
+  });
+
+  ipcManager.registerHandlers();
   await createWindow();
   trayManager.listen();
 
@@ -183,7 +205,6 @@ else {
     startPromise(closeApp());
   });
   app.on('before-quit', (): void => {
-    pyHandler.quitting();
     forceQuit = true;
   });
 }
@@ -244,7 +265,6 @@ async function createWindow(): Promise<BrowserWindow> {
   });
 
   if (import.meta.env.VITE_DEV_SERVER_URL) {
-    pyHandler.setCorsURL(import.meta.env.VITE_DEV_SERVER_URL as string);
     // Load the url of the dev server if in development mode
     await win.loadURL(import.meta.env.VITE_DEV_SERVER_URL as string);
     if (process.env.ENABLE_DEV_TOOLS)
@@ -253,7 +273,6 @@ async function createWindow(): Promise<BrowserWindow> {
   else {
     createProtocol('app');
     // Load the index.html when not in development
-    pyHandler.setCorsURL('app://*');
     await win.loadURL('app://./index.html');
   }
 
@@ -295,7 +314,7 @@ async function createWindow(): Promise<BrowserWindow> {
 async function closeApp(): Promise<void> {
   trayManager?.destroy();
   try {
-    await pyHandler.exitPyProc();
+    await subprocessHandler.terminateProcesses();
   }
   finally {
     // In some cases app object might be already disposed

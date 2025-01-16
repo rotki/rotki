@@ -138,7 +138,7 @@ function handleRequests(req: IncomingMessage, res: ServerResponse, cb: Callback)
 }
 
 export function startHttp(cb: Callback, port = 43432): number {
-  if (!(server && server.listening)) {
+  if (!(server?.listening)) {
     // eslint-disable-next-line no-console
     console.log(`Address Import Server: Listening at: http://localhost:${port}`);
     server = http.createServer((req, resp) => handleRequests(req, resp, cb));
@@ -153,6 +153,6 @@ export function startHttp(cb: Callback, port = 43432): number {
 export function stopHttp() {
   // eslint-disable-next-line no-console
   console.log('Address Import Server: Stopped');
-  if (server && server.listening)
+  if (server?.listening)
     server.close();
 }
