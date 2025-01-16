@@ -547,7 +547,7 @@ def migrate_to_v3(connection: 'DBConnection', progress_handler: 'DBUpgradeProgre
 
         dir_path = Path(__file__).resolve().parent.parent.parent
         # This file contains the EVM version of the assets that are currently in the
-        # database and are not EVM (matic tokens, Otimism tokens, etc) + their variants in
+        # database and are not EVM (matic tokens, Optimism tokens, etc) + their variants in
         # other chains. And populates them properly via sql statements
         raw_sql_sentences = (dir_path / 'data' / 'globaldb_v2_v3_assets.sql').read_text(encoding='utf8')  # noqa: E501
         per_table_sentences = raw_sql_sentences.split('\n\n')
