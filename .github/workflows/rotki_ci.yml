@@ -142,7 +142,7 @@ jobs:
             pnpm run build
           fi
       - name: Lint code
-        working-directory: ./colibri
+        working-directory: ./frontend
         run: pnpm run lint:all
 
   unittest-frontend:
