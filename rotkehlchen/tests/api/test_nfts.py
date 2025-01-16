@@ -5,12 +5,7 @@ from unittest.mock import patch
 import pytest
 import requests
 
-from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.assets.asset import EvmToken
-from rotkehlchen.chain.ethereum.interfaces.ammswap.types import LiquidityPoolAsset
 from rotkehlchen.chain.ethereum.modules.nft.constants import FREE_NFT_LIMIT
-from rotkehlchen.chain.ethereum.modules.nft.structures import NftLpHandling
-from rotkehlchen.chain.evm.decoding.uniswap.v3.types import NFTLiquidityPool
 from rotkehlchen.chain.evm.types import ChecksumEvmAddress, string_to_evm_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH
@@ -25,7 +20,6 @@ from rotkehlchen.tests.utils.api import (
     wait_for_async_task,
 )
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import Price
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
@@ -207,7 +201,7 @@ def test_nft_ids_are_unique(rotkehlchen_api_server: 'APIServer') -> None:
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ACC4, TEST_ACC5, TEST_ACC6]])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
-@pytest.mark.parametrize('ethereum_modules', [['nfts', 'uniswap']])
+@pytest.mark.parametrize('ethereum_modules', [['nfts']])
 def test_nft_balances_and_prices(rotkehlchen_api_server: 'APIServer') -> None:
     """Check that nfts balances return the expected fields. Also check nft prices"""
     response = requests.get(api_url_for(
@@ -221,7 +215,7 @@ def test_nft_balances_and_prices(rotkehlchen_api_server: 'APIServer') -> None:
         'nftsbalanceresource',
     ), json={'async_query': False, 'ignore_cache': True})
     result_ignored_cache = assert_proper_sync_response_with_result(response)
-    assert result_ignored_cache['entries_found'] == 5
+    assert result_ignored_cache['entries_found'] == 3
     for nft_balance in result_ignored_cache['entries']:
         if nft_balance['id'] == NFT_ID_FOR_TEST_ACC4:
             assert nft_balance['name'] == 'yabir.eth'
@@ -237,21 +231,6 @@ def test_nft_balances_and_prices(rotkehlchen_api_server: 'APIServer') -> None:
             assert nft_balance['name'] == 'nebolax.eth'
             assert nft_balance['collection_name'] == 'ENS: Ethereum Name Service'
             assert nft_balance['is_lp'] is False
-            assert FVal(nft_balance['usd_price']) > ZERO
-        elif nft_balance['id'] == NFT_ID_FOR_TEST_ACC6_1:
-            assert nft_balance['name'] == 'Uniswap - 0.3% - USDT/WETH - 224.56<>2445.5'
-            assert nft_balance['collection_name'] == 'Uniswap V3 Positions'
-            assert nft_balance['is_lp'] is True
-            assert FVal(nft_balance['usd_price']) > ZERO
-        elif nft_balance['id'] == NFT_ID_FOR_TEST_ACC6_2:
-            assert nft_balance['name'] == 'Uniswap - 0.3% - SHIB/WETH - 79010000<>166260000'
-            assert nft_balance['collection_name'] == 'Uniswap V3 Positions'
-            assert nft_balance['is_lp'] is False
-            assert FVal(nft_balance['usd_price']) > ZERO
-        elif nft_balance['id'] == NFT_ID_FOR_TEST_ACC6_3:
-            assert nft_balance['name'] == 'Uniswap - 1% - SHIB/WETH - 201050000<>546470000'
-            assert nft_balance['collection_name'] == 'Uniswap V3 Positions'
-            assert nft_balance['is_lp'] is True
             assert FVal(nft_balance['usd_price']) > ZERO
         else:
             raise AssertionError('NFT has to be one of the expected')
@@ -284,8 +263,8 @@ def test_nft_balances_and_prices(rotkehlchen_api_server: 'APIServer') -> None:
         'offset': 2,
     })
     result = assert_proper_sync_response_with_result(response)
-    assert result['entries_found'] == 5
-    assert result['entries_total'] == 5
+    assert result['entries_found'] == 3
+    assert result['entries_total'] == 3
 
     # ignore an nft
     response = requests.put(
@@ -310,14 +289,12 @@ def test_nft_balances_and_prices(rotkehlchen_api_server: 'APIServer') -> None:
     assert result_with_cache == result_ignored_cache
 
     # Check that filtering ignored nfts works
-    assert result_with_cache['entries_found'] == 5
-    assert result_with_cache['entries_total'] == 5
+    assert result_with_cache['entries_found'] == 3
+    assert result_with_cache['entries_total'] == 3
     assert {entry['id'] for entry in result_with_cache['entries']} == {
         NFT_ID_FOR_TEST_ACC4,
         NFT_ID_FOR_TEST_ACC4_2,
         NFT_ID_FOR_TEST_ACC5,
-        NFT_ID_FOR_TEST_ACC6_1,
-        NFT_ID_FOR_TEST_ACC6_3,
     }
 
     # Make sure that after invalidating NFTs cache ignored NFTs remain ignored
@@ -334,9 +311,9 @@ def test_nft_balances_and_prices(rotkehlchen_api_server: 'APIServer') -> None:
     assert result_with_cache == result_ignored_cache
 
     # Check that the response is correct
-    assert result_with_cache['entries_found'] == 3
-    assert result_with_cache['entries_total'] == 5
-    expected_nfts_without_ignored = {NFT_ID_FOR_TEST_ACC5, NFT_ID_FOR_TEST_ACC6_1, NFT_ID_FOR_TEST_ACC6_3}  # noqa: E501
+    assert result_with_cache['entries_found'] == 1
+    assert result_with_cache['entries_total'] == 3
+    expected_nfts_without_ignored = {NFT_ID_FOR_TEST_ACC5}
     assert {entry['id'] for entry in result_with_cache['entries']} == expected_nfts_without_ignored
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
@@ -344,7 +321,7 @@ def test_nft_balances_and_prices(rotkehlchen_api_server: 'APIServer') -> None:
     ), json={'async_query': False, 'ignore_cache': False, 'ignored_assets_handling': 'show only'})
     result = assert_proper_sync_response_with_result(response)
     assert result['entries_found'] == 2
-    assert result['entries_total'] == 5
+    assert result['entries_total'] == 3
     assert {entry['id'] for entry in result['entries']} == {
         NFT_ID_FOR_TEST_ACC4,
         NFT_ID_FOR_TEST_ACC4_2,
@@ -657,203 +634,6 @@ def test_nft_no_price(rotkehlchen_api_server: 'APIServer') -> None:
     }
 
 
-@pytest.mark.parametrize('ethereum_accounts', [[TEST_ACC4, TEST_ACC5, TEST_ACC6]])
-@pytest.mark.parametrize('start_with_valid_premium', [True])
-@pytest.mark.parametrize('ethereum_modules', [['nfts', 'uniswap']])
-def test_lp_nfts_filtering(rotkehlchen_api_server: 'APIServer') -> None:
-    """Assert that filtering by the lp property for NFTs works properly on all the endpoints that
-    allow it
-    """
-    def mock_get_all_nft_data(
-            _addresses: list[ChecksumEvmAddress],
-            **_kwargs,
-         ) -> tuple[dict[str, Any], int]:
-        data = {
-            '0x4bBa290826C253BD854121346c370a9886d1bC26': [TEST_NFT_NEBOLAX_ETH],
-            '0xc37b40ABdB939635068d3c5f13E7faF686F03B65': [TEST_NFT_YABIR_ETH],
-            '0x3e649c5Eac6BBEE8a4F2A2945b50d8e582faB3bf': [
-                NFT(
-                    token_identifier='_nft_0xC36442b4a4522E871399CD717aBDD847Ab11FE88_360762',
-                    background_color=None,
-                    image_url='https://openseauserdata.com/files/99b67e38e2d1abc16d6d843f478b5224.svg',
-                    name='Uniswap - 0.3% - SHIB/WETH - 79010000<>166260000',
-                    external_link=None,
-                    permalink='https://opensea.io/assets/ethereum/0xc36442b4a4522e871399cd717abdd847ab11fe88/360762',
-                    price_in_asset=ZERO,
-                    price_asset=A_ETH,
-                    price_usd=ZERO,
-                    collection=Collection(
-                        name='Uniswap V3 Positions',
-                        banner_image='https://i.seadn.io/gae/Xq98abLTjlFfzdIxsXNL0sVE2W-3FGcJ2TFUkphz9dh9wEH4rcUesMhE7RzEh_ivPCdL5KxkNVfyE5gb870OgqOLQnBP6sIL54-G0A?w=500&auto=format',
-                        description='',
-                        large_image='https://i.seadn.io/gae/cnVFmcBCIreYJxfaZ2ba62kEdC9ocuP7vawwcfZx9QIOVNlisuJTV2f19D48hg2NSUxPFX6peemTKaYshJvs-vIcy_3Kv3nCiF7t9g?w=500&auto=format',
-                        floor_price=None,
-                    ),
-                ),
-                NFT(
-                    token_identifier='_nft_0xC36442b4a4522E871399CD717aBDD847Ab11FE88_360680',
-                    background_color=None,
-                    image_url='https://openseauserdata.com/files/53f418fceab543a174d22efd0a55782c.svg',
-                    name='Uniswap - 0.3% - USDT/WETH - 224.56<>2445.5',
-                    external_link=None,
-                    permalink='https://opensea.io/assets/ethereum/0xc36442b4a4522e871399cd717abdd847ab11fe88/360680',
-                    price_in_asset=ZERO,
-                    price_asset=A_ETH,
-                    price_usd=ZERO,
-                    collection=Collection(
-                        name='Uniswap V3 Positions',
-                        banner_image='https://i.seadn.io/gae/Xq98abLTjlFfzdIxsXNL0sVE2W-3FGcJ2TFUkphz9dh9wEH4rcUesMhE7RzEh_ivPCdL5KxkNVfyE5gb870OgqOLQnBP6sIL54-G0A?w=500&auto=format',
-                        description='',
-                        large_image='https://i.seadn.io/gae/cnVFmcBCIreYJxfaZ2ba62kEdC9ocuP7vawwcfZx9QIOVNlisuJTV2f19D48hg2NSUxPFX6peemTKaYshJvs-vIcy_3Kv3nCiF7t9g?w=500&auto=format',
-                        floor_price=None,
-                    ),
-                ),
-            ],
-        }
-        return data, 4
-
-    def mock_uniswap_v3_balances(*_args, **_kwargs) -> dict[str, list[NFTLiquidityPool]]:
-        return {
-            '0x3e649c5Eac6BBEE8a4F2A2945b50d8e582faB3bf': [
-                NFTLiquidityPool(
-                    address=string_to_evm_address('0x4e68Ccd3E89f51C3074ca5072bbAC773960dFa36'),
-                    assets=[
-                        LiquidityPoolAsset(
-                            token=EvmToken('eip155:1/erc20:0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'),
-                            total_amount=FVal(467.1438481374891080028754879),
-                            user_balance=Balance(
-                                amount=FVal(0.07634689899681738268929722925),
-                                usd_value=FVal(0.1145203484952260740339458439),
-                            ),
-                            usd_price=Price(FVal(1.5)),
-                        ), LiquidityPoolAsset(
-                            token=EvmToken('eip155:1/erc20:0xdAC17F958D2ee523a2206206994597C13D831ec7'),
-                            total_amount=FVal(590091.4573701435329438497875),
-                            user_balance=Balance(
-                                amount=FVal(197.9498109045197253831082955),
-                                usd_value=FVal(296.9247163567795880746624432),
-                            ),
-                            usd_price=Price(FVal(1.5)),
-                        ),
-                    ],
-                    total_supply=None,
-                    user_balance=Balance(
-                        amount=ZERO,
-                        usd_value=FVal(297.0392367052748141486963890),
-                    ),
-                    nft_id='_nft_0xC36442b4a4522E871399CD717aBDD847Ab11FE88_360680',
-                    price_range=(
-                        FVal(0.0004089111961461131970577658069),
-                        FVal(0.004453201773423214426045068107),
-                    ),
-                ),
-                NFTLiquidityPool(
-                    address=string_to_evm_address('0x2F62f2B4c5fcd7570a709DeC05D68EA19c82A9ec'),
-                    assets=[
-                        LiquidityPoolAsset(
-                            token=EvmToken('eip155:1/erc20:0x95aD61b0a150d79219dCF64E1E6Cc01f0B64C4cE'),
-                            total_amount=FVal(7434412870.4299540940086804),
-                            user_balance=Balance(
-                                amount=FVal(14993034.44120264275215351374),
-                                usd_value=FVal(22489551.66180396412823027061),
-                            ),
-                            usd_price=Price(FVal(1.5)),
-                        ), LiquidityPoolAsset(
-                            token=EvmToken('eip155:1/erc20:0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'),
-                            total_amount=FVal(54.08313355138617618618670289),
-                            user_balance=Balance(
-                                amount=FVal(0.04035273849436677000793717497),
-                                usd_value=FVal(0.06052910774155015501190576246),
-                            ),
-                            usd_price=Price(FVal(1.5)),
-                        ),
-                    ],
-                    total_supply=None,
-                    user_balance=Balance(
-                        amount=ZERO,
-                        usd_value=FVal(22489551.72233307186978042562),
-                    ),
-                    nft_id='_nft_0xC36442b4a4522E871399CD717aBDD847Ab11FE88_360762',
-                    price_range=(
-                        FVal(79010456.35648359278851139208),
-                        FVal(166258366.8407051322948007978),
-                    ),
-                ),
-            ]}
-
-    get_all_nft_data_patch = patch('rotkehlchen.chain.ethereum.modules.nft.nfts.Nfts._get_all_nft_data', side_effect=mock_get_all_nft_data)  # noqa: E501
-    get_v3_balances_patch = patch('rotkehlchen.chain.ethereum.modules.uniswap.uniswap.Uniswap.get_v3_balances', side_effect=mock_uniswap_v3_balances)  # noqa: E501
-
-    with get_all_nft_data_patch, get_v3_balances_patch:
-        response = requests.get(
-            api_url_for(
-                rotkehlchen_api_server,
-                'nftsbalanceresource',
-            ),
-            json={'async_query': False, 'ignore_cache': True},
-        )
-        result = assert_proper_sync_response_with_result(response)
-        assert result['entries_found'] == 4
-
-    # test that only lp works
-    response = requests.get(
-        api_url_for(
-            rotkehlchen_api_server,
-            'nftsbalanceresource',
-        ),
-        json={
-            'async_query': False,
-            'ignore_cache': False,
-            'lps_handling': NftLpHandling.ONLY_LPS.serialize(),
-        },
-    )
-    result = assert_proper_sync_response_with_result(response)
-    assert result['entries_found'] == 2
-    for entry in result['entries']:
-        assert entry['is_lp'] is True
-
-    # Test that non lp + filter works
-    response = requests.get(
-        api_url_for(
-            rotkehlchen_api_server,
-            'nftsbalanceresource',
-        ),
-        json={
-            'async_query': False,
-            'ignore_cache': False,
-            'lps_handling': NftLpHandling.EXCLUDE_LPS.serialize(),
-            'name': 'yabir',
-        },
-    )
-    result = assert_proper_sync_response_with_result(response)
-    assert result['entries_found'] == 1
-
-    # test the handling in the prices endpoint
-    response = requests.post(api_url_for(
-        rotkehlchen_api_server,
-        'nftspricesresource',
-    ), json={'lps_handling': NftLpHandling.ONLY_LPS.serialize()})
-    result = assert_proper_sync_response_with_result(response)
-    for nft in result:
-        assert nft['asset'] in (NFT_ID_FOR_TEST_ACC6_1, NFT_ID_FOR_TEST_ACC6_2)
-
-    response = requests.post(api_url_for(
-        rotkehlchen_api_server,
-        'nftspricesresource',
-    ), json={'lps_handling': NftLpHandling.EXCLUDE_LPS.serialize()})
-    result = assert_proper_sync_response_with_result(response)
-    assert len(result) == 2
-    for nft in result:
-        assert nft['asset'] not in (NFT_ID_FOR_TEST_ACC6_1, NFT_ID_FOR_TEST_ACC6_2)
-
-    response = requests.post(api_url_for(
-        rotkehlchen_api_server,
-        'nftspricesresource',
-    ))
-    result = assert_proper_sync_response_with_result(response)
-    assert len(result) == 4
-
-
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ACC4, TEST_ACC5]])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('ethereum_modules', [['nfts']])
@@ -900,22 +680,3 @@ def test_customized_queried_addresses(rotkehlchen_api_server: 'APIServer') -> No
     )
     result = assert_proper_sync_response_with_result(response)
     assert len(result['entries']) == 1 and result['entries'][0]['name'] == TEST_NFT_NEBOLAX_ETH.name  # noqa: E501
-
-
-@pytest.mark.vcr(filter_query_parameters=['apikey'])
-@pytest.mark.parametrize('ethereum_accounts', [['0xF73e7772113Cf4a6a8749dF5e4e32b27B449B85D']])
-@pytest.mark.parametrize('start_with_valid_premium', [True])
-@pytest.mark.parametrize('ethereum_modules', [['nfts', 'uniswap']])
-def test_uniswap_v3_exited_positions(rotkehlchen_api_server: 'APIServer') -> None:
-    """Test for https://github.com/rotki/rotki/issues/8137
-    Ensure that positions that have been exited in uniswap v3 don't end up in the nft balances
-    """
-    response = requests.get(api_url_for(
-        rotkehlchen_api_server,
-        'nftsbalanceresource',
-    ), json={
-        'ignore_cache': True,
-        'lps_handling': NftLpHandling.ALL_NFTS.serialize(),
-    })
-    result = assert_proper_sync_response_with_result(response)
-    assert all(entry['collection_name'] != 'Uniswap V3 Positions' for entry in result['entries'])

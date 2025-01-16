@@ -9,6 +9,7 @@ from rotkehlchen.chain.ethereum.utils import (
     token_normalized_value,
     token_normalized_value_decimals,
 )
+from rotkehlchen.chain.evm.decoding.uniswap.v3.constants import UNISWAP_V3_NFT_MANAGER_ADDRESSES
 from rotkehlchen.chain.evm.types import WeightedNode, asset_id_is_evm_token
 from rotkehlchen.chain.structures import EvmTokenDetectionData
 from rotkehlchen.errors.misc import RemoteError
@@ -108,7 +109,12 @@ def generate_multicall_chunks(
     return multicall_chunks
 
 
-def get_chunk_size_call_order(evm_inquirer: 'EvmNodeInquirer') -> tuple[int, list[WeightedNode]]:
+def get_chunk_size_call_order(
+        evm_inquirer: 'EvmNodeInquirer',
+        web3_node_chunk_size: int = OTHER_MAX_TOKEN_CHUNK_LENGTH,
+        etherscan_chunk_size: int = ETHERSCAN_MAX_ARGUMENTS_TO_CONTRACT,
+        arbiscan_chunksize: int = ARBISCAN_MAX_ARGUMENTS_TO_CONTRACT,
+) -> tuple[int, list[WeightedNode]]:
     """
     Return the max number of tokens that can be queried in a single call depending on whether we
     have a web3 node connected or we are going to use etherscan.
@@ -116,10 +122,10 @@ def get_chunk_size_call_order(evm_inquirer: 'EvmNodeInquirer') -> tuple[int, lis
     skip etherscan because chunk size is too big for etherscan.
     """
     if evm_inquirer.connected_to_any_web3():
-        chunk_size = OTHER_MAX_TOKEN_CHUNK_LENGTH
+        chunk_size = web3_node_chunk_size
         call_order = evm_inquirer.default_call_order(skip_etherscan=True)
     else:
-        chunk_size = ETHERSCAN_MAX_ARGUMENTS_TO_CONTRACT if evm_inquirer.chain_id != ChainID.ARBITRUM_ONE else ARBISCAN_MAX_ARGUMENTS_TO_CONTRACT  # noqa: E501
+        chunk_size = etherscan_chunk_size if evm_inquirer.chain_id != ChainID.ARBITRUM_ONE else arbiscan_chunksize  # noqa: E501
         call_order = [evm_inquirer.etherscan_node]
 
     return chunk_size, call_order
@@ -409,6 +415,13 @@ class EvmTokens(ABC):  # noqa: B024
         for asset_id in ignored_asset_ids:  # don't query for the ignored tokens
             if (evm_details := asset_id_is_evm_token(asset_id)) is not None and evm_details[0] == self.evm_inquirer.chain_id:  # noqa: E501
                 exceptions.add(evm_details[1])
+
+        # Exclude the Uniswap V3 NFT Manager address.
+        # Without this exclusion, the balance logic reports a balance equal to the
+        # number of Uniswap V3 positions held by the user for *each* position NFT.
+        # Actual position balances are handled by the UniswapV3Balances class.
+        if self.evm_inquirer.chain_id in UNISWAP_V3_NFT_MANAGER_ADDRESSES:
+            exceptions.add(UNISWAP_V3_NFT_MANAGER_ADDRESSES[self.evm_inquirer.chain_id])
 
         return exceptions | self._per_chain_token_exceptions()
 

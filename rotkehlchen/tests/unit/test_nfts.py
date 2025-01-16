@@ -23,10 +23,7 @@ def test_addresses_queried_for_nfts(blockchain):
     IntegrityError described in https://github.com/rotki/rotki/issues/4456
     """
     nft_module = blockchain.get_module('nfts')
-    nft_module.query_balances(
-        addresses=[TEST_ACC1, TEST_ACC2],
-        uniswap_nfts=None,
-    )
+    nft_module.query_balances(addresses=[TEST_ACC1, TEST_ACC2])
     balances = nft_module.get_db_nft_balances(filter_query=NFTFilterQuery.make())['entries']
     assert any(x['name'] == 'yabir.eth' for x in balances)
 
@@ -129,10 +126,7 @@ def test_duplicate_balances(
         )
     nft_module = blockchain.get_module('nfts')
     assert nft_module is not None
-    nft_module.query_balances(
-        addresses=ethereum_accounts,
-        uniswap_nfts=None,
-    )
+    nft_module.query_balances(addresses=ethereum_accounts)
     balances = rotki.query_balances()
     assert Asset('eip155:1/erc721:0x524cAB2ec69124574082676e6F654a18df49A048') not in balances['assets']  # noqa: E501
     assert Asset('_nft_0x524cAB2ec69124574082676e6F654a18df49A048_7535') in balances['assets']

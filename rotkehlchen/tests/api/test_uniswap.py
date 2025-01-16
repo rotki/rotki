@@ -1,5 +1,4 @@
 import random
-import warnings as test_warnings
 from http import HTTPStatus
 from typing import TYPE_CHECKING
 from unittest.mock import patch
@@ -11,7 +10,7 @@ from rotkehlchen.chain.ethereum.interfaces.ammswap.types import (
     LiquidityPoolEventsBalance,
 )
 from rotkehlchen.chain.evm.types import ChecksumEvmAddress, string_to_evm_address
-from rotkehlchen.constants import ONE, ZERO
+from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_WETH
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
@@ -220,109 +219,3 @@ def test_get_events_history_filtering_by_timestamp(
     expected_event.pop('usd_profit_loss')
     events_balances[0].pop('usd_profit_loss')
     assert expected_event == events_balances[0]
-
-
-@pytest.mark.vcr(filter_query_parameters=['apikey'])
-@pytest.mark.parametrize('ethereum_accounts', [[LP_V3_HOLDER_ADDRESS]])
-@pytest.mark.parametrize('ethereum_modules', [['uniswap']])
-@pytest.mark.parametrize('start_with_valid_premium', [True])
-def test_get_v3_balances_premium(rotkehlchen_api_server: 'APIServer') -> None:
-    """Check querying the uniswap balances v3 endpoint works."""
-    response = requests.get(
-        api_url_for(
-            api_server=rotkehlchen_api_server,
-            endpoint='evmmodulebalanceswithversionresource',
-            module='uniswap',
-            version='3',
-        ),
-    )
-    result = assert_proper_sync_response_with_result(response)
-
-    if LP_V3_HOLDER_ADDRESS not in result or len(result[LP_V3_HOLDER_ADDRESS]) == 0:
-        test_warnings.warn(
-            UserWarning(f'Test account {LP_V3_HOLDER_ADDRESS} has no uniswap balances'),
-        )
-        return
-
-    address_balances = result[LP_V3_HOLDER_ADDRESS]
-    for lp in address_balances:
-        # LiquidityPool attributes
-        assert lp['address'].startswith('0x')
-        assert len(lp['price_range']) == 2
-        assert isinstance(lp['price_range'], list)
-        assert lp['nft_id']
-        assert isinstance(lp['nft_id'], str)
-        assert len(lp['assets']) == 2
-        assert lp['user_balance']['amount']
-        assert lp['user_balance']['usd_value']
-
-        # LiquidityPoolAsset attributes
-        for lp_asset in lp['assets']:
-            lp_asset_type = type(lp_asset['asset'])
-
-            assert lp_asset_type in (str, dict)
-
-            # Unknown asset, at least contains token address
-            if lp_asset_type is dict:
-                assert lp_asset['asset']['evm_address'].startswith('0x')
-            # Known asset, contains identifier
-            else:
-                assert not lp_asset['asset'].startswith('0x')
-            assert lp_asset['total_amount'] is not None
-            assert lp_asset['usd_price']
-            assert len(lp_asset['user_balance']) == 2
-            assert lp_asset['user_balance']['amount']
-            assert lp_asset['user_balance']['usd_value']
-
-
-@pytest.mark.vcr(filter_query_parameters=['apikey'])
-@pytest.mark.parametrize('ethereum_accounts', [[LP_V3_HOLDER_ADDRESS]])
-@pytest.mark.parametrize('ethereum_modules', [['uniswap']])
-@pytest.mark.parametrize('start_with_valid_premium', [False])
-def test_get_v3_balances_no_premium(rotkehlchen_api_server: 'APIServer') -> None:
-    """Check querying the uniswap balances v3 endpoint works."""
-    response = requests.get(
-        api_url_for(
-            api_server=rotkehlchen_api_server,
-            endpoint='evmmodulebalanceswithversionresource',
-            module='uniswap',
-            version='3',
-        ),
-    )
-    result = assert_proper_sync_response_with_result(response)
-
-    if LP_V3_HOLDER_ADDRESS not in result or len(result[LP_V3_HOLDER_ADDRESS]) == 0:
-        test_warnings.warn(
-            UserWarning(f'Test account {LP_V3_HOLDER_ADDRESS} has no uniswap balances'),
-        )
-        return
-
-    address_balances = result[LP_V3_HOLDER_ADDRESS]
-    for lp in address_balances:
-        # LiquidityPool attributes
-        assert lp['address'].startswith('0x')
-        assert len(lp['price_range']) == 2
-        assert isinstance(lp['price_range'], list)
-        assert lp['nft_id']
-        assert isinstance(lp['nft_id'], str)
-        assert len(lp['assets']) == 2
-        assert lp['user_balance']['amount']
-        assert lp['user_balance']['usd_value']
-
-        # LiquidityPoolAsset attributes
-        for lp_asset in lp['assets']:
-            lp_asset_type = type(lp_asset['asset'])
-
-            assert lp_asset_type in (str, dict)
-
-            # Unknown asset, at least contains token address
-            if lp_asset_type is dict:
-                assert lp_asset['asset']['ethereum_address'].startswith('0x')
-            # Known asset, contains identifier
-            else:
-                assert not lp_asset['asset'].startswith('0x')
-            # check that the user_balances are not returned
-            assert lp_asset['total_amount'] is None
-            assert FVal(lp_asset['usd_price']) == ZERO
-            assert FVal(lp_asset['user_balance']['amount']) == ZERO
-            assert FVal(lp_asset['user_balance']['usd_value']) == ZERO

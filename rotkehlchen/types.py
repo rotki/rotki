@@ -81,6 +81,7 @@ DEFAULT_OFF_MODULES = {'makerdao_dsr', 'yearn_vaults'}
 
 
 UNISWAP_PROTOCOL: Final = 'UNI-V2'
+UNISWAPV3_PROTOCOL: Final = 'UNI-V3'
 SUSHISWAP_PROTOCOL: Final = 'SLP'
 # this variable is used in the decoders and maps to the protocol field used in the database
 # for yearn vaults v1
@@ -106,6 +107,7 @@ ProtocolsWithPriceLogic = (
     CURVE_POOL_PROTOCOL,
     VELODROME_POOL_PROTOCOL,
     HOP_PROTOCOL_LP,
+    UNISWAPV3_PROTOCOL,
 )
 
 LP_TOKEN_AS_POOL_PROTOCOLS = (  # In these protocols the LP token of a pool and the pool itself are the same contract  # noqa: E501
@@ -656,6 +658,7 @@ CHAIN_IDS_WITH_BALANCE_PROTOCOLS = Literal[
     ChainID.POLYGON_POS,
     ChainID.SCROLL,
     ChainID.GNOSIS,
+    ChainID.BINANCE_SC,
 ]
 
 SUPPORTED_EVM_CHAINS_TYPE = Literal[

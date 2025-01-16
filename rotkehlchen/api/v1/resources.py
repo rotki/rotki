@@ -2297,12 +2297,6 @@ class EvmModuleBalancesWithVersionResource(BaseMethodView):
                 async_query=async_query,
                 module=module.serialize(),
             )
-        elif version == 3:
-            return self.rest_api.get_amm_platform_balances(
-                async_query=async_query,
-                module=module.serialize(),
-                method='get_v3_balances',
-            )
 
         # this shouldn't happen since we have validation in marshmallow
         return api_response(wrap_in_fail_result(

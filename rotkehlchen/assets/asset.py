@@ -507,11 +507,13 @@ class EvmToken(CryptoAsset):
             decimals: int | None = None,
             protocol: str | None = None,
             underlying_tokens: list[UnderlyingToken] | None = None,
+            collectible_id: str | None = None,
     ) -> 'EvmToken':
         identifier = evm_address_to_identifier(
             address=address,
             chain_id=chain_id,
             token_type=token_kind,
+            collectible_id=collectible_id,
         )
         asset = EvmToken(identifier=identifier, direct_field_initialization=True)
         object.__setattr__(asset, 'asset_type', AssetType.EVM_TOKEN)
