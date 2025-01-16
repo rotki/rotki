@@ -788,10 +788,6 @@
     },
     "view_addresses": "查看 {name} 的查询地址"
   },
-  "address_account_form": {
-    "hint": "当检查时,将跟踪此地址的所有支持的EVM链(Ethereum, Optimism 等)",
-    "label": "添加到所有支持的 EVM 链"
-  },
   "address_book": {
     "actions": {
       "add": {

@@ -48,10 +48,15 @@ const { isModuleEnabled } = useModules();
 const { isLoading } = useStatusStore();
 const isEth2Enabled = isModuleEnabled(Module.ETH2);
 
+const isAccountsTabSelected = computed(() => get(tab) === 'accounts');
+
 const { chainIds } = useAccountCategoryHelper(category);
 const usedChainIds = computed(() => {
-  if (get(tab) === 'accounts') {
-    return get(chainIds);
+  if (get(isAccountsTabSelected)) {
+    return [
+      'evm',
+      ...get(chainIds),
+    ];
   }
 
   return [Blockchain.ETH2];
@@ -66,7 +71,6 @@ function createNewBlockchainAccount(): void {
         tags: null,
       },
     ],
-    evm: true,
     mode: 'add',
     type: 'account',
   });
@@ -117,7 +121,7 @@ const isEth2Loading = isLoading(Section.BLOCKCHAIN, Blockchain.ETH2);
   >
     <template #buttons>
       <RuiButtonGroup
-        v-if="tab === 'accounts'"
+        v-if="isAccountsTabSelected"
         variant="outlined"
         color="primary"
       >
@@ -207,7 +211,7 @@ const isEth2Loading = isLoading(Section.BLOCKCHAIN, Blockchain.ETH2);
       leave-active-class="hidden"
     >
       <AccountBalances
-        v-if="tab === 'accounts'"
+        v-if="isAccountsTabSelected"
         ref="table"
         :category="category"
         @edit="account = $event"
@@ -221,6 +225,7 @@ const isEth2Loading = isLoading(Section.BLOCKCHAIN, Blockchain.ETH2);
     <AccountDialog
       v-model="account"
       :chain-ids="usedChainIds"
+      :show-all-chains-option="isAccountsTabSelected"
       @complete="refresh()"
     />
   </TablePageLayout>

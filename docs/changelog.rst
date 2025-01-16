@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :feature:`-` In the blockchain account addition form, the "Add to all supported EVM chains" checkbox will be removed and integrated into the chain selector itself.
+* :feature:`-` The blockchain accounts and balances section will now be separated for better focus and accessibility.
 * :feature:`1573` rotki will now support Binance Smart Chain. Balances will be shown and transactions will be decoded.
 * :feature:`-` Adds filtering by date for kraken staking rewards.
 * :feature:`-` Current and historical token prices will now also be queryable via Alchemy.

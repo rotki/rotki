@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { Blockchain } from '@rotki/common';
 import AddressInput from '@/components/accounts/blockchain/AddressInput.vue';
 import { useSupportedChains } from '@/composables/info/chains';
 import AccountDataInput from '@/components/accounts/management/inputs/AccountDataInput.vue';
@@ -106,31 +105,10 @@ const addresses = computed<string[]>({
   },
 });
 
-const allEvmChains = computed<boolean>({
-  get() {
-    const model = get(modelValue);
-    if (model.mode !== 'edit')
-      return model.evm ?? false;
-
-    return false;
-  },
-  set(evm) {
-    const model = get(modelValue);
-    if (model.mode === 'edit')
-      return;
-
-    set(modelValue, { ...model, evm });
-  },
-});
-
-const showEvmCheck = computed<boolean>(() => {
+const showWalletImport = computed<boolean>(() => {
   const model = get(modelValue);
-  return get(isEvm(model.chain)) && model.mode !== 'edit';
+  return get(isEvm(model.chain)) || model.chain === 'evm';
 });
-
-function onAllEvmChainsUpdate(allChains: boolean) {
-  set(allEvmChains, allChains);
-}
 
 function validate(): Promise<boolean> {
   assert(isDefined(address));
@@ -145,15 +123,8 @@ defineExpose({
 <template>
   <div class="flex flex-col gap-6">
     <ModuleActivator
-      v-if="modelValue.chain === Blockchain.ETH && !editMode"
+      v-if="[Blockchain.ETH, 'evm'].includes(modelValue.chain) && !editMode"
       @update:selection="selectedModules = $event"
-    />
-
-    <slot
-      v-if="showEvmCheck"
-      name="selector"
-      :disabled="loading"
-      :attrs="{ 'modelValue': allEvmChains, 'onUpdate:model-value': onAllEvmChainsUpdate }"
     />
 
     <div class="flex flex-col gap-4">
@@ -163,7 +134,7 @@ defineExpose({
         v-model:error-messages="errors"
         :disabled="loading || editMode"
         :multi="!editMode"
-        :show-wallet-import="showEvmCheck"
+        :show-wallet-import="showWalletImport"
       />
       <AccountDataInput
         v-model:tags="tags"

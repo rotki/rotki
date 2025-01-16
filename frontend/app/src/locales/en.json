@@ -90,6 +90,7 @@
       "addresses": "Addresses",
       "addresses_entries": "no entries | {count} unique entry | {count} unique entries",
       "addresses_hint": "Insert multiple comma separated addresses",
+      "all_supported_chains": "All Supported Chains",
       "blockchain": "Choose blockchain | Choose blockchains",
       "btc": {
         "derivation_path": "Derivation Path",
@@ -1006,10 +1007,6 @@
       "title": "Enabled module"
     },
     "view_addresses": "View the queried addresses for {name}"
-  },
-  "address_account_form": {
-    "hint": "When checked this address will be tracked for all supported evm chains (Ethereum, Optimism etc)",
-    "label": "Add to all supported EVM chains"
   },
   "address_book": {
     "actions": {

@@ -48,10 +48,14 @@ async function confirm() {
   const state = get(model);
   assert(state);
 
+  set(stateUpdated, false);
   const success = await save(state);
   if (success) {
     emit('complete');
     dismiss();
+  }
+  else {
+    set(stateUpdated, true);
   }
 }
 watch(model, (model, oldModel) => {

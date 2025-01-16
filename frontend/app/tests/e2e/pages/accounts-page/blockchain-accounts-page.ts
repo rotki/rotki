@@ -1,6 +1,6 @@
 import { BigNumber, Blockchain } from '@rotki/common';
 import { RotkiApp } from '../rotki-app';
-import { setCheckBox, waitForAsyncQuery } from '../../support/utils';
+import { waitForAsyncQuery } from '../../support/utils';
 import { updateLocationBalance } from '../../utils/amounts';
 import type { FixtureBlockchainAccount } from '../../support/types';
 
@@ -39,9 +39,6 @@ export class BlockchainAccountsPage {
 
     if (balance.blockchain !== Blockchain.ETH)
       cy.get('[data-cy=input-mode-manual]').click();
-
-    if (balance.blockchain === Blockchain.ETH)
-      setCheckBox('[data-cy=account-all-evm-chains]', false);
 
     cy.get('[data-cy=account-address-field]').should('not.be.disabled');
     cy.get('[data-cy=account-address-field]').type(balance.address);
