@@ -247,6 +247,7 @@ def get_or_create_evm_token(
         fallback_decimals: int | None = None,
         fallback_name: str | None = None,
         fallback_symbol: str | None = None,
+        collectible_id: str | None = None,
 ) -> EvmToken:
     """Given a token address return the <EvmToken>
 
@@ -277,6 +278,7 @@ def get_or_create_evm_token(
         address=evm_address,
         chain_id=chain_id,
         token_type=token_kind,
+        collectible_id=collectible_id,
     )
     with userdb.get_or_create_evm_token_lock:
         try:
@@ -348,6 +350,7 @@ def get_or_create_evm_token(
                 started=started,
                 coingecko=coingecko,
                 cryptocompare=cryptocompare,
+                collectible_id=collectible_id,
             )
             if asset_exists is True:
                 # This means that we need to update the information in the database with the

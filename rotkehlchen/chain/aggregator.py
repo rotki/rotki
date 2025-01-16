@@ -59,6 +59,7 @@ from rotkehlchen.chain.evm.decoding.balancer.v2.balances import Balancerv2Balanc
 from rotkehlchen.chain.evm.decoding.compound.v3.balances import Compoundv3Balances
 from rotkehlchen.chain.evm.decoding.curve_lend.balances import CurveLendBalances
 from rotkehlchen.chain.evm.decoding.hop.balances import HopBalances
+from rotkehlchen.chain.evm.decoding.uniswap.v3.balances import UniswapV3Balances
 from rotkehlchen.chain.gnosis.modules.giveth.balances import GivethBalances as GivethGnosisBalances
 from rotkehlchen.chain.optimism.modules.extrafi.balances import (
     ExtrafiBalances as ExtrafiBalancesOp,
@@ -228,6 +229,7 @@ CHAIN_TO_BALANCE_PROTOCOLS = {
         Balancerv2Balances,
         CurveLendBalances,
         AuraFinanceBalances,
+        UniswapV3Balances,
     ),
     ChainID.OPTIMISM: (
         VelodromeBalances,
@@ -239,6 +241,7 @@ CHAIN_TO_BALANCE_PROTOCOLS = {
         CurveLendBalances,
         AuraFinanceBalances,
         GivethOptimismBalances,
+        UniswapV3Balances,
     ),
     ChainID.BASE: (
         Compoundv3Balances,
@@ -247,6 +250,7 @@ CHAIN_TO_BALANCE_PROTOCOLS = {
         ExtrafiBalancesBase,
         Balancerv2Balances,
         AuraFinanceBalances,
+        UniswapV3Balances,
     ),
     ChainID.ARBITRUM_ONE: (
         Compoundv3Balances,
@@ -259,8 +263,15 @@ CHAIN_TO_BALANCE_PROTOCOLS = {
         Balancerv2Balances,
         CurveLendBalances,
         AuraFinanceBalances,
+        UniswapV3Balances,
     ),
-    ChainID.POLYGON_POS: (Compoundv3Balances, HopBalances, Balancerv2Balances, AuraFinanceBalances),  # noqa: E501
+    ChainID.POLYGON_POS: (
+        Compoundv3Balances,
+        HopBalances,
+        Balancerv2Balances,
+        AuraFinanceBalances,
+        UniswapV3Balances,
+    ),
     ChainID.GNOSIS: (
         HopBalances,
         Balancerv1Balances,
@@ -269,6 +280,7 @@ CHAIN_TO_BALANCE_PROTOCOLS = {
         GivethGnosisBalances,
     ),
     ChainID.SCROLL: (Compoundv3Balances,),
+    ChainID.BINANCE_SC: (UniswapV3Balances,),
 }
 
 
@@ -1137,6 +1149,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         Same potential exceptions as ethereum
         """
         self.query_evm_chain_balances(chain=SupportedBlockchain.BINANCE_SC)
+        self._query_protocols_with_balance(chain_id=ChainID.BINANCE_SC)
 
     @protect_with_lock()
     @cache_response_timewise()

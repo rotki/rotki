@@ -3714,18 +3714,11 @@ class RestAPI:
             ignore_cache: bool,
     ) -> dict[str, Any]:
         if ignore_cache is True:
-            uniswap_result = self._eth_module_query(
-                module_name='uniswap',
-                method='get_v3_balances',
-                query_specific_balances_before=None,
-                addresses=self.rotkehlchen.chains_aggregator.queried_addresses_for_module('uniswap'),
-            )
             self._eth_module_query(
                 module_name='nfts',
                 method='query_balances',
                 query_specific_balances_before=None,
                 addresses=self.rotkehlchen.chains_aggregator.queried_addresses_for_module('nfts'),
-                uniswap_nfts=uniswap_result['result'],
             )
 
         return self._eth_module_query(

@@ -77,6 +77,7 @@ from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.tests.utils.morpho import create_ethereum_morpho_vault_token
 from rotkehlchen.types import (
     EVM_CHAINS_WITH_TRANSACTIONS,
+    UNISWAPV3_PROTOCOL,
     VELODROME_POOL_PROTOCOL,
     YEARN_VAULTS_V3_PROTOCOL,
     CacheType,
@@ -1014,6 +1015,65 @@ def test_find_curve_lending_vault_price(
     """Test that we get the correct price for Curve lending vault tokens."""
     price = inquirer_defi.find_usd_price(asset=ethereum_vault_token)
     assert price.is_close(FVal(0.00102), max_diff=1e-5)
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+def test_find_uniswap_v3_position_price(database: 'DBHandler', inquirer_defi: 'Inquirer') -> None:
+    """Test that we get the correct price for Uniswap V3 position NFTs in all supported chains."""
+
+    def get_position_price(
+            token_address: ChecksumEvmAddress,
+            token_id: str,
+            chain_id: ChainID,
+    ) -> Price:
+        return inquirer_defi.find_usd_price(asset=get_or_create_evm_token(
+            userdb=database,
+            evm_address=token_address,
+            chain_id=chain_id,
+            token_kind=EvmTokenKind.ERC721,
+            symbol=f'UNI-V3-POS-{token_id}',
+            name=f'Uniswap V3 Positions #{token_id}',
+            collectible_id=token_id,
+            protocol=UNISWAPV3_PROTOCOL,
+        ))
+
+    assert get_position_price(
+        token_address=string_to_evm_address('0xC36442b4a4522E871399CD717aBDD847Ab11FE88'),
+        token_id='907907',
+        chain_id=ChainID.ETHEREUM,
+    ).is_close(FVal('3.99903'), max_diff='1e-5')
+
+    assert get_position_price(
+        token_address=string_to_evm_address('0xC36442b4a4522E871399CD717aBDD847Ab11FE88'),
+        token_id='4085191',
+        chain_id=ChainID.ARBITRUM_ONE,
+    ).is_close(FVal('26.70596'), max_diff='1e-5')
+
+    assert get_position_price(
+        token_address=string_to_evm_address('0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f1'),
+        token_id='1815027',
+        chain_id=ChainID.BASE,
+    ).is_close(FVal('93.54660'), max_diff='1e-5')
+
+    assert get_position_price(
+        token_address=string_to_evm_address('0xC36442b4a4522E871399CD717aBDD847Ab11FE88'),
+        token_id='2387839',
+        chain_id=ChainID.POLYGON_POS,
+    ).is_close(FVal('641.52847'), max_diff='1e-5')
+
+    assert get_position_price(
+        token_address=string_to_evm_address('0xC36442b4a4522E871399CD717aBDD847Ab11FE88'),
+        token_id='929877',
+        chain_id=ChainID.OPTIMISM,
+    ).is_close(FVal('1010.96583'), max_diff='1e-5')
+
+    assert get_position_price(
+        token_address=string_to_evm_address('0x7b8A01B39D58278b5DE7e48c8449c9f4F5170613'),
+        token_id='188693',
+        chain_id=ChainID.BINANCE_SC,
+    ).is_close(FVal('7222.51769'), max_diff='1e-5')
 
 
 @pytest.mark.vcr

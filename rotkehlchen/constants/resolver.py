@@ -19,6 +19,14 @@ def evm_address_to_identifier(
     return ident
 
 
+def identifier_to_collectible_id(identifier: str) -> str | None:
+    """Get erc721 collectible id from the asset identifier."""
+    if 'erc721' not in identifier or len(id_parts := identifier.split('/')) != 3:
+        return None
+
+    return id_parts[-1]
+
+
 def ethaddress_to_identifier(address: ChecksumEvmAddress) -> str:
     return evm_address_to_identifier(
         address=str(address),
