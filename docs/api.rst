@@ -13975,7 +13975,8 @@ Historical Balance Queries
           "to_timestamp": 1675209600
         }
 
-      :reqjsonarr string asset: The asset identifier to query balances for
+      :reqjsonarr string asset: The asset identifier to query balance amounts for. This is mutually exclusive with the collection id
+      :reqjson integer collection_id: Collection id to query balance amounts. This is mutually exclusive with the asset
       :reqjsonarr integer from_timestamp: The start timestamp of the query range
       :reqjsonarr integer to_timestamp: The end timestamp of the query range
 
