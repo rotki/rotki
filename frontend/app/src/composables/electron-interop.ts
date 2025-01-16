@@ -7,14 +7,14 @@ interface UseInteropReturn {
   readonly isPackaged: boolean;
   readonly appSession: boolean;
   logToFile: (message: string) => void;
-  navigate: (url: string) => void;
-  navigateToPremium: () => void;
+  navigate: (url: string) => Promise<void>;
+  navigateToPremium: () => Promise<void>;
   setupListeners: (listeners: Listeners) => void;
   openDirectory: (title: string) => Promise<string | undefined>;
-  openUrl: (url: string) => void;
-  openPath: (path: string) => void;
+  openUrl: (url: string) => Promise<void>;
+  openPath: (path: string) => Promise<void>;
   premiumUserLoggedIn: (premiumUser: boolean) => void;
-  closeApp: () => void;
+  closeApp: () => Promise<void>;
   metamaskImport: () => Promise<string[]>;
   restartBackend: (options: Partial<BackendOptions>) => Promise<boolean>;
   config: (defaults: boolean) => Promise<Partial<BackendOptions>>;
@@ -56,8 +56,8 @@ const interop: UseInteropReturn = {
     await window.interop?.clearPassword();
   },
 
-  closeApp: (): void => {
-    window.interop?.closeApp();
+  closeApp: async (): Promise<void> => {
+    await window.interop?.closeApp();
   },
 
   config: async (defaults: boolean): Promise<Partial<BackendOptions>> => {
@@ -114,24 +114,24 @@ const interop: UseInteropReturn = {
     return response.addresses;
   },
 
-  navigate: (url: string): void => {
-    window.interop?.openUrl(url);
+  navigate: async (url: string): Promise<void> => {
+    await window.interop?.openUrl(url);
   },
 
-  navigateToPremium: (): void => {
-    window.interop?.openUrl(externalLinks.premium);
+  navigateToPremium: async (): Promise<void> => {
+    await window.interop?.openUrl(externalLinks.premium);
   },
 
   openDirectory: async (title: string): Promise<string | undefined> =>
     (await window.interop?.openDirectory(title)) ?? undefined,
 
-  openPath: (path: string): void => {
-    window.interop?.openPath(path);
+  openPath: async (path: string): Promise<void> => {
+    await window.interop?.openPath(path);
   },
 
-  openUrl: (url: string): void => {
+  openUrl: async (url: string): Promise<void> => {
     if (electronApp) {
-      window.interop?.openUrl(url);
+      await window.interop?.openUrl(url);
     }
     else {
       window.open(url, '_blank');
@@ -157,7 +157,7 @@ const interop: UseInteropReturn = {
 
   storePassword: async (username: string, password: string): Promise<boolean | undefined> => {
     assert(window.interop);
-    return window.interop.storePassword(username, password);
+    return window.interop.storePassword({ password, username });
   },
 
   updateTray: (update: TrayUpdate): void => {

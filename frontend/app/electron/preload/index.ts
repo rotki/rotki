@@ -1,23 +1,15 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import { IpcCommands } from '@electron/ipc-commands';
 import { checkIfDevelopment } from '@shared/utils';
-import type { Interop, Listeners, TrayUpdate } from '@shared/ipc';
-
-async function ipcAction<T>(message: string, arg?: any): Promise<T> {
-  return new Promise((resolve) => {
-    ipcRenderer.once(message, (event, args) => {
-      resolve(args);
-    });
-    ipcRenderer.send(message, arg);
-  });
-}
+import type { ApiUrls, Credentials, Interop, Listeners, TrayUpdate } from '@shared/ipc';
 
 const isDevelopment = checkIfDevelopment();
 
 interface DebugSettings {
   persistStore: boolean;
 }
-let debugSettings: DebugSettings | undefined = isDevelopment ? ipcRenderer.sendSync(IpcCommands.GET_DEBUG) : undefined;
+
+let debugSettings: DebugSettings | undefined = isDevelopment ? ipcRenderer.sendSync(IpcCommands.SYNC_GET_DEBUG) : undefined;
 
 if (isDevelopment) {
   ipcRenderer.on(IpcCommands.DEBUG_SETTINGS, (event, args) => {
@@ -26,9 +18,9 @@ if (isDevelopment) {
 }
 
 contextBridge.exposeInMainWorld('interop', {
-  openUrl: (url: string) => ipcRenderer.send(IpcCommands.OPEN_URL, url),
-  closeApp: () => ipcRenderer.send(IpcCommands.CLOSE_APP),
-  openDirectory: async (title: string) => ipcAction(IpcCommands.OPEN_DIRECTORY, title),
+  openUrl: async (url: string) => ipcRenderer.invoke(IpcCommands.INVOKE_OPEN_URL, url),
+  closeApp: async () => ipcRenderer.invoke(IpcCommands.INVOKE_CLOSE_APP),
+  openDirectory: async (title: string) => ipcRenderer.invoke(IpcCommands.INVOKE_OPEN_DIRECTORY, title),
   premiumUserLoggedIn: (premiumUser: boolean) => ipcRenderer.send(IpcCommands.PREMIUM_LOGIN, premiumUser),
   setListeners(listeners: Listeners): void {
     ipcRenderer.on('failed', (event, error, code) => {
@@ -49,27 +41,27 @@ contextBridge.exposeInMainWorld('interop', {
     });
   },
   debugSettings: isDevelopment ? (): DebugSettings | undefined => debugSettings : undefined,
-  serverUrl: (): string => ipcRenderer.sendSync(IpcCommands.SERVER_URL),
-  metamaskImport: async () => ipcAction(IpcCommands.METAMASK_IMPORT),
-  restartBackend: async options => ipcAction(IpcCommands.RESTART_BACKEND, options),
-  checkForUpdates: async () => ipcAction(IpcCommands.CHECK_FOR_UPDATES),
+  apiUrls: (): ApiUrls => ipcRenderer.sendSync(IpcCommands.SYNC_API_URL),
+  metamaskImport: async () => ipcRenderer.invoke(IpcCommands.INVOKE_WALLET_IMPORT),
+  restartBackend: async options => ipcRenderer.invoke(IpcCommands.INVOKE_SUBPROCESS_START, options),
+  checkForUpdates: async () => ipcRenderer.invoke(IpcCommands.INVOKE_UPDATE_CHECK),
   downloadUpdate: async (progress) => {
     ipcRenderer.on(IpcCommands.DOWNLOAD_PROGRESS, (event, args) => {
       progress(args);
     });
-    return ipcAction(IpcCommands.DOWNLOAD_UPDATE);
+    return ipcRenderer.invoke(IpcCommands.INVOKE_DOWNLOAD_UPDATE);
   },
-  installUpdate: async () => ipcAction(IpcCommands.INSTALL_UPDATE),
-  setSelectedTheme: async selectedTheme => ipcAction(IpcCommands.THEME, selectedTheme),
-  version: async () => ipcAction(IpcCommands.VERSION),
-  isMac: async () => ipcAction(IpcCommands.IS_MAC),
-  openPath: (path: string) => ipcRenderer.send(IpcCommands.OPEN_PATH, path),
-  config: async (defaults: boolean) => ipcAction(IpcCommands.CONFIG, defaults),
+  installUpdate: async () => ipcRenderer.invoke(IpcCommands.INVOKE_INSTALL_UPDATE),
+  setSelectedTheme: async selectedTheme => ipcRenderer.invoke(IpcCommands.INVOKE_THEME, selectedTheme),
+  version: async () => ipcRenderer.invoke(IpcCommands.INVOKE_VERSION),
+  isMac: async () => ipcRenderer.invoke(IpcCommands.INVOKE_IS_MAC),
+  openPath: async (path: string) => ipcRenderer.invoke(IpcCommands.INVOKE_OPEN_PATH, path),
+  config: async (defaults: boolean) => ipcRenderer.invoke(IpcCommands.INVOKE_CONFIG, defaults),
   updateTray: (trayUpdate: TrayUpdate) => ipcRenderer.send(IpcCommands.TRAY_UPDATE, trayUpdate),
-  logToFile(message: string) {
+  logToFile: (message: string) => {
     ipcRenderer.send(IpcCommands.LOG_TO_FILE, message);
   },
-  storePassword: async (username: string, password: string) => ipcAction(IpcCommands.STORE_PASSWORD, { username, password }),
-  getPassword: async (username: string) => ipcAction(IpcCommands.GET_PASSWORD, username),
-  clearPassword: async () => ipcAction(IpcCommands.CLEAR_PASSWORD),
-} as Interop);
+  storePassword: async (credentials: Credentials) => ipcRenderer.invoke(IpcCommands.INVOKE_STORE_PASSWORD, credentials),
+  getPassword: async (username: string) => ipcRenderer.invoke(IpcCommands.INVOKE_GET_PASSWORD, username),
+  clearPassword: async () => ipcRenderer.invoke(IpcCommands.INVOKE_CLEAR_PASSWORD),
+} satisfies Interop);

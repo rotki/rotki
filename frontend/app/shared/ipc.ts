@@ -10,6 +10,8 @@ export const BackendCode = {
 
 export type BackendCode = typeof BackendCode[keyof typeof BackendCode];
 
+export interface ApiUrls { coreApiUrl: string; colibriApiUrl: string }
+
 interface MetamaskImportError {
   readonly error: string;
 }
@@ -18,7 +20,12 @@ interface MetamaskImportSupport {
   readonly addresses: string[];
 }
 
-type MetamaskImport = MetamaskImportError | MetamaskImportSupport;
+export type MetamaskImport = MetamaskImportError | MetamaskImportSupport;
+
+export interface Credentials {
+  readonly username: string;
+  readonly password: string;
+}
 
 export interface SystemVersion {
   readonly electron: string;
@@ -64,15 +71,14 @@ export interface Listeners {
 }
 
 export interface Interop {
-  openUrl: (url: string) => void;
-  openPath: (path: string) => void;
-  closeApp: () => void;
+  openUrl: (url: string) => Promise<void>;
+  openPath: (path: string) => Promise<void>;
+  closeApp: () => Promise<void>;
   setListeners: (listeners: Listeners) => void;
   openDirectory: (title: string) => Promise<undefined | string>;
   premiumUserLoggedIn: (premiumUser: boolean) => void;
-  monitorDebugSettings: () => void;
   debugSettings?: () => DebugSettings | undefined;
-  serverUrl: () => string;
+  apiUrls: () => ApiUrls;
   metamaskImport: () => Promise<MetamaskImport>;
   checkForUpdates: () => Promise<boolean>;
   downloadUpdate: (progress: (percentage: number) => void) => Promise<boolean>;
@@ -84,7 +90,7 @@ export interface Interop {
   config: (defaults: boolean) => Promise<Partial<BackendOptions>>;
   updateTray: (trayUpdate: TrayUpdate) => void;
   logToFile: (message: string) => void;
-  storePassword: (username: string, password: string) => Promise<boolean>;
+  storePassword: (credentials: Credentials) => Promise<boolean>;
   getPassword: (username: string) => Promise<string>;
   clearPassword: () => Promise<void>;
 }

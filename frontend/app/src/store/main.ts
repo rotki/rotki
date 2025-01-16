@@ -48,9 +48,9 @@ export const useMainStore = defineStore('main', () => {
     const { version: appVersion } = await info(true);
     if (appVersion) {
       set(version, {
-        downloadUrl: appVersion.downloadUrl || '',
-        latestVersion: appVersion.latestVersion || '',
-        version: appVersion.ourVersion || '',
+        downloadUrl: appVersion.downloadUrl ?? '',
+        latestVersion: appVersion.latestVersion ?? '',
+        version: appVersion.ourVersion ?? '',
       });
     }
   };
@@ -76,12 +76,12 @@ export const useMainStore = defineStore('main', () => {
       clearInterval(intervalId);
 
     const updateApi = (payload?: Nullable<string>): void => {
-      const interopBackendUrl = window.interop?.serverUrl();
+      const apiUrls = window.interop?.apiUrls();
       let backendUrl = api.defaultServerUrl;
       if (payload)
         backendUrl = payload;
-      else if (interopBackendUrl)
-        backendUrl = interopBackendUrl;
+      else if (apiUrls)
+        backendUrl = apiUrls.coreApiUrl;
 
       api.setup(backendUrl);
     };

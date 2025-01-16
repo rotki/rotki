@@ -19,9 +19,9 @@ export function useLinks(url?: MaybeRef<string | undefined>): UseLinksReturn {
 
   const onLinkClick = !isPackaged
     ? (): void => {}
-    : (): void => {
-        openUrl(get(targetUrl));
-      };
+    : async (): Promise<void> => {
+      await openUrl(get(targetUrl));
+    };
 
   const hasLink = computed<boolean>(() => get(url)?.startsWith('http') ?? false);
 

@@ -109,11 +109,11 @@ export class TrayManager {
     this.tray?.setContextMenu(this.buildMenu(win.isVisible()));
   }
 
-  private hidden = () => {
+  private readonly hidden = () => {
     this.tray?.setContextMenu(this.buildMenu(false, this.tooltip));
   };
 
-  private shown = () => {
+  private readonly shown = () => {
     this.tray?.setContextMenu(this.buildMenu(true, this.tooltip));
   };
 
