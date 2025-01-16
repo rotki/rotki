@@ -35,8 +35,7 @@ const navTarget = computed<RouteLocationRaw>(() => {
 
   const target = getChainAccountType(balanceChain) ?? 'evm';
   return {
-    hash: '#accounts-section',
-    path: `${Routes.BALANCES_BLOCKCHAIN}/${target}`,
+    path: `${Routes.ACCOUNTS}/${target}`,
   };
 });
 
