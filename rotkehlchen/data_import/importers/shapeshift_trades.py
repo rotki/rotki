@@ -71,7 +71,7 @@ Trade from ShapeShift with ShapeShift Deposit Address:
         if sold_amount == ZERO:
             raise SkippedCSVEntry('Trade has sold_amount of zero.')
         if in_addr == '' or out_addr == '':
-            raise SkippedCSVEntry('Trade was preformed on a DEX.')
+            raise SkippedCSVEntry('Trade was performed on a DEX.')
         # Assuming that before launch of multi collateral dai everything was SAI.
         # Converting DAI to SAI in buy_asset and sell_asset.
         if buy_asset == A_DAI and timestamp <= SAI_TIMESTAMP:

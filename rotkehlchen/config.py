@@ -40,7 +40,7 @@ def old_data_directory() -> Path:
 def default_data_directory() -> Path:
     """Find the default data directory for rotki for each different OS
 
-    An interesting lirary that finds the data directories per OS is this:
+    An interesting library that finds the data directories per OS is this:
     https://github.com/ActiveState/appdirs/blob/master/appdirs.py
     """
     data_dir_name = 'develop_data'
