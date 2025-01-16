@@ -1,10 +1,17 @@
-import { spawn } from 'node:child_process';
+import { type ChildProcess, execSync, spawn } from 'node:child_process';
 import process, { exit } from 'node:process';
 import fs from 'node:fs';
 import { platform } from 'node:os';
 import path from 'node:path';
 import { config } from 'dotenv';
 import consola from 'consola';
+import { assert } from '@rotki/common';
+import type { Buffer } from 'node:buffer';
+
+interface OutputListener {
+  out: (buffer: Buffer) => void;
+  err: (buffer: Buffer) => void;
+}
 
 const PROXY = 'proxy';
 const COMMON = '@rotki/common';
@@ -14,9 +21,21 @@ const BACKEND = 'backend';
 const scriptArgs = process.argv;
 const noElectron = scriptArgs.includes('--web');
 
-function getArg(flag) {
+function getArg(flag: string): string | undefined {
   if (scriptArgs.includes(flag) && scriptArgs.length > scriptArgs.indexOf(flag) + 1)
     return scriptArgs[scriptArgs.indexOf(flag) + 1];
+}
+
+function checkForCargo(): boolean {
+  try {
+    const cargoVersion = execSync('cargo --version', { encoding: 'utf-8' });
+    consola.info(`detected cargo: ${cargoVersion}`);
+    return /cargo\s\d+\.\d+\.\d+/.test(cargoVersion);
+  }
+  catch {
+    consola.error('Cargo is not installed');
+    return false;
+  }
 }
 
 const profilingArgs = getArg('--profiling-args');
@@ -29,18 +48,28 @@ if (profilingArgs)
   process.env.ROTKI_BACKEND_PROFILING_ARGS = profilingArgs;
 
 const colors = {
-  magenta: msg => `\u001B[35m${msg}\u001B[0m`,
-  green: msg => `\u001B[32m${msg}\u001B[0m`,
-  yellow: msg => `\u001B[33m${msg}\u001B[0m`,
-  blue: msg => `\u001B[34m${msg}\u001B[0m`,
-  cyan: msg => `\u001B[36m${msg}\u001B[0m`,
-};
+  magenta: (msg: string) => `\u001B[35m${msg}\u001B[0m`,
+  green: (msg: string) => `\u001B[32m${msg}\u001B[0m`,
+  yellow: (msg: string) => `\u001B[33m${msg}\u001B[0m`,
+  blue: (msg: string) => `\u001B[34m${msg}\u001B[0m`,
+  cyan: (msg: string) => `\u001B[36m${msg}\u001B[0m`,
+} as const;
 
 const logger = consola.withTag(colors.cyan('dev'));
 
 if (!process.env.VIRTUAL_ENV) {
   logger.info('No python virtual environment detected');
   process.exit(1);
+}
+
+const cargoInstalled = checkForCargo();
+if (cargoInstalled) {
+  consola.info('Cargo is installed building colibri binary');
+  execSync('cargo build', {
+    encoding: 'utf-8',
+    cwd: path.join('..', 'colibri'),
+    stdio: 'inherit',
+  });
 }
 
 let startDevProxy = false;
@@ -50,17 +79,23 @@ if (devEnvExists) {
   startDevProxy = !!process.env.VITE_BACKEND_URL;
 }
 
-const pids = {};
-const listeners = {};
-const subprocesses = [];
+const pids: Record<number, string> = {};
+const listeners: Record<number, OutputListener> = {};
+const subprocesses: ChildProcess[] = [];
 
-function startProcess(cmd, tag, name, args, opts = undefined) {
+function startProcess(
+  cmd: string,
+  tag: string,
+  name: string,
+  args: string[] = [],
+  opts?: Record<string, any>,
+): ChildProcess {
   const logger = consola.withTag(tag);
-  const createListeners = () => ({
-    out: (buffer) => {
+  const createListeners = (): OutputListener => ({
+    out: (buffer: Buffer): void => {
       logger.log(buffer.toString().replace(/\n$/, ''));
     },
-    err: (buffer) => {
+    err: (buffer: Buffer): void => {
       logger.log(buffer.toString().replace(/\n$/, ''));
     },
   });
@@ -70,18 +105,20 @@ function startProcess(cmd, tag, name, args, opts = undefined) {
     shell: true,
     stdio: [process.stdin],
     env: {
-      ...{ FORCE_COLOR: 1 },
+      ...{ FORCE_COLOR: '1' },
       ...process.env,
     },
   });
 
   subprocesses.push(child);
 
-  const stdListeners = createListeners(tag);
-  child.stdout.on('data', stdListeners.out);
-  child.stderr.on('data', stdListeners.err);
-  pids[child.pid] = name;
-  listeners[child.pid] = stdListeners;
+  const stdListeners = createListeners();
+  child.stdout?.on('data', stdListeners.out);
+  child.stderr?.on('data', stdListeners.err);
+  const pid = child.pid;
+  assert(pid !== undefined, 'pid is undefined');
+  pids[pid] = name;
+  listeners[pid] = stdListeners;
   return child;
 }
 
@@ -92,13 +129,18 @@ function terminateSubprocesses() {
     if (subprocess.killed)
       continue;
 
-    const name = pids[subprocess.pid] ?? '';
-    logger.info(`terminating process: ${name} (${subprocess.pid})`);
-    const ls = listeners[subprocess.pid];
+    const pid = subprocess.pid;
+    if (pid === undefined) {
+      continue;
+    }
+
+    const name = pids[pid] ?? '';
+    logger.info(`terminating process: ${name} (${pid})`);
+    const ls = listeners[pid];
     if (ls) {
-      subprocess.stdout.off('data', ls.out);
-      subprocess.stderr.off('data', ls.err);
-      delete listeners[subprocess.pid];
+      subprocess.stdout?.off('data', ls.out);
+      subprocess.stderr?.off('data', ls.err);
+      delete listeners[pid];
     }
 
     subprocess.kill();
@@ -139,7 +181,7 @@ if (noElectron) {
     `${path.join(logDir, 'backend.log')}`,
   ];
 
-  startProcess(profilingCmd || 'python', colors.yellow(BACKEND), BACKEND, args, {
+  startProcess(profilingCmd ?? 'python', colors.yellow(BACKEND), BACKEND, args, {
     cwd: path.join('..'),
   });
 }
