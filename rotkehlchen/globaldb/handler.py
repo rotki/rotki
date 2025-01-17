@@ -1224,7 +1224,7 @@ class GlobalDBHandler:
             query_data: list[tuple['Asset', 'Asset', Timestamp]],
             max_seconds_distance: int,
             source: HistoricalPriceOracle | None = None,
-    ) -> list[Optional['HistoricalPrice']]:
+    ) -> list[HistoricalPrice | None]:
         """Given a list of from/to/timestamp data to query returns all values
         that could be found in the DB and None for those that could not be found.
         """
@@ -1243,11 +1243,22 @@ class GlobalDBHandler:
             for from_asset, to_asset, timestamp in query_data:
                 querylist.append((timestamp, from_asset.identifier, to_asset.identifier, timestamp - max_seconds_distance, timestamp + max_seconds_distance))  # noqa: E501
 
-        prices_results = []
+        prices_results: list[HistoricalPrice | None] = []
         with GlobalDBHandler().conn.read_ctx() as cursor:
-            for entry in querylist:
-                result = cursor.execute(querystr, entry).fetchone()  # below last index of the result tuple is ignored in deserialize  # noqa: E501
-                prices_results.append(None if result[0] is None else HistoricalPrice.deserialize_from_db(result))  # noqa: E501
+            for query_entry, (_, _, queried_timestamp) in zip(querylist, query_data, strict=True):
+                result = cursor.execute(querystr, query_entry).fetchone()  # below last index of the result tuple is ignored in deserialize  # noqa: E501
+                if result[0] is None:
+                    prices_results.append(None)
+                    continue
+
+                db_price = HistoricalPrice.deserialize_from_db(result)
+                prices_results.append(HistoricalPrice(
+                    from_asset=db_price.from_asset,
+                    to_asset=db_price.to_asset,
+                    source=db_price.source,
+                    timestamp=queried_timestamp,  # Use original queried timestamp
+                    price=db_price.price,
+                ))
 
         return prices_results
 

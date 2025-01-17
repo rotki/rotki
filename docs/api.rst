@@ -1474,7 +1474,8 @@ Query the historical price of assets
 
 .. http:post:: /api/(version)/assets/prices/historical
 
-   Querying this endpoint with a list of lists of asset and timestamp, and a target asset will return an object with the price of the assets at the given timestamp in the target asset currency. Providing an empty list or no target asset is an error.
+   Querying this endpoint with a list of lists of asset and timestamp, and a target asset will return an object with the price of the assets at the given timestamp in the target asset currency. Providing an empty list or no target asset is an error. Timestamps for which no price is found will be omitted from the response.
+   If ``only_cache_period`` is provided, the endpoint will only return prices found in cache within the specified time period around each timestamp. This is useful for scenarios requiring immediate responses, such as graph rendering.
 
    .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``.
@@ -1494,6 +1495,7 @@ Query the historical price of assets
 
    :reqjson list assets_timestamp: A list of lists of asset and timestamp
    :reqjson string target_asset: The target asset against which to return the price of each asset in the list
+   :reqjson integer only_cache_period: (Optional) Time period in seconds around each timestamp to search for cached prices. If omitted, falls back to querying historical prices
 
    **Example Response**:
 

@@ -2576,6 +2576,10 @@ class HistoricalAssetsPriceSchema(AsyncQueryArgumentSchema):
         required=True,
         validate=webargs.validate.Length(min=1),
     )
+    only_cache_period = fields.Integer(
+        load_default=None,
+        validate=webargs.validate.Range(min=1, error='Cache period must be a positive integer'),
+    )
     target_asset = AssetField(expected_type=Asset, required=True)
 
 
