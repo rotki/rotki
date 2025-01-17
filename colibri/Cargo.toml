@@ -22,4 +22,4 @@ dirs = "6.0.0"
 # for CLI args parsing
 clap = { version = "4.5.26", features = ["string"] }
 # for globalDB and other sqlite operations
-rusqlite = "0.32.1"
+rusqlite = { version = "0.32.1", features = ["bundled"] }
