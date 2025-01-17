@@ -243,7 +243,7 @@ def test_get_historical_assets_in_collection_amounts_over_time(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.NONE,
             location=Location.BLOCKCHAIN,
-            asset=Asset('eip155:1/erc20:0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599'),
+            asset=Asset('eip155:1/erc20:0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599'),  # WBTC
             balance=Balance(amount=FVal('1.6')),  # spending more than remaining balance  # noqa: E501
             notes='BTC first overspend attempt',
         ),
@@ -254,7 +254,7 @@ def test_get_historical_assets_in_collection_amounts_over_time(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.NONE,
             location=Location.BLOCKCHAIN,
-            asset=Asset('eip155:100/erc20:0x8e5bBbb09Ed1ebdE8674Cda39A0c169401db4252'),
+            asset=Asset('eip155:100/erc20:0x8e5bBbb09Ed1ebdE8674Cda39A0c169401db4252'),  # WBTC
             balance=Balance(amount=FVal('0.7')),
             notes='BTC second overspend attempt',
         ),

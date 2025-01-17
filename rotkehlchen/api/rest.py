@@ -3448,9 +3448,9 @@ class RestAPI:
             except (RemoteError, NoPriceForGivenTimestamp) as e:
                 log.warning(
                     f'Could not query the historical {target_asset.identifier} price for '
-                    f'{asset.identifier} at time {timestamp} due to: {e!s}. Using zero price',
+                    f'{asset.identifier} at time {timestamp} due to: {e!s}. Skipping',
                 )
-                price = ZERO_PRICE
+                continue
 
             assets_price[asset][timestamp] = price
 
@@ -3465,7 +3465,22 @@ class RestAPI:
             self,
             assets_timestamp: list[tuple[Asset, Timestamp]],
             target_asset: Asset,
+            only_cache_period: int | None = None,
     ) -> dict[str, Any]:
+        if only_cache_period is not None:
+            result: dict[str, Any] = {
+                'assets': defaultdict(lambda: defaultdict(lambda: ZERO_PRICE)),
+                'target_asset': target_asset.identifier,
+            }
+            for price_result in GlobalDBHandler.get_historical_prices(
+                query_data=[(entry[0], target_asset, entry[1]) for entry in assets_timestamp],
+                max_seconds_distance=only_cache_period,
+            ):
+                if price_result is not None:
+                    result['assets'][price_result.from_asset.identifier][price_result.timestamp] = str(price_result.price)  # noqa: E501
+
+            return _wrap_in_ok_result(result)
+
         return self._get_historical_assets_price(
             assets_timestamp=assets_timestamp,
             target_asset=target_asset,

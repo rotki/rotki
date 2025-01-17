@@ -2536,8 +2536,10 @@ class HistoricalAssetsPriceResource(BaseMethodView):
             assets_timestamp: list[tuple[Asset, Timestamp]],
             target_asset: Asset,
             async_query: bool,
+            only_cache_period: int | None = None,
     ) -> Response:
         return self.rest_api.get_historical_assets_price(
+            only_cache_period=only_cache_period,
             assets_timestamp=assets_timestamp,
             target_asset=target_asset,
             async_query=async_query,
