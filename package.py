@@ -717,7 +717,7 @@ class BackendBuilder:
 
         backend_binary = colibri_directory / 'release' / binary_name
 
-        ret_code = subprocess.call(f'{backend_binary}', shell=True)
+        ret_code = subprocess.call(f'{backend_binary} --version', shell=True)
 
         if ret_code != 0:
             logger.error('colibri binary check failed')

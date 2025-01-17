@@ -49,6 +49,7 @@ pub fn parse_args() -> Args {
     let is_production = true;
     let default_dir = default_data_dir(is_production).unwrap();
     let matches = Command::new("colibri")
+        .version(env!("CARGO_PKG_VERSION"))
         .arg(
             Arg::new("data-directory")
                 .long("data-directory")
