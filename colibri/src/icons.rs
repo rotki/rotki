@@ -3,7 +3,10 @@ use axum::http::StatusCode;
 use log::{debug, error};
 use reqwest::Client;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 use std::time::Duration;
+
+use crate::coingecko;
 
 pub enum FileTypeError {
     UnsupportedFileType,
@@ -128,6 +131,7 @@ async fn find_icon(path: &Path) -> Option<(Bytes, String)> {
 /// Gets the given icon from the user's system if it's already
 /// downloaded or asks for it from the icon sources. Returns it if found
 pub async fn get_or_query_icon(
+    coingecko: Arc<coingecko::Coingecko>,
     data_dir: PathBuf,
     asset_id: &str,
     match_header: Option<String>,
@@ -157,16 +161,25 @@ pub async fn get_or_query_icon(
         }
         _ => {
             // we have to query it
-            let (chain_id, address) = match extract_chain_id_and_address(asset_id) {
-                Some((chain_id, address)) => (chain_id, address),
-                _ => return (StatusCode::NOT_FOUND, None, None),
+            let (icon_bytes, extension) = match extract_chain_id_and_address(asset_id) {
+                Some((chain_id, address)) => {
+                    match query_token_icon_and_extension(chain_id, &address).await {
+                        Some((bytes, ext)) => (bytes, ext),
+                        None => match coingecko.query_asset_image(asset_id).await {
+                            Some(bytes) => (bytes, "png"),
+                            None => return (StatusCode::NOT_FOUND, None, None),
+                        },
+                    }
+                }
+                None => {
+                    // If we can't extract chain_id and address, try coingecko directly
+                    match coingecko.query_asset_image(asset_id).await {
+                        Some(bytes) => (bytes, "png"),
+                        None => return (StatusCode::NOT_FOUND, None, None),
+                    }
+                }
             };
 
-            let (icon_bytes, extension) =
-                match query_token_icon_and_extension(chain_id, &address).await {
-                    Some((icon_bytes, extension)) => (icon_bytes, extension),
-                    _ => return (StatusCode::NOT_FOUND, None, None),
-                };
             let headers = match get_headers(extension) {
                 Err(FileTypeError::UnsupportedFileType) => {
                     return (StatusCode::NOT_FOUND, None, None);

@@ -80,7 +80,6 @@ pub fn parse_args() -> Args {
             .unwrap()
             .clone(),
         logfile_path: matches.get_one::<PathBuf>("logfile-path").unwrap().clone(),
-        // port: matches.get_one::<u16>("port").unwrap().clone(),
         port: *matches.get_one::<u16>("port").unwrap(),
     }
 }
