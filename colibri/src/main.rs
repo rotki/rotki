@@ -1,13 +1,16 @@
 use axum::{routing::post, Router};
-use log::{info, LevelFilter};
+use log::{error, info, LevelFilter};
 use simplelog::{CombinedLogger, Config, TermLogger, TerminalMode, WriteLogger};
 use std::fs::File;
 use std::net::SocketAddr;
 use std::path::PathBuf;
+use std::sync::Arc;
 use tokio::net::TcpListener;
 
 mod api;
 mod args;
+mod coingecko;
+mod globaldb;
 mod icons;
 
 fn setup_logger(
@@ -39,8 +42,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     setup_logger(args.logfile_path, false, LevelFilter::Debug)?;
     info!("Starting colibri");
 
+    let globaldb =
+        match globaldb::GlobalDB::new(args.data_directory.join("global").join("global.db")).await {
+            Err(e) => {
+                error!("Unable to open globaldb due to {}", e);
+                std::process::exit(1);
+            }
+            Ok(globaldb) => Arc::new(globaldb),
+        };
+    let coingecko = Arc::new(coingecko::Coingecko::new(globaldb));
     let state = api::AppState {
         data_dir: args.data_directory,
+        coingecko,
     };
     let app = Router::new()
         .route("/icon", post(api::get_icon))

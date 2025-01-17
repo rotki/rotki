@@ -8,14 +8,18 @@ edition = "2021"
 log = "0.4.22"
 simplelog = "0.12.2"
 # For the asynchronous Rest API
-reqwest = "0.12.2"
-tokio = { version = "1.43.0", features=["rt-multi-thread", "fs"]}
+reqwest = { version = "0.12.2", features = ["json"]}
+tokio = { version = "1.43.0", features = ["rt-multi-thread", "fs"]}
 axum = "0.7"
 # for serialization of structs via the API
 serde = { version = "1.0.217", features = ["derive"] }
+# For reading / manipulating json data from a string response
+serde_json = "1.0.135"
 # For md5 checksum in icon cache matching
 md5 = "0.7.0"
 # To retrieve OS-specific directories
 dirs = "6.0.0"
 # for CLI args parsing
 clap = { version = "4.5.26", features = ["string"] }
+# for globalDB and other sqlite operations
+rusqlite = "0.32.1"
