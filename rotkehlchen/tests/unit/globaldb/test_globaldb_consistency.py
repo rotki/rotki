@@ -122,7 +122,7 @@ def test_asset_updates_consistency_with_packaged_db(
         # while upgrading the globaldb schema, it becomes 31 meaning we have all
         # asset updates before schema-breaking changes
         assert old_db_cursor.execute("SELECT value FROM settings WHERE name='assets_version'").fetchone()[0] == '32'  # noqa: E501
-        assert packaged_db_cursor.execute("SELECT value FROM settings WHERE name='assets_version'").fetchone()[0] == '33'  # noqa: E501
+        assert packaged_db_cursor.execute("SELECT value FROM settings WHERE name='assets_version'").fetchone()[0] == '34'  # noqa: E501
 
     assets_updater = AssetsUpdater(
         globaldb=globaldb,
