@@ -229,6 +229,21 @@ def hexstr_to_int(value: str) -> int:
     return int_value
 
 
+def bytes_to_hexstr(value: bytes) -> str:
+    """Turns bytes into a hexstr
+
+    May raise:
+    - DeserializationError if it can't convert a value to hextstrt or if an unexpected
+    type is given.
+    """
+    try:
+        hexstr = value.hex()
+    except (ConversionError, AttributeError) as e:
+        raise DeserializationError(f'Could not turn {value!r} to hex') from e
+
+    return '0x' + hexstr
+
+
 def bytes_to_address(value: bytes) -> ChecksumEvmAddress:
     """Turns 32 bytes/hexbytes into a checksummed EVM address
 
@@ -236,11 +251,7 @@ def bytes_to_address(value: bytes) -> ChecksumEvmAddress:
     - DeserializationError if it can't convert a value to an int or if an unexpected
     type is given.
     """
-    try:
-        hexstr = value.hex()
-    except ConversionError as e:
-        raise DeserializationError(f'Could not turn {value!r} to an ethereum address') from e
-    return bytes32hexstr_to_address('0x' + hexstr)
+    return bytes32hexstr_to_address(bytes_to_hexstr(value))
 
 
 def address_to_bytes32_hexstr(address: ChecksumEvmAddress) -> str:

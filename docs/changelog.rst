@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`-` rotki will now correctly decode gitcoin profile creation and updating across supported EVM chains. Also some more gitcoin rounds are added.
 * :feature:`8780` rotki will now correctly decode Spark transactions in all supported EVM chains.
 * :feature:`-` In the blockchain account addition form, the "Add to all supported EVM chains" checkbox will be removed and integrated into the chain selector itself.
 * :feature:`-` The blockchain accounts and balances section will now be separated for better focus and accessibility.
