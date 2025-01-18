@@ -14,6 +14,10 @@ from rotkehlchen.chain.evm.decoding.gitcoinv2.constants import (
     METADATA_UPDATED,
     NEW_PROJECT_APPLICATION_2ARGS,
     NEW_PROJECT_APPLICATION_3ARGS,
+    PROFILE_CREATED,
+    PROFILE_CREATED_ABI,
+    PROFILE_METADATA_UPDATED,
+    PROFILE_REGISTRY,
     PROJECT_CREATED,
     REGISTERED,
     REGISTERED_ABI,
@@ -36,7 +40,7 @@ from rotkehlchen.history.events.structures.types import HistoryEventSubType, His
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.utils.data_structures import LRUCacheWithRemove
-from rotkehlchen.utils.misc import bytes_to_address
+from rotkehlchen.utils.misc import bytes_to_address, bytes_to_hexstr
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import CryptoAsset
@@ -399,6 +403,63 @@ class GitcoinV2CommonDecoder(DecoderInterface, ABC):
 
         return DEFAULT_DECODING_OUTPUT
 
+    def _decode_profile_created(self, context: DecoderContext) -> DecodingOutput:
+        try:
+            topic_data, decoded_data = decode_event_data_abi(context.tx_log, PROFILE_CREATED_ABI)
+            profile_id = bytes_to_hexstr(topic_data[0])
+        except DeserializationError as e:
+            log.error(
+                f'Failed to deserialize gitcoin profile created event at '
+                f'{context.transaction.tx_hash.hex()} due to {e}',
+            )
+            return DEFAULT_DECODING_OUTPUT
+
+        name = decoded_data[1]
+        owner = decoded_data[3]
+        event = self.base.make_event_from_transaction(
+            transaction=context.transaction,
+            tx_log=context.tx_log,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.CREATE,
+            asset=A_ETH,
+            balance=Balance(),
+            location_label=context.transaction.from_address,
+            notes=f'Create gitcoin profile for {name} with id {profile_id} and owner {owner}',
+            counterparty=CPT_GITCOIN,
+            address=context.tx_log.address,
+            extra_data={
+                'name': name,
+                'profile_id': profile_id,
+                'owner': owner,
+                'anchor': decoded_data[4],
+            },
+        )
+        return DecodingOutput(event=event)
+
+    def _decode_profile_metadata_updated(self, context: DecoderContext) -> DecodingOutput:
+        profile_id = bytes_to_hexstr(context.tx_log.topics[1])
+        event = self.base.make_event_from_transaction(
+            transaction=context.transaction,
+            tx_log=context.tx_log,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.UPDATE,
+            asset=A_ETH,
+            balance=Balance(),
+            location_label=context.transaction.from_address,
+            notes=f'Update gitcoin profile {profile_id} metadata',
+            counterparty=CPT_GITCOIN,
+            address=context.tx_log.address,
+        )
+        return DecodingOutput(event=event)
+
+    def _decode_profile_registry(self, context: DecoderContext) -> DecodingOutput:
+        if context.tx_log.topics[0] == PROFILE_CREATED:
+            return self._decode_profile_created(context)
+        elif context.tx_log.topics[0] == PROFILE_METADATA_UPDATED:
+            return self._decode_profile_metadata_updated(context)
+
+        return DEFAULT_DECODING_OUTPUT
+
     def _decode_round_action(self, context: DecoderContext) -> DecodingOutput:
         if context.tx_log.topics[0] not in (NEW_PROJECT_APPLICATION_2ARGS, NEW_PROJECT_APPLICATION_3ARGS):  # noqa: E501
             return DEFAULT_DECODING_OUTPUT
@@ -448,7 +509,8 @@ class GitcoinV2CommonDecoder(DecoderInterface, ABC):
     # -- DecoderInterface methods
 
     def addresses_to_decoders(self) -> dict['ChecksumEvmAddress', tuple[Any, ...]]:
-        mappings: dict[ChecksumEvmAddress, tuple[Any, ...]] = dict.fromkeys(self.voting_impl_addresses, (self._decode_vote_action,))  # noqa: E501
+        mappings: dict[ChecksumEvmAddress, tuple[Any, ...]] = {PROFILE_REGISTRY: (self._decode_profile_registry,)}  # noqa: E501
+        mappings |= dict.fromkeys(self.voting_impl_addresses, (self._decode_vote_action,))
         mappings |= dict.fromkeys(self.round_impl_addresses, (self._decode_round_action,))
         mappings |= dict.fromkeys(self.payout_strategy_addresses, (self._decode_payout_action,))
         if self.voting_merkle_distributor_addresses:

@@ -3,6 +3,7 @@ import pytest
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS, CPT_GITCOIN
+from rotkehlchen.chain.evm.decoding.gitcoinv2.constants import PROFILE_REGISTRY
 from rotkehlchen.constants.assets import A_ARB, A_DAI, A_ETH, A_POLYGON_POS_MATIC
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
@@ -631,5 +632,81 @@ def test_registered(arbitrum_one_inquirer, arbitrum_one_accounts):
         notes=f'Register for a gitcoin round with recipient id {recipient_id}',
         counterparty=CPT_GITCOIN,
         extra_data={'recipient_id': recipient_id},
+    )]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('optimism_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
+def test_create_profile(optimism_inquirer, optimism_accounts):
+    tx_hash = deserialize_evm_tx_hash('0x21495907ebaf438445534f5460e75f01635e6fb99f0ab4d05e9e4c7906606329')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
+    user_address, timestamp, gas_str, profile_id = optimism_accounts[0], TimestampMS(1737131721000), '0.000004819811310411', '0xca5797a71ca6f849ba9c366972d47c01061949d5cdf7fa61e20a229e035d877b'  # noqa: E501
+    expected_events = [EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=0,
+        timestamp=timestamp,
+        location=Location.OPTIMISM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        balance=Balance(amount=FVal(gas_str)),
+        location_label=user_address,
+        notes=f'Burn {gas_str} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=28,
+        timestamp=timestamp,
+        location=Location.OPTIMISM,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.CREATE,
+        asset=A_ETH,
+        balance=Balance(),
+        location_label=user_address,
+        notes=f'Create gitcoin profile for rotki with id {profile_id} and owner {user_address}',
+        counterparty=CPT_GITCOIN,
+        address=PROFILE_REGISTRY,
+        extra_data={
+            'name': 'rotki',
+            'profile_id': profile_id,
+            'owner': user_address,
+            'anchor': '0x73B00B94762f800A244B6a84617Adbf07b9520a8',
+        },
+    )]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('optimism_accounts', [['0xB8Fbd9A43cc0CeB3d9ddd58b752979a77e6f0c1D']])
+def test_update_profile_metadata(optimism_inquirer, optimism_accounts):
+    tx_hash = deserialize_evm_tx_hash('0xb5a8549899c7e5174c69701f7eb7b89ad491bed9954825e19d58b0ce0c5b29ab')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
+    user_address, timestamp, gas_str, profile_id = optimism_accounts[0], TimestampMS(1737130603000), '0.000010433913479874', '0x233b3b3a4e2e0f114c2fb5412e810d9fcab0138b4b3087f268628a62c5b3e5c0'  # noqa: E501
+    expected_events = [EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=0,
+        timestamp=timestamp,
+        location=Location.OPTIMISM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        balance=Balance(amount=FVal(gas_str)),
+        location_label=user_address,
+        notes=f'Burn {gas_str} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=6,
+        timestamp=timestamp,
+        location=Location.OPTIMISM,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.UPDATE,
+        asset=A_ETH,
+        balance=Balance(),
+        location_label=user_address,
+        notes=f'Update gitcoin profile {profile_id} metadata',
+        counterparty=CPT_GITCOIN,
+        address=PROFILE_REGISTRY,
     )]
     assert events == expected_events

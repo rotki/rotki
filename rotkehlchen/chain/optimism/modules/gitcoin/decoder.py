@@ -46,4 +46,7 @@ class GitcoinDecoder(GitcoinV2CommonDecoder):
                 string_to_evm_address('0x1444D2837BDFfc409B66bD6BEeb38784e82F57ff'),
                 string_to_evm_address('0x0e5E1F6A82D1EC6ce5c6D5568096FCa96ecDe651'),
             ],
+            voting_merkle_distributor_addresses=[
+                string_to_evm_address('0x3C2aCA0c287FC5B27C392914D204703aD3d43b19'),
+            ],
         )
