@@ -1,4 +1,5 @@
-use axum::{routing::post, Router};
+use axum::{routing::get, routing::post, Router};
+use database::DBHandler;
 use log::{error, info, LevelFilter};
 use simplelog::{CombinedLogger, Config, TermLogger, TerminalMode, WriteLogger};
 use std::fs::File;
@@ -6,10 +7,12 @@ use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::net::TcpListener;
+use tokio::sync::RwLock;
 
 mod api;
 mod args;
 mod coingecko;
+mod database;
 mod globaldb;
 mod icons;
 
@@ -36,7 +39,7 @@ fn setup_logger(
     Ok(())
 }
 
-#[tokio::main]
+#[tokio::main(flavor = "multi_thread")]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = args::parse_args();
     setup_logger(args.logfile_path, false, LevelFilter::Debug)?;
@@ -51,12 +54,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             Ok(globaldb) => Arc::new(globaldb),
         };
     let coingecko = Arc::new(coingecko::Coingecko::new(globaldb));
-    let state = api::AppState {
+    let state = Arc::new(api::AppState {
         data_dir: args.data_directory,
         coingecko,
-    };
+        userdb: Arc::new(RwLock::new(DBHandler::new())),
+    });
+
     let app = Router::new()
-        .route("/icon", post(api::get_icon))
+        .route("/icon", post(api::icons::get_icon))
+        .route("/user", post(api::database::unlock_user))
+        .route(
+            "/assets/ignored",
+            get(api::database::get_ignored_assets),
+        )
         .with_state(state);
 
     info!("Colibri api listens on 127.0.0.1:{}", args.port);
