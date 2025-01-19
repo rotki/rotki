@@ -330,6 +330,7 @@ def test_writing_fetching_data(data_dir, username, sql_vm_instructions_cb):
     data = DataHandler(data_dir, msg_aggregator, sql_vm_instructions_cb)
     data.unlock(username, '123', create_new=True, resume_from_backup=False)
 
+    existing_address = string_to_evm_address('0xd36029d76af6fE4A356528e4Dc66B2C18123597D')
     with data.db.user_write() as write_cursor:
         data.db.add_blockchain_accounts(
             write_cursor,
@@ -338,7 +339,7 @@ def test_writing_fetching_data(data_dir, username, sql_vm_instructions_cb):
         data.db.add_blockchain_accounts(
             write_cursor,
             [
-                BlockchainAccountData(chain=SupportedBlockchain.ETHEREUM, address='0xd36029d76af6fE4A356528e4Dc66B2C18123597D'),  # noqa: E501
+                BlockchainAccountData(chain=SupportedBlockchain.ETHEREUM, address=existing_address),  # noqa: E501
                 BlockchainAccountData(chain=SupportedBlockchain.ETHEREUM, address='0x80B369799104a47e98A553f3329812a44A7FaCDc'),  # noqa: E501
                 # Add this to 2 evm chains
                 BlockchainAccountData(chain=SupportedBlockchain.ETHEREUM, address='0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'),  # noqa: E501
@@ -365,20 +366,16 @@ def test_writing_fetching_data(data_dir, username, sql_vm_instructions_cb):
             blockchain=SupportedBlockchain.POLYGON_POS,
             tokens=[A_POLYGON_POS_MATIC],
         )
-        random_tx_hash_in_cache = make_evm_tx_hash()
-        data.db.set_dynamic_cache(
-            write_cursor=write_cursor,
-            name=DBCacheDynamic.EXTRA_INTERNAL_TX,
-            value=string_to_evm_address('0xd36029d76af6fE4A356528e4Dc66B2C18123597D'),
-            tx_hash=random_tx_hash_in_cache.hex(),  # pylint: disable=no-member
-            receiver=string_to_evm_address('0xd36029d76af6fE4A356528e4Dc66B2C18123597D'),
+        random_tx_hash_in_cache = make_evm_tx_hash().hex()  # pylint: disable=no-member
+
+        cache_data = (
+            (DBCacheDynamic.EXTRA_INTERNAL_TX, {'tx_hash': random_tx_hash_in_cache, 'receiver': existing_address}, existing_address),  # noqa: E501
+            (DBCacheDynamic.WITHDRAWALS_TS, {'address': existing_address}, Timestamp(1737327943)),
+            (DBCacheDynamic.WITHDRAWALS_IDX, {'address': existing_address}, 4242),
         )
-        assert data.db.get_dynamic_cache(  # ensure it's properly set
-            cursor=write_cursor,
-            name=DBCacheDynamic.EXTRA_INTERNAL_TX,
-            tx_hash=random_tx_hash_in_cache.hex(),  # pylint: disable=no-member
-            receiver=string_to_evm_address('0xd36029d76af6fE4A356528e4Dc66B2C18123597D'),
-        ) == string_to_evm_address('0xd36029d76af6fE4A356528e4Dc66B2C18123597D')
+        for cache_key, kargs, value in cache_data:  # set and ensure value is set for each key
+            data.db.set_dynamic_cache(write_cursor, cache_key, value, **kargs)
+            assert data.db.get_dynamic_cache(write_cursor, cache_key, **kargs) == value
 
     with data.db.conn.read_ctx() as cursor:
         accounts = data.db.get_blockchain_accounts(cursor)
@@ -386,7 +383,7 @@ def test_writing_fetching_data(data_dir, username, sql_vm_instructions_cb):
         assert accounts.btc == ('1CB7Pbji3tquDtMRp8mBkerimkFzWRkovS',)
         # See that after addition the address has been checksummed
         assert set(accounts.eth) == {
-            '0xd36029d76af6fE4A356528e4Dc66B2C18123597D',
+            existing_address,
             '0x80B369799104a47e98A553f3329812a44A7FaCDc',
             '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',
         }
@@ -397,7 +394,7 @@ def test_writing_fetching_data(data_dir, username, sql_vm_instructions_cb):
         with pytest.raises(InputError):  # pylint: disable=no-member
             data.db.add_blockchain_accounts(
                 write_cursor,
-                [BlockchainAccountData(chain=SupportedBlockchain.ETHEREUM, address='0xd36029d76af6fE4A356528e4Dc66B2C18123597D')],  # noqa: E501
+                [BlockchainAccountData(chain=SupportedBlockchain.ETHEREUM, address=existing_address)],  # noqa: E501
             )
         # Remove non-existing account
         with pytest.raises(InputError):
@@ -410,19 +407,16 @@ def test_writing_fetching_data(data_dir, username, sql_vm_instructions_cb):
         data.db.remove_single_blockchain_accounts(
             write_cursor,
             SupportedBlockchain.ETHEREUM,
-            ['0xd36029d76af6fE4A356528e4Dc66B2C18123597D'],
+            [existing_address],
         )
         accounts = data.db.get_blockchain_accounts(write_cursor)
         assert set(accounts.eth) == {
             '0x80B369799104a47e98A553f3329812a44A7FaCDc',
             '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',
         }
-        assert data.db.get_dynamic_cache(
-            cursor=write_cursor,
-            name=DBCacheDynamic.EXTRA_INTERNAL_TX,
-            tx_hash=random_tx_hash_in_cache.hex(),  # pylint: disable=no-member
-            receiver=string_to_evm_address('0xd36029d76af6fE4A356528e4Dc66B2C18123597D'),
-        ) is None
+        for cache_key, kargs, _ in cache_data:  # check cache stuff got deleted
+            assert data.db.get_dynamic_cache(write_cursor, cache_key, **kargs) is None
+
         # Remove only the polygon account
         data.db.remove_single_blockchain_accounts(
             write_cursor,
