@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Deleting an ethereum address will now remove the withdrawals cache for that address so re-adding it will now properly detect ethereum staking withdrawals again.
 * :bug:`-` Fix double count of cowswap fees.
 * :bug:`-` Allow the rotki app to be minimized using the shortcut for each platform.
 * :bug:`-` Fix issue when user tries to delete Kusama, Polkadot, or Beaconchain RPC URL.
