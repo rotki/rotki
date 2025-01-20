@@ -38,7 +38,7 @@ from rotkehlchen.types import CacheType, ChainID, ChecksumEvmAddress, EvmTokenKi
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.client import DBCursor
     from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)

@@ -119,24 +119,25 @@ class HopCommonDecoder(DecoderInterface):
             new_protocol=HOP_PROTOCOL_LP,
         )
         # Cache the pool address if needed
-        with GlobalDBHandler().conn.write_ctx() as write_cursor:
+        with (globaldb_conn := GlobalDBHandler().conn).read_ctx() as cursor:
             if globaldb_get_unique_cache_value(
-                cursor=write_cursor,
+                cursor=cursor,
                 key_parts=(
                     CacheType.HOP_POOL_ADDRESS,
                     str(lp_token.chain_id.value),
                     lp_token.evm_address,
                 ),
             ) is None:
-                globaldb_set_unique_cache_value(
-                    write_cursor=write_cursor,
-                    key_parts=(
-                        CacheType.HOP_POOL_ADDRESS,
-                        str(lp_token.chain_id.value),
-                        lp_token.evm_address,
-                    ),
-                    value=pool_address,
-                )
+                with globaldb_conn.write_ctx() as write_cursor:
+                    globaldb_set_unique_cache_value(
+                        write_cursor=write_cursor,
+                        key_parts=(
+                            CacheType.HOP_POOL_ADDRESS,
+                            str(lp_token.chain_id.value),
+                            lp_token.evm_address,
+                        ),
+                        value=pool_address,
+                    )
 
     def _decode_withdrawal_bonded(self, context: DecoderContext) -> DecodingOutput:
         """This function is used to decode the WithdrawalBonded events on Hop protocol."""

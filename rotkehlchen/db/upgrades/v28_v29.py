@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.client import DBCursor
     from rotkehlchen.db.upgrade_manager import DBUpgradeProgressHandler
 
 
@@ -130,7 +130,7 @@ def upgrade_v28_to_v29(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
     - Alters the ethereum transactions table to have tx_hash as primary key
     """
     progress_handler.set_total_steps(6)
-    with db.user_write() as cursor:
+    with db.user_read_write() as cursor:
         progress_handler.new_step(name='Updating existing tables.')
         _upgrade_existing_tables(cursor=cursor, progress_handler=progress_handler)
         progress_handler.new_step(name='Creating new tables.')

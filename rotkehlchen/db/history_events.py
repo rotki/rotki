@@ -64,7 +64,7 @@ from rotkehlchen.utils.misc import ts_ms_to_sec, ts_sec_to_ms
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.client import DBCursor, DBWriterClient
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -100,7 +100,7 @@ class DBHistoryEvents:
 
     def add_history_event(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: 'DBWriterClient',
             event: HistoryBaseEntry,
             mapping_values: dict[str, int] | None = None,
     ) -> int | None:
@@ -137,7 +137,7 @@ class DBHistoryEvents:
 
     def add_history_events(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: 'DBWriterClient',
             history: Sequence[HistoryBaseEntry],
     ) -> None:
         """Insert a list of history events in the database.
@@ -150,7 +150,7 @@ class DBHistoryEvents:
                 event=event,
             )
 
-    def edit_history_event(self, write_cursor: 'DBCursor', event: HistoryBaseEntry) -> None:
+    def edit_history_event(self, write_cursor: 'DBWriterClient', event: HistoryBaseEntry) -> None:
         """
         Edit a history entry to the DB with information provided by the user.
         NOTE: It edits all the fields except the extra_data one.
@@ -227,14 +227,19 @@ class DBHistoryEvents:
 
     def delete_events_by_location(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: 'DBWriterClient',
             location: EVM_EVMLIKE_LOCATIONS_TYPE,
     ) -> None:
         """Delete all relevant non-customized events for a given location
 
         Also set evm_tx_mapping as non decoded so they can be redecoded later
         """
-        customized_event_ids = self.get_customized_event_identifiers(cursor=write_cursor, location=location)  # noqa: E501
+        with self.db.conn.read_ctx() as cursor:
+            customized_event_ids = self.get_customized_event_identifiers(
+                cursor=cursor,
+                location=location,
+            )
+
         whereclause = 'WHERE location=?'
         if (length := len(customized_event_ids)) != 0:
             whereclause += f' AND history_events.identifier NOT IN ({", ".join(["?"] * length)})'
@@ -242,7 +247,12 @@ class DBHistoryEvents:
         else:
             bindings = (location.serialize_for_db(),)  # type: ignore  # different type of elements in the list
 
-        transaction_hashes = write_cursor.execute(f'SELECT evm_events_info.tx_hash FROM history_events INNER JOIN evm_events_info ON history_events.identifier=evm_events_info.identifier {whereclause}', bindings).fetchall()  # noqa: E501
+        with self.db.conn.read_ctx() as cursor:
+            transaction_hashes = cursor.execute(
+                'SELECT evm_events_info.tx_hash FROM history_events INNER JOIN evm_events_info '
+                f'ON history_events.identifier=evm_events_info.identifier {whereclause}',
+                bindings,
+            ).fetchall()
         write_cursor.execute(f'DELETE FROM history_events {whereclause}', bindings)
 
         if location != Location.ZKSYNC_LITE and len(transaction_hashes) != 0:
@@ -253,7 +263,7 @@ class DBHistoryEvents:
 
     def delete_events_by_tx_hash(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: 'DBWriterClient',
             tx_hashes: list[EVMTxHash],
             location: EVM_EVMLIKE_LOCATIONS_TYPE,
             delete_customized: bool = False,
@@ -268,7 +278,12 @@ class DBHistoryEvents:
         """
         customized_event_ids = []
         if not delete_customized:
-            customized_event_ids = self.get_customized_event_identifiers(cursor=write_cursor, location=location)  # noqa: E501
+            with self.db.conn.read_ctx() as cursor:
+                customized_event_ids = self.get_customized_event_identifiers(
+                    cursor=cursor,
+                    location=location,
+                )
+
         querystr = f'DELETE FROM history_events WHERE identifier IN (SELECT H.identifier from history_events H INNER JOIN evm_events_info E ON H.identifier=E.identifier AND E.tx_hash IN ({", ".join(["?"] * len(tx_hashes))}))'  # noqa: E501
         if (length := len(customized_event_ids)) != 0:
             querystr += f' AND identifier NOT IN ({", ".join(["?"] * length)})'
@@ -787,7 +802,7 @@ class DBHistoryEvents:
 
     def edit_event_extra_data(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: 'DBWriterClient',
             event: HistoryBaseEntry,
             extra_data: Mapping[str, Any],
     ) -> None:
