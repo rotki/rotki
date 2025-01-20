@@ -3,41 +3,36 @@ import { dialog, ipcMain, nativeTheme, shell } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import { loadConfig } from '@electron/main/config';
 import { startHttp, stopHttp } from '@electron/main/http';
-import { debugSettings } from '@electron/main/menu';
 import { selectPort } from '@electron/main/port-utils';
 import { checkIfDevelopment, startPromise } from '@shared/utils';
 import { IpcCommands } from '@electron/ipc-commands';
 import { apiUrls } from '@electron/main/api-urls';
 import { PasswordManager } from '@electron/main/password-manager';
+import { type DebugSettings, assert } from '@rotki/common';
 import type { BackendOptions, Credentials, SystemVersion, TrayUpdate } from '@shared/ipc';
 import type { ProgressInfo } from 'electron-builder';
 import type { LogService } from '@electron/main/log-service';
+import type { SettingsManager } from '@electron/main/settings-manager';
 
 const isDevelopment = checkIfDevelopment();
 
 interface Callbacks {
-  closeApp: () => Promise<void>;
-  ensureSafeUpdateRestart: () => void;
+  quit: () => Promise<void>;
   updateTray: (trayUpdate: TrayUpdate) => void;
-  updatePremiumMenu: (showPremium: boolean) => void;
+  updatePremiumMenu: (isPremium: boolean) => void;
   restartSubprocesses: (options: Partial<BackendOptions>) => Promise<void>;
-  terminateSubprocesses: () => Promise<void>;
+  terminateSubprocesses: (update?: boolean) => Promise<void>;
   getRunningCorePIDs: () => Promise<number[]>;
   updateDownloadProgress: (progress: number) => void;
 }
 
 export class IpcManager {
   private readonly passwordManager = new PasswordManager();
-
-  constructor(
-    private readonly logger: LogService,
-    private readonly callbacks: Callbacks,
-  ) {}
-
   private walletImportTimeout: NodeJS.Timeout | undefined;
 
   private firstStart = true;
   private restarting = false;
+  private callbacks: Callbacks | null = null;
 
   private static readonly updateTimeout = 5000;
 
@@ -48,10 +43,22 @@ export class IpcManager {
     electron: process.versions.electron,
   };
 
-  registerHandlers() {
+  private get requireCallbacks(): Callbacks {
+    const callbacks = this.callbacks;
+    assert(callbacks);
+    return callbacks;
+  }
+
+  constructor(
+    private readonly logger: LogService,
+    private readonly settings: SettingsManager,
+  ) {}
+
+  initialize(callbacks: Callbacks) {
+    this.callbacks = callbacks;
     this.logger.log('Registering IPC handlers');
     ipcMain.on(IpcCommands.SYNC_GET_DEBUG, (event) => {
-      event.returnValue = debugSettings;
+      event.returnValue = { persistStore: this.settings.appSettings.persistStore ?? false } satisfies DebugSettings;
     });
 
     ipcMain.on(IpcCommands.SYNC_API_URL, (event) => {
@@ -59,10 +66,10 @@ export class IpcManager {
     });
 
     ipcMain.on(IpcCommands.PREMIUM_LOGIN, (_event, showPremium) => {
-      this.callbacks.updatePremiumMenu(showPremium);
+      callbacks.updatePremiumMenu(showPremium);
     });
 
-    ipcMain.handle(IpcCommands.INVOKE_CLOSE_APP, this.callbacks.closeApp);
+    ipcMain.handle(IpcCommands.INVOKE_CLOSE_APP, callbacks.quit);
     ipcMain.handle(IpcCommands.INVOKE_OPEN_URL, this.openUrl);
     ipcMain.handle(IpcCommands.INVOKE_OPEN_DIRECTORY, this.openDirectory);
     ipcMain.handle(IpcCommands.INVOKE_OPEN_PATH, this.openPath);
@@ -83,7 +90,7 @@ export class IpcManager {
     ipcMain.handle(IpcCommands.INVOKE_SUBPROCESS_START, this.restartBackend);
 
     ipcMain.on(IpcCommands.TRAY_UPDATE, (_event, trayUpdate: TrayUpdate) => {
-      this.callbacks.updateTray(trayUpdate);
+      callbacks.updateTray(trayUpdate);
     });
     this.setupUpdaterInterop();
 
@@ -180,7 +187,7 @@ export class IpcManager {
     this.logger.log(`Restarting backend with options: ${JSON.stringify(options)}`);
     if (this.firstStart) {
       this.firstStart = false;
-      const pids = await this.callbacks.getRunningCorePIDs();
+      const pids = await this.requireCallbacks.getRunningCorePIDs();
       if (pids.length > 0) {
         event.sender.send(IpcCommands.BACKEND_PROCESS_DETECTED, pids);
         this.logger.log(`Detected existing backend process: ${pids.join(', ')}`);
@@ -196,7 +203,7 @@ export class IpcManager {
       this.restarting = true;
       try {
         this.logger.log('Starting backend process');
-        await this.callbacks.restartSubprocesses(options);
+        await this.requireCallbacks.restartSubprocesses(options);
         success = true;
       }
       catch (error: any) {
@@ -235,15 +242,14 @@ export class IpcManager {
   };
 
   private async quitAndInstallUpdates() {
-    this.callbacks.ensureSafeUpdateRestart();
-    await this.callbacks.terminateSubprocesses();
+    await this.requireCallbacks.terminateSubprocesses(true);
     autoUpdater.quitAndInstall();
   }
 
   private readonly downloadUpdate = async (event: Electron.IpcMainInvokeEvent): Promise<boolean> => {
     const progress = (progress: ProgressInfo) => {
       event.sender.send(IpcCommands.DOWNLOAD_PROGRESS, progress.percent);
-      this.callbacks.updateDownloadProgress(progress.percent);
+      this.requireCallbacks.updateDownloadProgress(progress.percent);
     };
 
     return new Promise<boolean>((resolve) => {

@@ -1,225 +1,291 @@
 import process from 'node:process';
-import { type BrowserWindow, type MenuItem, app, shell } from 'electron';
-import { settingsManager } from '@electron/main/settings-manager';
+import { type BaseWindow, BrowserWindow, Menu, type MenuItem, type MenuItemConstructorOptions, app, shell } from 'electron';
 import { externalLinks } from '@shared/external-links';
 import { checkIfDevelopment } from '@shared/utils';
 import { IpcCommands } from '@electron/ipc-commands';
+import { assert } from '@rotki/common';
+import type { LogService } from '@electron/main/log-service';
+import type { SettingsManager } from '@electron/main/settings-manager';
 
 const isDevelopment = checkIfDevelopment();
 const isMac = process.platform === 'darwin';
 
-export interface MenuActions {
-  displayTray: (display: boolean) => void;
+export interface MenuManagerListener {
+  onDisplayTrayChanged: (displayTray: boolean) => void;
 }
 
-export const debugSettings = {
-  persistStore: false,
-};
+export class MenuManager {
+  private menu: Menu | null = null;
+  private listener: MenuManagerListener | null = null;
+  private readonly separator: MenuItemConstructorOptions = { type: 'separator' };
+  private isPremium: boolean = false;
 
-let actions: MenuActions = { displayTray: () => {} };
+  constructor(private readonly logger: LogService, private readonly settings: SettingsManager) {
+  }
 
-const debugMenu = {
-  label: '&Debug',
-  submenu: [
-    {
-      label: 'Persist store',
-      type: 'checkbox',
-      checked: debugSettings.persistStore,
-      click: (item: MenuItem, browserWindow: BrowserWindow) => {
-        debugSettings.persistStore = item.checked;
-        browserWindow.webContents.send(IpcCommands.DEBUG_SETTINGS, debugSettings);
-        browserWindow.reload();
-      },
-    },
-  ],
-};
+  initialize(listener: MenuManagerListener): void {
+    this.listener = listener;
+    this.updateMenu();
+  }
 
-const separator = { type: 'separator' };
+  cleanup(): void {
+    this.menu?.removeAllListeners();
+    this.menu = null;
+    this.listener = null;
+  }
 
-const helpMenu = {
-  label: '&Help',
-  submenu: [
-    {
-      label: 'Usage Guide',
-      click: async () => {
-        await shell.openExternal(externalLinks.usageGuide);
-      },
-    },
-    {
-      label: 'Frequently Asked Questions',
-      click: async () => {
-        await shell.openExternal(externalLinks.faq);
-      },
-    },
-    separator,
-    {
-      label: 'Release Notes',
-      click: async () => {
-        await shell.openExternal(externalLinks.changeLog);
-      },
-    },
-    separator,
-    {
-      label: 'Issue / Feature Requests',
-      click: async () => {
-        await shell.openExternal(externalLinks.githubIssues);
-      },
-    },
-    {
-      label: 'Logs Directory',
-      click: async () => {
-        await shell.openPath(app.getPath('logs'));
-      },
-    },
-    separator,
-    {
-      label: 'Clear Cache',
-      click: async (_item: MenuItem, browserWindow: BrowserWindow) => {
-        await browserWindow.webContents.session.clearCache();
-      },
-    },
-    {
-      label: 'Reset Settings / Restart Backend',
-      click: async (_item: MenuItem, browserWindow: BrowserWindow) => {
-        await browserWindow.webContents.session.clearStorageData();
-        browserWindow.webContents.send(IpcCommands.REQUEST_RESTART);
-      },
-    },
-    separator,
-    {
-      label: 'About',
-      click: (_item: MenuItem, browserWindow: BrowserWindow) => {
-        browserWindow.webContents.send(IpcCommands.ABOUT);
-      },
-    },
-  ],
-};
-const macEditOptions = [
-  { role: 'pasteAndMatchStyle' },
-  { role: 'delete' },
-  { role: 'selectAll' },
-  separator,
-  {
-    label: 'Speech',
-    submenu: [{ role: 'startspeaking' }, { role: 'stopspeaking' }],
-  },
-];
-const editMenu = {
-  label: '&Edit',
-  submenu: [
-    { role: 'undo' },
-    { role: 'redo' },
-    separator,
-    { role: 'cut' },
-    { role: 'copy' },
-    { role: 'paste' },
-    // Macs have special copy/paste and speech functionality
-    ...(isMac ? macEditOptions : [{ role: 'delete' }, separator, { role: 'selectAll' }]),
-  ],
-};
-const fileMenu = {
-  label: 'File',
-  submenu: [isMac ? { role: 'close' } : { role: 'quit' }],
-};
+  updatePremiumStatus(isPremium: boolean): void {
+    this.isPremium = isPremium;
+    this.updateMenu();
+  }
 
-const developmentViewMenu = [
-  { role: 'reload' },
-  { role: 'forceReload' },
-  { role: 'toggleDevTools' },
-  separator,
-];
+  private updateMenu(): void {
+    this.menu = Menu.buildFromTemplate(this.getMenuTemplate());
+    Menu.setApplicationMenu(this.menu);
+  }
 
-const minimize = {
-  id: 'MINIMIZE_TO_TRAY',
-  label: 'Minimize to tray',
-  enabled: settingsManager.appSettings.displayTray,
-  click: (_: KeyboardEvent, window: BrowserWindow) => {
-    window.hide();
-  },
-};
+  private openLink(url: string): void {
+    shell.openExternal(url).catch(error => this.logger.log(error));
+  }
 
-const displayTrayIcon = {
-  label: 'Display Tray Icon',
-  type: 'checkbox',
-  checked: settingsManager.appSettings.displayTray,
-  click: (item: MenuItem) => {
-    const displayTray = item.checked;
-    settingsManager.appSettings.displayTray = displayTray;
-    settingsManager.save();
-    actions.displayTray(displayTray);
-  },
-};
+  private openPath(path: string): void {
+    shell.openPath(path).catch(error => this.logger.log(error));
+  }
 
-const viewMenu = {
-  label: '&View',
-  submenu: [
-    ...(isDevelopment ? developmentViewMenu : [{ role: 'toggleDevTools', visible: false }]),
-    { role: 'minimize' },
-    { role: 'resetZoom' },
-    { role: 'zoomIn' },
-    { role: 'zoomOut' },
-    separator,
-    { role: 'togglefullscreen' },
-    minimize,
-    separator,
-    displayTrayIcon,
-  ],
-};
-const defaultMenuTemplate: any[] = [
-  // On Mac, we want to show a "rotki" menu item in the app bar.
-  ...(isMac
-    ? [
+  private getMenuTemplate(): MenuItemConstructorOptions[] {
+    const macAppMenu: MenuItemConstructorOptions = {
+      label: app.name,
+      submenu: [
+        { role: 'hide' },
+        { role: 'hideOthers' },
+        { role: 'unhide' },
+        this.separator,
+        { role: 'quit' },
+      ],
+    };
+    return [
+      ...(isMac ? [macAppMenu] : []),
+      this.getFileMenu(),
+      this.getEditMenu(),
+      this.getViewMenu(),
+      this.getHelpMenu(),
+      ...(isDevelopment ? [this.getDebugMenu()] : []),
+      // Re-render the menu with the 'Get rotki Premium' button if the user who just logged in
+      // is not a premium user, otherwise render the menu without the button. Since we are unable to just toggle
+      // visibility on a top-level menu item, we instead have to add/remove it from the menu upon every login
+      // (see https://github.com/electron/electron/issues/8703).
+      ...(!this.isPremium ? [this.getPremiumMenu()] : []),
+    ];
+  }
+
+  private getHelpMenu(): MenuItemConstructorOptions {
+    return {
+      label: '&Help',
+      submenu: [
         {
-          label: app.name,
-          submenu: [
-            { role: 'hide' },
-            { role: 'hideOthers' },
-            { role: 'unhide' },
-            separator,
-            { role: 'quit' },
-          ],
+          label: 'Usage Guide',
+          click: () => this.openLink(externalLinks.usageGuide),
         },
-      ]
-    : []),
-  fileMenu,
-  editMenu,
-  viewMenu,
-  helpMenu,
-  separator,
+        {
+          label: 'Frequently Asked Questions',
+          click: () => this.openLink(externalLinks.faq),
+        },
+        this.separator,
+        {
+          label: 'Release Notes',
+          click: () => this.openLink(externalLinks.changeLog),
+        },
+        this.separator,
+        {
+          label: 'Issue / Feature Requests',
+          click: () => this.openLink(externalLinks.githubIssues),
+        },
+        {
+          label: 'Logs Directory',
+          click: () => this.openPath(app.getPath('logs')),
+        },
+        this.separator,
+        {
+          label: 'Clear Cache',
+          click: (_item: MenuItem, window?: BaseWindow) => {
+            if (!window || !(window instanceof BrowserWindow)) {
+              console.warn('window is not a BrowserWindow');
+              return;
+            }
 
-  ...(isDevelopment ? [debugMenu] : []),
-];
-
-export function getUserMenu(showPremium: boolean, menuActions: MenuActions) {
-  actions = menuActions;
-  const getRotkiPremiumButton = {
-    label: '&Get rotki Premium',
-    ...(isMac
-      ? {
-          // submenu is mandatory to be displayed on macOS
-          submenu: [
-            {
-              label: 'Get rotki Premium',
-              id: 'premium-button',
-              click: async () => {
-                await shell.openExternal(externalLinks.premium);
-              },
-            },
-          ],
-        }
-      : {
-          id: 'premium-button',
-          click: async () => {
-            await shell.openExternal(externalLinks.premium);
+            window.webContents.session.clearCache().catch(error => this.logger.log(error));
           },
-        }),
-  };
+        },
+        {
+          label: 'Reset Settings / Restart Backend',
+          click: (_item: MenuItem, window?: BaseWindow) => {
+            if (!window || !(window instanceof BrowserWindow)) {
+              console.warn('window is not a BrowserWindow');
+              return;
+            }
 
-  // Re-render the menu with the 'Get rotki Premium' button if the user who just logged in
-  // is not a premium user, otherwise render the menu without the button. Since we are unable to just toggle
-  // visibility on a top-level menu item, we instead have to add/remove it from the menu upon every login
-  // (see https://github.com/electron/electron/issues/8703). TODO: if we move the menu to the render
-  // process we can make this a lot cleaner.
+            window.webContents.session.clearStorageData().then(() => {
+              window.webContents.send(IpcCommands.REQUEST_RESTART);
+            }).catch(error => this.logger.log(error));
+          },
+        },
+        this.separator,
+        {
+          label: 'About',
+          click: (_item: MenuItem, window?: BaseWindow) => {
+            if (!window || !(window instanceof BrowserWindow)) {
+              console.warn('window is not a BrowserWindow');
+              return;
+            }
 
-  return showPremium ? defaultMenuTemplate.concat(getRotkiPremiumButton) : defaultMenuTemplate;
+            window.webContents.send(IpcCommands.ABOUT);
+          },
+        },
+      ],
+    };
+  }
+
+  private getDebugMenu(): MenuItemConstructorOptions {
+    return {
+      label: '&Debug',
+      submenu: [{
+        label: 'Persist store',
+        type: 'checkbox',
+        checked: this.settings.appSettings.persistStore ?? false,
+        click: (item: MenuItem, window?: BaseWindow) => {
+          if (!window || !(window instanceof BrowserWindow)) {
+            console.warn('window is not a BrowserWindow');
+            return;
+          }
+
+          const enabled = item.checked;
+          this.settings.appSettings.persistStore = enabled;
+          this.settings.save();
+          window.webContents.send(IpcCommands.DEBUG_SETTINGS, { persistStore: enabled });
+          window.reload();
+        },
+      }],
+    };
+  }
+
+  private getPremiumMenu(): MenuItemConstructorOptions {
+    return {
+      label: '&Get rotki Premium',
+      ...(isMac
+        ? {
+          // submenu is mandatory to be displayed on macOS
+            submenu: [
+              {
+                label: 'Get rotki Premium',
+                id: 'premium-button',
+                click: () => this.openLink(externalLinks.premium),
+              },
+            ],
+          }
+        : {
+            id: 'premium-button',
+            click: () => this.openLink(externalLinks.premium),
+          }),
+    };
+  }
+
+  private getEditMenu(): MenuItemConstructorOptions {
+    const macEditOptions: MenuItemConstructorOptions[] = [
+      { role: 'pasteAndMatchStyle' },
+      { role: 'delete' },
+      { role: 'selectAll' },
+      this.separator,
+      {
+        label: 'Speech',
+        submenu: [{ role: 'startSpeaking' }, { role: 'stopSpeaking' }],
+      },
+    ];
+
+    const editOptions: MenuItemConstructorOptions[] = [
+      { role: 'delete' },
+      this.separator,
+      { role: 'selectAll' },
+    ];
+
+    return {
+      label: '&Edit',
+      submenu: [
+        { role: 'undo' },
+        { role: 'redo' },
+        this.separator,
+        { role: 'cut' },
+        { role: 'copy' },
+        { role: 'paste' },
+        // Macs have special copy/paste and speech functionality
+        ...(isMac ? macEditOptions : editOptions),
+      ],
+    };
+  }
+
+  private getFileMenu(): MenuItemConstructorOptions {
+    return {
+      label: 'File',
+      submenu: [isMac ? { role: 'close' } : { role: 'quit' }],
+    };
+  }
+
+  private getViewMenu(): MenuItemConstructorOptions {
+    const minimize: MenuItemConstructorOptions = {
+      id: 'MINIMIZE_TO_TRAY',
+      label: 'Minimize to tray',
+      enabled: this.settings.appSettings.displayTray,
+      click: (_: MenuItem, window?: BaseWindow) => {
+        window?.hide();
+      },
+    };
+
+    const developmentDevTools: MenuItemConstructorOptions[] = [
+      { role: 'reload' },
+      { role: 'forceReload' },
+      { role: 'toggleDevTools' },
+      this.separator,
+    ];
+
+    const productionDevTools: MenuItemConstructorOptions[] = [
+      { role: 'toggleDevTools', visible: false },
+    ];
+
+    const displayTrayIcon: MenuItemConstructorOptions = {
+      label: 'Display Tray Icon',
+      type: 'checkbox',
+      checked: this.settings.appSettings.displayTray,
+      click: (item: MenuItem) => {
+        const displayTray = item.checked;
+        this.settings.appSettings.displayTray = displayTray;
+        this.settings.save();
+
+        const applicationMenu = Menu.getApplicationMenu();
+        if (applicationMenu) {
+          const menuItem = applicationMenu.getMenuItemById('MINIMIZE_TO_TRAY');
+          if (menuItem)
+            menuItem.enabled = displayTray;
+        }
+
+        const listener = this.listener;
+        assert(listener);
+        listener.onDisplayTrayChanged(displayTray);
+      },
+    };
+
+    return {
+      label: '&View',
+      submenu: [
+        ...(isDevelopment ? developmentDevTools : productionDevTools),
+        { role: 'minimize' },
+        { role: 'resetZoom' },
+        { role: 'zoomIn' },
+        { role: 'zoomOut' },
+        this.separator,
+        { role: 'togglefullscreen' },
+        minimize,
+        this.separator,
+        displayTrayIcon,
+      ],
+    };
+  }
 }
