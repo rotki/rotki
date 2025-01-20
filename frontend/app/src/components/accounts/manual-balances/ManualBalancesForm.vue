@@ -25,7 +25,6 @@ const modelValue = defineModel<RawManualBalance | ManualBalance>({ required: tru
 
 defineProps<{
   submitting: boolean;
-  editMode: boolean;
 }>();
 
 const { t } = useI18n();
@@ -119,16 +118,17 @@ async function savePrice() {
 }
 
 watch(asset, (asset) => {
-  if (asset && !props.editMode && !get(locationTouched)) {
-    const info = get(assetInfo(asset));
-    const evmChain = info?.evmChain;
-    if (evmChain) {
-      const foundLocation = get(tradeLocations).find(item => item.identifier === evmChain.split('_').join(' '));
-
-      if (foundLocation) {
-        set(location, foundLocation.identifier);
-      }
-    }
+  if (!(asset && !('identifier' in get(modelValue)) && !get(locationTouched))) {
+    return;
+  }
+  const info = get(assetInfo(asset));
+  const evmChain = info?.evmChain;
+  if (!evmChain) {
+    return;
+  }
+  const foundLocation = get(tradeLocations).find(item => item.identifier === evmChain.split('_').join(' '));
+  if (foundLocation) {
+    set(location, foundLocation.identifier);
   }
 });
 
