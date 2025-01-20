@@ -13,7 +13,7 @@ from rotkehlchen.assets.asset import (
     UnderlyingToken,
 )
 from rotkehlchen.assets.types import AssetType
-from rotkehlchen.constants.resolver import identifier_to_collectible_id
+from rotkehlchen.constants.resolver import tokenid_to_collectible_id
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import ChainID, EvmTokenKind, Location, Timestamp, TradeType
 
@@ -94,7 +94,7 @@ def deserialize_asset_with_oracles_from_db(
             cryptocompare=asset_data[10],
             protocol=asset_data[11],
             underlying_tokens=underlying_tokens,
-            collectible_id=identifier_to_collectible_id(identifier=identifier),
+            collectible_id=tokenid_to_collectible_id(identifier=identifier),
         )
     if asset_type == AssetType.FIAT:
         return FiatAsset.initialize(

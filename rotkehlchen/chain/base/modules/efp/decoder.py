@@ -15,8 +15,10 @@ from rotkehlchen.chain.evm.decoding.structures import (
 )
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.types import EvmTokenKind
 from rotkehlchen.utils.misc import bytes_to_address
 
 from .constants import EFP_LIST_REGISTRY
@@ -74,7 +76,10 @@ class EfpDecoder(EfpCommonDecoder):
         """Decode events from the EFPListRegistry contract, currently only deployed on Base.
         See https://docs.ethfollow.xyz/design/deployments/
         """
-        if context.tx_log.topics[0] != ERC20_OR_ERC721_TRANSFER:
+        if (  # filter to only erc721 transfers
+            context.tx_log.topics[0] != ERC20_OR_ERC721_TRANSFER or
+            len(context.tx_log.topics) != 4  # erc721 should have 4
+        ):
             return DEFAULT_DECODING_OUTPUT
 
         return DecodingOutput(action_items=[ActionItem(
@@ -82,7 +87,12 @@ class EfpDecoder(EfpCommonDecoder):
             from_event_type=HistoryEventType.RECEIVE,
             from_event_subtype=HistoryEventSubType.NONE,
             location_label=(user_address := bytes_to_address(context.tx_log.topics[2])),
-            asset=Asset(f'eip155:8453/erc721:{EFP_LIST_REGISTRY}'),  # EFP List NFT
+            asset=Asset(evm_address_to_identifier(  # EFP List NFT
+                address=EFP_LIST_REGISTRY,
+                chain_id=self.evm_inquirer.chain_id,
+                token_type=EvmTokenKind.ERC721,
+                collectible_id=str(int.from_bytes(context.tx_log.topics[3])),
+            )),
             address=ZERO_ADDRESS,
             to_notes=f'Receive EFP list NFT for {user_address}',
             to_counterparty=CPT_EFP,

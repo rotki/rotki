@@ -62,7 +62,12 @@ from rotkehlchen.utils.misc import bytes_to_address, from_wei
 from rotkehlchen.utils.mixins.customizable_date import CustomizableDateMixin
 
 from .base import BaseDecoderTools, BaseDecoderToolsWithDSProxy
-from .constants import CPT_GAS, ERC20_APPROVE, ERC20_OR_ERC721_TRANSFER, OUTGOING_EVENT_TYPES
+from .constants import (
+    CPT_GAS,
+    ERC20_OR_ERC721_APPROVE,
+    ERC20_OR_ERC721_TRANSFER,
+    OUTGOING_EVENT_TYPES,
+)
 from .structures import (
     DEFAULT_DECODING_OUTPUT,
     FAILED_ENRICHMENT_OUTPUT,
@@ -880,6 +885,22 @@ class EVMTransactionDecoder(ABC):
             counterparty=counterparty,
         )
 
+    def _get_transfer_or_approval_token_kind_and_id(
+            self,
+            tx_log: EvmTxReceiptLog,
+    ) -> tuple[EvmTokenKind, str | None] | None:
+        """Determine if a transfer or approval event is for an erc20 or erc721 token.
+        Returns the token kind and id (or None for erc20) in a tuple, or None on error."""
+        if self._is_non_conformant_erc721(tx_log.address):
+            return EvmTokenKind.ERC721, str(int.from_bytes(tx_log.data[0:32]))  # token_id is in data  # noqa: E501
+        elif len(tx_log.topics) == 3:  # typical ERC20 has 2 indexed args
+            return EvmTokenKind.ERC20, None  # no token_id for erc20
+        elif len(tx_log.topics) == 4:  # typical ERC721 has 3 indexed args
+            return EvmTokenKind.ERC721, str(int.from_bytes(tx_log.topics[3]))  # token_id is in topics  # noqa: E501
+        else:
+            log.debug(f'Failed to decode token with address {tx_log.address} due to inability to match token type')  # noqa: E501
+            return None
+
     def _maybe_decode_erc20_approve(
             self,
             token: 'EvmToken | None',
@@ -889,23 +910,14 @@ class EVMTransactionDecoder(ABC):
             action_items: list[ActionItem],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
     ) -> DecodingOutput:
-        if tx_log.topics[0] != ERC20_APPROVE:
+        if (
+            tx_log.topics[0] != ERC20_OR_ERC721_APPROVE or
+            (token_kind_and_id := self._get_transfer_or_approval_token_kind_and_id(tx_log=tx_log)) is None  # noqa: E501
+        ):
             return DEFAULT_DECODING_OUTPUT
 
-        if token is None:
-            try:
-                token = get_or_create_evm_token(
-                    userdb=self.database,
-                    evm_address=tx_log.address,
-                    chain_id=self.evm_inquirer.chain_id,
-                    token_kind=EvmTokenKind.ERC20,
-                    evm_inquirer=self.evm_inquirer,
-                    encounter=TokenEncounterInfo(tx_hash=transaction.tx_hash),
-                )
-            except NotERC20Conformant:
-                return DEFAULT_DECODING_OUTPUT  # ignore non-ERC20 approval for now
-
-        if len(tx_log.topics) == 3:
+        token_kind, collectible_id = token_kind_and_id
+        if len(tx_log.topics) in (3, 4):
             owner_address = bytes_to_address(tx_log.topics[1])
             spender_address = bytes_to_address(tx_log.topics[2])
             amount_raw = int.from_bytes(tx_log.data)
@@ -919,6 +931,20 @@ class EVMTransactionDecoder(ABC):
                 f'in transaction {transaction.tx_hash.hex()}',
             )
             return DEFAULT_DECODING_OUTPUT
+
+        if token is None:
+            try:
+                token = get_or_create_evm_token(
+                    userdb=self.database,
+                    evm_address=tx_log.address,
+                    chain_id=self.evm_inquirer.chain_id,
+                    token_kind=token_kind,
+                    collectible_id=collectible_id,
+                    evm_inquirer=self.evm_inquirer,
+                    encounter=TokenEncounterInfo(tx_hash=transaction.tx_hash),
+                )
+            except (NotERC20Conformant, NotERC721Conformant):
+                return DEFAULT_DECODING_OUTPUT  # ignore non token transfers for now
 
         if not self.base.any_tracked([owner_address, spender_address]):
             return DEFAULT_DECODING_OUTPUT
@@ -1024,17 +1050,13 @@ class EVMTransactionDecoder(ABC):
             action_items: list[ActionItem],
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
     ) -> DecodingOutput:
-        if tx_log.topics[0] != ERC20_OR_ERC721_TRANSFER:
+        if (
+            tx_log.topics[0] != ERC20_OR_ERC721_TRANSFER or
+            (token_kind_and_id := self._get_transfer_or_approval_token_kind_and_id(tx_log=tx_log)) is None  # noqa: E501
+        ):
             return DEFAULT_DECODING_OUTPUT
 
-        if self._is_non_conformant_erc721(tx_log.address) or len(tx_log.topics) == 4:  # typical ERC721 has 3 indexed args  # noqa: E501
-            token_kind = EvmTokenKind.ERC721
-        elif len(tx_log.topics) == 3:  # typical ERC20 has 2 indexed args
-            token_kind = EvmTokenKind.ERC20
-        else:
-            log.debug(f'Failed to decode token with address {tx_log.address} due to inability to match token type')  # noqa: E501
-            return DEFAULT_DECODING_OUTPUT
-
+        token_kind, collectible_id = token_kind_and_id
         if token is None:
             try:
                 found_token = get_or_create_evm_token(
@@ -1042,6 +1064,7 @@ class EVMTransactionDecoder(ABC):
                     evm_address=tx_log.address,
                     chain_id=self.evm_inquirer.chain_id,
                     token_kind=token_kind,
+                    collectible_id=collectible_id,
                     evm_inquirer=self.evm_inquirer,
                     encounter=TokenEncounterInfo(tx_hash=transaction.tx_hash),
                 )

@@ -74,6 +74,7 @@ class EnsCommonDecoder(DecoderInterface, CustomizableDateMixin, ABC):
             evm_address=context.tx_log.address,
             chain_id=self.evm_inquirer.chain_id,
             token_kind=EvmTokenKind.ERC721,
+            collectible_id=str(collectible_id := int.from_bytes(context.tx_log.topics[3])),
             evm_inquirer=self.evm_inquirer,
             encounter=TokenEncounterInfo(tx_hash=context.transaction.tx_hash),
         )
@@ -85,7 +86,7 @@ class EnsCommonDecoder(DecoderInterface, CustomizableDateMixin, ABC):
         if transfer_event is None:  # Can happen if neither from/to is tracked
             return DEFAULT_DECODING_OUTPUT
 
-        label_hash = '0x{:064x}'.format(transfer_event.extra_data['token_id'])  # type: ignore[index]  # ERC721 transfer always has extra data. This code is to transform the int token id to a 32 bytes hex label hash
+        label_hash = f'0x{collectible_id:064x}'  # Transform the int token id to a 32 bytes hex label hash  # noqa: E501
         found_name = self._maybe_get_labelhash_name(context=context, label_hash=label_hash)
         if found_name is None:
             name_to_show = ''

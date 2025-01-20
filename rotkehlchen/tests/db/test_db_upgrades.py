@@ -9,7 +9,9 @@ from unittest.mock import patch
 import pytest
 from pysqlcipher3 import dbapi2 as sqlcipher
 
+from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.evm.accounting.structures import TxEventSettings
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_COW, A_ETH
 from rotkehlchen.constants.misc import (
     AIRDROPSDIR_NAME,
@@ -38,6 +40,7 @@ from rotkehlchen.db.upgrades.v39_v40 import PREFIX
 from rotkehlchen.db.utils import table_exists
 from rotkehlchen.errors.api import RotkehlchenPermissionError
 from rotkehlchen.errors.misc import DBUpgradeError
+from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.oracles.structures import CurrentPriceOracle
@@ -51,6 +54,7 @@ from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
 from rotkehlchen.types import (
     ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE,
     ChainID,
+    EvmTokenKind,
     Location,
     SupportedBlockchain,
     Timestamp,
@@ -2721,6 +2725,15 @@ def test_upgrade_db_46_to_47(user_data_dir, messages_aggregator):
         msg_aggregator=messages_aggregator,
         resume_from_backup=False,
     )
+
+    # Add an erc721 token (without the token id)
+    uniswap_token = get_or_create_evm_token(
+        userdb=db_v46,
+        evm_address=string_to_evm_address('0xC36442b4a4522E871399CD717aBDD847Ab11FE88'),
+        name='Uniswap V3 Positions NFT-V1',
+        chain_id=ChainID.ETHEREUM,
+        token_kind=EvmTokenKind.ERC721,
+    )
     address, tx_hash = make_evm_address(), make_evm_tx_hash()
     with db_v46.user_write() as write_cursor:
         db_v46.set_dynamic_cache(
@@ -2731,6 +2744,15 @@ def test_upgrade_db_46_to_47(user_data_dir, messages_aggregator):
             receiver=address,
             tx_hash=tx_hash.hex(),  # pylint: disable=no-member
         )
+        # Add evm event with a token_id in extra data
+        # to be used during upgrade to update the token identifier
+        write_cursor.execute(
+            'INSERT INTO history_events(entry_type, event_identifier, sequence_index, '
+            'timestamp, location, location_label, asset, amount, usd_value, notes, '
+            'type, subtype, extra_data) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            (HistoryBaseEntryType.EVM_EVENT.value, 'TEST1', 0, 1, Location.ETHEREUM.serialize_for_db(), '', uniswap_token.identifier, 1, 0, '', HistoryEventType.DEPLOY.value, HistoryEventSubType.NFT.value, json.dumps({'token_id': 401357, 'token_name': 'Uniswap V3 Positions NFT-V1', 'test': 'xyz'})),  # noqa: E501
+        )
+
     with db_v46.conn.read_ctx() as cursor:
         assert db_v46.get_dynamic_cache(
             cursor=cursor,
@@ -2759,6 +2781,25 @@ def test_upgrade_db_46_to_47(user_data_dir, messages_aggregator):
         ) is None
         cursor.execute("SELECT seq FROM location WHERE location='v'")
         assert cursor.fetchone() == (54,)
+
+        # Check that the identifier has been updated in assets and history events.
+        assets_query = 'SELECT COUNT(*) FROM assets WHERE identifier=?'
+        new_token_identifier = f'{uniswap_token.identifier}/401357'
+        assert cursor.execute(assets_query, (uniswap_token.identifier,)).fetchone()[0] == 0
+        assert cursor.execute(assets_query, (new_token_identifier,)).fetchone()[0] == 1
+        events_query = 'SELECT COUNT(*) FROM history_events WHERE asset=?'
+        assert cursor.execute(events_query, (uniswap_token.identifier,)).fetchone()[0] == 0
+        assert cursor.execute(events_query, (new_token_identifier,)).fetchone()[0] == 1
+
+        # Check that token_id and token_name were removed from extra_data
+        assert cursor.execute(
+            "SELECT extra_data FROM history_events WHERE event_identifier = 'TEST1'",
+        ).fetchone()[0] == '{"test": "xyz"}'
+
+    # Also check that the identifier has changed in the globaldb
+    with GlobalDBHandler().conn.read_ctx() as cursor:
+        assert cursor.execute(assets_query, (uniswap_token.identifier,)).fetchone()[0] == 0
+        assert cursor.execute(assets_query, (new_token_identifier,)).fetchone()[0] == 1
 
     db.logout()
 
