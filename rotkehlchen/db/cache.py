@@ -1,5 +1,5 @@
 from collections.abc import Callable
-from typing import Final, TypedDict, Unpack, overload
+from typing import Any, Final, TypedDict, Unpack, overload
 
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.db.constants import EXTRAINTERNALTXPREFIX
@@ -47,8 +47,9 @@ class AddressArgType(TypedDict):
 
 class ExtraTxArgType(TypedDict):
     """Type of kwargs, used to get the value of `DBCacheDynamic.EXTRA_INTERNAL_TX`"""
-    tx_hash: str  # using str instead of EVMTxHash because DB schema is in TEXT
+    chain_id: int
     receiver: ChecksumEvmAddress
+    tx_hash: str  # using str instead of EVMTxHash because DB schema is in TEXT
 
 
 def _deserialize_int_from_str(value: str) -> int | None:
@@ -68,7 +69,7 @@ class DBCacheDynamic(Enum):
     LAST_BLOCK_ID: Final = '{location}_{location_name}_{account_id}_last_block_id', _deserialize_int_from_str  # noqa: E501
     WITHDRAWALS_TS: Final = 'ethwithdrawalsts_{address}', _deserialize_timestamp_from_str
     WITHDRAWALS_IDX: Final = 'ethwithdrawalsidx_{address}', _deserialize_int_from_str
-    EXTRA_INTERNAL_TX: Final = f'{EXTRAINTERNALTXPREFIX}_{{tx_hash}}_{{receiver}}', string_to_evm_address  # noqa: E501
+    EXTRA_INTERNAL_TX: Final = f'{EXTRAINTERNALTXPREFIX}_{{chain_id}}_{{receiver}}_{{tx_hash}}', string_to_evm_address  # noqa: E501
 
     @overload
     def get_db_key(self, **kwargs: Unpack[LabeledLocationArgsType]) -> str:
@@ -86,7 +87,7 @@ class DBCacheDynamic(Enum):
     def get_db_key(self, **kwargs: Unpack[ExtraTxArgType]) -> str:
         ...
 
-    def get_db_key(self, **kwargs: str) -> str:
+    def get_db_key(self, **kwargs: Any) -> str:
         """Get the key that is used in the DB schema for the given kwargs.
 
         May Raise KeyError if incompatible kwargs are passed. Pass the kwargs according to the

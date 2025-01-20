@@ -21,6 +21,7 @@ from rotkehlchen.constants.misc import (
     USERDB_NAME,
 )
 from rotkehlchen.data_handler import DataHandler
+from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.checks import sanity_check_impl
 from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED
 from rotkehlchen.db.dbhandler import DBHandler
@@ -46,6 +47,7 @@ from rotkehlchen.tests.utils.database import (
     mock_dbhandler_sync_globaldb_assets,
     mock_dbhandler_update_owned_assets,
 )
+from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
 from rotkehlchen.types import (
     ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE,
     ChainID,
@@ -2719,7 +2721,24 @@ def test_upgrade_db_46_to_47(user_data_dir, messages_aggregator):
         msg_aggregator=messages_aggregator,
         resume_from_backup=False,
     )
+    address, tx_hash = make_evm_address(), make_evm_tx_hash()
+    with db_v46.user_write() as write_cursor:
+        db_v46.set_dynamic_cache(
+            write_cursor=write_cursor,
+            name=DBCacheDynamic.EXTRA_INTERNAL_TX,
+            value=address,
+            chain_id=10,
+            receiver=address,
+            tx_hash=tx_hash.hex(),  # pylint: disable=no-member
+        )
     with db_v46.conn.read_ctx() as cursor:
+        assert db_v46.get_dynamic_cache(
+            cursor=cursor,
+            name=DBCacheDynamic.EXTRA_INTERNAL_TX,
+            chain_id=10,
+            receiver=address,
+            tx_hash=tx_hash.hex(),  # pylint: disable=no-member
+        ) == address
         cursor.execute("SELECT COUNT(*) FROM location WHERE location='v'")
         assert cursor.fetchone()[0] == 0
 
@@ -2731,6 +2750,13 @@ def test_upgrade_db_46_to_47(user_data_dir, messages_aggregator):
         resume_from_backup=False,
     )
     with db.conn.read_ctx() as cursor:
+        assert db.get_dynamic_cache(
+            cursor=cursor,
+            name=DBCacheDynamic.EXTRA_INTERNAL_TX,
+            chain_id=10,
+            receiver=address,
+            tx_hash=tx_hash.hex(),  # pylint: disable=no-member
+        ) is None
         cursor.execute("SELECT seq FROM location WHERE location='v'")
         assert cursor.fetchone() == (54,)
 

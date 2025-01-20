@@ -993,12 +993,14 @@ def test_query_transactions_check_decoded_events(
             write_cursor=write_cursor,
             name=DBCacheDynamic.EXTRA_INTERNAL_TX,
             value=random_user_address,
+            chain_id=1,
             tx_hash='0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f',
             receiver=random_receiver_in_cache,
         )
         assert rotki.data.db.get_dynamic_cache(  # ensure it's properly set
             cursor=write_cursor,
             name=DBCacheDynamic.EXTRA_INTERNAL_TX,
+            chain_id=1,
             tx_hash='0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f',
             receiver=random_receiver_in_cache,
         ) == random_user_address
@@ -1033,6 +1035,7 @@ def test_query_transactions_check_decoded_events(
         assert rotki.data.db.get_dynamic_cache(
             cursor=cursor,
             name=DBCacheDynamic.EXTRA_INTERNAL_TX,
+            chain_id=1,
             tx_hash='0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f',
             receiver=random_receiver_in_cache,
         ) is None

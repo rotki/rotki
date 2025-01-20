@@ -526,7 +526,7 @@ class DBEvmTx:
         # Delete any key_value_cache entries
         write_cursor.executemany(
             'DELETE FROM key_value_cache WHERE name LIKE ?',
-            [(f'{EXTRAINTERNALTXPREFIX}_{tx_hash.hex()}%',) for tx_hash in tx_hashes],
+            [(f'{EXTRAINTERNALTXPREFIX}_{chain_id.value}_%_{tx_hash.hex()}',) for tx_hash in tx_hashes],  # noqa: E501
         )
 
     def get_queried_range(

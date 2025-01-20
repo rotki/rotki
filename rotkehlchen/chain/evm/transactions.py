@@ -27,6 +27,7 @@ from rotkehlchen.tasks.assets import MULTISEND_SPAM_THRESHOLD
 from rotkehlchen.types import (
     CHAINID_TO_SUPPORTED_BLOCKCHAIN,
     SPAM_PROTOCOL,
+    ChainID,
     ChecksumEvmAddress,
     EvmInternalTransaction,
     EvmTokenKind,
@@ -578,6 +579,7 @@ class EvmTransactions(ABC):  # noqa: B024
     def get_and_ensure_internal_txns_of_parent_in_db(
             self,
             tx_hash: 'EVMTxHash',
+            chain_id: ChainID,
             to_address: 'ChecksumEvmAddress',
             user_address: 'ChecksumEvmAddress',
             from_address: 'ChecksumEvmAddress | None' = None,
@@ -603,8 +605,9 @@ class EvmTransactions(ABC):  # noqa: B024
             affected_address = self.database.get_dynamic_cache(
                 cursor=cursor,
                 name=DBCacheDynamic.EXTRA_INTERNAL_TX,
-                tx_hash=tx_hash.hex(),
+                chain_id=chain_id.value,
                 receiver=to_address,
+                tx_hash=tx_hash.hex(),
             )
         if affected_address == user_address:  # if we have queried them before
             return []
@@ -617,9 +620,10 @@ class EvmTransactions(ABC):  # noqa: B024
             self.database.set_dynamic_cache(
                 write_cursor=write_cursor,
                 name=DBCacheDynamic.EXTRA_INTERNAL_TX,
-                tx_hash=tx_hash.hex(),
-                receiver=to_address,
                 value=user_address,
+                chain_id=chain_id.value,
+                receiver=to_address,
+                tx_hash=tx_hash.hex(),
             )
         return self.dbevmtx.get_evm_internal_transactions(
             parent_tx_hash=tx_hash,

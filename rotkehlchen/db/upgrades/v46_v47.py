@@ -26,4 +26,8 @@ def upgrade_v46_to_v47(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
             INSERT OR IGNORE INTO location(location, seq) VALUES ('v', 54);
             """)
 
+    @progress_step(description='Remove extrainternaltx cache.')
+    def _clean_cache(write_cursor: 'DBCursor') -> None:
+        write_cursor.execute("DELETE FROM key_value_cache WHERE name LIKE 'extrainternaltx_%'")
+
     perform_userdb_upgrade_steps(db=db, progress_handler=progress_handler, should_vacuum=True)
