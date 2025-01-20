@@ -106,7 +106,6 @@ async function save(): Promise<boolean> {
       v-model="modelValue"
       v-model:error-messages="errorMessages"
       v-model:state-updated="stateUpdated"
-      :edit-mode="isEdit"
       :submitting="loading"
     />
   </BigDialog>
