@@ -1,26 +1,28 @@
 import path from 'node:path';
 import process from 'node:process';
-import { type BrowserWindow, Menu, Tray, app, nativeImage } from 'electron';
-import { settingsManager } from '@electron/main/settings-manager';
+import { Menu, Tray, nativeImage } from 'electron';
 import { checkIfDevelopment } from '@shared/utils';
+import { assert } from '@rotki/common';
+import type { SettingsManager } from '@electron/main/settings-manager';
 import type { TrayUpdate } from '@shared/ipc';
 
 const dirname = import.meta.dirname;
 
-type WindowProvider = () => BrowserWindow;
 const isMac = process.platform === 'darwin';
 
-export class TrayManager {
-  private readonly getWindow: WindowProvider;
-  private readonly closeApp: () => void;
-  private tooltip = '';
-  private tray?: Tray = undefined;
+interface TrayManagerListener {
+  toggleWindowVisibility: () => boolean;
+  quit: () => void;
+}
 
-  constructor(getWindow: WindowProvider, closeApp: () => void) {
-    this.getWindow = getWindow;
-    this.closeApp = closeApp;
-    if (settingsManager.appSettings.displayTray)
-      this.build();
+export class TrayManager {
+  private tooltip = '';
+  private tray?: Tray;
+  private listener?: TrayManagerListener;
+  private isVisible = false;
+
+  constructor(private readonly settings: SettingsManager) {
+
   }
 
   private static get iconPath(): string {
@@ -45,12 +47,12 @@ export class TrayManager {
       { type: 'separator' },
       {
         label: visible ? 'Minimize to tray' : 'Restore from tray',
-        click: () => this.showHide(this.getWindow()),
+        click: () => this.toggleWindowVisibility(),
       },
       { type: 'separator' },
       {
         label: 'Quit',
-        click: this.closeApp,
+        click: this.listener?.quit,
       },
     ]);
   }
@@ -87,8 +89,7 @@ export class TrayManager {
     this.tooltip = `Net worth ${netWorth} ${currency}.\nChange in ${period} period ${indicator} ${percentage}%\n(${delta} ${currency})`;
     this.tray.setToolTip(this.tooltip);
 
-    const visible = this.getWindow().isVisible();
-    this.tray.setContextMenu(this.buildMenu(visible, this.tooltip));
+    this.updateContextMenu(this.isVisible);
   }
 
   private setIcon(iconName: string) {
@@ -97,25 +98,17 @@ export class TrayManager {
     this.tray?.setImage(trayIcon);
   }
 
-  private showHide(win: BrowserWindow) {
-    if (win.isVisible()) {
-      win.hide();
-    }
-    else {
-      win.show();
-      app.focus();
-    }
-
-    this.tray?.setContextMenu(this.buildMenu(win.isVisible()));
+  private toggleWindowVisibility() {
+    const listener = this.listener;
+    assert(listener, 'No listener set');
+    const visible = listener.toggleWindowVisibility();
+    this.updateContextMenu(visible);
   }
 
-  private readonly hidden = () => {
-    this.tray?.setContextMenu(this.buildMenu(false, this.tooltip));
-  };
-
-  private readonly shown = () => {
-    this.tray?.setContextMenu(this.buildMenu(true, this.tooltip));
-  };
+  updateContextMenu(visible: boolean) {
+    this.isVisible = visible;
+    this.tray?.setContextMenu(this.buildMenu(visible, this.tooltip));
+  }
 
   build() {
     const icon = isMac ? 'rotki-trayTemplate@5.png' : 'rotki_tray@5x.png';
@@ -125,20 +118,24 @@ export class TrayManager {
     this.tray.setToolTip('rotki is running');
 
     this.tray.setContextMenu(this.buildMenu(true));
-    this.tray.on('double-click', () => this.showHide(this.getWindow()));
-    this.tray.on('click', () => this.showHide(this.getWindow()));
+    this.tray.on('double-click', () => this.toggleWindowVisibility());
+    this.tray.on('click', () => this.toggleWindowVisibility());
   }
 
-  destroy() {
+  cleanup() {
     if (this.tray) {
       this.tray.destroy();
       this.tray = undefined;
     }
+    this.listener = undefined;
   }
 
-  listen() {
-    const window = this.getWindow();
-    window.on('hide', this.hidden);
-    window.on('show', this.shown);
+  initialize(listener: TrayManagerListener) {
+    if (!this.settings.appSettings.displayTray) {
+      return;
+    }
+
+    this.build();
+    this.listener = listener;
   }
 }
