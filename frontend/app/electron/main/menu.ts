@@ -122,7 +122,12 @@ const fileMenu = {
   submenu: [isMac ? { role: 'close' } : { role: 'quit' }],
 };
 
-const developmentViewMenu = [{ role: 'reload' }, { role: 'forceReload' }, { role: 'toggleDevTools' }, separator];
+const developmentViewMenu = [
+  { role: 'reload' },
+  { role: 'forceReload' },
+  { role: 'toggleDevTools' },
+  separator,
+];
 
 const minimize = {
   id: 'MINIMIZE_TO_TRAY',
@@ -149,6 +154,7 @@ const viewMenu = {
   label: '&View',
   submenu: [
     ...(isDevelopment ? developmentViewMenu : [{ role: 'toggleDevTools', visible: false }]),
+    { role: 'minimize' },
     { role: 'resetZoom' },
     { role: 'zoomIn' },
     { role: 'zoomOut' },
@@ -160,12 +166,18 @@ const viewMenu = {
   ],
 };
 const defaultMenuTemplate: any[] = [
-  // On a mac we want to show a "rotki" menu item in the app bar
+  // On Mac, we want to show a "rotki" menu item in the app bar.
   ...(isMac
     ? [
         {
           label: app.name,
-          submenu: [{ role: 'hide' }, { role: 'hideOthers' }, { role: 'unhide' }, separator, { role: 'quit' }],
+          submenu: [
+            { role: 'hide' },
+            { role: 'hideOthers' },
+            { role: 'unhide' },
+            separator,
+            { role: 'quit' },
+          ],
         },
       ]
     : []),

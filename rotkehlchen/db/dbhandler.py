@@ -765,6 +765,18 @@ class DBHandler:
         ).fetchone()
         return None if value is None else name.deserialize_callback(value[0])
 
+    def delete_dynamic_cache(
+            self,
+            write_cursor: 'DBCursor',
+            name: DBCacheDynamic,
+            **kwargs: str,
+    ) -> None:
+        """Delete the cache value from the `key_value_cache` table of the DB
+        according to the given `name` and `kwargs` if it exists"""
+        write_cursor.execute(
+            'DELETE FROM key_value_cache WHERE name=?;', (name.get_db_key(**kwargs),),
+        ).fetchone()
+
     @overload
     def set_dynamic_cache(
             self,
@@ -2080,11 +2092,15 @@ class DBHandler:
             )
             loopring = DBLoopring(self)
             loopring.remove_accountid_mapping(write_cursor, address)
+            # Delete withdrawals related data
+            self.delete_dynamic_cache(write_cursor=write_cursor, name=DBCacheDynamic.WITHDRAWALS_TS, address=address)  # noqa: E501
+            self.delete_dynamic_cache(write_cursor=write_cursor, name=DBCacheDynamic.WITHDRAWALS_IDX, address=address)  # noqa: E501
 
         write_cursor.execute(
             'DELETE FROM evm_accounts_details WHERE account=? AND chain_id=?',
             (address, blockchain.to_chain_id().serialize_for_db()),
         )
+
         write_cursor.execute(
             f"DELETE FROM key_value_cache WHERE name LIKE '{EXTRAINTERNALTXPREFIX}_%' AND value = ?",  # noqa: E501
             (address,),

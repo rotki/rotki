@@ -14,6 +14,8 @@ import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import BalanceTypeInput from '@/components/inputs/BalanceTypeInput.vue';
 import RuiForm from '@/components/helper/RuiForm.vue';
 import { useBigNumberModel, useRefPropVModel } from '@/utils/model';
+import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import { useLocationStore } from '@/store/locations';
 import type { ValidationErrors } from '@/types/api/errors';
 import type { ManualBalance, RawManualBalance } from '@/types/manual-balances';
 
@@ -23,6 +25,7 @@ const modelValue = defineModel<RawManualBalance | ManualBalance>({ required: tru
 
 defineProps<{
   submitting: boolean;
+  editMode: boolean;
 }>();
 
 const { t } = useI18n();
@@ -35,6 +38,8 @@ const label = useRefPropVModel(modelValue, 'label');
 const balanceType = useRefPropVModel(modelValue, 'balanceType');
 const location = useRefPropVModel(modelValue, 'location');
 const rawAmount = useRefPropVModel(modelValue, 'amount');
+
+const locationTouched = ref<boolean>(false);
 
 const tags = computed<string[]>({
   get() {
@@ -50,6 +55,8 @@ const tags = computed<string[]>({
 
 const amount = useBigNumberModel(rawAmount);
 const { manualLabels } = useManualBalancesStore();
+const { tradeLocations } = storeToRefs(useLocationStore());
+const { assetInfo } = useAssetInfoRetrieval();
 
 const rules = {
   amount: {
@@ -110,6 +117,20 @@ async function validate(): Promise<boolean> {
 async function savePrice() {
   await get(priceForm)?.savePrice(get(asset));
 }
+
+watch(asset, (asset) => {
+  if (asset && !props.editMode && !get(locationTouched)) {
+    const info = get(assetInfo(asset));
+    const evmChain = info?.evmChain;
+    if (evmChain) {
+      const foundLocation = get(tradeLocations).find(item => item.identifier === evmChain.split('_').join(' '));
+
+      if (foundLocation) {
+        set(location, foundLocation.identifier);
+      }
+    }
+  }
+});
 
 defineExpose({
   savePrice,
@@ -209,6 +230,7 @@ defineExpose({
       :disabled="submitting"
       :label="t('common.location')"
       @blur="v$.location.$touch()"
+      @update:model-value="locationTouched = true"
     />
 
     <CustomAssetFormDialog

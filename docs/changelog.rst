@@ -15,6 +15,11 @@ Changelog
 * :feature:`-` Lido and EtherFI reserve tokens will now be automatically queried.
 * :feature:`-` Safepass vesting claim start events will now be properly decoded.
 * :bug:`-` Bitmex balances will now be queried correctly.
+* :bug:`-` Deleting an ethereum address will now remove the withdrawals cache for that address so re-adding it will now properly detect ethereum staking withdrawals again.
+* :bug:`-` Fix double count of cowswap fees.
+* :bug:`-` Allow the rotki app to be minimized using the shortcut for each platform.
+* :bug:`-` Fix issue when user tries to delete Kusama, Polkadot, or Beaconchain RPC URL.
+* :bug:`-` rotki should now warn you again when gnosis pay authentication token expires.
 
 * :release:`1.37.1 <2025-01-10>`
 * :bug:`-` OKX balances will now include assets in the funding account.
