@@ -11,7 +11,7 @@ from rotkehlchen.chain.ethereum.oracles.constants import UNISWAP_FACTORY_ADDRESS
 from rotkehlchen.chain.ethereum.utils import generate_address_via_create2
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.prices import ZERO_PRICE
-from rotkehlchen.constants.resolver import identifier_to_collectible_id
+from rotkehlchen.constants.resolver import tokenid_to_collectible_id
 from rotkehlchen.errors.misc import NotERC20Conformant, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
@@ -107,7 +107,7 @@ def get_uniswap_v3_position_price(
         token: 'EvmToken',
 ) -> Price:
     """Get the USD price of a Uniswap V3 LP position identified by the token's collectible id."""
-    if (token_id := identifier_to_collectible_id(identifier=token.identifier)) is None:
+    if (collectible_id := tokenid_to_collectible_id(identifier=token.identifier)) is None:
         log.error(f'Failed to find Uniswap V3 position price for {token} due to missing token ID.')
         return ZERO_PRICE
 
@@ -122,7 +122,7 @@ def get_uniswap_v3_position_price(
             contract_address=uniswap_v3_nft_manager.address,
             abi=uniswap_v3_nft_manager.abi,
             method_name='positions',
-            arguments=[int(token_id)],
+            arguments=[int(collectible_id)],
         )
     except (RemoteError, ValueError) as e:
         log.error(f'Failed to query Uniswap V3 position information from nft contract for {token} due to {e!s}')  # noqa: E501

@@ -19,12 +19,20 @@ def evm_address_to_identifier(
     return ident
 
 
-def identifier_to_collectible_id(identifier: str) -> str | None:
+def tokenid_to_collectible_id(identifier: str) -> str | None:
     """Get erc721 collectible id from the asset identifier."""
     if 'erc721' not in identifier or len(id_parts := identifier.split('/')) != 3:
         return None
 
     return id_parts[-1]
+
+
+def tokenid_belongs_to_collection(token_identifier: str, collection_identifier: str) -> bool:
+    """Determine if an ERC721 token belongs to the specified collection.
+    An ERC721 token's identifier is its token id appended to its collection identifier.
+    Returns true if the token identifier starts with the collection identifier otherwise false.
+    """
+    return token_identifier.startswith(collection_identifier)
 
 
 def ethaddress_to_identifier(address: ChecksumEvmAddress) -> str:
