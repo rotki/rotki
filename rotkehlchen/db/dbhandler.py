@@ -756,7 +756,7 @@ class DBHandler:
             self,
             cursor: 'DBCursor',
             name: DBCacheDynamic,
-            **kwargs: str,
+            **kwargs: Any,
     ) -> int | Timestamp | str | ChecksumEvmAddress | None:
         """Returns the cache value from the `key_value_cache` table of the DB
         according to the given `name` and `kwargs`. Defaults to `None` if not found."""
@@ -852,7 +852,7 @@ class DBHandler:
             write_cursor: 'DBCursor',
             name: DBCacheDynamic,
             value: int | Timestamp | ChecksumEvmAddress,
-            **kwargs: str,
+            **kwargs: Any,
     ) -> None:
         """Save the name-value pair of the cache with variable name to the `key_value_cache` table."""  # noqa: E501
         write_cursor.execute(
@@ -2102,7 +2102,7 @@ class DBHandler:
         )
 
         write_cursor.execute(
-            f"DELETE FROM key_value_cache WHERE name LIKE '{EXTRAINTERNALTXPREFIX}_%' AND value = ?",  # noqa: E501
+            f"DELETE FROM key_value_cache WHERE name LIKE '{EXTRAINTERNALTXPREFIX}_{blockchain.to_chain_id().value}%' AND value = ?",  # noqa: E501
             (address,),
         )
 

@@ -85,11 +85,13 @@ class OdosCommonDecoderBase(DecoderInterface):
         if self.native_currency.identifier in output_tokens:
             try:  # download (if not there) and find all native token transfers from/to the router
                 internal_native_ins = self.evm_txns.get_and_ensure_internal_txns_of_parent_in_db(
+                    chain_id=self.base.evm_inquirer.chain_id,
                     tx_hash=context.transaction.tx_hash,
                     to_address=self.router_address,
                     user_address=sender,
                 )
                 internal_native_outs = self.evm_txns.get_and_ensure_internal_txns_of_parent_in_db(
+                    chain_id=self.base.evm_inquirer.chain_id,
                     tx_hash=context.transaction.tx_hash,
                     from_address=self.router_address,
                     to_address=sender,
