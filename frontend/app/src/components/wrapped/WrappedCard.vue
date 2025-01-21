@@ -1,8 +1,8 @@
-<script setup lang="ts">
+<script setup lang="ts" generic="T extends object">
 import WrappedItem from '@/components/wrapped/WrappedItem.vue';
 
 const props = defineProps<{
-  items: any[];
+  items: T[];
 }>();
 
 const { t } = useI18n();
@@ -46,7 +46,7 @@ const itemsToUse = computed(() => {
           name="label"
           v-bind="{ item, index }"
         >
-          {{ item.label }}
+          {{ 'label' in item ? item.label : item }}
         </slot>
       </template>
       <template #value>
@@ -54,7 +54,7 @@ const itemsToUse = computed(() => {
           name="value"
           v-bind="{ item, index }"
         >
-          {{ item.value }}
+          {{ 'value' in item ? item.value : item }}
         </slot>
       </template>
     </WrappedItem>
