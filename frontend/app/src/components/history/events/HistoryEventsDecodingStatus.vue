@@ -111,13 +111,15 @@ const combinedDecodingStatus = computed(() => {
   ];
 });
 
+const allDone = computed(() => get(combinedDecodingStatus).every(status => status.total - status.processed === 0));
+
 onMounted(() => refresh());
 </script>
 
 <template>
   <RuiCard>
     <template #custom-header>
-      <div class="flex justify-between gap-4 p-4 pb-0">
+      <div class="flex items-center justify-between gap-4 pt-3 p-4 pb-0">
         <h6 class="text-h6 text-rui-text">
           {{ t('transactions.events_decoding.title') }}
         </h6>
@@ -125,120 +127,119 @@ onMounted(() => refresh());
       </div>
     </template>
 
-    <div
-      v-if="combinedDecodingStatus.length > 0"
-      :class="$style.content"
-    >
-      <div class="mb-4">
+    <div class="mb-4">
+      <div
+        v-if="fetching || usedIsDecoding || isTransactionsLoading"
+        class="flex items-center gap-4"
+      >
+        <RuiProgress
+          color="primary"
+          variant="indeterminate"
+          circular
+          size="20"
+          thickness="2"
+        />
+        <template v-if="fetching">
+          {{ t('transactions.events_decoding.fetching') }}
+        </template>
+        <template v-else-if="usedIsDecoding">
+          {{ t('transactions.events_decoding.preparing') }}
+        </template>
+        <template v-else-if="isTransactionsLoading">
+          {{ t('transactions.events_decoding.decoded.not_started') }}
+        </template>
+      </div>
+      <div
+        v-else-if="allDone"
+        class="flex items-center gap-4"
+      >
+        <SuccessDisplay
+          success
+          size="28"
+        />
+        {{ t('transactions.events_decoding.decoded.true') }}
+      </div>
+      <div v-else>
         {{ t('transactions.events_decoding.decoded.false') }}
       </div>
+    </div>
 
-      <DefineProgress #default="{ data }">
-        <div
-          v-if="refreshing || usedIsDecoding"
-          class="flex flex-col justify-center gap-3"
-        >
-          <RuiProgress
-            class="max-w-[5rem] mx-auto"
-            thickness="2"
-            size="20"
-            color="primary"
-            :value="
-              data.protocolCacheRefreshStatus
-                ? (data.protocolCacheRefreshStatus.processed / (data.protocolCacheRefreshStatus.total || 1)) * 100
-                : (data.processed / (data.total || 1)) * 100
-            "
-          />
-          <i18n-t
-            v-if="!data.protocolCacheRefreshStatus"
-            tag="span"
-            keypath="transactions.events_decoding.transactions_processed"
-          >
-            <template #processed>
-              {{ data.processed }}
-            </template>
-            <template #total>
-              {{ data.total }}
-            </template>
-          </i18n-t>
-          <i18n-t
-            v-else
-            tag="span"
-            keypath="transactions.protocol_cache_updates.protocol_pools_refreshed"
-          >
-            <template #protocol>
-              {{ toSentenceCase(data.protocolCacheRefreshStatus.protocol) }}
-            </template>
-            <template #processed>
-              {{ data.protocolCacheRefreshStatus.processed }}
-            </template>
-            <template #total>
-              {{ data.protocolCacheRefreshStatus.total }}
-            </template>
-          </i18n-t>
-        </div>
-        <div v-else>
-          -
-        </div>
-      </DefineProgress>
-
-      <RuiDataTable
-        :cols="headers"
-        :rows="combinedDecodingStatus"
-        dense
-        row-attr="chain"
-        striped
-        outlined
+    <DefineProgress #default="{ data }">
+      <div
+        v-if="refreshing || usedIsDecoding"
+        class="flex flex-col justify-center gap-3"
       >
-        <template #item.chain="{ row }">
-          <LocationDisplay :identifier="row.chain" />
-        </template>
-        <template #item.number="{ row }">
-          {{ row.total - row.processed }}
-        </template>
-        <template #item.progress="{ row }">
-          <ReuseProgress :data="row" />
-        </template>
-        <template #tfoot>
-          <tr>
-            <th>{{ t('common.total') }}</th>
-            <td class="text-end pr-12 py-2">
-              {{ total }}
-            </td>
-          </tr>
-        </template>
-      </RuiDataTable>
-    </div>
-    <div
-      v-else
-      class="mb-4 flex items-center gap-4"
+        <RuiProgress
+          class="max-w-[5rem] mx-auto"
+          thickness="2"
+          size="20"
+          color="primary"
+          :value="
+            data.protocolCacheRefreshStatus
+              ? (data.protocolCacheRefreshStatus.processed / (data.protocolCacheRefreshStatus.total || 1)) * 100
+              : (data.processed / (data.total || 1)) * 100
+          "
+        />
+        <i18n-t
+          v-if="!data.protocolCacheRefreshStatus"
+          tag="span"
+          keypath="transactions.events_decoding.transactions_processed"
+        >
+          <template #processed>
+            {{ data.processed }}
+          </template>
+          <template #total>
+            {{ data.total }}
+          </template>
+        </i18n-t>
+        <i18n-t
+          v-else
+          tag="span"
+          keypath="transactions.protocol_cache_updates.protocol_pools_refreshed"
+        >
+          <template #protocol>
+            {{ toSentenceCase(data.protocolCacheRefreshStatus.protocol) }}
+          </template>
+          <template #processed>
+            {{ data.protocolCacheRefreshStatus.processed }}
+          </template>
+          <template #total>
+            {{ data.protocolCacheRefreshStatus.total }}
+          </template>
+        </i18n-t>
+      </div>
+      <div v-else>
+        -
+      </div>
+    </DefineProgress>
+
+    <RuiDataTable
+      v-if="combinedDecodingStatus.length > 0"
+      :cols="headers"
+      :rows="combinedDecodingStatus"
+      dense
+      row-attr="chain"
+      striped
+      outlined
     >
-      <RuiProgress
-        v-if="fetching || usedIsDecoding || isTransactionsLoading"
-        color="primary"
-        variant="indeterminate"
-        circular
-        size="28"
-        thickness="2"
-      />
-      <SuccessDisplay
-        v-else
-        success
-        size="28"
-      />
-      <template v-if="fetching">
-        {{ t('transactions.events_decoding.fetching') }}
+      <template #item.chain="{ row }">
+        <LocationDisplay :identifier="row.chain" />
       </template>
-      <template v-else-if="usedIsDecoding">
-        {{ t('transactions.events_decoding.preparing') }}
+      <template #item.number="{ row }">
+        {{ row.total - row.processed }}
       </template>
-      <template v-else-if="isTransactionsLoading">
-        {{ t('transactions.events_decoding.decoded.not_started') }}
+      <template #item.progress="{ row }">
+        <ReuseProgress :data="row" />
       </template>
-      <template v-else>
-        {{ t('transactions.events_decoding.decoded.true') }}
+      <template #tfoot>
+        <tr>
+          <th>{{ t('common.total') }}</th>
+          <td class="text-end pr-12 py-2">
+            {{ total }}
+          </td>
+        </tr>
       </template>
-    </div>
+    </RuiDataTable>
 
     <template #footer>
       <div class="grow" />

@@ -3024,7 +3024,7 @@
       "blockchain_balances": "Soldes de la blockchain",
       "exchange_balances": "Soldes d'échange",
       "manual_balances": "Soldes manuels",
-      "non_fungible_balances": "Soldes non fongibles"
+      "non_fungible_balances": "Soldes NFT"
     },
     "api_keys": "Clés d'API",
     "api_keys_sub": {
