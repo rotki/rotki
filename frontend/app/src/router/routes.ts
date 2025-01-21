@@ -151,7 +151,7 @@ export const useAppRoutes = createSharedComposable(() => {
       text: t('common.assets'),
     },
     BALANCES: {
-      icon: 'lu-accounts-and-balances' as const,
+      icon: 'lu-balances' as const,
       route: Routes.BALANCES,
       text: t('navigation_menu.balances'),
     },
@@ -226,7 +226,7 @@ export const useAppRoutes = createSharedComposable(() => {
       text: t('navigation_menu.history'),
     },
     HISTORY_EVENTS: {
-      icon: 'lu-file-clock' as const,
+      icon: 'lu-history-events-fill' as const,
       route: Routes.HISTORY_EVENTS,
       text: t('navigation_menu.history_sub.history_events'),
     },
