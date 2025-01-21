@@ -1,16 +1,15 @@
 import process from 'node:process';
 import { LogService } from '@electron/main/log-service';
 import { app, protocol } from 'electron';
-import { startPromise } from '@shared/utils';
+import { checkIfDevelopment, startPromise } from '@shared/utils';
 import { SubprocessHandler } from '@electron/main/subprocess-handler';
 import { WindowManager } from '@electron/main/window-manager';
-import { WindowConfig } from '@electron/main/window-config';
 import { MenuManager } from '@electron/main/menu';
 import { TrayManager } from '@electron/main/tray-manager';
 import { IpcManager } from '@electron/main/ipc-setup';
 import { SettingsManager } from '@electron/main/settings-manager';
-
-const isMac = process.platform === 'darwin';
+import { DEFAULT_COLIBRI_PORT, DEFAULT_PORT } from '@electron/main/port-utils';
+import type { AppConfig } from '@electron/main/app-config';
 
 export class Application {
   private readonly window: WindowManager;
@@ -20,16 +19,27 @@ export class Application {
   private readonly processHandler: SubprocessHandler;
   private readonly menu: MenuManager;
   private readonly settings: SettingsManager;
-  private readonly config = new WindowConfig();
+  private readonly appConfig: AppConfig = {
+    isDev: checkIfDevelopment(),
+    isMac: process.platform === 'darwin',
+    urls: {
+      coreApiUrl: import.meta.env.VITE_BACKEND_URL as string,
+      colibriApiUrl: import.meta.env.VITE_COLIBRI_URL as string,
+    },
+    ports: {
+      colibriPort: DEFAULT_COLIBRI_PORT,
+      corePort: DEFAULT_PORT,
+    },
+  };
 
   constructor() {
     this.logger = new LogService(app);
     this.settings = new SettingsManager(app);
-    this.processHandler = new SubprocessHandler(this.logger);
-    this.window = new WindowManager(this.config, this.logger);
-    this.menu = new MenuManager(this.logger, this.settings);
-    this.tray = new TrayManager(this.settings);
-    this.ipc = new IpcManager(this.logger, this.settings);
+    this.processHandler = new SubprocessHandler(this.logger, this.appConfig);
+    this.window = new WindowManager(this.logger);
+    this.menu = new MenuManager(this.logger, this.settings, this.appConfig);
+    this.tray = new TrayManager(this.settings, this.appConfig);
+    this.ipc = new IpcManager(this.logger, this.settings, this.appConfig);
   }
 
   async start(): Promise<void> {
@@ -101,7 +111,7 @@ export class Application {
   private setupAppEvents() {
     app.on('second-instance', this.window.focus);
     app.on('window-all-closed', (): void => {
-      if (!isMac)
+      if (!this.appConfig.isMac)
         app.quit();
     });
     app.on('activate', () => startPromise(this.window.activate()));

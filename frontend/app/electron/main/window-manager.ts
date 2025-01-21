@@ -5,7 +5,7 @@ import windowStateKeeper from 'electron-window-state';
 import { BrowserWindow, ipcMain } from 'electron';
 import { createProtocol } from '@electron/main/create-protocol';
 import { assert } from '@rotki/common';
-import type { WindowConfig } from '@electron/main/window-config';
+import { WindowConfig } from '@electron/main/window-config';
 import type { BackendCode } from '@shared/ipc';
 import type { LogService } from '@electron/main/log-service';
 
@@ -18,6 +18,7 @@ export class WindowManager {
   private window: BrowserWindow | null = null;
   private readonly navigation: NavigationHandler;
   private readonly contextMenuHandler: ContextMenuHandler;
+  private readonly windowConfig: WindowConfig;
 
   private readonly isMac = process.platform === 'darwin';
   private forceQuit: boolean = false;
@@ -37,14 +38,15 @@ export class WindowManager {
     return listener;
   }
 
-  constructor(private readonly config: WindowConfig, private readonly logger: LogService) {
+  constructor(private readonly logger: LogService) {
     this.navigation = new NavigationHandler();
     this.contextMenuHandler = new ContextMenuHandler();
+    this.windowConfig = new WindowConfig();
   }
 
   async create(): Promise<BrowserWindow> {
     const windowState = this.createWindowState();
-    this.window = new BrowserWindow(this.config.getWindowOptions(windowState));
+    this.window = new BrowserWindow(this.windowConfig.getWindowOptions(windowState));
 
     windowState.manage(this.window);
 
@@ -108,7 +110,7 @@ export class WindowManager {
   }
 
   private createWindowState() {
-    const screen = this.config.getScreenDimensions();
+    const screen = this.windowConfig.getScreenDimensions();
     return windowStateKeeper({
       defaultWidth: screen.defaultWidth,
       defaultHeight: screen.defaultHeight,

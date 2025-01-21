@@ -1,14 +1,10 @@
-import process from 'node:process';
 import { type BaseWindow, BrowserWindow, Menu, type MenuItem, type MenuItemConstructorOptions, app, shell } from 'electron';
 import { externalLinks } from '@shared/external-links';
-import { checkIfDevelopment } from '@shared/utils';
 import { IpcCommands } from '@electron/ipc-commands';
 import { assert } from '@rotki/common';
 import type { LogService } from '@electron/main/log-service';
 import type { SettingsManager } from '@electron/main/settings-manager';
-
-const isDevelopment = checkIfDevelopment();
-const isMac = process.platform === 'darwin';
+import type { AppConfig } from '@electron/main/app-config';
 
 export interface MenuManagerListener {
   onDisplayTrayChanged: (displayTray: boolean) => void;
@@ -20,7 +16,11 @@ export class MenuManager {
   private readonly separator: MenuItemConstructorOptions = { type: 'separator' };
   private isPremium: boolean = false;
 
-  constructor(private readonly logger: LogService, private readonly settings: SettingsManager) {
+  constructor(
+    private readonly logger: LogService,
+    private readonly settings: SettingsManager,
+    private readonly config: AppConfig,
+  ) {
   }
 
   initialize(listener: MenuManagerListener): void {
@@ -64,12 +64,12 @@ export class MenuManager {
       ],
     };
     return [
-      ...(isMac ? [macAppMenu] : []),
+      ...(this.config.isMac ? [macAppMenu] : []),
       this.getFileMenu(),
       this.getEditMenu(),
       this.getViewMenu(),
       this.getHelpMenu(),
-      ...(isDevelopment ? [this.getDebugMenu()] : []),
+      ...(this.config.isDev ? [this.getDebugMenu()] : []),
       // Re-render the menu with the 'Get rotki Premium' button if the user who just logged in
       // is not a premium user, otherwise render the menu without the button. Since we are unable to just toggle
       // visibility on a top-level menu item, we instead have to add/remove it from the menu upon every login
@@ -171,7 +171,7 @@ export class MenuManager {
   private getPremiumMenu(): MenuItemConstructorOptions {
     return {
       label: '&Get rotki Premium',
-      ...(isMac
+      ...(this.config.isMac
         ? {
           // submenu is mandatory to be displayed on macOS
             submenu: [
@@ -217,7 +217,7 @@ export class MenuManager {
         { role: 'copy' },
         { role: 'paste' },
         // Macs have special copy/paste and speech functionality
-        ...(isMac ? macEditOptions : editOptions),
+        ...(this.config.isMac ? macEditOptions : editOptions),
       ],
     };
   }
@@ -225,7 +225,7 @@ export class MenuManager {
   private getFileMenu(): MenuItemConstructorOptions {
     return {
       label: 'File',
-      submenu: [isMac ? { role: 'close' } : { role: 'quit' }],
+      submenu: [this.config.isMac ? { role: 'close' } : { role: 'quit' }],
     };
   }
 
@@ -275,7 +275,7 @@ export class MenuManager {
     return {
       label: '&View',
       submenu: [
-        ...(isDevelopment ? developmentDevTools : productionDevTools),
+        ...(this.config.isDev ? developmentDevTools : productionDevTools),
         { role: 'minimize' },
         { role: 'resetZoom' },
         { role: 'zoomIn' },
