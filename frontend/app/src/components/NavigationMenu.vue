@@ -145,8 +145,20 @@ const navItems: MenuItem[] = [
   },
   {
     class: 'statistics',
-    type: 'item',
+    type: 'group',
     ...Routes.STATISTICS,
+    items: [
+      {
+        class: 'statistics-graph',
+        type: 'item',
+        ...Routes.STATISTICS_GRAPHS,
+      },
+      {
+        class: 'statistics-history-events',
+        type: 'item',
+        ...Routes.STATISTICS_HISTORY_EVENTS,
+      },
+    ],
   },
   {
     class: 'staking',

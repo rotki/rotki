@@ -3546,7 +3546,7 @@
       "blockchain_balances": "Blockchain Balances",
       "exchange_balances": "Exchange Balances",
       "manual_balances": "Manual Balances",
-      "non_fungible_balances": "Non Fungible Balances"
+      "non_fungible_balances": "NFT Balances"
     },
     "api_keys": "API Keys",
     "api_keys_sub": {
@@ -3606,6 +3606,10 @@
     },
     "staking": "Staking",
     "statistics": "Statistics",
+    "statistics_sub": {
+      "graphs": "Graphs",
+      "history_events": "History Events Wrapped"
+    },
     "tag_manager": "Tag Manager"
   },
   "net_worth_chart": {
@@ -4757,7 +4761,7 @@
       "decoded": {
         "true": "All transactions have been processed.",
         "false": "Some transactions need to be processed.",
-        "not_started": "The decoding process will start after transaction querying is done."
+        "not_started": "The decoding process will continue after transaction querying is done."
       },
       "fetching": "Checking transaction decoding status",
       "transactions_processed": "{processed} / {total} transactions processed",
@@ -4973,9 +4977,7 @@
     "title": "rotki Wrapped {year}",
     "get_data": "Get data",
     "filter_by_date": "Filter by date",
-    "subtitle": "Your year with rotki",
     "year_subtitle": "Your DeFi journey in Numbers",
-    "tooltip": "View your {year} Wrapped",
     "exchange_activity": "Trades by exchange",
     "transactions_by_chain": "Transactions per chain",
     "protocol_activity": "Number of transactions by protocol",

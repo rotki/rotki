@@ -2703,7 +2703,7 @@
       "blockchain_balances": "Υπόλοιπα Blockchain",
       "exchange_balances": "Υπόλοιπα Ανταλλακτηρίων",
       "manual_balances": "Χειροκίνητα Υπόλοιπα",
-      "non_fungible_balances": "Μη ανταλλάξιμο Υπόλοιπα"
+      "non_fungible_balances": "Υπόλοιπα NFT"
     },
     "api_keys": "API Keys",
     "api_keys_sub": {

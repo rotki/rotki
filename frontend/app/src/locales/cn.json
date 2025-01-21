@@ -2758,7 +2758,7 @@
       "blockchain_balances": "区块链余额",
       "exchange_balances": "外汇余额",
       "manual_balances": "手动余额",
-      "non_fungible_balances": "不可替代余额"
+      "non_fungible_balances": "NFT 余额"
     },
     "api_keys": "API Keys",
     "api_keys_sub": {

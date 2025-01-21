@@ -25,6 +25,7 @@ import {
   LuCable,
   LuCalculator,
   LuCalendarDays,
+  LuChartBar,
   LuChartLine,
   LuCheck,
   LuCheckboxBlankCircle,
@@ -415,6 +416,8 @@ export function createRuiPlugin(defaults: Partial<RuiOptions['defaults']>): RuiP
         LuBitcoinAccounts,
         LuSubstrateAccounts,
         LuNotebookPen,
+        LuChartLine,
+        LuChartBar,
         // remaining from prev version of premium components
         RiEqualLine,
         RiMoonLine,
