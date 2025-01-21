@@ -242,7 +242,7 @@
         "counterparty_mappings": {
           "default": {
             "label": "donate",
-            "icon": "lu-heart-handshake"
+            "icon": "lu-donate-fill"
           }
         },
         "direction": "out"
@@ -251,7 +251,7 @@
         "counterparty_mappings": {
           "default": {
             "label": "receive donation",
-            "icon": "lu-hand-heart"
+            "icon": "lu-receive-donation-fill"
           }
         },
         "direction": "in"
@@ -351,7 +351,7 @@
         "counterparty_mappings": {
           "default": {
             "label": "fee",
-            "icon": "lu-receipt-cent"
+            "icon": "lu-banknote"
           },
           "gas": {
             "label": "gas fee",
@@ -426,13 +426,13 @@
     },
     "accounting_events_icons": {
       "trade": "lu-send-to-back",
-      "fee": "lu-receipt-cent",
+      "fee": "lu-banknote",
       "asset movement": "lu-coins-exchange",
       "margin position": "lu-percent",
       "loan": "lu-handshake",
       "prefork acquisition": "lu-git-branch",
       "staking": "lu-layers",
-      "history event": "lu-file-clock",
+      "history event": "lu-history-events-fill",
       "transaction event": "lu-arrow-left-right"
     }
   },
