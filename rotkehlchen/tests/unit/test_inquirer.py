@@ -23,6 +23,7 @@ from rotkehlchen.chain.evm.decoding.curve.curve_cache import (
     _query_curve_data_from_api,
     query_curve_data,
 )
+from rotkehlchen.chain.evm.decoding.spark.constants import CPT_SPARK
 from rotkehlchen.chain.evm.node_inquirer import _query_web3_get_logs, construct_event_filter_params
 from rotkehlchen.chain.evm.types import NodeName, string_to_evm_address
 from rotkehlchen.chain.gnosis.transactions import ADDED_RECEIVER_ABI, BLOCKREWARDS_ADDRESS
@@ -1074,6 +1075,54 @@ def test_find_uniswap_v3_position_price(database: 'DBHandler', inquirer_defi: 'I
         token_id='188693',
         chain_id=ChainID.BINANCE_SC,
     ).is_close(FVal('7222.51769'), max_diff='1e-5')
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+def test_find_spark_token_prices(database: 'DBHandler', inquirer_defi: 'Inquirer') -> None:
+    sp_wsteth = get_or_create_evm_token(
+        userdb=database,
+        evm_address=string_to_evm_address('0x12B54025C112Aa61fAce2CDB7118740875A566E9'),
+        chain_id=ChainID.ETHEREUM,
+        token_kind=EvmTokenKind.ERC20,
+        symbol='spwstETH',
+        protocol=CPT_SPARK,
+        name='Spark wstETH',
+        underlying_tokens=[
+            UnderlyingToken(
+                address=get_or_create_evm_token(
+                    userdb=database,
+                    chain_id=ChainID.ETHEREUM,
+                    evm_address=string_to_evm_address('0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0'),
+                ).evm_address,
+                token_kind=EvmTokenKind.ERC20,
+                weight=ONE,
+            ),
+        ],
+    )
+    sp_cbbtc = get_or_create_evm_token(
+        userdb=database,
+        evm_address=string_to_evm_address('0xb3973D459df38ae57797811F2A1fd061DA1BC123'),
+        chain_id=ChainID.ETHEREUM,
+        token_kind=EvmTokenKind.ERC20,
+        symbol='spcbBTC',
+        protocol=CPT_SPARK,
+        name='Spark cbBTC',
+        underlying_tokens=[
+            UnderlyingToken(
+                address=get_or_create_evm_token(
+                    userdb=database,
+                    chain_id=ChainID.ETHEREUM,
+                    evm_address=string_to_evm_address('0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf'),
+                ).evm_address,
+                token_kind=EvmTokenKind.ERC20,
+                weight=ONE,
+            ),
+        ],
+    )
+    assert inquirer_defi.find_usd_price(sp_wsteth).is_close(FVal('3913.2'), max_diff='1e-5')
+    assert inquirer_defi.find_usd_price(sp_cbbtc).is_close(FVal('104373'), max_diff='1e-5')
 
 
 @pytest.mark.vcr
