@@ -2,16 +2,13 @@ import * as os from 'node:os';
 import process from 'node:process';
 import { app } from 'electron';
 import { psList } from '@electron/main/ps-list';
-import { DEFAULT_COLIBRI_PORT, DEFAULT_PORT, getPortAndUrl } from '@electron/main/port-utils';
-import { checkIfDevelopment } from '@shared/utils';
+import { getPortAndUrl } from '@electron/main/port-utils';
 import { BackendCode, type BackendOptions } from '@shared/ipc';
 import { ProcessManager } from '@electron/main/process-manager';
 import { ColibriConfig } from '@electron/main/colibri-args';
 import { RotkiCoreConfig } from '@electron/main/core-args';
-import { apiUrls } from '@electron/main/api-urls';
 import type { LogService } from '@electron/main/log-service';
-
-const isDevelopment = checkIfDevelopment();
+import type { AppConfig } from '@electron/main/app-config';
 
 interface SubprocessHandlerErrorListener {
   onProcessError: (message: string | Error, code: BackendCode) => void;
@@ -23,7 +20,7 @@ export class SubprocessHandler {
   private readonly colibriManager: ProcessManager;
   private readonly coreManager: ProcessManager;
 
-  constructor(private readonly logger: LogService) {
+  constructor(private readonly logger: LogService, private readonly config: AppConfig) {
     this.exiting = false;
     const startupMessage = `
     ------------------
@@ -109,14 +106,17 @@ export class SubprocessHandler {
 
   private async startColibri() {
     this.logger.log('Preparing to start colibri');
-    const [port, url, isNonDefault] = await getPortAndUrl(DEFAULT_COLIBRI_PORT, import.meta.env.VITE_COLIBRI_URL);
+    const [port, url, isNonDefault] = await getPortAndUrl(
+      this.config.ports.colibriPort,
+      this.config.urls.colibriApiUrl,
+    );
 
     if (isNonDefault) {
       this.logger.log(`Using non-default port ${port} for colibri at ${url}`);
-      apiUrls.colibriApiUrl = url;
+      this.config.urls.colibriApiUrl = url;
     }
 
-    const { command, args, workDir } = ColibriConfig.create(isDevelopment)
+    const { command, args, workDir } = ColibriConfig.create(this.config.isDev)
       .withLogfilePath(this.logger.colibriProcessLogFile)
       .withPort(port)
       .build();
@@ -132,14 +132,17 @@ export class SubprocessHandler {
 
   private async startCore(options: Partial<BackendOptions>, listener: SubprocessHandlerErrorListener) {
     this.logger.log('Preparing to start rotki-core');
-    const [port, url, isNonDefault] = await getPortAndUrl(DEFAULT_PORT, import.meta.env.VITE_BACKEND_URL);
+    const [port, url, isNonDefault] = await getPortAndUrl(
+      this.config.ports.corePort,
+      this.config.urls.coreApiUrl,
+    );
 
     if (isNonDefault) {
       this.logger.log(`Using non-default port ${port} for rotki-core at ${url}`);
-      apiUrls.coreApiUrl = url;
+      this.config.urls.coreApiUrl = url;
     }
 
-    const { command, args, workDir } = RotkiCoreConfig.create(isDevelopment, options)
+    const { command, args, workDir } = RotkiCoreConfig.create(this.config.isDev, options)
       .withLogFile(this.logger.coreProcessLogPath)
       .withPort(port)
       .build();

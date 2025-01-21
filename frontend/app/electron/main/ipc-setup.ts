@@ -4,17 +4,15 @@ import { autoUpdater } from 'electron-updater';
 import { loadConfig } from '@electron/main/config';
 import { startHttp, stopHttp } from '@electron/main/http';
 import { selectPort } from '@electron/main/port-utils';
-import { checkIfDevelopment, startPromise } from '@shared/utils';
+import { startPromise } from '@shared/utils';
 import { IpcCommands } from '@electron/ipc-commands';
-import { apiUrls } from '@electron/main/api-urls';
 import { PasswordManager } from '@electron/main/password-manager';
 import { type DebugSettings, assert } from '@rotki/common';
 import type { BackendOptions, Credentials, SystemVersion, TrayUpdate } from '@shared/ipc';
 import type { ProgressInfo } from 'electron-builder';
 import type { LogService } from '@electron/main/log-service';
 import type { SettingsManager } from '@electron/main/settings-manager';
-
-const isDevelopment = checkIfDevelopment();
+import type { AppConfig } from '@electron/main/app-config';
 
 interface Callbacks {
   quit: () => Promise<void>;
@@ -52,6 +50,7 @@ export class IpcManager {
   constructor(
     private readonly logger: LogService,
     private readonly settings: SettingsManager,
+    private readonly config: AppConfig,
   ) {}
 
   initialize(callbacks: Callbacks) {
@@ -62,7 +61,7 @@ export class IpcManager {
     });
 
     ipcMain.on(IpcCommands.SYNC_API_URL, (event) => {
-      event.returnValue = apiUrls;
+      event.returnValue = this.config.urls;
     });
 
     ipcMain.on(IpcCommands.PREMIUM_LOGIN, (_event, showPremium) => {
@@ -267,7 +266,7 @@ export class IpcManager {
   };
 
   private readonly checkForUpdates = async (): Promise<boolean> => {
-    if (isDevelopment) {
+    if (this.config.isDev) {
       console.warn('Running in development skipping auto-updater check');
       return false;
     }

@@ -1,14 +1,9 @@
 import path from 'node:path';
-import process from 'node:process';
 import { Menu, Tray, nativeImage } from 'electron';
-import { checkIfDevelopment } from '@shared/utils';
 import { assert } from '@rotki/common';
 import type { SettingsManager } from '@electron/main/settings-manager';
 import type { TrayUpdate } from '@shared/ipc';
-
-const dirname = import.meta.dirname;
-
-const isMac = process.platform === 'darwin';
+import type { AppConfig } from '@electron/main/app-config';
 
 interface TrayManagerListener {
   toggleWindowVisibility: () => boolean;
@@ -21,12 +16,12 @@ export class TrayManager {
   private listener?: TrayManagerListener;
   private isVisible = false;
 
-  constructor(private readonly settings: SettingsManager) {
+  constructor(private readonly settings: SettingsManager, private readonly config: AppConfig) {
 
   }
 
-  private static get iconPath(): string {
-    return checkIfDevelopment() ? path.join(dirname, '..', 'public') : dirname;
+  private get iconPath(): string {
+    return this.config.isDev ? path.join(import.meta.dirname, '..', 'public') : import.meta.dirname;
   }
 
   private buildMenu(visible: boolean, info = '') {
@@ -34,7 +29,7 @@ export class TrayManager {
       {
         label: 'rotki',
         enabled: false,
-        icon: path.join(TrayManager.iconPath, 'rotki_tray.png'),
+        icon: path.join(this.iconPath, 'rotki_tray.png'),
       },
       ...(info
         ? [
@@ -62,7 +57,7 @@ export class TrayManager {
       return;
 
     if (up === undefined) {
-      this.setIcon(isMac ? 'rotki-trayTemplate@5.png' : 'rotki_tray@5x.png');
+      this.setIcon(this.config.isMac ? 'rotki-trayTemplate@5.png' : 'rotki_tray@5x.png');
       this.tray.setTitle('');
       this.tray.setToolTip('rotki is running');
       return;
@@ -82,7 +77,7 @@ export class TrayManager {
       indicator = '▼';
     }
 
-    if (!isMac)
+    if (!this.config.isMac)
       this.setIcon(icon);
 
     this.tray.setTitle(color + indicator);
@@ -93,7 +88,7 @@ export class TrayManager {
   }
 
   private setIcon(iconName: string) {
-    const iconPath = path.join(TrayManager.iconPath, iconName);
+    const iconPath = path.join(this.iconPath, iconName);
     const trayIcon = nativeImage.createFromPath(iconPath).resize({ width: 16, height: 16 });
     this.tray?.setImage(trayIcon);
   }
@@ -111,8 +106,8 @@ export class TrayManager {
   }
 
   build() {
-    const icon = isMac ? 'rotki-trayTemplate@5.png' : 'rotki_tray@5x.png';
-    const iconPath = path.join(TrayManager.iconPath, icon);
+    const icon = this.config.isMac ? 'rotki-trayTemplate@5.png' : 'rotki_tray@5x.png';
+    const iconPath = path.join(this.iconPath, icon);
     const trayIcon = nativeImage.createFromPath(iconPath).resize({ width: 16, height: 16 });
     this.tray = new Tray(trayIcon);
     this.tray.setToolTip('rotki is running');
