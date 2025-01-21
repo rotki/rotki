@@ -3033,8 +3033,7 @@
         "liquidity": "Pools de liquidité",
         "liquidity_sub": {
           "sushiswap": "Sushiswap",
-          "uniswap_v2": "Uniswap v2",
-          "uniswap_v3": "Uniswap v3"
+          "uniswap_v2": "Uniswap v2"
         },
         "protocols": "Protocoles"
       },

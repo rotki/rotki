@@ -48,7 +48,6 @@ declare module 'vue-router/auto-routes' {
     '/defi/deposits/liquidity/[[location]]': RouteRecordInfo<'/defi/deposits/liquidity/[[location]]', '/defi/deposits/liquidity/:location?', { location?: ParamValueZeroOrOne<true> }, { location?: ParamValueZeroOrOne<false> }>,
     '/defi/deposits/liquidity/sushiswap/': RouteRecordInfo<'/defi/deposits/liquidity/sushiswap/', '/defi/deposits/liquidity/sushiswap', Record<never, never>, Record<never, never>>,
     '/defi/deposits/liquidity/uniswap-v2/': RouteRecordInfo<'/defi/deposits/liquidity/uniswap-v2/', '/defi/deposits/liquidity/uniswap-v2', Record<never, never>, Record<never, never>>,
-    '/defi/deposits/liquidity/uniswap-v3/': RouteRecordInfo<'/defi/deposits/liquidity/uniswap-v3/', '/defi/deposits/liquidity/uniswap-v3', Record<never, never>, Record<never, never>>,
     'defi-deposits-protocols': RouteRecordInfo<'defi-deposits-protocols', '/defi/deposits/protocols', Record<never, never>, Record<never, never>>,
     'defi-liabilities': RouteRecordInfo<'defi-liabilities', '/defi/liabilities', Record<never, never>, Record<never, never>>,
     'defi-overview': RouteRecordInfo<'defi-overview', '/defi/overview', Record<never, never>, Record<never, never>>,

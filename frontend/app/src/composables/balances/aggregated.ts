@@ -78,7 +78,7 @@ export function useAggregatedBalances(): UseAggregatedBalancesReturn {
       return asset;
     });
 
-    const lpBalances = get(lpAggregatedBalances(false));
+    const lpBalances = get(lpAggregatedBalances);
     const lpAssets = lpBalances.map(item => item.asset).filter(item => !!item);
 
     assets.push(...liabilitiesAsset, ...lpAssets, ...additional);

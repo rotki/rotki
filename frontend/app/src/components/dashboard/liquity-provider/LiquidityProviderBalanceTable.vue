@@ -82,13 +82,11 @@ function createTableHeaders(currency: Ref<string>, dashboardTablesVisibleColumns
 const route = Routes.DEFI_DEPOSITS_LIQUIDITY;
 const expanded = ref<XSwapLiquidityBalance[]>([]);
 
-const { fetchV2Balances: fetchUniswapV2Balances, fetchV3Balances: fetchUniswapV3Balances } = useUniswapStore();
+const { fetchV2Balances: fetchUniswapV2Balances } = useUniswapStore();
 
 const { fetchBalances: fetchSushiswapBalances } = useSushiswapStore();
 
-const { getPoolName, lpAggregatedBalances, lpTotal } = useLiquidityPosition();
-const balances = lpAggregatedBalances(true);
-const totalInUsd = lpTotal(true);
+const { getPoolName, lpAggregatedBalances: balances, lpTotal: totalInUsd } = useLiquidityPosition();
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { dashboardTablesVisibleColumns } = storeToRefs(useFrontendSettingsStore());
@@ -98,7 +96,6 @@ const tableHeaders = createTableHeaders(currencySymbol, dashboardTablesVisibleCo
 const { isLoading } = useStatusStore();
 
 const loading = logicOr(
-  isLoading(Section.DEFI_UNISWAP_V3_BALANCES),
   isLoading(Section.DEFI_UNISWAP_V2_BALANCES),
   isLoading(Section.DEFI_SUSHISWAP_BALANCES),
 );
@@ -123,7 +120,6 @@ const ethAddresses = computed<string[]>(() => chainStore.getAddresses(Blockchain
 
 async function fetch(refresh = false) {
   if (get(ethAddresses).length > 0) {
-    await fetchUniswapV3Balances(refresh);
     await fetchUniswapV2Balances(refresh);
 
     if (get(premium)) {

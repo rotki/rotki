@@ -14,20 +14,16 @@ import type { OnError } from '@/types/fetch';
 
 export const useUniswapStore = defineStore('defi/uniswap', () => {
   const v2Balances = ref<XswapBalances>({});
-  const v3Balances = ref<XswapBalances>({});
   const events = ref<XswapEvents>({});
 
   const { activeModules } = storeToRefs(useGeneralSettingsStore());
   const isPremium = usePremium();
   const { t } = useI18n();
 
-  const { fetchUniswapEvents, fetchUniswapV2Balances, fetchUniswapV3Balances } = useUniswapApi();
+  const { fetchUniswapEvents, fetchUniswapV2Balances } = useUniswapApi();
 
   const uniswapV2Balances = (addresses: string[]): ComputedRef<XswapBalance[]> =>
     computed(() => getBalances(get(v2Balances), addresses));
-
-  const uniswapV3Balances = (addresses: string[]): ComputedRef<XswapBalance[]> =>
-    computed(() => getBalances(get(v3Balances), addresses, false));
 
   const uniswapPoolProfit = (addresses: string[]): ComputedRef<XswapPoolProfit[]> =>
     computed(() => getPoolProfit(get(events), addresses));
@@ -38,21 +34,10 @@ export const useUniswapStore = defineStore('defi/uniswap', () => {
     return Object.keys(uniswapBalances).concat(Object.keys(uniswapEvents)).filter(uniqueStrings);
   });
 
-  const uniswapV3Addresses = computed(() => {
-    const uniswapBalances = get(v3Balances);
-    const uniswapEvents = get(events);
-    return Object.keys(uniswapBalances).concat(Object.keys(uniswapEvents)).filter(uniqueStrings);
-  });
-
   const uniswapV2PoolAssets = computed(() => {
     const uniswapBalances = get(v2Balances);
     const uniswapEvents = get(events);
     return getPools(uniswapBalances, uniswapEvents);
-  });
-
-  const uniswapV3PoolAssets = computed(() => {
-    const uniswapBalances = get(v3Balances);
-    return getPools(uniswapBalances, {});
   });
 
   const fetchV2Balances = async (refresh = false): Promise<void> => {
@@ -89,45 +74,6 @@ export const useUniswapStore = defineStore('defi/uniswap', () => {
         },
       },
       v2Balances,
-    );
-  };
-
-  const fetchV3Balances = async (refresh = false): Promise<void> => {
-    const meta = {
-      premium: get(isPremium),
-      title: t('actions.defi.uniswap.task.title', { v: 3 }),
-    };
-
-    const onError: OnError = {
-      error: message => t('actions.defi.uniswap.error.description', {
-        error: message,
-        v: 3,
-      }),
-      title: t('actions.defi.uniswap.error.title', { v: 3 }),
-    };
-
-    await fetchDataAsync(
-      {
-        refresh,
-        requires: {
-          module: Module.UNISWAP,
-          premium: false,
-        },
-        state: {
-          activeModules,
-          isPremium,
-        },
-        task: {
-          checkLoading: { premium: get(isPremium) },
-          meta,
-          onError,
-          parser: data => XswapBalances.parse(data),
-          query: async () => fetchUniswapV3Balances(),
-          section: Section.DEFI_UNISWAP_V3_BALANCES,
-          type: TaskType.DEFI_UNISWAP_V3_BALANCES,
-        },
-      },
-      v3Balances,
     );
   };
 
@@ -169,13 +115,11 @@ export const useUniswapStore = defineStore('defi/uniswap', () => {
   };
 
   const reset = (): void => {
-    const { resetStatus } = useStatusUpdater(Section.DEFI_UNISWAP_V3_BALANCES);
+    const { resetStatus } = useStatusUpdater(Section.DEFI_UNISWAP_V2_BALANCES);
     set(v2Balances, {});
-    set(v3Balances, {});
     set(events, {});
 
     resetStatus({ section: Section.DEFI_UNISWAP_V2_BALANCES });
-    resetStatus({ section: Section.DEFI_UNISWAP_V3_BALANCES });
     resetStatus({ section: Section.DEFI_UNISWAP_EVENTS });
   };
 
@@ -183,17 +127,12 @@ export const useUniswapStore = defineStore('defi/uniswap', () => {
     events,
     fetchEvents,
     fetchV2Balances,
-    fetchV3Balances,
     reset,
     uniswapPoolProfit,
     uniswapV2Addresses,
     uniswapV2Balances,
     uniswapV2PoolAssets,
-    uniswapV3Addresses,
-    uniswapV3Balances,
-    uniswapV3PoolAssets,
     v2Balances,
-    v3Balances,
   };
 });
 
