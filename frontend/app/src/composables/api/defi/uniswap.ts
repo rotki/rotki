@@ -4,18 +4,12 @@ import type { PendingTask } from '@/types/task';
 
 interface UseUniswapApiReturn {
   fetchUniswapV2Balances: () => Promise<PendingTask>;
-  fetchUniswapV3Balances: () => Promise<PendingTask>;
   fetchUniswapEvents: () => Promise<PendingTask>;
 }
 
 export function useUniswapApi(): UseUniswapApiReturn {
   const fetchUniswapV2Balances = async (): Promise<PendingTask> => {
     const url = 'blockchains/eth/modules/uniswap/v2/balances';
-    return fetchExternalAsync(api.instance, url);
-  };
-
-  const fetchUniswapV3Balances = async (): Promise<PendingTask> => {
-    const url = 'blockchains/eth/modules/uniswap/v3/balances';
     return fetchExternalAsync(api.instance, url);
   };
 
@@ -27,6 +21,5 @@ export function useUniswapApi(): UseUniswapApiReturn {
   return {
     fetchUniswapEvents,
     fetchUniswapV2Balances,
-    fetchUniswapV3Balances,
   };
 }

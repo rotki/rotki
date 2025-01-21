@@ -4,7 +4,7 @@ export interface Account {
 }
 
 export interface GeneralAccount {
-  readonly account: { address: string };
+  readonly data: { address: string };
   readonly tags?: string[];
   readonly label?: string;
   readonly chain: string;

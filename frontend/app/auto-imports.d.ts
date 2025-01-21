@@ -62,6 +62,7 @@ declare global {
   const TimeFrameSetting: typeof import('@rotki/common')['TimeFrameSetting']
   const TimeUnit: typeof import('@rotki/common')['TimeUnit']
   const TimedAssetBalances: typeof import('@rotki/common')['TimedAssetBalances']
+  const TimedAssetHistoricalBalances: typeof import('@rotki/common')['TimedAssetHistoricalBalances']
   const TimedBalances: typeof import('@rotki/common')['TimedBalances']
   const UnderlyingToken: typeof import('@rotki/common')['UnderlyingToken']
   const XswapAsset: typeof import('@rotki/common')['XswapAsset']

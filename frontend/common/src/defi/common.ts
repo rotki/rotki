@@ -8,6 +8,5 @@ export interface ProfitLossModel {
 
 export enum LpType {
   UNISWAP_V2 = 'UNISWAP_V2',
-  UNISWAP_V3 = 'UNISWAP_V3',
   SUSHISWAP = 'SUSHISWAP',
 }
