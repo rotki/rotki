@@ -2685,7 +2685,7 @@
       "blockchain_balances": "Balances en blockchains",
       "exchange_balances": "Balances en exchanges",
       "manual_balances": "Balances manuales",
-      "non_fungible_balances": "Balances no fungibles"
+      "non_fungible_balances": "Balances en NFT"
     },
     "api_keys": "API Keys",
     "api_keys_sub": {
