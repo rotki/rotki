@@ -1,5 +1,6 @@
 import { api } from '@/services/rotkehlchen-api';
 import { handleResponse, validStatus } from '@/services/utils';
+import { apiUrls } from '@/services/api-urls';
 import type { ActionResult } from '@rotki/common';
 
 interface UseAsetIconApiReturn {
@@ -12,7 +13,7 @@ interface UseAsetIconApiReturn {
 
 export function useAssetIconApi(): UseAsetIconApiReturn {
   const assetImageUrl = (identifier: string, randomString?: string | number): string => {
-    let url = `${api.instance.defaults.baseURL}assets/icon?asset=${encodeURIComponent(identifier)}`;
+    let url = `${apiUrls.colibriApiUrl}/icon?asset_id=${encodeURIComponent(identifier)}`;
 
     if (randomString)
       url += `&t=${randomString}`;
