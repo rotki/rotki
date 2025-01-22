@@ -212,5 +212,7 @@ const cmd = platform() === 'win32' ? serveCmd : `sleep 20 && ${serveCmd}`;
 const devRotkiProcess = startProcess(`${cmd} ${args}`, colors.magenta(ROTKI), ROTKI);
 
 devRotkiProcess.on('exit', () => {
+  logger.info('dev rotki process exited, terminating subprocesses');
   terminateSubprocesses();
+  process.exit(0);
 });
