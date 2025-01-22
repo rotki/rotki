@@ -100,11 +100,11 @@ export class SubprocessHandler {
       return;
     }
 
-    await this.startColibri();
+    await this.startColibri(options.dataDirectory);
     await this.startCore(options, listener);
   }
 
-  private async startColibri() {
+  private async startColibri(dataDirectory?: string) {
     this.logger.log('Preparing to start colibri');
     const [port, url, isNonDefault] = await getPortAndUrl(
       this.config.ports.colibriPort,
@@ -118,6 +118,7 @@ export class SubprocessHandler {
 
     const { command, args, workDir } = ColibriConfig.create(this.config.isDev)
       .withLogfilePath(this.logger.colibriProcessLogFile)
+      .withDataDirectory(dataDirectory)
       .withPort(port)
       .build();
 
