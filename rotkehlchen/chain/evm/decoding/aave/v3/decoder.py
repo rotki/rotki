@@ -138,38 +138,58 @@ class Aavev3CommonDecoder(Commonv2v3Decoder):
            receive/return amount, because the interest event is created separately.
 
         Returns the final list of the decoded events."""
-        supply_event, withdraw_event, return_event, receive_event, maybe_earned_event = None, None, None, None, None  # noqa: E501
+        supply_event, withdraw_event, return_event, receive_event, migrateout_event, migratein_event, maybe_earned_event = None, None, None, None, None, None, None  # noqa: E501
         for event in decoded_events:  # identify the events decoded till now
             if (
-                event.event_type == HistoryEventType.DEPOSIT and
-                event.event_subtype == HistoryEventSubType.DEPOSIT_ASSET
+                    event.event_type == HistoryEventType.DEPOSIT and
+                    event.event_subtype == HistoryEventSubType.DEPOSIT_ASSET
             ):
                 supply_event = event
             elif (
-                event.event_type == HistoryEventType.WITHDRAWAL and
-                event.event_subtype == HistoryEventSubType.REMOVE_ASSET
+                    event.event_type == HistoryEventType.WITHDRAWAL and
+                    event.event_subtype == HistoryEventSubType.REMOVE_ASSET
             ):
                 withdraw_event = event
             elif (
-                event.event_type == HistoryEventType.RECEIVE and
-                event.event_subtype == HistoryEventSubType.RECEIVE_WRAPPED
+                    event.event_type == HistoryEventType.RECEIVE and
+                    event.event_subtype == HistoryEventSubType.RECEIVE_WRAPPED
             ):
                 receive_event = event
             elif (
-                event.event_type == HistoryEventType.SPEND and
-                event.event_subtype == HistoryEventSubType.RETURN_WRAPPED
+                    event.event_type == HistoryEventType.SPEND and
+                    event.event_subtype == HistoryEventSubType.RETURN_WRAPPED
             ):
                 return_event = event
             elif (
-                event.event_type == HistoryEventType.RECEIVE and
-                event.event_subtype == HistoryEventSubType.NONE and
-                event.address == ZERO_ADDRESS and
-                self._token_is_aave_contract(event.asset)
-            ):  # we received aTokens when transferring, so it's an interest event
-                event.event_subtype = HistoryEventSubType.INTEREST
-                event.notes = f'Receive {event.balance.amount} {event.asset.symbol_or_name()} as interest earned from {self.label}'  # noqa: E501
+                    event.event_type == HistoryEventType.MIGRATE and
+                    event.event_subtype == HistoryEventSubType.SPEND
+            ):
+                migrateout_event = event
+            elif (
+                    event.event_type == HistoryEventType.RECEIVE and
+                    event.event_subtype == HistoryEventSubType.NONE and
+                    event.address == ZERO_ADDRESS and
+                    self._token_is_aave_contract(event.asset)
+            ):  # we received aTokens when transferring, so it can be an interest event
+                if migrateout_event is not None:  # this is migrating from v2
+                    event.event_type = HistoryEventType.MIGRATE
+                    event.event_subtype = HistoryEventSubType.RECEIVE
+                    event.notes = f'Receive {event.balance.amount} {event.asset.symbol_or_name()} from migrating an AAVE v2 position to v3'  # noqa: E501
+                    event.address = None  # no need to have zero address
+                    migratein_event = event
+                else:
+                    event.event_subtype = HistoryEventSubType.INTEREST
+                    event.notes = f'Receive {event.balance.amount} {event.asset.symbol_or_name()} as interest earned from {self.label}'  # noqa: E501
+                    maybe_earned_event = event  # this may also be the mint transfer event which was already decoded (for some chains and assets) -- remember it to check it down later  # noqa: E501
+
                 event.counterparty = CPT_AAVE_V3
-                maybe_earned_event = event  # this may also be the mint transfer event which was already decoded (for some chains and assets) -- remember it to check it down later  # noqa: E501
+
+        if migrateout_event and migratein_event:
+            maybe_reshuffle_events(
+                ordered_events=[migrateout_event, migratein_event],
+                events_list=decoded_events,
+            )
+            return decoded_events
 
         # categorize the events, based on token_event and wrapped_event
         if supply_event is not None and receive_event is not None:
