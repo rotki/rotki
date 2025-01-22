@@ -675,7 +675,7 @@ class Rotkehlchen:
         list[tuple[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE, ChecksumEvmAddress]],
         list[tuple[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE, ChecksumEvmAddress]],
         list[tuple[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE, ChecksumEvmAddress]],
-        list[ChecksumEvmAddress],
+        list[tuple[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE, ChecksumEvmAddress]],
     ]:
         """Adds each account for all evm addresses
 
@@ -689,8 +689,8 @@ class Rotkehlchen:
         - list address, chain tuples for all addresses already tracked.
         - list address, chain tuples for all addresses that failed to be added.
         - list address, chain tuples for all addresses that have no activity in their chain.
-        - a list of addresses that are contracts in ethereum. We only do this check in ethereum
-            and this is why we return a list.
+        - list address, chain tuples for all addresses that are contracts except those
+        identified as SAFE contracts.
 
         May raise:
         - TagConstraintError if any of the given account data contain unknown tags.
@@ -711,7 +711,7 @@ class Rotkehlchen:
             existed_accounts,
             failed_accounts,
             no_activity_accounts,
-            eth_contract_addresses,
+            evm_contract_addresses,
         ) = self.chains_aggregator.add_accounts_to_all_evm(accounts=[entry.address for entry in account_data])  # noqa: E501
         with self.data.db.user_write() as write_cursor:
             for chain, address in added_accounts:
@@ -726,7 +726,7 @@ class Rotkehlchen:
             existed_accounts,
             failed_accounts,
             no_activity_accounts,
-            eth_contract_addresses,
+            evm_contract_addresses,
         )
 
     @overload

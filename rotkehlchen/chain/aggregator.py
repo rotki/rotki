@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Any, Literal, Optional, TypeVar, cast, get_arg
 
 import requests
 from gevent.lock import Semaphore
+from web3 import Web3
 from web3.exceptions import BadFunctionCallOutput, Web3Exception
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
@@ -32,6 +33,7 @@ from rotkehlchen.chain.bitcoin import get_bitcoin_addresses_balances
 from rotkehlchen.chain.bitcoin.bch import get_bitcoin_cash_addresses_balances
 from rotkehlchen.chain.bitcoin.bch.utils import force_address_to_legacy_address
 from rotkehlchen.chain.bitcoin.xpub import XpubManager
+from rotkehlchen.chain.constants import SAFE_BASIC_ABI
 from rotkehlchen.chain.ethereum.defi.chad import DefiChad
 from rotkehlchen.chain.ethereum.defi.structures import DefiProtocolBalances
 from rotkehlchen.chain.ethereum.modules import (
@@ -139,6 +141,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.modules.uniswap.uniswap import Uniswap
     from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
     from rotkehlchen.chain.evm.manager import EvmManager
+    from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.chain.gnosis.manager import GnosisManager
     from rotkehlchen.chain.optimism.manager import OptimismManager
     from rotkehlchen.chain.polygon_pos.manager import PolygonPOSManager
@@ -1497,6 +1500,40 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
     def is_contract(self, address: ChecksumEvmAddress, chain: SUPPORTED_EVM_CHAINS_TYPE) -> bool:
         return self.get_chain_manager(chain).node_inquirer.get_code(address) != '0x'
 
+    def is_safe_proxy_or_eoa(
+            self,
+            address: ChecksumEvmAddress,
+            chain: SUPPORTED_EVM_CHAINS_TYPE,
+    ) -> bool:
+        """
+        Check if an address is a SAFE contract or an EoA. We do this by checking the getThreshold,
+        VERSION and getChainId methods. We assume that if a contract has the same methods as a
+        safe then it is a safe. Also EoAs return (true, b'') for any method so this function
+        will also return True.
+        """
+        if chain in (SupportedBlockchain.ZKSYNC_LITE, SupportedBlockchain.AVALANCHE):
+            # We don't support those chains as the others so consider them addresses.
+            return True
+
+        manager: EvmNodeInquirer = self.get_chain_manager(chain).node_inquirer
+        contract = Web3().eth.contract(address=address, abi=SAFE_BASIC_ABI)
+        calls = [
+            (address, contract.encode_abi(method_name))
+            for method_name in ('getThreshold', 'VERSION', 'getChainId')
+        ]
+        try:
+            outputs = manager.multicall_2(
+                calls=calls,
+                require_success=False,
+            )
+        except RemoteError as e:
+            log.error(
+                f'Failed to check SAFE properties for {address} in {chain} due to {e}. Skipping',
+            )
+            return False
+
+        return all(result_tuple[0] for result_tuple in outputs)
+
     def check_single_address_activity(
             self,
             address: ChecksumEvmAddress,
@@ -1641,7 +1678,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         list[tuple[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE, ChecksumEvmAddress]],
         list[tuple[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE, ChecksumEvmAddress]],
         list[tuple[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE, ChecksumEvmAddress]],
-        list[ChecksumEvmAddress],
+        list[tuple[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE, ChecksumEvmAddress]],
     ]:
         """Adds each account for all evm chain if it is not a contract in ethereum mainnet.
 
@@ -1650,7 +1687,8 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         - list address, chain tuples for all addresses already tracked.
         - list address, chain tuples for all addresses that failed to be added.
         - list address, chain tuples for all addresses that have no activity in their chain.
-        - list of addresses that are ethereum contracts
+        - list address, chain tuples for all addresses that are contracts except those
+        identified as SAFE contracts.
 
         May raise:
         - RemoteError if an external service such as etherscan is queried and there
@@ -1660,35 +1698,36 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         failed_accounts: list[tuple[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE, ChecksumEvmAddress]] = []
         existed_accounts: list[tuple[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE, ChecksumEvmAddress]] = []
         no_activity_accounts: list[tuple[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE, ChecksumEvmAddress]] = []  # noqa: E501
-        eth_contract_addresses: list[ChecksumEvmAddress] = []
+        evm_contract_addresses: list[tuple[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE, ChecksumEvmAddress]] = []  # noqa: E501
 
         for account in accounts:
             existed_accounts += [(chain, account) for chain in SUPPORTED_EVM_EVMLIKE_CHAINS if account in self.accounts.get(chain)]  # noqa: E501
             # Distinguish between contracts and EOAs
-            if self.is_contract(account, SupportedBlockchain.ETHEREUM):
-                added_chains, _ = self.track_evm_address(account, [SupportedBlockchain.ETHEREUM])
-                if len(added_chains) == 1:  # Is always either 1 or 0 since is only for ethereum
-                    added_accounts.append((SupportedBlockchain.ETHEREUM, account))
-                    eth_contract_addresses.append(account)
-            else:
-                chains_to_check = [x for x in SUPPORTED_EVM_EVMLIKE_CHAINS if account not in self.accounts.get(x)]  # noqa: E501
-                new_accounts, new_failed_accounts, had_activity = self.check_chains_and_add_accounts(  # noqa: E501
-                    account=account,
-                    chains=chains_to_check,
-                )
+            chains_to_check = [x for x in SUPPORTED_EVM_EVMLIKE_CHAINS if account not in self.accounts.get(x)]  # noqa: E501
+            chains_with_valid_addresses = []
+            for chain in chains_to_check:
+                if self.is_safe_proxy_or_eoa(address=account, chain=chain):  # type: ignore  # the chain is a supportedblockchain here
+                    chains_with_valid_addresses.append(chain)
+                else:
+                    evm_contract_addresses.append((chain, account))
 
-                if had_activity is True:
-                    added_accounts += new_accounts
-                    failed_accounts += new_failed_accounts
-                elif had_activity is False and len(chains_to_check) != 0:
-                    no_activity_accounts += [(chain, account) for chain in chains_to_check]
+            new_accounts, new_failed_accounts, had_activity = self.check_chains_and_add_accounts(
+                account=account,
+                chains=chains_with_valid_addresses,
+            )
+
+            if had_activity is True:
+                added_accounts += new_accounts
+                failed_accounts += new_failed_accounts
+            elif had_activity is False and len(chains_with_valid_addresses) != 0:
+                no_activity_accounts += [(chain, account) for chain in chains_with_valid_addresses]
 
         return (
             added_accounts,
             existed_accounts,
             failed_accounts,
             no_activity_accounts,
-            eth_contract_addresses,
+            evm_contract_addresses,
         )
 
     def detect_evm_accounts(
@@ -1702,7 +1741,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         Otherwise for all evm chains.
 
         1. Iterates through already added addresses
-        2. For each address, assuming it's not a contract, checks which chains it's already in
+        2. For each address verify that is an EOA or a safe and check which chains it's already in
         3. Get the rest of the chains, and check activity. If active in any of them it tracks the
         address for that chain.
 
@@ -1721,10 +1760,11 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             if progress_handler is not None:
                 progress_handler.new_step(f'Checking {account} EVM chain activity')
 
-            if self.is_contract(account, SupportedBlockchain.ETHEREUM):
-                continue  # do not check ethereum mainnet contracts
-
             chains_to_check = list(all_evm_chains - set(account_chains))
+            for chain in list(chains_to_check):
+                if not self.is_safe_proxy_or_eoa(address=account, chain=chain):  # type: ignore  # the chain is a supportedblockchain here
+                    chains_to_check.remove(chain)
+
             if len(chains_to_check) == 0:
                 continue
 
