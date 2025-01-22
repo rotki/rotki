@@ -20,7 +20,7 @@ logging.basicConfig(level=logging.DEBUG)
 DEFAULT_LOG_LEVEL = 'critical'
 
 
-def check_core_api_availability(retries: int = 5, wait_seconds: int = 10) -> bool:
+def check_core_api_availability(retries: int = 30, wait_seconds: int = 10) -> bool:
     """
     Checks the availability of the core backend API by sending a ping request.
     The check must be successful before starting colibri since colibri needs
