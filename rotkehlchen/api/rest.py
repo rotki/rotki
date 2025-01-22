@@ -5371,6 +5371,8 @@ class RestAPI:
         """
         try:
             balances = HistoricalBalancesManager(self.rotkehlchen.data.db).get_balances(timestamp)
+        except DeserializationError as e:
+            return wrap_in_fail_result(str(e), status_code=HTTPStatus.INTERNAL_SERVER_ERROR)
         except NotFoundError as e:
             return wrap_in_fail_result(str(e), status_code=HTTPStatus.NOT_FOUND)
 
@@ -5389,6 +5391,8 @@ class RestAPI:
                 asset=asset,
                 timestamp=timestamp,
             )
+        except DeserializationError as e:
+            return wrap_in_fail_result(str(e), status_code=HTTPStatus.INTERNAL_SERVER_ERROR)
         except NotFoundError as e:
             return wrap_in_fail_result(str(e), status_code=HTTPStatus.NOT_FOUND)
 
@@ -5418,7 +5422,8 @@ class RestAPI:
                 from_ts=from_timestamp,
                 to_ts=to_timestamp,
             )
-
+        except DeserializationError as e:
+            return api_response(wrap_in_fail_result(str(e), status_code=HTTPStatus.INTERNAL_SERVER_ERROR))  # noqa: E501
         except NotFoundError as e:
             return api_response(wrap_in_fail_result(str(e), status_code=HTTPStatus.NOT_FOUND))
 
@@ -5428,5 +5433,30 @@ class RestAPI:
         }
         if last_event_identifier is not None:
             result['last_event_identifier'] = last_event_identifier
+
+        return api_response(_wrap_in_ok_result(result=result))
+
+    def get_historical_netvalue(
+            self,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+    ) -> Response:
+        try:
+            netvalue, missing_prices, last_event_id = HistoricalBalancesManager(self.rotkehlchen.data.db).get_historical_netvalue(  # noqa: E501
+                from_ts=from_timestamp,
+                to_ts=to_timestamp,
+            )
+        except DeserializationError as e:
+            return api_response(wrap_in_fail_result(str(e), status_code=HTTPStatus.INTERNAL_SERVER_ERROR))  # noqa: E501
+        except NotFoundError as e:
+            return api_response(wrap_in_fail_result(str(e), status_code=HTTPStatus.NOT_FOUND))
+
+        result = {
+            'times': list(netvalue),
+            'missing_prices': missing_prices,
+            'values': [str(x) for x in netvalue.values()],
+        }
+        if last_event_id is not None:
+            result['last_event_identifier'] = last_event_id
 
         return api_response(_wrap_in_ok_result(result=result))

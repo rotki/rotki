@@ -3421,3 +3421,16 @@ class HistoricalAssetAmountsResource(BaseMethodView):
             from_timestamp=from_timestamp,
             to_timestamp=to_timestamp,
         )
+
+
+class HistoricalNetValueResource(BaseMethodView):
+
+    post_schema = TimestampRangeSchema()
+
+    @require_premium_user(active_check=False)
+    @use_kwargs(post_schema, location='json')
+    def post(self, from_timestamp: Timestamp, to_timestamp: Timestamp) -> Response:
+        return self.rest_api.get_historical_netvalue(
+            from_timestamp=from_timestamp,
+            to_timestamp=to_timestamp,
+        )

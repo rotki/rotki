@@ -13961,7 +13961,7 @@ Historical Balance Queries
 
     .. note::
         If processing reveals a negative total balance amount at any point, the response will include amounts up to
-        (and including) the event that caused the negative balance. No amounts after this point are returned.
+        the event that caused the negative balance. No amounts after this point are returned.
 
     **Example Request:**
 
@@ -13999,11 +13999,68 @@ Historical Balance Queries
         }
 
         :resjson list[integer] times: Timestamps of balance changes.
-        :resjson string last_event_identifier: (Optional) The event identifier of the event that caused the negative balance amount.
+        :resjson list last_event_identifier: (Optional) A list containing [identifier, group_identifier] of the event that caused the negative balance amount. For trades, returns [trade_identifier, null].
         :resjson list[string] values: Net asset balance amount at each corresponding timestamp.
         :statuscode 200: Historical balances returned
         :statuscode 400: Malformed query
         :statuscode 401: User is not logged in
         :statuscode 404: No historical data found for the asset in the given time range
         :statuscode 403: User does not have premium access
+        :statuscode 500: Internal Rotki error
+
+  .. http:post:: /api/(version)/balances/historical/netvalue
+
+      Gets historical net worth values within a given time range, calculated by combining historical balances
+      with historical prices in the user's profit currency.
+
+      .. note::
+          If price data is missing for any asset at any timestamp, those missing data points will be
+          returned separately in the response.
+
+      **Example Request:**
+
+        .. http:example:: curl wget httpie python-requests
+
+          POST /api/(version)/balances/historical/netvalue HTTP/1.1
+          Host: localhost:5042
+          Content-Type: application/json;charset=UTF-8
+
+          {
+            "from_timestamp": 1672531200,
+            "to_timestamp": 1675209600
+          }
+
+        :reqjsonarr integer from_timestamp: The start timestamp of the query range
+        :reqjsonarr integer to_timestamp: The end timestamp of the query range
+
+      **Example Response:**
+
+        .. sourcecode:: http
+
+          HTTP/1.1 200 OK
+          Content-Type: application/json
+
+          {
+            "message": "",
+            "result": {
+              "times": [1672531200, 1673308800, 1674518400],
+              "values": ["50000.5", "48750.25", "52100.75"],
+              "last_event_identifier": [1, "10x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f"],
+              "missing_prices": [
+                ["BTC", 1672531200],
+                ["ETH", 1674518400]
+              ]
+            },
+            "status_code": 200
+          }
+
+        :resjson list[integer] times: Timestamps at which net worth was calculated
+        :resjson list[string] values: Net worth value at each corresponding timestamp in user's profit currency
+        :resjson list last_event_identifier: (Optional) A list containing [identifier, group_identifier] of the event that caused the negative balance. For trades, returns [trade_identifier, null].
+        :resjson list[list] missing_prices: List of [asset_identifier, timestamp] pairs where price data was missing
+        :statuscode 200: Historical net worth values returned
+        :statuscode 400: Malformed query
+        :statuscode 401: User is not logged in
+        :statuscode 403: User does not have premium access
+        :statuscode 404: No historical data found in the given time range
         :statuscode 500: Internal Rotki error
