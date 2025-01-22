@@ -27,7 +27,10 @@ class Aavev3Decoder(Aavev3LikeCommonDecoder):
                 string_to_evm_address('0x4e033931ad43597d96D6bcc25c280717730B58B1'),  # lido pool
                 string_to_evm_address('0x0AA97c284e98396202b6A04024F5E2c65026F3c0'),  # etherfi
             ),
-            native_gateways=(string_to_evm_address('0x893411580e590D62dDBca8a703d61Cc4A8c7b2b9'),),
+            native_gateways=(
+                string_to_evm_address('0x893411580e590D62dDBca8a703d61Cc4A8c7b2b9'),
+                string_to_evm_address('0xA434D495249abE33E031Fe71a969B81f3c07950D'),
+            ),
             treasury=string_to_evm_address('0x464C71f6c2F760DdA6093dCB91C24c39e5d6e18c'),
             incentives=string_to_evm_address('0x8164Cc65827dcFe994AB23944CBC90e0aa80bFcb'),
         )
