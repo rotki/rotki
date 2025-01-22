@@ -11,11 +11,50 @@ from pathlib import Path
 from signal import SIGINT, SIGQUIT, SIGTERM, signal
 from types import FrameType
 from typing import Any
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
 
 logger = logging.getLogger('monitor')
 logging.basicConfig(level=logging.DEBUG)
 
 DEFAULT_LOG_LEVEL = 'critical'
+
+
+def check_core_api_availability(retries: int = 5, wait_seconds: int = 10) -> bool:
+    """
+    Checks the availability of the core backend API by sending a ping request.
+    The check must be successful before starting colibri since colibri needs
+    the global.db to be present and the main backend is responsible for initializing it.
+
+    :param retries: The maximum number of retry attempts for the ping request.
+    :param wait_seconds: The number of seconds to wait between retry attempts.
+    :return: A boolean indicating whether the API responded successfully within the
+        allowed attempts.
+    """
+    attempt = 0
+
+    while attempt < retries:
+        try:
+            request = Request('http://localhost:4242/api/1/ping')
+            with urlopen(request, timeout=10) as response:
+                if response.status == 200:
+                    logger.info(f'Ping successful at attempt {attempt + 1}')
+                    return True
+
+        except HTTPError as e:
+            logger.error(f'Ping failed, HTTP error occurred: {e.reason} (status code: {e.code})')
+        except URLError as e:
+            logger.error(f'Ping failed, URL error occurred: {e.reason}')
+        except Exception as e:
+            logger.error(f'Ping failed, Unexpected error occurred: {e}')
+
+        attempt += 1
+        if attempt <= retries:
+            logger.info(f'Retrying in {wait_seconds} seconds')
+            time.sleep(wait_seconds)
+
+    logger.error(f'Could ping the core backend after {retries}.')
+    return False
 
 
 def can_delete(file: Path, cutoff: int) -> bool:
@@ -140,25 +179,17 @@ def load_config() -> list[str]:
 
 cleanup_tmp()
 
-# start colibri first and then start rotki
-colibri = subprocess.Popen(['/usr/sbin/colibri'])
-if colibri.returncode == 1:
-    logger.error('Failed to start colibri')
-    sys.exit(1)
-
+config_args = load_config()
 base_args = [
     '/usr/sbin/rotki',
     '--rest-api-port',
     '4242',
-    '--websockets-api-port',
-    '4243',
     '--api-cors',
     'http://localhost:*/*,app://.',
     '--api-host',
     '0.0.0.0',
 ]
 
-config_args = load_config()
 cmd = base_args + config_args
 
 logger.info('starting rotki backend')
@@ -168,6 +199,25 @@ rotki = subprocess.Popen(cmd)
 if rotki.returncode == 1:
     logger.error('Failed to start rotki')
     sys.exit(1)
+
+if check_core_api_availability() is False:
+    sys.exit(1)
+
+logger.info('starting colibri')
+
+colibri_cmd = [
+    '/usr/sbin/colibri',
+    '--data-directory=/data',
+    '--logfile-path=/logs/colibri.log',
+    '--port=4343',
+]
+
+colibri = subprocess.Popen(colibri_cmd)
+
+if colibri.returncode == 1:
+    logger.error('Failed to start colibri')
+    sys.exit(1)
+
 
 logger.info('starting nginx')
 
@@ -190,6 +240,7 @@ def terminate_process(process_name: str, process: subprocess.Popen) -> None:
 
 def graceful_exit(received_signal: int, _frame: FrameType | None) -> None:
     logger.info(f'Received signal {received_signal}. Exiting gracefully')
+    terminate_process('colibri', colibri)
     terminate_process('rotki', rotki)
     terminate_process('nginx', nginx)
     sys.exit(0)
@@ -210,6 +261,10 @@ while True:
 
     if nginx.poll() is not None:
         logger.error('nginx was not running')
+        sys.exit(1)
+
+    if colibri.poll() is not None:
+        logger.error('colibri has terminated exiting')
         sys.exit(1)
 
     logger.info('OK: processes still running')
