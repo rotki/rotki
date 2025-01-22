@@ -97,6 +97,7 @@ from rotkehlchen.api.v1.resources import (
     FalsePositiveSpamTokenResource,
     HistoricalAssetAmountsResource,
     HistoricalAssetsPriceResource,
+    HistoricalNetValueResource,
     HistoryActionableItemsResource,
     HistoryDownloadingResource,
     HistoryEventResource,
@@ -337,6 +338,7 @@ URLS_V1: URLS = [
     ('/calendar/reminders', CalendarRemindersResource),
     ('/balances/historical', TimestampHistoricalBalanceResource),
     ('/balances/historical/asset', HistoricalAssetAmountsResource),
+    ('/balances/historical/netvalue', HistoricalNetValueResource),
 ]
 
 logger = logging.getLogger(__name__)
