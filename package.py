@@ -317,7 +317,7 @@ class WindowsPackaging:
     def __init__(self, storage: Storage, env: Environment) -> None:
         self.__storage = storage
         self.__env = env
-        self.__p12 = Path('')
+        self.__p12: Path | None = None
 
     @log_group('miniupnpc windows')
     def setup_miniupnpc(self) -> None:
@@ -394,7 +394,8 @@ class WindowsPackaging:
         return True
 
     def cleanup_certificate(self) -> None:
-        self.__p12.unlink(missing_ok=True)
+        if self.__p12 is not None:
+            self.__p12.unlink(missing_ok=True)
 
 
 class MacPackaging:
