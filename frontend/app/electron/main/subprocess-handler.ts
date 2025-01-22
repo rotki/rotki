@@ -1,5 +1,7 @@
 import * as os from 'node:os';
 import process from 'node:process';
+import { URL } from 'node:url';
+import http from 'node:http';
 import { app } from 'electron';
 import { psList } from '@electron/main/ps-list';
 import { getPortAndUrl } from '@electron/main/port-utils';
@@ -7,6 +9,7 @@ import { BackendCode, type BackendOptions } from '@shared/ipc';
 import { ProcessManager } from '@electron/main/process-manager';
 import { ColibriConfig } from '@electron/main/colibri-args';
 import { RotkiCoreConfig } from '@electron/main/core-args';
+import { wait } from '@shared/utils';
 import type { LogService } from '@electron/main/log-service';
 import type { AppConfig } from '@electron/main/app-config';
 
@@ -100,8 +103,14 @@ export class SubprocessHandler {
       return;
     }
 
-    await this.startColibri(options.dataDirectory);
     await this.startCore(options, listener);
+    const isCoreAvailable = await this.checkCoreApiAvailability(this.config.urls.coreApiUrl);
+    if (!isCoreAvailable) {
+      this.logger.log('Failed to connect to core. Exiting');
+      await this.terminateProcesses();
+      return;
+    }
+    await this.startColibri(options.dataDirectory);
   }
 
   private async startColibri(dataDirectory?: string) {
@@ -165,6 +174,68 @@ export class SubprocessHandler {
     });
 
     this.coreManager.start(command, args, workDir);
+  }
+
+  /**
+   * Checks the availability of the core API by sending periodic ping requests
+   * to the ping endpoint.
+   * Continues to retry pinging the URL for a specified number of attempts,
+   * applying a delay between each attempt if the initial request fails.
+   *
+   * @param {string} url - The base URL of the core API endpoint to ping.
+   * @param {number} [retries=10] - The maximum number of ping attempts before giving up.
+   * @param {number} [waitSeconds=10] - The delay, in seconds, between consecutive ping attempts.
+   * @return {Promise<boolean>} A promise that resolves to true if the API responds successfully within the given attempts, otherwise false.
+   */
+  private async checkCoreApiAvailability(
+    url: string,
+    retries: number = 30,
+    waitSeconds: number = 10,
+  ): Promise<boolean> {
+    await wait(3000);
+    return new Promise((resolve) => {
+      const pingUrl = new URL(`${url}/api/1/ping`);
+
+      let attempt = 0;
+      let ping: () => void;
+
+      const retryOrFail = (): void => {
+        if (attempt <= retries) {
+          this.logger.log(`Retrying ping in ${waitSeconds} seconds`);
+          setTimeout(ping, waitSeconds * 1000);
+        }
+        else {
+          this.logger.log(`Ping failed after ${retries} attempts`);
+          resolve(false);
+        }
+      };
+
+      ping = (): void => {
+        attempt++;
+        this.logger.log(`Pinging ${pingUrl.href} attempt ${attempt}`);
+
+        const request = http.get(pingUrl.href, (res) => {
+          if (res.statusCode === 200) {
+            this.logger.log(`Ping successful on attempt ${attempt}`);
+            resolve(true);
+          }
+          else {
+            this.logger.log(`Ping failed with status code: ${res.statusCode}`);
+            retryOrFail();
+          }
+          res.destroy();
+        });
+
+        request.on('error', (err) => {
+          this.logger.log(`Ping failed with error: ${err.message}`);
+          retryOrFail();
+        });
+
+        request.end();
+      };
+
+      ping();
+    });
   }
 
   async terminateProcesses(restart: boolean = false): Promise<void> {
