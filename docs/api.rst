@@ -8973,7 +8973,7 @@ Adding EVM accounts to all EVM chains
                   "base"
                ]
             },
-            "eth_contracts": ["0x9008D19f58AAbD9eD0D60971565AA8510560ab41"]
+            "evm_contracts": [{"0x9008D19f58AAbD9eD0D60971565AA8510560ab41": ["eth"]}]
         },
         "message": ""
       }

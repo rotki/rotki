@@ -303,7 +303,6 @@ def test_add_multievm_accounts(rotkehlchen_api_server: 'APIServer') -> None:
     assert result == {
         'added': {
             '0x9531C059098e3d194fF87FebB587aB07B30B1306': ['all'],
-            '0x9008D19f58AAbD9eD0D60971565AA8510560ab41': ['eth'],
         },
         'failed': {
             '0xc37b40ABdB939635068d3c5f13E7faF686F03B65': [
@@ -328,7 +327,9 @@ def test_add_multievm_accounts(rotkehlchen_api_server: 'APIServer') -> None:
                 'zksync_lite',
             ],
         },
-        'eth_contracts': ['0x9008D19f58AAbD9eD0D60971565AA8510560ab41'],
+        'evm_contracts': {
+            '0x9008D19f58AAbD9eD0D60971565AA8510560ab41': ['all'],
+        },
     }
 
     # Now get accounts to make sure they are all input correctly
@@ -345,7 +346,6 @@ def test_add_multievm_accounts(rotkehlchen_api_server: 'APIServer') -> None:
     ))
     result = assert_proper_sync_response_with_result(response)
     assert result == [
-        {'address': contract_account, 'label': None, 'tags': None},
         {'address': common_account, 'label': label, 'tags': ['metamask']},
     ]
     response = requests.get(api_url_for(
@@ -402,6 +402,7 @@ def test_detect_evm_accounts(
         {'chain': SupportedBlockchain.GNOSIS.serialize(), 'address': ethereum_accounts[0]},
         {'chain': SupportedBlockchain.SCROLL.serialize(), 'address': ethereum_accounts[0]},
         {'chain': SupportedBlockchain.ZKSYNC_LITE.serialize(), 'address': ethereum_accounts[0]},
+        {'chain': SupportedBlockchain.AVALANCHE.serialize(), 'address': ethereum_accounts[0]},
     ], key=operator.itemgetter('chain', 'address'))
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     db = rotki.data.db
@@ -580,3 +581,20 @@ def test_argent_names(rotkehlchen_api_server: 'APIServer') -> None:
     ), json={'accounts': [name]})
     assert_proper_response(response)
     assert rotkehlchen_api_server.rest_api.rotkehlchen.chains_aggregator.accounts.eth == ()
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
+def test_adding_safe(rotkehlchen_api_server: 'APIServer') -> None:
+    """Test adding a safe proxy. The address is deployed on arb and base only"""
+    safe_address = string_to_evm_address('0x9d25AdBcffE28923E619f4Af88ECDe732c985b63')
+    request_data = {'accounts': [{'address': safe_address}]}
+    response = requests.put(api_url_for(
+        rotkehlchen_api_server,
+        'evmaccountsresource',
+    ), json=request_data)
+
+    result = assert_proper_sync_response_with_result(response)
+    assert result == {
+        'added': {safe_address: ['arbitrum_one', 'base']},
+    }
