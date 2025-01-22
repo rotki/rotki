@@ -2,6 +2,7 @@ import { checkIfDevelopment, startPromise } from '@shared/utils';
 import { api } from '@/services/rotkehlchen-api';
 import { getDefaultLogLevel, logger, setLevel } from '@/utils/logging';
 import { useInfoApi } from '@/composables/api/info';
+import { apiUrls, defaultApiUrls } from '@/services/api-urls';
 import type { Nullable } from '@rotki/common';
 import type { LogLevel } from '@shared/log-level';
 import type { Version } from '@/types/action';
@@ -76,12 +77,16 @@ export const useMainStore = defineStore('main', () => {
       clearInterval(intervalId);
 
     const updateApi = (payload?: Nullable<string>): void => {
-      const apiUrls = window.interop?.apiUrls();
-      let backendUrl = api.defaultServerUrl;
-      if (payload)
+      const updatedUrls = window.interop?.apiUrls();
+      let backendUrl = defaultApiUrls.coreApiUrl;
+      if (payload) {
         backendUrl = payload;
-      else if (apiUrls)
-        backendUrl = apiUrls.coreApiUrl;
+      }
+      else if (updatedUrls) {
+        backendUrl = updatedUrls.coreApiUrl;
+        apiUrls.coreApiUrl = updatedUrls.coreApiUrl;
+        apiUrls.colibriApiUrl = updatedUrls.colibriApiUrl;
+      }
 
       api.setup(backendUrl);
     };
