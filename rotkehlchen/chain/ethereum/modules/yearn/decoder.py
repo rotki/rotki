@@ -69,7 +69,7 @@ YEARN_COUNTERPARTIES: TypeAlias = Literal['yearn-v1', 'yearn-v2', 'yearn-v3']
 def _get_vault_token_name(vault_address: 'ChecksumEvmAddress') -> str:
     try:
         vault_token = EvmToken(ethaddress_to_identifier(vault_address))
-        vault_token_name = vault_token.name
+        vault_token_name = vault_token.name.strip()  # need strip since some names have whitespaces
     except (UnknownAsset, WrongAssetType):
         vault_token_name = str(vault_address)
 
@@ -191,6 +191,12 @@ class YearnDecoder(DecoderInterface, ReloadableDecoderMixin):
 
     def _handle_transfer_events(self, context: DecoderContext) -> DecodingOutput:
         """Decode v1 and v2 vault events that only have transfer log events."""
+        if not self.base.any_tracked((
+                (from_address := bytes_to_address(context.tx_log.topics[1])),
+                (to_address := bytes_to_address(context.tx_log.topics[2])),
+        )):
+            return DEFAULT_DECODING_OUTPUT  # can happen as other transfers of token may be hit in same transaction  # noqa: E501
+
         counterparty = CPT_YEARN_V1 if (vault_address := context.tx_log.address) in self.vaults[CPT_YEARN_V1] else CPT_YEARN_V2  # noqa: E501
 
         # For some deposits one of the transfers is already decoded and the action items
@@ -215,9 +221,14 @@ class YearnDecoder(DecoderInterface, ReloadableDecoderMixin):
 
         for tx_log in context.all_logs:
             if (
-                tx_log.topics[0] == ERC20_OR_ERC721_TRANSFER and
-                tx_log != context.tx_log and
-                tx_log.address == underlying_vault_token.evm_address
+                    tx_log.topics[0] == ERC20_OR_ERC721_TRANSFER and
+                    tx_log != context.tx_log and
+                    tx_log.address == underlying_vault_token.evm_address and
+                    (  # either from/to must be tracked to not hit other transfers of token in transaction  # noqa: E501
+                        self.base.is_tracked(bytes_to_address(tx_log.topics[1])) or
+                        self.base.is_tracked(bytes_to_address(tx_log.topics[2]))
+                    )
+
             ):
                 underlying_transfer_tx_log = tx_log
                 break
@@ -230,7 +241,7 @@ class YearnDecoder(DecoderInterface, ReloadableDecoderMixin):
             token=underlying_vault_token,
         )
 
-        if bytes_to_address(context.tx_log.topics[1]) == ZERO_ADDRESS:  # deposit
+        if from_address == ZERO_ADDRESS:  # deposit
             return DecodingOutput(action_items=[
                 ActionItem(
                     action='transform',
@@ -253,7 +264,7 @@ class YearnDecoder(DecoderInterface, ReloadableDecoderMixin):
                     to_counterparty=counterparty,
                 ),
             ])
-        elif bytes_to_address(context.tx_log.topics[2]) == ZERO_ADDRESS:  # withdraw
+        elif to_address == ZERO_ADDRESS:  # withdraw
             return DecodingOutput(action_items=[
                 ActionItem(
                     action='transform',
