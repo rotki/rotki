@@ -31,10 +31,13 @@ from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import (
     A_1INCH,
     A_AAVE,
+    A_AVAX,
+    A_BNB,
     A_BSQ,
     A_BTC,
     A_CRV,
     A_DAI,
+    A_ETC,
     A_ETH,
     A_EUR,
     A_KFEE,
@@ -234,7 +237,8 @@ def test_fallback_to_coingecko(inquirer: Inquirer):
 def test_find_usd_price_cache(inquirer, freezer):  # pylint: disable=unused-argument
     call_count = 0
 
-    def mock_query_price(from_asset, to_asset):  # pylint: disable=unused-argument
+    def mock_query_price(from_assets, to_asset):  # pylint: disable=unused-argument
+        from_asset = from_assets[0]
         assert from_asset.identifier == 'ETH'
         assert to_asset.identifier == 'USD'
         nonlocal call_count
@@ -246,11 +250,11 @@ def test_find_usd_price_cache(inquirer, freezer):  # pylint: disable=unused-argu
             raise AssertionError('Called too many times for this test')
 
         call_count += 1
-        return price
+        return {from_asset: price}
 
     cc_patch = patch.object(
         inquirer._cryptocompare,
-        'query_current_price',
+        'query_multiple_current_price',
         wraps=mock_query_price,
     )
     inquirer.set_oracles_order(oracles=[CurrentPriceOracle.CRYPTOCOMPARE])
@@ -321,19 +325,19 @@ def test_find_usd_price_all_rate_limited_in_last(inquirer):
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 def test_find_usd_price_no_price_found(inquirer):
-    """Test zero price is returned when all the oracles returned zero price
-    requesting the USD price of an asset.
+    """Test zero price is returned when all the oracles
+    are unable to find the USD price of an asset.
     """
     inquirer._oracle_instances = [MagicMock() for _ in inquirer._oracles]
 
     for oracle_instance in inquirer._oracle_instances:
-        oracle_instance.query_current_price.return_value = ZERO_PRICE
+        oracle_instance.query_multiple_current_price.return_value = {}
 
     price = inquirer.find_usd_price(A_BTC)
 
     assert price == ZERO_PRICE
     for oracle_instance in inquirer._oracle_instances:
-        assert oracle_instance.query_current_price.call_count == 1
+        assert oracle_instance.query_multiple_current_price.call_count == 1
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
@@ -345,14 +349,14 @@ def test_find_usd_price_via_second_oracle(inquirer):
     inquirer._oracle_instances = [MagicMock() for _ in inquirer._oracles]
 
     expected_price = Price(FVal('30000'))
-    inquirer._oracle_instances[0].query_current_price.side_effect = RemoteError
-    inquirer._oracle_instances[1].query_current_price.return_value = expected_price
+    inquirer._oracle_instances[0].query_multiple_current_price.side_effect = RemoteError
+    inquirer._oracle_instances[1].query_multiple_current_price.return_value = {A_BTC: expected_price}  # noqa: E501
 
     price = inquirer.find_usd_price(A_BTC)
 
     assert price == expected_price
     for oracle_instance in inquirer._oracle_instances[0:2]:
-        assert oracle_instance.query_current_price.call_count == 1
+        assert oracle_instance.query_multiple_current_price.call_count == 1
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
@@ -917,7 +921,7 @@ def test_recursion_handling_in_inquirer(inquirer: Inquirer, globaldb: GlobalDBHa
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 def test_recursion_decorator(inquirer: Inquirer):
     """Test that the decorator handle_recursion_error works properly"""
-    with patch('rotkehlchen.inquirer.Inquirer._find_usd_price', side_effect=RecursionError):
+    with patch('rotkehlchen.inquirer.Inquirer._find_usd_prices', side_effect=RecursionError):
         assert inquirer.find_usd_price(A_USDT) == ZERO
 
 
@@ -930,15 +934,15 @@ def test_matic_pol_hardforked_price(inquirer: Inquirer, freezer):
     after_hardfork = Timestamp(POLYGON_POS_POL_HARDFORK + 1)
 
     with patch(
-        'rotkehlchen.externalapis.coingecko.Coingecko.query_current_price',
-        wraps=inquirer._coingecko.query_current_price,
+        'rotkehlchen.externalapis.coingecko.Coingecko.query_multiple_current_price',
+        wraps=inquirer._coingecko.query_multiple_current_price,
     ) as patched_gecko:
         freezer.move_to(datetime.datetime.fromtimestamp(before_hardfork, tz=datetime.UTC))
         inquirer.find_usd_price(A_POLYGON_POS_MATIC, ignore_cache=True)
-        assert patched_gecko.call_args.kwargs['from_asset'] == A_POLYGON_POS_MATIC
+        assert patched_gecko.call_args.kwargs['from_assets'] == [A_POLYGON_POS_MATIC]
         freezer.move_to(datetime.datetime.fromtimestamp(after_hardfork, tz=datetime.UTC))
         inquirer.find_usd_price(A_POLYGON_POS_MATIC, ignore_cache=True)
-        assert patched_gecko.call_args.kwargs['from_asset'] == Asset('eip155:1/erc20:0x455e53CBB86018Ac2B8092FdCd39d8444aFFC3F6')  # POL token  # noqa: E501
+        assert patched_gecko.call_args.kwargs['from_assets'] == [Asset('eip155:1/erc20:0x455e53CBB86018Ac2B8092FdCd39d8444aFFC3F6')]  # POL token  # noqa: E501
 
 
 @pytest.mark.vcr
@@ -1169,3 +1173,37 @@ def test_bsq_price(inquirer: 'Inquirer') -> None:
     btc_price = Inquirer.find_usd_price(A_BTC)
     bsq_price = Inquirer.find_usd_price(A_BSQ.resolve_to_crypto_asset())
     assert bsq_price.is_close(btc_price * BTC_PER_BSQ)
+
+
+@pytest.mark.vcr
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+def test_batch_price_query(inquirer: 'Inquirer'):
+    """Test that finding multiple prices at once works as expected."""
+    assert inquirer.find_prices(
+        from_assets=[A_BTC, A_BNB, A_AVAX],
+        to_asset=A_ETH,
+    ) == {A_BTC: FVal('32.429599'), A_BNB: FVal('0.20951247'), A_AVAX: FVal('0.01060398')}
+
+    assert inquirer.find_prices_and_oracles(
+        from_assets=[A_ETC, A_AAVE],
+        to_asset=A_USDT,
+    ) == {
+        A_ETC: (FVal('26.337366'), CurrentPriceOracle.DEFILLAMA),
+        A_AAVE: (FVal('315.538443'), CurrentPriceOracle.DEFILLAMA),
+    }
+
+    assert inquirer.find_usd_prices(
+        assets=[A_BTC, A_BNB, A_AVAX],
+    ) == {A_BTC: FVal('105193'), A_BNB: FVal('679.6'), A_AVAX: FVal('34.4')}
+
+    assert inquirer.find_usd_prices_and_oracles(
+        assets=[
+            A_ETC,
+            A_AAVE,
+            (a_air := Asset('eip155:1/erc20:0x27Dce1eC4d3f72C3E457Cc50354f1F975dDEf488')),
+        ],
+    ) == {
+        A_ETC: (FVal('26.38'), CurrentPriceOracle.COINGECKO),
+        A_AAVE: (FVal('315.63'), CurrentPriceOracle.COINGECKO),
+        a_air: (FVal('0.01301'), CurrentPriceOracle.CRYPTOCOMPARE),
+    }

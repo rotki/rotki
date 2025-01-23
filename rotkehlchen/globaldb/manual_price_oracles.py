@@ -57,11 +57,10 @@ class ManualCurrentOracle(CurrentPriceOracleInterface, DBSetterMixin):
             # ManualCurrentOracle does a special handling of RecursionError using
             # `coming_from_latest_price` to detect recursions on the manual prices and break
             # it to continue to the next oracle.
-            current_to_asset_price, _ = Inquirer._find_price(
-                from_asset=current_to_asset,
+            current_to_asset_price, _ = Inquirer._find_prices(
+                from_assets=[current_to_asset],
                 to_asset=to_asset,
-                coming_from_latest_price=True,
-            )
+            ).get(current_to_asset, (ZERO_PRICE, None))
 
             return Price(current_price * current_to_asset_price)
         finally:
