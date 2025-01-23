@@ -2,7 +2,7 @@
 import pytest
 
 from rotkehlchen.assets.asset import EvmToken
-from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR, A_YFI
+from rotkehlchen.constants.assets import A_BNB, A_BTC, A_DAI, A_ETH, A_EUR, A_YFI
 from rotkehlchen.errors.asset import UnsupportedAsset
 from rotkehlchen.externalapis.coingecko import Coingecko, CoingeckoAssetData
 from rotkehlchen.fval import FVal
@@ -93,3 +93,15 @@ def test_coingecko_with_api_key(database):
 
     )
     assert result == FVal('3295.1477375227337')
+
+
+@pytest.mark.vcr
+def test_coingecko_query_multiple_current_price(session_coingecko: 'Coingecko'):
+    assert session_coingecko.query_multiple_current_price(
+        from_assets=[
+            A_BTC.resolve_to_asset_with_oracles(),
+            A_DAI.resolve_to_asset_with_oracles(),
+            A_BNB.resolve_to_asset_with_oracles(),
+        ],
+        to_asset=A_ETH.resolve_to_asset_with_oracles(),
+    ) == {A_BTC: FVal(31.906046), A_DAI: FVal(0.0003068), A_BNB: FVal(0.21387074)}

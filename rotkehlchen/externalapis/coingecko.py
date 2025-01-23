@@ -17,6 +17,7 @@ from rotkehlchen.externalapis.interface import ExternalServiceWithApiKeyOptional
 from rotkehlchen.fval import FVal
 from rotkehlchen.interfaces import HistoricalPriceOracleWithCoinListInterface
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.serialization.deserialize import deserialize_fval
 from rotkehlchen.types import ChainID, EvmTokenKind, ExternalService, Price, Timestamp
 from rotkehlchen.utils.misc import set_user_agent, timestamp_to_date, ts_now
 from rotkehlchen.utils.mixins.penalizable_oracle import PenalizablePriceOracleMixin
@@ -671,14 +672,15 @@ class Coingecko(
 
     @staticmethod
     def check_vs_currencies(
-            from_asset: AssetWithOracles,
             to_asset: AssetWithOracles,
             location: str,
+            from_asset: AssetWithOracles | None = None,
     ) -> str | None:
         vs_currency = to_asset.identifier.lower()
         if vs_currency not in COINGECKO_SIMPLE_VS_CURRENCIES:
+            from_str = from_asset.identifier if from_asset is not None else 'multiple assets'
             log.warning(
-                f'Tried to query coingecko {location} from {from_asset.identifier} '
+                f'Tried to query coingecko {location} from {from_str} '
                 f'to {to_asset.identifier}. But to_asset is not supported',
             )
             return None
@@ -690,49 +692,73 @@ class Coingecko(
             from_asset: AssetWithOracles,
             to_asset: AssetWithOracles,
     ) -> Price:
-        """Returns a simple price for from_asset to to_asset in coingecko.
+        """Wrapper for query_multiple_current_price when only querying a single price.
+        Returns the asset price or ZERO_PRICE if no price is found.
+        """
+        return self.query_multiple_current_price(
+            from_assets=[from_asset],
+            to_asset=to_asset,
+        ).get(from_asset, ZERO_PRICE)
+
+    def query_multiple_current_price(
+            self,
+            from_assets: list[AssetWithOracles],
+            to_asset: AssetWithOracles,
+    ) -> dict[AssetWithOracles, Price]:
+        """Query simple prices for from_assets to to_asset from coingecko.
 
         Uses the simple/price endpoint of coingecko. If to_asset is not part of the
-        coingecko simple vs currencies or if from_asset is not supported in coingecko
-        price zero is returned.
+        coingecko simple vs currencies querying is skipped and all assets are returned as failed.
+
+        Returns a dict mapping assets to prices found. Assets for which a price was not found
+        are not included in the dict.
 
         May raise:
         - RemoteError if there is a problem querying coingecko
         """
         vs_currency = Coingecko.check_vs_currencies(
-            from_asset=from_asset,
             to_asset=to_asset,
             location='simple price',
         )
         if not vs_currency:
-            return ZERO_PRICE
+            return {}
 
-        try:
-            from_coingecko_id = from_asset.to_coingecko()
-        except UnsupportedAsset:
-            log.warning(
-                f'Tried to query coingecko simple price from {from_asset.identifier} '
-                f'to {to_asset.identifier}. But from_asset is not supported in coingecko',
-            )
-            return ZERO_PRICE
+        coingecko_ids_to_assets: dict[str, AssetWithOracles] = {}
+        for from_asset in from_assets:
+            try:
+                coingecko_ids_to_assets[from_asset.to_coingecko()] = from_asset
+            except UnsupportedAsset:
+                log.debug(
+                    f'Tried to query coingecko simple price from {from_asset.identifier} '
+                    f'to {to_asset.identifier}. But from_asset is not supported in coingecko',
+                )
+
+        if len(coingecko_ids_to_assets) == 0:
+            return {}
 
         result = self._query(
             module='simple/price',
             options={
-                'ids': from_coingecko_id,
+                'ids': ','.join(coingecko_ids_to_assets.keys()),
                 'vs_currencies': vs_currency,
             })
 
-        # https://github.com/PyCQA/pylint/issues/4739
-        try:
-            return Price(FVal(result[from_coingecko_id][vs_currency]))
-        except KeyError as e:
-            log.warning(
-                f'Queried coingecko simple price from {from_asset.identifier} '
-                f'to {to_asset.identifier}. But got key error for {e!s} when '
-                f'processing the result.',
-            )
-            return ZERO_PRICE
+        prices: dict[AssetWithOracles, Price] = {}
+        for coingecko_id, from_asset in coingecko_ids_to_assets.items():
+            try:
+                prices[from_asset] = Price(deserialize_fval(
+                    value=result[coingecko_id][vs_currency],
+                    name=f'{from_asset} price',
+                    location='coingecko price query',
+                ))
+            except KeyError as e:
+                log.warning(
+                    f'Queried coingecko simple price from {from_asset.identifier} '
+                    f'to {to_asset.identifier}. But got key error for {e!s} when '
+                    f'processing the result.',
+                )
+
+        return prices
 
     def can_query_history(
             self,

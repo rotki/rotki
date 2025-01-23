@@ -6,6 +6,7 @@ from json import JSONDecodeError
 from typing import Any, Final
 
 from rotkehlchen.assets.asset import Asset, AssetWithOracles
+from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.globaldb.cache import (
     globaldb_get_unique_cache_last_queried_ts_by_key,
     globaldb_get_unique_cache_value,
@@ -54,6 +55,29 @@ class CurrentPriceOracleInterface(abc.ABC):
         Returns:
             Current price between from_asset and to_asset using this oracle's data
         """
+
+    def query_multiple_current_price(
+            self,
+            from_assets: list[AssetWithOracles],
+            to_asset: AssetWithOracles,
+    ) -> dict[AssetWithOracles, Price]:
+        """Query current price between all from_assets to to_asset.
+
+        Returns a dict mapping assets to prices found. Assets for which a price was not found
+        are not included in the dict.
+        """
+        # TODO: Implement this function for all oracles and make this an abstract method.
+        # For oracles that don't have this implemented yet,
+        # simply call query_current_price for each from_asset.
+        prices: dict[AssetWithOracles, Price] = {}
+        for from_asset in from_assets:
+            if (price := self.query_current_price(
+                    from_asset=from_asset,
+                    to_asset=to_asset,
+            )) != ZERO_PRICE:
+                prices[from_asset] = price
+
+        return prices
 
 
 class HistoricalPriceOracleInterface(CurrentPriceOracleInterface, abc.ABC):
