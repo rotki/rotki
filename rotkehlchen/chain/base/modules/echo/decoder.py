@@ -84,6 +84,9 @@ class EchoDecoder(DecoderInterface):
                 break
         return DEFAULT_DECODING_OUTPUT
 
+    # This will not track partial refund as it does not emit deregistered event
+    # Only 3 instance of those were happened https://dune.com/queries/4605517 it is much easier
+    # to just manually recouncile it by the end user
     def _mark_for_refund(self, context: DecoderContext) -> DecodingOutput:
         if context.tx_log.topics[0] != FUNDER_DEREGISTERED:
             return DEFAULT_DECODING_OUTPUT
