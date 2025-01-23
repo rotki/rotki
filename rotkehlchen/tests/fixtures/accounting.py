@@ -288,14 +288,12 @@ def _create_inquirer(
             from_asset,
             to_asset,
             ignore_cache: bool = False,  # pylint: disable=unused-argument
-            coming_from_latest_price: bool = False,   # pylint: disable=unused-argument
     ):
         return mocked_prices.get((from_asset, to_asset), FVal('1.5'))
 
     def mock_find_usd_price(
             asset,
             ignore_cache: bool = False,  # pylint: disable=unused-argument
-            coming_from_latest_price: bool = False,   # pylint: disable=unused-argument
     ):
         return mocked_prices.get(asset, FVal('1.5'))
 
@@ -336,46 +334,39 @@ def _create_inquirer(
                 from_asset,
                 to_asset,
                 ignore_cache=False,
-                coming_from_latest_price=False,
         ):
             if from_asset.identifier in ignore_mocked_prices_for:
                 return inquirer.find_price_old(  # pylint: disable=no-member # dynamic attribute
                     from_asset=from_asset,
                     to_asset=to_asset,
                     ignore_cache=ignore_cache,
-                    coming_from_latest_price=coming_from_latest_price,
                 )
             return mock_find_price(
                 from_asset=from_asset,
                 to_asset=to_asset,
                 ignore_cache=ignore_cache,
-                coming_from_latest_price=coming_from_latest_price,
             )
 
         def mock_some_usd_prices(
                 asset,
                 ignore_cache=False,
-                coming_from_latest_price=False,
         ):
             if asset.identifier in ignore_mocked_prices_for:
                 return inquirer.find_usd_price_old(  # pylint: disable=no-member # dynamic attribute
                     asset=asset,
                     ignore_cache=ignore_cache,
-                    coming_from_latest_price=coming_from_latest_price,
                 )
             return mock_find_usd_price(
                 asset=asset,
                 ignore_cache=ignore_cache,
-                coming_from_latest_price=coming_from_latest_price,
             )
 
-        def mock_prices_with_oracles(from_asset, to_asset, ignore_cache=False, coming_from_latest_price=False):  # noqa: E501
+        def mock_prices_with_oracles(from_asset, to_asset, ignore_cache=False, skip_onchain=False):
             if from_asset.identifier in ignore_mocked_prices_for:
                 return inquirer.find_price_and_oracle_old(  # pylint: disable=no-member # dynamic attribute
                     from_asset=from_asset,
                     to_asset=to_asset,
                     ignore_cache=ignore_cache,
-                    coming_from_latest_price=coming_from_latest_price,
                 )
             if len(mocked_current_prices_with_oracles) != 0:
                 price, oracle = mocked_current_prices_with_oracles.get((from_asset, to_asset), (FVal('1.5'), CurrentPriceOracle.BLOCKCHAIN))  # noqa: E501
@@ -384,16 +375,14 @@ def _create_inquirer(
                 from_asset=from_asset,
                 to_asset=to_asset,
                 ignore_cache=ignore_cache,
-                coming_from_latest_price=coming_from_latest_price,
             )
             return price, CurrentPriceOracle.BLOCKCHAIN
 
-        def mock_usd_prices_with_oracles(asset, ignore_cache=False, coming_from_latest_price=False):  # noqa: E501
+        def mock_usd_prices_with_oracles(asset, ignore_cache=False):
             if asset.identifier in ignore_mocked_prices_for:
                 return inquirer.find_usd_price_and_oracle_old(  # pylint: disable=no-member # dynamic attribute
                     asset=asset,
                     ignore_cache=ignore_cache,
-                    coming_from_latest_price=coming_from_latest_price,
                 )
             if len(mocked_current_prices_with_oracles) != 0:
                 price, oracle = mocked_current_prices_with_oracles.get(asset, (FVal('1.5'), CurrentPriceOracle.BLOCKCHAIN))  # noqa: E501
@@ -401,7 +390,6 @@ def _create_inquirer(
             price = mock_find_usd_price(
                 asset=asset,
                 ignore_cache=ignore_cache,
-                coming_from_latest_price=coming_from_latest_price,
             )
             return price, CurrentPriceOracle.BLOCKCHAIN
 
