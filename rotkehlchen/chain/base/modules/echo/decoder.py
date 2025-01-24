@@ -42,31 +42,36 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 class EchoDecoder(DecoderInterface):
-    def __init__(
-            self,
-            evm_inquirer: 'EvmNodeInquirer',
-            base_tools: 'BaseDecoderTools',
-            msg_aggregator: 'MessagesAggregator') -> None:
-        super().__init__(
-            evm_inquirer=evm_inquirer,
-            base_tools=base_tools,
-            msg_aggregator=msg_aggregator,
-        )
 
     def _decode_fee_paid(self, context: DecoderContext) -> DecodingOutput:
-        if context.tx_log.topics[0] != FEE_PAID:
+        if (
+            context.tx_log.topics[0] != FEE_PAID or 
+            not self.base.is_tracked(bytes_to_address(context.tx_log.topics[1]))
+        ):
             return DEFAULT_DECODING_OUTPUT
-        if not self.base.is_tracked(bytes_to_address(context.tx_log.topics[1])):
-            return DEFAULT_DECODING_OUTPUT
+
+        fee_amount_from_input = int.from_bytes(context.transaction.input_data[36:68])
+        deal_address = bytes_to_address(context.transaction.input_data[68:100])
+        raw_token_address = self.evm_inquirer.call_contract(
+                    contract_address=deal_address,
+                    abi=DEAL_ABI,
+                    method_name='token',
+        )
+        token = EvmToken(evm_address_to_identifier(
+                    raw_token_address,
+                    self.evm_inquirer.chain_id,
+                    EvmTokenKind.ERC20))
 
         for event in context.decoded_events:
             if (
-                event.sequence_index == context.tx_log.log_index - 1 and
                 event.event_type == HistoryEventType.INFORMATIONAL and
-                event.event_subtype == HistoryEventSubType.APPROVE
+                event.event_subtype == HistoryEventSubType.APPROVE and
+                event.address == FUNDING_CONDUIT and
+                event.asset == token and
+                fee_amount_from_input == int.from_bytes(context.tx_log.data[0:32])
             ):
                 fee_amount = asset_normalized_value(
-                    amount=int.from_bytes(context.tx_log.data[0:32]),
+                    amount=fee_amount_from_input,
                     asset=event.asset,
                 )
                 new_event = self.base.make_event_from_transaction(
@@ -82,17 +87,24 @@ class EchoDecoder(DecoderInterface):
                 )
                 context.decoded_events.append(new_event)
                 break
+        else:
+            log.error(f'Could not find fee event for {self.evm_inquirer.chain_name} for Echo funding tx {context.transaction.tx_hash.hex()}')  # noqa:E501
+
         return DEFAULT_DECODING_OUTPUT
 
-    # This will not track partial refund as it does not emit deregistered event
-    # Only 3 instance of those were happened https://dune.com/queries/4605517 it is much easier
-    # to just manually recouncile it by the end user
+
     def _mark_for_refund(self, context: DecoderContext) -> DecodingOutput:
-        if context.tx_log.topics[0] != FUNDER_DEREGISTERED:
+        '''Mark transfer event from echo full refund
+           This will not track partial refund as it does not emit deregistered event
+           Only 3 instance of those were happened https://dune.com/queries/4605517 it is much easier
+           to just manually recouncile it by the end user
+        '''
+        if (
+            context.tx_log.topics[0] != FUNDER_DEREGISTERED or
+            not self.base.is_tracked(user_address := bytes_to_address(context.tx_log.topics[2]))
+        ):
             return DEFAULT_DECODING_OUTPUT
-        user_address = bytes_to_address(context.tx_log.topics[2])
-        if not self.base.is_tracked(user_address):
-            return DEFAULT_DECODING_OUTPUT
+        
         for tx_log in context.all_logs:
             if (
                 tx_log.topics[0] == POOL_REFUNDED and
@@ -123,17 +135,20 @@ class EchoDecoder(DecoderInterface):
                     to_notes=f'Refund {amount} USDC from {tx_log.address} on Echo',
                 ))
                 break
+        else:
+            log.error(f'Could not find refund event for {self.evm_inquirer.chain_name} for Echo refund {context.transaction.tx_hash.hex()}')  # noqa:E501
+        
         return DEFAULT_DECODING_OUTPUT
 
     def _process_funding(
             self,
-            transaction: 'EvmTransaction',  # pylint: disable=unused-argument
+            transaction: 'EvmTransaction',
             decoded_events: list['EvmEvent'],
             all_logs: list['EvmTxReceiptLog'],
     ) -> list['EvmEvent']:
-        fund_amount = None
-        deal_address = None
-        user_address = None
+        '''Convert transfer event into Echo's deal funding event.
+        '''
+        deal_address = fund_amount = user_address = None
         for tx_log in all_logs:
             if (
                 tx_log.topics[0] == DEAL_FUNDED and
@@ -156,6 +171,9 @@ class EchoDecoder(DecoderInterface):
                 event.counterparty = CPT_ECHO
                 event.notes = f'Fund {event.balance.amount} {event.asset.symbol_or_name()} to {deal_address} on Echo'  # noqa:E501
                 break
+        else:
+            log.error(f'Could not find funding event for {self.evm_inquirer.chain_name} for Echo funding {transaction.tx_hash.hex()}')  # noqa:E501
+
         return decoded_events
 
     @staticmethod
