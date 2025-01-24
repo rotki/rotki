@@ -2704,6 +2704,43 @@ class DBHandler:
 
         if userdb_query != 0:
             with self.user_write() as write_cursor:
+                write_cursor.execute(  # merge the assets in the timed_balances table
+                    """
+                    WITH merged_rows AS (
+                        SELECT
+                            category,
+                            timestamp,
+                            currency,
+                            SUM(amount) AS total_amount,
+                            SUM(usd_value) AS total_usd_value
+                        FROM timed_balances
+                        WHERE currency IN (?, ?)
+                        GROUP BY category, timestamp
+                    )
+                    UPDATE timed_balances AS tb
+                    SET
+                        currency = ?,
+                        amount = mr.total_amount,
+                        usd_value = mr.total_usd_value
+                    FROM merged_rows mr
+                    WHERE
+                        tb.category = mr.category AND
+                        tb.timestamp = mr.timestamp AND
+                        tb.currency = mr.currency AND
+                        tb.currency IN (?, ?);
+                    """,
+                    (
+                        source_identifier,
+                        target_asset.identifier,
+                        target_asset.identifier,
+                        target_asset.identifier,
+                        source_identifier,
+                    ),
+                )
+                write_cursor.execute(
+                    'DELETE FROM timed_balances WHERE currency=?',
+                    (source_identifier,),
+                )
                 # the tricky part here is that we need to disable foreign keys for this
                 # approach and disabling foreign keys needs a commit. So rollback is impossible.
                 # But there is no way this can fail. (famous last words)

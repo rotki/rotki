@@ -10,6 +10,7 @@ from unittest.mock import PropertyMock, patch
 import pytest
 from eth_utils import is_checksum_address
 
+from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.assets.asset import Asset, CryptoAsset, CustomAsset, EvmToken, FiatAsset, Nft
 from rotkehlchen.assets.converters import asset_from_nexo
 from rotkehlchen.assets.ignored_assets_handling import IgnoredAssetsHandling
@@ -935,3 +936,36 @@ def test_all_assets_pagination(globaldb: 'GlobalDBHandler', database: 'DBHandler
         ),
     )
     assert found_ignored < found_without_ignored < found_all
+
+
+def test_merge_assets_timed_balances(database: 'DBHandler') -> None:
+    """Ensure that timed balances are merged when replacing assets.
+    This is a regression test.
+    """
+    with database.conn.write_ctx() as write_cursor:
+        serialized_balances = [
+            (0, 'BTC', '1.00', '178.44', BalanceType.ASSET.serialize_for_db()),
+            (0, 'ETH', '1.00', '87', BalanceType.ASSET.serialize_for_db()),
+            (0, 'ETH', '0.50', '87', BalanceType.LIABILITY.serialize_for_db()),
+            (1, 'BTC', '1.00', '178.44', BalanceType.ASSET.serialize_for_db()),
+            (1, 'ETH', '1.00', '87', BalanceType.ASSET.serialize_for_db()),
+            (2, 'BTC', '1.00', '178.44', BalanceType.ASSET.serialize_for_db()),
+            (3, 'ETH', '1.00', '87', BalanceType.ASSET.serialize_for_db()),
+        ]
+        write_cursor.executemany(
+            'INSERT INTO timed_balances( '
+            'timestamp, currency, amount, usd_value, category) '
+            ' VALUES(?, ?, ?, ?, ?)',
+            serialized_balances,
+        )
+
+    database.replace_asset_identifier(source_identifier='ETH', target_asset=Asset('BTC'))
+    with database.conn.read_ctx() as cursor:
+        cursor.execute('SELECT timestamp, currency, amount, category FROM timed_balances')
+        assert cursor.fetchall() == [
+            (0, 'BTC', '2.0', BalanceType.ASSET.serialize_for_db()),  # 1 ETH + 1 BTC
+            (0, 'BTC', '0.5', BalanceType.LIABILITY.serialize_for_db()),  # 0.5 ETH -> 0.5 BTC
+            (1, 'BTC', '2.0', BalanceType.ASSET.serialize_for_db()),  # 1 ETH + 1 BTC
+            (2, 'BTC', '1.0', BalanceType.ASSET.serialize_for_db()),  # 1 BTC = 1 BTC
+            (3, 'BTC', '1.0', BalanceType.ASSET.serialize_for_db()),  # 1 ETH -> 1 BTC
+        ]
