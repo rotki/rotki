@@ -397,17 +397,13 @@ def test_polygon_pos_bridge_plasma_start_exit(
             location=Location.ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.NONE,
-            asset=Asset('eip155:1/erc721:0xDF74156420Bd57ab387B195ed81EcA36F9fABAca'),
+            asset=Asset('eip155:1/erc721:0xDF74156420Bd57ab387B195ed81EcA36F9fABAca/588708823241823398655445372856552995073191575662'),
             balance=Balance(amount=ONE),
             location_label=user_address,
             notes='Receive Exit NFT from Polygon Bridge',
             tx_hash=tx_hash,
             counterparty=CPT_POLYGON,
             address=ZERO_ADDRESS,
-            extra_data={
-                'token_id': 588708823241823398655445372856552995073191575662,
-                'token_name': 'ERC721 token',
-            },
         ),
     ]
 
@@ -440,17 +436,13 @@ def test_polygon_pos_bridge_plasma_process_exit(
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.NONE,
-            asset=Asset('eip155:1/erc721:0xDF74156420Bd57ab387B195ed81EcA36F9fABAca'),
+            asset=Asset('eip155:1/erc721:0xDF74156420Bd57ab387B195ed81EcA36F9fABAca/588708823241823398655445372856552995073191575662'),
             balance=Balance(amount=ONE),
             location_label=user_address,
             notes='Return Exit NFT to Polygon Bridge',
             tx_hash=tx_hash,
             counterparty=CPT_POLYGON,
             address=ZERO_ADDRESS,
-            extra_data={
-                'token_id': 588708823241823398655445372856552995073191575662,
-                'token_name': 'ERC721 token',
-            },
         ), EvmEvent(
             sequence_index=336,
             timestamp=timestamp,

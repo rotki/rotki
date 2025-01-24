@@ -1,10 +1,15 @@
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any
 
-from rotkehlchen.chain.ethereum.utils import asset_normalized_value
+from rotkehlchen.chain.ethereum.utils import asset_normalized_value, token_normalized_value
 from rotkehlchen.chain.evm.decoding.aave.common import Commonv2v3LikeDecoder
-from rotkehlchen.chain.evm.decoding.structures import DEFAULT_DECODING_OUTPUT, DecodingOutput
+from rotkehlchen.chain.evm.decoding.structures import (
+    DEFAULT_DECODING_OUTPUT,
+    ActionItem,
+    DecodingOutput,
+)
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
+from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.utils.misc import bytes_to_address
 
@@ -29,6 +34,7 @@ class Aavev2CommonDecoder(Commonv2v3LikeDecoder):
             native_gateways: 'tuple[ChecksumEvmAddress, ...]',
             incentives: 'ChecksumEvmAddress',
             incentives_reward_token: 'ChecksumEvmAddress',
+            v3_migration_helper: 'ChecksumEvmAddress',
     ):
         Commonv2v3LikeDecoder.__init__(
             self,
@@ -43,6 +49,7 @@ class Aavev2CommonDecoder(Commonv2v3LikeDecoder):
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
         )
+        self.v3_migration_helper = v3_migration_helper
         self.incentives = incentives
         self.incentives_reward_token = incentives_reward_token
 
@@ -93,8 +100,32 @@ class Aavev2CommonDecoder(Commonv2v3LikeDecoder):
             amount_raw=context.tx_log.data[0:32],
         )
 
-    # --- DecoderInterface methods
+    def _decode_migration(self, context: 'DecoderContext') -> DecodingOutput:
+        if context.tx_log.topics[0] != b'K\xec\xcb\x90\xf9\x94\xc3\x1a\xce\xd7\xa2;V\x11\x02\x07(\xa2=\x8e\xc5\xcd\xdd\x1a>\x9d\x97\xb9o\xda\x86f':  # TokenTransferred # noqa: E501
+            return DEFAULT_DECODING_OUTPUT
 
+        if self.v3_migration_helper and (to_address := bytes_to_address(context.tx_log.topics[2])) == self.v3_migration_helper and self.base.is_tracked(from_address := bytes_to_address(context.tx_log.topics[1])):  # noqa: E501
+            token = self.base.get_evm_token(address=context.tx_log.address)
+            assert token, 'token should be in the DB. Decoding rule reads it from the DB'
+            amount = token_normalized_value(token_amount=int.from_bytes(context.tx_log.data[:32]), token=token)  # noqa: E501
+            action_item = ActionItem(
+                action='transform',
+                from_event_type=HistoryEventType.SPEND,
+                from_event_subtype=HistoryEventSubType.NONE,
+                asset=token,
+                amount=amount,
+                location_label=from_address,
+                address=to_address,
+                to_event_type=HistoryEventType.MIGRATE,
+                to_event_subtype=HistoryEventSubType.SPEND,
+                to_notes=f'Migrate {amount} {token.symbol} from AAVE v2',
+                to_counterparty=CPT_AAVE_V2,
+            )
+            return DecodingOutput(action_items=[action_item])
+
+        return DEFAULT_DECODING_OUTPUT
+
+    # --- DecoderInterface methods
     @staticmethod
     def counterparties() -> tuple[CounterpartyDetails, ...]:
         return (CounterpartyDetails(
@@ -103,7 +134,16 @@ class Aavev2CommonDecoder(Commonv2v3LikeDecoder):
             image='aave.svg',
         ),)
 
+    def addresses_to_counterparties(self) -> dict['ChecksumEvmAddress', str]:
+        return dict.fromkeys(GlobalDBHandler.get_addresses_by_protocol(
+            chain_id=self.evm_inquirer.chain_id,
+            protocol=CPT_AAVE_V2,
+        ), CPT_AAVE_V2) | dict.fromkeys(self.pool_addresses, CPT_AAVE_V2)
+
     def addresses_to_decoders(self) -> dict['ChecksumEvmAddress', tuple[Any, ...]]:
         return super().addresses_to_decoders() | {
             self.incentives: (self._decode_incentives,),
-        }
+        } | dict.fromkeys(GlobalDBHandler.get_addresses_by_protocol(
+            chain_id=self.evm_inquirer.chain_id,
+            protocol=CPT_AAVE_V2,
+        ), (self._decode_migration,))

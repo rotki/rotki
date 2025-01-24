@@ -1,214 +1,50 @@
-/* eslint-disable max-lines */
-
-import { type ChildProcess, spawn, spawnSync } from 'node:child_process';
-import * as fs from 'node:fs';
 import * as os from 'node:os';
-import * as path from 'node:path';
 import process from 'node:process';
-import { Buffer } from 'node:buffer';
-import { type App, type BrowserWindow, app, ipcMain } from 'electron';
+import { URL } from 'node:url';
+import http from 'node:http';
+import { app } from 'electron';
 import { psList } from '@electron/main/ps-list';
-import { assert } from '@rotki/common';
-import { type Task, tasklist } from 'tasklist';
-import { DEFAULT_PORT, selectPort } from '@electron/main/port-utils';
-import { checkIfDevelopment, wait } from '@shared/utils';
+import { getPortAndUrl } from '@electron/main/port-utils';
 import { BackendCode, type BackendOptions } from '@shared/ipc';
-import type stream from 'node:stream';
+import { ProcessManager } from '@electron/main/process-manager';
+import { ColibriConfig } from '@electron/main/colibri-args';
+import { RotkiCoreConfig } from '@electron/main/core-args';
+import { wait } from '@shared/utils';
+import type { LogService } from '@electron/main/log-service';
+import type { AppConfig } from '@electron/main/app-config';
 
-const isDevelopment = checkIfDevelopment();
-const currentDir = import.meta.dirname;
-
-function streamToString(ioStream: stream.Readable, log: (msg: string) => void, label = 'rotki-core'): () => void {
-  const bufferChunks: Buffer[] = [];
-  const stringChunks: string[] = [];
-
-  const onData = (chunk: any): void => {
-    if (typeof chunk === 'string')
-      stringChunks.push(chunk);
-    else
-      bufferChunks.push(chunk);
-  };
-
-  const onEnd = (): void => {
-    if (bufferChunks.length > 0) {
-      try {
-        stringChunks.push(Buffer.concat(bufferChunks).toString('utf8'));
-      }
-      catch (error: any) {
-        stringChunks.push(error.message);
-      }
-    }
-
-    log(`[${label}] ${stringChunks.join('\n')}`);
-  };
-
-  const onError = (err: Error) => {
-    console.error(err);
-  };
-
-  ioStream.on('data', onData);
-  ioStream.on('error', onError);
-  ioStream.on('end', onEnd);
-
-  return () => {
-    ioStream.off('data', onData);
-    ioStream.off('end', onEnd);
-    ioStream.off('error', onError);
-  };
+interface SubprocessHandlerErrorListener {
+  onProcessError: (message: string | Error, code: BackendCode) => void;
 }
-
-function getBackendArguments(options: Partial<BackendOptions>): string[] {
-  const args: string[] = [];
-  if (options.loglevel)
-    args.push('--loglevel', options.loglevel);
-
-  if (options.logFromOtherModules)
-    args.push('--logfromothermodules');
-
-  if (options.dataDirectory)
-    args.push('--data-dir', options.dataDirectory);
-
-  if (options.sleepSeconds)
-    args.push('--sleep-secs', options.sleepSeconds.toString());
-
-  if (options.maxLogfilesNum)
-    args.push('--max-logfiles-num', options.maxLogfilesNum.toString());
-
-  if (options.maxSizeInMbAllLogs)
-    args.push('--max-size-in-mb-all-logs', options.maxSizeInMbAllLogs.toString());
-
-  if (options.sqliteInstructions !== undefined)
-    args.push('--sqlite-instructions', options.sqliteInstructions.toString());
-
-  return args;
-}
-
-const BACKEND_DIRECTORY = 'backend';
-const COLIBRI_DIRECTORY = 'colibri';
 
 export class SubprocessHandler {
-  readonly defaultLogDirectory: string;
-  private rpcFailureNotifier?: any;
-  private childProcess?: ChildProcess;
-  private colibriProcess?: ChildProcess;
-  private executable?: string;
-  private _corsURL?: string;
-  private backendOutput = '';
-  private onChildError?: (err: Error) => void;
-  private onChildExit?: (code: number, signal: any) => void;
-  private logDirectory?: string;
   private exiting: boolean;
-  private stdioListeners = {
-    outOff: (): void => {},
-    errOff: (): void => {},
-  };
 
-  constructor(private app: App) {
+  private readonly colibriManager: ProcessManager;
+  private readonly coreManager: ProcessManager;
+
+  constructor(private readonly logger: LogService, private readonly config: AppConfig) {
     this.exiting = false;
-    app.setAppLogsPath(path.join(app.getPath('appData'), 'rotki', 'logs'));
-    this.defaultLogDirectory = app.getPath('logs');
-    this._serverUrl = '';
     const startupMessage = `
     ------------------
     | Starting rotki |
     ------------------`;
-    this.logToFile(startupMessage);
-    this.listenForMessages();
-  }
+    this.logger.log(startupMessage);
 
-  private _port?: number;
-
-  get port(): number {
-    assert(this._port);
-    return this._port;
-  }
-
-  private _serverUrl: string;
-
-  get serverUrl(): string {
-    return this._serverUrl;
-  }
-
-  get logDir(): string {
-    if (import.meta.env.VITE_DEV_LOGS)
-      return path.join('frontend', 'logs');
-
-    return this.logDirectory ?? this.defaultLogDirectory;
-  }
-
-  get electronLogFile(): string {
-    return path.join(this.logDir, 'rotki_electron.log');
-  }
-
-  get backendLogFile(): string {
-    return path.join(this.logDir, 'rotkehlchen.log');
-  }
-
-  private static packagedBackendPath() {
-    const resources = process.resourcesPath ? process.resourcesPath : currentDir;
-    if (os.platform() === 'darwin')
-      return path.join(resources, BACKEND_DIRECTORY, 'rotki-core');
-
-    return path.join(resources, BACKEND_DIRECTORY);
-  }
-
-  private static packagedColibriPath() {
-    const resources = process.resourcesPath ? process.resourcesPath : currentDir;
-    return path.join(resources, COLIBRI_DIRECTORY);
-  }
-
-  /**
-   * Removes the error/out listeners from the backend when the app is quitting.
-   * It should be called `before-quit` to avoid having weird unhandled exceptions on SIGINT.
-   */
-  quitting(): void {
-    this.stdioListeners.errOff();
-    this.stdioListeners.outOff();
-  }
-
-  logToFile(msg: string | Error) {
-    try {
-      if (!msg)
-        return;
-
-      const message = `${new Date(Date.now()).toISOString()}: ${msg.toString()}`;
-
-      // eslint-disable-next-line no-console
-      console.log(message);
-      if (!fs.existsSync(this.logDir))
-        fs.mkdirSync(this.logDir);
-
-      fs.appendFileSync(this.electronLogFile, `${message}\n`);
-    }
-    catch {
-      // Not much we can do if an error happens here.
-    }
-  }
-
-  setCorsURL(url: string) {
-    if (url.endsWith('/'))
-      this._corsURL = url.slice(0, Math.max(0, url.length - 1));
-    else this._corsURL = url;
-  }
-
-  listenForMessages() {
-    // Listen for ack messages from renderer process
-    ipcMain.on('ack', (event, ...args) => {
-      if (args[0] === 1)
-        clearInterval(this.rpcFailureNotifier);
-      else this.logToFile(`Warning: unknown ack code ${args[0]}`);
-    });
-  }
-
-  logAndQuit(msg: string) {
-    // eslint-disable-next-line no-console
-    console.log(msg);
-    this.app.quit();
+    this.colibriManager = new ProcessManager(
+      'colibri',
+      msg => this.logger.log(msg),
+    );
+    this.coreManager = new ProcessManager(
+      'rotki-core',
+      msg => this.logger.log(msg),
+      { useWindowsTermination: true },
+    );
   }
 
   async checkForBackendProcess(): Promise<number[]> {
     try {
-      this.logToFile('Checking for running rotki-core processes');
+      this.logger.log('Checking for running rotki-core processes');
       const runningProcesses = await psList({ all: true });
       const matches = runningProcesses.filter(
         process => process.cmd?.includes('-m rotkehlchen') || process.cmd?.includes('rotki-core'),
@@ -216,341 +52,202 @@ export class SubprocessHandler {
       return matches.map(p => p.pid);
     }
     catch (error: any) {
-      this.logToFile(error.toString());
+      this.logger.log(error.toString());
       return [];
     }
   }
 
-  async createPyProc(window: BrowserWindow, options: Partial<BackendOptions>) {
-    if (options.logDirectory && !fs.existsSync(options.logDirectory))
-      fs.mkdirSync(options.logDirectory);
-
-    this.logDirectory = options.logDirectory;
-    if (process.env.SKIP_PYTHON_BACKEND) {
-      this.logToFile('Skipped starting rotki-core');
-      return;
+  private checkIfMacOsVersionIsSupported(): boolean {
+    if (os.platform() !== 'darwin') {
+      return true;
     }
 
-    if (os.platform() === 'darwin') {
-      const release = os.release().split('.');
-      if (release.length > 0 && Number.parseInt(release[0]) < 17) {
-        this.setFailureNotification(window, 'rotki requires at least macOS High Sierra', BackendCode.MACOS_VERSION);
-        return;
-      }
-    }
-    else if (os.platform() === 'win32') {
-      const release = os.release().split('.');
-      if (release.length > 1) {
-        const major = Number.parseInt(release[0]);
-        const minor = Number.parseInt(release[1]);
-
-        // Win 7 (v6.1) or earlier
-        const v = major + minor * 0.1;
-        if (v < 6.1) {
-          this.setFailureNotification(
-            window,
-            'rotki cannot run on Windows 7 or earlier, since Python3.11 is no longer supported there',
-            BackendCode.WIN_VERSION,
-          );
-          return;
-        }
-      }
-    }
-
-    const port = await selectPort();
-    const backendUrl = import.meta.env.VITE_BACKEND_URL as string | undefined;
-
-    assert(backendUrl);
-    const regExp = /(.*):\/\/(.*):(.*)/;
-    const match = backendUrl.match(regExp);
-    assert(match && match.length === 4);
-    const [, scheme, host, oldPort] = match;
-    assert(host);
-
-    if (port !== DEFAULT_PORT && Number.parseInt(oldPort) !== port) {
-      this._serverUrl = `${scheme}://${host}:${port}`;
-      this.logToFile(`Default port ${oldPort} was in use. Starting rotki-core at ${port}`);
-    }
-
-    this._port = port;
-    const args: string[] = getBackendArguments(options);
-
-    if (this.guessPackaged())
-      this.startProcessPackaged(port, args, window);
-    else this.startProcess(port, args);
-
-    const childProcess = this.childProcess;
-    if (!childProcess)
-      return;
-
-    if (childProcess.stdout)
-      this.stdioListeners.outOff = streamToString(childProcess.stdout, msg => this.logBackendOutput(msg));
-
-    if (childProcess.stderr)
-      this.stdioListeners.errOff = streamToString(childProcess.stderr, msg => this.logBackendOutput(msg));
-
-    // eslint-disable-next-line @typescript-eslint/no-this-alias
-    const handler = this;
-    this.onChildError = (err: Error) => {
-      this.logToFile(`Encountered an error while trying to start rotki-core\n\n${err.toString()}`);
-      // Notify the main window every 2 seconds until it acks the notification
-      handler.setFailureNotification(window, err, BackendCode.TERMINATED);
-      this.childProcess = undefined;
-      this._port = undefined;
-    };
-
-    this.onChildExit = (code: number, signal: any) => {
-      this.logToFile(`rotki-core exited with signal: ${signal} (Code: ${code})`);
-      /**
-         * On win32 we can also get a null code on SIGTERM
-         */
-      if (!(code === 0 || code === null)) {
-        // Notify the main window every 2 seconds until it acks the notification
-        handler.setFailureNotification(window, this.backendOutput, BackendCode.TERMINATED);
-      }
-      this.childProcess = undefined;
-      this._port = undefined;
-    };
-
-    childProcess.once('error', this.onChildError);
-    childProcess.once('exit', this.onChildExit);
-
-    if (childProcess) {
-      this.logToFile(`rotki-core started on port: ${port} (PID: ${childProcess.pid})`);
-      return;
-    }
-    this.logToFile('rotki-core was not successfully started');
+    const releaseVersionParts = os.release().split('.');
+    const majorVersion = Number.parseInt(releaseVersionParts[0]);
+    return !(releaseVersionParts.length > 0 && majorVersion < 17);
   }
 
-  async exitPyProc(restart = false) {
-    const client = this.childProcess;
-    if (!client)
-      return;
+  private checkIfWindowsVersionIsSupported(): boolean {
+    if (os.platform() !== 'win32') {
+      return true;
+    }
+    const releaseVersionParts = os.release().split('.');
 
+    if (releaseVersionParts.length > 1) {
+      const majorVersion = Number.parseInt(releaseVersionParts[0]);
+      const minorVersion = Number.parseInt(releaseVersionParts[1]);
+
+      // Win 7 (v6.1) or earlier
+      const windowsVersion = majorVersion + minorVersion * 0.1;
+      return windowsVersion >= 6.1;
+    }
+    return true;
+  }
+
+  async startProcesses(options: Partial<BackendOptions>, listener: SubprocessHandlerErrorListener): Promise<void> {
+    this.logger.log('Preparing to start processes');
+    this.logger.updateLogDirectory(options.logDirectory);
+
+    if (process.env.SKIP_PYTHON_BACKEND) {
+      this.logger.log('Skipped starting rotki-core');
+      return;
+    }
+
+    if (!this.checkIfMacOsVersionIsSupported()) {
+      listener.onProcessError('rotki requires at least macOS High Sierra', BackendCode.MACOS_VERSION);
+      return;
+    }
+
+    if (!this.checkIfWindowsVersionIsSupported()) {
+      listener.onProcessError('rotki requires at least Windows 10', BackendCode.WIN_VERSION);
+      return;
+    }
+
+    await this.startCore(options, listener);
+    const isCoreAvailable = await this.checkCoreApiAvailability(this.config.urls.coreApiUrl);
+    if (!isCoreAvailable) {
+      this.logger.log('Failed to connect to core. Exiting');
+      await this.terminateProcesses();
+      return;
+    }
+    await this.startColibri(options.dataDirectory);
+  }
+
+  private async startColibri(dataDirectory?: string) {
+    this.logger.log('Preparing to start colibri');
+    const [port, url, isNonDefault] = await getPortAndUrl(
+      this.config.ports.colibriPort,
+      this.config.urls.colibriApiUrl,
+    );
+
+    if (isNonDefault) {
+      this.logger.log(`Using non-default port ${port} for colibri at ${url}`);
+      this.config.urls.colibriApiUrl = url;
+    }
+
+    const { command, args, workDir } = ColibriConfig.create(this.config.isDev)
+      .withLogfilePath(this.logger.colibriProcessLogFile)
+      .withDataDirectory(dataDirectory)
+      .withPort(port)
+      .build();
+
+    this.colibriManager.onExit((code) => {
+      this.logger.log(`colibri exited with code: ${code}`);
+    });
+    this.colibriManager.onError((error) => {
+      this.logger.log(`colibri exited with error: ${error}`);
+    });
+    this.colibriManager.start(command, args, workDir);
+  }
+
+  private async startCore(options: Partial<BackendOptions>, listener: SubprocessHandlerErrorListener) {
+    this.logger.log('Preparing to start rotki-core');
+    const [port, url, isNonDefault] = await getPortAndUrl(
+      this.config.ports.corePort,
+      this.config.urls.coreApiUrl,
+    );
+
+    if (isNonDefault) {
+      this.logger.log(`Using non-default port ${port} for rotki-core at ${url}`);
+      this.config.urls.coreApiUrl = url;
+    }
+
+    const { command, args, workDir } = RotkiCoreConfig.create(this.config.isDev, options)
+      .withLogFile(this.logger.coreProcessLogPath)
+      .withPort(port)
+      .build();
+
+    this.coreManager.onExit((code, signal, lastError) => {
+      this.logger.log(`rotki-core exited with signal: ${signal} (Code: ${code})`);
+      /**
+       * On win32 we can also get a null code on SIGTERM
+       */
+      if (!(code === 0 || code === null)) {
+        // Notify the main window every 2 seconds until it acks the notification
+        listener.onProcessError(lastError, BackendCode.TERMINATED);
+      }
+    });
+
+    this.coreManager.onError((error) => {
+      this.logger.log(`Encountered an error while trying to start rotki-core\n\n${error.toString()}`);
+      listener.onProcessError(error, BackendCode.TERMINATED);
+    });
+
+    this.coreManager.start(command, args, workDir);
+  }
+
+  /**
+   * Checks the availability of the core API by sending periodic ping requests
+   * to the ping endpoint.
+   * Continues to retry pinging the URL for a specified number of attempts,
+   * applying a delay between each attempt if the initial request fails.
+   *
+   * @param {string} url - The base URL of the core API endpoint to ping.
+   * @param {number} [retries=10] - The maximum number of ping attempts before giving up.
+   * @param {number} [waitSeconds=10] - The delay, in seconds, between consecutive ping attempts.
+   * @return {Promise<boolean>} A promise that resolves to true if the API responds successfully within the given attempts, otherwise false.
+   */
+  private async checkCoreApiAvailability(
+    url: string,
+    retries: number = 30,
+    waitSeconds: number = 10,
+  ): Promise<boolean> {
+    await wait(3000);
+    return new Promise((resolve) => {
+      const pingUrl = new URL(`${url}/api/1/ping`);
+
+      let attempt = 0;
+      let ping: () => void;
+
+      const retryOrFail = (): void => {
+        if (attempt <= retries) {
+          this.logger.log(`Retrying ping in ${waitSeconds} seconds`);
+          setTimeout(ping, waitSeconds * 1000);
+        }
+        else {
+          this.logger.log(`Ping failed after ${retries} attempts`);
+          resolve(false);
+        }
+      };
+
+      ping = (): void => {
+        attempt++;
+        this.logger.log(`Pinging ${pingUrl.href} attempt ${attempt}`);
+
+        const request = http.get(pingUrl.href, (res) => {
+          if (res.statusCode === 200) {
+            this.logger.log(`Ping successful on attempt ${attempt}`);
+            resolve(true);
+          }
+          else {
+            this.logger.log(`Ping failed with status code: ${res.statusCode}`);
+            retryOrFail();
+          }
+          res.destroy();
+        });
+
+        request.on('error', (err) => {
+          this.logger.log(`Ping failed with error: ${err.message}`);
+          retryOrFail();
+        });
+
+        request.end();
+      };
+
+      ping();
+    });
+  }
+
+  async terminateProcesses(restart: boolean = false): Promise<void> {
     if (this.exiting)
       return;
 
     this.exiting = true;
-    this.logToFile(restart ? 'Restarting rotki-core' : `Terminating rotki-core: (PID ${client.pid})`);
-    if (this.rpcFailureNotifier)
-      clearInterval(this.rpcFailureNotifier);
-
-    if (restart && client) {
-      if (this.onChildExit)
-        client.off('exit', this.onChildExit);
-
-      if (this.onChildError)
-        client.off('error', this.onChildError);
-
-      this.stdioListeners.outOff();
-      this.stdioListeners.errOff();
-    }
-    if (process.platform === 'win32')
-      await this.terminateWindowsProcesses(restart);
-
-    if (client)
-      this.terminateBackend(client);
-
+    await this.colibriManager?.terminate();
+    await this.coreManager?.terminate();
     this.exiting = false;
-  }
 
-  private logBackendOutput(msg: string | Error) {
-    this.logToFile(msg);
-    this.backendOutput = `${this.backendOutput} ${msg.toString()}`;
-  }
-
-  private terminateBackend = (client: ChildProcess): void => {
-    if (!client.pid) {
-      this.logToFile('subprocess was already terminated (no process id pid found)');
-    }
-    else {
-      if (!client.exitCode) {
-        this.logToFile(`attempting to kill process: ${client.pid}`);
-        const success = client.kill();
-        this.logToFile(`The Python sub-process was terminated successfully (${client.killed}) (${success})`);
-      }
-    }
-
-    this.childProcess = undefined;
-    this._port = undefined;
-  };
-
-  private guessPackaged() {
-    const path = SubprocessHandler.packagedBackendPath();
-    this.logToFile(`Determining if we are packaged by seeing if ${path} exists`);
-    return fs.existsSync(path);
-  }
-
-  private setFailureNotification(
-    window: Electron.BrowserWindow | null,
-    backendOutput: string | Error,
-    code: BackendCode,
-  ): void {
-    if (this.rpcFailureNotifier)
-      clearInterval(this.rpcFailureNotifier);
-
-    this.rpcFailureNotifier = setInterval(() => {
-      /**
-       * There is a possibility that the window has been already disposed and this
-       * will result in an exception. In that case, we just catch and clear the notifier
-       */
-      try {
-        window?.webContents.send('failed', backendOutput, code);
-      }
-      catch {
-        clearInterval(this.rpcFailureNotifier);
-      }
-    }, 2000);
-  }
-
-  private startProcess(port: number, args: string[]) {
-    const profilingCmd = process.env.ROTKI_BACKEND_PROFILING_CMD;
-    const profilingArgs = process.env.ROTKI_BACKEND_PROFILING_ARGS;
-
-    const defaultArgs: string[] = [
-      ...(profilingArgs ? profilingArgs.split(' ') : []),
-      ...(profilingCmd ? ['python'] : []),
-      '-m',
-      'rotkehlchen',
-      '--rest-api-port',
-      port.toString(),
-    ];
-
-    if (this._corsURL)
-      defaultArgs.push('--api-cors', this._corsURL);
-
-    defaultArgs.push('--logfile', this.backendLogFile);
-
-    if (!process.env.VIRTUAL_ENV) {
-      this.logAndQuit('ERROR: Running in development mode and not inside a python virtual environment');
-      return;
-    }
-
-    const allArgs = defaultArgs.concat(args);
-    const cmd = profilingCmd || 'python';
-    this.logToFile(`Starting non-packaged rotki-core: ${cmd} ${allArgs.join(' ')}`);
-
-    this.childProcess = spawn(cmd, allArgs, { cwd: '../../' });
-
-    if (!isDevelopment) {
-      this.colibriProcess = spawn('colibri');
-      if (this.colibriProcess.stdout)
-        streamToString(this.colibriProcess.stdout, msg => this.logToFile(`Colibri says: ${msg}`));
-    }
-  }
-
-  private startProcessPackaged(port: number, args: string[], window: Electron.CrossProcessExports.BrowserWindow): void {
-    const distDir = SubprocessHandler.packagedBackendPath();
-    const files = fs.readdirSync(distDir);
-    if (files.length === 0) {
-      this.logAndQuit('ERROR: No files found in the dist directory');
-      return;
-    }
-
-    const binaries = files.filter(file => file.startsWith('rotki-core-'));
-
-    if (binaries.length > 1) {
-      const names = files.join(', ');
-      const error = `Expected only one backend binary but found multiple ones
-       in directory: ${names}.\nThis might indicate a problematic upgrade.\n\n
-       Please make sure only one binary file exists that matches the app version`;
-      this.logToFile(`ERROR: ${error}`);
-      this.setFailureNotification(window, error, BackendCode.TERMINATED);
-      return;
-    }
-
-    const exe = files.find(file => file.startsWith('rotki-core-'));
-    if (!exe) {
-      this.logAndQuit(`ERROR: Executable was not found`);
-      return;
-    }
-
-    this.executable = exe;
-    const executable = path.join(distDir, exe);
-    if (this._corsURL)
-      args.push('--api-cors', this._corsURL);
-
-    args.push('--logfile', this.backendLogFile);
-    args = ['--rest-api-port', port.toString()].concat(args);
-    this.logToFile(`Starting packaged rotki-core: ${executable} ${args.join(' ')}`);
-    this.childProcess = spawn(executable, args);
-
-    if (!isDevelopment) {
-      const colibriDir = SubprocessHandler.packagedColibriPath();
-      const colibriExe = fs.readdirSync(colibriDir).find(file => file.startsWith('colibri'));
-
-      if (!colibriExe) {
-        this.logAndQuit(`ERROR: colibri executable was not found`);
-        return;
-      }
-      this.colibriProcess = spawn(path.join(colibriDir, colibriExe));
-      if (this.colibriProcess.stdout)
-        streamToString(this.colibriProcess.stdout, msg => this.logToFile(`output: ${msg}`), 'colibri');
-    }
-  }
-
-  private async terminateWindowsProcesses(restart: boolean) {
-    // For win32 we got two problems:
-    // 1. pyProc.kill() does not work due to SIGTERM not really being a signal
-    //    in Windows
-    // 2. the onefile pyinstaller packaging creates two executables.
-    // https://github.com/pyinstaller/pyinstaller/issues/2483
-    //
-    // So the solution is to not let the application close, get all
-    // pids and kill them before we close the app
-
-    this.logToFile('Starting windows process termination');
-    const executable = this.executable;
-    if (!executable) {
-      this.logToFile('No rotki-core executable detected');
-      return;
-    }
-
-    const tasks: Task[] = await tasklist();
-    this.logToFile(`Currently running: ${tasks.length} tasks`);
-
-    const pids = tasks.filter(task => task.imageName === executable).map(task => task.pid);
-    this.logToFile(`Detected the following running rotki-core processes: ${pids.join(', ')}`);
-
-    const args = ['/f', '/t'];
-
-    for (const pid of pids) args.push('/PID', pid.toString());
-
-    this.logToFile(`Preparing to call "taskill ${args.join(' ')}" on the rotki-core processes`);
-
-    try {
-      spawnSync('taskkill', args);
-      await this.waitForTermination(tasks, pids);
-    }
-    catch (error: any) {
-      this.logToFile(`Call to taskkill failed:\n\n ${error.toString()}`);
-    }
-    finally {
-      this.logToFile('Call to taskkill complete');
-      if (!restart)
-        app.exit();
-    }
-  }
-
-  private async waitForTermination(tasks: Task[], processes: number[]) {
-    function stillRunning(tasks: Task[]): number {
-      return tasks.filter(({ pid }) => processes.includes(pid)).length;
-    }
-
-    const running = stillRunning(tasks);
-    if (running === 0) {
-      this.logToFile('The task killed successfully');
-      return;
-    }
-
-    for (let i = 0; i < 10; i++) {
-      this.logToFile(`The ${running} processes are still running. Waiting for 2 seconds`);
-      await wait(2000);
-      tasks = await tasklist();
-      if (stillRunning(tasks) === 0) {
-        this.logToFile('The task killed successfully');
-        break;
-      }
-    }
+    if (!restart)
+      app.quit();
   }
 }

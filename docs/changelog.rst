@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :feature:`9298` rotki will now support Echo.xyz funding and refund event.
+* :feature:`-` History events export will now include the symbol or name of the asset to improve readability of entries.
 * :feature:`9203` rotki will now detect Uniswap V3 balances in all supported EVM chains.
 * :feature:`-` rotki will now correctly decode gitcoin profile creation and updating across supported EVM chains. Also some more gitcoin rounds are added.
 * :feature:`8780` rotki will now correctly decode Spark transactions in all supported EVM chains.
@@ -17,11 +18,14 @@ Changelog
 * :feature:`-` Lido and EtherFI reserve tokens will now be automatically queried.
 * :feature:`-` Safepass vesting claim start events will now be properly decoded.
 * :bug:`-` Bitmex balances will now be queried correctly.
+* :bug:`-` Some specific cases of yearn v2 vault deposit/withdrawals that had problems will now be decoded properly.
 * :bug:`-` Deleting an ethereum address will now remove the withdrawals cache for that address so re-adding it will now properly detect ethereum staking withdrawals again.
 * :bug:`-` Fix double count of cowswap fees.
 * :bug:`-` Allow the rotki app to be minimized using the shortcut for each platform.
 * :bug:`-` Fix issue when user tries to delete Kusama, Polkadot, or Beaconchain RPC URL.
 * :bug:`-` rotki should now warn you again when gnosis pay authentication token expires.
+* :bug:`-` rotki will now properly decode aave v2 to v3 migrations for polygon and mainnet
+* :bug:`-` rotki will now properly decode some aave v3 wrapped eth transactions that were not decoded properly in the past.
 
 * :release:`1.37.1 <2025-01-10>`
 * :bug:`-` OKX balances will now include assets in the funding account.

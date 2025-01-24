@@ -1,30 +1,27 @@
 import path from 'node:path';
-import process from 'node:process';
-import { type BrowserWindow, Menu, Tray, app, nativeImage } from 'electron';
-import { settingsManager } from '@electron/main/settings-manager';
-import { checkIfDevelopment } from '@shared/utils';
+import { Menu, Tray, nativeImage } from 'electron';
+import { assert } from '@rotki/common';
+import type { SettingsManager } from '@electron/main/settings-manager';
 import type { TrayUpdate } from '@shared/ipc';
+import type { AppConfig } from '@electron/main/app-config';
 
-const dirname = import.meta.dirname;
-
-type WindowProvider = () => BrowserWindow;
-const isMac = process.platform === 'darwin';
+interface TrayManagerListener {
+  toggleWindowVisibility: () => boolean;
+  quit: () => void;
+}
 
 export class TrayManager {
-  private readonly getWindow: WindowProvider;
-  private readonly closeApp: () => void;
   private tooltip = '';
-  private tray?: Tray = undefined;
+  private tray?: Tray;
+  private listener?: TrayManagerListener;
+  private isVisible = false;
 
-  constructor(getWindow: WindowProvider, closeApp: () => void) {
-    this.getWindow = getWindow;
-    this.closeApp = closeApp;
-    if (settingsManager.appSettings.displayTray)
-      this.build();
+  constructor(private readonly settings: SettingsManager, private readonly config: AppConfig) {
+
   }
 
-  private static get iconPath(): string {
-    return checkIfDevelopment() ? path.join(dirname, '..', 'public') : dirname;
+  private get iconPath(): string {
+    return this.config.isDev ? path.join(import.meta.dirname, '..', 'public') : import.meta.dirname;
   }
 
   private buildMenu(visible: boolean, info = '') {
@@ -32,7 +29,7 @@ export class TrayManager {
       {
         label: 'rotki',
         enabled: false,
-        icon: path.join(TrayManager.iconPath, 'rotki_tray.png'),
+        icon: path.join(this.iconPath, 'rotki_tray.png'),
       },
       ...(info
         ? [
@@ -45,12 +42,12 @@ export class TrayManager {
       { type: 'separator' },
       {
         label: visible ? 'Minimize to tray' : 'Restore from tray',
-        click: () => this.showHide(this.getWindow()),
+        click: () => this.toggleWindowVisibility(),
       },
       { type: 'separator' },
       {
         label: 'Quit',
-        click: this.closeApp,
+        click: this.listener?.quit,
       },
     ]);
   }
@@ -60,7 +57,7 @@ export class TrayManager {
       return;
 
     if (up === undefined) {
-      this.setIcon(isMac ? 'rotki-trayTemplate@5.png' : 'rotki_tray@5x.png');
+      this.setIcon(this.config.isMac ? 'rotki-trayTemplate@5.png' : 'rotki_tray@5x.png');
       this.tray.setTitle('');
       this.tray.setToolTip('rotki is running');
       return;
@@ -80,65 +77,60 @@ export class TrayManager {
       indicator = '▼';
     }
 
-    if (!isMac)
+    if (!this.config.isMac)
       this.setIcon(icon);
 
     this.tray.setTitle(color + indicator);
     this.tooltip = `Net worth ${netWorth} ${currency}.\nChange in ${period} period ${indicator} ${percentage}%\n(${delta} ${currency})`;
     this.tray.setToolTip(this.tooltip);
 
-    const visible = this.getWindow().isVisible();
-    this.tray.setContextMenu(this.buildMenu(visible, this.tooltip));
+    this.updateContextMenu(this.isVisible);
   }
 
   private setIcon(iconName: string) {
-    const iconPath = path.join(TrayManager.iconPath, iconName);
+    const iconPath = path.join(this.iconPath, iconName);
     const trayIcon = nativeImage.createFromPath(iconPath).resize({ width: 16, height: 16 });
     this.tray?.setImage(trayIcon);
   }
 
-  private showHide(win: BrowserWindow) {
-    if (win.isVisible()) {
-      win.hide();
-    }
-    else {
-      win.show();
-      app.focus();
-    }
-
-    this.tray?.setContextMenu(this.buildMenu(win.isVisible()));
+  private toggleWindowVisibility() {
+    const listener = this.listener;
+    assert(listener, 'No listener set');
+    const visible = listener.toggleWindowVisibility();
+    this.updateContextMenu(visible);
   }
 
-  private hidden = () => {
-    this.tray?.setContextMenu(this.buildMenu(false, this.tooltip));
-  };
-
-  private shown = () => {
-    this.tray?.setContextMenu(this.buildMenu(true, this.tooltip));
-  };
+  updateContextMenu(visible: boolean) {
+    this.isVisible = visible;
+    this.tray?.setContextMenu(this.buildMenu(visible, this.tooltip));
+  }
 
   build() {
-    const icon = isMac ? 'rotki-trayTemplate@5.png' : 'rotki_tray@5x.png';
-    const iconPath = path.join(TrayManager.iconPath, icon);
+    const icon = this.config.isMac ? 'rotki-trayTemplate@5.png' : 'rotki_tray@5x.png';
+    const iconPath = path.join(this.iconPath, icon);
     const trayIcon = nativeImage.createFromPath(iconPath).resize({ width: 16, height: 16 });
     this.tray = new Tray(trayIcon);
     this.tray.setToolTip('rotki is running');
 
     this.tray.setContextMenu(this.buildMenu(true));
-    this.tray.on('double-click', () => this.showHide(this.getWindow()));
-    this.tray.on('click', () => this.showHide(this.getWindow()));
+    this.tray.on('double-click', () => this.toggleWindowVisibility());
+    this.tray.on('click', () => this.toggleWindowVisibility());
   }
 
-  destroy() {
+  cleanup() {
     if (this.tray) {
       this.tray.destroy();
       this.tray = undefined;
     }
+    this.listener = undefined;
   }
 
-  listen() {
-    const window = this.getWindow();
-    window.on('hide', this.hidden);
-    window.on('show', this.shown);
+  initialize(listener: TrayManagerListener) {
+    if (!this.settings.appSettings.displayTray) {
+      return;
+    }
+
+    this.build();
+    this.listener = listener;
   }
 }

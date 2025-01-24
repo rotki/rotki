@@ -61,11 +61,11 @@ const { showHelpBar, showNotesSidebar, showNotificationBar, showPinned } = store
       v-if="isSmAndUp"
       class="app__app-bar__button"
     />
+    <UserDropdown class="app__app-bar__button" />
     <HelpIndicator
       v-if="isSmAndUp"
       v-model:visible="showHelpBar"
     />
-    <UserDropdown class="app__app-bar__button" />
   </div>
 </template>
 
