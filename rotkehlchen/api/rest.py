@@ -210,7 +210,6 @@ from rotkehlchen.history.skipped import (
 from rotkehlchen.history.types import NOT_EXPOSED_SOURCES, HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.icons import (
     check_if_image_is_cached,
-    create_image_response,
     maybe_create_image_response,
 )
 from rotkehlchen.inquirer import CurrentPriceOracle, Inquirer
@@ -3270,34 +3269,6 @@ class RestAPI:
                 }
 
         return _wrap_in_ok_result(result)
-
-    def get_asset_icon(
-            self,
-            asset: AssetWithNameAndType,
-            match_header: str | None,
-    ) -> Response:
-        icon_path = self.rotkehlchen.icon_manager.asset_icon_path(asset)
-        if icon_path is not None:
-            response = check_if_image_is_cached(
-                image_path=icon_path,
-                match_header=match_header,
-            )
-            if response is not None:
-                return response
-            else:
-                # here icon_path comes from asset_icon_path where the existence has been
-                # already checked
-                return create_image_response(image_path=icon_path)
-
-        image_path, launched_remote_query = self.rotkehlchen.icon_manager.get_icon(asset)
-        if image_path is None and launched_remote_query is True:
-            return make_response(
-                (
-                    b'',
-                    HTTPStatus.ACCEPTED, {'mimetype': 'image/png', 'Content-Type': 'image/png'},
-                ),
-            )
-        return maybe_create_image_response(image_path=image_path)
 
     def upload_asset_icon(self, asset: Asset, filepath: Path) -> Response:
         self.rotkehlchen.icon_manager.add_icon(asset=asset, icon_path=filepath)

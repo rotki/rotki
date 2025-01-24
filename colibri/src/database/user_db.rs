@@ -10,7 +10,6 @@ pub struct DBHandler {
     pub client: Option<Arc<Client>>,
 }
 
-
 /// The user db handler for Colibri
 /// We assume its updated and up to date
 /// from the rotki python backend
@@ -36,7 +35,8 @@ impl DBHandler {
             .conn(|conn| {
                 conn.pragma_update(None, "KEY", password)?;
                 Ok(())
-            }).await
+            })
+            .await
         {
             Ok(_) => self.client = Some(Arc::new(client)),
             Err(e) => return Err(DBError::UnlockError(e.to_string())),

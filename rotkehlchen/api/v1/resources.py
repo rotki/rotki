@@ -2397,15 +2397,6 @@ class WatchersResource(BaseMethodView):
         return self.rest_api.delete_watchers(watchers=watchers)
 
 
-class AssetIconFileResource(BaseMethodView):
-
-    get_schema = SingleAssetIdentifierSchema()
-
-    @use_kwargs(get_schema, location='query')
-    def get(self, asset: AssetWithNameAndType) -> Response:
-        return self.rest_api.get_asset_icon(asset=asset, match_header=get_match_header())
-
-
 class AssetIconsResource(BaseMethodView):
 
     patch_schema = SingleAssetWithOraclesIdentifierSchema()
