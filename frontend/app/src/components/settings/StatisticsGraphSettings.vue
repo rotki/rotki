@@ -31,7 +31,7 @@ const showMenu = ref<boolean>(false);
       </MenuTooltipButton>
     </template>
 
-    <div class="p-4">
+    <div class="p-4 max-h-[30rem] overflow-y-auto">
       <SsfGraphMultiplierSetting @updated="updated()" />
       <RuiDivider class="my-4" />
       <InferZeroTimedBalancesSetting @updated="updated()" />
