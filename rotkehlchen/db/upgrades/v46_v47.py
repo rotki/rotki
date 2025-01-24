@@ -1,4 +1,3 @@
-import json
 import logging
 from typing import TYPE_CHECKING
 
@@ -32,35 +31,33 @@ def upgrade_v46_to_v47(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
     def _clean_cache(write_cursor: 'DBCursor') -> None:
         write_cursor.execute("DELETE FROM key_value_cache WHERE name LIKE 'extrainternaltx_%'")
 
-    @progress_step(description='Updating ERC721 token identifiers.')
-    def _update_erc721_token_identifiers(write_cursor: 'DBCursor') -> None:
-        """Update erc721 token identifiers to include the token id
-        for all evm events that have the token id in extra_data.
+    @progress_step(description='Remove unneeded nft collection assets.')
+    def _remove_nft_collection_assets(write_cursor: 'DBCursor') -> None:
+        """Remove erc721 assets that have no collectible id, and also any erc20 assets
+        with the same address that were incorrectly added.
         """
-        write_cursor = write_cursor.execute("SELECT identifier, asset, extra_data FROM history_events WHERE entry_type = 2 AND extra_data != ''")  # noqa: E501
-        assets_updates = []
-        extra_data_updates = []
-        for entry in write_cursor:
-            asset_identifier = entry[1]
-            try:
-                extra_data: dict = json.loads(entry[2])
-            except json.JSONDecodeError as e:
-                log.error(f'Failed to parse {entry[2]} as JSON due to {e}')
-                continue
+        identifiers_to_remove = []
+        with GlobalDBHandler().conn.read_ctx() as global_db_cursor:
+            cursor = global_db_cursor.execute("SELECT identifier FROM assets WHERE identifier LIKE '%erc721%'")  # noqa: E501
+            for entry in cursor:
+                identifiers_to_remove.extend([
+                    entry[0],
+                    entry[0].replace('erc721', 'erc20'),
+                ])
 
-            if (token_id := extra_data.get('token_id')) is not None:
-                assets_updates.append((f'{asset_identifier}/{token_id}', asset_identifier))
-                # remove the token id and name from extra_data to avoid storing redundant data,
-                extra_data.pop('token_id', '')
-                extra_data.pop('token_name', '')
-                extra_data_updates.append((json.dumps(extra_data), entry[0]))
+        if len(identifiers_to_remove) == 0:
+            return
 
-        if len(assets_updates) > 0:
-            assets_query = 'UPDATE assets SET identifier=? WHERE identifier=?'
-            with GlobalDBHandler().conn.write_ctx() as global_db_write_cursor:
-                global_db_write_cursor.executemany(assets_query, assets_updates)
+        placeholders = ','.join(['?'] * len(identifiers_to_remove))
+        with GlobalDBHandler().conn.write_ctx() as global_db_write_cursor:
+            global_db_write_cursor.execute(f'DELETE FROM assets WHERE identifier IN ({placeholders})', identifiers_to_remove)  # noqa: E501
 
-            write_cursor.executemany(assets_query, assets_updates)
-            write_cursor.executemany('UPDATE history_events SET extra_data=? WHERE identifier=?', extra_data_updates)  # noqa: E501
+        # Delete from other tables where they might be referenced first to avoid FOREIGN KEY constraint errors when deleting from assets.  # noqa: E501
+        write_cursor.execute(f'DELETE FROM history_events WHERE asset IN ({placeholders})', identifiers_to_remove)  # noqa: E501
+        write_cursor.execute(f'DELETE FROM timed_balances WHERE currency IN ({placeholders})', identifiers_to_remove)  # noqa: E501
+        write_cursor.execute(f'DELETE FROM evm_accounts_details WHERE value IN ({placeholders})', identifiers_to_remove)  # noqa: E501
+        write_cursor.execute(f'DELETE FROM assets WHERE identifier IN ({placeholders})', identifiers_to_remove)  # noqa: E501
+
+    # TODO: Reset events to trigger re-decoding so erc721 assets are added properly.
 
     perform_userdb_upgrade_steps(db=db, progress_handler=progress_handler, should_vacuum=True)
