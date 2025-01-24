@@ -40,8 +40,7 @@ log = RotkehlchenLogsAdapter(logger)
 class EchoDecoder(DecoderInterface):
 
     def _decode_fee_paid(self, context: DecoderContext) -> DecodingOutput:
-        """Transform transfer event to Echo fee event if Echo charged on-chain fee
-        """
+        """Transform transfer event to Echo fee event if Echo charged on-chain fee"""
         if (
             context.tx_log.topics[0] != FEE_PAID or
             not self.base.is_tracked(user_address := bytes_to_address(context.tx_log.topics[1]))
@@ -53,14 +52,14 @@ class EchoDecoder(DecoderInterface):
 
         deal_address = bytes_to_address(context.transaction.input_data[68:100])
         raw_token_address = self.evm_inquirer.call_contract(
-                    contract_address=deal_address,
-                    abi=DEAL_ABI,
-                    method_name='token',
+                contract_address=deal_address,
+                abi=DEAL_ABI,
+                method_name='token',
         )
         token = EvmToken(evm_address_to_identifier(
-                    raw_token_address,
-                    self.evm_inquirer.chain_id,
-                    EvmTokenKind.ERC20))
+                    address=raw_token_address,
+                    chain_id=self.evm_inquirer.chain_id,
+                    token_type=EvmTokenKind.ERC20))
 
         for event in context.decoded_events:
             if (
@@ -115,9 +114,9 @@ class EchoDecoder(DecoderInterface):
                     method_name='token',
                 )
                 token = EvmToken(evm_address_to_identifier(
-                    raw_token_address,
-                    self.evm_inquirer.chain_id,
-                    EvmTokenKind.ERC20))
+                    address=raw_token_address,
+                    chain_id=self.evm_inquirer.chain_id,
+                    token_type=EvmTokenKind.ERC20))
                 token_amount = int.from_bytes(tx_log.data[:32])
                 amount = asset_normalized_value(token_amount, token)
                 context.action_items.append(ActionItem(
@@ -145,8 +144,7 @@ class EchoDecoder(DecoderInterface):
             decoded_events: list['EvmEvent'],
             all_logs: list['EvmTxReceiptLog'],
     ) -> list['EvmEvent']:
-        """Convert transfer event into Echo's deal funding event.
-        """
+        """Convert transfer event into Echo's deal funding event."""
         deal_address = fund_amount = user_address = None
         for tx_log in all_logs:
             if (
