@@ -7,6 +7,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use crate::coingecko;
+use crate::globaldb;
 
 pub enum FileTypeError {
     UnsupportedFileType,
@@ -131,6 +132,7 @@ async fn find_icon(path: &Path) -> Option<(Bytes, String)> {
 /// Gets the given icon from the user's system if it's already
 /// downloaded or asks for it from the icon sources. Returns it if found
 pub async fn get_or_query_icon(
+    globaldb: Arc<globaldb::GlobalDB>,
     coingecko: Arc<coingecko::Coingecko>,
     data_dir: PathBuf,
     asset_id: &str,
@@ -140,10 +142,20 @@ pub async fn get_or_query_icon(
     Option<[(&'static str, &'static str); 2]>,
     Option<Bytes>,
 ) {
+    let new_asset_id = match globaldb.get_collection_main_asset(asset_id).await {
+        Err(e) => {
+            error!(
+                "Failed to get collection main asset id for {} due to {}",
+                asset_id, e
+            );
+            asset_id.to_string()
+        }
+        Ok(result) => result.unwrap_or_else(|| asset_id.to_string()),
+    };
     const ASSETS_PATH: &str = "images/assets/all/";
     let path = data_dir
         .join(ASSETS_PATH)
-        .join(format!("{}_small", url_encode_identifier(asset_id)));
+        .join(format!("{}_small", url_encode_identifier(&new_asset_id)));
 
     match find_icon(&path).await {
         Some((bytes, extension)) => {
@@ -161,11 +173,11 @@ pub async fn get_or_query_icon(
         }
         _ => {
             // we have to query it
-            let (icon_bytes, extension) = match extract_chain_id_and_address(asset_id) {
+            let (icon_bytes, extension) = match extract_chain_id_and_address(&new_asset_id) {
                 Some((chain_id, address)) => {
                     match query_token_icon_and_extension(chain_id, &address).await {
                         Some((bytes, ext)) => (bytes, ext),
-                        None => match coingecko.query_asset_image(asset_id).await {
+                        None => match coingecko.query_asset_image(&new_asset_id).await {
                             Some(bytes) => (bytes, "png"),
                             None => return (StatusCode::NOT_FOUND, None, None),
                         },
@@ -173,7 +185,7 @@ pub async fn get_or_query_icon(
                 }
                 None => {
                     // If we can't extract chain_id and address, try coingecko directly
-                    match coingecko.query_asset_image(asset_id).await {
+                    match coingecko.query_asset_image(&new_asset_id).await {
                         Some(bytes) => (bytes, "png"),
                         None => return (StatusCode::NOT_FOUND, None, None),
                     }

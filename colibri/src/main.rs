@@ -53,9 +53,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
             Ok(globaldb) => Arc::new(globaldb),
         };
-    let coingecko = Arc::new(coingecko::Coingecko::new(globaldb));
+    let coingecko = Arc::new(coingecko::Coingecko::new(globaldb.clone()));
     let state = Arc::new(api::AppState {
         data_dir: args.data_directory,
+        globaldb: globaldb.clone(),
         coingecko,
         userdb: Arc::new(RwLock::new(DBHandler::new())),
     });
@@ -63,10 +64,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let app = Router::new()
         .route("/icon", get(api::icons::get_icon))
         .route("/user", post(api::database::unlock_user))
-        .route(
-            "/assets/ignored",
-            get(api::database::get_ignored_assets),
-        )
+        .route("/assets/ignored", get(api::database::get_ignored_assets))
         .with_state(state);
 
     info!("Colibri api listens on 127.0.0.1:{}", args.port);

@@ -1,8 +1,8 @@
+use crate::api::AppState;
+use crate::icons;
 use axum::{extract::Query, extract::State, response::IntoResponse};
 use serde::Deserialize;
 use std::sync::Arc;
-use crate::api::AppState;
-use crate::icons;
 
 #[derive(Deserialize)]
 pub struct AssetIconRequest {
@@ -20,6 +20,7 @@ pub async fn get_icon(
     Query(payload): Query<AssetIconRequest>,
 ) -> impl IntoResponse {
     match icons::get_or_query_icon(
+        state.globaldb.clone(),
         state.coingecko.clone(),
         state.data_dir.clone(),
         &payload.asset_id,
