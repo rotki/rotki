@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`9298` rotki will now support Echo.xyz funding and refund event.
 * :feature:`9203` rotki will now detect Uniswap V3 balances in all supported EVM chains.
 * :feature:`-` rotki will now correctly decode gitcoin profile creation and updating across supported EVM chains. Also some more gitcoin rounds are added.
 * :feature:`8780` rotki will now correctly decode Spark transactions in all supported EVM chains.
