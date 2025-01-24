@@ -62,7 +62,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     });
 
     let app = Router::new()
-        .route("/icon", get(api::icons::get_icon))
+        .route("/assets/icon", get(api::icons::get_icon))
         .route("/user", post(api::database::unlock_user))
         .route("/assets/ignored", get(api::database::get_ignored_assets))
         .with_state(state);
