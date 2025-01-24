@@ -108,8 +108,19 @@ fn url_encode_identifier(input: &str) -> String {
         .collect()
 }
 
-// Find the icon in the path and if existing return its extension
-async fn find_icon(path: &Path) -> Option<(Bytes, String)> {
+// Find the icon in the custom path if existing, otherwise find the icon in the normal path
+async fn find_icon(datadir: &Path, normalpath: &Path, asset_id: &str) -> Option<(Bytes, String)> {
+    let custom_path = datadir
+        .join("images/assets/all/")
+        .join(url_encode_identifier(asset_id));
+    if let Some(result) = search_icon_in_path(&custom_path).await {
+        return Some(result);
+    }
+    search_icon_in_path(normalpath).await
+}
+
+// Find the icon in the path and if existing return its data its extension
+async fn search_icon_in_path(path: &Path) -> Option<(Bytes, String)> {
     if let Ok(mut entries) = tokio::fs::read_dir(path.parent().unwrap_or(Path::new("."))).await {
         while let Some(entry) = entries.next_entry().await.transpose() {
             if let Ok(entry) = entry {
@@ -157,7 +168,7 @@ pub async fn get_or_query_icon(
         .join(ASSETS_PATH)
         .join(format!("{}_small", url_encode_identifier(&new_asset_id)));
 
-    match find_icon(&path).await {
+    match find_icon(&data_dir, &path, asset_id).await {
         Some((bytes, extension)) => {
             let headers = match get_headers(&extension) {
                 Err(FileTypeError::UnsupportedFileType) => {

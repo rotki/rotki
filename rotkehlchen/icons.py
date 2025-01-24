@@ -130,21 +130,6 @@ class IconManager:
 
         return None
 
-    def asset_icon_path(
-            self,
-            asset: AssetWithNameAndType,
-    ) -> Path | None:
-        # First try with the custom icon path
-        custom_icon_path = self.custom_iconfile_path(asset)
-        if custom_icon_path is not None:
-            return custom_icon_path
-
-        path = self.iconfile_path(asset)
-        if not path.is_file():
-            return None
-
-        return path
-
     def query_coingecko_for_icon(self, asset: AssetWithNameAndType, coingecko_id: str) -> bool:
         """Queries coingecko for icons of an asset
 
