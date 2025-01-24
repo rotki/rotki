@@ -518,6 +518,16 @@ class Rotkehlchen:
         self.user_is_logged_in = True
         log.debug('User unlocking complete')
 
+        # Send a notification to the user if data associated with
+        # old erc721 tokens has been saved during the db upgrade.
+        # TODO: Remove this after a couple versions (added in version 1.38).
+        with self.data.db.conn.read_ctx() as cursor:
+            if cursor.execute("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='temp_erc721_data'").fetchone()[0] != 0:  # noqa: E501
+                self.msg_aggregator.add_warning(
+                    'Data associated with invalid ERC721 assets is present in your database. '
+                    'Please contact rotki support via our discord to resolve this issue.',
+                )
+
     def _logout(self) -> None:
         if not self.user_is_logged_in:
             return

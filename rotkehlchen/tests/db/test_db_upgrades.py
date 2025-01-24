@@ -4,6 +4,7 @@ import shutil
 import urllib.parse
 from contextlib import ExitStack, contextmanager, suppress
 from pathlib import Path
+from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import pytest
@@ -63,6 +64,9 @@ from rotkehlchen.types import (
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.hexbytes import HexBytes
 from rotkehlchen.utils.misc import ts_now
+
+if TYPE_CHECKING:
+    from rotkehlchen.db.drivers.gevent import DBCursor
 
 
 def make_serialized_event_identifier(location: Location, raw_event_identifier: bytes) -> str:
@@ -2718,6 +2722,33 @@ def test_upgrade_db_45_to_46(user_data_dir: 'Path', messages_aggregator):
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_upgrade_db_46_to_47(user_data_dir, messages_aggregator):
     """Test upgrading the DB from version 46 to version 47"""
+
+    def _check_tokens_existence(user_db_cursor: 'DBCursor', expect_removed: bool = False):
+        """Assert whether the tokens are in the db or not depending on `expect_removed`"""
+        for table, column, count in [
+            ('assets', 'identifier', 2),
+            ('history_events', 'asset', 1),
+            ('timed_balances', 'currency', 1),
+            ('evm_accounts_details', 'value', 2),
+            ('manually_tracked_balances', 'asset', 1),
+        ]:
+            assert user_db_cursor.execute(
+                f'SELECT COUNT(*) FROM {table} WHERE {column} IN (?, ?)',
+                (uniswap_erc20_token.identifier, uniswap_erc721_token.identifier),
+            ).fetchone()[0] == 0 if expect_removed else count
+
+        with GlobalDBHandler().conn.read_ctx() as global_db_cursor:
+            assert global_db_cursor.execute(
+                'SELECT COUNT(*) FROM assets WHERE identifier IN (?, ?)',
+                (uniswap_erc20_token.identifier, uniswap_erc721_token.identifier),
+            ).fetchone()[0] == 0 if expect_removed else 2
+
+        if expect_removed:
+            assert user_db_cursor.execute('SELECT * FROM temp_erc721_data').fetchall() == [
+                ('history_events', '[[164, 2, "TEST1", 0, 1, "f", "0x706A70067BE19BdadBea3600Db0626859Ff25D74", "eip155:1/erc721:0xC36442b4a4522E871399CD717aBDD847Ab11FE88", "1", "0", "", "11", "16", ""]]'),  # noqa: E501
+                ('manually_tracked_balances', '[[1, "eip155:1/erc721:0xC36442b4a4522E871399CD717aBDD847Ab11FE88", "Test Balance", "5", "A", "A"]]'),  # noqa: E501
+            ]
+
     _use_prepared_db(user_data_dir, 'v45_rotkehlchen.db')
     db_v46 = _init_db_with_target_version(
         target_version=46,
@@ -2726,14 +2757,21 @@ def test_upgrade_db_46_to_47(user_data_dir, messages_aggregator):
         resume_from_backup=False,
     )
 
-    # Add an erc721 token (without the token id)
-    uniswap_token = get_or_create_evm_token(
+    uniswap_erc721_token = get_or_create_evm_token(
         userdb=db_v46,
         evm_address=string_to_evm_address('0xC36442b4a4522E871399CD717aBDD847Ab11FE88'),
         name='Uniswap V3 Positions NFT-V1',
         chain_id=ChainID.ETHEREUM,
         token_kind=EvmTokenKind.ERC721,
     )
+    uniswap_erc20_token = get_or_create_evm_token(
+        userdb=db_v46,
+        evm_address=string_to_evm_address('0xC36442b4a4522E871399CD717aBDD847Ab11FE88'),
+        name='Uniswap V3 Positions NFT-V1',
+        chain_id=ChainID.ETHEREUM,
+        token_kind=EvmTokenKind.ERC20,
+    )
+
     address, tx_hash = make_evm_address(), make_evm_tx_hash()
     with db_v46.user_write() as write_cursor:
         db_v46.set_dynamic_cache(
@@ -2744,13 +2782,31 @@ def test_upgrade_db_46_to_47(user_data_dir, messages_aggregator):
             receiver=address,
             tx_hash=tx_hash.hex(),  # pylint: disable=no-member
         )
-        # Add evm event with a token_id in extra data
-        # to be used during upgrade to update the token identifier
+        # Add entries with an old erc721 asset to ensure they are handled correctly during upgrade.
         write_cursor.execute(
             'INSERT INTO history_events(entry_type, event_identifier, sequence_index, '
             'timestamp, location, location_label, asset, amount, usd_value, notes, '
             'type, subtype, extra_data) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-            (HistoryBaseEntryType.EVM_EVENT.value, 'TEST1', 0, 1, Location.ETHEREUM.serialize_for_db(), '', uniswap_token.identifier, 1, 0, '', HistoryEventType.DEPLOY.value, HistoryEventSubType.NFT.value, json.dumps({'token_id': 401357, 'token_name': 'Uniswap V3 Positions NFT-V1', 'test': 'xyz'})),  # noqa: E501
+            (HistoryBaseEntryType.EVM_EVENT.value, 'TEST1', 0, 1, Location.ETHEREUM.serialize_for_db(), (user_address := '0x706A70067BE19BdadBea3600Db0626859Ff25D74'), uniswap_erc721_token.identifier, 1, 0, '', HistoryEventType.DEPLOY.value, HistoryEventSubType.NFT.value, ''),  # noqa: E501
+        )
+        write_cursor.execute(  # mark it a custom event to so event reset doesn't affect it.
+            "INSERT INTO history_events_mappings(parent_identifier, name, value) VALUES ((SELECT identifier FROM history_events WHERE event_identifier='TEST1'), ?, ?)",  # noqa: E501
+            (HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED),
+        )
+        write_cursor.executemany(
+            'INSERT INTO evm_accounts_details(account, chain_id, key, value) VALUES(?, ?, ?, ?)',
+            [
+                (user_address, 1, 'tokens', uniswap_erc721_token.identifier),
+                (user_address, 1, 'testkey', 'testdata'),
+            ],
+        )
+        write_cursor.execute(
+            'INSERT INTO timed_balances(category, timestamp, currency, amount, usd_value) VALUES(?, ?, ?, ?, ?)',  # noqa: E501
+            ('A', 1, uniswap_erc20_token.identifier, 1, 1),
+        )
+        write_cursor.execute(
+            'INSERT INTO manually_tracked_balances(asset, label, amount) VALUES(?, ?, ?)',
+            (uniswap_erc721_token.identifier, 'Test Balance', 5),
         )
 
     with db_v46.conn.read_ctx() as cursor:
@@ -2763,6 +2819,8 @@ def test_upgrade_db_46_to_47(user_data_dir, messages_aggregator):
         ) == address
         cursor.execute("SELECT COUNT(*) FROM location WHERE location='v'")
         assert cursor.fetchone()[0] == 0
+
+        _check_tokens_existence(user_db_cursor=cursor)
 
     # Execute upgrade
     db = _init_db_with_target_version(
@@ -2782,24 +2840,7 @@ def test_upgrade_db_46_to_47(user_data_dir, messages_aggregator):
         cursor.execute("SELECT seq FROM location WHERE location='v'")
         assert cursor.fetchone() == (54,)
 
-        # Check that the identifier has been updated in assets and history events.
-        assets_query = 'SELECT COUNT(*) FROM assets WHERE identifier=?'
-        new_token_identifier = f'{uniswap_token.identifier}/401357'
-        assert cursor.execute(assets_query, (uniswap_token.identifier,)).fetchone()[0] == 0
-        assert cursor.execute(assets_query, (new_token_identifier,)).fetchone()[0] == 1
-        events_query = 'SELECT COUNT(*) FROM history_events WHERE asset=?'
-        assert cursor.execute(events_query, (uniswap_token.identifier,)).fetchone()[0] == 0
-        assert cursor.execute(events_query, (new_token_identifier,)).fetchone()[0] == 1
-
-        # Check that token_id and token_name were removed from extra_data
-        assert cursor.execute(
-            "SELECT extra_data FROM history_events WHERE event_identifier = 'TEST1'",
-        ).fetchone()[0] == '{"test": "xyz"}'
-
-    # Also check that the identifier has changed in the globaldb
-    with GlobalDBHandler().conn.read_ctx() as cursor:
-        assert cursor.execute(assets_query, (uniswap_token.identifier,)).fetchone()[0] == 0
-        assert cursor.execute(assets_query, (new_token_identifier,)).fetchone()[0] == 1
+        _check_tokens_existence(user_db_cursor=cursor, expect_removed=True)
 
     db.logout()
 
