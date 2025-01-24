@@ -13,7 +13,7 @@ interface UseAsetIconApiReturn {
 
 export function useAssetIconApi(): UseAsetIconApiReturn {
   const assetImageUrl = (identifier: string, randomString?: string | number): string => {
-    let url = `${apiUrls.colibriApiUrl}/icon?asset_id=${encodeURIComponent(identifier)}`;
+    let url = `${apiUrls.colibriApiUrl}/assets/icon?asset_id=${encodeURIComponent(identifier)}`;
 
     if (randomString)
       url += `&t=${randomString}`;

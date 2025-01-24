@@ -6,7 +6,6 @@ from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR, A_YFI
 from rotkehlchen.errors.asset import UnsupportedAsset
 from rotkehlchen.externalapis.coingecko import Coingecko, CoingeckoAssetData
 from rotkehlchen.fval import FVal
-from rotkehlchen.icons import IconManager
 from rotkehlchen.types import (
     ApiKey,
     ExternalService,
@@ -14,15 +13,6 @@ from rotkehlchen.types import (
     Price,
     Timestamp,
 )
-
-
-@pytest.fixture(name='icon_manager')
-def fixture_icon_manager(data_dir, greenlet_manager):
-    return IconManager(
-        data_dir=data_dir,
-        coingecko=Coingecko(database=None),
-        greenlet_manager=greenlet_manager,
-    )
 
 
 def assert_coin_data_same(given, expected, compare_description=False):
