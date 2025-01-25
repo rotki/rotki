@@ -316,7 +316,7 @@ def test_api_query_paginated_stops_requesting(mock_bitfinex: 'Bitfinex') -> None
 def test_api_query_paginated_retries_request(mock_bitfinex: 'Bitfinex') -> None:
     """Test retry logic works as expected.
 
-    It also tests that that trying to decode first the unsuccessful response
+    It also tests that trying to decode first the unsuccessful response
     JSON as a dict and later as a list (via `_process_unsuccessful_response()`)
     works as expected.
     """
