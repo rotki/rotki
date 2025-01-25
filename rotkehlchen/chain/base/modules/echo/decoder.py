@@ -71,7 +71,7 @@ class EchoDecoder(DecoderInterface):
             ):
                 fee_amount = asset_normalized_value(
                     amount=fee_amount_from_input,
-                    asset=event.asset,
+                    asset=event.asset.resolve_to_crypto_asset(),
                 )
                 context.action_items.append(ActionItem(
                     action='transform',
@@ -118,7 +118,9 @@ class EchoDecoder(DecoderInterface):
                     chain_id=self.evm_inquirer.chain_id,
                     token_type=EvmTokenKind.ERC20))
                 token_amount = int.from_bytes(tx_log.data[:32])
-                amount = asset_normalized_value(token_amount, token)
+                amount = asset_normalized_value(
+                    amount=token_amount,
+                    asset=token)
                 context.action_items.append(ActionItem(
                     action='transform',
                     from_event_type=HistoryEventType.RECEIVE,
@@ -154,12 +156,17 @@ class EchoDecoder(DecoderInterface):
                 fund_amount = int.from_bytes(tx_log.data[0:32])
                 deal_address = tx_log.address
                 break
+        else:
+            log.error(f'Could not find deal funded event for {self.evm_inquirer.chain_name} for Echo fund {transaction.tx_hash.hex()}')  # noqa:E501
+            return decoded_events
 
         for event in decoded_events:
             if (
                 event.event_type == HistoryEventType.SPEND and
                 event.event_subtype == HistoryEventSubType.NONE and
-                event.balance.amount == asset_normalized_value(fund_amount, event.asset)
+                event.balance.amount == asset_normalized_value(
+                    amount=fund_amount,
+                    asset=event.asset.resolve_to_crypto_asset())
             ):
                 event.event_type = HistoryEventType.DEPOSIT
                 event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
