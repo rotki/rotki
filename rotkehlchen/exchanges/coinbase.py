@@ -42,6 +42,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
     deserialize_asset_amount_force_positive,
     deserialize_fee,
+    deserialize_fval,
     deserialize_timestamp_from_date,
 )
 from rotkehlchen.types import (
@@ -825,30 +826,19 @@ class Coinbase(ExchangeInterface):
         https://docs.cloud.coinbase.com/sign-in-with-coinbase/docs/api-transactions#transaction-types
         If the coinbase transaction is not a trade related transaction nothing happens.
 
+        Trades against USD can also be missing (but not necessarily do) the order_side key.
+
         May raise:
         - UnknownAsset due to Asset instantiation
         - DeserializationError due to unexpected format of dict entries
         - KeyError due to dict entries missing an expected entry
         - IndexError due to indices being out of bounds when parsing asset ids
         """
-        trade_type = TradeType.deserialize(event['advanced_trade_fill']['order_side'])
-
-        if trade_type not in (TradeType.BUY, TradeType.SELL):
-            return None
-
-        # Notice that we do not use abs() yet
+        # Notice that we do not use abs() yet, since this helps determine order type down the line
         amount = deserialize_asset_amount(event['amount']['amount'])
-        # Each trade has two sides, we ignore one of them
-        if (
-            (trade_type == TradeType.SELL and amount > 0) or
-            (trade_type == TradeType.BUY and amount < 0)
-        ):
-            return None
-
         tx_asset_identifier = event['amount']['currency']
         tx_asset = asset_from_coinbase(tx_asset_identifier, time=timestamp)
         asset_identifiers = event['advanced_trade_fill']['product_id'].split('-')
-
         if len(asset_identifiers) != 2:
             log.error(
                 'Error processing asset identifiers for coinbase trade',
@@ -856,16 +846,38 @@ class Coinbase(ExchangeInterface):
             )
             return None
 
-        other_side_identifier = (asset_identifiers[0]
-                                 if asset_identifiers[0] != tx_asset_identifier
-                                 else asset_identifiers[1])
+        other_side_identifier = (
+            asset_identifiers[0]
+            if asset_identifiers[0] != tx_asset_identifier
+            else asset_identifiers[1]
+        )
         other_side_asset = asset_from_coinbase(other_side_identifier, time=timestamp)
+        order_side = event['advanced_trade_fill'].get('order_side')
+        if order_side:
+            trade_type = TradeType.deserialize(event['advanced_trade_fill']['order_side'])
+            if trade_type not in (TradeType.BUY, TradeType.SELL):
+                log.error(f'Got non buy/sell order side in Coinbase advannced trade fill: {event}')
+                return None
 
-        base_asset, quote_asset = tx_asset, other_side_asset
-        rate = Price(event['advanced_trade_fill']['fill_price'])
+            # For trades with an order side each trade has two sides, we ignore one of them
+            if (
+                    (trade_type == TradeType.SELL and amount > 0) or
+                    (trade_type == TradeType.BUY and amount < 0)
+            ):
+                return None
+
+            base_asset, quote_asset = tx_asset, other_side_asset
+
+        elif amount < 0:
+            trade_type = TradeType.BUY
+            base_asset, quote_asset = other_side_asset, tx_asset
+        else:
+            trade_type = TradeType.SELL
+            base_asset, quote_asset = tx_asset, other_side_asset
+
+        rate = Price(deserialize_fval(event['advanced_trade_fill']['fill_price'], name='fill_price', location='Coinbase advanced trade'))  # noqa: E501
         fee_amount = abs(deserialize_fee(event['advanced_trade_fill']['commission']))
         fee_asset = quote_asset
-
         return Trade(
             timestamp=timestamp,
             location=Location.COINBASE,
