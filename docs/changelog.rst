@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`9298` rotki will now support Echo.xyz funding and refund event.
 * :feature:`-` History events export will now include the symbol or name of the asset to improve readability of entries.
 * :feature:`9203` rotki will now detect Uniswap V3 balances in all supported EVM chains.
 * :feature:`-` rotki will now correctly decode gitcoin profile creation and updating across supported EVM chains. Also some more gitcoin rounds are added.
