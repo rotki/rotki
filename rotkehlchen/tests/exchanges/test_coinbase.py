@@ -1147,12 +1147,89 @@ def test_coinbase_query_trade_history_advanced_fill(function_scope_coinbase):
     assert trades == expected_trades
 
 
+def test_advancedtrade_missing_order_side(mock_coinbase):
+    """Test that we can read coinbase advanced trades missing order_side """
+    tx_id1 = '77c5ad72-764e-414b-8bdb-b5aed20fb4b1'
+    raw_trade_a = {
+        'advanced_trade_fill': {
+            'commission': '0.85',
+            'fill_price': '1946.02',
+            'order_id': '0e2ae3da-3sdf-45cf-a1f0-60a6bd77a987',
+            'product_id': 'ETH-USD',
+        },
+        'amount': {
+            'amount': '-205.5',
+            'currency': 'USD',
+        },
+        'created_at': '2022-05-20T19:38:04Z',
+        'id': tx_id1,
+        'native_amount': {
+            'amount': '-205.5',
+            'currency': 'USD',
+        },
+        'resource': 'transaction',
+        'resource_path': f'/v2/accounts/883b6405-4099-5eec-9e33-b0f257f23bdd/transactions/{tx_id1}',  # noqa: E501
+        'status': 'completed',
+        'type': 'advanced_trade_fill',
+    }
+    trade = mock_coinbase._process_coinbase_trade(raw_trade_a)
+    expected_trade = Trade(
+        timestamp=1653075484,
+        location=Location.COINBASE,
+        base_asset=A_ETH,
+        quote_asset=A_USD,
+        trade_type=TradeType.BUY,
+        amount=FVal('205.5'),
+        rate=FVal('1946.02'),
+        fee=FVal('0.85'),
+        fee_currency=A_USD,
+        link=tx_id1,
+    )
+    assert trade == expected_trade
+    tx_id2 = '66c5ad72-764e-2f4b-8bdb-b5aed20fb389'
+    raw_trade_b = {
+        'advanced_trade_fill': {
+            'commission': '0.0047',
+            'fill_price': '1870.16',
+            'order_id': '9bc52036-9b18-1dea-756c-c960fd3d18a1',
+            'product_id': 'ETH-USD',
+        },
+        'amount': {
+            'amount': '0.00100000',
+            'currency': 'ETH',
+        },
+        'created_at': '2022-05-26T18:05:30Z',
+        'id': tx_id2,
+        'native_amount': {
+            'amount': '1.87',
+            'currency': 'USD',
+        },
+        'resource': 'transaction',
+        'resource_path': f'/v2/accounts/b7a7a05a-58ed-5a74-a328-266530609c9f/transactions/{tx_id2}',  # noqa: E501
+        'status': 'completed',
+        'type': 'advanced_trade_fill',
+    }
+    trade = mock_coinbase._process_coinbase_trade(raw_trade_b)
+    expected_trade = Trade(
+        timestamp=1653588330,
+        location=Location.COINBASE,
+        base_asset=A_ETH,
+        quote_asset=A_USD,
+        trade_type=TradeType.SELL,
+        amount=FVal('0.001'),
+        rate=FVal('1870.16'),
+        fee=FVal('0.0047'),
+        fee_currency=A_USD,
+        link=tx_id2,
+    )
+    assert trade == expected_trade
+
+
 def test_coverage_of_products():
     """Test that we can process all assets from coinbase"""
     data = requests.get('https://api.exchange.coinbase.com/currencies')
     for coin in data.json():
-        try:
-            # Make sure all products can be processed
+        try:  # Make sure all products can be processed
             asset_from_coinbase(coin['id'])
         except UnknownAsset as e:
             test_warnings.warn(UserWarning(
