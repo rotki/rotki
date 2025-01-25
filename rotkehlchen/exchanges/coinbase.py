@@ -81,10 +81,12 @@ PRIVATE_KEY_RE: re.Pattern = re.compile(
 )
 
 
-def trade_from_conversion(trade_a: dict[str, Any], trade_b: dict[str, Any]) -> Trade | None:
-    """Turn information from a conversion into a trade
+def trade_from_conversion(tx_a: dict[str, Any], tx_b: dict[str, Any] | None) -> Trade | None:
+    """Turn tx information from conversion into a trade
 
     Sometimes the amounts can be negative which breaks rotki's logic which is why we use abs().
+    Also sometimes there may not be a second transaction, in which case it's a sell for USD seen
+    as native_amount of the first transaction.
 
     May raise:
     - UnknownAsset due to Asset instantiation
@@ -92,56 +94,69 @@ def trade_from_conversion(trade_a: dict[str, Any], trade_b: dict[str, Any]) -> T
     - KeyError due to dict entries missing an expected entry
     """
     # Check that the status is complete
-    if trade_a['status'] != 'completed':
+    if tx_a['status'] != 'completed':
         return None
 
-    # Trade b will represent the asset we are converting to
-    if trade_b['amount']['amount'].startswith('-'):
-        trade_a, trade_b = trade_b, trade_a
+    timestamp = deserialize_timestamp_from_date(tx_a['updated_at'], 'iso8601', 'coinbase')
+    if tx_b is not None:
+        # Trade b will represent the asset we are converting to
+        if tx_b['amount']['amount'].startswith('-'):
+            tx_a, tx_b = tx_b, tx_a
 
-    timestamp = deserialize_timestamp_from_date(trade_a['updated_at'], 'iso8601', 'coinbase')
-    tx_amount = AssetAmount(abs(deserialize_asset_amount(trade_a['amount']['amount'])))
-    tx_asset = asset_from_coinbase(trade_a['amount']['currency'], time=timestamp)
-    native_amount = abs(deserialize_asset_amount(trade_b['amount']['amount']))
-    native_asset = asset_from_coinbase(trade_b['amount']['currency'], time=timestamp)
-    amount = tx_amount
+        tx_amount = AssetAmount(abs(deserialize_asset_amount(tx_a['amount']['amount'])))
+        tx_asset = asset_from_coinbase(tx_a['amount']['currency'], time=timestamp)
+        native_amount = abs(deserialize_asset_amount(tx_b['amount']['amount']))
+        native_asset = asset_from_coinbase(tx_b['amount']['currency'], time=timestamp)
+
+        # Obtain fee amount in the native currency using data from both trades
+        amount_after_fee = deserialize_asset_amount(tx_b['native_amount']['amount'])
+        amount_before_fee = deserialize_asset_amount(tx_a['native_amount']['amount'])
+        # amount_after_fee + amount_before_fee is a negative amount and the fee needs to be positive  # noqa: E501
+        conversion_native_fee_amount = abs(amount_after_fee + amount_before_fee)
+        if ZERO not in {tx_amount, conversion_native_fee_amount, amount_before_fee, amount_after_fee}:  # noqa: E501
+            # To get the asset in which the fee is nominated we pay attention to the creation
+            # date of each event. As per our hypothesis the fee is nominated in the asset
+            # for which the first transaction part was initialized
+            time_created_a = deserialize_timestamp_from_date(
+                date=tx_a['created_at'],
+                formatstr='iso8601',
+                location='coinbase',
+            )
+            time_created_b = deserialize_timestamp_from_date(
+                date=tx_b['created_at'],
+                formatstr='iso8601',
+                location='coinbase',
+            )
+            if time_created_a < time_created_b:
+                # We have the fee amount in the native currency. To get it in the
+                # converted asset we have to get the rate
+                asset_native_rate = tx_amount / abs(amount_before_fee)
+                fee_amount = Fee(conversion_native_fee_amount * asset_native_rate)
+                fee_asset = asset_from_coinbase(tx_a['amount']['currency'], time=timestamp)
+            else:
+                tx_b_amount = abs(deserialize_asset_amount(tx_b['amount']['amount']))
+                asset_native_rate = tx_b_amount / abs(amount_after_fee)
+                fee_amount = Fee(conversion_native_fee_amount * asset_native_rate)
+                fee_asset = asset_from_coinbase(tx_b['amount']['currency'], time=timestamp)
+        else:
+            fee_amount = Fee(ZERO)
+            fee_asset = asset_from_coinbase(tx_a['amount']['currency'], time=timestamp)
+
+    else:  # only one transaction
+        tx_amount = AssetAmount(abs(deserialize_asset_amount(tx_a['amount']['amount'])))
+        tx_asset = asset_from_coinbase(tx_a['amount']['currency'], time=timestamp)
+        native_amount = abs(deserialize_asset_amount(tx_a['native_amount']['amount']))
+        native_asset = asset_from_coinbase(tx_a['native_amount']['currency'], time=timestamp)
+        # For a single transaction fee may or may not exist in the transaction.
+        if (fee_data := tx_a['trade'].get('fee')) is not None:
+            fee_asset = asset_from_coinbase(fee_data['currency'])
+            fee_amount = Fee(abs(deserialize_asset_amount(fee_data['amount'])))
+        else:
+            fee_asset, fee_amount = None, None
+
     # The rate is how much you get/give in quotecurrency if you buy/sell 1 unit of base currency
     rate = Price(native_amount / tx_amount)
-
-    # Obtain fee amount in the native currency using data from both trades
-    amount_after_fee = deserialize_asset_amount(trade_b['native_amount']['amount'])
-    amount_before_fee = deserialize_asset_amount(trade_a['native_amount']['amount'])
-    # amount_after_fee + amount_before_fee is a negative amount and the fee needs to be positive
-    conversion_native_fee_amount = abs(amount_after_fee + amount_before_fee)
-    if ZERO not in {tx_amount, conversion_native_fee_amount, amount_before_fee, amount_after_fee}:
-        # To get the asset in which the fee is nominated we pay attention to the creation
-        # date of each event. As per our hypothesis the fee is nominated in the asset
-        # for which the first transaction part was initialized
-        time_created_a = deserialize_timestamp_from_date(
-            date=trade_a['created_at'],
-            formatstr='iso8601',
-            location='coinbase',
-        )
-        time_created_b = deserialize_timestamp_from_date(
-            date=trade_b['created_at'],
-            formatstr='iso8601',
-            location='coinbase',
-        )
-        if time_created_a < time_created_b:
-            # We have the fee amount in the native currency. To get it in the
-            # converted asset we have to get the rate
-            asset_native_rate = tx_amount / abs(amount_before_fee)
-            fee_amount = Fee(conversion_native_fee_amount * asset_native_rate)
-            fee_asset = asset_from_coinbase(trade_a['amount']['currency'], time=timestamp)
-        else:
-            trade_b_amount = abs(deserialize_asset_amount(trade_b['amount']['amount']))
-            asset_native_rate = trade_b_amount / abs(amount_after_fee)
-            fee_amount = Fee(conversion_native_fee_amount * asset_native_rate)
-            fee_asset = asset_from_coinbase(trade_b['amount']['currency'], time=timestamp)
-    else:
-        fee_amount = Fee(ZERO)
-        fee_asset = asset_from_coinbase(trade_a['amount']['currency'], time=timestamp)
-
+    amount = tx_amount
     return Trade(
         timestamp=timestamp,
         location=Location.COINBASE,
@@ -153,7 +168,7 @@ def trade_from_conversion(trade_a: dict[str, Any], trade_b: dict[str, Any]) -> T
         rate=rate,
         fee=fee_amount,
         fee_currency=fee_asset,
-        link=str(trade_a['trade']['id']),
+        link=str(tx_a['trade']['id']),
     )
 
 
@@ -628,14 +643,14 @@ class Coinbase(ExchangeInterface):
             log.debug('Coinbase API query returned no transactions')
             return trades, history_events
 
-        trade_pairs = defaultdict(list)  # Maps every trade id to their two transactions
+        transaction_pairs = defaultdict(list)  # Maps every trade id to their two transactions
         trades = []
         for transaction in transactions:
             log.debug(f'Processing coinbase {transaction=}')
             tx_type = transaction.get('type')
             if tx_type == 'trade':  # Analyze conversions of coins. We address them as sells
                 try:
-                    trade_pairs[transaction['trade']['id']].append(transaction)
+                    transaction_pairs[transaction['trade']['id']].append(transaction)
                 except KeyError:
                     log.error(
                         f'Transaction of type trade doesnt have the '
@@ -665,7 +680,7 @@ class Coinbase(ExchangeInterface):
             ):
                 log.warning(f'Found unknown coinbase transaction type: {transaction}')
 
-        self._process_trades_from_conversion(trade_pairs=trade_pairs, trades=trades)
+        self._process_trades_from_conversion(transaction_pairs=transaction_pairs, trades=trades)
 
         with self.db.user_write() as write_cursor:  # Remember last transaction id for account
             write_cursor.execute(
@@ -675,19 +690,14 @@ class Coinbase(ExchangeInterface):
 
         return trades, history_events
 
-    def _process_trades_from_conversion(self, trade_pairs: dict[str, list], trades: list[Trade]) -> None:  # noqa: E501
-        """Processes the trade pairs to create trades from conversions"""
-        for trade_id, trades_conversion in trade_pairs.items():
-            # Assert that in fact we have two trades
-            if len(trades_conversion) != 2:
-                log.error(
-                    f'Conversion with id {trade_id} doesnt '
-                    f'have two transactions. {trades_conversion}',
-                )
-                continue
+    def _process_trades_from_conversion(self, transaction_pairs: dict[str, list], trades: list[Trade]) -> None:  # noqa: E501
+        """Processes the transaction pairs to create trades from conversions"""
+        for conversion_transactions in transaction_pairs.values():
+            tx_1 = conversion_transactions[0]
+            tx_2 = None if len(conversion_transactions) == 1 else conversion_transactions[1]
 
             try:
-                if (trade := trade_from_conversion(trades_conversion[0], trades_conversion[1])) is not None:  # noqa: E501
+                if (trade := trade_from_conversion(tx_1, tx_2)) is not None:
                     trades.append(trade)
 
             except UnknownAsset as e:
@@ -712,7 +722,7 @@ class Coinbase(ExchangeInterface):
                 )
                 log.error(
                     'Error processing a coinbase conversion',
-                    trade=trades_conversion[0],
+                    trade=conversion_transactions[0],
                     error=msg,
                 )
                 continue
