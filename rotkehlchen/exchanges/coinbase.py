@@ -207,6 +207,8 @@ class Coinbase(ExchangeInterface):
         self.apiversion = 'v2'
         self.base_uri = 'https://api.coinbase.com'
         self.host = 'api.coinbase.com'
+        # keep orderids of advanced trades while parsing. As some appear two times showing both debit and credit part of the trade.  # noqa: E501
+        self.advanced_trade_orders: set[str] = set()
 
     def is_legacy_key(self, api_key: str) -> bool:
         if LEGACY_RE.match(api_key):
@@ -846,38 +848,32 @@ class Coinbase(ExchangeInterface):
             )
             return None
 
-        other_side_identifier = (
-            asset_identifiers[0]
-            if asset_identifiers[0] != tx_asset_identifier
-            else asset_identifiers[1]
-        )
-        other_side_asset = asset_from_coinbase(other_side_identifier, time=timestamp)
         order_side = event['advanced_trade_fill'].get('order_side')
         if order_side:
-            trade_type = TradeType.deserialize(event['advanced_trade_fill']['order_side'])
+            trade_type = TradeType.deserialize(order_side)
             if trade_type not in (TradeType.BUY, TradeType.SELL):
-                log.error(f'Got non buy/sell order side in Coinbase advannced trade fill: {event}')
+                log.error(f'Got non buy/sell order side in Coinbase advanced trade fill: {event}')
                 return None
 
-            # For trades with an order side each trade has two sides, we ignore one of them
-            if (
-                    (trade_type == TradeType.SELL and amount > 0) or
-                    (trade_type == TradeType.BUY and amount < 0)
-            ):
-                return None
+            if (order_id := event['advanced_trade_fill'].get('order_id')):
+                if order_id in self.advanced_trade_orders:
+                    log.debug('Ignoring already seen coinbase advanced trade other side', other_side=event)  # noqa: E501
+                    return None
 
-            base_asset, quote_asset = tx_asset, other_side_asset
+                self.advanced_trade_orders.add(order_id)
 
-        elif amount < 0:
-            trade_type = TradeType.BUY
-            base_asset, quote_asset = other_side_asset, tx_asset
         else:
-            trade_type = TradeType.SELL
-            base_asset, quote_asset = tx_asset, other_side_asset
+            trade_type = TradeType.BUY if amount < 0 else TradeType.SELL
 
+        # The base/quote asset is determined from the product id
+        base_asset = asset_from_coinbase(asset_identifiers[0], time=timestamp)
+        quote_asset = asset_from_coinbase(asset_identifiers[1], time=timestamp)
         rate = Price(deserialize_fval(event['advanced_trade_fill']['fill_price'], name='fill_price', location='Coinbase advanced trade'))  # noqa: E501
+        if tx_asset == quote_asset:  # calculate trade amount depending on the denominated asset
+            amount /= rate  # type: ignore[assignment]  # mixing asset amount and fval types
+
         fee_amount = abs(deserialize_fee(event['advanced_trade_fill']['commission']))
-        fee_asset = quote_asset
+        fee_asset = quote_asset  # fee is always in quote asset
         return Trade(
             timestamp=timestamp,
             location=Location.COINBASE,
