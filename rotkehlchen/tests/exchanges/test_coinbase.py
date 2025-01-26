@@ -915,10 +915,9 @@ def test_asset_conversion_choosing_fee_asset(mock_coinbase):
 def test_coinbase_query_trade_history_advanced_fill(function_scope_coinbase):
     """Test that coinbase trade history query works fine for advanced_trade_fill"""
     coinbase = function_scope_coinbase
-
     mock_transactions_response = """
 { "data": [{
-            "id": "REDACTED",
+            "id": "id1",
             "type": "advanced_trade_fill",
             "status": "completed",
             "amount": {
@@ -933,12 +932,12 @@ def test_coinbase_query_trade_history_advanced_fill(function_scope_coinbase):
             "created_at": "2024-03-07T08:12:51Z",
             "updated_at": "2024-03-07T08:12:51Z",
             "resource": "transaction",
-            "resource_path": "/v2/accounts/REDACTED/transactions/REDACTED",
+            "resource_path": "/v2/accounts/REDACTED/transactions/id1",
             "instant_exchange": false,
             "advanced_trade_fill": {
                 "fill_price": "0.9174",
                 "product_id": "USDC-EUR",
-                "order_id": "REDACTED",
+                "order_id": "orderid1",
                 "commission": "0",
                 "order_side": "sell"
             },
@@ -951,7 +950,7 @@ def test_coinbase_query_trade_history_advanced_fill(function_scope_coinbase):
             "hide_native_amount": false
         },
         {
-            "id": "REDACTED",
+            "id": "id2",
             "type": "advanced_trade_fill",
             "status": "completed",
             "amount": {
@@ -966,12 +965,12 @@ def test_coinbase_query_trade_history_advanced_fill(function_scope_coinbase):
             "created_at": "2024-03-07T09:12:51Z",
             "updated_at": "2024-03-07T09:12:51Z",
             "resource": "transaction",
-            "resource_path": "/v2/accounts/REDACTED/transactions/REDACTED",
+            "resource_path": "/v2/accounts/REDACTED/transactions/id2",
             "instant_exchange": false,
             "advanced_trade_fill": {
                 "fill_price": "0.9174",
                 "product_id": "USDC-EUR",
-                "order_id": "REDACTED",
+                "order_id": "orderid2",
                 "commission": "0",
                 "order_side": "sell"
             },
@@ -984,7 +983,7 @@ def test_coinbase_query_trade_history_advanced_fill(function_scope_coinbase):
             "hide_native_amount": false
         },
         {
-            "id": "REDACTED",
+            "id": "id3",
             "type": "advanced_trade_fill",
             "status": "completed",
             "amount": {
@@ -999,12 +998,12 @@ def test_coinbase_query_trade_history_advanced_fill(function_scope_coinbase):
             "created_at": "2024-03-07T09:12:51Z",
             "updated_at": "2024-03-07T09:12:51Z",
             "resource": "transaction",
-            "resource_path": "/v2/accounts/REDACTED/transactions/REDACTED",
+            "resource_path": "/v2/accounts/REDACTED/transactions/id3",
             "instant_exchange": false,
             "advanced_trade_fill": {
                 "fill_price": "3334.341",
                 "product_id": "ETH-USDC",
-                "order_id": "REDACTED",
+                "order_id": "orderid3",
                 "commission": "0.0000005",
                 "order_side": "sell"
             },
@@ -1017,7 +1016,7 @@ def test_coinbase_query_trade_history_advanced_fill(function_scope_coinbase):
             "hide_native_amount": false
         },
         {
-            "id": "REDACTED",
+            "id": "id4",
             "type": "advanced_trade_fill",
             "status": "completed",
             "amount": {
@@ -1032,12 +1031,12 @@ def test_coinbase_query_trade_history_advanced_fill(function_scope_coinbase):
             "created_at": "2024-03-07T09:12:51Z",
             "updated_at": "2024-03-07T09:12:51Z",
             "resource": "transaction",
-            "resource_path": "/v2/accounts/REDACTED/transactions/REDACTED",
+            "resource_path": "/v2/accounts/REDACTED/transactions/id4",
             "instant_exchange": false,
             "advanced_trade_fill": {
                 "fill_price": "170.12",
                 "product_id": "SOL-USDC",
-                "order_id": "REDACTED",
+                "order_id": "orderid4",
                 "commission": "0.5710371002622",
                 "order_side": "buy"
             },
@@ -1050,7 +1049,7 @@ def test_coinbase_query_trade_history_advanced_fill(function_scope_coinbase):
             "hide_native_amount": false
         },
         {
-            "id": "REDACTED",
+            "id": "id5",
             "type": "advanced_trade_fill",
             "status": "completed",
             "amount": {
@@ -1065,12 +1064,12 @@ def test_coinbase_query_trade_history_advanced_fill(function_scope_coinbase):
             "created_at": "2024-03-07T09:12:51Z",
             "updated_at": "2024-03-07T09:12:51Z",
             "resource": "transaction",
-            "resource_path": "/v2/accounts/REDACTED/transactions/REDACTED",
+            "resource_path": "/v2/accounts/REDACTED/transactions/id5",
             "instant_exchange": false,
             "advanced_trade_fill": {
                 "fill_price": "3334.341",
                 "product_id": "ETH-USDC",
-                "order_id": "REDACTED",
+                "order_id": "orderid3",
                 "commission": "0.0000005",
                 "order_side": "sell"
             },
@@ -1109,7 +1108,7 @@ def test_coinbase_query_trade_history_advanced_fill(function_scope_coinbase):
         rate=FVal('0.9174'),
         fee=ZERO,
         fee_currency=A_EUR,
-        link='REDACTED',
+        link='id1',
     ), Trade(
         timestamp=1709802771,
         location=Location.COINBASE,
@@ -1120,7 +1119,7 @@ def test_coinbase_query_trade_history_advanced_fill(function_scope_coinbase):
         rate=FVal('0.9174'),
         fee=ZERO,
         fee_currency=A_EUR,
-        link='REDACTED',
+        link='id2',
     ), Trade(
         timestamp=1709802771,
         location=Location.COINBASE,
@@ -1131,7 +1130,7 @@ def test_coinbase_query_trade_history_advanced_fill(function_scope_coinbase):
         rate=FVal('3334.341'),
         fee=FVal('0.0000005'),
         fee_currency=A_USDC,
-        link='REDACTED',
+        link='id3',
     ), Trade(
         timestamp=1709802771,
         location=Location.COINBASE,
@@ -1142,7 +1141,7 @@ def test_coinbase_query_trade_history_advanced_fill(function_scope_coinbase):
         rate=FVal('170.12'),
         fee=FVal('0.5710371002622'),
         fee_currency=A_USDC,
-        link='REDACTED',
+        link='id4',
     )]
     assert trades == expected_trades
 
@@ -1179,7 +1178,7 @@ def test_advancedtrade_missing_order_side(mock_coinbase):
         base_asset=A_ETH,
         quote_asset=A_USD,
         trade_type=TradeType.BUY,
-        amount=FVal('205.5'),
+        amount=FVal('0.105600147994367992106967040420961757844215372914975180111201323727402596067872'),
         rate=FVal('1946.02'),
         fee=FVal('0.85'),
         fee_currency=A_USD,
