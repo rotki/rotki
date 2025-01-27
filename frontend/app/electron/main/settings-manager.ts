@@ -6,6 +6,7 @@ import type { App } from 'electron';
 const AppSettingsSchema = z.object({
   displayTray: z.boolean().default(true),
   persistStore: z.boolean().optional(),
+  showNetWorthOnTray: z.boolean().default(false),
 });
 
 export type AppSettings = z.infer<typeof AppSettingsSchema>;
@@ -13,6 +14,7 @@ export type AppSettings = z.infer<typeof AppSettingsSchema>;
 export class SettingsManager {
   private readonly _appSettings: AppSettings = {
     displayTray: true,
+    showNetWorthOnTray: false,
   };
 
   constructor(private readonly app: App) {

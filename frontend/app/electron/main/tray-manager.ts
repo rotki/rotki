@@ -1,5 +1,5 @@
 import path from 'node:path';
-import { Menu, Tray, nativeImage } from 'electron';
+import { Menu, type MenuItem, Tray, nativeImage } from 'electron';
 import { assert } from '@rotki/common';
 import type { SettingsManager } from '@electron/main/settings-manager';
 import type { TrayUpdate } from '@shared/ipc';
@@ -15,6 +15,7 @@ export class TrayManager {
   private tray?: Tray;
   private listener?: TrayManagerListener;
   private isVisible = false;
+  private trayData?: TrayUpdate;
 
   constructor(private readonly settings: SettingsManager, private readonly config: AppConfig) {
 
@@ -41,9 +42,23 @@ export class TrayManager {
         : []),
       { type: 'separator' },
       {
-        label: visible ? 'Minimize to tray' : 'Restore from tray',
-        click: () => this.toggleWindowVisibility(),
+        label: 'Display net worth on the tray',
+        type: 'checkbox',
+        checked: this.settings.appSettings.showNetWorthOnTray,
+        click: (item: MenuItem) => {
+          const showNetWorthOnTray = item.checked;
+          this.settings.appSettings.showNetWorthOnTray = showNetWorthOnTray;
+          this.settings.save();
+
+          this.update();
+        },
       },
+      ...(this.config.isMac
+        ? [{
+            label: visible ? 'Minimize to tray' : 'Restore from tray',
+            click: () => this.toggleWindowVisibility(),
+          }]
+        : []),
       { type: 'separator' },
       {
         label: 'Quit',
@@ -52,9 +67,17 @@ export class TrayManager {
     ]);
   }
 
-  update({ currency, delta, percentage, up, period, netWorth }: TrayUpdate) {
+  update(tray?: TrayUpdate) {
     if (!this.tray)
       return;
+
+    const trayData = tray ?? this.trayData;
+
+    if (!trayData)
+      return;
+
+    const { currency, delta, percentage, up, period, netWorth } = trayData;
+    this.trayData = trayData;
 
     if (up === undefined) {
       this.setIcon(this.config.isMac ? 'rotki-trayTemplate@5.png' : 'rotki_tray@5x.png');
@@ -69,21 +92,27 @@ export class TrayManager {
     if (up) {
       icon = 'rotki_up.png';
       color = '\u001B[32m';
-      indicator = '▲';
+      indicator = '▴';
     }
     else {
       icon = 'rotki_down.png';
       color = '\u001B[31m';
-      indicator = '▼';
+      indicator = '▾';
     }
 
     if (!this.config.isMac)
       this.setIcon(icon);
 
-    this.tray.setTitle(color + indicator);
+    let title = `${color}${indicator}\u001B[0m`;
+
     this.tooltip = `Net worth ${netWorth} ${currency}.\nChange in ${period} period ${indicator} ${percentage}%\n(${delta} ${currency})`;
     this.tray.setToolTip(this.tooltip);
 
+    if (this.settings.appSettings.showNetWorthOnTray) {
+      title += ` ${netWorth} ${currency}`;
+    }
+
+    this.tray.setTitle(title);
     this.updateContextMenu(this.isVisible);
   }
 
