@@ -106,10 +106,17 @@ watchImmediate(chain, (chain) => {
   }
   else {
     const account = createNewBlockchainAccount();
-    set(modelValue, {
+    const newModelValue = {
       ...account,
       chain,
-    });
+    };
+
+    const data = get(modelValue).data;
+    if (data && Array.isArray(data)) {
+      newModelValue.data = data;
+    }
+
+    set(modelValue, newModelValue);
   }
 });
 
@@ -136,6 +143,7 @@ watch(inputMode, (mode) => {
   }
   else {
     const account = createNewBlockchainAccount();
+
     set(modelValue, {
       ...account,
       chain: selectedChain,

@@ -48,6 +48,15 @@ if (!hmrEnabled)
 
 const enableChecker = !(process.env.CI || isTest || process.env.VITEST);
 
+/**
+ * These modules are required by walletconnect/appkit
+ */
+const requiredModules = ['buffer', 'events', 'crypto'] as const;
+
+function isNotRequired(module: string): boolean {
+  return !Array.prototype.includes.call(requiredModules, module);
+}
+
 export default defineConfig({
   resolve: {
     alias: {
@@ -62,7 +71,15 @@ export default defineConfig({
     __APP_VERSION__: JSON.stringify(process.env.npm_package_version),
   },
   optimizeDeps: {
-    include: ['imask', 'vanilla-jsoneditor'],
+    include: [
+      'imask',
+      'vanilla-jsoneditor',
+      '@reown/appkit',
+      '@reown/appkit-adapter-wagmi',
+      '@reown/walletkit',
+      '@walletconnect/core',
+      'ethers',
+    ],
   },
   plugins: [
     VueRouter({
@@ -147,7 +164,10 @@ export default defineConfig({
     assetsDir: '.',
     minify: true,
     rollupOptions: {
-      external: ['electron', ...builtinModules.flatMap(p => [p, `node:${p}`])],
+      external: [
+        'electron',
+        ...builtinModules.filter(isNotRequired).flatMap(p => [p, `node:${p}`]),
+      ],
       input: join(PACKAGE_ROOT, 'index.html'),
       output: {
         chunkFileNames: (assetInfo: { name: string }) => {
@@ -176,6 +196,12 @@ export default defineConfig({
             'dayjs',
             'consola',
             'zod',
+          ],
+          'wallet-connect': [
+            '@reown/walletkit',
+            '@reown/appkit',
+            '@reown/appkit-adapter-wagmi',
+            '@walletconnect/core',
           ],
         },
       },

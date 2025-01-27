@@ -3,7 +3,7 @@ import type { PendingTask } from '@/types/task';
 import type { ActionResult } from '@rotki/common';
 import { snakeCaseTransformer } from '@/services/axios-transformers';
 import { api } from '@/services/rotkehlchen-api';
-import { handleResponse, validStatus, validWithSessionAndExternalService } from '@/services/utils';
+import { handleResponse, validStatus, validTaskStatus, validWithSessionAndExternalService } from '@/services/utils';
 import {
   AddressBookCollectionResponse,
   type AddressBookEntries,
@@ -26,6 +26,7 @@ interface UseAddressesNamesApiReturn {
   getAddressesNames: (addresses: AddressBookSimplePayload[]) => Promise<AddressBookEntries>;
   ensAvatarUrl: (ens: string, timestamp?: number) => string;
   clearEnsAvatarCache: (listEns: string[] | null) => Promise<boolean>;
+  resolveEnsNames: (name: string) => Promise<string>;
 }
 
 export function useAddressesNamesApi(): UseAddressesNamesApiReturn {
@@ -52,6 +53,20 @@ export function useAddressesNamesApi(): UseAddressesNamesApiReturn {
     const response = await internalEnsNames<EthNames>(ethAddresses);
 
     return EthNames.parse(response);
+  };
+
+  const resolveEnsNames = async (name: string): Promise<string> => {
+    const response = await api.instance.post<ActionResult<string>>(
+      `/names/ens/resolve`,
+      snakeCaseTransformer({
+        name,
+      }),
+      {
+        validateStatus: validTaskStatus,
+      },
+    );
+
+    return response.data.result || '';
   };
 
   const fetchAddressBook = async (
@@ -152,6 +167,7 @@ export function useAddressesNamesApi(): UseAddressesNamesApiReturn {
     getAddressesNames,
     getEnsNames,
     getEnsNamesTask,
+    resolveEnsNames,
     updateAddressBook,
   };
 }

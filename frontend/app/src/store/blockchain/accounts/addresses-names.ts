@@ -224,6 +224,22 @@ export const useAddressesNamesStore = defineStore('blockchains/accounts/addresse
     return result;
   };
 
+  const updateEnsNamesState = (newResult: Record<string, string | null>, skipReset = false): void => {
+    const oldEnsNames = {
+      ...get(ensNames),
+    };
+
+    set(ensNames, {
+      ...oldEnsNames,
+      ...newResult,
+    });
+
+    if (!skipReset) {
+      const addresses = Object.keys(newResult);
+      resetAddressNamesData(addresses.map(address => ({ address, blockchain: null })));
+    }
+  };
+
   const fetchEnsNames = async (
     payload: AddressBookSimplePayload[],
     forceUpdate = false,
@@ -270,12 +286,9 @@ export const useAddressesNamesStore = defineStore('blockchains/accounts/addresse
     }
 
     const payloadToReset = payload.filter(({ address }) => get(ensNames)[address] !== newResult[address]);
-
-    set(ensNames, {
-      ...get(ensNames),
-      ...newResult,
-    });
     resetAddressNamesData(payloadToReset);
+
+    updateEnsNamesState(newResult, true);
   };
 
   return {
@@ -294,6 +307,7 @@ export const useAddressesNamesStore = defineStore('blockchains/accounts/addresse
     resetAddressNamesData,
     setLastRefreshedAvatar,
     updateAddressBook,
+    updateEnsNamesState,
   };
 });
 

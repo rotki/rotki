@@ -131,7 +131,7 @@ test += ` --config baseUrl=${frontendUrl}`;
 if (ci && !process.env.SKIP_REBUILD) {
   consola.info('Building frontend');
   const start = Date.now();
-  execSync('pnpm run build:app --mode e2e', { stdio: 'inherit' });
+  execSync('NODE_OPTIONS="--max-old-space-size=5120" pnpm run build:app --mode e2e', { stdio: 'inherit' });
   consola.info(`Build complete (${Date.now() - start} ms)`);
 }
 

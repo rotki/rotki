@@ -1,9 +1,13 @@
+import type { LogService } from '@electron/main/log-service';
 import type { Buffer } from 'node:buffer';
 import fs from 'node:fs';
 import http, { type IncomingMessage, type OutgoingHttpHeaders, type Server, type ServerResponse } from 'node:http';
 import path from 'node:path';
+import process from 'node:process';
+import { getMimeType } from '@electron/main/create-protocol';
 import { assert } from '@rotki/common';
 import { checkIfDevelopment } from '@shared/utils';
+import * as httpProxy from 'http-proxy';
 
 type Callback = (addresses: string[]) => void;
 
@@ -155,4 +159,73 @@ export function stopHttp() {
   console.log('Address Import Server: Stopped');
   if (server?.listening)
     server.close();
+}
+
+export function startWalletConnectBridgeServer(port: number, logger: LogService) {
+  const devServerUrl = import.meta.env.VITE_DEV_SERVER_URL;
+  const isDev = !!devServerUrl;
+
+  if (isDev) {
+    // @ts-expect-error  Property createProxyServer does not exist on type typeof Server
+    const proxy = httpProxy.createProxyServer({
+      target: devServerUrl,
+      changeOrigin: true,
+    });
+
+    const server = http.createServer((req, res) => {
+      if (req && req.url && (req.url === '/' || req.url.startsWith('/#/'))) {
+        req.url = '/#/wallet-bridge'; // Ensure main app loads wallet-bridge
+      }
+
+      // Proxy request to Vite server
+      proxy.web(req, res, {}, (err: any) => {
+        console.error('Proxy error:', err);
+        res.writeHead(500, { 'Content-Type': 'text/plain' });
+        res.end('Proxy error');
+      });
+    });
+
+    server.listen(port, () => {
+      logger.log(`Dev Proxy Server started at http://localhost:${port}`);
+    });
+  }
+  else {
+    const resourcesDir = process.resourcesPath ? process.resourcesPath : import.meta.dirname;
+    const distPath = path.join(resourcesDir, 'app.asar', 'dist');
+    const indexPath = path.join(distPath, 'index.html');
+
+    const server = http.createServer((req, res) => {
+      let requestFile = req.url?.split('?')[0] ?? '/';
+
+      requestFile = path.normalize(requestFile).replace(/^(\.\.[/\\])+/, '');
+
+      if (requestFile === '/' || requestFile.startsWith('/#/')) {
+        requestFile = '/index.html'; // Always load index.html if on root or SPA route
+      }
+
+      const filePath = path.join(distPath, requestFile);
+
+      if (!filePath.startsWith(distPath)) {
+        res.writeHead(403, { 'Content-Type': 'text/plain' });
+        return res.end('403 Forbidden: Access Denied');
+      }
+
+      const mimeType = getMimeType(filePath);
+
+      fs.readFile(fs.existsSync(filePath) ? filePath : indexPath, (err, data) => {
+        if (err) {
+          res.writeHead(500, { 'Content-Type': 'text/plain' });
+          res.end(`500 Internal Server Error: Failed to load ${filePath}\nError: ${err.message}`);
+        }
+        else {
+          res.writeHead(200, { 'Content-Type': mimeType });
+          res.end(data);
+        }
+      });
+    });
+
+    server.listen(port, () => {
+      logger.log(`Static Server started at http://localhost:${port}`);
+    });
+  }
 }
