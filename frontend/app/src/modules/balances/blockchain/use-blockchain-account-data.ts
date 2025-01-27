@@ -37,6 +37,7 @@ interface UseBlockchainAccountDataReturn {
   getBlockchainAccounts: (chain: string) => BlockchainAccountWithBalance[];
   useAccountTags: (address: MaybeRef<string>) => ComputedRef<string[]>;
   useAccountDetails: (chain: Ref<string>, address: Ref<string>) => ComputedRef<AccountBalances>;
+  getAccountList: (accountData: Accounts, balanceData: Balances) => BlockchainAccountWithBalance[];
 }
 
 function toAssetBalances(
@@ -265,6 +266,7 @@ export function useBlockchainAccountData(): UseBlockchainAccountDataReturn {
     fetchAccounts,
     fetchGroupAccounts,
     getAccountDetails,
+    getAccountList,
     getAccounts,
     getBlockchainAccounts,
     useAccountDetails,

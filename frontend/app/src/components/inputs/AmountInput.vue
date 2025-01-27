@@ -8,6 +8,7 @@ import IMask, { type InputMask } from 'imask';
 interface AmountInputProps {
   integer?: boolean;
   hideDetails?: boolean;
+  rawInput?: boolean;
 }
 
 interface MaskConfig {
@@ -26,12 +27,14 @@ const modelValue = defineModel<string>({ required: true });
 const props = withDefaults(defineProps<AmountInputProps>(), {
   hideDetails: false,
   integer: false,
+  rawInput: false,
 });
 
-const { integer } = toRefs(props);
+const { integer, rawInput } = toRefs(props);
 const { decimalSeparator, thousandSeparator } = storeToRefs(useFrontendSettingsStore());
 
 const textInput = useTemplateRef<InstanceType<typeof RuiTextField>>('textInput');
+const rawTextInput = useTemplateRef<InstanceType<typeof HTMLInputElement>>('rawTextInput');
 const maskInstance = ref<InputMask<MaskConfig>>();
 const currentValue = ref<string>('');
 
@@ -83,6 +86,11 @@ function updateCurrentValue(mask: InputMask<any>) {
 }
 
 function getInput(): HTMLInputElement {
+  if (get(rawInput)) {
+    const textField = get(rawTextInput);
+    assert(textField, 'Input field is not defined');
+    return textField;
+  }
   const textField = get(textInput);
   assert(textField, 'Input field is not defined');
   return textField.$el.querySelector('input');
@@ -154,7 +162,15 @@ defineExpose({
 </script>
 
 <template>
+  <input
+    v-if="rawInput"
+    ref="rawTextInput"
+    v-model="internalModelValue"
+    v-bind="$attrs"
+    @focus="onFocus()"
+  />
   <RuiTextField
+    v-else
     ref="textInput"
     v-model="internalModelValue"
     color="primary"

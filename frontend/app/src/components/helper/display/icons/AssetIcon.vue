@@ -23,6 +23,7 @@ interface AssetIconProps {
   flat?: boolean;
   resolutionOptions?: AssetResolutionOptions;
   chainIconSize?: string;
+  forceChain?: string;
 }
 
 const props = withDefaults(defineProps<AssetIconProps>(), {
@@ -30,6 +31,7 @@ const props = withDefaults(defineProps<AssetIconProps>(), {
   circle: false,
   enableAssociation: true,
   flat: false,
+  forceChain: undefined,
   noTooltip: false,
   padding: '2px',
   resolutionOptions: () => ({}),
@@ -67,7 +69,7 @@ const url = reactify(getAssetImageUrl)(mappedIdentifier);
 
 const isCustomAsset = computed(() => get(asset)?.isCustomAsset ?? false);
 
-const chain = computed(() => get(asset)?.evmChain);
+const chain = computed(() => props.forceChain || get(asset)?.evmChain);
 const symbol = computed(() => get(asset)?.symbol);
 const name = computed(() => get(asset)?.name);
 

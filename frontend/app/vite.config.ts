@@ -48,12 +48,17 @@ if (!hmrEnabled)
 
 const enableChecker = !(process.env.CI || isTest || process.env.VITEST);
 
+const builtInModulesToNotExternalized = [
+  'events',
+];
+
 export default defineConfig({
   resolve: {
     alias: {
       '@': resolve(PACKAGE_ROOT, 'src'),
       '~@': resolve(PACKAGE_ROOT, 'src'),
       '@shared': `${join(PACKAGE_ROOT, 'shared')}/`,
+      'events': 'events',
     },
     dedupe: ['vue'],
   },
@@ -62,7 +67,7 @@ export default defineConfig({
     __APP_VERSION__: JSON.stringify(process.env.npm_package_version),
   },
   optimizeDeps: {
-    include: ['imask', 'vanilla-jsoneditor'],
+    include: ['imask', 'vanilla-jsoneditor', '@reown/appkit', '@reown/appkit-adapter-ethers'],
   },
   plugins: [
     VueRouter({
@@ -147,7 +152,7 @@ export default defineConfig({
     assetsDir: '.',
     minify: true,
     rollupOptions: {
-      external: ['electron', ...builtinModules.flatMap(p => [p, `node:${p}`])],
+      external: ['electron', ...builtinModules.filter(item => !builtInModulesToNotExternalized.includes(item)).flatMap(p => [p, `node:${p}`])],
       input: join(PACKAGE_ROOT, 'index.html'),
       output: {
         chunkFileNames: (assetInfo: { name: string }) => {

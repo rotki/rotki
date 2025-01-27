@@ -1,0 +1,9 @@
+<script setup lang="ts">
+import TradeSendCard from '@/components/trade/send/TradeSendCard.vue';
+</script>
+
+<template>
+  <div class="container !max-w-lg">
+    <TradeSendCard />
+  </div>
+</template>

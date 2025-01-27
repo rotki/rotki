@@ -70,6 +70,7 @@ declare module 'vue-router/auto-routes' {
     'statistics-graphs': RouteRecordInfo<'statistics-graphs', '/statistics/graphs', Record<never, never>, Record<never, never>>,
     'statistics-history-events': RouteRecordInfo<'statistics-history-events', '/statistics/history-events', Record<never, never>, Record<never, never>>,
     'tag_manager': RouteRecordInfo<'tag_manager', '/tag-manager', Record<never, never>, Record<never, never>>,
+    '/trade/send/': RouteRecordInfo<'/trade/send/', '/trade/send', Record<never, never>, Record<never, never>>,
     '/user/': RouteRecordInfo<'/user/', '/user', Record<never, never>, Record<never, never>>,
     '/user/create/': RouteRecordInfo<'/user/create/', '/user/create', Record<never, never>, Record<never, never>>,
     '/user/login/': RouteRecordInfo<'/user/login/', '/user/login', Record<never, never>, Record<never, never>>,
