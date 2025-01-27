@@ -40,6 +40,9 @@
     "webpack": "5.98.0"
   },
   "dependencies": {
+    "@reown/appkit": "1.6.6",
+    "@reown/appkit-adapter-wagmi": "1.6.6",
+    "@reown/walletkit": "1.2.1",
     "@rotki/common": "workspace:*",
     "@rotki/ui-library": "1.12.2",
     "@types/jsdom": "21.1.7",
@@ -48,6 +51,7 @@
     "@vueuse/core": "12.8.2",
     "@vueuse/math": "12.8.2",
     "@vueuse/shared": "12.8.2",
+    "@walletconnect/core": "2.17.5",
     "axios": "1.8.2",
     "bignumber.js": "9.1.2",
     "chart.js": "4.4.8",
@@ -58,6 +62,7 @@
     "electron-updater": "6.6.1",
     "electron-window-state": "5.0.3",
     "es-toolkit": "1.32.0",
+    "ethers": "6.13.5",
     "imask": "7.6.1",
     "pinia": "3.0.1",
     "ps-list": "8.1.1",
