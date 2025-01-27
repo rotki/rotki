@@ -64,6 +64,9 @@
     "allowNonAppliedPatches": true,
     "patchedDependencies": {
       "bignumber.js@9.1.2": "patches/bignumber.js@9.1.2.patch"
+    },
+    "overrides": {
+      "@intlify/message-compiler": "^11.1.2"
     }
   },
   "lint-staged": {

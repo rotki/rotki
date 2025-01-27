@@ -3387,7 +3387,11 @@
       "graphs": "Graphs",
       "history_events": "Events Analysis"
     },
-    "tag_manager": "Tag Manager"
+    "tag_manager": "Tag Manager",
+    "trade": "Trade",
+    "trade_sub": {
+      "send": "Send"
+    }
   },
   "net_worth_chart": {
     "current_balance": "Current balance"
@@ -4311,6 +4315,44 @@
     "default_timeframe_description": "Set the default time frame for the dashboard graph. This timeframe will be pre-selected upon login. By default it will remember the previous session's selection.",
     "inactive_timeframes": "Inactive Timeframes",
     "visible_timeframes": "Visible Timeframes"
+  },
+  "trade": {
+    "actions": {
+      "change_network": "Change Network",
+      "connect_wallet": "Connect Wallet",
+      "disconnect": "Disconnect",
+      "open_wallet": "Open Wallet",
+      "send": "Send",
+      "track": "Track Address"
+    },
+    "amount": {
+      "insufficient": "Insufficient Funds",
+      "sending": "I'm sending"
+    },
+    "available_balances": "Available Balances",
+    "never_interacted": "You have never interacted with this address before.",
+    "recent_transactions": {
+      "no_data": "No recent transactions",
+      "title": "Transactions this session"
+    },
+    "recipient": {
+      "from_private_address_book": "Addresses from private address book",
+      "no_addresses_found": "No addresses found",
+      "select_recipient_address": "Select recipient address",
+      "tracked_addresses": "Tracked Addresses"
+    },
+    "select_asset": {
+      "balance": "Balance",
+      "max": "Max",
+      "no_assets_found": "No assets found",
+      "select_token": "Select a token",
+      "title": "Select Asset"
+    },
+    "to_address": "To address",
+    "warning": {
+      "not_tracked": "This wallet address is not tracked in rotki, so you can't see your tokens.",
+      "query_on_progress": "The balance query is still in progress, you may not see all of your tokens yet."
+    }
   },
   "trade_history": {
     "loading": "Please wait while your trades are getting loaded..."

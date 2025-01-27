@@ -63,12 +63,12 @@ const usedChainIds = computed(() => {
   return [Blockchain.ETH2];
 });
 
-function createNewBlockchainAccount(): void {
+function createNewBlockchainAccount(address?: string): void {
   set(account, {
     chain: get(usedChainIds)[0],
     data: [
       {
-        address: '',
+        address: address || '',
         tags: null,
       },
     ],
@@ -97,7 +97,8 @@ function getTabLink(category: string): RouteLocationRaw {
 onMounted(async () => {
   const { query } = get(route);
   if (query.add) {
-    createNewBlockchainAccount();
+    const address = query.addressToAdd as string;
+    createNewBlockchainAccount(address);
     await router.replace({ query: {} });
   }
 });

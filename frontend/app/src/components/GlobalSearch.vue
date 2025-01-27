@@ -118,6 +118,10 @@ function getRoutes(keyword: string): SearchItemWithoutValue[] {
       ...Routes.BALANCES_NON_FUNGIBLE,
       texts: [Routes.BALANCES.text, Routes.BALANCES_NON_FUNGIBLE.text],
     },
+    {
+      ...Routes.TRADE_SEND,
+      texts: [Routes.TRADE.text, Routes.TRADE_SEND.text],
+    },
     { ...Routes.NFTS },
     {
       ...Routes.HISTORY_TRADES,
