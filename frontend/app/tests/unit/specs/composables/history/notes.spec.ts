@@ -57,6 +57,25 @@ describe('composables::history/notes', () => {
     expect(formatted).toMatchObject(expected);
   });
 
+  it('with amount and asset (but formatted amount with thousand separator in the notes)', () => {
+    const notes = 'Receive 15,123.233 ETH';
+    const formatted = get(formatNotes({ notes, amount: bigNumberify(15123.233), assetId: 'ETH' }));
+
+    const expected: NoteFormat[] = [
+      {
+        type: NoteType.WORD,
+        word: 'Receive',
+      },
+      {
+        type: NoteType.AMOUNT,
+        amount: bigNumberify(15123.233),
+        asset: 'ETH',
+      },
+    ];
+
+    expect(formatted).toMatchObject(expected);
+  });
+
   it('with amount and asset (but different asset symbol)', () => {
     const notes = 'Pay 100 EUR';
 

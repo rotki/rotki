@@ -154,7 +154,11 @@ export function useHistoryEventNote(): UseHistoryEventsNoteReturn {
     if (get(scrambleData) && counterpartyVal === 'monerium')
       notesVal = findAndScrambleIBAN(notesVal);
 
-    const words = notesVal.split(/[\s,]+/);
+    const words = notesVal
+      .replace(/(\d),(?=\d{3}(?!\d))/g, '$1_COMMA_')
+      .split(/[\s,]+/)
+      .map(word => word.replace(/_COMMA_/g, ','));
+
     const assetWords = asset ? asset.split(/\s+/) : [];
     const processedWords: string[] = [];
 
@@ -235,10 +239,11 @@ export function useHistoryEventNote(): UseHistoryEventsNoteReturn {
       }
 
       const amountVal = get(amount);
+      const wordUsed = word.replace(/(\d),(?=\d{3}(?!\d))/g, '$1');
 
       const isAmount = amountVal
-        && !isNaN(Number.parseFloat(word))
-        && bigNumberify(word).eq(amountVal)
+        && !isNaN(Number.parseFloat(wordUsed))
+        && bigNumberify(wordUsed).eq(amountVal)
         && amountVal.gt(0);
 
       if (isAmount) {
