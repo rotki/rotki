@@ -3371,6 +3371,10 @@
       "latest_prices": "Latest Prices"
     },
     "nfts": "NFTs Gallery",
+    "onchain": "On-Chain",
+    "onchain_sub": {
+      "send": "Send"
+    },
     "profit_loss_report": "Profit and Loss Report",
     "settings": "Settings",
     "settings_sub": {
@@ -3389,7 +3393,8 @@
       "graphs": "Graphs",
       "history_events": "Events Analysis"
     },
-    "tag_manager": "Tag Manager"
+    "tag_manager": "Tag Manager",
+    "wallet_bridge": "Wallet Bridge"
   },
   "net_worth_chart": {
     "current_balance": "Current balance"
@@ -4325,8 +4330,73 @@
     "inactive_timeframes": "Inactive Timeframes",
     "visible_timeframes": "Visible Timeframes"
   },
+  "trade": {
+    "actions": {
+      "change_network": "Change Network",
+      "change_network_in_your_wallet": "Change network in your wallet!",
+      "connect_wallet": "Connect Wallet",
+      "disconnect": "Disconnect",
+      "open_wallet": "Open Wallet",
+      "send": "Send",
+      "track": "Track Address"
+    },
+    "amount": {
+      "insufficient": "Insufficient Funds",
+      "sending": "I'm sending"
+    },
+    "available_balances": "Available Balances",
+    "bridge": {
+      "connect_browser_wallet": "Open Browser Wallet Bridge",
+      "connecting": "Connecting...",
+      "connection_logs": "Connection Logs",
+      "disconnect_session": "Disconnect Session",
+      "hint": "In Electron App, choose \"Wallet Connect\" and then \"Copy link\"",
+      "label": "Paste the Pair URI here",
+      "start_pairing": "Start Pairing",
+      "subtitle": "Paste Wallet Connect Pair URI from Electron App:",
+      "title": "Browser Wallet Bridge"
+    },
+    "never_interacted": "You have never interacted with this address before.",
+    "recent_transactions": {
+      "no_data": "No recent transactions",
+      "title": "Transactions this session"
+    },
+    "recipient": {
+      "from_private_address_book": "Addresses from private address book",
+      "no_addresses_found": "No addresses found",
+      "select_recipient_address": "Select recipient address",
+      "tracked_addresses": "Tracked Addresses"
+    },
+    "select_asset": {
+      "balance": "Balance",
+      "max": "Max",
+      "no_assets_found": "No assets found",
+      "select_token": "Select a token",
+      "title": "Select Asset"
+    },
+    "to_address": {
+      "error": "Please input valid ETH address",
+      "label": "To address"
+    },
+    "waiting_for_confirmation": {
+      "not_wallet_connect": "Check your wallet to sign the transaction",
+      "wallet_connect": "Check your browser / wallet to sign the transaction"
+    },
+    "warning": {
+      "not_tracked": "This wallet address is not tracked in rotki, so you can't see your tokens.",
+      "query_on_progress": "The balance query is still in progress, you may not see all of your tokens yet."
+    }
+  },
   "trade_history": {
     "loading": "Please wait while your trades are getting loaded..."
+  },
+  "trade_history_view": {
+    "labels": {
+      "all": "All",
+      "completed": "Completed",
+      "failed": "Failed",
+      "pending": "Pending"
+    }
   },
   "transactions": {
     "actions": {

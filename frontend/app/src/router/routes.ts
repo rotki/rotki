@@ -40,6 +40,8 @@ export const Routes = {
   IMPORT: ensureRoute('/import'),
   LOCATIONS: ensureRoute('/locations/:identifier'),
   NFTS: ensureRoute('/nfts'),
+  ONCHAIN: ensureRoute('/onchain'),
+  ONCHAIN_SEND: ensureRoute('/onchain/send'),
   PRICE_MANAGER: ensureRoute('/price-manager'),
   PRICE_MANAGER_HISTORIC: ensureRoute('/price-manager/historic'),
   PRICE_MANAGER_LATEST: ensureRoute('/price-manager/latest'),
@@ -61,6 +63,7 @@ export const Routes = {
   TAG_MANAGER: ensureRoute('/tag-manager'),
   USER_CREATE: ensureRoute('/user/create'),
   USER_LOGIN: ensureRoute('/user/login'),
+  WALLET_BRIDGE: ensureRoute('/wallet-bridge'),
 } as const;
 
 export const useAppRoutes = createSharedComposable(() => {
@@ -219,6 +222,16 @@ export const useAppRoutes = createSharedComposable(() => {
       route: Routes.NFTS,
       text: t('navigation_menu.nfts'),
     },
+    ONCHAIN: {
+      icon: 'lu-coins' as const,
+      route: Routes.ONCHAIN,
+      text: t('navigation_menu.onchain'),
+    },
+    ONCHAIN_SEND: {
+      icon: 'lu-send' as const,
+      route: Routes.ONCHAIN_SEND,
+      text: t('navigation_menu.onchain_sub.send'),
+    },
     PRICE_MANAGER: {
       icon: 'lu-manage-prices' as const,
       route: Routes.PRICE_MANAGER,
@@ -313,6 +326,11 @@ export const useAppRoutes = createSharedComposable(() => {
       icon: 'lu-tag-manager' as const,
       route: Routes.TAG_MANAGER,
       text: t('navigation_menu.tag_manager'),
+    },
+    WALLET_BRIDGE: {
+      icon: 'lu-chevrons-left-right-ellipsis',
+      route: Routes.WALLET_BRIDGE,
+      text: t('navigation_menu.wallet_bridge'),
     },
   } as const));
 

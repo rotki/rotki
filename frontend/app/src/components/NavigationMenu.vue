@@ -95,6 +95,18 @@ const navItems: MenuItem[] = [
     ],
   },
   {
+    class: 'trade',
+    type: 'group',
+    ...Routes.ONCHAIN,
+    items: [
+      {
+        class: 'onchain-send',
+        type: 'item',
+        ...Routes.ONCHAIN_SEND,
+      },
+    ],
+  },
+  {
     class: 'nfts',
     type: 'item',
     ...Routes.NFTS,

@@ -50,6 +50,7 @@ declare module 'vue-router/auto-routes' {
     'import': RouteRecordInfo<'import', '/import', Record<never, never>, Record<never, never>>,
     '/locations/[identifier]': RouteRecordInfo<'/locations/[identifier]', '/locations/:identifier', { identifier: ParamValue<true> }, { identifier: ParamValue<false> }>,
     'nfts': RouteRecordInfo<'nfts', '/nfts', Record<never, never>, Record<never, never>>,
+    '/onchain/send/': RouteRecordInfo<'/onchain/send/', '/onchain/send', Record<never, never>, Record<never, never>>,
     'playground': RouteRecordInfo<'playground', '/playground', Record<never, never>, Record<never, never>>,
     'price-manager': RouteRecordInfo<'price-manager', '/price-manager', Record<never, never>, Record<never, never>>,
     'price-manager-historic': RouteRecordInfo<'price-manager-historic', '/price-manager/historic', Record<never, never>, Record<never, never>>,
@@ -73,5 +74,6 @@ declare module 'vue-router/auto-routes' {
     '/user/': RouteRecordInfo<'/user/', '/user', Record<never, never>, Record<never, never>>,
     '/user/create/': RouteRecordInfo<'/user/create/', '/user/create', Record<never, never>, Record<never, never>>,
     '/user/login/': RouteRecordInfo<'/user/login/', '/user/login', Record<never, never>, Record<never, never>>,
+    '/wallet-bridge/': RouteRecordInfo<'/wallet-bridge/', '/wallet-bridge', Record<never, never>, Record<never, never>>,
   }
 }

@@ -1,36 +1,61 @@
-import { readFile } from 'node:fs';
+import { readFile } from 'node:fs/promises';
 import * as path from 'node:path';
 import { URL } from 'node:url';
 import { type Protocol, protocol } from 'electron';
 
 const currentDir = import.meta.dirname;
 
+export function getMimeType(pathName: string): string {
+  const extension = path.extname(pathName).toLowerCase();
+
+  if (extension === '.js')
+    return 'application/javascript';
+  else if (extension === '.html')
+    return 'text/html';
+  else if (extension === '.css')
+    return 'text/css';
+  else if (extension === '.svg' || extension === '.svgz')
+    return 'image/svg+xml';
+  else if (extension === '.png')
+    return 'image/png';
+  else if (extension === '.jpg' || extension === '.jpeg')
+    return 'image/jpeg';
+  else if (extension === '.json')
+    return 'application/json';
+  else if (extension === '.wasm')
+    return 'application/wasm';
+
+  return 'application/octet-stream';
+}
+
 export function createProtocol(scheme: string, customProtocol?: Protocol) {
-  (customProtocol || protocol).registerBufferProtocol(scheme, (request, respond) => {
-    let pathName = new URL(request.url).pathname;
-    pathName = decodeURI(pathName); // Needed in case URL contains spaces
+  const protocolToUse = customProtocol || protocol;
 
-    readFile(path.join(currentDir, pathName), (error, data) => {
-      if (error)
-        console.error(`Failed to read ${pathName} on ${scheme} protocol`, error);
+  protocolToUse.handle(scheme, async (request) => {
+    try {
+      const url = new URL(request.url);
+      const pathname = decodeURIComponent(url.pathname);
+      const filePath = path.join(currentDir, pathname);
 
-      const extension = path.extname(pathName).toLowerCase();
-      let mimeType = '';
+      const data = await readFile(filePath);
+      const mimeType = getMimeType(filePath);
 
-      if (extension === '.js')
-        mimeType = 'text/javascript';
-      else if (extension === '.html')
-        mimeType = 'text/html';
-      else if (extension === '.css')
-        mimeType = 'text/css';
-      else if (extension === '.svg' || extension === '.svgz')
-        mimeType = 'image/svg+xml';
-      else if (extension === '.json')
-        mimeType = 'application/json';
-      else if (extension === '.wasm')
-        mimeType = 'application/wasm';
+      return new Response(data, {
+        status: 200,
+        headers: {
+          'Content-Type': mimeType,
+        },
+      });
+    }
+    catch (error) {
+      console.error(`Failed to load file via ${scheme}:// protocol`, error);
 
-      respond({ mimeType, data });
-    });
+      return new Response(`Failed to load file`, {
+        status: 500,
+        headers: {
+          'Content-Type': 'text/plain',
+        },
+      });
+    }
   });
 }

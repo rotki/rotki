@@ -6,7 +6,7 @@ import type { ProgressInfo } from 'electron-builder';
 import process from 'node:process';
 import { IpcCommands } from '@electron/ipc-commands';
 import { loadConfig } from '@electron/main/config';
-import { startHttp, stopHttp } from '@electron/main/http';
+import { startHttp, startWalletConnectBridgeServer, stopHttp } from '@electron/main/http';
 import { PasswordManager } from '@electron/main/password-manager';
 import { selectPort } from '@electron/main/port-utils';
 import { assert, type DebugSettings } from '@rotki/common';
@@ -77,6 +77,7 @@ export class IpcManager {
 
     ipcMain.handle(IpcCommands.INVOKE_CONFIG, this.getConfig);
     ipcMain.handle(IpcCommands.INVOKE_WALLET_IMPORT, this.importFromWallet);
+    ipcMain.handle(IpcCommands.OPEN_WALLET_CONNECT_BRIDGE, this.openWalletConnectBridge);
     ipcMain.handle(IpcCommands.INVOKE_VERSION, () => this.version);
     ipcMain.handle(IpcCommands.INVOKE_IS_MAC, () => this.version.os === 'darwin');
 
@@ -181,6 +182,30 @@ export class IpcManager {
     }
     catch (error: any) {
       return { error: error.message };
+    }
+  };
+
+  private walletConnectBridgePort: number | undefined = undefined;
+
+  private readonly openWalletConnectBridge = async (): Promise<void> => {
+    try {
+      // If server is already running, just open the existing URL
+      if (this.walletConnectBridgePort) {
+        this.logger.log(`Wallet Connect Bridge already running at http://localhost:${this.walletConnectBridgePort}`);
+        await shell.openExternal(`http://localhost:${this.walletConnectBridgePort}/#/wallet-bridge`);
+        return;
+      }
+
+      const portNumber = await selectPort(40010);
+      this.walletConnectBridgePort = portNumber; // Store the port
+
+      startWalletConnectBridgeServer(portNumber, this.logger);
+
+      // Open the Wallet Connect Bridge in Electron (same URL in dev/prod)
+      await shell.openExternal(`http://localhost:${portNumber}/#/wallet-bridge`);
+    }
+    catch (error: any) {
+      this.logger.log(`Error opening Wallet Connect Bridge: ${error}`);
     }
   };
 
