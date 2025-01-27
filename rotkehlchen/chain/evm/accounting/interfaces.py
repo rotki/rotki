@@ -88,6 +88,7 @@ class DepositableAccountantInterface(ModuleAccountantInterface):
             direction = EventDirection.IN
 
         if events_to_consume is None:
+            log.debug(f'Processing event {event} of type {type(event)}. {event.serialize()}')
             log.debug(
                 f'Could not find the number of events to consume for a {event.counterparty} '
                 f'deposit/withdrawal transaction {event.tx_hash.hex()}',

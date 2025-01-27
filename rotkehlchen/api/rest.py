@@ -3966,27 +3966,35 @@ class RestAPI:
             entries_limit = - 1
 
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
-            events_result, entries_found, entries_with_limit = dbevents.get_history_events_and_limit_info(  # noqa: E501
-                cursor=cursor,
-                filter_query=filter_query,
-                has_premium=has_premium,
-                group_by_event_ids=group_by_event_ids,
-                entries_limit=entries_limit if entries_limit != -1 else None,
-            )
-            entries_total = self.rotkehlchen.data.db.get_entries_count(
-                cursor=cursor,
-                entries_table='history_events',
-                group_by='event_identifier' if group_by_event_ids else None,
-            )
-            customized_event_ids = dbevents.get_customized_event_identifiers(
-                cursor=cursor,
-                location=filter_query.location,
-            )
-            hidden_event_ids = dbevents.get_hidden_event_ids(cursor)
-            ignored_ids_mapping = self.rotkehlchen.data.db.get_ignored_action_ids(
-                cursor=cursor,
-                action_type=ActionType.HISTORY_EVENT,
-            )
+            try:
+                events_result, entries_found, entries_with_limit = dbevents.get_history_events_and_limit_info(  # noqa: E501
+                    cursor=cursor,
+                    filter_query=filter_query,
+                    has_premium=has_premium,
+                    group_by_event_ids=group_by_event_ids,
+                    entries_limit=entries_limit if entries_limit != -1 else None,
+                )
+                entries_total = self.rotkehlchen.data.db.get_entries_count(
+                    cursor=cursor,
+                    entries_table='history_events',
+                    group_by='event_identifier' if group_by_event_ids else None,
+                )
+                customized_event_ids = dbevents.get_customized_event_identifiers(
+                    cursor=cursor,
+                    location=filter_query.location,
+                )
+                hidden_event_ids = dbevents.get_hidden_event_ids(cursor)
+                ignored_ids_mapping = self.rotkehlchen.data.db.get_ignored_action_ids(
+                    cursor=cursor,
+                    action_type=ActionType.HISTORY_EVENT,
+                )
+            except Exception as e:
+                log.error(f'Failed to query history events from db due to {e}')
+                log.error(f'{traceback.format_exc()}')
+                return api_response(wrap_in_fail_result(
+                    message='Error querying event from database. Check logs for more details',
+                    status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+                ))
 
         accountant_pot = AccountingPot(
             database=self.rotkehlchen.data.db,
@@ -3994,39 +4002,48 @@ class RestAPI:
             msg_aggregator=self.rotkehlchen.msg_aggregator,
             is_dummy_pot=True,
         )
-        if group_by_event_ids is True:
-            event_accounting_rule_statuses = query_missing_accounting_rules(
-                db=self.rotkehlchen.data.db,
-                accounting_pot=accountant_pot,
-                evm_accounting_aggregator=accountant_pot.events_accountant.evm_accounting_aggregators,
-                events=[x for _, x in events_result],  # type: ignore
-                accountant=self.rotkehlchen.accountant,
-            )  # length of missing_accounting_rules and events guaranteed by function
-            entries = [  # type: ignore  # mypy doesn't understand significance of boolean check
-                x.serialize_for_api(  # type: ignore
-                    customized_event_ids=customized_event_ids,
-                    ignored_ids_mapping=ignored_ids_mapping,
-                    hidden_event_ids=hidden_event_ids,
-                    event_accounting_rule_status=event_accounting_rule_status,
-                    grouped_events_num=grouped_events_num,  # type: ignore
-                ) for (grouped_events_num, x), event_accounting_rule_status in zip(events_result, event_accounting_rule_statuses, strict=True)  # noqa: E501
-            ]
-        else:
-            event_accounting_rule_statuses = query_missing_accounting_rules(
-                db=self.rotkehlchen.data.db,
-                accounting_pot=accountant_pot,
-                evm_accounting_aggregator=accountant_pot.events_accountant.evm_accounting_aggregators,
-                events=events_result,  # type: ignore
-                accountant=self.rotkehlchen.accountant,
-            )
-            entries = [
-                x.serialize_for_api(  # type: ignore
-                    customized_event_ids=customized_event_ids,
-                    ignored_ids_mapping=ignored_ids_mapping,
-                    hidden_event_ids=hidden_event_ids,
-                    event_accounting_rule_status=event_accounting_rule_status,
-                ) for x, event_accounting_rule_status in zip(events_result, event_accounting_rule_statuses, strict=True)  # noqa: E501
-            ]
+        try:
+            if group_by_event_ids is True:
+                event_accounting_rule_statuses = query_missing_accounting_rules(
+                    db=self.rotkehlchen.data.db,
+                    accounting_pot=accountant_pot,
+                    evm_accounting_aggregator=accountant_pot.events_accountant.evm_accounting_aggregators,
+                    events=[x for _, x in events_result],  # type: ignore
+                    accountant=self.rotkehlchen.accountant,
+                )  # length of missing_accounting_rules and events guaranteed by function
+                entries = [  # type: ignore  # mypy doesn't understand significance of boolean check
+                    x.serialize_for_api(  # type: ignore
+                        customized_event_ids=customized_event_ids,
+                        ignored_ids_mapping=ignored_ids_mapping,
+                        hidden_event_ids=hidden_event_ids,
+                        event_accounting_rule_status=event_accounting_rule_status,
+                        grouped_events_num=grouped_events_num,  # type: ignore
+                    ) for (grouped_events_num, x), event_accounting_rule_status in zip(events_result, event_accounting_rule_statuses, strict=True)  # noqa: E501
+                ]
+            else:
+                event_accounting_rule_statuses = query_missing_accounting_rules(
+                    db=self.rotkehlchen.data.db,
+                    accounting_pot=accountant_pot,
+                    evm_accounting_aggregator=accountant_pot.events_accountant.evm_accounting_aggregators,
+                    events=events_result,  # type: ignore
+                    accountant=self.rotkehlchen.accountant,
+                )
+                entries = [
+                    x.serialize_for_api(  # type: ignore
+                        customized_event_ids=customized_event_ids,
+                        ignored_ids_mapping=ignored_ids_mapping,
+                        hidden_event_ids=hidden_event_ids,
+                        event_accounting_rule_status=event_accounting_rule_status,
+                    ) for x, event_accounting_rule_status in zip(events_result, event_accounting_rule_statuses, strict=True)  # noqa: E501
+                ]
+        except Exception as e:
+            log.error(f'Failed to process response due to {e}')
+            log.error(f'{traceback.format_exc()}')
+            return api_response(wrap_in_fail_result(
+                message='Error querying event from database. Check logs for more details',
+                status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            ))
+
         result = {
             'entries': entries,
             'entries_found': entries_with_limit,
