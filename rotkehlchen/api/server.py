@@ -97,6 +97,7 @@ from rotkehlchen.api.v1.resources import (
     HistoricalAssetAmountsResource,
     HistoricalAssetsPriceResource,
     HistoricalNetValueResource,
+    HistoricalPricesPerAssetResource,
     HistoryActionableItemsResource,
     HistoryDownloadingResource,
     HistoryEventResource,
@@ -336,6 +337,7 @@ URLS_V1: URLS = [
     ('/calendar/reminders', CalendarRemindersResource),
     ('/balances/historical', TimestampHistoricalBalanceResource),
     ('/balances/historical/asset', HistoricalAssetAmountsResource),
+    ('/balances/historical/asset/prices', HistoricalPricesPerAssetResource),
     ('/balances/historical/netvalue', HistoricalNetValueResource),
 ]
 

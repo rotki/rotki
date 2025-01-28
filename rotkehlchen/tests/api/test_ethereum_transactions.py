@@ -1391,10 +1391,10 @@ def test_decoding_missing_transactions(
     assert result['decoded_tx_number']['ethereum'] == len(transactions)
 
     websocket_connection.wait_until_messages_num(num=4, timeout=4)
-    assert websocket_connection.pop_message() == {'type': 'evm_undecoded_transactions', 'data': {'chain': 'ethereum', 'total': 2, 'processed': 0}}  # noqa: E501
+    assert websocket_connection.pop_message() == {'type': 'progress_updates', 'data': {'chain': 'ethereum', 'total': 2, 'processed': 0, 'subtype': 'evm_undecoded_transactions'}}  # noqa: E501
     assert websocket_connection.pop_message()
     assert websocket_connection.pop_message()
-    assert websocket_connection.pop_message() == {'type': 'evm_undecoded_transactions', 'data': {'chain': 'ethereum', 'total': 2, 'processed': 2}}  # noqa: E501
+    assert websocket_connection.pop_message() == {'type': 'progress_updates', 'data': {'chain': 'ethereum', 'total': 2, 'processed': 2, 'subtype': 'evm_undecoded_transactions'}}  # noqa: E501
 
     dbevents = DBHistoryEvents(rotki.data.db)
     with rotki.data.db.conn.read_ctx() as cursor:

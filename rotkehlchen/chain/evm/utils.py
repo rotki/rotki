@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any, Final
 
 from web3.types import BlockIdentifier
 
-from rotkehlchen.api.websockets.typedefs import WSMessageType
+from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessageType
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.constants import ZERO
@@ -200,10 +200,11 @@ def maybe_notify_cache_query_status(
     last notification, and returns the last notified timestamp."""
     if (current_time := ts_now()) - last_notified_ts > 5:
         msg_aggregator.add_message(
-            message_type=WSMessageType.PROTOCOL_CACHE_UPDATES,
+            message_type=WSMessageType.PROGRESS_UPDATES,
             data={
                 'protocol': protocol,
                 'chain': chain,
+                'subtype': str(ProgressUpdateSubType.PROTOCOL_CACHE_UPDATES),
                 'processed': processed,
                 'total': total,
             },

@@ -8,7 +8,7 @@ import pytest
 import requests
 from freezegun import freeze_time
 
-from rotkehlchen.api.websockets.typedefs import WSMessageType
+from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessageType
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.chain.aggregator import ChainsAggregator
@@ -209,10 +209,11 @@ def address_in_addressbook(address, cursor):
 def make_call_object(protocol: str, chain: ChainID, processed: int, total: int) -> _Call:
     """Create a call object for the given protocol, chain, processed and total."""
     return call(
-        message_type=WSMessageType.PROTOCOL_CACHE_UPDATES,
+        message_type=WSMessageType.PROGRESS_UPDATES,
         data={
             'protocol': protocol,
             'chain': chain,
+            'subtype': str(ProgressUpdateSubType.PROTOCOL_CACHE_UPDATES),
             'processed': processed,
             'total': total,
         },

@@ -104,6 +104,7 @@ from rotkehlchen.api.v1.schemas import (
     FileListSchema,
     HistoricalAssetsPriceSchema,
     HistoricalPerAssetBalanceSchema,
+    HistoricalPricesPerAssetSchema,
     HistoryEventSchema,
     HistoryEventsDeletionSchema,
     HistoryExportingSchema,
@@ -3424,4 +3425,27 @@ class HistoricalNetValueResource(BaseMethodView):
         return self.rest_api.get_historical_netvalue(
             from_timestamp=from_timestamp,
             to_timestamp=to_timestamp,
+        )
+
+
+class HistoricalPricesPerAssetResource(BaseMethodView):
+
+    post_schema = HistoricalPricesPerAssetSchema()
+
+    @require_loggedin_user()
+    @use_kwargs(post_schema, location='json')
+    def post(
+            self,
+            asset: Asset,
+            interval: int,
+            async_query: bool,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+    ) -> Response:
+        return self.rest_api.get_historical_prices_per_asset(
+            asset=asset,
+            interval=interval,
+            async_query=async_query,
+            to_timestamp=to_timestamp,
+            from_timestamp=from_timestamp,
         )

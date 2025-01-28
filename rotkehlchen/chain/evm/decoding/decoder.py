@@ -15,7 +15,7 @@ from gevent.lock import Semaphore
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.types import ActionType
-from rotkehlchen.api.websockets.typedefs import WSMessageType
+from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessageType
 from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token, get_token
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.chain.evm.decoding.interfaces import ReloadableDecoderMixin
@@ -717,9 +717,10 @@ class EVMTransactionDecoder(ABC):
             if send_ws_notifications and tx_index % 10 == 0:
                 log.debug(f'Processed {tx_index} out of {total_transactions} transactions from {self.evm_inquirer.chain_id}')  # noqa: E501
                 self.msg_aggregator.add_message(
-                    message_type=WSMessageType.EVM_UNDECODED_TRANSACTIONS,
+                    message_type=WSMessageType.PROGRESS_UPDATES,
                     data={
                         'chain': self.evm_inquirer.chain_name,
+                        'subtype': str(ProgressUpdateSubType.EVM_UNDECODED_TRANSACTIONS),
                         'total': total_transactions,
                         'processed': tx_index,
                     },
@@ -755,9 +756,10 @@ class EVMTransactionDecoder(ABC):
 
         if send_ws_notifications:
             self.msg_aggregator.add_message(
-                message_type=WSMessageType.EVM_UNDECODED_TRANSACTIONS,
+                message_type=WSMessageType.PROGRESS_UPDATES,
                 data={
                     'chain': self.evm_inquirer.chain_name,
+                    'subtype': str(ProgressUpdateSubType.EVM_UNDECODED_TRANSACTIONS),
                     'total': total_transactions,
                     'processed': total_transactions,
                 },
