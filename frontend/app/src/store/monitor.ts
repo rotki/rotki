@@ -23,7 +23,7 @@ const BALANCES = 'balances';
 export const useMonitorStore = defineStore('monitor', () => {
   const monitors = ref<Record<string, any>>({});
 
-  const { canRequestData } = storeToRefs(useSessionAuthStore());
+  const { canRequestData, logged } = storeToRefs(useSessionAuthStore());
   const { check } = usePeriodicStore();
   const { consume } = useMessageHandling();
   const { fetchWatchers } = useWatchersStore();
@@ -32,7 +32,6 @@ export const useMonitorStore = defineStore('monitor', () => {
   const { fetchManualBalances } = useManualBalancesStore();
   const { fetchConnectedExchangeBalances } = useExchangeBalancesStore();
   const { fetchBlockchainBalances } = useBlockchainBalances();
-  const { logged } = storeToRefs(useSessionAuthStore());
   const { currency } = storeToRefs(useGeneralSettingsStore());
 
   const frontendStore = useFrontendSettingsStore();
