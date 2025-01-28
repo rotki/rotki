@@ -11,7 +11,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.optimism.constants import CPT_OPTIMISM
-from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.constants.assets import A_OP
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import bytes_to_address
@@ -39,7 +39,7 @@ class OptimismDecoder(DecoderInterface):
             tx_log=context.tx_log,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.GOVERNANCE,
-            asset=A_ETH,
+            asset=A_OP,
             balance=Balance(),
             location_label=context.transaction.from_address,
             notes=f'Change OP Delegate{delegator_note} from {from_delegate} to {to_delegate}',

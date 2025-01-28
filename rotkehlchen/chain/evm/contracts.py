@@ -7,14 +7,18 @@ from eth_typing.abi import ABI, Decodable
 from eth_utils.abi import get_abi_output_types
 from web3 import Web3
 from web3._utils.contracts import find_matching_event_abi
+from web3.exceptions import Web3ValueError
 from web3.types import BlockIdentifier
 
 from rotkehlchen.chain.ethereum.abi import decode_event_data_abi
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChainID, ChecksumEvmAddress
 
 if TYPE_CHECKING:
+    from web3.contract.base_contract import BaseContractFunction
+
     from rotkehlchen.chain.ethereum.types import ETHEREUM_KNOWN_ABI
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
@@ -29,7 +33,7 @@ WEB3 = Web3()
 class EvmContract(NamedTuple):
     address: ChecksumEvmAddress
     abi: ABI
-    deployed_block: int
+    deployed_block: int = 0  # many times this is not needed
 
     def call(
             self,
@@ -127,6 +131,19 @@ class EvmContract(NamedTuple):
             argument_names=argument_names,
         )
         return decode_event_data_abi(tx_log=tx_log, event_abi=event_abi)
+
+    def decode_input_data(self, input_data: bytes) -> tuple['BaseContractFunction', dict[str, Any]]:  # noqa: E501
+        """Decodes the input data of a contract call. Returns a tuple of the function
+        selector and the decoded arguments.
+
+        May raise:
+            DeserializationError: If the decoding fails
+        """
+        contract = WEB3.eth.contract(address=self.address, abi=self.abi)
+        try:
+            return contract.decode_function_input(input_data)
+        except Web3ValueError as e:
+            raise DeserializationError(f'Failed to decode contract input data {input_data!r} due to {e!s}') from e  # noqa: E501
 
 
 T = TypeVar('T', bound='ChainID')
