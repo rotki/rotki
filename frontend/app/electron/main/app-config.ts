@@ -2,6 +2,7 @@ import type { ApiUrls } from '@shared/ipc';
 
 export interface AppConfig {
   readonly isDev: boolean;
+  readonly isLinux: boolean;
   readonly isMac: boolean;
   readonly urls: ApiUrls;
   readonly ports: {
