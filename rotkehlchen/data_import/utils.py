@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING, Any
 
-from rotkehlchen.api.websockets.typedefs import WSMessageType
+from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessageType
 from rotkehlchen.assets.converters import LOCATION_TO_ASSET_MAPPING, asset_from_common_identifier
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.misc import InputError
@@ -72,10 +72,11 @@ class BaseExchangeImporter(ABC):
                     grouped_msgs[msg]['rows'].append(row)
 
             log.debug(f'Imported {self.imported_entries}/{self.total_entries} entries.')
-            self.db.msg_aggregator.add_message(WSMessageType.CSV_IMPORT_RESULT, {
+            self.db.msg_aggregator.add_message(WSMessageType.PROGRESS_UPDATES, {
                 'source_name': self.name,
-                'total_entries': self.total_entries,
-                'imported_entries': self.imported_entries,
+                'subtype': str(ProgressUpdateSubType.CSV_IMPORT_RESULT),
+                'total': self.total_entries,
+                'processed': self.imported_entries,
                 'messages': list(grouped_msgs.values()),
             })
 

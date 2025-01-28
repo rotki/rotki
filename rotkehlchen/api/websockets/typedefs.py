@@ -24,11 +24,19 @@ class WSMessageType(Enum):
     REFRESH_BALANCES = auto()
     DATABASE_UPLOAD_RESULT = auto()
     ACCOUNTING_RULE_CONFLICT = auto()
-    EVM_UNDECODED_TRANSACTIONS = auto()
     CALENDAR_REMINDER = auto()
+    EXCHANGE_UNKNOWN_ASSET = auto()
+    PROGRESS_UPDATES = auto()
+
+    def __str__(self) -> str:
+        return self.name.lower()  # pylint: disable=no-member
+
+
+class ProgressUpdateSubType(Enum):
+    EVM_UNDECODED_TRANSACTIONS = auto()
     PROTOCOL_CACHE_UPDATES = auto()
     CSV_IMPORT_RESULT = auto()
-    EXCHANGE_UNKNOWN_ASSET = auto()
+    HISTORICAL_PRICE_QUERY_STATUS = auto()
 
     def __str__(self) -> str:
         return self.name.lower()  # pylint: disable=no-member

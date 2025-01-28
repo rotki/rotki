@@ -14064,3 +14064,59 @@ Historical Balance Queries
         :statuscode 403: User does not have premium access
         :statuscode 404: No historical data found in the given time range
         :statuscode 500: Internal Rotki error
+
+  .. http:post:: /api/(version)/balances/historical/asset/prices
+    Gets historical price data for a specific asset within a given time range at specified intervals.
+    Returns both the available prices and timestamps where price data is missing.
+
+    .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``.
+
+    **Example Request:**
+
+      .. http:example:: curl wget httpie python-requests
+
+        POST /api/(version)/balances/historical/asset/prices HTTP/1.1
+        Host: localhost:5042
+        Content-Type: application/json;charset=UTF-8
+
+        {
+          "asset": "BTC",
+          "interval": 86400,
+          "from_timestamp": 1672531200,
+          "to_timestamp": 1675209600,
+          "async_query": false
+        }
+
+      :reqjsonarr string asset: The asset identifier to query prices for
+      :reqjsonarr integer interval: The time interval between price queries in seconds
+      :reqjsonarr integer from_timestamp: The start timestamp of the query range
+      :reqjsonarr integer to_timestamp: The end timestamp of the query range
+      :reqjsonarr boolean async_query: (Optional) Whether to process the request asynchronously
+
+    **Example Response:**
+
+      .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        {
+          "message": "",
+          "result": {
+            "prices": {
+              "1672531200": "20000",
+              "1672617600": "19500",
+              "1672704000": "19800"
+            },
+            "no_prices_timestamps": [1672790400, 1672876800]
+          },
+          "status_code": 200
+        }
+
+      :resjson object prices: Mapping of timestamps to price values in user's profit currency
+      :resjson list[integer] no_prices_timestamps: List of timestamps where price data was not available
+      :statuscode 200: Historical prices returned
+      :statuscode 400: Malformed query
+      :statuscode 401: User is not logged in
+      :statuscode 500: Internal Rotki error

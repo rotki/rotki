@@ -44,6 +44,7 @@ from rotkehlchen.api.rest_helpers.history_events import edit_asset_movements
 from rotkehlchen.api.rest_helpers.wrap import calculate_wrap_score
 from rotkehlchen.api.v1.schemas import TradeSchema
 from rotkehlchen.api.v1.types import IncludeExcludeFilterData
+from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessageType
 from rotkehlchen.assets.asset import (
     Asset,
     AssetWithNameAndType,
@@ -5431,3 +5432,46 @@ class RestAPI:
             result['last_event_identifier'] = last_event_id
 
         return api_response(_wrap_in_ok_result(result=result))
+
+    @async_api_call()
+    def get_historical_prices_per_asset(
+            self,
+            asset: Asset,
+            interval: int,
+            to_timestamp: Timestamp,
+            from_timestamp: Timestamp,
+    ) -> dict[str, Any]:
+        prices, no_prices_ts = {}, []
+        with (db := self.rotkehlchen.data.db).conn.read_ctx() as cursor:
+            main_currency = db.get_setting(cursor=cursor, name='main_currency')
+
+        total_intervals = (to_timestamp - from_timestamp) // interval + 1
+        processed_count, current_ts = 0, from_timestamp
+        while current_ts <= to_timestamp:
+            try:
+                price = PriceHistorian.query_historical_price(
+                    from_asset=asset,
+                    to_asset=main_currency,
+                    timestamp=current_ts,
+                )
+            except NoPriceForGivenTimestamp:
+                no_prices_ts.append(current_ts)
+            else:
+                prices[current_ts] = str(price)
+
+            processed_count += 1
+            current_ts += interval  # type: ignore[assignment]  # they are both integers
+            if processed_count % 10 == 0:  # Send progress update every 10 price queries
+                db.msg_aggregator.add_message(
+                    message_type=WSMessageType.PROGRESS_UPDATES,
+                    data={
+                        'total': total_intervals,
+                        'processed': processed_count,
+                        'subtype': str(ProgressUpdateSubType.HISTORICAL_PRICE_QUERY_STATUS),
+                    },
+                )
+
+        return _wrap_in_ok_result(result={
+            'prices': prices,
+            'no_prices_timestamps': no_prices_ts,
+        })

@@ -73,11 +73,12 @@ def assert_cointracking_import_results(rotki: Rotkehlchen, websocket_connection:
     assert len(warnings) == 0
     websocket_connection.wait_until_messages_num(num=1, timeout=10)
     assert websocket_connection.pop_message() == {
-        'type': 'csv_import_result',
+        'type': 'progress_updates',
         'data': {
             'source_name': 'Cointracking',
-            'total_entries': 12,
-            'imported_entries': 7,
+            'subtype': 'csv_import_result',
+            'total': 12,
+            'processed': 7,
             'messages': [
                 {'msg': 'Not importing ETH Transactions from Cointracking. Cointracking does not export enough data for them. Simply enter your ethereum accounts and all your transactions will be auto imported directly from the chain', 'rows': [1, 2], 'is_error': True},  # noqa: E501
                 {'msg': 'Not importing BTC Transactions from Cointracking. Cointracking does not export enough data for them. Simply enter your BTC accounts and all your transactions will be auto imported directly from the chain', 'rows': [5], 'is_error': True},  # noqa: E501
@@ -777,11 +778,12 @@ def assert_nexo_results(rotki: Rotkehlchen, websocket_connection: WebsocketReade
     assert len(warnings) == 0
     websocket_connection.wait_until_messages_num(num=1, timeout=10)
     assert websocket_connection.pop_message() == {
-        'type': 'csv_import_result',
+        'type': 'progress_updates',
         'data': {
+            'subtype': 'csv_import_result',
             'source_name': 'Nexo',
-            'total_entries': 38,
-            'imported_entries': 36,
+            'total': 38,
+            'processed': 36,
             'messages': [{'msg': 'Ignoring rejected entry.', 'rows': [2, 8]}],
         },
     }
@@ -2083,11 +2085,12 @@ def assert_binance_import_results(rotki: Rotkehlchen, websocket_connection: Webs
     assert expected_events == events
     websocket_connection.wait_until_messages_num(num=1, timeout=10)
     assert websocket_connection.pop_message() == {
-        'type': 'csv_import_result',
+        'type': 'progress_updates',
         'data': {
+            'subtype': 'csv_import_result',
             'source_name': 'Binance',
-            'total_entries': 87,
-            'imported_entries': 81,
+            'total': 87,
+            'processed': 81,
             'messages': [
                 {'msg': 'Failed to deserialize a timestamp from a null entry in binance', 'rows': [4], 'is_error': True},  # noqa: E501
                 {'msg': 'Unknown asset "" provided.', 'rows': [5], 'is_error': True},
@@ -2142,11 +2145,12 @@ def assert_rotki_generic_trades_import_results(rotki: Rotkehlchen, websocket_con
     assert trades == expected_trades
     websocket_connection.wait_until_messages_num(num=1, timeout=10)
     assert websocket_connection.pop_message() == {
-        'type': 'csv_import_result',
+        'type': 'progress_updates',
         'data': {
+            'subtype': 'csv_import_result',
             'source_name': 'Rotki generic trades',
-            'total_entries': 5,
-            'imported_entries': 3,
+            'total': 5,
+            'processed': 3,
             'messages': [
                 {'msg': 'Deserialization error: Failed to deserialize Location value luno.', 'rows': [4], 'is_error': True},  # noqa: E501
                 {'msg': 'Entry has zero amount bought.', 'rows': [5], 'is_error': True},
@@ -2244,11 +2248,12 @@ def assert_rotki_generic_events_import_results(rotki: Rotkehlchen, websocket_con
     assert len(warnings) == 0
     websocket_connection.wait_until_messages_num(num=1, timeout=10)
     assert websocket_connection.pop_message() == {
-        'type': 'csv_import_result',
+        'type': 'progress_updates',
         'data': {
+            'subtype': 'csv_import_result',
             'source_name': 'Rotki generic events',
-            'total_entries': 7,
-            'imported_entries': 4,
+            'total': 7,
+            'processed': 4,
             'messages': [
                 {'msg': 'Deserialization error: Failed to deserialize Location value luno.', 'rows': [4], 'is_error': True},  # noqa: E501
                 {'msg': 'Deserialization error: Failed to deserialize Location value cex.', 'rows': [6], 'is_error': True},   # noqa: E501

@@ -11,7 +11,7 @@ import requests
 from pysqlcipher3.dbapi2 import IntegrityError
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.api.websockets.typedefs import WSMessageType
+from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessageType
 from rotkehlchen.assets.asset import Asset, CryptoAsset
 from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
@@ -833,9 +833,10 @@ class ZksyncLiteManager:
 
             if send_ws_notifications and tx_index % 10 == 0:
                 self.database.msg_aggregator.add_message(
-                    message_type=WSMessageType.EVM_UNDECODED_TRANSACTIONS,
+                    message_type=WSMessageType.PROGRESS_UPDATES,
                     data={
                         'chain': EvmlikeChain.ZKSYNC_LITE,
+                        'subtype': str(ProgressUpdateSubType.EVM_UNDECODED_TRANSACTIONS),
                         'total': total_transactions,
                         'processed': tx_index,
                     },
@@ -843,9 +844,10 @@ class ZksyncLiteManager:
 
         if send_ws_notifications:
             self.database.msg_aggregator.add_message(
-                message_type=WSMessageType.EVM_UNDECODED_TRANSACTIONS,
+                message_type=WSMessageType.PROGRESS_UPDATES,
                 data={
                     'chain': EvmlikeChain.ZKSYNC_LITE,
+                    'subtype': str(ProgressUpdateSubType.EVM_UNDECODED_TRANSACTIONS),
                     'total': total_transactions,
                     'processed': total_transactions,
                 },

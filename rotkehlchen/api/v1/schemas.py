@@ -3861,3 +3861,41 @@ class UpdateCalendarReminderSchema(NewCalendarReminderSchema, IntegerIdentifierS
 
 class HistoricalPerAssetBalanceSchema(SnapshotTimestampQuerySchema, AsyncQueryArgumentSchema):
     asset = AssetField(expected_type=Asset, load_default=None)
+
+
+class HistoricalPricesPerAssetSchema(AsyncQueryArgumentSchema, TimestampRangeSchema):
+    interval = fields.Integer(
+        strict=True,
+        required=True,
+        validate=webargs.validate.Range(min=0, error='interval has to be a positive integer'),
+    )
+    asset = AssetField(expected_type=Asset, required=True)
+
+    @validates_schema
+    def validate_schema(
+            self,
+            data: dict[str, Any],
+            **_kwargs: Any,
+    ) -> None:
+        if data['to_timestamp'] <= data['from_timestamp']:
+            raise ValidationError(
+                message='from_timestamp must be smaller than to_timestamp',
+                field_name='from_timestamp',
+            )
+
+    @post_load
+    def transform_data(
+            self,
+            data: dict[str, Any],
+            **_kwargs: Any,
+    ) -> dict[str, Any]:
+        """Align timestamps to interval boundaries.
+
+        - Rounds down `from_timestamp` to nearest multiple of interval
+        - Rounds up `to_timestamp` to nearest multiple of interval
+        """
+        interval = data['interval']
+        data['from_timestamp'] = (data['from_timestamp'] // interval) * interval
+        data['to_timestamp'] = ((data['to_timestamp'] + interval - 1) // interval) * interval
+
+        return data

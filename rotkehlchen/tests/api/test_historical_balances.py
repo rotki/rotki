@@ -6,6 +6,8 @@ import requests
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.utils import get_or_create_evm_token
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import DAY_IN_SECONDS
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -24,7 +26,7 @@ from rotkehlchen.tests.utils.api import (
     assert_proper_sync_response_with_result,
     wait_for_async_task,
 )
-from rotkehlchen.types import AssetAmount, Location, Price, Timestamp, TradeType
+from rotkehlchen.types import AssetAmount, ChainID, Location, Price, Timestamp, TradeType
 from rotkehlchen.utils.misc import timestamp_to_daystart_timestamp, ts_sec_to_ms
 
 if TYPE_CHECKING:
@@ -619,3 +621,109 @@ def test_get_historical_netvalue_with_negative_amount(
         timestamp_to_daystart_timestamp(START_TS),
         timestamp_to_daystart_timestamp(Timestamp(START_TS + DAY_IN_SECONDS * 2)),
     ))
+
+
+@pytest.mark.vcr
+@pytest.mark.parametrize('should_mock_price_queries', [False])
+def test_get_historical_prices_per_asset(rotkehlchen_api_server: 'APIServer') -> None:
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'historicalpricesperassetresource',
+        ),
+        json={
+            'asset': 'BTC',
+            'from_timestamp': START_TS,
+            'to_timestamp': START_TS + 2 * DAY_IN_SECONDS,
+            'interval': DAY_IN_SECONDS,
+            'async_query': True,
+        },
+    )
+    task_id = assert_ok_async_response(response)
+    outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
+    assert outcome['result']['no_prices_timestamps'] == []
+    assert outcome['result']['prices'] == {
+        '1672531200': '15519.8178641018',
+        '1672617600': '15615.0005870507',
+        '1672704000': '15806.226022787',
+    }
+
+    # invalid asset
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'historicalpricesperassetresource',
+        ),
+        json={
+            'asset': 'INVALID',
+            'from_timestamp': START_TS,
+            'to_timestamp': START_TS + DAY_IN_SECONDS,
+            'interval': DAY_IN_SECONDS,
+        },
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='Unknown asset INVALID',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
+    # Test timestamps not aligned with interval - API should auto-adjust them
+    two_day_interval = DAY_IN_SECONDS * 2
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'historicalpricesperassetresource',
+        ),
+        json={
+            'asset': 'ETH',
+            'from_timestamp': START_TS + 5000,  # Not interval-aligned
+            'to_timestamp': START_TS + 3 * DAY_IN_SECONDS - 1000,  # Also not aligned
+            'interval': two_day_interval,
+        },
+    )
+    result = assert_proper_sync_response_with_result(response)
+    assert str(START_TS) in result['prices']
+    assert str(START_TS + 2 * two_day_interval) in result['prices']
+
+    # asset with no historical prices
+    get_or_create_evm_token(
+        userdb=rotkehlchen_api_server.rest_api.rotkehlchen.data.db,
+        evm_address=string_to_evm_address('0x5875eEE11Cf8398102FdAd704C9E96607675467a'),
+        chain_id=ChainID.BASE,
+        decimals=18,
+        symbol='sUSDS',
+    )
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'historicalpricesperassetresource',
+        ),
+        json={
+            'asset': 'eip155:8453/erc20:0x5875eEE11Cf8398102FdAd704C9E96607675467a',
+            'from_timestamp': START_TS,
+            'to_timestamp': START_TS + DAY_IN_SECONDS,
+            'interval': DAY_IN_SECONDS,
+        },
+    )
+    result = assert_proper_sync_response_with_result(response)
+    assert result['prices'] == {}
+    assert result['no_prices_timestamps'] == [START_TS, START_TS + DAY_IN_SECONDS]
+
+    # invalid from_timestamp > to_timestamp
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'historicalpricesperassetresource',
+        ),
+        json={
+            'asset': 'BTC',
+            'from_timestamp': START_TS + DAY_IN_SECONDS,
+            'to_timestamp': START_TS,
+            'interval': DAY_IN_SECONDS,
+        },
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='from_timestamp must be smaller than to_timestamp',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
