@@ -1,4 +1,11 @@
-import { type ActionResult, LocationData, NetValue, TimedAssetBalances, TimedBalances } from '@rotki/common';
+import {
+  type ActionResult,
+  LocationData,
+  NetValue,
+  TimedAssetBalances,
+  TimedAssetHistoricalBalances,
+  TimedBalances,
+} from '@rotki/common';
 import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
 import { handleResponse, validStatus } from '@/services/utils';
@@ -6,6 +13,7 @@ import { handleResponse, validStatus } from '@/services/utils';
 interface UseStatisticsApiReturn {
   queryNetValueData: (includeNfts: boolean) => Promise<NetValue>;
   queryTimedBalancesData: (asset: string, fromTimestamp: number, toTimestamp: number, collectionId?: number) => Promise<TimedBalances>;
+  queryTimedHistoricalBalancesData: (asset: string, fromTimestamp: number, toTimestamp: number, collectionId?: number) => Promise<TimedAssetHistoricalBalances>;
   queryLatestLocationValueDistribution: () => Promise<LocationData>;
   queryLatestAssetValueDistribution: () => Promise<TimedAssetBalances>;
   queryStatisticsRenderer: () => Promise<string>;
@@ -45,6 +53,28 @@ export function useStatisticsApi(): UseStatisticsApiReturn {
     return TimedBalances.parse(handleResponse(balances));
   };
 
+  const queryTimedHistoricalBalancesData = async (
+    asset: string,
+    fromTimestamp: number,
+    toTimestamp: number,
+    collectionId?: number,
+  ): Promise<TimedAssetHistoricalBalances> => {
+    const payload = {
+      fromTimestamp,
+      toTimestamp,
+      ...(isDefined(collectionId) ? { collectionId } : { asset }),
+    };
+    const balances = await api.instance.post<ActionResult<TimedAssetHistoricalBalances>>(
+      `/balances/historical/asset`,
+      snakeCaseTransformer(payload),
+      {
+        validateStatus: validStatus,
+      },
+    );
+
+    return TimedAssetHistoricalBalances.parse(handleResponse(balances));
+  };
+
   const queryLatestLocationValueDistribution = async (): Promise<LocationData> => {
     const statistics = await api.instance.get<ActionResult<LocationData>>('/statistics/value_distribution', {
       params: snakeCaseTransformer({ distributionBy: 'location' }),
@@ -75,5 +105,6 @@ export function useStatisticsApi(): UseStatisticsApiReturn {
     queryNetValueData,
     queryStatisticsRenderer,
     queryTimedBalancesData,
+    queryTimedHistoricalBalancesData,
   };
 }

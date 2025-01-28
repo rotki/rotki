@@ -129,6 +129,7 @@ class Commonv2v3LikeDecoder(DecoderInterface):
             on_behalf_of = bytes_to_address(tx_log.topics[2])
         except DeserializationError:
             on_behalf_of = None
+
         # in the case of needing to wrap the native asset aave uses the
         # (NATIVE_CURRENCY)_GATEWAY contract and the user is the contract address
         if (

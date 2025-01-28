@@ -50,9 +50,9 @@ const { counter, pause, resume } = useInterval(600, {
 const icon = computed(() => {
   const tick = get(counter) % 2 === 0;
   if (get(isDownload))
-    return tick ? 'lu-cloud-download-2' : 'lu-cloud-download';
+    return tick ? 'lu-cloud-download-2-fill' : 'lu-cloud-download-fill';
 
-  return tick ? 'lu-cloud-upload-2' : 'lu-cloud-upload';
+  return tick ? 'lu-cloud-upload-2-fill' : 'lu-cloud-upload-fill';
 });
 
 const tooltip = computed<string>(() => {
@@ -117,12 +117,12 @@ const syncSettingMenuOpen = ref<boolean>(false);
           >
             <RuiIcon
               v-if="uploadStatus"
-              name="lu-cloud-off"
+              name="lu-cloud-off-fill"
               color="warning"
             />
             <RuiIcon
               v-else-if="!premiumSync"
-              name="lu-cloud-off"
+              name="lu-cloud-off-fill"
             />
             <RuiIcon
               v-else-if="isSyncing"
@@ -131,7 +131,7 @@ const syncSettingMenuOpen = ref<boolean>(false);
             />
             <RuiIcon
               v-else
-              name="lu-cloud"
+              name="lu-cloud-fill"
             />
           </RuiBadge>
         </MenuTooltipButton>
@@ -214,7 +214,7 @@ const syncSettingMenuOpen = ref<boolean>(false);
         :href="href"
         @click="onLinkClick()"
       >
-        <RuiIcon name="lu-cloud" />
+        <RuiIcon name="lu-cloud-fill" />
       </MenuTooltipButton>
     </RuiBadge>
   </template>

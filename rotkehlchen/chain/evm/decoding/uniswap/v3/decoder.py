@@ -32,7 +32,10 @@ from rotkehlchen.chain.evm.decoding.uniswap.v3.constants import (
 )
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog, SwapData
 from rotkehlchen.constants import ONE, ZERO
-from rotkehlchen.constants.resolver import evm_address_to_identifier
+from rotkehlchen.constants.resolver import (
+    evm_address_to_identifier,
+    tokenid_belongs_to_collection,
+)
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -531,7 +534,10 @@ class Uniswapv3CommonDecoder(DecoderInterface):
     ) -> TransferEnrichmentOutput:
         """This method enriches Uniswap V3 LP creation transactions."""
         if (
-            context.event.asset == self.uniswap_v3_nft and
+            tokenid_belongs_to_collection(
+                token_identifier=context.event.asset.identifier,
+                collection_identifier=self.uniswap_v3_nft,
+            ) and
             context.event.balance.amount == ONE and
             context.event.address == ZERO_ADDRESS and
             context.event.event_type == HistoryEventType.RECEIVE and

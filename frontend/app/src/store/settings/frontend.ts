@@ -50,6 +50,7 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
   const shouldRefreshValidatorDailyStats = useComputedRef(settings, 'shouldRefreshValidatorDailyStats');
   const savedFilters = useComputedRef(settings, 'savedFilters');
   const balanceUsdValueThreshold = useComputedRef(settings, 'balanceUsdValueThreshold');
+  const useHistoricalAssetBalances = useComputedRef(settings, 'useHistoricalAssetBalances');
 
   const globalItemsPerPage = useItemsPerPage();
 
@@ -147,6 +148,7 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
     timeframeSetting,
     update,
     updateSetting,
+    useHistoricalAssetBalances,
     valueRoundingMode,
     versionUpdateCheckFrequency,
     visibleTimeframes,

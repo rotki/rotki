@@ -35,7 +35,7 @@ export function useMissingApiKeyHandler(t: ReturnType<typeof useI18n>['t']): Com
       const { openUrl } = useInterop();
 
       actions.push({
-        action: () => openUrl(external),
+        action: async () => openUrl(external),
         icon: 'lu-external-link',
         label: t('notification_messages.missing_api_key.get_key'),
         persist: true,

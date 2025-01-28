@@ -155,5 +155,6 @@ declare global {
     'chartjs-plugin-zoom': any;
     'zod': any;
     'bn': any;
+    'VueRouter': any;
   }
 }

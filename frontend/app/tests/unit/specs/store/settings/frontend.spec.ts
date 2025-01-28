@@ -170,6 +170,7 @@ describe('settings:frontend', () => {
         [BalanceSource.BLOCKCHAIN]: '0',
         [BalanceSource.MANUAL]: '0',
       },
+      useHistoricalAssetBalances: false,
     };
 
     store.update(state);

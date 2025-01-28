@@ -56,13 +56,12 @@ def test_donation(ethereum_inquirer, ethereum_accounts):
         location=Location.ETHEREUM,
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.NONE,
-        asset=Asset('eip155:1/erc721:0x723932B58a7c6AEf036d1Fe17654E845d0f0fae5'),
+        asset=Asset('eip155:1/erc721:0x723932B58a7c6AEf036d1Fe17654E845d0f0fae5/4000000011'),
         balance=Balance(amount=ONE),
         location_label=user_address,
         notes='Receive an NFT for donating via Juicebox',
         counterparty=CPT_JUICEBOX,
         address=ZERO_ADDRESS,
-        extra_data={'token_id': 4000000011, 'token_name': 'Free Alexey & Roman NFT rewards'},
     ), EvmEvent(
         tx_hash=tx_hash,
         sequence_index=280,
@@ -70,13 +69,12 @@ def test_donation(ethereum_inquirer, ethereum_accounts):
         location=Location.ETHEREUM,
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.NONE,
-        asset=Asset('eip155:1/erc721:0x723932B58a7c6AEf036d1Fe17654E845d0f0fae5'),
+        asset=Asset('eip155:1/erc721:0x723932B58a7c6AEf036d1Fe17654E845d0f0fae5/3000000016'),
         balance=Balance(amount=ONE),
         location_label=user_address,
         notes='Receive an NFT for donating via Juicebox',
         counterparty=CPT_JUICEBOX,
         address=ZERO_ADDRESS,
-        extra_data={'token_id': 3000000016, 'token_name': 'Free Alexey & Roman NFT rewards'},
     )]
     assert expected_events == events
 

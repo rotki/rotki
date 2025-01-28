@@ -37,7 +37,7 @@ def test_backend():
 
         except gevent.Timeout as e:
             raise AssertionError(
-                f'Did not get anything in the stdout after {timeout} seconds',
+                f'Did not get all expected output in the stdout after {timeout} seconds',
             ) from e
         finally:
             proc.terminate()

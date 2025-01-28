@@ -2,6 +2,7 @@ import { checkIfDevelopment, startPromise } from '@shared/utils';
 import { api } from '@/services/rotkehlchen-api';
 import { getDefaultLogLevel, logger, setLevel } from '@/utils/logging';
 import { useInfoApi } from '@/composables/api/info';
+import { apiUrls, defaultApiUrls } from '@/services/api-urls';
 import type { Nullable } from '@rotki/common';
 import type { LogLevel } from '@shared/log-level';
 import type { Version } from '@/types/action';
@@ -48,9 +49,9 @@ export const useMainStore = defineStore('main', () => {
     const { version: appVersion } = await info(true);
     if (appVersion) {
       set(version, {
-        downloadUrl: appVersion.downloadUrl || '',
-        latestVersion: appVersion.latestVersion || '',
-        version: appVersion.ourVersion || '',
+        downloadUrl: appVersion.downloadUrl ?? '',
+        latestVersion: appVersion.latestVersion ?? '',
+        version: appVersion.ourVersion ?? '',
       });
     }
   };
@@ -76,12 +77,16 @@ export const useMainStore = defineStore('main', () => {
       clearInterval(intervalId);
 
     const updateApi = (payload?: Nullable<string>): void => {
-      const interopBackendUrl = window.interop?.serverUrl();
-      let backendUrl = api.defaultServerUrl;
-      if (payload)
+      const updatedUrls = window.interop?.apiUrls();
+      let backendUrl = defaultApiUrls.coreApiUrl;
+      if (payload) {
         backendUrl = payload;
-      else if (interopBackendUrl)
-        backendUrl = interopBackendUrl;
+      }
+      else if (updatedUrls) {
+        backendUrl = updatedUrls.coreApiUrl;
+        apiUrls.coreApiUrl = updatedUrls.coreApiUrl;
+        apiUrls.colibriApiUrl = updatedUrls.colibriApiUrl;
+      }
 
       api.setup(backendUrl);
     };

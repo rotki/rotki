@@ -58,20 +58,21 @@ def assert_csv_export_response(
         assert data['result'] is True
 
     base_headers = (
-        'direction',
+        'timestamp',
+        'event_type',
+        'event_subtype',
+        'location',
+        'location_label',
+        'asset',
+        'asset_symbol',
+        'amount',
+        'fiat_value',
+        'notes',
         'identifier',
         'entry_type',
         'event_identifier',
         'sequence_index',
-        'timestamp',
-        'location',
-        'asset',
-        'amount',
-        'fiat_value',
-        'event_type',
-        'event_subtype',
-        'location_label',
-        'notes',
+        'direction',
     )
 
     extra_headers = (

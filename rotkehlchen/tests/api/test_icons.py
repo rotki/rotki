@@ -67,20 +67,6 @@ def test_upload_custom_icon(
     assert uploaded_icon.is_file()
     assert filecmp.cmp(uploaded_icon, filepath)
 
-    # query the file using the endpoint
-    response = requests.get(
-        api_url_for(rotkehlchen_api_server, 'asseticonfileresource'),
-        params={'asset': A_GNO.identifier},
-    )
-    assert response.status_code == HTTPStatus.OK
-    response.headers.pop('Date')
-    assert response.headers == {
-        'mimetype': 'image/svg+xml',
-        'Content-Type': 'image/svg+xml',
-        'Content-Length': '563',
-        'ETag': '"9b5e2a97c10bc6e4735b7d19897c0457"',
-    }
-
 
 @pytest.mark.parametrize('start_with_logged_in_user', [False])
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
@@ -144,23 +130,3 @@ def test_refresh_icon(rotkehlchen_api_server: 'APIServer') -> None:
     )
     assert_simple_ok_response(response)
     assert icon_filepath.stat().st_ctime > now
-
-
-@pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_case_insensitive_icon(rotkehlchen_api_server: 'APIServer') -> None:
-    """
-    Test that providing asset identifier in a case insensitive way still maps to the correct asset
-    """
-    icon_manager = rotkehlchen_api_server.rest_api.rotkehlchen.icon_manager
-    Path(icon_manager.icons_dir / 'ETH_small.png').write_bytes(b'123')
-
-    for identifier in ('ETH', 'eth', 'eTh'):
-        response = requests.get(
-            api_url_for(
-                rotkehlchen_api_server,
-                'asseticonfileresource',
-                asset=identifier,
-            ),
-        )
-        assert response.status_code == HTTPStatus.OK
-        assert response.text == '123'

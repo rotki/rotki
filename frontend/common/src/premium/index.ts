@@ -1,3 +1,11 @@
+import type {
+  LocationData,
+  NetValue,
+  OwnedAssets,
+  TimedAssetBalances,
+  TimedAssetHistoricalBalances,
+  TimedBalances,
+} from '../statistics';
 import type { Theme, Themes } from '../settings/themes';
 import type { DebugSettings, FrontendSettingsPayload, TimeUnit } from '../settings/frontend';
 import type { LpType, ProfitLossModel } from '../defi/common';
@@ -7,7 +15,6 @@ import type { AssetInfo } from '../data';
 import type { XswapBalance, XswapPool, XswapPoolProfit } from '../defi/xswap';
 import type { BigNumber } from '../numbers';
 import type { AssetBalanceWithPrice } from '../balances';
-import type { LocationData, NetValue, OwnedAssets, TimedAssetBalances, TimedBalances } from '../statistics';
 
 export interface PremiumInterface {
   readonly useHostComponents: boolean;
@@ -21,6 +28,7 @@ export interface StatisticsApi {
   locationValueDistribution: () => Promise<LocationData>;
   ownedAssets: () => Promise<OwnedAssets>;
   timedBalances: (asset: string, start: number, end: number, collectionId?: number) => Promise<TimedBalances>;
+  timedHistoricalBalances: (asset: string, start: number, end: number, collectionId?: number) => Promise<TimedAssetHistoricalBalances>;
   fetchNetValue: () => Promise<void>;
   netValue: (startingData: number) => Ref<NetValue>;
 }
@@ -58,6 +66,10 @@ export interface BalancesApi {
   aggregatedBalances: Ref<AssetBalanceWithPrice[]>;
   balances: (groupMultiChain?: boolean) => ComputedRef<AssetBalanceWithPrice[]>;
   exchangeRate: (currency: string) => Ref<BigNumber>;
+  historicPriceInCurrentCurrency: (asset: string, timestamp: number) => ComputedRef<BigNumber>;
+  queryOnlyCacheHistoricalRates: (asset: string, timestamp: number[]) => Promise<Record<number, BigNumber>>;
+  assetPrice: (asset: string) => ComputedRef<BigNumber>;
+  isHistoricPricePending: (asset: string, timestamp: number) => ComputedRef<boolean>;
 }
 
 export interface AssetsApi {
@@ -95,6 +107,7 @@ export interface UserSettingsApi {
   privacyMode: Ref<number>;
   graphZeroBased: Ref<boolean>;
   showGraphRangeSelector: Ref<boolean>;
+  useHistoricalAssetBalances: Ref<boolean>;
 }
 
 export interface SettingsApi {

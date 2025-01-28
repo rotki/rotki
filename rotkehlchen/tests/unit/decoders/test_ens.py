@@ -4,7 +4,6 @@ import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.ethereum.airdrops import AIRDROP_IDENTIFIER_KEY
 from rotkehlchen.chain.ethereum.modules.airdrops.decoder import ENS_ADDRESS
 from rotkehlchen.chain.ethereum.modules.ens.constants import (
@@ -30,8 +29,6 @@ from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.tests.utils.factories import make_evm_tx_hash
 from rotkehlchen.types import (
     CacheType,
-    ChainID,
-    EvmTokenKind,
     Location,
     Timestamp,
     TimestampMS,
@@ -58,7 +55,8 @@ def test_mint_ens_name(ethereum_inquirer, add_subgraph_api_key):  # pylint: disa
     expires_timestamp = 2142055301
     timestamp = TimestampMS(1637144069000)
     register_fee_str = '0.019345192039577752'
-    expected_events = [
+    token_id = 88045077199635585930173998576189366882372899073811035545363728149974713265418
+    assert events == [
         EvmEvent(
             tx_hash=tx_hash,
             sequence_index=0,
@@ -137,34 +135,21 @@ def test_mint_ens_name(ethereum_inquirer, add_subgraph_api_key):  # pylint: disa
             counterparty=CPT_ENS,
             address=ENS_REGISTRAR_CONTROLLER_1,
             extra_data={'name': 'hania.eth', 'expires': expires_timestamp},
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=48,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=Asset(f'eip155:1/erc721:0x57f1887a8BF19b14fC0dF6Fd9B2acc9Af147eA85/{token_id}'),
+            balance=Balance(amount=ONE),
+            location_label=ADDY,
+            notes=f'Receive ENS name hania.eth from {ENS_REGISTRAR_CONTROLLER_1} to {ADDY}',
+            counterparty=CPT_ENS,
+            address=ENS_REGISTRAR_CONTROLLER_1,
         ),
     ]
-    assert expected_events == events[0:6]
-    erc721_asset = get_or_create_evm_token(  # TODO: Better way to test than this for ERC721 ...?
-        userdb=ethereum_inquirer.database,
-        evm_address=string_to_evm_address('0x57f1887a8BF19b14fC0dF6Fd9B2acc9Af147eA85'),
-        chain_id=ChainID.ETHEREUM,
-        token_kind=EvmTokenKind.ERC721,
-        evm_inquirer=ethereum_inquirer,
-    )
-    assert events[6] == EvmEvent(
-        tx_hash=tx_hash,
-        sequence_index=48,
-        timestamp=timestamp,
-        location=Location.ETHEREUM,
-        event_type=HistoryEventType.TRADE,
-        event_subtype=HistoryEventSubType.RECEIVE,
-        asset=erc721_asset,
-        balance=Balance(amount=ONE),
-        location_label=ADDY,
-        notes=f'Receive ENS name hania.eth from {ENS_REGISTRAR_CONTROLLER_1} to {ADDY}',
-        counterparty=CPT_ENS,
-        address=ENS_REGISTRAR_CONTROLLER_1,
-        extra_data={
-            'token_id': 88045077199635585930173998576189366882372899073811035545363728149974713265418,  # noqa: E501
-            'token_name': 'ERC721 token',
-        },
-    )
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -685,6 +670,7 @@ def test_transfer_ens_name(database, ethereum_inquirer, action, ethereum_account
 
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hex)
     timestamp = TimestampMS(1687771811000)
+    token_id = 73552724610198397480670284492690114609730214421511097849210414928326607694469
     gas_event = EvmEvent(
         tx_hash=evmhash,
         sequence_index=0,
@@ -709,16 +695,12 @@ def test_transfer_ens_name(database, ethereum_inquirer, action, ethereum_account
         location=Location.ETHEREUM,
         event_type=event_type,
         event_subtype=HistoryEventSubType.NONE,
-        asset=Asset('eip155:1/erc721:0x57f1887a8BF19b14fC0dF6Fd9B2acc9Af147eA85'),
+        asset=Asset(f'eip155:1/erc721:0x57f1887a8BF19b14fC0dF6Fd9B2acc9Af147eA85/{token_id}'),
         balance=Balance(amount=FVal(1)),
         location_label=from_address,
         notes=notes,
         counterparty=CPT_ENS,
         address=to_address,
-        extra_data={
-            'token_id': 73552724610198397480670284492690114609730214421511097849210414928326607694469,  # noqa: E501
-            'token_name': 'ERC721 token',
-        },
     ))
     assert events == expected_events
 
@@ -740,13 +722,7 @@ def test_for_truncated_labelhash(ethereum_inquirer, ethereum_accounts, add_subgr
     gas_str = '0.003424155'
     register_fee_str = '0.122618417748598345'
     expires_timestamp = Timestamp(1919231659)
-    erc721_asset = get_or_create_evm_token(  # TODO: Better way to test than this for ERC721 ...?
-        userdb=ethereum_inquirer.database,
-        evm_address=string_to_evm_address('0x57f1887a8BF19b14fC0dF6Fd9B2acc9Af147eA85'),
-        chain_id=ChainID.ETHEREUM,
-        token_kind=EvmTokenKind.ERC721,
-        evm_inquirer=ethereum_inquirer,
-    )
+    token_id = 520289412805995815014030902380736904960994587318475958708983757899533811755
     expected_events = [
         EvmEvent(
             tx_hash=evmhash,
@@ -834,16 +810,12 @@ def test_for_truncated_labelhash(ethereum_inquirer, ethereum_accounts, add_subgr
             location=Location.ETHEREUM,
             event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
-            asset=erc721_asset,
+            asset=Asset(f'eip155:1/erc721:0x57f1887a8BF19b14fC0dF6Fd9B2acc9Af147eA85/{token_id}'),
             balance=Balance(amount=FVal(1)),
             location_label=user_address,
             notes=f'Receive ENS name cantillon.eth from {ENS_REGISTRAR_CONTROLLER_1} to {user_address}',  # noqa: E501
             counterparty=CPT_ENS,
             address=ENS_REGISTRAR_CONTROLLER_1,
-            extra_data={
-                'token_id': 520289412805995815014030902380736904960994587318475958708983757899533811755,  # noqa: E501
-                'token_name': 'ERC721 token',
-            },
         ),
     ]
     assert events == expected_events

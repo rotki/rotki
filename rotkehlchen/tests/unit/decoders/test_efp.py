@@ -64,13 +64,12 @@ def test_efp_list_creation(
             location=Location.BASE,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.NONE,
-            asset=Asset(f'eip155:8453/erc721:{EFP_LIST_REGISTRY}'),
+            asset=Asset(f'eip155:8453/erc721:{EFP_LIST_REGISTRY}/183'),
             balance=Balance(amount=ONE),
             location_label=user_address,
             notes=f'Receive EFP list NFT for {user_address}',
             counterparty=CPT_EFP,
             address=ZERO_ADDRESS,
-            extra_data={'token_id': 183, 'token_name': 'EFP'},
         ),
     ]
 

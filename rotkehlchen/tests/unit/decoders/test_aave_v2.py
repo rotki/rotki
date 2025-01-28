@@ -5,9 +5,18 @@ import pytest
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
-from rotkehlchen.chain.ethereum.modules.aave.constants import STK_AAVE_ADDR, STKAAVE_IDENTIFIER
+from rotkehlchen.chain.ethereum.modules.aave.constants import (
+    STK_AAVE_ADDR,
+    STKAAVE_IDENTIFIER,
+    V3_MIGRATION_HELPER,
+)
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
-from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE, CPT_AAVE_V1, CPT_AAVE_V2
+from rotkehlchen.chain.evm.decoding.aave.constants import (
+    CPT_AAVE,
+    CPT_AAVE_V1,
+    CPT_AAVE_V2,
+    CPT_AAVE_V3,
+)
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -1349,6 +1358,94 @@ def test_polygon_incentives(polygon_pos_inquirer: 'PolygonPOSInquirer', polygon_
             tx_hash=tx_hash,
             address=string_to_evm_address('0x357D51124f59836DeD84c8a1730D72B749d8BC23'),
             counterparty=CPT_AAVE_V2,
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x4BF180A73575D4393Cc794f29fb92C3954a36b5A']])
+def test_mainnet_aave_v2_migrate_to_v3_(ethereum_inquirer, ethereum_accounts) -> None:
+    tx_hash = deserialize_evm_tx_hash('0xa77ea655f8e0fc7227674633ee1da0c52aadd38f825e2dfa8f44d40867ae1745')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+
+    amount_out, amount_in, approval_amount, gas_fees, timestamp, user = '84.521918902842181053', '76.326951198340166536', '115792089237316195423570985008687907853269984665640564039373.062089010287458882', '0.010769376235131354', TimestampMS(1675004267000), ethereum_accounts[0]  # noqa: E501
+    expected_events = [
+        EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(gas_fees)),
+            location_label=user,
+            notes=f'Burn {gas_fees} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=137,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=EvmToken('eip155:1/erc20:0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84'),  # stETH
+            balance=Balance(),
+            location_label=user,
+            notes='Disable stETH as collateral on AAVE v2',
+            counterparty=CPT_AAVE_V2,
+            address=V3_MIGRATION_HELPER,
+        ), EvmEvent(
+            sequence_index=139,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.APPROVE,
+            asset=EvmToken('eip155:1/erc20:0x1982b2F5814301d4e9a8b0201555376e62F82428'),  # astETH v2  # noqa: E501
+            balance=Balance(amount=FVal(approval_amount)),
+            location_label=user,
+            notes=f'Set aSTETH spending approval of {user} by {V3_MIGRATION_HELPER} to {approval_amount}',  # noqa: E501
+            tx_hash=tx_hash,
+            address=V3_MIGRATION_HELPER,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=157,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=EvmToken('eip155:1/erc20:0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0'),
+            balance=Balance(),
+            location_label=user,
+            notes='Enable wstETH as collateral on AAVE v3',
+            counterparty=CPT_AAVE_V3,
+            address=V3_MIGRATION_HELPER,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=158,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.MIGRATE,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=EvmToken('eip155:1/erc20:0x1982b2F5814301d4e9a8b0201555376e62F82428'),  # astETH v2  # noqa: E501
+            balance=Balance(amount=FVal(amount_out)),
+            location_label=user,
+            notes=f'Migrate {amount_out} aSTETH from AAVE v2',
+            counterparty=CPT_AAVE_V2,
+            address=V3_MIGRATION_HELPER,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=159,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.MIGRATE,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=EvmToken('eip155:1/erc20:0x0B925eD163218f6662a35e0f0371Ac234f9E9371'),  # aEthwstETH v3  # noqa: E501
+            balance=Balance(amount=FVal(amount_in)),
+            location_label=user,
+            notes=f'Receive {amount_in} aEthwstETH from migrating an AAVE v2 position to v3',
+            counterparty=CPT_AAVE_V3,
         ),
     ]
     assert events == expected_events

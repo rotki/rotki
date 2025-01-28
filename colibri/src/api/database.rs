@@ -23,7 +23,8 @@ pub async fn unlock_user(
                 result: None,
                 message: "DB already unlocked".to_string(),
             }),
-        ).into_response()
+        )
+            .into_response();
     }
 
     let db_path = state
@@ -49,16 +50,16 @@ pub async fn get_ignored_assets(State(state): State<Arc<AppState>>) -> impl Into
                     result: Some(ignored_assets),
                     message: "".to_string(),
                 }),
-            ).into_response()
+            )
+                .into_response()
         }
-        Err(err) => {
-            (
-                StatusCode::BAD_REQUEST,
-                Json(ApiResponse::<String> {
-                    result: None,
-                    message: format!("Failed to query ignored assets due to {}", err),
-                }),
-            ).into_response()
-        }
+        Err(err) => (
+            StatusCode::BAD_REQUEST,
+            Json(ApiResponse::<String> {
+                result: None,
+                message: format!("Failed to query ignored assets due to {}", err),
+            }),
+        )
+            .into_response(),
     }
 }

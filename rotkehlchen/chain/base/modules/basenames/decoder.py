@@ -15,6 +15,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.constants.resolver import tokenid_belongs_to_collection
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -186,7 +187,10 @@ class BasenamesDecoder(EnsCommonDecoder):
                 event.notes = f'Register {self.display_name} name {fullname} for {event.balance.amount} ETH until {self.timestamp_to_date(expires)}'  # noqa: E501
                 event.extra_data = {'name': fullname, 'expires': expires}
                 spend_event = event
-            elif event.event_type == HistoryEventType.RECEIVE and event.asset.identifier == 'eip155:8453/erc721:0x03c4738Ee98aE44591e1A4A4F3CaB6641d95DD9a':  # Basenames NFT  # noqa: E501
+            elif event.event_type == HistoryEventType.RECEIVE and tokenid_belongs_to_collection(
+                token_identifier=event.asset.identifier,
+                collection_identifier='eip155:8453/erc721:0x03c4738Ee98aE44591e1A4A4F3CaB6641d95DD9a',  # Basenames NFTs  # noqa: E501
+            ):
                 event.event_type = HistoryEventType.TRADE
                 event.event_subtype = HistoryEventSubType.RECEIVE
                 receive_event = event

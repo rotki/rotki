@@ -252,25 +252,45 @@ jobs:
   build-docker:
     name: Build docker images
     if: ${{ github.repository == 'rotki/rotki' || github.event_name != 'schedule' }}
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.platform.runner }}
     environment: docker
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - name: linux/amd64
+            runner: ubuntu-24.04
+          - name: linux/arm64
+            runner: ubuntu-24.04-arm
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           persist-credentials: false
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+
+      - name: Prepare
+        id: prepare
+        run: |
+          platform=${{ matrix.platform.name }}
+          echo "PLATFORM_PAIR=${platform//\//-}" >> $GITHUB_ENV
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
         with:
-          platforms: arm64
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+          images: |
+            ${{ github.repository }}
+
       - name: Login to DockerHub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USER }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
       - name: Rotki Version
         id: rotki_version
         run: |
@@ -278,42 +298,83 @@ jobs:
           POSTFIX=$(if git describe --tags --exact-match "$REVISION" &>/dev/null; then echo ''; else echo '-dev'; fi)
           ROTKI_VERSION=${ROTKI_VERSION}${POSTFIX}$(date +'%Y%m%d')
           echo "version=${ROTKI_VERSION}" >> "$GITHUB_OUTPUT"
-      - name: Build Information
-        id: build_information
-        run: |
-          if [[ "$GITHUB_EVENT_NAME" == 'schedule' ]]; then
-            PLATFORMS='linux/amd64,linux/arm64'
-            TAG=nightly
-          else
-            PLATFORMS=linux/amd64
-            TAG=dev
-          fi
-          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
-          echo "platforms=$PLATFORMS" >> "$GITHUB_OUTPUT"
-      - name: Build and push
-        id: docker_build
+
+      - name: Build and push by digest
+        id: build
         uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile
-          platforms: ${{ steps.build_information.outputs.platforms }}
-          push: true
+          platforms: ${{ matrix.platform.name }}
           provenance: mode=max
-          tags: rotki/rotki:${{ steps.build_information.outputs.tag }}
           build-args: |
             REVISION=${{ github.sha }}
             ROTKI_VERSION=${{ steps.rotki_version.outputs.version }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-      - name: Image digest
-        run: echo "${DIGEST}"
-        env:
-          DIGEST: ${{ steps.docker_build.outputs.digest }}
+          labels: ${{ steps.meta.outputs.labels }}
+          outputs: type=image,"name=${{ github.repository }}",push-by-digest=true,name-canonical=true,push=true
+
+      - name: Export digest
+        run: |
+          mkdir -p ${{ runner.temp }}/digests
+          digest="${{ steps.build.outputs.digest }}"
+          touch "${{ runner.temp }}/digests/${digest#sha256:}"
+
+      - name: Upload digest
+        uses: actions/upload-artifact@v4
+        with:
+          name: digests-${{ env.PLATFORM_PAIR }}
+          path: ${{ runner.temp }}/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  docker-merge:
+    runs-on: ubuntu-latest
+    needs:
+      - build-docker
+    environment: docker
+    steps:
+      - name: Download digests
+        uses: actions/download-artifact@v4
+        with:
+          path: ${{ runner.temp }}/digests
+          pattern: digests-*
+          merge-multiple: true
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USER }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ${{ github.repository }}
+          tags: |
+            type=schedule,pattern=nightly
+            type=edge,branch=build
+
+      - name: Create manifest list and push
+        working-directory: ${{ runner.temp }}/digests
+        run: |
+          docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
+            $(printf '${{ github.repository }}@sha256:%s ' *)
+
+      - name: Inspect image
+        run: |
+          docker buildx imagetools inspect "${{ github.repository }}:${{ steps.meta.outputs.version }}"
 
   notify:
     name: 'Success check'
     if: ${{ always() && (github.repository == 'rotki/rotki' || github.event_name != 'schedule') }}
-    needs: [ 'build-linux', 'build-windows', 'build-macos', 'build-docker' ]
+    needs: [ 'build-linux', 'build-windows', 'build-macos', 'docker-merge' ]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

@@ -5,6 +5,7 @@ import * as Chart from 'chart.js';
 import ChartJsPluginZoom from 'chartjs-plugin-zoom';
 import * as Vue from 'vue';
 import * as zod from 'zod';
+import * as VueRouter from 'vue-router';
 import { app } from '@/main';
 
 export async function setupPremium(): Promise<void> {
@@ -20,6 +21,7 @@ export async function setupPremium(): Promise<void> {
     window.Chart = Chart;
     window.zod = zod;
     window.bn = BigNumber;
+    window.VueRouter = VueRouter;
   }
 
   /**

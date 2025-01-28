@@ -34,7 +34,6 @@ from rotkehlchen.api.v1.resources import (
     AllEvmChainsResource,
     AllLatestAssetsPriceResource,
     AllNamesResource,
-    AssetIconFileResource,
     AssetIconsResource,
     AssetsMappingResource,
     AssetsReplaceResource,
@@ -97,6 +96,7 @@ from rotkehlchen.api.v1.resources import (
     FalsePositiveSpamTokenResource,
     HistoricalAssetAmountsResource,
     HistoricalAssetsPriceResource,
+    HistoricalNetValueResource,
     HistoryActionableItemsResource,
     HistoryDownloadingResource,
     HistoryEventResource,
@@ -192,7 +192,6 @@ URLS_V1: URLS = [
         ExchangeBalancesResource,
         'named_exchanges_balances_resource',
     ),
-    ('/assets/icon', AssetIconFileResource),
     ('/assets/icon/modify', AssetIconsResource),
     ('/assets/locationmappings', LocationAssetMappingsResource),
     ('/trades', TradesResource),
@@ -337,6 +336,7 @@ URLS_V1: URLS = [
     ('/calendar/reminders', CalendarRemindersResource),
     ('/balances/historical', TimestampHistoricalBalanceResource),
     ('/balances/historical/asset', HistoricalAssetAmountsResource),
+    ('/balances/historical/netvalue', HistoricalNetValueResource),
 ]
 
 logger = logging.getLogger(__name__)

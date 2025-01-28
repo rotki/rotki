@@ -1,17 +1,25 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { type App, app } from 'electron';
+import { z } from 'zod';
+import type { App } from 'electron';
 
-class SettingManager {
-  private readonly _appSettings: SettingsManager = {
+const AppSettingsSchema = z.object({
+  displayTray: z.boolean().default(true),
+  persistStore: z.boolean().optional(),
+});
+
+export type AppSettings = z.infer<typeof AppSettingsSchema>;
+
+export class SettingsManager {
+  private readonly _appSettings: AppSettings = {
     displayTray: true,
   };
 
-  constructor(private app: App) {
+  constructor(private readonly app: App) {
     this._appSettings = this.readAppSettings();
   }
 
-  get appSettings(): SettingsManager {
+  get appSettings(): AppSettings {
     return this._appSettings;
   }
 
@@ -20,7 +28,7 @@ class SettingManager {
     return path.join(userData, 'app.config.json');
   }
 
-  private writeAppSettings(settings: SettingsManager) {
+  private writeAppSettings(settings: AppSettings) {
     const appConfig = this.appConfigFile();
     const json = JSON.stringify(settings);
     try {
@@ -31,37 +39,22 @@ class SettingManager {
     }
   }
 
-  private readAppSettings(): SettingsManager {
-    const settings: SettingsManager = {
-      displayTray: true,
-    };
+  private readAppSettings(): AppSettings {
     const appConfig = this.appConfigFile();
     if (fs.existsSync(appConfig)) {
       try {
         const file = fs.readFileSync(appConfig, { encoding: 'utf8' });
-        const loadedSettings = JSON.parse(file) as Partial<SettingsManager>;
-        for (const [key, value] of Object.entries(loadedSettings)) {
-          if (typeof settings[key as keyof SettingsManager] === typeof value) {
-            // @ts-expect-error any type
-            settings[key] = loadedSettings[key];
-          }
-        }
+        return AppSettingsSchema.parse(JSON.parse(file));
       }
       catch (error: any) {
         console.error(error);
       }
     }
 
-    return settings;
+    return AppSettingsSchema.parse({});
   }
 
   save() {
     this.writeAppSettings(this._appSettings);
   }
 }
-
-export interface SettingsManager {
-  displayTray: boolean;
-}
-
-export const settingsManager = new SettingManager(app);

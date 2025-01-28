@@ -37,6 +37,7 @@ from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import ChecksumEvmAddress, Location, TimestampMS, deserialize_evm_tx_hash
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.arbitrum_one.node_inquirer import ArbitrumOneInquirer
     from rotkehlchen.chain.binance_sc.node_inquirer import BinanceSCInquirer
 
 ADDY = string_to_evm_address('0xb63e0C506dDBa7b0dd106d1937d6D13BE2C62aE2')
@@ -569,13 +570,12 @@ def test_uniswap_v3_add_liquidity(ethereum_inquirer):
             location=Location.ETHEREUM,
             event_type=HistoryEventType.DEPLOY,
             event_subtype=HistoryEventSubType.NFT,
-            asset=Asset('eip155:1/erc721:0xC36442b4a4522E871399CD717aBDD847Ab11FE88'),
+            asset=Asset('eip155:1/erc721:0xC36442b4a4522E871399CD717aBDD847Ab11FE88/401357'),
             balance=Balance(amount=FVal(1)),
             location_label=ADDY_5,
             notes='Create uniswap-v3 LP with id 401357',
             counterparty=CPT_UNISWAP_V3,
             address=ZERO_ADDRESS,
-            extra_data={'token_id': 401357, 'token_name': 'Uniswap V3 Positions NFT-V1'},
         ),
     ]
     assert events == expected_events
@@ -684,17 +684,13 @@ def test_uniswap_v3_weth_deposit(ethereum_inquirer, ethereum_accounts):
         location=Location.ETHEREUM,
         event_type=HistoryEventType.DEPLOY,
         event_subtype=HistoryEventSubType.NFT,
-        asset=Asset('eip155:1/erc721:0xC36442b4a4522E871399CD717aBDD847Ab11FE88'),
+        asset=Asset(f'eip155:1/erc721:0xC36442b4a4522E871399CD717aBDD847Ab11FE88/{nft_id}'),
         balance=Balance(amount=ONE),
         location_label=string_to_evm_address('0xb26655EBEe9DFA2f8D20523FE7CaE45CBe0122A2'),
         notes=f'Create uniswap-v3 LP with id {nft_id}',
         tx_hash=tx_hash,
         counterparty=CPT_UNISWAP_V3,
         address=ZERO_ADDRESS,
-        extra_data={
-            'token_id': int(nft_id),
-            'token_name': 'Uniswap V3 Positions NFT-V1',
-        },
     )]
 
 
@@ -968,13 +964,12 @@ def test_add_liquidity_on_optimism(optimism_inquirer, optimism_accounts):
             location=Location.OPTIMISM,
             event_type=HistoryEventType.DEPLOY,
             event_subtype=HistoryEventSubType.NFT,
-            asset=Asset('eip155:10/erc721:0xC36442b4a4522E871399CD717aBDD847Ab11FE88'),
+            asset=Asset('eip155:10/erc721:0xC36442b4a4522E871399CD717aBDD847Ab11FE88/550709'),
             balance=Balance(amount=FVal(1)),
             location_label=optimism_accounts[0],
             notes='Create uniswap-v3 LP with id 550709',
             counterparty=CPT_UNISWAP_V3,
             address=ZERO_ADDRESS,
-            extra_data={'token_id': 550709, 'token_name': 'Uniswap V3 Positions NFT-V1'},
         ),
     ]
     assert events == expected_events
@@ -1030,3 +1025,70 @@ def test_swap_on_binance_sc(
             address=UNISWAP_UNIVERSAL_ROUTER_BINANCE_SC,
         ),
     ]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('arbitrum_one_accounts', [['0x706A70067BE19BdadBea3600Db0626859Ff25D74']])
+def test_receive_position_token_on_arbitrum(
+        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
+        arbitrum_one_accounts: list['ChecksumEvmAddress'],
+) -> None:
+    """Test that erc721 approval and transfer events work correctly.
+    The approval event is on an untracked address, but is what creates the token initially.
+    Regression test for https://github.com/rotki/rotki/pull/9286
+    Since this transaction is interacting with the currently unsupported Krystal ALM protocol's
+    V3Utils contract (https://alm-docs.krystal.app/resources/smart-contracts), these events are
+    simply decoded as plain transfers and are not ordered correctly.
+    """
+    tx_hash = deserialize_evm_tx_hash('0xbdfe4bfba8932fafed46a0cae44a945088c2496e1ef3c643d315159f900c338b')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=arbitrum_one_inquirer, tx_hash=tx_hash)  # noqa: E501
+    user_address, timestamp, gas_amount, spend_amount, receive_amount, v3utils_contract = arbitrum_one_accounts[0], TimestampMS(1718052436000), '0.00002126616', '100.768463', '0.000044879191744967', string_to_evm_address('0x3991bA795fb13a7646a8745F90b0F24Ed2443b03')  # noqa: E501
+    assert events == [EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=0,
+        timestamp=timestamp,
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        balance=Balance(FVal(gas_amount)),
+        location_label=user_address,
+        notes=f'Burn {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=3,
+        timestamp=timestamp,
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=Asset('eip155:42161/erc20:0xaf88d065e77c8cC2239327C5EDb3A432268e5831'),
+        balance=Balance(FVal(spend_amount)),
+        location_label=user_address,
+        notes=f'Send {spend_amount} USDC from {user_address} to {v3utils_contract}',
+        address=v3utils_contract,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=47,
+        timestamp=timestamp,
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=Asset('eip155:42161/erc721:0xC36442b4a4522E871399CD717aBDD847Ab11FE88/2985371'),
+        balance=Balance(ONE),
+        location_label=user_address,
+        notes=f'Receive Uniswap V3 Positions NFT-V1 with id 2985371 from {v3utils_contract} to {user_address}',  # noqa: E501
+        address=v3utils_contract,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=49,
+        timestamp=timestamp,
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=Asset('eip155:42161/erc20:0x8B0E6f19Ee57089F7649A455D89D7bC6314D04e8'),
+        balance=Balance(FVal(receive_amount)),
+        location_label=user_address,
+        notes=f'Receive {receive_amount} DMT from {v3utils_contract} to {user_address}',
+        address=v3utils_contract,
+    )]

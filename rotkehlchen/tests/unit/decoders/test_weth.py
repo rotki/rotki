@@ -219,6 +219,7 @@ def test_weth_interaction_with_protocols_deposit(database, ethereum_inquirer):
         evm_address=string_to_evm_address('0xC36442b4a4522E871399CD717aBDD847Ab11FE88'),
         chain_id=ChainID.ETHEREUM,
         token_kind=EvmTokenKind.ERC721,
+        collectible_id='343053',
         evm_inquirer=ethereum_inquirer,
     )
     assert events[3] == EvmEvent(
@@ -234,7 +235,6 @@ def test_weth_interaction_with_protocols_deposit(database, ethereum_inquirer):
         notes='Create uniswap-v3 LP with id 343053',
         counterparty=CPT_UNISWAP_V3,
         address=ZERO_ADDRESS,
-        extra_data={'token_id': 343053, 'token_name': 'Uniswap V3 Positions NFT-V1'},
     )
 
 

@@ -34,7 +34,7 @@ def test_basenames_register(
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x20280b43dbcfa86cdf0703d2e9f8f2ef200839b2ee0e819d895515d3adb74eff')  # noqa: E501
     events, decoder = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)  # noqa: E501
-    timestamp, user_address, gas_amount = TimestampMS(1726738619000), base_accounts[0], '0.000001963384627852'  # noqa: E501
+    timestamp, user_address, gas_amount, token_id = TimestampMS(1726738619000), base_accounts[0], '0.000001963384627852', 26612040215479394739615825115912800930061094786769410446114278812336794170041  # noqa: E501
     assert events == [
         EvmEvent(
             tx_hash=tx_hash,
@@ -134,13 +134,12 @@ def test_basenames_register(
             location=Location.BASE,
             event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
-            asset=Asset('eip155:8453/erc721:0x03c4738Ee98aE44591e1A4A4F3CaB6641d95DD9a'),
+            asset=Asset(f'eip155:8453/erc721:0x03c4738Ee98aE44591e1A4A4F3CaB6641d95DD9a/{token_id}'),
             balance=Balance(amount=ONE),
             location_label=user_address,
             notes=f'Receive Basenames name yabir.base.eth from {ZERO_ADDRESS} to {user_address}',
             counterparty=CPT_BASENAMES,
             address=ZERO_ADDRESS,
-            extra_data={'token_id': 26612040215479394739615825115912800930061094786769410446114278812336794170041, 'token_name': 'Basenames'},  # noqa: E501
         ),
     ]
 
@@ -153,7 +152,7 @@ def test_basenames_register_with_discount(
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x9a7021f26ecabdd0d3a3781cec24a452851d97849defa9862a18230a9e72fbd9')  # noqa: E501
     events, decoder = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)  # noqa: E501
-    timestamp, user_address, gas_amount = TimestampMS(1730993703000), base_accounts[0], '0.000005269375874545'  # noqa: E501
+    timestamp, user_address, gas_amount, token_id = TimestampMS(1730993703000), base_accounts[0], '0.000005269375874545', 7069226722341729763252382492637378743849472286311622838562285205711946962668  # noqa: E501
     assert events == [
         EvmEvent(
             tx_hash=tx_hash,
@@ -253,13 +252,12 @@ def test_basenames_register_with_discount(
             location=Location.BASE,
             event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
-            asset=Asset('eip155:8453/erc721:0x03c4738Ee98aE44591e1A4A4F3CaB6641d95DD9a'),
+            asset=Asset(f'eip155:8453/erc721:0x03c4738Ee98aE44591e1A4A4F3CaB6641d95DD9a/{token_id}'),
             balance=Balance(amount=ONE),
             location_label=user_address,
             notes=f'Receive Basenames name javxq.base.eth from {ZERO_ADDRESS} to {user_address}',
             counterparty=CPT_BASENAMES,
             address=ZERO_ADDRESS,
-            extra_data={'token_id': 7069226722341729763252382492637378743849472286311622838562285205711946962668, 'token_name': 'Basenames'},  # noqa: E501
         ),
     ]
 
@@ -377,7 +375,7 @@ def test_basenames_transfer_name(database, base_inquirer, action, base_accounts,
         to_address = '0x2B97eb170a57fa2B5ea499b9f0176Ef587c6F54d'
 
     events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
-    timestamp = TimestampMS(1731055033000)
+    timestamp, token_id = TimestampMS(1731055033000), 112426549028048856546593988202926666418642845280196262619695088491431122056723  # noqa: E501
     gas_event = EvmEvent(
         tx_hash=tx_hash,
         sequence_index=0,
@@ -402,16 +400,12 @@ def test_basenames_transfer_name(database, base_inquirer, action, base_accounts,
         location=Location.BASE,
         event_type=event_type,
         event_subtype=HistoryEventSubType.NONE,
-        asset=Asset('eip155:8453/erc721:0x03c4738Ee98aE44591e1A4A4F3CaB6641d95DD9a'),
+        asset=Asset(f'eip155:8453/erc721:0x03c4738Ee98aE44591e1A4A4F3CaB6641d95DD9a/{token_id}'),
         balance=Balance(amount=ONE),
         location_label=from_address,
         notes=notes,
         counterparty=CPT_BASENAMES,
         address=string_to_evm_address(to_address),
-        extra_data={
-            'token_id': 112426549028048856546593988202926666418642845280196262619695088491431122056723,  # noqa: E501
-            'token_name': 'Basenames',
-        },
     ))
     assert events == expected_events
 

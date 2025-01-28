@@ -187,10 +187,10 @@ EVENT_CATEGORY_DETAILS = {
         icon='lu-scale',
     )}, EventCategory.DONATE: {DEFAULT: EventCategoryDetails(
         label='donate',
-        icon='lu-heart-handshake',
+        icon='lu-donate-fill',
     )}, EventCategory.RECEIVE_DONATION: {DEFAULT: EventCategoryDetails(
         label='receive donation',
-        icon='lu-hand-heart',
+        icon='lu-receive-donation-fill',
     )}, EventCategory.RENEW: {DEFAULT: EventCategoryDetails(
         label='renew',
         icon='lu-refresh-cw',
@@ -223,7 +223,7 @@ EVENT_CATEGORY_DETAILS = {
         label='refund',
         icon='lu-refund',
     )}, EventCategory.FEE: {
-        DEFAULT: EventCategoryDetails(label='fee', icon='lu-receipt-cent'),
+        DEFAULT: EventCategoryDetails(label='fee', icon='lu-banknote'),
         CPT_GAS: EventCategoryDetails(label='gas fee', icon='lu-flame'),
     }, EventCategory.FAIL: {DEFAULT: EventCategoryDetails(
         label='Failed',
@@ -279,12 +279,12 @@ EVENT_CATEGORY_DETAILS = {
 
 ACCOUNTING_EVENTS_ICONS = {
     AccountingEventType.TRADE: 'lu-send-to-back',
-    AccountingEventType.FEE: 'lu-receipt-cent',
+    AccountingEventType.FEE: 'lu-banknote',
     AccountingEventType.ASSET_MOVEMENT: 'lu-coins-exchange',
     AccountingEventType.MARGIN_POSITION: 'lu-percent',
     AccountingEventType.LOAN: 'lu-handshake',
     AccountingEventType.PREFORK_ACQUISITION: 'lu-git-branch',
     AccountingEventType.STAKING: 'lu-layers',
-    AccountingEventType.HISTORY_EVENT: 'lu-file-clock',
+    AccountingEventType.HISTORY_EVENT: 'lu-history-events-fill',
     AccountingEventType.TRANSACTION_EVENT: 'lu-arrow-left-right',
 }

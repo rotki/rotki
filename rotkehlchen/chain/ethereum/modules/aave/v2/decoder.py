@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING
 
+from rotkehlchen.chain.ethereum.modules.aave.constants import V3_MIGRATION_HELPER
 from rotkehlchen.chain.evm.decoding.aave.v2.decoder import Aavev2CommonDecoder
 from rotkehlchen.chain.evm.types import string_to_evm_address
 
@@ -27,4 +28,5 @@ class Aavev2Decoder(Aavev2CommonDecoder):
             native_gateways=ETH_GATEWAYS,
             incentives=string_to_evm_address('0xd784927Ff2f95ba542BfC824c8a8a98F3495f6b5'),
             incentives_reward_token=string_to_evm_address('0x4da27a545c0c5B758a6BA100e3a049001de870f5'),  # stkAAVE  # noqa: E501
+            v3_migration_helper=V3_MIGRATION_HELPER,
         )

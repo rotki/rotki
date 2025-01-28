@@ -2397,15 +2397,6 @@ class WatchersResource(BaseMethodView):
         return self.rest_api.delete_watchers(watchers=watchers)
 
 
-class AssetIconFileResource(BaseMethodView):
-
-    get_schema = SingleAssetIdentifierSchema()
-
-    @use_kwargs(get_schema, location='query')
-    def get(self, asset: AssetWithNameAndType) -> Response:
-        return self.rest_api.get_asset_icon(asset=asset, match_header=get_match_header())
-
-
 class AssetIconsResource(BaseMethodView):
 
     patch_schema = SingleAssetWithOraclesIdentifierSchema()
@@ -3418,6 +3409,19 @@ class HistoricalAssetAmountsResource(BaseMethodView):
         return self.rest_api.get_historical_asset_amounts(
             asset=asset,  # note that from marshmallow asset and collection_id are guaranteed to exist and be mutually exclusive  # noqa: E501
             collection_id=collection_id,
+            from_timestamp=from_timestamp,
+            to_timestamp=to_timestamp,
+        )
+
+
+class HistoricalNetValueResource(BaseMethodView):
+
+    post_schema = TimestampRangeSchema()
+
+    @require_premium_user(active_check=False)
+    @use_kwargs(post_schema, location='json')
+    def post(self, from_timestamp: Timestamp, to_timestamp: Timestamp) -> Response:
+        return self.rest_api.get_historical_netvalue(
             from_timestamp=from_timestamp,
             to_timestamp=to_timestamp,
         )

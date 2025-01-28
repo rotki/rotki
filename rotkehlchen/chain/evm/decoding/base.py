@@ -4,10 +4,11 @@ from typing import TYPE_CHECKING, Any, Optional, Union
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import CryptoAsset, EvmToken
-from rotkehlchen.assets.utils import get_or_create_evm_token
+from rotkehlchen.assets.utils import get_or_create_evm_token, get_token
 from rotkehlchen.chain.evm.constants import ETH_SPECIAL_ADDRESS, ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import OUTGOING_EVENT_TYPES
 from rotkehlchen.constants import ONE, ZERO
+from rotkehlchen.constants.resolver import tokenid_to_collectible_id
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent, EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -166,7 +167,6 @@ class BaseDecoderTools:
         if direction_result is None:
             return None
 
-        extra_data = None
         event_type, event_subtype, location_label, address, counterparty, verb = direction_result
         counterparty_or_address = counterparty or address
         amount_raw_or_token_id = int.from_bytes(tx_log.data)
@@ -177,25 +177,16 @@ class BaseDecoderTools:
             else:
                 notes = f'{verb} {amount} {token.symbol} from {counterparty_or_address} to {location_label}'  # noqa: E501
         elif token.token_kind == EvmTokenKind.ERC721:
-            try:
-                if self.is_non_conformant_erc721(token.evm_address):  # id is in the data
-                    token_id = int.from_bytes(tx_log.data[0:32])
-                else:
-                    token_id = int.from_bytes(tx_log.topics[3])
-            except IndexError as e:
-                log.debug(
-                    f'At decoding of token {token.evm_address} as ERC721 got '
-                    f'insufficient number of topics: {tx_log.topics} and error: {e!s}',
-                )
+            if (collectible_id := tokenid_to_collectible_id(identifier=token.identifier)) is None:
+                log.debug(f'Failed to get token id from identifier when decoding token {token} as ERC721')  # noqa: E501
                 return None
 
             amount = ONE
             name = 'ERC721 token' if token.name == '' else token.name
-            extra_data = {'token_id': token_id, 'token_name': name}
             if event_type in {HistoryEventType.SPEND, HistoryEventType.TRANSFER}:
-                notes = f'{verb} {name} with id {token_id} from {location_label} to {counterparty_or_address}'  # noqa: E501
+                notes = f'{verb} {name} with id {collectible_id} from {location_label} to {counterparty_or_address}'  # noqa: E501
             else:
-                notes = f'{verb} {name} with id {token_id} from {counterparty_or_address} to {location_label}'  # noqa: E501
+                notes = f'{verb} {name} with id {collectible_id} from {counterparty_or_address} to {location_label}'  # noqa: E501
         else:
             return None  # unknown kind
 
@@ -214,7 +205,6 @@ class BaseDecoderTools:
             notes=notes,
             address=address,
             counterparty=counterparty,
-            extra_data=extra_data,
         )
 
     def make_event(
@@ -315,6 +305,10 @@ class BaseDecoderTools:
             address=address,
             extra_data=extra_data,
         )
+
+    def get_evm_token(self, address: ChecksumEvmAddress) -> EvmToken | None:
+        """Query a token from the DB or cache. If it does not exist there return None"""
+        return get_token(evm_address=address, chain_id=self.evm_inquirer.chain_id)
 
     def get_or_create_evm_token(
             self,

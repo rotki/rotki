@@ -264,18 +264,18 @@ class HistoryBaseEntry(AccountingEventMixin, ABC, Generic[ExtraDataType]):
     def serialize(self) -> dict[str, Any]:
         """Serialize the event alone for api"""
         serialized_data = {
+            'timestamp': self.timestamp,
+            'event_type': self.event_type.serialize(),
+            'event_subtype': self.event_subtype.serialize_or_none(),
+            'location': str(self.location),
+            'location_label': self.location_label,
+            'asset': self.asset.identifier,
+            'balance': self.balance.serialize(),
+            'notes': self.notes,
             'identifier': self.identifier,
             'entry_type': self.entry_type.serialize(),
             'event_identifier': self.event_identifier,
             'sequence_index': self.sequence_index,
-            'timestamp': self.timestamp,
-            'location': str(self.location),
-            'asset': self.asset.identifier,
-            'balance': self.balance.serialize(),
-            'event_type': self.event_type.serialize(),
-            'event_subtype': self.event_subtype.serialize_or_none(),
-            'location_label': self.location_label,
-            'notes': self.notes,
             'extra_data': self.extra_data,
         }
         if self.location == Location.KRAKEN and not self.notes:
@@ -311,14 +311,18 @@ class HistoryBaseEntry(AccountingEventMixin, ABC, Generic[ExtraDataType]):
         right after the 'asset' in the serialized dictionary. Note that
         'fiat_value' is not in USD but in the user-selected currency.
         """
-        new_dict: dict[str, Any] = {'direction': self.maybe_get_direction()}
+        new_dict: dict[str, Any] = {}
         entry = self.serialize()
         balance = entry.pop('balance')
         for key, value in entry.items():
             new_dict[key] = value
             if key == 'asset':
+                new_dict['asset_symbol'] = self.asset.symbol_or_name()
                 new_dict['amount'] = balance['amount']
                 new_dict['fiat_value'] = fiat_value
+
+            if key == 'sequence_index':
+                new_dict['direction'] = self.maybe_get_direction()
 
         return new_dict
 

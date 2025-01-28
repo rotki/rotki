@@ -491,6 +491,7 @@ declare module 'vue' {
     readonly TimeFrameSetting: UnwrapRef<typeof import('@rotki/common')['TimeFrameSetting']>
     readonly TimeUnit: UnwrapRef<typeof import('@rotki/common')['TimeUnit']>
     readonly TimedAssetBalances: UnwrapRef<typeof import('@rotki/common')['TimedAssetBalances']>
+    readonly TimedAssetHistoricalBalances: UnwrapRef<typeof import('@rotki/common')['TimedAssetHistoricalBalances']>
     readonly TimedBalances: UnwrapRef<typeof import('@rotki/common')['TimedBalances']>
     readonly UnderlyingToken: UnwrapRef<typeof import('@rotki/common')['UnderlyingToken']>
     readonly XswapAsset: UnwrapRef<typeof import('@rotki/common')['XswapAsset']>

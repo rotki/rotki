@@ -16,6 +16,7 @@ from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.constants.resolver import tokenid_belongs_to_collection
 from rotkehlchen.errors.api import APIKeyNotConfigured
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -231,7 +232,10 @@ class EnsDecoder(GovernableDecoderInterface, EnsCommonDecoder):
                 spend_event = event
 
             # Find the ENS ERC721 receive event which should be before the registered event
-            if event.event_type == HistoryEventType.RECEIVE and event.asset.identifier == 'eip155:1/erc721:0x57f1887a8BF19b14fC0dF6Fd9B2acc9Af147eA85':  # noqa: E501
+            if event.event_type == HistoryEventType.RECEIVE and tokenid_belongs_to_collection(
+                token_identifier=event.asset.identifier,
+                collection_identifier='eip155:1/erc721:0x57f1887a8BF19b14fC0dF6Fd9B2acc9Af147eA85',
+            ):
                 event.event_type = HistoryEventType.TRADE
                 event.event_subtype = HistoryEventSubType.RECEIVE
                 receive_event = event

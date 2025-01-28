@@ -694,3 +694,75 @@ def test_deposit_yearn_full_amount(ethereum_inquirer, ethereum_accounts):
             address=ZERO_ADDRESS,
         ),
     ]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0xcd931775F36bf0cEDDC20ae8E256838890E49212']])
+def test_withdraw_yearn_v2_many_transfers_in_tx(
+        ethereum_inquirer: 'EthereumInquirer',
+        ethereum_accounts: list['ChecksumEvmAddress'],
+) -> None:
+    """Test for an issue where our matching logic for a subtype of yearn v2 vault events was
+    matching other transfers of either vault or underlying token that did not involve the user's
+    address and as such failed to properly decode either deposit or withdrawal"""
+    vault_address = string_to_evm_address('0xdA816459F1AB5631232FE5e97a05BBBb94970c95')
+    get_or_create_evm_token(
+        userdb=ethereum_inquirer.database,
+        evm_address=vault_address,
+        chain_id=ChainID.ETHEREUM,
+        token_kind=EvmTokenKind.ERC20,
+        symbol='yvDAI',
+        name='DAI yVault',
+        decimals=18,
+        protocol=YEARN_VAULTS_V2_PROTOCOL,
+        started=Timestamp(1625883889),
+        underlying_tokens=[UnderlyingToken(
+            address=string_to_evm_address('0x6B175474E89094C44Da98b954EedeAC495271d0F'),  # DAI
+            token_kind=EvmTokenKind.ERC20,
+            weight=ONE,
+        )],
+    )
+    tx_hash = deserialize_evm_tx_hash('0x5e7266993a6c47164f503421b409735acd5474ef07346ce80314b1ba53ff0c9e')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    user_address, timestamp, gas, vault_amount, underlying_amount = ethereum_accounts[0], TimestampMS(1691423519000), '0.028290459798220144', '507845.778194128464278875', '540236.846296294579041898'  # noqa: E501
+    assert events == [
+        EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(gas)),
+            location_label=user_address,
+            notes=f'Burn {gas} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.RETURN_WRAPPED,
+            asset=Asset('eip155:1/erc20:0xdA816459F1AB5631232FE5e97a05BBBb94970c95'),
+            balance=Balance(amount=FVal(vault_amount)),
+            location_label=user_address,
+            notes=f'Return {vault_amount} yvDAI to a yearn-v2 vault',
+            counterparty=CPT_YEARN_V2,
+            address=ZERO_ADDRESS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=2,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.REMOVE_ASSET,
+            asset=Asset('eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F'),
+            balance=Balance(amount=FVal(underlying_amount)),
+            location_label=user_address,
+            notes=f'Withdraw {underlying_amount} DAI from yearn-v2 vault DAI yVault',
+            counterparty=CPT_YEARN_V2,
+            address=vault_address,
+        ),
+    ]

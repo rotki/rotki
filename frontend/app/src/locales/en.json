@@ -3962,9 +3962,12 @@
     },
     "statistics": {
       "asset_amount_and_value_over_time": "Asset amount and value over time",
+      "check_problematic_event": "Check the problematic event",
+      "loading_historical_prices": "Loading historical prices",
       "max_visible": "Maximum assets to show",
       "max_visible_required": "You cannot show more than {availableAssets} assets",
       "min_visible_required": "You have to show at least one asset.",
+      "negative_amount_detected": "Negative amount detected during historical processing.",
       "netvalue_over_time": "Netvalue over time",
       "no_balance_snapshot_data_available": "No balance snapshot data available.",
       "range_selector": {
@@ -4399,6 +4402,12 @@
         "positive_number": "Must be positive number"
       }
     },
+    "source": {
+      "historical_events_processing": "Historical events and prices",
+      "snapshot": "Snapshot data",
+      "title": "Data Source",
+      "warning": "Using historical events, processing will not take Manual Balance into account, it will be added to the current balance. It will fallback to snapshot data if we can't use the historical events and prices"
+    },
     "tooltip": "Asset graph setting"
   },
   "summary_card": {
@@ -4727,6 +4736,7 @@
       "loading": "Loading events...",
       "no_data": "Events are hidden because they contain ignored assets",
       "show_missing_acquisition": "Showing event for missing acquisition",
+      "show_negative_balance": "Showing event that cause negative balance",
       "skipped": {
         "csv_export_error": "There was an error with export",
         "download_failed": "Download of CSV is not possible",
