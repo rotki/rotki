@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Correctly handle a remote error in the Aerodrome/Velodrome pool querying logic.
 * :bug:`-` Some mainnet to optimism bridging transactions that were not seen correctly will now be properly decoded.
 * :bug:`9308` Fix some cases of Coinbase events that were not properly understood in rotki.
 * :bug:`-` Some specific cases of yearn v2 vault deposit/withdrawals that had problems will now be decoded properly.
