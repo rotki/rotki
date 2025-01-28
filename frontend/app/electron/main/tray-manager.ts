@@ -41,7 +41,7 @@ export class TrayManager {
           ]
         : []),
       { type: 'separator' },
-      ...(this.config.isMac || this.config.isLinux
+      ...(this.config.isMac
         ? ([{
             label: 'Display net worth on the tray',
             type: 'checkbox',
@@ -79,39 +79,44 @@ export class TrayManager {
     const { currency, delta, percentage, up, period, netWorth } = trayData;
     this.trayData = trayData;
 
-    if (up === undefined) {
-      this.setIcon(this.config.isMac ? 'rotki-trayTemplate@5.png' : 'rotki_tray@5x.png');
-      this.tray.setTitle('');
-      this.tray.setToolTip('rotki is running');
-      return;
-    }
-
     let indicator: string;
+    const tooltip: string[] = [];
     let color: string;
-    let icon: string;
-    if (up) {
-      icon = 'rotki_up.png';
-      color = '\u001B[32m';
-      indicator = '▴';
+    let icon: string = 'rotki_tray@5x.png';
+    let title: string = '';
+
+    if (typeof up !== 'undefined') {
+      if (up) {
+        icon = 'rotki_up.png';
+        color = '\u001B[32m';
+        indicator = '▴';
+      }
+      else {
+        icon = 'rotki_down.png';
+        color = '\u001B[31m';
+        indicator = '▾';
+      }
+
+      title += `${color}${indicator}\u001B[0m`;
+      tooltip.push(`Change in ${period} period ${indicator} ${percentage}%\n(${delta} ${currency})`);
     }
-    else {
-      icon = 'rotki_down.png';
-      color = '\u001B[31m';
-      indicator = '▾';
-    }
 
-    if (!this.config.isMac)
-      this.setIcon(icon);
-
-    let title = `${color}${indicator}\u001B[0m`;
-
-    this.tooltip = `Net worth ${netWorth} ${currency}.\nChange in ${period} period ${indicator} ${percentage}%\n(${delta} ${currency})`;
-    this.tray.setToolTip(this.tooltip);
+    if (this.config.isMac)
+      icon = 'rotki-trayTemplate@5x.png';
 
     if (this.settings.appSettings.showNetWorthOnTray) {
-      title += ` ${netWorth} ${currency}`;
+      if (netWorth) {
+        title += ` ${netWorth} ${currency}`;
+        tooltip.unshift(`Net worth ${netWorth} ${currency}.`);
+      }
+      else {
+        title += ' rotki is running';
+      }
     }
 
+    this.setIcon(icon);
+    this.tooltip = tooltip.length > 0 ? tooltip.join('\n') : 'rotki is running';
+    this.tray.setToolTip(this.tooltip);
     this.tray.setTitle(title);
     this.updateContextMenu(this.isVisible);
   }
@@ -119,6 +124,7 @@ export class TrayManager {
   private setIcon(iconName: string) {
     const iconPath = path.join(this.iconPath, iconName);
     const trayIcon = nativeImage.createFromPath(iconPath).resize({ width: 16, height: 16 });
+    trayIcon.setTemplateImage(this.config.isMac);
     this.tray?.setImage(trayIcon);
   }
 
@@ -135,9 +141,10 @@ export class TrayManager {
   }
 
   build() {
-    const icon = this.config.isMac ? 'rotki-trayTemplate@5.png' : 'rotki_tray@5x.png';
+    const icon = this.config.isMac ? 'rotki-trayTemplate@5x.png' : 'rotki_tray@5x.png';
     const iconPath = path.join(this.iconPath, icon);
     const trayIcon = nativeImage.createFromPath(iconPath).resize({ width: 16, height: 16 });
+    trayIcon.setTemplateImage(this.config.isMac);
     this.tray = new Tray(trayIcon);
     this.tray.setToolTip('rotki is running');
 
