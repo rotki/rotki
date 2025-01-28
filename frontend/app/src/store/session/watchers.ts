@@ -5,6 +5,7 @@ import { usePremium } from '@/composables/premium';
 
 export const useWatchersStore = defineStore('session/watchers', () => {
   const watchers = ref<Watcher[]>([]);
+  const monitorWatchers = ref<boolean>(true);
 
   const { t } = useI18n();
 
@@ -19,11 +20,12 @@ export const useWatchersStore = defineStore('session/watchers', () => {
   const api = useWatchersApi();
 
   const fetchWatchers = async (): Promise<void> => {
-    if (!get(premium))
+    if (!get(premium) || !get(monitorWatchers))
       return;
 
     try {
       set(watchers, await api.watchers());
+      set(monitorWatchers, get(watchers).length > 0);
     }
     catch (error: any) {
       notify({
@@ -38,10 +40,12 @@ export const useWatchersStore = defineStore('session/watchers', () => {
 
   const addWatchers = async (newWatchers: Omit<Watcher, 'identifier'>[]): Promise<void> => {
     set(watchers, await api.addWatcher(newWatchers));
+    set(monitorWatchers, get(watchers).length > 0);
   };
 
   const deleteWatchers = async (identifiers: string[]): Promise<void> => {
     set(watchers, await api.deleteWatcher(identifiers));
+    set(monitorWatchers, get(watchers).length > 0);
   };
 
   const editWatchers = async (editedWatchers: Watcher[]): Promise<void> => {
