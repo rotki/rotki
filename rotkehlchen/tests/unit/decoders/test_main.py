@@ -73,6 +73,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'Gitcoinv2',
         'Golem',
         'HarvestFinance',
+        'Hedgey',
         'Juicebox',
         'Kyber',
         'Lido',
@@ -164,6 +165,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'uniswap-v3',
         'zksync',
         'frax',
+        'hedgey'
         'makerdao dsr',
         'makerdao sai',
         'pickle finance',
