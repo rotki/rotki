@@ -22,7 +22,6 @@ export class Application {
   private readonly appConfig: AppConfig = {
     isDev: checkIfDevelopment(),
     isMac: process.platform === 'darwin',
-    isLinux: process.platform === 'linux',
     urls: {
       coreApiUrl: import.meta.env.VITE_BACKEND_URL as string,
       colibriApiUrl: import.meta.env.VITE_COLIBRI_URL as string,
