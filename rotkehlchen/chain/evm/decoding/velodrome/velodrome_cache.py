@@ -181,6 +181,22 @@ def query_velodrome_data_from_chain_and_maybe_create_tokens(
     pool_data_chunk: list[dict] = []
     offset, limit, last_notified_ts = 0, 200, Timestamp(0)
     while len(pool_data_chunk) == limit or (len(pool_data_chunk) == 0 and offset == 0):
+        try:
+            pool_data_chunk = data_contract.call(
+                node_inquirer=inquirer,
+                method_name='all',
+                arguments=[limit, offset],
+            )
+        except RemoteError as e:
+            log.warning(f'Failed to query velodrome pool data chunk due to {e!s}.')
+            # If the total count of existing pools is a multiple of 200 it will try to query
+            # a chunk for which there is no data, which results in a remote error here.
+            # So break the loop since this indicates we have gotten all pools.
+            break
+
+        pool_data.extend(pool_data_chunk)
+        offset += limit
+
         last_notified_ts = maybe_notify_new_pools_status(
             msg_aggregator=msg_aggregator,
             last_notified_ts=last_notified_ts,
@@ -189,27 +205,10 @@ def query_velodrome_data_from_chain_and_maybe_create_tokens(
             get_new_pools_count=lambda: len(pool_data),
         )
 
-        pool_data_chunk = data_contract.call(
-            node_inquirer=inquirer,
-            method_name='all',
-            arguments=[limit, offset],
-        )
-        pool_data.extend(pool_data_chunk)
-        offset += limit
-
     deserialized_pools: list[VelodromePoolData] = []
     # first gather all pool data, and prepare a multicall for token information
-    addresses, all_pools_length = [], len(pool_data)
-    for idx, pool in enumerate(pool_data):
-        last_notified_ts = maybe_notify_cache_query_status(
-            msg_aggregator=msg_aggregator,
-            last_notified_ts=last_notified_ts,
-            protocol=counterparty,
-            chain=inquirer.chain_id,
-            processed=idx + 1,
-            total=all_pools_length,
-        )
-
+    addresses = []
+    for pool in pool_data:
         try:
             pool_address = deserialize_evm_address(pool[0])
         except DeserializationError as e:
@@ -251,7 +250,8 @@ def query_velodrome_data_from_chain_and_maybe_create_tokens(
         description=f'Querying velodrome pools for {inquirer.chain_name}',
         should_notify=False,
     )
-    for entry in deserialized_pools:
+    all_pools_length = len(deserialized_pools)
+    for idx, entry in enumerate(deserialized_pools):
         try:
             token0, token1 = (
                 get_or_create_evm_token(
@@ -283,6 +283,14 @@ def query_velodrome_data_from_chain_and_maybe_create_tokens(
             fallback_symbol=pool_name,
         )
         returned_pools.append(entry)
+        last_notified_ts = maybe_notify_cache_query_status(
+            msg_aggregator=msg_aggregator,
+            last_notified_ts=last_notified_ts,
+            protocol=counterparty,
+            chain=inquirer.chain_id,
+            processed=idx + 1,
+            total=all_pools_length,
+        )
 
     return returned_pools
 
