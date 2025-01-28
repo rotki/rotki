@@ -1,5 +1,5 @@
 import path from 'node:path';
-import { Menu, type MenuItem, Tray, nativeImage } from 'electron';
+import { Menu, type MenuItem, type MenuItemConstructorOptions, Tray, nativeImage } from 'electron';
 import { assert } from '@rotki/common';
 import type { SettingsManager } from '@electron/main/settings-manager';
 import type { TrayUpdate } from '@shared/ipc';
@@ -25,7 +25,7 @@ export class TrayManager {
     return this.config.isDev ? path.join(import.meta.dirname, '..', 'public') : import.meta.dirname;
   }
 
-  private buildMenu(visible: boolean, info = '') {
+  private buildMenu(visible: boolean, info = ''): Menu {
     return Menu.buildFromTemplate([
       {
         label: 'rotki',
@@ -41,24 +41,24 @@ export class TrayManager {
           ]
         : []),
       { type: 'separator' },
-      {
-        label: 'Display net worth on the tray',
-        type: 'checkbox',
-        checked: this.settings.appSettings.showNetWorthOnTray,
-        click: (item: MenuItem) => {
-          const showNetWorthOnTray = item.checked;
-          this.settings.appSettings.showNetWorthOnTray = showNetWorthOnTray;
-          this.settings.save();
+      ...(this.config.isMac || this.config.isLinux
+        ? ([{
+            label: 'Display net worth on the tray',
+            type: 'checkbox',
+            checked: this.settings.appSettings.showNetWorthOnTray,
+            click: (item: MenuItem) => {
+              const showNetWorthOnTray = item.checked;
+              this.settings.appSettings.showNetWorthOnTray = showNetWorthOnTray;
+              this.settings.save();
 
-          this.update();
-        },
-      },
-      ...(this.config.isMac
-        ? [{
-            label: visible ? 'Minimize to tray' : 'Restore from tray',
-            click: () => this.toggleWindowVisibility(),
-          }]
+              this.update();
+            },
+          }] satisfies MenuItemConstructorOptions[])
         : []),
+      {
+        label: visible ? 'Minimize to tray' : 'Restore from tray',
+        click: () => this.toggleWindowVisibility(),
+      },
       { type: 'separator' },
       {
         label: 'Quit',
