@@ -2,7 +2,6 @@ import logging
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
-from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.base.modules.echo.constants import (
     CPT_ECHO,
     DEAL_ABI,
@@ -26,7 +25,7 @@ from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, EvmTokenKind, EvmTransaction
+from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
 from rotkehlchen.utils.misc import bytes_to_address
 
 if TYPE_CHECKING:
@@ -56,10 +55,7 @@ class EchoDecoder(DecoderInterface):
                 abi=DEAL_ABI,
                 method_name='token',
         )
-        token = EvmToken(evm_address_to_identifier(
-                    address=raw_token_address,
-                    chain_id=self.evm_inquirer.chain_id,
-                    token_type=EvmTokenKind.ERC20))
+        token = self.base.get_or_create_evm_token(raw_token_address)
 
         for event in context.decoded_events:
             if (
@@ -113,14 +109,12 @@ class EchoDecoder(DecoderInterface):
                     abi=DEAL_ABI,
                     method_name='token',
                 )
-                token = EvmToken(evm_address_to_identifier(
-                    address=raw_token_address,
-                    chain_id=self.evm_inquirer.chain_id,
-                    token_type=EvmTokenKind.ERC20))
+                token = self.base.get_or_create_evm_token(raw_token_address)
                 token_amount = int.from_bytes(tx_log.data[:32])
                 amount = asset_normalized_value(
                     amount=token_amount,
-                    asset=token)
+                    asset=token,
+                )
                 context.action_items.append(ActionItem(
                     action='transform',
                     from_event_type=HistoryEventType.RECEIVE,
@@ -166,7 +160,8 @@ class EchoDecoder(DecoderInterface):
                 event.event_subtype == HistoryEventSubType.NONE and
                 event.balance.amount == asset_normalized_value(
                     amount=fund_amount,
-                    asset=event.asset.resolve_to_crypto_asset())
+                    asset=event.asset.resolve_to_crypto_asset(),
+                )
             ):
                 event.event_type = HistoryEventType.DEPOSIT
                 event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
