@@ -83,15 +83,15 @@ class EchoDecoder(DecoderInterface):
                 ))
                 break
         else:
-            log.error(f'Could not find fee event for {self.evm_inquirer.chain_name} for Echo funding tx {context.transaction.tx_hash.hex()}')  # noqa:E501
+            log.error(f'Could not find fee event for {self.evm_inquirer.chain_name} for Echo funding tx {context.transaction}')  # noqa:E501
 
         return DEFAULT_DECODING_OUTPUT
 
     def _transform_refund(self, context: DecoderContext) -> DecodingOutput:
         """Transform transfer event from echo full refund
            This will not track partial refund as it does not emit deregistered event
-           Only 3 instance of those were happened https://dune.com/queries/4605517
-           it is much easier to just manually recouncile it by the end user
+           Only 3 instance of those have happened https://dune.com/queries/4605517
+           so it is much easier to just manually reconcile it by the end user
         """
         if (
             context.tx_log.topics[0] != FUNDER_DEREGISTERED or
@@ -130,7 +130,7 @@ class EchoDecoder(DecoderInterface):
                 ))
                 break
         else:
-            log.error(f'Could not find refund event for {self.evm_inquirer.chain_name} for Echo refund {context.transaction.tx_hash.hex()}')  # noqa:E501
+            log.error(f'Could not find refund event for {self.evm_inquirer.chain_name} for Echo refund {context.transaction}')  # noqa:E501
 
         return DEFAULT_DECODING_OUTPUT
 

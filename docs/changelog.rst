@@ -25,7 +25,7 @@ Changelog
 * :bug:`-` rotki should now warn you again when gnosis pay authentication token expires.
 * :bug:`-` rotki will now properly decode aave v2 to v3 migrations for polygon and mainnet
 * :bug:`-` rotki will now properly decode some aave v3 wrapped eth transactions that were not decoded properly in the past.
-* :feature:`9270` rotki will now support Echo.xyz funding and refunding event.
+* :feature:`9270` rotki will now support Echo.xyz funding and refunding events.
 
 * :release:`1.37.1 <2025-01-10>`
 * :bug:`-` OKX balances will now include assets in the funding account.
