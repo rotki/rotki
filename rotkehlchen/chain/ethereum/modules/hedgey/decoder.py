@@ -160,4 +160,11 @@ class HedgeyDecoder(DecoderInterface):
 
     @staticmethod
     def counterparties() -> tuple[CounterpartyDetails, ...]:
-        return (CounterpartyDetails(identifier=CPT_HEDGEY, label='Hedgey', image='hedgey_dark.svg'),)  # noqa: E501
+        return (
+            CounterpartyDetails(
+                identifier=CPT_HEDGEY,
+                label='Hedgey',
+                image='hedgey_dark.svg',
+                darkmode_image='hedgey_light.svg',
+            ),
+        )

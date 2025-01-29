@@ -11,12 +11,15 @@ class CounterpartyDetails(NamedTuple):
     identifier: str
     label: str
     image: str | None = None
+    darkmode_image: str | None = None
     icon: str | None = None
 
     def serialize(self) -> dict[str, str]:
         data = {'identifier': self.identifier, 'label': self.label}
         if self.image is not None:
             data['image'] = self.image
+        if self.darkmode_image is not None:
+            data['darkmode_image'] = self.darkmode_image
         if self.icon is not None:
             data['icon'] = self.icon
 
