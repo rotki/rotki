@@ -23,11 +23,13 @@ CHAIN_MAPPING: Final = {
     SupportedBlockchain.ETHEREUM: 'mainnet',
     SupportedBlockchain.GNOSIS: 'xdai',
     SupportedBlockchain.ARBITRUM_ONE: 'arbitrum_one',
+    SupportedBlockchain.BASE: 'base',
 }
 SUPPORTED_COWSWAP_BLOCKCHAIN: TypeAlias = Literal[
     SupportedBlockchain.ETHEREUM,
     SupportedBlockchain.GNOSIS,
     SupportedBlockchain.ARBITRUM_ONE,
+    SupportedBlockchain.BASE,
 ]
 
 

@@ -6,8 +6,6 @@ from typing import TYPE_CHECKING, Any, Final, Literal, Optional, cast
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset, EvmToken
-from rotkehlchen.chain.arbitrum_one.node_inquirer import ArbitrumOneInquirer
-from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value, token_normalized_value
 from rotkehlchen.chain.evm.constants import ETH_SPECIAL_ADDRESS
 from rotkehlchen.chain.evm.decoding.airdrops import match_airdrop_claim
@@ -23,7 +21,6 @@ from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.chain.gnosis.node_inquirer import GnosisInquirer
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.errors.misc import RemoteError
@@ -38,7 +35,11 @@ from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind, EvmTran
 from rotkehlchen.utils.misc import bytes_to_address
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.arbitrum_one.node_inquirer import ArbitrumOneInquirer
+    from rotkehlchen.chain.base.node_inquirer import BaseInquirer
+    from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
+    from rotkehlchen.chain.gnosis.node_inquirer import GnosisInquirer
     from rotkehlchen.fval import FVal
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
     from rotkehlchen.user_messages import MessagesAggregator
@@ -73,7 +74,7 @@ class CowswapCommonDecoder(DecoderInterface, abc.ABC):
 
     def __init__(
             self,
-            evm_inquirer: EthereumInquirer | ArbitrumOneInquirer | GnosisInquirer,
+            evm_inquirer: 'EthereumInquirer | ArbitrumOneInquirer | GnosisInquirer | BaseInquirer',
             base_tools: 'BaseDecoderTools',
             msg_aggregator: 'MessagesAggregator',
             native_asset: Asset,
@@ -353,7 +354,7 @@ class CowswapCommonDecoderWithVCOW(CowswapCommonDecoder):
 
     def __init__(
             self,
-            evm_inquirer: EthereumInquirer | ArbitrumOneInquirer | GnosisInquirer,
+            evm_inquirer: 'EthereumInquirer | ArbitrumOneInquirer | GnosisInquirer | BaseInquirer',
             base_tools: 'BaseDecoderTools',
             msg_aggregator: 'MessagesAggregator',
             native_asset: Asset,
