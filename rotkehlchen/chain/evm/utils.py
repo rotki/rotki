@@ -15,6 +15,7 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval
 from rotkehlchen.types import (
+    AERODROME_POOL_PROTOCOL,
     UNISWAP_PROTOCOL,
     VELODROME_POOL_PROTOCOL,
     ChainID,
@@ -36,6 +37,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 LP_TOKEN_AS_POOL_PROTOCOL_TO_ABI_NAME: Final[dict[str, 'LP_TOKEN_AS_POOL_CONTRACT_ABIS']] = {
     VELODROME_POOL_PROTOCOL: 'VELO_V2_LP',
+    AERODROME_POOL_PROTOCOL: 'VELO_V2_LP',
     UNISWAP_PROTOCOL: 'UNISWAP_V2_LP',
 }
 FVAL_ERROR_NAME: Final = 'token supply'

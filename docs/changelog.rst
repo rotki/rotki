@@ -2,7 +2,8 @@
 Changelog
 =========
 
-* :bug:`-` Correctly handle a remote error in the Aerodrome/Velodrome pool querying logic.
+* :bug:`-` Prices for Aerodrome LP tokens will now be found and the associated balances shown correctly.
+* :bug:`-` A rare error with velodrome events decoding should now be fixed and the relevant events properly decoded.
 * :bug:`-` Some mainnet to optimism bridging transactions that were not seen correctly will now be properly decoded.
 * :bug:`9308` Fix some cases of Coinbase events that were not properly understood in rotki.
 * :bug:`-` Some specific cases of yearn v2 vault deposit/withdrawals that had problems will now be decoded properly.
