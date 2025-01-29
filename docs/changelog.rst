@@ -9,7 +9,8 @@ Changelog
 * :bug:`-` Fix double count of cowswap fees.
 * :bug:`-` Fix an error when merging two assets if they both appear at the same snapshot.
 * :bug:`-` Allow the rotki app to be minimized using the shortcut for each platform.
-* :bug:`-` Fix issue when user tries to delete Kusama, Polkadot, or Beaconchain RPC URL.
+* :bug:`-` Deleting Kusama, Polkadot, or Beaconchain RPC URL should now work properly again.
+* :bug:`-` Some curve event edge cases will now be properly decoded and accounted for.
 * :bug:`-` rotki should now warn you again when gnosis pay authentication token expires.
 * :bug:`-` rotki will now properly decode aave v2 to v3 migrations for polygon and mainnet
 * :bug:`-` rotki will now properly decode some aave v3 wrapped eth transactions that were not decoded properly in the past.

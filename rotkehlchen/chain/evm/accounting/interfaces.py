@@ -1,6 +1,5 @@
 import logging
 from abc import ABC, abstractmethod
-from collections.abc import Iterator
 from typing import TYPE_CHECKING
 
 from rotkehlchen.accounting.mixins.event import AccountingEventType
@@ -9,6 +8,8 @@ from rotkehlchen.history.events.structures.types import EventDirection, HistoryE
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
 if TYPE_CHECKING:
+    from more_itertools import peekable
+
     from rotkehlchen.accounting.pot import AccountingPot
     from rotkehlchen.chain.evm.accounting.structures import EventsAccountantCallback
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
@@ -65,7 +66,7 @@ class DepositableAccountantInterface(ModuleAccountantInterface):
             self,
             pot: 'AccountingPot',
             event: 'EvmEvent',
-            other_events: Iterator['EvmEvent'],
+            other_events: 'peekable[EvmEvent]',
     ) -> int:
         """
         Process deposits and withdrawals from protocols that allow to deposit multiple assets
@@ -97,13 +98,28 @@ class DepositableAccountantInterface(ModuleAccountantInterface):
         # Consume the events
         events_consumed = 1  # counting the event that started it
         for idx in range(events_to_consume):
-            next_event = next(other_events, None)
-            if next_event is None:
+            if (next_event := other_events.peek(None)) is None:
                 log.debug(f'Could not consume event nr. {idx} for {event.counterparty} deposit/withdrawal')  # noqa: E501
                 return events_consumed
+            elif next_event.event_identifier != event.event_identifier:
+                # ensure that we only process entries of the same event group.
+                log.error(
+                    'In _process_deposit_or_withdrawal the next event belongs to a different '
+                    f'group when processing {event}. Next event is {next_event}. Skipping',
+                )
+                return events_consumed
 
+            if next_event.entry_type != event.entry_type:
+                # ensure that we don't mix evm events with other types of events.
+                log.error(
+                    f'Expected to consume an event of type {event.entry_type} but the next event '
+                    f'is of type {next_event.entry_type}. {event=}, {next_event=}. Skipping',
+                )
+                return events_consumed
+
+            # We have peeked. Consume the iterator now so it is advanced correctly.
+            next(other_events)
             events_consumed += 1
-
             if next_event.balance.amount == ZERO:
                 continue
 
