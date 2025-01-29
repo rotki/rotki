@@ -3,8 +3,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Defaults } from '@/data/defaults';
 import { DARK_COLORS, LIGHT_COLORS } from '@/plugins/theme';
 import {
-  BalanceSource,
   BlockchainRefreshButtonBehaviour,
+  FRONTEND_SETTINGS_SCHEMA_VERSION,
   FrontendSettings,
   Quarter,
   SupportedLanguage,
@@ -17,7 +17,7 @@ describe('settings:utils', () => {
 
   it('restore nothing is the loaded value has an unexpected type', () => {
     expect.assertions(1);
-    expect(() => FrontendSettings.parse({ defiSetupDone: 1 })).toThrow();
+    expect(() => FrontendSettings.parse({ defiSetupDone: 1, schemaVersion: FRONTEND_SETTINGS_SCHEMA_VERSION })).toThrow();
   });
 
   it('restore valid properties', () => {
@@ -25,6 +25,7 @@ describe('settings:utils', () => {
     const frontendSettings = FrontendSettings.parse({
       defiSetupDone: true,
       invalid: 2,
+      schemaVersion: FRONTEND_SETTINGS_SCHEMA_VERSION,
     });
 
     expect(frontendSettings).toMatchObject({
@@ -59,11 +60,7 @@ describe('settings:utils', () => {
       blockchainRefreshButtonBehaviour: BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES,
       shouldRefreshValidatorDailyStats: false,
       savedFilters: {},
-      balanceUsdValueThreshold: {
-        [BalanceSource.EXCHANGES]: '0',
-        [BalanceSource.BLOCKCHAIN]: '0',
-        [BalanceSource.MANUAL]: '0',
-      },
+      balanceUsdValueThreshold: {},
     });
   });
 });

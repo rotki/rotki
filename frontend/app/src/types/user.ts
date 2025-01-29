@@ -1,20 +1,16 @@
 import { NumericString } from '@rotki/common';
 import { z } from 'zod';
 import { Constraints } from '@/data/constraints';
-import { camelCaseTransformer } from '@/services/axios-tranformers';
 import { AddressNamePriorityEnum } from '@/types/settings/address-name-priorities';
 import { useCurrencies } from '@/types/currencies';
 import { Exchange, KrakenAccountType } from '@/types/exchanges';
-import { FrontendSettings } from '@/types/settings/frontend-settings';
+import { parseFrontendSettings } from '@/types/settings/frontend-settings';
 import { ModuleEnum } from '@/types/modules';
 import { PriceOracleEnum } from '@/types/settings/price-oracle';
 import type { ToSnakeCase } from '@/types/common';
 
 export const OtherSettings = z.object({
-  frontendSettings: z.string().transform((arg) => {
-    const data = arg ? camelCaseTransformer(JSON.parse(arg)) : {};
-    return FrontendSettings.parse(data);
-  }),
+  frontendSettings: z.string().transform(parseFrontendSettings),
   havePremium: z.boolean(),
   krakenAccountType: KrakenAccountType.optional(),
   premiumShouldSync: z.boolean(),

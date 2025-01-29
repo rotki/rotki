@@ -1,5 +1,15 @@
-import { BigNumber, Theme, ThemeColors, ThemeEnum, TimeFramePeriod, TimeFramePeriodEnum, TimeFramePersist, TimeFrameSetting } from '@rotki/common';
+import {
+  BigNumber,
+  Theme,
+  ThemeColors,
+  ThemeEnum,
+  TimeFramePeriod,
+  TimeFramePeriodEnum,
+  TimeFramePersist,
+  TimeFrameSetting,
+} from '@rotki/common';
 import { z } from 'zod';
+import { isEmpty } from 'es-toolkit/compat';
 import { Constraints, MINIMUM_DIGIT_TO_BE_ABBREVIATED } from '@/data/constraints';
 import { Defaults } from '@/data/defaults';
 import { DARK_COLORS, LIGHT_COLORS } from '@/plugins/theme';
@@ -7,6 +17,9 @@ import { CurrencyLocationEnum } from '@/types/currency-location';
 import { DateFormatEnum } from '@/types/date-format';
 import { TableColumnEnum } from '@/types/table-column';
 import { BaseSuggestion, SavedFilterLocation } from '@/types/filtering';
+import { camelCaseTransformer } from '@/services/axios-tranformers';
+
+export const FRONTEND_SETTINGS_SCHEMA_VERSION = 1;
 
 export enum Quarter {
   Q1 = 'Q1',
@@ -90,16 +103,20 @@ export enum BalanceSource {
   MANUAL = 'MANUAL',
 }
 
-const BalanceUsdValueThresholdRecord = z.object({
+export const BalanceUsdValueThresholdV0 = z.object({
   [BalanceSource.BLOCKCHAIN]: z.string().default('0'),
   [BalanceSource.EXCHANGES]: z.string().default('0'),
   [BalanceSource.MANUAL]: z.string().default('0'),
 });
 
+export const BalanceUsdValueThresholdV1 = z.record(z.nativeEnum(BalanceSource), z.string().optional());
+
+export type BalanceUsdValueThreshold = z.infer<typeof BalanceUsdValueThresholdV1>;
+
 export const FrontendSettings = z.object({
   abbreviateNumber: z.boolean().default(false),
   amountRoundingMode: RoundingMode.default(BigNumber.ROUND_UP),
-  balanceUsdValueThreshold: BalanceUsdValueThresholdRecord.default({}),
+  balanceUsdValueThreshold: BalanceUsdValueThresholdV1.default({}),
   blockchainRefreshButtonBehaviour: BlockchainRefreshButtonBehaviourEnum.default(
     BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES,
   ),
@@ -138,6 +155,7 @@ export const FrontendSettings = z.object({
     .default({})
     // eslint-disable-next-line unicorn/prefer-top-level-await
     .catch({}),
+  schemaVersion: z.literal(1),
   selectedTheme: ThemeEnum.default(Theme.AUTO),
   shouldRefreshValidatorDailyStats: z.boolean().default(false),
   showGraphRangeSelector: z.boolean().default(true),
@@ -161,3 +179,22 @@ export const FrontendSettings = z.object({
 export type FrontendSettings = z.infer<typeof FrontendSettings>;
 
 export type FrontendSettingsPayload = Partial<FrontendSettings>;
+
+export function deserializeFrontendSettings<T extends object>(settings: string): T {
+  return settings ? camelCaseTransformer(JSON.parse(settings)) : {};
+}
+
+export function parseFrontendSettings(settings: string): FrontendSettings {
+  const data = deserializeFrontendSettings(settings);
+  if (isEmpty(data)) {
+    return getDefaultFrontendSettings();
+  }
+  return FrontendSettings.parse(data);
+}
+
+export function getDefaultFrontendSettings(props: Partial<FrontendSettings> = {}): FrontendSettings {
+  return FrontendSettings.parse({
+    schemaVersion: FRONTEND_SETTINGS_SCHEMA_VERSION,
+    ...props,
+  });
+}

@@ -3,7 +3,7 @@ import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import DefiWizard from '@/components/defi/wizard/DefiWizard.vue';
 import { snakeCaseTransformer } from '@/services/axios-tranformers';
-import { FrontendSettings } from '@/types/settings/frontend-settings';
+import { type FrontendSettings, getDefaultFrontendSettings } from '@/types/settings/frontend-settings';
 import { useSettingsApi } from '@/composables/api/settings/settings-api';
 
 vi.mock('@/composables/api/settings/settings-api', () => ({
@@ -29,7 +29,7 @@ describe('defiWizard.vue', () => {
   };
 
   beforeEach(() => {
-    settings = FrontendSettings.parse({});
+    settings = getDefaultFrontendSettings();
     wrapper = createWrapper();
     api = useSettingsApi();
     api.setSettings = vi.fn();

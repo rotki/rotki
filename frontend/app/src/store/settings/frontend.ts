@@ -2,8 +2,9 @@ import { BigNumber } from '@rotki/common';
 import { getBnFormat } from '@/data/amount-formatter';
 import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import {
-  FrontendSettings,
+  type FrontendSettings,
   type FrontendSettingsPayload,
+  getDefaultFrontendSettings,
 } from '@/types/settings/frontend-settings';
 import { logger } from '@/utils/logging';
 import { useSettingsApi } from '@/composables/api/settings/settings-api';
@@ -13,7 +14,7 @@ import { useItemsPerPage } from '@/composables/session/use-items-per-page';
 import type { ActionStatus } from '@/types/action';
 
 export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
-  const settings = ref<FrontendSettings>(markRaw(FrontendSettings.parse({})));
+  const settings = ref<FrontendSettings>(markRaw(getDefaultFrontendSettings()));
 
   const defiSetupDone = useComputedRef(settings, 'defiSetupDone');
   const language = useComputedRef(settings, 'language');
@@ -90,6 +91,7 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
       };
     }
     catch (error: any) {
+      logger.error(error);
       return {
         message: error.message,
         success: false,

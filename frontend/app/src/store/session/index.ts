@@ -7,7 +7,7 @@ import {
   type UnlockPayload,
 } from '@/types/login';
 import { TaskType } from '@/types/task-type';
-import { UserAccount, type UserSettingsModel } from '@/types/user';
+import { type SettingsUpdate, UserAccount, type UserSettingsModel } from '@/types/user';
 import { api } from '@/services/rotkehlchen-api';
 import { logger } from '@/utils/logging';
 import { lastLogin } from '@/utils/account-management';
@@ -23,8 +23,9 @@ import { useExchangeApi } from '@/composables/api/balances/exchanges';
 import { useSettingsApi } from '@/composables/api/settings/settings-api';
 import { useUsersApi } from '@/composables/api/session/users';
 import { useSessionSettings } from '@/composables/session/settings';
-import type { Exchange } from '@/types/exchanges';
+import { migrateSettingsIfNeeded } from '@/types/settings/frontend-settings-migrations';
 import type { SupportedLanguage } from '@/types/settings/frontend-settings';
+import type { Exchange } from '@/types/exchanges';
 import type { TaskMeta } from '@/types/task';
 import type { ChangePasswordPayload } from '@/types/session';
 import type { ActionStatus } from '@/types/action';
@@ -141,9 +142,19 @@ export const useSessionStore = defineStore('session', () => {
         const taskType = TaskType.LOGIN;
         const { taskId } = await usersApi.login(credentials);
         start();
-        const { result } = await awaitTask<UserAccount, TaskMeta>(taskId, taskType, {
+        const { result } = await awaitTask<{
+          settings: SettingsUpdate;
+          exchanges: Exchange[];
+        }, TaskMeta>(taskId, taskType, {
           title: 'login in',
         });
+
+        const migratedSettings = migrateSettingsIfNeeded(result.settings.frontendSettings);
+
+        if (migratedSettings) {
+          await settingsApi.setSettings({ frontendSettings: migratedSettings });
+          result.settings.frontendSettings = migratedSettings;
+        }
 
         const account = UserAccount.parse(result);
         ({ exchanges, settings } = account);

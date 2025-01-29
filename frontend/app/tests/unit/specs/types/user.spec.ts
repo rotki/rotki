@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import { BigNumber, Blockchain, Theme, TimeFramePeriod } from '@rotki/common';
 import { CurrencyLocation } from '@/types/currency-location';
 import {
-  BalanceSource,
   BlockchainRefreshButtonBehaviour,
   DashboardTableType,
   type FrontendSettings,
@@ -17,6 +16,7 @@ import { OtherSettings } from '@/types/user';
 describe('types/user', () => {
   it('otherSettings parsed correctly', () => {
     const frontendSettings: FrontendSettings = {
+      schemaVersion: 1,
       defiSetupDone: true,
       language: SupportedLanguage.EN,
       timeframeSetting: TimeFramePeriod.YEAR,
@@ -79,11 +79,7 @@ describe('types/user', () => {
       shouldRefreshValidatorDailyStats: false,
       subscriptDecimals: false,
       savedFilters: {},
-      balanceUsdValueThreshold: {
-        [BalanceSource.EXCHANGES]: '0',
-        [BalanceSource.BLOCKCHAIN]: '0',
-        [BalanceSource.MANUAL]: '0',
-      },
+      balanceUsdValueThreshold: {},
       useHistoricalAssetBalances: false,
     };
 

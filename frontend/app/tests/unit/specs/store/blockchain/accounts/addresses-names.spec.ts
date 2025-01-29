@@ -1,7 +1,7 @@
 import { Blockchain } from '@rotki/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import flushPromises from 'flush-promises';
-import { FrontendSettings } from '@/types/settings/frontend-settings';
+import { getDefaultFrontendSettings } from '@/types/settings/frontend-settings';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import { useAddressesNamesApi } from '@/composables/api/blockchain/addresses-names';
@@ -200,7 +200,7 @@ describe('store::blockchain/accounts/addresses-names', () => {
 
     it('enableAliasNames=true', async () => {
       useFrontendSettingsStore().update({
-        ...FrontendSettings.parse({}),
+        ...getDefaultFrontendSettings(),
         enableAliasNames: true,
       });
 
@@ -237,7 +237,7 @@ describe('store::blockchain/accounts/addresses-names', () => {
 
     it('enableAliasNames=false', async () => {
       useFrontendSettingsStore().update({
-        ...FrontendSettings.parse({}),
+        ...getDefaultFrontendSettings(),
         enableAliasNames: false,
       });
 

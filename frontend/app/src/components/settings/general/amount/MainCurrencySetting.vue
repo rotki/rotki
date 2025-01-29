@@ -3,11 +3,14 @@ import { type SupportedCurrency, useCurrencies } from '@/types/currencies';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import ListItem from '@/components/common/ListItem.vue';
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
+import { useCurrencyUpdate } from '@/composables/use-currency-update';
 
 const { currencies } = useCurrencies();
 const selectedCurrency = ref<SupportedCurrency>(get(currencies)[0].tickerSymbol);
+
 const { currency } = storeToRefs(useGeneralSettingsStore());
 const { t } = useI18n();
+const { onCurrencyUpdate } = useCurrencyUpdate();
 
 function successMessage(symbol: string) {
   return t('general_settings.validation.currency.success', {
@@ -31,6 +34,7 @@ function calculateFontSize(symbol: string) {
     setting="mainCurrency"
     :error-message="t('general_settings.validation.currency.error')"
     :success-message="successMessage"
+    @finish="onCurrencyUpdate()"
   >
     <RuiMenuSelect
       v-model="selectedCurrency"

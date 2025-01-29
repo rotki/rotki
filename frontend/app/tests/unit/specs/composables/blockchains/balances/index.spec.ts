@@ -104,7 +104,7 @@ describe('composables::blockchain/balances/index', () => {
       await blockchainBalances.fetchBlockchainBalances();
 
       expect(api.queryBlockchainBalances).toHaveBeenCalledTimes(1);
-      expect(api.queryBlockchainBalances).toHaveBeenCalledWith(false, 'eth', '0');
+      expect(api.queryBlockchainBalances).toHaveBeenCalledWith(false, 'eth', undefined);
     });
 
     describe('particular blockchain', () => {
@@ -120,7 +120,7 @@ describe('composables::blockchain/balances/index', () => {
 
       const assert = (times = 1) => {
         expect(api.queryBlockchainBalances).toHaveBeenCalledTimes(times);
-        expect(api.queryBlockchainBalances).toHaveBeenCalledWith(true, Blockchain.ETH, '0');
+        expect(api.queryBlockchainBalances).toHaveBeenCalledWith(true, Blockchain.ETH, undefined);
       };
 
       const { isLoading } = useStatusStore();
