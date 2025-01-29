@@ -165,7 +165,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'uniswap-v3',
         'zksync',
         'frax',
-        'hedgey'
+        'hedgey',
         'makerdao dsr',
         'makerdao sai',
         'pickle finance',

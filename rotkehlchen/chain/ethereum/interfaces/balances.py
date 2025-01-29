@@ -51,6 +51,7 @@ PROTOCOLS_WITH_BALANCES = Literal[
     'aura-finance',
     'giveth',
     'uniswap-v3',
+    'hedgey',
 ]
 BalancesSheetType = dict[ChecksumEvmAddress, BalanceSheet]
 

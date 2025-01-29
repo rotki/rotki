@@ -17,6 +17,7 @@ Changelog
 * :feature:`7254` rotki will now correctly decode OpenOcean swaps in all supported EVM chains.
 * :feature:`-` Lido and EtherFI reserve tokens will now be automatically queried.
 * :feature:`-` Safepass vesting claim start events will now be properly decoded.
+* :feature:`-` Hedgey voting token lockup related events will now be properly decoded and locked balances automatically detected.
 * :bug:`-` Bitmex balances will now be queried correctly.
 * :bug:`-` Some specific cases of yearn v2 vault deposit/withdrawals that had problems will now be decoded properly.
 * :bug:`-` Deleting an ethereum address will now remove the withdrawals cache for that address so re-adding it will now properly detect ethereum staking withdrawals again.
