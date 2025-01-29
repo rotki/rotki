@@ -76,6 +76,7 @@ from rotkehlchen.tests.utils.constants import A_CNY, A_JPY
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.tests.utils.morpho import create_ethereum_morpho_vault_token
 from rotkehlchen.types import (
+    AERODROME_POOL_PROTOCOL,
     EVM_CHAINS_WITH_TRANSACTIONS,
     VELODROME_POOL_PROTOCOL,
     YEARN_VAULTS_V3_PROTOCOL,
@@ -446,6 +447,26 @@ def test_find_velodrome_v2_lp_token_price(inquirer, optimism_manager):
     inquirer.inject_evm_managers([(ChainID.OPTIMISM, optimism_manager)])
     price = inquirer.find_lp_price_from_uniswaplike_pool(token=token)
     assert price is not None
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+def test_find_aerodrome_lp_token_price(inquirer, base_manager):
+    get_or_create_evm_token(  # wBLT token
+        userdb=base_manager.node_inquirer.database,
+        evm_address=string_to_evm_address('0x4E74D4Db6c0726ccded4656d0BCE448876BB4C7A'),
+        chain_id=ChainID.BASE,
+    )
+    token = get_or_create_evm_token(  # wBLT/USDC pool token
+        userdb=base_manager.node_inquirer.database,
+        evm_address=string_to_evm_address('0x4299f2004C4Ee942dC7A70356c112aE507597268'),
+        chain_id=ChainID.BASE,
+        protocol=AERODROME_POOL_PROTOCOL,
+    )
+    inquirer.inject_evm_managers([(ChainID.BASE, base_manager)])
+    price = inquirer.find_usd_price(asset=token)
+    assert price.is_close(FVal('64887262.569622'))
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
