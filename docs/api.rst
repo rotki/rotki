@@ -12710,19 +12710,32 @@ Getting all available counterparties
             {
               "identifier":"1inch-v1",
               "label":"1inch",
-              "image":"/assets/images/defi/1inch.svg"
+              "image":"1inch.svg"
             },
             {
               "identifier":"1inch-v2",
               "label":"1inch",
-              "image":"/assets/images/defi/1inch.svg"
+              "image":"1inch.svg"
+            },
+            {
+              "identifier":"gas",
+              "label":"gas",
+              "icon":"lu-flame"
+            },
+            {
+              "identifier":"hedgey",
+              "label":"Hedgey",
+              "image":"hedgey_dark.svg",
+              "darkmode_image":"hedgey_light.svg"
             }
         ]
       }
 
   :resjson string identifier: value used by the backend to represent the counterparty.
   :resjson string label: Name displayed in the frontend.
-  :resjson string image: Relative path to the counterparty image.
+  :resjson string image: Optional. Relative path to the counterparty image. To be used mainly in light mode
+  :resjson string darkmode_image: Optional. Relative path to the counterparty image to be used for dark mode.
+  :resjson string icon: Optional. If given then this means the counterparty has no image but uses an icon from the icon set.
 
   :statuscode 200: Information was correctly generated
   :statuscode 500: Internal rotki error
