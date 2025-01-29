@@ -80,7 +80,7 @@ class HedgeyDecoder(DecoderInterface):
                     tx_log=tx_log,
                     transaction=context.transaction,
                     owner_address=owner_address,
-                    plan_name=f'Hedgey token lockup ({plan_id})',
+                    plan_name=f'Hedgey token lockup {plan_id}',
                 )
 
         log.error(f'Did not find a delegation event in {context.transaction} logs')

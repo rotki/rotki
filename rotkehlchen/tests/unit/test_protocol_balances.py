@@ -31,6 +31,7 @@ from rotkehlchen.chain.ethereum.modules.curve.balances import CurveBalances
 from rotkehlchen.chain.ethereum.modules.eigenlayer.balances import EigenlayerBalances
 from rotkehlchen.chain.ethereum.modules.gearbox.balances import GearboxBalances
 from rotkehlchen.chain.ethereum.modules.gearbox.constants import GEAR_IDENTIFIER
+from rotkehlchen.chain.ethereum.modules.hedgey.balances import HedgeyBalances
 from rotkehlchen.chain.ethereum.modules.octant.balances import OctantBalances
 from rotkehlchen.chain.ethereum.modules.safe.balances import SafeBalances
 from rotkehlchen.chain.ethereum.modules.safe.constants import SAFE_TOKEN_ID
@@ -66,6 +67,7 @@ from rotkehlchen.constants.assets import (
     A_AAVE,
     A_ARB,
     A_CVX,
+    A_ENS,
     A_ETH,
     A_GLM,
     A_GMX,
@@ -1399,6 +1401,32 @@ def test_uniswapv3_balances_arbitrum(
     assert user_balance.assets[position_nft] == Balance(
         amount=ONE,
         usd_value=FVal('26.7962165816347802200022991318482105023701331828161909334783235019695249285796'),
+    )
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+@pytest.mark.parametrize('ethereum_accounts', [['0x54BeCc7560a7Be76d72ED76a1f5fee6C5a2A7Ab6']])
+def test_hedgey_locked_balances(
+        ethereum_inquirer: 'EthereumInquirer',
+        ethereum_accounts: list[ChecksumEvmAddress],
+        inquirer_defi: 'Inquirer',  # pylint: disable=unused-argument
+) -> None:
+    """Check that hedgey locked voting token positions are detected"""
+    _, tx_decoder = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        tx_hash=deserialize_evm_tx_hash('0xb85eb3fb6496fa51ac3d43d230ea729b52593bd2781b2b9dfab638aab7011719'),
+    )
+    protocol_balances_inquirer = HedgeyBalances(
+        evm_inquirer=ethereum_inquirer,
+        tx_decoder=tx_decoder,
+    )
+    protocol_balances = protocol_balances_inquirer.query_balances()
+    user_balance = protocol_balances[ethereum_accounts[0]]
+
+    assert user_balance.assets[A_ENS] == Balance(
+        amount=FVal('2943.901116977446327568'),
+        usd_value=FVal('92114.66595022429558960272'),
     )
 
 

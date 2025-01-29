@@ -247,7 +247,7 @@ def test_optimism_delegate_change(optimism_inquirer):
             location=Location.OPTIMISM,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.GOVERNANCE,
-            asset=A_ETH,
+            asset=A_OP,
             balance=Balance(),
             location_label=ADDY,
             notes=f'Change OP Delegate from {ADDY} to {ADDY}',
