@@ -1,19 +1,22 @@
 from typing import TYPE_CHECKING
 
 import pytest
+from more_itertools import peekable
 
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.pnl import PNL, PnlTotals
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.types import MissingPrice
-from rotkehlchen.assets.asset import EvmToken
+from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.chain.ethereum.modules.eth2.structures import ValidatorDailyStats
 from rotkehlchen.chain.evm.decoding.cowswap.constants import CPT_COWSWAP
+from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE
 from rotkehlchen.constants import ONE, ZERO
-from rotkehlchen.constants.assets import A_BTC, A_COMP, A_ETH, A_EUR, A_USD, A_USDC, A_WBTC
+from rotkehlchen.constants.assets import A_BTC, A_COMP, A_DAI, A_ETH, A_EUR, A_USD, A_USDC, A_WBTC
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -37,6 +40,7 @@ from rotkehlchen.types import (
     TimestampMS,
     TradeType,
 )
+from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.accountant import Accountant
@@ -546,3 +550,60 @@ def test_non_history_event_in_history_iterator(accountant):
     no_message_errors(accountant.msg_aggregator)
     missing_acquisitions = accountant.pots[0].cost_basis.missing_acquisitions
     assert missing_acquisitions == []
+
+
+@pytest.mark.parametrize('accounting_initialize_parameters', [True])
+@pytest.mark.parametrize('should_mock_price_queries', [True])
+@pytest.mark.parametrize('default_mock_price_value', [FVal(1.5)])
+def test_mixing_events(accountant: 'Accountant'):
+    """Regression test for a case where the order of the decoded events was not correct
+    in the curve accountant `_process_deposit_or_withdrawal` and it processed entries from other
+    events. The worst error was with an asset movement since it doesn't have the same
+    fields as an evm event and it was breaking with unhandled errors.
+    """
+    pot = accountant.pots[0]
+    timestamp1 = ts_sec_to_ms(Timestamp(1624395186))
+    timestamp2 = ts_sec_to_ms(Timestamp(1724395186))
+    deposit_entries = [
+        EvmEvent(
+            tx_hash=(tx_hash := make_evm_tx_hash()),
+            sequence_index=76,
+            timestamp=timestamp1,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+            asset=Asset('eip155:1/erc20:0xC25a3A3b969415c80451098fa907EC722572917F'),
+            balance=Balance(amount=FVal('9.423568821947938716')),
+            location_label=(evm_address := make_evm_address()),
+            notes='Receive 9.423568821947938716 crvPlain3andSUSD after depositing in curve pool 0xA5407eAE9Ba41422680e2e00537571bcC53efBfD',  # noqa: E501
+            counterparty=CPT_CURVE,
+            extra_data={'deposit_events_num': 2},
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=77,
+            timestamp=timestamp1,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+            asset=A_DAI,
+            balance=Balance(amount=FVal(10)),
+            location_label=evm_address,
+            notes='Deposit 10 DAI in curve pool 0xA5407eAE9Ba41422680e2e00537571bcC53efBfD',
+            counterparty=CPT_CURVE,
+        ), AssetMovement(
+            timestamp=timestamp2,
+            location=Location.BYBIT,
+            event_type=HistoryEventType.DEPOSIT,
+            asset=A_DAI,
+            balance=Balance(FVal(10)),
+            unique_id='very_unique_id',
+            is_fee=False,
+        ),
+    ]
+    events_iterator = peekable(deposit_entries)
+    events_processed = pot.events_accountant.process(
+        event=deposit_entries[0],
+        events_iterator=events_iterator,  # type: ignore
+    )
+    assert events_processed == 1  # only 1 entry consumed
+    assert events_iterator.peek() == deposit_entries[2]  # third event is not consumed
