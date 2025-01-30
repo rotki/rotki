@@ -2606,7 +2606,7 @@
     "label_username": "个人资料名称",
     "logout": "注销",
     "migrating_data": {
-      "current": "已应用数据迁移 {currentVersion} 的 {totalSteps} 步 {currentStep}。.",
+      "current": "正在应用数据迁移 {currentVersion} 的 {totalSteps} 中的步骤 {currentStep}。",
       "title": "数据迁移",
       "warning": "数据迁移 {currentVersion} 正在运行。在完成之前请不要关闭应用程序。"
     },
@@ -2621,7 +2621,7 @@
     },
     "title": "解锁账户",
     "upgrading_db": {
-      "current": "已应用数据库升级 v{currentVersion} 的 {totalSteps} 步 {currentStep}。",
+      "current": "正在应用数据库升级 v{currentVersion} 的 {totalSteps} 中的步骤 {currentStep}。",
       "title": "数据库升级",
       "warning": "数据库正在从版本 {fromVersion} 升级到 {toVersion}。在完成之前请不要关闭应用程序。"
     },
