@@ -32,7 +32,7 @@ const errorText = computed(() => {
 </script>
 
 <template>
-  <div class="error-screen">
+  <div class="error-screen py-6">
     <div>
       <RuiIcon
         size="120"
@@ -53,7 +53,8 @@ const errorText = computed(() => {
 
     <RuiCard
       v-if="!alternative"
-      class="error-screen__message mt-3"
+      class="error-screen__message flex-1 my-6 overflow-hidden"
+      content-class="h-full"
     >
       <template #header>
         {{ title }}
@@ -66,7 +67,7 @@ const errorText = computed(() => {
       <template #subheader>
         {{ subtitle }}
       </template>
-      <div class="font-light text-rui-text-secondary` error-screen__description">
+      <div class="font-light text-rui-text-secondary error-screen__description">
         <pre class="text-caption text-wrap error-screen__description__message">
           {{ message }}
           <RuiDivider
@@ -116,16 +117,6 @@ const errorText = computed(() => {
     position: absolute;
     top: -999em;
     left: -999em;
-  }
-
-  &__description {
-    height: 300px;
-    overflow: auto;
-
-    &__message {
-      max-width: 500px;
-      width: 100%;
-    }
   }
 }
 </style>
