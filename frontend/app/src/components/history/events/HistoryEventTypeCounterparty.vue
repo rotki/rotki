@@ -17,6 +17,22 @@ const counterparty = getEventCounterpartyData(event);
 const imagePath = '/assets/images/protocols/';
 
 const useDarkModeImage = computed(() => get(isDark) && get(counterparty)?.darkmodeImage);
+const counterpartyImageSrc = computed<string | undefined>(() => {
+  const counterpartyVal = get(counterparty);
+
+  if (!counterpartyVal)
+    return undefined;
+
+  if (get(useDarkModeImage)) {
+    return `${imagePath}/${counterpartyVal.darkmodeImage}`;
+  }
+
+  if (counterpartyVal.image) {
+    return `${imagePath}/${counterpartyVal.image}`;
+  }
+
+  return undefined;
+});
 </script>
 
 <template>
@@ -45,15 +61,8 @@ const useDarkModeImage = computed(() => get(isDark) && get(counterparty)?.darkmo
               />
 
               <AppImage
-                v-else-if="useDarkModeImage"
-                :src="`${imagePath}${counterparty.darkmodeImage}`"
-                contain
-                size="20px"
-              />
-
-              <AppImage
-                v-else-if="counterparty.image"
-                :src="`${imagePath}${counterparty.image}`"
+                v-else-if="counterpartyImageSrc"
+                :src="counterpartyImageSrc"
                 contain
                 size="20px"
               />
