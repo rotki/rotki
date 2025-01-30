@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` A problem with decoding WETH events in transactions from safes or other smart contracts on arbitrum will now be fixed.
 * :bug:`-` Prices for Aerodrome LP tokens will now be found and the associated balances shown correctly.
 * :bug:`-` A rare error with velodrome events decoding should now be fixed and the relevant events properly decoded.
 * :bug:`-` Some mainnet to optimism bridging transactions that were not seen correctly will now be properly decoded.

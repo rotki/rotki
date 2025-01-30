@@ -7,6 +7,7 @@ from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE_V3
 from rotkehlchen.chain.evm.decoding.aave.v3.constants import POOL_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.safe.constants import CPT_SAFE_MULTISIG
+from rotkehlchen.chain.evm.decoding.weth.constants import CPT_WETH
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import (
     A_ETH,
@@ -1494,33 +1495,6 @@ def test_aave_v3_close_position_with_safe(arbitrum_one_inquirer, arbitrum_one_ac
             address=user_eoa_account,
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=2,
-            timestamp=timestamp,
-            location=Location.ARBITRUM_ONE,
-            event_type=HistoryEventType.RECEIVE,
-            event_subtype=HistoryEventSubType.NONE,
-            asset=A_ETH,
-            balance=Balance(amount=FVal(eth_withdraw_amount) + FVal(eth_interest_amount)),
-            location_label=user_safe_proxy,
-            # New bug, this event should detected as WETH unwrapping and not as a receive
-            notes=f'Receive {FVal(eth_withdraw_amount) + FVal(eth_interest_amount)} ETH from 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1',  # noqa: E501
-            counterparty=None,
-            address=A_WETH_ARB.resolve_to_evm_token().evm_address,
-        ), EvmEvent(
-            tx_hash=tx_hash,
-            sequence_index=3,
-            timestamp=timestamp,
-            location=Location.ARBITRUM_ONE,
-            event_type=HistoryEventType.INFORMATIONAL,
-            event_subtype=HistoryEventSubType.NONE,
-            asset=A_ETH,
-            balance=Balance(),
-            location_label=user_eoa_account,
-            notes=f'Successfully executed safe transaction 0xd7a87c1f11f5cbe9685d1e0627ea5ba8cf7373ec738cb2da4e345b836b67c2ef for multisig {user_safe_proxy}',  # noqa: E501
-            counterparty=CPT_SAFE_MULTISIG,
-            address=user_safe_proxy,
-        ), EvmEvent(
-            tx_hash=tx_hash,
             sequence_index=4,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
@@ -1530,6 +1504,19 @@ def test_aave_v3_close_position_with_safe(arbitrum_one_inquirer, arbitrum_one_ac
             balance=Balance(amount=FVal(usd_paid_back_amount)),
             location_label=user_eoa_account,
             notes=f'Transfer {usd_paid_back_amount} USDT from {user_eoa_account} to {user_safe_proxy}',  # noqa: E501
+            address=user_safe_proxy,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=4,  # TODO: Fix this sequence_index collision. See https://github.com/orgs/rotki/projects/11?pane=issue&itemId=95879616  # noqa: E501
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            balance=Balance(),
+            location_label=user_eoa_account,
+            notes=f'Successfully executed safe transaction 0xd7a87c1f11f5cbe9685d1e0627ea5ba8cf7373ec738cb2da4e345b836b67c2ef for multisig {user_safe_proxy}',  # noqa: E501
+            counterparty=CPT_SAFE_MULTISIG,
             address=user_safe_proxy,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -1619,20 +1606,33 @@ def test_aave_v3_close_position_with_safe(arbitrum_one_inquirer, arbitrum_one_ac
             address=user_safe_proxy,
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=22,
+            sequence_index=19,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
             event_type=HistoryEventType.SPEND,
-            event_subtype=HistoryEventSubType.NONE,
+            event_subtype=HistoryEventSubType.RETURN_WRAPPED,
             asset=A_WETH_ARB,
-            balance=Balance(amount=FVal(eth_withdraw_amount) + FVal(eth_interest_amount)),
+            balance=Balance(unwrap_amount := FVal(eth_withdraw_amount) + FVal(eth_interest_amount)),  # noqa: E501
             location_label=user_safe_proxy,
-            # TODO: https://github.com/orgs/rotki/projects/11?pane=issue&itemId=95697078 . This is not a spend but a WETH wrapping  # noqa: E501
-            notes=f'Send {FVal(eth_withdraw_amount) + FVal(eth_interest_amount)} WETH from {user_safe_proxy} to 0x0000000000000000000000000000000000000000',  # noqa: E501
-            address=ZERO_ADDRESS,
+            notes=f'Unwrap {unwrap_amount} WETH',
+            counterparty=CPT_WETH,
+            address=user_safe_proxy,
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=23,
+            sequence_index=20,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            balance=Balance(unwrap_amount),
+            location_label=user_safe_proxy,
+            notes=f'Receive {unwrap_amount} ETH',
+            counterparty=CPT_WETH,
+            address=A_WETH_ARB.resolve_to_evm_token().evm_address,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=21,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
             event_type=HistoryEventType.SPEND,
@@ -1645,7 +1645,7 @@ def test_aave_v3_close_position_with_safe(arbitrum_one_inquirer, arbitrum_one_ac
             address=ZERO_ADDRESS,
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=24,
+            sequence_index=22,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
             event_type=HistoryEventType.WITHDRAWAL,
@@ -1658,7 +1658,7 @@ def test_aave_v3_close_position_with_safe(arbitrum_one_inquirer, arbitrum_one_ac
             address=string_to_evm_address('0xe50fA9b3c56FfB159cB0FCA61F5c9D750e8128c8'),
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=25,
+            sequence_index=23,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
             event_type=HistoryEventType.RECEIVE,
