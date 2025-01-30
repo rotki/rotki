@@ -19,14 +19,21 @@ Changelog
 * :feature:`-` Safepass vesting claim start events will now be properly decoded.
 * :feature:`-` Hedgey voting token lockup related events will now be properly decoded and locked balances automatically detected.
 * :bug:`-` Bitmex balances will now be queried correctly.
+* :bug:`-` Prices for Aerodrome LP tokens will now be found and the associated balances shown correctly.
+* :bug:`-` A rare error with velodrome events decoding should now be fixed and the relevant events properly decoded.
+* :bug:`-` Some mainnet to optimism bridging transactions that were not seen correctly will now be properly decoded.
+* :bug:`9308` Fix some cases of Coinbase events that were not properly understood in rotki.
 * :bug:`-` Some specific cases of yearn v2 vault deposit/withdrawals that had problems will now be decoded properly.
 * :bug:`-` Deleting an ethereum address will now remove the withdrawals cache for that address so re-adding it will now properly detect ethereum staking withdrawals again.
 * :bug:`-` Fix double count of cowswap fees.
+* :bug:`-` Fix an error when merging two assets if they both appear at the same snapshot.
 * :bug:`-` Allow the rotki app to be minimized using the shortcut for each platform.
-* :bug:`-` Fix issue when user tries to delete Kusama, Polkadot, or Beaconchain RPC URL.
+* :bug:`-` Deleting Kusama, Polkadot, or Beaconchain RPC URL should now work properly again.
+* :bug:`-` Some curve event edge cases will now be properly decoded and accounted for.
 * :bug:`-` rotki should now warn you again when gnosis pay authentication token expires.
 * :bug:`-` rotki will now properly decode aave v2 to v3 migrations for polygon and mainnet
 * :bug:`-` rotki will now properly decode some aave v3 wrapped eth transactions that were not decoded properly in the past.
+* :bug:`-` rotki will now be able to add SAFE accounts to all the supported EVM chains at once.
 
 * :release:`1.37.1 <2025-01-10>`
 * :bug:`-` OKX balances will now include assets in the funding account.

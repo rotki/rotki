@@ -635,6 +635,9 @@ def setup_evm_addresses_activity_mock(
             return '0xsomecode'
         return '0x'
 
+    def mock_is_safe_or_eoa(address: ChecksumEvmAddress, chain: SupportedBlockchain):
+        return address not in eth_contract_addresses
+
     def mock_avax_get_tx_count(account):
         if account in avalanche_addresses:
             return 1
@@ -676,6 +679,11 @@ def setup_evm_addresses_activity_mock(
         chains_aggregator.zksync_lite,
         '_query_api',
         side_effect=mock_zksync_lite_query_api,
+    ))
+    stack.enter_context(patch.object(
+        chains_aggregator,
+        'is_safe_proxy_or_eoa',
+        side_effect=mock_is_safe_or_eoa,
     ))
 
     for chain in EVM_CHAINS_WITH_TRANSACTIONS:

@@ -251,7 +251,12 @@ def test_velodrome_cache(optimism_inquirer):
     assert all(entry in addressbook_entries for entry in VELODROME_SOME_EXPECTED_ADDRESBOOK_ENTRIES)  # noqa: E501
     assert all((identifier,) in asset_identifiers for identifier in VELODROME_SOME_EXPECTED_ASSETS)
 
-    assert mock_notify.call_args_list == [make_call_object(CPT_VELODROME, ChainID.OPTIMISM, 0, 0)]
+    # New messages are sent only after a delay of 5 secs and the test runs fast
+    # due to the vcr, so only the first message from each loop gets sent.
+    assert mock_notify.call_args_list == [
+        make_call_object(CPT_VELODROME, ChainID.OPTIMISM, 0, 200),
+        make_call_object(CPT_VELODROME, ChainID.OPTIMISM, 1, 282),
+    ]
 
 
 class MockEvmContract:

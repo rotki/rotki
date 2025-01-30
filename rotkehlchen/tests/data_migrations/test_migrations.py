@@ -439,7 +439,7 @@ def test_migration_11(
     - Test that detecting arbitrum one accounts works properly
     """
     detect_accounts_migration_check(
-        expected_detected_addresses_per_chain={SupportedBlockchain.ARBITRUM_ONE: [ethereum_accounts[1]]},  # noqa: E501
+        expected_detected_addresses_per_chain={SupportedBlockchain.ARBITRUM_ONE: ethereum_accounts},  # noqa: E501
         migration_version=11,
         migration_steps=5,  # 2 (current eth accounts) + 3 (potentially write to db + updating spam assets and rpc nodes + new round msg)  # noqa: E501
         migration_list=[MIGRATION_LIST[5]],
@@ -470,8 +470,8 @@ def test_migration_13(
     """
     detect_accounts_migration_check(
         expected_detected_addresses_per_chain={
-            SupportedBlockchain.GNOSIS: [ethereum_accounts[1]],
-            SupportedBlockchain.BASE: [ethereum_accounts[1]],
+            SupportedBlockchain.GNOSIS: ethereum_accounts,
+            SupportedBlockchain.BASE: ethereum_accounts,
         },
         migration_version=13,
         migration_steps=5,  # 2 (current eth accounts) + 3 (potentially write to db + updating spam assets and rpc nodes + new round msg)  # noqa: E501
@@ -488,7 +488,7 @@ def test_migration_13(
 @pytest.mark.parametrize('ethereum_accounts', [[
     '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',  # should have zksynclite
     '0xfa8666aE51F5b136596248d9411b03AC9040fff0',  # should have scroll
-    '0x2F4c0f60f2116899FA6D4b9d8B979167CE963d25',  # should have neither
+    '0xDeeF02aDA5b089f851F2a1C0301D46631514D312',  # should have neither
 ]])
 @pytest.mark.parametrize('legacy_messages_via_websockets', [True])
 @pytest.mark.parametrize('network_mocking', [False])

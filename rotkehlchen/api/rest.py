@@ -1938,7 +1938,7 @@ class RestAPI:
                 existed_accounts,
                 failed_accounts,
                 no_activity_accounts,
-                eth_contract_addresses,
+                evm_contract_addresses,
             ) = self.rotkehlchen.add_evm_accounts(account_data=account_data)
         except (EthSyncError, TagConstraintError) as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
@@ -1953,17 +1953,14 @@ class RestAPI:
             ('failed', failed_accounts),
             ('existed', existed_accounts),
             ('no_activity', no_activity_accounts),
+            ('evm_contracts', evm_contract_addresses),
         ):
             for chain, address in list_of_accounts:
                 result_dicts[response_key][address].append(chain.serialize())
                 if len(result_dicts[response_key][address]) == len(SUPPORTED_EVM_EVMLIKE_CHAINS):
                     result_dicts[response_key][address] = [all_key]
 
-        result: dict[str, Any] = result_dicts
-        if len(eth_contract_addresses) != 0:
-            result |= {'eth_contracts': eth_contract_addresses}
-
-        return _wrap_in_ok_result(result)
+        return _wrap_in_ok_result(result_dicts)
 
     @async_api_call()
     def refresh_evm_accounts(self) -> dict[str, Any]:

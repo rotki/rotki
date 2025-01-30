@@ -7,26 +7,31 @@ import requests
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.converters import asset_from_coinbase
 from rotkehlchen.constants import ZERO
-from rotkehlchen.constants.assets import A_1INCH, A_BTC, A_ETH, A_EUR, A_SOL, A_USDC
+from rotkehlchen.constants.assets import A_1INCH, A_BTC, A_ETH, A_EUR, A_SOL, A_USD, A_USDC
 from rotkehlchen.db.filtering import HistoryEventFilterQuery, TradesFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.asset import UnknownAsset
-from rotkehlchen.exchanges.coinbase import Coinbase, trade_from_conversion
+from rotkehlchen.exchanges.coinbase import Coinbase
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.tests.utils.constants import A_XTZ
 from rotkehlchen.tests.utils.exchanges import TRANSACTIONS_RESPONSE, mock_normal_coinbase_query
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import Location, TimestampMS, TradeType
 from rotkehlchen.utils.misc import ts_now
 
 
-def test_name():
-    exchange = Coinbase('coinbase1', 'a', b'a', object(), object())
-    assert exchange.location == Location.COINBASE
-    assert exchange.name == 'coinbase1'
+@pytest.fixture(name='mock_coinbase')
+def fixture_mock_coinbase() -> Coinbase:
+    return Coinbase('coinbase1', 'a', b'a', object(), object())  # type: ignore
+
+
+def test_name(mock_coinbase):
+    assert mock_coinbase.location == Location.COINBASE
+    assert mock_coinbase.name == 'coinbase1'
 
 
 def test_coinbase_query_balances(function_scope_coinbase):
@@ -526,9 +531,10 @@ def test_coinbase_query_history_events(
     assert expected_events == events
 
 
-def test_asset_conversion():
+def test_asset_conversion(mock_coinbase):
+    tx_id = '77c5ad72-764e-414b-8bdb-b5aed20fb4b1'
     trade_b = {
-        'id': '77c5ad72-764e-414b-8bdb-b5aed20fb4b1',
+        'id': tx_id,
         'type': 'trade',
         'status': 'completed',
         'amount': {
@@ -541,9 +547,9 @@ def test_asset_conversion():
         },
         'description': None,
         'created_at': '2020-06-08T02:32:15Z',
-        'updated_at': '2021-06-08T02:32:16Z',
+        'updated_at': '2021-06-08T02:32:15Z',
         'resource': 'transaction',
-        'resource_path': '/v2/accounts/sd5af/transactions/77c5ad72-764e-414b-8bdb-b5aed20fb4b1',
+        'resource_path': f'/v2/accounts/sd5af/transactions/{tx_id}',
         'instant_exchange': False,
         'trade': {
             'id': '5dceef97-ef34-41e6-9171-3e60cd01639e',
@@ -560,7 +566,7 @@ def test_asset_conversion():
     }
 
     trade_a = {
-        'id': '8f530cd1-5ec0-4aae-afdc-198502a53b17',
+        'id': tx_id,
         'type': 'trade',
         'status': 'completed',
         'amount': {
@@ -573,9 +579,9 @@ def test_asset_conversion():
         },
         'description': None,
         'created_at': '2020-06-08T02:32:16Z',
-        'updated_at': '2020-06-08T02:32:16Z',
+        'updated_at': '2021-06-08T02:32:16Z',
         'resource': 'transaction',
-        'resource_path': '/v2/accounts/sd5af/transactions/8f530cd1-5ec0-4aae-afdc-198502a53b17',
+        'resource_path': f'/v2/accounts/sd5af/transactions/{tx_id}',
         'instant_exchange': False,
         'trade': {
             'id': '5dceef97-ef34-41e6-9171-3e60cd01639e',
@@ -591,7 +597,8 @@ def test_asset_conversion():
         },
     }
 
-    trade = trade_from_conversion(trade_a, trade_b)
+    trade_pairs, trades = {tx_id: [trade_a, trade_b]}, []
+    mock_coinbase._process_trades_from_conversion(trade_pairs, trades)
     expected_trade = Trade(
         timestamp=1623119536,
         location=Location.COINBASE,
@@ -604,13 +611,59 @@ def test_asset_conversion():
         fee_currency=A_USDC,
         link='5dceef97-ef34-41e6-9171-3e60cd01639e',
     )
-    assert trade == expected_trade
+    assert trades == [expected_trade]
 
 
-def test_asset_conversion_not_stable_coin():
-    """Test a conversion using a from asset that is not a stable coin"""
+def test_asset_conversion_no_second_transaction(mock_coinbase):
+    tx_id = '77c5ad72-764e-414b-8bdb-b5aed20fb4b1'
     trade_a = {
-        'id': '77c5ad72-764e-414b-8bdb-b5aed20fb4b1',
+        'id': tx_id,
+        'type': 'trade',
+        'status': 'completed',
+        'amount': {
+            'amount': '450',
+            'currency': 'XTZ',
+        },
+        'native_amount': {
+            'amount': '540',
+            'currency': 'USD',
+        },
+        'created_at': '2020-06-08T02:32:15Z',
+        'updated_at': '2021-06-08T02:32:16Z',
+        'resource': 'transaction',
+        'resource_path': f'/v2/accounts/sd5af/transactions/{tx_id}',
+        'trade': {
+            'fee': {
+                'amount': '1',
+                'currency': 'XTZ',
+            },
+            'id': '5dceef97-ef34-41e6-9171-3e60cd01639e',
+            'payment_method_name': 'ETH Wallet',
+        },
+    }
+
+    trade_pairs, trades = {tx_id: [trade_a]}, []
+    mock_coinbase._process_trades_from_conversion(trade_pairs, trades)
+    expected_trade = Trade(
+        timestamp=1623119536,
+        location=Location.COINBASE,
+        base_asset=A_XTZ,
+        quote_asset=A_USD,
+        trade_type=TradeType.SELL,
+        amount=FVal('450'),
+        rate=FVal('1.2'),
+        fee=FVal('1'),
+        fee_currency=A_XTZ,
+        link='5dceef97-ef34-41e6-9171-3e60cd01639e',
+    )
+    assert trades == [expected_trade]
+
+
+def test_asset_conversion_not_stable_coin(mock_coinbase):
+    """Test a conversion using a from asset that is not a stable coin"""
+    tx_id = '77c5ad72-764e-414b-8bdb-b5aed20fb4b1'
+    trade_a = {
+        'id': tx_id,
         'type': 'trade',
         'status': 'completed',
         'amount': {
@@ -625,7 +678,7 @@ def test_asset_conversion_not_stable_coin():
         'created_at': '2020-06-08T02:32:15Z',
         'updated_at': '2021-06-08T02:32:16Z',
         'resource': 'transaction',
-        'resource_path': '/v2/accounts/sd5af/transactions/77c5ad72-764e-414b-8bdb-b5aed20fb4b1',
+        'resource_path': f'/v2/accounts/sd5af/transactions/{tx_id}',
         'instant_exchange': False,
         'trade': {
             'id': '5dceef97-ef34-41e6-9171-3e60cd01639e',
@@ -640,9 +693,8 @@ def test_asset_conversion_not_stable_coin():
             'payment_method_name': 'USDC Wallet',
         },
     }
-
     trade_b = {
-        'id': '8f530cd1-5ec0-4aae-afdc-198502a53b17',
+        'id': tx_id,
         'type': 'trade',
         'status': 'completed',
         'amount': {
@@ -657,7 +709,7 @@ def test_asset_conversion_not_stable_coin():
         'created_at': '2020-06-08T02:32:16Z',
         'updated_at': '2020-06-08T02:32:16Z',
         'resource': 'transaction',
-        'resource_path': '/v2/accounts/sd5af/transactions/8f530cd1-5ec0-4aae-afdc-198502a53b17',
+        'resource_path': f'/v2/accounts/sd5af/transactions/{tx_id}',
         'instant_exchange': False,
         'trade': {
             'id': '5dceef97-ef34-41e6-9171-3e60cd01639e',
@@ -673,7 +725,8 @@ def test_asset_conversion_not_stable_coin():
         },
     }
 
-    trade = trade_from_conversion(trade_a, trade_b)
+    trade_pairs, trades = {tx_id: [trade_a, trade_b]}, []
+    mock_coinbase._process_trades_from_conversion(trade_pairs, trades)
     expected_trade = Trade(
         timestamp=1623119536,
         location=Location.COINBASE,
@@ -686,13 +739,14 @@ def test_asset_conversion_not_stable_coin():
         fee_currency=A_1INCH,
         link='5dceef97-ef34-41e6-9171-3e60cd01639e',
     )
-    assert trade == expected_trade
+    assert trades == [expected_trade]
 
 
-def test_asset_conversion_zero_fee():
+def test_asset_conversion_zero_fee(mock_coinbase):
     """Test a conversion with 0 fee"""
+    tx_id = '77c5ad72-764e-414b-8bdb-b5aed20fb4b1'
     trade_a = {
-        'id': '77c5ad72-764e-414b-8bdb-b5aed20fb4b1',
+        'id': tx_id,
         'type': 'trade',
         'status': 'completed',
         'amount': {
@@ -707,7 +761,7 @@ def test_asset_conversion_zero_fee():
         'created_at': '2020-06-08T02:32:16Z',
         'updated_at': '2021-06-08T02:32:16Z',
         'resource': 'transaction',
-        'resource_path': '/v2/accounts/sd5af/transactions/77c5ad72-764e-414b-8bdb-b5aed20fb4b1',
+        'resource_path': f'/v2/accounts/sd5af/transactions/{tx_id}',
         'instant_exchange': False,
         'trade': {
             'id': '5dceef97-ef34-41e6-9171-3e60cd01639e',
@@ -722,9 +776,8 @@ def test_asset_conversion_zero_fee():
             'payment_method_name': 'USDC Wallet',
         },
     }
-
     trade_b = {
-        'id': '8f530cd1-5ec0-4aae-afdc-198502a53b17',
+        'id': tx_id,
         'type': 'trade',
         'status': 'completed',
         'amount': {
@@ -739,7 +792,7 @@ def test_asset_conversion_zero_fee():
         'created_at': '2020-06-08T02:32:16Z',
         'updated_at': '2020-06-08T02:32:16Z',
         'resource': 'transaction',
-        'resource_path': '/v2/accounts/sd5af/transactions/8f530cd1-5ec0-4aae-afdc-198502a53b17',
+        'resource_path': f'/v2/accounts/sd5af/transactions/{tx_id}',
         'instant_exchange': False,
         'trade': {
             'id': '5dceef97-ef34-41e6-9171-3e60cd01639e',
@@ -755,7 +808,8 @@ def test_asset_conversion_zero_fee():
         },
     }
 
-    trade = trade_from_conversion(trade_a, trade_b)
+    trade_pairs, trades = {tx_id: [trade_a, trade_b]}, []
+    mock_coinbase._process_trades_from_conversion(trade_pairs, trades)
     expected_trade = Trade(
         timestamp=1623119536,
         location=Location.COINBASE,
@@ -768,16 +822,16 @@ def test_asset_conversion_zero_fee():
         fee_currency=A_1INCH,
         link='5dceef97-ef34-41e6-9171-3e60cd01639e',
     )
-    assert trade == expected_trade
+    assert trades == [expected_trade]
 
 
-def test_asset_conversion_choosing_fee_asset():
+def test_asset_conversion_choosing_fee_asset(mock_coinbase):
     """Test that the fee asset is correctly chosen when the received asset transaction
     is created before the giving transaction.
     """
-
+    tx_id = '77c5ad72-764e-414b-8bdb-b5aed20fb4b1'
     trade_a = {
-        'id': 'REDACTED',
+        'id': tx_id,
         'type': 'trade',
         'status': 'completed',
         'amount': {
@@ -792,7 +846,7 @@ def test_asset_conversion_choosing_fee_asset():
         'created_at': '2021-10-12T13:23:56Z',
         'updated_at': '2021-10-12T13:23:56Z',
         'resource': 'transaction',
-        'resource_path': '/v2/accounts/REDACTED/transactions/REDACTED',
+        'resource_path': f'/v2/accounts/sd5af/transactions/{tx_id}',
         'instant_exchange': False,
         'trade': {
             'id': 'id_of_trade',
@@ -808,9 +862,8 @@ def test_asset_conversion_choosing_fee_asset():
         },
         'hide_native_amount': False,
     }
-
     trade_b = {
-        'id': 'REDACTED',
+        'id': tx_id,
         'type': 'trade',
         'status': 'completed',
         'amount': {
@@ -825,7 +878,7 @@ def test_asset_conversion_choosing_fee_asset():
         'created_at': '2021-10-12T13:23:55Z',
         'updated_at': '2021-10-12T13:23:57Z',
         'resource': 'transaction',
-        'resource_path': '/v2/accounts/REDACTED/transactions/REDACTED',
+        'resource_path': f'/v2/accounts/sd5af/transactions/{tx_id}',
         'instant_exchange': False,
         'trade': {
             'id': 'id_of_trade',
@@ -842,7 +895,8 @@ def test_asset_conversion_choosing_fee_asset():
         'hide_native_amount': False,
     }
 
-    trade = trade_from_conversion(trade_a, trade_b)
+    trade_pairs, trades = {tx_id: [trade_a, trade_b]}, []
+    mock_coinbase._process_trades_from_conversion(trade_pairs, trades)
     expected_trade = Trade(
         timestamp=1634045036,
         location=Location.COINBASE,
@@ -855,16 +909,15 @@ def test_asset_conversion_choosing_fee_asset():
         fee_currency=A_BTC,
         link='id_of_trade',
     )
-    assert trade == expected_trade
+    assert trades == [expected_trade]
 
 
 def test_coinbase_query_trade_history_advanced_fill(function_scope_coinbase):
     """Test that coinbase trade history query works fine for advanced_trade_fill"""
     coinbase = function_scope_coinbase
-
     mock_transactions_response = """
 { "data": [{
-            "id": "REDACTED",
+            "id": "id1",
             "type": "advanced_trade_fill",
             "status": "completed",
             "amount": {
@@ -879,12 +932,12 @@ def test_coinbase_query_trade_history_advanced_fill(function_scope_coinbase):
             "created_at": "2024-03-07T08:12:51Z",
             "updated_at": "2024-03-07T08:12:51Z",
             "resource": "transaction",
-            "resource_path": "/v2/accounts/REDACTED/transactions/REDACTED",
+            "resource_path": "/v2/accounts/REDACTED/transactions/id1",
             "instant_exchange": false,
             "advanced_trade_fill": {
                 "fill_price": "0.9174",
                 "product_id": "USDC-EUR",
-                "order_id": "REDACTED",
+                "order_id": "orderid1",
                 "commission": "0",
                 "order_side": "sell"
             },
@@ -897,7 +950,7 @@ def test_coinbase_query_trade_history_advanced_fill(function_scope_coinbase):
             "hide_native_amount": false
         },
         {
-            "id": "REDACTED",
+            "id": "id2",
             "type": "advanced_trade_fill",
             "status": "completed",
             "amount": {
@@ -912,12 +965,12 @@ def test_coinbase_query_trade_history_advanced_fill(function_scope_coinbase):
             "created_at": "2024-03-07T09:12:51Z",
             "updated_at": "2024-03-07T09:12:51Z",
             "resource": "transaction",
-            "resource_path": "/v2/accounts/REDACTED/transactions/REDACTED",
+            "resource_path": "/v2/accounts/REDACTED/transactions/id2",
             "instant_exchange": false,
             "advanced_trade_fill": {
                 "fill_price": "0.9174",
                 "product_id": "USDC-EUR",
-                "order_id": "REDACTED",
+                "order_id": "orderid2",
                 "commission": "0",
                 "order_side": "sell"
             },
@@ -930,7 +983,7 @@ def test_coinbase_query_trade_history_advanced_fill(function_scope_coinbase):
             "hide_native_amount": false
         },
         {
-            "id": "REDACTED",
+            "id": "id3",
             "type": "advanced_trade_fill",
             "status": "completed",
             "amount": {
@@ -945,12 +998,12 @@ def test_coinbase_query_trade_history_advanced_fill(function_scope_coinbase):
             "created_at": "2024-03-07T09:12:51Z",
             "updated_at": "2024-03-07T09:12:51Z",
             "resource": "transaction",
-            "resource_path": "/v2/accounts/REDACTED/transactions/REDACTED",
+            "resource_path": "/v2/accounts/REDACTED/transactions/id3",
             "instant_exchange": false,
             "advanced_trade_fill": {
                 "fill_price": "3334.341",
                 "product_id": "ETH-USDC",
-                "order_id": "REDACTED",
+                "order_id": "orderid3",
                 "commission": "0.0000005",
                 "order_side": "sell"
             },
@@ -963,7 +1016,7 @@ def test_coinbase_query_trade_history_advanced_fill(function_scope_coinbase):
             "hide_native_amount": false
         },
         {
-            "id": "REDACTED",
+            "id": "id4",
             "type": "advanced_trade_fill",
             "status": "completed",
             "amount": {
@@ -978,12 +1031,12 @@ def test_coinbase_query_trade_history_advanced_fill(function_scope_coinbase):
             "created_at": "2024-03-07T09:12:51Z",
             "updated_at": "2024-03-07T09:12:51Z",
             "resource": "transaction",
-            "resource_path": "/v2/accounts/REDACTED/transactions/REDACTED",
+            "resource_path": "/v2/accounts/REDACTED/transactions/id4",
             "instant_exchange": false,
             "advanced_trade_fill": {
                 "fill_price": "170.12",
                 "product_id": "SOL-USDC",
-                "order_id": "REDACTED",
+                "order_id": "orderid4",
                 "commission": "0.5710371002622",
                 "order_side": "buy"
             },
@@ -996,7 +1049,7 @@ def test_coinbase_query_trade_history_advanced_fill(function_scope_coinbase):
             "hide_native_amount": false
         },
         {
-            "id": "REDACTED",
+            "id": "id5",
             "type": "advanced_trade_fill",
             "status": "completed",
             "amount": {
@@ -1011,12 +1064,12 @@ def test_coinbase_query_trade_history_advanced_fill(function_scope_coinbase):
             "created_at": "2024-03-07T09:12:51Z",
             "updated_at": "2024-03-07T09:12:51Z",
             "resource": "transaction",
-            "resource_path": "/v2/accounts/REDACTED/transactions/REDACTED",
+            "resource_path": "/v2/accounts/REDACTED/transactions/id5",
             "instant_exchange": false,
             "advanced_trade_fill": {
                 "fill_price": "3334.341",
                 "product_id": "ETH-USDC",
-                "order_id": "REDACTED",
+                "order_id": "orderid3",
                 "commission": "0.0000005",
                 "order_side": "sell"
             },
@@ -1055,7 +1108,7 @@ def test_coinbase_query_trade_history_advanced_fill(function_scope_coinbase):
         rate=FVal('0.9174'),
         fee=ZERO,
         fee_currency=A_EUR,
-        link='REDACTED',
+        link='id1',
     ), Trade(
         timestamp=1709802771,
         location=Location.COINBASE,
@@ -1066,7 +1119,7 @@ def test_coinbase_query_trade_history_advanced_fill(function_scope_coinbase):
         rate=FVal('0.9174'),
         fee=ZERO,
         fee_currency=A_EUR,
-        link='REDACTED',
+        link='id2',
     ), Trade(
         timestamp=1709802771,
         location=Location.COINBASE,
@@ -1077,7 +1130,7 @@ def test_coinbase_query_trade_history_advanced_fill(function_scope_coinbase):
         rate=FVal('3334.341'),
         fee=FVal('0.0000005'),
         fee_currency=A_USDC,
-        link='REDACTED',
+        link='id3',
     ), Trade(
         timestamp=1709802771,
         location=Location.COINBASE,
@@ -1088,17 +1141,94 @@ def test_coinbase_query_trade_history_advanced_fill(function_scope_coinbase):
         rate=FVal('170.12'),
         fee=FVal('0.5710371002622'),
         fee_currency=A_USDC,
-        link='REDACTED',
+        link='id4',
     )]
     assert trades == expected_trades
+
+
+def test_advancedtrade_missing_order_side(mock_coinbase):
+    """Test that we can read coinbase advanced trades missing order_side """
+    tx_id1 = '77c5ad72-764e-414b-8bdb-b5aed20fb4b1'
+    raw_trade_a = {
+        'advanced_trade_fill': {
+            'commission': '0.85',
+            'fill_price': '1946.02',
+            'order_id': '0e2ae3da-3sdf-45cf-a1f0-60a6bd77a987',
+            'product_id': 'ETH-USD',
+        },
+        'amount': {
+            'amount': '-205.5',
+            'currency': 'USD',
+        },
+        'created_at': '2022-05-20T19:38:04Z',
+        'id': tx_id1,
+        'native_amount': {
+            'amount': '-205.5',
+            'currency': 'USD',
+        },
+        'resource': 'transaction',
+        'resource_path': f'/v2/accounts/883b6405-4099-5eec-9e33-b0f257f23bdd/transactions/{tx_id1}',  # noqa: E501
+        'status': 'completed',
+        'type': 'advanced_trade_fill',
+    }
+    trade = mock_coinbase._process_coinbase_trade(raw_trade_a)
+    expected_trade = Trade(
+        timestamp=1653075484,
+        location=Location.COINBASE,
+        base_asset=A_ETH,
+        quote_asset=A_USD,
+        trade_type=TradeType.BUY,
+        amount=FVal('0.105600147994367992106967040420961757844215372914975180111201323727402596067872'),
+        rate=FVal('1946.02'),
+        fee=FVal('0.85'),
+        fee_currency=A_USD,
+        link=tx_id1,
+    )
+    assert trade == expected_trade
+    tx_id2 = '66c5ad72-764e-2f4b-8bdb-b5aed20fb389'
+    raw_trade_b = {
+        'advanced_trade_fill': {
+            'commission': '0.0047',
+            'fill_price': '1870.16',
+            'order_id': '9bc52036-9b18-1dea-756c-c960fd3d18a1',
+            'product_id': 'ETH-USD',
+        },
+        'amount': {
+            'amount': '0.00100000',
+            'currency': 'ETH',
+        },
+        'created_at': '2022-05-26T18:05:30Z',
+        'id': tx_id2,
+        'native_amount': {
+            'amount': '1.87',
+            'currency': 'USD',
+        },
+        'resource': 'transaction',
+        'resource_path': f'/v2/accounts/b7a7a05a-58ed-5a74-a328-266530609c9f/transactions/{tx_id2}',  # noqa: E501
+        'status': 'completed',
+        'type': 'advanced_trade_fill',
+    }
+    trade = mock_coinbase._process_coinbase_trade(raw_trade_b)
+    expected_trade = Trade(
+        timestamp=1653588330,
+        location=Location.COINBASE,
+        base_asset=A_ETH,
+        quote_asset=A_USD,
+        trade_type=TradeType.SELL,
+        amount=FVal('0.001'),
+        rate=FVal('1870.16'),
+        fee=FVal('0.0047'),
+        fee_currency=A_USD,
+        link=tx_id2,
+    )
+    assert trade == expected_trade
 
 
 def test_coverage_of_products():
     """Test that we can process all assets from coinbase"""
     data = requests.get('https://api.exchange.coinbase.com/currencies')
     for coin in data.json():
-        try:
-            # Make sure all products can be processed
+        try:  # Make sure all products can be processed
             asset_from_coinbase(coin['id'])
         except UnknownAsset as e:
             test_warnings.warn(UserWarning(

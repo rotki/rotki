@@ -154,12 +154,14 @@ class Aavev3LikeCommonDecoder(Commonv2v3LikeDecoder):
                 withdraw_event = event
             elif (
                     event.event_type == HistoryEventType.RECEIVE and
-                    event.event_subtype == HistoryEventSubType.RECEIVE_WRAPPED
+                    event.event_subtype == HistoryEventSubType.RECEIVE_WRAPPED and
+                    self._token_is_aave_contract(event.asset)
             ):
                 receive_event = event
             elif (
                     event.event_type == HistoryEventType.SPEND and
-                    event.event_subtype == HistoryEventSubType.RETURN_WRAPPED
+                    event.event_subtype == HistoryEventSubType.RETURN_WRAPPED and
+                    self._token_is_aave_contract(event.asset)
             ):
                 return_event = event
             elif (

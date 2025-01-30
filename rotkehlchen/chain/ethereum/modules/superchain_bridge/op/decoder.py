@@ -32,6 +32,7 @@ class SuperchainBridgeopDecoder(SuperchainL1SideCommonBridgeDecoder):
                 string_to_evm_address('0x99C9fc46f92E8a1c0deC1b1747d010903E884bE1'),
                 string_to_evm_address('0x10E6593CDda8c58a1d0f14C5164B376352a55f2F'),
                 string_to_evm_address('0xbEb5Fc579115071764c7423A4f12eDde41f106Ed'),
+                string_to_evm_address('0x467194771dAe2967Aef3ECbEDD3Bf9a310C76C65'),
             ),
             l2_chain=ChainID.OPTIMISM,
             counterparty=OPTIMISM_CPT_DETAILS,
