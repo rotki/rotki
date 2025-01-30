@@ -98,7 +98,13 @@ def trade_from_conversion(tx_a: dict[str, Any], tx_b: dict[str, Any] | None) -> 
     if tx_a['status'] != 'completed':
         return None
 
-    timestamp = deserialize_timestamp_from_date(tx_a['updated_at'], 'iso8601', 'coinbase')
+    # we found cases where trades only had `created_at` so we use
+    # that as a fallback.
+    timestamp = deserialize_timestamp_from_date(
+        date=tx_a.get('updated_at') or tx_a.get('created_at'),
+        formatstr='iso8601',
+        location='coinbase',
+    )
     if tx_b is not None:
         # Trade b will represent the asset we are converting to
         if tx_b['amount']['amount'].startswith('-'):
@@ -660,10 +666,14 @@ class Coinbase(ExchangeInterface):
                         f'expected structure {transaction}',
                     )
             elif tx_type in ('buy', 'sell', 'advanced_trade_fill'):
-                if (trade := self._process_coinbase_trade(event=transaction)):
+                if (trade := self._process_coinbase_trade(event=transaction)) is not None:
                     trades.append(trade)
             elif (
-                    tx_type in ('interest', 'inflation_reward', 'staking_reward') or
+                    tx_type in (
+                        'interest', 'inflation_reward', 'staking_reward',
+                        'staking_transfer', 'unstaking_transfer', 'cardbuyback',
+                        'cardspend', 'incentives_shared_clawback', 'clawback',
+                    ) or
                     (
                         tx_type == 'send' and 'from' in transaction and
                         'resource' in transaction['from'] and
@@ -672,7 +682,14 @@ class Coinbase(ExchangeInterface):
             ):
                 if (history_event := self._deserialize_history_event(transaction)) is not None:
                     history_events.append(history_event)
-            elif tx_type in ('send', 'fiat_deposit', 'fiat_withdrawal', 'pro_withdrawal'):
+
+            # 'tx' represents uncategorized transactions that don't fit other specific types.
+            # Used as fallback when a transaction's nature is unclear.
+            # See: https://docs.cdp.coinbase.com/coinbase-app/docs/api-transactions#transaction-types
+            elif tx_type in (
+                'send', 'fiat_deposit', 'fiat_withdrawal',
+                'pro_withdrawal', 'pro_deposit', 'tx',
+            ):
                 # Their docs don't list all possible types. Added some I saw in the wild
                 # and some I assume would exist (exchange_withdrawal, since I saw exchange_deposit)
                 if (asset_movement := self._deserialize_asset_movement(transaction)) is not None:
@@ -921,8 +938,13 @@ class Coinbase(ExchangeInterface):
             fee = Fee(ZERO)
             tx_type = raw_data['type']  # not sure if fiat
             event_type: Literal[HistoryEventType.DEPOSIT, HistoryEventType.WITHDRAWAL]
-            if tx_type in ('send', 'fiat_withdrawal'):
+            amount_data = raw_data['amount']
+            # 'pro_deposit' is treated as withdrawal since it debits funds from Coinbase
+            # See: https://docs.cdp.coinbase.com/coinbase-app/docs/api-transactions#parameters
+            if tx_type in ('fiat_withdrawal', 'pro_deposit'):
                 event_type = HistoryEventType.WITHDRAWAL
+            elif tx_type in ('send', 'tx'):
+                event_type = HistoryEventType.WITHDRAWAL if amount_data['amount'].startswith('-') else HistoryEventType.DEPOSIT  # noqa: E501
             elif tx_type in ('fiat_deposit', 'pro_withdrawal'):
                 event_type = HistoryEventType.DEPOSIT
             else:
@@ -932,7 +954,6 @@ class Coinbase(ExchangeInterface):
                 return None
 
             # Can't see the fee being charged from the "send" resource
-            amount_data = raw_data['amount']
             amount = deserialize_asset_amount_force_positive(amount_data['amount'])
             asset = asset_from_coinbase(amount_data['currency'], time=timestamp)
             # Fees dont appear in the docs but from an experiment of sending ETH
@@ -963,9 +984,6 @@ class Coinbase(ExchangeInterface):
                 return None  # Can ignore. https://github.com/rotki/rotki/issues/3901
 
             if 'from' in raw_data:
-                event_type = HistoryEventType.DEPOSIT
-
-            if tx_type == 'send' and not amount_data['amount'].startswith('-'):
                 event_type = HistoryEventType.DEPOSIT
 
         except UnknownAsset as e:
@@ -1038,22 +1056,37 @@ class Coinbase(ExchangeInterface):
                 )
 
             amount_data = raw_data.get('amount', {})
-            amount = deserialize_asset_amount(amount_data['amount'])
+            amount = deserialize_asset_amount_force_positive(amount_data['amount'])
             asset = asset_from_coinbase(amount_data['currency'], time=timestamp)
             notes = raw_data.get('details', {}).get('header', '')
             tx_type = raw_data['type']
+            event_identifier = f'{CB_EVENTS_PREFIX}{raw_data["id"]!s}'
+            timestamp_ms = ts_sec_to_ms(timestamp)
             if notes != '':
                 notes += f' {"from coinbase earn" if tx_type == "send" else "as " + tx_type}'
+
+            if tx_type in ('staking_transfer', 'unstaking_transfer'):
+                event_type = HistoryEventType.STAKING
+                event_subtype = HistoryEventSubType.DEPOSIT_ASSET if tx_type == 'staking_transfer' else HistoryEventSubType.REMOVE_ASSET  # noqa: E501
+            elif tx_type in ('incentives_shared_clawback', 'clawback'):
+                event_type, event_subtype = HistoryEventType.SPEND, HistoryEventSubType.CLAWBACK
+            elif tx_type == 'cardspend':
+                event_type, event_subtype = HistoryEventType.SPEND, HistoryEventSubType.PAYMENT
+            elif tx_type == 'cardbuyback':
+                event_type, event_subtype = HistoryEventType.RECEIVE, HistoryEventSubType.CASHBACK
+            else:
+                event_type, event_subtype = HistoryEventType.RECEIVE, HistoryEventSubType.NONE
+
             return HistoryEvent(
-                event_identifier=f'{CB_EVENTS_PREFIX}{raw_data["id"]!s}',
+                event_identifier=event_identifier,
                 sequence_index=0,
-                timestamp=ts_sec_to_ms(timestamp),
+                timestamp=timestamp_ms,
                 location=Location.COINBASE,
-                event_type=HistoryEventType.RECEIVE,
-                event_subtype=HistoryEventSubType.NONE,
+                event_type=event_type,
+                event_subtype=event_subtype,
                 asset=asset,
-                balance=Balance(amount=amount, usd_value=ZERO),
-                location_label=None,
+                balance=Balance(amount),
+                location_label=self.name,
                 notes=notes,
             )
 
