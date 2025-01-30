@@ -3372,7 +3372,7 @@
     "label_username": "Profile Name",
     "logout": "Logout",
     "migrating_data": {
-      "current": "Step {currentStep} of {totalSteps} of data migration {currentVersion} is applied.",
+      "current": "Step {currentStep} of {totalSteps} of data migration {currentVersion} is being applied.",
       "title": "Data Migration",
       "warning": "Data migration {currentVersion} is running. Please don't close the app until it's finished."
     },
@@ -3388,7 +3388,7 @@
     },
     "title": "Unlock account",
     "upgrading_db": {
-      "current": "Step {currentStep} of {totalSteps} of database upgrade v{currentVersion} is applied.",
+      "current": "Step {currentStep} of {totalSteps} of database upgrade v{currentVersion} is being applied.",
       "title": "Database Upgrade",
       "warning": "The database is being upgraded from version {fromVersion} to {toVersion}. Please don't close the app until it's finished."
     },
