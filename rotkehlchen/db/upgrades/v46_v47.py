@@ -2,6 +2,7 @@ import json
 import logging
 from typing import TYPE_CHECKING
 
+from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
 from rotkehlchen.utils.progress import perform_userdb_upgrade_steps, progress_step
@@ -32,6 +33,33 @@ def upgrade_v46_to_v47(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
     def _clean_cache(write_cursor: 'DBCursor') -> None:
         write_cursor.execute("DELETE FROM key_value_cache WHERE name LIKE 'extrainternaltx_%'")
 
+    @progress_step(description='Resetting decoded events.')
+    def _reset_decoded_events(write_cursor: 'DBCursor') -> None:
+        """Reset all decoded evm events except for the customized ones and those in zksync lite.
+        Code taken from previous upgrade
+        """
+        if write_cursor.execute('SELECT COUNT(*) FROM evm_transactions').fetchone()[0] > 0:
+            customized_events = write_cursor.execute(
+                'SELECT COUNT(*) FROM history_events_mappings WHERE name=? AND value=?',
+                (HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED),
+            ).fetchone()[0]
+            querystr = (
+                "DELETE FROM history_events WHERE identifier IN ("
+                "SELECT H.identifier from history_events H INNER JOIN evm_events_info E "
+                "ON H.identifier=E.identifier AND E.tx_hash IN "
+                "(SELECT tx_hash FROM evm_transactions) AND H.location != 'o')"  # location 'o' is zksync lite  # noqa: E501
+            )
+            bindings: tuple = ()
+            if customized_events != 0:
+                querystr += ' AND identifier NOT IN (SELECT parent_identifier FROM history_events_mappings WHERE name=? AND value=?)'  # noqa: E501
+                bindings = (HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED)
+
+            write_cursor.execute(querystr, bindings)
+            write_cursor.execute(
+                'DELETE from evm_tx_mappings WHERE tx_id IN (SELECT identifier FROM evm_transactions) AND value=?',  # noqa: E501
+                (0,),  # decoded tx state
+            )
+
     @progress_step(description='Remove unneeded nft collection assets (may take some time).')
     def _remove_nft_collection_assets(write_cursor: 'DBCursor') -> None:
         """Remove erc721 assets that have no collectible id, and also any erc20 assets
@@ -50,9 +78,32 @@ def upgrade_v46_to_v47(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
 
         log.debug(f'Deleting {num_to_remove} assets...')
         placeholders = ','.join(['?'] * len(identifiers_to_remove))
+        tables_with_assets = (
+            ('assets', 'identifier'),
+            ('evm_tokens', 'identifier'),
+            ('common_asset_details', 'identifier'),
+            ('multiasset_mappings', 'asset'),
+            ('price_history', 'from_asset'),
+            ('price_history', 'to_asset'),
+            ('underlying_tokens_list', 'identifier'),
+            ('underlying_tokens_list', 'parent_token_entry'),
+            ('user_owned_assets', 'asset_id'),
+        )
+        total = len(tables_with_assets)
         with globaldb_conn.write_ctx() as global_db_write_cursor:
             log.debug('Deleting from globaldb...')
-            global_db_write_cursor.execute(f'DELETE FROM assets WHERE identifier IN ({placeholders})', identifiers_to_remove)  # noqa: E501
+            # We disable foreign keys because that ended up being the fastest way to delete
+            # the assets. Without that a CASCADE deletion happens but it turned to be really
+            # slow, around ~8 mins in my case with ~300 assets to delete and ~30K assets in my
+            # globaldb. First I tried adding indexes in the globaldb to the tables that reference
+            # the assets table but it lowered the time only to ~6-7 minutes. With direct deletion
+            # without FKs it's almost instant.
+            global_db_write_cursor.executescript('PRAGMA foreign_keys = OFF;')
+            for step, (table_name, column_name) in enumerate(tables_with_assets, start=1):
+                log.debug(f'{step}/{total}: Deleting references in the {table_name} table for {column_name}')  # noqa: E501
+                global_db_write_cursor.execute(f'DELETE FROM {table_name} WHERE {column_name} IN ({placeholders})', identifiers_to_remove)  # noqa: E501
+
+            global_db_write_cursor.executescript('PRAGMA foreign_keys = ON;')
 
         log.debug('Deleting from user db...')
         # Load any data associated with these identifiers that might actually be valuable and

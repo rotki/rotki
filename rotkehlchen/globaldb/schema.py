@@ -332,6 +332,20 @@ CREATE TABLE IF NOT EXISTS location_unsupported_assets (
 );
 """
 
+DB_CREATE_INDEXES = """
+CREATE INDEX IF NOT EXISTS idx_assets_identifier ON assets (identifier);
+CREATE INDEX IF NOT EXISTS idx_evm_tokens_identifier ON evm_tokens (identifier, chain, protocol);
+CREATE INDEX IF NOT EXISTS idx_multiasset_mappings_asset ON multiasset_mappings (asset);
+CREATE INDEX IF NOT EXISTS idx_asset_collections_main_asset ON asset_collections (main_asset);
+CREATE INDEX IF NOT EXISTS idx_user_owned_assets_asset_id ON user_owned_assets (asset_id);
+CREATE INDEX IF NOT EXISTS idx_common_assets_identifier ON common_asset_details (identifier);
+CREATE INDEX IF NOT EXISTS idx_price_history_identifier ON price_history (from_asset, to_asset);
+CREATE INDEX IF NOT EXISTS idx_location_mappings_identifier ON location_asset_mappings (local_id);
+CREATE INDEX IF NOT EXISTS idx_underlying_tokens_lists_identifier ON underlying_tokens_list (identifier, parent_token_entry);
+CREATE INDEX IF NOT EXISTS idx_binance_pairs_identifier ON binance_pairs (base_asset, quote_asset);
+CREATE INDEX IF NOT EXISTS idx_multiasset_mappings_identifier ON multiasset_mappings (asset);
+"""  # noqa: E501
+
 DB_SCRIPT_CREATE_TABLES = f"""
 PRAGMA foreign_keys=off;
 BEGIN TRANSACTION;
@@ -357,6 +371,7 @@ BEGIN TRANSACTION;
 {DB_CREATE_DEFAULT_RPC_NODES}
 {DB_CREATE_LOCATION_ASSET_MAPPINGS}
 {DB_CREATE_LOCATION_UNSUPPORTED_ASSETS}
+{DB_CREATE_INDEXES}
 COMMIT;
 PRAGMA foreign_keys=on;
 """
