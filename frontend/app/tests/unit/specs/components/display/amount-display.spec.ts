@@ -4,7 +4,7 @@ import flushPromises from 'flush-promises';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { type ShownCurrency, useCurrencies } from '@/types/currencies';
 import { CurrencyLocation } from '@/types/currency-location';
-import { FrontendSettings } from '@/types/settings/frontend-settings';
+import { getDefaultFrontendSettings } from '@/types/settings/frontend-settings';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useHistoricCachePriceStore } from '@/store/prices/historic';
@@ -177,7 +177,7 @@ describe('amountDisplay.vue', () => {
     describe('before', () => {
       beforeEach(() => {
         useFrontendSettingsStore().update({
-          ...FrontendSettings.parse({}),
+          ...getDefaultFrontendSettings(),
           currencyLocation: CurrencyLocation.BEFORE,
         });
       });
@@ -209,7 +209,7 @@ describe('amountDisplay.vue', () => {
     describe('after', () => {
       beforeEach(() => {
         useFrontendSettingsStore().update({
-          ...FrontendSettings.parse({}),
+          ...getDefaultFrontendSettings(),
           currencyLocation: CurrencyLocation.AFTER,
         });
       });
@@ -242,7 +242,7 @@ describe('amountDisplay.vue', () => {
   describe('check separator', () => {
     it('`Thousand separator=,` & `Decimal separator=.`', () => {
       useFrontendSettingsStore().update({
-        ...FrontendSettings.parse({}),
+        ...getDefaultFrontendSettings(),
         thousandSeparator: ',',
         decimalSeparator: '.',
       });
@@ -253,7 +253,7 @@ describe('amountDisplay.vue', () => {
 
     it('`Thousand separator=.` & `Decimal separator=,`', () => {
       useFrontendSettingsStore().update({
-        ...FrontendSettings.parse({}),
+        ...getDefaultFrontendSettings(),
         thousandSeparator: '.',
         decimalSeparator: ',',
       });
@@ -266,7 +266,7 @@ describe('amountDisplay.vue', () => {
   describe('check rounding', () => {
     it('`amountRoundingMode=up`', () => {
       useFrontendSettingsStore().update({
-        ...FrontendSettings.parse({}),
+        ...getDefaultFrontendSettings(),
         amountRoundingMode: BigNumber.ROUND_UP,
       });
 
@@ -276,7 +276,7 @@ describe('amountDisplay.vue', () => {
 
     it('`amountRoundingMode=down`', () => {
       useFrontendSettingsStore().update({
-        ...FrontendSettings.parse({}),
+        ...getDefaultFrontendSettings(),
         amountRoundingMode: BigNumber.ROUND_DOWN,
       });
 
@@ -286,7 +286,7 @@ describe('amountDisplay.vue', () => {
 
     it('`valueRoundingMode=up`', () => {
       useFrontendSettingsStore().update({
-        ...FrontendSettings.parse({}),
+        ...getDefaultFrontendSettings(),
         valueRoundingMode: BigNumber.ROUND_UP,
       });
 
@@ -298,7 +298,7 @@ describe('amountDisplay.vue', () => {
 
     it('`valueRoundingMode=down`', () => {
       useFrontendSettingsStore().update({
-        ...FrontendSettings.parse({}),
+        ...getDefaultFrontendSettings(),
         valueRoundingMode: BigNumber.ROUND_DOWN,
       });
 
@@ -312,7 +312,7 @@ describe('amountDisplay.vue', () => {
   describe('check large number abbreviations', () => {
     it('`abbreviateNumber=true`', () => {
       useFrontendSettingsStore().update({
-        ...FrontendSettings.parse({}),
+        ...getDefaultFrontendSettings(),
         abbreviateNumber: true,
       });
 
@@ -322,7 +322,7 @@ describe('amountDisplay.vue', () => {
 
     it('`abbreviateNumber=true`, `minimumDigitToBeAbbreviated=7`', () => {
       useFrontendSettingsStore().update({
-        ...FrontendSettings.parse({}),
+        ...getDefaultFrontendSettings(),
         abbreviateNumber: true,
         minimumDigitToBeAbbreviated: 7,
       });
@@ -333,7 +333,7 @@ describe('amountDisplay.vue', () => {
 
     it('`abbreviateNumber=true`, `minimumDigitToBeAbbreviated=8`', () => {
       useFrontendSettingsStore().update({
-        ...FrontendSettings.parse({}),
+        ...getDefaultFrontendSettings(),
         abbreviateNumber: true,
         minimumDigitToBeAbbreviated: 8,
       });
@@ -444,7 +444,7 @@ describe('amountDisplay.vue', () => {
     beforeEach(async () => {
       const frontendStore = useFrontendSettingsStore();
       frontendStore.update({
-        ...FrontendSettings.parse({}),
+        ...getDefaultFrontendSettings(),
         subscriptDecimals: true,
       });
 
@@ -510,7 +510,7 @@ describe('amountDisplay.vue', () => {
     it('respects disabled subscript setting', async () => {
       const frontendStore = useFrontendSettingsStore();
       frontendStore.update({
-        ...FrontendSettings.parse({}),
+        ...getDefaultFrontendSettings(),
         subscriptDecimals: false,
       });
 

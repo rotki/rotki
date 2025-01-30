@@ -4,6 +4,7 @@ import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useSettingsStore } from '@/store/settings';
 import ListItem from '@/components/common/ListItem.vue';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
+import { useCurrencyUpdate } from '@/composables/use-currency-update';
 
 const { update } = useSettingsStore();
 const { currency } = storeToRefs(useGeneralSettingsStore());
@@ -13,6 +14,7 @@ const visible = ref<boolean>(false);
 
 const { t } = useI18n();
 const { currencies } = useCurrencies();
+const { onCurrencyUpdate } = useCurrencyUpdate();
 
 const filteredCurrencies = computed<Currency[]>(() => {
   const filterValue = get(filter).toLocaleLowerCase();
@@ -33,6 +35,7 @@ async function onSelected(newCurrency: Currency) {
     return;
 
   await update({ mainCurrency: newCurrency.tickerSymbol });
+  await onCurrencyUpdate();
 }
 
 const { isPending, start, stop } = useTimeoutFn(

@@ -86,11 +86,7 @@ describe('settings:frontend', () => {
       blockchainRefreshButtonBehaviour: BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES,
       shouldRefreshValidatorDailyStats: false,
       savedFilters: {},
-      balanceUsdValueThreshold: {
-        [BalanceSource.BLOCKCHAIN]: '0',
-        [BalanceSource.EXCHANGES]: '0',
-        [BalanceSource.MANUAL]: '0',
-      },
+      balanceUsdValueThreshold: {},
     });
   });
 
@@ -103,6 +99,7 @@ describe('settings:frontend', () => {
   it('restore', () => {
     const store = useFrontendSettingsStore(pinia);
     const state: FrontendSettings = {
+      schemaVersion: 1,
       defiSetupDone: true,
       language: SupportedLanguage.EN,
       timeframeSetting: TimeFramePeriod.YEAR,

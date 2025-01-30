@@ -1,0 +1,76 @@
+{
+  "abbreviateNumber": false,
+  "amountRoundingMode": 0,
+  "balanceUsdValueThreshold": {
+    "BLOCKCHAIN": "0",
+    "EXCHANGES": "0",
+    "MANUAL": "0"
+  },
+  "blockchainRefreshButtonBehaviour": "ONLY_REFRESH_BALANCES",
+  "currencyLocation": "after",
+  "darkTheme": {
+    "accent": "#667085",
+    "graph": "#E96930",
+    "primary": "#5b68b2"
+  },
+  "dashboardTablesVisibleColumns": {
+    "ASSETS": [
+      "percentage_of_total_net_value"
+    ],
+    "BLOCKCHAIN_ASSET_BALANCES": [
+      "percentage_of_total_net_value"
+    ],
+    "LIABILITIES": [
+      "percentage_of_total_net_value"
+    ],
+    "LIQUIDITY_POSITION": [
+      "percentage_of_total_net_value"
+    ],
+    "NFT": [
+      "percentage_of_total_net_value"
+    ]
+  },
+  "dateInputFormat": "%d/%m/%Y %H:%M:%S",
+  "decimalSeparator": ".",
+  "defaultThemeVersion": 1,
+  "defiSetupDone": false,
+  "enableAliasNames": true,
+  "explorers": {},
+  "graphZeroBased": false,
+  "itemsPerPage": 10,
+  "language": "en",
+  "lastKnownTimeframe": "All",
+  "lightTheme": {
+    "accent": "#667085",
+    "graph": "#96DFD2",
+    "primary": "#4e5ba6"
+  },
+  "minimumDigitToBeAbbreviated": 4,
+  "nftsInNetValue": true,
+  "profitLossReportPeriod": {
+    "quarter": "ALL",
+    "year": "2025"
+  },
+  "queryPeriod": 5,
+  "refreshPeriod": -1,
+  "renderAllNftImages": true,
+  "savedFilters": {},
+  "selectedTheme": 1,
+  "shouldRefreshValidatorDailyStats": false,
+  "showGraphRangeSelector": true,
+  "subscriptDecimals": false,
+  "thousandSeparator": ",",
+  "timeframeSetting": "REMEMBER",
+  "useHistoricalAssetBalances": false,
+  "valueRoundingMode": 1,
+  "versionUpdateCheckFrequency": 24,
+  "visibleTimeframes": [
+    "All",
+    "1Y",
+    "3M",
+    "1M",
+    "2W",
+    "1W"
+  ],
+  "whitelistedDomainsForNftImages": []
+}

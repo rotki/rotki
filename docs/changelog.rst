@@ -18,6 +18,7 @@ Changelog
 * :feature:`-` Lido and EtherFI reserve tokens will now be automatically queried.
 * :feature:`-` Safepass vesting claim start events will now be properly decoded.
 * :feature:`-` Hedgey voting token lockup related events will now be properly decoded and locked balances automatically detected.
+* :bug:`-` Assets with zero price will again show properly when usd value threshold is not set
 * :bug:`-` Bitmex balances will now be queried correctly.
 * :bug:`-` Prices for Aerodrome LP tokens will now be found and the associated balances shown correctly.
 * :bug:`-` A rare error with velodrome events decoding should now be fixed and the relevant events properly decoded.

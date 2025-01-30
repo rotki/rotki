@@ -1,10 +1,14 @@
 <script setup lang="ts">
-import { BalanceSource } from '@/types/settings/frontend-settings';
+import { omit } from 'es-toolkit';
+import useVuelidate from '@vuelidate/core';
+import { minValue, required } from '@vuelidate/validators';
+import { BalanceSource, type BalanceUsdValueThreshold } from '@/types/settings/frontend-settings';
 import { TaskType } from '@/types/task-type';
 import { useTaskStore } from '@/store/tasks';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import HintMenuIcon from '@/components/HintMenuIcon.vue';
+import { toMessages } from '@/utils/validation';
 
 const props = defineProps<{
   source: BalanceSource;
@@ -26,6 +30,21 @@ const isManualBalancesLoading = isTaskRunning(TaskType.MANUAL_BALANCES);
 const isExchangeLoading = isTaskRunning(TaskType.QUERY_EXCHANGE_BALANCES);
 const isQueryingBlockchain = isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES);
 
+const v$ = useVuelidate(
+  {
+    hideBelow: {
+      minValue: minValue(0),
+      required,
+    },
+  },
+  {
+    hideBelow,
+  },
+  {
+    $autoDirty: true,
+  },
+);
+
 const loading = computed(() => {
   const loadingStates = {
     [BalanceSource.BLOCKCHAIN]: get(isQueryingBlockchain),
@@ -38,21 +57,36 @@ const loading = computed(() => {
     : loadingStates[props.source];
 });
 
-function applyChanges() {
-  const usedNumber = get(hide) ? get(hideBelow) : '0';
-  let newState: Record<BalanceSource, string>;
+const hint = computed(() => {
+  if (get(hideBelow) !== '0') {
+    return t('hide_small_balances.hint', {
+      symbol: get(currencySymbol),
+      value: get(hideBelow),
+    });
+  }
+  return t('hide_small_balances.hint_zero');
+});
+
+async function applyChanges() {
+  if (!(await get(v$).$validate())) {
+    return;
+  }
+  const usedNumber = get(hide) ? get(hideBelow) : undefined;
+  let newState: BalanceUsdValueThreshold;
 
   if (get(applyToAllBalances)) {
-    newState = {
-      [BalanceSource.BLOCKCHAIN]: usedNumber,
-      [BalanceSource.EXCHANGES]: usedNumber,
-      [BalanceSource.MANUAL]: usedNumber,
-    };
+    newState = usedNumber
+      ? {
+          [BalanceSource.BLOCKCHAIN]: usedNumber,
+          [BalanceSource.EXCHANGES]: usedNumber,
+          [BalanceSource.MANUAL]: usedNumber,
+        }
+      : {};
   }
   else {
     newState = {
-      ...get(balanceUsdValueThreshold),
-      [props.source]: usedNumber,
+      ...omit(get(balanceUsdValueThreshold), [props.source]),
+      ...(usedNumber ? { [props.source]: usedNumber } : {}),
     };
   }
 
@@ -62,7 +96,7 @@ function applyChanges() {
 watchImmediate([balanceUsdValueThreshold, open], ([balanceUsdValueThreshold]) => {
   const data = balanceUsdValueThreshold[props.source];
 
-  if (data && parseFloat(data) > 0) {
+  if (data) {
     set(hide, true);
     set(hideBelow, data);
   }
@@ -70,6 +104,13 @@ watchImmediate([balanceUsdValueThreshold, open], ([balanceUsdValueThreshold]) =>
     set(hide, false);
     set(hideBelow, '1');
   }
+});
+
+watch(hide, (hide) => {
+  if (!hide) {
+    set(hideBelow, '1');
+  }
+  get(v$).$reset();
 });
 </script>
 
@@ -105,7 +146,8 @@ watchImmediate([balanceUsdValueThreshold, open], ([balanceUsdValueThreshold]) =>
         step="0.1"
         :disabled="!hide"
         type="number"
-        hide-details
+        :hint="hint"
+        :error-messages="toMessages(v$.hideBelow)"
         dense
       >
         <template #prepend>

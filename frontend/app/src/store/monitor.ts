@@ -10,7 +10,6 @@ import { useSessionAuthStore } from '@/store/session/auth';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useWebsocketStore } from '@/store/websocket';
 import { useTaskStore } from '@/store/tasks';
-import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useBalances } from '@/composables/balances';
 import { useBlockchainBalances } from '@/composables/blockchain/balances';
 import { useMessageHandling } from '@/composables/message-handling';
@@ -23,16 +22,15 @@ const BALANCES = 'balances';
 export const useMonitorStore = defineStore('monitor', () => {
   const monitors = ref<Record<string, any>>({});
 
-  const { canRequestData, logged } = storeToRefs(useSessionAuthStore());
+  const { canRequestData } = storeToRefs(useSessionAuthStore());
   const { check } = usePeriodicStore();
   const { consume } = useMessageHandling();
   const { fetchWatchers } = useWatchersStore();
   const { monitor } = useTaskStore();
-  const { autoRefresh, refreshPrices } = useBalances();
+  const { autoRefresh } = useBalances();
   const { fetchManualBalances } = useManualBalancesStore();
   const { fetchConnectedExchangeBalances } = useExchangeBalancesStore();
   const { fetchBlockchainBalances } = useBlockchainBalances();
-  const { currency } = storeToRefs(useGeneralSettingsStore());
 
   const frontendStore = useFrontendSettingsStore();
   const { balanceUsdValueThreshold, queryPeriod, refreshPeriod } = storeToRefs(frontendStore);
@@ -146,23 +144,6 @@ export const useMonitorStore = defineStore('monitor', () => {
     if (!isEqual(current[BalanceSource.BLOCKCHAIN], old[BalanceSource.BLOCKCHAIN])) {
       startPromise(fetchBlockchainBalances());
     }
-  });
-
-  watch(currency, async () => {
-    if (!get(logged))
-      return;
-
-    // TODO: This is temporary fix for double conversion issue. Future solutions should try to eliminate this part.
-    startPromise(refreshPrices(true));
-
-    // Clear hide small balances state, if the currency is changed
-    startPromise(frontendStore.updateSetting({
-      balanceUsdValueThreshold: {
-        [BalanceSource.BLOCKCHAIN]: '0',
-        [BalanceSource.EXCHANGES]: '0',
-        [BalanceSource.MANUAL]: '0',
-      },
-    }));
   });
 
   return {

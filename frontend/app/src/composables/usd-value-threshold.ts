@@ -5,12 +5,12 @@ import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import type { BalanceSource } from '@/types/settings/frontend-settings';
 import type { ComputedRef } from 'vue';
 
-export function useUsdValueThreshold(balanceSource: BalanceSource): ComputedRef<string> {
+export function useUsdValueThreshold(balanceSource: BalanceSource): ComputedRef<string | undefined> {
   const { balanceUsdValueThreshold } = storeToRefs(useFrontendSettingsStore());
   const { exchangeRate } = useBalancePricesStore();
   const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
-  return computed(() => {
+  return computed<string | undefined>(() => {
     const valueThreshold = get(balanceUsdValueThreshold)[balanceSource];
     const currency = get(currencySymbol);
 

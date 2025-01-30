@@ -3021,7 +3021,9 @@
     "apply_to_all_hint": "Apply changes to Blockchain, Exchange, and Manual balances",
     "hide": "Hide small balances",
     "hide_under": "Hide assets under",
-    "lt": "<"
+    "lt": "<",
+    "hint_zero": "All the assets without price will be hidden",
+    "hint": "All the assets with value lower than {value} {symbol} will be hidden"
   },
   "ignore": {
     "confirm": {
