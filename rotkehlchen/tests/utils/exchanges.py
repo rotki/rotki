@@ -1211,6 +1211,29 @@ TRANSACTIONS_RESPONSE = """{
     "idem": "zzzz",
     "details": {"title": "Sent Ethereum", "subtitle": "To Ethereum address"}
 },{
+  "amount": {
+    "amount": "-10.482180",
+    "currency": "USDC"
+  },
+  "created_at": "2024-12-02T14:46:23Z",
+  "id": "5a1a32dc-bfda-5cbf-b625-1a197e699829",
+  "native_amount": {
+    "amount": "-9.98",
+    "currency": "EUR"
+  },
+  "resource": "transaction",
+  "resource_path": "/v2/accounts/40e03599-5601-534c-95c2-0db5f5c5e652/transactions/5a1a32dc-bfda-5cbf-b625-1a197e699829",
+  "status": "completed",
+  "trade": {
+    "fee": {
+      "amount": "0.099839",
+      "currency": "USDC"
+    },
+    "id": "id9",
+    "payment_method_name": "billetera de USDC"
+  },
+  "type": "trade"
+}, {
   "id": "id2",
   "type": "send",
   "status": "completed",
@@ -1337,6 +1360,36 @@ TRANSACTIONS_RESPONSE = """{
     "health": "positive"
   },
   "hide_native_amount": false
+},{
+  "id": "id6",
+  "type": "send",
+  "status": "completed",
+  "amount": {
+    "amount": "-0.00100000",
+    "currency": "BTC"
+  },
+  "native_amount": {
+    "amount": "-0.01",
+    "currency": "USD"
+  },
+  "description": null,
+  "created_at": "2021-03-11T13:13:35-07:00",
+  "updated_at": "2021-03-26T15:55:43-07:00",
+  "resource": "transaction",
+  "resource_path": "/v2/accounts/2bbf394c-193b-5b2a-9155-3b4732659ede/transactions/57ffb4ae-0c59-5430-bcd3-3f98f797a66c",
+  "network": {
+    "status": "off_blockchain",
+    "name": "bitcoin"
+  },
+  "to": {
+    "id": "a6b4c2df-a62c-5d68-822a-dd4e2102e703",
+    "resource": "user",
+    "resource_path": "/v2/users/a6b4c2df-a62c-5d68-822a-dd4e2102e703"
+  },
+  "details": {
+    "title": "Send bitcoin",
+    "subtitle": "to User 2"
+  }
 },{
 "amount": {"amount": "0.05772716", "currency": "ETH"},
  "buy": {"id": "testid-1", "resource": "buy", "resource_path": "/v2/accounts/accountid-1/buys/testid-1"},

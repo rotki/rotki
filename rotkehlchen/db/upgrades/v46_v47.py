@@ -2,9 +2,11 @@ import json
 import logging
 from typing import TYPE_CHECKING
 
+from rotkehlchen.data_import.importers.constants import ROTKI_EVENT_PREFIX
 from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
+from rotkehlchen.types import Location
 from rotkehlchen.utils.progress import perform_userdb_upgrade_steps, progress_step
 
 if TYPE_CHECKING:
@@ -59,6 +61,30 @@ def upgrade_v46_to_v47(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
                 'DELETE from evm_tx_mappings WHERE tx_id IN (SELECT identifier FROM evm_transactions) AND value=?',  # noqa: E501
                 (0,),  # decoded tx state
             )
+
+    @progress_step(description='Reset coinbase events and cache')
+    def _reset_coinbase_events(write_cursor: 'DBCursor') -> None:
+        write_cursor.execute(
+            'DELETE FROM history_events WHERE location=? AND event_identifier NOT LIKE ?',
+            ((coinbase_db_loc := Location.COINBASE.serialize_for_db()), f'{ROTKI_EVENT_PREFIX}_%'),
+        )
+        write_cursor.execute(  # only deleting trades that were added via the coinbase api
+            "DELETE FROM trades WHERE location=? AND link != ''",
+            (coinbase_db_loc,),
+        )
+        write_cursor.execute(
+            'DELETE FROM key_value_cache WHERE name LIKE ? OR name LIKE ?',
+            (f'{(coinbase_loc := Location.COINBASE.serialize())}_%_last_query_ts', f'{coinbase_loc}_%_last_query_id'),  # noqa: E501
+        )
+        write_cursor.execute(
+            'DELETE FROM used_query_ranges WHERE name LIKE ? OR name LIKE ? OR name LIKE ? OR name LIKE ?',  # noqa: E501
+            (
+                f'{coinbase_loc}_history_events_%',
+                f'{coinbase_loc}_trades_%',
+                f'{coinbase_loc}_margins_%',
+                f'{coinbase_loc}_asset_movements_%',
+            ),
+        )
 
     @progress_step(description='Remove unneeded nft collection assets (may take some time).')
     def _remove_nft_collection_assets(write_cursor: 'DBCursor') -> None:
@@ -159,8 +185,5 @@ def upgrade_v46_to_v47(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
                 f'WHERE EXISTS (SELECT 1 FROM asset_list WHERE value IN ({column_str}))',
                 identifiers_to_remove,
             )
-
-    # TODO: Put the history events reset step BEFORE _remove_nft_collection_assets so that
-    # most history events are gone when it checks for data associated with old erc721 assets.
 
     perform_userdb_upgrade_steps(db=db, progress_handler=progress_handler, should_vacuum=True)

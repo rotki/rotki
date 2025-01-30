@@ -58,6 +58,7 @@ EVENT_CATEGORY_MAPPINGS = {  # possible combinations of types and subtypes mappe
         HistoryEventSubType.DONATE: {DEFAULT: EventCategory.DONATE},
         HistoryEventSubType.PAYMENT: {DEFAULT: EventCategory.PAY},
         HistoryEventSubType.NONE: {DEFAULT: EventCategory.SEND},
+        HistoryEventSubType.CLAWBACK: {DEFAULT: EventCategory.CLAWBACK},
     },
     HistoryEventType.LOSS: {
         HistoryEventSubType.LIQUIDATE: {DEFAULT: EventCategory.LIQUIDATION_LOSS},
@@ -274,6 +275,9 @@ EVENT_CATEGORY_DETAILS = {
     )}, EventCategory.HACK_LOSS: {DEFAULT: EventCategoryDetails(
         label='Hack',
         icon='lu-skull',
+    )}, EventCategory.CLAWBACK: {DEFAULT: EventCategoryDetails(
+        label='Clawback',
+        icon='lu-undo-2',
     )},
 }
 

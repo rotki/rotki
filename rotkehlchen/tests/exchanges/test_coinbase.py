@@ -221,7 +221,7 @@ def test_coinbase_query_trade_history(function_scope_coinbase):
     errors = coinbase.msg_aggregator.consume_errors()
     assert len(warnings) == 0
     assert len(errors) == 0
-    assert len(trades) == 2
+    assert len(trades) == 3
     expected_trades = [Trade(
         timestamp=1566687695,
         location=Location.COINBASE,
@@ -244,6 +244,17 @@ def test_coinbase_query_trade_history(function_scope_coinbase):
         fee=None,
         fee_currency=None,
         link='txid-2',
+    ), Trade(
+        timestamp=1733150783,
+        location=Location.COINBASE,
+        base_asset=A_USDC,
+        quote_asset=A_EUR,
+        trade_type=TradeType.SELL,
+        amount=FVal('10.482180'),
+        rate=FVal('0.952092026658576746440148900324169209076737854148659916162477652549374271382480'),
+        fee=FVal('0.099839'),
+        fee_currency=A_USDC,
+        link='id9',
     )]
     assert trades == expected_trades
 
@@ -289,8 +300,8 @@ def query_coinbase_and_test(
         transactions_response=TRANSACTIONS_RESPONSE,
         expected_warnings_num=0,
         expected_errors_num=0,
-        # Since this test only mocks as breaking only one of the two actions by default
-        expected_actions_num=1,
+        # Since this test only mocks as breaking only one of the three actions by default
+        expected_actions_num=2,
         expected_ws_messages_num=0,
 ):
     now = ts_now()
@@ -329,7 +340,7 @@ def test_coinbase_query_trade_history_unexpected_data(function_scope_coinbase):
         coinbase=coinbase,
         expected_warnings_num=0,
         expected_errors_num=0,
-        expected_actions_num=2,
+        expected_actions_num=3,
     )
 
     # invalid created_at timestamp
@@ -348,7 +359,7 @@ def test_coinbase_query_trade_history_unexpected_data(function_scope_coinbase):
         transactions_response=broken_response,
         expected_warnings_num=0,
         expected_errors_num=4,
-        expected_actions_num=0,
+        expected_actions_num=1,
     )
 
     # invalid transaction type
@@ -358,7 +369,7 @@ def test_coinbase_query_trade_history_unexpected_data(function_scope_coinbase):
         transactions_response=broken_response,
         expected_warnings_num=0,
         expected_errors_num=0,
-        expected_actions_num=1,
+        expected_actions_num=2,
     )
 
     # invalid amount
@@ -385,7 +396,7 @@ def test_coinbase_query_trade_history_unexpected_data(function_scope_coinbase):
         coinbase=coinbase,
         transactions_response=broken_response,
         expected_warnings_num=0,
-        expected_errors_num=2,
+        expected_errors_num=3,
         expected_actions_num=0,
     )
 
@@ -398,7 +409,7 @@ def test_query_trade_history_unknown_asset(function_scope_coinbase):
         transactions_response=TRANSACTIONS_RESPONSE.replace('"ETH"', '"dsadsad"'),
         expected_warnings_num=0,
         expected_errors_num=0,
-        expected_actions_num=0,
+        expected_actions_num=1,
         expected_ws_messages_num=4,
     )
 
@@ -416,7 +427,7 @@ def test_coinbase_query_trade_history_paginated(function_scope_coinbase):
         coinbase=coinbase,
         expected_warnings_num=0,
         expected_errors_num=0,
-        expected_actions_num=2,
+        expected_actions_num=3,
         transactions_response=paginated_transactions_response,
     )
 
@@ -443,7 +454,7 @@ def test_coinbase_query_history_events(
     errors = coinbase.msg_aggregator.consume_errors()
     assert len(warnings) == 0
     assert len(errors) == 0
-    assert len(events) == 7
+    assert len(events) == 8
     expected_events = [AssetMovement(
         identifier=4,
         event_identifier='582c2b78e88052d879b203fd07b6fca15f90417da7f715dcda72275b8d290054',
@@ -503,6 +514,7 @@ def test_coinbase_query_history_events(
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.NONE,
         asset=asset_from_coinbase('NMR'),
+        location_label=coinbase.name,
         balance=Balance(amount=FVal('0.02762431'), usd_value=ZERO),
         notes='Received 0.02762431 NMR ($1.01) from coinbase earn',
     ), HistoryEvent(
@@ -514,10 +526,11 @@ def test_coinbase_query_history_events(
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.NONE,
         asset=asset_from_coinbase('ALGO'),
+        location_label=coinbase.name,
         balance=Balance(amount=FVal('0.000076'), usd_value=ZERO),
         notes='Received 0.000076 ALGO ($0.00) as inflation_reward',
     ), HistoryEvent(
-        identifier=7,
+        identifier=8,
         event_identifier='CBE_id6',
         sequence_index=0,
         timestamp=TimestampMS(1611512633000),
@@ -525,8 +538,19 @@ def test_coinbase_query_history_events(
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.NONE,
         asset=asset_from_coinbase('SOL'),
+        location_label=coinbase.name,
         balance=Balance(amount=FVal('0.025412'), usd_value=ZERO),
         notes='',
+    ), AssetMovement(
+        identifier=7,
+        event_identifier='1181793af14ed42cb443d55ce50f68deef95b320c114025cb25a988f005a3a76',
+        location=Location.COINBASE,
+        location_label=coinbase.name,
+        event_type=HistoryEventType.WITHDRAWAL,
+        timestamp=TimestampMS(1615493615000),
+        asset=A_BTC,
+        balance=Balance(FVal('0.00100000')),
+        extra_data={'reference': 'id6'},
     )]
     assert expected_events == events
 

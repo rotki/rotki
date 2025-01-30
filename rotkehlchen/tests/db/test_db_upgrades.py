@@ -24,6 +24,7 @@ from rotkehlchen.constants.misc import (
     USERDB_NAME,
 )
 from rotkehlchen.data_handler import DataHandler
+from rotkehlchen.data_import.importers.constants import ROTKI_EVENT_PREFIX
 from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.checks import sanity_check_impl
 from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED
@@ -41,6 +42,7 @@ from rotkehlchen.db.upgrades.v39_v40 import PREFIX
 from rotkehlchen.db.utils import table_exists
 from rotkehlchen.errors.api import RotkehlchenPermissionError
 from rotkehlchen.errors.misc import DBUpgradeError
+from rotkehlchen.exchanges.coinbase import CB_EVENTS_PREFIX
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -2808,6 +2810,42 @@ def test_upgrade_db_46_to_47(user_data_dir, messages_aggregator):
             'INSERT INTO manually_tracked_balances(asset, label, amount) VALUES(?, ?, ?)',
             (uniswap_erc721_token.identifier, 'Test Balance', 5),
         )
+        write_cursor.executemany(  # add test history events
+            'INSERT INTO history_events(entry_type, event_identifier, sequence_index, '
+            'timestamp, location, location_label, asset, amount, usd_value, notes, '
+            'type, subtype, extra_data) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            [
+                (1, f'{CB_EVENTS_PREFIX}_EVENT', 0, 1, (coinbase_location := Location.COINBASE.serialize_for_db()), '', 'ETH', 1, 0, '', 'receive', 'receive', ''),  # noqa: E501
+                (1, f'{ROTKI_EVENT_PREFIX}_EVENT', 0, 1, coinbase_location, '', 'ETH', 1, 0, '', 'receive', 'receive', ''),  # noqa: E501
+                (1, 'kraken-id', 0, 1, (kraken_location := Location.KRAKEN.serialize_for_db()), '', 'BTC', 1, 0, '', 'spend', 'spend', ''),  # noqa: E501
+            ],
+        )
+        write_cursor.executemany(  # add location cache entries
+            'INSERT INTO key_value_cache(name, value) VALUES(?, ?)',
+            [
+                ('coinbase_main_123_last_query_ts', '1641386280'),
+                ('coinbase_test_456_last_query_ts', '1641386281'),
+                ('coinbase_main_123_last_query_id', 'abc123'),
+                ('coinbase_test_456_last_query_id', 'def456'),
+                ('kraken_main_789_last_query_ts', '1641386282'),  # kraken entry - shouldn't be deleted  #noqa: E501
+            ],
+        )
+        write_cursor.executemany(  # add test trades
+            'INSERT INTO trades(id, timestamp, location, base_asset, quote_asset, type, amount, rate, link, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',  # noqa: E501
+            [
+                ('trade_1', 1641386280, kraken_location, 'BTC', 'EUR', 'A', '0.5', '50000', '', 'Kraken trade'),  # noqa: E501
+                ('trade_2', 1641386281, coinbase_location, 'ETH', 'USD', 'B', '1.0', '3000', 'cbid77', 'Coinbase trade with link'),  # noqa: E501
+                ('trade_3', 1641386282, coinbase_location, 'ETH', 'USD', 'C', '1.5', '3500', '', 'Coinbase trade without link'),  # noqa: E501
+            ],
+        )
+        write_cursor.executemany(  # add entries to queried ranges
+            'INSERT INTO used_query_ranges(name, start_ts, end_ts) VALUES (?, ?, ?)',
+            [
+                ('coinbase_trades_cb1', 1641386200, 1641386300),
+                ('coinbase_history_events_cb1', 1641386301, 1641386400),
+                ('kraken_history_events_kk', 1641386301, 1641386400),
+            ],
+        )
 
     with db_v46.conn.read_ctx() as cursor:
         assert db_v46.get_dynamic_cache(
@@ -2841,6 +2879,34 @@ def test_upgrade_db_46_to_47(user_data_dir, messages_aggregator):
         assert cursor.fetchone() == (54,)
 
         _check_tokens_existence(user_db_cursor=cursor, expect_removed=True)
+
+        assert cursor.execute(  # events with the correct prefix for coinbase removed
+            'SELECT COUNT(*) FROM history_events WHERE location=? AND event_identifier LIKE ?',
+            (coinbase_location, f'{CB_EVENTS_PREFIX}%'),
+        ).fetchone()[0] == 0
+
+        assert cursor.execute(  # events imported or different locations preserved
+            'SELECT COUNT(*) FROM history_events WHERE event_identifier IN (?, ?)',
+            ('kraken-id', f'{ROTKI_EVENT_PREFIX}_EVENT'),
+        ).fetchone()[0] == 2
+
+        assert cursor.execute(  # all coinbase caches are deleted
+            'SELECT COUNT(*) FROM key_value_cache WHERE name LIKE ? OR name LIKE ?',
+            (f'{(coinbase_loc := Location.COINBASE.serialize())}_%_last_query_ts', f'{coinbase_loc}_%_last_query_id'),  # noqa: E501
+        ).fetchone()[0] == 0
+        assert cursor.execute(  # check that the kraken cache was not affected
+            'SELECT COUNT(*) FROM key_value_cache WHERE name LIKE ? OR name LIKE ?',
+            (f'{(kraken_loc := Location.KRAKEN.serialize())}_%_last_query_ts', f'{kraken_loc}_%_last_query_id'),  # noqa: E501
+        ).fetchone()[0] == 1
+        assert cursor.execute(  # ensure trades with Coinbase location and a link are deleted
+            'SELECT COUNT(*) FROM trades WHERE location=? AND link != ?',
+            (coinbase_location, ''),
+        ).fetchone()[0] == 0
+        assert cursor.execute('SELECT COUNT(*) FROM trades').fetchone()[0] == 2  # ensure trade with empty link is preserved  # noqa: E501
+        assert cursor.execute(  # verify query ranges for coinbase are deleted
+            'SELECT COUNT(*) FROM used_query_ranges WHERE name=?',
+            (f'{coinbase_loc}_%',),
+        ).fetchone()[0] == 0
 
     db.logout()
 
