@@ -24,6 +24,9 @@ declare global {
   const EthStakingPerformanceResponse: typeof import('@rotki/common')['EthStakingPerformanceResponse']
   const EvmTokenKind: typeof import('@rotki/common')['EvmTokenKind']
   const EvmTokenKindEnum: typeof import('@rotki/common')['EvmTokenKindEnum']
+  const HistoricalAssetPricePayload: typeof import('@rotki/common')['HistoricalAssetPricePayload']
+  const HistoricalAssetPriceResponse: typeof import('@rotki/common')['HistoricalAssetPriceResponse']
+  const HistoricalPriceQueryStatusData: typeof import('@rotki/common')['HistoricalPriceQueryStatusData']
   const HistoryEventEntryType: typeof import('@rotki/common')['HistoryEventEntryType']
   const LIGHT_THEME: typeof import('@rotki/common')['LIGHT_THEME']
   const LiquityBalances: typeof import('@rotki/common')['LiquityBalances']
@@ -453,6 +456,9 @@ declare module 'vue' {
     readonly EthStakingPerformanceResponse: UnwrapRef<typeof import('@rotki/common')['EthStakingPerformanceResponse']>
     readonly EvmTokenKind: UnwrapRef<typeof import('@rotki/common')['EvmTokenKind']>
     readonly EvmTokenKindEnum: UnwrapRef<typeof import('@rotki/common')['EvmTokenKindEnum']>
+    readonly HistoricalAssetPricePayload: UnwrapRef<typeof import('@rotki/common')['HistoricalAssetPricePayload']>
+    readonly HistoricalAssetPriceResponse: UnwrapRef<typeof import('@rotki/common')['HistoricalAssetPriceResponse']>
+    readonly HistoricalPriceQueryStatusData: UnwrapRef<typeof import('@rotki/common')['HistoricalPriceQueryStatusData']>
     readonly HistoryEventEntryType: UnwrapRef<typeof import('@rotki/common')['HistoryEventEntryType']>
     readonly LIGHT_THEME: UnwrapRef<typeof import('@rotki/common')['LIGHT_THEME']>
     readonly LiquityBalances: UnwrapRef<typeof import('@rotki/common')['LiquityBalances']>

@@ -1,5 +1,6 @@
 import {
   type ActionResult,
+  type HistoricalAssetPricePayload,
   LocationData,
   NetValue,
   TimedAssetBalances,
@@ -9,6 +10,7 @@ import {
 import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
 import { handleResponse, validStatus } from '@/services/utils';
+import type { PendingTask } from '@/types/task';
 
 interface UseStatisticsApiReturn {
   queryNetValueData: (includeNfts: boolean) => Promise<NetValue>;
@@ -17,6 +19,7 @@ interface UseStatisticsApiReturn {
   queryLatestLocationValueDistribution: () => Promise<LocationData>;
   queryLatestAssetValueDistribution: () => Promise<TimedAssetBalances>;
   queryStatisticsRenderer: () => Promise<string>;
+  queryHistoricalAssetPrices: (payload: HistoricalAssetPricePayload) => Promise<PendingTask>;
 }
 
 export function useStatisticsApi(): UseStatisticsApiReturn {
@@ -99,7 +102,19 @@ export function useStatisticsApi(): UseStatisticsApiReturn {
     return handleResponse(response);
   };
 
+  const queryHistoricalAssetPrices = async (payload: HistoricalAssetPricePayload): Promise<PendingTask> => {
+    const response = await api.instance.post<ActionResult<PendingTask>>('/balances/historical/asset/prices', snakeCaseTransformer({
+      ...payload,
+      asyncQuery: true,
+    }), {
+      validateStatus: validStatus,
+    });
+
+    return handleResponse(response);
+  };
+
   return {
+    queryHistoricalAssetPrices,
     queryLatestAssetValueDistribution,
     queryLatestLocationValueDistribution,
     queryNetValueData,

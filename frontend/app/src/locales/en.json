@@ -420,6 +420,15 @@
         "task": {
           "description": "Fetching rate from {fromAsset} to {toAsset} on {date} | Fetching rates for {count} pairs to {toAsset}",
           "title": "Fetching conversion rate"
+        },
+        "daily": {
+          "task": {
+            "title": "Fetching daily historic prices",
+            "detail": "Fetching daily historic prices for asset: {asset}"
+          },
+          "error": {
+            "message": "Failed to fetch daily historic prices: {message}"
+          }
         }
       },
       "loopring": {
@@ -3963,7 +3972,9 @@
     "statistics": {
       "asset_amount_and_value_over_time": "Asset amount and value over time",
       "check_problematic_event": "Check the problematic event",
-      "loading_historical_prices": "Loading historical prices",
+      "fetching_graph_data": "Fetching graph data",
+      "fetching_graph_daily_data": "Fetching graph daily data ({processed}/{total})",
+      "fetching_historical_prices": "Fetching historical prices",
       "max_visible": "Maximum assets to show",
       "max_visible_required": "You cannot show more than {availableAssets} assets",
       "min_visible_required": "You have to show at least one asset.",
