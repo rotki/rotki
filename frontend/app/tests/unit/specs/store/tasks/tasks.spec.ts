@@ -70,6 +70,7 @@ describe('store:tasks', () => {
     setActivePinia(pinia);
     store = useTaskStore();
     server.resetHandlers();
+    vi.clearAllMocks();
   });
 
   it('task is not running', () => {

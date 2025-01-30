@@ -20,6 +20,17 @@ export default mergeConfig(
         TZ: 'UTC',
         VITE_TEST: 'true',
       },
+      fakeTimers: {
+        toFake: [
+          'setTimeout',
+          'clearTimeout',
+          'setInterval',
+          'clearInterval',
+          'setImmediate',
+          'clearImmediate',
+          'Date',
+        ],
+      },
       exclude: [...configDefaults.exclude, 'tests/e2e/**'],
       root: fileURLToPath(new URL('./', import.meta.url)),
       server: {

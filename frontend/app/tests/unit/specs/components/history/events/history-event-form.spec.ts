@@ -19,7 +19,6 @@ vi.mock('json-editor-vue', () => ({
 }));
 
 describe('historyEventForm.vue', () => {
-  setupDayjs();
   let wrapper: VueWrapper<InstanceType<typeof HistoryEventForm>>;
 
   const createWrapper = () => {
@@ -42,6 +41,7 @@ describe('historyEventForm.vue', () => {
   });
 
   beforeEach(async () => {
+    setupDayjs();
     wrapper = createWrapper();
     await nextTick();
     await flushPromises();
