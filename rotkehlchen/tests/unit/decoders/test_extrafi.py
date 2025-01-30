@@ -13,6 +13,7 @@ from rotkehlchen.chain.evm.decoding.extrafi.decoder import (
     VOTE_ESCROW,
 )
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.chain.optimism.modules.extrafi.constants import EXTRAFI_COMMUNITY_FUND
 from rotkehlchen.constants.assets import A_ETH, A_OP
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
@@ -689,5 +690,35 @@ def test_extrafi_claim_lending_base(
             notes=f'Claim {claimed_extra} EXTRA from Extrafi lending',
             counterparty=CPT_EXTRAFI,
             address=string_to_evm_address('0x79a5a9e97Dc8f4a1c2370E1049dB960275431793'),
+        ),
+    ]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('optimism_accounts', [['0x0EdB39ada48BDF162C09983e0005825c4ce3E5B4']])
+def test_op_incentive_rewards(
+        optimism_inquirer: 'OptimismInquirer',
+        optimism_accounts: list['ChecksumEvmAddress'],
+):
+    tx_hash = deserialize_evm_tx_hash('0xb9bb665425a4beeac4afaba637bffcdfc3fe57d2606eee44ec90bba532050a0c')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=optimism_inquirer,
+        tx_hash=tx_hash,
+    )
+    timestamp, amount = TimestampMS(1737018755000), '0.769886891'
+    assert events == [
+        EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=58,
+            timestamp=timestamp,
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.REWARD,
+            asset=A_OP,
+            balance=Balance(amount=FVal(amount)),
+            location_label=optimism_accounts[0],
+            notes=f'Receive {amount} OP as a reward incentive for participating in an Extrafi pool',  # noqa: E501
+            counterparty=CPT_EXTRAFI,
+            address=EXTRAFI_COMMUNITY_FUND,
         ),
     ]

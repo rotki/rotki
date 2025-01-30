@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`-` Extrafi optimism incentive rewards sent directly to the wallet will now be properly seen as defi rewards.
 * :feature:`-` History events export will now include the symbol or name of the asset to improve readability of entries.
 * :feature:`9203` rotki will now detect Uniswap V3 balances in all supported EVM chains.
 * :feature:`-` rotki will now correctly decode gitcoin profile creation and updating across supported EVM chains. Also some more gitcoin rounds are added.
