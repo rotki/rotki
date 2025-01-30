@@ -29,6 +29,7 @@ export interface ActionDataEntry<T = string> {
   readonly label: string;
   readonly icon?: RuiIcons;
   readonly image?: string;
+  readonly darkmodeImage?: string;
   readonly color?: ContextColorsType;
   readonly matcher?: (identifier: string) => boolean | null;
   readonly detailPath?: string;

@@ -10,17 +10,30 @@ const { counterparty } = toRefs(props);
 
 const { getCounterpartyData } = useHistoryEventCounterpartyMappings();
 
+const { isDark } = useRotkiTheme();
+
 const data = getCounterpartyData(counterparty);
 const imagePath = '/assets/images/protocols/';
+
+const useDarkModeImage = computed(() => get(isDark) && get(data).darkmodeImage);
 </script>
 
 <template>
   <div class="flex items-center gap-3">
-    <div class="icon-bg">
+    <div
+      :class="useDarkModeImage ? 'p-0.5 bg-black rounded-md' : 'icon-bg'"
+    >
       <RuiIcon
         v-if="data.icon"
         :name="data.icon"
         :color="data.color || 'secondary'"
+        size="20px"
+      />
+
+      <AppImage
+        v-else-if="useDarkModeImage"
+        :src="`${imagePath}${data.darkmodeImage}`"
+        contain
         size="20px"
       />
 

@@ -11,8 +11,12 @@ const { event } = toRefs(props);
 
 const { getEventCounterpartyData } = useHistoryEventCounterpartyMappings();
 
+const { isDark } = useRotkiTheme();
+
 const counterparty = getEventCounterpartyData(event);
 const imagePath = '/assets/images/protocols/';
+
+const useDarkModeImage = computed(() => get(isDark) && get(counterparty)?.darkmodeImage);
 </script>
 
 <template>
@@ -29,12 +33,22 @@ const imagePath = '/assets/images/protocols/';
         :open-delay="400"
       >
         <template #activator>
-          <div class="rounded-full overflow-hidden bg-rui-grey-100 border-2 border-white dark:border-black size-6 flex items-center justify-center">
+          <div
+            class="rounded-full overflow-hidden bg-rui-grey-100 border-2 border-white dark:border-black size-6 flex items-center justify-center"
+            :class="{ '!bg-black': useDarkModeImage }"
+          >
             <template v-if="counterparty">
               <RuiIcon
                 v-if="counterparty.icon"
                 :name="counterparty.icon"
                 :color="counterparty.color"
+              />
+
+              <AppImage
+                v-else-if="useDarkModeImage"
+                :src="`${imagePath}${counterparty.darkmodeImage}`"
+                contain
+                size="20px"
               />
 
               <AppImage
