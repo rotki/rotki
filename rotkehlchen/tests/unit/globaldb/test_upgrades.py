@@ -920,6 +920,9 @@ def test_upgrade_v10_v11(globaldb: GlobalDBHandler, messages_aggregator):
     with globaldb.conn.read_ctx() as cursor:
         cursor.execute('SELECT COUNT(*) FROM price_history_source_types WHERE seq = 9')
         assert cursor.fetchone()[0] == 0
+        assert len(cursor.execute(
+            'SELECT name FROM sqlite_master WHERE type="index" and sql IS NOT NULL',
+        ).fetchall()) == 0
 
     with ExitStack() as stack:
         patch_for_globaldb_upgrade_to(stack, 11)
@@ -934,6 +937,21 @@ def test_upgrade_v10_v11(globaldb: GlobalDBHandler, messages_aggregator):
     with globaldb.conn.read_ctx() as cursor:
         cursor.execute('SELECT COUNT(*) FROM price_history_source_types WHERE seq = 9')
         assert cursor.fetchone()[0] == 1
+        assert cursor.execute(
+            'SELECT name FROM sqlite_master WHERE type="index" and sql IS NOT NULL',
+        ).fetchall() == [
+            ('idx_assets_identifier',),
+            ('idx_evm_tokens_identifier',),
+            ('idx_multiasset_mappings_asset',),
+            ('idx_asset_collections_main_asset',),
+            ('idx_user_owned_assets_asset_id',),
+            ('idx_common_assets_identifier',),
+            ('idx_price_history_identifier',),
+            ('idx_location_mappings_identifier',),
+            ('idx_underlying_tokens_lists_identifier',),
+            ('idx_binance_pairs_identifier',),
+            ('idx_multiasset_mappings_identifier',),
+        ]
 
 
 @pytest.mark.parametrize('custom_globaldb', ['v2_global.db'])
