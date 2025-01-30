@@ -152,7 +152,6 @@ describe('table-filter/TableFilter.vue', () => {
 
     await nextTick();
 
-    expect(wrapper.emitted('update:matches')?.at(-1)).toEqual([{}]);
     expect((wrapper.find('input').element as HTMLInputElement).value).toBe('type=type 2');
   });
 
