@@ -1,5 +1,6 @@
-use clap::{Arg, Command};
+use clap::{Arg, ArgAction, Command};
 use std::path::PathBuf;
+use tracing_subscriber::filter::LevelFilter;
 
 // macro to get the datadir depending on os
 macro_rules! get_datadir {
@@ -36,10 +37,15 @@ fn default_data_dir(is_prod: bool) -> std::io::Result<PathBuf> {
     Ok(datadir)
 }
 
+#[derive(Clone)]
 pub struct Args {
     pub data_directory: PathBuf,
     pub logfile_path: PathBuf,
     pub port: u16,
+    pub log_to_stdout: bool,
+    pub max_logfiles_num: usize,
+    pub max_size_in_mb: usize,
+    pub log_level: LevelFilter,
 }
 
 pub fn parse_args() -> Args {
@@ -73,6 +79,43 @@ pub fn parse_args() -> Args {
                 .value_hint(clap::ValueHint::DirPath)
                 .help("Sets the path for the colibri logfile"),
         )
+        .arg(
+            Arg::new("log-to-stdout")
+                .long("log-to-stdout")
+                .required(false)
+                .action(ArgAction::SetTrue)
+                .help("Log to the stdout instead of the logfile"),
+        )
+        .arg(
+            Arg::new("max-logfiles-num")
+                .long("max-logfiles-num")
+                .value_parser(clap::value_parser!(usize))
+                .default_value("5")
+                .help("Max number of log files to keep"),
+        )
+        .arg(
+            Arg::new("log-level")
+                .long("log-level")
+                .value_parser(clap::value_parser!(LevelFilter))
+                .default_value("info")
+                .help(format!(
+                    "Log level for the app: {:?}",
+                    [
+                        LevelFilter::ERROR.to_string(),
+                        LevelFilter::WARN.to_string(),
+                        LevelFilter::INFO.to_string(),
+                        LevelFilter::DEBUG.to_string(),
+                        LevelFilter::TRACE.to_string(),
+                    ]
+                )),
+        )
+        .arg(
+            Arg::new("max-size-in-mb")
+                .long("max-size-in-mb")
+                .value_parser(clap::value_parser!(usize))
+                .default_value("50")
+                .help("Max size in MB for each one of the log files"),
+        )
         .get_matches();
 
     Args {
@@ -82,5 +125,9 @@ pub fn parse_args() -> Args {
             .clone(),
         logfile_path: matches.get_one::<PathBuf>("logfile-path").unwrap().clone(),
         port: *matches.get_one::<u16>("port").unwrap(),
+        log_to_stdout: *matches.get_one::<bool>("log-to-stdout").unwrap(),
+        max_logfiles_num: *matches.get_one::<usize>("max-logfiles-num").unwrap(),
+        log_level: *matches.get_one::<LevelFilter>("log-level").unwrap(),
+        max_size_in_mb: *matches.get_one::<usize>("max-size-in-mb").unwrap(),
     }
 }

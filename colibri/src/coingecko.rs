@@ -1,20 +1,24 @@
 use axum::body::Bytes;
-use log::error;
+use log::{debug, error};
 use serde_json::Value;
 use std::sync::Arc;
+
+pub const COINGECKO_BASE_URL: &str = "https://api.coingecko.com";
 
 use crate::globaldb;
 
 pub struct Coingecko {
     client: reqwest::Client,
     globaldb: Arc<globaldb::GlobalDB>,
+    base_url: String,
 }
 
 impl Coingecko {
-    pub fn new(globaldb: Arc<globaldb::GlobalDB>) -> Self {
+    pub fn new(globaldb: Arc<globaldb::GlobalDB>, base_url: String) -> Self {
         Coingecko {
             globaldb,
             client: reqwest::Client::new(),
+            base_url,
         }
     }
 
@@ -29,7 +33,7 @@ impl Coingecko {
             }
             Ok(identifier) => identifier?,
         };
-        let url = format!("https://api.coingecko.com/api/v3/coins/{}", coingecko_id);
+        let url = format!("{}/api/v3/coins/{}", self.base_url, coingecko_id);
         let params = [
             ("localization", "false"),
             ("tickers", "false"),
@@ -54,6 +58,50 @@ impl Coingecko {
             Err(e) => error!("Failed to query coingecko for {} due to {}", asset_id, e),
         }
 
+        debug!("Icon not found in coingecko for {}", asset_id);
         None
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::create_globaldb;
+    use axum::body::Bytes;
+    use std::sync::Arc;
+
+    use super::Coingecko;
+
+    #[tokio::test]
+    async fn test_coingecko_query() {
+        let globaldb = create_globaldb!().await;
+        let mut server = mockito::Server::new_async().await;
+
+        let coingecko = Coingecko::new(
+            Arc::new(globaldb.expect("Failed to create globaldb for coingecko")),
+            server.url(),
+        );
+        let json = format!(
+            r#"{{"image": {{"small": "{}/coins/images/279/thumb/ethereum.png"}}}}"#,
+            server.url()
+        );
+
+        // mock successful query
+        server
+            .mock("GET", format!("/api/v3/coins/ethereum").as_str())
+            .match_query(mockito::Matcher::Any) // ignore the query args
+            .with_body(json)
+            .create();
+        server
+            .mock(
+                "GET",
+                format!("/coins/images/279/thumb/ethereum.png").as_str(),
+            )
+            .with_body(b"Image bytes")
+            .create();
+
+        assert_eq!(
+            coingecko.query_asset_image("ETH").await,
+            Some(Bytes::from_static(b"Image bytes")),
+        );
     }
 }

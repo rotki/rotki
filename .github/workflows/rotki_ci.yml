@@ -205,7 +205,7 @@ jobs:
           category: "/language:python"
 
   lint-colibri:
-    name: 'Colibri lint'
+    name: 'Colibri lint and test'
     needs: ['check-changes', 'check-typos']
     if: ${{ github.event_name != 'push' && needs.check-changes.outputs.colibri_tasks }}
     runs-on: ubuntu-latest
@@ -216,6 +216,10 @@ jobs:
         with:
           cache-on-failure: true
       - run: cargo check --workspace && cargo clippy --workspace
+        working-directory: ./colibri
+        env:
+          RUSTFLAGS: -Dwarnings
+      - run: cargo test
         working-directory: ./colibri
         env:
           RUSTFLAGS: -Dwarnings
