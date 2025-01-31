@@ -18,7 +18,6 @@ vi.mock('@/store/balances/prices', () => ({
 }));
 
 describe('onlineHistoryEventForm.vue', () => {
-  setupDayjs();
   let wrapper: VueWrapper<InstanceType<typeof OnlineHistoryEventForm>>;
   let pinia: Pinia;
 
@@ -53,7 +52,7 @@ describe('onlineHistoryEventForm.vue', () => {
   };
 
   beforeEach(() => {
-    vi.useFakeTimers();
+    setupDayjs();
     pinia = createPinia();
     setActivePinia(pinia);
     vi.mocked(useAssetInfoApi().assetMapping).mockResolvedValue(mapping);
