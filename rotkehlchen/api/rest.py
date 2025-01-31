@@ -92,7 +92,7 @@ from rotkehlchen.chain.evm.decoding.velodrome.velodrome_cache import (
     query_velodrome_like_data,
 )
 from rotkehlchen.chain.evm.names import find_ens_mappings, search_for_addresses_names
-from rotkehlchen.chain.evm.types import EvmlikeAccount, NodeName, WeightedNode
+from rotkehlchen.chain.evm.types import ChainID, EvmlikeAccount, NodeName, WeightedNode
 from rotkehlchen.chain.gnosis.modules.gnosis_pay.constants import CPT_GNOSIS_PAY
 from rotkehlchen.chain.zksync_lite.constants import ZKL_IDENTIFIER
 from rotkehlchen.constants import ONE
@@ -113,7 +113,6 @@ from rotkehlchen.constants.misc import (
     ZERO,
 )
 from rotkehlchen.constants.prices import ZERO_PRICE
-from rotkehlchen.constants.resolver import ChainID
 from rotkehlchen.constants.timing import ENS_AVATARS_REFRESH
 from rotkehlchen.data_import.manager import DataImportSource
 from rotkehlchen.db.accounting_rules import DBAccountingRules, query_missing_accounting_rules
@@ -260,6 +259,7 @@ from rotkehlchen.types import (
     ModuleName,
     OptionalChainAddress,
     Price,
+    ProtocolsWithCache,
     PurgeableModuleName,
     SubstrateAddress,
     SupportedBlockchain,
@@ -275,6 +275,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.bitcoin.xpub import XpubData
     from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings
     from rotkehlchen.chain.evm.manager import EvmManager
+    from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.chain.gnosis.modules.gnosis_pay.decoder import GnosisPayDecoder
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
@@ -4789,29 +4790,89 @@ class RestAPI:
         )
 
     @async_api_call()
-    def refresh_general_cache(self) -> dict[str, Any]:
+    def refresh_general_cache(self, cache_protocol: ProtocolsWithCache) -> dict[str, Any]:
         eth_node_inquirer = self.rotkehlchen.chains_aggregator.ethereum.node_inquirer
         optimism_inquirer = self.rotkehlchen.chains_aggregator.optimism.node_inquirer
         base_inquirer = self.rotkehlchen.chains_aggregator.base.node_inquirer
         arbitrum_inquirer = self.rotkehlchen.chains_aggregator.arbitrum_one.node_inquirer
         gnosis_inquirer = self.rotkehlchen.chains_aggregator.gnosis.node_inquirer
         polygon_inquirer = self.rotkehlchen.chains_aggregator.polygon_pos.node_inquirer
-        for (cache, cache_type, query_method, chain_id, inquirer) in [
-            ('curve pools', CacheType.CURVE_LP_TOKENS, query_curve_data, chain_id, node_inquirer)
-            for chain_id, node_inquirer in (
-                (ChainID.ETHEREUM, eth_node_inquirer),
-                (ChainID.OPTIMISM, optimism_inquirer),
-                (ChainID.ARBITRUM_ONE, arbitrum_inquirer),
-                (ChainID.BASE, base_inquirer),
-                (ChainID.GNOSIS, gnosis_inquirer),
-                (ChainID.POLYGON_POS, polygon_inquirer),
-            )
-        ] + [
-            ('convex pools', CacheType.CONVEX_POOL_ADDRESS, query_convex_data, None, eth_node_inquirer),  # noqa: E501
-            ('velodrome pools', CacheType.VELODROME_POOL_ADDRESS, query_velodrome_like_data, None, optimism_inquirer),  # noqa: E501
-            ('aerodrome pools', CacheType.AERODROME_POOL_ADDRESS, query_velodrome_like_data, None, base_inquirer),  # noqa: E501
-            ('gearbox pools', CacheType.GEARBOX_POOL_ADDRESS, query_gearbox_data, ChainID.ETHEREUM, eth_node_inquirer),  # noqa: E501
-        ]:
+        cache_rules: list[
+            tuple[str, CacheType, Callable, ChainID | None, EvmNodeInquirer],
+        ] = []
+
+        match cache_protocol:
+            case ProtocolsWithCache.CURVE:
+                cache_rules.extend([
+                    (
+                        'curve pools',
+                        CacheType.CURVE_LP_TOKENS,
+                        query_curve_data,
+                        chain_id,
+                        node_inquirer,
+                    )
+                    for chain_id, node_inquirer in (
+                        (ChainID.ETHEREUM, eth_node_inquirer),
+                        (ChainID.OPTIMISM, optimism_inquirer),
+                        (ChainID.ARBITRUM_ONE, arbitrum_inquirer),
+                        (ChainID.BASE, base_inquirer),
+                        (ChainID.GNOSIS, gnosis_inquirer),
+                        (ChainID.POLYGON_POS, polygon_inquirer),
+                    )
+                ])
+            case ProtocolsWithCache.VELODROME:
+                cache_rules.append((
+                    'velodrome pools',
+                    CacheType.VELODROME_POOL_ADDRESS,
+                    query_velodrome_like_data,
+                    None,
+                    optimism_inquirer,
+                ))
+            case ProtocolsWithCache.AERODROME:
+                cache_rules.append((
+                    'aerodrome pools',
+                    CacheType.AERODROME_POOL_ADDRESS,
+                    query_velodrome_like_data,
+                    None,
+                    base_inquirer,
+                ))
+            case ProtocolsWithCache.CONVEX:
+                cache_rules.append((
+                    'convex pools',
+                    CacheType.CONVEX_POOL_ADDRESS,
+                    query_convex_data,
+                    None,
+                    eth_node_inquirer,
+                ))
+            case ProtocolsWithCache.GEARBOX:
+                cache_rules.append((
+                    'gearbox pools',
+                    CacheType.GEARBOX_POOL_ADDRESS,
+                    query_gearbox_data,
+                    ChainID.ETHEREUM,
+                    eth_node_inquirer,
+                ))
+            case ProtocolsWithCache.YEARN:
+                try:
+                    query_yearn_vaults(
+                        db=self.rotkehlchen.data.db,
+                        ethereum_inquirer=eth_node_inquirer,
+                    )
+                except RemoteError as e:
+                    return wrap_in_fail_result(
+                        message=f'Failed to refresh yearn vaults cache due to: {e!s}',
+                        status_code=HTTPStatus.CONFLICT,
+                    )
+            case ProtocolsWithCache.MAKER:
+                try:
+                    query_ilk_registry_and_maybe_update_cache(eth_node_inquirer)
+                except RemoteError as e:
+                    return wrap_in_fail_result(
+                        message=f'Failed to refresh makerdao vault ilk cache due to: {e!s}',
+                        status_code=HTTPStatus.CONFLICT,
+                    )
+
+        for (cache, cache_type, query_method, chain_id, inquirer) in cache_rules:
             if inquirer.ensure_cache_data_is_updated(
                 cache_type=cache_type,
                 query_method=query_method,
@@ -4824,23 +4885,6 @@ class RestAPI:
                     status_code=HTTPStatus.CONFLICT,
                 )
 
-        try:
-            query_yearn_vaults(
-                db=self.rotkehlchen.data.db,
-                ethereum_inquirer=eth_node_inquirer,
-            )
-        except RemoteError as e:
-            return wrap_in_fail_result(
-                message=f'Failed to refresh yearn vaults cache due to: {e!s}',
-                status_code=HTTPStatus.CONFLICT,
-            )
-        try:
-            query_ilk_registry_and_maybe_update_cache(eth_node_inquirer)
-        except RemoteError as e:
-            return wrap_in_fail_result(
-                message=f'Failed to refresh makerdao vault ilk cache due to: {e!s}',
-                status_code=HTTPStatus.CONFLICT,
-            )
         return OK_RESULT
 
     def get_airdrops_metadata(self) -> Response:

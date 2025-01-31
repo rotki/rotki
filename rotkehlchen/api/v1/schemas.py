@@ -129,6 +129,7 @@ from rotkehlchen.types import (
     OnlyPurgeableModuleName,
     OptionalBlockchainAddress,
     OptionalChainAddress,
+    ProtocolsWithCache,
     SupportedBlockchain,
     Timestamp,
     TradeType,
@@ -3899,3 +3900,10 @@ class HistoricalPricesPerAssetSchema(AsyncQueryArgumentSchema, TimestampRangeSch
         data['to_timestamp'] = ((data['to_timestamp'] + interval - 1) // interval) * interval
 
         return data
+
+
+class RefreshProtocolCache(AsyncQueryArgumentSchema):
+    cache_protocol = SerializableEnumField(
+        enum_class=ProtocolsWithCache,
+        required=True,
+    )

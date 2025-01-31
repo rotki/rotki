@@ -8,8 +8,13 @@ import requests
 
 from rotkehlchen.constants.misc import AVATARIMAGESDIR_NAME, IMAGESDIR_NAME
 from rotkehlchen.db.ens import DBEns
-from rotkehlchen.tests.utils.api import api_url_for, assert_proper_response
+from rotkehlchen.tests.utils.api import (
+    api_url_for,
+    assert_proper_response,
+    assert_proper_sync_response_with_result,
+)
 from rotkehlchen.tests.utils.factories import make_evm_address
+from rotkehlchen.types import ProtocolsWithCache
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
@@ -113,9 +118,17 @@ def test_icons_and_avatars_cache_deletion(rotkehlchen_api_server: 'APIServer') -
     assert response.headers['Content-Type'] == 'image/png'
 
 
-@pytest.mark.vcr
 def test_general_cache_refresh(rotkehlchen_api_server: 'APIServer') -> None:
     """Tests that refreshing the general cache works as expected"""
+    response = requests.get(api_url_for(
+        rotkehlchen_api_server,
+        'refreshgeneralcacheresource',
+    ))
+    result = assert_proper_sync_response_with_result(response)
+    assert {
+        'curve', 'velodrome', 'convex', 'aerodrome', 'gearbox', 'yearn', 'maker',
+    }.issubset(set(result))
+
     with ExitStack() as stack:
         stack.enter_context(patch(
             'rotkehlchen.chain.evm.node_inquirer.should_update_protocol_cache',
@@ -146,15 +159,18 @@ def test_general_cache_refresh(rotkehlchen_api_server: 'APIServer') -> None:
             new=MagicMock(),
         ))
 
-        response = requests.post(api_url_for(
-            rotkehlchen_api_server,
-            'refreshgeneralcacheresource',
-        ))
-        assert_proper_response(response)
-        assert patched_convex_query.call_count == 1, 'Convex pools should have been queried despite should_update_protocol_cache being False'  # noqa: E501
-        assert patched_curve_query.call_count == 6, 'Curve pools should have been queried despite should_update_protocol_cache being False'  # noqa: E501
-        assert patched_gearbox_query.call_count == 1, 'Gearbox pools should have been queried despite should_update_protocol_cache being False'  # noqa: E501
-        # we query query_velodrome_like_data twice. First for velodrome and then for aerodrome
-        assert patched_velodrome_query.call_count == 2, 'Velodrome pools should have been queried despite should_update_protocol_cache being False'  # noqa: E501
-        assert patched_query_yearn_vaults.call_count == 1, 'Yearn vaults refresh should have been triggered'  # noqa: E501
-        assert patched_ilk_registry.call_count == 1, 'Ilk registry refresh should have been triggered'  # noqa: E501
+        for protocol, patched_obj, expected_calls in (
+            (ProtocolsWithCache.CURVE, patched_curve_query, 6),
+            (ProtocolsWithCache.CONVEX, patched_convex_query, 1),
+            (ProtocolsWithCache.GEARBOX, patched_gearbox_query, 1),
+            (ProtocolsWithCache.VELODROME, patched_velodrome_query, 1),
+            (ProtocolsWithCache.AERODROME, patched_velodrome_query, 2),  # 1 for velo and 1 for aerodrome  # noqa: E501
+            (ProtocolsWithCache.YEARN, patched_query_yearn_vaults, 1),
+            (ProtocolsWithCache.MAKER, patched_ilk_registry, 1),
+        ):
+            response = requests.post(api_url_for(
+                rotkehlchen_api_server,
+                'refreshgeneralcacheresource',
+            ), json={'cache_protocol': protocol.serialize()})
+            assert_proper_response(response)
+            assert patched_obj.call_count == expected_calls, f'{protocol} should have been queried {expected_calls} but had {patched_obj.call_count} calls'  # noqa: E501
