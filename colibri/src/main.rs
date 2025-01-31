@@ -1,13 +1,16 @@
-use axum::{routing::get, routing::post, Router};
+use axum::{http::Request, routing, Router};
 use database::DBHandler;
-use log::{error, info, LevelFilter};
-use simplelog::{CombinedLogger, Config, TermLogger, TerminalMode, WriteLogger};
-use std::fs::File;
+use http::{request::Parts as RequestParts, HeaderValue};
+use log::{error, info};
+use std::collections::HashSet;
 use std::net::SocketAddr;
-use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::net::TcpListener;
-use tokio::sync::RwLock;
+use tokio::sync::{Mutex, RwLock};
+use tower_http::{
+    cors::{AllowOrigin, CorsLayer},
+    trace::TraceLayer,
+};
 
 mod api;
 mod args;
@@ -15,36 +18,14 @@ mod coingecko;
 mod database;
 mod globaldb;
 mod icons;
-
-fn setup_logger(
-    log_file: PathBuf,
-    use_stdout: bool,
-    log_level: LevelFilter,
-) -> Result<(), Box<dyn std::error::Error>> {
-    let mut loggers: Vec<Box<dyn simplelog::SharedLogger>> = Vec::new();
-
-    if use_stdout {
-        loggers.push(TermLogger::new(
-            log_level,
-            Config::default(),
-            TerminalMode::Mixed,
-            simplelog::ColorChoice::Auto,
-        ));
-    }
-
-    let file = File::create(log_file)?;
-    loggers.push(WriteLogger::new(log_level, Config::default(), file));
-    CombinedLogger::init(loggers)?;
-
-    Ok(())
-}
+mod logging;
 
 #[tokio::main(flavor = "multi_thread")]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = args::parse_args();
-    setup_logger(args.logfile_path, false, LevelFilter::Debug)?;
-    info!("Starting colibri");
+    logging::config_logging(args.clone());
 
+    info!("Starting colibri");
     let globaldb =
         match globaldb::GlobalDB::new(args.data_directory.join("global").join("global.db")).await {
             Err(e) => {
@@ -53,23 +34,49 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
             Ok(globaldb) => Arc::new(globaldb),
         };
-    let coingecko = Arc::new(coingecko::Coingecko::new(globaldb.clone()));
+    let coingecko = Arc::new(coingecko::Coingecko::new(
+        globaldb.clone(),
+        coingecko::COINGECKO_BASE_URL.to_string(),
+    ));
     let state = Arc::new(api::AppState {
         data_dir: args.data_directory,
         globaldb: globaldb.clone(),
         coingecko,
         userdb: Arc::new(RwLock::new(DBHandler::new())),
+        active_tasks: Arc::new(Mutex::new(HashSet::<String>::new())),
     });
 
-    let stateless_routes = Router::new().route("/health", get(api::health::status));
-
+    let stateless_routes = Router::new().route("/health", routing::get(api::health::status));
     let app_routes = Router::new()
-        .route("/assets/icon", get(api::icons::get_icon))
-        .route("/user", post(api::database::unlock_user))
-        .route("/assets/ignored", get(api::database::get_ignored_assets))
+        .route("/assets/icon", routing::get(api::icons::get_icon))
+        .route("/assets/icon", routing::head(api::icons::check_icon))
+        .route("/user", routing::post(api::database::unlock_user))
+        .route(
+            "/assets/ignored",
+            routing::get(api::database::get_ignored_assets),
+        )
         .with_state(state);
 
-    let app = Router::new().merge(stateless_routes).merge(app_routes);
+    // configure cors to allow only requests from the localhost
+    let cors_layer = CorsLayer::new().allow_origin(AllowOrigin::predicate(
+        |origin: &HeaderValue, _request_parts: &RequestParts| {
+            origin.as_bytes().starts_with(b"http://localhost")
+        },
+    ));
+
+    let app = Router::new()
+        .merge(stateless_routes)
+        .merge(app_routes)
+        .layer(cors_layer)
+        .layer(
+            TraceLayer::new_for_http().make_span_with(|request: &Request<_>| {
+                tracing::info_span!(
+                    "http_request",
+                    method = %request.method(),
+                    uri = %request.uri(),
+                )
+            }),
+        );
 
     info!("Colibri api listens on 127.0.0.1:{}", args.port);
     let addr = SocketAddr::from(([127, 0, 0, 1], args.port));
