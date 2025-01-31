@@ -1,15 +1,18 @@
 #!/usr/bin/env node
 
-import { spawn } from 'node:child_process';
+import { type ChildProcessWithoutNullStreams, spawn } from 'node:child_process';
 import process from 'node:process';
 import { ArgumentParser } from 'argparse';
 import electron from 'electron';
-import { build, createLogger, createServer } from 'vite';
-import { LOG_LEVEL, sharedConfig } from './setup.js';
+import { type ViteDevServer, build, createLogger, createServer } from 'vite';
+import consola from 'consola';
+import { type BuildOutput, LOG_LEVEL, sharedConfig } from './setup';
+import type { OutputPlugin } from 'rollup';
 
 const parser = new ArgumentParser({
   description: 'Rotki frontend build',
 });
+
 parser.add_argument('--web', { action: 'store_true' });
 parser.add_argument('--remote-debugging-port', { type: 'int' });
 parser.add_argument('--mode', { help: 'mode docker', default: 'development' });
@@ -29,10 +32,13 @@ const stderrFilterPatterns = [
   /ExtensionLoadWarning/,
 ];
 
-/**
- * @param {{name: string; configFile: string; writeBundle: import('rollup').OutputPlugin['writeBundle'] }} param0
- */
-function getWatcher({ name, configFile, writeBundle }) {
+interface WatcherConfig {
+  name: string;
+  configFile: string;
+  writeBundle: OutputPlugin['writeBundle'];
+}
+
+async function getWatcher({ name, configFile, writeBundle }: WatcherConfig): Promise<BuildOutput> {
   return build({
     ...sharedConfig,
     mode,
@@ -41,18 +47,16 @@ function getWatcher({ name, configFile, writeBundle }) {
   });
 }
 
-/** @type {ChildProcessWithoutNullStreams[]} */
-let childProcesses = [];
+let childProcesses: ChildProcessWithoutNullStreams[] = [];
 
 /**
  * Start or restart App when source files are changed
- * @param {{config: {server: import('vite').ResolvedServerOptions}}} ResolvedServerOptions
  */
-function setupMainPackageWatcher({ config: { server } }) {
+async function setupMainPackageWatcher({ config: { server } }: ViteDevServer): Promise<BuildOutput> {
   // Create VITE_DEV_SERVER_URL environment variable to pass it to the main process.
   const protocol = server.https ? 'https:' : 'http:';
   const host = server.host || 'localhost';
-  const port = server.port; // Vite searches for and occupies the first free port: 3000, 3001, 3002 and so on
+  const port = server.port; // Vite searches for and occupies the first free port: 3000, 3001, 3002, and so on
   const urlPath = '/';
   process.env.VITE_DEV_SERVER_URL = `${protocol}//${host}:${port}${urlPath}`;
 
@@ -60,8 +64,7 @@ function setupMainPackageWatcher({ config: { server } }) {
     prefix: '[main]',
   });
 
-  /** @type {ChildProcessWithoutNullStreams | null} */
-  let spawnProcess = null;
+  let spawnProcess: ChildProcessWithoutNullStreams | null = null;
 
   return getWatcher({
     name: 'reload-app-on-main-package-change',
@@ -69,7 +72,7 @@ function setupMainPackageWatcher({ config: { server } }) {
     writeBundle() {
       if (spawnProcess) {
         childProcesses = childProcesses.filter(p => p !== spawnProcess);
-        spawnProcess.off('exit', process.exit);
+        spawnProcess.off('exit', () => process.exit());
         spawnProcess.kill('SIGINT');
         spawnProcess = null;
       }
@@ -98,16 +101,15 @@ function setupMainPackageWatcher({ config: { server } }) {
       });
 
       // Stops the watch script when the application has been quit
-      spawnProcess.on('exit', process.exit);
+      spawnProcess.on('exit', () => process.exit());
     },
   });
 }
 
 /**
  * Start or restart App when source files are changed
- * @param {{ws: import('vite').WebSocketServer}} WebSocketServer
  */
-function setupPreloadPackageWatcher({ ws }) {
+async function setupPreloadPackageWatcher({ ws }: ViteDevServer): Promise<BuildOutput> {
   return getWatcher({
     name: 'reload-page-on-preload-package-change',
     configFile: 'vite.config.preload.ts',
@@ -119,7 +121,7 @@ function setupPreloadPackageWatcher({ ws }) {
   });
 }
 
-async function serve() {
+async function serve(): Promise<void> {
   try {
     const viteDevServer = await createServer({
       ...sharedConfig,
@@ -139,20 +141,21 @@ async function serve() {
     }
 
     process.on('SIGINT', () => {
-      viteDevServer.close();
-      childProcesses.forEach((p) => {
-        console.info(`terminating child process ${p.pid}`);
-        p.kill();
+      viteDevServer.close().then(() => {
+        consola.info('Vite server stopped');
+      }).catch(error => consola.error(error)).finally(() => {
+        childProcesses.forEach((p) => {
+          console.info(`terminating child process ${p.pid}`);
+          p.kill();
+        });
+        process.exit();
       });
-      process.exit();
     });
   }
   catch (error) {
-    console.error(error);
+    consola.error(error);
     process.exit(1);
   }
 }
 
-// re-evaluate after moving to mjs or ts
-// eslint-disable-next-line unicorn/prefer-top-level-await
-serve();
+await serve();

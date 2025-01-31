@@ -20,28 +20,34 @@ jobs:
         with:
           fetch-depth: 2
           persist-credentials: false
+
       - name: Load env
         uses: rotki/action-env@v2
         with:
           env_file: .github/.env.ci
+
       - name: Setup python
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: 'pip'
+
       - name: Setup node
         uses: actions/setup-node@v4
         with:
           node-version-file: 'frontend/.nvmrc'
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v3
         with:
           package_json_file: frontend/package.json
+
       - name: Get pnpm store directory
         id: pnpm-cache
         shell: bash
         run: |
           echo "STORE_PATH=$(pnpm store path)" >> "$GITHUB_OUTPUT"
+
       - name: Setup pnpm cache
         uses: actions/cache@v4
         with:
@@ -52,6 +58,7 @@ jobs:
           key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
+
       - name: Store test data
         uses: actions/cache@v4
         with:
@@ -59,38 +66,45 @@ jobs:
             ./frontend/app/.e2e/data/icons
             ./frontend/app/.e2e/data/global_data
           key: ${{ runner.os }}-e2e-data-${{ hashFiles('rotkehlchen/data/global.db') }}
+
       - name: Setup backend
         run: |
           pip install --upgrade uv wheel
           uv pip install --system -r requirements.txt
           uv pip install --system -e .
+
       - name: Restore dependencies
         working-directory: ./frontend
         run: pnpm install --frozen-lockfile
+
       - name: Run e2e tests
         timeout-minutes: 20
         env:
           CYPRESS_ETHERSCAN_API_KEY: ${{ secrets.ETHERSCAN_API_KEY }}
         run: pnpm run --filter rotki test:integration-ci --browser chrome
         working-directory: ./frontend
+
       - name: Upload coverage
         uses: codecov/codecov-action@v4
         with:
           flags: frontend_integration
           env_vars: GROUP
           token: ${{ secrets.CODECOV_TOKEN }}
+
       - name: Upload screenshots
         uses: actions/upload-artifact@v4
         if: failure()
         with:
           name: screenshots-${{ runner.os }}-${{ matrix.group }}
           path: ./frontend/app/tests/e2e/screenshots
+
       - name: Upload backend logs
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: backend-logs-${{ runner.os }}-${{ matrix.group }}
           path: ./frontend/app/.e2e/logs/*.log
+
       - name: Upload videos
         uses: actions/upload-artifact@v4
         if: failure()
