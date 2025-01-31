@@ -274,7 +274,7 @@ def test_deploy_eigenpod(ethereum_inquirer, ethereum_accounts, database):
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_hash=tx_hash,
-        sequence_index=1,
+        sequence_index=219,
         timestamp=timestamp,
         location=Location.ETHEREUM,
         event_type=HistoryEventType.INFORMATIONAL,
@@ -313,7 +313,7 @@ def test_deploy_eigenpod_via_safe(ethereum_inquirer, ethereum_accounts):
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_hash=tx_hash,
-        sequence_index=1,
+        sequence_index=120,
         timestamp=timestamp,
         location=Location.ETHEREUM,
         event_type=HistoryEventType.INFORMATIONAL,
@@ -327,7 +327,7 @@ def test_deploy_eigenpod_via_safe(ethereum_inquirer, ethereum_accounts):
         address=EIGENPOD_MANAGER,
     ), EvmEvent(
         tx_hash=tx_hash,
-        sequence_index=2,
+        sequence_index=121,
         timestamp=timestamp,
         location=Location.ETHEREUM,
         event_type=HistoryEventType.INFORMATIONAL,
@@ -362,7 +362,7 @@ def test_create_delayed_withdrawals(ethereum_inquirer, ethereum_accounts):
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_hash=tx_hash,
-        sequence_index=1,
+        sequence_index=243,
         timestamp=timestamp,
         location=Location.ETHEREUM,
         event_type=HistoryEventType.INFORMATIONAL,
@@ -400,7 +400,7 @@ def test_lst_create_delayed_withdrawals(database, ethereum_inquirer, ethereum_ac
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_hash=tx_hash,
-        sequence_index=1,
+        sequence_index=264,
         timestamp=timestamp,
         location=Location.ETHEREUM,
         event_type=HistoryEventType.INFORMATIONAL,
@@ -414,7 +414,7 @@ def test_lst_create_delayed_withdrawals(database, ethereum_inquirer, ethereum_ac
         extra_data={'amount': amount},
     ), EvmEvent(
         tx_hash=tx_hash,
-        sequence_index=2,
+        sequence_index=265,
         timestamp=timestamp,
         location=Location.ETHEREUM,
         event_type=HistoryEventType.INFORMATIONAL,
@@ -472,20 +472,6 @@ def test_lst_complete_delayed_withdrawals(database, ethereum_inquirer, ethereum_
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_hash=tx_hash,
-        sequence_index=1,
-        timestamp=timestamp,
-        location=Location.ETHEREUM,
-        event_type=HistoryEventType.INFORMATIONAL,
-        event_subtype=HistoryEventSubType.NONE,
-        asset=cbeth,
-        balance=Balance(),
-        location_label=user_address,
-        notes='Complete eigenlayer withdrawal of cbETH',
-        counterparty=CPT_EIGENLAYER,
-        address=EIGENLAYER_DELEGATION,
-        extra_data={'matched': True},
-    ), EvmEvent(
-        tx_hash=tx_hash,
         sequence_index=581,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -497,6 +483,20 @@ def test_lst_complete_delayed_withdrawals(database, ethereum_inquirer, ethereum_
         notes=f'Withdraw {amount} cbETH from Eigenlayer',
         counterparty=CPT_EIGENLAYER,
         address=cbeth_strategy,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=582,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=cbeth,
+        balance=Balance(),
+        location_label=user_address,
+        notes='Complete eigenlayer withdrawal of cbETH',
+        counterparty=CPT_EIGENLAYER,
+        address=EIGENLAYER_DELEGATION,
+        extra_data={'matched': True},
     )]
     assert events == expected_events
 
@@ -563,7 +563,7 @@ def test_claim_delayed_withdrawals(ethereum_inquirer, ethereum_accounts):
         address=EIGENPOD_DELAYED_WITHDRAWAL_ROUTER,
     ), EvmEvent(
         tx_hash=tx_hash,
-        sequence_index=2,
+        sequence_index=160,
         timestamp=timestamp,
         location=Location.ETHEREUM,
         event_type=HistoryEventType.INFORMATIONAL,
@@ -587,7 +587,7 @@ def test_native_restake_delegate(ethereum_inquirer, ethereum_accounts):
     expected_events = [
         EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=0,
+            sequence_index=373,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.INFORMATIONAL,
@@ -601,7 +601,7 @@ def test_native_restake_delegate(ethereum_inquirer, ethereum_accounts):
             extra_data={'amount': '160'},
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=1,
+            sequence_index=374,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.INFORMATIONAL,
@@ -647,7 +647,7 @@ def test_eigenpod_start_checkpoint(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=1,
+            sequence_index=248,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.INFORMATIONAL,
@@ -690,7 +690,7 @@ def test_eigenpod_verify_checkpoint_proofs(ethereum_inquirer, ethereum_accounts)
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=1,
+            sequence_index=280,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.INFORMATIONAL,
@@ -703,7 +703,7 @@ def test_eigenpod_verify_checkpoint_proofs(ethereum_inquirer, ethereum_accounts)
             address=eigenpod_address,
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=2,
+            sequence_index=282,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.INFORMATIONAL,
@@ -716,7 +716,7 @@ def test_eigenpod_verify_checkpoint_proofs(ethereum_inquirer, ethereum_accounts)
             address=EIGENPOD_MANAGER,
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=3,
+            sequence_index=284,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.INFORMATIONAL,

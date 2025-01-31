@@ -353,7 +353,7 @@ def test_prove_withdrawal(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=1,
+            sequence_index=276,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.INFORMATIONAL,

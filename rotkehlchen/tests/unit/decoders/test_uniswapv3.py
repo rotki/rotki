@@ -640,19 +640,6 @@ def test_uniswap_v3_weth_deposit(ethereum_inquirer, ethereum_accounts):
     nft_id = '645638'
 
     assert events == [EvmEvent(
-        sequence_index=0,
-        timestamp=timestamp,
-        location=Location.ETHEREUM,
-        event_type=HistoryEventType.INFORMATIONAL,
-        event_subtype=HistoryEventSubType.NONE,
-        asset=A_ETH,
-        balance=Balance(amount=ZERO),
-        location_label=string_to_evm_address('0x9e753054aedE94A2648d4D9d4Efa4f7e5aE82cb5'),
-        notes='Successfully executed safe transaction 0xaae7b65fed168006d9d786c6f60f0f6c549e0189df7f6b101b185bbc538a8469 for multisig 0xb26655EBEe9DFA2f8D20523FE7CaE45CBe0122A2',  # noqa: E501
-        tx_hash=tx_hash,
-        counterparty=CPT_SAFE_MULTISIG,
-        address='0xb26655EBEe9DFA2f8D20523FE7CaE45CBe0122A2',
-    ), EvmEvent(
         sequence_index=97,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -691,6 +678,19 @@ def test_uniswap_v3_weth_deposit(ethereum_inquirer, ethereum_accounts):
         tx_hash=tx_hash,
         counterparty=CPT_UNISWAP_V3,
         address=ZERO_ADDRESS,
+    ), EvmEvent(
+        sequence_index=102,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=A_ETH,
+        balance=Balance(amount=ZERO),
+        location_label=string_to_evm_address('0x9e753054aedE94A2648d4D9d4Efa4f7e5aE82cb5'),
+        notes='Successfully executed safe transaction 0xaae7b65fed168006d9d786c6f60f0f6c549e0189df7f6b101b185bbc538a8469 for multisig 0xb26655EBEe9DFA2f8D20523FE7CaE45CBe0122A2',  # noqa: E501
+        tx_hash=tx_hash,
+        counterparty=CPT_SAFE_MULTISIG,
+        address='0xb26655EBEe9DFA2f8D20523FE7CaE45CBe0122A2',
     )]
 
 

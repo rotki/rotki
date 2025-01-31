@@ -285,9 +285,9 @@ class ExtrafiCommonDecoder(DecoderInterface, ReloadableCacheDecoderMixin):
             else:
                 borrow_token, amount = token1, asset_normalized_value(amount_1_borrowed, token1)
 
-            borrow_event = self.base.make_event_from_transaction(
-                transaction=context.transaction,
-                tx_log=context.tx_log,
+            borrow_event = self.base.make_event_next_index(
+                tx_hash=context.transaction.tx_hash,
+                timestamp=context.transaction.timestamp,
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.GENERATE_DEBT,
                 asset=borrow_token,
@@ -297,9 +297,9 @@ class ExtrafiCommonDecoder(DecoderInterface, ReloadableCacheDecoderMixin):
                 address=context.tx_log.address,
                 counterparty=CPT_EXTRAFI,
             )
-            deposit_event = self.base.make_event_from_transaction(
-                transaction=context.transaction,
-                tx_log=context.tx_log,
+            deposit_event = self.base.make_event_next_index(
+                tx_hash=context.transaction.tx_hash,
+                timestamp=context.transaction.timestamp,
                 event_type=HistoryEventType.DEPOSIT,
                 event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
                 asset=borrow_token,
@@ -309,7 +309,6 @@ class ExtrafiCommonDecoder(DecoderInterface, ReloadableCacheDecoderMixin):
                 address=context.tx_log.address,
                 counterparty=CPT_EXTRAFI,
             )
-            deposit_event.sequence_index = self.base.get_next_sequence_counter()
             # the user did used leverage by borrowing from the lending pool at extrafi and
             # depositing the borrowed amount in the pool to earn rewards and swap fees.
             context.decoded_events.extend([borrow_event, deposit_event])

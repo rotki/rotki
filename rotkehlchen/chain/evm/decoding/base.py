@@ -7,6 +7,7 @@ from rotkehlchen.assets.asset import CryptoAsset, EvmToken
 from rotkehlchen.assets.utils import get_or_create_evm_token, get_token
 from rotkehlchen.chain.evm.constants import ETH_SPECIAL_ADDRESS, ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import OUTGOING_EVENT_TYPES
+from rotkehlchen.chain.evm.structures import EvmTxReceipt
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.resolver import tokenid_to_collectible_id
 from rotkehlchen.fval import FVal
@@ -51,23 +52,56 @@ class BaseDecoderTools:
         with self.database.conn.read_ctx() as cursor:
             self.tracked_accounts = self.database.get_blockchain_accounts(cursor)
         self.sequence_counter = 0
+        self.sequence_offset = 0
 
-    def reset_sequence_counter(self) -> None:
+    def reset_sequence_counter(self, tx_receipt: 'EvmTxReceipt') -> None:
+        """Reset the sequence index counter before decoding a transaction.
+        `sequence_offset` is set to one more than the highest tx log index, and is used in
+        `get_next_sequence_index` to add new events whose sequence index will not collide with
+        the sequence index of any events that have associated tx logs.
+        """
         self.sequence_counter = 0
+        self.sequence_offset = tx_receipt.logs[-1].log_index + 1 if len(tx_receipt.logs) else 0
+        if __debug__:
+            self.get_sequence_index_called = False
 
-    def get_next_sequence_counter(self) -> int:
-        """Returns current counter and also increases it.
-        Meant to be called for all transaction events that do not have a corresponding log index"""
+    def get_next_sequence_index_pre_decoding(self) -> int:
+        """Get a sequence index for a new event created prior to running the decoding rules.
+        Used for gas events, eth transfers, etc. Must never be used after `get_sequence_index`
+        or `get_next_sequence_index` has been used to prevent sequence index collisions.
+        Returns the current counter and increments it.
+        """
+        if __debug__:  # develop only test that sequence index was not called
+            assert not self.get_sequence_index_called  # Perhaps remove after some time.
+
         value = self.sequence_counter
         self.sequence_counter += 1
         return value
 
     def get_sequence_index(self, tx_log: EvmTxReceiptLog) -> int:
-        """Get the value that should go for this event's sequence index
+        """Get the sequence index for an event associated with a specific tx log.
+        Used for token transfers, approvals, and misc events created by the protocol decoders.
+        Returns the current counter added to the log index, placing these events after those
+        created using `get_next_sequence_index_pre_decoding`.
+        """
+        if __debug__:
+            self.get_sequence_index_called = True
 
-        This function exists to calculate the index bases on the pre-calculated
-        sequence index and the event's log index"""
         return self.sequence_counter + tx_log.log_index
+
+    def get_next_sequence_index(self) -> int:
+        """Get a sequence index for a new event with no associated tx log.
+        Used during protocol decoding for things like informational or fee events that are not
+        directly associated with any specific tx log.
+        Returns the current counter added to the sequence offset, placing these events after
+        any events created using `get_sequence_index`.
+        """
+        if __debug__:
+            self.get_sequence_index_called = True
+
+        value = self.sequence_counter
+        self.sequence_counter += 1
+        return value + self.sequence_offset
 
     def refresh_tracked_accounts(self, cursor: 'DBCursor') -> None:
         self.tracked_accounts = self.database.get_blockchain_accounts(cursor)
@@ -193,10 +227,9 @@ class BaseDecoderTools:
         if amount == ZERO:
             return None  # Zero transfers are useless, so ignoring them
 
-        return self.make_event(
-            tx_hash=transaction.tx_hash,
-            sequence_index=self.get_sequence_index(tx_log),
-            timestamp=transaction.timestamp,
+        return self.make_event_from_transaction(
+            transaction=transaction,
+            tx_log=tx_log,
             event_type=event_type,
             event_subtype=event_subtype,
             asset=token,
@@ -257,7 +290,9 @@ class BaseDecoderTools:
             address: ChecksumEvmAddress | None = None,
             extra_data: dict[str, Any] | None = None,
     ) -> 'EvmEvent':
-        """Convenience function on top of make_event to use transaction and ReceiptLog"""
+        """Convenience function on top of make_event to use the transaction and a given log.
+        Must only be used once for a specific tx_log to prevent duplicate sequence indexes.
+        """
         return self.make_event(
             tx_hash=transaction.tx_hash,
             sequence_index=self.get_sequence_index(tx_log),
@@ -289,10 +324,10 @@ class BaseDecoderTools:
             address: ChecksumEvmAddress | None = None,
             extra_data: dict[str, Any] | None = None,
     ) -> 'EvmEvent':
-        """Convenience function on top of make_event to use next sequence index"""
+        """Convenience function on top of make_event to use next sequence index."""
         return self.make_event(
             tx_hash=tx_hash,
-            sequence_index=self.get_next_sequence_counter(),
+            sequence_index=self.get_next_sequence_index(),
             timestamp=timestamp,
             event_type=event_type,
             event_subtype=event_subtype,

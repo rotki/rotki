@@ -955,7 +955,7 @@ def test_non_aave_tx(ethereum_inquirer, ethereum_accounts) -> None:
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=1,
+            sequence_index=352,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.INFORMATIONAL,
@@ -997,7 +997,7 @@ def test_safe_interaction_interest(ethereum_inquirer, ethereum_accounts) -> None
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=1,
+            sequence_index=150,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.INFORMATIONAL,
@@ -1010,7 +1010,7 @@ def test_safe_interaction_interest(ethereum_inquirer, ethereum_accounts) -> None
             address=string_to_evm_address(multisig),
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=2,
+            sequence_index=151,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.DEPOSIT,
@@ -1023,7 +1023,7 @@ def test_safe_interaction_interest(ethereum_inquirer, ethereum_accounts) -> None
             address=string_to_evm_address('0x98C23E9d8f34FEFb1B7BD6a91B7FF122F4e16F5c'),
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=3,
+            sequence_index=152,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
@@ -1036,7 +1036,7 @@ def test_safe_interaction_interest(ethereum_inquirer, ethereum_accounts) -> None
             address=ZERO_ADDRESS,
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=4,
+            sequence_index=153,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
@@ -1654,23 +1654,10 @@ def test_aave_v3_close_position_with_safe(arbitrum_one_inquirer, arbitrum_one_ac
             asset=A_ETH,
             balance=Balance(amount=FVal(eth_withdraw_amount) + FVal(eth_interest_amount)),
             location_label=user_safe_proxy,
-            # New bug, this event should detected as WETH unwrapping and not as a receive
+            # This is an ETH receive after WETH unwrap. Fixed in bugfixes: https://github.com/rotki/rotki/pull/9338.  # noqa: E501
             notes=f'Receive {FVal(eth_withdraw_amount) + FVal(eth_interest_amount)} ETH from 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1',  # noqa: E501
             counterparty=None,
             address=A_WETH_ARB.resolve_to_evm_token().evm_address,
-        ), EvmEvent(
-            tx_hash=tx_hash,
-            sequence_index=3,
-            timestamp=timestamp,
-            location=Location.ARBITRUM_ONE,
-            event_type=HistoryEventType.INFORMATIONAL,
-            event_subtype=HistoryEventSubType.NONE,
-            asset=A_ETH,
-            balance=Balance(),
-            location_label=user_eoa_account,
-            notes=f'Successfully executed safe transaction 0xd7a87c1f11f5cbe9685d1e0627ea5ba8cf7373ec738cb2da4e345b836b67c2ef for multisig {user_safe_proxy}',  # noqa: E501
-            counterparty=CPT_SAFE_MULTISIG,
-            address=user_safe_proxy,
         ), EvmEvent(
             tx_hash=tx_hash,
             sequence_index=4,
@@ -1779,12 +1766,25 @@ def test_aave_v3_close_position_with_safe(arbitrum_one_inquirer, arbitrum_one_ac
             asset=A_WETH_ARB,
             balance=Balance(amount=FVal(eth_withdraw_amount) + FVal(eth_interest_amount)),
             location_label=user_safe_proxy,
-            # TODO: https://github.com/orgs/rotki/projects/11?pane=issue&itemId=95697078 . This is not a spend but a WETH wrapping  # noqa: E501
+            # This is a WETH unwrapping. Fixed in bugfixes: https://github.com/rotki/rotki/pull/9338.  # noqa: E501
             notes=f'Send {FVal(eth_withdraw_amount) + FVal(eth_interest_amount)} WETH from {user_safe_proxy} to 0x0000000000000000000000000000000000000000',  # noqa: E501
             address=ZERO_ADDRESS,
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=23,
+            sequence_index=25,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            balance=Balance(),
+            location_label=user_eoa_account,
+            notes=f'Successfully executed safe transaction 0xd7a87c1f11f5cbe9685d1e0627ea5ba8cf7373ec738cb2da4e345b836b67c2ef for multisig {user_safe_proxy}',  # noqa: E501
+            counterparty=CPT_SAFE_MULTISIG,
+            address=user_safe_proxy,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=26,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
             event_type=HistoryEventType.SPEND,
@@ -1797,7 +1797,7 @@ def test_aave_v3_close_position_with_safe(arbitrum_one_inquirer, arbitrum_one_ac
             address=ZERO_ADDRESS,
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=24,
+            sequence_index=27,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
             event_type=HistoryEventType.WITHDRAWAL,
@@ -1810,7 +1810,7 @@ def test_aave_v3_close_position_with_safe(arbitrum_one_inquirer, arbitrum_one_ac
             address=string_to_evm_address('0xe50fA9b3c56FfB159cB0FCA61F5c9D750e8128c8'),
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=25,
+            sequence_index=28,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
             event_type=HistoryEventType.RECEIVE,

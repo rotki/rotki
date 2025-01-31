@@ -76,7 +76,7 @@ class Eth2Decoder(DecoderInterface):
                 eth_deposit_event = EthDepositEvent(
                     tx_hash=context.transaction.tx_hash,
                     validator_index=validator_index,
-                    sequence_index=self.base.get_next_sequence_counter(),
+                    sequence_index=self.base.get_next_sequence_index(),
                     timestamp=event.timestamp,
                     balance=Balance(amount=amount),
                     depositor=string_to_evm_address(event.location_label),
