@@ -1,4 +1,5 @@
 pub mod database;
+pub mod health;
 pub mod icons;
 mod utils;
 

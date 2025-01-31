@@ -61,11 +61,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         userdb: Arc::new(RwLock::new(DBHandler::new())),
     });
 
-    let app = Router::new()
+    let stateless_routes = Router::new().route("/health", get(api::health::status));
+
+    let app_routes = Router::new()
         .route("/assets/icon", get(api::icons::get_icon))
         .route("/user", post(api::database::unlock_user))
         .route("/assets/ignored", get(api::database::get_ignored_assets))
         .with_state(state);
+
+    let app = Router::new().merge(stateless_routes).merge(app_routes);
 
     info!("Colibri api listens on 127.0.0.1:{}", args.port);
     let addr = SocketAddr::from(([127, 0, 0, 1], args.port));
