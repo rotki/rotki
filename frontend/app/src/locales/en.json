@@ -1248,7 +1248,9 @@
     "underlying_tokens": "Underlying Tokens"
   },
   "asset_update": {
-    "advanced": "Advanced",
+    "advanced": "Advanced options",
+    "show_advanced": "Show advance options",
+    "hide_advanced": "Hide advance options",
     "description": "Version {remote} of the asset database is available. Would you like to update from version {local}?",
     "manual": {
       "check": "Check For Update",

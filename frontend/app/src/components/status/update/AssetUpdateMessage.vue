@@ -17,6 +17,7 @@ const { versions } = toRefs(props);
 const partial = ref<boolean>(false);
 const upToVersion = ref<string>('0');
 const skipUpdate = ref<boolean>(false);
+const showAdvanced = ref<boolean>(false);
 
 const multiple = computed(() => {
   const { local, remote } = get(versions);
@@ -63,84 +64,108 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <RuiCard
-    variant="flat"
-    :class="{ 'bg-transparent': headless }"
-  >
-    <template #header>
-      {{ t('asset_update.title') }}
-    </template>
-    <i18n-t
-      class="text-body-1"
-      tag="div"
-      keypath="asset_update.description"
+  <div>
+    <RuiCard
+      variant="flat"
+      :class="{ 'bg-transparent': headless }"
     >
-      <template #remote>
-        <span class="font-medium">{{ versions.remote }}</span>
+      <template #header>
+        {{ t('asset_update.title') }}
       </template>
-      <template #local>
-        <span class="font-medium">{{ versions.local }}</span>
-      </template>
-    </i18n-t>
-    <div class="text-body-1 mt-4">
-      {{ t('asset_update.total_changes', { changes: versions.changes }) }}
-    </div>
-
-    <div
-      v-if="multiple"
-      class="font-medium text-body-1 mt-6"
-    >
-      {{ t('asset_update.advanced') }}
-    </div>
-    <div v-if="multiple">
-      <RuiCheckbox
-        v-model="partial"
-        class="asset-update__partial"
-        hide-details
-        color="primary"
+      <i18n-t
+        class="text-body-1"
+        tag="div"
+        keypath="asset_update.description"
       >
-        {{ t('asset_update.partially_update') }}
-      </RuiCheckbox>
-      <div class="ml-8 md:w-1/2">
-        <RuiTextField
-          :disabled="!partial"
-          :model-value="upToVersion"
-          variant="outlined"
-          color="primary"
-          type="number"
-          dense
-          hide-details
-          :min="versions.local"
-          :max="versions.remote"
-          :label="t('asset_update.up_to_version')"
-          @update:model-value="onChange($event)"
-        />
+        <template #remote>
+          <span class="font-medium">{{ versions.remote }}</span>
+        </template>
+        <template #local>
+          <span class="font-medium">{{ versions.local }}</span>
+        </template>
+      </i18n-t>
+      <div class="text-body-1 mt-4">
+        {{ t('asset_update.total_changes', { changes: versions.changes }) }}
       </div>
-    </div>
-    <div v-if="headless">
-      <RuiCheckbox
-        v-model="skipUpdate"
-        dense
-        color="primary"
+
+      <RuiAccordion
+        :open="showAdvanced"
+        class="pt-4 -mx-4 [&>div]:px-4"
       >
-        {{ t('asset_update.skip_notification') }}
-      </RuiCheckbox>
-    </div>
-    <template #footer>
-      <div class="grow" />
-      <RuiButton
-        variant="text"
-        color="primary"
-        @click="emit('dismiss', skipUpdate)"
-      >
-        {{ t('common.actions.skip') }}
-      </RuiButton>
-      <RuiButton
-        color="primary"
-        @click="emit('confirm')"
-      >
-        {{ t('common.actions.update') }}
-      </RuiButton>
-    </template>
-  </RuiCard>
+        <div class="font-medium text-body-1 border-t border-default pt-4">
+          {{ t('asset_update.advanced') }}
+        </div>
+        <div v-if="multiple">
+          <RuiCheckbox
+            v-model="partial"
+            class="asset-update__partial"
+            hide-details
+            color="primary"
+          >
+            {{ t('asset_update.partially_update') }}
+          </RuiCheckbox>
+          <div class="ml-8 md:w-1/2">
+            <RuiTextField
+              :disabled="!partial"
+              :model-value="upToVersion"
+              variant="outlined"
+              color="primary"
+              type="number"
+              dense
+              hide-details
+              :min="versions.local"
+              :max="versions.remote"
+              :label="t('asset_update.up_to_version')"
+              @update:model-value="onChange($event)"
+            />
+          </div>
+        </div>
+
+        <div v-if="headless">
+          <RuiCheckbox
+            v-model="skipUpdate"
+            dense
+            color="primary"
+            hide-details
+          >
+            {{ t('asset_update.skip_notification') }}
+          </RuiCheckbox>
+        </div>
+      </RuiAccordion>
+
+      <template #footer>
+        <RuiButton
+          v-if="showAdvanced"
+          variant="text"
+          color="error"
+          @click="emit('dismiss', skipUpdate)"
+        >
+          {{ t('common.actions.skip') }}
+        </RuiButton>
+        <div class="grow" />
+
+        <RuiButton
+          variant="text"
+          color="primary"
+          @click="showAdvanced = !showAdvanced"
+        >
+          <template #prepend>
+            <RuiIcon
+              name="lu-chevron-down"
+              size="16"
+              class="transition-all"
+              :class="{ 'rotate-180': showAdvanced }"
+            />
+          </template>
+          {{ showAdvanced ? t('asset_update.hide_advanced') : t('asset_update.show_advanced') }}
+        </RuiButton>
+        <RuiButton
+          color="primary"
+          @click="emit('confirm')"
+        >
+          {{ t('common.actions.update') }}
+        </RuiButton>
+      </template>
+    </RuiCard>
+  </div>
 </template>

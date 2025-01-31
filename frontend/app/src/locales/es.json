@@ -992,7 +992,7 @@
     "underlying_tokens": "Underlying Tokens"
   },
   "asset_update": {
-    "advanced": "Advanced",
+    "advanced": "Opciones avanzadas",
     "description": "Version {remote} of the asset database is available. Would you like to update from version {local}?",
     "manual": {
       "check": "Check For Update",

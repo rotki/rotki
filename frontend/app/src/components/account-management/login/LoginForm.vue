@@ -468,17 +468,10 @@ function abortLogin() {
               </RuiTooltip>
             </div>
 
-            <Transition
-              enter-from-class="h-0 opacity-0"
-              enter-to-class="h-full opacity-1"
-              enter-active-class="transition duration-300"
-              leave-from-class="h-full opacity-1"
-              leave-to-class="h-0 opacity-0"
-              leave-active-class="transition duration-100"
-            >
+            <RuiAccordion :open="customBackendDisplay">
               <div
                 v-if="customBackendDisplay"
-                class="flex flex-col justify-stretch space-y-4 mt-4"
+                class="flex flex-col justify-stretch space-y-4 pt-4"
               >
                 <RuiTextField
                   v-model="customBackendUrl"
@@ -541,7 +534,7 @@ function abortLogin() {
                   {{ t('login.custom_backend.session_only') }}
                 </RuiCheckbox>
               </div>
-            </Transition>
+            </RuiAccordion>
 
             <PremiumSyncConflictAlert @proceed="login({ syncApproval: $event })" />
 
