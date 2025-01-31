@@ -97,6 +97,10 @@ class WethDecoderBase(DecoderInterface, ABC):
             notes=f'Receive {deposited_amount} {self.wrapped_token.symbol}',
             address=context.transaction.to_address,
         )
+        maybe_reshuffle_events(
+            ordered_events=[out_event, in_event],
+            events_list=context.decoded_events + [in_event],
+        )
         return DecodingOutput(event=in_event)
 
     def _decode_withdrawal_event(self, context: DecoderContext) -> DecodingOutput:

@@ -106,7 +106,7 @@ def test_voted(arbitrum_one_inquirer, arbitrum_one_accounts):
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=1,
+            sequence_index=17,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
             event_type=HistoryEventType.INFORMATIONAL,

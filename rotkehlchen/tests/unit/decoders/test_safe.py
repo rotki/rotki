@@ -50,7 +50,7 @@ def test_added_owner(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=1,
+            sequence_index=153,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.INFORMATIONAL,
@@ -97,7 +97,7 @@ def test_removed_owner(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=1,
+            sequence_index=101,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.INFORMATIONAL,
@@ -143,7 +143,7 @@ def test_changed_threshold(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=1,
+            sequence_index=59,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.INFORMATIONAL,
@@ -187,7 +187,7 @@ def test_execution_success(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=1,
+            sequence_index=194,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.INFORMATIONAL,
@@ -231,7 +231,7 @@ def test_execution_failure(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=1,
+            sequence_index=217,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.INFORMATIONAL,
@@ -272,7 +272,7 @@ def test_safe_creation(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=1,
+            sequence_index=171,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.INFORMATIONAL,
@@ -345,20 +345,6 @@ def test_safe_vesting_claim(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=1,
-            timestamp=timestamp,
-            location=Location.ETHEREUM,
-            event_type=HistoryEventType.INFORMATIONAL,
-            event_subtype=HistoryEventSubType.NONE,
-            asset=A_ETH,
-            balance=Balance(),
-            location_label=user_address,
-            notes=f'Successfully executed safe transaction 0x4abbfbca46ad4a4099ae7896cfd9e4a4c3ef604236d55efd58a0314e1bfcf0eb for multisig {multisig_address}',  # noqa: E501
-            counterparty=CPT_SAFE_MULTISIG,
-            address=multisig_address,
-        ), EvmEvent(
-
-            tx_hash=evmhash,
             sequence_index=270,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -370,6 +356,19 @@ def test_safe_vesting_claim(ethereum_inquirer, ethereum_accounts):
             notes=f'Claim {amount} SAFE from vesting',
             counterparty=CPT_SAFE,
             address=SAFE_VESTING,
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=271,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            balance=Balance(),
+            location_label=user_address,
+            notes=f'Successfully executed safe transaction 0x4abbfbca46ad4a4099ae7896cfd9e4a4c3ef604236d55efd58a0314e1bfcf0eb for multisig {multisig_address}',  # noqa: E501
+            counterparty=CPT_SAFE_MULTISIG,
+            address=multisig_address,
         ),
     ]
     assert events == expected_events
@@ -398,19 +397,6 @@ def test_safe_lock(ethereum_inquirer, ethereum_accounts):
             location_label=user_address,
             notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
-        ), EvmEvent(
-            tx_hash=evmhash,
-            sequence_index=1,
-            timestamp=timestamp,
-            location=Location.ETHEREUM,
-            event_type=HistoryEventType.INFORMATIONAL,
-            event_subtype=HistoryEventSubType.NONE,
-            asset=A_ETH,
-            balance=Balance(),
-            location_label=user_address,
-            notes=f'Successfully executed safe transaction 0x4aed5d3d1e4a41a5dec570127ff5bba82d40214ce4fc6f65767ee3c2ac17aaca for multisig {multisig_address}',  # noqa: E501
-            counterparty=CPT_SAFE_MULTISIG,
-            address=multisig_address,
         ), EvmEvent(
             tx_hash=evmhash,
             sequence_index=157,
@@ -449,6 +435,19 @@ def test_safe_lock(ethereum_inquirer, ethereum_accounts):
             notes=f'Lock {amount} SAFE for Safe{{Pass}}',
             counterparty=CPT_SAFE,
             address=SAFE_LOCKING,
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=161,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            balance=Balance(),
+            location_label=user_address,
+            notes=f'Successfully executed safe transaction 0x4aed5d3d1e4a41a5dec570127ff5bba82d40214ce4fc6f65767ee3c2ac17aaca for multisig {multisig_address}',  # noqa: E501
+            counterparty=CPT_SAFE_MULTISIG,
+            address=multisig_address,
         ),
     ]
     assert events == expected_events
@@ -479,19 +478,6 @@ def test_safe_unlock(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=1,
-            timestamp=timestamp,
-            location=Location.ETHEREUM,
-            event_type=HistoryEventType.INFORMATIONAL,
-            event_subtype=HistoryEventSubType.NONE,
-            asset=A_ETH,
-            balance=Balance(),
-            location_label=user_address,
-            notes=f'Successfully executed safe transaction 0x3b6ade06b3f4dd85a4056813f6c418a6780fa675a69c728fad28e88a7726c9dd for multisig {multisig_address}',  # noqa: E501
-            counterparty=CPT_SAFE_MULTISIG,
-            address=multisig_address,
-        ), EvmEvent(
-            tx_hash=evmhash,
             sequence_index=560,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -503,6 +489,19 @@ def test_safe_unlock(ethereum_inquirer, ethereum_accounts):
             notes=f'Start unlock of {amount} SAFE from Safe{{Pass}}',
             counterparty=CPT_SAFE,
             address=SAFE_LOCKING,
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=561,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            balance=Balance(),
+            location_label=user_address,
+            notes=f'Successfully executed safe transaction 0x3b6ade06b3f4dd85a4056813f6c418a6780fa675a69c728fad28e88a7726c9dd for multisig {multisig_address}',  # noqa: E501
+            counterparty=CPT_SAFE_MULTISIG,
+            address=multisig_address,
         ),
     ]
     assert events == expected_events
@@ -533,19 +532,6 @@ def test_safe_withdraw_unlocked(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=1,
-            timestamp=timestamp,
-            location=Location.ETHEREUM,
-            event_type=HistoryEventType.INFORMATIONAL,
-            event_subtype=HistoryEventSubType.NONE,
-            asset=A_ETH,
-            balance=Balance(),
-            location_label=user_address,
-            notes=f'Successfully executed safe transaction 0x1f5ea0fb049fabccf49f2a9e8ccd8ae95db0d32727d5c62ea329b0381a51a698 for multisig {multisig_address}',  # noqa: E501
-            counterparty=CPT_SAFE_MULTISIG,
-            address=multisig_address,
-        ), EvmEvent(
-            tx_hash=evmhash,
             sequence_index=146,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -557,6 +543,19 @@ def test_safe_withdraw_unlocked(ethereum_inquirer, ethereum_accounts):
             notes=f'Withdraw {amount} SAFE from Safe{{Pass}} locking',
             counterparty=CPT_SAFE,
             address=SAFE_LOCKING,
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=147,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            balance=Balance(),
+            location_label=user_address,
+            notes=f'Successfully executed safe transaction 0x1f5ea0fb049fabccf49f2a9e8ccd8ae95db0d32727d5c62ea329b0381a51a698 for multisig {multisig_address}',  # noqa: E501
+            counterparty=CPT_SAFE_MULTISIG,
+            address=multisig_address,
         ),
     ]
     assert events == expected_events
@@ -586,19 +585,6 @@ def test_safepass_start_vesting_claim(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=1,
-            timestamp=timestamp,
-            location=Location.ETHEREUM,
-            event_type=HistoryEventType.INFORMATIONAL,
-            event_subtype=HistoryEventSubType.NONE,
-            asset=A_ETH,
-            balance=Balance(),
-            location_label=user_address,
-            notes=f'Successfully executed safe transaction 0x8e01ca76365b063a7628f0072527f51579660103276990ab4f2b97e2de26e04b for multisig {multisig_address}',  # noqa: E501
-            counterparty=CPT_SAFE_MULTISIG,
-            address=multisig_address,
-        ), EvmEvent(
-            tx_hash=tx_hash,
             sequence_index=118,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -610,6 +596,19 @@ def test_safepass_start_vesting_claim(ethereum_inquirer, ethereum_accounts):
             notes='Claim and start vesting of SAFE tokens from Safe{Pass}',
             counterparty=CPT_SAFE,
             address=SAFEPASS_AIRDROP,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=119,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            balance=Balance(),
+            location_label=user_address,
+            notes=f'Successfully executed safe transaction 0x8e01ca76365b063a7628f0072527f51579660103276990ab4f2b97e2de26e04b for multisig {multisig_address}',  # noqa: E501
+            counterparty=CPT_SAFE_MULTISIG,
+            address=multisig_address,
         ),
     ]
     assert events == expected_events

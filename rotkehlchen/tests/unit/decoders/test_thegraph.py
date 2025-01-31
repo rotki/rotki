@@ -156,7 +156,7 @@ def test_thegraph_contract_transfer_approval(ethereum_inquirer):
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=1,
+            sequence_index=415,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.INFORMATIONAL,

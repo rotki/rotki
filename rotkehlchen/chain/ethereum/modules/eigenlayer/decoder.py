@@ -211,9 +211,9 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
         notes = f'{"Restake" if shares_delta > 0 else "Unstake"} {from_wei(shares_delta)} ETH'
         if context.transaction.from_address != owner:
             notes += f' for {owner}'
-        event = self.base.make_event_next_index(
-            tx_hash=context.transaction.tx_hash,
-            timestamp=context.transaction.timestamp,
+        event = self.base.make_event_from_transaction(
+            transaction=context.transaction,
+            tx_log=context.tx_log,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
@@ -231,9 +231,9 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
 
         eigenpod_address = bytes_to_address(context.tx_log.topics[1])
         suffix = f' with owner {owner}' if context.transaction.from_address != owner else ''
-        event = self.base.make_event_next_index(
-            tx_hash=context.transaction.tx_hash,
-            timestamp=context.transaction.timestamp,
+        event = self.base.make_event_from_transaction(
+            transaction=context.transaction,
+            tx_log=context.tx_log,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.CREATE,
             asset=A_ETH,
@@ -271,9 +271,9 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
         notes = f'Start a delayed withdrawal of {amount} ETH from Eigenlayer'
         if partial_withdrawals_redeemed != 0 or full_withdrawals_redeemed != 0:
             notes += f' by processing {partial_withdrawals_redeemed} partial and {full_withdrawals_redeemed} full beaconchain withdrawals'  # noqa: E501
-        event = self.base.make_event_next_index(
-            tx_hash=context.transaction.tx_hash,
-            timestamp=context.transaction.timestamp,
+        event = self.base.make_event_from_transaction(
+            transaction=context.transaction,
+            tx_log=context.tx_log,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
@@ -340,9 +340,9 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
         withdrawal_root = '0x' + context.tx_log.data.hex()
         for withdrawal_event in events:  # iterate and find the withdrawal event
             if withdrawal_event.extra_data and withdrawal_event.extra_data.get('withdrawal_root', '') == withdrawal_root and not withdrawal_event.extra_data.get('completed', False):  # noqa: E501
-                new_event = self.base.make_event_next_index(
-                    tx_hash=context.transaction.tx_hash,
-                    timestamp=context.transaction.timestamp,
+                new_event = self.base.make_event_from_transaction(
+                    transaction=context.transaction,
+                    tx_log=context.tx_log,
                     event_type=HistoryEventType.INFORMATIONAL,
                     event_subtype=HistoryEventSubType.NONE,
                     asset=withdrawal_event.asset,
@@ -382,9 +382,9 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
         else:  # not found. Perhaps transaction and event not pulled or timing issue. Is rechecked from time to time when doing balance queries.  # noqa: E501
             log.debug(f'When decoding eigenlayer WithdrawalCompleted could not find corresponding Withdrawal queued: {context.transaction.tx_hash.hex()}')  # noqa: E501
 
-            new_event = self.base.make_event_next_index(  # so let's just keep minimal info
-                tx_hash=context.transaction.tx_hash,
-                timestamp=context.transaction.timestamp,
+            new_event = self.base.make_event_from_transaction(  # so let's just keep minimal info
+                transaction=context.transaction,
+                tx_log=context.tx_log,
                 event_type=HistoryEventType.INFORMATIONAL,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_ETH,
@@ -418,9 +418,9 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
             shares_entries=shares_entries,
         )
         for idx, (underlying_token, underlying_amount) in enumerate(zip(underlying_tokens, underlying_amounts, strict=False)):  # noqa: E501
-            event = self.base.make_event_next_index(
-                tx_hash=context.transaction.tx_hash,
-                timestamp=context.transaction.timestamp,
+            event = self.base.make_event_from_transaction(
+                transaction=context.transaction,
+                tx_log=context.tx_log,
                 event_type=HistoryEventType.INFORMATIONAL,
                 event_subtype=HistoryEventSubType.REMOVE_ASSET,
                 asset=underlying_token,
@@ -515,9 +515,9 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
         notes = f'{verb} {underlying_amounts[0]} restaked {underlying_tokens[0].symbol} {preposition} {operator}'  # noqa: E501
         if context.transaction.from_address != staker:
             notes += f' for {staker}'
-        event = self.base.make_event_next_index(
-            tx_hash=context.transaction.tx_hash,
-            timestamp=context.transaction.timestamp,
+        event = self.base.make_event_from_transaction(
+            transaction=context.transaction,
+            tx_log=context.tx_log,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
             asset=underlying_tokens[0],
@@ -534,9 +534,9 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
     def _decode_start_checkpoint(self, context: DecoderContext) -> DecodingOutput:
         beacon_blockroot = '0x' + context.tx_log.topics[2].hex()
         validators_num = int.from_bytes(context.tx_log.data)
-        event = self.base.make_event_next_index(
-            tx_hash=context.transaction.tx_hash,
-            timestamp=context.transaction.timestamp,
+        event = self.base.make_event_from_transaction(
+            transaction=context.transaction,
+            tx_log=context.tx_log,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
@@ -554,9 +554,9 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
             action = f'add {total_shares_delta} ETH for'
         else:
             action = f'remove {-total_shares_delta} ETH from'
-        event = self.base.make_event_next_index(
-            tx_hash=context.transaction.tx_hash,
-            timestamp=context.transaction.timestamp,
+        event = self.base.make_event_from_transaction(
+            transaction=context.transaction,
+            tx_log=context.tx_log,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
@@ -572,9 +572,9 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
         validator_index = int.from_bytes(context.tx_log.data[0:32])
         validator_balance = from_gwei(int.from_bytes(context.tx_log.data[64:96]))
 
-        event = self.base.make_event_next_index(
-            tx_hash=context.transaction.tx_hash,
-            timestamp=context.transaction.timestamp,
+        event = self.base.make_event_from_transaction(
+            transaction=context.transaction,
+            tx_log=context.tx_log,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,

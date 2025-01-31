@@ -370,7 +370,7 @@ def test_2_decoded_swaps(ethereum_inquirer, ethereum_accounts):
 
         ), EvmEvent(  # 1st swap with FUND
             tx_hash=tx_hex,
-            sequence_index=11,
+            sequence_index=41,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.TRADE,
@@ -383,7 +383,7 @@ def test_2_decoded_swaps(ethereum_inquirer, ethereum_accounts):
             address=GPV2_SETTLEMENT_ADDRESS,
         ), EvmEvent(
             tx_hash=tx_hex,
-            sequence_index=12,
+            sequence_index=42,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.TRADE,
@@ -396,7 +396,7 @@ def test_2_decoded_swaps(ethereum_inquirer, ethereum_accounts):
             address=GPV2_SETTLEMENT_ADDRESS,
         ), EvmEvent(
             tx_hash=tx_hex,
-            sequence_index=13,
+            sequence_index=43,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.TRADE,
@@ -409,7 +409,7 @@ def test_2_decoded_swaps(ethereum_inquirer, ethereum_accounts):
             address=GPV2_SETTLEMENT_ADDRESS,
         ), EvmEvent(  # 2nd swap with USDT
             tx_hash=tx_hex,
-            sequence_index=14,
+            sequence_index=44,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.TRADE,
@@ -422,7 +422,7 @@ def test_2_decoded_swaps(ethereum_inquirer, ethereum_accounts):
             address=GPV2_SETTLEMENT_ADDRESS,
         ), EvmEvent(
             tx_hash=tx_hex,
-            sequence_index=15,
+            sequence_index=45,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.TRADE,
@@ -435,7 +435,7 @@ def test_2_decoded_swaps(ethereum_inquirer, ethereum_accounts):
             address=GPV2_SETTLEMENT_ADDRESS,
         ), EvmEvent(
             tx_hash=tx_hex,
-            sequence_index=16,
+            sequence_index=46,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.TRADE,

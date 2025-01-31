@@ -139,8 +139,9 @@ def test_splits_updated(ethereum_inquirer, ethereum_accounts):
         counterparty=CPT_GAS,
     )
 
-    for idx, (address, percent) in zip(
+    for idx, sequence_index, (address, percent) in zip(
             range(1, 9),
+            range(523, 530),
             [
                 ('0x106B62Fdd27B748CF2Da3BacAB91a2CaBaeE6dCa', '5.00'),
                 ('0x19e4057A38a730be37c4DA690b103267AAE1d75d', '5.00'),
@@ -154,7 +155,7 @@ def test_splits_updated(ethereum_inquirer, ethereum_accounts):
     ):
         assert events[idx] == EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=idx,
+            sequence_index=sequence_index,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.INFORMATIONAL,
@@ -169,7 +170,7 @@ def test_splits_updated(ethereum_inquirer, ethereum_accounts):
 
         assert events[9] == EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=9,
+            sequence_index=531,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
@@ -182,8 +183,9 @@ def test_splits_updated(ethereum_inquirer, ethereum_accounts):
             address=string_to_evm_address('0x73043143e0A6418cc45d82D4505B096b802FD365'),
         )
 
-    for idx, (address, amount) in zip(
+    for idx, sequence_index, (address, amount) in zip(
             range(10, 19),
+            range(532, 537),
             [
                 ('0x106B62Fdd27B748CF2Da3BacAB91a2CaBaeE6dCa', '9.999999999999936'),
                 ('0x5e4D630C35ef5c23ac57cF6bf8f2267D9E3CB78F', '9.999999999999936'),
@@ -195,7 +197,7 @@ def test_splits_updated(ethereum_inquirer, ethereum_accounts):
     ):
         assert events[idx] == EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=idx,
+            sequence_index=sequence_index,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.INFORMATIONAL,

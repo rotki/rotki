@@ -83,9 +83,9 @@ class ClrfundCommonDecoder(CommonGrantsDecoderMixin):
         if not self.base.any_tracked([user := bytes_to_address(context.tx_log.topics[1]), context.transaction.from_address]):  # noqa: E501
             return DEFAULT_DECODING_OUTPUT
 
-        new_event = self.base.make_event_next_index(
-            tx_hash=context.transaction.tx_hash,
-            timestamp=context.transaction.timestamp,
+        new_event = self.base.make_event_from_transaction(
+            transaction=context.transaction,
+            tx_log=context.tx_log,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
@@ -158,9 +158,9 @@ class ClrfundCommonDecoder(CommonGrantsDecoderMixin):
                 break
 
         else:  # event not found. Perhaps no fee? Just make info event
-            new_event = self.base.make_event_next_index(
-                tx_hash=context.transaction.tx_hash,
-                timestamp=context.transaction.timestamp,
+            new_event = self.base.make_event_from_transaction(
+                transaction=context.transaction,
+                tx_log=context.tx_log,
                 event_type=HistoryEventType.INFORMATIONAL,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_ETH,

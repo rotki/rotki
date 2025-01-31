@@ -44,7 +44,7 @@ def test_deposit(database, ethereum_inquirer, ethereum_accounts):
         ), EthDepositEvent(
             tx_hash=evmhash,
             validator_index=validator.validator_index,
-            sequence_index=2,
+            sequence_index=178,
             timestamp=TimestampMS(1674558203000),
             balance=Balance(amount=FVal('32')),
             depositor=user_address,
@@ -93,21 +93,21 @@ def test_multiple_deposits(database, ethereum_inquirer, ethereum_accounts):
         ), EthDepositEvent(
             tx_hash=evmhash,
             validator_index=55750,
-            sequence_index=2,
+            sequence_index=62,
             timestamp=TimestampMS(1608594280000),
             balance=Balance(amount=FVal('32')),
             depositor=user_address,
         ), EthDepositEvent(
             tx_hash=evmhash,
             validator_index=55751,
-            sequence_index=3,
+            sequence_index=63,
             timestamp=TimestampMS(1608594280000),
             balance=Balance(amount=FVal('32')),
             depositor=user_address,
         ), EthDepositEvent(
             tx_hash=evmhash,
             validator_index=55752,
-            sequence_index=4,
+            sequence_index=64,
             timestamp=TimestampMS(1608594280000),
             balance=Balance(amount=FVal('32')),
             depositor=user_address,
@@ -153,7 +153,7 @@ def test_deposit_with_anonymous_event(database, ethereum_inquirer, ethereum_acco
         ), EthDepositEvent(
             tx_hash=evmhash,
             validator_index=validator.validator_index,
-            sequence_index=2,
+            sequence_index=432,
             timestamp=timestamp,
             balance=Balance(amount=FVal('32')),
             depositor=proxy_address,

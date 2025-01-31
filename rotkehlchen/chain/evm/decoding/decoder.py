@@ -484,7 +484,7 @@ class EVMTransactionDecoder(ABC):
         with self.database.conn.read_ctx() as read_cursor:
             tx_id = transaction.get_or_query_db_id(read_cursor)
 
-        self.base.reset_sequence_counter()
+        self.base.reset_sequence_counter(tx_receipt)
         # check if any eth transfer happened in the transaction, including in internal transactions
         events = self._maybe_decode_simple_transactions(transaction, tx_receipt)
         action_items: list[ActionItem] = []
@@ -850,8 +850,9 @@ class EVMTransactionDecoder(ABC):
             event_type, event_subtype, location_label, address, counterparty, verb = direction_result  # noqa: E501
             counterparty_or_address = counterparty or address
             preposition = 'to' if event_type in OUTGOING_EVENT_TYPES else 'from'
-            events.append(self.base.make_event_next_index(
+            events.append(self.base.make_event(
                 tx_hash=tx.tx_hash,
+                sequence_index=self.base.get_next_sequence_index_pre_decoding(),
                 timestamp=tx.timestamp,
                 event_type=event_type,
                 event_subtype=event_subtype,
@@ -874,8 +875,9 @@ class EVMTransactionDecoder(ABC):
         counterparty_or_address = counterparty or address
         amount = ZERO if tx.value == 0 else from_wei(FVal(tx.value))
         preposition = 'to' if event_type in OUTGOING_EVENT_TYPES else 'from'
-        return self.base.make_event_next_index(
+        return self.base.make_event(
             tx_hash=tx.tx_hash,
+            sequence_index=self.base.get_next_sequence_index_pre_decoding(),
             timestamp=tx.timestamp,
             event_type=event_type,
             event_subtype=event_subtype,
@@ -989,8 +991,9 @@ class EVMTransactionDecoder(ABC):
                     notes += ' of a failed transaction'
                     event_type = HistoryEventType.FAIL
 
-                events.append(self.base.make_event_next_index(
+                events.append(self.base.make_event(
                     tx_hash=tx.tx_hash,
+                    sequence_index=self.base.get_next_sequence_index_pre_decoding(),
                     timestamp=tx.timestamp,
                     event_type=event_type,
                     event_subtype=HistoryEventSubType.FEE,
@@ -1023,8 +1026,9 @@ class EVMTransactionDecoder(ABC):
             if amount != ZERO:
                 event_subtype = HistoryEventSubType.SPEND
 
-            events.append(self.base.make_event_next_index(  # contract deployment
+            events.append(self.base.make_event(  # contract deployment
                 tx_hash=tx.tx_hash,
+                sequence_index=self.base.get_next_sequence_index_pre_decoding(),
                 timestamp=tx.timestamp,
                 event_type=HistoryEventType.DEPLOY,
                 event_subtype=event_subtype,

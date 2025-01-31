@@ -127,9 +127,9 @@ class SuperchainL1SideCommonBridgeDecoder(DecoderInterface, ABC):
             return DEFAULT_DECODING_OUTPUT
 
         withdrawal_hash = context.tx_log.topics[1].hex()
-        event = self.base.make_event_next_index(
-            tx_hash=context.transaction.tx_hash,
-            timestamp=context.transaction.timestamp,
+        event = self.base.make_event_from_transaction(
+            transaction=context.transaction,
+            tx_log=context.tx_log,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
