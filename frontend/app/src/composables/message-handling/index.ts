@@ -1,6 +1,5 @@
 import { type Notification, Priority, Severity } from '@rotki/common';
 import { backoff } from '@shared/utils';
-import { omit } from 'es-toolkit';
 import {
   type BalanceSnapshotError,
   type DbUploadResult,
@@ -131,16 +130,16 @@ export function useMessageHandling(): UseMessageHandling {
     const subtype = rawData.subtype;
 
     if (subtype === SocketMessageProgressUpdateSubType.CSV_IMPORT_RESULT) {
-      return handleCsvImportResult(omit(rawData, ['subtype']));
+      return handleCsvImportResult(rawData);
     }
     else if (subtype === SocketMessageProgressUpdateSubType.EVM_UNDECODED_TRANSACTIONS) {
-      setUndecodedTransactionsStatus(omit(rawData, ['subtype']));
+      setUndecodedTransactionsStatus(rawData);
     }
     else if (subtype === SocketMessageProgressUpdateSubType.PROTOCOL_CACHE_UPDATES) {
-      setProtocolCacheStatus(omit(rawData, ['subtype']));
+      setProtocolCacheStatus(rawData);
     }
     else if (subtype === SocketMessageProgressUpdateSubType.HISTORICAL_PRICE_QUERY_STATUS) {
-      setHistoricalAssetPriceStatus(omit(rawData, ['subtype']));
+      setHistoricalAssetPriceStatus(rawData);
     }
     return null;
   };
