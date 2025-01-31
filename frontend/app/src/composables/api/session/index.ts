@@ -8,7 +8,8 @@ import type { PendingTask } from '@/types/task';
 interface UseSessionApiReturn {
   consumeMessages: () => Promise<Messages>;
   fetchPeriodicData: () => Promise<PeriodicClientQueryResult>;
-  refreshGeneralCacheTask: () => Promise<PendingTask>;
+  refreshGeneralCacheTask: (cacheProtocol: string) => Promise<PendingTask>;
+  getRefreshableGeneralCaches: () => Promise<string[]>;
 }
 
 export function useSessionApi(): UseSessionApiReturn {
@@ -26,10 +27,10 @@ export function useSessionApi(): UseSessionApiReturn {
     return handleResponse(response);
   };
 
-  const refreshGeneralCacheTask = async (): Promise<PendingTask> => {
+  const refreshGeneralCacheTask = async (cacheProtocol: string): Promise<PendingTask> => {
     const response = await api.instance.post<ActionResult<PendingTask>>(
       '/cache/general/refresh',
-      snakeCaseTransformer({ asyncQuery: true }),
+      snakeCaseTransformer({ asyncQuery: true, cacheProtocol }),
       {
         validateStatus: validWithSessionStatus,
       },
@@ -38,9 +39,19 @@ export function useSessionApi(): UseSessionApiReturn {
     return handleResponse(response);
   };
 
+  const getRefreshableGeneralCaches = async (): Promise<string[]> => {
+    const response = await api.instance.get<ActionResult<string[]>>(
+      '/cache/general/refresh',
+      snakeCaseTransformer({ asyncQuery: true }),
+    );
+
+    return handleResponse(response);
+  };
+
   return {
     consumeMessages,
     fetchPeriodicData,
+    getRefreshableGeneralCaches,
     refreshGeneralCacheTask,
   };
 }

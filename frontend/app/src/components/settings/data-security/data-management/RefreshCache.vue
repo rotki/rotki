@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { RefreshableCache } from '@/types/session/purge';
+import { startPromise } from '@shared/utils';
 import { TaskType } from '@/types/task-type';
 import { useTaskStore } from '@/store/tasks';
 import { useHistoryStore } from '@/store/history';
@@ -8,34 +8,29 @@ import { useSupportedChains } from '@/composables/info/chains';
 import { useSessionPurge } from '@/composables/session/purge';
 import ActionStatusIndicator from '@/components/error/ActionStatusIndicator.vue';
 import SettingsItem from '@/components/settings/controls/SettingsItem.vue';
+import { useSessionApi } from '@/composables/api/session/index';
 
+const source = ref<string>();
+
+const { protocolCacheStatus } = storeToRefs(useHistoryStore());
+const { isTaskRunning } = useTaskStore();
+
+const { getChainName } = useSupportedChains();
+const { refreshGeneralCache } = useSessionPurge();
+const { getRefreshableGeneralCaches } = useSessionApi();
 const { t } = useI18n();
 
-const refreshable = [
-  {
-    id: RefreshableCache.GENERAL_CACHE,
-    shortText: t('data_management.refresh_cache.label.general_cache_short'),
-    text: t('data_management.refresh_cache.label.general_cache'),
-  },
-];
+const generalCaches = ref<string[]>([]);
 
-const source = ref<RefreshableCache>(RefreshableCache.GENERAL_CACHE);
+const refreshable = computed(() => get(generalCaches).map(id => ({
+  id,
+  shortText: toSentenceCase(id),
+  text: toSentenceCase(id),
+})));
 
-const { refreshGeneralCache } = useSessionPurge();
-const { protocolCacheStatus } = storeToRefs(useHistoryStore());
-
-const { isTaskRunning } = useTaskStore();
-const taskRunning = isTaskRunning(TaskType.REFRESH_GENERAL_CACHE);
-const eventTaskLoading = isTaskRunning(TaskType.TRANSACTIONS_DECODING);
-
-async function refreshSource(source: RefreshableCache) {
-  if (source === RefreshableCache.GENERAL_CACHE)
-    await refreshGeneralCache();
-}
-
-const { pending, showConfirmation, status } = useCacheClear<RefreshableCache>(
+const { pending, showConfirmation, status } = useCacheClear<string>(
   refreshable,
-  refreshSource,
+  refreshGeneralCache,
   (source: string) => ({
     error: t('data_management.refresh_cache.error', {
       source,
@@ -52,7 +47,9 @@ const { pending, showConfirmation, status } = useCacheClear<RefreshableCache>(
   }),
 );
 
-const { getChainName } = useSupportedChains();
+const taskRunning = isTaskRunning(TaskType.REFRESH_GENERAL_CACHE);
+const eventTaskLoading = isTaskRunning(TaskType.TRANSACTIONS_DECODING);
+const loading = logicOr(pending, taskRunning, eventTaskLoading);
 
 const hint = computed<string>(() => {
   if (!get(taskRunning))
@@ -71,7 +68,18 @@ const hint = computed<string>(() => {
   });
 });
 
-const loading = logicOr(pending, taskRunning, eventTaskLoading);
+async function getRefreshableCaches() {
+  set(generalCaches, await getRefreshableGeneralCaches());
+}
+
+function confirm() {
+  assert(isDefined(source));
+  showConfirmation(get(source));
+}
+
+onMounted(() => {
+  startPromise(getRefreshableCaches());
+});
 </script>
 
 <template>
@@ -110,7 +118,7 @@ const loading = logicOr(pending, taskRunning, eventTaskLoading);
             icon
             :disabled="!source || loading"
             :loading="loading"
-            @click="showConfirmation(source)"
+            @click="confirm()"
           >
             <RuiIcon name="lu-rotate-ccw" />
           </RuiButton>

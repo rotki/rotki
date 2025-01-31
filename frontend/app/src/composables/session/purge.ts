@@ -13,13 +13,17 @@ import type { TaskMeta } from '@/types/task';
 
 interface UseSessionPurge {
   purgeCache: (purgeable: Purgeable, value: string) => void;
-  refreshGeneralCache: () => Promise<void>;
+  refreshGeneralCache: (source: string) => Promise<void>;
 }
 
 export function useSessionPurge(): UseSessionPurge {
   const { resetState } = useDefiStore();
   const { refreshGeneralCacheTask } = useSessionApi();
   const { resetStatus } = useStatusStore();
+  const { awaitTask } = useTaskStore();
+  const { notify } = useNotificationsStore();
+  const { resetProtocolCacheUpdatesStatus } = useHistoryStore();
+  const { t } = useI18n();
 
   const purgeExchange = (): void => {
     resetStatus(Section.TRADES);
@@ -46,30 +50,27 @@ export function useSessionPurge(): UseSessionPurge {
     }
   };
 
-  const { awaitTask } = useTaskStore();
-  const { t } = useI18n();
-  const { notify } = useNotificationsStore();
-
-  const { resetProtocolCacheUpdatesStatus } = useHistoryStore();
-  const refreshGeneralCache = async (): Promise<void> => {
+  const refreshGeneralCache = async (source: string): Promise<void> => {
     resetProtocolCacheUpdatesStatus();
     const taskType = TaskType.REFRESH_GENERAL_CACHE;
-    const { taskId } = await refreshGeneralCacheTask();
+    const { taskId } = await refreshGeneralCacheTask(source);
     try {
       await awaitTask<boolean, TaskMeta>(taskId, taskType, {
-        title: t('actions.session.refresh_general_cache.task.title'),
+        title: t('actions.session.refresh_general_cache.task.title', { name: source }),
       });
     }
     catch (error: any) {
-      if (!isTaskCancelled(error)) {
-        notify({
-          display: true,
-          message: t('actions.session.refresh_general_cache.error.message', {
-            message: error.message,
-          }),
-          title: t('actions.session.refresh_general_cache.task.title'),
-        });
+      if (isTaskCancelled(error)) {
+        return;
       }
+      notify({
+        display: true,
+        message: t('actions.session.refresh_general_cache.error.message', {
+          message: error.message,
+          name: source,
+        }),
+        title: t('actions.session.refresh_general_cache.task.title', { name: source }),
+      });
     }
   };
 

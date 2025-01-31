@@ -1,6 +1,7 @@
 import { useConfirmStore } from '@/store/confirm';
 import type { BaseMessage } from '@/types/messages';
 import type { Ref } from 'vue';
+import type { MaybeRef } from '@vueuse/core';
 
 interface UseCacheClearReturn<T> {
   status: Ref<BaseMessage | null>;
@@ -8,8 +9,10 @@ interface UseCacheClearReturn<T> {
   showConfirmation: (source: T) => void;
 }
 
+export interface Clearable<T> { id: T; text: string }
+
 export function useCacheClear<T>(
-  clearable: { id: T; text: string }[],
+  clearable: MaybeRef<Clearable<T>[]>,
   clearHandle: (source: T) => Promise<void>,
   message: (source: string) => {
     success: string;
@@ -27,7 +30,7 @@ export function useCacheClear<T>(
   const confirm = ref<boolean>(false);
   const pending = ref<boolean>(false);
 
-  const text = (source: T): string => clearable.find(({ id }) => id === source)?.text || '';
+  const text = (source: T): string => get(clearable).find(({ id }) => id === source)?.text || '';
 
   const clear = async (source: T): Promise<void> => {
     set(confirm, false);

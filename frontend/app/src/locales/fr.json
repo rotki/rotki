@@ -810,10 +810,10 @@
       },
       "refresh_general_cache": {
         "error": {
-          "message": "Échec du rafraîchissement du cache général : {message}"
+          "message": "Échec du rafraîchissement du cache général {name}: {message}"
         },
         "task": {
-          "title": "Rafraîchissement du cache général (Curve, MakerDAO, Yearn)"
+          "title": "Rafraîchissement du cache général ({name})"
         }
       },
       "tag_add": {
@@ -1861,10 +1861,6 @@
         "title": "Confirmer l'actualisation de la mise en cache"
       },
       "error": "Échec de l'actualisation de la mise en cache pour {source} : {message}",
-      "label": {
-        "general_cache": "Mise en cache générale (Curve, MakerDAO, Yearn, Velodrome, Aerodrome, and Gearbox)",
-        "general_cache_short": "Mise en cache générale (Curve, MakerDAO, etc.)"
-      },
       "select_cache": "Sélectionner la mise en cache à actualiser",
       "subtitle": "Vous permet de rafraîchir les données mises en cache par rotki",
       "success": "Le cache a été effacé avec succès",
