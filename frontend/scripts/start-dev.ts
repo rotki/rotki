@@ -6,6 +6,7 @@ import path from 'node:path';
 import { config } from 'dotenv';
 import consola from 'consola';
 import { assert } from '@rotki/common';
+import { omit } from 'es-toolkit';
 import type { Buffer } from 'node:buffer';
 
 interface OutputListener {
@@ -20,6 +21,7 @@ const BACKEND = 'backend';
 
 const scriptArgs = process.argv;
 const noElectron = scriptArgs.includes('--web');
+const webPort = scriptArgs.includes('--web-port') ? Number.parseInt(scriptArgs[scriptArgs.indexOf('--web-port') + 1]) : 4242;
 
 function getArg(flag: string): string | undefined {
   if (scriptArgs.includes(flag) && scriptArgs.length > scriptArgs.indexOf(flag) + 1)
@@ -88,7 +90,7 @@ function startProcess(
   tag: string,
   name: string,
   args: string[] = [],
-  opts?: Record<string, any>,
+  opts: Record<string, any> = {},
 ): ChildProcess {
   const logger = consola.withTag(tag);
   const createListeners = (): OutputListener => ({
@@ -100,14 +102,18 @@ function startProcess(
     },
   });
 
+  const envVars = opts?.env ?? {};
+  const env = {
+    ...{ FORCE_COLOR: '1' },
+    ...process.env,
+    ...envVars,
+  };
+
   const child = spawn(cmd, args, {
-    ...opts,
+    ...omit(opts, ['env']),
     shell: true,
     stdio: [process.stdin],
-    env: {
-      ...{ FORCE_COLOR: '1' },
-      ...process.env,
-    },
+    env,
   });
 
   subprocesses.push(child);
@@ -163,7 +169,7 @@ logger.info('Starting @rotki/common watch');
 startProcess('pnpm run --filter @rotki/common watch', colors.blue(COMMON), COMMON);
 
 if (noElectron) {
-  logger.info('Starting python backend');
+  logger.info(`Starting python backend at port: ${webPort}`);
   const logDir = path.join(process.cwd(), 'logs');
   if (!fs.existsSync(logDir))
     fs.mkdirSync(logDir);
@@ -174,7 +180,7 @@ if (noElectron) {
     '-m',
     'rotkehlchen',
     '--rest-api-port',
-    '4242',
+    webPort.toString(),
     '--api-cors',
     'http://localhost:*',
     '--logfile',
@@ -209,7 +215,11 @@ if (args)
 const serveCmd = noElectron ? 'pnpm run --filter rotki serve' : 'pnpm run --filter rotki electron:serve';
 const cmd = platform() === 'win32' ? serveCmd : `sleep 20 && ${serveCmd}`;
 
-const devRotkiProcess = startProcess(`${cmd} ${args}`, colors.magenta(ROTKI), ROTKI);
+const devRotkiProcess = startProcess(`${cmd} ${args}`, colors.magenta(ROTKI), ROTKI, [], {
+  env: {
+    VITE_BACKEND_URL: `http://localhost:${webPort}`,
+  },
+});
 
 devRotkiProcess.on('exit', () => {
   logger.info('dev rotki process exited, terminating subprocesses');
