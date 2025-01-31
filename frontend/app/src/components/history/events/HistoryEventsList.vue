@@ -8,6 +8,7 @@ const props = withDefaults(
     allEvents: HistoryEventEntry[];
     hasIgnoredEvent?: boolean;
     loading?: boolean;
+    highlightedIdentifiers?: string[];
   }>(),
   {
     loading: false,
@@ -107,6 +108,7 @@ const buttonText = computed(() => {
       :events="limitedEvents"
       :total="events.length"
       :loading="loading"
+      :highlighted-identifiers="highlightedIdentifiers"
       @delete-event="emit('delete-event', $event)"
       @show:missing-rule-action="emit('show:missing-rule-action', $event)"
       @edit-event="emit('edit-event', {

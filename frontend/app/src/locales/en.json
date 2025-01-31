@@ -3989,6 +3989,7 @@
         "no_entries_available_before": "There are no entries available before"
       },
       "refresh_the_net_value_data": "Refresh the net value data",
+      "refresh_daily_prices": "Refresh daily prices",
       "select_asset": "Search for an asset",
       "search_asset_to_see_graph": "Search for an asset to see the graph",
       "show_graph_for_selected_range": "Show the graph for the selected range",

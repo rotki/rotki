@@ -40,7 +40,7 @@ export const NetValue = z.object({
 export type NetValue = z.infer<typeof NetValue>;
 
 export const TimedAssetHistoricalBalances = z.object({
-  lastEventIdentifier: z.string().optional(),
+  lastEventIdentifier: z.tuple([z.number(), z.string()]).optional(),
   times: z.array(z.number().positive()),
   values: z.array(NumericString),
 });

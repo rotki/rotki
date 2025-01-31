@@ -1,6 +1,7 @@
 import {
   type ActionResult,
   type HistoricalAssetPricePayload,
+  HistoricalAssetPriceResponse,
   LocationData,
   NetValue,
   TimedAssetBalances,
@@ -20,6 +21,7 @@ interface UseStatisticsApiReturn {
   queryLatestAssetValueDistribution: () => Promise<TimedAssetBalances>;
   queryStatisticsRenderer: () => Promise<string>;
   queryHistoricalAssetPrices: (payload: HistoricalAssetPricePayload) => Promise<PendingTask>;
+  queryCachedHistoricalAssetPrices: (payload: HistoricalAssetPricePayload) => Promise<HistoricalAssetPriceResponse>;
 }
 
 export function useStatisticsApi(): UseStatisticsApiReturn {
@@ -102,10 +104,10 @@ export function useStatisticsApi(): UseStatisticsApiReturn {
     return handleResponse(response);
   };
 
-  const queryHistoricalAssetPrices = async (payload: HistoricalAssetPricePayload): Promise<PendingTask> => {
-    const response = await api.instance.post<ActionResult<PendingTask>>('/balances/historical/asset/prices', snakeCaseTransformer({
+  const internalHistoricalAssetPrices = async <T>(payload: HistoricalAssetPricePayload, asyncQuery: boolean = false): Promise<T> => {
+    const response = await api.instance.post<ActionResult<T>>('/balances/historical/asset/prices', snakeCaseTransformer({
       ...payload,
-      asyncQuery: true,
+      asyncQuery,
     }), {
       validateStatus: validStatus,
     });
@@ -113,7 +115,14 @@ export function useStatisticsApi(): UseStatisticsApiReturn {
     return handleResponse(response);
   };
 
+  const queryHistoricalAssetPrices = async (payload: HistoricalAssetPricePayload): Promise<PendingTask> => internalHistoricalAssetPrices<PendingTask>(payload, true);
+  const queryCachedHistoricalAssetPrices = async (payload: HistoricalAssetPricePayload): Promise<HistoricalAssetPriceResponse> => {
+    const response = await internalHistoricalAssetPrices<HistoricalAssetPriceResponse>(payload);
+    return HistoricalAssetPriceResponse.parse(response);
+  };
+
   return {
+    queryCachedHistoricalAssetPrices,
     queryHistoricalAssetPrices,
     queryLatestAssetValueDistribution,
     queryLatestLocationValueDistribution,

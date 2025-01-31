@@ -21,6 +21,8 @@ import type {
   BalancesApi,
   BigNumber,
   CompoundApi,
+  HistoricalAssetPricePayload,
+  HistoricalAssetPriceResponse,
   LocationData,
   OwnedAssets,
   ProfitLossModel,
@@ -56,6 +58,7 @@ export function statisticsApi(): StatisticsApi {
   const { fetchHistoricalAssetPrice, fetchNetValue, getNetValue } = statisticsStore;
   const { historicalAssetPriceStatus } = storeToRefs(statisticsStore);
   const {
+    queryCachedHistoricalAssetPrices,
     queryLatestAssetValueDistribution,
     queryLatestLocationValueDistribution,
     queryTimedBalancesData,
@@ -79,7 +82,11 @@ export function statisticsApi(): StatisticsApi {
       const owned = await queryOwnedAssets();
       return owned.filter(asset => !get(isAssetIgnored(asset)));
     },
-    queryHistoricalAssetPrices: fetchHistoricalAssetPrice,
+    queryHistoricalAssetPrices: async (payload: HistoricalAssetPricePayload, ignoreCache: boolean = false): Promise<HistoricalAssetPriceResponse> => {
+      if (!ignoreCache)
+        return queryCachedHistoricalAssetPrices(payload);
+      return fetchHistoricalAssetPrice(payload);
+    },
     async timedBalances(asset: string, start: number, end: number, collectionId?: number): Promise<TimedBalances> {
       return queryTimedBalancesData(asset, start, end, collectionId);
     },
