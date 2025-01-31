@@ -141,6 +141,7 @@ from rotkehlchen.api.v1.schemas import (
     QueriedAddressesSchema,
     QueryAddressbookSchema,
     QueryCalendarSchema,
+    RefreshProtocolCache,
     ReverseEnsSchema,
     RpcAddNodeSchema,
     RpcNodeEditSchema,
@@ -258,6 +259,7 @@ from rotkehlchen.types import (
     ModuleName,
     OptionalChainAddress,
     Price,
+    ProtocolsWithCache,
     SupportedBlockchain,
     Timestamp,
     TradeType,
@@ -3121,11 +3123,23 @@ class LocationResource(BaseMethodView):
 
 
 class RefreshGeneralCacheResource(BaseMethodView):
-    post_schema = AsyncQueryArgumentSchema()
+    post_schema = RefreshProtocolCache()
 
     @use_kwargs(post_schema, location='json_and_query')
-    def post(self, async_query: bool) -> Response:
-        return self.rest_api.refresh_general_cache(async_query=async_query)
+    def post(self, async_query: bool, cache_protocol: ProtocolsWithCache) -> Response:
+        return self.rest_api.refresh_general_cache(
+            async_query=async_query,
+            cache_protocol=cache_protocol,
+        )
+
+    def get(self) -> Response:
+        return api_response(
+            result={
+                'result': [protocol.serialize() for protocol in ProtocolsWithCache],
+                'message': '',
+            },
+            status_code=HTTPStatus.OK,
+        )
 
 
 class AirdropsMetadataResource(BaseMethodView):

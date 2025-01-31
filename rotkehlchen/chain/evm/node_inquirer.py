@@ -1458,6 +1458,9 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
         the remote sources of the data and stores it to the globaldb cache tables.
         Returns true if the cache was modified or false otherwise.
 
+        If the query_method logic fails due to a RemoteError this function handles
+        it and returns False. Other errors aren't handled in this function.
+
         - cache type: The cache type to check for freshness
         - query_method: The method that queries the remote source for the data
         - save_method: The method that saves the data to the cache tables
@@ -1473,11 +1476,18 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
             log.debug(f'Not refreshing cache {cache_type}. Queried recently')
             return False
 
-        new_data = query_method(
-            inquirer=self,
-            cache_type=cache_type,
-            msg_aggregator=self.database.msg_aggregator,
-        )
+        try:
+            new_data = query_method(
+                inquirer=self,
+                cache_type=cache_type,
+                msg_aggregator=self.database.msg_aggregator,
+            )
+        except RemoteError as e:
+            log.error(
+                f'Failed to call {query_method} when updating cache {cache_type} due to {e}',
+            )
+            return False
+
         return new_data is not None
 
 

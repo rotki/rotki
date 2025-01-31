@@ -12848,9 +12848,40 @@ Get all valid locations
 Refresh general cache
 ========================
 
+.. http:get:: /api/(version)/cache/general/refresh
+
+   Doing a GET on this endpoint will return the list of protocols that have caches and can be used by this endpoint.
+
+
+  **Example Request**
+
+  .. http:example:: curl wget httpie python-requests
+
+    GET /cache/general/refresh HTTP/1.1
+    Host: localhost:5042
+
+
+  **Example Response**
+
+  .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "result": ["curve", "velodrome", "aerodrome", "yearn", "maker", "aave", "convex", "gearbox"],
+        "message": ""
+      }
+
+  :resjson list[string] result: Values that can be used in this endpoint.
+
+  :statuscode 200: List queried correctly.
+  :statuscode 500: Internal rotki error
+
+
 .. http:post:: /api/(version)/cache/general/refresh
 
-   Doing a POST on this endpoint will refresh the entire cache (curve, makerdao, yearn, velodrome).
+   Doing a POST on this endpoint will refresh the cache for the selected protocol.
 
    .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``.
@@ -12861,6 +12892,12 @@ Refresh general cache
 
     POST /cache/general/refresh HTTP/1.1
     Host: localhost:5042
+
+    Content-Type: application/json;charset=UTF-8
+
+    {
+        "cache_protocol": "curve"
+    }
 
 
   **Example Response**
@@ -12875,9 +12912,9 @@ Refresh general cache
         "message": ""
       }
 
-  :resjson bool result: Is true if all the caches were refreshed successfully.
+  :resjson bool result: Is true if the cache was refreshed successfully.
 
-  :statuscode 200: Caches were correctly updated
+  :statuscode 200: Cache was correctly refreshed
   :statuscode 409: An issue during refreshing caches occurred
   :statuscode 500: Internal rotki error
 

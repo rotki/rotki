@@ -1146,7 +1146,10 @@ class EvmTokenKind(DBCharEnumMixIn):
 
 
 class CacheType(Enum):
-    """It contains all types both for the general cache table and the unique cache table"""
+    """It contains all types both for the general cache table and the unique cache table
+    Important: When adding a new cache for a protocol that the user should be able to refresh
+    please add it to `ProtocolsWithCache`.
+    """
     CURVE_LP_TOKENS = auto()
     CURVE_POOL_ADDRESS = auto()  # get pool addr by lp token
     CURVE_POOL_TOKENS = auto()  # get pool tokens by pool addr
@@ -1195,6 +1198,21 @@ class CacheType(Enum):
             parts = self.name.split('_')
             return parts[0][:4] + parts[1][0]  # Shorten the name that is stored in the db to save space. For example: VELODROME_POOL_ADDRESS -> VELOP  # noqa: E501
         return self.name
+
+
+class ProtocolsWithCache(SerializableEnumNameMixin):
+    """"Enumeration of all the protocols that have cache keys that can be
+    refreshed by the user manually. It doesn't match the counterparties
+    because some protocols have different versions.
+    """
+    CURVE = auto()
+    VELODROME = auto()
+    AERODROME = auto()
+    YEARN = auto()
+    MAKER = auto()
+    AAVE = auto()
+    CONVEX = auto()
+    GEARBOX = auto()
 
 
 UniqueCacheType = Literal[
