@@ -1126,7 +1126,7 @@
     "underlying_tokens": "Jetons sous-jacents"
   },
   "asset_update": {
-    "advanced": "Avancé",
+    "advanced": "Options avancées",
     "description": "Une version {remote} de la base de données d'actifs est disponible. Voulez-vous mettre à jour depuis la version {local} ?",
     "manual": {
       "check": "Vérifier la mise à jour",

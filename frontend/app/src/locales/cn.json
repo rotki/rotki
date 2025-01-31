@@ -1000,7 +1000,7 @@
     "underlying_tokens": "底层代币"
   },
   "asset_update": {
-    "advanced": "高级",
+    "advanced": "高级选项",
     "description": "资产数据库的 {remote} 版本可用。您想从 {local} 版本更新吗？",
     "manual": {
       "check": "检查更新",
