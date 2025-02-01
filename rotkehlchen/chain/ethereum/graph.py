@@ -1,6 +1,5 @@
 import json
 import logging
-import re
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Any, Final
 
@@ -27,7 +26,6 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
-RE_MULTIPLE_WHITESPACE: Final = re.compile(r'\s+')
 RETRY_BACKOFF_FACTOR: Final = 0.2
 THEGRAPH_BASE_URL: Final = 'https://gateway-arbitrum.network.thegraph.com/api/'
 

@@ -36,7 +36,6 @@ L2_ETH_GATEWAY: Final = string_to_evm_address('0x6EA73e05AdC79974B931123675ea8F7
 L2_ERC20_GATEWAY: Final = string_to_evm_address('0xE2b4795039517653c5Ae8C2A9BFdd783b48f447A')
 # USDC has a special gateway
 L2_USDC_GATEWAY: Final = string_to_evm_address('0x33B60d5Dd260d453cAC3782b0bDC01ce84672142')
-L2_MESSENGER_PROXY: Final = string_to_evm_address('0x781e90f1c8Fc4611c9b7497C3B47F99Ef6969CbC')
 
 # Topics
 FINALIZE_DEPOSIT_ETH: Final = b'\x9e\x86\xc3V\xe1N$\xe2n<\xe7i\xbf\x8b\x87\xde8\xe0\xfa\xa0\xed\x0c\xa9F\xfa\te\x9a\xa6\x06\xbd-'  # noqa: E501

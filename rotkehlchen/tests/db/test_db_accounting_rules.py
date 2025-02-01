@@ -5,7 +5,7 @@ from rotkehlchen.accounting.accountant import Accountant
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.types import EventAccountingRuleStatus
 from rotkehlchen.chain.ethereum.modules.compound.constants import CPT_COMPOUND
-from rotkehlchen.chain.evm.accounting.structures import TxAccountingTreatment, TxEventSettings
+from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings, TxAccountingTreatment
 from rotkehlchen.chain.evm.decoding.balancer.constants import CPT_BALANCER_V1
 from rotkehlchen.chain.evm.decoding.cowswap.constants import CPT_COWSWAP
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -27,7 +27,7 @@ from rotkehlchen.types import Location, TimestampMS
 def test_managing_accounting_rules(database: DBHandler) -> None:
     """Test common operations in accounting rules"""
     db = DBAccountingRules(database)
-    rule = TxEventSettings(
+    rule = BaseEventSettings(
         taxable=True,
         count_entire_amount_spend=True,
         count_cost_basis_pnl=True,
@@ -96,7 +96,7 @@ def test_managing_accounting_rules(database: DBHandler) -> None:
 def test_errors_with_rules(database: DBHandler) -> None:
     """Test different situations that can lead to errors when managing accounting rules"""
     db = DBAccountingRules(database)
-    rule = TxEventSettings(
+    rule = BaseEventSettings(
         taxable=True,
         count_entire_amount_spend=True,
         count_cost_basis_pnl=True,
@@ -134,7 +134,7 @@ def test_accounting_rules_linking(database: 'DBHandler', counterparty: str) -> N
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         counterparty=counterparty,
-        rule=TxEventSettings(
+        rule=BaseEventSettings(
             taxable=True,
             count_entire_amount_spend=True,
             count_cost_basis_pnl=False,
@@ -175,7 +175,7 @@ def test_missing_accounting_rules_accounting_treatment(
         event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
         counterparty=CPT_COWSWAP,
-        rule=TxEventSettings(
+        rule=BaseEventSettings(
             taxable=True,
             count_entire_amount_spend=True,
             count_cost_basis_pnl=True,
@@ -245,7 +245,7 @@ def test_events_affected_by_others_accounting_treatment(
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.RETURN_WRAPPED,
         counterparty=CPT_COMPOUND,
-        rule=TxEventSettings(
+        rule=BaseEventSettings(
             taxable=True,
             count_entire_amount_spend=True,
             count_cost_basis_pnl=True,
@@ -307,7 +307,7 @@ def test_events_affected_by_others_accounting_treatment_with_fee(
         event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
         counterparty=CPT_COWSWAP,
-        rule=TxEventSettings(
+        rule=BaseEventSettings(
             taxable=True,
             count_entire_amount_spend=True,
             count_cost_basis_pnl=True,
@@ -522,7 +522,7 @@ def test_correct_accounting_treatment_is_selected(
         event_type=HistoryEventType.DEPOSIT,
         event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
         counterparty=NO_ACCOUNTING_COUNTERPARTY,
-        rule=TxEventSettings(
+        rule=BaseEventSettings(
             taxable=True,
             count_entire_amount_spend=True,
             count_cost_basis_pnl=True,
@@ -534,7 +534,7 @@ def test_correct_accounting_treatment_is_selected(
         event_type=HistoryEventType.DEPOSIT,
         event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
         counterparty=CPT_COMPOUND,
-        rule=TxEventSettings(
+        rule=BaseEventSettings(
             taxable=True,
             count_entire_amount_spend=True,
             count_cost_basis_pnl=True,

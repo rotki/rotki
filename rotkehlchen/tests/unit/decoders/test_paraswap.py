@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
 
 import pytest
 
@@ -7,10 +7,7 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.base.modules.paraswap.v5.constants import (
     PARASWAP_AUGUSTUS_ROUTER as PARASWAP_AUGUSTUS_ROUTER_BASE,
 )
-from rotkehlchen.chain.ethereum.modules.paraswap.v5.constants import (
-    PARASWAP_AUGUSTUS_ROUTER,
-    PARASWAP_TOKEN_TRANSFER_PROXY,
-)
+from rotkehlchen.chain.ethereum.modules.paraswap.v5.constants import PARASWAP_AUGUSTUS_ROUTER
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.paraswap.constants import CPT_PARASWAP
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -53,6 +50,9 @@ A_cbETH = Asset('eip155:8453/erc20:0x2Ae3F1Ec7F1F5012CFEab0185bfc7aa3cf0DEc22')
 A_sUSD = Asset('eip155:10/erc20:0x8c6f28f2F1A3C87F0f938b96d27520d9751ec8d9')
 A_POLYGON_POS_USDC = Asset('eip155:137/erc20:0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359')
 A_POLYGON_POS_DAI = Asset('eip155:137/erc20:0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063')
+
+
+PARASWAP_TOKEN_TRANSFER_PROXY: Final = string_to_evm_address('0x216B4B4Ba9F3e719726886d34a177484278Bfcae')  # noqa: E501
 
 
 @pytest.mark.vcr
