@@ -1,3 +1,5 @@
+from typing import Final
+
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
@@ -15,7 +17,6 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.scroll.constants import CPT_SCROLL
 from rotkehlchen.chain.scroll.modules.scroll_bridge.decoder import (
     L2_ETH_GATEWAY,
-    L2_MESSENGER_PROXY,
     L2_USDC_GATEWAY,
 )
 from rotkehlchen.constants.assets import A_ETH
@@ -24,6 +25,8 @@ from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
+
+L2_MESSENGER_PROXY: Final = string_to_evm_address('0x781e90f1c8Fc4611c9b7497C3B47F99Ef6969CbC')
 
 
 @pytest.mark.vcr

@@ -1,3 +1,4 @@
+import re
 from contextlib import ExitStack
 from typing import Final
 from unittest.mock import MagicMock, patch
@@ -5,10 +6,11 @@ from unittest.mock import MagicMock, patch
 import pytest
 from gql.transport.exceptions import TransportQueryError
 
-from rotkehlchen.chain.ethereum.graph import RE_MULTIPLE_WHITESPACE, Graph
+from rotkehlchen.chain.ethereum.graph import Graph
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError
 
+RE_MULTIPLE_WHITESPACE: Final = re.compile(r'\s+')
 UNISWAP_GRAPH_ID: Final = 'A3Np3RQbaBA6oKJgiwDJeo5T3zrYfGHPWFYayMwtNDum'
 TEST_QUERY_1: Final = (
     """

@@ -6,7 +6,7 @@ from rotkehlchen.accounting.accountant import Accountant
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.pnl import PNL, PnlTotals
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.chain.evm.accounting.structures import TxEventSettings
+from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
@@ -321,7 +321,7 @@ def test_eth_withdrawal_not_taxable(accountant: Accountant, staking_taxable: boo
         event_type=HistoryEventType.STAKING,
         event_subtype=HistoryEventSubType.REMOVE_ASSET,
         counterparty=None,
-        rule=TxEventSettings(
+        rule=BaseEventSettings(
             taxable=staking_taxable,
             count_entire_amount_spend=False,
             count_cost_basis_pnl=False,

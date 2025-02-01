@@ -100,22 +100,3 @@ class BaseEventSettings:
 
     def __eq__(self, other: object) -> bool:
         return hash(self) == hash(other)
-
-
-class TxEventSettings(BaseEventSettings):
-    """Accounting settings for EVM transaction events"""
-    def __init__(
-            self,
-            taxable: bool,
-            count_entire_amount_spend: bool,
-            count_cost_basis_pnl: bool,
-            accounting_treatment: TxAccountingTreatment | None = None,
-            accountant_cb: EventsAccountantCallback | None = None,
-    ):
-        super().__init__(
-            taxable=taxable,
-            count_entire_amount_spend=count_entire_amount_spend,
-            count_cost_basis_pnl=count_cost_basis_pnl,
-            accounting_treatment=accounting_treatment,
-        )
-        self.accountant_cb = accountant_cb

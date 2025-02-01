@@ -15,7 +15,7 @@ from rotkehlchen.accounting.pot import AccountingPot
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.types import MissingAcquisition
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.chain.evm.accounting.structures import TxAccountingTreatment, TxEventSettings
+from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings, TxAccountingTreatment
 from rotkehlchen.chain.evm.decoding.uniswap.constants import CPT_UNISWAP_V2
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_3CRV, A_BTC, A_ETH, A_EUR, A_WETH
@@ -1046,7 +1046,7 @@ def test_swaps_taxability(accountant: Accountant, taxable: bool) -> None:
             counterparty=CPT_UNISWAP_V2,
         ),
         fee_event=None,
-        event_settings=TxEventSettings(
+        event_settings=BaseEventSettings(
             taxable=taxable,
             count_entire_amount_spend=False,
             count_cost_basis_pnl=True,

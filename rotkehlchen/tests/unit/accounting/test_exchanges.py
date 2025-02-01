@@ -8,7 +8,7 @@ from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.api.server import APIServer
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.chain.evm.accounting.structures import TxEventSettings
+from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR, A_KSM, A_LINK, A_USDT
 from rotkehlchen.db.accounting_rules import DBAccountingRules
@@ -177,7 +177,7 @@ def test_process_kraken_events(rotkehlchen_api_server_with_exchanges: APIServer)
             event_type=HistoryEventType.ADJUSTMENT,
             event_subtype=HistoryEventSubType.RECEIVE,
             counterparty=None,
-            rule=TxEventSettings(
+            rule=BaseEventSettings(
                 taxable=True,
                 count_entire_amount_spend=True,
                 count_cost_basis_pnl=True,

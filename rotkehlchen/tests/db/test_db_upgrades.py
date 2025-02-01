@@ -11,7 +11,7 @@ import pytest
 from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.assets.utils import get_or_create_evm_token
-from rotkehlchen.chain.evm.accounting.structures import TxEventSettings
+from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_COW, A_ETH
 from rotkehlchen.constants.misc import (
@@ -1982,12 +1982,12 @@ def test_upgrade_db_39_to_40(user_data_dir):  # pylint: disable=unused-argument
         "SELECT * FROM accounting_rules WHERE type='receive' AND subtype='airdrop'",
     ).fetchone()
     assert accounting_row[:4] == (1, 'receive', 'airdrop', 'NONE')
-    assert TxEventSettings(
+    assert BaseEventSettings(
         taxable=True,
         count_entire_amount_spend=False,
         count_cost_basis_pnl=False,
         accounting_treatment=None,
-    ).serialize() == TxEventSettings.deserialize_from_db(accounting_row[4:]).serialize()
+    ).serialize() == BaseEventSettings.deserialize_from_db(accounting_row[4:]).serialize()
 
     # check that the replacement for the VELO asset worked
     assert cursor.execute(
