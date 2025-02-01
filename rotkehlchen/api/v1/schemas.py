@@ -2569,7 +2569,7 @@ class CurrentAssetsPriceSchema(AsyncQueryArgumentSchema):
 
 class HistoricalAssetsPriceSchema(AsyncQueryArgumentSchema):
     assets_timestamp = fields.List(
-        fields.Tuple(  # type: ignore # Tuple is not annotated
+        fields.Tuple(
             (AssetField(expected_type=Asset, required=True), TimestampField(required=True)),
             required=True,
         ),
