@@ -6,7 +6,7 @@ lint:
 	ruff check $(ALL_LINT_PATHS)
 	double-indent --dry-run $(ALL_LINT_PATHS)
 	mypy $(COMMON_LINT_PATHS) --install-types --non-interactive
-	pyright $(COMMON_LINT_PATHS)
+	PYRIGHT_PYTHON_IGNORE_WARNINGS=1 pyright $(COMMON_LINT_PATHS)
 	pylint --rcfile .pylint.rc $(ALL_LINT_PATHS)
 
 
