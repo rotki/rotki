@@ -114,7 +114,7 @@ const placeholderStyle = computed(() => {
   };
 });
 
-watch([symbol, identifier], () => {
+watch(identifier, () => {
   set(pending, true);
   set(error, false);
 });

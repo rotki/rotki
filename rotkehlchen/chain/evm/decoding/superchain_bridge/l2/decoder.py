@@ -1,8 +1,9 @@
 import logging
 from abc import ABC
+from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any, Final
 
-from rotkehlchen.assets.asset import CryptoAsset, EvmToken
+from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
@@ -38,7 +39,7 @@ class SuperchainL2SideBridgeCommonDecoder(DecoderInterface, ABC):
             evm_inquirer: 'EvmNodeInquirer',
             base_tools: 'BaseDecoderTools',
             msg_aggregator: 'MessagesAggregator',
-            native_asset: 'CryptoAsset',
+            native_assets: Sequence['Asset'],
             bridge_addresses: tuple['ChecksumEvmAddress', ...],
             counterparty: 'CounterpartyDetails',
     ):
@@ -48,7 +49,10 @@ class SuperchainL2SideBridgeCommonDecoder(DecoderInterface, ABC):
             msg_aggregator=msg_aggregator,
         )
         self.bride_addresses = bridge_addresses
-        self.native_asset = native_asset
+        # native assets is a sequence because in optimism there is:
+        # 1. ETH transfers (no event emitted)
+        # 2. Legacy "system" transfers via 0xDeadDeAddeAddEAddeadDEaDDEAdDeaDDeAD0000
+        self.native_assets = native_assets
         self.counterparty = counterparty
 
     def _decode_receive_or_deposit(self, context: DecoderContext) -> DecodingOutput:
@@ -73,7 +77,8 @@ class SuperchainL2SideBridgeCommonDecoder(DecoderInterface, ABC):
 
         if l1_token_address == ZERO_ADDRESS:
             # This means that ETH was bridged
-            asset = self.native_asset
+            asset = self.evm_inquirer.native_token
+            valid_assets = self.native_assets
         else:
             # Otherwise it is an ERC20 token bridging event
             try:
@@ -82,6 +87,7 @@ class SuperchainL2SideBridgeCommonDecoder(DecoderInterface, ABC):
                     chain_id=self.evm_inquirer.chain_id,
                     token_type=EvmTokenKind.ERC20,
                 ))
+                valid_assets = (asset,)
             except (UnknownAsset, WrongAssetType):
                 # can't call `notify_user`` since we don't have any particular event here.
                 log.error(f'Failed to resolve asset with address {l2_token_address} to an {self.evm_inquirer.chain_name} token')  # noqa: E501
@@ -104,7 +110,7 @@ class SuperchainL2SideBridgeCommonDecoder(DecoderInterface, ABC):
                 event.event_type == expected_event_type and
                 event.location_label == expected_location_label and
                 event.address in (ZERO_ADDRESS, *self.bride_addresses) and
-                event.asset == asset and
+                event.asset in valid_assets and
                 event.balance.amount == amount
             ):
                 bridge_match_transfer(

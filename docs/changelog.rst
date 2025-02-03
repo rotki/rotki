@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` A problem with decoding WETH events in transactions from safes or other smart contracts on arbitrum will now be fixed.
 * :feature:`-` Extrafi optimism incentive rewards sent directly to the wallet will now be properly seen as defi rewards.
 * :feature:`-` History events export will now include the symbol or name of the asset to improve readability of entries.
 * :feature:`9203` rotki will now detect Uniswap V3 balances in all supported EVM chains.
@@ -27,6 +28,7 @@ Changelog
 * :bug:`-` A rare error with velodrome events decoding should now be fixed and the relevant events properly decoded.
 * :bug:`-` Some mainnet to optimism bridging transactions that were not seen correctly will now be properly decoded.
 * :bug:`9308` Fix some cases of Coinbase events that were not properly understood in rotki.
+* :bug:`-` Bridging ETH from Ethereum to Optimism will be correctly decoded for new transactions.
 * :bug:`-` Some specific cases of yearn v2 vault deposit/withdrawals that had problems will now be decoded properly.
 * :bug:`-` Deleting an ethereum address will now remove the withdrawals cache for that address so re-adding it will now properly detect ethereum staking withdrawals again.
 * :bug:`-` Fix double count of cowswap fees.

@@ -8,12 +8,13 @@ from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.optimism.constants import CPT_OPTIMISM
+from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
 from rotkehlchen.constants.assets import A_ETH, A_OPTIMISM_ETH
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
-from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
+from rotkehlchen.types import ChecksumEvmAddress, Location, TimestampMS, deserialize_evm_tx_hash
 
 
 @pytest.mark.vcr
@@ -609,6 +610,32 @@ def test_withdraw_erc20_base_to_ethereum_bridge(base_inquirer, base_accounts):
             notes=f'Bridge {deposit_amount} USDbC from Base to Ethereum via Base bridge',
             counterparty=CPT_BASE,
             address=ZERO_ADDRESS,
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr
+@pytest.mark.parametrize('optimism_accounts', [['0x3Ba6eB0e4327B96aDe6D4f3b578724208a590CEF']])
+def test_new_eth_bridge(
+        optimism_inquirer: OptimismInquirer,
+        optimism_accounts: list[ChecksumEvmAddress],
+) -> None:
+    tx_hash = deserialize_evm_tx_hash('0xb35a4120ba0a1aadf7fc51e5e0167a4bc8c8b0d59939edd5c2f6ccec4b6612e8')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
+    expected_events = [EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=0,
+            timestamp=TimestampMS(1738244009000),
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.BRIDGE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal('0.1')),
+            location_label=optimism_accounts[0],
+            notes='Bridge 0.1 ETH from Ethereum to Optimism via Optimism bridge',
+            counterparty=CPT_OPTIMISM,
+            address=string_to_evm_address('0x4200000000000000000000000000000000000010'),
         ),
     ]
     assert events == expected_events

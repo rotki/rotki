@@ -2561,7 +2561,7 @@
     },
     "title": "Ξεκλείδωμα λογαριασμού",
     "upgrading_db": {
-      "current": "Βήμα {currentStep} από {totalSteps} της αναβάθμισής της βάσης δεδομένων v{currentVersion}.",
+      "current": "Εφαρμόζεται το βήμα {currentStep} των {totalSteps} της αναβάθμισης της βάσης δεδομένων v{currentVersion}.",
       "title": "Αναβάθμιση βάσης δεδομένων",
       "warning": "Η βάση δεδομένων αναβαιμίζεται από την έκδοση {fromVersion} στην {toVersion}. Παρακαλώ μην κλείσετε την εφαρμογή μέχρι να ολοκληρωθεί."
     },

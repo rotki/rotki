@@ -2549,7 +2549,7 @@
     },
     "title": "Desbloquear cuenta",
     "upgrading_db": {
-      "current": "Aplicando paso {currentStep} de {totalSteps} para la actualización de la base de datos v{currentVersion}.",
+      "current": "Se está aplicando el paso {currentStep} de {totalSteps} de la actualización de la base de datos v{currentVersion}.",
       "title": "Actualización de base de datos",
       "warning": "La base de datos se está actualizando de la versión {fromVersion} a {toVersion}. No cierres la aplicación hasta que esté terminada."
     },

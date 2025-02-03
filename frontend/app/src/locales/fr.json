@@ -2853,7 +2853,7 @@
     "label_username": "Nom de profil",
     "logout": "Déconnexion",
     "migrating_data": {
-      "current": "Étape {currentStep} sur {totalSteps} de la migration des données {currentVersion} est appliquée.",
+      "current": "L'étape {currentStep} de {totalSteps} de la migration de données {currentVersion} est en cours d'application.",
       "title": "Migration des données",
       "warning": "La migration des données {currentVersion} est en cours. Veuillez ne pas fermer l'application jusqu'à ce qu'elle soit terminée."
     },
@@ -2869,7 +2869,7 @@
     },
     "title": "Déverrouiller le compte",
     "upgrading_db": {
-      "current": "Étape {currentStep} sur {totalSteps} de la mise à niveau de la base de données v{currentVersion} est appliquée.",
+      "current": "L'étape {currentStep} de {totalSteps} de la mise à niveau de la base de données v{currentVersion} est en cours d'application.",
       "title": "Mise à niveau de la base de données",
       "warning": "La base de données est en cours de mise à niveau depuis la version {fromVersion} vers {toVersion}. Veuillez ne pas fermer l'application jusqu'à ce qu'elle soit terminée."
     },

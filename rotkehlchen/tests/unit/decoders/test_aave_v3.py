@@ -11,6 +11,7 @@ from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE_V3
 from rotkehlchen.chain.evm.decoding.aave.v3.constants import OLD_POOL_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.safe.constants import CPT_SAFE_MULTISIG
+from rotkehlchen.chain.evm.decoding.weth.constants import CPT_WETH
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import (
@@ -1646,20 +1647,6 @@ def test_aave_v3_close_position_with_safe(arbitrum_one_inquirer, arbitrum_one_ac
             address=user_eoa_account,
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=2,
-            timestamp=timestamp,
-            location=Location.ARBITRUM_ONE,
-            event_type=HistoryEventType.RECEIVE,
-            event_subtype=HistoryEventSubType.NONE,
-            asset=A_ETH,
-            balance=Balance(amount=FVal(eth_withdraw_amount) + FVal(eth_interest_amount)),
-            location_label=user_safe_proxy,
-            # This is an ETH receive after WETH unwrap. Fixed in bugfixes: https://github.com/rotki/rotki/pull/9338.  # noqa: E501
-            notes=f'Receive {FVal(eth_withdraw_amount) + FVal(eth_interest_amount)} ETH from 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1',  # noqa: E501
-            counterparty=None,
-            address=A_WETH_ARB.resolve_to_evm_token().evm_address,
-        ), EvmEvent(
-            tx_hash=tx_hash,
             sequence_index=4,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
@@ -1758,20 +1745,33 @@ def test_aave_v3_close_position_with_safe(arbitrum_one_inquirer, arbitrum_one_ac
             address=user_safe_proxy,
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=22,
+            sequence_index=19,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
             event_type=HistoryEventType.SPEND,
-            event_subtype=HistoryEventSubType.NONE,
+            event_subtype=HistoryEventSubType.RETURN_WRAPPED,
             asset=A_WETH_ARB,
-            balance=Balance(amount=FVal(eth_withdraw_amount) + FVal(eth_interest_amount)),
+            balance=Balance(unwrap_amount := FVal(eth_withdraw_amount) + FVal(eth_interest_amount)),  # noqa: E501
             location_label=user_safe_proxy,
-            # This is a WETH unwrapping. Fixed in bugfixes: https://github.com/rotki/rotki/pull/9338.  # noqa: E501
-            notes=f'Send {FVal(eth_withdraw_amount) + FVal(eth_interest_amount)} WETH from {user_safe_proxy} to 0x0000000000000000000000000000000000000000',  # noqa: E501
-            address=ZERO_ADDRESS,
+            notes=f'Unwrap {unwrap_amount} WETH',
+            counterparty=CPT_WETH,
+            address=user_safe_proxy,
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=25,
+            sequence_index=20,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            balance=Balance(unwrap_amount),
+            location_label=user_safe_proxy,
+            notes=f'Receive {unwrap_amount} ETH',
+            counterparty=CPT_WETH,
+            address=A_WETH_ARB.resolve_to_evm_token().evm_address,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=26,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
             event_type=HistoryEventType.INFORMATIONAL,
@@ -1784,7 +1784,7 @@ def test_aave_v3_close_position_with_safe(arbitrum_one_inquirer, arbitrum_one_ac
             address=user_safe_proxy,
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=26,
+            sequence_index=27,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
             event_type=HistoryEventType.SPEND,
@@ -1797,7 +1797,7 @@ def test_aave_v3_close_position_with_safe(arbitrum_one_inquirer, arbitrum_one_ac
             address=ZERO_ADDRESS,
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=27,
+            sequence_index=28,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
             event_type=HistoryEventType.WITHDRAWAL,
@@ -1810,7 +1810,7 @@ def test_aave_v3_close_position_with_safe(arbitrum_one_inquirer, arbitrum_one_ac
             address=string_to_evm_address('0xe50fA9b3c56FfB159cB0FCA61F5c9D750e8128c8'),
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=28,
+            sequence_index=29,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
             event_type=HistoryEventType.RECEIVE,

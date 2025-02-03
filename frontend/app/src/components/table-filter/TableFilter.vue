@@ -65,14 +65,8 @@ const selectedMatcher = computed(() => {
 
 const usedKeys = computed(() => get(selection).map(entry => entry.key));
 
-function removeSelection(item: Suggestion) {
-  const newSelection = get(selection).filter(sel => getSuggestionText(sel).text !== getSuggestionText(item).text);
-  updateMatches(newSelection);
-}
-
 function clickItem(item: Suggestion) {
   if (typeof item.value !== 'boolean') {
-    removeSelection(item);
     selectItem(item);
   }
 }
