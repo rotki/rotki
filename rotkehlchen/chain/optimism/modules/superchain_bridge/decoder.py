@@ -7,7 +7,7 @@ from rotkehlchen.chain.evm.decoding.superchain_bridge.l2.decoder import (
 )
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants.assets import A_OPTIMISM_ETH
+from rotkehlchen.constants.assets import A_ETH, A_OPTIMISM_ETH
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
 if TYPE_CHECKING:
@@ -31,7 +31,7 @@ class SuperchainBridgeDecoder(SuperchainL2SideBridgeCommonDecoder):
             evm_inquirer=evm_inquirer,
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
-            native_asset=A_OPTIMISM_ETH.resolve_to_crypto_asset(),
+            native_assets=(A_OPTIMISM_ETH, A_ETH),
             bridge_addresses=(
                 # Normal Bridge
                 string_to_evm_address('0x4200000000000000000000000000000000000010'),
