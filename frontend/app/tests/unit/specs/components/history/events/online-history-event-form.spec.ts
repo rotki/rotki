@@ -1,7 +1,6 @@
 import { type ComponentMountingOptions, type VueWrapper, mount } from '@vue/test-utils';
 import { type Pinia, createPinia, setActivePinia } from 'pinia';
-import flushPromises from 'flush-promises';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { HistoryEventEntryType } from '@rotki/common';
 import OnlineHistoryEventForm from '@/components/history/events/forms/OnlineHistoryEventForm.vue';
 import { setupDayjs } from '@/utils/date';
@@ -51,16 +50,24 @@ describe('onlineHistoryEventForm.vue', () => {
     notes: 'History event notes',
   };
 
-  beforeEach(() => {
+  beforeAll(() => {
     setupDayjs();
     pinia = createPinia();
     setActivePinia(pinia);
+    vi.useFakeTimers();
+  });
+
+  beforeEach(() => {
     vi.mocked(useAssetInfoApi().assetMapping).mockResolvedValue(mapping);
     vi.mocked(useBalancePricesStore().getHistoricPrice).mockResolvedValue(One);
   });
 
   afterEach(() => {
     wrapper.unmount();
+  });
+
+  afterAll(() => {
+    vi.useRealTimers();
   });
 
   const createWrapper = (options: ComponentMountingOptions<typeof OnlineHistoryEventForm> = {}) =>
@@ -74,7 +81,7 @@ describe('onlineHistoryEventForm.vue', () => {
   describe('should prefill the fields based on the props', () => {
     it('no `groupHeader`, `editableItem`, nor `nextSequence` are passed', async () => {
       wrapper = createWrapper();
-      await nextTick();
+      await vi.advanceTimersToNextTimerAsync();
 
       expect((wrapper.find('[data-cy=eventIdentifier] input').element as HTMLInputElement).value).toBe('');
 
@@ -85,9 +92,9 @@ describe('onlineHistoryEventForm.vue', () => {
 
     it('`groupHeader` and `nextSequence` are passed', async () => {
       wrapper = createWrapper();
-      await nextTick();
+      vi.advanceTimersToNextTimer();
       await wrapper.setProps({ groupHeader, nextSequence: '10' });
-      await nextTick();
+      vi.advanceTimersToNextTimer();
 
       expect((wrapper.find('[data-cy=eventIdentifier] input').element as HTMLInputElement).value).toBe(
         groupHeader.eventIdentifier,
@@ -108,9 +115,9 @@ describe('onlineHistoryEventForm.vue', () => {
 
     it('`groupHeader`, `editableItem`, and `nextSequence` are passed', async () => {
       wrapper = createWrapper();
-      await nextTick();
+      vi.advanceTimersToNextTimer();
       await wrapper.setProps({ groupHeader, editableItem: groupHeader, nextSequence: '10' });
-      await nextTick();
+      vi.advanceTimersToNextTimer();
 
       expect((wrapper.find('[data-cy=eventIdentifier] input').element as HTMLInputElement).value).toBe(
         groupHeader.eventIdentifier,
@@ -136,8 +143,7 @@ describe('onlineHistoryEventForm.vue', () => {
 
   it('should show all eventTypes options correctly', async () => {
     wrapper = createWrapper({ props: { groupHeader } });
-    await nextTick();
-    await flushPromises();
+    vi.advanceTimersToNextTimer();
 
     const { historyEventTypesData } = useHistoryEventMappings();
 
@@ -146,8 +152,7 @@ describe('onlineHistoryEventForm.vue', () => {
 
   it('should show all eventSubTypes options correctly', async () => {
     wrapper = createWrapper({ props: { groupHeader } });
-    await nextTick();
-    await flushPromises();
+    vi.advanceTimersToNextTimer();
 
     const { historyEventSubTypesData } = useHistoryEventMappings();
 
@@ -158,8 +163,7 @@ describe('onlineHistoryEventForm.vue', () => {
 
   it('should show correct eventSubtypes options, based on selected eventType', async () => {
     wrapper = createWrapper({ props: { groupHeader } });
-    await nextTick();
-    await flushPromises();
+    vi.advanceTimersToNextTimer();
 
     const { historyEventTypeGlobalMapping } = useHistoryEventMappings();
 
@@ -169,7 +173,7 @@ describe('onlineHistoryEventForm.vue', () => {
       value: selectedEventType,
     });
 
-    await nextTick();
+    vi.advanceTimersToNextTimer();
 
     const keysFromGlobalMappings = Object.keys(get(historyEventTypeGlobalMapping)?.[selectedEventType] ?? {});
 
