@@ -7,6 +7,7 @@ import content_hash
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token
 from rotkehlchen.chain.ethereum.abi import decode_event_data_abi_str
+from rotkehlchen.chain.ethereum.modules.ens.constants import CPT_ENS
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.ens.constants import (
     ADDR_CHANGED,
@@ -68,12 +69,16 @@ class EnsCommonDecoder(DecoderInterface, CustomizableDateMixin, ABC):
         if context.tx_log.topics[0] != ERC20_OR_ERC721_TRANSFER:
             return DEFAULT_DECODING_OUTPUT
 
+        # The ENS contract doesn't implement the `symbol` and `name` methods so we must hardcode them here  # noqa: E501
+        symbol, name = ('ENS', 'Ethereum Name Service') if self.counterparty == CPT_ENS else (None, None)  # noqa: E501
         to_address = bytes_to_address(context.tx_log.topics[2])
         token = get_or_create_evm_token(
             userdb=self.database,
             evm_address=context.tx_log.address,
             chain_id=self.evm_inquirer.chain_id,
             token_kind=EvmTokenKind.ERC721,
+            symbol=symbol,
+            name=name,
             collectible_id=str(collectible_id := int.from_bytes(context.tx_log.topics[3])),
             evm_inquirer=self.evm_inquirer,
             encounter=TokenEncounterInfo(tx_hash=context.transaction.tx_hash),
