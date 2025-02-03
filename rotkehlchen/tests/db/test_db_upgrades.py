@@ -2902,7 +2902,9 @@ def test_upgrade_db_46_to_47(user_data_dir, messages_aggregator):
             'SELECT COUNT(*) FROM trades WHERE location=? AND link != ?',
             (coinbase_location, ''),
         ).fetchone()[0] == 0
-        assert cursor.execute('SELECT COUNT(*) FROM trades').fetchone()[0] == 2  # ensure trade with empty link is preserved  # noqa: E501
+        assert cursor.execute('SELECT id FROM trades').fetchall() == [  # ensure trade with empty link is preserved  # noqa: E501
+            ('trade_1',), ('trade_3',),
+        ]
         assert cursor.execute(  # verify query ranges for coinbase are deleted
             'SELECT COUNT(*) FROM used_query_ranges WHERE name=?',
             (f'{coinbase_loc}_%',),

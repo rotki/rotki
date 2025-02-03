@@ -1100,13 +1100,23 @@ class Coinbase(ExchangeInterface):
 
             if tx_type in ('staking_transfer', 'unstaking_transfer'):
                 event_type = HistoryEventType.STAKING
-                event_subtype = HistoryEventSubType.DEPOSIT_ASSET if tx_type == 'staking_transfer' else HistoryEventSubType.REMOVE_ASSET  # noqa: E501
+                if tx_type == 'staking_transfer':
+                    event_subtype = HistoryEventSubType.DEPOSIT_ASSET
+                    verb = 'Stake'
+                else:
+                    event_subtype = HistoryEventSubType.REMOVE_ASSET
+                    verb = 'Unstake'
+
+                notes = f'{verb} {amount} {asset.symbol_or_name()} in Coinbase'
             elif tx_type in ('incentives_shared_clawback', 'clawback'):
                 event_type, event_subtype = HistoryEventType.SPEND, HistoryEventSubType.CLAWBACK
+                notes = f'Coinbase clawback of {amount} {asset.symbol_or_name()}'
             elif tx_type == 'cardspend':
                 event_type, event_subtype = HistoryEventType.SPEND, HistoryEventSubType.PAYMENT
+                notes = f'Spend {amount} {asset.symbol_or_name()} via Coinbase card'
             elif tx_type == 'cardbuyback':
                 event_type, event_subtype = HistoryEventType.RECEIVE, HistoryEventSubType.CASHBACK
+                notes = f'Receive cashback of {amount} {asset.symbol_or_name()} from Coinbase'
             else:
                 event_type, event_subtype = HistoryEventType.RECEIVE, HistoryEventSubType.NONE
 
