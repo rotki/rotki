@@ -209,6 +209,7 @@ def get_token(
         evm_address: ChecksumEvmAddress,
         chain_id: ChainID,
         token_kind: EvmTokenKind = EvmTokenKind.ERC20,
+        collectible_id: str | None = None,
 ) -> EvmToken | None:
     """
     Query a token from the cache of the AssetResolver or the GlobalDB if
@@ -219,6 +220,7 @@ def get_token(
         address=evm_address,
         chain_id=chain_id,
         token_type=token_kind,
+        collectible_id=collectible_id,
     )
     try:
         return AssetResolver.resolve_asset_to_class(

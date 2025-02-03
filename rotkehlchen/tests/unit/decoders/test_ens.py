@@ -4,6 +4,7 @@ import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.utils import get_token
 from rotkehlchen.chain.ethereum.airdrops import AIRDROP_IDENTIFIER_KEY
 from rotkehlchen.chain.ethereum.modules.airdrops.decoder import ENS_ADDRESS
 from rotkehlchen.chain.ethereum.modules.ens.constants import (
@@ -29,6 +30,8 @@ from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.tests.utils.factories import make_evm_tx_hash
 from rotkehlchen.types import (
     CacheType,
+    ChainID,
+    EvmTokenKind,
     Location,
     Timestamp,
     TimestampMS,
@@ -55,7 +58,7 @@ def test_mint_ens_name(ethereum_inquirer, add_subgraph_api_key):  # pylint: disa
     expires_timestamp = 2142055301
     timestamp = TimestampMS(1637144069000)
     register_fee_str = '0.019345192039577752'
-    token_id = 88045077199635585930173998576189366882372899073811035545363728149974713265418
+    token_id = '88045077199635585930173998576189366882372899073811035545363728149974713265418'
     assert events == [
         EvmEvent(
             tx_hash=tx_hash,
@@ -150,6 +153,14 @@ def test_mint_ens_name(ethereum_inquirer, add_subgraph_api_key):  # pylint: disa
             address=ENS_REGISTRAR_CONTROLLER_1,
         ),
     ]
+    ens_nft = get_token(
+        evm_address=string_to_evm_address('0x57f1887a8BF19b14fC0dF6Fd9B2acc9Af147eA85'),
+        chain_id=ChainID.ETHEREUM,
+        token_kind=EvmTokenKind.ERC721,
+        collectible_id=token_id,
+    )
+    assert ens_nft.symbol == 'ENS'
+    assert ens_nft.name == 'Ethereum Name Service'
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
