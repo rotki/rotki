@@ -6,7 +6,7 @@ import requests
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.converters import asset_from_coinbase
-from rotkehlchen.constants import ZERO
+from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_1INCH, A_BTC, A_ETH, A_EUR, A_SOL, A_USD, A_USDC
 from rotkehlchen.db.filtering import HistoryEventFilterQuery, TradesFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -25,8 +25,8 @@ from rotkehlchen.utils.misc import ts_now
 
 
 @pytest.fixture(name='mock_coinbase')
-def fixture_mock_coinbase() -> Coinbase:
-    return Coinbase('coinbase1', 'a', b'a', object(), object())  # type: ignore
+def fixture_mock_coinbase(messages_aggregator) -> Coinbase:
+    return Coinbase('coinbase1', 'a', b'a', object(), messages_aggregator)  # type: ignore
 
 
 def test_name(mock_coinbase):
@@ -621,8 +621,8 @@ def test_asset_conversion(mock_coinbase):
         },
     }
 
-    trade_pairs, trades = {tx_id: [trade_a, trade_b]}, []
-    mock_coinbase._process_trades_from_conversion(trade_pairs, trades)
+    trade_pairs = {tx_id: [trade_a, trade_b]}
+    trades = mock_coinbase._process_trades_from_conversion(trade_pairs)
     expected_trade = Trade(
         timestamp=1623119536,
         location=Location.COINBASE,
@@ -636,6 +636,29 @@ def test_asset_conversion(mock_coinbase):
         link='5dceef97-ef34-41e6-9171-3e60cd01639e',
     )
     assert trades == [expected_trade]
+
+
+def test_conversion_with_fee(mock_coinbase):
+    tx_id = '61258a99-7e8a-4ece-94cf-485b33d09319'
+    trade_b = {'amount': {'amount': '-10.571942', 'currency': 'USDC'}, 'created_at': '2024-12-06T10:27:56Z', 'id': '39073929-386e-58a2-9ec4-d8371a395a9e', 'native_amount': {'amount': '-10.00', 'currency': 'EUR'}, 'resource': 'transaction', 'resource_path': '/v2/accounts/40e03599-5601-534c-95c2-0db5f5c5e652/transactions/39073929-386e-58a2-9ec4-d8371a395a9e', 'status': 'completed', 'trade': {'fee': {'amount': '0.109974', 'currency': 'USDC'}, 'id': '61258a99-7e8a-4ece-94cf-485b33d09319', 'payment_method_name': 'billetera de USDC'}, 'type': 'trade'}  # noqa: E501
+    trade_a = {'amount': {'amount': '0.00266121', 'currency': 'ETH'}, 'created_at': '2024-12-06T10:27:57Z', 'id': 'e34548a2-4eec-54fc-a13f-6b48996e9ecf', 'native_amount': {'amount': '9.70', 'currency': 'EUR'}, 'resource': 'transaction', 'resource_path': '/v2/accounts/16ff1367-5834-5827-95f3-f503d891421c/transactions/e34548a2-4eec-54fc-a13f-6b48996e9ecf', 'status': 'completed', 'trade': {'fee': {'amount': '0.109974', 'currency': 'USDC'}, 'id': '61258a99-7e8a-4ece-94cf-485b33d09319', 'payment_method_name': 'billetera de USDC'}, 'type': 'trade'}  # noqa: E501
+
+    trade_pairs = {tx_id: [trade_a, trade_b]}
+    trades = mock_coinbase._process_trades_from_conversion(trade_pairs)
+
+    assert len(trades) == 1
+    assert [Trade(
+        timestamp=1733480877,
+        location=Location.COINBASE,
+        base_asset=A_USDC,
+        quote_asset=A_ETH,
+        trade_type=TradeType.SELL,
+        amount=FVal('10.571942'),
+        rate=FVal('0.000251723855465722380996793209800053764956334418028400080136648498449953660358712'),
+        fee=FVal('0.1162638749508'),
+        fee_currency=A_USDC,
+        link=tx_id,
+    )] == trades
 
 
 def test_asset_conversion_no_second_transaction(mock_coinbase):
@@ -667,7 +690,7 @@ def test_asset_conversion_no_second_transaction(mock_coinbase):
     }
 
     trade_pairs, trades = {tx_id: [trade_a]}, []
-    mock_coinbase._process_trades_from_conversion(trade_pairs, trades)
+    trades = mock_coinbase._process_trades_from_conversion(trade_pairs)
     expected_trade = Trade(
         timestamp=1623119536,
         location=Location.COINBASE,
@@ -676,7 +699,7 @@ def test_asset_conversion_no_second_transaction(mock_coinbase):
         trade_type=TradeType.SELL,
         amount=FVal('450'),
         rate=FVal('1.2'),
-        fee=FVal('1'),
+        fee=ONE,
         fee_currency=A_XTZ,
         link='5dceef97-ef34-41e6-9171-3e60cd01639e',
     )
@@ -749,8 +772,8 @@ def test_asset_conversion_not_stable_coin(mock_coinbase):
         },
     }
 
-    trade_pairs, trades = {tx_id: [trade_a, trade_b]}, []
-    mock_coinbase._process_trades_from_conversion(trade_pairs, trades)
+    trade_pairs = {tx_id: [trade_a, trade_b]}
+    trades = mock_coinbase._process_trades_from_conversion(trade_pairs)
     expected_trade = Trade(
         timestamp=1623119536,
         location=Location.COINBASE,
@@ -832,8 +855,8 @@ def test_asset_conversion_zero_fee(mock_coinbase):
         },
     }
 
-    trade_pairs, trades = {tx_id: [trade_a, trade_b]}, []
-    mock_coinbase._process_trades_from_conversion(trade_pairs, trades)
+    trade_pairs = {tx_id: [trade_a, trade_b]}
+    trades = mock_coinbase._process_trades_from_conversion(trade_pairs)
     expected_trade = Trade(
         timestamp=1623119536,
         location=Location.COINBASE,
@@ -919,8 +942,8 @@ def test_asset_conversion_choosing_fee_asset(mock_coinbase):
         'hide_native_amount': False,
     }
 
-    trade_pairs, trades = {tx_id: [trade_a, trade_b]}, []
-    mock_coinbase._process_trades_from_conversion(trade_pairs, trades)
+    trade_pairs = {tx_id: [trade_a, trade_b]}
+    trades = mock_coinbase._process_trades_from_conversion(trade_pairs)
     expected_trade = Trade(
         timestamp=1634045036,
         location=Location.COINBASE,

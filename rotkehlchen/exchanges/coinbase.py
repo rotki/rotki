@@ -57,7 +57,7 @@ from rotkehlchen.types import (
     TradeType,
 )
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import ts_now, ts_sec_to_ms
+from rotkehlchen.utils.misc import combine_dicts, ts_now, ts_sec_to_ms
 from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
 from rotkehlchen.utils.mixins.lockable import protect_with_lock
 from rotkehlchen.utils.serialization import jsonloads_dict
@@ -115,11 +115,27 @@ def trade_from_conversion(tx_a: dict[str, Any], tx_b: dict[str, Any] | None) -> 
         native_amount = abs(deserialize_asset_amount(tx_b['amount']['amount']))
         native_asset = asset_from_coinbase(tx_b['amount']['currency'], time=timestamp)
 
-        # Obtain fee amount in the native currency using data from both trades
         amount_after_fee = deserialize_asset_amount(tx_b['native_amount']['amount'])
         amount_before_fee = deserialize_asset_amount(tx_a['native_amount']['amount'])
-        # amount_after_fee + amount_before_fee is a negative amount and the fee needs to be positive  # noqa: E501
-        conversion_native_fee_amount = abs(amount_after_fee + amount_before_fee)
+        if (
+            (fee_a := tx_a['trade'].get('fee')) is not None and
+            (fee_b := tx_b['trade'].get('fee')) is not None and
+            fee_a['amount'] == fee_b['amount']
+        ):
+            # Lefteris mentioned that conversions for him didn't have at least in the past the fee
+            # section. I've kept both of them but we might have to revisit this part of the logic.
+            # Using the fee field as value for the fee the rate that calculates rotki is correct
+            # and displays the exact same amounts that the accounting report from coinbase.
+            conversion_native_fee_amount = deserialize_fval(
+                value=tx_a['trade']['fee']['amount'],
+                name='conversion fee',
+                location='coinbase conversion',
+            )
+        else:
+            # Obtain fee amount in the native currency using data from both trades
+            # amount_after_fee + amount_before_fee is a negative amount and the fee needs to be positive  # noqa: E501
+            conversion_native_fee_amount = abs(amount_after_fee + amount_before_fee)
+
         if ZERO not in {tx_amount, conversion_native_fee_amount, amount_before_fee, amount_after_fee}:  # noqa: E501
             # To get the asset in which the fee is nominated we pay attention to the creation
             # date of each event. As per our hypothesis the fee is nominated in the asset
@@ -579,6 +595,7 @@ class Coinbase(ExchangeInterface):
         account_info = self._get_active_account_info(account_data)
 
         now = ts_now()
+        conversion_pairs: defaultdict[str, list[dict]] = defaultdict(list)
         for account_id, last_update_timestamp in account_info:
             with self.db.conn.read_ctx() as cursor:
                 last_query = 0
@@ -604,11 +621,12 @@ class Coinbase(ExchangeInterface):
                 )) is not None:
                     last_id = str(result_id)
 
-            trades, history_events = self._query_single_account_transactions(
+            trades, history_events, conversions = self._query_single_account_transactions(
                 account_id=account_id,
                 account_last_id_name=f'{self.location}_{self.name}_{account_id}_last_query_id',
                 last_tx_id=last_id,
             )
+            conversion_pairs = combine_dicts(conversion_pairs, conversions)
 
             # The approach here does not follow the exchange interface querying with
             # a different method per type of event. Instead similar to kraken we query
@@ -629,12 +647,23 @@ class Coinbase(ExchangeInterface):
                     account_id=account_id,
                 )
 
+        if len(conversion_pairs) != 0:
+            conversion_trades = self._process_trades_from_conversion(
+                transaction_pairs=conversion_pairs,
+            )
+            with self.db.user_write() as write_cursor:
+                self.db.add_trades(write_cursor=write_cursor, trades=conversion_trades)
+
     def _query_single_account_transactions(
             self,
             account_id: str,
             account_last_id_name: str,
             last_tx_id: str | None,
-    ) -> tuple[list[Trade], Sequence[HistoryEvent | AssetMovement]]:
+    ) -> tuple[
+            list[Trade],
+            Sequence[HistoryEvent | AssetMovement],
+            defaultdict[str, list[dict]],
+        ]:
         """
         Query all the transactions and save all newly generated events
 
@@ -648,11 +677,11 @@ class Coinbase(ExchangeInterface):
             options['starting_after'] = last_tx_id
             options['order'] = 'asc'
         transactions = self._api_query(f'accounts/{account_id}/transactions', options=options)
+        transaction_pairs: defaultdict[str, list[dict[str, Any]]] = defaultdict(list)  # Maps every trade id to their two transactions  # noqa: E501
         if len(transactions) == 0:
             log.debug('Coinbase API query returned no transactions')
-            return trades, history_events
+            return trades, history_events, transaction_pairs
 
-        transaction_pairs = defaultdict(list)  # Maps every trade id to their two transactions
         trades = []
         for transaction in transactions:
             log.debug(f'Processing coinbase {transaction=}')
@@ -700,18 +729,21 @@ class Coinbase(ExchangeInterface):
             ):
                 log.warning(f'Found unknown coinbase transaction type: {transaction}')
 
-        self._process_trades_from_conversion(transaction_pairs=transaction_pairs, trades=trades)
-
         with self.db.user_write() as write_cursor:  # Remember last transaction id for account
             write_cursor.execute(
                 'INSERT OR REPLACE INTO key_value_cache(name, value) VALUES(?, ?) ',
                 (account_last_id_name, transactions[-1]['id']),  # -1 takes last transaction due to ascending order  # noqa: E501
             )
 
-        return trades, history_events
+        return trades, history_events, transaction_pairs
 
-    def _process_trades_from_conversion(self, transaction_pairs: dict[str, list], trades: list[Trade]) -> None:  # noqa: E501
-        """Processes the transaction pairs to create trades from conversions"""
+    def _process_trades_from_conversion(self, transaction_pairs: dict[str, list]) -> list[Trade]:
+        """Processes the transaction pairs to create trades from conversions
+
+        Note: Conversions appear as pairs and each leg of the trade needs to be obtained by
+        querying the transactions of the wallets for the involved assets.
+        """
+        trades = []
         for conversion_transactions in transaction_pairs.values():
             tx_1 = conversion_transactions[0]
             tx_2 = None if len(conversion_transactions) == 1 else conversion_transactions[1]
@@ -746,6 +778,8 @@ class Coinbase(ExchangeInterface):
                     error=msg,
                 )
                 continue
+
+        return trades
 
     def _process_coinbase_trade(self, event: dict[str, Any]) -> Trade | None:
         """Turns a coinbase transaction into a rotki trade and returns it.
