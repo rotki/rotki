@@ -698,7 +698,7 @@
       },
       "refresh_general_cache": {
         "task": {
-          "title": "Refresh general cache (Curve, MakerDAO, Yearn)"
+          "title": "Refresh general cache ({name})"
         }
       },
       "tag_add": {
@@ -1668,10 +1668,6 @@
         "title": "Confirm refresh cache"
       },
       "error": "Clear the cache for {source} failed: {message}",
-      "label": {
-        "general_cache": "γενική κρυφή μνήμη (Curve, MakerDAO, Yearn, Velodrome, Aerodrome, and Gearbox)",
-        "general_cache_short": "γενική κρυφή μνήμη (Curve, MakerDAO, κ.λπ.)"
-      },
       "select_cache": "Select cache to refresh",
       "subtitle": "Allows you to refresh data cached by rotki",
       "success": "Cache was successfully cleared",
