@@ -153,8 +153,9 @@ function startProcess(
 
   const envVars = opts?.env ?? {};
   const env = {
-    ...{ FORCE_COLOR: '1' },
+    FORCE_COLOR: '1',
     ...process.env,
+    NODE_ENV: 'development',
     ...envVars,
   };
 
