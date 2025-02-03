@@ -7,6 +7,7 @@ Changelog
 * :bug:`-` A rare error with velodrome events decoding should now be fixed and the relevant events properly decoded.
 * :bug:`-` Some mainnet to optimism bridging transactions that were not seen correctly will now be properly decoded.
 * :bug:`9308` Fix some cases of Coinbase events that were not properly understood in rotki.
+* :bug:`-` Bridging ETH from Ethereum to Optimism will be correctly decoded for new transactions.
 * :bug:`-` Some specific cases of yearn v2 vault deposit/withdrawals that had problems will now be decoded properly.
 * :bug:`-` Deleting an ethereum address will now remove the withdrawals cache for that address so re-adding it will now properly detect ethereum staking withdrawals again.
 * :bug:`-` Fix double count of cowswap fees.

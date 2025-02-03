@@ -31,7 +31,7 @@ class SuperchainBridgeDecoder(SuperchainL2SideBridgeCommonDecoder):
             evm_inquirer=evm_inquirer,
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
-            native_asset=A_ETH.resolve_to_crypto_asset(),
+            native_assets=(A_ETH,),
             bridge_addresses=(
                 # Normal Bridge
                 string_to_evm_address('0x4200000000000000000000000000000000000010'),
