@@ -388,9 +388,11 @@ class Coinbase(ExchangeInterface):
     def _get_active_account_info(self, accounts: list[dict[str, Any]]) -> list[tuple[str, Timestamp]]:  # noqa: E501
         """Gets the account ids and last_update timestamp out of the accounts response
 
-        Only returns the active ones. We assume that if created_at and updated_at are
-        the same then the account is not active. This is important as the API requires
-        iteration over all accounts to get history and there is A LOT of them.
+        At the moment of writing this the coinbase API returns the accounts for the assets
+        that the user has interacted with and in addition account for BCH, ETH2, BTC and ETH.
+
+        We used to have an activity check comparing the `updated_at` and `created_at` fields
+        of the response but in some cases it proved to not be reliable.
         """
         account_info = []
         for account_data in accounts:
@@ -415,9 +417,6 @@ class Coinbase(ExchangeInterface):
                 continue
 
             log.debug(f'Found coinbase account: {account_data}')
-            if account_data.get('created_at') == updated_at:
-                continue  # assume no activity
-
             account_info.append((account_data['id'], timestamp))
 
         return account_info
