@@ -1,14 +1,15 @@
 import path from 'node:path';
 import process from 'node:process';
+import type { InlineConfig, LogLevel } from 'vite';
+import type { RollupOutput, RollupWatcher } from 'rollup';
 
-/** @type 'production' | 'development'' */
-export const mode = (process.env.NODE_ENV = process.env.NODE_ENV || 'development');
+export type BuildOutput = RollupOutput | RollupOutput[] | RollupWatcher;
 
-/** @type {import('vite').LogLevel} */
-export const LOG_LEVEL = 'info';
+export const mode: 'production' | 'development' = (process.env.NODE_ENV = process.env.NODE_ENV !== 'development' ? 'production' : 'development');
 
-/** @type {import('vite').InlineConfig} */
-export const sharedConfig = {
+export const LOG_LEVEL: LogLevel = 'info';
+
+export const sharedConfig: InlineConfig = {
   mode,
   logLevel: LOG_LEVEL,
 };
@@ -22,6 +23,6 @@ if (process.env.VIRTUAL_ENV) {
   process.env.PATH = process.env.VIRTUAL_ENV.concat(
     path.sep,
     process.platform === 'win32' ? 'Scripts;' : 'bin:',
-    process.env.PATH,
+    process.env.PATH ?? '',
   );
 }
