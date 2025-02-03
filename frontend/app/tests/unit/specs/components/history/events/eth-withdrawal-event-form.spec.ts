@@ -1,6 +1,6 @@
 import { type ComponentMountingOptions, type VueWrapper, mount } from '@vue/test-utils';
 import { type Pinia, createPinia, setActivePinia } from 'pinia';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { HistoryEventEntryType } from '@rotki/common';
 import EthWithdrawalEventForm from '@/components/history/events/forms/EthWithdrawalEventForm.vue';
 import { setupDayjs } from '@/utils/date';
@@ -51,16 +51,24 @@ describe('ethWithdrawalEventForm.vue', () => {
     isExit: true,
   };
 
-  beforeEach(() => {
+  beforeAll(() => {
     setupDayjs();
     pinia = createPinia();
     setActivePinia(pinia);
+    vi.useFakeTimers();
+  });
+
+  beforeEach(() => {
     vi.mocked(useAssetInfoApi().assetMapping).mockResolvedValue(mapping);
     vi.mocked(useBalancePricesStore().getHistoricPrice).mockResolvedValue(One);
   });
 
   afterEach(() => {
     wrapper.unmount();
+  });
+
+  afterAll(() => {
+    vi.useRealTimers();
   });
 
   const createWrapper = (options: ComponentMountingOptions<typeof EthWithdrawalEventForm> = {}) =>
@@ -74,7 +82,7 @@ describe('ethWithdrawalEventForm.vue', () => {
   describe('should prefill the fields based on the props', () => {
     it('no `groupHeader`, nor `editableItem` are passed', async () => {
       wrapper = createWrapper();
-      await nextTick();
+      vi.advanceTimersToNextTimer();
 
       expect((wrapper.find('[data-cy=validatorIndex] input').element as HTMLInputElement).value).toBe('');
 
@@ -85,7 +93,7 @@ describe('ethWithdrawalEventForm.vue', () => {
 
     it('`groupHeader` passed', async () => {
       wrapper = createWrapper();
-      await nextTick();
+      vi.advanceTimersToNextTimer();
       await wrapper.setProps({ groupHeader });
 
       expect((wrapper.find('[data-cy=validatorIndex] input').element as HTMLInputElement).value).toBe(
@@ -103,7 +111,7 @@ describe('ethWithdrawalEventForm.vue', () => {
 
     it('`groupHeader` and `editableItem` are passed', async () => {
       wrapper = createWrapper();
-      await nextTick();
+      vi.advanceTimersToNextTimer();
       await wrapper.setProps({ groupHeader, editableItem: groupHeader });
 
       expect((wrapper.find('[data-cy=validatorIndex] input').element as HTMLInputElement).value).toBe(

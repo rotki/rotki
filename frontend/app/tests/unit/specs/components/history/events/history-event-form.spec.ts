@@ -1,7 +1,7 @@
 import { type VueWrapper, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { HistoryEventEntryType } from '@rotki/common';
-import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import flushPromises from 'flush-promises';
 import HistoryEventForm from '@/components/history/events/HistoryEventForm.vue';
 import { setupDayjs } from '@/utils/date';
@@ -37,11 +37,12 @@ describe('historyEventForm.vue', () => {
   };
 
   beforeAll(() => {
+    setupDayjs();
     vi.mocked(useBalancePricesStore().getHistoricPrice).mockResolvedValue(One);
+    vi.useFakeTimers();
   });
 
   beforeEach(async () => {
-    setupDayjs();
     wrapper = createWrapper();
     await nextTick();
     await flushPromises();
@@ -49,6 +50,10 @@ describe('historyEventForm.vue', () => {
 
   afterEach(() => {
     wrapper.unmount();
+  });
+
+  afterAll(() => {
+    vi.useRealTimers();
   });
 
   it('should default to history event form', () => {
@@ -63,15 +68,13 @@ describe('historyEventForm.vue', () => {
 
   it.each(Object.values(HistoryEventEntryType))('changes to proper form %s', async (value: string) => {
     await wrapper.find('[data-cy="entry-type"] [data-id="activator"]').trigger('click');
-    await nextTick();
-    await flushPromises();
+    await vi.advanceTimersToNextTimerAsync();
 
     const options = wrapper.find('[role="menu-content"]').findAll('button');
     for (const option of options) {
       if (option.text() === value) {
         await option.trigger('click');
-        await nextTick();
-        await flushPromises();
+        await vi.advanceTimersToNextTimerAsync();
         break;
       }
     }

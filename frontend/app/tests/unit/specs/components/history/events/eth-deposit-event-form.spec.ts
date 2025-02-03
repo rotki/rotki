@@ -1,6 +1,6 @@
 import { type ComponentMountingOptions, type VueWrapper, mount } from '@vue/test-utils';
 import { type Pinia, createPinia, setActivePinia } from 'pinia';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { HistoryEventEntryType } from '@rotki/common';
 import EthDepositEventForm from '@/components/history/events/forms/EthDepositEventForm.vue';
 import { setupDayjs } from '@/utils/date';
@@ -58,16 +58,24 @@ describe('ethDepositEventForm.vue', () => {
     validatorIndex: 223,
   };
 
-  beforeEach(() => {
+  beforeAll(() => {
     setupDayjs();
     pinia = createPinia();
     setActivePinia(pinia);
+    vi.useFakeTimers();
+  });
+
+  beforeEach(() => {
     vi.mocked(useAssetInfoApi().assetMapping).mockResolvedValue(mapping);
     vi.mocked(useBalancePricesStore().getHistoricPrice).mockResolvedValue(One);
   });
 
   afterEach(() => {
     wrapper.unmount();
+  });
+
+  afterAll(() => {
+    vi.useRealTimers();
   });
 
   const createWrapper = (options: ComponentMountingOptions<typeof EthDepositEventForm> = {}) =>
@@ -81,10 +89,10 @@ describe('ethDepositEventForm.vue', () => {
   describe('should prefill the fields based on the props', () => {
     it('no `groupHeader`, `editableItem`, nor `nextSequence` are passed', async () => {
       wrapper = createWrapper();
-      await nextTick();
+      vi.advanceTimersToNextTimer();
 
       await wrapper.find('[data-cy=eth-deposit-event-form__advance] .accordion__header').trigger('click');
-      await nextTick();
+      vi.advanceTimersToNextTimer();
 
       expect((wrapper.find('[data-cy=validatorIndex] input').element as HTMLInputElement).value).toBe('');
 
@@ -99,11 +107,11 @@ describe('ethDepositEventForm.vue', () => {
 
     it('`groupHeader` and `nextSequence` are passed', async () => {
       wrapper = createWrapper();
-      await nextTick();
+      vi.advanceTimersToNextTimer();
       await wrapper.setProps({ groupHeader, nextSequence: '10' });
 
       await wrapper.find('[data-cy=eth-deposit-event-form__advance] .accordion__header').trigger('click');
-      await nextTick();
+      vi.advanceTimersToNextTimer();
 
       expect((wrapper.find('[data-cy=validatorIndex] input').element as HTMLInputElement).value).toBe(
         groupHeader.validatorIndex.toString(),
@@ -126,11 +134,11 @@ describe('ethDepositEventForm.vue', () => {
 
     it('`groupHeader`, `editableItem`, and `nextSequence` are passed', async () => {
       wrapper = createWrapper();
-      await nextTick();
+      vi.advanceTimersToNextTimer();
       await wrapper.setProps({ groupHeader, editableItem: groupHeader });
 
       await wrapper.find('[data-cy=eth-deposit-event-form__advance] .accordion__header').trigger('click');
-      await nextTick();
+      vi.advanceTimersToNextTimer();
 
       expect((wrapper.find('[data-cy=validatorIndex] input').element as HTMLInputElement).value).toBe(
         groupHeader.validatorIndex.toString(),

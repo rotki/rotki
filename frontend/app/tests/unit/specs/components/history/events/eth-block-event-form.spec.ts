@@ -1,6 +1,6 @@
 import { type ComponentMountingOptions, type VueWrapper, mount } from '@vue/test-utils';
 import { type Pinia, createPinia, setActivePinia } from 'pinia';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { HistoryEventEntryType } from '@rotki/common';
 import EthBlockEventForm from '@/components/history/events/forms/EthBlockEventForm.vue';
 import { setupDayjs } from '@/utils/date';
@@ -52,16 +52,24 @@ describe('ethBlockEventForm.vue', () => {
     blockNumber: 444,
   };
 
-  beforeEach(() => {
+  beforeAll(() => {
     setupDayjs();
     pinia = createPinia();
     setActivePinia(pinia);
+    vi.useFakeTimers();
+  });
+
+  beforeEach(() => {
     vi.mocked(useAssetInfoApi().assetMapping).mockResolvedValue(mapping);
     vi.mocked(useBalancePricesStore().getHistoricPrice).mockResolvedValue(One);
   });
 
   afterEach(() => {
     wrapper.unmount();
+  });
+
+  afterAll(() => {
+    vi.useRealTimers();
   });
 
   const createWrapper = (options: ComponentMountingOptions<typeof EthBlockEventForm> = {}) =>
@@ -75,7 +83,7 @@ describe('ethBlockEventForm.vue', () => {
   describe('should prefill the fields based on the props', () => {
     it('no `groupHeader`, nor `editableItem` are passed', async () => {
       wrapper = createWrapper();
-      await nextTick();
+      vi.advanceTimersToNextTimer();
 
       expect((wrapper.find('[data-cy=blockNumber] input').element as HTMLInputElement).value).toBe('');
 
@@ -88,7 +96,7 @@ describe('ethBlockEventForm.vue', () => {
 
     it('`groupHeader` are passed', async () => {
       wrapper = createWrapper();
-      await nextTick();
+      vi.advanceTimersToNextTimer();
       await wrapper.setProps({ groupHeader });
 
       expect((wrapper.find('[data-cy=blockNumber] input').element as HTMLInputElement).value).toBe(
@@ -110,7 +118,7 @@ describe('ethBlockEventForm.vue', () => {
 
     it('`groupHeader` and `editableItem` are passed', async () => {
       wrapper = createWrapper();
-      await nextTick();
+      vi.advanceTimersToNextTimer();
       await wrapper.setProps({ groupHeader, editableItem: groupHeader });
 
       expect((wrapper.find('[data-cy=blockNumber] input').element as HTMLInputElement).value).toBe(
