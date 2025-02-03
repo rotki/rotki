@@ -16,7 +16,24 @@ import { useStatisticsApi } from '@/composables/api/statistics/statistics-api';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useHistoricCachePriceStore } from '@/store/prices/historic';
 import { usePriceApi } from '@/composables/api/balances/price';
-import type { AssetsApi, BalancesApi, BigNumber, CompoundApi, LocationData, OwnedAssets, ProfitLossModel, StatisticsApi, SushiApi, TimedAssetBalances, TimedAssetHistoricalBalances, TimedBalances, UserSettingsApi, UtilsApi } from '@rotki/common';
+import type {
+  AssetsApi,
+  BalancesApi,
+  BigNumber,
+  CompoundApi,
+  HistoricalAssetPricePayload,
+  HistoricalAssetPriceResponse,
+  LocationData,
+  OwnedAssets,
+  ProfitLossModel,
+  StatisticsApi,
+  SushiApi,
+  TimedAssetBalances,
+  TimedAssetHistoricalBalances,
+  TimedBalances,
+  UserSettingsApi,
+  UtilsApi,
+} from '@rotki/common';
 import type { MaybeRef } from '@vueuse/core';
 
 export function assetsApi(): AssetsApi {
@@ -36,8 +53,12 @@ export function assetsApi(): AssetsApi {
 
 export function statisticsApi(): StatisticsApi {
   const { isAssetIgnored } = useIgnoredAssetsStore();
-  const { fetchNetValue, getNetValue } = useStatisticsStore();
+  const statisticsStore = useStatisticsStore();
+
+  const { fetchHistoricalAssetPrice, fetchNetValue, getNetValue } = statisticsStore;
+  const { historicalAssetPriceStatus } = storeToRefs(statisticsStore);
   const {
+    queryCachedHistoricalAssetPrices,
     queryLatestAssetValueDistribution,
     queryLatestLocationValueDistribution,
     queryTimedBalancesData,
@@ -52,6 +73,7 @@ export function statisticsApi(): StatisticsApi {
     async fetchNetValue(): Promise<void> {
       await fetchNetValue();
     },
+    historicalAssetPriceStatus,
     async locationValueDistribution(): Promise<LocationData> {
       return queryLatestLocationValueDistribution();
     },
@@ -59,6 +81,11 @@ export function statisticsApi(): StatisticsApi {
     async ownedAssets(): Promise<OwnedAssets> {
       const owned = await queryOwnedAssets();
       return owned.filter(asset => !get(isAssetIgnored(asset)));
+    },
+    queryHistoricalAssetPrices: async (payload: HistoricalAssetPricePayload, ignoreCache: boolean = false): Promise<HistoricalAssetPriceResponse> => {
+      if (!ignoreCache)
+        return queryCachedHistoricalAssetPrices(payload);
+      return fetchHistoricalAssetPrice(payload);
     },
     async timedBalances(asset: string, start: number, end: number, collectionId?: number): Promise<TimedBalances> {
       return queryTimedBalancesData(asset, start, end, collectionId);

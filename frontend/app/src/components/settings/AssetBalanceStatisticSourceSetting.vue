@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
+import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 
 const { t } = useI18n();
 
@@ -18,18 +19,14 @@ onMounted(() => {
     :popper="{ placement: 'top' }"
   >
     <template #activator="{ attrs }">
-      <RuiButton
+      <MenuTooltipButton
+        :tooltip="t('statistics_graph_settings.source.title')"
+        class-name="graph-period"
+        custom-color
         v-bind="attrs"
-        size="sm"
-        icon
-        variant="text"
-        class="!p-1"
       >
-        <RuiIcon
-          name="lu-arrow-up-right"
-          size="14"
-        />
-      </RuiButton>
+        <RuiIcon name="lu-file-cog" />
+      </MenuTooltipButton>
     </template>
 
     <div class="p-4">

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { Blockchain, type Notification } from '@rotki/common';
+import { Blockchain, HistoricalPriceQueryStatusData, type Notification } from '@rotki/common';
 import { EvmChainAddress, EvmChainLikeAddress } from '@/types/history/events';
 import { CalendarEventPayload } from '@/types/history/calendar';
 
@@ -29,6 +29,15 @@ export const EvmTransactionsQueryStatus = {
 
 export type EvmTransactionsQueryStatus = (typeof EvmTransactionsQueryStatus)[keyof typeof EvmTransactionsQueryStatus];
 
+export const SocketMessageProgressUpdateSubType = {
+  CSV_IMPORT_RESULT: 'csv_import_result',
+  EVM_UNDECODED_TRANSACTIONS: 'evm_undecoded_transactions',
+  HISTORICAL_PRICE_QUERY_STATUS: 'historical_price_query_status',
+  PROTOCOL_CACHE_UPDATES: 'protocol_cache_updates',
+} as const;
+
+export type SocketMessageProgressUpdateSubType = (typeof SocketMessageProgressUpdateSubType)[keyof typeof SocketMessageProgressUpdateSubType];
+
 export const EvmTransactionQueryData = z
   .object({
     period: z.tuple([z.number(), z.number()]),
@@ -43,6 +52,10 @@ export const EvmUnDecodedTransactionsData = z.object({
 });
 
 export type EvmUnDecodedTransactionsData = z.infer<typeof EvmUnDecodedTransactionsData>;
+
+export const EvmUnDecodedTransactionsDataWithSubtype = EvmUnDecodedTransactionsData.extend({
+  subtype: z.literal(SocketMessageProgressUpdateSubType.EVM_UNDECODED_TRANSACTIONS),
+});
 
 export const EvmUndecodedTransactionBreakdown = z.object({
   total: z.number(),
@@ -157,18 +170,42 @@ export const ProtocolCacheUpdatesData = EvmUnDecodedTransactionsData.extend({
 
 export type ProtocolCacheUpdatesData = z.infer<typeof ProtocolCacheUpdatesData>;
 
+export const ProtocolCacheUpdatesDataWithSubtype = ProtocolCacheUpdatesData.extend({
+  subtype: z.literal(SocketMessageProgressUpdateSubType.PROTOCOL_CACHE_UPDATES),
+
+});
+
+export const HistoricalPriceQueryStatusDataWithSubtype = HistoricalPriceQueryStatusData.extend({
+  subtype: z.literal(SocketMessageProgressUpdateSubType.HISTORICAL_PRICE_QUERY_STATUS),
+});
+
 export const CsvImportResult = z.object({
-  importedEntries: z.number(),
   messages: z.array(z.object({
     isError: z.boolean(),
     msg: z.string(),
     rows: z.array(z.number()).optional(),
   })),
+  processed: z.number(),
   sourceName: z.string(),
-  totalEntries: z.number(),
+  total: z.number(),
 });
 
 export type CsvImportResult = z.infer<typeof CsvImportResult>;
+
+export const CsvImportResultWithSubtype = CsvImportResult.extend({
+  subtype: z.literal(SocketMessageProgressUpdateSubType.CSV_IMPORT_RESULT),
+});
+
+export type CsvImportResultWithSubtype = z.infer<typeof CsvImportResultWithSubtype>;
+
+export const ProgressUpdateResultData = z.discriminatedUnion('subtype', [
+  EvmUnDecodedTransactionsDataWithSubtype,
+  ProtocolCacheUpdatesDataWithSubtype,
+  HistoricalPriceQueryStatusDataWithSubtype,
+  CsvImportResultWithSubtype,
+]);
+
+export type ProgressUpdateResultData = z.infer<typeof ProgressUpdateResultData>;
 
 export const ExchangeUnknownAssetData = z.object({
   details: z.string(),
@@ -183,20 +220,18 @@ export const SocketMessageType = {
   ACCOUNTING_RULE_CONFLICT: 'accounting_rule_conflict',
   BALANCES_SNAPSHOT_ERROR: 'balance_snapshot_error',
   CALENDAR_REMINDER: 'calendar_reminder',
-  CSV_IMPORT_RESULT: 'csv_import_result',
   DATA_MIGRATION_STATUS: 'data_migration_status',
   DB_UPGRADE_STATUS: 'db_upgrade_status',
   DB_UPLOAD_RESULT: 'database_upload_result',
   EVM_ACCOUNTS_DETECTION: 'evmlike_accounts_detection',
   EVM_TRANSACTION_STATUS: 'evm_transaction_status',
-  EVM_UNDECODED_TRANSACTIONS: 'evm_undecoded_transactions',
   EXCHANGE_UNKNOWN_ASSET: 'exchange_unknown_asset',
   HISTORY_EVENTS_STATUS: 'history_events_status',
   LEGACY: 'legacy',
   MISSING_API_KEY: 'missing_api_key',
   NEW_EVM_TOKEN_DETECTED: 'new_evm_token_detected',
   PREMIUM_STATUS_UPDATE: 'premium_status_update',
-  PROTOCOL_CACHE_UPDATES: 'protocol_cache_updates',
+  PROGRESS_UPDATES: 'progress_updates',
   REFRESH_BALANCES: 'refresh_balances',
 } as const;
 
@@ -277,19 +312,14 @@ const CalendarReminderMessage = z.object({
   type: z.literal(SocketMessageType.CALENDAR_REMINDER),
 });
 
-const ProtocolCacheUpdatesMessage = z.object({
-  data: ProtocolCacheUpdatesData,
-  type: z.literal(SocketMessageType.PROTOCOL_CACHE_UPDATES),
-});
-
-const CsvImportResultMessage = z.object({
-  data: CsvImportResult,
-  type: z.literal(SocketMessageType.CSV_IMPORT_RESULT),
-});
-
 const ExchangeUnknownAssetMessage = z.object({
   data: ExchangeUnknownAssetData,
   type: z.literal(SocketMessageType.EXCHANGE_UNKNOWN_ASSET),
+});
+
+const ProgressUpdatesMessage = z.object({
+  data: ProgressUpdateResultData,
+  type: z.literal(SocketMessageType.PROGRESS_UPDATES),
 });
 
 export const WebsocketMessage = z.union([
@@ -308,9 +338,8 @@ export const WebsocketMessage = z.union([
   DbUploadResultMessage,
   AccountingRuleConflictMessage,
   CalendarReminderMessage,
-  ProtocolCacheUpdatesMessage,
-  CsvImportResultMessage,
   ExchangeUnknownAssetMessage,
+  ProgressUpdatesMessage,
 ]);
 
 export type WebsocketMessage = z.infer<typeof WebsocketMessage>;

@@ -172,6 +172,12 @@ const eventIdentifiers = computed<string[] | undefined>(() => {
   return eventIdentifiers ? [eventIdentifiers as string] : undefined;
 });
 
+const highlightedIdentifiers = computed<string[] | undefined>(() => {
+  const { highlightedIdentifier } = get(route).query;
+
+  return highlightedIdentifier ? [highlightedIdentifier as string] : undefined;
+});
+
 const { editableItem, openDialog } = useCommonTableProps<HistoryEventEntry>();
 
 const {
@@ -388,6 +394,7 @@ function removeIdentifierParam() {
 function removeEventIdentifierParam() {
   const query = { ...route.query };
   delete query.eventIdentifiers;
+  delete query.highlightIdentifier;
   router.push({ query });
 }
 
@@ -528,6 +535,7 @@ onUnmounted(() => {
         :groups="groups"
         :exclude-ignored="!toggles.showIgnoredAssets"
         :identifiers="identifiers"
+        :highlighted-identifiers="highlightedIdentifiers"
         @show:form="showForm($event)"
         @refresh="fetchAndRedecodeEvents($event)"
         @set-page="setPage($event)"

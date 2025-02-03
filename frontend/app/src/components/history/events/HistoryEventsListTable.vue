@@ -27,6 +27,7 @@ const props = withDefaults(
     eventGroup: HistoryEventEntry;
     loading?: boolean;
     total?: number;
+    highlightedIdentifiers?: string[];
   }>(),
   {
     loading: false,
@@ -101,9 +102,10 @@ function hideEventAction(item: HistoryEventEntry): boolean {
         v-for="(item, index) in events"
         :key="item.identifier"
         min-height="5rem"
-        class="grid md:grid-cols-4 gap-x-2 gap-y-4 lg:grid-cols-[repeat(20,minmax(0,1fr))] py-3 items-center"
+        class="grid md:grid-cols-4 gap-x-2 gap-y-4 lg:grid-cols-[repeat(20,minmax(0,1fr))] py-3 items-center -mx-4 px-4"
         :class="{
           'border-b border-default': index < events.length - 1,
+          'bg-rui-error/[0.05]': highlightedIdentifiers && highlightedIdentifiers.includes(item.identifier.toString()),
         }"
       >
         <HistoryEventType

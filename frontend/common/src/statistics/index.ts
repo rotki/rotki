@@ -40,9 +40,32 @@ export const NetValue = z.object({
 export type NetValue = z.infer<typeof NetValue>;
 
 export const TimedAssetHistoricalBalances = z.object({
-  lastEventIdentifier: z.string().optional(),
+  lastEventIdentifier: z.tuple([z.number(), z.string()]).optional(),
   times: z.array(z.number().positive()),
   values: z.array(NumericString),
 });
 
 export type TimedAssetHistoricalBalances = z.infer<typeof TimedAssetHistoricalBalances>;
+
+export const HistoricalAssetPricePayload = z.object({
+  asset: z.string(),
+  fromTimestamp: z.number(),
+  interval: z.number(),
+  toTimestamp: z.number(),
+});
+
+export type HistoricalAssetPricePayload = z.infer<typeof HistoricalAssetPricePayload>;
+
+export const HistoricalAssetPriceResponse = z.object({
+  noPricesTimestamps: z.array(z.number()),
+  prices: z.record(NumericString),
+});
+
+export type HistoricalAssetPriceResponse = z.infer<typeof HistoricalAssetPriceResponse>;
+
+export const HistoricalPriceQueryStatusData = z.object({
+  processed: z.number(),
+  total: z.number(),
+});
+
+export type HistoricalPriceQueryStatusData = z.infer<typeof HistoricalPriceQueryStatusData>;

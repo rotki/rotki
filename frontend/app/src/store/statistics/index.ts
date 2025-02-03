@@ -1,4 +1,13 @@
-import { type BigNumber, type NetValue, type TimeFramePeriod, TimeUnit, timeframes } from '@rotki/common';
+import {
+  type BigNumber,
+  type HistoricalAssetPricePayload,
+  HistoricalAssetPriceResponse,
+  type HistoricalPriceQueryStatusData,
+  type NetValue,
+  type TimeFramePeriod,
+  TimeUnit,
+  timeframes,
+} from '@rotki/common';
 import dayjs from 'dayjs';
 import { CURRENCY_USD, type SupportedCurrency } from '@/types/currencies';
 import { useSessionSettingsStore } from '@/store/settings/session';
@@ -10,6 +19,11 @@ import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useLiquidityPosition } from '@/composables/defi';
 import { useAggregatedBalances } from '@/composables/balances/aggregated';
 import { useStatisticsApi } from '@/composables/api/statistics/statistics-api';
+import { isTaskCancelled } from '@/utils';
+import { TaskType } from '@/types/task-type';
+import { useTaskStore } from '@/store/tasks';
+import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import type { TaskMeta } from '@/types/task';
 
 function defaultNetValue(): NetValue {
   return {
@@ -39,10 +53,14 @@ export const useStatisticsStore = defineStore('statistics', () => {
   const { nonFungibleTotalValue } = storeToRefs(useNonFungibleBalancesStore());
   const { timeframe } = storeToRefs(useSessionSettingsStore());
   const { exchangeRate } = useBalancePricesStore();
+  const { assetName } = useAssetInfoRetrieval();
+
+  const historicalAssetPriceStatus = ref<HistoricalPriceQueryStatusData>();
 
   const api = useStatisticsApi();
   const { lpTotal } = useLiquidityPosition();
   const { balances, liabilities } = useAggregatedBalances();
+  const { awaitTask } = useTaskStore();
 
   const calculateTotalValue = (includeNft = false): ComputedRef<BigNumber> => computed<BigNumber>(() => {
     const aggregatedBalances = get(balances());
@@ -163,11 +181,47 @@ export const useStatisticsStore = defineStore('statistics', () => {
     }
   };
 
+  const fetchHistoricalAssetPrice = async (payload: HistoricalAssetPricePayload): Promise<HistoricalAssetPriceResponse> => {
+    try {
+      const taskType = TaskType.FETCH_DAILY_HISTORIC_PRICE;
+      const { taskId } = await api.queryHistoricalAssetPrices(payload);
+      const { result } = await awaitTask<HistoricalAssetPriceResponse, TaskMeta>(taskId, taskType, {
+        description: t('actions.balances.historic_fetch_price.daily.task.detail', {
+          asset: get(assetName(payload.asset)),
+        }),
+        title: t('actions.balances.historic_fetch_price.daily.task.title'),
+      });
+
+      return HistoricalAssetPriceResponse.parse(result);
+    }
+    catch (error: any) {
+      if (!isTaskCancelled(error)) {
+        notify({
+          display: true,
+          message: t('actions.balances.historic_fetch_price.daily.error.message'),
+          title: t('actions.balances.historic_fetch_price.daily.task.title'),
+        });
+      }
+
+      return {
+        noPricesTimestamps: [],
+        prices: {},
+      };
+    }
+  };
+
+  const setHistoricalAssetPriceStatus = (status: HistoricalPriceQueryStatusData): void => {
+    set(historicalAssetPriceStatus, status);
+  };
+
   return {
+    fetchHistoricalAssetPrice,
     fetchNetValue,
     getNetValue,
+    historicalAssetPriceStatus,
     netValue,
     overall,
+    setHistoricalAssetPriceStatus,
     totalNetWorth,
     totalNetWorthUsd,
   };

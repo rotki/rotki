@@ -5,6 +5,8 @@ import {
   type DbUploadResult,
   MESSAGE_WARNING,
   type PremiumStatusUpdateData,
+  type ProgressUpdateResultData,
+  SocketMessageProgressUpdateSubType,
   SocketMessageType,
   WebsocketMessage,
 } from '@/types/websocket-messages';
@@ -29,6 +31,7 @@ import { useSync } from '@/composables/session/sync';
 import { usePremium } from '@/composables/premium';
 import { useSessionApi } from '@/composables/api/session';
 import { useBlockchainBalances } from '@/composables/blockchain/balances';
+import { useStatisticsStore } from '@/store/statistics';
 
 interface UseMessageHandling {
   handleMessage: (data: string) => Promise<void>;
@@ -47,6 +50,7 @@ export function useMessageHandling(): UseMessageHandling {
   const { consumeMessages } = useSessionApi();
   const { uploadStatus, uploadStatusAlreadyHandled } = useSync();
   const { setProtocolCacheStatus, setUndecodedTransactionsStatus } = useHistoryStore();
+  const { setHistoricalAssetPriceStatus } = useStatisticsStore();
   const { handle: handleMissingApiKeyMessage } = useMissingApiKeyHandler(t);
   const { handle: handleAccountingRuleConflictMessage } = useAccountingRuleConflictMessageHandler(t);
   const { handle: handleCalendarReminder } = useCalendarReminderHandler(t);
@@ -122,6 +126,24 @@ export function useMessageHandling(): UseMessageHandling {
     }
   };
 
+  const handleProgressUpdates = (rawData: ProgressUpdateResultData): Notification | null => {
+    const subtype = rawData.subtype;
+
+    if (subtype === SocketMessageProgressUpdateSubType.CSV_IMPORT_RESULT) {
+      return handleCsvImportResult(rawData);
+    }
+    else if (subtype === SocketMessageProgressUpdateSubType.EVM_UNDECODED_TRANSACTIONS) {
+      setUndecodedTransactionsStatus(rawData);
+    }
+    else if (subtype === SocketMessageProgressUpdateSubType.PROTOCOL_CACHE_UPDATES) {
+      setProtocolCacheStatus(rawData);
+    }
+    else if (subtype === SocketMessageProgressUpdateSubType.HISTORICAL_PRICE_QUERY_STATUS) {
+      setHistoricalAssetPriceStatus(rawData);
+    }
+    return null;
+  };
+
   const handleMessage = async (data: string): Promise<void> => {
     const message: WebsocketMessage = WebsocketMessage.parse(camelCaseTransformer(JSON.parse(data)));
     const type = message.type;
@@ -146,9 +168,6 @@ export function useMessageHandling(): UseMessageHandling {
     }
     else if (type === SocketMessageType.EVM_TRANSACTION_STATUS) {
       setTxQueryStatus(message.data);
-    }
-    else if (type === SocketMessageType.EVM_UNDECODED_TRANSACTIONS) {
-      setUndecodedTransactionsStatus(message.data);
     }
     else if (type === SocketMessageType.HISTORY_EVENTS_STATUS) {
       setEventsQueryStatus(message.data);
@@ -180,14 +199,11 @@ export function useMessageHandling(): UseMessageHandling {
     else if (type === SocketMessageType.CALENDAR_REMINDER) {
       addNotification(handleCalendarReminder(message.data));
     }
-    else if (type === SocketMessageType.PROTOCOL_CACHE_UPDATES) {
-      setProtocolCacheStatus(message.data);
-    }
-    else if (type === SocketMessageType.CSV_IMPORT_RESULT) {
-      addNotification(handleCsvImportResult(message.data));
-    }
     else if (type === SocketMessageType.EXCHANGE_UNKNOWN_ASSET) {
       addNotification(handleExchangeUnknownAsset(message.data));
+    }
+    else if (type === SocketMessageType.PROGRESS_UPDATES) {
+      addNotification(handleProgressUpdates(message.data));
     }
     else {
       logger.warn(`Unsupported socket message received: '${type}'`);
@@ -207,12 +223,12 @@ export function useMessageHandling(): UseMessageHandling {
         notifications.push(handleSnapshotError(object));
       else if (object.type === SocketMessageType.EVM_TRANSACTION_STATUS)
         setTxQueryStatus(object);
-      else if (object.type === SocketMessageType.EVM_UNDECODED_TRANSACTIONS)
-        setUndecodedTransactionsStatus(object);
       else if (object.type === SocketMessageType.DB_UPGRADE_STATUS)
         updateDbUpgradeStatus(object);
       else if (object.type === SocketMessageType.DATA_MIGRATION_STATUS)
         updateDataMigrationStatus(object);
+      else if (object.type === SocketMessageType.PROGRESS_UPDATES)
+        handleProgressUpdates(object);
       else logger.error('unsupported message:', message);
     }
     catch {

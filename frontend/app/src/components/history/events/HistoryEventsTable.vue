@@ -42,6 +42,7 @@ const props = defineProps<{
   excludeIgnored: boolean;
   groupLoading: boolean;
   identifiers?: string[];
+  highlightedIdentifiers?: string[];
 }>();
 
 const emit = defineEmits<{
@@ -343,6 +344,7 @@ function forceRedecode(): void {
             :event-group="row"
             :loading="sectionLoading || eventsLoading"
             :has-ignored-event="hasIgnoredEvent"
+            :highlighted-identifiers="highlightedIdentifiers"
             @edit-event="emit('show:form', {
               type: 'event',
               data: {

@@ -1,5 +1,7 @@
 import {
   type ActionResult,
+  type HistoricalAssetPricePayload,
+  HistoricalAssetPriceResponse,
   LocationData,
   NetValue,
   TimedAssetBalances,
@@ -9,6 +11,7 @@ import {
 import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
 import { handleResponse, validStatus } from '@/services/utils';
+import type { PendingTask } from '@/types/task';
 
 interface UseStatisticsApiReturn {
   queryNetValueData: (includeNfts: boolean) => Promise<NetValue>;
@@ -17,6 +20,8 @@ interface UseStatisticsApiReturn {
   queryLatestLocationValueDistribution: () => Promise<LocationData>;
   queryLatestAssetValueDistribution: () => Promise<TimedAssetBalances>;
   queryStatisticsRenderer: () => Promise<string>;
+  queryHistoricalAssetPrices: (payload: HistoricalAssetPricePayload) => Promise<PendingTask>;
+  queryCachedHistoricalAssetPrices: (payload: HistoricalAssetPricePayload) => Promise<HistoricalAssetPriceResponse>;
 }
 
 export function useStatisticsApi(): UseStatisticsApiReturn {
@@ -99,7 +104,26 @@ export function useStatisticsApi(): UseStatisticsApiReturn {
     return handleResponse(response);
   };
 
+  const internalHistoricalAssetPrices = async <T>(payload: HistoricalAssetPricePayload, asyncQuery: boolean = false): Promise<T> => {
+    const response = await api.instance.post<ActionResult<T>>('/balances/historical/asset/prices', snakeCaseTransformer({
+      ...payload,
+      asyncQuery,
+    }), {
+      validateStatus: validStatus,
+    });
+
+    return handleResponse(response);
+  };
+
+  const queryHistoricalAssetPrices = async (payload: HistoricalAssetPricePayload): Promise<PendingTask> => internalHistoricalAssetPrices<PendingTask>(payload, true);
+  const queryCachedHistoricalAssetPrices = async (payload: HistoricalAssetPricePayload): Promise<HistoricalAssetPriceResponse> => {
+    const response = await internalHistoricalAssetPrices<HistoricalAssetPriceResponse>(payload);
+    return HistoricalAssetPriceResponse.parse(response);
+  };
+
   return {
+    queryCachedHistoricalAssetPrices,
+    queryHistoricalAssetPrices,
     queryLatestAssetValueDistribution,
     queryLatestLocationValueDistribution,
     queryNetValueData,
