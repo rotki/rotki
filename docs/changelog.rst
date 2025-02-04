@@ -2,7 +2,8 @@
 Changelog
 =========
 
-* :feature:`-` For the asset amount and value graph, users can now choose to use historical events and prices as the source, instead of snapshots.
+* :feature:`1379` For the asset amount and value graph, users can now choose to use historical events and prices as the source, instead of snapshots.
+* :bug:`-` Block production events will no longer blindly trust the MEV relay for the MEV reward but instead track exact transactions sent to fee recipient as MEV reward. Also covering the rare case of multiple MEV reward transactions for a single block.
 * :bug:`-` A problem with decoding WETH events in transactions from safes or other smart contracts on arbitrum will now be fixed.
 * :feature:`-` Extrafi optimism incentive rewards sent directly to the wallet will now be properly seen as defi rewards.
 * :feature:`-` History events export will now include the symbol or name of the asset to improve readability of entries.
@@ -34,7 +35,7 @@ Changelog
 * :bug:`-` Deleting an ethereum address will now remove the withdrawals cache for that address so re-adding it will now properly detect ethereum staking withdrawals again.
 * :bug:`-` Fix double count of cowswap fees.
 * :bug:`-` Fix an error when merging two assets if they both appear at the same snapshot.
-* :bug:`-` Allow the rotki app to be minimized using the shortcut for each platform.
+* :bug:`-` Allow rotki app to be minimized using the shortcut for each platform.
 * :bug:`-` Deleting Kusama, Polkadot, or Beaconchain RPC URL should now work properly again.
 * :bug:`-` Some curve event edge cases will now be properly decoded and accounted for.
 * :bug:`-` rotki should now warn you again when gnosis pay authentication token expires.

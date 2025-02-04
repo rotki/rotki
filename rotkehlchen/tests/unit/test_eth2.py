@@ -708,6 +708,7 @@ def test_eth_validators_performance(eth2, database, ethereum_accounts):
                 timestamp=timestampms,
                 balance=Balance(block_reward_1),
                 fee_recipient=vindex1_address,
+                fee_recipient_tracked=True,
                 block_number=block_number,
                 is_mev_reward=False,
             ), EthBlockEvent(
@@ -715,6 +716,7 @@ def test_eth_validators_performance(eth2, database, ethereum_accounts):
                 timestamp=TimestampMS(timestampms + (1 * (HOUR_IN_SECONDS * 1000))),
                 balance=Balance(mev_reward_1),
                 fee_recipient=vindex1_address,
+                fee_recipient_tracked=True,
                 block_number=block_number,
                 is_mev_reward=True,
             ), EthBlockEvent(
@@ -722,6 +724,7 @@ def test_eth_validators_performance(eth2, database, ethereum_accounts):
                 timestamp=TimestampMS(timestampms + (2 * (HOUR_IN_SECONDS * 1000))),
                 balance=Balance(block_reward_2),  # since mev builder gets it we shouldn't count it
                 fee_recipient=mev_builder_address,
+                fee_recipient_tracked=True,
                 block_number=block_number + 1,
                 is_mev_reward=False,
             ), EthBlockEvent(
@@ -729,6 +732,7 @@ def test_eth_validators_performance(eth2, database, ethereum_accounts):
                 timestamp=TimestampMS(timestampms + (3 * (HOUR_IN_SECONDS * 1000))),
                 balance=Balance(mev_reward_2),
                 fee_recipient=vindex2_address,
+                fee_recipient_tracked=True,
                 block_number=block_number + 1,
                 is_mev_reward=True,
             ), EvmEvent(
@@ -765,6 +769,7 @@ def test_eth_validators_performance(eth2, database, ethereum_accounts):
                 timestamp=TimestampMS(timestampms + (7 * (HOUR_IN_SECONDS * 1000))),
                 balance=Balance(no_mev_block_reward_2),
                 fee_recipient=vindex2_address,
+                fee_recipient_tracked=True,
                 block_number=16212625,
                 is_mev_reward=False,
             ), EthWithdrawalEvent(
@@ -853,6 +858,7 @@ def test_eth_validators_performance_recent(eth2, database, ethereum_accounts):
                 timestamp=TimestampMS(1666693607000),
                 balance=Balance(block_reward_1),
                 fee_recipient=ethereum_accounts[0],
+                fee_recipient_tracked=True,
                 block_number=15824493,
                 is_mev_reward=False,
             ),
@@ -932,6 +938,7 @@ def test_combine_block_with_tx_events(eth2, database):
                 timestamp=timestampms,
                 balance=Balance(FVal('0.126419309459217215')),
                 fee_recipient=mev_builder_address,
+                fee_recipient_tracked=True,
                 block_number=block_number,
                 is_mev_reward=False,
             ), EthBlockEvent(
@@ -939,6 +946,7 @@ def test_combine_block_with_tx_events(eth2, database):
                 timestamp=timestampms,
                 balance=Balance(mev_reward),
                 fee_recipient=vindex1_address,
+                fee_recipient_tracked=True,
                 block_number=block_number,
                 is_mev_reward=True,
             ), EvmEvent(

@@ -22,6 +22,7 @@ from rotkehlchen.constants.assets import A_DAI, A_USDT
 from rotkehlchen.db.addressbook import DBAddressbook
 from rotkehlchen.db.filtering import AddressbookFilterQuery
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.types import HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.tests.utils.api import (
     ASYNC_TASK_WAIT_TIMEOUT,
@@ -355,6 +356,18 @@ def _add_blockchain_accounts_test_start(
         token_balances=token_balances,
     )
 
+    with rotki.data.db.user_write() as write_cursor:  # add block production with new account as recpient  # noqa: E501
+        write_cursor.execute(
+            'INSERT INTO history_events(identifier, entry_type, event_identifier, sequence_index, timestamp, location, location_label, asset, amount, usd_value, notes, type, subtype) '  # noqa: E501
+            "VALUES(1, 4, 'BP1_17153311', 0, 1682911787000, 'f', ?, 'ETH', '0.1', '100', ?, ?, 'block production')",  # noqa: E501
+            (
+                new_eth_accounts[0],
+                f'Validator 4242 produced block 17153311 with 0.1 ETH going to {new_eth_accounts[0]} as the block reward',  # noqa: E501
+                HistoryEventType.INFORMATIONAL.serialize(),
+            ),
+        )
+        write_cursor.execute('INSERT INTO eth_staking_events_info(identifier, validator_index, is_exit_or_blocknumber) VALUES(1, 4242, 17153311)')  # noqa: E501
+
     # The application has started only with 2 ethereum accounts. Let's add two more
     data = {
         'accounts': [{'address': x} for x in new_eth_accounts],
@@ -390,13 +403,16 @@ def _add_blockchain_accounts_test_start(
         token_balances=setup.token_balances,
         also_btc=True,
     )
-    # Also make sure they are added in the DB
+    # Also make sure that DB has been properly modified
     with rotki.data.db.conn.read_ctx() as cursor:
+        # accounts should be added in the DB
         accounts = rotki.data.db.get_blockchain_accounts(cursor)
-    assert len(accounts.eth) == 4
-    assert all(acc in accounts.eth for acc in all_eth_accounts)
-    assert len(accounts.btc) == 2
-    assert all(acc in accounts.btc for acc in btc_accounts)
+        assert len(accounts.eth) == 4
+        assert all(acc in accounts.eth for acc in all_eth_accounts)
+        assert len(accounts.btc) == 2
+        assert all(acc in accounts.btc for acc in btc_accounts)
+        # The block production event type for the fee recipient we start tracking should change
+        assert cursor.execute('SELECT type from history_events WHERE identifier=1').fetchone()[0] == HistoryEventType.STAKING.serialize()  # noqa: E501
 
     # Now try to query all balances to make sure the result is the stored
     with ExitStack() as stack:
@@ -419,6 +435,7 @@ def _add_blockchain_accounts_test_start(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_modules', [['eth2']])
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
 @pytest.mark.parametrize('btc_accounts', [[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]])
 @pytest.mark.parametrize('query_balances_before_first_modification', [True, False])
@@ -1411,6 +1428,18 @@ def _remove_blockchain_accounts_test_start(
         defi_balances=defi_balances,
     )
 
+    with rotki.data.db.user_write() as write_cursor:  # add block production with removed account as recpient  # noqa: E501
+        write_cursor.execute(
+            'INSERT INTO history_events(identifier, entry_type, event_identifier, sequence_index, timestamp, location, location_label, asset, amount, usd_value, notes, type, subtype) '  # noqa: E501
+            "VALUES(1, 4, 'BP1_17153311', 0, 1682911787000, 'f', ?, 'ETH', '0.1', '100', ?, ?, 'block production')",  # noqa: E501
+            (
+                removed_eth_accounts[0],
+                f'Validator 4242 produced block 17153311 with 0.1 ETH going to {removed_eth_accounts[0]} as the block reward',  # noqa: E501
+                HistoryEventType.STAKING.serialize(),
+            ),
+        )
+        write_cursor.execute('INSERT INTO eth_staking_events_info(identifier, validator_index, is_exit_or_blocknumber) VALUES(1, 4242, 17153311)')  # noqa: E501
+
     # The application has started with 4 ethereum accounts. Remove two and see that balances match
     with ExitStack() as stack:
         setup.enter_ethereum_patches(stack)
@@ -1440,13 +1469,16 @@ def _remove_blockchain_accounts_test_start(
     if query_balances_before_first_modification:
         assert rotki.chains_aggregator.defi_balances == {eth_accounts_after_removal[0]: defi_balances[eth_accounts_after_removal[0]]}  # noqa: E501
 
-    # Also make sure they are removed from the DB
+    # Also make sure that DB has been properly modified
     with rotki.data.db.conn.read_ctx() as cursor:
+        # accounts should be removed from the DB
         accounts = rotki.data.db.get_blockchain_accounts(cursor)
-    assert len(accounts.eth) == 2
-    assert all(acc in accounts.eth for acc in eth_accounts_after_removal)
-    assert len(accounts.btc) == 2
-    assert all(acc in accounts.btc for acc in btc_accounts)
+        assert len(accounts.eth) == 2
+        assert all(acc in accounts.eth for acc in eth_accounts_after_removal)
+        assert len(accounts.btc) == 2
+        assert all(acc in accounts.btc for acc in btc_accounts)
+        # The block production event type for the fee recipient we stopped tracking should change
+        assert cursor.execute('SELECT type from history_events WHERE identifier=1').fetchone()[0] == HistoryEventType.INFORMATIONAL.serialize()  # noqa: E501
 
     # Now try to query all balances to make sure the result is the stored
     with ExitStack() as stack:
@@ -1471,6 +1503,7 @@ def _remove_blockchain_accounts_test_start(
 
 @pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize('number_of_eth_accounts', [4])
+@pytest.mark.parametrize('ethereum_modules', [['eth2']])
 @pytest.mark.parametrize('btc_accounts', [[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]])
 @pytest.mark.parametrize('query_balances_before_first_modification', [True, False])
 @pytest.mark.parametrize('gnosis_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])

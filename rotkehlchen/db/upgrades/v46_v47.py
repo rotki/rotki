@@ -62,6 +62,44 @@ def upgrade_v46_to_v47(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
                 (0,),  # decoded tx state
             )
 
+    @progress_step(description='Adjust block production events.')
+    def _adjust_block_production_events(write_cursor: 'DBCursor') -> None:
+        """Due to the block production changes we need to make sure that all MEV
+        events are recalculated and that we properly use INFORMATIONAL when the recipient
+        is not tracked.
+        """
+        # Delete MEV events that were already moved to the block events. They will rerun
+        write_cursor.execute(
+            "DELETE FROM history_events WHERE sequence_index > 1 AND event_identifier LIKE 'BP1_%'",  # noqa: E501
+        )
+        # Modify all MEV relayer events to be informational and properly display new notes
+        write_cursor.execute("""
+        UPDATE history_events
+        SET
+            type = 'informational',
+            subtype = 'mev reward',
+            notes = 'Validator ' ||
+            (SELECT SE.validator_index FROM eth_staking_events_info SE WHERE SE.identifier = history_events.identifier) ||
+            ' produced block ' ||
+            (SELECT SE.is_exit_or_blocknumber FROM eth_staking_events_info SE WHERE SE.identifier = history_events.identifier) ||
+            '. Relayer reported ' ||
+            history_events.amount ||
+            ' ETH as the MEV reward going to ' ||
+            COALESCE(history_events.location_label, 'Unknown')
+        WHERE
+            entry_type = 4 AND
+            sequence_index = 1 AND
+        EXISTS (SELECT 1 FROM eth_staking_events_info SE WHERE SE.identifier = history_events.identifier);
+        """)  # noqa: E501
+        # Modify block proposals to be informational if the fee recipient is not tracked
+        write_cursor.execute("""
+        UPDATE history_events
+        SET type = 'informational'
+        WHERE entry_type = 4 AND sequence_index = 0 AND location_label NOT IN (
+            SELECT account FROM blockchain_accounts WHERE blockchain = 'ETH'
+        );
+        """)
+
     @progress_step(description='Remove unneeded nft collection assets (may take some time).')
     def _remove_nft_collection_assets(write_cursor: 'DBCursor') -> None:
         """Remove erc721 assets that have no collectible id, and also any erc20 assets

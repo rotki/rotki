@@ -23,11 +23,12 @@ from rotkehlchen.errors.api import PremiumPermissionError
 from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
 from rotkehlchen.history.events.structures.eth2 import EthBlockEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium, has_premium_check
-from rotkehlchen.types import ChecksumEvmAddress, Eth2PubKey, Timestamp
+from rotkehlchen.types import ChecksumEvmAddress, Eth2PubKey, Timestamp, deserialize_evm_tx_hash
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.data_structures import LRUCacheWithRemove
 from rotkehlchen.utils.interfaces import EthereumModule
@@ -566,8 +567,8 @@ class Eth2(EthereumModule):
         transaction events if they can be found"""
         with self.database.conn.read_ctx() as cursor:
             cursor.execute(
-                'SELECT B_H.identifier, B_T.block_number, B_H.notes FROM evm_transactions B_T '
-                'LEFT JOIN evm_events_info B_E '
+                'SELECT B_H.identifier, B_T.block_number, B_H.notes, B_T.tx_hash '
+                'FROM evm_transactions B_T LEFT JOIN evm_events_info B_E '
                 'ON B_T.tx_hash=B_E.tx_hash LEFT JOIN history_events B_H '
                 'ON B_E.identifier=B_H.identifier WHERE '
                 'B_H.asset=? AND B_H.type=? AND B_H.subtype=? '
@@ -576,28 +577,43 @@ class Eth2(EthereumModule):
                 'FROM history_events A_H LEFT JOIN eth_staking_events_info A_S '
                 'ON A_H.identifier=A_S.identifier WHERE A_H.subtype=? AND '
                 'A_S.is_exit_or_blocknumber=B_T.block_number AND '
-                'A_H.amount=B_H.amount AND A_H.location_label=B_H.location_label)',
+                ' A_H.location_label=B_H.location_label)',
                 (A_ETH.identifier, HistoryEventType.RECEIVE.serialize(),
                  HistoryEventSubType.NONE.serialize(), HistoryEventSubType.MEV_REWARD.serialize()),
             )
-            result = cursor.fetchall()
+            changes = []
+            for entry in cursor:
+                event_identifier = EthBlockEvent.form_event_identifier(entry[1])
+                tx_hash = deserialize_evm_tx_hash(entry[3])
+                changes.append((
+                    event_identifier,
+                    event_identifier,
+                    f'{entry[2]} as mev reward for block {entry[1]} in {tx_hash.hex()}',  # pylint: disable=no-member
+                    HistoryEventType.STAKING.serialize(),
+                    HistoryEventSubType.MEV_REWARD.serialize(),
+                    entry[0],
+                    tx_hash,
+                ))
 
-        changes = [(
-            EthBlockEvent.form_event_identifier(entry[1]),
-            2,
-            f'{entry[2]} as mev reward for block {entry[1]}',
-            HistoryEventType.STAKING.serialize(),
-            HistoryEventSubType.MEV_REWARD.serialize(),
-            entry[0],
-        ) for entry in result]
         with self.database.user_write() as write_cursor:
             for changes_entry in changes:
+                result = write_cursor.execute(
+                    'SELECT COUNT(*) FROM history_events HE LEFT JOIN evm_events_info EE ON '
+                    'HE.identifier = EE.identifier WHERE HE.event_identifier=? AND EE.tx_hash=?',
+                    (changes_entry[0], changes_entry[6]),
+                ).fetchone()
+                if result == 1:  # Has already been moved.
+                    log.debug(f'Did not move history event with {changes_entry} in combine_block_with_tx_events since event with same tx_hash already combined in the block')  # noqa: E501
+                    write_cursor.execute('DELETE FROM history_events WHERE identifier=?', (changes_entry[5],))  # noqa: E501
+                    continue
+
                 try:
                     write_cursor.execute(
                         'UPDATE history_events '
-                        'SET event_identifier=?, sequence_index=?, notes=?, type=?, subtype=?'
-                        'WHERE identifier=?',
-                        changes_entry,
+                        'SET event_identifier=?, sequence_index=('
+                        'SELECT COUNT(*) FROM history_events E2 WHERE E2.event_identifier=?)+1, '
+                        'notes=?, type=?, subtype=? WHERE identifier=?',
+                        changes_entry[:-1],
                     )
                 except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
                     log.warning(f'Could not update history events with {changes_entry} in combine_block_with_tx_events due to {e!s}')  # noqa: E501
@@ -713,9 +729,30 @@ class Eth2(EthereumModule):
                 validators,
             )
 
+    def _adjust_blockproduction_at_account_modification(
+            self,
+            address: ChecksumEvmAddress,
+            event_type: Literal[HistoryEventType.INFORMATIONAL, HistoryEventType.STAKING],
+    ) -> None:
+        """Modify any existing block proposals to be staking and no longer informational
+           if the fee recipient is the newly added address and vice versa if the fee recipient
+           is the removed address then turn to informational."""
+        with self.database.user_write() as write_cursor:
+            write_cursor.execute(
+                'UPDATE history_events SET type=? WHERE entry_type=? AND sequence_index=0 AND location_label=?',  # noqa: E501
+                (
+                    event_type.serialize(),
+                    HistoryBaseEntryType.ETH_BLOCK_EVENT.serialize_for_db(),
+                    address,
+                ),
+            )
+
     # -- Methods following the EthereumModule interface -- #
     def on_account_addition(self, address: ChecksumEvmAddress) -> None:
-        """Just add validators to DB."""
+        """
+        - Add validators to the DB for the new address if any
+        - Adjust the existing block production events to maybe not be informational.
+        """
         try:
             self.detect_and_refresh_validators([address])
         except RemoteError as e:
@@ -724,8 +761,13 @@ class Eth2(EthereumModule):
                 f' If you have Eth2 staked balances the final balance results may not be accurate',
             )
 
+        self._adjust_blockproduction_at_account_modification(address, HistoryEventType.STAKING)
+
     def on_account_removal(self, address: ChecksumEvmAddress) -> None:
-        pass
+        """
+        Adjust existing block production events to become informational if they involve the address
+        """
+        self._adjust_blockproduction_at_account_modification(address, HistoryEventType.INFORMATIONAL)  # noqa: E501
 
     def deactivate(self) -> None:
         with self.database.user_write() as write_cursor:

@@ -166,6 +166,7 @@ def predefined_events_to_insert() -> list['HistoryBaseEntry']:
         timestamp=TimestampMS(1691693607000),
         balance=Balance(FVal('0.126419309459217215')),
         fee_recipient=string_to_evm_address('0x690B9A9E9aa1C9dB991C7721a92d351Db4FaC990'),
+        fee_recipient_tracked=True,
         block_number=15824493,
         is_mev_reward=False,
     )]

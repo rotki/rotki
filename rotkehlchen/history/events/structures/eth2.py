@@ -231,7 +231,26 @@ class EthWithdrawalEvent(EthStakingEvent):
 
 
 class EthBlockEvent(EthStakingEvent):
-    """An ETH block production/MEV event"""
+    """An ETH block production/MEV event
+
+    These events have a kind of special meaning based on type/subtype and sequence index.
+    0 -> Normal block production. This contains the fee recipient event. May or may
+    not be a tracked address
+    1 -> MEV event. This contains the MEV reported by the relayer (we get this from beaconcha.in).
+    This may not be the actual true amount received by the mev recipient. Sometimes they mistakenly
+    add the fee amount in too if the fee is also received by the same address or the amount
+    is simply wrong.
+
+    -----
+
+    Even though they are EVM history events and not block events, by changing their event
+    identifier to be same as the blocks we move the MEV receivals here with sequence
+    index 2 and higher.
+
+    2 ++ -> We move here all the actual MEV transfers to the fee recipient. As there can be
+    multiple ones, this is what we must count as the actual MEV reported. Also we should not trust
+    what the relayer (seq index 1) is reporting. Only what we verify we received.
+    """
 
     def __init__(
             self,
@@ -239,6 +258,7 @@ class EthBlockEvent(EthStakingEvent):
             timestamp: TimestampMS,
             balance: Balance,
             fee_recipient: ChecksumEvmAddress,
+            fee_recipient_tracked: bool,
             block_number: int,
             is_mev_reward: bool,
             identifier: int | None = None,
@@ -247,25 +267,27 @@ class EthBlockEvent(EthStakingEvent):
 
         if is_mev_reward:
             sequence_index = 1
+            event_type = HistoryEventType.INFORMATIONAL  # the Relayer reported MEV is always info
             event_subtype = HistoryEventSubType.MEV_REWARD
-            name = 'mev reward'
+            notes = f'Validator {validator_index} produced block {block_number}. Relayer reported {balance.amount} ETH as the MEV reward going to {fee_recipient}'  # noqa: E501
         else:
             sequence_index = 0
+            event_type = HistoryEventType.STAKING if fee_recipient_tracked else HistoryEventType.INFORMATIONAL  # noqa: E501
             event_subtype = HistoryEventSubType.BLOCK_PRODUCTION
-            name = 'block reward'
+            notes = f'Validator {validator_index} produced block {block_number} with {balance.amount} ETH going to {fee_recipient} as the block reward'  # noqa: E501
 
         super().__init__(
             identifier=identifier,
             event_identifier=self.form_event_identifier(block_number) if event_identifier is None else event_identifier,  # noqa: E501
             sequence_index=sequence_index,
             timestamp=timestamp,
-            event_type=HistoryEventType.STAKING,
+            event_type=event_type,
             event_subtype=event_subtype,
             validator_index=validator_index,
             balance=balance,
             location_label=fee_recipient,
             is_exit_or_blocknumber=block_number,
-            notes=f'Validator {validator_index} produced block {block_number} with {balance.amount} ETH going to {fee_recipient} as the {name}',  # noqa: E501
+            notes=notes,
         )
 
     @staticmethod
@@ -289,7 +311,13 @@ class EthBlockEvent(EthStakingEvent):
         return super().serialize() | {'validator_index': self.validator_index, 'block_number': self.is_exit_or_blocknumber}  # noqa: E501
 
     @classmethod
-    def deserialize_from_db(cls: type['EthBlockEvent'], entry: tuple) -> 'EthBlockEvent':
+    def deserialize_from_db(cls: type['EthBlockEvent'], entry: tuple, fee_recipient_tracked: bool) -> 'EthBlockEvent':  # type: ignore[override]  # noqa: E501
+        """
+        We have an annoying typing problem here. We are breaking the Liskov principle by adding an
+        extra argument to the subclass function. But not sure what else to do since we need it.
+        Mypy will stop complaining if we make it optional but not sure what to put as default
+        value in that case. This here and in the deserialize() function needs some more thinking
+        """
         entry = cast('ETH_STAKING_EVENT_DB_TUPLE_READ', entry)
         amount = deserialize_fval(entry[5], 'amount', 'eth block event')
         usd_value = deserialize_fval(entry[6], 'usd_value', 'eth block event')
@@ -299,13 +327,14 @@ class EthBlockEvent(EthStakingEvent):
             timestamp=TimestampMS(entry[3]),
             balance=Balance(amount, usd_value),
             fee_recipient=entry[4],  # type: ignore  # exists for these events
+            fee_recipient_tracked=fee_recipient_tracked,
             validator_index=entry[8],
             block_number=entry[9],
             is_mev_reward=entry[7] == HistoryEventSubType.MEV_REWARD.serialize(),
         )
 
     @classmethod
-    def deserialize(cls: type['EthBlockEvent'], data: dict[str, Any]) -> 'EthBlockEvent':
+    def deserialize(cls: type['EthBlockEvent'], data: dict[str, Any], fee_recipient_tracked: bool) -> 'EthBlockEvent':  # type: ignore[override]  # noqa: E501
         base_data = cls._deserialize_base_history_data(data)
         try:
             validator_index = data['validator_index']
@@ -322,6 +351,7 @@ class EthBlockEvent(EthStakingEvent):
             balance=base_data['balance'],
             validator_index=validator_index,
             fee_recipient=fee_recipient,
+            fee_recipient_tracked=fee_recipient_tracked,
             block_number=block_number,
             is_mev_reward=base_data['event_subtype'] == HistoryEventSubType.MEV_REWARD.serialize(),
         )
@@ -344,17 +374,13 @@ class EthBlockEvent(EthStakingEvent):
         with accounting.database.conn.read_ctx() as cursor:
             accounts = accounting.database.get_blockchain_accounts(cursor)
 
-        if self.location_label not in accounts.eth:
-            return 1  # fee recipient not tracked. So we do not add it in accounting
+        if self.event_type != HistoryEventType.STAKING or self.location_label not in accounts.eth:
+            return 1  # fee recipient not tracked or mev relay info. So do not add it in accounting
 
-        if self.event_subtype == HistoryEventSubType.MEV_REWARD:
-            name = 'Mev reward'
-        else:
-            name = 'Block reward'
-
+        assert self.event_subtype == HistoryEventSubType.BLOCK_PRODUCTION, 'Only block production events should come here'  # Because MEV rewards are always information and actual MEV comes in as transaction events # noqa: E501
         accounting.add_in_event(
             event_type=AccountingEventType.HISTORY_EVENT,
-            notes=f'{name} of {self.balance.amount} for block {self.is_exit_or_blocknumber}',
+            notes=f'Block reward of {self.balance.amount} for block {self.is_exit_or_blocknumber}',
             location=self.location,
             timestamp=self.get_timestamp_in_sec(),
             asset=self.asset,

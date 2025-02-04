@@ -57,6 +57,7 @@ from rotkehlchen.types import (
     ChainID,
     EVMTxHash,
     Location,
+    SupportedBlockchain,
     Timestamp,
     TimestampMS,
 )
@@ -458,10 +459,12 @@ class DBHistoryEvents:
             group_by_event_ids=group_by_event_ids,
             entries_limit=FREE_HISTORY_EVENTS_LIMIT,
         )
-
         if filter_query.pagination is not None:
             base_query = f'SELECT * FROM ({base_query}) {filter_query.pagination.prepare()}'
 
+        ethereum_tracked_accounts = self.db.get_blockchain_accounts(cursor).get(
+            SupportedBlockchain.ETHEREUM,
+        )
         cursor.execute(base_query, filters_bindings)
         output: list[HistoryBaseEntry] | list[tuple[int, HistoryBaseEntry]] = []
         type_idx = 1 if group_by_event_ids else 0
@@ -482,9 +485,10 @@ class DBHistoryEvents:
                         HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT,
                         HistoryBaseEntryType.ETH_BLOCK_EVENT,
                 ):
+                    location_label_tuple = entry[data_start_idx + 5:data_start_idx + 6]
                     data = (
                         entry[data_start_idx:data_start_idx + 4] +
-                        entry[data_start_idx + 5:data_start_idx + 6] +
+                        location_label_tuple +
                         entry[data_start_idx + 7:data_start_idx + 9] +
                         entry[data_start_idx + 11:data_start_idx + 12] +
                         entry[data_start_idx + HISTORY_BASE_ENTRY_LENGTH + EVM_FIELD_LENGTH:data_start_idx + HISTORY_BASE_ENTRY_LENGTH + EVM_FIELD_LENGTH + ETH_STAKING_FIELD_LENGTH + 1]  # noqa: E501
@@ -492,7 +496,7 @@ class DBHistoryEvents:
                     if entry_type == HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT:
                         deserialized_event = EthWithdrawalEvent.deserialize_from_db(data)
                     else:
-                        deserialized_event = EthBlockEvent.deserialize_from_db(data)
+                        deserialized_event = EthBlockEvent.deserialize_from_db(data, fee_recipient_tracked=location_label_tuple[0] in ethereum_tracked_accounts)  # noqa: E501
 
                 elif entry_type == HistoryBaseEntryType.ETH_DEPOSIT_EVENT:
                     data = (
@@ -780,8 +784,8 @@ class DBHistoryEvents:
         cursor.execute(
             'SELECT E.identifier FROM history_events E LEFT JOIN eth_staking_events_info S '
             'ON E.identifier=S.identifier WHERE E.sequence_index=1 AND S.identifier IS NOT NULL '
-            'AND 3=(SELECT COUNT(*) FROM history_events E2 WHERE '
-            'E2.event_identifier=E.event_identifier)',
+            'AND (SELECT COUNT(*) FROM history_events E2 WHERE '
+            'E2.event_identifier=E.event_identifier) > 2',
         )
         return [x[0] for x in cursor]
 

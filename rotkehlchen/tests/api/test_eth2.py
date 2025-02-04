@@ -630,6 +630,7 @@ def test_add_get_edit_delete_eth2_validators(
             timestamp=TimestampMS(1671379127000),
             balance=Balance(FVal(1)),
             fee_recipient=make_evm_address(),
+            fee_recipient_tracked=True,
             block_number=42,
             is_mev_reward=True,
         )]
