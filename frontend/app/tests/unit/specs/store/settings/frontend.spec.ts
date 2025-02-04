@@ -123,6 +123,7 @@ describe('settings:frontend', () => {
       thousandSeparator: '|',
       decimalSeparator: '-',
       refreshPeriod: 120,
+      notifyNewNfts: false,
       explorers: {
         [Blockchain.ETH]: {
           transaction: 'explore/tx',

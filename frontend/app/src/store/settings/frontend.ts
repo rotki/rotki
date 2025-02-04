@@ -52,6 +52,7 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
   const savedFilters = useComputedRef(settings, 'savedFilters');
   const balanceUsdValueThreshold = useComputedRef(settings, 'balanceUsdValueThreshold');
   const useHistoricalAssetBalances = useComputedRef(settings, 'useHistoricalAssetBalances');
+  const notifyNewNfts = useComputedRef(settings, 'notifyNewNfts');
 
   const globalItemsPerPage = useItemsPerPage();
 
@@ -136,6 +137,7 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
     lightTheme,
     minimumDigitToBeAbbreviated,
     nftsInNetValue,
+    notifyNewNfts,
     profitLossReportPeriod,
     queryPeriod,
     refreshPeriod,

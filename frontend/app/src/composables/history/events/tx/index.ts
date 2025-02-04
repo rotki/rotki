@@ -1,4 +1,5 @@
 import { groupBy, omit } from 'es-toolkit';
+import { startPromise } from '@shared/utils';
 import { Section, Status } from '@/types/status';
 import {
   type AddTransactionHashPayload,
@@ -26,6 +27,7 @@ import { useSupportedChains } from '@/composables/info/chains';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
 import { useHistoryTransactionDecoding } from '@/composables/history/events/tx/decoding';
 import { useExchangesStore } from '@/store/exchanges/index';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import type { ActionStatus } from '@/types/action';
 import type { Blockchain } from '@rotki/common';
 import type { Exchange } from '@/types/exchanges';
@@ -46,14 +48,22 @@ export const useHistoryTransactions = createSharedComposable(() => {
   const { connectedExchanges } = storeToRefs(useExchangesStore());
   const { awaitTask, isTaskRunning } = useTaskStore();
   const { removeQueryStatus, resetQueryStatus } = useTxQueryStatusStore();
+  const { updateSetting } = useFrontendSettingsStore();
   const { getChainName, getEvmChainName, isEvmLikeChains, supportsTransactions } = useSupportedChains();
-  const { fetchDisabled, resetStatus, setStatus } = useStatusUpdater(Section.HISTORY_EVENT);
+  const { fetchDisabled, getStatus, resetStatus, setStatus } = useStatusUpdater(Section.HISTORY_EVENT);
   const {
     decodeTransactionsTask,
     fetchUndecodedTransactionsBreakdown,
     fetchUndecodedTransactionsStatus,
   } = useHistoryTransactionDecoding();
   const { resetUndecodedTransactionsStatus } = useHistoryStore();
+
+  queue.setOnCompletion(() => {
+    if (getStatus() === Status.LOADED) {
+      logger.info('Enabling notifications for newly detected nfts');
+      startPromise(updateSetting({ notifyNewNfts: true }));
+    }
+  });
 
   const syncTransactionTask = async (
     account: EvmChainAddress,
