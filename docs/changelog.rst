@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`-` For the asset amount and value graph, users can now choose to use historical events and prices as the source, instead of snapshots.
 * :bug:`-` A problem with decoding WETH events in transactions from safes or other smart contracts on arbitrum will now be fixed.
 * :feature:`-` Extrafi optimism incentive rewards sent directly to the wallet will now be properly seen as defi rewards.
 * :feature:`-` History events export will now include the symbol or name of the asset to improve readability of entries.
