@@ -4847,6 +4847,7 @@
       "latest_period_date_range": "Latest successfully queried period is between {start} and {end}",
       "latest_period_end_date": "Latest successfully queried period is until {end}",
       "statuses": {
+        "pending": "Pending",
         "querying_evm_tokens_transactions": "evm tokens transactions",
         "querying_internal_transactions": "evm internal transactions",
         "querying_transactions": "evm transactions"
