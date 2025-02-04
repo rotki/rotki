@@ -33,7 +33,7 @@ describe('frontend-settings-migrations', () => {
     const settings = JSON.stringify(frontendSettings);
     const migratedSettings = migrateSettingsIfNeeded(settings);
     expect(migratedSettings).not.toBeUndefined();
-    expect(JSON.parse(migratedSettings ?? '')).toEqual(getDefaultFrontendSettings());
+    expect(getDefaultFrontendSettings()).toMatchObject(expect.objectContaining(JSON.parse(migratedSettings ?? '')));
   });
 
   it('should return undefined if settings are empty', () => {

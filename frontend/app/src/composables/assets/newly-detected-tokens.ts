@@ -1,11 +1,13 @@
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useLoggedUserIdentifier } from '@/composables/user/use-logged-user-identifier';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import type { NewDetectedToken } from '@/types/websocket-messages';
 
 const MAX_SIZE = 500;
+const NEWLY_DETECTED_TOKENS_PREFIX = 'rotki.newly_detected_tokens.';
 
 function createStorage(identifier: string): Ref<NewDetectedToken[]> {
-  return useLocalStorage(`rotki.newly_detected_tokens.${identifier}`, []);
+  return useLocalStorage(`${NEWLY_DETECTED_TOKENS_PREFIX}${identifier}`, []);
 }
 
 export const useNewlyDetectedTokens = createSharedComposable(() => {
@@ -15,6 +17,8 @@ export const useNewlyDetectedTokens = createSharedComposable(() => {
   const { ignoredAssets } = storeToRefs(ignoredAssetStore);
   const { addIgnoredAsset } = ignoredAssetStore;
   const loggedUserIdentifier = useLoggedUserIdentifier();
+  const settingsStore = useFrontendSettingsStore();
+  const { notifyNewNfts } = storeToRefs(settingsStore);
 
   const tokens = computed<NewDetectedToken[]>(() => get(internalTokens));
 
@@ -23,6 +27,10 @@ export const useNewlyDetectedTokens = createSharedComposable(() => {
   };
 
   const addNewDetectedToken = (data: NewDetectedToken): boolean => {
+    if (!get(notifyNewNfts) && data.tokenIdentifier.includes('erc721')) {
+      return false;
+    }
+
     if (data.isIgnored) {
       addIgnoredAsset(data.tokenIdentifier);
       return false;
@@ -33,7 +41,8 @@ export const useNewlyDetectedTokens = createSharedComposable(() => {
 
     if (tokenIndex === -1)
       tokenList.push(data);
-    else tokenList.splice(tokenIndex, 1, data);
+    else
+      tokenList.splice(tokenIndex, 1, data);
 
     set(internalTokens, tokenList.slice(-MAX_SIZE));
     return tokenIndex === -1;
@@ -49,10 +58,12 @@ export const useNewlyDetectedTokens = createSharedComposable(() => {
   });
 
   watch(loggedUserIdentifier, (identifier): void => {
-    if (identifier)
+    if (identifier) {
       internalTokens = createStorage(identifier);
-    else
+    }
+    else {
       internalTokens = ref<NewDetectedToken[]>([]);
+    }
   }, { immediate: true });
 
   return {

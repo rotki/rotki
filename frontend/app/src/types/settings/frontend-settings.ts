@@ -136,6 +136,7 @@ export const FrontendSettings = z.object({
   lightTheme: ThemeColors.default(LIGHT_COLORS),
   minimumDigitToBeAbbreviated: z.number().default(MINIMUM_DIGIT_TO_BE_ABBREVIATED),
   nftsInNetValue: z.boolean().default(true),
+  notifyNewNfts: z.boolean().optional().default(false),
   profitLossReportPeriod: ProfitLossTimeframe.default({
     quarter: Quarter.ALL,
     year: new Date().getFullYear().toString(),

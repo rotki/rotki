@@ -62,6 +62,7 @@ describe('types/user', () => {
       defaultThemeVersion: 1,
       graphZeroBased: true,
       showGraphRangeSelector: true,
+      notifyNewNfts: false,
       nftsInNetValue: true,
       renderAllNftImages: true,
       whitelistedDomainsForNftImages: [],
