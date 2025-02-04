@@ -128,7 +128,8 @@ class DBNestedFilter(DBFilter):
             filterstrings.append(f'({operator.join(filters)})')
             bindings.extend(single_bindings)
 
-        return filterstrings, bindings
+        operator = ' AND ' if self.and_op else ' OR '
+        return [f'({operator.join(filterstrings)})'], bindings
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
