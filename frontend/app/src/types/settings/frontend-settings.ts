@@ -107,7 +107,7 @@ export const BalanceUsdValueThresholdV0 = z.object({
   [BalanceSource.BLOCKCHAIN]: z.string().default('0'),
   [BalanceSource.EXCHANGES]: z.string().default('0'),
   [BalanceSource.MANUAL]: z.string().default('0'),
-});
+}).optional();
 
 export const BalanceUsdValueThresholdV1 = z.record(z.nativeEnum(BalanceSource), z.string().optional());
 
