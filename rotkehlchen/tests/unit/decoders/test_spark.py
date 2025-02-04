@@ -1,12 +1,13 @@
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import Asset, UnderlyingToken
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.spark.constants import CPT_SPARK
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_ETH, A_XDAI
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
@@ -263,6 +264,69 @@ def test_withdraw_from_spark(gnosis_inquirer, gnosis_accounts):
             balance=Balance(amount=FVal(interest_amount)),
             location_label=user_address,
             notes=f'Receive {interest_amount} WETH as interest earned from Spark',
+            counterparty=CPT_SPARK,
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x9DBE4Eb4A0a41955E1DC733E322f84295a0aa5c0']])
+def test_borrow_dai_from_spark(ethereum_inquirer, ethereum_accounts):
+    get_or_create_evm_token(
+        evm_inquirer=ethereum_inquirer,
+        userdb=ethereum_inquirer.database,
+        evm_address=string_to_evm_address('0xf705d2B7e92B3F38e6ae7afaDAA2fEE110fE5914'),
+        chain_id=ethereum_inquirer.chain_id,
+        protocol=CPT_SPARK,
+        token_kind=EvmTokenKind.ERC20,
+        underlying_tokens=[UnderlyingToken(
+            address=string_to_evm_address('0x6B175474E89094C44Da98b954EedeAC495271d0F'),
+            token_kind=EvmTokenKind.ERC20,
+            weight=ONE,
+        )],
+    )
+    tx_hash = deserialize_evm_tx_hash('0x1358fc883e97e30a9c97811a1f91069f3b7a3a2a9b9b8cc3e283f8d61d205526')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    user_address, timestamp, gas_amount, in_amount = ethereum_accounts[0], TimestampMS(1734003227000), '0.005720280710618214', '50'  # noqa: E501
+    expected_events = [
+        EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(gas_amount)),
+            location_label=user_address,
+            notes=f'Burn {gas_amount} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+            asset=Asset('eip155:1/erc20:0xf705d2B7e92B3F38e6ae7afaDAA2fEE110fE5914'),
+            balance=Balance(FVal(in_amount)),
+            location_label=user_address,
+            notes=f'Receive {in_amount} variableDebtDAI from Spark',
+            counterparty=CPT_SPARK,
+            address=ZERO_ADDRESS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=2,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.GENERATE_DEBT,
+            asset=Asset('eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F'),
+            balance=Balance(amount=FVal(in_amount)),
+            location_label=user_address,
+            notes=f'Borrow {in_amount} DAI from Spark with variable APY 11.82%',
+            address=string_to_evm_address('0x4DEDf26112B3Ec8eC46e7E31EA5e123490B05B8B'),
             counterparty=CPT_SPARK,
         ),
     ]
