@@ -131,6 +131,26 @@ def test_get_historical_asset_balance(
         rotkehlchen_api_server: 'APIServer',
         setup_historical_data: None,
 ) -> None:
+    """Test that the historical asset balance endpoint works correctly with both
+    history events (from the setup_historical_data fixture) and also with an exchange trade.
+    """
+    db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
+    with db.user_write() as write_cursor:
+        db.add_trades(
+            write_cursor=write_cursor,
+            trades=[
+                Trade(
+                    timestamp=Timestamp(START_TS + DAY_IN_SECONDS),  # Day 2
+                    location=Location.EXTERNAL,
+                    base_asset=A_BTC,
+                    quote_asset=A_EUR,
+                    trade_type=TradeType.BUY,
+                    amount=AssetAmount(FVal('0.2')),
+                    rate=Price(FVal('16000.0')),
+                ),
+            ],
+        )
+
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
@@ -144,7 +164,7 @@ def test_get_historical_asset_balance(
 
     result = assert_proper_sync_response_with_result(response)
     # Should show post-withdrawal balance
-    assert result['amount'] == '1.5'  # 2 - 0.5
+    assert result['amount'] == '1.7'  # 2 - 0.5 + 0.2
     assert result['price'] == '15806.226022787'
 
 

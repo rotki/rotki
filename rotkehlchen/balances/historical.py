@@ -92,7 +92,11 @@ class HistoricalBalancesManager:
 
         current_balances: dict[Asset, FVal] = defaultdict(FVal)
         for event in events:
-            if self._update_balances(event=event, current_balances=current_balances) is not None:
+            if self._update_balances(
+                event=event,
+                current_balances=current_balances,
+                assets=(asset,),
+            ) is not None:
                 break
 
         try:
@@ -133,7 +137,11 @@ class HistoricalBalancesManager:
         current_balances: dict[Asset, FVal] = defaultdict(FVal)
         amounts: dict[Timestamp, FVal] = defaultdict(lambda: ZERO)
         for event in events:
-            if (negative_balance_data := self._update_balances(event=event, current_balances=current_balances)) is not None:  # noqa: E501
+            if (negative_balance_data := self._update_balances(
+                event=event,
+                current_balances=current_balances,
+                assets=assets,
+            )) is not None:
                 break
 
             for asset in assets:
@@ -143,7 +151,6 @@ class HistoricalBalancesManager:
                     else ts_ms_to_sec(event.timestamp)
                 )
                 amounts[event_ts] += current_balances[asset]
-
         return amounts, negative_balance_data
 
     def get_historical_netvalue(
@@ -406,6 +413,7 @@ class HistoricalBalancesManager:
     def _update_balances(
             event: HistoryEvent | Trade,
             current_balances: dict[Asset, FVal],
+            assets: tuple[Asset, ...] | None = None,
     ) -> tuple[str | int | None, str | None] | None:
         """Updates current balances for a trade or history event, checking for negative balances.
         Zero balance assets are removed to avoid accumulating empty entries.
@@ -413,6 +421,8 @@ class HistoricalBalancesManager:
         For trades:
         - BUY means we receive base_asset and spend quote_asset
         - SELL means we spend base_asset and receive quote_asset
+
+        If `assets` is specified, then trade amounts for assets not in the list will be ignored.
 
         Returns a tuple of identifier & group_identifier if a negative balance would occur,
         otherwise None. For trades, only returns (trade_identifier, None).
@@ -430,6 +440,12 @@ class HistoricalBalancesManager:
                 receive_asset = event.quote_asset
                 spend_amount = event.amount
                 receive_amount = event.amount * event.rate  # type: ignore[assignment]  # AssetAmount is the same as fval
+
+            if assets is not None:  # Only include amounts for the specified assets.
+                if spend_asset not in assets:
+                    spend_amount = ZERO
+                if receive_asset not in assets:
+                    receive_amount = ZERO  # type: ignore[assignment]  # AssetAmount is the same as fval
 
             if current_balances[spend_asset] - spend_amount < ZERO:
                 return event.identifier, None
