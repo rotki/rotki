@@ -45,7 +45,7 @@ const { t } = useI18n();
           tag="span"
         >
           <InternalLink :to="Routes.BALANCES_MANUAL">
-            {{ t('import_data.cryptocom.line_four_link') }}
+            {{ t('navigation_menu.balances_sub.manual_balances') }}
           </InternalLink>
         </i18n-t>
       </li>

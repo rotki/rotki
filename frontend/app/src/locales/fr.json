@@ -2604,13 +2604,11 @@
       "line_one": "Les opérations/dépôts/retraits de CoinTracking ne comprennent pas les frais.",
       "line_three": "Les transactions ETH/BTC sont traitées comme des dépôts/retraits, elles ne sont donc pas importées dans rotki. Pour importer des transactions ETH, il vous suffit d'ajouter vos comptes dans {0} et ils seront importés automatiquement pour vous.",
       "line_two": "Toutes les opérations importées de CoinTracking seront toujours considérées comme des achats en raison de la façon dont les données sont représentées.",
-      "link": "Comptes/Solde de la blockchain",
       "name": "CoinTracking",
       "preferred": "Pour cette raison, il est préférable de se connecter directement à vos échanges pour importer les données depuis là. Si vous ne le faites pas, une grande partie de la précision est perdue."
     },
     "cryptocom": {
       "line_four": "Seules les transactions sont importées ici (pour le rapport fiscal), si vous souhaitez que les actifs s'affichent dans vos soldes rotki, vous devez les ajouter manuellement en tant que soldes manuels : {0}",
-      "line_four_link": "Comptes/Solde manuel",
       "line_one": "[Stade précoce] Ce script d'importation peut manquer certains types de transactions, comme les retraits. Comme nous ne pouvons pas avoir une liste exhaustive de tous les types, nous le développons en utilisant ce que nous savons au moment donné. Si vous pensez que l'importation de script peut être améliorée et que vous pouvez aider en fournissant plus de types de données, {0}.",
       "line_one_link": "faites-le nous savoir",
       "line_three": "Les opérations de change/dépôts/retraits de crypto.com ne comprennent pas les détails des frais. Ils sont soit abandonnés au moment de l'écriture (août 2020) ou gérés dans le montant échangé.",

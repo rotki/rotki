@@ -21,24 +21,22 @@ onMounted(() => {
 
 const transform = (value?: string) => (value ? Number.parseInt(value) : value);
 
-const items = computed(() => {
-  const textMap = {
-    B: t('amount_display.abbreviation.b'),
-    k: t('amount_display.abbreviation.k'),
-    M: t('amount_display.abbreviation.m'),
-    T: t('amount_display.abbreviation.t'),
+const textMap = [
+  { label: t('amount_display.abbreviation.k'), symbol: 'k' },
+  { label: t('amount_display.abbreviation.m'), symbol: 'M' },
+  { label: t('amount_display.abbreviation.b'), symbol: 'B' },
+  { label: t('amount_display.abbreviation.t'), symbol: 'T' },
+];
+
+const items = computed(() => textMap.map(({ label, symbol }) => {
+  const digit = abbreviationList.find(item => item[1] === symbol)?.[0] || 0;
+  const value = (digit + 1).toString();
+
+  return {
+    label: `${label} (${symbol})`,
+    value,
   };
-
-  return Object.entries(textMap).map(([abbreviation, label]) => {
-    const digit = abbreviationList.find(item => item[1] === abbreviation)?.[0] || 0;
-    const value = (digit + 1).toString();
-
-    return {
-      label: `${label} (${abbreviation})`,
-      value,
-    };
-  });
-});
+}));
 </script>
 
 <template>

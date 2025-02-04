@@ -3129,13 +3129,11 @@
       "line_one": "Trades/deposits/withdrawals from CoinTracking do not include fees.",
       "line_three": "ETH/BTC Transactions are treated as deposits/withdrawals so they are not imported in rotki. To import ETH transactions simply input your accounts in {0} and they will be imported automatically for you.",
       "line_two": "All trades imported from CoinTracking will always be considered as buys due to the way the data are represented.",
-      "link": "Blockchain Accounts/Balances",
       "name": "CoinTracking",
       "preferred": "For the above reasons it's preferred to directly connect your exchanges in order to import data from there. If you do not do that a lot of accuracy is lost."
     },
     "cryptocom": {
       "line_four": "Only transactions are imported here (for tax report), if you want the assets be displayed in your rotki balances, you have to add them manually as manual balances: {0}",
-      "line_four_link": "Manual Accounts/Balances",
       "line_one": "[Early stage] This import script may miss some transaction types, like withdrawals. Since we can't have an exhaustive list of every type, we develop it using what we know at the time. If you think that import script can be improved and you can help providing more data types, {0}.",
       "line_one_link": "please let us know",
       "line_three": "Trades/deposits/withdrawals from crypto.com do not include fees details. They are waived at the moment (August 2020) or they are handled in the traded amount.",
@@ -3744,10 +3742,7 @@
     },
     "unknown_asset_mapping": {
       "title": "Unknown asset from {location}",
-      "message": "Found unknown asset \"{identifier}\" from {location} ({name}). \n Ignoring its {details}.",
-      "actions": {
-        "add_mapping": "Add Mapping"
-      }
+      "message": "Found unknown asset \"{identifier}\" from {location} ({name}). \n Ignoring its {details}."
     },
     "snapshot_failed": {
       "message": "Could not save the balance snapshot at {location}. {error}",

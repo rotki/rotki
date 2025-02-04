@@ -31,7 +31,7 @@ const { t } = useI18n();
       </ImportSource>
     </div>
 
-    <div class="pt-4">
+    <div class="mt-4 text-sm leading-7 text-rui-text-secondary">
       <i18n-t
         tag="span"
         keypath="import_data.note"
