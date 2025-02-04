@@ -24,7 +24,7 @@ export function useExchangeUnknownAssetHandler(t: ReturnType<typeof useI18n>['t'
           },
         }),
         icon: 'lu-cable',
-        label: t('notification_messages.unknown_asset_mapping.actions.add_mapping'),
+        label: t('asset_management.cex_mapping.add_mapping'),
       },
       display: true,
       message: t('notification_messages.unknown_asset_mapping.message', { details, identifier, location, name }),

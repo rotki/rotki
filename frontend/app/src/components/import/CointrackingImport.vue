@@ -24,8 +24,8 @@ const { t } = useI18n();
         keypath="import_data.cointracking.line_three"
         tag="span"
       >
-        <InternalLink :to="Routes.BALANCES">
-          {{ t('import_data.cointracking.link') }}
+        <InternalLink :to="Routes.ACCOUNTS">
+          {{ t('navigation_menu.accounts') }}
         </InternalLink>
       </i18n-t>
     </ul>

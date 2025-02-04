@@ -176,7 +176,7 @@ const isRotkiCustomImport = computed(() => get(source).startsWith('rotki_'));
         </template>
       </RuiTextField>
 
-      <div class="mt-4">
+      <div class="mt-4 text-sm leading-7 text-rui-text-secondary">
         <slot />
         <div v-if="$slots.hint">
           <slot name="hint" />
@@ -187,9 +187,16 @@ const isRotkiCustomImport = computed(() => get(source).startsWith('rotki_'));
           color="primary"
           class="w-full"
           data-cy="button-import"
+          size="lg"
           :disabled="v$.$invalid || !file || loading"
           @click="uploadFile()"
         >
+          <template #prepend>
+            <RuiIcon
+              name="lu-file-up"
+              size="18"
+            />
+          </template>
           {{ t('common.actions.import') }}
         </RuiButton>
       </div>
