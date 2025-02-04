@@ -26,6 +26,8 @@ EVENT_CATEGORY_MAPPINGS = {  # possible combinations of types and subtypes mappe
         HistoryEventSubType.APPLY: {DEFAULT: EventCategory.APPLY},
         HistoryEventSubType.APPROVE: {DEFAULT: EventCategory.APPROVAL},
         HistoryEventSubType.ATTEST: {DEFAULT: EventCategory.ATTEST},
+        HistoryEventSubType.MEV_REWARD: {DEFAULT: EventCategory.MEV_REWARD},
+        HistoryEventSubType.BLOCK_PRODUCTION: {DEFAULT: EventCategory.CREATE_BLOCK},
     },
     HistoryEventType.RECEIVE: {
         HistoryEventSubType.REWARD: {DEFAULT: EventCategory.CLAIM_REWARD},

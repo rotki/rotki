@@ -2723,7 +2723,7 @@ def test_upgrade_db_45_to_46(user_data_dir: 'Path', messages_aggregator):
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_upgrade_db_46_to_47(user_data_dir, messages_aggregator):
-    """Test upgrading the DB from version 46 to version 47"""
+    """Test upgrading the DB from version 46 to version 47. This happened in 1.38"""
 
     def _check_tokens_existence(user_db_cursor: 'DBCursor', expect_removed: bool = False):
         """Assert whether the tokens are in the db or not depending on `expect_removed`"""
@@ -2747,18 +2747,17 @@ def test_upgrade_db_46_to_47(user_data_dir, messages_aggregator):
 
         if expect_removed:
             assert user_db_cursor.execute('SELECT * FROM temp_erc721_data').fetchall() == [
-                ('history_events', '[[164, 2, "TEST1", 0, 1, "f", "0x706A70067BE19BdadBea3600Db0626859Ff25D74", "eip155:1/erc721:0xC36442b4a4522E871399CD717aBDD847Ab11FE88", "1", "0", "", "11", "16", ""]]'),  # noqa: E501
+                ('history_events', '[[7, 2, "TEST1", 0, 1, "f", "0x706A70067BE19BdadBea3600Db0626859Ff25D74", "eip155:1/erc721:0xC36442b4a4522E871399CD717aBDD847Ab11FE88", "1", "0", "", "11", "16", ""]]'),  # noqa: E501
                 ('manually_tracked_balances', '[[1, "eip155:1/erc721:0xC36442b4a4522E871399CD717aBDD847Ab11FE88", "Test Balance", "5", "A", "A"]]'),  # noqa: E501
             ]
 
-    _use_prepared_db(user_data_dir, 'v45_rotkehlchen.db')
+    _use_prepared_db(user_data_dir, 'v46_rotkehlchen.db')
     db_v46 = _init_db_with_target_version(
         target_version=46,
         user_data_dir=user_data_dir,
         msg_aggregator=messages_aggregator,
         resume_from_backup=False,
     )
-
     uniswap_erc721_token = get_or_create_evm_token(
         userdb=db_v46,
         evm_address=string_to_evm_address('0xC36442b4a4522E871399CD717aBDD847Ab11FE88'),
@@ -2859,6 +2858,24 @@ def test_upgrade_db_46_to_47(user_data_dir, messages_aggregator):
             ],
         )
 
+    with db_v46.conn.read_ctx() as cursor:  # assert block events state before upgrade
+        result = cursor.execute("SELECT identifier, entry_type, event_identifier, sequence_index, timestamp, location, location_label, asset, amount, usd_value, notes, type, subtype FROM history_events WHERE event_identifier IN ('BP1_17153311', 'BP1_17153312')").fetchall()  # noqa: E501
+        assert result == [
+            (1, 4, 'BP1_17153311', 0, 1682911787000, 'f', '0x8ff1E3bD9b935208521D33F74430Bd5fA4387120', 'ETH', '0.1', '100', 'Validator 4242 produced block 17153311 with 0.1 ETH going to 0x8ff1E3bD9b935208521D33F74430Bd5fA4387120 as the block reward', 'staking', 'block production'),  # noqa: E501
+            (2, 4, 'BP1_17153311', 1, 1682911787000, 'f', '0x8ff1E3bD9b935208521D33F74430Bd5fA4387120', 'ETH', '0.05', '50', 'Validator 4242 produced block 17153311 with 0.05 ETH going to 0x8ff1E3bD9b935208521D33F74430Bd5fA4387120 as the mev reward', 'staking', 'mev reward'),  # noqa: E501
+            (3, 2, 'BP1_17153311', 2, 1682911787000, 'f', '0x8ff1E3bD9b935208521D33F74430Bd5fA4387120', 'ETH', '0.05', '50', 'Receive 0.05 ETH going from 0x2Aeb220005C35D30F3980b33FFE2a91Ce7a4E131 as mev reward for block 17153311', 'staking', 'mev reward'),  # noqa: E501
+            (4, 4, 'BP1_17153312', 0, 1683911787000, 'f', '0x6EF6f6436605793b1c551727B26295Cd4E74bC43', 'ETH', '0.2', '200', 'Validator 4242 produced block 17153312 with 0.2 ETH going to 0x6EF6f6436605793b1c551727B26295Cd4E74bC43 as the block reward', 'staking', 'block production'),  # noqa: E501
+            (5, 4, 'BP1_17153312', 1, 1683911787000, 'f', '0x8ff1E3bD9b935208521D33F74430Bd5fA4387120', 'ETH', '0.06', '60', 'Validator 4242 produced block 17153312 with 0.06 ETH going to 0x8ff1E3bD9b935208521D33F74430Bd5fA4387120 as the mev reward', 'staking', 'mev reward'),  # noqa: E501
+            (6, 2, 'BP1_17153312', 2, 1682311787000, 'f', '0x8ff1E3bD9b935208521D33F74430Bd5fA4387120', 'ETH', '0.06', '60', 'Receive 0.06 ETH going from 0x2Aeb220005C35D30F3980b33FFE2a91Ce7a4E131 as mev reward for block 17153312', 'staking', 'mev reward'),  # noqa: E501
+        ]
+        result = cursor.execute('SELECT identifier, validator_index, is_exit_or_blocknumber FROM eth_staking_events_info').fetchall()  # noqa: E501
+        assert result == [(1, 4242, 17153311), (2, 4242, 17153311), (4, 4242, 17153312), (5, 4242, 17153312)]  # noqa: E501
+        result = cursor.execute('SELECT identifier, tx_hash, counterparty, product, address FROM evm_events_info').fetchall()  # noqa: E501
+        assert result == [
+            (3, deserialize_evm_tx_hash('0x3891138d3930f46d853183c651de85e57cfc9f776f211916d5b6337556527682'), None, None, '0x2Aeb220005C35D30F3980b33FFE2a91Ce7a4E131'),  # noqa: E501
+            (6, deserialize_evm_tx_hash('0xcdf96f6a8082939652fcb23278f42954fa41c2e11ae30c77f5ee3ef8fc3f0da8'), None, None, '0x2Aeb220005C35D30F3980b33FFE2a91Ce7a4E131'),  # noqa: E501
+        ]
+
     with db_v46.conn.read_ctx() as cursor:
         assert db_v46.get_dynamic_cache(
             cursor=cursor,
@@ -2921,6 +2938,19 @@ def test_upgrade_db_46_to_47(user_data_dir, messages_aggregator):
             'SELECT COUNT(*) FROM used_query_ranges WHERE name IN (?, ?, ?)',
             (f'{coinbase_loc}_%', f'{Location.GEMINI.serialize()}_%', f'{Location.BYBIT.serialize()}_%'),  # noqa: E501
         ).fetchone()[0] == 0
+
+        # assert block events state after upgrade
+        result = cursor.execute("SELECT identifier, entry_type, event_identifier, sequence_index, timestamp, location, location_label, asset, amount, usd_value, notes, type, subtype FROM history_events WHERE event_identifier IN ('BP1_17153311', 'BP1_17153312')").fetchall()  # noqa: E501
+        assert result == [
+            (1, 4, 'BP1_17153311', 0, 1682911787000, 'f', '0x8ff1E3bD9b935208521D33F74430Bd5fA4387120', 'ETH', '0.1', '100', 'Validator 4242 produced block 17153311 with 0.1 ETH going to 0x8ff1E3bD9b935208521D33F74430Bd5fA4387120 as the block reward', 'staking', 'block production'),  # noqa: E501
+            (2, 4, 'BP1_17153311', 1, 1682911787000, 'f', '0x8ff1E3bD9b935208521D33F74430Bd5fA4387120', 'ETH', '0.05', '50', 'Validator 4242 produced block 17153311. Relayer reported 0.05 ETH as the MEV reward going to 0x8ff1E3bD9b935208521D33F74430Bd5fA4387120', 'informational', 'mev reward'),  # noqa: E501
+            (4, 4, 'BP1_17153312', 0, 1683911787000, 'f', '0x6EF6f6436605793b1c551727B26295Cd4E74bC43', 'ETH', '0.2', '200', 'Validator 4242 produced block 17153312 with 0.2 ETH going to 0x6EF6f6436605793b1c551727B26295Cd4E74bC43 as the block reward', 'informational', 'block production'),  # noqa: E501
+            (5, 4, 'BP1_17153312', 1, 1683911787000, 'f', '0x8ff1E3bD9b935208521D33F74430Bd5fA4387120', 'ETH', '0.06', '60', 'Validator 4242 produced block 17153312. Relayer reported 0.06 ETH as the MEV reward going to 0x8ff1E3bD9b935208521D33F74430Bd5fA4387120', 'informational', 'mev reward'),  # noqa: E501
+        ]
+        result = cursor.execute('SELECT identifier, validator_index, is_exit_or_blocknumber FROM eth_staking_events_info').fetchall()  # noqa: E501
+        assert result == [(1, 4242, 17153311), (2, 4242, 17153311), (4, 4242, 17153312), (5, 4242, 17153312)]  # noqa: E501
+        result = cursor.execute('SELECT identifier, tx_hash, counterparty, product, address FROM evm_events_info').fetchall()  # noqa: E501
+        assert result == []
 
     db.logout()
 

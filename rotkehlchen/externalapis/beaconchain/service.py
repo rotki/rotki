@@ -25,7 +25,13 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_fval,
     deserialize_int,
 )
-from rotkehlchen.types import ChecksumEvmAddress, Eth2PubKey, ExternalService, Timestamp
+from rotkehlchen.types import (
+    ChecksumEvmAddress,
+    Eth2PubKey,
+    ExternalService,
+    SupportedBlockchain,
+    Timestamp,
+)
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import (
     create_timestamp,
@@ -283,7 +289,8 @@ class BeaconChain(ExternalServiceWithApiKey):
             limit=50,
         )
         dbevents = DBHistoryEvents(self.db)
-
+        with self.db.conn.read_ctx() as cursor:
+            ethereum_tracked_accounts = self.db.get_blockchain_accounts(cursor).get(SupportedBlockchain.ETHEREUM)  # noqa: E501
         try:
             for entry in data:
                 blocknumber = int(entry['blockNumber'])
@@ -307,6 +314,7 @@ class BeaconChain(ExternalServiceWithApiKey):
                     timestamp=timestamp,
                     balance=Balance(amount=block_reward),
                     fee_recipient=fee_recipient,
+                    fee_recipient_tracked=fee_recipient in ethereum_tracked_accounts,
                     block_number=blocknumber,
                     is_mev_reward=False,
                 )
@@ -321,6 +329,7 @@ class BeaconChain(ExternalServiceWithApiKey):
                             timestamp=timestamp,
                             balance=Balance(amount=mev_reward),
                             fee_recipient=producer_fee_recipient,
+                            fee_recipient_tracked=producer_fee_recipient in ethereum_tracked_accounts,  # noqa: E501
                             block_number=blocknumber,
                             is_mev_reward=True,
                         )

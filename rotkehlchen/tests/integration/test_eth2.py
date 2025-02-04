@@ -16,11 +16,22 @@ from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.eth2 import EthBlockEvent, EthWithdrawalEvent
-from rotkehlchen.types import ChecksumEvmAddress, Eth2PubKey, TimestampMS
+from rotkehlchen.history.events.structures.evm_event import EvmEvent
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
+from rotkehlchen.types import (
+    ChecksumEvmAddress,
+    Eth2PubKey,
+    Location,
+    Timestamp,
+    TimestampMS,
+    deserialize_evm_tx_hash,
+)
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.modules.eth2.eth2 import Eth2
+    from rotkehlchen.history.events.structures.base import HistoryBaseEntry
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -174,6 +185,7 @@ def test_block_production(eth2: 'Eth2', database):
         timestamp=TimestampMS(1666693607000),
         balance=Balance(FVal('0.126419309459217215')),
         fee_recipient=string_to_evm_address('0x690B9A9E9aa1C9dB991C7721a92d351Db4FaC990'),
+        fee_recipient_tracked=True,
         block_number=15824493,
         is_mev_reward=False,
     ), EthBlockEvent(
@@ -182,6 +194,7 @@ def test_block_production(eth2: 'Eth2', database):
         timestamp=TimestampMS(1666693607000),
         balance=Balance(FVal('0.126458404824519798')),
         fee_recipient=vindex1_address,
+        fee_recipient_tracked=True,
         block_number=15824493,
         is_mev_reward=True,
     ), EthBlockEvent(
@@ -190,6 +203,7 @@ def test_block_production(eth2: 'Eth2', database):
         timestamp=TimestampMS(1668068651000),
         balance=Balance(FVal('0.095134860916352597')),
         fee_recipient=string_to_evm_address('0x95222290DD7278Aa3Ddd389Cc1E1d165CC4BAfe5'),
+        fee_recipient_tracked=True,
         block_number=15938405,
         is_mev_reward=False,
     ), EthBlockEvent(
@@ -198,6 +212,7 @@ def test_block_production(eth2: 'Eth2', database):
         timestamp=TimestampMS(1668068651000),
         balance=Balance(FVal('0.109978419256414016')),
         fee_recipient=vindex1_address,
+        fee_recipient_tracked=True,
         block_number=15938405,
         is_mev_reward=True,
     ), EthBlockEvent(
@@ -206,6 +221,7 @@ def test_block_production(eth2: 'Eth2', database):
         timestamp=TimestampMS(1670267915000),
         balance=Balance(FVal('0.025900962606266958')),
         fee_recipient=vindex2_address,
+        fee_recipient_tracked=True,
         block_number=16120623,
         is_mev_reward=False,
     ), EthBlockEvent(
@@ -214,6 +230,7 @@ def test_block_production(eth2: 'Eth2', database):
         timestamp=TimestampMS(1671379127000),
         balance=Balance(FVal('0.02290370247079784')),
         fee_recipient=vindex2_address,
+        fee_recipient_tracked=True,
         block_number=16212625,
         is_mev_reward=False,
     ), EthBlockEvent(
@@ -222,6 +239,7 @@ def test_block_production(eth2: 'Eth2', database):
         timestamp=TimestampMS(1674734363000),
         balance=Balance(FVal('0.012922327272245232')),
         fee_recipient=vindex2_address,
+        fee_recipient_tracked=True,
         block_number=16490846,
         is_mev_reward=False,
     ), EthBlockEvent(
@@ -230,6 +248,7 @@ def test_block_production(eth2: 'Eth2', database):
         timestamp=TimestampMS(1675143275000),
         balance=Balance(FVal('0.016091543022603308')),
         fee_recipient=vindex2_address,
+        fee_recipient_tracked=True,
         block_number=16524748,
         is_mev_reward=False,
     ), EthBlockEvent(
@@ -238,6 +257,7 @@ def test_block_production(eth2: 'Eth2', database):
         timestamp=TimestampMS(1675926299000),
         balance=Balance(FVal('0.156090536122554115')),
         fee_recipient=string_to_evm_address('0xAAB27b150451726EC7738aa1d0A94505c8729bd1'),
+        fee_recipient_tracked=True,
         block_number=16589592,
         is_mev_reward=False,
     ), EthBlockEvent(
@@ -246,6 +266,7 @@ def test_block_production(eth2: 'Eth2', database):
         timestamp=TimestampMS(1675926299000),
         balance=Balance(FVal('0.155599501480976115')),
         fee_recipient=vindex1_address,
+        fee_recipient_tracked=True,
         block_number=16589592,
         is_mev_reward=True,
     ), EthBlockEvent(
@@ -254,6 +275,7 @@ def test_block_production(eth2: 'Eth2', database):
         timestamp=TimestampMS(1676596919000),
         balance=Balance(FVal('0.004759289463309382')),
         fee_recipient=vindex2_address,
+        fee_recipient_tracked=True,
         block_number=16645139,
         is_mev_reward=False,
     ), EthBlockEvent(
@@ -262,6 +284,7 @@ def test_block_production(eth2: 'Eth2', database):
         timestamp=TimestampMS(1681593839000),
         balance=Balance(FVal('0.013231650982632651')),
         fee_recipient=string_to_evm_address('0xFeebabE6b0418eC13b30aAdF129F5DcDd4f70CeA'),
+        fee_recipient_tracked=True,
         block_number=17055026,
         is_mev_reward=False,
     ), EthBlockEvent(
@@ -270,6 +293,7 @@ def test_block_production(eth2: 'Eth2', database):
         timestamp=TimestampMS(1681593839000),
         balance=Balance(FVal('0.013233591104431482')),
         fee_recipient=vindex1_address,
+        fee_recipient_tracked=True,
         block_number=17055026,
         is_mev_reward=True,
     )]
@@ -471,3 +495,88 @@ def test_details_with_beacon_node(eth2: 'Eth2'):
         details = eth2.beacon_inquirer.get_validator_data(indices_or_pubkeys=[1])
         assert patched_beaconchain.call_count == 1
         assert details[0].exited_timestamp == epoch_to_timestamp(248121)
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('network_mocking', [False])
+@pytest.mark.freeze_time('2025-02-04 08:55:00 GMT')
+@pytest.mark.parametrize('ethereum_accounts', [['0x6b3A8798E5Fb9fC5603F3aB5eA2e8136694e55d0']])
+def test_block_with_mev_and_block_reward_and_multiple_mev_txs(
+        eth2: 'Eth2',
+        database,
+        ethereum_inquirer,
+        ethereum_accounts,
+):
+    """Test that proposing validators that get both the block fee recipient and a mev reward on top
+    are properly seen in rotki. Also that when MEV reward
+    is sent in multiple transactions they are all marked as such and moved into the block event.
+    """
+    dbevents = DBHistoryEvents(database)
+    dbeth2 = DBEth2(database)
+    vindex = 191912
+    with database.user_write() as write_cursor:
+        dbeth2.add_or_update_validators(write_cursor, [
+            ValidatorDetails(
+                validator_index=vindex,
+                public_key=Eth2PubKey('0xa5a07d88d03f4763b7341cb10c547e128b5a924d4c0b7b1d9ce8294d22584ad97c3092be9c68caad172b058d461a1c6b'),
+                ownership_proportion=ONE,
+            ),
+        ])
+
+    tx_hashes_and_amounts = [
+        (deserialize_evm_tx_hash('0xcb7ebe40e13e7b9fa7eff0c03e727618b2d68a00b7d9e23599ac1cbb20f36864'), '0.000108734081255623'),  # noqa: E501
+        (deserialize_evm_tx_hash('0x02be96ca70adc0f0c826cf2c3466681c53bbf68270fd5b6647a962e0e9bfe41a'), '0.000112625190291071'),  # noqa: E501
+        (deserialize_evm_tx_hash('0x2327159d6b747407352de9860f86b0bfa8266f9dc7dc967ba05dc015e51d6bc1'), '0.000177763139489933'),  # noqa: E501
+    ]
+    for tx_hash, _ in tx_hashes_and_amounts:
+        get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+
+    eth2.beacon_inquirer.beaconchain.get_and_store_produced_blocks([vindex])
+    eth2.combine_block_with_tx_events()
+    with database.conn.read_ctx() as cursor:
+        events = dbevents.get_history_events(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(
+                from_ts=Timestamp(1738537200),  # 03/02/2025
+                to_ts=Timestamp(1738655703),  # 04/02/2025 08:55 UTC
+            ),
+            has_premium=True,
+            group_by_event_ids=False,
+        )
+
+    timestamp, user_address, mevbot_address, block_number = TimestampMS(1738655099000), ethereum_accounts[0], string_to_evm_address('0xA69babEF1cA67A37Ffaf7a485DfFF3382056e78C'), 21771728  # noqa: E501
+    expected_events: list[HistoryBaseEntry] = [EthBlockEvent(
+        identifier=4,
+        validator_index=vindex,
+        timestamp=timestamp,
+        balance=Balance(FVal('0.013925706716354256')),
+        fee_recipient=user_address,
+        fee_recipient_tracked=True,
+        block_number=block_number,
+        is_mev_reward=False,
+    ), EthBlockEvent(
+        identifier=5,
+        validator_index=vindex,
+        timestamp=timestamp,
+        balance=Balance(FVal('0.022204362489834771')),
+        fee_recipient=user_address,
+        fee_recipient_tracked=True,
+        block_number=block_number,
+        is_mev_reward=True,
+    )]
+    expected_events += [EvmEvent(
+        identifier=1 + counter,
+        event_identifier=f'BP1_{block_number}',
+        tx_hash=tx_hash,
+        sequence_index=3 + counter,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.STAKING,
+        event_subtype=HistoryEventSubType.MEV_REWARD,
+        asset=A_ETH,
+        balance=Balance(FVal(amount)),
+        location_label=user_address,
+        address=mevbot_address,
+        notes=f'Receive {amount} ETH from {mevbot_address} as mev reward for block {block_number} in {tx_hash.hex()}',  # noqa: E501
+    ) for counter, (tx_hash, amount) in enumerate(tx_hashes_and_amounts)]
+    assert events == expected_events
