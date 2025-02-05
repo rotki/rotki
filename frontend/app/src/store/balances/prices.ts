@@ -158,7 +158,7 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
       );
 
       const parsed = HistoricPrices.parse(result);
-      return parsed.assets[fromAsset][timestamp];
+      return parsed.assets[fromAsset]?.[timestamp] ?? One.negated();
     }
     catch (error: any) {
       if (!isTaskCancelled(error))
