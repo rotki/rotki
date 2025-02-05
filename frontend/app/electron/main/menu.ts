@@ -113,7 +113,10 @@ export class MenuManager {
               return;
             }
 
-            window.webContents.session.clearCache().catch(error => this.logger.log(error));
+            this.logger.log('clearing cache');
+            window.webContents.session.clearCache()
+              .then(() => window.webContents.reloadIgnoringCache())
+              .catch(error => this.logger.log(error));
           },
         },
         {

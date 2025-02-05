@@ -14,7 +14,7 @@
   "module": "lib/index.js",
   "types": "lib/index.d.ts",
   "scripts": {
-    "postinstall": "pnpm run build",
+    "prepare": "pnpm run build",
     "build": "tsup --tsconfig tsconfig.lib.json",
     "watch": "tsup --watch --tsconfig tsconfig.lib.json"
   },
