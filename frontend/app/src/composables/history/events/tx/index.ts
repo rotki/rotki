@@ -47,7 +47,7 @@ export const useHistoryTransactions = createSharedComposable(() => {
   const { addresses } = storeToRefs(useBlockchainStore());
   const { connectedExchanges } = storeToRefs(useExchangesStore());
   const { awaitTask, isTaskRunning } = useTaskStore();
-  const { removeQueryStatus, resetQueryStatus } = useTxQueryStatusStore();
+  const { initializeQueryStatus, removeQueryStatus } = useTxQueryStatusStore();
   const { updateSetting } = useFrontendSettingsStore();
   const { getChainName, getEvmChainName, isEvmLikeChains, supportsTransactions } = useSupportedChains();
   const { fetchDisabled, getStatus, resetStatus, setStatus } = useStatusUpdater(Section.HISTORY_EVENT);
@@ -277,7 +277,7 @@ export const useHistoryTransactions = createSharedComposable(() => {
 
     if (evmAccounts.length + evmLikeAccounts.length > 0) {
       setStatus(Status.REFRESHING);
-      resetQueryStatus();
+      initializeQueryStatus(evmAccounts);
       resetUndecodedTransactionsStatus();
     }
 

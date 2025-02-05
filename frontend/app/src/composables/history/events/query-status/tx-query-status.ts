@@ -16,7 +16,7 @@ interface Status { index: number; label?: string }
 type Statuses = Record<EvmTransactionsQueryStatus, Status>;
 
 interface UseTransactionQueryStatusReturn {
-  getLabel: (data: EvmTransactionQueryData) => '' | string;
+  getLabel: (data: EvmTransactionQueryData) => string;
   getStatusData: (data: EvmTransactionQueryData) => Status;
   getItemTranslationKey: (item: EvmTransactionQueryData) => TranslationKey;
   isQueryFinished: (item: EvmTransactionQueryData) => boolean;
@@ -50,6 +50,7 @@ export function useTransactionQueryStatus(onlyChains: MaybeRef<Blockchain[]> = [
   const statusesData = computed<Statuses>(() => ({
     [EvmTransactionsQueryStatus.ACCOUNT_CHANGE]: {
       index: 0,
+      label: t('transactions.query_status.statuses.pending'),
     },
     [EvmTransactionsQueryStatus.QUERYING_EVM_TOKENS_TRANSACTIONS]: {
       index: 3,
@@ -73,7 +74,7 @@ export function useTransactionQueryStatus(onlyChains: MaybeRef<Blockchain[]> = [
 
   const getStatusData = (data: EvmTransactionQueryData): Status => get(statusesData)[data.status];
 
-  const getLabel = (data: EvmTransactionQueryData): '' | string => getStatusData(data)?.label || '';
+  const getLabel = (data: EvmTransactionQueryData): string => getStatusData(data)?.label ?? '';
 
   const getItemTranslationKey = (item: EvmTransactionQueryData): TranslationKey => {
     const isRange = isQueryStatusRange(item);
