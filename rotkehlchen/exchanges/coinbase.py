@@ -229,8 +229,9 @@ class Coinbase(ExchangeInterface):
         self.apiversion = 'v2'
         self.base_uri = 'https://api.coinbase.com'
         self.host = 'api.coinbase.com'
-        # keep orderids of advanced trades while parsing. As some appear two times showing both debit and credit part of the trade.  # noqa: E501
-        self.advanced_trade_orders: set[str] = set()
+        # Maps advanced trade order ids to the trade currency so unneeded events can be
+        # skipped when both the debit and credit part of the trade is present.
+        self.advanced_orders_to_currency: dict[str, str] = {}
 
     def is_legacy_key(self, api_key: str) -> bool:
         if LEGACY_RE.match(api_key):
@@ -905,12 +906,15 @@ class Coinbase(ExchangeInterface):
                 log.error(f'Got non buy/sell order side in Coinbase advanced trade fill: {event}')
                 return None
 
-            if (order_id := event['advanced_trade_fill'].get('order_id')):
-                if order_id in self.advanced_trade_orders:
-                    log.debug('Ignoring already seen coinbase advanced trade other side', other_side=event)  # noqa: E501
+            if (
+                (order_id := event['advanced_trade_fill'].get('order_id')) is not None and
+                (event_currency := event['amount'].get('currency')) is not None
+            ):
+                if (existing_trade_currency := self.advanced_orders_to_currency.get(order_id)) is None:  # noqa: E501
+                    self.advanced_orders_to_currency[order_id] = event_currency
+                elif existing_trade_currency != event_currency:
+                    log.debug('Ignoring other side of already seen coinbase advanced trade', other_side=event)  # noqa: E501
                     return None
-
-                self.advanced_trade_orders.add(order_id)
 
         else:
             trade_type = TradeType.BUY if amount < 0 else TradeType.SELL
