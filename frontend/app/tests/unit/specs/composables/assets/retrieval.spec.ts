@@ -169,6 +169,7 @@ describe('store::assets/retrieval', () => {
           [collectionId]: {
             name: collectionName,
             symbol: assetSymbol,
+            mainAsset: identifier,
           },
         });
 

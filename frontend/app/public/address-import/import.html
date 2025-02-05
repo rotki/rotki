@@ -247,12 +247,12 @@
 
       setTimeout(() => {
         cleanup();
-        resolve(providers);
+        resolve([...new Map(providers.map(provider => [provider.info.uuid, provider])).values()]);
       }, 1000);
     });
   }
 
-  const { createApp, ref, reactive, onMounted, set} = Vue;
+  const { createApp, ref, onMounted, set} = Vue;
 
   const app = createApp({
     setup() {

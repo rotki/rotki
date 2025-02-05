@@ -1,4 +1,4 @@
-import { AssetInfo, AssetInfoWithTransformer, SupportedAsset } from '@rotki/common';
+import { AssetCollection, AssetInfo, AssetInfoWithTransformer, SupportedAsset } from '@rotki/common';
 import { z } from 'zod';
 import { CollectionCommonFields } from '@/types/collection';
 import type { ConflictResolutionStrategy, PaginationRequestPayload } from '@/types/common';
@@ -48,7 +48,7 @@ export const AssetsWithId = z.array(AssetInfoWithId);
 export type AssetsWithId = z.infer<typeof AssetsWithId>;
 
 export const AssetMap = z.object({
-  assetCollections: z.record(AssetInfo),
+  assetCollections: z.record(AssetCollection),
   assets: z.record(AssetInfoWithTransformer),
 });
 

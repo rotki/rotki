@@ -50,11 +50,17 @@ const textStyle = computed<Style>(() => {
   const length = get(text).length;
   const { value } = get(dimensions);
 
-  const fontSize = (value - 2) / Math.max(2.5, length);
+  const fontSize = (value - 2) / Math.max(length, length < 2 ? 1.8 : 2.5);
 
   return {
     fontSize: `${fontSize}px`,
   };
+});
+
+const customIconSize = computed(() => {
+  const { value } = get(dimensions);
+
+  return Math.min(24, value / 2);
 });
 </script>
 
@@ -65,7 +71,7 @@ const textStyle = computed<Style>(() => {
   >
     <RuiIcon
       v-if="customAsset"
-      size="16"
+      :size="customIconSize"
       name="lu-pencil"
     />
     <template v-else>

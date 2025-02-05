@@ -15,6 +15,7 @@ vi.mock('@/composables/assets/retrieval', () => ({
         collectionId,
       };
     }),
+    assetSymbol: vi.fn().mockImplementation(identifier => identifier),
   }),
 }));
 
@@ -161,12 +162,13 @@ describe('composables::balances/breakdown', () => {
       USDC: {
         name: 'USDC',
         symbol: 'USDC',
+        mainAsset: 'USDC',
       },
     });
     const locationBreakdown = balancesBreakdown.locationBreakdown('kraken');
     const expectedResult = [
       {
-        asset: 'aUSDC',
+        asset: 'USDC',
         amount: bigNumberify(6000),
         usdValue: bigNumberify(6000),
         usdPrice: bigNumberify(-1),

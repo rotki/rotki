@@ -1,11 +1,11 @@
 import { useNotificationsStore } from '@/store/notifications';
 import { useItemCache } from '@/composables/item-cache';
 import { useAssetInfoApi } from '@/composables/api/assets/info';
-import type { AssetInfo } from '@rotki/common';
+import type { AssetCollection, AssetInfo } from '@rotki/common';
 import type { AssetMap } from '@/types/asset';
 
 export const useAssetCacheStore = defineStore('assets/cache', () => {
-  const fetchedAssetCollections = ref<Record<string, AssetInfo>>({});
+  const fetchedAssetCollections = ref<Record<string, AssetCollection>>({});
 
   const { assetMapping } = useAssetInfoApi();
   const { t } = useI18n();

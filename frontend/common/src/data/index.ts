@@ -61,6 +61,7 @@ export const AssetInfo = z.object({
   imageUrl: z.string().nullish(),
   isCustomAsset: z.boolean().nullish(),
   isSpam: z.boolean().optional(),
+  mainAsset: z.string().optional(),
   name: z.string().nullish(),
   symbol: z.string().nullish(),
 });
@@ -71,6 +72,14 @@ export const AssetInfoWithTransformer = AssetInfo.transform(data => ({
 }));
 
 export type AssetInfo = z.infer<typeof AssetInfo>;
+
+export const AssetCollection = z.object({
+  mainAsset: z.string(),
+  name: z.string(),
+  symbol: z.string(),
+});
+
+export type AssetCollection = z.infer<typeof AssetCollection>;
 
 // note: make sure that the identifier is checksummed
 export const assetSymbolToIdentifierMap: Record<string, string> = {
