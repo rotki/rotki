@@ -18,6 +18,7 @@ export const etherscanLinks = {
   base: 'https://basescan.org/myapikey',
   gnosis: 'https://gnosisscan.io/myapikey',
   scroll: 'https://scrollscan.com/myapikey',
+  binanceSc: 'https://bscscan.com/myapikey',
 };
 
 export const blockscoutLinks = {
