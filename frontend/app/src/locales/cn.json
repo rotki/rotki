@@ -694,8 +694,11 @@
         }
       },
       "refresh_general_cache": {
+        "error": {
+          "message": "刷新协议数据失败 {name}: {message}"
+        },
         "task": {
-          "title": "刷新通用缓存 {name}"
+          "title": "刷新协议数据 ({name})"
         }
       },
       "tag_add": {
@@ -1693,15 +1696,15 @@
     },
     "refresh_cache": {
       "confirm": {
-        "message": "您确定要刷新 {source} 的缓存吗？",
-        "title": "确认刷新缓存"
+        "message": "确定要刷新 {source} 的协议数据吗？",
+        "title": "确认刷新协议数据"
       },
-      "error": "清除 {source} 的缓存失败：{message}",
-      "select_cache": "选择要刷新的缓存",
-      "subtitle": "允许您刷新 rotki 缓存的数据",
-      "success": "缓存已成功清除",
-      "title": "刷新缓存",
-      "tooltip": "刷新选定源的缓存"
+      "error": "清除 {source} 的协议数据失败：{message}",
+      "select_cache": "选择要刷新的协议数据",
+      "subtitle": "允许您在 rotki 中刷新协议数据",
+      "success": "协议数据已成功清除",
+      "title": "刷新协议数据",
+      "tooltip": "刷新所选来源的协议数据"
     },
     "title": "管理数据"
   },

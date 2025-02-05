@@ -141,7 +141,7 @@ from rotkehlchen.api.v1.schemas import (
     QueriedAddressesSchema,
     QueryAddressbookSchema,
     QueryCalendarSchema,
-    RefreshProtocolCache,
+    RefreshProtocolDataSchema,
     ReverseEnsSchema,
     RpcAddNodeSchema,
     RpcNodeEditSchema,
@@ -3122,12 +3122,12 @@ class LocationResource(BaseMethodView):
         )
 
 
-class RefreshGeneralCacheResource(BaseMethodView):
-    post_schema = RefreshProtocolCache()
+class ProtocolDataRefreshResource(BaseMethodView):
+    post_schema = RefreshProtocolDataSchema()
 
     @use_kwargs(post_schema, location='json_and_query')
     def post(self, async_query: bool, cache_protocol: ProtocolsWithCache) -> Response:
-        return self.rest_api.refresh_general_cache(
+        return self.rest_api.refresh_protocol_data(
             async_query=async_query,
             cache_protocol=cache_protocol,
         )

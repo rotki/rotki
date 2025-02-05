@@ -914,10 +914,10 @@
       },
       "refresh_general_cache": {
         "error": {
-          "message": "Failed to refresh general cache {name}: {message}"
+          "message": "Failed to refresh protocol data {name}: {message}"
         },
         "task": {
-          "title": "Refresh general cache ({name})"
+          "title": "Refresh protocol data ({name})"
         }
       },
       "tag_add": {
@@ -2101,15 +2101,15 @@
     },
     "refresh_cache": {
       "confirm": {
-        "message": "Are you sure you want to refresh the cache for {source}?",
-        "title": "Confirm refresh cache"
+        "message": "Are you sure you want to refresh the protocol data for {source}?",
+        "title": "Confirm refresh protocol data"
       },
-      "error": "Clear the cache for {source} failed: {message}",
-      "select_cache": "Select cache to refresh",
-      "subtitle": "Allows you to refresh data cached by rotki",
-      "success": "Cache was successfully cleared",
-      "title": "Refresh cache",
-      "tooltip": "Refresh cache for selected source"
+      "error": "Clear the protocol data for {source} failed: {message}",
+      "select_cache": "Select protocol data to refresh",
+      "subtitle": "Allows you to refresh protocol data in rotki",
+      "success": "Protocol data was successfully cleared",
+      "title": "Refresh protocol data",
+      "tooltip": "Refresh protocol data for selected source"
     },
     "title": "Manage Data"
   },

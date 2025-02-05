@@ -118,11 +118,11 @@ def test_icons_and_avatars_cache_deletion(rotkehlchen_api_server: 'APIServer') -
     assert response.headers['Content-Type'] == 'image/png'
 
 
-def test_general_cache_refresh(rotkehlchen_api_server: 'APIServer') -> None:
-    """Tests that refreshing the general cache works as expected"""
+def test_protocol_data_refresh(rotkehlchen_api_server: 'APIServer') -> None:
+    """Tests that refreshing the protocol data works as expected"""
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
-        'refreshgeneralcacheresource',
+        'protocoldatarefreshresource',
     ))
     result = assert_proper_sync_response_with_result(response)
     assert {
@@ -158,6 +158,14 @@ def test_general_cache_refresh(rotkehlchen_api_server: 'APIServer') -> None:
             'rotkehlchen.api.rest.query_ilk_registry_and_maybe_update_cache',
             new=MagicMock(),
         ))
+        patched_aave_v3_assets = stack.enter_context(patch(
+            'rotkehlchen.api.rest.update_aave_v3_underlying_assets',
+            new=MagicMock(),
+        ))
+        patched_spark_assets = stack.enter_context(patch(
+            'rotkehlchen.api.rest.update_spark_underlying_assets',
+            new=MagicMock(),
+        ))
 
         for protocol, patched_obj, expected_calls in (
             (ProtocolsWithCache.CURVE, patched_curve_query, 6),
@@ -167,10 +175,12 @@ def test_general_cache_refresh(rotkehlchen_api_server: 'APIServer') -> None:
             (ProtocolsWithCache.AERODROME, patched_velodrome_query, 2),  # 1 for velo and 1 for aerodrome  # noqa: E501
             (ProtocolsWithCache.YEARN, patched_query_yearn_vaults, 1),
             (ProtocolsWithCache.MAKER, patched_ilk_registry, 1),
+            (ProtocolsWithCache.AAVE, patched_aave_v3_assets, 1),
+            (ProtocolsWithCache.SPARK, patched_spark_assets, 1),
         ):
             response = requests.post(api_url_for(
                 rotkehlchen_api_server,
-                'refreshgeneralcacheresource',
+                'protocoldatarefreshresource',
             ), json={'cache_protocol': protocol.serialize()})
             assert_proper_response(response)
             assert patched_obj.call_count == expected_calls, f'{protocol} should have been queried {expected_calls} but had {patched_obj.call_count} calls'  # noqa: E501
