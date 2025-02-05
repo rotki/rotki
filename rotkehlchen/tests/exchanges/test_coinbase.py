@@ -5,6 +5,7 @@ import pytest
 import requests
 
 from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_coinbase
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_1INCH, A_BTC, A_ETH, A_EUR, A_SOL, A_USD, A_USDC
@@ -1100,33 +1101,92 @@ def test_coinbase_query_trade_history_advanced_fill(function_scope_coinbase):
             "type": "advanced_trade_fill",
             "status": "completed",
             "amount": {
-                "amount": "1.120000",
-                "currency": "ETH"
+                "amount": "25.8100000000000000",
+                "currency": "NEAR"
             },
             "native_amount": {
-                "amount": "3400.98",
-                "currency": "EUR"
+                "amount": "191.12",
+                "currency": "USD"
             },
-            "description": null,
-            "created_at": "2024-03-07T09:12:51Z",
-            "updated_at": "2024-03-07T09:12:51Z",
+            "created_at": "2024-03-25T13:03:11Z",
             "resource": "transaction",
-            "resource_path": "/v2/accounts/REDACTED/transactions/id5",
-            "instant_exchange": false,
+            "resource_path": "/v2/accounts/REDACTED/transactions/id6",
             "advanced_trade_fill": {
-                "fill_price": "3334.341",
-                "product_id": "ETH-USDC",
-                "order_id": "orderid3",
-                "commission": "0.0000005",
-                "order_side": "sell"
+                "fill_price": "7.409",
+                "product_id": "NEAR-USD",
+                "order_id": "orderid6",
+                "commission": "1.9122629",
+                "order_side": "buy"
+            }
+        },
+        {
+            "id": "id6",
+            "type": "advanced_trade_fill",
+            "status": "completed",
+            "amount": {
+                "amount": "2.0000000000000000",
+                "currency": "NEAR"
             },
-            "details": {
-                "title": "Filled ETH on sell",
-                "subtitle": null,
-                "header": null,
-                "health": "positive"
+            "native_amount": {
+                "amount": "14.81",
+                "currency": "USD"
             },
-            "hide_native_amount": false
+            "created_at": "2024-03-25T13:03:11Z",
+            "resource": "transaction",
+            "resource_path": "/v2/accounts/REDACTED/transactions/id7",
+            "advanced_trade_fill": {
+                "fill_price": "7.408",
+                "product_id": "NEAR-USD",
+                "order_id": "orderid6",
+                "commission": "0.14816",
+                "order_side": "buy"
+            }
+        },
+        {
+            "id": "id7",
+            "type": "advanced_trade_fill",
+            "status": "completed",
+            "amount": {
+                "amount": "-191.22",
+                "currency": "USD"
+            },
+            "native_amount": {
+                "amount": "-191.23",
+                "currency": "USD"
+            },
+            "created_at": "2024-03-25T13:03:11Z",
+            "resource": "transaction",
+            "resource_path": "/v2/accounts/REDACTED/transactions/id6",
+            "advanced_trade_fill": {
+                "fill_price": "7.409",
+                "product_id": "NEAR-USD",
+                "order_id": "orderid6",
+                "commission": "1.9122629",
+                "order_side": "buy"
+            }
+        },
+        {
+            "id": "id8",
+            "type": "advanced_trade_fill",
+            "status": "completed",
+            "amount": {
+                "amount": "-14.81",
+                "currency": "USD"
+            },
+            "native_amount": {
+                "amount": "-14.82",
+                "currency": "USD"
+            },
+            "created_at": "2024-03-25T13:03:11Z",
+            "resource": "transaction",
+            "resource_path": "/v2/accounts/REDACTED/transactions/id7",
+            "advanced_trade_fill": {
+                "fill_price": "7.408",
+                "product_id": "NEAR-USD",
+                "order_id": "orderid6",
+                "commission": "0.14816",
+                "order_side": "buy"
+            }
         }]
 }
 """
@@ -1189,6 +1249,28 @@ def test_coinbase_query_trade_history_advanced_fill(function_scope_coinbase):
         fee=FVal('0.5710371002622'),
         fee_currency=A_USDC,
         link='id4',
+    ), Trade(
+        timestamp=1711371791,
+        location=Location.COINBASE,
+        base_asset=Asset('NEAR'),
+        quote_asset=A_USD,
+        trade_type=TradeType.BUY,
+        amount=FVal('25.8100000000000000'),
+        rate=FVal('7.409'),
+        fee=FVal('1.9122629'),
+        fee_currency=A_USD,
+        link='id5',
+    ), Trade(
+        timestamp=1711371791,
+        location=Location.COINBASE,
+        base_asset=Asset('NEAR'),
+        quote_asset=A_USD,
+        trade_type=TradeType.BUY,
+        amount=FVal('2.0000000000000000'),
+        rate=FVal('7.408'),
+        fee=FVal('0.14816'),
+        fee_currency=A_USD,
+        link='id6',
     )]
     assert trades == expected_trades
 
