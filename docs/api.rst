@@ -3328,7 +3328,8 @@ Get asset identifiers mappings
           "asset_collections": {
             "0": {
               "name": "0xBitcoin",
-              "symbol": "0xBTC"
+              "symbol": "0xBTC",
+              "main_asset": "BTC"
             }
           }
         },
@@ -3336,7 +3337,7 @@ Get asset identifiers mappings
       }
 
    :resjson object assets: A mapping of identifiers to (1) their name, symbol & chain(if available) if they are assets. And to (2) their name, collection name and image url if they are nfts.
-   :resjson object asset_collections: A mapping of asset collections ids to their properties.
+   :resjson object asset_collections: A mapping of asset collections ids to their properties. The properties ``"name"``, ``"symbol"``, and ``"main_asset"`` are always present.
    :resjson string name: Name of the asset/nft.
    :resjson string symbol: Symbol of the asset. Will only exist for non-nft assets.
    :resjson int chain_id: This value might not be included in all the results. Chain id of the chain where the asset is located if the asset is an EVM token.
