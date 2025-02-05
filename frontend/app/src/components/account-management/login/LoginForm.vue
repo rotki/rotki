@@ -210,6 +210,9 @@ async function loadSettings() {
   set(customBackendSessionOnly, sessionOnly);
   set(customBackendSaved, !!url);
 
+  if (get(errors).length > 0)
+    return;
+
   if (isPackaged && get(rememberPassword) && get(username)) {
     const savedPassword = await getPassword(get(username));
 

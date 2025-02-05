@@ -169,6 +169,7 @@ export const useSessionStore = defineStore('session', () => {
     }
     catch (error: any) {
       logger.error(error);
+      authStore.clearUpgradeMessages();
       return createActionStatus(error);
     }
   };
