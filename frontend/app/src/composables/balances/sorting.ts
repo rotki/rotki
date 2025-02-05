@@ -61,16 +61,10 @@ export function useBalanceSorting(): UseBalanceSortingReturn {
           zeroBalance(),
         );
 
-        // If it contains a native asset, it should be used rather than the eip155 variant.
-        // E.g., ETH should be prioritized over WETH, and BTC should be prioritized over cbBTC.
-        let parentAsset = grouped[0];
-        const nativeAsset = grouped.find(item => !isEvmIdentifier(item.asset));
-        if (nativeAsset)
-          parentAsset = nativeAsset;
-
         const parent: T = {
-          ...parentAsset,
+          ...grouped[0],
           ...sumBalance,
+          asset: assetCollectionInfo.mainAsset,
           breakdown: grouped,
         };
 

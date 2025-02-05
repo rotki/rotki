@@ -10,6 +10,7 @@ declare global {
   const AaveHistory: typeof import('@rotki/common')['AaveHistory']
   const AssetBalance: typeof import('@rotki/common')['AssetBalance']
   const AssetBalanceWithPriceBeforeBreakdown: typeof import('@rotki/common')['AssetBalanceWithPriceBeforeBreakdown']
+  const AssetCollection: typeof import('@rotki/common')['AssetCollection']
   const AssetEntry: typeof import('@rotki/common')['AssetEntry']
   const AssetInfo: typeof import('@rotki/common')['AssetInfo']
   const AssetInfoWithTransformer: typeof import('@rotki/common')['AssetInfoWithTransformer']
@@ -442,6 +443,7 @@ declare module 'vue' {
     readonly AaveHistory: UnwrapRef<typeof import('@rotki/common')['AaveHistory']>
     readonly AssetBalance: UnwrapRef<typeof import('@rotki/common')['AssetBalance']>
     readonly AssetBalanceWithPriceBeforeBreakdown: UnwrapRef<typeof import('@rotki/common')['AssetBalanceWithPriceBeforeBreakdown']>
+    readonly AssetCollection: UnwrapRef<typeof import('@rotki/common')['AssetCollection']>
     readonly AssetEntry: UnwrapRef<typeof import('@rotki/common')['AssetEntry']>
     readonly AssetInfo: UnwrapRef<typeof import('@rotki/common')['AssetInfo']>
     readonly AssetInfoWithTransformer: UnwrapRef<typeof import('@rotki/common')['AssetInfoWithTransformer']>
