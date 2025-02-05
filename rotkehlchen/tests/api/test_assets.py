@@ -611,10 +611,12 @@ def test_get_assets_mappings(rotkehlchen_api_server: 'APIServer') -> None:
         '23': {
             'name': 'Multi Collateral Dai',
             'symbol': 'DAI',
+            'main_asset': 'eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F',
         },
         '40': {
             'name': 'Bitcoin',
             'symbol': 'BTC',
+            'main_asset': 'BTC',
         },
     }
 
