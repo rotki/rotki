@@ -10,7 +10,7 @@ import GeneratedIcon from '@/components/helper/display/icons/GeneratedIcon.vue';
 import EvmChainIcon from '@/components/helper/display/icons/EvmChainIcon.vue';
 import type { StyleValue } from 'vue';
 
-const props = withDefaults(defineProps<{
+interface AssetIconProps {
   identifier: string;
   size: string;
   styled?: StyleValue;
@@ -23,7 +23,9 @@ const props = withDefaults(defineProps<{
   flat?: boolean;
   resolutionOptions?: AssetResolutionOptions;
   chainIconSize?: string;
-}>(), {
+}
+
+const props = withDefaults(defineProps<AssetIconProps>(), {
   chainIconPadding: '0.5px',
   circle: false,
   enableAssociation: true,
@@ -35,7 +37,7 @@ const props = withDefaults(defineProps<{
   styled: undefined,
 });
 
-const emit = defineEmits<{ (e: 'click'): void }>();
+const emit = defineEmits<{ click: [] }>();
 
 const { t } = useI18n();
 
@@ -43,8 +45,11 @@ const { chainIconSize, identifier, padding, resolutionOptions, showChain, size }
 
 const error = ref<boolean>(false);
 const pending = ref<boolean>(true);
+const abortController = ref<AbortController>();
 
+const { checkIfAssetExists, getAssetImageUrl } = useAssetIconStore();
 const { currencies } = useCurrencies();
+const { assetInfo } = useAssetInfoRetrieval();
 
 const mappedIdentifier = computed<string>(() => {
   const id = getIdentifierFromSymbolMap(get(identifier));
@@ -53,16 +58,15 @@ const mappedIdentifier = computed<string>(() => {
 
 const currency = computed<string | undefined>(() => {
   const id = get(mappedIdentifier);
-
   const fiatCurrencies = get(currencies).filter(({ crypto }) => !crypto);
   return fiatCurrencies.find(({ tickerSymbol }) => tickerSymbol === id)?.unicodeSymbol;
 });
 
-const { assetInfo } = useAssetInfoRetrieval();
-const { getAssetImageUrl } = useAssetIconStore();
-
 const asset = assetInfo(mappedIdentifier, resolutionOptions);
+const url = reactify(getAssetImageUrl)(mappedIdentifier);
+
 const isCustomAsset = computed(() => get(asset)?.isCustomAsset ?? false);
+
 const chain = computed(() => get(asset)?.evmChain);
 const symbol = computed(() => get(asset)?.symbol);
 const name = computed(() => get(asset)?.name);
@@ -78,30 +82,30 @@ const displayAsset = computed<string>(() => {
 const tooltip = computed(() => {
   const assetName = get(name) ?? '';
   const assetSymbol = get(symbol) ?? '';
+  const isCustom = get(isCustomAsset);
 
-  if (get(isCustomAsset)) {
-    return {
-      name: '',
-      symbol: get(name) ?? '',
-    };
+  const emptyNameAsset = (symbol: string) => ({
+    name: '',
+    symbol,
+  });
+
+  if (isCustom) {
+    return emptyNameAsset(assetName);
   }
 
-  if (assetName.toLowerCase() === assetSymbol.toLowerCase()) {
-    return {
-      name: '',
-      symbol: assetSymbol,
-    };
+  const areSymbolAndNameEqual = assetName.toLowerCase() === assetSymbol.toLowerCase();
+  if (areSymbolAndNameEqual) {
+    return emptyNameAsset(assetSymbol);
   }
 
   return {
-    name: get(name),
-    symbol: get(symbol),
+    name: assetName,
+    symbol: assetSymbol,
   };
 });
 
-const url = reactify(getAssetImageUrl)(mappedIdentifier);
-
 const usedChainIconSize = computed(() => get(chainIconSize) || `${(Number.parseInt(get(size)) * 50) / 100}px`);
+
 const chainIconMargin = computed(() => `-${get(usedChainIconSize)}`);
 
 const placeholderStyle = computed(() => {
@@ -114,9 +118,23 @@ const placeholderStyle = computed(() => {
   };
 });
 
-watch(identifier, () => {
+watchImmediate(mappedIdentifier, async (identifier) => {
   set(pending, true);
   set(error, false);
+
+  if (isDefined(abortController)) {
+    get(abortController).abort();
+  }
+  set(abortController, new AbortController());
+
+  const assetExists = await checkIfAssetExists(identifier, {
+    abortController: get(abortController),
+  });
+
+  set(pending, false);
+  if (!assetExists) {
+    set(error, true);
+  }
 });
 
 const { copy } = useCopy(identifier);
@@ -175,11 +193,12 @@ const { copy } = useCopy(identifier);
 
           <AppImage
             v-else
-            v-show="!pending"
+            v-show="!pending && !error"
             :class="{ 'rounded-full overflow-hidden': flat }"
             contain
             :alt="displayAsset"
             :src="url"
+            :loading="pending"
             :size="size"
             @loadstart="pending = true"
             @load="pending = false"

@@ -3,12 +3,17 @@ import { handleResponse, validStatus } from '@/services/utils';
 import { apiUrls } from '@/services/api-urls';
 import type { ActionResult } from '@rotki/common';
 
+interface CheckAssetOptions {
+  abortController?: AbortController;
+}
+
 interface UseAsetIconApiReturn {
   assetImageUrl: (identifier: string, randomString?: string | number) => string;
   uploadIcon: (identifier: string, file: File) => Promise<boolean>;
   setIcon: (asset: string, file: string) => Promise<boolean>;
   refreshIcon: (asset: string) => Promise<boolean>;
   clearIconCache: (assets: string[] | null) => Promise<boolean>;
+  checkAsset: (identifier: string, options: CheckAssetOptions) => Promise<number>;
 }
 
 export function useAssetIconApi(): UseAsetIconApiReturn {
@@ -19,6 +24,15 @@ export function useAssetIconApi(): UseAsetIconApiReturn {
       url += `&t=${randomString}`;
 
     return url;
+  };
+
+  const checkAsset = async (identifier: string, options: CheckAssetOptions): Promise<number> => {
+    const url = `${apiUrls.colibriApiUrl}/assets/icon?asset_id=${encodeURIComponent(identifier)}`;
+    const response = await api.instance.head<never>(url, {
+      signal: options.abortController?.signal,
+      validateStatus: code => [200, 202, 404].includes(code),
+    });
+    return response.status;
   };
 
   const uploadIcon = async (identifier: string, file: File): Promise<boolean> => {
@@ -62,6 +76,7 @@ export function useAssetIconApi(): UseAsetIconApiReturn {
 
   return {
     assetImageUrl,
+    checkAsset,
     clearIconCache,
     refreshIcon,
     setIcon,
