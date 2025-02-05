@@ -1213,6 +1213,7 @@ class ProtocolsWithCache(SerializableEnumNameMixin):
     AAVE = auto()
     CONVEX = auto()
     GEARBOX = auto()
+    SPARK = auto()
 
 
 UniqueCacheType = Literal[

@@ -217,6 +217,10 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import PremiumCredentials, has_premium_check
 from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.serialization.serialize import process_result, process_result_list
+from rotkehlchen.tasks.assets import (
+    update_aave_v3_underlying_assets,
+    update_spark_underlying_assets,
+)
 from rotkehlchen.tasks.utils import query_missing_prices_of_base_entries
 from rotkehlchen.types import (
     AVAILABLE_MODULES_MAP,
@@ -4790,7 +4794,7 @@ class RestAPI:
         )
 
     @async_api_call()
-    def refresh_general_cache(self, cache_protocol: ProtocolsWithCache) -> dict[str, Any]:
+    def refresh_protocol_data(self, cache_protocol: ProtocolsWithCache) -> dict[str, Any]:
         eth_node_inquirer = self.rotkehlchen.chains_aggregator.ethereum.node_inquirer
         optimism_inquirer = self.rotkehlchen.chains_aggregator.optimism.node_inquirer
         base_inquirer = self.rotkehlchen.chains_aggregator.base.node_inquirer
@@ -4869,6 +4873,19 @@ class RestAPI:
                 except RemoteError as e:
                     return wrap_in_fail_result(
                         message=f'Failed to refresh makerdao vault ilk cache due to: {e!s}',
+                        status_code=HTTPStatus.CONFLICT,
+                    )
+            case ProtocolsWithCache.SPARK | ProtocolsWithCache.AAVE:
+                fn = (
+                    update_aave_v3_underlying_assets
+                    if cache_protocol == ProtocolsWithCache.AAVE
+                    else update_spark_underlying_assets
+                )
+                try:
+                    fn(chains_aggregator=self.rotkehlchen.chains_aggregator)
+                except RemoteError as e:
+                    return wrap_in_fail_result(
+                        message=f'Failed to refresh {cache_protocol.name.lower()} cache due to: {e!s}',  # noqa: E501
                         status_code=HTTPStatus.CONFLICT,
                     )
 

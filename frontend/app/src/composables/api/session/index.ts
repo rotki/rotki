@@ -29,7 +29,7 @@ export function useSessionApi(): UseSessionApiReturn {
 
   const refreshGeneralCacheTask = async (cacheProtocol: string): Promise<PendingTask> => {
     const response = await api.instance.post<ActionResult<PendingTask>>(
-      '/cache/general/refresh',
+      '/protocols/data/refresh',
       snakeCaseTransformer({ asyncQuery: true, cacheProtocol }),
       {
         validateStatus: validWithSessionStatus,
@@ -41,7 +41,7 @@ export function useSessionApi(): UseSessionApiReturn {
 
   const getRefreshableGeneralCaches = async (): Promise<string[]> => {
     const response = await api.instance.get<ActionResult<string[]>>(
-      '/cache/general/refresh',
+      '/protocols/data/refresh',
       snakeCaseTransformer({ asyncQuery: true }),
     );
 

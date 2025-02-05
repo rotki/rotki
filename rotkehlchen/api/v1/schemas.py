@@ -3902,7 +3902,7 @@ class HistoricalPricesPerAssetSchema(AsyncQueryArgumentSchema, TimestampRangeSch
         return data
 
 
-class RefreshProtocolCache(AsyncQueryArgumentSchema):
+class RefreshProtocolDataSchema(AsyncQueryArgumentSchema):
     cache_protocol = SerializableEnumField(
         enum_class=ProtocolsWithCache,
         required=True,

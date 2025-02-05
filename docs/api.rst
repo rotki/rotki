@@ -12846,10 +12846,10 @@ Get all valid locations
   :statuscode 200: Information was correctly returned
   :statuscode 500: Internal rotki error
 
-Refresh general cache
+Refresh protocol data
 ========================
 
-.. http:get:: /api/(version)/cache/general/refresh
+.. http:get:: /api/(version)/protocols/data/refresh
 
    Doing a GET on this endpoint will return the list of protocols that have caches and can be used by this endpoint.
 
@@ -12858,7 +12858,7 @@ Refresh general cache
 
   .. http:example:: curl wget httpie python-requests
 
-    GET /cache/general/refresh HTTP/1.1
+    GET /protocols/data/refresh HTTP/1.1
     Host: localhost:5042
 
 
@@ -12870,7 +12870,7 @@ Refresh general cache
       Content-Type: application/json
 
       {
-        "result": ["curve", "velodrome", "aerodrome", "yearn", "maker", "aave", "convex", "gearbox"],
+        "result": ["curve", "velodrome", "aerodrome", "yearn", "maker", "aave", "convex", "gearbox", "spark"],
         "message": ""
       }
 
@@ -12880,9 +12880,9 @@ Refresh general cache
   :statuscode 500: Internal rotki error
 
 
-.. http:post:: /api/(version)/cache/general/refresh
+.. http:post:: /api/(version/protocols/data/refresh
 
-   Doing a POST on this endpoint will refresh the cache for the selected protocol.
+   Doing a POST on this endpoint will refresh the data for the selected protocol.
 
    .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``.
@@ -12891,7 +12891,7 @@ Refresh general cache
 
   .. http:example:: curl wget httpie python-requests
 
-    POST /cache/general/refresh HTTP/1.1
+    POST /protocols/data/refresh HTTP/1.1
     Host: localhost:5042
 
     Content-Type: application/json;charset=UTF-8
@@ -12915,8 +12915,8 @@ Refresh general cache
 
   :resjson bool result: Is true if the cache was refreshed successfully.
 
-  :statuscode 200: Cache was correctly refreshed
-  :statuscode 409: An issue during refreshing caches occurred
+  :statuscode 200: Protocol data was correctly refreshed
+  :statuscode 409: An issue during refreshing protocol data occurred
   :statuscode 500: Internal rotki error
 
 Getting Metadata For Airdrops

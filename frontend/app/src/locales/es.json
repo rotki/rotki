@@ -698,8 +698,11 @@
         }
       },
       "refresh_general_cache": {
+        "error": {
+          "message": "Error al actualizar los datos del protocolo {name}: {message}"
+        },
         "task": {
-          "title": "Refresh general cache ({name})"
+          "title": "Actualizar datos del protocolo ({name})"
         }
       },
       "tag_add": {
@@ -1657,15 +1660,15 @@
     },
     "refresh_cache": {
       "confirm": {
-        "message": "Are you sure you want to refresh the cache for {source}?",
-        "title": "Confirm refresh cache"
+        "message": "¿Está seguro de que desea actualizar los datos del protocolo para {source}?",
+        "title": "Confirmar actualización de datos del protocolo"
       },
-      "error": "Clear the cache for {source} failed: {message}",
-      "select_cache": "Select cache to refresh",
-      "subtitle": "Allows you to refresh data cached by rotki",
-      "success": "Cache was successfully cleared",
-      "title": "Refresh cache",
-      "tooltip": "Refresh cache for selected source"
+      "error": "Error al borrar los datos del protocolo para {source}: {message}",
+      "select_cache": "Seleccionar datos del protocolo para actualizar",
+      "subtitle": "Permite actualizar datos del protocolo en rotki",
+      "success": "Los datos del protocolo se borraron correctamente",
+      "title": "Actualizar datos del protocolo",
+      "tooltip": "Actualizar datos del protocolo para la fuente seleccionada"
     },
     "title": "Manage Data"
   },
