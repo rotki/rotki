@@ -32,18 +32,19 @@ from rotkehlchen.tests.utils.history_base_entry import store_and_retrieve_events
 from rotkehlchen.types import Location, TimestampMS
 
 
-def _update_rules(rotki: Rotkehlchen, latest_accounting_rules: Path) -> None:
+def _update_rules(rotki: Rotkehlchen, latest_accounting_rules: list[tuple[int, Path]]) -> None:
     """Pull remote accounting rules and save them"""
     data_updater = RotkiDataUpdater(msg_aggregator=rotki.msg_aggregator, user_db=rotki.data.db)
-    data_updater.update_accounting_rules(
-        data=json.loads(latest_accounting_rules.read_text(encoding='utf-8'))['accounting_rules'],
-        version=999999,
-    )
+    for version, jsonfile in latest_accounting_rules:
+        data_updater.update_accounting_rules(
+            data=json.loads(jsonfile.read_text(encoding='utf-8'))['accounting_rules'],
+            version=version,
+        )
 
 
 def _setup_conflict_tests(
         rotkehlchen_api_server: APIServer,
-        latest_accounting_rules: Path,
+        latest_accounting_rules: list[tuple[int, Path]],
 ) -> None:
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     rule_1 = {
@@ -274,7 +275,7 @@ def test_rules_info(rotkehlchen_api_server: 'APIServer') -> None:
 @pytest.mark.parametrize('legacy_messages_via_websockets', [True])
 def test_solving_conflicts(
         rotkehlchen_api_server: APIServer,
-        latest_accounting_rules: Path,
+        latest_accounting_rules: list[tuple[int, Path]],
 ) -> None:
     """Test solving conflicts using a different method for each rule"""
     _setup_conflict_tests(rotkehlchen_api_server, latest_accounting_rules)
@@ -305,7 +306,7 @@ def test_solving_conflicts(
 @pytest.mark.parametrize('solve_all_using', ['remote', 'local'])
 def test_solving_conflicts_all(
         rotkehlchen_api_server: APIServer,
-        latest_accounting_rules: Path,
+        latest_accounting_rules: list[tuple[int, Path]],
         solve_all_using: Literal['remote', 'local'],
 ) -> None:
     """Test that solving all the conflicts using either local or remote works"""
@@ -339,7 +340,7 @@ def test_solving_conflicts_all(
 @pytest.mark.parametrize('initialize_accounting_rules', [False])
 def test_listing_conflicts(
         rotkehlchen_api_server: APIServer,
-        latest_accounting_rules: Path,
+        latest_accounting_rules: list[tuple[int, Path]],
 ) -> None:
     """Test that serialization for conflicts works as expected"""
     _setup_conflict_tests(rotkehlchen_api_server, latest_accounting_rules)
@@ -568,8 +569,9 @@ def test_import_export_accounting_rules(rotkehlchen_api_server: 'APIServer') -> 
         with open(rules_file_path, encoding='utf-8') as file:
             rules_data = json.load(file)
 
+        all_rules_num = 105
         assert rules_data == response_result
-        assert len(rules_data['accounting_rules']) == 82
+        assert len(rules_data['accounting_rules']) == all_rules_num
         assert rules_data['accounting_rules']['1'] == {
             'event_type': 'deposit',
             'event_subtype': 'deposit asset',
@@ -618,7 +620,8 @@ def test_import_export_accounting_rules(rotkehlchen_api_server: 'APIServer') -> 
         # edit the rules and setting properties
         with rotkehlchen_api_server.rest_api.rotkehlchen.data.db.conn.write_ctx() as write_cursor:
             write_cursor.execute(
-                'UPDATE accounting_rules SET identifier=83 WHERE identifier=82',
+                'UPDATE accounting_rules SET identifier=? WHERE identifier=?',
+                (all_rules_num + 1, all_rules_num),
             )
             write_cursor.execute(
                 'UPDATE linked_rules_properties SET setting_name=? WHERE identifier=?',

@@ -66,6 +66,7 @@ def assert_editing_works(
         if attr in KEYS_IN_ENTRY_TYPE[entry.entry_type]:
             if attr == 'is_mev_reward' and value is True:  # special handling
                 entry.sequence_index = 1
+                entry.event_type = HistoryEventType.INFORMATIONAL
                 entry.event_subtype = HistoryEventSubType.MEV_REWARD
                 return
 
@@ -133,7 +134,7 @@ def assert_editing_works(
 
 
 @pytest.mark.parametrize('have_decoders', [True])  # so we can run redecode after add/edit/delete
-@pytest.mark.parametrize('number_of_eth_accounts', [0])
+@pytest.mark.parametrize('ethereum_accounts', [['0x690B9A9E9aa1C9dB991C7721a92d351Db4FaC990']])
 def test_add_edit_delete_entries(rotkehlchen_api_server: 'APIServer') -> None:
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     db = DBHistoryEvents(rotki.data.db)
@@ -201,7 +202,7 @@ def test_add_edit_delete_entries(rotkehlchen_api_server: 'APIServer') -> None:
     assert_editing_works(entries[5], rotkehlchen_api_server, db, 5)  # history event
     assert_editing_works(entries[6], rotkehlchen_api_server, db, 6, {'notes': 'Exit validator 1001 with 1500.1 ETH', 'event_identifier': 'EW_1001_19460'})  # eth withdrawal event  # noqa: E501
     assert_editing_works(entries[7], rotkehlchen_api_server, db, 7, {'notes': 'Deposit 1500.1 ETH to validator 1001'})  # eth deposit event  # noqa: E501
-    assert_editing_works(entries[8], rotkehlchen_api_server, db, 8, {'notes': 'Validator 1001 produced block 5 with 1500.1 ETH going to 0x9531C059098e3d194fF87FebB587aB07B30B1306 as the mev reward', 'event_identifier': 'BP1_5'})  # eth block event  # noqa: E501
+    assert_editing_works(entries[8], rotkehlchen_api_server, db, 8, {'notes': 'Validator 1001 produced block 5. Relayer reported 1500.1 ETH as the MEV reward going to 0x9531C059098e3d194fF87FebB587aB07B30B1306', 'event_identifier': 'BP1_5'})  # eth block event  # noqa: E501
 
     entries.sort(key=lambda x: x.timestamp)  # resort by timestamp
     with rotki.data.db.conn.read_ctx() as cursor:
@@ -397,6 +398,7 @@ def test_event_with_details(rotkehlchen_api_server: 'APIServer') -> None:
     assert result == {SUB_SWAPS_DETAILS: event2.extra_data[SUB_SWAPS_DETAILS]}  # type: ignore[index]  # extra_data is not None here
 
 
+@pytest.mark.parametrize('ethereum_accounts', [['0x690B9A9E9aa1C9dB991C7721a92d351Db4FaC990']])
 @pytest.mark.parametrize('initialize_accounting_rules', [True])
 def test_get_events(rotkehlchen_api_server: 'APIServer') -> None:
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen

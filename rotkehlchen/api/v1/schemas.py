@@ -835,6 +835,10 @@ class CreateHistoryEventSchema(Schema):
     include_identifier: bool = False
     entry_type = SerializableEnumField(enum_class=HistoryBaseEntryType, required=True)
 
+    def __init__(self, dbhandler: 'DBHandler') -> None:
+        super().__init__()
+        self.database = dbhandler
+
     class BaseSchema(Schema):
         timestamp = TimestampMSField(required=True)
         balance = fields.Nested(BalanceSchema, required=True)
@@ -900,18 +904,15 @@ class CreateHistoryEventSchema(Schema):
             ),
         )
 
-        def __init__(self, dbhandler: 'DBHandler') -> None:
-            super().__init__()
-            self.database = dbhandler
-
         @post_load
         def make_history_base_entry(
                 self,
                 data: dict[str, Any],
                 **_kwargs: Any,
         ) -> dict[str, Any]:
-            with self.database.conn.read_ctx() as cursor:
-                tracked_accounts = self.database.get_blockchain_accounts(cursor)
+            database = self.context['schema'].database
+            with database.conn.read_ctx() as cursor:
+                tracked_accounts = database.get_blockchain_accounts(cursor)
             data['fee_recipient_tracked'] = data['fee_recipient'] in tracked_accounts.get(SupportedBlockchain.ETHEREUM)  # noqa: E501
             return {'events': [EthBlockEvent(**data)]}
 
@@ -1055,10 +1056,6 @@ class CreateHistoryEventSchema(Schema):
 class EditHistoryEventSchema(CreateHistoryEventSchema):
     """Schema used when editing an existing event in the EVM transactions view"""
     include_identifier = True
-
-    def __init__(self, dbhandler: 'DBHandler') -> None:
-        super().__init__()
-        self.database = dbhandler
 
     def get_fee_event_identifier(self, data: dict[str, Any]) -> int | None:
         """Retrieve fee event's identifier for asset movement, returns None for create."""

@@ -243,12 +243,13 @@ def test_eth2_daily_stats(rotkehlchen_api_server: 'APIServer') -> None:
 ]])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('ethereum_modules', [['eth2']])
-@pytest.mark.freeze_time('2024-09-15 10:00:00 GMT')
+@pytest.mark.freeze_time('2025-02-07 13:00:00 GMT')
 @pytest.mark.parametrize('network_mocking', [False])
 def test_staking_performance(
         rotkehlchen_api_server: 'APIServer',
         ethereum_accounts: list['ChecksumEvmAddress'],
 ) -> None:
+    validator_index = 1187604
     response = requests.put(api_url_for(  # track the depositor address
         rotkehlchen_api_server,
         'blockchainsaccountsresource',
@@ -257,7 +258,7 @@ def test_staking_performance(
     assert_proper_sync_response_with_result(response)
     detected_validator = ValidatorDetailsWithStatus(
         activation_timestamp=Timestamp(1707319895),
-        validator_index=1187604,
+        validator_index=validator_index,
         public_key=Eth2PubKey('0xa2de832511231af4bf98083e68c67aa6429c8c2b08920302d1d6953298f3720c8d5ca22c08a54fffa2efab782e25dba8'),
         withdrawal_address=ethereum_accounts[0],
         status=ValidatorStatus.ACTIVE,
@@ -271,7 +272,25 @@ def test_staking_performance(
     result = assert_proper_sync_response_with_result(response)
     assert result == {'entries': [detected_validator.serialize()], 'entries_found': 1, 'entries_limit': -1}  # noqa: E501
 
-    # Query withdrawals/block productions
+    # Pull data for transactions where the blocks were mined. True if MEV tx recipient is tracked
+    tx_hashes_and_amounts = [
+        (deserialize_evm_tx_hash('0xb7c9fd48c675ece788cc992c0896d6a2928df45ac4e79842a15e9838702c22a6'), '0.060349153479296828', False),  # block 19212929 # noqa: E501
+        (deserialize_evm_tx_hash('0xc6d9078959e1657767abf81c489b3315e69bee57faa4b0e3d8703e4ea4a22bde'), '0.07047850663787723', True),  # block 19933083  # noqa: E501
+        # block 20377217 -- no mev with our accounts as recipient
+        (deserialize_evm_tx_hash('0xae6276e768300db5576c1bd5cfbe6eee33c23c449d625982bc419f44621c78d1'), '0.023324581649728112', True),  # block 20536372  # noqa: E501
+        (deserialize_evm_tx_hash('0x6e917c0d8ad974fd6d68789ec192ec0b5831a27c784331886f17e151c34b428c'), '0.05802984487013608', True),  # block 20868232  # noqa: E501
+        (deserialize_evm_tx_hash('0xf30f5bdb725f8cd7bdcc42a13b8124ab24292fada066957689e443320a9f6b90'), '0.231618030402117244', False),  # block 21417107 -- ouch MEV sent to 0x0  # noqa: E501
+    ]
+    expected_execution_mev = ZERO
+    for tx_hash, amount_str, is_tracked in tx_hashes_and_amounts:
+        get_decoded_events_of_transaction(
+            evm_inquirer=rotkehlchen_api_server.rest_api.rotkehlchen.chains_aggregator.ethereum.node_inquirer,
+            tx_hash=tx_hash,
+        )
+        if is_tracked:
+            expected_execution_mev += FVal(amount_str)
+
+    # Query withdrawals/block productions. This also runs the block combining code
     for query_type in ('block_productions', 'eth_withdrawals'):
         response = requests.post(
             url=api_url_for(
@@ -295,31 +314,24 @@ def test_staking_performance(
             ]},
     )
     result = assert_proper_sync_response_with_result(response)
-    expected_validators_result = {
-        'sums': {
-            'outstanding_consensus_pnl': '-0.0011592',
-            'withdrawals': '0.600129935',
-        },
-        'validators': {
-            '1187604': {
-                'outstanding_consensus_pnl': '-0.0011592',
-                'withdrawals': '0.600129935',
-            },
-        },
-        'entries_found': 1,
-        'entries_total': 1,
-    }
-
-    # we don't compare directly the dict values because they come from the database and there
-    # is a rounding difference between linux and macos.
-    expected_sum, expected_execution, expected_apr = FVal('0.82216012100728395'), FVal('0.22318938600728405'), FVal('0.0424775793265764082855623252084392229313421239502676478367328536179575826476231')  # noqa: E501
-    assert FVal(result['sums'].pop('execution')).is_close(expected_execution)
+    expected_withdrawals_str, expected_outstanding_consensus_str = '0.931083313', '0.012038559'
+    # we don't compare directly the dict values because they come from the database and sqlite
+    # handles REAL SUM in a non-accurate way to the decimal point, plus it differs between OSes.
+    expected_execution_blocks, expected_withdrawals, expected_outstanding_consensus, expected_apr = FVal('0.050711686670683926'), FVal(expected_withdrawals_str), FVal(expected_outstanding_consensus_str), FVal('0.0357145299327897914654288755952596541234774409066056206397907463329126771149047')  # noqa: E501
+    expected_sum = expected_execution_blocks + expected_withdrawals + expected_execution_mev + expected_outstanding_consensus  # noqa: E501
+    assert FVal(result['sums'].pop('execution_blocks')).is_close(expected_execution_blocks)
+    assert FVal(result['sums'].pop('execution_mev')).is_close(expected_execution_mev)
+    assert FVal(result['sums'].pop('withdrawals')).is_close(expected_withdrawals)
+    assert FVal(result['sums'].pop('outstanding_consensus_pnl')).is_close(expected_outstanding_consensus)  # noqa: E501
     assert FVal(result['sums'].pop('sum')).is_close(expected_sum)
     assert FVal(result['sums'].pop('apr')).is_close(expected_apr)
-    assert FVal(result['validators']['1187604'].pop('execution')).is_close(expected_execution)
-    assert FVal(result['validators']['1187604'].pop('sum')).is_close(expected_sum)
-    assert FVal(result['validators']['1187604'].pop('apr')).is_close(expected_apr)
-    assert result == expected_validators_result
+    vindex = str(validator_index)
+    assert FVal(result['validators'][vindex].pop('execution_blocks')).is_close(expected_execution_blocks)  # noqa: E501
+    assert FVal(result['validators'][vindex].pop('execution_mev')).is_close(expected_execution_mev)
+    assert FVal(result['validators'][vindex].pop('withdrawals')).is_close(expected_withdrawals)
+    assert FVal(result['validators'][vindex].pop('outstanding_consensus_pnl')).is_close(expected_outstanding_consensus)  # noqa: E501
+    assert FVal(result['validators'][vindex].pop('sum')).is_close(expected_sum)
+    assert FVal(result['validators'][vindex].pop('apr')).is_close(expected_apr)
 
 
 @pytest.mark.vcr(
@@ -433,6 +445,7 @@ def test_staking_performance_filtering_pagination(
     assert len(result['validators']) == 0
     assert result['entries_total'] == total_validators
 
+    # note: This contains no MEV, since we do not pull the transactions here
     # now filter by an address that should have an association AND by a
     # validator index to see using both filters works
     response = requests.put(
@@ -451,9 +464,9 @@ def test_staking_performance_filtering_pagination(
         'validators': {
             '432840': {
                 'withdrawals': '33.593010259',
-                'sum': '34.1065823007808183',
-                'execution': '0.5135720417808183',
-                'apr': '0.79047922897503225775055426615612469746775999711013979698732073835928186973955',  # noqa: E501
+                'sum': '33.68891977241534547',
+                'execution_blocks': '0.09590951341534547',
+                'apr': '0.780799175122596180057410572372936459198786258714734674710110898385290611566666',  # noqa: E501
             },
             '624729': {
                 'withdrawals': '1.289917788',
@@ -463,9 +476,9 @@ def test_staking_performance_filtering_pagination(
         },
         'sums': {
             'withdrawals': '34.882928047',
-            'sum': '35.3965000887808183',
-            'execution': '0.5135720417808183',
-            'apr': '0.410246362610707521008555234504478680599412420011036638465769751493240036930240',  # noqa: E501
+            'sum': '34.97883756041534547',
+            'execution_blocks': '0.09590951341534547',
+            'apr': '0.405406335684489482161983387612884561464925550813334077327164831506244407843798',  # noqa: E501
         },
         'entries_total': 402,
         'entries_found': 2,
@@ -1018,9 +1031,7 @@ def test_query_combined_mev_reward_and_block_production_events(rotkehlchen_api_s
     vindex1 = 45555
     vindex2 = 54333
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    tx_hash = deserialize_evm_tx_hash('0x8d0969db1e536969ba2e29abf8e8945e4304d49ae14523b66cbe9be5d52df804')  # noqa: E501
-    block_number = 15824493
-    mev_reward = '0.126458404824519798'
+    tx_hash, block_number, mev_reward, mevbot_address = deserialize_evm_tx_hash('0x8d0969db1e536969ba2e29abf8e8945e4304d49ae14523b66cbe9be5d52df804'), 15824493, '0.126458404824519798', string_to_evm_address('0x690B9A9E9aa1C9dB991C7721a92d351Db4FaC990')  # noqa: E501
 
     # add validator data and query transaction and decode events for a single MEV reward
     response = requests.put(
@@ -1092,7 +1103,7 @@ def test_query_combined_mev_reward_and_block_production_events(rotkehlchen_api_s
             assert entry['identifier'] == 10
             assert entry['event_identifier'] == event_identifier
             assert entry['entry_type'] == 'eth block event'
-            assert entry['event_type'] == 'staking'
+            assert entry['event_type'] == 'informational'  # fee recipient not tracked
             assert entry['event_subtype'] == 'block production'
             assert entry['validator_index'] == vindex1
             assert entry['balance']['amount'] == '0.126419309459217215'
@@ -1100,17 +1111,17 @@ def test_query_combined_mev_reward_and_block_production_events(rotkehlchen_api_s
             assert entry['identifier'] == 11
             assert entry['event_identifier'] == event_identifier
             assert entry['entry_type'] == 'eth block event'
-            assert entry['event_type'] == 'staking'
+            assert entry['event_type'] == 'informational'
             assert entry['event_subtype'] == 'mev reward'
             assert entry['validator_index'] == vindex1
             assert entry['balance']['amount'] == mev_reward
         elif entry['sequence_index'] == 2:
             assert entry['identifier'] == 1
             assert entry['event_identifier'] == event_identifier
-            assert entry['entry_type'] == 'evm event'
+            assert entry['entry_type'] == 'evmc event'
             assert entry['balance']['amount'] == mev_reward
             assert entry['tx_hash'] == tx_hash.hex()  # pylint: disable=no-member
-            assert entry['notes'] == f'Receive {mev_reward} ETH from 0x690B9A9E9aa1C9dB991C7721a92d351Db4FaC990 as mev reward for block {block_number}'  # noqa: E501
+            assert entry['notes'] == f'Receive {mev_reward} ETH from {mevbot_address} as mev reward for block {block_number} in {tx_hash.hex()}'  # pylint: disable=no-member  # noqa: E501
         else:
             raise AssertionError('Should not get to this sequence index')
 

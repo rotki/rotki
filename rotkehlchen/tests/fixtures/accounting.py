@@ -127,27 +127,33 @@ def fixture_use_dummy_pot() -> bool:
 
 @pytest.fixture(name='last_accounting_rules_version', scope='session')
 def fixture_last_accounting_rules_version() -> int:
-    return 1
+    return 5
 
 
 @pytest.fixture(name='latest_accounting_rules', autouse=True, scope='session')
-def fixture_download_rules(last_accounting_rules_version) -> Path:
+def fixture_download_rules(last_accounting_rules_version) -> list[tuple[int, Path]]:
     """
-    Returns the path to the file containing the accounting rules as the RotkiDataUpdater ingest
-    them. If the file doesn't exist it is downloaded from github using the version in
-    `last_accounting_rules_version` otherwise we just return the local path.
+    Gets the paths to the files containing the accounting rules as the RotkiDataUpdater ingest
+    them. For each update file, if the files doesn't exist it is downloaded from github. Until we
+    reach the last_acounting_rules_version.
+
+    Returns a list of tuples. (version, update_json_file_path)
     """
     root_dir = default_data_directory().parent / 'test-caching'
     base_dir = root_dir / 'accounting_rules'
-    rules_file = Path(base_dir / f'v{last_accounting_rules_version}.json')
+    result = []
+    for i in range(1, last_accounting_rules_version + 1):
+        rules_file = Path(base_dir / f'v{i}.json')
+        if (rules_file := Path(base_dir / f'v{i}.json')).exists():
+            result.append((i, rules_file))
+            continue
 
-    if rules_file.exists():
-        return rules_file
+        response = requests.get(f'https://raw.githubusercontent.com/rotki/data/develop/updates/accounting_rules/v{i}.json')
+        rules_file.parent.mkdir(exist_ok=True, parents=True)
+        rules_file.write_text(response.text, encoding='utf-8')
+        result.append((i, rules_file))
 
-    response = requests.get(f'https://raw.githubusercontent.com/rotki/data/develop/updates/accounting_rules/v{last_accounting_rules_version}.json')
-    rules_file.parent.mkdir(exist_ok=True, parents=True)
-    rules_file.write_text(response.text, encoding='utf-8')
-    return rules_file
+    return result
 
 
 @pytest.fixture(name='accountant')
@@ -179,10 +185,11 @@ def fixture_accountant(
     )
 
     if accountant_without_rules is False:
-        data_updater.update_accounting_rules(
-            data=json.loads(latest_accounting_rules.read_text(encoding='utf-8'))['accounting_rules'],
-            version=999999,  # only for logs
-        )
+        for version, jsonfile in latest_accounting_rules:
+            data_updater.update_accounting_rules(
+                data=json.loads(jsonfile.read_text(encoding='utf-8'))['accounting_rules'],
+                version=version,
+            )
 
     with ExitStack() as stack:
         if use_dummy_pot:  # don't load ignored assets if dummy
