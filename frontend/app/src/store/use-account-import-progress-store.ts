@@ -77,7 +77,7 @@ export const useAccountImportProgressStore = defineStore('import-progress', (): 
   return {
     importingAccounts,
     increment,
-    progress: readonly(progress),
+    progress,
     progressPercentage,
     setTotal,
     skip,

@@ -1,4 +1,5 @@
 import { cloneDeep } from 'es-toolkit';
+import { logger } from '@/utils/logging';
 import type { PiniaPluginContext, StoreGeneric } from 'pinia';
 
 export function StoreResetPlugin({ store }: PiniaPluginContext): void {
@@ -33,5 +34,12 @@ export function StoreTrackPlugin({ store }: PiniaPluginContext): void {
  * Resets the state of all the installed pinia stores.
  */
 export function resetState(): void {
-  for (const store of storeMap.values()) store.$reset();
+  for (const [name, store] of storeMap) {
+    try {
+      store.$reset();
+    }
+    catch (error: any) {
+      logger.error(`error while clearing the ${name} store`, error);
+    }
+  }
 }
