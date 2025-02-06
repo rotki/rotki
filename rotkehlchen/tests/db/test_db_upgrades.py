@@ -2818,6 +2818,9 @@ def test_upgrade_db_46_to_47(user_data_dir, messages_aggregator):
                 (1, f'{CB_EVENTS_PREFIX}_EVENT', 0, 1, (coinbase_location := Location.COINBASE.serialize_for_db()), '', 'ETH', 1, 0, '', 'receive', 'receive', ''),  # noqa: E501
                 (1, f'{ROTKI_EVENT_PREFIX}_EVENT', 0, 1, coinbase_location, '', 'ETH', 1, 0, '', 'receive', 'receive', ''),  # noqa: E501
                 (1, 'kraken-id', 0, 1, (kraken_location := Location.KRAKEN.serialize_for_db()), '', 'BTC', 1, 0, '', 'spend', 'spend', ''),  # noqa: E501
+                (1, 'gemini-id', 0, 1, (gemini_location := Location.GEMINI.serialize_for_db()), '', 'BTC', 1, 0, '', 'spend', 'spend', ''),  # noqa: E501
+                (1, f'{ROTKI_EVENT_PREFIX}_GEM_EVENT', 0, 1, gemini_location, '', 'ETH', 1, 0, '', 'receive', 'receive', ''),  # noqa: E501
+
             ],
         )
         write_cursor.executemany(  # add location cache entries
@@ -2836,6 +2839,8 @@ def test_upgrade_db_46_to_47(user_data_dir, messages_aggregator):
                 ('trade_1', 1641386280, kraken_location, 'BTC', 'EUR', 'A', '0.5', '50000', '', 'Kraken trade'),  # noqa: E501
                 ('trade_2', 1641386281, coinbase_location, 'ETH', 'USD', 'B', '1.0', '3000', 'cbid77', 'Coinbase trade with link'),  # noqa: E501
                 ('trade_3', 1641386282, coinbase_location, 'ETH', 'USD', 'C', '1.5', '3500', '', 'Coinbase trade without link'),  # noqa: E501
+                ('trade_4', 1641386282, gemini_location, 'ETH', 'USD', 'C', '1.5', '3500', 'geminitxid333', 'gemini trade with link'),  # noqa: E501
+                ('trade_5', 1641386282, gemini_location, 'ETH', 'USD', 'C', '1.5', '3500', '', 'gemini trade without link'),  # noqa: E501
             ],
         )
         write_cursor.executemany(  # add entries to queried ranges
@@ -2844,6 +2849,8 @@ def test_upgrade_db_46_to_47(user_data_dir, messages_aggregator):
                 ('coinbase_trades_cb1', 1641386200, 1641386300),
                 ('coinbase_history_events_cb1', 1641386301, 1641386400),
                 ('kraken_history_events_kk', 1641386301, 1641386400),
+                ('gemini_trades_cb1', 1641386200, 1641386300),
+                ('gemini_history_events_cb1', 1641386301, 1641386400),
             ],
         )
 
@@ -2880,15 +2887,15 @@ def test_upgrade_db_46_to_47(user_data_dir, messages_aggregator):
 
         _check_tokens_existence(user_db_cursor=cursor, expect_removed=True)
 
-        assert cursor.execute(  # events with the correct prefix for coinbase removed
-            'SELECT COUNT(*) FROM history_events WHERE location=? AND event_identifier LIKE ?',
-            (coinbase_location, f'{CB_EVENTS_PREFIX}%'),
+        assert cursor.execute(  # events with the correct prefix for coinbase & gemini removed
+            'SELECT COUNT(*) FROM history_events WHERE location IN (?, ?) AND event_identifier LIKE ?',  # noqa: E501
+            (coinbase_location, gemini_location, f'{CB_EVENTS_PREFIX}%'),
         ).fetchone()[0] == 0
 
         assert cursor.execute(  # events imported or different locations preserved
-            'SELECT COUNT(*) FROM history_events WHERE event_identifier IN (?, ?)',
-            ('kraken-id', f'{ROTKI_EVENT_PREFIX}_EVENT'),
-        ).fetchone()[0] == 2
+            'SELECT COUNT(*) FROM history_events WHERE event_identifier IN (?, ?, ?)',
+            ('kraken-id', f'{ROTKI_EVENT_PREFIX}_EVENT', f'{ROTKI_EVENT_PREFIX}_GEM_EVENT'),
+        ).fetchone()[0] == 3
 
         assert cursor.execute(  # all coinbase caches are deleted
             'SELECT COUNT(*) FROM key_value_cache WHERE name LIKE ? OR name LIKE ?',
@@ -2898,16 +2905,16 @@ def test_upgrade_db_46_to_47(user_data_dir, messages_aggregator):
             'SELECT COUNT(*) FROM key_value_cache WHERE name LIKE ? OR name LIKE ?',
             (f'{(kraken_loc := Location.KRAKEN.serialize())}_%_last_query_ts', f'{kraken_loc}_%_last_query_id'),  # noqa: E501
         ).fetchone()[0] == 1
-        assert cursor.execute(  # ensure trades with Coinbase location and a link are deleted
-            'SELECT COUNT(*) FROM trades WHERE location=? AND link != ?',
-            (coinbase_location, ''),
+        assert cursor.execute(  # ensure trades with Coinbase or Gemini location and a link are deleted  # noqa: E501
+            'SELECT COUNT(*) FROM trades WHERE location IN (?, ?) AND link != ?',
+            (coinbase_location, gemini_location, ''),
         ).fetchone()[0] == 0
-        assert cursor.execute('SELECT id FROM trades').fetchall() == [  # ensure trade with empty link is preserved  # noqa: E501
-            ('trade_1',), ('trade_3',),
+        assert cursor.execute('SELECT id FROM trades').fetchall() == [  # ensure trades with empty link is preserved  # noqa: E501
+            ('trade_1',), ('trade_3',), ('trade_5',),
         ]
-        assert cursor.execute(  # verify query ranges for coinbase are deleted
-            'SELECT COUNT(*) FROM used_query_ranges WHERE name=?',
-            (f'{coinbase_loc}_%',),
+        assert cursor.execute(  # verify query ranges for coinbase and gemini are deleted
+            'SELECT COUNT(*) FROM used_query_ranges WHERE name IN (?, ?)',
+            (f'{coinbase_loc}_%', f'{Location.GEMINI.serialize()}_%'),
         ).fetchone()[0] == 0
 
     db.logout()

@@ -6,8 +6,9 @@ import pytest
 import requests
 
 from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import ZERO
-from rotkehlchen.constants.assets import A_BCH, A_BTC, A_ETH, A_LINK, A_LTC, A_USD
+from rotkehlchen.constants.assets import A_BCH, A_BTC, A_ETH, A_GUSD, A_LINK, A_LTC, A_USD
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.asset import UnknownAsset, UnprocessableTradePair, UnsupportedAsset
@@ -349,23 +350,16 @@ def test_gemini_query_deposits_withdrawals(sandbox_gemini):
 
 
 def test_gemini_symbol_to_base_quote():
-    """Test edge cases and not yet existing cases of gemini symbol to pair"""
-    assert gemini_symbol_to_base_quote('btclink') == (A_BTC, A_LINK)
+    """Test quote asset detection and validation for gemini symbols"""
+    assert gemini_symbol_to_base_quote('btcusd') == (A_BTC, A_USD)
     assert gemini_symbol_to_base_quote('linkbtc') == (A_LINK, A_BTC)
+    assert gemini_symbol_to_base_quote('btcgusd') == (A_BTC, A_GUSD)
     assert gemini_symbol_to_base_quote('linkpaxg') == (A_LINK, A_PAXG)
-    assert gemini_symbol_to_base_quote('paxglink') == (A_PAXG, A_LINK)
+    assert gemini_symbol_to_base_quote('moodengusd') == (Asset('MOODENG'), A_USD)
 
     with pytest.raises(UnprocessableTradePair):
-        gemini_symbol_to_base_quote('btclinkxyz')
-    with pytest.raises(UnprocessableTradePair):
-        gemini_symbol_to_base_quote('xyzbtclink')
+        gemini_symbol_to_base_quote('btcusdperp')
     with pytest.raises(UnknownAsset):
-        gemini_symbol_to_base_quote('zzzbtc')
+        gemini_symbol_to_base_quote('zzzusd')
     with pytest.raises(UnknownAsset):
         gemini_symbol_to_base_quote('linkzzz')
-    with pytest.raises(UnknownAsset):
-        gemini_symbol_to_base_quote('zzzlink')
-    with pytest.raises(UnknownAsset):
-        gemini_symbol_to_base_quote('zzzzlink')
-    with pytest.raises(UnknownAsset):
-        gemini_symbol_to_base_quote('linkzzzz')

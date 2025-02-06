@@ -26,7 +26,6 @@ from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalan
 from rotkehlchen.exchanges.utils import (
     deserialize_asset_movement_address,
     get_key_if_has_val,
-    pair_symbol_to_base_quote,
 )
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
@@ -71,17 +70,27 @@ class GeminiPermissionError(Exception):
 def gemini_symbol_to_base_quote(symbol: str) -> tuple[AssetWithOracles, AssetWithOracles]:
     """Turns a gemini symbol product into a base/quote asset tuple
 
-    - Can raise UnprocessableTradePair if symbol is in unexpected format
-    - Case raise UnknownAsset if any of the pair assets are not known to rotki
+    May raise:
+    - UnprocessableTradePair if symbol is in unexpected format.
+    - UnknownAsset if any of the pair assets are not known to rotki
     """
-    five_letter_assets = {'sushi', '1inch', 'storj', 'matic', 'audio', 'index', 'metis'}
-    base_asset, quote_asset = pair_symbol_to_base_quote(
-        symbol=symbol,
-        asset_deserialize_fn=asset_from_gemini,
-        five_letter_assets=five_letter_assets,
-    )
+    if symbol.endswith('perp'):
+        raise UnprocessableTradePair(symbol)
 
-    return base_asset, quote_asset
+    special_cases = {'moodengusd': ('MOODENG', 'USD')}
+    if symbol in special_cases:
+        base, quote = special_cases[symbol]
+        return asset_from_gemini(base), asset_from_gemini(quote)
+
+    # from gemini api, quote assets are either 4 chars ('gusd', 'usdt')
+    # or 3 chars ('usd', 'btc', etc). Try 4-char quotes first.
+    if len(symbol) >= 4 and symbol[-4:] in {'gusd', 'usdt', 'paxg'}:
+        split_at = -4
+    else:
+        split_at = -3
+
+    base, quote = symbol[:split_at], symbol[split_at:]
+    return asset_from_gemini(base.upper()), asset_from_gemini(quote.upper())
 
 
 class Gemini(ExchangeInterface):
