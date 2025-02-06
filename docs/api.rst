@@ -8340,7 +8340,8 @@ Getting eth2 staking performance
           "result": {
               "sums": {
                   "apr": "0.0597652039949379861158979362586657031468575710584143257025001370766265371913491",
-                  "execution": "0.951964836013963505",
+                  "execution_blocks": "0.451964836013963505",
+                  "execution_mev": "0.31964836013963505",
                   "exits": "0.0014143880000005993",
                   "outstanding_consensus_pnl": "0.000829238",
                   "sum": "3.2351487110139639043",
@@ -8349,14 +8350,16 @@ Getting eth2 staking performance
               "validators": {
                   "432840": {
                       "apr": "0.0466762036714707128052091929912369373004480648295118244406922158753010413605874",
-                      "execution": "0.93361811418473",
+                      "execution_blocks": "0.63361811418473",
+                      "execution_mev": "0.361811418473",
                       "exits": "0.0014143880000005993",
                       "sum": "2.5266283731847305993",
                       "withdrawals": "1.591595871"
                   },
                   "624729": {
                       "apr": "0.0130890003234672733106887432674287658464095062289025012618079212013254958307617",
-                      "execution": "0.018346721829233505",
+                      "execution_blocks": "0.016346721829233505",
+                      "execution_mev": "0.012346721829233505",
                       "outstanding_consensus_pnl": "0.000829238",
                       "sum": "0.708520337829233305",
                       "withdrawals": "0.6893443779999998"
@@ -8371,7 +8374,8 @@ Getting eth2 staking performance
    :resjson object sums: Sums of all the pages of the results
    :resjson object validator: Mapping of validator index to performance for the current page
    :resjson string apr: The APR of returns for the given timerange for the validator.
-   :resjson string execution: The sum of execution layer ETH PnL for the validator.
+   :resjson string execution_blocks: The sum of the block rewards of the validator sent to the fee recipient if that recipient is tracked.
+   :resjson string execution_mev: The sum of MEV rewards for blocks proposed by the validator if the MEV fee recipient is tracked.
    :resjson string withdrawals: The sum of consensus layer withdrawals ETH pnl for the validator
    :resjson string exits: The sum of the exit ETH PnL for the validator
    :resjson string outstanding_consensus_pnl: If a recent timerange is queried we also take into account not yet withdrawn ETH gathering in the consensus layer.

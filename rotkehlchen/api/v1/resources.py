@@ -1328,9 +1328,13 @@ class HistorySkippedExternalEventResource(BaseMethodView):
 
 class HistoryEventResource(BaseMethodView):
 
-    put_schema = CreateHistoryEventSchema()
     post_schema = HistoryEventSchema()
     delete_schema = HistoryEventsDeletionSchema()
+
+    def make_put_schema(self) -> CreateHistoryEventSchema:
+        return CreateHistoryEventSchema(
+            dbhandler=self.rest_api.rotkehlchen.data.db,
+        )
 
     def make_patch_schema(self) -> EditHistoryEventSchema:
         return EditHistoryEventSchema(
@@ -1343,7 +1347,7 @@ class HistoryEventResource(BaseMethodView):
         return self.rest_api.get_history_events(filter_query=filter_query, group_by_event_ids=group_by_event_ids)  # noqa: E501
 
     @require_loggedin_user()
-    @use_kwargs(put_schema, location='json')
+    @resource_parser.use_kwargs(make_put_schema, location='json')
     def put(self, events: list['HistoryBaseEntry']) -> Response:
         return self.rest_api.add_history_events(events)
 

@@ -437,10 +437,11 @@ def initialize_mock_rotkehlchen_instance(
             user_db=rotki.data.db,
         )
 
-        data_updater.update_accounting_rules(
-            data=json.loads(latest_accounting_rules.read_text(encoding='utf-8'))['accounting_rules'],
-            version=999999,  # only for logs
-        )
+        for version, jsonfile in latest_accounting_rules:
+            data_updater.update_accounting_rules(
+                data=json.loads(jsonfile.read_text(encoding='utf-8'))['accounting_rules'],
+                version=version,
+            )
         with accountant.db.conn.read_ctx() as cursor:
             db_settings = accountant.db.get_settings(cursor)
 

@@ -1,4 +1,6 @@
+import json
 import logging
+from collections import defaultdict
 from typing import TYPE_CHECKING, Literal
 
 from pysqlcipher3 import dbapi2 as sqlcipher
@@ -15,6 +17,7 @@ from rotkehlchen.db.filtering import (
     ETH_STAKING_EVENT_JOIN,
     EthStakingEventFilterQuery,
     EthWithdrawalFilterQuery,
+    EvmEventFilterQuery,
 )
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.fval import FVal
@@ -357,25 +360,53 @@ class DBEth2:
             cursor: 'DBCursor',
             withdrawals_filter_query: EthWithdrawalFilterQuery,
             exits_filter_query: EthWithdrawalFilterQuery,
-            execution_filter_query: EthStakingEventFilterQuery,
-    ) -> tuple[dict[int, FVal], dict[int, FVal], dict[int, FVal]]:
+            blocks_execution_filter_query: EthStakingEventFilterQuery,
+            mev_execution_filter_query: EvmEventFilterQuery,
+            to_filter_indices: set[int] | None,
+    ) -> tuple[dict[int, FVal], dict[int, FVal], dict[int, FVal], dict[int, FVal]]:
         """Query withdrawals, exits, EL rewards amounts for the given filter.
 
         Returns each of the different amount sums for the period per validator
         """
         withdrawals_amounts = self._validator_stats_process_queries(
             cursor=cursor,
-            amount_querystr='SUM(CAST(amount AS REAL))',
+            amount_querystr='SUM(CAST(amount AS REAL))',  # note: has precision issues
             filter_query=withdrawals_filter_query,
         )
         exits_pnl = self._validator_stats_process_queries(
             cursor=cursor,
-            amount_querystr='CAST(amount AS REAL) - 32',
+            amount_querystr='CAST(amount AS REAL) - 32',  # note: has precision issues
             filter_query=exits_filter_query,
         )
-        execution_rewards_amounts = self._validator_stats_process_queries(
+        blocks_rewards_amounts = self._validator_stats_process_queries(
             cursor=cursor,
-            amount_querystr='SUM(CAST(amount AS REAL))',
-            filter_query=execution_filter_query,
+            amount_querystr='SUM(CAST(amount AS REAL))',  # note: has precision issues
+            filter_query=blocks_execution_filter_query,
         )
-        return withdrawals_amounts, exits_pnl, execution_rewards_amounts
+
+        # For MEV we need to do this in python due to validator index being in extra data
+        # This is also why we pass
+        mev_rewards_amounts: dict[int, FVal] = defaultdict(FVal)
+        query, bindings = mev_execution_filter_query.prepare(with_pagination=False, with_order=False)  # noqa: E501
+        query = 'SELECT amount, extra_data FROM history_events ' + query
+        for amount_str, extra_data_raw in cursor.execute(query, bindings):
+            if extra_data_raw is None:
+                log.warning('During validators profit query got an event without extra_data')
+                continue
+
+            try:
+                extra_data = json.loads(extra_data_raw)
+            except json.JSONDecodeError:
+                log.error(f'Could not decode {extra_data_raw=} as json')
+                continue
+
+            if (validator_index := extra_data.get('validator_index')) is None:
+                log.warning(f'During validators profit query got extra_data {extra_data} without a validator index')  # noqa: E501
+                continue
+
+            if to_filter_indices is not None and validator_index not in to_filter_indices:
+                continue
+
+            mev_rewards_amounts[validator_index] += FVal(amount_str)
+
+        return withdrawals_amounts, exits_pnl, blocks_rewards_amounts, mev_rewards_amounts

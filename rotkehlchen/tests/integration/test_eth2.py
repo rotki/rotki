@@ -144,18 +144,20 @@ def test_withdrawals(eth2: 'Eth2', database, ethereum_accounts, query_method):
     assert account1_events == 47
 
 
-@pytest.mark.vcr
+# @pytest.mark.vcr
 @pytest.mark.parametrize('network_mocking', [False])
 @pytest.mark.freeze_time('2023-04-24 21:00:00 GMT')
-def test_block_production(eth2: 'Eth2', database):
+@pytest.mark.parametrize('ethereum_accounts', [[
+    '0x0fdAe061cAE1Ad4Af83b27A96ba5496ca992139b', '0x76b23B82c8dCf1635a9DF63Fe6D9AafAaF042A9B',
+]])
+def test_block_production(eth2: 'Eth2', database, ethereum_accounts):
     """Test that providing validators that have both pure block production and running
     mev-boost works and detects the block production events.
     """
     dbevents = DBHistoryEvents(database)
     dbeth2 = DBEth2(database)
     vindex1, vindex2 = 45555, 56562
-    vindex1_address = string_to_evm_address('0x0fdAe061cAE1Ad4Af83b27A96ba5496ca992139b')
-    vindex2_address = string_to_evm_address('0x76b23B82c8dCf1635a9DF63Fe6D9AafAaF042A9B')
+    vindex1_address, vindex2_address = ethereum_accounts[0], ethereum_accounts[1]
     with database.user_write() as write_cursor:
         dbeth2.add_or_update_validators(write_cursor, [
             ValidatorDetails(
@@ -174,22 +176,20 @@ def test_block_production(eth2: 'Eth2', database):
     with database.conn.read_ctx() as cursor:
         events = dbevents.get_history_events(
             cursor=cursor,
-            filter_query=HistoryEventFilterQuery.make(),
+            filter_query=HistoryEventFilterQuery.make(to_ts=Timestamp(1682370000)),
             has_premium=True,
             group_by_event_ids=False,
         )
 
-    assert events == [EthBlockEvent(
-        identifier=12,
+    expected_events = [EthBlockEvent(
         validator_index=vindex1,
         timestamp=TimestampMS(1666693607000),
         balance=Balance(FVal('0.126419309459217215')),
         fee_recipient=string_to_evm_address('0x690B9A9E9aa1C9dB991C7721a92d351Db4FaC990'),
-        fee_recipient_tracked=True,
+        fee_recipient_tracked=False,
         block_number=15824493,
         is_mev_reward=False,
     ), EthBlockEvent(
-        identifier=13,
         validator_index=vindex1,
         timestamp=TimestampMS(1666693607000),
         balance=Balance(FVal('0.126458404824519798')),
@@ -198,16 +198,14 @@ def test_block_production(eth2: 'Eth2', database):
         block_number=15824493,
         is_mev_reward=True,
     ), EthBlockEvent(
-        identifier=10,
         validator_index=vindex1,
         timestamp=TimestampMS(1668068651000),
         balance=Balance(FVal('0.095134860916352597')),
         fee_recipient=string_to_evm_address('0x95222290DD7278Aa3Ddd389Cc1E1d165CC4BAfe5'),
-        fee_recipient_tracked=True,
+        fee_recipient_tracked=False,
         block_number=15938405,
         is_mev_reward=False,
     ), EthBlockEvent(
-        identifier=11,
         validator_index=vindex1,
         timestamp=TimestampMS(1668068651000),
         balance=Balance(FVal('0.109978419256414016')),
@@ -216,7 +214,6 @@ def test_block_production(eth2: 'Eth2', database):
         block_number=15938405,
         is_mev_reward=True,
     ), EthBlockEvent(
-        identifier=9,
         validator_index=vindex2,
         timestamp=TimestampMS(1670267915000),
         balance=Balance(FVal('0.025900962606266958')),
@@ -225,7 +222,6 @@ def test_block_production(eth2: 'Eth2', database):
         block_number=16120623,
         is_mev_reward=False,
     ), EthBlockEvent(
-        identifier=8,
         validator_index=vindex2,
         timestamp=TimestampMS(1671379127000),
         balance=Balance(FVal('0.02290370247079784')),
@@ -234,7 +230,6 @@ def test_block_production(eth2: 'Eth2', database):
         block_number=16212625,
         is_mev_reward=False,
     ), EthBlockEvent(
-        identifier=7,
         validator_index=vindex2,
         timestamp=TimestampMS(1674734363000),
         balance=Balance(FVal('0.012922327272245232')),
@@ -243,7 +238,6 @@ def test_block_production(eth2: 'Eth2', database):
         block_number=16490846,
         is_mev_reward=False,
     ), EthBlockEvent(
-        identifier=6,
         validator_index=vindex2,
         timestamp=TimestampMS(1675143275000),
         balance=Balance(FVal('0.016091543022603308')),
@@ -252,16 +246,14 @@ def test_block_production(eth2: 'Eth2', database):
         block_number=16524748,
         is_mev_reward=False,
     ), EthBlockEvent(
-        identifier=4,
         validator_index=vindex1,
         timestamp=TimestampMS(1675926299000),
         balance=Balance(FVal('0.156090536122554115')),
         fee_recipient=string_to_evm_address('0xAAB27b150451726EC7738aa1d0A94505c8729bd1'),
-        fee_recipient_tracked=True,
+        fee_recipient_tracked=False,
         block_number=16589592,
         is_mev_reward=False,
     ), EthBlockEvent(
-        identifier=5,
         validator_index=vindex1,
         timestamp=TimestampMS(1675926299000),
         balance=Balance(FVal('0.155599501480976115')),
@@ -270,7 +262,6 @@ def test_block_production(eth2: 'Eth2', database):
         block_number=16589592,
         is_mev_reward=True,
     ), EthBlockEvent(
-        identifier=3,
         validator_index=vindex2,
         timestamp=TimestampMS(1676596919000),
         balance=Balance(FVal('0.004759289463309382')),
@@ -279,16 +270,14 @@ def test_block_production(eth2: 'Eth2', database):
         block_number=16645139,
         is_mev_reward=False,
     ), EthBlockEvent(
-        identifier=1,
         validator_index=vindex1,
         timestamp=TimestampMS(1681593839000),
         balance=Balance(FVal('0.013231650982632651')),
         fee_recipient=string_to_evm_address('0xFeebabE6b0418eC13b30aAdF129F5DcDd4f70CeA'),
-        fee_recipient_tracked=True,
+        fee_recipient_tracked=False,
         block_number=17055026,
         is_mev_reward=False,
     ), EthBlockEvent(
-        identifier=2,
         validator_index=vindex1,
         timestamp=TimestampMS(1681593839000),
         balance=Balance(FVal('0.013233591104431482')),
@@ -297,6 +286,9 @@ def test_block_production(eth2: 'Eth2', database):
         block_number=17055026,
         is_mev_reward=True,
     )]
+    for x in events:  # do not compare identifiers
+        x.identifier = None
+    assert expected_events == events
 
 
 @pytest.mark.vcr
@@ -568,7 +560,7 @@ def test_block_with_mev_and_block_reward_and_multiple_mev_txs(
         identifier=1 + counter,
         event_identifier=f'BP1_{block_number}',
         tx_hash=tx_hash,
-        sequence_index=3 + counter,
+        sequence_index=2 + counter,
         timestamp=timestamp,
         location=Location.ETHEREUM,
         event_type=HistoryEventType.STAKING,
@@ -578,5 +570,6 @@ def test_block_with_mev_and_block_reward_and_multiple_mev_txs(
         location_label=user_address,
         address=mevbot_address,
         notes=f'Receive {amount} ETH from {mevbot_address} as mev reward for block {block_number} in {tx_hash.hex()}',  # noqa: E501
+        extra_data={'validator_index': vindex},
     ) for counter, (tx_hash, amount) in enumerate(tx_hashes_and_amounts)]
     assert events == expected_events

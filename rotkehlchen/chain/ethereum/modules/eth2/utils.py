@@ -6,6 +6,7 @@ from rotkehlchen.chain.ethereum.modules.eth2.constants import DEFAULT_VALIDATOR_
 from rotkehlchen.db.filtering import (
     EthStakingEventFilterQuery,
     EthWithdrawalFilterQuery,
+    EvmEventFilterQuery,
     WithdrawalTypesFilter,
 )
 from rotkehlchen.fval import FVal
@@ -64,7 +65,7 @@ def create_profit_filter_queries(
         to_ts: Timestamp,
         validator_indices: list[int] | None,
         tracked_addresses: Sequence[ChecksumEvmAddress],
-) -> tuple[EthWithdrawalFilterQuery, EthWithdrawalFilterQuery, EthStakingEventFilterQuery]:
+) -> tuple[EthWithdrawalFilterQuery, EthWithdrawalFilterQuery, EthStakingEventFilterQuery, EvmEventFilterQuery]:  # noqa: E501
     """Create the Filter queries for withdrawal events and execution layer reward events"""
     withdrawals_filter_query = EthWithdrawalFilterQuery.make(
         from_ts=from_ts,
@@ -84,13 +85,22 @@ def create_profit_filter_queries(
         entry_types=IncludeExcludeFilterData(values=[HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT]),
         withdrawal_types_filter=WithdrawalTypesFilter.ONLY_EXITS,
     )
-    execution_filter_query = EthStakingEventFilterQuery.make(
+    blocks_execution_filter_query = EthStakingEventFilterQuery.make(
         from_ts=from_ts,
         to_ts=to_ts,
         validator_indices=validator_indices,
         event_types=[HistoryEventType.STAKING],
-        event_subtypes=[HistoryEventSubType.BLOCK_PRODUCTION, HistoryEventSubType.MEV_REWARD],
+        event_subtypes=[HistoryEventSubType.BLOCK_PRODUCTION],
         entry_types=IncludeExcludeFilterData(values=[HistoryBaseEntryType.ETH_BLOCK_EVENT]),
         location_labels=tracked_addresses,  # type: ignore  # addresses are strings
     )
-    return withdrawals_filter_query, exits_filter_query, execution_filter_query
+    # Unfortunately here at the moment we can't filter by validator index. But since it's
+    # in the extra data we do it where this filter is used
+    mev_execution_filter_query = EvmEventFilterQuery.make(
+        from_ts=from_ts,
+        to_ts=to_ts,
+        event_types=[HistoryEventType.STAKING],
+        event_subtypes=[HistoryEventSubType.MEV_REWARD],
+        location_labels=tracked_addresses,  # type: ignore  # addresses are strings
+    )
+    return withdrawals_filter_query, exits_filter_query, blocks_execution_filter_query, mev_execution_filter_query  # noqa: E501

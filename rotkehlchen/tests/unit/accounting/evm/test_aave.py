@@ -98,10 +98,36 @@ def test_v2_withdraw(accountant: 'Accountant'):
             free_amount=ZERO,
             taxable_amount=FVal(1000),
             price=Price(ONE),
-            pnl=PNL(taxable=ZERO, free=ZERO),  # Deposits are not taxable
+            pnl=PNL(taxable=ZERO, free=ZERO),
             cost_basis=None,
             index=0,
             extra_data={'tx_hash': HASH1.hex()},  # pylint: disable=no-member
+        ), ProcessedAccountingEvent(
+            event_type=AccountingEventType.TRANSACTION_EVENT,
+            notes='Receive 1000 aDAI from AAVE v2',
+            location=Location.ETHEREUM,
+            timestamp=TS1,
+            asset=Asset('eip155:1/erc20:0x028171bCA77440897B824Ca71D1c56caC55b68A3'),
+            free_amount=FVal(1000),
+            taxable_amount=ZERO,
+            price=Price(ONE),
+            pnl=PNL(taxable=ZERO, free=ZERO),
+            cost_basis=None,
+            index=1,
+            extra_data={'tx_hash': HASH1.hex()},  # pylint: disable=no-member
+        ), ProcessedAccountingEvent(
+            event_type=AccountingEventType.TRANSACTION_EVENT,
+            notes='Return 1050 aDAI to AAVE v2',
+            location=Location.ETHEREUM,
+            timestamp=TS2,
+            asset=Asset('eip155:1/erc20:0x028171bCA77440897B824Ca71D1c56caC55b68A3'),
+            free_amount=ZERO,
+            taxable_amount=FVal(1050),
+            price=Price(ONE),
+            pnl=PNL(taxable=ZERO, free=ZERO),
+            cost_basis=None,
+            index=2,
+            extra_data={'tx_hash': HASH2.hex()},  # pylint: disable=no-member
         ), ProcessedAccountingEvent(
             event_type=AccountingEventType.TRANSACTION_EVENT,
             notes=f'Gained 50 DAI on Aave v2 as interest rate for {USER_ADDRESS}',
@@ -113,7 +139,7 @@ def test_v2_withdraw(accountant: 'Accountant'):
             price=Price(ONE),
             pnl=PNL(taxable=FVal(50), free=ZERO),  # $50 interest gained
             cost_basis=None,
-            index=1,
+            index=3,
             extra_data={'tx_hash': HASH2.hex()},  # pylint: disable=no-member
         ), ProcessedAccountingEvent(
             event_type=AccountingEventType.TRANSACTION_EVENT,
@@ -126,11 +152,11 @@ def test_v2_withdraw(accountant: 'Accountant'):
             price=Price(ONE),
             pnl=PNL(taxable=ZERO, free=ZERO),
             cost_basis=None,
-            index=2,
+            index=4,
             extra_data={'tx_hash': HASH2.hex()},  # pylint: disable=no-member
         ),
     ]
-    expected_events[1].count_cost_basis_pnl = True  # can't be set by init()
+    expected_events[3].count_cost_basis_pnl = True  # can't be set by init()
     assert pot.processed_events == expected_events
 
 
@@ -192,12 +218,25 @@ def test_v2_payback(accountant: 'Accountant'):
 
     matched_acquisitions = [MatchedAcquisition(
         amount=FVal(50),
-        event=AssetAcquisitionEvent(amount=FVal(1000), timestamp=TS1, rate=Price(ONE), index=0),
+        event=AssetAcquisitionEvent(amount=FVal(1000), timestamp=TS1, rate=Price(ONE), index=1),
         taxable=True,
     )]
     matched_acquisitions[0].event.remaining_amount = FVal(950)  # can't be set by init
     expected_events = [
         ProcessedAccountingEvent(
+            event_type=AccountingEventType.TRANSACTION_EVENT,
+            notes='Receive 1000 variableDebtREN from AAVE v2',
+            location=Location.ETHEREUM,
+            timestamp=TS1,
+            asset=Asset('eip155:1/erc20:0xcd9D82d33bd737De215cDac57FE2F7f04DF77FE0'),
+            free_amount=FVal(1000),
+            taxable_amount=FVal(0),
+            price=Price(ONE),
+            pnl=PNL(taxable=ZERO, free=ZERO),
+            cost_basis=None,
+            index=0,
+            extra_data={'tx_hash': HASH1.hex()},  # pylint: disable=no-member
+        ), ProcessedAccountingEvent(
             event_type=AccountingEventType.TRANSACTION_EVENT,
             notes='Borrow 1000 REN from AAVE v2 with variable APY 0.80%',
             location=Location.ETHEREUM,
@@ -206,10 +245,23 @@ def test_v2_payback(accountant: 'Accountant'):
             free_amount=FVal(1000),
             taxable_amount=ZERO,
             price=Price(ONE),
-            pnl=PNL(taxable=ZERO, free=ZERO),  # Deposits are not taxable
+            pnl=PNL(taxable=ZERO, free=ZERO),
             cost_basis=None,
-            index=0,
+            index=1,
             extra_data={'tx_hash': HASH1.hex()},  # pylint: disable=no-member
+        ), ProcessedAccountingEvent(
+            event_type=AccountingEventType.TRANSACTION_EVENT,
+            notes='Return 1050 variableDebtREN to AAVE v2',
+            location=Location.ETHEREUM,
+            timestamp=TS2,
+            asset=Asset('eip155:1/erc20:0xcd9D82d33bd737De215cDac57FE2F7f04DF77FE0'),
+            free_amount=ZERO,
+            taxable_amount=FVal(1050),
+            price=Price(ONE),
+            pnl=PNL(taxable=ZERO, free=ZERO),
+            cost_basis=None,
+            index=2,
+            extra_data={'tx_hash': HASH2.hex()},  # pylint: disable=no-member
         ), ProcessedAccountingEvent(
             event_type=AccountingEventType.TRANSACTION_EVENT,
             notes=f'Lost 50 REN as debt during payback to Aave v2 loan for {USER_ADDRESS}',
@@ -227,7 +279,7 @@ def test_v2_payback(accountant: 'Accountant'):
                 matched_acquisitions=matched_acquisitions,
                 is_complete=True,
             ),
-            index=1,
+            index=3,
             extra_data={'tx_hash': HASH2.hex()},  # pylint: disable=no-member
         ), ProcessedAccountingEvent(
             event_type=AccountingEventType.TRANSACTION_EVENT,
@@ -240,10 +292,10 @@ def test_v2_payback(accountant: 'Accountant'):
             price=Price(ONE),
             pnl=PNL(taxable=ZERO, free=ZERO),
             cost_basis=None,
-            index=2,
+            index=4,
             extra_data={'tx_hash': HASH2.hex()},  # pylint: disable=no-member
         ),
     ]
-    expected_events[1].count_cost_basis_pnl = True  # can't be set by init()
-    expected_events[1].count_entire_amount_spend = True  # can't be set by init()
+    expected_events[3].count_cost_basis_pnl = True  # can't be set by init()
+    expected_events[3].count_entire_amount_spend = True  # can't be set by init()
     assert pot.processed_events == expected_events

@@ -724,7 +724,7 @@ def test_eth_validators_performance(eth2, database, ethereum_accounts):
                 timestamp=TimestampMS(timestampms + (2 * (HOUR_IN_SECONDS * 1000))),
                 balance=Balance(block_reward_2),  # since mev builder gets it we shouldn't count it
                 fee_recipient=mev_builder_address,
-                fee_recipient_tracked=True,
+                fee_recipient_tracked=False,
                 block_number=block_number + 1,
                 is_mev_reward=False,
             ), EthBlockEvent(
@@ -740,23 +740,25 @@ def test_eth_validators_performance(eth2, database, ethereum_accounts):
                 sequence_index=0,
                 timestamp=TimestampMS(timestampms + (4 * (HOUR_IN_SECONDS * 1000))),
                 location=Location.ETHEREUM,
-                event_type=HistoryEventType.RECEIVE,
-                event_subtype=HistoryEventSubType.NONE,
+                event_type=HistoryEventType.STAKING,
+                event_subtype=HistoryEventSubType.MEV_REWARD,
                 asset=A_ETH,
                 balance=Balance(mev_reward_1),
                 location_label=vindex1_address,
                 notes=f'Received {mev_reward_1} ETH from {mev_builder_address}',
+                extra_data={'validator_index': vindex1},
             ), EvmEvent(
                 tx_hash=tx_hash_2,
                 sequence_index=0,
                 timestamp=TimestampMS(timestampms + (5 * (HOUR_IN_SECONDS * 1000))),
                 location=Location.ETHEREUM,
-                event_type=HistoryEventType.RECEIVE,
-                event_subtype=HistoryEventSubType.NONE,
+                event_type=HistoryEventType.STAKING,
+                event_subtype=HistoryEventSubType.MEV_REWARD,
                 asset=A_ETH,
                 balance=Balance(mev_reward_2),
                 location_label=vindex2_address,
                 notes=f'Received {mev_reward_2} ETH from {mev_builder_address}',
+                extra_data={'validator_index': vindex2},
             ), EthWithdrawalEvent(
                 validator_index=vindex1,
                 timestamp=TimestampMS(timestampms + (6 * (HOUR_IN_SECONDS * 1000))),
@@ -791,36 +793,39 @@ def test_eth_validators_performance(eth2, database, ethereum_accounts):
 
     assert set(performance.keys()) == {'sums', 'validators', 'entries_found', 'entries_total'}
     expected_sums = {
-        'execution': block_reward_1 + mev_reward_1 + mev_reward_2 + no_mev_block_reward_2,
+        'execution_blocks': block_reward_1 + no_mev_block_reward_2,
+        'execution_mev': mev_reward_1 + mev_reward_2,
         'exits': exit_1 - 32,
         'sum': block_reward_1 + mev_reward_1 + withdrawal_1 + (exit_1 - 32) + mev_reward_2 + no_mev_block_reward_2,   # noqa: E501
         'withdrawals': withdrawal_1,
     }
-    for check_key in ('execution', 'exits', 'sum', 'withdrawals'):
-        assert performance['sums'][check_key] == expected_sums[check_key]
+    for check_key, check_value in expected_sums.items():
+        assert performance['sums'][check_key] == check_value
     assert performance['sums']['apr'].is_close(FVal('0.00404161581589250586388450985171054082159224751613839429006282479554837399160762'))  # noqa: E501
 
     assert set(performance['validators'].keys()) == {vindex1, vindex2}
     expected_vindex1 = {
-        'execution': block_reward_1 + mev_reward_1,
+        'execution_blocks': block_reward_1,
+        'execution_mev': mev_reward_1,
         'exits': exit_1 - 32,
         'sum': block_reward_1 + mev_reward_1 + withdrawal_1 + (exit_1 - 32),
     }
-    check_performance_validator(performance, vindex1, ('execution', 'exits', 'sum'), expected_vindex1, FVal('0.00588921161744336568737457149820678805432013209494451739409154470208477353062825'))  # noqa: E501
+    check_performance_validator(performance, vindex1, ('execution_blocks', 'execution_mev', 'exits', 'sum'), expected_vindex1, FVal('0.00588921161744336568737457149820678805432013209494451739409154470208477353062825'))  # noqa: E501
     expected_vindex2 = {
-        'execution': mev_reward_2 + no_mev_block_reward_2,
+        'execution_blocks': no_mev_block_reward_2,
+        'execution_mev': mev_reward_2,
         'sum': mev_reward_2 + no_mev_block_reward_2,
     }
-    check_performance_validator(performance, vindex2, ('execution', 'sum'), expected_vindex2, FVal('0.00219402001434164604039444820521429358886436293733227118603410488901197445258700'))  # noqa: E501
+    check_performance_validator(performance, vindex2, ('execution_blocks', 'execution_mev', 'sum'), expected_vindex2, FVal('0.00219402001434164604039444820521429358886436293733227118603410488901197445258700'))  # noqa: E501
 
     # Check pagination and that cache works
     performance = eth2.get_performance(from_ts=Timestamp(0), to_ts=Timestamp(1706866836), limit=1, offset=0, ignore_cache=False)  # noqa: E501
     assert set(performance['validators'].keys()) == {vindex1}
-    check_performance_validator(performance, vindex1, ('execution', 'exits', 'sum'), expected_vindex1, FVal('0.00588921161744336568737457149820678805432013209494451739409154470208477353062825'))  # noqa: E501
+    check_performance_validator(performance, vindex1, ('execution_blocks', 'execution_mev', 'exits', 'sum'), expected_vindex1, FVal('0.00588921161744336568737457149820678805432013209494451739409154470208477353062825'))  # noqa: E501
 
     performance = eth2.get_performance(from_ts=Timestamp(0), to_ts=Timestamp(1706866836), limit=2, offset=1, ignore_cache=False)  # noqa: E501
     assert set(performance['validators'].keys()) == {vindex2}
-    check_performance_validator(performance, vindex2, ('execution', 'sum'), expected_vindex2, FVal('0.00219402001434164604039444820521429358886436293733227118603410488901197445258700'))  # noqa: E501
+    check_performance_validator(performance, vindex2, ('execution_blocks', 'execution_mev', 'sum'), expected_vindex2, FVal('0.00219402001434164604039444820521429358886436293733227118603410488901197445258700'))  # noqa: E501
 
     # check that filtering by an unknown address returns nothing
     performance = eth2.get_performance(from_ts=Timestamp(0), to_ts=Timestamp(1706866836), limit=10, offset=0, addresses=[make_evm_address()], ignore_cache=True)  # noqa: E501
@@ -872,13 +877,13 @@ def test_eth_validators_performance_recent(eth2, database, ethereum_accounts):
         'entries_total': 2,
         'sums': {
             'apr': FVal('0.0000776903705156613784446944579849811839682064281831828001284342697410897538992595'),  # noqa: E501
-            'execution': block_reward_1,
+            'execution_blocks': block_reward_1,
             'outstanding_consensus_pnl': outstanding_pnl_v1 + outstanding_pnl_v2,
             'sum': block_reward_1 + outstanding_pnl_v1 + outstanding_pnl_v2,
         }, 'validators': {
             vindex1: {
                 'apr': FVal('0.000147758740130539337547271202817412768671318268351221239436400390645888567672372'),  # noqa: E501
-                'execution': block_reward_1,
+                'execution_blocks': block_reward_1,
                 'outstanding_consensus_pnl': outstanding_pnl_v1,
                 'sum': block_reward_1 + outstanding_pnl_v1,
             }, vindex2: {
@@ -984,8 +989,9 @@ def test_combine_block_with_tx_events(eth2, database):
         asset=A_ETH,
         balance=Balance(mev_reward),
         location_label=vindex1_address,
-        notes=f'Received {mev_reward} ETH from {mev_builder_address} as mev reward for block {block_number}',  # noqa: E501
+        notes=f'Received {mev_reward} ETH from {mev_builder_address} as mev reward for block {block_number} in {tx_hash.hex()}',  # pylint: disable=no-member  # noqa: E501
         event_identifier=EthBlockEvent.form_event_identifier(block_number),
+        extra_data={'validator_index': vindex1},
     )
     assert modified_event == events[2]
 
