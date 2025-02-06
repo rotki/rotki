@@ -60,14 +60,16 @@ onMounted(() => {
       <div class="pl-8 pt-2 border-b border-default">
         <EnableEnsNamesSetting />
       </div>
-      <PrioritizedList
-        variant="flat"
-        :model-value="currentAddressNamePriorities"
-        :all-items="availableCurrentAddressNamePriorities()"
-        :disable-add="true"
-        :disable-delete="true"
-        @update:model-value="updateImmediate($event)"
-      />
+      <div class="flex flex-col gap-2">
+        <PrioritizedList
+          variant="flat"
+          :model-value="currentAddressNamePriorities"
+          :all-items="availableCurrentAddressNamePriorities()"
+          :disable-add="true"
+          :disable-delete="true"
+          @update:model-value="updateImmediate($event)"
+        />
+      </div>
     </RuiCard>
 
     <ActionStatusIndicator

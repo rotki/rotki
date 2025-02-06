@@ -14,7 +14,7 @@ withDefaults(
 <template>
   <div
     v-if="status && (status.success || status.error)"
-    class="action-status-indicator"
+    class="action-status-indicator min-h-[3rem]"
   >
     <RuiAlert
       class="mb-0"
@@ -25,9 +25,3 @@ withDefaults(
     </RuiAlert>
   </div>
 </template>
-
-<style scoped lang="scss">
-.action-status-indicator {
-  height: 48px;
-}
-</style>
