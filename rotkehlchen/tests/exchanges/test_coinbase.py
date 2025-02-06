@@ -477,7 +477,7 @@ def test_coinbase_query_history_events(
         event_type=HistoryEventType.WITHDRAWAL,
         timestamp=TimestampMS(1566726126000),
         asset=A_ETH,
-        balance=Balance(FVal('0.05770427')),
+        balance=Balance(FVal('0.05749427')),
         extra_data={
             'address': '0x6dcD6449dbCa615e40d696328209686eA95327b2',
             'transaction_id': '0x558bfa4d2a4ef598ddb92233459c00eda9e6c14cda75e6773b90208cb6938169',
