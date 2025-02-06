@@ -47,7 +47,7 @@
 <div id="overview"></div>
 
 ## 📖 **Overview**
-[Rotki](https://rotki.com/) is an open-source portfolio management tool designed to protect your privacy. Unlike centralized services, **Rotki encrypts and stores your financial data locally** on your device, ensuring full ownership of your information.
+[Rotki](https://rotki.com/) is an open source portfolio management tool that protects your privacy. The mission of rotki is to bring transparency into the crypto and financial sectors through the use of open source. Most importantly, unlike virtually every other competing service which consists of a closed source SaaS onto which you are forced to hand over all your financial data, with rotki your data is stored encrypted locally on your computer. It enables you to take ownership of your financial data!
 
 🔹 **Why choose Rotki?**
 - **Open-source & Transparent** 📖  
