@@ -28,6 +28,12 @@ export class ColibriConfigBuilder {
     return this;
   }
 
+  withLogLevel(logLevel: string): this {
+    assert(this.cmd !== '', 'Command must be set first');
+    this.args.push(`--log-level=${logLevel}`);
+    return this;
+  }
+
   setWorkDir(workDir: string): this {
     assert(workDir !== '', 'Work dir must be set');
     this.workDir = workDir;

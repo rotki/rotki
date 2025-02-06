@@ -10,12 +10,16 @@ import { ProcessManager } from '@electron/main/process-manager';
 import { ColibriConfig } from '@electron/main/colibri-args';
 import { RotkiCoreConfig } from '@electron/main/core-args';
 import { wait } from '@shared/utils';
+import { pick } from 'es-toolkit';
+import { LogLevel } from '@shared/log-level';
 import type { LogService } from '@electron/main/log-service';
 import type { AppConfig } from '@electron/main/app-config';
 
 interface SubprocessHandlerErrorListener {
   onProcessError: (message: string | Error, code: BackendCode) => void;
 }
+
+interface StartColibriParams { dataDirectory?: string; loglevel?: BackendOptions['loglevel'] }
 
 export class SubprocessHandler {
   private exiting: boolean;
@@ -110,11 +114,12 @@ export class SubprocessHandler {
       await this.terminateProcesses();
       return;
     }
-    await this.startColibri(options.dataDirectory);
+    await this.startColibri(pick(options, ['dataDirectory', 'loglevel']));
   }
 
-  private async startColibri(dataDirectory?: string) {
+  private async startColibri(options: StartColibriParams): Promise<void> {
     this.logger.log('Preparing to start colibri');
+    const { dataDirectory, loglevel = LogLevel.INFO } = options;
     const [port, url, isNonDefault] = await getPortAndUrl(
       this.config.ports.colibriPort,
       this.config.urls.colibriApiUrl,
@@ -128,6 +133,7 @@ export class SubprocessHandler {
     const { command, args, workDir } = ColibriConfig.create(this.config.isDev)
       .withLogfilePath(this.logger.colibriProcessLogFile)
       .withDataDirectory(dataDirectory)
+      .withLogLevel(loglevel)
       .withPort(port)
       .build();
 
