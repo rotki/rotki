@@ -1009,6 +1009,7 @@ class Coinbase(ExchangeInterface):
                         )
                     else:
                         fee = deserialize_fee(raw_fee['amount'])
+                        amount = AssetAmount(amount - fee)  # fee is deducted from withdrawal amount  # noqa: E501
 
             if 'network' in raw_data:
                 transaction_hash = get_key_if_has_val(raw_data['network'], 'hash')
