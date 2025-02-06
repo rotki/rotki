@@ -186,4 +186,24 @@ def upgrade_v46_to_v47(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
                 identifiers_to_remove,
             )
 
+    @progress_step(description='Reset gemini events and cache')
+    def _reset_gemini_events(write_cursor: 'DBCursor') -> None:
+        write_cursor.execute(
+            'DELETE FROM history_events WHERE location=? AND event_identifier NOT LIKE ?',
+            ((gemini_db_loc := Location.GEMINI.serialize_for_db()), f'{ROTKI_EVENT_PREFIX}_%'),
+        )
+        write_cursor.execute(
+            "DELETE FROM trades WHERE location=? AND link != ''",
+            (gemini_db_loc,),
+        )
+        write_cursor.execute(
+            'DELETE FROM used_query_ranges WHERE name LIKE ? OR name LIKE ? OR name LIKE ? OR name LIKE ?',  # noqa: E501
+            (
+                f'{(gemini_loc := Location.GEMINI.serialize())}_history_events_%',
+                f'{gemini_loc}_trades_%',
+                f'{gemini_loc}_margins_%',
+                f'{gemini_loc}_asset_movements_%',
+            ),
+        )
+
     perform_userdb_upgrade_steps(db=db, progress_handler=progress_handler, should_vacuum=True)
