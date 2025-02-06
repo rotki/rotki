@@ -5,6 +5,7 @@ import { useAssetsApi } from '@/composables/api/assets';
 import { useInterop } from '@/composables/electron-interop';
 import { useAssets } from '@/composables/assets';
 import type { AssetMergePayload, AssetUpdatePayload } from '@/types/asset';
+import type { useAssetIconApi } from '@/composables/api/assets/icon';
 
 vi.mock('@/composables/api/assets/index', () => ({
   useAssetsApi: vi.fn().mockReturnValue({
@@ -14,6 +15,12 @@ vi.mock('@/composables/api/assets/index', () => ({
     importCustom: vi.fn().mockResolvedValue(1),
     exportCustom: vi.fn().mockResolvedValue({}),
   }),
+}));
+
+vi.mock('@/composables/api/assets/icon', () => ({
+  useAssetIconApi: vi.fn().mockReturnValue({
+    checkAsset: vi.fn().mockResolvedValue(404),
+  } satisfies Partial<ReturnType<typeof useAssetIconApi>>),
 }));
 
 vi.mock('@/store/tasks', () => ({
@@ -39,6 +46,8 @@ vi.mock('@/composables/electron-interop', () => {
     interop: mockInterop,
   };
 });
+
+vi.mock('');
 
 describe('store::assets/index', () => {
   setActivePinia(createPinia());

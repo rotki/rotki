@@ -7,7 +7,7 @@ interface CheckAssetOptions {
   abortController?: AbortController;
 }
 
-interface UseAsetIconApiReturn {
+interface UseAssetIconApiReturn {
   assetImageUrl: (identifier: string, randomString?: string | number) => string;
   uploadIcon: (identifier: string, file: File) => Promise<boolean>;
   setIcon: (asset: string, file: string) => Promise<boolean>;
@@ -16,7 +16,7 @@ interface UseAsetIconApiReturn {
   checkAsset: (identifier: string, options: CheckAssetOptions) => Promise<number>;
 }
 
-export function useAssetIconApi(): UseAsetIconApiReturn {
+export function useAssetIconApi(): UseAssetIconApiReturn {
   const assetImageUrl = (identifier: string, randomString?: string | number): string => {
     let url = `${apiUrls.colibriApiUrl}/assets/icon?asset_id=${encodeURIComponent(identifier)}`;
 

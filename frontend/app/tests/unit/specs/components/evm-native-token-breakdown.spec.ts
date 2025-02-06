@@ -4,6 +4,7 @@ import { type ComponentMountingOptions, type VueWrapper, mount } from '@vue/test
 import { computed, ref } from 'vue';
 import EvmNativeTokenBreakdown from '@/components/EvmNativeTokenBreakdown.vue';
 import { libraryDefaults } from '../../utils/provide-defaults';
+import type { useAssetIconApi } from '@/composables/api/assets/icon';
 
 vi.mock('vue-router', () => ({
   useRoute: vi.fn(),
@@ -14,6 +15,13 @@ vi.mock('vue-router', () => ({
     beforeEach: vi.fn(),
   })),
   createWebHashHistory: vi.fn(),
+}));
+
+vi.mock('@/composables/api/assets/icon', () => ({
+  useAssetIconApi: vi.fn().mockReturnValue({
+    checkAsset: vi.fn().mockResolvedValue(404),
+    assetImageUrl: vi.fn(),
+  } satisfies Partial<ReturnType<typeof useAssetIconApi>>),
 }));
 
 vi.mock('@/composables/locations', () => ({

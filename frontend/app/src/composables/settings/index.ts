@@ -28,14 +28,14 @@ type UpdateResult = SuccessfulUpdate | UnsuccessfulUpdate;
 
 async function getActionStatus(method: () => Promise<ActionStatus>, messages?: BaseMessage): Promise<UpdateResult> {
   let message: UpdateResult = {
-    error: messages?.error || '',
+    error: messages?.error ?? '',
   };
   try {
     const result = await method();
 
     if (result.success) {
       message = {
-        success: messages?.success || '',
+        success: messages?.success ?? '',
       };
     }
     else if (result.message) {

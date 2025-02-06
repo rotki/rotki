@@ -2,6 +2,7 @@ import { type VueWrapper, mount } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import OnboardingSettings from '@/components/settings/OnboardingSettings.vue';
 import { useMainStore } from '@/store/main';
+import type { useAssetIconApi } from '@/composables/api/assets/icon';
 
 vi.mock('@/composables/electron-interop', () => ({
   useInterop: vi.fn().mockReturnValue({
@@ -59,6 +60,12 @@ vi.mock('@/composables/api/settings/settings-api', () => ({
       },
     }),
   }),
+}));
+
+vi.mock('@/composables/api/assets/icon', () => ({
+  useAssetIconApi: vi.fn().mockReturnValue({
+    checkAsset: vi.fn().mockResolvedValue(404),
+  } satisfies Partial<ReturnType<typeof useAssetIconApi>>),
 }));
 
 describe('onboardingSetting.vue', () => {
