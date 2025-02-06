@@ -4,10 +4,10 @@
   <img src="https://raw.githubusercontent.com/rotki/rotki/develop/frontend/app/public/assets/images/rotkehlchen_no_text.png" alt="Rotki Logo" width="250">
 </p>
 
-<h1 align="center">Rotki: The Open-Source Portfolio Manager</h1>
+<h1 align="center">rotki: The Open-Source Portfolio Manager</h1>
 
 <p align="center">
-  <strong>A privacy-focused portfolio tracker, accounting, and analytics tool.</strong>
+  <strong>A privacy-focused portfolio manager, accounting, and analytics tool.</strong>
 </p>
 
 <div align="center">
@@ -104,7 +104,7 @@ For **detailed setup and usage guides**, visit our [documentation](https://docs.
 
 📌 **Quick Start**:
 - Follow the [usage guide](https://docs.rotki.com/usage-guides/).
-- Configure settings & import your wallet.
+- Configure settings & import your addresses.
 - Start tracking and analyzing your portfolio! 🚀
 
 ---
@@ -112,7 +112,7 @@ For **detailed setup and usage guides**, visit our [documentation](https://docs.
 <div id="changelog"></div>
 
 ## 📜 **Changelog**
-Stay up to date with Rotki's latest features and improvements:
+Stay up to date with rotki's latest features and improvements:
 
 📌 **[Full Changelog](https://rotki.readthedocs.io/en/latest/changelog.html)**  
 📌 **[Release Notes](https://github.com/rotki/rotki/releases)**  
