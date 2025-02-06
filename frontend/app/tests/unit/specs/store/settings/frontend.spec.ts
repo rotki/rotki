@@ -20,7 +20,7 @@ import { useSettingsApi } from '@/composables/api/settings/settings-api';
 
 vi.mock('@/composables/api/settings/settings-api', () => ({
   useSettingsApi: vi.fn().mockReturnValue({
-    setSettings: vi.fn(),
+    setSettings: vi.fn().mockResolvedValue({ other: { frontendSettings: {} } }),
   }),
 }));
 

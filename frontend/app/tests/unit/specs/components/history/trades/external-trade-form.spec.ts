@@ -10,11 +10,18 @@ import { useAssetInfoApi } from '@/composables/api/assets/info';
 import { type Trade, TradeType } from '@/types/history/trade';
 import { createNewTrade } from '@/utils/history/trades';
 import type { AssetMap } from '@/types/asset';
+import type { useAssetIconApi } from '@/composables/api/assets/icon';
 
 vi.mock('@/store/balances/prices', () => ({
   useBalancePricesStore: vi.fn().mockReturnValue({
     getHistoricPrice: vi.fn(),
   }),
+}));
+
+vi.mock('@/composables/api/assets/icon', () => ({
+  useAssetIconApi: vi.fn().mockReturnValue({
+    checkAsset: vi.fn().mockResolvedValue(404),
+  } satisfies Partial<ReturnType<typeof useAssetIconApi>>),
 }));
 
 describe('externalTradeForm.vue', () => {

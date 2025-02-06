@@ -4,6 +4,7 @@ import { setActivePinia } from 'pinia';
 import SuggestedItem from '@/components/table-filter/SuggestedItem.vue';
 import { createCustomPinia } from '../../../utils/create-pinia';
 import type { Suggestion } from '@/types/filtering';
+import type { useAssetIconApi } from '@/composables/api/assets/icon';
 
 vi.mock('@/composables/assets/retrieval', () => ({
   useAssetInfoRetrieval: vi.fn().mockReturnValue({
@@ -15,6 +16,13 @@ vi.mock('@/composables/assets/retrieval', () => ({
       name: 'Name 2',
     })),
   }),
+}));
+
+vi.mock('@/composables/api/assets/icon', () => ({
+  useAssetIconApi: vi.fn().mockReturnValue({
+    checkAsset: vi.fn().mockResolvedValue(404),
+    assetImageUrl: vi.fn(),
+  } satisfies Partial<ReturnType<typeof useAssetIconApi>>),
 }));
 
 describe('table-filter/SuggestedItem.vue', () => {

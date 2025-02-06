@@ -7,7 +7,14 @@ import { createCustomPinia } from '../../../utils/create-pinia';
 
 vi.mock('@/composables/api/settings/settings-api', () => ({
   useSettingsApi: vi.fn().mockReturnValue({
-    setSettings: vi.fn().mockReturnValue({ other: {} }),
+    setSettings: vi.fn().mockReturnValue({
+      other: {
+        frontendSettings: {
+          thousandSeparator: ',',
+          decimalSeparator: '.',
+        },
+      },
+    }),
   }),
 }));
 

@@ -8,7 +8,7 @@ import { useSettingsApi } from '@/composables/api/settings/settings-api';
 
 vi.mock('@/composables/api/settings/settings-api', () => ({
   useSettingsApi: vi.fn().mockReturnValue({
-    setSettings: vi.fn(),
+    setSettings: vi.fn().mockResolvedValue({ other: {} }),
   }),
 }));
 
@@ -32,7 +32,7 @@ describe('defiWizard.vue', () => {
     settings = getDefaultFrontendSettings();
     wrapper = createWrapper();
     api = useSettingsApi();
-    api.setSettings = vi.fn();
+    api.setSettings = vi.fn().mockResolvedValue({ other: {} });
   });
 
   afterEach(() => {
