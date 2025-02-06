@@ -22,7 +22,11 @@ from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.base import HistoryEvent
-from rotkehlchen.history.events.structures.types import EventDirection
+from rotkehlchen.history.events.structures.types import (
+    EventDirection,
+    HistoryEventSubType,
+    HistoryEventType,
+)
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import Timestamp, TradeType
@@ -323,8 +327,14 @@ class HistoricalBalancesManager:
                 trade_bindings,
             )
             cursor2.execute(
-                f'SELECT {HISTORY_BASE_ENTRY_FIELDS} FROM history_events WHERE {" AND ".join(event_where_clauses)} ORDER BY timestamp',  # noqa: E501
-                event_bindings,
+                f'SELECT {HISTORY_BASE_ENTRY_FIELDS} FROM history_events WHERE {" AND ".join(event_where_clauses)} '  # noqa: E501
+                f'AND NOT ((type=? AND subtype=?) OR (type=? AND subtype=?)) ORDER BY timestamp',
+                event_bindings + [
+                    HistoryEventType.DEPOSIT.serialize(),
+                    HistoryEventSubType.DEPOSIT_ASSET.serialize(),
+                    HistoryEventType.WITHDRAWAL.serialize(),
+                    HistoryEventSubType.REMOVE_ASSET.serialize(),
+                ],  # Skip DEPOSIT/DEPOSIT_ASSET and WITHDRAWAL/REMOVE_ASSET events since they don't affect the balance.  # noqa: E501
             )
 
             trades_buffer = deque(cursor1.fetchmany(BATCH_SIZE))

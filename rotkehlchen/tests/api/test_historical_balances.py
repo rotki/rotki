@@ -13,6 +13,7 @@ from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.types import (
     HistoryEventSubType,
@@ -72,6 +73,13 @@ def fixture_setup_historical_data(rotkehlchen_api_server: 'APIServer') -> None:
             asset=A_BTC,
             balance=Balance(amount=FVal('0.5')),
             notes='BTC partial spend',
+        ),
+        AssetMovement(  # AssetMovements should be ignored
+            timestamp=ts_sec_to_ms(Timestamp(START_TS + DAY_IN_SECONDS * 2)),
+            location=Location.COINBASE,
+            event_type=HistoryEventType.WITHDRAWAL,
+            asset=A_BTC,
+            balance=Balance(FVal('3')),
         ),
     ]
     with db.user_write() as write_cursor:
@@ -245,7 +253,7 @@ def test_get_historical_asset_amounts_over_time_with_negative_amount(
     assert len(result['times']) == len(result['values'])
     assert len(result['times']) == 2
 
-    assert result['last_event_identifier'] == [4, events[0].event_identifier]
+    assert result['last_event_identifier'] == [5, events[0].event_identifier]
     assert result['times'][0] == START_TS  # Initial timestamp
     assert result['times'][1] == START_TS + DAY_IN_SECONDS * 2  # First spend
     assert result['values'][0] == '2'  # Initial balance
@@ -303,7 +311,7 @@ def test_get_historical_assets_in_collection_amounts_over_time(
     assert len(result['times']) == len(result['values'])
     assert len(result['times']) == 2
 
-    assert result['last_event_identifier'] == [4, events[0].event_identifier]
+    assert result['last_event_identifier'] == [5, events[0].event_identifier]
     assert result['times'][0] == START_TS  # Initial timestamp
     assert result['times'][1] == START_TS + DAY_IN_SECONDS * 2  # First spend
     assert result['values'][0] == '2'  # Initial balance
