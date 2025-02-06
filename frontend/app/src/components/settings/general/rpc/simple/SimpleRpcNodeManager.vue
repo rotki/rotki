@@ -100,7 +100,7 @@ defineExpose({
             >
               <template #activator>
                 <RuiIcon
-                  name="earth-line"
+                  name="lu-earth"
                   class="text-rui-text-secondary"
                 />
               </template>
@@ -113,7 +113,7 @@ defineExpose({
             >
               <template #activator>
                 <RuiIcon
-                  name="user-2-line"
+                  name="lu-user"
                   class="text-rui-text-secondary"
                 />
               </template>
