@@ -114,7 +114,7 @@ fn url_encode_identifier(input: &str) -> String {
 // Find the icon in the custom path if existing, otherwise find the icon in the normal path
 pub async fn find_icon(datadir: &Path, normalpath: &Path, asset_id: &str) -> Option<PathBuf> {
     let custom_path = datadir
-        .join("images/assets/all/")
+        .join("images/assets/custom/")
         .join(url_encode_identifier(asset_id));
     if let Some(asset_path) = search_icon_in_path(&custom_path).await {
         return Some(asset_path);
