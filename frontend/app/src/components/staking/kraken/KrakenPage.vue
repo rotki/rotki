@@ -10,14 +10,18 @@ import InternalLink from '@/components/helper/InternalLink.vue';
 import AppImage from '@/components/common/AppImage.vue';
 import FullSizeContent from '@/components/common/FullSizeContent.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
+import { useBalances } from '@/composables/balances';
 import type { RouteLocationRaw } from 'vue-router';
 import type { KrakenStakingDateFilter } from '@/types/staking';
 
 const filters = ref<KrakenStakingDateFilter>({});
 
 const { isLoading, shouldShowLoadingScreen } = useStatusStore();
-const { $reset, load } = useKrakenStakingStore();
+const store = useKrakenStakingStore();
+const { $reset, load } = store;
+const { events } = toRefs(store);
 const { connectedExchanges } = storeToRefs(useExchangesStore());
+const { refreshPrices } = useBalances();
 
 const { t } = useI18n();
 
@@ -36,21 +40,16 @@ const isKrakenConnected = computed(() => {
   return exchanges.some(({ location }) => location === 'kraken');
 });
 
-const refresh = () => load(true, get(filters));
+async function refresh(ignoreCache: boolean = false) {
+  await load(ignoreCache, get(filters));
+  const assets = get(events).received.map(item => item.asset);
+  await refreshPrices(ignoreCache, assets);
+}
 
-watch(isKrakenConnected, async (isKrakenConnected) => {
-  if (isKrakenConnected)
-    await load(false, get(filters));
-});
-
-watch(filters, async () => {
-  if (get(isKrakenConnected))
-    await load(false, get(filters));
-});
-
-onMounted(async () => {
-  if (get(isKrakenConnected))
-    await load(false, get(filters));
+watchImmediate([filters, isKrakenConnected], async ([_, isKrakenConnected]) => {
+  if (isKrakenConnected) {
+    await refresh();
+  }
 });
 
 onUnmounted(() => {
@@ -73,7 +72,7 @@ onUnmounted(() => {
             variant="outlined"
             color="primary"
             :loading="refreshing || loading"
-            @click="refresh()"
+            @click="refresh(true)"
           >
             <template #prepend>
               <RuiIcon name="lu-refresh-ccw" />

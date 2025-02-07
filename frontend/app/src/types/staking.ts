@@ -1,4 +1,4 @@
-import { NumericString } from '@rotki/common';
+import { AssetBalance, NumericString } from '@rotki/common';
 import { z } from 'zod';
 
 export enum KrakenStakingEventType {
@@ -10,31 +10,20 @@ export enum KrakenStakingEventType {
 
 export const KrakenStakingEventTypeEnum = z.nativeEnum(KrakenStakingEventType);
 
-const KrakenStakingEvent = z.object({
-  amount: NumericString,
-  asset: z.string(),
+const KrakenStakingEvent = AssetBalance.extend({
   eventType: KrakenStakingEventTypeEnum,
   location: z.literal('kraken'),
   timestamp: z.number().nonnegative(),
-  usdValue: NumericString,
 });
 
 export type KrakenStakingEvent = z.infer<typeof KrakenStakingEvent>;
-
-const ReceivedAmount = z.object({
-  amount: NumericString,
-  asset: z.string(),
-  usdValue: NumericString,
-});
-
-export type ReceivedAmount = z.infer<typeof ReceivedAmount>;
 
 export const KrakenStakingEvents = z.object({
   assets: z.array(z.string()),
   entriesFound: z.number().nonnegative(),
   entriesLimit: z.number().min(-1),
   entriesTotal: z.number().nonnegative(),
-  received: z.array(ReceivedAmount),
+  received: z.array(AssetBalance),
   totalUsdValue: NumericString,
 });
 

@@ -1,29 +1,15 @@
 <script setup lang="ts">
-import { useBalancePricesStore } from '@/store/balances/prices';
 import BalanceDisplay from '@/components/display/BalanceDisplay.vue';
 import ValueAccuracyHint from '@/components/helper/hint/ValueAccuracyHint.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
-import type { ReceivedAmount } from '@/types/staking';
-import type { Balance } from '@rotki/common';
+import type { AssetBalance } from '@rotki/common';
 
 defineProps<{
-  received: ReceivedAmount[];
+  loading: boolean;
+  received: AssetBalance[];
 }>();
 
-const { prices } = storeToRefs(useBalancePricesStore());
 const selection = ref<'current' | 'historical'>('current');
-const pricesAreLoading = computed(() => Object.keys(get(prices)).length === 0);
-
-function getBalance({ amount, asset, usdValue }: ReceivedAmount): Balance {
-  const assetPrices = get(prices);
-
-  const currentPrice = assetPrices[asset] ? assetPrices[asset].value.times(amount) : Zero;
-  return {
-    amount,
-    usdValue: get(selection) === 'current' ? currentPrice : usdValue,
-  };
-}
-
 const { t } = useI18n();
 </script>
 
@@ -67,8 +53,8 @@ const { t } = useI18n();
           <BalanceDisplay
             no-icon
             :asset="item.asset"
-            :value="getBalance(item)"
-            :loading="pricesAreLoading && selection === 'current'"
+            :value="item"
+            :loading="loading && selection === 'current'"
           />
         </div>
       </div>

@@ -13,9 +13,9 @@ import type {
   KrakenStakingDateFilter,
   KrakenStakingEvents,
   KrakenStakingPagination,
-  ReceivedAmount,
 } from '@/types/staking';
 import type { TaskMeta } from '@/types/task';
+import type { AssetBalance } from '@rotki/common';
 
 function defaultPagination(): KrakenStakingPagination {
   return {
@@ -50,9 +50,9 @@ export const useKrakenStakingStore = defineStore('staking/kraken', () => {
     const eventsValue = get(rawEvents);
     const received = eventsValue.received;
 
-    const receivedAssets: Record<string, ReceivedAmount> = {};
+    const receivedAssets: Record<string, AssetBalance> = {};
 
-    received.forEach((item: ReceivedAmount) => {
+    received.forEach((item: AssetBalance) => {
       const associatedAsset: string = get(getAssociatedAssetIdentifier(item.asset));
 
       const receivedAsset = receivedAssets[associatedAsset];

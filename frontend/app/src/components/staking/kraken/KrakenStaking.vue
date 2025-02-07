@@ -1,15 +1,38 @@
 <script setup lang="ts">
-import { HistoryEventEntryType } from '@rotki/common';
+import { type AssetBalance, HistoryEventEntryType } from '@rotki/common';
 import { useKrakenStakingStore } from '@/store/staking/kraken';
 import HistoryEventsView from '@/components/history/events/HistoryEventsView.vue';
 import KrakenStakingReceived from '@/components/staking/kraken/KrakenStakingReceived.vue';
 import KrakenStakingOverview from '@/components/staking/kraken/KrakenStakingOverview.vue';
 import KrakenDateFilter from '@/components/staking/kraken/KrakenDateFilter.vue';
+import { useBalancePricesStore } from '@/store/balances/prices';
 import type { KrakenStakingDateFilter } from '@/types/staking';
 
 const modelValue = defineModel<KrakenStakingDateFilter>({ required: true });
 
 const { events } = toRefs(useKrakenStakingStore());
+const { assetPrice } = useBalancePricesStore();
+
+const earnedAssetsData = computed<[boolean, AssetBalance[]]>(() => {
+  const earned = get(events).received;
+
+  let loading = false;
+
+  const earnedWithPrice = earned.map((item) => {
+    const price = get(assetPrice(item.asset));
+    if (!price) {
+      loading = true;
+
+      return item;
+    }
+    return {
+      ...item,
+      usdValue: price.times(item.amount),
+    };
+  });
+
+  return [loading, earnedWithPrice];
+});
 </script>
 
 <template>
@@ -23,10 +46,14 @@ const { events } = toRefs(useKrakenStakingStore());
     </div>
     <div class="grid md:grid-cols-2 gap-4">
       <KrakenStakingOverview
-        :total-usd="events.totalUsdValue"
-        :earned="events.received"
+        :loading="earnedAssetsData[0]"
+        :total-usd-historical="events.totalUsdValue"
+        :earned="earnedAssetsData[1]"
       />
-      <KrakenStakingReceived :received="events.received" />
+      <KrakenStakingReceived
+        :loading="earnedAssetsData[0]"
+        :received="earnedAssetsData[1]"
+      />
     </div>
 
     <!-- as an exception here we specify event-types to only include staking events  -->
