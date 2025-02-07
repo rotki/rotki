@@ -12,7 +12,7 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_ETH, A_SOL, A_USDC
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
-from rotkehlchen.errors.asset import UnknownAsset, UnprocessableTradePair
+from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.exchanges.bybit import Bybit, bybit_symbol_to_base_quote
 from rotkehlchen.exchanges.data_structures import Trade
@@ -298,16 +298,13 @@ def test_assets_are_known(bybit_exchange: Bybit):
         try:
             bybit_symbol_to_base_quote(
                 symbol=ticker['symbol'],
-                five_letter_assets=bybit_exchange.five_letter_assets,
-                six_letter_assets=bybit_exchange.six_letter_assets,
+                four_letter_assets={'USDC', 'USDE', 'USDT'},
             )
         except UnknownAsset as e:
             test_warnings.warn(UserWarning(
                 f'Found unknown asset {e.identifier} in Bybit. '
                 f'Support for it has to be added',
             ))
-        except UnprocessableTradePair:
-            test_warnings.warn(UserWarning(f'Found bybit pair that cannot be processed {ticker["symbol"]}'))  # noqa: E501
 
 
 def test_query_old_trades(bybit_exchange: Bybit) -> None:
