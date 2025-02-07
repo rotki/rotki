@@ -19,12 +19,11 @@ from rotkehlchen.constants.timing import DAY_IN_SECONDS, WEEK_IN_SECONDS
 from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings
-from rotkehlchen.errors.asset import UnknownAsset, UnprocessableTradePair
+from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import MarginPosition, Trade
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
-from rotkehlchen.exchanges.utils import pair_symbol_to_base_quote
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.history.events.structures.asset_movement import (
@@ -68,12 +67,10 @@ log = RotkehlchenLogsAdapter(logger)
 
 def bybit_symbol_to_base_quote(
         symbol: str,
-        five_letter_assets: set[str],
-        six_letter_assets: set[str],
+        four_letter_assets: set[str],
 ) -> tuple[AssetWithOracles, AssetWithOracles]:
     """Turns a bybit symbol product into a base/quote asset tuple
 
-    - Can raise UnprocessableTradePair if symbol is in unexpected format
     - Can raise UnknownAsset if any of the pair assets are not known to rotki
     """
     # bybit has special pairs with perpetuals/shorts of the tokens
@@ -88,13 +85,10 @@ def bybit_symbol_to_base_quote(
     if split_symbol is not None and len(split_symbol) == 2:
         base_asset = asset_from_bybit(split_symbol[0])
         quote_asset = asset_from_bybit(split_symbol[1])
+    elif len(symbol) >= 4 and symbol[-4:] in four_letter_assets:
+        base_asset, quote_asset = asset_from_bybit(symbol[:-4].upper()), asset_from_bybit(symbol[-4:].upper())  # noqa: E501
     else:
-        base_asset, quote_asset = pair_symbol_to_base_quote(
-            symbol=symbol,
-            asset_deserialize_fn=asset_from_bybit,
-            five_letter_assets=five_letter_assets,
-            six_letter_assets=six_letter_assets,
-        )
+        base_asset, quote_asset = asset_from_bybit(symbol[:-3].upper()), asset_from_bybit(symbol[-3:].upper())  # noqa: E501
 
     return base_asset, quote_asset
 
@@ -143,19 +137,14 @@ class Bybit(ExchangeInterface):
         }
         self.is_unified_account = False
         self.history_events_db = DBHistoryEvents(self.db)
-        self.five_letter_assets = set()
-        self.six_letter_assets = set()
-
+        self.four_letter_assets = {'USDT', 'USDC', 'USDE'}  # known quote assets
         with GlobalDBHandler().conn.read_ctx() as cursor:
             cursor.execute(
-                'SELECT exchange_symbol FROM location_asset_mappings WHERE (location IS ? OR location IS NULL) AND LENGTH(exchange_symbol) >= 5;',  # noqa: E501
+                'SELECT exchange_symbol FROM location_asset_mappings WHERE (location IS ? OR location IS NULL) AND LENGTH(exchange_symbol) = 4;',  # noqa: E501
                 (Location.BYBIT.serialize_for_db(),),
             )
             for symbol in cursor:
-                if len(symbol[0]) == 5:
-                    self.five_letter_assets.add(symbol[0])
-                elif len(symbol[0]) == 6:
-                    self.six_letter_assets.add(symbol[0])
+                self.four_letter_assets.add(symbol[0])
 
     def edit_exchange_credentials(self, credentials: ExchangeAuthCredentials) -> bool:
         changed = super().edit_exchange_credentials(credentials)
@@ -370,10 +359,9 @@ class Bybit(ExchangeInterface):
                 try:
                     base_asset, quote_asset = bybit_symbol_to_base_quote(
                         symbol=raw_trade['symbol'],
-                        five_letter_assets=self.five_letter_assets,
-                        six_letter_assets=self.six_letter_assets,
+                        four_letter_assets=self.four_letter_assets,
                     )
-                except (UnknownAsset, UnprocessableTradePair, KeyError):
+                except (UnknownAsset, KeyError):
                     log.error(f'Could not read assets from bybit trade {raw_trade}')
                     continue
 
