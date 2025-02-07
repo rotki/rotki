@@ -49,6 +49,46 @@ fn extract_chain_id_and_address(identifier: &str) -> Option<(u64, String)> {
     Some((chain_id, address))
 }
 
+async fn smaldapp_image_query(
+    client: &Client,
+    url: &str,
+    extension: &'static str,
+) -> Option<(Bytes, &'static str)> {
+    debug!("Querying {}", url);
+    match client
+        .get(url)
+        .timeout(Duration::from_secs(10))
+        .send()
+        .await
+    {
+        Ok(response) => {
+            let status = response.status();
+            if status.is_success() {
+                if let Ok(bytes) = response.bytes().await {
+                    return Some((bytes, extension));
+                }
+            } else if let Ok(text) = response.text().await {
+                error!(
+                    "Got non success response status when querying SmolDapp for {}. {} - {}",
+                    url, status, text
+                );
+            } else {
+                error!("Got non success response status {}", status);
+            }
+        }
+        Err(e) => {
+            error!("Got error {} after querying {}", e, url);
+        }
+    }
+
+    None
+}
+
+// extract the bytes for an image from the provided CDN
+async fn query_image_from_cdn(url: &str) -> Option<Bytes> {
+    smaldapp_image_query(&Client::new(), url, "").await.map(|(bytes, _)| bytes)
+}
+
 async fn query_token_icon_and_extension(
     chain_id: u64,
     address: &str,
@@ -69,32 +109,8 @@ async fn query_token_icon_and_extension(
     ];
 
     for (url, extension) in urls {
-        debug!("Querying {}", url);
-        match client
-            .get(&url)
-            .timeout(Duration::from_secs(10))
-            .send()
-            .await
-        {
-            Ok(response) => {
-                let status = response.status();
-                if status.is_success() {
-                    if let Ok(bytes) = response.bytes().await {
-                        return Some((bytes, extension));
-                    }
-                } else if let Ok(text) = response.text().await {
-                    error!(
-                        "Got non success response status when querying SmolDapp for the icon of {} with format {}. {} with text: {} ",
-                        address, extension, status, text
-                    );
-                } else {
-                    error!("Got non success response status {}", status);
-                }
-            }
-            Err(e) => {
-                error!("Got error {} after querying {}", e, url);
-                continue;
-            }
+        if let Some(response) = smaldapp_image_query(&client, &url, extension).await {
+            return Some(response);
         }
     }
 
@@ -225,6 +241,27 @@ pub async fn query_icon_remotely(
     path: PathBuf,
     coingecko: Arc<coingecko::Coingecko>,
 ) {
+    // first check for some common identifiers
+    if let Some((url, extension)) = match asset_id.as_str() {
+        "ETH" | "ETH2" => Some(("https://raw.githubusercontent.com/rotki/data/develop/assets/icons/eth.png", "png")),
+        "BTC" => Some(("https://raw.githubusercontent.com/rotki/data/develop/assets/icons/btc.png", "png")),
+        "SUI" => Some(("https://raw.githubusercontent.com/rotki/data/develop/assets/icons/sui.png", "png")),
+        "TIA" => Some(("https://raw.githubusercontent.com/rotki/data/develop/assets/icons/tia.png", "png")),
+        "DOT" => Some(("https://raw.githubusercontent.com/rotki/data/develop/assets/icons/dot.png", "png")),
+        "SOL-2" => Some(("https://raw.githubusercontent.com/SmolDapp/tokenAssets/main/tokens/1151111081099710/So11111111111111111111111111111111111111112/logo.svg", "svg")),
+        "eip155:1/erc20:0x455e53CBB86018Ac2B8092FdCd39d8444aFFC3F6" => Some(("https://raw.githubusercontent.com/SmolDapp/tokenAssets/refs/heads/main/chains/1101/logo.svg", "svg")),  // polygon
+        _ => None
+    } {
+        if let Some(icon_bytes) = query_image_from_cdn(url).await {
+            let _ = tokio::fs::write(path.with_extension(extension), &icon_bytes)
+                .await
+                .map_err(|e| {
+                    error!("Unable to write {} to the file system due to {}", path.display(), e);
+                });
+            return;
+        }
+    };
+
     let (icon_bytes, extension) = match extract_chain_id_and_address(&asset_id) {
         Some((chain_id, address)) => {
             match query_token_icon_and_extension(chain_id, &address, SMOLDAPP_BASE_URL).await {
