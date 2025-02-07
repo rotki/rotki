@@ -1118,7 +1118,7 @@ def test_query_combined_mev_reward_and_block_production_events(rotkehlchen_api_s
         elif entry['sequence_index'] == 2:
             assert entry['identifier'] == 1
             assert entry['event_identifier'] == event_identifier
-            assert entry['entry_type'] == 'evmc event'
+            assert entry['entry_type'] == 'evm event'
             assert entry['balance']['amount'] == mev_reward
             assert entry['tx_hash'] == tx_hash.hex()  # pylint: disable=no-member
             assert entry['notes'] == f'Receive {mev_reward} ETH from {mevbot_address} as mev reward for block {block_number} in {tx_hash.hex()}'  # pylint: disable=no-member  # noqa: E501

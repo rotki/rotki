@@ -74,17 +74,20 @@ class DBAccountingRules:
             counterparty: str | None,
             rule: 'BaseEventSettings',
             links: dict[LINKABLE_ACCOUNTING_PROPERTIES, LINKABLE_ACCOUNTING_SETTINGS_NAME],
+            force_update: bool = False,
     ) -> int:
         """
         Add a single accounting rule to the database. It returns the identifier
         of the created rule.
         May raise:
-        - InputError: If the combination of type, subtype and counterparty already exists.
+        - InputError: If the combination of type, subtype and counterparty already exists
+        and we are not force updating.
         """
+        verb = 'INSERT OR REPLACE' if force_update else 'INSERT'
         with self.db.conn.write_ctx() as write_cursor:
             try:
                 write_cursor.execute(
-                    'INSERT INTO accounting_rules(type, subtype, counterparty, taxable, '
+                    f'{verb} INTO accounting_rules(type, subtype, counterparty, taxable, '
                     'count_entire_amount_spend, count_cost_basis_pnl, '
                     'accounting_treatment) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING identifier',
                     (
