@@ -125,7 +125,7 @@ class Balancerv1CommonDecoder(BalancerCommonDecoder):
                     context.event.event_subtype == HistoryEventSubType.NONE
                 ):
                     context.event.event_type = HistoryEventType.DEPOSIT
-                    context.event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
+                    context.event.event_subtype = HistoryEventSubType.DEPOSIT_FOR_WRAPPED
                     context.event.counterparty = CPT_BALANCER_V1
                     context.event.notes = f'Deposit {context.event.balance.amount} {context.token.symbol} to a Balancer v1 pool'  # noqa: E501
                     return TransferEnrichmentOutput(matched_counterparty=CPT_BALANCER_V1)
@@ -135,7 +135,7 @@ class Balancerv1CommonDecoder(BalancerCommonDecoder):
                     context.event.event_subtype == HistoryEventSubType.NONE
                 ):
                     context.event.event_type = HistoryEventType.WITHDRAWAL
-                    context.event.event_subtype = HistoryEventSubType.REMOVE_ASSET
+                    context.event.event_subtype = HistoryEventSubType.REDEEM_WRAPPED
                     context.event.counterparty = CPT_BALANCER_V1
                     context.event.notes = f'Receive {context.event.balance.amount} {context.token.symbol} after removing liquidity from a Balancer v1 pool'  # noqa: E501
                     return TransferEnrichmentOutput(matched_counterparty=CPT_BALANCER_V1)
@@ -159,7 +159,7 @@ class Balancerv1CommonDecoder(BalancerCommonDecoder):
         if context.tx_log.topics[0] == JOIN_V1:
             from_event_type = HistoryEventType.SPEND
             to_event_type = HistoryEventType.DEPOSIT
-            to_event_subtype = HistoryEventSubType.DEPOSIT_ASSET
+            to_event_subtype = HistoryEventSubType.DEPOSIT_FOR_WRAPPED
             location_label = bytes_to_address(context.tx_log.topics[1])
             token = self.base.get_or_create_evm_token(address=bytes_to_address(context.tx_log.topics[2]))  # noqa: E501
             amount = asset_normalized_value(amount=int.from_bytes(context.tx_log.data[:32]), asset=token)  # noqa: E501
@@ -170,7 +170,7 @@ class Balancerv1CommonDecoder(BalancerCommonDecoder):
             amount = asset_normalized_value(amount=int.from_bytes(context.tx_log.data[:32]), asset=token)  # noqa: E501
             from_event_type = HistoryEventType.RECEIVE
             to_event_type = HistoryEventType.WITHDRAWAL
-            to_event_subtype = HistoryEventSubType.REMOVE_ASSET
+            to_event_subtype = HistoryEventSubType.REDEEM_WRAPPED
             to_notes = f'Receive {amount} {token.symbol} after removing liquidity from a Balancer v1 pool'  # noqa: E501
         else:
             from_address = bytes_to_address(context.tx_log.topics[1])
@@ -214,7 +214,7 @@ class Balancerv1CommonDecoder(BalancerCommonDecoder):
 
             if (
                 event.event_type == HistoryEventType.DEPOSIT and
-                event.event_subtype == HistoryEventSubType.DEPOSIT_ASSET
+                event.event_subtype == HistoryEventSubType.DEPOSIT_FOR_WRAPPED
             ):
                 deposited_assets.add(event.asset)
             elif (

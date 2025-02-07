@@ -354,7 +354,7 @@ class HopCommonDecoder(DecoderInterface):
                 event.balance.amount in token_amounts
             ):
                 event.event_type = HistoryEventType.DEPOSIT
-                event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
+                event.event_subtype = HistoryEventSubType.DEPOSIT_FOR_WRAPPED
                 event.counterparty = CPT_HOP
                 event.notes = f'Deposit {event.balance.amount} {event.asset.symbol_or_name()} to Hop'  # noqa: E501
                 if out_event1 is None:
@@ -466,7 +466,7 @@ class HopCommonDecoder(DecoderInterface):
                 event.balance.amount in token_amounts
             ):
                 event.event_type = HistoryEventType.WITHDRAWAL
-                event.event_subtype = HistoryEventSubType.REMOVE_ASSET
+                event.event_subtype = HistoryEventSubType.REDEEM_WRAPPED
                 event.counterparty = CPT_HOP
                 event.notes = f'Withdraw {event.balance.amount} {event.asset.symbol_or_name()} from Hop'  # noqa: E501
                 if in_event1 is None:

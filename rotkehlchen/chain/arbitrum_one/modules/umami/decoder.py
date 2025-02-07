@@ -98,7 +98,7 @@ class UmamiDecoder(ArbitrumDecoderInterface):
             event=event,
             match_amount=match_amount,
             event_type=HistoryEventType.DEPOSIT,
-            event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+            event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
             event_notes=f'Deposit {match_amount} {resolved_asset.symbol} into Umami',
             fee_match_amount=asset_normalized_value(
                 amount=context.transaction.value,
@@ -158,7 +158,7 @@ class UmamiDecoder(ArbitrumDecoderInterface):
                 context.tx_log.topics[0] == TRANSFER_TOPIC
             ):  # withdraw execution
                 event.event_type = HistoryEventType.WITHDRAWAL
-                event.event_subtype = HistoryEventSubType.REMOVE_ASSET
+                event.event_subtype = HistoryEventSubType.REDEEM_WRAPPED
                 event.notes = f'Withdraw {event.balance.amount} {event.asset.resolve_to_asset_with_symbol().symbol} from Umami'  # noqa: E501
                 event.counterparty = CPT_UMAMI
                 main_event = event

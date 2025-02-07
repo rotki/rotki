@@ -177,7 +177,7 @@ class GmxBalances(ProtocolWithBalance):
         - esGMX (vested GMX) is tracked as a token as is not transferable. No price for this asset
         """
         addresses_events = self.addresses_with_activity(
-            event_types={(HistoryEventType.STAKING, HistoryEventSubType.DEPOSIT_ASSET)},
+            event_types={(HistoryEventType.STAKING, HistoryEventSubType.DEPOSIT_FOR_WRAPPED)},
         )
         if len(addresses_events) == 0:
             return balances

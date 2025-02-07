@@ -103,8 +103,8 @@ class Aavev2Accountant(ModuleAccountantInterface):
     def event_callbacks(self) -> dict[int, tuple[int, EventsAccountantCallback]]:
         """Being defined at function call time is fine since this function is called only once"""
         return {
-            get_event_type_identifier(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET, CPT_AAVE_V2): (1, self._process_deposit),  # noqa: E501
-            get_event_type_identifier(HistoryEventType.WITHDRAWAL, HistoryEventSubType.REMOVE_ASSET, CPT_AAVE_V2): (1, self._process_withdraw),  # noqa: E501
+            get_event_type_identifier(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_FOR_WRAPPED, CPT_AAVE_V2): (1, self._process_deposit),  # noqa: E501
+            get_event_type_identifier(HistoryEventType.WITHDRAWAL, HistoryEventSubType.REDEEM_WRAPPED, CPT_AAVE_V2): (1, self._process_withdraw),  # noqa: E501
             get_event_type_identifier(HistoryEventType.RECEIVE, HistoryEventSubType.GENERATE_DEBT, CPT_AAVE_V2): (1, self._process_borrow),  # noqa: E501
             get_event_type_identifier(HistoryEventType.SPEND, HistoryEventSubType.PAYBACK_DEBT, CPT_AAVE_V2): (1, self._process_payback),  # noqa: E501
         }

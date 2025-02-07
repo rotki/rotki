@@ -91,6 +91,8 @@ class HistoryEventSubType(SerializableEnumNameMixin):
     CASHBACK = auto()
     HACK = auto()
     CLAWBACK = auto()
+    DEPOSIT_FOR_WRAPPED = auto()
+    REDEEM_WRAPPED = auto()
 
     def serialize_or_none(self) -> str | None:
         return self.serialize()

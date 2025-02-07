@@ -128,13 +128,13 @@ class AMMSwapPlatform:
                 asset_list = (A_ETH, A_WETH)
 
             event_asset_is_token_0 = event.asset in asset_list
-            if event.event_subtype == HistoryEventSubType.DEPOSIT_ASSET:
+            if event.event_subtype == HistoryEventSubType.DEPOSIT_FOR_WRAPPED:
                 if event_asset_is_token_0 is True:
                     pool_aggregated_amount[pool_token].profit_loss0 -= event.balance.amount
                 else:
                     pool_aggregated_amount[pool_token].profit_loss1 -= event.balance.amount
                 pool_aggregated_amount[pool_token].usd_profit_loss -= event.balance.usd_value
-            else:  # event_type == HistoryEventSubType.REMOVE_ASSET
+            else:  # event_type == HistoryEventSubType.REDEEM_WRAPPED
                 if event_asset_is_token_0 is True:
                     pool_aggregated_amount[pool_token].profit_loss0 += event.balance.amount
                 else:
@@ -193,8 +193,8 @@ class AMMSwapPlatform:
                 from_ts=from_timestamp,
                 to_ts=to_timestamp,
                 event_subtypes=[
-                    HistoryEventSubType.DEPOSIT_ASSET,
-                    HistoryEventSubType.REMOVE_ASSET,
+                    HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
+                    HistoryEventSubType.REDEEM_WRAPPED,
                 ],
             )
             entries_missing_prices = db.get_base_entries_missing_prices(query_filter=dbfilter)

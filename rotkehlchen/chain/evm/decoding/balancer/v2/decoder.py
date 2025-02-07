@@ -94,7 +94,7 @@ class Balancerv2CommonDecoder(BalancerCommonDecoder):
                 event.address == context.tx_log.address
             ):  # exit pool: withdraw token
                 event.event_type = HistoryEventType.WITHDRAWAL
-                event.event_subtype = HistoryEventSubType.REMOVE_ASSET
+                event.event_subtype = HistoryEventSubType.REDEEM_WRAPPED
                 event.counterparty = CPT_BALANCER_V2
                 event.notes = f'Receive {event.balance.amount} {token.symbol} after removing liquidity from a Balancer v2 pool'  # noqa: E501
                 receive_events.append(event)
@@ -115,7 +115,7 @@ class Balancerv2CommonDecoder(BalancerCommonDecoder):
                 event.address == VAULT_ADDRESS
             ):  # join pool: deposit token
                 event.event_type = HistoryEventType.DEPOSIT
-                event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
+                event.event_subtype = HistoryEventSubType.DEPOSIT_FOR_WRAPPED
                 event.counterparty = CPT_BALANCER_V2
                 event.notes = f'Deposit {event.balance.amount} {token.symbol} to a Balancer v2 pool'  # noqa: E501
                 send_events.append(event)

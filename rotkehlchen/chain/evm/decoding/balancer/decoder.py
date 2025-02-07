@@ -95,7 +95,7 @@ class BalancerCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMix
 
                 event.counterparty = self.counterparty
                 event.event_type = HistoryEventType.DEPOSIT
-                event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
+                event.event_subtype = HistoryEventSubType.DEPOSIT_FOR_WRAPPED
                 event.notes = f'Deposit {amount} {evm_asset.symbol} into {self.counterparty} gauge'
             elif event.event_type == HistoryEventType.RECEIVE:
                 paired_events_data = ([event], False)
@@ -107,7 +107,7 @@ class BalancerCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMix
 
                 event.counterparty = self.counterparty
                 event.event_type = HistoryEventType.WITHDRAWAL
-                event.event_subtype = HistoryEventSubType.REMOVE_ASSET
+                event.event_subtype = HistoryEventSubType.REDEEM_WRAPPED
                 event.notes = f'Withdraw {amount} {evm_asset.symbol} from {self.counterparty} gauge'  # noqa: E501
 
         return DecodingOutput(action_items=[] if paired_events_data is None else [
@@ -173,7 +173,7 @@ class BalancerCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMix
 
             elif ((
                 event.event_type == HistoryEventType.DEPOSIT and
-                event.event_subtype == HistoryEventSubType.DEPOSIT_ASSET
+                event.event_subtype == HistoryEventSubType.DEPOSIT_FOR_WRAPPED
             ) or (
                 event.event_type == HistoryEventType.WITHDRAWAL and
                 event.event_subtype == HistoryEventSubType.REFUND
@@ -195,7 +195,7 @@ class BalancerCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMix
 
             elif (
                 event.event_type == HistoryEventType.WITHDRAWAL and
-                event.event_subtype == HistoryEventSubType.REMOVE_ASSET
+                event.event_subtype == HistoryEventSubType.REDEEM_WRAPPED
             ):
                 related_events.append(event)
 

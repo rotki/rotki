@@ -163,7 +163,7 @@ class Commonv2v3LikeDecoder(DecoderInterface):
                     event.address != ZERO_ADDRESS
                 ):
                     event.event_type = HistoryEventType.DEPOSIT
-                    event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
+                    event.event_subtype = HistoryEventSubType.DEPOSIT_FOR_WRAPPED
                     event.notes = notes
                     event.counterparty = self.counterparty
                     deposit_event = event
@@ -219,7 +219,7 @@ class Commonv2v3LikeDecoder(DecoderInterface):
                     event.address != ZERO_ADDRESS
                 ):
                     event.event_type = HistoryEventType.WITHDRAWAL
-                    event.event_subtype = HistoryEventSubType.REMOVE_ASSET
+                    event.event_subtype = HistoryEventSubType.REDEEM_WRAPPED
                     if is_wnative_user is False:  # else location label is correctly set by the transfer decoder  # noqa: E501
                         event.location_label = user
 

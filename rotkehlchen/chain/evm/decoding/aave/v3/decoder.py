@@ -144,12 +144,12 @@ class Aavev3LikeCommonDecoder(Commonv2v3LikeDecoder):
         for event in decoded_events:  # identify the events decoded till now
             if (
                     event.event_type == HistoryEventType.DEPOSIT and
-                    event.event_subtype == HistoryEventSubType.DEPOSIT_ASSET
+                    event.event_subtype == HistoryEventSubType.DEPOSIT_FOR_WRAPPED
             ):
                 supply_event = event
             elif (
                     event.event_type == HistoryEventType.WITHDRAWAL and
-                    event.event_subtype == HistoryEventSubType.REMOVE_ASSET
+                    event.event_subtype == HistoryEventSubType.REDEEM_WRAPPED
             ):
                 withdraw_event = event
             elif (

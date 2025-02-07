@@ -49,6 +49,7 @@ EVENT_CATEGORY_MAPPINGS = {  # possible combinations of types and subtypes mappe
             DEFAULT: EventCategory.DEPOSIT,
             EXCHANGE: EventCategory.CEX_DEPOSIT,
         },
+        HistoryEventSubType.DEPOSIT_FOR_WRAPPED: {DEFAULT: EventCategory.DEPOSIT},
         HistoryEventSubType.BRIDGE: {DEFAULT: EventCategory.BRIDGE_DEPOSIT},
         HistoryEventSubType.PLACE_ORDER: {DEFAULT: EventCategory.DEPOSIT},
         HistoryEventSubType.FEE: {DEFAULT: EventCategory.FEE},
@@ -71,6 +72,7 @@ EVENT_CATEGORY_MAPPINGS = {  # possible combinations of types and subtypes mappe
             DEFAULT: EventCategory.WITHDRAW,
             EXCHANGE: EventCategory.CEX_WITHDRAWAL,
         },
+        HistoryEventSubType.REDEEM_WRAPPED: {DEFAULT: EventCategory.WITHDRAW},
         HistoryEventSubType.BRIDGE: {DEFAULT: EventCategory.BRIDGE_WITHDRAWAL},
         HistoryEventSubType.CANCEL_ORDER: {DEFAULT: EventCategory.CANCEL_ORDER},
         HistoryEventSubType.REFUND: {DEFAULT: EventCategory.REFUND},
@@ -88,6 +90,7 @@ EVENT_CATEGORY_MAPPINGS = {  # possible combinations of types and subtypes mappe
     },
     HistoryEventType.STAKING: {
         HistoryEventSubType.DEPOSIT_ASSET: {DEFAULT: EventCategory.STAKE_DEPOSIT},
+        HistoryEventSubType.DEPOSIT_FOR_WRAPPED: {DEFAULT: EventCategory.STAKE_DEPOSIT},
         HistoryEventSubType.REWARD: {DEFAULT: EventCategory.STAKING_REWARD},
         HistoryEventSubType.REMOVE_ASSET: {DEFAULT: EventCategory.UNSTAKE},
         HistoryEventSubType.BLOCK_PRODUCTION: {DEFAULT: EventCategory.CREATE_BLOCK},

@@ -214,11 +214,11 @@ def decode_uniswap_like_deposit_and_withdrawals(
     if event_action_type == 'addition':
         notes = 'Deposit {amount} {asset} to {counterparty} LP {pool_address}'
         from_event_type = (HistoryEventType.SPEND, HistoryEventSubType.NONE)
-        to_event_type = (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET)
+        to_event_type = (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_FOR_WRAPPED)
     else:  # can only be 'removal'
         notes = 'Remove {amount} {asset} from {counterparty} LP {pool_address}'
         from_event_type = (HistoryEventType.RECEIVE, HistoryEventSubType.NONE)
-        to_event_type = (HistoryEventType.WITHDRAWAL, HistoryEventSubType.REMOVE_ASSET)
+        to_event_type = (HistoryEventType.WITHDRAWAL, HistoryEventSubType.REDEEM_WRAPPED)
 
     # First, get the tokens deposited into the pool. The reason for this approach is
     # to circumvent scenarios where the mint/burn event comes before the needed transfer events.

@@ -353,7 +353,7 @@ class MakerdaosaiDecoder(DecoderInterface):
                 event.asset == self.eth
             ):
                 event.event_type = HistoryEventType.DEPOSIT
-                event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
+                event.event_subtype = HistoryEventSubType.DEPOSIT_FOR_WRAPPED
                 event.notes = f'Supply {event.balance.amount} {self.eth.symbol} to Sai vault'
                 event.counterparty = CPT_SAI
                 return DEFAULT_DECODING_OUTPUT
@@ -372,7 +372,7 @@ class MakerdaosaiDecoder(DecoderInterface):
                         int.from_bytes(log.data[:32]) == int.from_bytes(context.tx_log.topics[2])
                     ):
                         event.event_type = HistoryEventType.DEPOSIT
-                        event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
+                        event.event_subtype = HistoryEventSubType.DEPOSIT_FOR_WRAPPED
                         event.notes = f'Supply {event.balance.amount} {self.eth.symbol} to Sai vault'  # noqa: E501
                         event.counterparty = CPT_SAI
                         return DEFAULT_DECODING_OUTPUT
@@ -391,7 +391,7 @@ class MakerdaosaiDecoder(DecoderInterface):
         ):
             if context.event.asset == self.weth:
                 context.event.event_type = HistoryEventType.DEPOSIT
-                context.event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
+                context.event.event_subtype = HistoryEventSubType.DEPOSIT_FOR_WRAPPED
                 context.event.notes = f'Supply {context.event.balance.amount} {self.weth.symbol} to Sai vault'  # noqa: E501
                 context.event.counterparty = CPT_SAI
                 return TransferEnrichmentOutput(matched_counterparty=CPT_SAI)

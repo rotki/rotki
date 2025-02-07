@@ -78,7 +78,7 @@ class WethDecoderBase(DecoderInterface, ABC):
             ):
                 event.counterparty = self.counterparty
                 event.event_type = HistoryEventType.DEPOSIT
-                event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
+                event.event_subtype = HistoryEventSubType.DEPOSIT_FOR_WRAPPED
                 event.notes = f'Wrap {deposited_amount} {self.base_asset.symbol} in {self.wrapped_token.symbol}'  # noqa: E501
                 out_event = event
 

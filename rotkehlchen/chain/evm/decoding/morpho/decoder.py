@@ -151,7 +151,7 @@ class MorphoCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
                 event.balance.amount == assets_amount
             ):
                 event.event_type = HistoryEventType.DEPOSIT
-                event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
+                event.event_subtype = HistoryEventSubType.DEPOSIT_FOR_WRAPPED
                 event.notes = f'Deposit {event.balance.amount} {event.asset.resolve_to_asset_with_symbol().symbol} in a Morpho vault'  # noqa: E501
                 event.counterparty = CPT_MORPHO
                 event.extra_data = {'vault': vault_token.evm_address}  # Used when querying balances  # noqa: E501
@@ -176,7 +176,7 @@ class MorphoCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
                 transaction=context.transaction,
                 tx_log=context.tx_log,
                 event_type=HistoryEventType.DEPOSIT,
-                event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+                event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
                 asset=underlying_token,
                 balance=Balance(amount=assets_amount),
                 location_label=receive_event.location_label,
@@ -222,7 +222,7 @@ class MorphoCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
                 event.balance.amount == assets_amount
             ):
                 event.event_type = HistoryEventType.WITHDRAWAL
-                event.event_subtype = HistoryEventSubType.REMOVE_ASSET
+                event.event_subtype = HistoryEventSubType.REDEEM_WRAPPED
                 event.notes = f'Withdraw {event.balance.amount} {event.asset.resolve_to_asset_with_symbol().symbol} from a Morpho vault'  # noqa: E501
                 event.counterparty = CPT_MORPHO
                 receive_event = event
@@ -235,7 +235,7 @@ class MorphoCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
                 transaction=context.transaction,
                 tx_log=context.tx_log,
                 event_type=HistoryEventType.WITHDRAWAL,
-                event_subtype=HistoryEventSubType.REMOVE_ASSET,
+                event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
                 asset=underlying_token,
                 balance=Balance(amount=assets_amount),
                 location_label=spend_event.location_label,

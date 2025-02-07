@@ -196,13 +196,13 @@ class AuraFinanceCommonDecoder(DecoderInterface):
                     event.event_subtype == HistoryEventSubType.NONE
                 ) or (
                     event.event_type == HistoryEventType.DEPOSIT and
-                    event.event_subtype == HistoryEventSubType.DEPOSIT_ASSET and
+                    event.event_subtype == HistoryEventSubType.DEPOSIT_FOR_WRAPPED and
                     event.counterparty == CPT_BALANCER_V2
                 )) and
                 event.balance.amount == deposited_amount
             ):
                 event.event_type = HistoryEventType.DEPOSIT
-                event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
+                event.event_subtype = HistoryEventSubType.DEPOSIT_FOR_WRAPPED
                 event.notes = f'Deposit {deposited_amount} {token.symbol} {deposit_note_suffix}'
                 event.counterparty = CPT_AURA_FINANCE
                 deposit_events.append(event)

@@ -52,7 +52,7 @@ class SparkDecoder(DecoderInterface):
                 event.counterparty = CPT_SPARK
                 if context.transaction.input_data[:4] == SWAP_EXACT_IN_4BYTE:
                     event.event_type = HistoryEventType.DEPOSIT
-                    event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
+                    event.event_subtype = HistoryEventSubType.DEPOSIT_FOR_WRAPPED
                     event.notes = f'Deposit {amount_in} {asset_in.symbol} in Spark Savings'
                 else:  # swap exact out
                     event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
@@ -72,7 +72,7 @@ class SparkDecoder(DecoderInterface):
                     event.notes = f'Receive {amount_out} {asset_out.symbol} from depositing into Spark Savings'  # noqa: E501
                 else:  # swap exact out
                     event.event_type = HistoryEventType.WITHDRAWAL
-                    event.event_subtype = HistoryEventSubType.REMOVE_ASSET
+                    event.event_subtype = HistoryEventSubType.REDEEM_WRAPPED
                     event.notes = f'Remove {amount_out} {asset_out.symbol} from Spark Savings'
 
         return DEFAULT_DECODING_OUTPUT
