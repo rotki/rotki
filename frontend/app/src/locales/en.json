@@ -1855,7 +1855,7 @@
   },
   "create_account": {
     "credentials": {
-      "description": "Remember that the user you create here is {highlight}, independent of the account create on the web.",
+      "description": "Remember that the user you create here is {highlight}, independent of the account created on the web.",
       "highlight": "only enabled in the application",
       "label_password": "Password",
       "label_password_backup_reminder": "rotki saves all user data locally. I understand that if I lose my password, I lose access to my data. I have created a backup of the password.",
