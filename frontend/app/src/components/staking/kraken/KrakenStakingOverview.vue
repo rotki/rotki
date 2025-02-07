@@ -1,35 +1,20 @@
 <script setup lang="ts">
-import { useBalancePricesStore } from '@/store/balances/prices';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import ValueAccuracyHint from '@/components/helper/hint/ValueAccuracyHint.vue';
-import type { BigNumber } from '@rotki/common';
-import type { ReceivedAmount } from '@/types/staking';
+import { sum } from '@/utils/balances';
+import type { AssetBalance, BigNumber } from '@rotki/common';
 
 const props = defineProps<{
-  totalUsd: BigNumber;
-  earned: ReceivedAmount[];
+  loading: boolean;
+  totalUsdHistorical: BigNumber;
+  earned: AssetBalance[];
 }>();
 
 const { earned } = toRefs(props);
-const { prices } = storeToRefs(useBalancePricesStore());
-const pricesAreLoading = computed(() => {
-  const assetPrices = get(prices);
-  return Object.keys(assetPrices).length === 0;
-});
+
 const totalUsdCurrent = computed<BigNumber>(() => {
   const earnedAssets = get(earned);
-  const assetPrices = get(prices);
-  if (Object.keys(assetPrices).length === 0)
-    return Zero;
-
-  let sum = Zero;
-
-  for (const { amount, asset } of earnedAssets) {
-    const assetPrice = assetPrices[asset];
-    assert(assetPrice);
-    sum = sum.plus(assetPrice.value.times(amount));
-  }
-  return sum;
+  return sum(earnedAssets);
 });
 
 const { t } = useI18n();
@@ -65,7 +50,7 @@ const { t } = useI18n();
           <AmountDisplay
             show-currency="ticker"
             fiat-currency="USD"
-            :value="totalUsd"
+            :value="totalUsdHistorical"
             class="text-rui-text-secondary"
           />
         </div>
@@ -89,7 +74,7 @@ const { t } = useI18n();
         <AmountDisplay
           show-currency="ticker"
           fiat-currency="USD"
-          :loading="pricesAreLoading"
+          :loading="loading"
           :value="totalUsdCurrent"
           class="text-rui-text-secondary"
         />
