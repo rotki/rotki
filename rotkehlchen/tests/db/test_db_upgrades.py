@@ -2744,6 +2744,10 @@ def test_upgrade_db_46_to_47(user_data_dir, messages_aggregator):
                 'SELECT COUNT(*) FROM assets WHERE identifier IN (?, ?)',
                 (uniswap_erc20_token.identifier, uniswap_erc721_token.identifier),
             ).fetchone()[0] == 0 if expect_removed else 2
+            assert global_db_cursor.execute(
+                'SELECT COUNT(*) FROM assets WHERE identifier = ?',
+                (erc721_token_with_id.identifier,),
+            ).fetchone()[0] == 1  # tokens with collectible ids shouldn't be modified
 
         if expect_removed:
             assert user_db_cursor.execute('SELECT * FROM temp_erc721_data').fetchall() == [
@@ -2772,6 +2776,14 @@ def test_upgrade_db_46_to_47(user_data_dir, messages_aggregator):
         name='Uniswap V3 Positions NFT-V1',
         chain_id=ChainID.ETHEREUM,
         token_kind=EvmTokenKind.ERC20,
+    )
+    erc721_token_with_id = get_or_create_evm_token(
+        userdb=db_v46,
+        evm_address=string_to_evm_address('0xC36442b4a4522E871399CD717aBDD847Ab11FE88'),
+        name='Uniswap V3 Positions NFT-V1',
+        chain_id=ChainID.ETHEREUM,
+        token_kind=EvmTokenKind.ERC721,
+        collectible_id='12345',
     )
 
     address, tx_hash = make_evm_address(), make_evm_tx_hash()
