@@ -110,7 +110,8 @@ def upgrade_v46_to_v47(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
                 'SELECT identifier FROM assets WHERE identifier IN ('
                 "SELECT identifier FROM evm_tokens WHERE token_kind = 'B' "
                 "UNION SELECT REPLACE(identifier, 'erc721', 'erc20') "
-                "FROM evm_tokens WHERE token_kind = 'B');",
+                "FROM evm_tokens WHERE token_kind = 'B') AND "
+                "LENGTH(identifier) <= 62;",  # Skip identifiers with collectible ids (will be longer than 62)  # noqa: E501
             ))
 
         if (num_to_remove := len(identifiers_to_remove)) == 0:
