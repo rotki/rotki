@@ -90,6 +90,7 @@ export const useHistoryStore = defineStore('history', () => {
 
   const resetProtocolCacheUpdatesStatus = (): void => {
     set(protocolCacheUpdateStatus, {});
+    set(receivingProtocolCacheStatus, false);
   };
 
   const { fetchAssociatedLocations: fetchAssociatedLocationsApi } = useHistoryApi();
@@ -116,7 +117,6 @@ export const useHistoryStore = defineStore('history', () => {
 
   watch(refreshProtocolCacheTaskRunning, (curr, prev) => {
     if (!curr && prev) {
-      set(receivingProtocolCacheStatus, false);
       resetProtocolCacheUpdatesStatus();
     }
   });

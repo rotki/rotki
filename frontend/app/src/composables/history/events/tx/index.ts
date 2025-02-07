@@ -56,12 +56,13 @@ export const useHistoryTransactions = createSharedComposable(() => {
     fetchUndecodedTransactionsBreakdown,
     fetchUndecodedTransactionsStatus,
   } = useHistoryTransactionDecoding();
-  const { resetUndecodedTransactionsStatus } = useHistoryStore();
+  const { resetProtocolCacheUpdatesStatus, resetUndecodedTransactionsStatus } = useHistoryStore();
 
   queue.setOnCompletion(() => {
     if (getStatus() === Status.LOADED) {
       logger.info('Enabling notifications for newly detected nfts');
       startPromise(updateSetting({ notifyNewNfts: true }));
+      resetProtocolCacheUpdatesStatus();
     }
   });
 
