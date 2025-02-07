@@ -39,6 +39,7 @@ def _update_rules(rotki: Rotkehlchen, latest_accounting_rules: list[tuple[int, P
         data_updater.update_accounting_rules(
             data=json.loads(jsonfile.read_text(encoding='utf-8'))['accounting_rules'],
             version=version,
+            force_updates=False,  # TODO: This should adjust / go away. Related to https://github.com/orgs/rotki/projects/11?pane=issue&itemId=96831912  # noqa: E501
         )
 
 
@@ -76,8 +77,8 @@ def _setup_conflict_tests(
         )
         assert_simple_ok_response(response)
 
-    # pull remote updates
-    _update_rules(rotki=rotki, latest_accounting_rules=latest_accounting_rules)
+    # pull only the first remote update (so that new rules don't mess with our tests)
+    _update_rules(rotki=rotki, latest_accounting_rules=latest_accounting_rules[:1])
 
     # check the conflicts
     with rotki.data.db.conn.read_ctx() as cursor:
@@ -569,7 +570,7 @@ def test_import_export_accounting_rules(rotkehlchen_api_server: 'APIServer') -> 
         with open(rules_file_path, encoding='utf-8') as file:
             rules_data = json.load(file)
 
-        all_rules_num = 105
+        changed_rules, all_rules_num = 2, 106  # changed rules is rules that were modified. This pushes identifier up  # noqa: E501
         assert rules_data == response_result
         assert len(rules_data['accounting_rules']) == all_rules_num
         assert rules_data['accounting_rules']['1'] == {
@@ -621,7 +622,7 @@ def test_import_export_accounting_rules(rotkehlchen_api_server: 'APIServer') -> 
         with rotkehlchen_api_server.rest_api.rotkehlchen.data.db.conn.write_ctx() as write_cursor:
             write_cursor.execute(
                 'UPDATE accounting_rules SET identifier=? WHERE identifier=?',
-                (all_rules_num + 1, all_rules_num),
+                (all_rules_num + changed_rules + 1, all_rules_num + changed_rules),
             )
             write_cursor.execute(
                 'UPDATE linked_rules_properties SET setting_name=? WHERE identifier=?',

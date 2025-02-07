@@ -181,10 +181,23 @@ class RotkiDataUpdater:
             new_default_nodes=new_default_nodes,
         )
 
-    def update_accounting_rules(self, data: list[dict[str, Any]], version: int) -> None:
+    def update_accounting_rules(
+            self,
+            data: list[dict[str, Any]],
+            version: int,
+            force_updates: bool = True,
+    ) -> None:
         """
         Add remote rules to the user database. In case of conflict we notify the user sending
-        a ws message
+        a ws message unless this is a forced update.
+
+        The issue with not using forced updates is that we can't replace/edit older rules other
+        than just updating them until this accounting rule updating methodology is rethought.
+        https://github.com/orgs/rotki/projects/11?pane=issue&itemId=96831912
+
+        So at the moment the only way to update a rule is to just rewrite it with different
+        attributes and have it update.
+        TODO: This is hacky. At the moment it's always force updating.
         """
         log.info(f'Applying update for accounting rules to v{version}')
         rules_db = DBAccountingRules(self.user_db)
@@ -212,6 +225,7 @@ class RotkiDataUpdater:
                     counterparty=counterparty,
                     rule=rule,
                     links=rule_data.get('links', {}),
+                    force_update=force_updates,
                 )
             except InputError as e:
                 # there is a conflict in the rule. Notify the frontend about it
