@@ -45,7 +45,7 @@ class UmamiBalances(ProtocolWithBalance):
             evm_inquirer=evm_inquirer,
             deposit_event_types={
                 (HistoryEventType.STAKING, HistoryEventSubType.DEPOSIT_ASSET),
-                (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET),
+                (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_FOR_WRAPPED),
             },
         )
         self.umami_masterchef_contract = EvmContract(
@@ -69,7 +69,7 @@ class UmamiBalances(ProtocolWithBalance):
         """
         balances: BalancesSheetType = defaultdict(BalanceSheet)
         if len(addresses_with_deposits := list(self.addresses_with_activity(event_types={
-            (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET),
+            (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_FOR_WRAPPED),
             (HistoryEventType.STAKING, HistoryEventSubType.DEPOSIT_ASSET),
         }))) == 0:
             return balances

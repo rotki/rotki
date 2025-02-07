@@ -152,7 +152,7 @@ class GearboxCommonDecoder(DecoderInterface, ReloadableCacheDecoderMixin):
                 event.location_label == user_address
             ):
                 event.event_type = HistoryEventType.DEPOSIT
-                event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
+                event.event_subtype = HistoryEventSubType.DEPOSIT_FOR_WRAPPED
                 event.counterparty = CPT_GEARBOX
                 event.notes = f'Deposit {event.balance.amount} {event.asset.symbol_or_name()} to Gearbox'  # noqa: E501
             elif (
@@ -198,7 +198,7 @@ class GearboxCommonDecoder(DecoderInterface, ReloadableCacheDecoderMixin):
                 event.balance.amount == amount
             ):
                 event.event_type = HistoryEventType.WITHDRAWAL
-                event.event_subtype = HistoryEventSubType.REMOVE_ASSET
+                event.event_subtype = HistoryEventSubType.REDEEM_WRAPPED
                 event.counterparty = CPT_GEARBOX
                 event.notes = f'Withdraw {event.balance.amount} {event.asset.symbol_or_name()} from Gearbox'  # noqa: E501
             elif (

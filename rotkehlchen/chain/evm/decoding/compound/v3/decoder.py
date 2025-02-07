@@ -182,7 +182,7 @@ class Compoundv3CommonDecoder(DecoderInterface):
                 event.counterparty = CPT_COMPOUND_V3
                 if receiving_ctoken:
                     event.event_type = HistoryEventType.DEPOSIT
-                    event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
+                    event.event_subtype = HistoryEventSubType.DEPOSIT_FOR_WRAPPED
                     event.notes = f'Deposit {amount} {underlying_asset_symbol} into Compound v3'
                     paired_event = event
                     action_from_event_type = HistoryEventType.RECEIVE
@@ -263,7 +263,7 @@ class Compoundv3CommonDecoder(DecoderInterface):
             ):
                 if sending_ctoken:
                     event.event_type = HistoryEventType.WITHDRAWAL
-                    event.event_subtype = HistoryEventSubType.REMOVE_ASSET
+                    event.event_subtype = HistoryEventSubType.REDEEM_WRAPPED
                     event.notes = f'Withdraw {event.balance.amount} {event.asset.symbol_or_name()} from Compound v3'  # noqa: E501
                     paired_event = event
                     action_from_event_type = HistoryEventType.SPEND

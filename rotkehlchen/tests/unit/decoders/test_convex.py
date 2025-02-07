@@ -143,7 +143,7 @@ def test_booster_withdraw(ethereum_inquirer, ethereum_accounts):
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.WITHDRAWAL,
-            event_subtype=HistoryEventSubType.REMOVE_ASSET,
+            event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
             asset=EvmToken('eip155:1/erc20:0xF3A43307DcAFa93275993862Aae628fCB50dC768'),
             balance=Balance(amount=FVal('364.338089842514973505'), usd_value=ZERO),
             location_label=user_address,

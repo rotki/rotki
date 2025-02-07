@@ -31,7 +31,7 @@ class VelodromeLikeBalances(ProtocolWithGauges):
             evm_inquirer=evm_inquirer,
             tx_decoder=tx_decoder,
             counterparty=counterparty,
-            deposit_event_types={(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET)},
+            deposit_event_types={(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_FOR_WRAPPED)},  # noqa: E501
             gauge_deposit_event_types={(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET)},  # noqa: E501
         )
 

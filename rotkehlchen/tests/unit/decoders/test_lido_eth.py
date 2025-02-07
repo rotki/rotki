@@ -38,7 +38,7 @@ def test_lido_steth_staking(ethereum_inquirer, ethereum_accounts):
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.DEPOSIT,
-            event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+            event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
             asset=A_ETH,
             balance=Balance(FVal(amount_deposited)),
             location_label=ethereum_accounts[0],

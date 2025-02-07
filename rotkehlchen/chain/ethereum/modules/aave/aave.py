@@ -267,9 +267,9 @@ class Aave(EthereumModule):
             if event.asset in earned_atoken_balances:
                 prev_balance = earned_atoken_balances[event.asset]
 
-            if event.event_subtype in (HistoryEventSubType.GENERATE_DEBT, HistoryEventSubType.DEPOSIT_ASSET):  # noqa: E501
+            if event.event_subtype in (HistoryEventSubType.GENERATE_DEBT, HistoryEventSubType.DEPOSIT_FOR_WRAPPED):  # noqa: E501
                 historical_borrow_balances[event.asset] -= event.balance.amount
-            elif event.event_subtype in (HistoryEventSubType.PAYBACK_DEBT, HistoryEventSubType.REMOVE_ASSET, HistoryEventSubType.REWARD):  # noqa: E501
+            elif event.event_subtype in (HistoryEventSubType.PAYBACK_DEBT, HistoryEventSubType.REDEEM_WRAPPED, HistoryEventSubType.REWARD):  # noqa: E501
                 if event.event_subtype == HistoryEventSubType.REWARD:
                     atokens_balances[event.asset] += event.balance
                 else:
@@ -373,8 +373,8 @@ class Aave(EthereumModule):
             counterparties=self.counterparties,
             location_labels=[address],
             event_subtypes=[
-                HistoryEventSubType.DEPOSIT_ASSET,
-                HistoryEventSubType.REMOVE_ASSET,
+                HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
+                HistoryEventSubType.REDEEM_WRAPPED,
                 HistoryEventSubType.GENERATE_DEBT,
                 HistoryEventSubType.PAYBACK_DEBT,
                 HistoryEventSubType.LIQUIDATE,

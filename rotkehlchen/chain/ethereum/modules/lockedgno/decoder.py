@@ -60,7 +60,7 @@ class LockedgnoDecoder(DecoderInterface):
                     event.address == LOCKED_GNO_ADDRESS
             ):
                 event.event_type = HistoryEventType.DEPOSIT
-                event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
+                event.event_subtype = HistoryEventSubType.DEPOSIT_FOR_WRAPPED
                 event.counterparty = CPT_LOCKEDGNO
                 event.notes = f'Deposit {event.balance.amount} GNO to the locking contract'
 
@@ -86,7 +86,7 @@ class LockedgnoDecoder(DecoderInterface):
                     event.address == LOCKED_GNO_ADDRESS
             ):
                 event.event_type = HistoryEventType.WITHDRAWAL
-                event.event_subtype = HistoryEventSubType.REMOVE_ASSET
+                event.event_subtype = HistoryEventSubType.REDEEM_WRAPPED
                 event.counterparty = CPT_LOCKEDGNO
                 event.notes = f'Receive {event.balance.amount} GNO back from the locking contract'
 

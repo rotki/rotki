@@ -35,7 +35,7 @@ class WethDecoder(EthBaseWethDecoder):
             ):
                 event.counterparty = self.counterparty
                 event.event_type = HistoryEventType.DEPOSIT
-                event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
+                event.event_subtype = HistoryEventSubType.DEPOSIT_FOR_WRAPPED
                 event.notes = f'Wrap {deposited_amount} ETH in WETH'
             elif (
                 event.event_type == HistoryEventType.RECEIVE and

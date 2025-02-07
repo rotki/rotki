@@ -151,7 +151,7 @@ class CurveCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin)
                 event.location_label == user_or_contract_address
             ):
                 event.event_type = HistoryEventType.WITHDRAWAL
-                event.event_subtype = HistoryEventSubType.REMOVE_ASSET
+                event.event_subtype = HistoryEventSubType.REDEEM_WRAPPED
                 event.counterparty = CPT_CURVE
                 event.notes = f'Remove {event.balance.amount} {crypto_asset.symbol} from the curve pool'  # noqa: E501
                 withdrawal_events.append(event)
@@ -184,14 +184,14 @@ class CurveCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin)
                     event.event_subtype == HistoryEventSubType.NONE
                 ):
                     event.event_type = HistoryEventType.WITHDRAWAL
-                    event.event_subtype = HistoryEventSubType.REMOVE_ASSET
+                    event.event_subtype = HistoryEventSubType.REDEEM_WRAPPED
                     event.counterparty = CPT_CURVE
                     event.notes = notes
                     withdrawal_events.append(event)
                 elif (  # Is already decoded by aave
                     tx_log.address in self.aave_pools and
                     event.event_type == HistoryEventType.WITHDRAWAL and
-                    event.event_subtype == HistoryEventSubType.REMOVE_ASSET and
+                    event.event_subtype == HistoryEventSubType.REDEEM_WRAPPED and
                     event.location_label == tx_log.address and
                     event.counterparty in (CPT_AAVE_V1, CPT_AAVE_V2, CPT_AAVE_V3)
                 ):
@@ -209,7 +209,7 @@ class CurveCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin)
             # in another method below.
             elif (
                 event.event_type == HistoryEventType.WITHDRAWAL and
-                event.event_subtype == HistoryEventSubType.REMOVE_ASSET and
+                event.event_subtype == HistoryEventSubType.REDEEM_WRAPPED and
                 event.counterparty == CPT_CURVE
             ):
                 withdrawal_events.append(event)
@@ -252,7 +252,7 @@ class CurveCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin)
                         from_event_subtype=HistoryEventSubType.NONE,
                         asset=withdrawal_asset,
                         to_event_type=HistoryEventType.WITHDRAWAL,
-                        to_event_subtype=HistoryEventSubType.REMOVE_ASSET,
+                        to_event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
                         to_notes=f'Remove {{amount}} {{symbol}} from {tx_log.address} curve pool',  # amount and symbol set at actionitem process  # noqa: E501
                         to_counterparty=CPT_CURVE,
                     ) for withdrawal_asset in withdrawn_assets]
@@ -306,7 +306,7 @@ class CurveCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin)
                 event.location_label == user_or_contract_address
             ):
                 event.event_type = HistoryEventType.DEPOSIT
-                event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
+                event.event_subtype = HistoryEventSubType.DEPOSIT_FOR_WRAPPED
                 event.counterparty = CPT_CURVE
                 event.notes = f'Deposit {event.balance.amount} {crypto_asset.symbol} in curve pool'
                 deposit_events.append(event)
@@ -333,7 +333,7 @@ class CurveCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin)
                     tx_log.address in self.pools
                 ):
                     event.event_type = HistoryEventType.DEPOSIT
-                    event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
+                    event.event_subtype = HistoryEventSubType.DEPOSIT_FOR_WRAPPED
                     event.counterparty = CPT_CURVE
                     event.notes = f'Deposit {event.balance.amount} {crypto_asset.symbol} in curve pool {tx_log.address}'  # noqa: E501
                     deposit_events.append(event)
@@ -353,7 +353,7 @@ class CurveCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin)
                             break
             elif (
                 event.event_type == HistoryEventType.DEPOSIT and
-                event.event_subtype == HistoryEventSubType.DEPOSIT_ASSET and
+                event.event_subtype == HistoryEventSubType.DEPOSIT_FOR_WRAPPED and
                 event.counterparty == CPT_CURVE
             ):
                 deposit_events.append(event)
@@ -639,7 +639,7 @@ class CurveCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin)
                     asset=event.asset.resolve_to_crypto_asset(),
                 ):
                     event.event_type = HistoryEventType.DEPOSIT
-                    event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
+                    event.event_subtype = HistoryEventSubType.DEPOSIT_FOR_WRAPPED
                     event.counterparty = CPT_CURVE
                     event.extra_data = {'gauge_tokens': gauge_tokens}
                     break
@@ -742,7 +742,7 @@ class CurveCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin)
                 gauge_events.append(event)
                 if context.tx_log.topics[0] == GAUGE_DEPOSIT:
                     event.event_type = HistoryEventType.DEPOSIT
-                    event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
+                    event.event_subtype = HistoryEventSubType.DEPOSIT_FOR_WRAPPED if gauge_token is not None else HistoryEventSubType.DEPOSIT_ASSET  # noqa: E501
                     event.notes = f'Deposit {event.balance.amount} {evm_asset.symbol} into {gauge_address} curve gauge'  # noqa: E501
                     from_event_type = HistoryEventType.RECEIVE
                     pair_subtype = HistoryEventSubType.RECEIVE_WRAPPED
@@ -750,7 +750,7 @@ class CurveCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin)
                     pair_note = 'Receive {{amount}} {symbol} after depositing in {address} curve gauge'  # noqa: E501
                 else:  # Withdraw
                     event.event_type = HistoryEventType.WITHDRAWAL
-                    event.event_subtype = HistoryEventSubType.REMOVE_ASSET
+                    event.event_subtype = HistoryEventSubType.REDEEM_WRAPPED if gauge_token is not None else HistoryEventSubType.REMOVE_ASSET  # noqa: E501
                     event.notes = f'Withdraw {event.balance.amount} {evm_asset.symbol} from {gauge_address} curve gauge'  # noqa: E501
                     from_event_type = HistoryEventType.SPEND
                     pair_subtype = HistoryEventSubType.RETURN_WRAPPED

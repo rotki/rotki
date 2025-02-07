@@ -63,7 +63,7 @@ class LidoDecoder(DecoderInterface):
                 event.location_label == sender
             ):
                 event.event_type = HistoryEventType.DEPOSIT
-                event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
+                event.event_subtype = HistoryEventSubType.DEPOSIT_FOR_WRAPPED
                 event.notes = f'Submit {collateral_amount} ETH to Lido'
                 event.counterparty = CPT_LIDO
                 #  preparing next action to be processed when erc20 transfer will be decoded

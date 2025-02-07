@@ -224,7 +224,7 @@ class GmxDecoder(ArbitrumDecoderInterface):
             ):
                 event.counterparty = CPT_GMX
                 event.event_type = HistoryEventType.STAKING
-                event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
+                event.event_subtype = HistoryEventSubType.DEPOSIT_FOR_WRAPPED
                 # the contract when staking GMX also creates transfers for (sGMX, sbGMX, sbfGMX)
                 asset = event.asset.resolve_to_crypto_asset()
                 event.notes = f'Stake {amount} {asset.symbol} in GMX'

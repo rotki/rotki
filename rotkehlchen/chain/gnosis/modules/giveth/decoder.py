@@ -82,7 +82,7 @@ class GivethDecoder(GivethDecoderBase):
             ):
                 out_event = event
                 event.event_type = HistoryEventType.DEPOSIT
-                event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
+                event.event_subtype = HistoryEventSubType.DEPOSIT_FOR_WRAPPED
                 event.counterparty = CPT_GIVETH
                 event.notes = f'Deposit {amount} GIV for staking'
                 break
@@ -146,7 +146,7 @@ class GivethDecoder(GivethDecoderBase):
              asset=Asset(self.giv_token_id),
              address=GNOSIS_GIVPOWERSTAKING_WRAPPER,
              to_event_type=HistoryEventType.WITHDRAWAL,
-             to_event_subtype=HistoryEventSubType.REMOVE_ASSET,
+             to_event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
              to_notes='Withdraw {amount} GIV from staking',  # to be filled by the action item
              to_counterparty=CPT_GIVETH,
          ), ActionItem(  # also make an action item to skip ggiv

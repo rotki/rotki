@@ -398,11 +398,11 @@ class Uniswapv3CommonDecoder(DecoderInterface):
         if event_action_type == 'addition':
             notes = 'Deposit {amount} {asset} to uniswap-v3 LP {pool_id}'
             from_event_type = (HistoryEventType.SPEND, HistoryEventSubType.NONE)
-            to_event_type = (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET)
+            to_event_type = (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_FOR_WRAPPED)
         else:  # can only be 'removal'
             notes = 'Remove {amount} {asset} from uniswap-v3 LP {pool_id}'
             from_event_type = (HistoryEventType.RECEIVE, HistoryEventSubType.NONE)
-            to_event_type = (HistoryEventType.WITHDRAWAL, HistoryEventSubType.REMOVE_ASSET)
+            to_event_type = (HistoryEventType.WITHDRAWAL, HistoryEventSubType.REDEEM_WRAPPED)
 
         try:
             # Returns a tuple containing information about the state of the LP position.

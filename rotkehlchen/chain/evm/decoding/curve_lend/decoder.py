@@ -162,7 +162,7 @@ class CurveLendCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
                 event.balance.amount == assets_amount
             ):
                 event.event_type = HistoryEventType.DEPOSIT
-                event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
+                event.event_subtype = HistoryEventSubType.DEPOSIT_FOR_WRAPPED
                 event.notes = f'Deposit {assets_amount} {underlying_token.symbol} in a Curve lending vault'  # noqa: E501
                 event.counterparty = CPT_CURVE
                 out_event = event
@@ -217,7 +217,7 @@ class CurveLendCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
                 event.balance.amount == assets_amount
             ):
                 event.event_type = HistoryEventType.WITHDRAWAL
-                event.event_subtype = HistoryEventSubType.REMOVE_ASSET
+                event.event_subtype = HistoryEventSubType.REDEEM_WRAPPED
                 event.notes = f'Withdraw {assets_amount} {underlying_token.symbol} from a Curve lending vault'  # noqa: E501
                 event.counterparty = CPT_CURVE
                 in_event = event

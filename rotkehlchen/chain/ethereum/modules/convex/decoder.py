@@ -111,7 +111,7 @@ class ConvexDecoder(DecoderInterface, ReloadableCacheDecoderMixin):
         """
         amount_raw = int.from_bytes(context.tx_log.data[0:32])
         interacted_address = bytes_to_address(context.tx_log.topics[1])
-        found_event_modifying_balances = False
+        found_event_modifying_balances, found_return_wrapped = False, False
         # in the case of withdrawing CVX from an expired lock the withdrawn event
         # is emitted before the transfer events and when iterating over the decoded events
         # we haven't processed the transfer yet so it can't be decoded. To cover that case
@@ -137,6 +137,7 @@ class ConvexDecoder(DecoderInterface, ReloadableCacheDecoderMixin):
             ):
                 found_event_modifying_balances = True
                 if event.address == ZERO_ADDRESS:
+                    found_return_wrapped = True
                     event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
                     event.counterparty = CPT_CONVEX
                     if context.tx_log.address in self.pools:
@@ -176,7 +177,7 @@ class ConvexDecoder(DecoderInterface, ReloadableCacheDecoderMixin):
             ):
                 if context.tx_log.topics[0] in WITHDRAWAL_TOPICS:
                     event.event_type = HistoryEventType.WITHDRAWAL
-                    event.event_subtype = HistoryEventSubType.REMOVE_ASSET
+                    event.event_subtype = HistoryEventSubType.REDEEM_WRAPPED if found_return_wrapped else HistoryEventSubType.REMOVE_ASSET  # noqa: E501
                     event.counterparty = CPT_CONVEX
                     found_event_modifying_balances = True
                     if context.tx_log.address in self.pools:

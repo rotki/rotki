@@ -54,7 +54,7 @@ class GivethDecoder(GivethDecoderBase):
                 context=context,
                 send_token_id=self.giv_token_id,
                 send_type=HistoryEventType.DEPOSIT,
-                send_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+                send_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
                 send_to_address=context.tx_log.address,
                 send_notes='Deposit {amount} GIV for staking',
                 receive_token_id=self.pow_token_id,
@@ -72,7 +72,7 @@ class GivethDecoder(GivethDecoderBase):
                 send_notes='Return {amount} POW to Giveth staking',
                 receive_token_id=self.giv_token_id,
                 receive_type=HistoryEventType.WITHDRAWAL,
-                receive_subtype=HistoryEventSubType.REMOVE_ASSET,
+                receive_subtype=HistoryEventSubType.REDEEM_WRAPPED,
                 receive_notes='Withdraw {amount} GIV from staking',
             )
         elif context.tx_log.topics[0] == TOKEN_LOCKED:

@@ -87,13 +87,13 @@ class Compound(EthereumModule, CompoundV2, CompoundV3):
         )
         for event in events:
             address = ChecksumEvmAddress(event.location_label)  # type: ignore[arg-type]  # location label is not none here
-            if event.event_subtype == HistoryEventSubType.DEPOSIT_ASSET:
+            if event.event_subtype == HistoryEventSubType.DEPOSIT_FOR_WRAPPED:
                 assets[address][event.asset] -= event.balance
             elif event.event_subtype == HistoryEventSubType.GENERATE_DEBT:
                 loss_assets[address][event.asset] -= event.balance
             elif event.event_subtype == HistoryEventSubType.REWARD:
                 rewards_assets[address][event.asset] += event.balance
-            elif event.event_subtype == HistoryEventSubType.REMOVE_ASSET:
+            elif event.event_subtype == HistoryEventSubType.REDEEM_WRAPPED:
                 profit_amount = (
                     assets[address][event.asset].amount +
                     event.balance.amount -
@@ -194,10 +194,10 @@ class Compound(EthereumModule, CompoundV2, CompoundV3):
             counterparties=[CPT_COMPOUND],
             location_labels=addresses,  # type: ignore[arg-type]
             event_subtypes=[
-                HistoryEventSubType.DEPOSIT_ASSET,
+                HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
                 HistoryEventSubType.GENERATE_DEBT,
                 HistoryEventSubType.REWARD,
-                HistoryEventSubType.REMOVE_ASSET,
+                HistoryEventSubType.REDEEM_WRAPPED,
                 HistoryEventSubType.LIQUIDATE,
                 HistoryEventSubType.PAYBACK_DEBT,
             ],

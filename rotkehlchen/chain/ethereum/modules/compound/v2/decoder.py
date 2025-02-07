@@ -94,7 +94,7 @@ class Compoundv2Decoder(DecoderInterface):
                 event.address == compound_token.evm_address
             ):
                 event.event_type = HistoryEventType.DEPOSIT
-                event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
+                event.event_subtype = HistoryEventSubType.DEPOSIT_FOR_WRAPPED
                 event.counterparty = CPT_COMPOUND
                 event.notes = f'Deposit {mint_amount} {underlying_asset.symbol} to compound'
                 out_event = event
@@ -141,7 +141,7 @@ class Compoundv2Decoder(DecoderInterface):
             # Find the transfer event which should have come before the redeeming
             if event.event_type == HistoryEventType.RECEIVE and event.asset == underlying_asset and event.balance.amount == redeem_amount:  # noqa: E501
                 event.event_type = HistoryEventType.WITHDRAWAL
-                event.event_subtype = HistoryEventSubType.REMOVE_ASSET
+                event.event_subtype = HistoryEventSubType.REDEEM_WRAPPED
                 event.counterparty = CPT_COMPOUND
                 event.notes = f'Withdraw {redeem_amount} {underlying_asset.symbol} from compound'
                 in_event = event

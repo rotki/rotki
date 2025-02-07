@@ -148,7 +148,7 @@ class YearnDecoder(DecoderInterface, ReloadableDecoderMixin):
                 event.address in self.vaults[counterparty]
             ):
                 event.event_type = HistoryEventType.WITHDRAWAL
-                event.event_subtype = HistoryEventSubType.REMOVE_ASSET
+                event.event_subtype = HistoryEventSubType.REDEEM_WRAPPED
                 event.counterparty = counterparty
                 vault_token_name = _get_vault_token_name(event.address)
                 event.notes = f'Withdraw {event.balance.amount} {event.asset.resolve_to_asset_with_symbol().symbol} from {counterparty} vault {vault_token_name}'  # noqa: E501
@@ -170,7 +170,7 @@ class YearnDecoder(DecoderInterface, ReloadableDecoderMixin):
                 (event.address == YEARN_PARTNER_TRACKER or event.address in self.vaults[counterparty])  # noqa: E501
             ):
                 event.event_type = HistoryEventType.DEPOSIT
-                event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
+                event.event_subtype = HistoryEventSubType.DEPOSIT_FOR_WRAPPED
                 event.counterparty = counterparty
                 event.notes = f'Deposit {event.balance.amount} {event.asset.resolve_to_asset_with_symbol().symbol} in {counterparty} vault'  # noqa: E501
                 deposit_event = event
@@ -250,7 +250,7 @@ class YearnDecoder(DecoderInterface, ReloadableDecoderMixin):
                     asset=underlying_vault_token,
                     amount=underlying_amount,
                     to_event_type=HistoryEventType.DEPOSIT,
-                    to_event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+                    to_event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
                     to_notes=f'Deposit {underlying_amount} {underlying_vault_token.symbol} in {counterparty} vault {_get_vault_token_name(vault_token.evm_address)}',  # noqa: E501
                     to_counterparty=counterparty,
                 ), ActionItem(
@@ -282,7 +282,7 @@ class YearnDecoder(DecoderInterface, ReloadableDecoderMixin):
                     asset=underlying_vault_token,
                     amount=underlying_amount,
                     to_event_type=HistoryEventType.WITHDRAWAL,
-                    to_event_subtype=HistoryEventSubType.REMOVE_ASSET,
+                    to_event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
                     to_notes=f'Withdraw {underlying_amount} {underlying_vault_token.symbol} from {counterparty} vault {_get_vault_token_name(vault_token.evm_address)}',  # noqa: E501
                     to_counterparty=counterparty,
                 ),
@@ -358,12 +358,12 @@ class YearnDecoder(DecoderInterface, ReloadableDecoderMixin):
 
             if (
                 (event.event_type == HistoryEventType.SPEND and event.event_subtype == HistoryEventSubType.RETURN_WRAPPED) or  # noqa: E501
-                (event.event_type == HistoryEventType.DEPOSIT and event.event_subtype == HistoryEventSubType.DEPOSIT_ASSET)  # noqa: E501
+                (event.event_type == HistoryEventType.DEPOSIT and event.event_subtype == HistoryEventSubType.DEPOSIT_FOR_WRAPPED)  # noqa: E501
             ):
                 out_event = event
             elif (
                 (event.event_type == HistoryEventType.RECEIVE and event.event_subtype == HistoryEventSubType.RECEIVE_WRAPPED) or  # noqa: E501
-                (event.event_type == HistoryEventType.WITHDRAWAL and event.event_subtype == HistoryEventSubType.REMOVE_ASSET)  # noqa: E501
+                (event.event_type == HistoryEventType.WITHDRAWAL and event.event_subtype == HistoryEventSubType.REDEEM_WRAPPED)  # noqa: E501
             ):
                 in_event = event
 

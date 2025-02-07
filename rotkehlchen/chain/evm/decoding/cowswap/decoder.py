@@ -394,7 +394,7 @@ class CowswapCommonDecoderWithVCOW(CowswapCommonDecoder):
             if event.event_type == HistoryEventType.SPEND and event.event_subtype == HistoryEventSubType.RETURN_WRAPPED and event.counterparty == CPT_COWSWAP and event.asset == self.vcow_token:  # noqa: E501
                 out_event = event
                 event.notes = f'Exchange {event.balance.amount} vested vCOW for COW'
-            elif event.event_type == HistoryEventType.WITHDRAWAL and event.event_subtype == HistoryEventSubType.REMOVE_ASSET and event.counterparty == CPT_COWSWAP and event.asset == self.cow_token:  # noqa: E501
+            elif event.event_type == HistoryEventType.WITHDRAWAL and event.event_subtype == HistoryEventSubType.REDEEM_WRAPPED and event.counterparty == CPT_COWSWAP and event.asset == self.cow_token:  # noqa: E501
                 in_event = event
                 event.notes = f'Claim {event.balance.amount} COW from vesting tokens'
 
@@ -482,7 +482,7 @@ class CowswapCommonDecoderWithVCOW(CowswapCommonDecoder):
                     to_address=x[2].evm_address,
                 ) for x in (
                     (HistoryEventType.SPEND, HistoryEventSubType.NONE, self.vcow_token, HistoryEventType.SPEND, HistoryEventSubType.RETURN_WRAPPED),  # noqa: E501
-                    (HistoryEventType.RECEIVE, HistoryEventSubType.NONE, self.cow_token, HistoryEventType.WITHDRAWAL, HistoryEventSubType.REMOVE_ASSET),  # noqa: E501
+                    (HistoryEventType.RECEIVE, HistoryEventSubType.NONE, self.cow_token, HistoryEventType.WITHDRAWAL, HistoryEventSubType.REDEEM_WRAPPED),  # noqa: E501
                 )
             ],
         )
