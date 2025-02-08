@@ -1,10 +1,10 @@
 <div id="top"></div>
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/rotki/rotki/develop/frontend/app/public/assets/images/rotkehlchen_no_text.png" alt="Rotki Logo" width="250">
+  <img src="https://raw.githubusercontent.com/rotki/rotki/develop/frontend/app/public/assets/images/rotkehlchen_no_text.png" alt="rotki Logo" width="250">
 </p>
 
-<h1 align="center">rotki: The Open-Source Portfolio Manager</h1>
+<h1 align="center">rotki: The Opensource, Self-Hosted Portfolio Manager</h1>
 
 <p align="center">
   <strong>A privacy-focused portfolio manager, accounting, and analytics tool.</strong>
@@ -47,10 +47,11 @@
 <div id="overview"></div>
 
 ## 📖 **Overview**
-[Rotki](https://rotki.com/) is an open source portfolio management tool that protects your privacy. The mission of rotki is to bring transparency into the crypto and financial sectors through the use of open source. Most importantly, unlike virtually every other competing service which consists of a closed source SaaS onto which you are forced to hand over all your financial data, with rotki your data is stored encrypted locally on your computer. It enables you to take ownership of your financial data!
+[rotki](https://rotki.com/) is an opensource self-hosted portfolio management tool that puts privacy first. Unlike most competitors, which are closed-source SaaS platforms requiring you to hand over sensitive financial data, rotki keeps your data encrypted and stored locally—ensuring you stay in control. Our mission is to bring transparency to the crypto and financial sectors through opensource software, empowering users with a secure, self-sovereign alternative to cloud-based tracking services.
 
-🔹 **Why choose Rotki?**
+🔹 **Why choose rotki?**
 - **Open-source & Transparent** 📖  
+- **Self-hosted** 🏠  
 - **Privacy-Focused** 🔒  
 - **Multi-Platform Support** 🖥  
 - **Powerful Analytics & Reporting** 📊  
@@ -64,7 +65,7 @@ For **advanced features**, check out the [Pro Version](https://rotki.com/product
 ## ✨ **Features**
 ✅ **Portfolio Overview**: Track balances across multiple platforms, blockchains, and exchanges.  
 ✅ **Graphical Insights**: Historical data visualization for better financial decision-making.  
-✅ **Transaction Decoding**: Readable breakdown of EVM transactions (Ethereum, Optimism, etc.).  
+✅ **Transaction Decoding**: Readable breakdown of blockchain transactions, exchange events and other history.  
 ✅ **Data Customization**: Personalize UI, main currency, language, and more.  
 ✅ **PnL Reports**: Perform detailed profit/loss analysis using customizable accounting settings.  
 
@@ -73,7 +74,7 @@ For **advanced features**, check out the [Pro Version](https://rotki.com/product
 <div id="requirements"></div>
 
 ## 🔧 **Requirements**
-Before installing Rotki, ensure you have the following dependencies:
+Before installing rotki, ensure you have the following dependencies:
 
 📌 **Required Software**:
 - `Node.js`
@@ -87,7 +88,7 @@ Before installing Rotki, ensure you have the following dependencies:
 <div id="installation"></div>
 
 ## 🚀 **Installation**
-Rotki supports **Windows, macOS, and Linux**.
+rotki supports **Windows, macOS, and Linux**.
 
 📌 **Recommended Installation Method**:
 - [Download Pre-Packaged Binaries](https://docs.rotki.com/requirement-and-installation/packaged-binaries.html)
@@ -105,7 +106,7 @@ For **detailed setup and usage guides**, visit our [documentation](https://docs.
 📌 **Quick Start**:
 - Follow the [usage guide](https://docs.rotki.com/usage-guides/).
 - Configure settings & import your addresses.
-- Start tracking and analyzing your portfolio! 🚀
+- Start managing and analyzing your portfolio! 🚀
 
 ---
 
@@ -136,7 +137,7 @@ Contributors receive a **GitPOAP Badge** for each year they contribute! 🎖 [Cl
 
 ### Contributors
 
-We are thankful to all the people who have contributed to this project.
+We are thankful to all the people who have contributed to rotki.
 
 <a href="https://github.com/rotki/rotki/graphs/contributors">
   <img src="https://contrib.rocks/image?repo=rotki/rotki&max=999&anon=1&columns=12" />
@@ -149,15 +150,13 @@ We are thankful to all the people who have contributed to this project.
 ## 📢 **Get in Touch**
 Need help or want to discuss features? Connect with us!
 
-## 📢 **Stay Connected**
-
 ### 💬 **Community & Support**
 [![Discord](https://img.shields.io/badge/Join%20our%20Discord-5865F2?logo=discord&logoColor=white&style=for-the-badge)](https://discord.rotki.com)
 [![GitHub Discussions](https://img.shields.io/badge/GitHub%20Discussions-181717?logo=github&logoColor=white&style=for-the-badge)](https://github.com/rotki/rotki/discussions)
 [![GitHub Issues](https://img.shields.io/badge/Report%20an%20Issue-F05032?logo=github&logoColor=white&style=for-the-badge)](https://github.com/rotki/rotki/issues)  
 
 ### 📌 **Follow Us for Updates**
-[![Website](https://img.shields.io/badge/Visit%20Rotki-1E90FF?logo=google-chrome&logoColor=white&style=for-the-badge)](https://rotki.com)
+[![Website](https://img.shields.io/badge/Visit%20rotki-1E90FF?logoColor=white&style=for-the-badge)](https://rotki.com)
 [![Docs](https://img.shields.io/badge/Read%20the%20Docs-FF4500?logo=read-the-docs&logoColor=white&style=for-the-badge)](https://docs.rotki.com/)
 [![X (Twitter)](https://img.shields.io/badge/Follow%20on%20X-000000?logo=x&logoColor=white&style=for-the-badge)](https://twitter.com/rotkiapp)
 [![LinkedIn](https://img.shields.io/badge/Connect%20on%20LinkedIn-0077B5?logo=linkedin&logoColor=white&style=for-the-badge)](https://www.linkedin.com/company/rotki)  
@@ -167,7 +166,7 @@ Need help or want to discuss features? Connect with us!
 <div id="donations"></div>
 
 ## 💰 **Donations**
-If you find this project helpful, don't want to purchase a subscription and would like to support its development, you can make a donation using the following cryptocurrency addresses 🚀
+If you find rotki helpful, don't want to purchase a subscription and would like to support its development, you can make a donation using the following cryptocurrency addresses 🚀
 
 📌 **Bitcoin (BTC)**: `1PfvkW8MC7Ns2y8zn6CE2P2t5f19KF8XiW`  
 📌 **Ethereum (ETH)**: `rotki.eth` (`0x9531c059098e3d194ff87febb587ab07b30b1306`)  
@@ -183,7 +182,7 @@ Thank you for considering a donation to support our work!
 <div id="license"></div>
 
 ## 📄 **License**
-Rotki is open-source and distributed under the **AGPLv3 License**.
+rotki is open-source and distributed under the **AGPLv3 License**.
 
 📜 **[Read the Full License](https://github.com/rotki/rotki/blob/develop/LICENSE.md)**
 
