@@ -99,9 +99,9 @@ class AssetParser(BaseAssetParser[AssetData]):
 
     def __init__(self) -> None:
         super().__init__()
-        self._assets_re = re.compile(r'.*INSERT +INTO +assets\( *identifier *, *name *, *type *\) *VALUES\(([^,]*?),([^,]*?),([^,]*?)\).*?')  # noqa: E501
-        self._common_details_re = re.compile(r'.*INSERT +INTO +common_asset_details\( *identifier *, *symbol *, *coingecko *, *cryptocompare *, *forked *, *started *, *swapped_for *\) *VALUES\((.*?),(.*?),(.*?),(.*?),(.*?),([^,]*?),([^,]*?)\).*')  # noqa: E501
-        self._evm_tokens_re = re.compile(r'.*INSERT +INTO +evm_tokens\( *identifier *, *token_kind *, *chain *, *address *, *decimals *, *protocol *\) *VALUES\(([^,]*?),([^,]*?),([^,]*?),([^,]*?),([^,]*?),([^,]*?)\).*')  # noqa: E501
+        self._assets_re = re.compile(r'.*INSERT +INTO +assets *\( *identifier *, *name *, *type *\) *VALUES *\(([^,]*?),([^,]*?),([^,]*?)\).*?')  # noqa: E501
+        self._common_details_re = re.compile(r'.*INSERT +INTO +common_asset_details *\( *identifier *, *symbol *, *coingecko *, *cryptocompare *, *forked *, *started *, *swapped_for *\) *VALUES *\((.*?),(.*?),(.*?),(.*?),(.*?),([^,]*?),([^,]*?)\).*')  # noqa: E501
+        self._evm_tokens_re = re.compile(r'.*INSERT +INTO +evm_tokens *\( *identifier *, *token_kind *, *chain *, *address *, *decimals *, *protocol *\) *VALUES *\(([^,]*?),([^,]*?),([^,]*?),([^,]*?),([^,]*?),([^,]*?)\).*')  # noqa: E501
         self._version_parsers = [
             (VersionRange(15, None), self._parse),
         ]
