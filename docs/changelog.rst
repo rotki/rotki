@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`-` Support for compound v3 protocol on OP mainnet has now been added. Also USDS in mainnet and AERO in BASE for Compound v3 should be seen properly now. Finally compound interactions that wrap ETH to WETH through the Compound bulker and vice versa should be seen properly now.
 * :feature:`1379` For the asset amount and value graph, users can now choose to use historical events and prices as the source, instead of snapshots.
 * :bug:`-` Block production events will no longer blindly trust the MEV relay for the MEV reward but instead track exact transactions sent to fee recipient as MEV reward. Also covering the rare case of multiple MEV reward transactions for a single block.
 * :bug:`-` A problem with decoding WETH events in transactions from safes or other smart contracts on arbitrum will now be fixed.

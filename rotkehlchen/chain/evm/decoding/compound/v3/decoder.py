@@ -17,6 +17,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
 )
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
+from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -53,6 +54,7 @@ class Compoundv3CommonDecoder(DecoderInterface):
             base_tools: 'BaseDecoderTools',
             msg_aggregator: 'MessagesAggregator',
             rewards_address: 'ChecksumEvmAddress',
+            bulker_address: 'ChecksumEvmAddress',
     ) -> None:
         super().__init__(
             evm_inquirer=evm_inquirer,
@@ -60,6 +62,7 @@ class Compoundv3CommonDecoder(DecoderInterface):
             msg_aggregator=msg_aggregator,
         )
         self.rewards_address = rewards_address
+        self.bulker_address = bulker_address
         self.underlying_tokens: dict[EvmToken, EvmToken | None] = {}
 
     def _get_compound_underlying_token(self, compound_token: EvmToken) -> EvmToken | None:
@@ -154,23 +157,33 @@ class Compoundv3CommonDecoder(DecoderInterface):
                 receiving_ctoken = True
                 break
 
+        may_wrap_eth = underlying_token.symbol == 'WETH' and self.evm_inquirer.native_token == A_ETH  # noqa: E501
         amount = asset_normalized_value(
             amount=int.from_bytes(context.tx_log.data),
             asset=underlying_token,
         )
-        paired_event, action_from_event_type, action_to_event_subtype, action_to_notes = None, None, None, None  # noqa: E501
+        paired_event, action_from_event_type, action_to_event_subtype, action_to_notes, asset_matches, compound_token_matches, underlying_asset_symbol = None, None, None, None, False, False, ''  # noqa: E501
         for event in context.decoded_events:
+            if event.asset == underlying_token:
+                asset_matches = True
+                underlying_asset_symbol = underlying_token.symbol
+                compound_token_matches = event.address == compound_token.evm_address
+            elif may_wrap_eth:
+                asset_matches = True
+                underlying_asset_symbol = 'ETH'
+                compound_token_matches = event.address == self.bulker_address
+
             if (
-                event.event_type == HistoryEventType.SPEND and
-                event.event_subtype == HistoryEventSubType.NONE and
-                event.asset == underlying_token and amount == event.balance.amount and
-                event.address == compound_token.evm_address
+                    event.event_type == HistoryEventType.SPEND and
+                    event.event_subtype == HistoryEventSubType.NONE and
+                    asset_matches and amount == event.balance.amount and
+                    compound_token_matches
             ):
                 event.counterparty = CPT_COMPOUND_V3
                 if receiving_ctoken:
                     event.event_type = HistoryEventType.DEPOSIT
                     event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
-                    event.notes = f'Deposit {amount} {underlying_token.symbol} into Compound v3'
+                    event.notes = f'Deposit {amount} {underlying_asset_symbol} into Compound v3'
                     paired_event = event
                     action_from_event_type = HistoryEventType.RECEIVE
                     action_to_event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
@@ -178,7 +191,7 @@ class Compoundv3CommonDecoder(DecoderInterface):
                 else:
                     event.event_type = HistoryEventType.SPEND
                     event.event_subtype = HistoryEventSubType.PAYBACK_DEBT
-                    event.notes = f'Repay {amount} {underlying_token.symbol} on Compound v3'
+                    event.notes = f'Repay {amount} {underlying_asset_symbol} on Compound v3'
 
                 break
         else:  # did not break/find anything
@@ -219,24 +232,34 @@ class Compoundv3CommonDecoder(DecoderInterface):
             )
             return DEFAULT_DECODING_OUTPUT
 
+        may_wrap_eth = underlying_token.symbol == 'WETH' and self.evm_inquirer.native_token == A_ETH  # noqa: E501
         sending_ctoken = False
         for tx_log in context.all_logs:
             if (
-                tx_log.address == compound_token.evm_address and
-                tx_log.topics[0] == ERC20_OR_ERC721_TRANSFER and
-                bytes_to_address(tx_log.topics[1]) == bytes_to_address(context.tx_log.topics[2]) and  # from  # noqa: E501
+                    tx_log.address == compound_token.evm_address and
+                    tx_log.topics[0] == ERC20_OR_ERC721_TRANSFER and
+                    (  # check the from sender matches
+                        (send_from_address := bytes_to_address(tx_log.topics[1])) == bytes_to_address(context.tx_log.topics[2]) or  # noqa: E501
+                        (may_wrap_eth and send_from_address == bytes_to_address(context.tx_log.topics[1]))  # noqa: E501
+                    ) and
                 bytes_to_address(tx_log.topics[2]) == ZERO_ADDRESS  # to
             ):
                 sending_ctoken = True
                 break
 
-        paired_event, action_from_event_type, action_to_event_subtype, action_to_notes = None, None, None, None  # noqa: E501
+        paired_event, action_from_event_type, action_to_event_subtype, action_to_notes, asset_matches, compound_token_matches = None, None, None, None, False, False  # noqa: E501
         for event in context.decoded_events:
+            if event.asset == underlying_token:
+                asset_matches = True
+                compound_token_matches = event.address == compound_token.evm_address
+            elif may_wrap_eth:
+                asset_matches = True
+                compound_token_matches = event.address == self.bulker_address
+
             if (
-                event.event_type == HistoryEventType.RECEIVE and
-                event.event_subtype == HistoryEventSubType.NONE and
-                event.asset.identifier == underlying_token.identifier and
-                event.address == compound_token.evm_address
+                    event.event_type == HistoryEventType.RECEIVE and
+                    event.event_subtype == HistoryEventSubType.NONE and
+                    asset_matches and compound_token_matches
             ):
                 if sending_ctoken:
                     event.event_type = HistoryEventType.WITHDRAWAL
