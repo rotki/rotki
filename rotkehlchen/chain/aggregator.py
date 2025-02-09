@@ -238,6 +238,7 @@ CHAIN_TO_BALANCE_PROTOCOLS = {
     ),
     ChainID.OPTIMISM: (
         VelodromeBalances,
+        Compoundv3Balances,
         HopBalances,
         GearboxBalancesOptimism,
         ExtrafiBalancesOp,

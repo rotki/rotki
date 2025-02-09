@@ -1,18 +1,13 @@
-import logging
 from typing import TYPE_CHECKING
 
 from rotkehlchen.chain.evm.decoding.compound.v3.decoder import Compoundv3CommonDecoder
-from rotkehlchen.logging import RotkehlchenLogsAdapter
 
-from .constants import COMPOUND_REWARDS_ADDRESS
+from .constants import COMPOUND_BULKER_ADDRESS, COMPOUND_REWARDS_ADDRESS
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.arbitrum_one.node_inquirer import ArbitrumOneInquirer
     from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
     from rotkehlchen.user_messages import MessagesAggregator
-
-logger = logging.getLogger(__name__)
-log = RotkehlchenLogsAdapter(logger)
 
 
 class Compoundv3Decoder(Compoundv3CommonDecoder):
@@ -28,4 +23,5 @@ class Compoundv3Decoder(Compoundv3CommonDecoder):
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
             rewards_address=COMPOUND_REWARDS_ADDRESS,
+            bulker_address=COMPOUND_BULKER_ADDRESS,
         )

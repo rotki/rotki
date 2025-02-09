@@ -4,11 +4,17 @@ import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.chain.arbitrum_one.modules.compound.v3.constants import (
+    COMPOUND_BULKER_ADDRESS as ARBITRUM_BULKER_ADDRESS,
+)
 from rotkehlchen.chain.ethereum.modules.compound.v3.constants import COMPOUND_REWARDS_ADDRESS
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.compound.v3.constants import CPT_COMPOUND_V3
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.chain.optimism.modules.compound.v3.constants import (
+    COMPOUND_BULKER_ADDRESS as OPTIMISM_BULKER_ADDRESS,
+)
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_COMP, A_ETH, A_POLYGON_POS_MATIC, A_USDC, A_WBTC
 from rotkehlchen.fval import FVal
@@ -450,5 +456,109 @@ def test_scroll_withdraw(scroll_inquirer, scroll_accounts):
             notes=f'Withdraw {withdraw_amount} USDC from Compound v3',
             counterparty=CPT_COMPOUND_V3,
             address=string_to_evm_address('0xB2f97c1Bd3bf02f5e74d13f02E3e26F93D77CE44'),
+        )]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('optimism_accounts', [['0xBf02910A77281F3c279ee45dA17c3BE8163b108f']])
+def test_optimism_supply_eth_with_wrapping(optimism_inquirer, optimism_accounts):
+    tx_hash = deserialize_evm_tx_hash('0x6b4320c7965cfeb3263cdeb13469e49881ae66c2cfef68c94af1c210d7da8be7')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=optimism_inquirer,
+        tx_hash=tx_hash,
+    )
+    user, timestamp, gas_fees, deposit_amount, withdraw_amount = optimism_accounts[0], TimestampMS(1739077677000), '0.00000002224085855', '0.025', '0.024999999999999999'  # noqa: E501
+    expected_events = [
+        EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(gas_fees)),
+            location_label=user,
+            notes=f'Burn {gas_fees} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(deposit_amount)),
+            location_label=user,
+            notes=f'Deposit {deposit_amount} ETH into Compound v3',
+            counterparty=CPT_COMPOUND_V3,
+            address=OPTIMISM_BULKER_ADDRESS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=2,
+            timestamp=timestamp,
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+            asset=Asset('eip155:10/erc20:0xE36A30D249f7761327fd973001A32010b521b6Fd'),  # cWETHv3
+            balance=Balance(amount=FVal(withdraw_amount)),
+            location_label=user,
+            notes=f'Receive {withdraw_amount} cWETHv3 from Compound v3',
+            counterparty=CPT_COMPOUND_V3,
+            address=ZERO_ADDRESS,
+        )]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('arbitrum_one_accounts', [['0xd3c41C883A0B04c9d4f5b6002693d436AB87F67A']])
+def test_arbitrum_one_withdraw_eth_with_unwrapping(arbitrum_one_inquirer, arbitrum_one_accounts):
+    tx_hash = deserialize_evm_tx_hash('0xd12c93b2dfc8009b345549dcf14258300d04d78850960334c816f343770ab63a')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=arbitrum_one_inquirer,
+        tx_hash=tx_hash,
+    )
+    user, timestamp, gas_fees, amount = arbitrum_one_accounts[0], TimestampMS(1739094648000), '0.00000128289', '0.409005868637616281'  # noqa: E501
+    expected_events = [
+        EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(gas_fees)),
+            location_label=user,
+            notes=f'Burn {gas_fees} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.RETURN_WRAPPED,
+            asset=Asset('eip155:42161/erc20:0x6f7D514bbD4aFf3BcD1140B7344b32f063dEe486'),  # cWETHv3  # noqa: E501
+            balance=Balance(amount=FVal(amount)),
+            location_label=user,
+            notes=f'Return {amount} cWETHv3 to Compound v3',
+            counterparty=CPT_COMPOUND_V3,
+            address=ZERO_ADDRESS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=2,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.REMOVE_ASSET,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(amount)),
+            location_label=user,
+            notes=f'Withdraw {amount} ETH from Compound v3',
+            counterparty=CPT_COMPOUND_V3,
+            address=ARBITRUM_BULKER_ADDRESS,
         )]
     assert events == expected_events
