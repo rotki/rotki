@@ -1,6 +1,8 @@
 import process from 'node:process';
 import path from 'node:path';
 import { assert } from '@rotki/common';
+import { LogLevel } from '@shared/log-level';
+import type { BackendOptions } from '@shared/ipc';
 
 export class ColibriConfigBuilder {
   private readonly args: string[] = [];
@@ -13,24 +15,31 @@ export class ColibriConfigBuilder {
     return this;
   }
 
+  withBackendOptions(options: Partial<BackendOptions>): this {
+    assert(this.cmd !== '', 'Command must be set first');
+    const { dataDirectory, loglevel = LogLevel.INFO, maxLogfilesNum, maxSizeInMbAllLogs } = options;
+
+    if (dataDirectory) {
+      this.args.push(`--data-directory=${dataDirectory}`);
+    }
+
+    this.args.push(`--log-level=${loglevel}`);
+
+    if (maxLogfilesNum) {
+      this.args.push(`--max-logfiles-num=${maxLogfilesNum}`);
+    }
+
+    if (maxSizeInMbAllLogs) {
+      const maxLogs = maxLogfilesNum ?? 5;
+      const maxSize = Math.round(maxSizeInMbAllLogs / maxLogs);
+      this.args.push(`--max-size-in-mb=${maxSize}`);
+    }
+    return this;
+  }
+
   withLogfilePath(logFilePath: string): this {
     assert(this.cmd !== '', 'Command must be set first');
     this.args.push(`--logfile-path=${logFilePath}`);
-    return this;
-  }
-
-  withDataDirectory(dataDir?: string): this {
-    if (!dataDir) {
-      return this;
-    }
-    assert(this.cmd !== '', 'Command must be set first');
-    this.args.push(`--data-directory=${dataDir}`);
-    return this;
-  }
-
-  withLogLevel(logLevel: string): this {
-    assert(this.cmd !== '', 'Command must be set first');
-    this.args.push(`--log-level=${logLevel}`);
     return this;
   }
 

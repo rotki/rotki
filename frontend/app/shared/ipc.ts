@@ -45,9 +45,9 @@ export const BackendOptions = z.object({
   logDirectory: z.string().optional(),
   sleepSeconds: z.number().nonnegative().optional(),
   logFromOtherModules: z.boolean().optional(),
-  maxSizeInMbAllLogs: z.number().optional(),
-  sqliteInstructions: z.number().optional(),
-  maxLogfilesNum: z.number().optional(),
+  maxSizeInMbAllLogs: z.number().int().positive().optional(),
+  sqliteInstructions: z.number().int().positive().optional(),
+  maxLogfilesNum: z.number().int().positive().optional(),
 });
 
 export type StoredBackendOptions = z.infer<typeof BackendOptions>;
