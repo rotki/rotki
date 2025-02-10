@@ -63,7 +63,10 @@ const multipleUpgrades = computed<boolean>(() => {
           </div>
           <RuiDivider class="my-2" />
           <!-- hide the progress message when the reset signal is received from the backend -->
-          <div v-if="updateProgress.totalSteps > 0">
+          <div
+            v-if="updateProgress.totalSteps > 0"
+            class="break-words"
+          >
             {{ current }}
           </div>
           <ul
