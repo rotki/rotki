@@ -1,3 +1,4 @@
+import logging
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any, Final
 
@@ -8,9 +9,11 @@ from rotkehlchen.chain.ethereum.utils import (
 from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS, ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.aura_finance.constants import CPT_AURA_FINANCE
 from rotkehlchen.chain.evm.decoding.balancer.constants import CPT_BALANCER_V2
+from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
+    ActionItem,
     DecoderContext,
     DecodingOutput,
 )
@@ -19,6 +22,7 @@ from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChainID, ChecksumEvmAddress
 from rotkehlchen.utils.misc import bytes_to_address
 
@@ -33,6 +37,7 @@ LOCK_4BYTE: Final = b'K\xbc\x17\n'
 GET_REWARD_4BYTE: Final = b'pP\xcc\xd9'
 CLAIM_REWARDS_L1_4BYTE: Final = b'\xd3F@\xb2'
 CLAIM_REWARDS_L2_4BYTE: Final = b'\xc6\xa0y`'
+WITHDRAW_AND_UNWRAP_4BYTE: Final = b'\xc3.r\x02'
 LOCK_ETHEREUM_AND_BASE_4BYTE: Final = b'(-?\xdf'
 
 LOCKED_TOPIC: Final = b'\x9f\x1e\xc8\xc8\x80\xf7g\x98\xe7\xb7\x932]b^\x9b`\xe4\x08*U<\x98\xf4+l\xda6\x8d\xd6\x00\x08'  # noqa: E501
@@ -40,10 +45,14 @@ STAKED_TOPIC: Final = b'\x14I\xc6\xddxQ\xab\xc3\n\xbf7\xf5w\x15\xf4\x92\x01\x05\
 DEPOSIT_AURA_BAL_TOPIC: Final = b'\xdc\xbc\x1c\x05$\x0f1\xff:\xd0g\xef\x1e\xe3\\\xe4\x99wbu.:\tR\x84uED\xf4\xc7\t\xd7'  # noqa: E501
 REWARD_PAID_TOPIC: Final = b'\xe2@6@\xbah\xfe\xd3\xa2\xf8\x8buWU\x1d\x19\x93\xf8K\x99\xbb\x10\xff\x83?\x0c\xf8\xdb\x0c^\x04\x86'  # noqa: E501
 DEPOSITED_TOPIC: Final = b's\xa1\x9d\xd2\x10\xf1\xa7\xf9\x02\x192\x14\xc0\xee\x91\xdd5\xee[M\x92\x0c\xba\x8dQ\x9e\xcae\xa7\xb4\x88\xca'  # noqa: E501
+WITHDRAWN_AURA_BOOSTER = b'\x92\xcc\xf4P\xa2\x86\xa9W\xafRP\x9b\xc1\xc9\x93\x9d\x1ajH\x17\x83\xe1B\xe4\x1e$\x99\xf0\xbbf\xeb\xc6'  # noqa: E501
 
 AURA_BAL_VAULT_ADDRESS = string_to_evm_address('0x4EA9317D90b61fc28C418C247ad0CA8939Bbb0e9')
 AURA_L2_BOOSTER_LITE_ADDRESS = string_to_evm_address('0x98Ef32edd24e2c92525E59afc4475C1242a30184')
 AURA_ETHEREUM_BOOSTER_ADDRESS = string_to_evm_address('0xA57b8d98dAE62B26Ec3bcC4a365338157060B234')
+
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 
 class AuraFinanceCommonDecoder(DecoderInterface):
@@ -127,31 +136,34 @@ class AuraFinanceCommonDecoder(DecoderInterface):
     def _decode_reward_claims(self, context: DecoderContext) -> DecodingOutput:
         """Decodes Aura Finance reward claiming events.
 
-        It handles two types of reward transactions: 'getReward' and 'claimRewards'.
+        It handles three types of reward transactions: 'getReward', 'claimRewards'
+        and `withdrawAndUnwrap`.
 
         `getReward` transactions are to only claim AURA and BAL rewards.
         `claimRewards` transactions handle other reward tokens (including AURA and BAL).
+        `withdrawAndUnwrap` transactions withdraw the BPT token and may claim the rewards.
         """
-        if (
-            (is_claims_reward := context.transaction.input_data[:4] in {CLAIM_REWARDS_L1_4BYTE, CLAIM_REWARDS_L2_4BYTE}) is True and  # noqa: E501
-            context.transaction.to_address != self.claim_zap_address
-        ):
-            return DEFAULT_DECODING_OUTPUT
-
         recipient = bytes_to_address(context.tx_log.topics[1])
         amount_paid = int.from_bytes(context.tx_log.data[:32])
+        is_aura_transaction = False
         for event in context.decoded_events:
+            # this is_aura_transaction is needed for the case of withdrawals + claim rewards.
+            # Since we don't have a way to detect if the transaction is claiming rewards.
+            is_aura_transaction = is_aura_transaction or event.counterparty == CPT_AURA_FINANCE
             if (
                 event.event_type == HistoryEventType.RECEIVE and
                 event.event_subtype == HistoryEventSubType.NONE and
-                ((crypto_asset := event.asset.resolve_to_crypto_asset()) in self.base_reward_tokens or is_claims_reward) and  # noqa: E501
+                event.location_label == recipient and
+                (event.asset in self.base_reward_tokens or is_aura_transaction) and
                 (
                     # there's an aura token transfer as reward but the RewardPaid
                     # event is not emitted for that so that's handled here.
-                    event.balance.amount == asset_normalized_value(amount=amount_paid, asset=crypto_asset) or  # noqa: E501
+                    event.balance.amount == asset_normalized_value(
+                        amount=amount_paid,
+                        asset=(crypto_asset := event.asset.resolve_to_crypto_asset()),
+                    ) or
                     event.asset in self.base_reward_tokens
-                ) and
-                event.location_label == recipient
+                )
             ):
                 event.notes = f'Claim {event.balance.amount} {crypto_asset.symbol} from Aura Finance'  # noqa: E501
                 event.event_subtype = HistoryEventSubType.REWARD
@@ -213,6 +225,63 @@ class AuraFinanceCommonDecoder(DecoderInterface):
         )
         return DEFAULT_DECODING_OUTPUT
 
+    def _decode_withdraw(self, context: DecoderContext) -> DecodingOutput:
+        """This logic processes withdrawals from aura that return BPT tokens"""
+        withdrawn_amount_raw = int.from_bytes(context.tx_log.data[0:32])
+        user_address = bytes_to_address(context.tx_log.topics[1])
+        withdrawn_amount = token_normalized_value_decimals(
+            token_amount=withdrawn_amount_raw,
+            token_decimals=DEFAULT_TOKEN_DECIMALS,
+        )
+        for event in context.decoded_events:
+            if (
+                event.event_type == HistoryEventType.RECEIVE and
+                event.event_subtype == HistoryEventSubType.NONE and
+                event.balance.amount == withdrawn_amount
+            ):
+                event.notes = f'Withdraw {withdrawn_amount} {event.asset.symbol_or_name()} from an Aura gauge'  # noqa: E501
+                event.event_type = HistoryEventType.WITHDRAWAL
+                event.event_subtype = HistoryEventSubType.REDEEM_WRAPPED
+                event.counterparty = CPT_AURA_FINANCE
+
+                # find the address of the aura vault so we can transform the burning event. The
+                # address appears in the `to` of the transaction and not in any other event that
+                # we can use to match. The strategy here is to find a burn of tokens that happens
+                # with the same amount.
+                aura_pool_contract_addr = None
+                for log_event in context.all_logs:
+                    if log_event.log_index < context.tx_log.log_index:
+                        continue
+
+                    if (
+                        log_event.topics[0] == ERC20_OR_ERC721_TRANSFER and
+                        bytes_to_address(log_event.topics[2]) == ZERO_ADDRESS and
+                        log_event.data[0:32] == context.tx_log.data[0:32]
+                    ):
+                        aura_pool_contract_addr = log_event.address
+                        break
+                else:
+                    log.error(f'Failed to match the burn event of aura tokens in {context.transaction}')  # noqa: E501
+                    return DEFAULT_DECODING_OUTPUT
+
+                aura_token = self.base.get_or_create_evm_token(address=aura_pool_contract_addr)
+                action_item = ActionItem(
+                    action='transform',
+                    from_event_type=HistoryEventType.SPEND,
+                    from_event_subtype=HistoryEventSubType.NONE,
+                    asset=aura_token,
+                    amount=withdrawn_amount,
+                    location_label=user_address,
+                    to_event_subtype=HistoryEventSubType.RETURN_WRAPPED,
+                    address=ZERO_ADDRESS,
+                    to_counterparty=CPT_AURA_FINANCE,
+                    to_notes=f'Return {withdrawn_amount} {aura_token.symbol_or_name()} to Aura',
+                    paired_events_data=((event,), False),
+                )
+                return DecodingOutput(action_items=[action_item])
+
+        return DEFAULT_DECODING_OUTPUT
+
     def _decode_deposit_aura_bal(self, context: DecoderContext) -> DecodingOutput:
         """Decodes auraBAL deposit events (Base, Arbitrum, Polygon)."""
         if context.tx_log.topics[0] != DEPOSIT_AURA_BAL_TOPIC:
@@ -229,26 +298,29 @@ class AuraFinanceCommonDecoder(DecoderInterface):
             receive_note_suffix='from auraBAL vault',
         )
 
-    def _decode_booster_deposit(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_booster_event(self, context: DecoderContext) -> DecodingOutput:
         """Decodes booster deposit events."""
-        if context.tx_log.topics[0] != DEPOSITED_TOPIC:
-            return DEFAULT_DECODING_OUTPUT
+        if context.tx_log.topics[0] == DEPOSITED_TOPIC:
+            return self._decode_deposit_helper(
+                context=context,
+                deposit_note_suffix='into an Aura gauge',
+                receive_note_suffix='from an Aura gauge',
+            )
 
-        return self._decode_deposit_helper(
-            context=context,
-            deposit_note_suffix='into an Aura gauge',
-            receive_note_suffix='from an Aura gauge',
-        )
+        if context.tx_log.topics[0] == WITHDRAWN_AURA_BOOSTER:
+            return self._decode_withdraw(context=context)
+
+        return DEFAULT_DECODING_OUTPUT
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         if self.evm_inquirer.chain_id == ChainID.ETHEREUM:
             return {
-                AURA_ETHEREUM_BOOSTER_ADDRESS: (self._decode_booster_deposit,),
+                AURA_ETHEREUM_BOOSTER_ADDRESS: (self._decode_booster_event,),
             }
 
         return {
             AURA_BAL_VAULT_ADDRESS: (self._decode_deposit_aura_bal,),
-            AURA_L2_BOOSTER_LITE_ADDRESS: (self._decode_booster_deposit,),
+            AURA_L2_BOOSTER_LITE_ADDRESS: (self._decode_booster_event,),
         }
 
     def decoding_by_input_data(self) -> dict[bytes, dict[bytes, Callable]]:
@@ -256,6 +328,7 @@ class AuraFinanceCommonDecoder(DecoderInterface):
             GET_REWARD_4BYTE: {REWARD_PAID_TOPIC: self._decode_reward_claims},
             CLAIM_REWARDS_L1_4BYTE: {REWARD_PAID_TOPIC: self._decode_reward_claims},
             CLAIM_REWARDS_L2_4BYTE: {REWARD_PAID_TOPIC: self._decode_reward_claims},
+            WITHDRAW_AND_UNWRAP_4BYTE: {REWARD_PAID_TOPIC: self._decode_reward_claims},
         }
         if self.evm_inquirer.chain_id in (ChainID.ETHEREUM, ChainID.BASE):
             decoders[LOCK_ETHEREUM_AND_BASE_4BYTE] = {STAKED_TOPIC: self._decode_lock_aura}

@@ -25,6 +25,7 @@ Changelog
 * :feature:`-` Safepass vesting claim start events will now be properly decoded.
 * :feature:`-` Hedgey voting token lockup related events will now be properly decoded and locked balances automatically detected.
 * :feature:`-` Users will be now able to refresh individual general caches (Curve, MakerDAO, Yearn, Velodrome, Aerodrome, Gearbox, etc.) instead of all of them at once.
+* :bug:`-` Withdrawals from Aura gauges will now be properly decoded.
 * :bug:`-` Assets with zero price will again show properly when usd value threshold is not set
 * :bug:`-` Bitmex balances will now be queried correctly.
 * :bug:`-` Prices for Aerodrome LP tokens will now be found and the associated balances shown correctly.
