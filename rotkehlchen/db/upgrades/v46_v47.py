@@ -227,4 +227,23 @@ def upgrade_v46_to_v47(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
             (f'{(coinbase_loc := Location.COINBASE.serialize())}_%_last_query_ts', f'{coinbase_loc}_%_last_query_id'),  # noqa: E501
         )
 
+    @progress_step(description='Remove old accounting rules')
+    def _remove_old_accounting_rules(write_cursor: 'DBCursor') -> None:
+        """Remove unused `deposit asset` and `remove asset` accounting rules.
+        This must be done here as the accounting rule updates don't currently support deletion.
+        See https://github.com/orgs/rotki/projects/11?pane=issue&itemId=96831912
+        """
+        counterparties = ('aave-v1', 'aave-v2', 'aave-v3', 'compound', 'compound-v3', 'Locked GNO', 'yearn-v1', 'yearn-v2')  # noqa: E501
+        write_cursor.executemany(
+            'DELETE FROM accounting_rules WHERE type=? AND subtype=? AND counterparty=?',
+            [
+                (event_type, event_subtype, counterparty)
+                for counterparty in counterparties
+                for event_type, event_subtype in (
+                    ('deposit', 'deposit asset'),
+                    ('withdrawal', 'remove asset'),
+                )
+            ],
+        )
+
     perform_userdb_upgrade_steps(db=db, progress_handler=progress_handler, should_vacuum=True)

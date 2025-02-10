@@ -2964,6 +2964,11 @@ def test_upgrade_db_46_to_47(user_data_dir, messages_aggregator):
         result = cursor.execute('SELECT identifier, tx_hash, counterparty, product, address FROM evm_events_info').fetchall()  # noqa: E501
         assert result == []
 
+        assert cursor.execute(  # verify that all old counterparty specific rules for these types are removed  # noqa: E501
+            'SELECT counterparty FROM accounting_rules WHERE (type=? AND subtype=?) OR (type=? AND subtype=?)',  # noqa: E501
+            ('deposit', 'deposit asset', 'withdrawal', 'remove asset'),
+        ).fetchall() == [('NONE',), ('NONE',)]  # Keep the rules with null counterparty
+
     db.logout()
 
 

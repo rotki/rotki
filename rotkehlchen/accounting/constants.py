@@ -93,6 +93,7 @@ EVENT_CATEGORY_MAPPINGS = {  # possible combinations of types and subtypes mappe
         HistoryEventSubType.DEPOSIT_FOR_WRAPPED: {DEFAULT: EventCategory.STAKE_DEPOSIT},
         HistoryEventSubType.REWARD: {DEFAULT: EventCategory.STAKING_REWARD},
         HistoryEventSubType.REMOVE_ASSET: {DEFAULT: EventCategory.UNSTAKE},
+        HistoryEventSubType.REDEEM_WRAPPED: {DEFAULT: EventCategory.UNSTAKE},
         HistoryEventSubType.BLOCK_PRODUCTION: {DEFAULT: EventCategory.CREATE_BLOCK},
         HistoryEventSubType.MEV_REWARD: {DEFAULT: EventCategory.MEV_REWARD},
         HistoryEventSubType.FEE: {DEFAULT: EventCategory.FEE},
