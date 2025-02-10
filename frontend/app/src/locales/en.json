@@ -3906,7 +3906,8 @@
         "apr": "APR",
         "outstanding": "Outstanding",
         "withdrawals": "Withdrawn",
-        "execution": "Execution"
+        "execution_blocks": "Execution Blocks",
+        "execution_mev": "Execution MEV"
       },
       "status": {
         "all": "All",
@@ -3924,9 +3925,12 @@
       "rewards": {
         "consensus": {
           "description": "Based on the current price of ETH",
-          "title": "Outstanding Consensus Layer Rewards"
+          "title": "Outstanding consensus layer rewards"
         },
-        "el": "Execution Layer Rewards",
+        "el": "Total execution layer rewards",
+        "execution_blocks": "Blocks",
+        "execution_mev": "MEV",
+        "total_reward": "Total Rewards",
         "withdrawn_cl": "Withdrawn from consensus layer"
       },
       "staking_per_beacon_chain": "Staking per Validator",

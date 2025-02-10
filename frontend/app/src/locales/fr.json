@@ -3304,7 +3304,7 @@
       "rewards": {
         "consensus": {
           "description": "Basé sur le prix actuel de ETH",
-          "title": "Récompenses du Niveau de Consensus"
+          "title": "Récompenses du niveau de consensus"
         },
         "el": "Couche d'exécution",
         "withdrawn_cl": "Retiré de la couche de consensus"

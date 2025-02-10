@@ -15,6 +15,19 @@ export default {
     extend: {},
   },
   // Classes for premium components
-  safelist: ['!leading-7', 'lg:grid-cols-2', '-my-5', 'py-5', 'h-32'],
+  safelist: [
+    '!leading-7',
+    'lg:grid-cols-2',
+    '-my-5',
+    'py-5',
+    'h-32',
+    'lg:grid-cols-5',
+    'lg:col-span-3',
+    'lg:col-span-2',
+    'pl-6',
+    '[&_span]:!text-xs',
+    '!text-center',
+    '[&>div>div>div]:font-normal',
+  ],
   plugins: [generated],
 };
