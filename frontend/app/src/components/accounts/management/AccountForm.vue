@@ -92,7 +92,7 @@ watch(modelValue, (modelValue) => {
   immediate: true,
 });
 
-watch(chain, (chain) => {
+watchImmediate(chain, (chain) => {
   if (get(modelValue).mode === 'edit' || !chain)
     return;
 

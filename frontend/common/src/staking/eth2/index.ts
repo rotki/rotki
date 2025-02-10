@@ -28,7 +28,8 @@ export type EthStakingDailyStatData = Omit<Eth2DailyStats, 'entries'> & {
 
 const EthStakingStats = z.object({
   apr: NumericString.optional(),
-  execution: NumericString.optional(),
+  executionBlocks: NumericString.optional(),
+  executionMev: NumericString.optional(),
   exits: NumericString.optional(),
   outstandingConsensusPnl: NumericString.optional(),
   sum: NumericString.optional(),
