@@ -3971,6 +3971,8 @@
     "statistics": {
       "asset_amount_and_value_over_time": "Asset amount and value over time",
       "check_problematic_event": "Check the problematic event",
+      "fetch_daily_prices": "Fetch daily prices",
+      "fetch_daily_prices_hint": "rotki will try to get the daily prices of the assets to fill the gap between events.",
       "fetching_graph_data": "Fetching graph data",
       "fetching_graph_daily_data": "Fetching graph daily data ({processed}/{total})",
       "fetching_historical_prices": "Fetching historical prices",
@@ -3988,7 +3990,6 @@
         "no_entries_available_before": "There are no entries available before"
       },
       "refresh_the_net_value_data": "Refresh the net value data",
-      "refresh_daily_prices": "Refresh daily prices",
       "select_asset": "Search for an asset",
       "search_asset_to_see_graph": "Search for an asset to see the graph",
       "show_graph_for_selected_range": "Show the graph for the selected range",

@@ -16,13 +16,13 @@ import { useStatisticsApi } from '@/composables/api/statistics/statistics-api';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useHistoricCachePriceStore } from '@/store/prices/historic';
 import { usePriceApi } from '@/composables/api/balances/price';
+import { useTaskStore } from '@/store/tasks';
+import { TaskType } from '@/types/task-type';
 import type {
   AssetsApi,
   BalancesApi,
   BigNumber,
   CompoundApi,
-  HistoricalAssetPricePayload,
-  HistoricalAssetPriceResponse,
   LocationData,
   OwnedAssets,
   ProfitLossModel,
@@ -58,13 +58,14 @@ export function statisticsApi(): StatisticsApi {
   const { fetchHistoricalAssetPrice, fetchNetValue, getNetValue } = statisticsStore;
   const { historicalAssetPriceStatus } = storeToRefs(statisticsStore);
   const {
-    queryCachedHistoricalAssetPrices,
     queryLatestAssetValueDistribution,
     queryLatestLocationValueDistribution,
     queryTimedBalancesData,
     queryTimedHistoricalBalancesData,
   } = useStatisticsApi();
   const { queryOwnedAssets } = useAssetManagementApi();
+
+  const { isTaskRunning } = useTaskStore();
 
   return {
     async assetValueDistribution(): Promise<TimedAssetBalances> {
@@ -74,6 +75,7 @@ export function statisticsApi(): StatisticsApi {
       await fetchNetValue();
     },
     historicalAssetPriceStatus,
+    isQueryingDailyPrices: isTaskRunning(TaskType.FETCH_DAILY_HISTORIC_PRICE),
     async locationValueDistribution(): Promise<LocationData> {
       return queryLatestLocationValueDistribution();
     },
@@ -82,11 +84,7 @@ export function statisticsApi(): StatisticsApi {
       const owned = await queryOwnedAssets();
       return owned.filter(asset => !get(isAssetIgnored(asset)));
     },
-    queryHistoricalAssetPrices: async (payload: HistoricalAssetPricePayload, ignoreCache: boolean = false): Promise<HistoricalAssetPriceResponse> => {
-      if (!ignoreCache)
-        return queryCachedHistoricalAssetPrices(payload);
-      return fetchHistoricalAssetPrice(payload);
-    },
+    queryHistoricalAssetPrices: fetchHistoricalAssetPrice,
     async timedBalances(asset: string, start: number, end: number, collectionId?: number): Promise<TimedBalances> {
       return queryTimedBalancesData(asset, start, end, collectionId);
     },
