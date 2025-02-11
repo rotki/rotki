@@ -181,6 +181,31 @@ def test_get_historical_asset_amounts_over_time(
         rotkehlchen_api_server: 'APIServer',
         setup_historical_data: None,
 ) -> None:
+    db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
+    with db.user_write() as write_cursor:
+        db.add_trades(
+            write_cursor=write_cursor,
+            trades=[Trade(
+                timestamp=Timestamp(START_TS + DAY_IN_SECONDS * 3),
+                location=Location.EXTERNAL,
+                base_asset=A_BTC,
+                quote_asset=A_EUR,
+                trade_type=TradeType.BUY,
+                amount=AssetAmount(FVal('1.5')),
+                rate=Price(FVal('16000.0')),
+                link='trade1',
+            ), Trade(  # Second trade with same asset and timestamp (multiple fill events of the same order)  # noqa: E501
+                timestamp=Timestamp(START_TS + DAY_IN_SECONDS * 3),
+                location=Location.EXTERNAL,
+                base_asset=A_BTC,
+                quote_asset=A_EUR,
+                trade_type=TradeType.BUY,
+                amount=AssetAmount(FVal('0.5')),
+                rate=Price(FVal('16000.0')),
+                link='trade2',
+            )],
+        )
+
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
@@ -197,8 +222,8 @@ def test_get_historical_asset_amounts_over_time(
     assert len(result['times']) == len(result['values'])
     assert 'last_event_identifier' not in result
     for ts, amount in zip(result['times'], result['values'], strict=True):
-        assert ts in {START_TS, START_TS + DAY_IN_SECONDS * 2}
-        assert amount in {'2', '1.5'}
+        assert ts in {START_TS, START_TS + DAY_IN_SECONDS * 2, START_TS + DAY_IN_SECONDS * 3}
+        assert amount in {'2', '1.5', '3.5'}
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])

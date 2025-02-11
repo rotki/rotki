@@ -148,13 +148,15 @@ class HistoricalBalancesManager:
             )) is not None:
                 break
 
-            for asset in assets:
-                event_ts = (
-                    event.timestamp
-                    if isinstance(event, Trade)
-                    else ts_ms_to_sec(event.timestamp)
-                )
-                amounts[event_ts] += current_balances[asset]
+            event_ts = (
+                event.timestamp
+                if isinstance(event, Trade)
+                else ts_ms_to_sec(event.timestamp)
+            )
+            # Combine balances of all assets. Overwrite any existing value for this timestamp
+            # so the final amount per timestamp is the cumulative result of all processed events.
+            amounts[event_ts] = FVal(sum(current_balances[asset] for asset in assets))
+
         return amounts, negative_balance_data
 
     def get_historical_netvalue(
