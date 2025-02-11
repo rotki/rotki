@@ -3741,8 +3741,8 @@
       "open_calendar": "Open Calendar"
     },
     "unknown_asset_mapping": {
-      "title": "Unknown asset from {location}",
-      "message": "Found unknown asset \"{identifier}\" from {location} ({name}). \n Ignoring its {details}."
+      "title": "Missing mapping in {location}",
+      "message": "We could not find a mapping for \"{identifier}\" from {location} ({name}). \n Ignoring its {details}."
     },
     "snapshot_failed": {
       "message": "Could not save the balance snapshot at {location}. {error}",
