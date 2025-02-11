@@ -9,6 +9,7 @@ from eth_utils import to_checksum_address
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE_V3
 from rotkehlchen.chain.evm.decoding.aave.v3.constants import DEBT_TOKEN_SYMBOL_REGEX
+from rotkehlchen.chain.evm.decoding.spark.constants import CPT_SPARK
 from rotkehlchen.constants.misc import NFT_DIRECTIVE
 from rotkehlchen.constants.resolver import ChainID, evm_address_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset, WrongAssetType
@@ -574,7 +575,7 @@ class EvmToken(CryptoAsset):
     def is_liability(self) -> bool:
         """Returns True if the token is a liability token, False if it's an asset token"""
         return (
-            self.protocol == CPT_AAVE_V3 and
+            self.protocol in (CPT_AAVE_V3, CPT_SPARK) and
             DEBT_TOKEN_SYMBOL_REGEX.match(self.symbol) is not None
         )
 
