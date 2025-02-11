@@ -1,7 +1,6 @@
 import logging
 from typing import TYPE_CHECKING, Any, Final
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.utils import (
     token_normalized_value_decimals,
@@ -97,7 +96,7 @@ class WalletconnectDecoder(DecoderInterface, CustomizableDateMixin):
                 event_type=HistoryEventType.INFORMATIONAL,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=Asset(WCT_TOKEN_ID),
-                balance=Balance(),
+                amount=ZERO,
                 location_label=user_address,
                 notes=f'Increase WCT staking expiration until {self.timestamp_to_date(locktime)}',
                 address=context.tx_log.address,
@@ -112,7 +111,7 @@ class WalletconnectDecoder(DecoderInterface, CustomizableDateMixin):
                     event.event_type == HistoryEventType.SPEND and
                     event.event_subtype == HistoryEventSubType.NONE and
                     event.asset.identifier == WCT_TOKEN_ID and
-                    event.balance.amount == transferred_amount
+                    event.amount == transferred_amount
             ):
                 event.counterparty = CPT_WALLETCONNECT
                 event.event_type = HistoryEventType.STAKING
@@ -139,7 +138,7 @@ class WalletconnectDecoder(DecoderInterface, CustomizableDateMixin):
                     event.event_type == HistoryEventType.RECEIVE and
                     event.event_subtype == HistoryEventSubType.NONE and
                     event.asset.identifier == WCT_TOKEN_ID and
-                    event.balance.amount == transferred_amount
+                    event.amount == transferred_amount
             ):
                 event.counterparty = CPT_WALLETCONNECT
                 event.event_type = HistoryEventType.STAKING

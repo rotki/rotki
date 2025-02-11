@@ -111,7 +111,7 @@ class SuperchainL2SideBridgeCommonDecoder(DecoderInterface, ABC):
                 event.location_label == expected_location_label and
                 event.address in (ZERO_ADDRESS, *self.bride_addresses) and
                 event.asset in valid_assets and
-                event.balance.amount == amount
+                event.amount == amount
             ):
                 bridge_match_transfer(
                     event=event,

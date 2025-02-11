@@ -110,7 +110,7 @@ class BitMEXImporter(BaseExchangeImporter):
             location=Location.BITMEX,
             event_type=event_type,
             asset=asset,
-            balance=Balance(amount),
+            amount=amount,
             unique_id=(transaction_id := get_key_if_has_val(csv_row, 'tx')),
             extra_data=maybe_set_transaction_extra_data(
                 address=deserialize_asset_movement_address(csv_row, 'address', asset),
@@ -123,7 +123,7 @@ class BitMEXImporter(BaseExchangeImporter):
                 location=Location.BITMEX,
                 event_type=event_type,
                 asset=asset,
-                balance=Balance(fee),
+                amount=fee,
                 unique_id=transaction_id,
                 is_fee=True,
             ))

@@ -49,7 +49,7 @@ class AirdropsDecoder(ArbitrumDecoderInterface):
         amount = asset_normalized_value(amount=raw_amount, asset=self.arb_token)
 
         for event in context.decoded_events:
-            if event.event_type == HistoryEventType.RECEIVE and event.location_label == user_address and amount == event.balance.amount and self.arb_token == event.asset:  # noqa: E501
+            if event.event_type == HistoryEventType.RECEIVE and event.location_label == user_address and amount == event.amount and self.arb_token == event.asset:  # noqa: E501
                 event.event_type = HistoryEventType.RECEIVE
                 event.event_subtype = HistoryEventSubType.AIRDROP
                 event.counterparty = CPT_ARBITRUM_ONE

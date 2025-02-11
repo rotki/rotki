@@ -70,16 +70,16 @@ class UmamiDecoder(ArbitrumDecoderInterface):
 
         Returns FoundEventType identifying the type of event found to allow reshuffling later.
         """
-        if event.balance.amount == match_amount:
+        if event.amount == match_amount:
             event.event_type = event_type
             event.event_subtype = event_subtype
             event.notes = event_notes
             event.counterparty = CPT_UMAMI
             return FoundEventType.MAIN
-        elif event.balance.amount == fee_match_amount:
+        elif event.amount == fee_match_amount:
             event.event_type = fee_event_type
             event.event_subtype = HistoryEventSubType.FEE
-            event.notes = f'Spend {event.balance.amount} ETH as Umami execution fee'
+            event.notes = f'Spend {event.amount} ETH as Umami execution fee'
             event.counterparty = CPT_UMAMI
             return FoundEventType.FEE
 
@@ -159,7 +159,7 @@ class UmamiDecoder(ArbitrumDecoderInterface):
             ):  # withdraw execution
                 event.event_type = HistoryEventType.WITHDRAWAL
                 event.event_subtype = HistoryEventSubType.REDEEM_WRAPPED
-                event.notes = f'Withdraw {event.balance.amount} {event.asset.resolve_to_asset_with_symbol().symbol} from Umami'  # noqa: E501
+                event.notes = f'Withdraw {event.amount} {event.asset.resolve_to_asset_with_symbol().symbol} from Umami'  # noqa: E501
                 event.counterparty = CPT_UMAMI
                 main_event = event
 
@@ -205,7 +205,7 @@ class UmamiDecoder(ArbitrumDecoderInterface):
                 event.event_type = HistoryEventType.STAKING
                 event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
                 event.counterparty = CPT_UMAMI
-                event.notes = f'Stake {event.balance.amount} {asset_symbol} in Umami'
+                event.notes = f'Stake {event.amount} {asset_symbol} in Umami'
             elif (
                 event.event_type == HistoryEventType.RECEIVE and
                 event.event_subtype == HistoryEventSubType.NONE
@@ -214,12 +214,12 @@ class UmamiDecoder(ArbitrumDecoderInterface):
                     event.event_type = HistoryEventType.STAKING
                     event.event_subtype = HistoryEventSubType.REWARD
                     event.counterparty = CPT_UMAMI
-                    event.notes = f'Receive staking reward of {event.balance.amount} {asset_symbol} from Umami'  # noqa: E501
+                    event.notes = f'Receive staking reward of {event.amount} {asset_symbol} from Umami'  # noqa: E501
                 elif context.tx_log.topics[0] == UNSTAKE_TOPIC:
                     event.event_type = HistoryEventType.STAKING
                     event.event_subtype = HistoryEventSubType.REMOVE_ASSET
                     event.counterparty = CPT_UMAMI
-                    event.notes = f'Unstake {event.balance.amount} {asset_symbol} from Umami'
+                    event.notes = f'Unstake {event.amount} {asset_symbol} from Umami'
 
         return DEFAULT_DECODING_OUTPUT
 

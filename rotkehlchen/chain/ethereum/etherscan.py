@@ -3,7 +3,6 @@ from typing import TYPE_CHECKING
 
 from pysqlcipher3 import dbapi2 as sqlcipher
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.structures import TimestampOrBlockRange
 from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -74,11 +73,11 @@ class EthereumEtherscan(Etherscan):
                     withdrawals.append(EthWithdrawalEvent(
                         validator_index=validator_index,
                         timestamp=ts_sec_to_ms(deserialize_timestamp(entry['timestamp'])),
-                        balance=Balance(amount=from_gwei(deserialize_fval(
+                        amount=from_gwei(deserialize_fval(
                             value=entry['amount'],
                             name='withdrawal amount',
                             location='etherscan staking withdrawals query',
-                        ))),
+                        )),
                         withdrawal_address=address,
                         is_exit=False,  # is figured out later in a periodic task
                     ))

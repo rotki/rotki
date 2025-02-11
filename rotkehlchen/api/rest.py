@@ -72,7 +72,6 @@ from rotkehlchen.chain.ethereum.modules.convex.convex_cache import (
 )
 from rotkehlchen.chain.ethereum.modules.eth2.constants import FREE_VALIDATORS_LIMIT
 from rotkehlchen.chain.ethereum.modules.eth2.structures import PerformanceStatusFilter
-from rotkehlchen.chain.ethereum.modules.liquity.constants import CPT_LIQUITY
 from rotkehlchen.chain.ethereum.modules.liquity.statistics import get_stats as get_liquity_stats
 from rotkehlchen.chain.ethereum.modules.makerdao.cache import (
     query_ilk_registry_and_maybe_update_cache,
@@ -96,7 +95,6 @@ from rotkehlchen.chain.evm.types import ChainID, EvmlikeAccount, NodeName, Weigh
 from rotkehlchen.chain.gnosis.modules.gnosis_pay.constants import CPT_GNOSIS_PAY
 from rotkehlchen.chain.zksync_lite.constants import ZKL_IDENTIFIER
 from rotkehlchen.constants import ONE
-from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.limits import (
     FREE_HISTORY_EVENTS_LIMIT,
     FREE_TRADES_LIMIT,
@@ -134,7 +132,6 @@ from rotkehlchen.db.filtering import (
     CustomAssetsFilterQuery,
     DBFilterQuery,
     Eth2DailyStatsFilterQuery,
-    EvmEventFilterQuery,
     EvmTransactionsFilterQuery,
     HistoryBaseEntryFilterQuery,
     HistoryEventFilterQuery,
@@ -221,7 +218,6 @@ from rotkehlchen.tasks.assets import (
     update_aave_v3_underlying_assets,
     update_spark_underlying_assets,
 )
-from rotkehlchen.tasks.utils import query_missing_prices_of_base_entries
 from rotkehlchen.types import (
     AVAILABLE_MODULES_MAP,
     BLOCKSCOUT_TO_CHAINID,
@@ -2874,18 +2870,6 @@ class RestAPI:
     def get_liquity_stats(self) -> dict[str, Any]:
         liquity_addresses = self.rotkehlchen.chains_aggregator.queried_addresses_for_module('liquity')  # noqa: E501
         # make sure that all the entries that need it have the usd value queried
-        task_manager = self.rotkehlchen.task_manager
-        if task_manager is not None:
-            history_events_db = DBHistoryEvents(task_manager.database)
-            entries_missing_prices = history_events_db.get_base_entries_missing_prices(
-                query_filter=EvmEventFilterQuery.make(counterparties=[CPT_LIQUITY]),
-            )
-            query_missing_prices_of_base_entries(
-                database=task_manager.database,
-                entries_missing_prices=entries_missing_prices,
-                base_entries_ignore_set=task_manager.base_entries_ignore_set,
-            )
-
         stats = get_liquity_stats(
             database=self.rotkehlchen.data.db,
             addresses=liquity_addresses,
@@ -3104,18 +3088,6 @@ class RestAPI:
                 'status_code': HTTPStatus.BAD_GATEWAY,
             }
 
-        # Trigger the task to query the missing prices for the decoded events
-        events_filter = EvmEventFilterQuery.make(
-            tx_hashes=list(tx_hashes),
-        )
-        history_events_db = DBHistoryEvents(task_manager.database)
-        entries = history_events_db.get_base_entries_missing_prices(events_filter)
-        query_missing_prices_of_base_entries(
-            database=task_manager.database,
-            entries_missing_prices=entries,
-            base_entries_ignore_set=task_manager.base_entries_ignore_set,
-        )
-
         return {'result': success, 'message': message, 'status_code': status_code}
 
     @async_api_call()
@@ -3151,22 +3123,6 @@ class RestAPI:
                     transaction=transaction,
                     tracked_addresses=tracked_addresses,
                 )
-                events_filter = EvmEventFilterQuery.make(
-                    tx_hashes=[tx_hash],
-                    location=Location.ZKSYNC_LITE,
-                )
-                try:
-                    # Trigger the task to query the missing prices for the decoded events
-                    history_events_db = DBHistoryEvents(task_manager.database)
-                    entries = history_events_db.get_base_entries_missing_prices(events_filter)
-                    query_missing_prices_of_base_entries(
-                        database=task_manager.database,
-                        entries_missing_prices=entries,
-                        base_entries_ignore_set=task_manager.base_entries_ignore_set,
-                    )
-                except (RemoteError, DeserializationError) as e:
-                    return {'result': False, 'message': f'Failed to request evmlike transaction decoding due to {e!s}', 'status_code': HTTPStatus.BAD_GATEWAY}  # noqa: E501
-
             else:
                 return {'result': False, 'message': f'Failed to fetch transaction {tx_hash.hex()} from zksync lite API', 'status_code': HTTPStatus.BAD_GATEWAY}  # noqa: E501
 
@@ -4997,27 +4953,24 @@ class RestAPI:
         serialized_history_events = []
         headers: dict[str, None] = {}
         for event in history_events:
-            if currency != A_USD or (currency == A_USD and event.balance.usd_value == ZERO):
-                try:  # ask oracles for the price in the given timestamp and currency
-                    price = PriceHistorian.query_historical_price(
-                        from_asset=event.asset,
-                        to_asset=currency,
-                        timestamp=ts_ms_to_sec(event.timestamp),
+            try:  # ask oracles for the price in the given timestamp and currency
+                price = PriceHistorian.query_historical_price(
+                    from_asset=event.asset,
+                    to_asset=currency,
+                    timestamp=ts_ms_to_sec(event.timestamp),
+                )
+            except (PriceQueryUnsupportedAsset, RemoteError):
+                fiat_value = ZERO
+            except NoPriceForGivenTimestamp as e:
+                # In the case of NoPriceForGivenTimestamp when we got rate limited
+                if e.rate_limited is True:
+                    return wrap_in_fail_result(
+                        message='Price query got rate limited for all the oracles. Try again later',  # noqa: E501
+                        status_code=HTTPStatus.BAD_GATEWAY,
                     )
-                except (PriceQueryUnsupportedAsset, RemoteError):
-                    fiat_value = ZERO
-                except NoPriceForGivenTimestamp as e:
-                    # In the case of NoPriceForGivenTimestamp when we got rate limited
-                    if e.rate_limited is True:
-                        return wrap_in_fail_result(
-                            message='Price query got rate limited for all the oracles. Try again later',  # noqa: E501
-                            status_code=HTTPStatus.BAD_GATEWAY,
-                        )
-                    fiat_value = ZERO
-                else:
-                    fiat_value = event.balance.amount * price
-            else:  # if the asset is USD we don't need to ask for the price, is already queried
-                fiat_value = event.balance.usd_value
+                fiat_value = ZERO
+            else:
+                fiat_value = event.amount * price
 
             serialized_event = event.serialize_for_csv(fiat_value)
             serialized_history_events.append(serialized_event)

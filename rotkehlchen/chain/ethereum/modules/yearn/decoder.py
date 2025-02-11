@@ -140,7 +140,7 @@ class YearnDecoder(DecoderInterface, ReloadableDecoderMixin):
             ):
                 event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
                 event.counterparty = counterparty
-                event.notes = f'Return {event.balance.amount} {event.asset.resolve_to_asset_with_symbol().symbol} to a {counterparty} vault'  # noqa: E501
+                event.notes = f'Return {event.amount} {event.asset.resolve_to_asset_with_symbol().symbol} to a {counterparty} vault'  # noqa: E501
                 return_event = event
             elif (
                 event.event_type == HistoryEventType.RECEIVE and
@@ -151,7 +151,7 @@ class YearnDecoder(DecoderInterface, ReloadableDecoderMixin):
                 event.event_subtype = HistoryEventSubType.REDEEM_WRAPPED
                 event.counterparty = counterparty
                 vault_token_name = _get_vault_token_name(event.address)
-                event.notes = f'Withdraw {event.balance.amount} {event.asset.resolve_to_asset_with_symbol().symbol} from {counterparty} vault {vault_token_name}'  # noqa: E501
+                event.notes = f'Withdraw {event.amount} {event.asset.resolve_to_asset_with_symbol().symbol} from {counterparty} vault {vault_token_name}'  # noqa: E501
                 withdraw_event = event
 
         return return_event, withdraw_event
@@ -172,7 +172,7 @@ class YearnDecoder(DecoderInterface, ReloadableDecoderMixin):
                 event.event_type = HistoryEventType.DEPOSIT
                 event.event_subtype = HistoryEventSubType.DEPOSIT_FOR_WRAPPED
                 event.counterparty = counterparty
-                event.notes = f'Deposit {event.balance.amount} {event.asset.resolve_to_asset_with_symbol().symbol} in {counterparty} vault'  # noqa: E501
+                event.notes = f'Deposit {event.amount} {event.asset.resolve_to_asset_with_symbol().symbol} in {counterparty} vault'  # noqa: E501
                 deposit_event = event
                 if event.address != YEARN_PARTNER_TRACKER:
                     vault_token_name = _get_vault_token_name(event.address)
@@ -184,7 +184,7 @@ class YearnDecoder(DecoderInterface, ReloadableDecoderMixin):
             ):
                 event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
                 event.counterparty = counterparty
-                event.notes = f'Receive {event.balance.amount} {event.asset.resolve_to_asset_with_symbol().symbol} after deposit in a {counterparty} vault'  # noqa: E501
+                event.notes = f'Receive {event.amount} {event.asset.resolve_to_asset_with_symbol().symbol} after deposit in a {counterparty} vault'  # noqa: E501
                 receive_event = event
 
         return deposit_event, receive_event

@@ -62,7 +62,7 @@ class LockedgnoDecoder(DecoderInterface):
                 event.event_type = HistoryEventType.DEPOSIT
                 event.event_subtype = HistoryEventSubType.DEPOSIT_FOR_WRAPPED
                 event.counterparty = CPT_LOCKEDGNO
-                event.notes = f'Deposit {event.balance.amount} GNO to the locking contract'
+                event.notes = f'Deposit {event.amount} GNO to the locking contract'
 
                 # also create an action item for the receive of the locked gno tokens.
                 # Funny thing is that the log shows transfer from the user to the contract
@@ -72,10 +72,10 @@ class LockedgnoDecoder(DecoderInterface):
                     from_event_type=HistoryEventType.SPEND,
                     from_event_subtype=HistoryEventSubType.NONE,
                     asset=self.lgno,
-                    amount=event.balance.amount,
+                    amount=event.amount,
                     to_event_type=HistoryEventType.RECEIVE,
                     to_event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
-                    to_notes=f'Receive {event.balance.amount} locked GNO from the locking contract',  # noqa: E501
+                    to_notes=f'Receive {event.amount} locked GNO from the locking contract',
                     to_counterparty=CPT_LOCKEDGNO,
                 )
                 return DecodingOutput(action_items=[action_item])
@@ -88,7 +88,7 @@ class LockedgnoDecoder(DecoderInterface):
                 event.event_type = HistoryEventType.WITHDRAWAL
                 event.event_subtype = HistoryEventSubType.REDEEM_WRAPPED
                 event.counterparty = CPT_LOCKEDGNO
-                event.notes = f'Receive {event.balance.amount} GNO back from the locking contract'
+                event.notes = f'Receive {event.amount} GNO back from the locking contract'
 
                 # also create an action item for the returning of the locked gno tokens.
                 # Funny thing is that the log shows transfer from the contract to the user
@@ -98,10 +98,10 @@ class LockedgnoDecoder(DecoderInterface):
                     from_event_type=HistoryEventType.RECEIVE,
                     from_event_subtype=HistoryEventSubType.NONE,
                     asset=self.lgno,
-                    amount=event.balance.amount,
+                    amount=event.amount,
                     to_event_type=HistoryEventType.SPEND,
                     to_event_subtype=HistoryEventSubType.RETURN_WRAPPED,
-                    to_notes=f'Return {event.balance.amount} locked GNO to the locking contract',
+                    to_notes=f'Return {event.amount} locked GNO to the locking contract',
                     to_counterparty=CPT_LOCKEDGNO,
                 )
                 return DecodingOutput(action_items=[action_item])

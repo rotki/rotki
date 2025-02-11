@@ -1,12 +1,12 @@
 import pytest
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.ethereum.airdrops import AIRDROP_IDENTIFIER_KEY
 from rotkehlchen.chain.ethereum.modules.diva.constants import CPT_DIVA
 from rotkehlchen.chain.ethereum.modules.diva.decoder import DIVA_GOVERNOR
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_DIVA, A_ETH
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -33,7 +33,7 @@ def test_diva_delegate(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=FVal('0.001694706319628652')),
+            amount=FVal('0.001694706319628652'),
             location_label=ethereum_accounts[0],
             notes='Burn 0.001694706319628652 ETH for gas',
             counterparty=CPT_GAS,
@@ -46,7 +46,7 @@ def test_diva_delegate(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.GOVERNANCE,
             asset=A_DIVA,
-            balance=Balance(),
+            amount=ZERO,
             location_label=ethereum_accounts[0],
             notes='Change DIVA Delegate from 0xc37b40ABdB939635068d3c5f13E7faF686F03B65 to 0x42E6DD8D517abB3E4f6611Ca53a8D1243C183fB0',  # noqa: E501
             counterparty=CPT_DIVA,
@@ -71,7 +71,7 @@ def test_diva_claim(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=FVal('0.002211737193518538')),
+            amount=FVal('0.002211737193518538'),
             location_label=ethereum_accounts[0],
             notes='Burn 0.002211737193518538 ETH for gas',
             counterparty=CPT_GAS,
@@ -84,7 +84,7 @@ def test_diva_claim(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.AIRDROP,
             asset=A_DIVA,
-            balance=Balance(amount=FVal(12000)),
+            amount=FVal(12000),
             location_label=ethereum_accounts[0],
             notes='Claim 12000 DIVA from the DIVA airdrop',
             counterparty=CPT_DIVA,
@@ -99,7 +99,7 @@ def test_diva_claim(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.GOVERNANCE,
             asset=A_DIVA,
-            balance=Balance(),
+            amount=ZERO,
             location_label=ethereum_accounts[0],
             notes='Change DIVA Delegate from 0xc37b40ABdB939635068d3c5f13E7faF686F03B65 to 0xc37b40ABdB939635068d3c5f13E7faF686F03B65',  # noqa: E501
             counterparty=CPT_DIVA,
@@ -127,7 +127,7 @@ def test_vote_cast(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=FVal(gas_str)),
+            amount=FVal(gas_str),
             location_label=user_address,
             notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
@@ -140,7 +140,7 @@ def test_vote_cast(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.GOVERNANCE,
             asset=A_ETH,
-            balance=Balance(),
+            amount=ZERO,
             location_label=user_address,
             notes='Vote FOR diva governance proposal https://www.tally.xyz/gov/diva/proposal/52481024395238134144299582623582875841236980209822828761178984408970724801644',
             counterparty=CPT_DIVA,

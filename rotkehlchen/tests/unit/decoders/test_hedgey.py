@@ -2,7 +2,6 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.ethereum.modules.airdrops.decoder import ENS_ADDRESS
 from rotkehlchen.chain.ethereum.modules.hedgey.constants import CPT_HEDGEY, VOTING_TOKEN_LOCKUPS
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
@@ -34,7 +33,7 @@ def test_delegate_vested_tokens_with_vault_creation(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=FVal(gas)),
+            amount=FVal(gas),
             location_label=ethereum_accounts[0],
             notes=f'Burn {gas} ETH for gas',
             tx_hash=tx_hash,
@@ -46,7 +45,7 @@ def test_delegate_vested_tokens_with_vault_creation(
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.GOVERNANCE,
             asset=A_ENS,
-            balance=Balance(),
+            amount=FVal(0),
             location_label=user_address,
             notes=f'Change ENS delegate for {user_address} Hedgey token lockup 290 to 0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',  # noqa: E501
             tx_hash=tx_hash,
@@ -74,7 +73,7 @@ def test_delegate_plans(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=FVal(gas)),
+            amount=FVal(gas),
             location_label=ethereum_accounts[0],
             notes=f'Burn {gas} ETH for gas',
             tx_hash=tx_hash,
@@ -86,7 +85,7 @@ def test_delegate_plans(
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.GOVERNANCE,
             asset=A_ENS,
-            balance=Balance(),
+            amount=FVal(0),
             location_label=user_address,
             notes=f'Change ENS delegate for {user_address} Hedgey token lockup 290 from 0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12 to 0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',  # noqa: E501
             tx_hash=tx_hash,
@@ -114,7 +113,7 @@ def test_redeem_plans(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=FVal(gas)),
+            amount=FVal(gas),
             location_label=ethereum_accounts[0],
             notes=f'Burn {gas} ETH for gas',
             tx_hash=tx_hash,
@@ -126,7 +125,7 @@ def test_redeem_plans(
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.REWARD,
             asset=A_ENS,
-            balance=Balance(FVal(amount)),
+            amount=FVal(amount),
             location_label=user_address,
             notes=f'Redeem {amount} ENS from Hedgey token lockup 14',
             tx_hash=tx_hash,

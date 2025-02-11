@@ -1,7 +1,6 @@
 import logging
 from typing import TYPE_CHECKING, Any
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
@@ -52,8 +51,8 @@ class FluenceDecoder(DecoderInterface):
         amount = token_normalized_value_decimals(int.from_bytes(context.tx_log.data[32:64]), 18)
 
         for event in context.decoded_events:
-            if event.event_type == HistoryEventType.RECEIVE and event.balance.amount == amount and event.location_label == user_address and event.asset.identifier == ethaddress_to_identifier(DEV_REWARD_DISTRIBUTOR):  # noqa: E501
-                event.notes = f'Claim {event.balance.amount} FLT-DROP from Fluence dev rewards'
+            if event.event_type == HistoryEventType.RECEIVE and event.amount == amount and event.location_label == user_address and event.asset.identifier == ethaddress_to_identifier(DEV_REWARD_DISTRIBUTOR):  # noqa: E501
+                event.notes = f'Claim {event.amount} FLT-DROP from Fluence dev rewards'
                 event.counterparty = CPT_FLUENCE
                 event.address = DEV_REWARD_DISTRIBUTOR
                 break
@@ -76,7 +75,7 @@ class FluenceDecoder(DecoderInterface):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.NONE,
             asset=self.base.get_or_create_evm_token(DEV_REWARD_DISTRIBUTOR),
-            balance=Balance(amount=amount),
+            amount=amount,
             location_label=user_address,
             notes=f'Burn {amount} FLT-DROP',
             address=context.tx_log.address,
@@ -85,8 +84,8 @@ class FluenceDecoder(DecoderInterface):
 
         in_event = None
         for event in context.decoded_events:
-            if event.event_type == HistoryEventType.RECEIVE and event.balance.amount == amount and event.location_label == user_address and event.asset.identifier == FLUENCE_IDENTIFIER:  # noqa: E501
-                event.notes = f'Claim {event.balance.amount} FLT by burning FLT-DROP'
+            if event.event_type == HistoryEventType.RECEIVE and event.amount == amount and event.location_label == user_address and event.asset.identifier == FLUENCE_IDENTIFIER:  # noqa: E501
+                event.notes = f'Claim {event.amount} FLT by burning FLT-DROP'
                 event.counterparty = CPT_FLUENCE
                 event.address = DEV_REWARD_DISTRIBUTOR
                 event.event_subtype = HistoryEventSubType.AIRDROP

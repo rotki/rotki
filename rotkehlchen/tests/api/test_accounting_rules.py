@@ -8,7 +8,6 @@ from typing import Any, Literal, get_args
 import pytest
 import requests
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.types import EventAccountingRuleStatus
 from rotkehlchen.api.server import APIServer
 from rotkehlchen.chain.ethereum.modules.compound.constants import CPT_COMPOUND
@@ -418,7 +417,7 @@ def test_cache_invalidation(rotkehlchen_api_server: APIServer) -> None:
         timestamp=TimestampMS(16433333000),
         location=Location.ETHEREUM,
         asset=A_CUSDC,
-        balance=Balance(amount=ONE),
+        amount=ONE,
         event_type=HistoryEventType.DEPOSIT,
         event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
         counterparty=CPT_COMPOUND,
@@ -430,7 +429,7 @@ def test_cache_invalidation(rotkehlchen_api_server: APIServer) -> None:
         timestamp=TimestampMS(16433333000),
         location=Location.ETHEREUM,
         asset=A_USDC,
-        balance=Balance(amount=ONE),
+        amount=ONE,
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
         counterparty=CPT_COMPOUND,

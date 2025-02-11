@@ -32,7 +32,7 @@ class MakerdaoAccountant(ModuleAccountantInterface):
             other_events: Iterator['EvmEvent'],  # pylint: disable=unused-argument
     ) -> int:
         cdp_id = event.extra_data['cdp_id']  # type: ignore  # this event should have extra data
-        self.vault_balances[cdp_id] += event.balance.amount
+        self.vault_balances[cdp_id] += event.amount
         return 1
 
     def _process_vault_dai_payback(
@@ -42,7 +42,7 @@ class MakerdaoAccountant(ModuleAccountantInterface):
             other_events: Iterator['EvmEvent'],  # pylint: disable=unused-argument
     ) -> int:
         cdp_id = event.extra_data['cdp_id']  # type: ignore  # this event should have extra_data
-        self.vault_balances[cdp_id] -= event.balance.amount
+        self.vault_balances[cdp_id] -= event.amount
         if self.vault_balances[cdp_id] < ZERO:
             loss = -1 * self.vault_balances[cdp_id]
             pot.add_out_event(
@@ -66,7 +66,7 @@ class MakerdaoAccountant(ModuleAccountantInterface):
             other_events: Iterator['EvmEvent'],  # pylint: disable=unused-argument
     ) -> int:
         address = cast('ChecksumEvmAddress', event.location_label)  # should always exist
-        self.dsr_balances[address] += event.balance.amount
+        self.dsr_balances[address] += event.amount
         return 1
 
     def _process_dsr_withdraw(
@@ -76,7 +76,7 @@ class MakerdaoAccountant(ModuleAccountantInterface):
             other_events: Iterator['EvmEvent'],  # pylint: disable=unused-argument
     ) -> int:
         address = cast('ChecksumEvmAddress', event.location_label)  # should always exist
-        self.dsr_balances[address] -= event.balance.amount
+        self.dsr_balances[address] -= event.amount
         if self.dsr_balances[address] < ZERO:
             profit = -1 * self.dsr_balances[address]
             pot.add_in_event(

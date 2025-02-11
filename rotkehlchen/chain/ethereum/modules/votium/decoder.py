@@ -35,7 +35,7 @@ class VotiumDecoder(DecoderInterface):
         amount = asset_normalized_value(amount=claimed_amount_raw, asset=claimed_token)
 
         for event in context.decoded_events:
-            if event.event_type == HistoryEventType.RECEIVE and event.location_label == receiver and event.balance.amount == amount and claimed_token == event.asset:  # noqa: E501
+            if event.event_type == HistoryEventType.RECEIVE and event.location_label == receiver and event.amount == amount and claimed_token == event.asset:  # noqa: E501
                 try:
                     crypto_asset = event.asset.resolve_to_crypto_asset()
                 except (UnknownAsset, WrongAssetType):
@@ -43,7 +43,7 @@ class VotiumDecoder(DecoderInterface):
                     continue
                 event.event_subtype = HistoryEventSubType.REWARD
                 event.counterparty = CPT_VOTIUM
-                event.notes = f'Receive {event.balance.amount} {crypto_asset.symbol} from votium bribe'  # noqa: E501
+                event.notes = f'Receive {event.amount} {crypto_asset.symbol} from votium bribe'
                 event.product = EvmProduct.BRIBE
                 break
 

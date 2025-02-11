@@ -1,4 +1,3 @@
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.db.filtering import EthDepositEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
@@ -16,7 +15,7 @@ def make_deposit_event():
         validator_index=42,
         sequence_index=1,
         timestamp=TimestampMS(69000),
-        balance=Balance(FVal(32)),
+        amount=FVal(32),
         depositor=depositor,
     )
 

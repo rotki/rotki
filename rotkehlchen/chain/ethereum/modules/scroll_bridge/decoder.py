@@ -3,7 +3,6 @@ from typing import TYPE_CHECKING, Any, Final
 
 from eth_abi import decode as decode_abi
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
@@ -155,7 +154,7 @@ class ScrollBridgeDecoder(DecoderInterface):
                 event.address == L1_MESSENGER_PROXY
             ):
                 refund_event_idx = idx
-                refund_amount = event.balance.amount
+                refund_amount = event.amount
                 break
         if refund_event_idx is not None:
             del context.decoded_events[refund_event_idx]
@@ -165,7 +164,7 @@ class ScrollBridgeDecoder(DecoderInterface):
             if (
                 event.event_type == expected_event_type and
                 event.asset == asset and
-                event.balance.amount == amount
+                event.amount == amount
             ):
                 bridge_match_transfer(
                     event=event,
@@ -184,9 +183,9 @@ class ScrollBridgeDecoder(DecoderInterface):
                 event.asset == A_ETH and
                 event.address == L1_GATEWAY_ROUTER
             ):  # Update the fee event by subtracting the refund amount
-                l2_fees_amount = event.balance.amount - refund_amount
+                l2_fees_amount = event.amount - refund_amount
                 event.counterparty = CPT_SCROLL
-                event.balance.amount = l2_fees_amount
+                event.amount = l2_fees_amount
                 event.notes = f'Spend {l2_fees_amount} ETH in L2 fees to bridge ERC20 tokens to Scroll'  # noqa: E501
 
         return DEFAULT_DECODING_OUTPUT
@@ -211,13 +210,13 @@ class ScrollBridgeDecoder(DecoderInterface):
             return DEFAULT_DECODING_OUTPUT
 
         # The original amount will be edited on the event, keeping a copy here
-        orig_amount = bridge_event.balance.amount
+        orig_amount = bridge_event.amount
 
         # Edit the main bridge event
         bridge_event.event_type = new_event_type
         bridge_event.event_subtype = HistoryEventSubType.BRIDGE
         bridge_event.counterparty = CPT_SCROLL
-        bridge_event.balance.amount = amount
+        bridge_event.amount = amount
         bridge_event.notes = (
             f'Bridge {amount} ETH from {from_chain.label()} '
             f'to {to_chain.label()} via Scroll bridge'
@@ -285,7 +284,7 @@ class ScrollBridgeDecoder(DecoderInterface):
                 event.address == L1_MESSENGER_PROXY
             ):
                 refund_event_idx = idx
-                refund_amount = event.balance.amount
+                refund_amount = event.amount
                 break
 
         return refund_event_idx, refund_amount
@@ -303,7 +302,7 @@ class ScrollBridgeDecoder(DecoderInterface):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=fee_amount),
+            amount=fee_amount,
             location_label=sender,
             notes=f'Spend {fee_amount} ETH as a fee for bridging to Scroll',
             counterparty=CPT_SCROLL,

@@ -2,7 +2,6 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.arbitrum_one.modules.cctp.constants import USDC_IDENTIFIER_ARB
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
@@ -40,7 +39,7 @@ def test_deposit_usdc_from_ethereum_to_arbitrum_one(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=FVal(gas)),
+            amount=FVal(gas),
             location_label=ethereum_accounts[0],
             notes=f'Burn {gas} ETH for gas',
             tx_hash=tx_hash,
@@ -52,7 +51,7 @@ def test_deposit_usdc_from_ethereum_to_arbitrum_one(
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.BRIDGE,
             asset=A_USDC,
-            balance=Balance(amount=FVal(deposit_amount)),
+            amount=FVal(deposit_amount),
             location_label=ethereum_accounts[0],
             notes=f'Bridge {deposit_amount} USDC from Ethereum to Arbitrum One via CCTP',
             tx_hash=tx_hash,
@@ -83,7 +82,7 @@ def test_receive_usdc_on_arbitrum_one_from_ethereum(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=FVal(gas)),
+            amount=FVal(gas),
             location_label=arbitrum_one_accounts[0],
             notes=f'Burn {gas} ETH for gas',
             tx_hash=tx_hash,
@@ -95,7 +94,7 @@ def test_receive_usdc_on_arbitrum_one_from_ethereum(
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.BRIDGE,
             asset=Asset(USDC_IDENTIFIER_ARB),
-            balance=Balance(amount=FVal(deposit_amount)),
+            amount=FVal(deposit_amount),
             location_label=arbitrum_one_accounts[0],
             notes=f'Bridge {deposit_amount} USDC from Ethereum to Arbitrum One via CCTP',
             tx_hash=tx_hash,
@@ -126,7 +125,7 @@ def test_deposit_usdc_from_polygon_to_arbitrum_one(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_POLYGON_POS_MATIC,
-            balance=Balance(amount=FVal(gas)),
+            amount=FVal(gas),
             location_label=polygon_pos_accounts[0],
             notes=f'Burn {gas} POL for gas',
             tx_hash=tx_hash,
@@ -138,7 +137,7 @@ def test_deposit_usdc_from_polygon_to_arbitrum_one(
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.BRIDGE,
             asset=Asset(USDC_IDENTIFIER_POLYGON),
-            balance=Balance(amount=FVal(deposit_amount)),
+            amount=FVal(deposit_amount),
             location_label=polygon_pos_accounts[0],
             notes=f'Bridge {deposit_amount} USDC from Polygon POS to Arbitrum One via CCTP',
             tx_hash=tx_hash,
@@ -169,7 +168,7 @@ def test_receive_usdc_on_arbitrum_one_from_polygon(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=FVal(gas)),
+            amount=FVal(gas),
             location_label=arbitrum_one_accounts[0],
             notes=f'Burn {gas} ETH for gas',
             tx_hash=tx_hash,
@@ -181,7 +180,7 @@ def test_receive_usdc_on_arbitrum_one_from_polygon(
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.BRIDGE,
             asset=Asset(USDC_IDENTIFIER_ARB),
-            balance=Balance(amount=FVal(deposit_amount)),
+            amount=FVal(deposit_amount),
             location_label=arbitrum_one_accounts[0],
             notes=f'Bridge {deposit_amount} USDC from Polygon POS to Arbitrum One via CCTP',
             tx_hash=tx_hash,
@@ -212,7 +211,7 @@ def test_receive_usdc_on_arbitrum_one_from_polygon_2(
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.BRIDGE,
             asset=Asset(USDC_IDENTIFIER_ARB),
-            balance=Balance(amount=FVal(deposit_amount)),
+            amount=FVal(deposit_amount),
             location_label=arbitrum_one_accounts[0],
             notes=f'Bridge {deposit_amount} USDC from Polygon POS to Arbitrum One via CCTP',
             tx_hash=tx_hash,

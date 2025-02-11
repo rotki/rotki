@@ -8,7 +8,6 @@ from urllib.parse import urlencode
 import pytest
 import requests
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
 from rotkehlchen.constants.limits import FREE_TRADES_LIMIT
@@ -756,7 +755,7 @@ def test_delete_external_exchange_data_works(
         event_type=HistoryEventType.DEPOSIT,
         timestamp=TimestampMS(0),
         asset=A_BTC,
-        balance=Balance(FVal(100)),
+        amount=FVal(100),
     ) for x in (Location.CRYPTOCOM, Location.KRAKEN)]
     history_db = DBHistoryEvents(rotki.data.db)
     with rotki.data.db.user_write() as write_cursor:
@@ -810,10 +809,7 @@ def test_edit_exchange_account(rotkehlchen_api_server_with_exchanges: 'APIServer
         location=Location.KRAKEN,
         location_label=kraken.name,
         asset=A_ETH,
-        balance=Balance(
-            amount=FVal('0.0000400780'),
-            usd_value=FVal('0.051645312360'),
-        ),
+        amount=FVal('0.0000400780'),
         event_type=HistoryEventType.STAKING,
         event_subtype=HistoryEventSubType.REWARD,
         notes='Staking reward from kraken',

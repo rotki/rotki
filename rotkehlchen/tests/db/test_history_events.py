@@ -3,7 +3,6 @@ from unittest.mock import patch
 
 import pytest
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.api.v1.types import IncludeExcludeFilterData
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE
@@ -44,7 +43,7 @@ def test_get_customized_event_identifiers(database):
                 event_type=HistoryEventType.TRADE,
                 event_subtype=HistoryEventSubType.RECEIVE,
                 asset=A_ETH,
-                balance=Balance(1),
+                amount=ONE,
             ),
             mapping_values={HISTORY_MAPPING_KEY_STATE: HISTORY_MAPPING_STATE_CUSTOMIZED},
         )
@@ -59,7 +58,7 @@ def test_get_customized_event_identifiers(database):
                     event_type=HistoryEventType.TRADE,
                     event_subtype=HistoryEventSubType.NONE,
                     asset=A_ETH,
-                    balance=Balance(1),
+                    amount=ONE,
                 ), HistoryEvent(
                     event_identifier=deserialize_evm_tx_hash('0x25ceef8e258c08fc2724c1286da0426cb6ec8df208a9ec269108430c30262791'),
                     sequence_index=1,
@@ -68,7 +67,7 @@ def test_get_customized_event_identifiers(database):
                     event_type=HistoryEventType.TRADE,
                     event_subtype=HistoryEventSubType.NONE,
                     asset=A_ETH,
-                    balance=Balance(2),
+                    amount=FVal(2),
                 ),
             ],
         )
@@ -82,7 +81,7 @@ def test_get_customized_event_identifiers(database):
                 event_type=HistoryEventType.TRADE,
                 event_subtype=HistoryEventSubType.SPEND,
                 asset=A_ETH,
-                balance=Balance(1),
+                amount=ONE,
             ),
             mapping_values={HISTORY_MAPPING_KEY_STATE: HISTORY_MAPPING_STATE_CUSTOMIZED},
         )
@@ -107,7 +106,7 @@ def add_history_events_to_db(db: DBHistoryEvents, data: dict[int, tuple[str, Tim
                     event_type=HistoryEventType.TRADE,
                     event_subtype=HistoryEventSubType.NONE,
                     asset=A_ETH,
-                    balance=Balance(entry[2]),
+                    amount=entry[2],
                 ),
                 mapping_values=entry[3],
             )
@@ -127,7 +126,7 @@ def add_evm_events_to_db(db: DBHistoryEvents, data: dict[int, tuple[EVMTxHash, T
                     event_type=HistoryEventType.TRADE,
                     event_subtype=HistoryEventSubType.NONE,
                     asset=A_ETH,
-                    balance=Balance(entry[2]),
+                    amount=entry[2],
                     counterparty=entry[3],
                     product=entry[4],
                     address=string_to_evm_address(entry[5]),
@@ -148,7 +147,7 @@ def add_eth2_events_to_db(db: DBHistoryEvents, data: dict[int, tuple[EVMTxHash, 
                     validator_index=42,
                     sequence_index=1,
                     timestamp=entry[1],
-                    balance=Balance(entry[2]),
+                    amount=entry[2],
                     depositor=string_to_evm_address(entry[3]),
                 ),
                 mapping_values=entry[4],
@@ -194,7 +193,7 @@ def test_read_write_events_from_db(database):
                         event_type=HistoryEventType.TRADE,
                         event_subtype=HistoryEventSubType.NONE,
                         asset=A_ETH,
-                        balance=Balance(data_entry[2]),
+                        amount=data_entry[2],
                     )
                 else:
                     data_entry = evm_data[event.identifier]
@@ -207,7 +206,7 @@ def test_read_write_events_from_db(database):
                         event_type=HistoryEventType.TRADE,
                         event_subtype=HistoryEventSubType.NONE,
                         asset=A_ETH,
-                        balance=Balance(data_entry[2]),
+                        amount=data_entry[2],
                         counterparty=data_entry[3],
                         product=data_entry[4],
                         address=data_entry[5],
@@ -292,7 +291,7 @@ def test_delete_last_event(database):
             event=EthWithdrawalEvent(
                 validator_index=1000,
                 timestamp=TimestampMS(1683115229000),
-                balance=Balance(amount=ONE),
+                amount=ONE,
                 withdrawal_address=make_evm_address(),
                 is_exit=True,
             ),
@@ -326,7 +325,7 @@ def test_get_history_events_free_filter(database: 'DBHandler'):
             location=Location.KRAKEN,
             event_type=HistoryEventType.DEPOSIT,
             asset=A_BTC,
-            balance=Balance(amount=ONE),
+            amount=ONE,
         ), HistoryEvent(
             event_identifier=event_identifiers[0],
             sequence_index=0,
@@ -335,7 +334,7 @@ def test_get_history_events_free_filter(database: 'DBHandler'):
             event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
-            balance=Balance(ONE),
+            amount=ONE,
         ), HistoryEvent(
             event_identifier=event_identifiers[1],
             sequence_index=0,
@@ -344,7 +343,7 @@ def test_get_history_events_free_filter(database: 'DBHandler'):
             event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
-            balance=Balance(FVal(2)),
+            amount=FVal(2),
         ), HistoryEvent(
             event_identifier=event_identifiers[1],
             sequence_index=1,
@@ -353,7 +352,7 @@ def test_get_history_events_free_filter(database: 'DBHandler'):
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_USDC,
-            balance=Balance(FVal(1000)),
+            amount=FVal(1000),
         ), HistoryEvent(
             event_identifier=event_identifiers[2],
             sequence_index=0,
@@ -362,7 +361,7 @@ def test_get_history_events_free_filter(database: 'DBHandler'):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_USDT,
-            balance=Balance(FVal(5)),
+            amount=FVal(5),
         ), HistoryEvent(
             event_identifier=event_identifiers[2],
             sequence_index=1,
@@ -371,7 +370,7 @@ def test_get_history_events_free_filter(database: 'DBHandler'):
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_USDT,
-            balance=Balance(amount=FVal('1.5')),
+            amount=FVal('1.5'),
         ), HistoryEvent(
             event_identifier=event_identifiers[2],
             sequence_index=2,
@@ -380,7 +379,7 @@ def test_get_history_events_free_filter(database: 'DBHandler'):
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_USDT,
-            balance=Balance(amount=FVal('0.02762431')),
+            amount=FVal('0.02762431'),
         ), HistoryEvent(
             event_identifier=event_identifiers[3],
             sequence_index=0,
@@ -389,7 +388,7 @@ def test_get_history_events_free_filter(database: 'DBHandler'):
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_USDT,
-            balance=Balance(amount=FVal('0.000076')),
+            amount=FVal('0.000076'),
         ), HistoryEvent(
             event_identifier=event_identifiers[3],
             sequence_index=1,
@@ -398,7 +397,7 @@ def test_get_history_events_free_filter(database: 'DBHandler'):
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
-            balance=Balance(amount=ONE),
+            amount=ONE,
         ), HistoryEvent(
             event_identifier=event_identifiers[3],
             sequence_index=2,
@@ -407,7 +406,7 @@ def test_get_history_events_free_filter(database: 'DBHandler'):
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
-            balance=Balance(amount=FVal(1000)),
+            amount=FVal(1000),
         ), HistoryEvent(
             event_identifier=event_identifiers[4],
             sequence_index=0,
@@ -416,7 +415,7 @@ def test_get_history_events_free_filter(database: 'DBHandler'):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_USDT,
-            balance=Balance(amount=ONE),
+            amount=ONE,
         ),
     )
     with database.conn.write_ctx() as write_cursor:

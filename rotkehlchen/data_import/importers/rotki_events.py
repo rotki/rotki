@@ -3,7 +3,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 from uuid import uuid4
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.constants import ZERO
 from rotkehlchen.data_import.utils import (
     BaseExchangeImporter,
@@ -67,10 +66,7 @@ class RotkiGenericEventsImporter(BaseExchangeImporter):
             event_type=event_type,
             event_subtype=event_subtype,
             asset=asset,
-            balance=Balance(
-                amount=deserialize_asset_amount(csv_row['Amount']),
-                usd_value=ZERO,
-            ),
+            amount=deserialize_asset_amount(csv_row['Amount']),
             notes=csv_row['Description'],
         )
         events.append(history_event)
@@ -83,10 +79,7 @@ class RotkiGenericEventsImporter(BaseExchangeImporter):
                 event_type=HistoryEventType.SPEND,
                 event_subtype=HistoryEventSubType.FEE,
                 asset=fee_currency,  # type: ignore[arg-type]
-                balance=Balance(
-                    amount=fee,
-                    usd_value=ZERO,
-                ),
+                amount=fee,
                 notes=csv_row['Description'],
             )
             events.append(fee_event)

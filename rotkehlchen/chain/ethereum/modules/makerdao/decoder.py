@@ -1,6 +1,5 @@
 from typing import TYPE_CHECKING, Any
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import CryptoAsset
 from rotkehlchen.chain.ethereum.constants import RAY_DIGITS
 from rotkehlchen.chain.ethereum.defi.defisaver_proxy import HasDSProxy
@@ -180,7 +179,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
             )
             # Go through decoded events to find and edit the transfer event
             for event in context.decoded_events:
-                if event.event_type == HistoryEventType.SPEND and event.asset == vault_asset and event.balance.amount == amount:  # noqa: E501
+                if event.event_type == HistoryEventType.SPEND and event.asset == vault_asset and event.amount == amount:  # noqa: E501
                     event.sequence_index = context.tx_log.log_index  # to better position it in the list  # noqa: E501
                     event.event_type = HistoryEventType.DEPOSIT
                     event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
@@ -198,7 +197,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
 
             # Go through decoded events to find and edit the transfer event
             for event in context.decoded_events:
-                if event.event_type == HistoryEventType.RECEIVE and event.asset == vault_asset and event.balance.amount == amount:  # noqa: E501
+                if event.event_type == HistoryEventType.RECEIVE and event.asset == vault_asset and event.amount == amount:  # noqa: E501
                     event.event_type = HistoryEventType.WITHDRAWAL
                     event.event_subtype = HistoryEventSubType.REMOVE_ASSET
                     event.counterparty = CPT_VAULT
@@ -262,7 +261,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
 
             # The transfer event should be right before
             for event in context.decoded_events:
-                if event.asset == A_DAI and event.event_type == HistoryEventType.SPEND and event.balance.amount == amount:  # noqa: E501
+                if event.asset == A_DAI and event.event_type == HistoryEventType.SPEND and event.amount == amount:  # noqa: E501
                     # found the event
                     event.location_label = user
                     event.counterparty = CPT_DSR
@@ -326,7 +325,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
                 event_type=HistoryEventType.INFORMATIONAL,
                 event_subtype=HistoryEventSubType.CREATE,
                 asset=A_ETH,
-                balance=Balance(),
+                amount=ZERO,
                 location_label=owner_address,
                 notes=notes,
                 address=proxy_address,
@@ -352,7 +351,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.CREATE,
             asset=A_ETH,
-            balance=Balance(),
+            amount=ZERO,
             notes=notes,
             counterparty=CPT_VAULT,
             address=context.transaction.to_address,
@@ -415,7 +414,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
 
             # now find the payback transfer and transform it
             for event in context.decoded_events:
-                if event.event_type == action_item.from_event_type and event.event_subtype == action_item.from_event_subtype and event.asset == action_item.asset and event.balance.amount == action_item.amount:  # noqa: E501
+                if event.event_type == action_item.from_event_type and event.event_subtype == action_item.from_event_subtype and event.asset == action_item.asset and event.amount == action_item.amount:  # noqa: E501
                     if action_item.to_event_type:
                         event.event_type = action_item.to_event_type
                     if action_item.to_event_subtype:
@@ -426,7 +425,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
                         event.extra_data = action_item.extra_data
                         event.extra_data['cdp_id'] = cdp_id
 
-                    event.notes = f'Payback {event.balance.amount} DAI of debt to makerdao vault {cdp_id}'  # noqa: E501
+                    event.notes = f'Payback {event.amount} DAI of debt to makerdao vault {cdp_id}'
                     break
 
         else:  # collateral deposit
@@ -443,11 +442,11 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
                         amount=dink,
                         asset=event.asset.resolve_to_crypto_asset(),
                     )
-                    if normalized_dink != event.balance.amount:
+                    if normalized_dink != event.amount:
                         continue
 
                     vault_type = event.extra_data.get('vault_type', 'unknown') if event.extra_data else 'unknown'  # noqa: E501
-                    event.notes = f'Deposit {event.balance.amount} {crypto_asset.symbol} to {vault_type} vault {cdp_id}'  # noqa: E501
+                    event.notes = f'Deposit {event.amount} {crypto_asset.symbol} to {vault_type} vault {cdp_id}'  # noqa: E501
                     break
 
         return DEFAULT_DECODING_OUTPUT
@@ -499,7 +498,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
             event_type=event_type,
             event_subtype=event_subtype,
             asset=self.sdai,
-            balance=Balance(amount=amount),
+            amount=amount,
             location_label=owner_address,
             notes=notes,
             address=self.sdai.evm_address,
@@ -512,7 +511,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
                 event.event_type = HistoryEventType.WITHDRAWAL if incoming_event else HistoryEventType.DEPOSIT  # noqa: E501
                 event.event_subtype = HistoryEventSubType.REMOVE_ASSET if incoming_event else HistoryEventSubType.DEPOSIT_ASSET  # noqa: E501
                 verb, preposition = ('Withdraw', 'from') if incoming_event else ('Deposit', 'to')
-                event.notes = f'{verb} {event.balance.amount} DAI {preposition} sDAI contract'
+                event.notes = f'{verb} {event.amount} DAI {preposition} sDAI contract'
                 event.address = self.sdai.evm_address
                 event.counterparty = CPT_SDAI
                 deposit_event, receive_event = (transfer, event) if incoming_event else (event, transfer)  # noqa: E501
@@ -539,7 +538,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
 
             transfer.event_type = HistoryEventType.MIGRATE
             transfer.event_subtype = HistoryEventSubType.SPEND
-            transfer.notes = f'Migrate {transfer.balance.amount} SAI to DAI'
+            transfer.notes = f'Migrate {transfer.amount} SAI to DAI'
             transfer.counterparty = CPT_MAKERDAO_MIGRATION
 
             # also create action item for the receive transfer
@@ -548,10 +547,10 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
                 from_event_type=HistoryEventType.RECEIVE,
                 from_event_subtype=HistoryEventSubType.NONE,
                 asset=self.dai,
-                amount=transfer.balance.amount,
+                amount=transfer.amount,
                 to_event_type=HistoryEventType.MIGRATE,
                 to_event_subtype=HistoryEventSubType.RECEIVE,
-                to_notes=f'Receive {transfer.balance.amount} DAI from SAI->DAI migration',
+                to_notes=f'Receive {transfer.amount} DAI from SAI->DAI migration',
                 to_counterparty=CPT_MAKERDAO_MIGRATION,
                 to_address=MAKERDAO_MIGRATION_ADDRESS,
             )
@@ -576,7 +575,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_MKR,
-            balance=Balance(amount=amount),
+            amount=amount,
             location_label=bytes_to_address(context.tx_log.topics[1]),
             notes=f'Burn {amount} MKR tokens',
             address=MKR_ADDRESS,

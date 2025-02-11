@@ -1,7 +1,6 @@
 import logging
 from typing import TYPE_CHECKING, Any
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
@@ -18,6 +17,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecodingOutput,
 )
 from rotkehlchen.constants.assets import A_CRV, A_CRV_3CRV, A_ETH
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -117,7 +117,7 @@ class CurveDecoder(CurveCommonDecoder):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.GOVERNANCE,
             asset=self.native_currency,
-            balance=Balance(),
+            amount=ZERO,
             location_label=context.transaction.from_address,
             notes=f'{verb}{user_note} for {gauge_address} curve gauge{weight_note}',
             address=gauge_address,
@@ -172,7 +172,7 @@ class CurveDecoder(CurveCommonDecoder):
     def _decode_voting_escrow_deposit(self, context: DecoderContext, amount: FVal, suffix: str) -> DecodingOutput:  # noqa: E501
         locktime = Timestamp(int.from_bytes(context.tx_log.topics[2]))
         for event in context.decoded_events:
-            if event.event_type == HistoryEventType.SPEND and event.event_subtype == HistoryEventSubType.NONE and event.asset == A_CRV and event.balance.amount == amount:  # noqa: E501
+            if event.event_type == HistoryEventType.SPEND and event.event_subtype == HistoryEventSubType.NONE and event.asset == A_CRV and event.amount == amount:  # noqa: E501
                 event.event_type = HistoryEventType.DEPOSIT
                 event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
                 event.counterparty = CPT_CURVE
@@ -186,7 +186,7 @@ class CurveDecoder(CurveCommonDecoder):
 
     def _decode_voting_escrow_withdraw(self, context: DecoderContext, amount: FVal, suffix: str) -> DecodingOutput:  # noqa: E501
         for event in context.decoded_events:
-            if event.event_type == HistoryEventType.RECEIVE and event.event_subtype == HistoryEventSubType.NONE and event.asset == A_CRV and event.balance.amount == amount:  # noqa: E501
+            if event.event_type == HistoryEventType.RECEIVE and event.event_subtype == HistoryEventSubType.NONE and event.asset == A_CRV and event.amount == amount:  # noqa: E501
                 event.event_type = HistoryEventType.WITHDRAWAL
                 event.event_subtype = HistoryEventSubType.REMOVE_ASSET
                 event.counterparty = CPT_CURVE

@@ -2,7 +2,6 @@ import json
 import logging
 from typing import TYPE_CHECKING, Any
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset, CryptoAsset
 from rotkehlchen.chain.arbitrum_one.modules.clrfund.constants import (
     CLRFUND_CPT_DETAILS,
@@ -20,6 +19,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
 )
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -89,7 +89,7 @@ class ClrfundCommonDecoder(CommonGrantsDecoderMixin):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
-            balance=Balance(),
+            amount=ZERO,
             location_label=user,
             notes=f'Vote in Clrfund {name}',
             counterparty=CPT_CLRFUND,
@@ -110,7 +110,7 @@ class ClrfundCommonDecoder(CommonGrantsDecoderMixin):
                     event.event_type == HistoryEventType.SPEND and
                     event.event_subtype == HistoryEventSubType.NONE and
                     event.asset == asset and
-                    event.balance.amount == amount and
+                    event.amount == amount and
                     event.address == context.tx_log.address
             ):
                 event.location_label = sender
@@ -154,7 +154,7 @@ class ClrfundCommonDecoder(CommonGrantsDecoderMixin):
             ):
                 event.event_subtype = HistoryEventSubType.FEE
                 event.counterparty = CPT_CLRFUND
-                event.notes = f'{notes} and pay a {event.balance.amount} {event.asset.resolve_to_asset_with_symbol().symbol} fee'  # noqa: E501
+                event.notes = f'{notes} and pay a {event.amount} {event.asset.resolve_to_asset_with_symbol().symbol} fee'  # noqa: E501
                 break
 
         else:  # event not found. Perhaps no fee? Just make info event
@@ -164,7 +164,7 @@ class ClrfundCommonDecoder(CommonGrantsDecoderMixin):
                 event_type=HistoryEventType.INFORMATIONAL,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_ETH,
-                balance=Balance(),
+                amount=ZERO,
                 location_label=recipient,
                 notes=f'Apply to clrfund for {jsondata.get("name", "a project")}',
                 counterparty=CPT_CLRFUND,

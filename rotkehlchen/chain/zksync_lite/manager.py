@@ -761,7 +761,7 @@ class ZksyncLiteManager:
                 event_type=event_type,
                 event_subtype=event_subtype,
                 asset=asset,
-                balance=Balance(amount=amount),
+                amount=amount,
                 location_label=location_label,
                 address=target,
                 notes=notes,
@@ -786,7 +786,7 @@ class ZksyncLiteManager:
                 # DEPOSIT/FEE, WITHDRAWAl/FEE, SPEND/FEE, TRANSFER/FEE
                 event_subtype=HistoryEventSubType.FEE,
                 asset=transaction.asset,
-                balance=Balance(amount=transaction.fee),
+                amount=transaction.fee,
                 location_label=events[0].location_label,
                 address=target,
                 notes=f'{fee_type} fee of {transaction.fee} {transaction.asset.resolve_to_asset_with_symbol().symbol}',  # noqa: E501,

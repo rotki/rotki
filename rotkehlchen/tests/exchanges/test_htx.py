@@ -125,7 +125,7 @@ def test_deposit_withdrawals(htx_exchange: Htx) -> None:
             event_type=HistoryEventType.DEPOSIT,
             timestamp=TimestampMS(1612820394000),
             asset=A_ZRX,
-            balance=Balance(FVal('597.0018')),
+            amount=FVal('597.0018'),
             unique_id='59781355',
             extra_data={
                 'address': '0x4838B106FCe9647Bdf1E7877BF73cE8B0BAD5f97',
@@ -137,7 +137,7 @@ def test_deposit_withdrawals(htx_exchange: Htx) -> None:
             event_type=HistoryEventType.DEPOSIT,
             timestamp=TimestampMS(1710153143000),
             asset=A_DAI,
-            balance=Balance(FVal('1064.437')),
+            amount=FVal('1064.437'),
             unique_id='131331249',
             extra_data={
                 'address': '0x4838B106FCe9647Bdf1E7877BF73cE8B0BAD5f97',
@@ -149,7 +149,7 @@ def test_deposit_withdrawals(htx_exchange: Htx) -> None:
             event_type=HistoryEventType.WITHDRAWAL,
             timestamp=TimestampMS(1631140110000),
             asset=A_ZRX,
-            balance=Balance(FVal('1174.49047')),
+            amount=FVal('1174.49047'),
             unique_id='52360978',
             extra_data={
                 'address': '0x4838B106FCe9647Bdf1E7877BF73cE8B0BAD5f97',
@@ -161,7 +161,7 @@ def test_deposit_withdrawals(htx_exchange: Htx) -> None:
             event_type=HistoryEventType.WITHDRAWAL,
             timestamp=TimestampMS(1631140110000),
             asset=A_ZRX,
-            balance=Balance(FVal('13.778201')),
+            amount=FVal('13.778201'),
             unique_id='52360978',
             is_fee=True,
         ),

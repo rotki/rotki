@@ -70,20 +70,20 @@ class Aavev2CommonDecoder(Commonv2v3LikeDecoder):
             if asset_normalized_value(
                 amount=int.from_bytes(context.tx_log.data[32:64]),  # liquidated amount
                 asset=asset,
-            ) == event.balance.amount and asset.protocol == CPT_AAVE_V2:
+            ) == event.amount and asset.protocol == CPT_AAVE_V2:
                 # we are transferring the aTOKEN
                 event.event_type = HistoryEventType.LOSS
                 event.event_subtype = HistoryEventSubType.LIQUIDATE
-                event.notes = f'An {self.label} position got liquidated for {event.balance.amount} {asset.symbol}'  # noqa: E501
+                event.notes = f'An {self.label} position got liquidated for {event.amount} {asset.symbol}'  # noqa: E501
                 event.counterparty = CPT_AAVE_V2
                 event.address = context.tx_log.address
             elif asset_normalized_value(
                 amount=int.from_bytes(context.tx_log.data[:32]),  # debt amount
                 asset=asset,
-            ) == event.balance.amount:
+            ) == event.amount:
                 # we are transferring the debt token
                 event.event_subtype = HistoryEventSubType.PAYBACK_DEBT
-                event.notes = f'Payback {event.balance.amount} {asset.symbol} for an {self.label} position'  # noqa: E501
+                event.notes = f'Payback {event.amount} {asset.symbol} for an {self.label} position'
                 event.counterparty = CPT_AAVE_V2
                 event.address = context.tx_log.address
                 event.extra_data = {'is_liquidation': True}  # adding this field to the decoded event to differentiate paybacks happening in liquidations.  # noqa: E501

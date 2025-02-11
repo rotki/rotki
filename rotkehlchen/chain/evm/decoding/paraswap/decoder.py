@@ -2,7 +2,6 @@ import logging
 from abc import ABC
 from typing import TYPE_CHECKING
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import CryptoAsset, EvmToken
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
@@ -86,7 +85,7 @@ class ParaswapCommonDecoder(DecoderInterface, ABC):
                 event.counterparty = CPT_PARASWAP
                 event.event_type = HistoryEventType.TRADE
                 event.event_subtype = HistoryEventSubType.RECEIVE
-                event.notes = f'Receive {event.balance.amount} {event.asset.resolve_to_asset_with_symbol().symbol} as the result of a swap in paraswap'  # noqa: E501
+                event.notes = f'Receive {event.amount} {event.asset.resolve_to_asset_with_symbol().symbol} as the result of a swap in paraswap'  # noqa: E501
                 event.address = self.router_address
                 if in_event is None:
                     in_event = event
@@ -104,9 +103,9 @@ class ParaswapCommonDecoder(DecoderInterface, ABC):
             # at the time of the check
             if in_event.asset == out_event.asset:  # if this is true, then assumption is wrong
                 partial_refund_event, in_event = in_event, partial_refund_event  # swap them
-            out_event.balance.amount -= partial_refund_event.balance.amount  # adjust the amount
+            out_event.amount -= partial_refund_event.amount  # adjust the amount
             context.decoded_events.remove(partial_refund_event)  # and remove it from the list
-        out_event.notes = f'Swap {out_event.balance.amount} {out_event.asset.resolve_to_asset_with_symbol().symbol} in paraswap'  # noqa: E501
+        out_event.notes = f'Swap {out_event.amount} {out_event.asset.resolve_to_asset_with_symbol().symbol} in paraswap'  # noqa: E501
 
         fee_raw: int | None = None
         # assets can be native currency, so resolve them to CryptoAsset instead of EvmToken
@@ -145,8 +144,8 @@ class ParaswapCommonDecoder(DecoderInterface, ABC):
             if fee_asset == in_asset:
                 # update the in_event to adjust its balance since the amount used in fees
                 # was also received as part of the swap
-                in_event.balance.amount += fee_amount
-                in_event.notes = f'Receive {in_event.balance.amount} {fee_asset.symbol} as the result of a swap in paraswap'  # noqa: E501
+                in_event.amount += fee_amount
+                in_event.notes = f'Receive {in_event.amount} {fee_asset.symbol} as the result of a swap in paraswap'  # noqa: E501
 
             # And now create a new event for the fee
             fee_event = self.base.make_event_from_transaction(
@@ -155,7 +154,7 @@ class ParaswapCommonDecoder(DecoderInterface, ABC):
                 event_type=HistoryEventType.TRADE,
                 event_subtype=HistoryEventSubType.FEE,
                 asset=fee_asset,
-                balance=Balance(amount=fee_amount),
+                amount=fee_amount,
                 location_label=sender,
                 notes=f'Spend {fee_amount} {fee_asset.symbol} as a paraswap fee',
                 counterparty=CPT_PARASWAP,

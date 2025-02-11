@@ -1,6 +1,5 @@
 from typing import TYPE_CHECKING, Any
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
@@ -75,7 +74,7 @@ class MoneriumCommonDecoder(DecoderInterface):
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=token,
-                balance=Balance(amount=amount),
+                amount=amount,
                 location_label=to_address,
                 notes=f'Mint {amount} {token.symbol_or_name()}',
                 counterparty=CPT_MONERIUM,
@@ -92,7 +91,7 @@ class MoneriumCommonDecoder(DecoderInterface):
                 event_type=HistoryEventType.SPEND,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=token,
-                balance=Balance(amount=amount),
+                amount=amount,
                 location_label=from_address,
                 notes=f'Burn {amount} {token.symbol_or_name()}',
                 counterparty=CPT_MONERIUM,

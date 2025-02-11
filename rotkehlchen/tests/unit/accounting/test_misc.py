@@ -4,7 +4,6 @@ import pytest
 
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
 from rotkehlchen.accounting.pnl import PNL, PnlTotals
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_ETH, A_ETH2, A_EUR, A_KFEE, A_USD, A_USDT
 from rotkehlchen.exchanges.data_structures import Trade
@@ -42,7 +41,7 @@ def test_kfee_price_in_accounting(accountant, google_service):
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
-            balance=Balance(amount=ONE),
+            amount=ONE,
         ), HistoryEvent(
             event_identifier='2',
             sequence_index=0,
@@ -51,7 +50,7 @@ def test_kfee_price_in_accounting(accountant, google_service):
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_KFEE,
-            balance=Balance(amount=FVal(1000)),
+            amount=FVal(1000),
         ), Trade(
             timestamp=Timestamp(1609537953),
             location=Location.KRAKEN,  # PNL: 598.26 ETH/EUR -> PNL: 0.02 * 598.26 - 0.02*178.615 ->  8.3929  # noqa: E501
@@ -154,7 +153,7 @@ def test_fees_in_received_asset(accountant, google_service):
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
-            balance=Balance(amount=ONE),
+            amount=ONE,
         ), Trade(
             # Sell 0.02 ETH for USDT with rate 1000 USDT/ETH and 0.10 USDT fee
             # So acquired 20 USDT for 0.02 ETH + 0.10 USDT

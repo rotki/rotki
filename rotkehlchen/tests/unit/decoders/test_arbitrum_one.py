@@ -1,6 +1,5 @@
 import pytest
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.arbitrum_one.constants import CPT_ARBITRUM_ONE
 from rotkehlchen.chain.arbitrum_one.modules.airdrops.decoder import ARBITRUM_ONE_AIRDROP
 from rotkehlchen.chain.arbitrum_one.modules.arbitrum_governor.constants import GOVERNOR_ADDRESSES
@@ -38,7 +37,7 @@ def test_arbitrum_airdrop_claim(arbitrum_one_inquirer, arbitrum_one_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=FVal('0.000032717')),
+            amount=FVal('0.000032717'),
             location_label=user_address,
             notes='Burn 0.000032717 ETH for gas',
             counterparty=CPT_GAS,
@@ -50,7 +49,7 @@ def test_arbitrum_airdrop_claim(arbitrum_one_inquirer, arbitrum_one_accounts):
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.AIRDROP,
             asset=A_ARB,
-            balance=Balance(amount=FVal('625')),
+            amount=FVal('625'),
             location_label=user_address,
             notes='Claimed 625 ARB from arbitrum airdrop',
             counterparty=CPT_ARBITRUM_ONE,
@@ -77,7 +76,7 @@ def test_vote_cast(arbitrum_one_inquirer, arbitrum_one_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=FVal('0.0000821946')),
+            amount=FVal('0.0000821946'),
             location_label=user_address,
             notes='Burn 0.0000821946 ETH for gas',
             counterparty=CPT_GAS,
@@ -89,7 +88,7 @@ def test_vote_cast(arbitrum_one_inquirer, arbitrum_one_accounts):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.GOVERNANCE,
             asset=A_ETH,
-            balance=Balance(amount=ZERO),
+            amount=ZERO,
             location_label=user_address,
             notes='Vote FOR arbitrum_one governance proposal https://www.tally.xyz/gov/arbitrum/proposal/28300903567340237987946172947371304329455149918972967618773111648600015289785',
             counterparty=CPT_ARBITRUM_ONE,
@@ -115,7 +114,7 @@ def test_vote_cast_2(arbitrum_one_inquirer, arbitrum_one_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=FVal(gas)),
+            amount=FVal(gas),
             location_label=arbitrum_one_accounts[0],
             notes=f'Burn {gas} ETH for gas',
             tx_hash=tx_hash,
@@ -127,7 +126,7 @@ def test_vote_cast_2(arbitrum_one_inquirer, arbitrum_one_accounts):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.GOVERNANCE,
             asset=A_ETH,
-            balance=Balance(amount=FVal(0)),
+            amount=FVal(0),
             location_label=arbitrum_one_accounts[0],
             notes='Vote FOR arbitrum_one governance proposal https://www.tally.xyz/gov/arbitrum/proposal/42524710257895482033293584464762477376427316183960646909542733545381165923770',
             tx_hash=tx_hash,
@@ -155,7 +154,7 @@ def test_vote_cast_treasury(arbitrum_one_inquirer, arbitrum_one_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=FVal(gas)),
+            amount=FVal(gas),
             location_label=arbitrum_one_accounts[0],
             notes=f'Burn {gas} ETH for gas',
             tx_hash=tx_hash,
@@ -167,7 +166,7 @@ def test_vote_cast_treasury(arbitrum_one_inquirer, arbitrum_one_accounts):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.GOVERNANCE,
             asset=A_ETH,
-            balance=Balance(amount=FVal(0)),
+            amount=FVal(0),
             location_label=arbitrum_one_accounts[0],
             notes="Vote AGAINST arbitrum_one governance proposal https://www.tally.xyz/gov/arbitrum/proposal/53472400873981607449547539050199074000442490831067826984987297151333310022877 with reasoning: IMO games or arbitrum is a path that is interesting but the amounts are big and I'm not sure how they adjust to the industry. This is giving a lot of money and might be the wrong path where games that no one enjoy get developed and then nothing happens after it. How the money will be spent is described but I believe the amounts are more than what is needed for such a program",  # noqa: E501
             tx_hash=tx_hash,

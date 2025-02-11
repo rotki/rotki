@@ -99,7 +99,7 @@ class ConvexDecoder(DecoderInterface, ReloadableCacheDecoderMixin):
             ):
                 event.event_subtype = HistoryEventSubType.REWARD
                 event.counterparty = CPT_CONVEX
-                event.notes = f'Claim {event.balance.amount} {event.asset.resolve_to_crypto_asset().symbol} after compounding Convex pool'  # noqa: E501
+                event.notes = f'Claim {event.amount} {event.asset.resolve_to_crypto_asset().symbol} after compounding Convex pool'  # noqa: E501
 
         return DEFAULT_DECODING_OUTPUT
 
@@ -128,7 +128,7 @@ class ConvexDecoder(DecoderInterface, ReloadableCacheDecoderMixin):
             amount = asset_normalized_value(amount_raw, crypto_asset)
             if (
                 event.location_label == context.transaction.from_address == interacted_address is False or  # noqa: E501
-                (event.address != ZERO_ADDRESS and event.balance.amount != amount)
+                (event.address != ZERO_ADDRESS and event.amount != amount)
             ):
                 continue
             if (
@@ -141,18 +141,18 @@ class ConvexDecoder(DecoderInterface, ReloadableCacheDecoderMixin):
                     event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
                     event.counterparty = CPT_CONVEX
                     if context.tx_log.address in self.pools:
-                        event.notes = f'Return {event.balance.amount} {crypto_asset.symbol} to convex {self.pools[context.tx_log.address]} pool'  # noqa: E501
+                        event.notes = f'Return {event.amount} {crypto_asset.symbol} to convex {self.pools[context.tx_log.address]} pool'  # noqa: E501
                     else:
-                        event.notes = f'Return {event.balance.amount} {crypto_asset.symbol} to convex'  # noqa: E501
+                        event.notes = f'Return {event.amount} {crypto_asset.symbol} to convex'
                 else:
                     event.event_type = HistoryEventType.DEPOSIT
                     event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
                     event.counterparty = CPT_CONVEX
                     if context.tx_log.address in self.pools:
-                        event.notes = f'Deposit {event.balance.amount} {crypto_asset.symbol} into convex {self.pools[context.tx_log.address]} pool'  # noqa: E501
+                        event.notes = f'Deposit {event.amount} {crypto_asset.symbol} into convex {self.pools[context.tx_log.address]} pool'  # noqa: E501
                         event.product = EvmProduct.GAUGE
                     else:
-                        event.notes = f'Deposit {event.balance.amount} {crypto_asset.symbol} into convex'  # noqa: E501
+                        event.notes = f'Deposit {event.amount} {crypto_asset.symbol} into convex'
                         if (
                             isinstance(crypto_asset, EvmToken) and
                             crypto_asset.protocol == CURVE_POOL_PROTOCOL
@@ -181,10 +181,10 @@ class ConvexDecoder(DecoderInterface, ReloadableCacheDecoderMixin):
                     event.counterparty = CPT_CONVEX
                     found_event_modifying_balances = True
                     if context.tx_log.address in self.pools:
-                        event.notes = f'Withdraw {event.balance.amount} {crypto_asset.symbol} from convex {self.pools[context.tx_log.address]} pool'  # noqa: E501
+                        event.notes = f'Withdraw {event.amount} {crypto_asset.symbol} from convex {self.pools[context.tx_log.address]} pool'  # noqa: E501
                         event.product = EvmProduct.GAUGE
                     else:
-                        event.notes = f'Withdraw {event.balance.amount} {crypto_asset.symbol} from convex'  # noqa: E501
+                        event.notes = f'Withdraw {event.amount} {crypto_asset.symbol} from convex'
                         if (
                             isinstance(crypto_asset, EvmToken) and
                             crypto_asset.protocol == CURVE_POOL_PROTOCOL
@@ -195,9 +195,9 @@ class ConvexDecoder(DecoderInterface, ReloadableCacheDecoderMixin):
                     event.counterparty = CPT_CONVEX
                     found_event_modifying_balances = True
                     if context.tx_log.address in self.pools:
-                        event.notes = f'Claim {event.balance.amount} {crypto_asset.symbol} reward from convex {self.pools[context.tx_log.address]} pool'  # noqa: E501
+                        event.notes = f'Claim {event.amount} {crypto_asset.symbol} reward from convex {self.pools[context.tx_log.address]} pool'  # noqa: E501
                     else:
-                        event.notes = f'Claim {event.balance.amount} {crypto_asset.symbol} reward from convex'  # noqa: E501
+                        event.notes = f'Claim {event.amount} {crypto_asset.symbol} reward from convex'  # noqa: E501
         return DecodingOutput(
             refresh_balances=found_event_modifying_balances,
             matched_counterparty=matched_counterparty,
@@ -229,14 +229,14 @@ class ConvexDecoder(DecoderInterface, ReloadableCacheDecoderMixin):
                 event.event_type == HistoryEventType.RECEIVE and
                 event.event_subtype == HistoryEventSubType.NONE and
                 event.asset == A_CVX and
-                event.balance.amount in amounts_withdrawn
+                event.amount in amounts_withdrawn
             ):
                 event.event_type = HistoryEventType.WITHDRAWAL
                 event.event_subtype = HistoryEventSubType.REMOVE_ASSET
                 event.counterparty = CPT_CONVEX
-                event.notes = f'Unlock {event.balance.amount} {self.cvx.symbol} from convex'
+                event.notes = f'Unlock {event.amount} {self.cvx.symbol} from convex'
 
-                amounts_withdrawn.remove(event.balance.amount)
+                amounts_withdrawn.remove(event.amount)
                 if len(amounts_withdrawn) == 0:
                     break  # stop as soon as we have processed all the unlock events
         else:
@@ -264,9 +264,9 @@ class ConvexDecoder(DecoderInterface, ReloadableCacheDecoderMixin):
             crypto_asset = context.event.asset.resolve_to_crypto_asset()
             context.event.event_subtype = HistoryEventSubType.REWARD
             if context.tx_log.address in self.pools:
-                context.event.notes = f'Claim {context.event.balance.amount} {crypto_asset.symbol} reward from convex {self.pools[context.tx_log.address]} pool'  # noqa: E501
+                context.event.notes = f'Claim {context.event.amount} {crypto_asset.symbol} reward from convex {self.pools[context.tx_log.address]} pool'  # noqa: E501
             else:
-                context.event.notes = f'Claim {context.event.balance.amount} {crypto_asset.symbol} reward from convex'  # noqa: E501
+                context.event.notes = f'Claim {context.event.amount} {crypto_asset.symbol} reward from convex'  # noqa: E501
             context.event.counterparty = CPT_CONVEX
             return TransferEnrichmentOutput(matched_counterparty=CPT_CONVEX)
         return FAILED_ENRICHMENT_OUTPUT

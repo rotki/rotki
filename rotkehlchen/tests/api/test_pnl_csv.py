@@ -15,7 +15,6 @@ import requests
 
 from rotkehlchen.accounting.export.csv import FILENAME_ALL_CSV
 from rotkehlchen.accounting.mixins.event import AccountingEventType
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import CustomAsset
 from rotkehlchen.chain.accounts import BlockchainAccountData
 from rotkehlchen.chain.evm.constants import GENESIS_HASH
@@ -205,7 +204,7 @@ def test_history_export_download_csv(
             timestamp=TimestampMS(1601040360000),
             location=Location.ETHEREUM,
             asset=custom_asset,
-            balance=Balance(amount=FVal('1.5')),
+            amount=FVal('1.5'),
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.NONE,
             notes=f'Test note to check if label is added with {ETH_ADDRESS1} address',
@@ -241,7 +240,7 @@ def test_history_export_download_csv(
             timestamp=TimestampMS(1601040360000),
             location=Location.ZKSYNC_LITE,
             asset=custom_asset,
-            balance=Balance(amount=FVal('1.5')),
+            amount=FVal('1.5'),
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.NONE,
             notes=f'Test note to check if label is added with {ETH_ADDRESS1} address',
@@ -292,7 +291,7 @@ def test_encoding(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=FVal(1)),
+            amount=FVal(1),
             notes=unicode_notes,
         )]),
     )

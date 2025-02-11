@@ -3,7 +3,6 @@ from typing import Any
 
 from eth_utils import encode_hex
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.ethereum.constants import ETH2_DEPOSIT_ADDRESS
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
@@ -70,7 +69,7 @@ class Eth2Decoder(DecoderInterface):
                 event.event_type == HistoryEventType.SPEND and
                 event.event_subtype == HistoryEventSubType.NONE and
                 event.asset == A_ETH and
-                event.balance.amount >= amount
+                event.amount >= amount
             ):
                 assert event.location_label is not None
                 eth_deposit_event = EthDepositEvent(
@@ -78,15 +77,15 @@ class Eth2Decoder(DecoderInterface):
                     validator_index=validator_index,
                     sequence_index=self.base.get_next_sequence_index(),
                     timestamp=event.timestamp,
-                    balance=Balance(amount=amount),
+                    amount=amount,
                     depositor=string_to_evm_address(event.location_label),
                     extra_data=extra_data,  # only used if validator index is unknown
                 )
-                if event.balance.amount == amount:  # If amount is the same, replace the event
+                if event.amount == amount:  # If amount is the same, replace the event
                     context.decoded_events[idx] = eth_deposit_event
                     return DEFAULT_DECODING_OUTPUT
                 else:  # If amount is less, subtract the amount from the event and return new event
-                    event.balance.amount -= amount
+                    event.amount -= amount
                     return DecodingOutput(event=eth_deposit_event)
 
         log.error(

@@ -1,7 +1,6 @@
 import logging
 from typing import TYPE_CHECKING, Any
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.ethereum.airdrops import AIRDROP_IDENTIFIER_KEY
 from rotkehlchen.chain.ethereum.modules.diva.decoder import DELEGATE_CHANGED
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
@@ -80,7 +79,7 @@ class ShutterDecoder(DecoderInterface):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
             asset=self.shu,
-            balance=Balance(amount=FVal(amount)),
+            amount=FVal(amount),
             location_label=user_address,
             notes=f'Claim {amount} SHU from shutter airdrop into the vesting contract: {vesting_contract_address}',  # noqa: E501
             counterparty=CPT_SHUTTER,
@@ -104,7 +103,7 @@ class ShutterDecoder(DecoderInterface):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.GOVERNANCE,
             asset=self.shu,
-            balance=Balance(),
+            amount=FVal(0),
             location_label=context.transaction.from_address,
             notes=f'Change SHU Delegate{delegator_note} from {bytes_to_address(context.tx_log.topics[2])} to {bytes_to_address(context.tx_log.topics[3])}',  # noqa: E501
             counterparty=CPT_SHUTTER,

@@ -2,7 +2,6 @@ from unittest.mock import patch
 
 import pytest
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.types import ActionType
 from rotkehlchen.chain.ethereum.constants import CPT_KRAKEN
 from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
@@ -280,7 +279,7 @@ def test_no_logs_and_zero_eth(
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
-            balance=Balance(amount=ZERO, usd_value=ZERO),
+            amount=ZERO,
             location_label=user_address,
             notes=f'Receive 0 ETH from {sender}',
             address=sender,
@@ -362,7 +361,7 @@ def test_simple_erc20_transfer(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=FVal('0.00045')) if chain is ChainID.ETHEREUM else Balance(amount=FVal('0.00055')),  # noqa: E501
+            amount=FVal('0.00045') if chain is ChainID.ETHEREUM else FVal('0.00055'),
             location_label=from_address,
             notes='Burn 0.00045 ETH for gas' if chain is ChainID.ETHEREUM else 'Burn 0.00055 ETH for gas',  # noqa: E501
             counterparty=CPT_GAS,
@@ -376,7 +375,7 @@ def test_simple_erc20_transfer(
             event_type=HistoryEventType.TRANSFER,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_USDT if chain is ChainID.ETHEREUM else A_OPTIMISM_USDT,
-            balance=Balance(amount=FVal('38.002229')),
+            amount=FVal('38.002229'),
             location_label=from_address,
             notes=f'Transfer 38.002229 USDT from {from_address} to {to_address}',
             address=to_address,
@@ -446,7 +445,7 @@ def test_eth_transfer(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=FVal('0.001')) if chain is ChainID.ETHEREUM else Balance(amount=FVal('0.0011')),  # noqa: E501
+            amount=FVal('0.001') if chain is ChainID.ETHEREUM else FVal('0.0011'),
             location_label=from_address,
             notes='Burn 0.001 ETH for gas' if chain is ChainID.ETHEREUM else 'Burn 0.0011 ETH for gas',  # noqa: E501
             counterparty=CPT_GAS,
@@ -461,7 +460,7 @@ def test_eth_transfer(
             event_type=HistoryEventType.TRANSFER,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
-            balance=Balance(amount=FVal(0.5)),
+            amount=FVal(0.5),
             location_label=from_address,
             notes=f'Transfer 0.5 ETH to {to_address}',
             address=to_address,
@@ -530,7 +529,7 @@ def test_eth_spend(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=FVal('0.001')) if chain is ChainID.ETHEREUM else Balance(amount=FVal('0.0011')),  # noqa: E501
+            amount=FVal('0.001') if chain is ChainID.ETHEREUM else FVal('0.0011'),
             location_label=from_address,
             notes='Burn 0.001 ETH for gas' if chain is ChainID.ETHEREUM else 'Burn 0.0011 ETH for gas',  # noqa: E501
             counterparty=CPT_GAS,
@@ -545,7 +544,7 @@ def test_eth_spend(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
-            balance=Balance(amount=FVal(0.5)),
+            amount=FVal(0.5),
             location_label=from_address,
             notes=f'Send 0.5 ETH to {to_address}',
             address=to_address,
@@ -606,7 +605,7 @@ def test_eth_deposit(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=FVal(0.001)),
+            amount=FVal(0.001),
             location_label=from_address,
             notes='Burn 0.001 ETH for gas',
             counterparty=CPT_GAS,
@@ -621,7 +620,7 @@ def test_eth_deposit(
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
             asset=A_ETH,
-            balance=Balance(amount=FVal(100)),
+            amount=FVal(100),
             location_label=from_address,
             notes='Deposit 100 ETH to kraken',
             counterparty=CPT_KRAKEN,
@@ -865,7 +864,7 @@ def test_genesis_transaction(database, ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
-            balance=Balance(amount=FVal('200')),
+            amount=FVal('200'),
             location_label=user_address_2,
             notes=f'Receive 200 ETH from {ZERO_ADDRESS}',
             address=ZERO_ADDRESS,
@@ -877,7 +876,7 @@ def test_genesis_transaction(database, ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
-            balance=Balance(amount=FVal('2000')),
+            amount=FVal('2000'),
             location_label=user_address_1,
             notes=f'Receive 2000 ETH from {ZERO_ADDRESS}',
             address=ZERO_ADDRESS,
@@ -968,7 +967,7 @@ def test_failed_transaction(ethereum_inquirer, ethereum_accounts):
         event_type=HistoryEventType.FAIL,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        balance=Balance(amount=FVal(gas)),
+        amount=FVal(gas),
         location_label=ethereum_accounts[0],
         notes=f'Burn {gas} ETH for gas of a failed transaction',
         counterparty=CPT_GAS,

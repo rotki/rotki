@@ -7,7 +7,6 @@ from unittest.mock import patch
 import pytest
 import requests
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.ethereum.modules.eth2.constants import CPT_ETH2
 from rotkehlchen.chain.ethereum.modules.eth2.eth2 import FREE_VALIDATORS_LIMIT
 from rotkehlchen.chain.ethereum.modules.eth2.structures import (
@@ -628,20 +627,20 @@ def test_add_get_edit_delete_eth2_validators(
             validator_index=validators[0].validator_index,  # type: ignore[arg-type]  # validator indexes are defined above and will not be None
             sequence_index=1,
             timestamp=TimestampMS(1601379127000),
-            balance=Balance(FVal(32)),
+            amount=FVal(32),
             depositor=make_evm_address(),
         ), EthWithdrawalEvent(
             identifier=2,
             validator_index=validators[0].validator_index,  # type: ignore[arg-type]  # validator indexes are defined above and will not be None
             timestamp=TimestampMS(1611379127000),
-            balance=Balance(FVal('0.01')),
+            amount=FVal('0.01'),
             withdrawal_address=make_evm_address(),
             is_exit=False,
         ), EthBlockEvent(
             identifier=3,
             validator_index=validators[2].validator_index,  # type: ignore[arg-type]  # validator indexes are defined above and will not be None
             timestamp=TimestampMS(1671379127000),
-            balance=Balance(FVal(1)),
+            amount=FVal(1),
             fee_recipient=make_evm_address(),
             fee_recipient_tracked=True,
             block_number=42,
@@ -1106,7 +1105,7 @@ def test_query_combined_mev_reward_and_block_production_events(rotkehlchen_api_s
             assert entry['event_type'] == 'informational'  # fee recipient not tracked
             assert entry['event_subtype'] == 'block production'
             assert entry['validator_index'] == vindex1
-            assert entry['balance']['amount'] == '0.126419309459217215'
+            assert entry['amount'] == '0.126419309459217215'
         elif entry['sequence_index'] == 1:
             assert entry['identifier'] == 11
             assert entry['event_identifier'] == event_identifier
@@ -1114,12 +1113,12 @@ def test_query_combined_mev_reward_and_block_production_events(rotkehlchen_api_s
             assert entry['event_type'] == 'informational'
             assert entry['event_subtype'] == 'mev reward'
             assert entry['validator_index'] == vindex1
-            assert entry['balance']['amount'] == mev_reward
+            assert entry['amount'] == mev_reward
         elif entry['sequence_index'] == 2:
             assert entry['identifier'] == 1
             assert entry['event_identifier'] == event_identifier
             assert entry['entry_type'] == 'evm event'
-            assert entry['balance']['amount'] == mev_reward
+            assert entry['amount'] == mev_reward
             assert entry['tx_hash'] == tx_hash.hex()  # pylint: disable=no-member
             assert entry['notes'] == f'Receive {mev_reward} ETH from {mevbot_address} as mev reward for block {block_number} in {tx_hash.hex()}'  # pylint: disable=no-member  # noqa: E501
         else:

@@ -86,17 +86,23 @@ class Compound(EthereumModule, CompoundV2, CompoundV3):
             given_eth_balances=given_eth_balances,
         )
         for event in events:
+            usd_price = query_usd_price_zero_if_error(
+                asset=event.asset,
+                time=event.get_timestamp_in_sec(),
+                location=f'comp repay event {event.tx_hash!r} processing',
+            )
             address = ChecksumEvmAddress(event.location_label)  # type: ignore[arg-type]  # location label is not none here
+            event_balance = Balance(amount=event.amount, usd_value=event.amount * usd_price)
             if event.event_subtype == HistoryEventSubType.DEPOSIT_FOR_WRAPPED:
-                assets[address][event.asset] -= event.balance
+                assets[address][event.asset] -= event_balance
             elif event.event_subtype == HistoryEventSubType.GENERATE_DEBT:
-                loss_assets[address][event.asset] -= event.balance
+                loss_assets[address][event.asset] -= event_balance
             elif event.event_subtype == HistoryEventSubType.REWARD:
-                rewards_assets[address][event.asset] += event.balance
+                rewards_assets[address][event.asset] += event_balance
             elif event.event_subtype == HistoryEventSubType.REDEEM_WRAPPED:
                 profit_amount = (
                     assets[address][event.asset].amount +
-                    event.balance.amount -
+                    event.amount -
                     profit_so_far[address][event.asset].amount
                 )
                 profit: Balance | None
@@ -112,29 +118,23 @@ class Compound(EthereumModule, CompoundV2, CompoundV3):
                 else:
                     profit = None
 
-                assets[address][event.asset] = event.balance
+                assets[address][event.asset] = event_balance
             elif event.event_subtype == HistoryEventSubType.PAYBACK_DEBT:
                 loss_amount = (
                     loss_assets[address][event.asset].amount +
-                    event.balance.amount -
+                    event.amount -
                     loss_so_far[address][event.asset].amount
                 )
                 if loss_amount >= 0:
-                    usd_price = query_usd_price_zero_if_error(
-                        asset=event.asset,
-                        time=ts_ms_to_sec(event.timestamp),
-                        location=f'comp repay event {event.tx_hash!r} processing',
-                        msg_aggregator=self.msg_aggregator,
-                    )
                     loss = Balance(loss_amount, loss_amount * usd_price)
                     loss_so_far[address][event.asset] += loss
                 else:
                     loss = None
 
-                loss_assets[address][event.asset] = event.balance
+                loss_assets[address][event.asset] = event_balance
             elif event.event_subtype == HistoryEventSubType.LIQUIDATE:
-                loss_assets[address][event.asset] += event.balance
-                liquidation_profit[address][event.asset] += event.balance
+                loss_assets[address][event.asset] += event_balance
+                liquidation_profit[address][event.asset] += event_balance
 
         for address, balance_entry in balances.items():
             # iterate the lending balances to calculate profit based on the current status

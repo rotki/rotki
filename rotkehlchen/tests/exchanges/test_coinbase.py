@@ -5,7 +5,6 @@ from unittest.mock import patch
 import pytest
 import requests
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_coinbase
 from rotkehlchen.constants import ONE, ZERO
@@ -516,7 +515,7 @@ def test_coinbase_query_history_events(
         event_type=HistoryEventType.DEPOSIT,
         timestamp=TimestampMS(1502554304000),
         asset=A_BTC,
-        balance=Balance(FVal('0.10181673')),
+        amount=FVal('0.10181673'),
         extra_data={
             'transaction_id': 'ccc',
             'reference': 'id3',
@@ -529,7 +528,7 @@ def test_coinbase_query_history_events(
         event_type=HistoryEventType.WITHDRAWAL,
         timestamp=TimestampMS(1566726126000),
         asset=A_ETH,
-        balance=Balance(FVal('0.05749427')),
+        amount=FVal('0.05749427'),
         extra_data={
             'address': '0x6dcD6449dbCa615e40d696328209686eA95327b2',
             'transaction_id': '0x558bfa4d2a4ef598ddb92233459c00eda9e6c14cda75e6773b90208cb6938169',
@@ -543,7 +542,7 @@ def test_coinbase_query_history_events(
         event_type=HistoryEventType.WITHDRAWAL,
         timestamp=TimestampMS(1566726126000),
         asset=A_ETH,
-        balance=Balance(FVal('0.05770427')),
+        amount=FVal('0.05770427'),
         extra_data={
             'address': '0x6dcD6449dbCa615e40d696328209686eA95327b2',
             'reference': 'id2',
@@ -556,7 +555,7 @@ def test_coinbase_query_history_events(
         event_type=HistoryEventType.WITHDRAWAL,
         timestamp=TimestampMS(1566726126000),
         asset=A_ETH,
-        balance=Balance(FVal('0.00021')),
+        amount=FVal('0.00021'),
         is_fee=True,
     ), HistoryEvent(
         identifier=5,
@@ -568,7 +567,7 @@ def test_coinbase_query_history_events(
         event_subtype=HistoryEventSubType.NONE,
         asset=asset_from_coinbase('NMR'),
         location_label=coinbase.name,
-        balance=Balance(amount=FVal('0.02762431'), usd_value=ZERO),
+        amount=FVal('0.02762431'),
         notes='Received 0.02762431 NMR ($1.01) from coinbase earn',
     ), HistoryEvent(
         identifier=6,
@@ -580,7 +579,7 @@ def test_coinbase_query_history_events(
         event_subtype=HistoryEventSubType.NONE,
         asset=asset_from_coinbase('ALGO'),
         location_label=coinbase.name,
-        balance=Balance(amount=FVal('0.000076'), usd_value=ZERO),
+        amount=FVal('0.000076'),
         notes='Received 0.000076 ALGO ($0.00) as inflation_reward',
     ), HistoryEvent(
         identifier=8,
@@ -592,7 +591,7 @@ def test_coinbase_query_history_events(
         event_subtype=HistoryEventSubType.REWARD,
         asset=asset_from_coinbase('SOL'),
         location_label=coinbase.name,
-        balance=Balance(amount=FVal('0.025412'), usd_value=ZERO),
+        amount=FVal('0.025412'),
         notes='Receive 0.025412 SOL as Coinbase staking reward',
     ), AssetMovement(
         identifier=7,
@@ -602,7 +601,7 @@ def test_coinbase_query_history_events(
         event_type=HistoryEventType.WITHDRAWAL,
         timestamp=TimestampMS(1615493615000),
         asset=A_BTC,
-        balance=Balance(FVal('0.00100000')),
+        amount=FVal('0.00100000'),
         extra_data={'reference': 'id6'},
     )]
     assert expected_events == events

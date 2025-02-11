@@ -3,7 +3,6 @@ from unittest.mock import patch
 
 import pytest
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.modules.gitcoin.constants import GITCOIN_GRANTS_OLD1
 from rotkehlchen.chain.evm.constants import GENESIS_HASH
@@ -148,7 +147,7 @@ def test_tx_decode(ethereum_transaction_decoder, database):
                         location=Location.ETHEREUM,
                         location_label=addr1,
                         asset=A_ETH,
-                        balance=Balance(amount=FVal('0.000030921')),
+                        amount=FVal('0.000030921'),
                         # The no-member is due to https://github.com/PyCQA/pylint/issues/3162
                         notes='Burn 0.000030921 ETH for gas',
                         event_type=HistoryEventType.SPEND,
@@ -163,7 +162,7 @@ def test_tx_decode(ethereum_transaction_decoder, database):
                         location=Location.ETHEREUM,
                         location_label=addr1,
                         asset=A_SAI,
-                        balance=Balance(amount=1),
+                        amount=1,
                         notes=f'Set SAI spending approval of {addr1} by {GITCOIN_GRANTS_OLD1} to 1',  # noqa: E501
                         event_type=HistoryEventType.INFORMATIONAL,
                         event_subtype=HistoryEventSubType.APPROVE,

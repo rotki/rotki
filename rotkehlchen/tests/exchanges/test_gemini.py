@@ -5,7 +5,6 @@ from unittest.mock import patch
 import pytest
 import requests
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_BCH, A_BTC, A_ETH, A_GUSD, A_LINK, A_LTC, A_USD
@@ -287,7 +286,7 @@ def test_gemini_query_deposits_withdrawals(sandbox_gemini):
         event_type=HistoryEventType.WITHDRAWAL,
         timestamp=TimestampMS(1535451930000),
         asset=A_USD,
-        balance=Balance(FVal('1.00')),
+        amount=FVal('1.00'),
         unique_id='341167014',
         extra_data={
             'address': '0xd24400ae8BfEBb18cA49Be86258a3C749cf46853',
@@ -300,7 +299,7 @@ def test_gemini_query_deposits_withdrawals(sandbox_gemini):
         event_type=HistoryEventType.DEPOSIT,
         timestamp=TimestampMS(1507913541000),
         asset=A_USD,
-        balance=Balance(FVal('36.00')),
+        amount=FVal('36.00'),
         unique_id='320013281',
     ), AssetMovement(
         identifier=5,
@@ -309,7 +308,7 @@ def test_gemini_query_deposits_withdrawals(sandbox_gemini):
         event_type=HistoryEventType.DEPOSIT,
         timestamp=TimestampMS(1499990797000),
         asset=A_ETH,
-        balance=Balance(FVal('100')),
+        amount=FVal('100'),
         unique_id='309356152',
         extra_data={'transaction_id': '605c5fa8bf99458d24d61e09941bc443ddc44839d9aaa508b14b296c0c8269b2'},  # noqa: E501
     ), AssetMovement(
@@ -319,7 +318,7 @@ def test_gemini_query_deposits_withdrawals(sandbox_gemini):
         event_type=HistoryEventType.DEPOSIT,
         timestamp=TimestampMS(1495550176000),
         asset=A_BTC,
-        balance=Balance(FVal('1500')),
+        amount=FVal('1500'),
         unique_id='298112782',
         extra_data={'transaction_id': '163eeee4741f8962b748289832dd7f27f754d892f5d23bf3ea6fba6e350d9ce3'},  # noqa: E501
     ), AssetMovement(
@@ -329,7 +328,7 @@ def test_gemini_query_deposits_withdrawals(sandbox_gemini):
         event_type=HistoryEventType.DEPOSIT,
         timestamp=TimestampMS(1458862076000),
         asset=A_USD,
-        balance=Balance(FVal('500.00')),
+        amount=FVal('500.00'),
         unique_id='265799530',
     ), AssetMovement(
         identifier=2,
@@ -338,7 +337,7 @@ def test_gemini_query_deposits_withdrawals(sandbox_gemini):
         event_type=HistoryEventType.WITHDRAWAL,
         timestamp=TimestampMS(1450403787000),
         asset=A_BTC,
-        balance=Balance(FVal('5')),
+        amount=FVal('5'),
         unique_id='82897811',
         extra_data={
             'address': 'mqjvCtt4TJfQaC7nUgLMvHwuDPXMTEUGqx',

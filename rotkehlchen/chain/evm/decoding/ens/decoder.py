@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING
 
 import content_hash
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token
 from rotkehlchen.chain.ethereum.abi import decode_event_data_abi_str
 from rotkehlchen.chain.ethereum.modules.ens.constants import CPT_ENS
@@ -26,6 +25,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecodingOutput,
 )
 from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -132,7 +132,7 @@ class EnsCommonDecoder(DecoderInterface, CustomizableDateMixin, ABC):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
-            balance=Balance(),
+            amount=ZERO,
             location_label=context.transaction.from_address,
             notes=notes,
             counterparty=self.counterparty,
@@ -164,7 +164,7 @@ class EnsCommonDecoder(DecoderInterface, CustomizableDateMixin, ABC):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
-            balance=Balance(),
+            amount=ZERO,
             location_label=associated_address,
             notes=f'Transfer {node_str} ownership of subnode {subnode_str} to {new_owner}',
             address=context.tx_log.address,
@@ -218,7 +218,7 @@ class EnsCommonDecoder(DecoderInterface, CustomizableDateMixin, ABC):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
-            balance=Balance(),
+            amount=ZERO,
             location_label=context.transaction.from_address,
             notes=notes,
             counterparty=self.counterparty,
@@ -244,7 +244,7 @@ class EnsCommonDecoder(DecoderInterface, CustomizableDateMixin, ABC):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
-            balance=Balance(),
+            amount=ZERO,
             location_label=associated_address,
             notes=f'Address for {name_str} changed to {new_address}',
             address=context.tx_log.address,
@@ -291,7 +291,7 @@ class EnsCommonDecoder(DecoderInterface, CustomizableDateMixin, ABC):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
-            balance=Balance(),
+            amount=ZERO,
             location_label=context.transaction.from_address,
             notes=notes,
             counterparty=self.counterparty,

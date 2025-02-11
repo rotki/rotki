@@ -5,7 +5,6 @@ from unittest.mock import patch
 
 import pytest
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_poloniex
@@ -320,7 +319,7 @@ def test_poloniex_deposits_withdrawal_unknown_asset(poloniex: 'Poloniex') -> Non
         event_type=HistoryEventType.WITHDRAWAL,
         timestamp=TimestampMS(1458994442000),
         asset=A_BTC,
-        balance=Balance(FVal('5.0')),
+        amount=FVal('5.0'),
         unique_id='withdrawal_1',
         extra_data={
             'address': '131rdg5Rzn6BFufnnQaHhVa5ZtRU1J2EZR',
@@ -332,7 +331,7 @@ def test_poloniex_deposits_withdrawal_unknown_asset(poloniex: 'Poloniex') -> Non
         event_type=HistoryEventType.WITHDRAWAL,
         timestamp=TimestampMS(1458994442000),
         asset=A_BTC,
-        balance=Balance(FVal('0.5')),
+        amount=FVal('0.5'),
         unique_id='withdrawal_1',
         is_fee=True,
     ), AssetMovement(
@@ -341,7 +340,7 @@ def test_poloniex_deposits_withdrawal_unknown_asset(poloniex: 'Poloniex') -> Non
         event_type=HistoryEventType.WITHDRAWAL,
         timestamp=TimestampMS(1468994442000),
         asset=A_ETH,
-        balance=Balance(FVal('10.0')),
+        amount=FVal('10.0'),
         unique_id='withdrawal_2',
         extra_data={
             'address': '0xB7E033598Cb94EF5A35349316D3A2e4f95f308Da',
@@ -353,7 +352,7 @@ def test_poloniex_deposits_withdrawal_unknown_asset(poloniex: 'Poloniex') -> Non
         event_type=HistoryEventType.WITHDRAWAL,
         timestamp=TimestampMS(1468994442000),
         asset=A_ETH,
-        balance=Balance(FVal('0.1')),
+        amount=FVal('0.1'),
         unique_id='withdrawal_2',
         is_fee=True,
     ), AssetMovement(
@@ -362,7 +361,7 @@ def test_poloniex_deposits_withdrawal_unknown_asset(poloniex: 'Poloniex') -> Non
         event_type=HistoryEventType.DEPOSIT,
         timestamp=TimestampMS(1448994442000),
         asset=A_BTC,
-        balance=Balance(FVal('50.0')),
+        amount=FVal('50.0'),
         unique_id='deposit_1',
         extra_data={
             'address': '131rdg5Rzn6BFufnnQaHhVa5ZtRU1J2EZR',
@@ -374,7 +373,7 @@ def test_poloniex_deposits_withdrawal_unknown_asset(poloniex: 'Poloniex') -> Non
         event_type=HistoryEventType.DEPOSIT,
         timestamp=TimestampMS(1438994442000),
         asset=A_ETH,
-        balance=Balance(FVal('100.0')),
+        amount=FVal('100.0'),
         unique_id='deposit_2',
         extra_data={
             'address': '0xB7E033598Cb94EF5A35349316D3A2e4f95f308Da',
@@ -391,7 +390,7 @@ def test_poloniex_deposits_withdrawal_unknown_asset(poloniex: 'Poloniex') -> Non
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_poloniex_deposits_withdrawal_null_fee(poloniex):
+def test_poloniex_deposits_withdrawal_null_fee(poloniex: 'Poloniex'):
     """
     Test that if a poloniex asset movement query returns null for fee we don't crash.
     Regression test for issue #76
@@ -406,15 +405,15 @@ def test_poloniex_deposits_withdrawal_null_fee(poloniex):
 
     with patch.object(poloniex.session, 'get', side_effect=mock_api_return):
         asset_movements = poloniex.query_online_history_events(
-            start_ts=0,
-            end_ts=1488994442,
+            start_ts=Timestamp(0),
+            end_ts=Timestamp(1488994442),
         )
 
     assert len(asset_movements) == 1
     assert asset_movements[0].event_type == HistoryEventType.WITHDRAWAL
     assert asset_movements[0].timestamp == TimestampMS(1478994442000)
     assert asset_movements[0].asset == Asset('FAIR')
-    assert asset_movements[0].balance.amount == FVal('100.5')
+    assert asset_movements[0].amount == FVal('100.5')
 
     warnings = poloniex.msg_aggregator.consume_warnings()
     assert len(warnings) == 0

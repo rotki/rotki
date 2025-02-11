@@ -2,7 +2,6 @@ import logging
 from collections.abc import Callable, Sequence
 from typing import TYPE_CHECKING, Any, Optional, Union
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import CryptoAsset, EvmToken
 from rotkehlchen.assets.utils import get_or_create_evm_token, get_token
 from rotkehlchen.chain.evm.constants import ETH_SPECIAL_ADDRESS, ZERO_ADDRESS
@@ -233,7 +232,7 @@ class BaseDecoderTools:
             event_type=event_type,
             event_subtype=event_subtype,
             asset=token,
-            balance=Balance(amount=amount),
+            amount=amount,
             location_label=location_label,
             notes=notes,
             address=address,
@@ -248,7 +247,7 @@ class BaseDecoderTools:
             event_type: HistoryEventType,
             event_subtype: HistoryEventSubType,
             asset: 'Asset',
-            balance: Balance,
+            amount: FVal,
             location_label: str | None = None,
             notes: str | None = None,
             counterparty: str | None = None,
@@ -266,7 +265,7 @@ class BaseDecoderTools:
             event_type=event_type,
             event_subtype=event_subtype,
             asset=asset,
-            balance=balance,
+            amount=amount,
             location_label=location_label,
             notes=notes,
             counterparty=counterparty,
@@ -282,7 +281,7 @@ class BaseDecoderTools:
             event_type: HistoryEventType,
             event_subtype: HistoryEventSubType,
             asset: 'Asset',
-            balance: Balance,
+            amount: FVal,
             location_label: str | None = None,
             notes: str | None = None,
             counterparty: str | None = None,
@@ -300,7 +299,7 @@ class BaseDecoderTools:
             event_type=event_type,
             event_subtype=event_subtype,
             asset=asset,
-            balance=balance,
+            amount=amount,
             location_label=location_label,
             notes=notes,
             counterparty=counterparty,
@@ -316,7 +315,7 @@ class BaseDecoderTools:
             event_type: HistoryEventType,
             event_subtype: HistoryEventSubType,
             asset: 'Asset',
-            balance: Balance,
+            amount: FVal,
             location_label: str | None = None,
             notes: str | None = None,
             counterparty: str | None = None,
@@ -332,7 +331,7 @@ class BaseDecoderTools:
             event_type=event_type,
             event_subtype=event_subtype,
             asset=asset,
-            balance=balance,
+            amount=amount,
             location_label=location_label,
             notes=notes,
             counterparty=counterparty,

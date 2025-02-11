@@ -12,7 +12,6 @@ from rotkehlchen.accounting.export.csv import FILENAME_ALL_CSV, CSVExporter
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.pnl import PNL, PnlTotals
 from rotkehlchen.accounting.pot import AccountingPot
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.types import MissingAcquisition
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings, TxAccountingTreatment
@@ -1026,7 +1025,7 @@ def test_swaps_taxability(accountant: Accountant, taxable: bool) -> None:
             location=Location.ETHEREUM,
             location_label=make_evm_address(),
             asset=A_ETH,
-            balance=Balance(amount=ONE, usd_value=ONE),
+            amount=ONE,
             notes='Swap 0.15 ETH in uniswap-v2 from 0x3CAdf2cA458376a6a5feA2EF3612346037D5A787',
             event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
@@ -1039,7 +1038,7 @@ def test_swaps_taxability(accountant: Accountant, taxable: bool) -> None:
             location=Location.ETHEREUM,
             location_label=make_evm_address(),
             asset=A_3CRV,
-            balance=Balance(amount=ONE, usd_value=ONE),
+            amount=ONE,
             notes='Receive 462.967761432322996701 3CRV in uniswap-v2 from 0x3CAdf2cA458376a6a5feA2EF3612346037D5A787',  # noqa: E501
             event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,

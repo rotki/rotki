@@ -1,6 +1,5 @@
 import pytest
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.ethereum.modules.eth2.structures import ValidatorDetails
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.constants.assets import A_ETH
@@ -37,7 +36,7 @@ def test_deposit(database, ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=FVal('0.000788637337054068')),
+            amount=FVal('0.000788637337054068'),
             location_label=user_address,
             notes='Burn 0.000788637337054068 ETH for gas',
             counterparty=CPT_GAS,
@@ -46,7 +45,7 @@ def test_deposit(database, ethereum_inquirer, ethereum_accounts):
             validator_index=validator.validator_index,
             sequence_index=178,
             timestamp=TimestampMS(1674558203000),
-            balance=Balance(amount=FVal('32')),
+            amount=FVal('32'),
             depositor=user_address,
         ),
     ]
@@ -85,7 +84,7 @@ def test_multiple_deposits(database, ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=FVal('0.010956672')),
+            amount=FVal('0.010956672'),
             location_label=user_address,
             notes='Burn 0.010956672 ETH for gas',
             counterparty=CPT_GAS,
@@ -95,21 +94,21 @@ def test_multiple_deposits(database, ethereum_inquirer, ethereum_accounts):
             validator_index=55750,
             sequence_index=62,
             timestamp=TimestampMS(1608594280000),
-            balance=Balance(amount=FVal('32')),
+            amount=FVal('32'),
             depositor=user_address,
         ), EthDepositEvent(
             tx_hash=evmhash,
             validator_index=55751,
             sequence_index=63,
             timestamp=TimestampMS(1608594280000),
-            balance=Balance(amount=FVal('32')),
+            amount=FVal('32'),
             depositor=user_address,
         ), EthDepositEvent(
             tx_hash=evmhash,
             validator_index=55752,
             sequence_index=64,
             timestamp=TimestampMS(1608594280000),
-            balance=Balance(amount=FVal('32')),
+            amount=FVal('32'),
             depositor=user_address,
         ),
     ]
@@ -146,7 +145,7 @@ def test_deposit_with_anonymous_event(database, ethereum_inquirer, ethereum_acco
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=FVal('0.00071529566834925')),
+            amount=FVal('0.00071529566834925'),
             location_label=user_address,
             notes='Burn 0.00071529566834925 ETH for gas',
             counterparty=CPT_GAS,
@@ -155,7 +154,7 @@ def test_deposit_with_anonymous_event(database, ethereum_inquirer, ethereum_acco
             validator_index=validator.validator_index,
             sequence_index=432,
             timestamp=timestamp,
-            balance=Balance(amount=FVal('32')),
+            amount=FVal('32'),
             depositor=proxy_address,
         ),
     ]

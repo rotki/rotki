@@ -52,12 +52,12 @@ class YearnygovDecoder(DecoderInterface):
                 event.event_type == HistoryEventType.RECEIVE and
                 event.event_subtype == HistoryEventSubType.NONE and
                 event.asset == A_CRVP_DAIUSDCTTUSD and
-                event.balance.amount == withdrawn_amount
+                event.amount == withdrawn_amount
             ):
                 event.counterparty = CPT_YGOV
                 event.event_type = HistoryEventType.WITHDRAWAL
                 event.event_subtype = HistoryEventSubType.REMOVE_ASSET
-                event.notes = f'Withdraw {event.balance.amount} YFI reward from ygov.finance'
+                event.notes = f'Withdraw {event.amount} YFI reward from ygov.finance'
                 break
 
     def _decode_reward_token(self, context: 'DecoderContext') -> None:
@@ -72,11 +72,11 @@ class YearnygovDecoder(DecoderInterface):
                 event.event_type == HistoryEventType.RECEIVE and
                 event.event_subtype == HistoryEventSubType.NONE and
                 event.asset == A_YFI and
-                event.balance.amount == withdrawn_amount
+                event.amount == withdrawn_amount
             ):
                 event.counterparty = CPT_YGOV
                 event.event_subtype = HistoryEventSubType.REWARD
-                event.notes = f'Collect reward of {event.balance.amount} YFI from ygov.finance'
+                event.notes = f'Collect reward of {event.amount} YFI from ygov.finance'
                 break
 
     def _decode_stake(self, context: 'DecoderContext') -> None:
@@ -91,12 +91,12 @@ class YearnygovDecoder(DecoderInterface):
                 event.event_type == HistoryEventType.SPEND and
                 event.event_subtype == HistoryEventSubType.NONE and
                 event.asset == A_CRVP_DAIUSDCTTUSD and
-                event.balance.amount == staked_amount
+                event.amount == staked_amount
             ):
                 event.counterparty = CPT_YGOV
                 event.event_type = HistoryEventType.DEPOSIT
                 event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
-                event.notes = f'Deposit {event.balance.amount} yDAI+yUSDC+yUSDT+yTUSD in ygov.finance'  # noqa: E501
+                event.notes = f'Deposit {event.amount} yDAI+yUSDC+yUSDT+yTUSD in ygov.finance'
                 break
 
     def decode_gov_events(self, context: 'DecoderContext') -> 'DecodingOutput':

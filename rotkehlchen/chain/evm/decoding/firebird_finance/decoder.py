@@ -72,25 +72,25 @@ class FirebirdFinanceCommonDecoder(DecoderInterface):
                 event.event_subtype == HistoryEventSubType.NONE and
                 event.location_label == sender and
                 event.asset == from_token and
-                event.balance.amount == out_amount
+                event.amount == out_amount
             ):
                 out_event = event
                 event.event_type = HistoryEventType.TRADE
                 event.event_subtype = HistoryEventSubType.SPEND
-                event.notes = f'Swap {event.balance.amount} {event.asset.resolve_to_asset_with_symbol().symbol} in {FIREBIRD_FINANCE_LABEL}'  # noqa: E501
+                event.notes = f'Swap {event.amount} {event.asset.resolve_to_asset_with_symbol().symbol} in {FIREBIRD_FINANCE_LABEL}'  # noqa: E501
                 event.counterparty = CPT_FIREBIRD_FINANCE
 
             elif (
                 event.event_type == HistoryEventType.RECEIVE and
                 event.event_subtype == HistoryEventSubType.NONE and
                 event.location_label == receiver and
-                event.balance.amount == in_amount and
+                event.amount == in_amount and
                 event.asset == to_token
             ):
                 in_event = event
                 event.event_type = HistoryEventType.TRADE
                 event.event_subtype = HistoryEventSubType.RECEIVE
-                event.notes = f'Receive {event.balance.amount} {event.asset.resolve_to_asset_with_symbol().symbol} as the result of a swap in {FIREBIRD_FINANCE_LABEL}'  # noqa: E501
+                event.notes = f'Receive {event.amount} {event.asset.resolve_to_asset_with_symbol().symbol} as the result of a swap in {FIREBIRD_FINANCE_LABEL}'  # noqa: E501
                 event.counterparty = CPT_FIREBIRD_FINANCE
 
         if in_event is None or out_event is None:

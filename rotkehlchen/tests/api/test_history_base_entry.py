@@ -6,7 +6,6 @@ from unittest.mock import patch
 import pytest
 import requests
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.types import ActionType
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH, A_SUSHI, A_USDT
@@ -92,7 +91,7 @@ def assert_editing_works(
                 assert event == entry
 
     entry.timestamp = TimestampMS(entry.timestamp + 2)
-    entry.balance = Balance(amount=FVal('1500.1'), usd_value=FVal('1499.45'))
+    entry.amount = FVal('1500.1')
     edit_entry('event_type', HistoryEventType.DEPOSIT)
     edit_entry('event_subtype', HistoryEventSubType.DEPOSIT_ASSET)
     edit_entry('extra_data', {'some': 2, 'data': 4})
@@ -317,7 +316,7 @@ def test_event_with_details(rotkehlchen_api_server: 'APIServer') -> None:
         event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_SUSHI,
-        balance=Balance(amount=FVal(100)),
+        amount=FVal(100),
     )
     event2 = EvmEvent(
         tx_hash=transaction.tx_hash,
@@ -327,7 +326,7 @@ def test_event_with_details(rotkehlchen_api_server: 'APIServer') -> None:
         event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_USDT,
-        balance=Balance(amount=FVal(98.2)),
+        amount=FVal(98.2),
         extra_data={
             SUB_SWAPS_DETAILS: [
                 {'amount_in': '100.0', 'amount_out': '0.084', 'from_asset': A_SUSHI.identifier, 'to_asset': A_ETH.identifier},  # noqa: E501
@@ -647,7 +646,7 @@ def test_add_edit_asset_movements(rotkehlchen_api_server: 'APIServer') -> None:
         {
             'entry_type': 'asset movement event',
             'timestamp': 1569924575000,
-            'balance': {'amount': '0.44', 'usd_value': '0'},
+            'amount': '0.44',
             'event_type': 'deposit',
             'location': 'bitfinex',
             'unique_id': 'BITFINEX-543',
@@ -655,7 +654,7 @@ def test_add_edit_asset_movements(rotkehlchen_api_server: 'APIServer') -> None:
         }, {
             'entry_type': 'asset movement event',
             'timestamp': 1669924575000,
-            'balance': {'amount': '0.0569', 'usd_value': '0'},
+            'amount': '0.0569',
             'event_type': 'withdrawal',
             'fee': '0.000004',
             'location': 'bitfinex',
@@ -721,10 +720,7 @@ def test_add_edit_asset_movements(rotkehlchen_api_server: 'APIServer') -> None:
             if idx == 2:  # the fee event
                 expected_event = {
                     'asset': 'ETH',
-                    'balance': {
-                        'amount': '0.000004',
-                        'usd_value': '0',
-                    },
+                    'amount': '0.000004',
                     'entry_type': 'asset movement event',
                     'event_type': 'withdrawal',
                     'identifier': 3,

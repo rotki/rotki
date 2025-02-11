@@ -5,7 +5,6 @@ from collections import defaultdict
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.converters import asset_from_cryptocom
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_USD
@@ -166,7 +165,7 @@ class CryptocomImporter(BaseExchangeImporter):
                 event_type=movement_type,
                 timestamp=ts_sec_to_ms(timestamp),
                 asset=asset,
-                balance=Balance(amount),
+                amount=amount,
             )])
         elif row_type in {
             'airdrop_to_exchange_transfer',
@@ -193,7 +192,7 @@ class CryptocomImporter(BaseExchangeImporter):
                 location=Location.CRYPTOCOM,
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.NONE,
-                balance=Balance(amount=amount),
+                amount=amount,
                 asset=asset,
                 notes=notes,
             )
@@ -208,7 +207,7 @@ class CryptocomImporter(BaseExchangeImporter):
                 location=Location.CRYPTOCOM,
                 event_type=HistoryEventType.SPEND,
                 event_subtype=HistoryEventSubType.NONE,
-                balance=Balance(amount=amount),
+                amount=amount,
                 asset=asset,
                 notes=notes,
             )
@@ -221,7 +220,7 @@ class CryptocomImporter(BaseExchangeImporter):
                 event_type=HistoryEventType.DEPOSIT,
                 timestamp=ts_sec_to_ms(timestamp),
                 asset=asset,
-                balance=Balance(amount),
+                amount=amount,
             )])
         elif row_type == 'invest_withdrawal':
             asset = asset_from_cryptocom(csv_row['Currency'])
@@ -231,7 +230,7 @@ class CryptocomImporter(BaseExchangeImporter):
                 event_type=HistoryEventType.WITHDRAWAL,
                 timestamp=ts_sec_to_ms(timestamp),
                 asset=asset,
-                balance=Balance(amount),
+                amount=amount,
             )])
         elif row_type == 'crypto_transfer':
             asset = asset_from_cryptocom(csv_row['Currency'])
@@ -249,7 +248,7 @@ class CryptocomImporter(BaseExchangeImporter):
                 location=Location.CRYPTOCOM,
                 event_type=event_type,
                 event_subtype=HistoryEventSubType.NONE,
-                balance=Balance(amount=amount),
+                amount=amount,
                 asset=asset,
                 notes=notes,
             )
@@ -522,7 +521,7 @@ class CryptocomImporter(BaseExchangeImporter):
                             location=Location.CRYPTOCOM,
                             event_type=HistoryEventType.RECEIVE,
                             event_subtype=HistoryEventSubType.NONE,
-                            balance=Balance(amount=profit),
+                            amount=profit,
                             asset=asset_object,
                             notes=f'Staking profit for {asset}',
                         )

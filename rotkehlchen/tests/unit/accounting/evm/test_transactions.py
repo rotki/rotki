@@ -4,7 +4,6 @@ import pytest
 
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.pnl import PNL, PnlTotals
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.types import ActionType
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.constants import ONE, ZERO
@@ -35,7 +34,7 @@ def test_receiving_value_from_tx(accountant, google_service):
             location=Location.ETHEREUM,
             location_label=make_evm_address(),
             asset=A_ETH,
-            balance=Balance(amount=FVal('1.5')),
+            amount=FVal('1.5'),
             notes=f'Received 1.5 ETH from {addr2}',
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.NONE,
@@ -70,7 +69,7 @@ def test_gas_fees_after_year(accountant, google_service):
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.AIRDROP,  # not counting as income by default
             asset=A_ETH,
-            balance=Balance(ONE),
+            amount=ONE,
         ), EvmEvent(
             tx_hash=tx_hash,
             sequence_index=0,
@@ -78,7 +77,7 @@ def test_gas_fees_after_year(accountant, google_service):
             location=Location.ETHEREUM,
             location_label=make_evm_address(),
             asset=A_ETH,
-            balance=Balance(amount=FVal('0.01')),
+            amount=FVal('0.01'),
             notes='Burn 0.01 ETH for gas',
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -118,7 +117,7 @@ def test_ignoring_transaction_from_accounting(accountant, google_service, databa
             location=Location.OPTIMISM,
             location_label=make_evm_address(),
             asset=A_ETH,
-            balance=Balance(amount=FVal('1.5')),
+            amount=FVal('1.5'),
             notes=f'Received 1.5 ETH from {addr2} in Optimism',
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.NONE,
@@ -131,7 +130,7 @@ def test_ignoring_transaction_from_accounting(accountant, google_service, databa
             location=Location.ETHEREUM,
             location_label=make_evm_address(),
             asset=A_ETH,
-            balance=Balance(amount=FVal('1.5')),
+            amount=FVal('1.5'),
             notes=f'Received 1.5 ETH from {addr2} in Ethereum',
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.NONE,

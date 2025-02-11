@@ -5,7 +5,6 @@ from unittest.mock import _patch, patch
 import pytest
 import requests
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.api.server import APIServer
 from rotkehlchen.chain.ethereum.modules.liquity.constants import CPT_LIQUITY
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -312,7 +311,7 @@ def test_staking_stats(rotkehlchen_api_server: APIServer, ethereum_accounts: lis
             event_type=HistoryEventType.STAKING,
             event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
             asset=A_LUSD,
-            balance=Balance(FVal('1974')),
+            amount=FVal('1974'),
             counterparty=CPT_LIQUITY,
             location_label=ethereum_accounts[0],
         ), EvmEvent(  # deposit 2 for address 0
@@ -323,7 +322,7 @@ def test_staking_stats(rotkehlchen_api_server: APIServer, ethereum_accounts: lis
             event_type=HistoryEventType.STAKING,
             event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
             asset=A_LUSD,
-            balance=Balance(FVal('2000')),
+            amount=FVal('2000'),
             counterparty=CPT_LIQUITY,
             location_label=ethereum_accounts[0],
         ), EvmEvent(  # deposit 1 for address 1
@@ -334,7 +333,7 @@ def test_staking_stats(rotkehlchen_api_server: APIServer, ethereum_accounts: lis
             event_type=HistoryEventType.STAKING,
             event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
             asset=A_LUSD,
-            balance=Balance(FVal('1000')),
+            amount=FVal('1000'),
             counterparty=CPT_LIQUITY,
             location_label=ethereum_accounts[1],
         ), EvmEvent(  # address 0 stability pool gains
@@ -345,7 +344,7 @@ def test_staking_stats(rotkehlchen_api_server: APIServer, ethereum_accounts: lis
             event_type=HistoryEventType.STAKING,
             event_subtype=HistoryEventSubType.REWARD,
             asset=A_LQTY,
-            balance=Balance(FVal(44)),
+            amount=FVal(44),
             counterparty=CPT_LIQUITY,
             location_label=ethereum_accounts[0],
         ), EvmEvent(  # address 1 stability pool gains
@@ -356,7 +355,7 @@ def test_staking_stats(rotkehlchen_api_server: APIServer, ethereum_accounts: lis
             event_type=HistoryEventType.STAKING,
             event_subtype=HistoryEventSubType.REWARD,
             asset=A_LQTY,
-            balance=Balance(FVal(4240.34942308358)),
+            amount=FVal(4240.34942308358),
             counterparty=CPT_LIQUITY,
             location_label=ethereum_accounts[1],
         ), EvmEvent(  # stake lqty and get reward
@@ -367,7 +366,7 @@ def test_staking_stats(rotkehlchen_api_server: APIServer, ethereum_accounts: lis
             event_type=HistoryEventType.STAKING,
             event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
             asset=A_LQTY,
-            balance=Balance(FVal(10)),
+            amount=FVal(10),
             counterparty=CPT_LIQUITY,
             location_label=ethereum_accounts[1],
         ), EvmEvent(
@@ -378,7 +377,7 @@ def test_staking_stats(rotkehlchen_api_server: APIServer, ethereum_accounts: lis
             event_type=HistoryEventType.STAKING,
             event_subtype=HistoryEventSubType.REWARD,
             asset=A_LUSD,
-            balance=Balance(FVal(65556)),
+            amount=FVal(65556),
             counterparty=CPT_LIQUITY,
             location_label=ethereum_accounts[1],
         ), EvmEvent(  # lqty reward for address 0
@@ -389,7 +388,7 @@ def test_staking_stats(rotkehlchen_api_server: APIServer, ethereum_accounts: lis
             event_type=HistoryEventType.STAKING,
             event_subtype=HistoryEventSubType.REWARD,
             asset=A_LQTY,
-            balance=Balance(FVal(400)),
+            amount=FVal(400),
             counterparty=CPT_LIQUITY,
             location_label=ethereum_accounts[0],
         ),

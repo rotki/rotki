@@ -4,7 +4,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Final, Literal, overload
 from unittest.mock import _patch, patch
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.assets.converters import asset_from_kraken
 from rotkehlchen.constants import ONE
@@ -500,7 +499,7 @@ def assert_binance_asset_movements_result(
             location_label=location_label,
             event_type=HistoryEventType.DEPOSIT,
             asset=A_ETH,
-            balance=Balance(FVal('0.04670582')),
+            amount=FVal('0.04670582'),
             extra_data={
                 'address': '0x6915f16F8791d0A1CC2BF47c13a6B2A92000504B',
                 'transaction_id': '0xef33b22bdb2b28b1f75ccd201a4a4m6e7g83jy5fc5d5a9d1340961598cfcb0a1',  # noqa: E501
@@ -512,7 +511,7 @@ def assert_binance_asset_movements_result(
             location_label=location_label,
             event_type=HistoryEventType.DEPOSIT,
             asset=A_XMR,
-            balance=Balance(FVal('1000')),
+            amount=FVal('1000'),
             extra_data={
                 'address': '463tWEBn5XZJSxLU34r6g7h8jtxuNcDbjLSjkn3XAXHCbLrTTErJrBWYgHJQyrCwkNgYvV38',  # noqa: E501
                 'transaction_id': 'c3c6219639c8ae3f9cf010cdc24fw7f7yt8j1e063f9b4bd1a05cb44c4b6e2509',  # noqa: E501
@@ -524,7 +523,7 @@ def assert_binance_asset_movements_result(
             location_label=location_label,
             event_type=HistoryEventType.WITHDRAWAL,
             asset=A_ETH,
-            balance=Balance(FVal('0.99')),
+            amount=FVal('0.99'),
             extra_data={
                 'address': '0x6915f16F8791d0A1CC2BF47c13a6B2A92000504B',
                 'transaction_id': '0xdf33b22bdb2b28b1f75ccd201a4a4m6e7g83jy5fc5d5a9d1340961598cfcb0a1',  # noqa: E501
@@ -536,7 +535,7 @@ def assert_binance_asset_movements_result(
             location_label=location_label,
             event_type=HistoryEventType.WITHDRAWAL,
             asset=A_ETH,
-            balance=Balance(FVal('0.01')),
+            amount=FVal('0.01'),
             is_fee=True,
         ), AssetMovement(
             event_identifier='x',
@@ -545,7 +544,7 @@ def assert_binance_asset_movements_result(
             location_label=location_label,
             event_type=HistoryEventType.WITHDRAWAL,
             asset=A_XMR,
-            balance=Balance(FVal('999.9999')),
+            amount=FVal('999.9999'),
             extra_data={
                 'address': '463tWEBn5XZJSxLU34r6g7h8jtxuNcDbjLSjkn3XAXHCbLrTTErJrBWYgHJQyrCwkNgYvyV3z8zctJLPCZy24jvb3NiTcTJ',  # noqa: E501
                 'transaction_id': 'b3c6219639c8ae3f9cf010cdc24fw7f7yt8j1e063f9b4bd1a05cb44c4b6e2509',  # noqa: E501
@@ -557,7 +556,7 @@ def assert_binance_asset_movements_result(
             location_label=location_label,
             event_type=HistoryEventType.WITHDRAWAL,
             asset=A_XMR,
-            balance=Balance(FVal('0.0001')),
+            amount=FVal('0.0001'),
             is_fee=True,
         ),
     ]
@@ -572,7 +571,7 @@ def assert_binance_asset_movements_result(
         location_label=location_label,
         event_type=HistoryEventType.DEPOSIT,
         asset=A_EUR,
-        balance=Balance(FVal('10.00')),
+        amount=FVal('10.00'),
         extra_data={'transaction_id': '7d76d611-0568-4f43-afb6-24cac7767365'},
     ), AssetMovement(
         event_identifier='x',
@@ -581,7 +580,7 @@ def assert_binance_asset_movements_result(
         location_label=location_label,
         event_type=HistoryEventType.WITHDRAWAL,
         asset=A_EUR,
-        balance=Balance(FVal('10.00')),
+        amount=FVal('10.00'),
         extra_data={'transaction_id': '8e76d611-0568-4f43-afb6-24cac7767365'},
     ), AssetMovement(
         event_identifier='x',
@@ -590,7 +589,7 @@ def assert_binance_asset_movements_result(
         location_label=location_label,
         event_type=HistoryEventType.WITHDRAWAL,
         asset=A_EUR,
-        balance=Balance(FVal('0.02')),
+        amount=FVal('0.02'),
         is_fee=True,
     )]
 

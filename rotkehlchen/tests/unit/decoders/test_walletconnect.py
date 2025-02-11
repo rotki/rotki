@@ -2,7 +2,6 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
@@ -43,7 +42,7 @@ def test_airdrop_claim(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(FVal(gas_amount)),
+            amount=FVal(gas_amount),
             location_label=user_address,
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
@@ -55,7 +54,7 @@ def test_airdrop_claim(
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.AIRDROP,
             asset=Asset(WCT_TOKEN_ID),
-            balance=Balance(FVal(token_amount)),
+            amount=FVal(token_amount),
             location_label=user_address,
             notes=f'Claim {token_amount} WCT from walletconnect airdrop',
             counterparty=CPT_WALLETCONNECT,
@@ -83,7 +82,7 @@ def test_stake(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(FVal(gas_amount)),
+            amount=FVal(gas_amount),
             location_label=user_address,
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
@@ -95,7 +94,7 @@ def test_stake(
             event_type=HistoryEventType.STAKING,
             event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
             asset=Asset(WCT_TOKEN_ID),
-            balance=Balance(FVal(token_amount)),
+            amount=FVal(token_amount),
             location_label=user_address,
             notes=f'Stake {token_amount} WCT until {decoder.decoders["Walletconnect"].timestamp_to_date(lock_timestamp)}',  # type: ignore  # noqa: E501
             counterparty=CPT_WALLETCONNECT,
@@ -123,7 +122,7 @@ def test_unstake(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(FVal(gas_amount)),
+            amount=FVal(gas_amount),
             location_label=user_address,
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
@@ -135,7 +134,7 @@ def test_unstake(
             event_type=HistoryEventType.STAKING,
             event_subtype=HistoryEventSubType.REMOVE_ASSET,
             asset=Asset(WCT_TOKEN_ID),
-            balance=Balance(FVal(token_amount)),
+            amount=FVal(token_amount),
             location_label=user_address,
             notes=f'Unstake {token_amount} WCT',
             counterparty=CPT_WALLETCONNECT,
@@ -169,7 +168,7 @@ def test_increase_lock(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(FVal(gas_amount)),
+            amount=FVal(gas_amount),
             location_label=user_address,
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
@@ -181,7 +180,7 @@ def test_increase_lock(
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
             asset=Asset(WCT_TOKEN_ID),
-            balance=Balance(),
+            amount=FVal(0),
             location_label=user_address,
             notes=f'Increase WCT staking expiration until {decoder.decoders["Walletconnect"].timestamp_to_date(unlock_time)}',  # type: ignore  # noqa: E501
             counterparty=CPT_WALLETCONNECT,
@@ -210,7 +209,7 @@ def test_update_lock(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(FVal(gas_amount)),
+            amount=FVal(gas_amount),
             location_label=user_address,
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
@@ -222,7 +221,7 @@ def test_update_lock(
             event_type=HistoryEventType.STAKING,
             event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
             asset=Asset(WCT_TOKEN_ID),
-            balance=Balance(FVal(token_amount)),
+            amount=FVal(token_amount),
             location_label=user_address,
             notes=f'Stake {token_amount} WCT until {decoder.decoders["Walletconnect"].timestamp_to_date(unlock_time)}',  # type: ignore  # noqa: E501
             counterparty=CPT_WALLETCONNECT,

@@ -79,7 +79,7 @@ class BalancerCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMix
         paired_events_data, from_event_type, from_event_subtype, to_event_type, to_event_subtype, to_notes = None, None, None, None, None, ''  # noqa: E501
         for event in context.decoded_events:
             if (
-                 event.balance.amount != amount or
+                 event.amount != amount or
                  event.event_subtype != HistoryEventSubType.NONE or
                  (evm_asset := event.asset.resolve_to_evm_token()).evm_address not in self.pools
             ):

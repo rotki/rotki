@@ -5,7 +5,6 @@ from more_itertools import peekable
 
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.pnl import PNL, PnlTotals
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.types import MissingPrice
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.chain.ethereum.modules.eth2.structures import ValidatorDailyStats
@@ -435,7 +434,7 @@ def test_acquisition_price_not_found(accountant, google_service):
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_COMP,
-            balance=Balance(amount=ONE),
+            amount=ONE,
         ), Trade(
             timestamp=Timestamp(1635314397),  # cryptocompare hourly COMP/EUR price: 261.39
             location=Location.POLONIEX,
@@ -515,7 +514,7 @@ def test_non_history_event_in_history_iterator(accountant):
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.NONE,
         asset=A_WBTC,
-        balance=Balance(amount=ONE),
+        amount=ONE,
     ), EvmEvent(
         tx_hash=tx_hash,
         sequence_index=1,
@@ -524,7 +523,7 @@ def test_non_history_event_in_history_iterator(accountant):
         event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_WBTC,
-        balance=Balance(amount=FVal(swap_amount_str)),
+        amount=FVal(swap_amount_str),
         location_label=user_address,
         notes=f'Swap {swap_amount_str} WBTC in cowswap',
         counterparty=CPT_COWSWAP,
@@ -537,7 +536,7 @@ def test_non_history_event_in_history_iterator(accountant):
         event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_USDC,
-        balance=Balance(amount=FVal(receive_amount_str)),
+        amount=FVal(receive_amount_str),
         location_label=user_address,
         notes=f'Receive {receive_amount_str} USDC as the result of a swap in cowswap',
         counterparty=CPT_COWSWAP,
@@ -574,7 +573,7 @@ def test_mixing_events(accountant: 'Accountant'):
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
             asset=Asset('eip155:1/erc20:0xC25a3A3b969415c80451098fa907EC722572917F'),
-            balance=Balance(amount=FVal('9.423568821947938716')),
+            amount=FVal('9.423568821947938716'),
             location_label=(evm_address := make_evm_address()),
             notes='Receive 9.423568821947938716 crvPlain3andSUSD after depositing in curve pool 0xA5407eAE9Ba41422680e2e00537571bcC53efBfD',  # noqa: E501
             counterparty=CPT_CURVE,
@@ -587,7 +586,7 @@ def test_mixing_events(accountant: 'Accountant'):
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
             asset=A_DAI,
-            balance=Balance(amount=FVal(10)),
+            amount=FVal(10),
             location_label=evm_address,
             notes='Deposit 10 DAI in curve pool 0xA5407eAE9Ba41422680e2e00537571bcC53efBfD',
             counterparty=CPT_CURVE,
@@ -596,7 +595,7 @@ def test_mixing_events(accountant: 'Accountant'):
             location=Location.BYBIT,
             event_type=HistoryEventType.DEPOSIT,
             asset=A_DAI,
-            balance=Balance(FVal(10)),
+            amount=FVal(10),
             unique_id='very_unique_id',
             is_fee=False,
         ),

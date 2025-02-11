@@ -1,7 +1,6 @@
 import logging
 from typing import TYPE_CHECKING, Any
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS
 from rotkehlchen.chain.evm.decoding.drips.v1.constants import (
@@ -21,6 +20,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
 )
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.constants.assets import A_DAI, A_ETH
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress, Timestamp
@@ -68,7 +68,7 @@ class Dripsv1CommonDecoder(DecoderInterface, CustomizableDateMixin):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_DAI,
-            balance=Balance(),
+            amount=ZERO,
             location_label=user,
             notes=f'Split {amount} DAI from Drips v1 and forward to {bytes_to_address(context.tx_log.topics[2])}',  # noqa: E501
             counterparty=CPT_DRIPS,
@@ -128,7 +128,7 @@ class Dripsv1CommonDecoder(DecoderInterface, CustomizableDateMixin):
                 event_type=HistoryEventType.INFORMATIONAL,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_ETH,
-                balance=Balance(),
+                amount=ZERO,
                 location_label=user,
                 notes=f'Setup Drips v1 rule to drip {entry[1] / 10000:.2f}% of {initiator}incoming drip funds to {entry[0]}',  # noqa: E501
                 counterparty=CPT_DRIPS,
@@ -177,7 +177,7 @@ class Dripsv1CommonDecoder(DecoderInterface, CustomizableDateMixin):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
-            balance=Balance(),
+            amount=ZERO,
             location_label=user,
             notes=f'Drip {amount} DAI per second to {receiver} until {self.timestamp_to_date(end_ts)}',  # noqa: E501
             counterparty=CPT_DRIPS,

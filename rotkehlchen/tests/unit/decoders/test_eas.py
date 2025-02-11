@@ -1,6 +1,5 @@
 import pytest
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.eas.constants import CPT_EAS
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -30,7 +29,7 @@ def test_attest_optimism(optimism_inquirer, optimism_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=FVal(gas_amount_str)),
+            amount=FVal(gas_amount_str),
             location_label=user_address,
             notes=f'Burn {gas_amount_str} ETH for gas',
             counterparty=CPT_GAS,
@@ -42,7 +41,7 @@ def test_attest_optimism(optimism_inquirer, optimism_accounts):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.ATTEST,
             asset=A_ETH,
-            balance=Balance(),
+            amount=FVal(0),
             location_label=user_address,
             notes='Attest to https://optimism.easscan.org/attestation/view/0x3045bf8797f8e528219d48b23d28b661be5be17d13c28f61f4f6cced1b349c65',
             counterparty=CPT_EAS,

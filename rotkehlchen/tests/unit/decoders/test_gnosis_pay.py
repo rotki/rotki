@@ -2,7 +2,6 @@ from unittest.mock import patch
 
 import pytest
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.gnosis.modules.gnosis_pay.constants import (
     CPT_GNOSIS_PAY,
     GNOSIS_PAY_CASHBACK_ADDRESS,
@@ -42,7 +41,7 @@ def test_gnosis_pay_cashback(gnosis_inquirer, gnosis_accounts):
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.CASHBACK,
             asset=Asset('eip155:100/erc20:0x9C58BAcC331c9aa871AFD802DB6379a98e80CEdb'),
-            balance=Balance(amount=FVal(amount)),
+            amount=FVal(amount),
             location_label=gnosis_accounts[0],
             notes=f'Receive cashback of {amount} GNO from Gnosis Pay',
             tx_hash=tx_hash,
@@ -71,7 +70,7 @@ def test_gnosis_pay_referral(gnosis_inquirer, gnosis_accounts):
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.REWARD,
             asset=Asset('eip155:100/erc20:0x420CA0f9B9b604cE0fd9C18EF134C705e5Fa3430'),
-            balance=Balance(amount=FVal(amount)),
+            amount=FVal(amount),
             location_label=gnosis_accounts[0],
             notes=f'Receive referral reward of {amount} EURe from Gnosis Pay',
             tx_hash=tx_hash,
@@ -102,7 +101,7 @@ def test_gnosis_pay_spend(gnosis_inquirer, gnosis_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.PAYMENT,
             asset=Asset('eip155:100/erc20:0x420CA0f9B9b604cE0fd9C18EF134C705e5Fa3430'),
-            balance=Balance(amount=FVal(amount)),
+            amount=FVal(amount),
             location_label=gnosis_accounts[0],
             notes=f'Spend {amount} EURe via Gnosis Pay',
             tx_hash=tx_hash,
@@ -202,7 +201,7 @@ def test_gnosis_pay_refund(gnosis_inquirer, gnosis_accounts):
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.REFUND,
             asset=Asset('eip155:100/erc20:0x420CA0f9B9b604cE0fd9C18EF134C705e5Fa3430'),
-            balance=Balance(amount=FVal(amount)),
+            amount=FVal(amount),
             location_label=gnosis_accounts[0],
             notes=f'Receive refund of {amount} EURe from Gnosis Pay',
             tx_hash=tx_hash,

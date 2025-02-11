@@ -31,7 +31,7 @@ class Aavev2Accountant(ModuleAccountantInterface):
             event: 'EvmEvent',
             other_events: Iterator['EvmEvent'],  # pylint: disable=unused-argument
     ) -> int:
-        self.assets_borrowed[string_to_evm_address(event.location_label), event.asset] += event.balance.amount  # type: ignore[arg-type]  # location_label can't be None here  # noqa: E501
+        self.assets_borrowed[string_to_evm_address(event.location_label), event.asset] += event.amount  # type: ignore[arg-type]  # location_label can't be None here  # noqa: E501
         return 1
 
     def _process_payback(
@@ -45,7 +45,7 @@ class Aavev2Accountant(ModuleAccountantInterface):
         a loss event is added to the accounting pot.
         """
         key = (string_to_evm_address(event.location_label), event.asset)  # type: ignore[arg-type]  # location_label can't be None here
-        self.assets_borrowed[key] -= event.balance.amount
+        self.assets_borrowed[key] -= event.amount
         if self.assets_borrowed[key] < ZERO:
             loss = -1 * self.assets_borrowed[key]
             resolved_asset = event.asset.resolve_to_asset_with_symbol()
@@ -69,7 +69,7 @@ class Aavev2Accountant(ModuleAccountantInterface):
             event: 'EvmEvent',
             other_events: Iterator['EvmEvent'],  # pylint: disable=unused-argument
     ) -> int:
-        self.assets_supplied[string_to_evm_address(event.location_label), event.asset] += event.balance.amount  # type: ignore[arg-type]  # location_label can't be None here  # noqa: E501
+        self.assets_supplied[string_to_evm_address(event.location_label), event.asset] += event.amount  # type: ignore[arg-type]  # location_label can't be None here  # noqa: E501
         return 1
 
     def _process_withdraw(
@@ -83,7 +83,7 @@ class Aavev2Accountant(ModuleAccountantInterface):
         a gain event is added to the accounting pot.
         """
         key = (string_to_evm_address(event.location_label), event.asset)  # type: ignore[arg-type]  # location_label can't be None here
-        self.assets_supplied[key] -= event.balance.amount
+        self.assets_supplied[key] -= event.amount
         if self.assets_supplied[key] < ZERO:
             gain = -1 * self.assets_supplied[key]
             resolved_asset = event.asset.resolve_to_asset_with_symbol()

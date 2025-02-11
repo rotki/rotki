@@ -2,7 +2,6 @@ import logging
 from abc import ABC
 from typing import TYPE_CHECKING, Any
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import CryptoAsset, EvmToken
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
@@ -73,7 +72,7 @@ class WethDecoderBase(DecoderInterface, ABC):
             if (
                 event.event_type == HistoryEventType.SPEND and
                 event.address == self.wrapped_token.evm_address and
-                event.balance.amount == deposited_amount and
+                event.amount == deposited_amount and
                 event.asset == self.base_asset
             ):
                 event.counterparty = self.counterparty
@@ -91,7 +90,7 @@ class WethDecoderBase(DecoderInterface, ABC):
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
             asset=self.wrapped_token,
-            balance=Balance(amount=deposited_amount),
+            amount=deposited_amount,
             location_label=depositor,
             counterparty=self.counterparty,
             notes=f'Receive {deposited_amount} {self.wrapped_token.symbol}',
@@ -117,7 +116,7 @@ class WethDecoderBase(DecoderInterface, ABC):
             if (
                 event.event_type == HistoryEventType.RECEIVE and
                 event.address == self.wrapped_token.evm_address and
-                event.balance.amount == withdrawn_amount and
+                event.amount == withdrawn_amount and
                 event.asset == self.base_asset
             ):
                 in_event = event
@@ -133,7 +132,7 @@ class WethDecoderBase(DecoderInterface, ABC):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.RETURN_WRAPPED,
             asset=self.wrapped_token,
-            balance=Balance(amount=withdrawn_amount),
+            amount=withdrawn_amount,
             location_label=withdrawer,
             counterparty=self.counterparty,
             notes=f'Unwrap {withdrawn_amount} {self.wrapped_token.symbol}',

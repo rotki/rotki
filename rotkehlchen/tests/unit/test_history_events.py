@@ -3,14 +3,12 @@ from typing import TYPE_CHECKING
 import pytest
 
 from rotkehlchen.accounting.constants import EVENT_CATEGORY_MAPPINGS
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.types import EventAccountingRuleStatus
 from rotkehlchen.chain.evm.decoding.eas.constants import CPT_EAS
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.db.evmtx import DBEvmTx
-from rotkehlchen.db.filtering import EvmEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import (
@@ -42,7 +40,7 @@ def test_serialize_with_invalid_type_subtype():
         event_type=event_type,
         event_subtype=HistoryEventSubType.NONE,
         asset=A_ETH,
-        balance=Balance(amount=FVal(1)),
+        amount=FVal(1),
     )
     event.event_subtype = event_subtype  # do here cause ctor will raise for invalid subtype
     assert event.serialize_for_api(
@@ -54,7 +52,7 @@ def test_serialize_with_invalid_type_subtype():
     ) == {
         'entry': {
             'asset': 'ETH',
-            'balance': {'amount': '1', 'usd_value': '0'},
+            'amount': '1',
             'entry_type': 'history event',
             'event_identifier': '1',
             'event_subtype': 'spend',
@@ -90,7 +88,7 @@ def test_informational_events(database: 'DBHandler', base_accounts: list[Checksu
                 event_type=HistoryEventType.INFORMATIONAL,
                 event_subtype=HistoryEventSubType.APPROVE,
                 asset=A_ETH,
-                balance=Balance(amount=ONE),
+                amount=ONE,
                 location_label=base_accounts[0],
                 notes='HOP-LP-ETH spending approval of by 0x0ce6c85cF43553DE10FC56cecA0aef6Ff0DD444d',  # noqa: E501
                 address=string_to_evm_address('0x0ce6c85cF43553DE10FC56cecA0aef6Ff0DD444d'),
@@ -102,14 +100,10 @@ def test_informational_events(database: 'DBHandler', base_accounts: list[Checksu
                 event_type=HistoryEventType.INFORMATIONAL,
                 event_subtype=HistoryEventSubType.ATTEST,
                 asset=A_ETH,
-                balance=Balance(amount=ONE),
+                amount=ONE,
                 location_label=base_accounts[0],
                 notes='Attest to https://optimism.easscan.org/attestation/view/0x3045bf8797f8e528219d48b23d28b661be5be17d13c28f61f4f6cced1b349c65',
                 counterparty=CPT_EAS,
                 address=string_to_evm_address('0x4200000000000000000000000000000000000021'),
             ),
         ])
-
-    events_filter = EvmEventFilterQuery.make()
-    entries = dbevents.get_base_entries_missing_prices(events_filter)
-    assert len(entries) == 0

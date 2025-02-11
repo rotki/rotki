@@ -398,7 +398,7 @@ def test_kraken_query_deposit_withdrawals_unknown_asset(kraken):
     assert movements[0].location == Location.KRAKEN
     assert movements[0].location_label == kraken.name
     assert movements[0].asset == A_ETH
-    assert movements[0].balance.amount == ONE
+    assert movements[0].amount == ONE
     assert movements[0].event_type == HistoryEventType.WITHDRAWAL
     assert movements[0].event_subtype == HistoryEventSubType.REMOVE_ASSET
     assert movements[1].event_identifier == movements[0].event_identifier
@@ -407,11 +407,11 @@ def test_kraken_query_deposit_withdrawals_unknown_asset(kraken):
     assert movements[1].location == Location.KRAKEN
     assert movements[1].location_label == kraken.name
     assert movements[1].asset == A_ETH
-    assert movements[1].balance.amount == FVal('0.0035')
+    assert movements[1].amount == FVal('0.0035')
     assert movements[1].event_type == HistoryEventType.WITHDRAWAL
     assert movements[1].event_subtype == HistoryEventSubType.FEE
     assert movements[2].asset == A_EUR
-    assert movements[2].balance.amount == FVal('4000000')
+    assert movements[2].amount == FVal('4000000')
     assert movements[2].event_type == HistoryEventType.DEPOSIT
     assert movements[3].event_subtype == HistoryEventSubType.FEE
     errors = kraken.msg_aggregator.consume_errors()
@@ -909,17 +909,14 @@ def test_kraken_staking(rotkehlchen_api_server_with_exchanges, start_with_valid_
     assert events[0]['asset'] == 'XTZ'
     assert events[1]['asset'] == 'ETH2'
     assert events[2]['asset'] == 'ETH'
-    assert events[0]['usd_value'] == '0.000046300000'
-    assert events[1]['usd_value'] == '0.219353533620'
-    assert events[2]['usd_value'] == '242.570400000000'
     if start_with_valid_premium:
         assert result['entries_limit'] == -1
     else:
         assert result['entries_limit'] == FREE_HISTORY_EVENTS_LIMIT
     assert result['entries_total'] == 4
-    assert result['received'] == [
-        {'asset': 'ETH2', 'amount': '0.000053862', 'usd_value': '0.21935353362'},
-        {'asset': 'XTZ', 'amount': '0.00001', 'usd_value': '0.0000463'},
+    assert result['received'] == [  # TODO: @yabirgb adjust usd value
+        {'asset': 'ETH2', 'amount': '0.000053862', 'usd_value': '0'},
+        {'asset': 'XTZ', 'amount': '0.00001', 'usd_value': '0'},
     ]
 
     # test that the correct number of entries is returned with pagination
@@ -1103,7 +1100,7 @@ def test_kraken_informational_fees(rotkehlchen_api_server_with_exchanges: 'APISe
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_EUR,
-            balance=Balance(amount=ONE),
+            amount=ONE,
             location_label='mockkraken',
             notes='margin',
         ),
@@ -1137,7 +1134,7 @@ def test_kraken_event_serialization_with_custom_asset(database):
             event_type=event_type,
             event_subtype=event_subtype,
             asset=custom_asset,
-            balance=Balance(amount=FVal(1)),
+            amount=FVal(1),
             location_label='my kraken',
         )
         assert event.serialize()['notes'] == expected_notes

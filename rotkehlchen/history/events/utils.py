@@ -18,7 +18,7 @@ def history_event_to_staking_for_api(event: HistoryBaseEntry) -> dict[str, Any]:
         'asset': event.asset.identifier,
         'timestamp': ts_ms_to_sec(event.timestamp),
         'location': str(event.location),
-        'balance': abs(event.balance).serialize(),
+        'amount': abs(event.amount),
     }
     if not (
             event.location == Location.BINANCE and
@@ -26,5 +26,4 @@ def history_event_to_staking_for_api(event: HistoryBaseEntry) -> dict[str, Any]:
     ):
         data['event_type'] = event.event_subtype.serialize()
 
-    balance = abs(event.balance).serialize()
-    return {**data, **balance}
+    return data

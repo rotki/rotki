@@ -257,7 +257,7 @@ def test_events_compound(rotkehlchen_api_server: 'APIServer') -> None:
             '0xF59D4937BF1305856C3a267bB07791507a3377Ee': {
                 'eip155:1/erc20:0xc00e94Cb662C3520282E6f5717214004A7f26888': {
                     'amount': '0.003613066320816938',
-                    'usd_value': '0.0010221689306641185',
+                    'usd_value': '0.0039537892977049775',
                 },
             },
         },

@@ -268,7 +268,7 @@ def test_deposit_withdrawals(bybit_exchange: Bybit) -> None:
             location_label=bybit_exchange.name,
             event_type=HistoryEventType.DEPOSIT,
             asset=A_USDC,
-            balance=Balance(FVal('79.993947')),
+            amount=FVal('79.993947'),
             unique_id='0xe9bce05f14cb35eeb762ed5ce109ab4676ed1459480f6196c82060c4e0c63b27',
             extra_data={'transaction_id': '0xe9bce05f14cb35eeb762ed5ce109ab4676ed1459480f6196c82060c4e0c63b27'},  # noqa: E501
         ), AssetMovement(
@@ -277,7 +277,7 @@ def test_deposit_withdrawals(bybit_exchange: Bybit) -> None:
             location_label=bybit_exchange.name,
             event_type=HistoryEventType.DEPOSIT,
             asset=A_USDC,
-            balance=Balance(FVal('20')),
+            amount=FVal('20'),
             unique_id='0xc2433faf5938e4be896127a15815952e99b41412b8aa0fbe239ce24c8bc435ab',
             extra_data={'transaction_id': '0xc2433faf5938e4be896127a15815952e99b41412b8aa0fbe239ce24c8bc435ab'},  # noqa: E501
         ),

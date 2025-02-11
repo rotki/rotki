@@ -7,7 +7,7 @@ import pytest
 import requests
 from polyleven import levenshtein
 
-from rotkehlchen.accounting.structures.balance import Balance, BalanceType
+from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.api.server import APIServer
 from rotkehlchen.assets.asset import CryptoAsset, CustomAsset
 from rotkehlchen.assets.resolver import AssetResolver
@@ -114,7 +114,7 @@ def test_query_owned_assets(
                 event_type=HistoryEventType.TRADE,
                 event_subtype=HistoryEventSubType.RECEIVE,
                 asset=A_USDC,
-                balance=Balance(ONE),
+                amount=ONE,
             ),
         )
 

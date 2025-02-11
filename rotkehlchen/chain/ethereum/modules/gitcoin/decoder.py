@@ -101,10 +101,10 @@ class GitcoinDecoder(GovernableDecoderInterface, GitcoinOldCommonDecoder):
         crypto_asset = context.event.asset.resolve_to_crypto_asset()
         if context.event.event_type == HistoryEventType.SPEND:
             to_address = context.event.address
-            context.event.notes = f'Donate {context.event.balance.amount} {crypto_asset.symbol} to {to_address} via gitcoin'  # noqa: E501
+            context.event.notes = f'Donate {context.event.amount} {crypto_asset.symbol} to {to_address} via gitcoin'  # noqa: E501
         else:  # can only be RECEIVE
             from_address = context.event.address
-            context.event.notes = f'Receive donation of {context.event.balance.amount} {crypto_asset.symbol} from {from_address} via gitcoin'  # noqa: E501
+            context.event.notes = f'Receive donation of {context.event.amount} {crypto_asset.symbol} from {from_address} via gitcoin'  # noqa: E501
 
         context.event.event_subtype = HistoryEventSubType.DONATE
         context.event.counterparty = CPT_GITCOIN

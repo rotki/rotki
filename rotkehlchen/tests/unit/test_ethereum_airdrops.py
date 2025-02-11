@@ -9,7 +9,6 @@ from unittest.mock import Mock, patch
 import polars as pl
 import pytest
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.chain.ethereum.airdrops import (
@@ -275,7 +274,7 @@ def test_check_airdrops(
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.AIRDROP,
             asset=A_UNI,
-            balance=Balance(amount=FVal('400') + tolerance_for_amount_check * FVal('0.25')),  # inside tolerance  # noqa: E501
+            amount=FVal('400') + tolerance_for_amount_check * FVal('0.25'),  # inside tolerance
             location_label=string_to_evm_address(TEST_ADDR1),
             extra_data={AIRDROP_IDENTIFIER_KEY: 'uniswap'},
         ), EvmEvent(
@@ -286,7 +285,7 @@ def test_check_airdrops(
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.AIRDROP,
             asset=A_1INCH,
-            balance=Balance(amount=FVal('630.374421472277638654') + tolerance_for_amount_check * FVal('2')),  # outside tolerance  # noqa: E501
+            amount=FVal('630.374421472277638654') + tolerance_for_amount_check * FVal('2'),
             location_label=string_to_evm_address(TEST_ADDR1),
             extra_data={AIRDROP_IDENTIFIER_KEY: '1inch'},
         ), EvmEvent(
@@ -297,7 +296,7 @@ def test_check_airdrops(
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.AIRDROP,
             asset=Asset('eip155:8453/erc20:0x4ed4E862860beD51a9570b96d89aF5E1B0Efefed'),
-            balance=Balance(amount=FVal('394857.029384576349787465')),
+            amount=FVal('394857.029384576349787465'),
             location_label=string_to_evm_address(TEST_ADDR2),
             extra_data={AIRDROP_IDENTIFIER_KEY: 'degen2_season1'},
         ),

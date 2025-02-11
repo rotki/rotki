@@ -7,7 +7,7 @@ from unittest.mock import patch
 import pytest
 import requests
 
-from rotkehlchen.accounting.structures.balance import Balance, BalanceType
+from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.ethereum.modules.ens.constants import CPT_ENS
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
@@ -558,7 +558,7 @@ def test_query_wrap(
                     event_type=HistoryEventType.SPEND,
                     event_subtype=HistoryEventSubType.FEE,
                     asset=A_ETH,
-                    balance=Balance(amount=FVal(0.1)),
+                    amount=FVal(0.1),
                     counterparty=CPT_GAS,
                     location_label=ethereum_accounts[0],
                 )
@@ -571,7 +571,7 @@ def test_query_wrap(
                     event_type=HistoryEventType.SPEND,
                     event_subtype=HistoryEventSubType.FEE,
                     asset=A_ETH,
-                    balance=Balance(amount=FVal(5)),
+                    amount=FVal(5),
                     counterparty=CPT_GAS,
                     location_label=ethereum_accounts[0],
                 ),
@@ -583,7 +583,7 @@ def test_query_wrap(
                     event_type=HistoryEventType.SPEND,
                     event_subtype=HistoryEventSubType.FEE,
                     asset=A_ETH,
-                    balance=Balance(amount=FVal(0.1)),
+                    amount=FVal(0.1),
                     counterparty=CPT_ENS,
                     location_label=ethereum_accounts[0],
                 ),
@@ -595,7 +595,7 @@ def test_query_wrap(
                     event_type=HistoryEventType.SPEND,
                     event_subtype=HistoryEventSubType.FEE,
                     asset=A_ETH,
-                    balance=Balance(amount=FVal(0.1)),
+                    amount=FVal(0.1),
                     location_label=ethereum_accounts[0],
                 ),
                 EvmEvent(  # event with ignored asset
@@ -606,7 +606,7 @@ def test_query_wrap(
                     event_type=HistoryEventType.SPEND,
                     event_subtype=HistoryEventSubType.NONE,
                     asset=A_USDC,
-                    balance=Balance(amount=FVal(5)),
+                    amount=FVal(5),
                     location_label=ethereum_accounts[0],
                 ),
             ],
