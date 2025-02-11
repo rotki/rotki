@@ -570,7 +570,7 @@ def test_import_export_accounting_rules(rotkehlchen_api_server: 'APIServer') -> 
         with open(rules_file_path, encoding='utf-8') as file:
             rules_data = json.load(file)
 
-        changed_rules, all_rules_num = 2, 106  # changed rules is rules that were modified. This pushes identifier up  # noqa: E501
+        changed_rules, all_rules_num = 2, 119  # changed rules is rules that were modified. This pushes identifier up  # noqa: E501
         assert rules_data == response_result
         assert len(rules_data['accounting_rules']) == all_rules_num
         assert rules_data['accounting_rules']['1'] == {
