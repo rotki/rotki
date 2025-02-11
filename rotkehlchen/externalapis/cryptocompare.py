@@ -779,9 +779,9 @@ class Cryptocompare(
         So how much `to_asset` does 1 unit of `from_asset` cost.
 
         This tries to:
-        1. Find cached cryptocompare values and return them
-        2. If none exist at the moment try the normal historical price endpoint
-        3. Else fail
+        1. Query the historical price endpoint
+        2. Return the price if found
+        3. Fail if no price exists
 
         May raise:
         - PriceQueryUnsupportedAsset if from/to asset is known to miss from cryptocompare
@@ -795,24 +795,7 @@ class Cryptocompare(
             to_asset = to_asset.resolve_to_asset_with_oracles()
         except (UnknownAsset, WrongAssetType) as e:
             raise PriceQueryUnsupportedAsset(e.identifier) from e
-        # check DB cache
-        price_cache_entry = GlobalDBHandler.get_historical_price(
-            from_asset=from_asset,
-            to_asset=to_asset,
-            timestamp=timestamp,
-            max_seconds_distance=3600,
-            source=HistoricalPriceOracle.CRYPTOCOMPARE,
-        )
-        if price_cache_entry and price_cache_entry.price != ZERO_PRICE:
-            log.debug('Got historical price from cryptocompare', from_asset=from_asset, to_asset=to_asset, timestamp=timestamp, price=price_cache_entry.price)  # noqa: E501
-            return price_cache_entry.price
 
-        # else
-        log.debug(
-            f"Couldn't find historical price from {from_asset} to "
-            f'{to_asset} at timestamp {timestamp} through cryptocompare.'
-            f' Attempting to get daily price...',
-        )
         price = self.query_endpoint_pricehistorical(from_asset, to_asset, timestamp)
         if price == ZERO_PRICE:
             raise NoPriceForGivenTimestamp(
@@ -822,13 +805,6 @@ class Cryptocompare(
             )
 
         log.debug('Got historical price from cryptocompare', from_asset=from_asset, to_asset=to_asset, timestamp=timestamp, price=price)  # noqa: E501
-        GlobalDBHandler.add_historical_prices(entries=[HistoricalPrice(
-            from_asset=from_asset,
-            to_asset=to_asset,
-            source=HistoricalPriceOracle.CRYPTOCOMPARE,
-            timestamp=timestamp,
-            price=price,
-        )])
         return price
 
     def all_coins(self) -> dict[str, dict[str, Any]]:

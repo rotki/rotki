@@ -9,7 +9,6 @@ from rotkehlchen.assets.asset import Asset, AssetWithOracles
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.prices import ZERO_PRICE
-from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import RemoteError
@@ -17,15 +16,13 @@ from rotkehlchen.errors.price import NoPriceForGivenTimestamp, PriceQueryUnsuppo
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.interface import ExternalServiceWithApiKeyOptionalDB
 from rotkehlchen.fval import FVal
-from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.history.price import PriceHistorian
-from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.interfaces import HistoricalPriceOracleInterface
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChainID, ExternalService, Price, Timestamp
-from rotkehlchen.utils.misc import create_timestamp, timestamp_to_date, ts_now
+from rotkehlchen.utils.misc import ts_now
 from rotkehlchen.utils.mixins.penalizable_oracle import PenalizablePriceOracleMixin
 from rotkehlchen.utils.network import create_session
 
@@ -237,17 +234,6 @@ class Defillama(
         except UnknownAsset as e:
             raise PriceQueryUnsupportedAsset(e.identifier) from e
 
-        # check DB cache
-        price_cache_entry = GlobalDBHandler.get_historical_price(
-            from_asset=from_asset,
-            to_asset=to_asset,
-            timestamp=timestamp,
-            max_seconds_distance=DAY_IN_SECONDS,
-            source=HistoricalPriceOracle.DEFILLAMA,
-        )
-        if price_cache_entry:
-            return price_cache_entry.price
-
         try:
             coin_id = self._get_asset_id(from_asset)
         except UnsupportedAsset as e:
@@ -263,8 +249,6 @@ class Defillama(
                 rate_limited=False,
             ) from e
 
-        # no cache, query defillama for historical price
-        date = timestamp_to_date(timestamp, formatstr='%d-%m-%Y')
         result = self._query(
             module='prices',
             subpath=f'historical/{timestamp}/{coin_id}',
@@ -291,13 +275,4 @@ class Defillama(
         else:
             price = usd_price
 
-        # save result in the DB and return
-        date_timestamp = create_timestamp(date, formatstr='%d-%m-%Y')
-        GlobalDBHandler.add_historical_prices(entries=[HistoricalPrice(
-            from_asset=from_asset,
-            to_asset=to_asset,
-            source=HistoricalPriceOracle.DEFILLAMA,
-            timestamp=date_timestamp,
-            price=price,
-        )])
         return price

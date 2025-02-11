@@ -15,12 +15,10 @@ from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset
 from rotkehlchen.externalapis.interface import ExternalServiceWithApiKeyOptionalDB
 from rotkehlchen.fval import FVal
-from rotkehlchen.globaldb.handler import GlobalDBHandler
-from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.interfaces import HistoricalPriceOracleWithCoinListInterface
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChainID, EvmTokenKind, ExternalService, Price, Timestamp
-from rotkehlchen.utils.misc import create_timestamp, set_user_agent, timestamp_to_date, ts_now
+from rotkehlchen.utils.misc import set_user_agent, timestamp_to_date, ts_now
 from rotkehlchen.utils.mixins.penalizable_oracle import PenalizablePriceOracleMixin
 from rotkehlchen.utils.network import create_session
 
@@ -790,18 +788,6 @@ class Coingecko(
                 time=timestamp,
             ) from e
 
-        # check DB cache
-        price_cache_entry = GlobalDBHandler.get_historical_price(
-            from_asset=from_asset,
-            to_asset=to_asset,
-            timestamp=timestamp,
-            max_seconds_distance=DAY_IN_SECONDS,
-            source=HistoricalPriceOracle.COINGECKO,
-        )
-        if price_cache_entry:
-            return price_cache_entry.price
-
-        # no cache, query coingecko for daily price
         date = timestamp_to_date(timestamp, formatstr='%d-%m-%Y')
         result = self._query(
             module='coins',
@@ -827,13 +813,4 @@ class Coingecko(
                 rate_limited=False,
             ) from e
 
-        # save result in the DB and return
-        date_timestamp = create_timestamp(date, formatstr='%d-%m-%Y')
-        GlobalDBHandler.add_historical_prices(entries=[HistoricalPrice(
-            from_asset=from_asset,
-            to_asset=to_asset,
-            source=HistoricalPriceOracle.COINGECKO,
-            timestamp=date_timestamp,
-            price=price,
-        )])
         return price

@@ -3,13 +3,11 @@ from typing import TYPE_CHECKING
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.prices import ZERO_PRICE
-from rotkehlchen.errors.price import NoPriceForGivenTimestamp
 from rotkehlchen.globaldb.handler import GlobalDBHandler
-from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.interfaces import CurrentPriceOracleInterface
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import Price, Timestamp
+from rotkehlchen.types import Price
 from rotkehlchen.utils.interfaces import DBSetterMixin
 
 if TYPE_CHECKING:
@@ -18,42 +16,6 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
-
-
-class ManualPriceOracle:
-
-    def can_query_history(
-            self,
-            from_asset: Asset,  # pylint: disable=unused-argument
-            to_asset: Asset,  # pylint: disable=unused-argument
-            timestamp: Timestamp,  # pylint: disable=unused-argument
-            seconds: int | None = None,  # pylint: disable=unused-argument
-    ) -> bool:
-        return True
-
-    @classmethod
-    def query_historical_price(
-            cls,
-            from_asset: Asset,
-            to_asset: Asset,
-            timestamp: Timestamp,
-    ) -> Price:
-        price_entry = GlobalDBHandler.get_historical_price(
-            from_asset=from_asset,
-            to_asset=to_asset,
-            timestamp=timestamp,
-            max_seconds_distance=3600,
-            source=HistoricalPriceOracle.MANUAL,
-        )
-        if price_entry is not None:
-            log.debug('Got historical manual price', from_asset=from_asset, to_asset=to_asset, timestamp=timestamp)  # noqa: E501
-            return price_entry.price
-
-        raise NoPriceForGivenTimestamp(
-            from_asset=from_asset,
-            to_asset=to_asset,
-            time=timestamp,
-        )
 
 
 class ManualCurrentOracle(CurrentPriceOracleInterface, DBSetterMixin):

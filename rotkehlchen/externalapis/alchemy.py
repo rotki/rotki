@@ -14,10 +14,8 @@ from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.interface import ExternalServiceWithApiKeyOptionalDB
-from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.history.price import PriceHistorian
-from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.interfaces import HistoricalPriceOracleInterface
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -166,15 +164,6 @@ class Alchemy(
         except UnknownAsset as e:
             raise PriceQueryUnsupportedAsset(e.identifier) from e
 
-        if (price_cache_entry := GlobalDBHandler.get_historical_price(
-            from_asset=from_asset,
-            to_asset=to_asset,
-            timestamp=timestamp,
-            max_seconds_distance=HOUR_IN_SECONDS * 6,
-            source=HistoricalPriceOracle.ALCHEMY,
-        )):
-            return price_cache_entry.price
-
         try:
             alchemy_asset_data = self._get_alchemy_asset_data(from_asset)
         except UnsupportedAsset as e:
@@ -213,13 +202,6 @@ class Alchemy(
         else:
             price = usd_price
 
-        GlobalDBHandler.add_historical_prices(entries=[HistoricalPrice(
-            from_asset=from_asset,
-            to_asset=to_asset,
-            source=HistoricalPriceOracle.ALCHEMY,
-            timestamp=timestamp,
-            price=price,
-        )])
         return price
 
     def can_query_history(

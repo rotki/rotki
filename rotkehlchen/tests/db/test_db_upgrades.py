@@ -2869,6 +2869,8 @@ def test_upgrade_db_46_to_47(user_data_dir, messages_aggregator):
                 ('bybit_history_events_cb1', 1641386301, 1641386400),
             ],
         )
+        # ensure that manual historical price oracle is present.
+        assert 'manual' in json.loads(write_cursor.execute("SELECT value FROM settings WHERE name='historical_price_oracles'").fetchone()[0])  # noqa: E501
 
     with db_v46.conn.read_ctx() as cursor:  # assert block events state before upgrade
         result = cursor.execute("SELECT identifier, entry_type, event_identifier, sequence_index, timestamp, location, location_label, asset, amount, usd_value, notes, type, subtype FROM history_events WHERE event_identifier IN ('BP1_17153311', 'BP1_17153312')").fetchall()  # noqa: E501
@@ -2968,6 +2970,9 @@ def test_upgrade_db_46_to_47(user_data_dir, messages_aggregator):
             'SELECT counterparty FROM accounting_rules WHERE (type=? AND subtype=?) OR (type=? AND subtype=?)',  # noqa: E501
             ('deposit', 'deposit asset', 'withdrawal', 'remove asset'),
         ).fetchall() == [('NONE',), ('NONE',)]  # Keep the rules with null counterparty
+
+        # ensure that manual historical price oracle is removed from settings.
+        assert 'manual' not in json.loads(cursor.execute("SELECT value FROM settings WHERE name='historical_price_oracles'").fetchone()[0])  # noqa: E501
 
     db.logout()
 

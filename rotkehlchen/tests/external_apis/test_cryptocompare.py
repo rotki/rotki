@@ -1,6 +1,5 @@
 import datetime
 import os
-from unittest.mock import patch
 
 import pytest
 
@@ -56,22 +55,6 @@ def get_globaldb_cache_entries(from_asset: Asset, to_asset: Asset) -> list[Histo
         ),
     )
     return [HistoricalPrice.deserialize_from_db(x) for x in query]
-
-
-@pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_cryptocompare_historical_data_use_cached_price(database, historical_price_test_data):  # pylint: disable=unused-argument
-    """Test that the cryptocompare cache is used"""
-    cc = Cryptocompare(database=database)
-    with patch.object(cc, 'query_endpoint_histohour') as histohour_mock:
-        result = cc.query_historical_price(
-            from_asset=A_ETH,
-            to_asset=A_EUR,
-            timestamp=1511627623,
-        )
-        # make sure that histohour was not called, in essence that the cache was used
-        assert histohour_mock.call_count == 0
-
-    assert result == FVal(396.56)
 
 
 def check_cc_result(result: list, forward: bool):
