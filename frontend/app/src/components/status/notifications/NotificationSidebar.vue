@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Priority, Severity } from '@rotki/common';
+import { type NotificationData, Priority, Severity } from '@rotki/common';
 import { Routes } from '@/router/routes';
 import { useTaskStore } from '@/store/tasks';
 import { useNotificationsStore } from '@/store/notifications';
@@ -10,6 +10,17 @@ import PendingTasks from '@/components/status/notifications/PendingTasks.vue';
 
 const display = defineModel<boolean>({ required: true });
 
+enum TabCategory {
+  VIEW_ALL = 'view_all',
+  NEEDS_ACTION = 'needs_action',
+  REMINDER = 'reminder',
+  ERROR = 'error',
+}
+
+const contentWrapper = ref();
+const selectedTab = ref<TabCategory>(TabCategory.VIEW_ALL);
+const initialAppear = ref<boolean>(false);
+
 const { t } = useI18n();
 
 const confirmStore = useConfirmStore();
@@ -17,8 +28,35 @@ const { visible: dialogVisible } = storeToRefs(confirmStore);
 const { show } = confirmStore;
 
 const notificationStore = useNotificationsStore();
-const { prioritized: allNotifications } = storeToRefs(notificationStore);
+const { messageOverflow, prioritized: allNotifications } = storeToRefs(notificationStore);
 const { remove } = notificationStore;
+const { hasRunningTasks } = storeToRefs(useTaskStore());
+const [DefineNoMessages, ReuseNoMessages] = createReusableTemplate();
+const { y } = useScroll(contentWrapper);
+
+const tabCategoriesLabel = computed(() => ({
+  [TabCategory.ERROR]: t('notification_sidebar.tabs.error'),
+  [TabCategory.NEEDS_ACTION]: t('notification_sidebar.tabs.needs_action'),
+  [TabCategory.REMINDER]: t('notification_sidebar.tabs.reminder'),
+  [TabCategory.VIEW_ALL]: t('notification_sidebar.tabs.view_all'),
+}));
+
+const selectedNotifications = computed(() => {
+  const all = get(allNotifications);
+  const tab = get(selectedTab);
+  const filters: Partial<Record<TabCategory, (item: NotificationData) => boolean>> = {
+    [TabCategory.ERROR]: (item: NotificationData) => item.severity === Severity.ERROR,
+    [TabCategory.NEEDS_ACTION]: (item: NotificationData) => item.priority === Priority.ACTION,
+    [TabCategory.REMINDER]: (item: NotificationData) => item.severity === Severity.REMINDER,
+  };
+
+  const filterBy = filters[tab];
+  if (filterBy) {
+    return all.filter(filterBy);
+  }
+
+  return all;
+});
 
 function close() {
   set(display, false);
@@ -30,56 +68,12 @@ function clear() {
 }
 
 function showConfirmation() {
-  show(
-    {
-      message: t('notification_sidebar.confirmation.message'),
-      title: t('notification_sidebar.confirmation.title'),
-      type: 'info',
-    },
-    clear,
-  );
+  show({
+    message: t('notification_sidebar.confirmation.message'),
+    title: t('notification_sidebar.confirmation.title'),
+    type: 'info',
+  }, clear);
 }
-
-const { hasRunningTasks } = storeToRefs(useTaskStore());
-
-enum TabCategory {
-  VIEW_ALL = 'view_all',
-  NEEDS_ACTION = 'needs_action',
-  REMINDER = 'reminder',
-  ERROR = 'error',
-}
-
-const tabCategoriesLabel = computed(() => ({
-  [TabCategory.ERROR]: t('notification_sidebar.tabs.error'),
-  [TabCategory.NEEDS_ACTION]: t('notification_sidebar.tabs.needs_action'),
-  [TabCategory.REMINDER]: t('notification_sidebar.tabs.reminder'),
-  [TabCategory.VIEW_ALL]: t('notification_sidebar.tabs.view_all'),
-}));
-
-const selectedTab = ref<TabCategory>(TabCategory.VIEW_ALL);
-
-const selectedNotifications = computed(() => {
-  const all = get(allNotifications);
-  const tab = get(selectedTab);
-
-  if (tab === TabCategory.NEEDS_ACTION)
-    return all.filter(item => item.priority === Priority.ACTION);
-
-  if (tab === TabCategory.ERROR)
-    return all.filter(item => item.severity === Severity.ERROR);
-
-  if (tab === TabCategory.REMINDER)
-    return all.filter(item => item.severity === Severity.REMINDER);
-
-  return all;
-});
-
-const [DefineNoMessages, ReuseNoMessages] = createReusableTemplate();
-
-const contentWrapper = ref();
-const { y } = useScroll(contentWrapper);
-
-const initialAppear = ref<boolean>(false);
 
 watch(
   [y, selectedTab, selectedNotifications],
@@ -91,9 +85,7 @@ watch(
       });
     }
     else {
-      if (currentY > 0)
-        set(initialAppear, false);
-      else set(initialAppear, true);
+      set(initialAppear, currentY <= 0);
     }
   },
 );
@@ -173,6 +165,24 @@ watch(
               @dismiss="remove($event)"
             />
           </LazyLoader>
+          <div
+            v-if="messageOverflow"
+            class="flex bg-rui-warning/[.1] rounded-md border p-2 gap-4"
+          >
+            <div class="flex flex-col justify-center items-center">
+              <div class="rounded-full p-2 bg-rui-warning">
+                <RuiIcon
+                  size="20"
+                  class="text-white"
+                  name="lu-siren"
+                />
+              </div>
+            </div>
+
+            <div class="text-rui-text-secondary text-body-2 break-words">
+              {{ t('notification_sidebar.message_overflow') }}
+            </div>
+          </div>
         </div>
         <ReuseNoMessages v-else />
       </div>

@@ -12,19 +12,26 @@ import { useSessionStorage } from '@vueuse/core';
 import { orderBy } from 'es-toolkit';
 import { createNotification } from '@/utils/notifications';
 
+const DESERIALIZATION_ERROR_PREFIX = 'Could not deserialize';
+const NOTIFICATION_COOLDOWN_MS = 60_000;
+const NOTIFICATION_MAX_SIZE = 200;
+
+const DEFAULT_NOTIFICATION: NotificationPayload = {
+  category: NotificationCategory.DEFAULT,
+  display: false,
+  message: '',
+  severity: Severity.ERROR,
+  title: '',
+} as const;
+
 function notificationDefaults(): NotificationPayload {
-  return {
-    category: NotificationCategory.DEFAULT,
-    display: false,
-    message: '',
-    severity: Severity.ERROR,
-    title: '',
-  };
+  return { ...DEFAULT_NOTIFICATION };
 }
 
 export const useNotificationsStore = defineStore('notifications', () => {
   const data = ref<NotificationData[]>([]);
   const lastDisplay: Ref<Record<string, number>> = useSessionStorage('rotki.notification.last_display', {});
+  const messageOverflow = ref(false);
 
   const { t } = useI18n();
 
@@ -32,23 +39,25 @@ export const useNotificationsStore = defineStore('notifications', () => {
     const byDate = orderBy(get(data), ['date'], ['desc']);
     return orderBy(byDate, [(n: NotificationData): Priority => n.priority ?? Priority.NORMAL], ['desc']);
   });
-  const count = computed(() => get(data).length);
-  const nextId = computed(() => {
+
+  const count = computed<number>(() => get(data).length);
+
+  const nextId = computed<number>(() => {
     const ids = get(data)
       .map(value => value.id)
       .sort((a, b) => b - a);
 
-    let nextId: number;
-    if (ids.length > 0)
-      nextId = ids[0] + 1;
-    else nextId = 1;
-
-    return nextId;
+    return ids.length > 0 ? ids[0] + 1 : 1;
   });
-  const queue = computed(() => get(prioritized).filter(notification => notification.display));
 
-  function update(payload: NotificationData[]): void {
-    set(data, [...get(data), ...payload]);
+  const queue = computed<NotificationData[]>(() => get(prioritized).filter(notification => notification.display));
+
+  function take(notifications: NotificationData[], n: number = NOTIFICATION_MAX_SIZE): NotificationData[] {
+    return orderBy(notifications, ['date'], ['desc']).slice(0, n);
+  }
+
+  function addNotifications(payload: NotificationData[]): void {
+    set(data, take([...get(data), ...payload]));
   }
 
   function remove(id: number): void {
@@ -59,14 +68,49 @@ export const useNotificationsStore = defineStore('notifications', () => {
       notifications.splice(index, 1);
 
     set(data, notifications);
+    set(messageOverflow, false);
   }
 
   function setNotifications(notifications: NotificationData[]): void {
-    set(data, notifications);
+    set(data, take(notifications));
+  }
+
+  function handleDeserializationError(dataList: NotificationData[], newData: SemiPartial<NotificationPayload, 'title' | 'message'>): void {
+    const index = dataList.findIndex(notification => notification.group === NotificationGroup.DESERIALIZATION_ERROR);
+
+    if (index >= 0) {
+      const existing = dataList[index];
+
+      assert(existing.groupCount !== undefined, 'groupCount should be defined when group is set');
+
+      const groupCount = existing.groupCount + 1;
+
+      dataList[index] = {
+        ...existing,
+        date: new Date(),
+        groupCount,
+        message: t('notification_messages.deserialization_error', { count: groupCount }),
+      };
+
+      set(data, dataList);
+    }
+    else {
+      addNotifications([
+        createNotification(get(nextId), Object.assign(notificationDefaults(), {
+          ...newData,
+          group: NotificationGroup.DESERIALIZATION_ERROR,
+          groupCount: 1,
+          message: t('notification_messages.deserialization_error', { count: 1 }),
+        })),
+      ]);
+    }
   }
 
   const notify = (newData: SemiPartial<NotificationPayload, 'title' | 'message'>): void => {
-    const dataList = [...get(data)];
+    const notifications = [...get(data)];
+    const dataList = take(notifications, NOTIFICATION_MAX_SIZE - 1);
+
+    set(messageOverflow, notifications.length > dataList.length);
 
     if (newData.priority === Priority.BULK) {
       const messages = dataList.filter(notification => notification.priority === Priority.BULK)
@@ -76,36 +120,8 @@ export const useNotificationsStore = defineStore('notifications', () => {
         return;
       }
 
-      const deserializationErrorPrefix = 'Could not deserialize';
-
-      if (newData.message.startsWith(deserializationErrorPrefix)) {
-        const index = dataList.findIndex(notification => notification.group === NotificationGroup.DESERIALIZATION_ERROR);
-        if (index >= 0) {
-          const existing = dataList[index];
-          assert(
-            existing.groupCount !== undefined,
-            'groupCount should be defined when group is set',
-          );
-          const groupCount = existing.groupCount + 1;
-          dataList[index] = {
-            ...existing,
-            date: new Date(),
-            groupCount,
-            message: t('notification_messages.deserialization_error', { count: groupCount }),
-          };
-
-          set(data, dataList);
-        }
-        else {
-          update([
-            createNotification(get(nextId), Object.assign(notificationDefaults(), {
-              ...newData,
-              group: NotificationGroup.DESERIALIZATION_ERROR,
-              groupCount: 1,
-              message: t('notification_messages.deserialization_error', { count: 1 }),
-            })),
-          ]);
-        }
+      if (newData.message.startsWith(DESERIALIZATION_ERROR_PREFIX)) {
+        handleDeserializationError(dataList, newData);
         return;
       }
     }
@@ -124,7 +140,7 @@ export const useNotificationsStore = defineStore('notifications', () => {
         });
       }
 
-      update([notification]);
+      addNotifications([notification]);
     }
     else {
       const notification = dataList[notificationIndex];
@@ -135,7 +151,7 @@ export const useNotificationsStore = defineStore('notifications', () => {
       const group = groupToFind ?? '';
       const lastTime = get(lastDisplay)[group] ?? 0;
 
-      if (currentTime - lastTime < 60_000) {
+      if (currentTime - lastTime < NOTIFICATION_COOLDOWN_MS) {
         date = notification.date;
         display = false;
       }
@@ -148,7 +164,7 @@ export const useNotificationsStore = defineStore('notifications', () => {
         groupCount: newData.groupCount,
         message: newData.message,
         priority: newData.priority,
-        severity: newData.severity || notification.severity,
+        severity: newData.severity ?? notification.severity,
         title: newData.title,
       };
 
@@ -184,6 +200,7 @@ export const useNotificationsStore = defineStore('notifications', () => {
     count,
     data,
     displayed,
+    messageOverflow,
     nextId,
     notify,
     prioritized,
