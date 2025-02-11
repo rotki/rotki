@@ -10,7 +10,6 @@ from rotkehlchen.tests.utils.constants import A_DASH, A_XMR
 from rotkehlchen.types import Price, Timestamp
 
 HISTORICAL_PRICE_ORACLES = [
-    HistoricalPriceOracle.MANUAL,
     HistoricalPriceOracle.CRYPTOCOMPARE,
     HistoricalPriceOracle.COINGECKO,
 ]
@@ -22,7 +21,7 @@ HISTORICAL_PRICE_ORACLES = [
 @pytest.mark.vcr(filter_query_parameters=['api_key'])
 def test_price_queries(price_historian, database):
     """Test some historical price queries. Make sure that we test some
-    assets not in cryptocompare but in coigecko so the backup mechanism triggers and works"""
+    assets not in cryptocompare but in coingecko so the backup mechanism triggers and works"""
 
     # These should hit cryptocompare
     assert price_historian.query_historical_price(A_BTC, A_EUR, 1479200704) == FVal('664.837256889238')  # noqa: E501

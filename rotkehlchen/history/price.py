@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Optional
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.polygon_pos.constants import POLYGON_POS_POL_HARDFORK
-from rotkehlchen.constants import ONE
+from rotkehlchen.constants import HOUR_IN_SECONDS, ONE
 from rotkehlchen.constants.assets import (
     A_ETH,
     A_ETH2,
@@ -22,12 +22,11 @@ from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
-from rotkehlchen.globaldb.manual_price_oracles import ManualPriceOracle
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import Price, Timestamp
 
-from .types import HistoricalPriceOracle, HistoricalPriceOracleInstance
+from .types import HistoricalPrice, HistoricalPriceOracle, HistoricalPriceOracleInstance
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.oracles.uniswap import UniswapV2Oracle, UniswapV3Oracle
@@ -93,7 +92,6 @@ class PriceHistorian:
     _alchemy: 'Alchemy'
     _uniswapv2: 'UniswapV2Oracle'
     _uniswapv3: 'UniswapV3Oracle'
-    _manual: ManualPriceOracle  # This is used when iterating through all oracles
     _oracles: Sequence[HistoricalPriceOracle] | None = None
     _oracle_instances: list[HistoricalPriceOracleInstance] | None = None
 
@@ -126,7 +124,6 @@ class PriceHistorian:
         PriceHistorian._alchemy = alchemy
         PriceHistorian._uniswapv2 = uniswapv2
         PriceHistorian._uniswapv3 = uniswapv3
-        PriceHistorian._manual = ManualPriceOracle()
 
         return PriceHistorian.__instance
 
@@ -249,6 +246,15 @@ class PriceHistorian:
             if price is not None:
                 return price
 
+        # try to get the price from the cache
+        if (cached_price_entry := GlobalDBHandler.get_historical_price(
+            from_asset=from_asset,
+            to_asset=to_asset,
+            timestamp=timestamp,
+            max_seconds_distance=HOUR_IN_SECONDS,
+        )) is not None:
+            return cached_price_entry.price
+
         # else cryptocompare also has historical fiat to fiat data
         instance = PriceHistorian()
         oracles = instance._oracles
@@ -294,6 +300,13 @@ class PriceHistorian:
                 to_asset=to_asset,
                 timestamp=timestamp,
             )
+            GlobalDBHandler.add_historical_prices([HistoricalPrice(
+                from_asset=from_asset,
+                to_asset=to_asset,
+                source=oracle,
+                timestamp=timestamp,
+                price=price,
+            )])
             return price
 
         raise NoPriceForGivenTimestamp(

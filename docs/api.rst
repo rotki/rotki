@@ -5806,7 +5806,7 @@ Export PnL report debug data
                     "uniswapv2",
                     "uniswapv3",
                 ],
-                "historical_price_oracles": ["manual", "cryptocompare", "coingecko"],
+                "historical_price_oracles": ["cryptocompare", "coingecko", "uniswapv3", "defillama", "alchemy"],
                 "pnl_csv_with_formulas": true,
                 "pnl_csv_have_summary": false,
                 "ssf_graph_multiplier": 0,

@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 from rotkehlchen.data_import.importers.constants import ROTKI_EVENT_PREFIX
 from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED
 from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.history.types import DEFAULT_HISTORICAL_PRICE_ORACLES_ORDER
 from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
 from rotkehlchen.types import Location
 from rotkehlchen.utils.progress import perform_userdb_upgrade_steps, progress_step
@@ -244,6 +245,26 @@ def upgrade_v46_to_v47(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
                     ('withdrawal', 'remove asset'),
                 )
             ],
+        )
+
+    @progress_step(description='Remove manual historical oracle')
+    def _remove_manual_historical_price_oracle(write_cursor: 'DBCursor') -> None:
+        write_cursor.execute(
+            'SELECT value FROM settings WHERE name=?',
+            ('historical_price_oracles',),
+        )
+        if (result := write_cursor.fetchone()) is None:
+            return
+
+        try:
+            oracles = [x for x in json.loads(result[0]) if x != 'manual']
+        except json.JSONDecodeError:
+            log.error(f'During v46->v47 DB upgrade, a non-json historical_price_oracles entry was found: {result[0]}.')  # noqa: E501
+            oracles = [x.serialize() for x in DEFAULT_HISTORICAL_PRICE_ORACLES_ORDER]
+
+        write_cursor.execute(
+            'UPDATE settings SET value=? WHERE name=?',
+            (json.dumps(oracles), 'historical_price_oracles'),
         )
 
     perform_userdb_upgrade_steps(db=db, progress_handler=progress_handler, should_vacuum=True)
