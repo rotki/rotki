@@ -2,7 +2,6 @@ import logging
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.contracts import EvmContract
@@ -14,6 +13,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
@@ -53,7 +53,7 @@ class HedgeyDecoder(DecoderInterface):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.GOVERNANCE,
             asset=token,
-            balance=Balance(),
+            amount=ZERO,
             location_label=owner_address,
             notes=notes,
             counterparty=CPT_HEDGEY,
@@ -127,7 +127,7 @@ class HedgeyDecoder(DecoderInterface):
         amount_redeemed = token_normalized_value(token_amount=int.from_bytes(context.tx_log.data[:32]), token=token)  # noqa: E501
         # now find the transfer of the token
         for event in context.decoded_events:
-            if event.asset == token and event.balance.amount == amount_redeemed and event.location_label == owner_address and event.event_type == HistoryEventType.RECEIVE and event.event_subtype == HistoryEventSubType.NONE:  # noqa: E501
+            if event.asset == token and event.amount == amount_redeemed and event.location_label == owner_address and event.event_type == HistoryEventType.RECEIVE and event.event_subtype == HistoryEventSubType.NONE:  # noqa: E501
                 event.event_subtype = HistoryEventSubType.REWARD
                 event.notes = f'Redeem {amount_redeemed} {token.symbol} from Hedgey token lockup {plan_id}'  # noqa: E501
                 event.counterparty = CPT_HEDGEY

@@ -118,7 +118,7 @@ class Balancerv1CommonDecoder(BalancerCommonDecoder):
                 ):
                     context.event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
                     context.event.counterparty = CPT_BALANCER_V1
-                    context.event.notes = f'Receive {context.event.balance.amount} {context.token.symbol} from a Balancer v1 pool'  # noqa: E501
+                    context.event.notes = f'Receive {context.event.amount} {context.token.symbol} from a Balancer v1 pool'  # noqa: E501
                     return TransferEnrichmentOutput(matched_counterparty=CPT_BALANCER_V1)
                 if (
                     context.event.event_type == HistoryEventType.SPEND and
@@ -127,7 +127,7 @@ class Balancerv1CommonDecoder(BalancerCommonDecoder):
                     context.event.event_type = HistoryEventType.DEPOSIT
                     context.event.event_subtype = HistoryEventSubType.DEPOSIT_FOR_WRAPPED
                     context.event.counterparty = CPT_BALANCER_V1
-                    context.event.notes = f'Deposit {context.event.balance.amount} {context.token.symbol} to a Balancer v1 pool'  # noqa: E501
+                    context.event.notes = f'Deposit {context.event.amount} {context.token.symbol} to a Balancer v1 pool'  # noqa: E501
                     return TransferEnrichmentOutput(matched_counterparty=CPT_BALANCER_V1)
             elif proxied_event.get('type') == BalancerV1EventTypes.EXIT:
                 if (
@@ -137,7 +137,7 @@ class Balancerv1CommonDecoder(BalancerCommonDecoder):
                     context.event.event_type = HistoryEventType.WITHDRAWAL
                     context.event.event_subtype = HistoryEventSubType.REDEEM_WRAPPED
                     context.event.counterparty = CPT_BALANCER_V1
-                    context.event.notes = f'Receive {context.event.balance.amount} {context.token.symbol} after removing liquidity from a Balancer v1 pool'  # noqa: E501
+                    context.event.notes = f'Receive {context.event.amount} {context.token.symbol} after removing liquidity from a Balancer v1 pool'  # noqa: E501
                     return TransferEnrichmentOutput(matched_counterparty=CPT_BALANCER_V1)
                 if (
                     context.event.event_type == HistoryEventType.SPEND and
@@ -145,7 +145,7 @@ class Balancerv1CommonDecoder(BalancerCommonDecoder):
                 ):
                     context.event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
                     context.event.counterparty = CPT_BALANCER_V1
-                    context.event.notes = f'Return {context.event.balance.amount} {context.token.symbol} to a Balancer v1 pool'  # noqa: E501
+                    context.event.notes = f'Return {context.event.amount} {context.token.symbol} to a Balancer v1 pool'  # noqa: E501
                     return TransferEnrichmentOutput(matched_counterparty=CPT_BALANCER_V1)
 
         return FAILED_ENRICHMENT_OUTPUT
@@ -225,7 +225,7 @@ class Balancerv1CommonDecoder(BalancerCommonDecoder):
                 event.event_type = HistoryEventType.WITHDRAWAL
                 event.event_subtype = HistoryEventSubType.REFUND
                 asset = event.asset.resolve_to_asset_with_symbol()
-                event.notes = f'Refunded {event.balance.amount} {asset.symbol} after depositing in Balancer V1 pool'  # noqa: E501
+                event.notes = f'Refunded {event.amount} {asset.symbol} after depositing in Balancer V1 pool'  # noqa: E501
 
         return decoded_events
 

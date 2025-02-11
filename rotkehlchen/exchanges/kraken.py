@@ -625,7 +625,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
                     receive_part = trade_part
 
             if (
-                trade_part.balance.amount != ZERO and
+                trade_part.amount != ZERO and
                 trade_part.event_subtype != HistoryEventSubType.FEE
             ):
                 trade_assets.append(trade_part.asset)
@@ -654,11 +654,11 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
             if spend_part is not None:
                 base_asset = spend_part.asset
                 trade_type = TradeType.SELL
-                amount = spend_part.balance.amount
+                amount = spend_part.amount
             elif receive_part is not None:
                 base_asset = receive_part.asset
                 trade_type = TradeType.BUY
-                amount = receive_part.balance.amount
+                amount = receive_part.amount
             else:
                 log.warning(f'Found historic trade entries with no counterpart {trade_parts}')
                 return None
@@ -693,7 +693,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
             trade_type = TradeType.BUY
             base_asset = receive_asset
             quote_asset = spend_asset
-            amount = receive_part.balance.amount
+            amount = receive_part.amount
             if amount == ZERO:
                 self.msg_aggregator.add_warning(
                     f'Rate for kraken trade couldnt be calculated. Base amount is ZERO '
@@ -701,12 +701,12 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
                 )
                 return None
 
-            rate = Price(spend_part.balance.amount / amount)
+            rate = Price(spend_part.amount / amount)
         else:
             trade_type = TradeType.SELL
             base_asset = spend_asset
             quote_asset = receive_asset
-            amount = spend_part.balance.amount
+            amount = spend_part.amount
             if amount == ZERO:
                 self.msg_aggregator.add_warning(
                     f'Rate for kraken trade couldnt be calculated. Base amount is ZERO '
@@ -714,16 +714,16 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
                 )
                 return None
 
-            rate = Price(receive_part.balance.amount / amount)
+            rate = Price(receive_part.amount / amount)
 
         # If kfee was found we use it as the fee for the trade
         fee: Fee | None = None
         fee_asset: Asset | None = None
         if kfee_part is not None and fee_part is None:
-            fee = Fee(kfee_part.balance.amount)
+            fee = Fee(kfee_part.amount)
             fee_asset = A_KFEE
         else:
-            fee = Fee(fee_part.balance.amount) if fee_part is not None else None
+            fee = Fee(fee_part.amount) if fee_part is not None else None
             fee_asset = fee_part.asset if fee_part is not None else None
 
         return Trade(
@@ -800,14 +800,14 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
                     )
                     continue
 
-                rate = Price(abs(receive_event.balance.amount / spend_event.balance.amount))
+                rate = Price(abs(receive_event.amount / spend_event.amount))
                 trade = Trade(
                     timestamp=ts_ms_to_sec(a1.timestamp),
                     location=Location.KRAKEN,
                     base_asset=receive_event.asset,
                     quote_asset=spend_event.asset,
                     trade_type=TradeType.BUY,
-                    amount=AssetAmount(receive_event.balance.amount),
+                    amount=AssetAmount(receive_event.amount),
                     rate=rate,
                     fee=None,
                     fee_currency=None,
@@ -1042,9 +1042,9 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
                         len(events) == 2 and idx == 1 and
                         events[0]['type'] == events[1]['type'] and
                         events[0]['subtype'] == events[1]['subtype'] and
-                        abs(raw_amount) == group_events[0][1].balance.amount and (
+                        abs(raw_amount) == group_events[0][1].amount and (
                             len(group_events) != 2 or
-                            abs(fee_amount) == group_events[1][1].balance.amount)
+                            abs(fee_amount) == group_events[1][1].amount)
                 ):
                     log.info(f'Skipping failed kraken events that cancel each other out: {events}')
                     return [], skipped, False
@@ -1075,10 +1075,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
                         location=Location.KRAKEN,
                         location_label=self.name,
                         asset=asset,
-                        balance=Balance(  # amount sign was used above to determine types
-                            amount=abs(raw_amount),  # now enforce positive
-                            usd_value=ZERO,
-                        ),
+                        amount=abs(raw_amount),  # amount sign was used above to determine types now enforce positive  # noqa: E501
                         notes=notes,
                         event_type=event_type,
                         event_subtype=event_subtype,
@@ -1095,10 +1092,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
                         location=Location.KRAKEN,
                         location_label=self.name,
                         asset=asset,
-                        balance=Balance(
-                            amount=abs(fee_amount),
-                            usd_value=ZERO,
-                        ),
+                        amount=abs(fee_amount),
                         notes=notes,
                         event_type=event_type if event_type != HistoryEventType.RECEIVE else HistoryEventType.SPEND,  # in instant swaps @tewshi found that fees can also be in the receive part  # noqa: E501
                         event_subtype=HistoryEventSubType.FEE,

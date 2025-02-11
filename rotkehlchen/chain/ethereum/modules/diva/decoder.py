@@ -1,7 +1,6 @@
 import logging
 from typing import TYPE_CHECKING, Any
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.evm.decoding.constants import DELEGATE_CHANGED
 from rotkehlchen.chain.evm.decoding.interfaces import (
     GovernableDecoderInterface,
@@ -15,6 +14,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_DIVA
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
@@ -69,7 +69,7 @@ class DivaDecoder(GovernableDecoderInterface, MerkleClaimDecoderInterface):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.GOVERNANCE,
             asset=self.diva,
-            balance=Balance(),
+            amount=ZERO,
             location_label=event_address,
             notes=f'Change DIVA Delegate from {delegator} to {delegate}',
             counterparty=CPT_DIVA,

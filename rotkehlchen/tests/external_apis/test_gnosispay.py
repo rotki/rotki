@@ -3,7 +3,6 @@ from unittest.mock import patch
 import gevent
 import pytest
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.gnosis.modules.gnosis_pay.constants import CPT_GNOSIS_PAY
 from rotkehlchen.db.filtering import EvmEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -61,7 +60,7 @@ def test_gnosispay_periodic_task(task_manager, database, gnosispay_credentials):
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.PAYMENT,
         asset=A_GNOSIS_EURE,
-        balance=Balance(amount=FVal(amount)),
+        amount=FVal(amount),
         location_label=gnosis_user_address,
         notes=f'Spend {amount} via Gnosis Pay',
         counterparty=CPT_GNOSIS_PAY,

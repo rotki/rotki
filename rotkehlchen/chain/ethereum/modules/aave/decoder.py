@@ -71,7 +71,7 @@ class AaveDecoder(DecoderInterface):
                     event.event_subtype == HistoryEventSubType.NONE and
                     event.asset == A_AAVE and
                     event.location_label == to_address and
-                    event.balance.amount == amount
+                    event.amount == amount
             ):
                 event.event_type = HistoryEventType.STAKING
                 event.event_subtype = HistoryEventSubType.REWARD
@@ -102,7 +102,7 @@ class AaveDecoder(DecoderInterface):
                     event.event_subtype == HistoryEventSubType.NONE and
                     event.asset == A_AAVE and
                     event.location_label == to_address and
-                    event.balance.amount == amount
+                    event.amount == amount
             ):
                 event.event_type = HistoryEventType.STAKING
                 event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
@@ -117,11 +117,11 @@ class AaveDecoder(DecoderInterface):
                 event.event_subtype == HistoryEventSubType.NONE and
                 event.asset.identifier == STKAAVE_IDENTIFIER and
                 event.location_label == to_address and
-                event.balance.amount == amount
+                event.amount == amount
             ):
                 event.counterparty = CPT_AAVE
                 event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
-                event.notes = f'Receive {event.balance.amount} stkAAVE from staking in Aave'
+                event.notes = f'Receive {event.amount} stkAAVE from staking in Aave'
                 in_event = event
 
         maybe_reshuffle_events(
@@ -143,7 +143,7 @@ class AaveDecoder(DecoderInterface):
                 event.event_subtype == HistoryEventSubType.NONE and
                 event.asset.identifier == STKAAVE_IDENTIFIER and
                 event.location_label == to_address and
-                event.balance.amount == amount
+                event.amount == amount
             ):
                 event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
                 event.notes = f'Unstake {amount} stkAAVE'
@@ -156,12 +156,12 @@ class AaveDecoder(DecoderInterface):
                 event.event_subtype == HistoryEventSubType.NONE and
                 event.asset == A_AAVE and
                 event.location_label == to_address and
-                event.balance.amount == amount
+                event.amount == amount
             ):
                 event.counterparty = CPT_AAVE
                 event.event_type = HistoryEventType.STAKING
                 event.event_subtype = HistoryEventSubType.REMOVE_ASSET
-                event.notes = f'Receive {event.balance.amount} AAVE after unstaking from Aave'
+                event.notes = f'Receive {event.amount} AAVE after unstaking from Aave'
 
         return DEFAULT_DECODING_OUTPUT
 

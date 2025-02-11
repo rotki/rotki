@@ -1,6 +1,5 @@
 import pytest
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.ethereum.modules.yearn.constants import CPT_YGOV
 from rotkehlchen.chain.ethereum.modules.yearn.ygov.constants import YGOV_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
@@ -29,7 +28,7 @@ def test_ygov_stake(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=FVal(gas_amount)),
+            amount=FVal(gas_amount),
             location_label=addy_user,
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
@@ -42,7 +41,7 @@ def test_ygov_stake(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
             asset=A_CRVP_DAIUSDCTTUSD,
-            balance=Balance(amount=FVal(deposited_amount)),
+            amount=FVal(deposited_amount),
             location_label=addy_user,
             notes=f'Deposit {deposited_amount} yDAI+yUSDC+yUSDT+yTUSD in ygov.finance',
             address=YGOV_ADDRESS,
@@ -69,7 +68,7 @@ def test_ygov_get_reward(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=FVal(gas_amount)),
+            amount=FVal(gas_amount),
             location_label=addy_user,
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
@@ -82,7 +81,7 @@ def test_ygov_get_reward(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.REWARD,
             asset=A_YFI,
-            balance=Balance(amount=FVal(reward_amount)),
+            amount=FVal(reward_amount),
             location_label=addy_user,
             notes=f'Collect reward of {reward_amount} YFI from ygov.finance',
             address=YGOV_ADDRESS,
@@ -109,7 +108,7 @@ def test_ygov_exit(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=FVal(gas_amount)),
+            amount=FVal(gas_amount),
             location_label=addy_user,
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
@@ -122,7 +121,7 @@ def test_ygov_exit(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.REMOVE_ASSET,
             asset=A_CRVP_DAIUSDCTTUSD,
-            balance=Balance(amount=FVal(withdrawn_amount)),
+            amount=FVal(withdrawn_amount),
             location_label=addy_user,
             notes=f'Withdraw {withdrawn_amount} YFI reward from ygov.finance',
             address=YGOV_ADDRESS,
@@ -136,7 +135,7 @@ def test_ygov_exit(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.REWARD,
             asset=A_YFI,
-            balance=Balance(amount=FVal(reward_amount)),
+            amount=FVal(reward_amount),
             location_label=addy_user,
             notes=f'Collect reward of {reward_amount} YFI from ygov.finance',
             address=YGOV_ADDRESS,

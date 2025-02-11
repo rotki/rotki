@@ -65,7 +65,7 @@ class CctpCommonDecoder(DecoderInterface):
                 event.event_type == HistoryEventType.SPEND and
                 event.event_subtype == HistoryEventSubType.NONE and
                 event.asset.identifier == self.asset_identifier and
-                event.balance.amount == deposit_amount and
+                event.amount == deposit_amount and
                 event.location_label == user_address
             ):
                 try:
@@ -75,7 +75,7 @@ class CctpCommonDecoder(DecoderInterface):
                     chain_info = ''
                 event.event_type = HistoryEventType.DEPOSIT
                 event.event_subtype = HistoryEventSubType.BRIDGE
-                event.notes = f'Bridge {event.balance.amount} USDC{chain_info} via CCTP'
+                event.notes = f'Bridge {event.amount} USDC{chain_info} via CCTP'
                 event.counterparty = CPT_CCTP
                 break
         else:
@@ -96,12 +96,12 @@ class CctpCommonDecoder(DecoderInterface):
                 event.event_type == HistoryEventType.RECEIVE and
                 event.event_subtype == HistoryEventSubType.NONE and
                 event.asset.identifier == self.asset_identifier and
-                event.balance.amount == deposit_amount and
+                event.amount == deposit_amount and
                 event.location_label == user_address
             ):
                 event.event_type = HistoryEventType.WITHDRAWAL
                 event.event_subtype = HistoryEventSubType.BRIDGE
-                event.notes = f'Bridge {event.balance.amount} USDC via CCTP'
+                event.notes = f'Bridge {event.amount} USDC via CCTP'
                 event.counterparty = CPT_CCTP
                 break
         else:
@@ -123,7 +123,7 @@ class CctpCommonDecoder(DecoderInterface):
                 from_chain = int.from_bytes(context.tx_log.data[:32])
                 try:
                     chain_info = f' from {CCTP_DOMAIN_MAPPING[from_chain].label()} to {self.evm_inquirer.chain_id.label()}'  # noqa: E501
-                    event.notes = f'Bridge {event.balance.amount} USDC{chain_info} via CCTP'
+                    event.notes = f'Bridge {event.amount} USDC{chain_info} via CCTP'
                 except KeyError:
                     log.error(f'Could not find chain ID {from_chain} for CCTP transfer to {self.evm_inquirer.chain_name}')  # noqa: E501
                 break

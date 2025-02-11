@@ -47,7 +47,7 @@ def decode_basic_uniswap_info(
         ):
             approval_event = event
         elif (
-            event.balance.amount == asset_normalized_value(amount=amount_sent, asset=crypto_asset) and  # noqa: E501
+            event.amount == asset_normalized_value(amount=amount_sent, asset=crypto_asset) and
             event.event_type == HistoryEventType.SPEND and
             # don't touch native asset since there may be multiple such transfers
             # and they are better handled by the aggregator decoder.
@@ -57,10 +57,10 @@ def decode_basic_uniswap_info(
             event.event_type = HistoryEventType.TRADE
             event.event_subtype = HistoryEventSubType.SPEND
             event.counterparty = counterparty
-            event.notes = f'Swap {event.balance.amount} {crypto_asset.symbol} in {counterparty}'
+            event.notes = f'Swap {event.amount} {crypto_asset.symbol} in {counterparty}'
             spend_event = event
         elif (
-            event.balance.amount == asset_normalized_value(amount=amount_received, asset=crypto_asset) and  # noqa: E501
+            event.amount == asset_normalized_value(amount=amount_received, asset=crypto_asset) and
             event.event_type == HistoryEventType.RECEIVE and
             event.asset != native_currency and
             receive_event is None
@@ -68,7 +68,7 @@ def decode_basic_uniswap_info(
             event.event_type = HistoryEventType.TRADE
             event.event_subtype = HistoryEventSubType.RECEIVE
             event.counterparty = counterparty
-            event.notes = f'Receive {event.balance.amount} {crypto_asset.symbol} as a result of a {counterparty} swap'  # noqa: E501
+            event.notes = f'Receive {event.amount} {crypto_asset.symbol} as a result of a {counterparty} swap'  # noqa: E501
             receive_event = event
         elif (
             event.counterparty in {CPT_UNISWAP_V2, CPT_UNISWAP_V3} and

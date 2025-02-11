@@ -218,7 +218,7 @@ def test_locked_crv_calendar_reminders(
             identifier=idx + 1,
             name='CRV vote escrow lock period ends',
             timestamp=locktime,
-            description=f'Lock period for {crv_events[idx].balance.amount} CRV in vote escrow ends on {reminder_creator.timestamp_to_date(locktime)}',  # noqa: E501
+            description=f'Lock period for {crv_events[idx].amount} CRV in vote escrow ends on {reminder_creator.timestamp_to_date(locktime)}',  # noqa: E501
             counterparty=CPT_CURVE,
             address=crv_events[idx].location_label,  # type: ignore[arg-type]  # location_label is not None, checked above
             blockchain=ChainID.deserialize(crv_events[idx].location.to_chain_id()).to_blockchain(),
@@ -350,9 +350,9 @@ def test_l2_bridge_claim_reminders(arbitrum_one_accounts, arbitrum_one_inquirer,
             asset_symbol = bridge_event.asset.resolve_to_asset_with_symbol().symbol
             assert calendar_entry == CalendarEntry(
                 identifier=idx + 1,
-                name=f'Claim {bridge_event.balance.amount} {asset_symbol} bridge deposit on Ethereum',  # noqa: E501
+                name=f'Claim {bridge_event.amount} {asset_symbol} bridge deposit on Ethereum',
                 timestamp=ts_ms_to_sec(TimestampMS(bridge_event.timestamp + WEEK_IN_SECONDS * 1000)),  # noqa: E501
-                description=f'Bridge deposit of {bridge_event.balance.amount} {asset_symbol} is ready to claim on Ethereum',  # noqa: E501
+                description=f'Bridge deposit of {bridge_event.amount} {asset_symbol} is ready to claim on Ethereum',  # noqa: E501
                 counterparty=bridge_event.counterparty,
                 auto_delete=True,
                 blockchain=inquirer.chain_id.to_blockchain(),

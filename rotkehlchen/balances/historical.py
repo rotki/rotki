@@ -476,12 +476,12 @@ class HistoricalBalancesManager:
             return None
 
         if direction == EventDirection.IN:
-            current_balances[event.asset] += event.balance.amount
+            current_balances[event.asset] += event.amount
         else:
-            if current_balances[event.asset] - event.balance.amount < ZERO:
+            if current_balances[event.asset] - event.amount < ZERO:
                 return event.identifier, event.event_identifier
 
-            current_balances[event.asset] -= event.balance.amount
+            current_balances[event.asset] -= event.amount
             if current_balances[event.asset] == ZERO:
                 del current_balances[event.asset]
 

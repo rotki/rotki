@@ -1,7 +1,6 @@
 import logging
 from typing import Any
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.airdrops import AIRDROP_IDENTIFIER_KEY
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
@@ -41,7 +40,7 @@ class OmniDecoder(CliqueAirdropDecoderInterface):
                 event.event_type == HistoryEventType.RECEIVE and
                 event.location_label == claiming_address and
                 event.asset.identifier == OMNI_TOKEN_ID and
-                event.balance.amount == claimed_amount
+                event.amount == claimed_amount
             ):
                 event.event_type = HistoryEventType.RECEIVE
                 event.event_subtype = HistoryEventSubType.AIRDROP
@@ -56,7 +55,7 @@ class OmniDecoder(CliqueAirdropDecoderInterface):
             ):
                 event.event_subtype = HistoryEventSubType.FEE
                 event.counterparty = CPT_OMNI
-                event.notes = f'Spend {event.balance.amount} ETH as a fee to claim the Omni genesis airdrop'  # noqa: E501
+                event.notes = f'Spend {event.amount} ETH as a fee to claim the Omni genesis airdrop'  # noqa: E501
 
         if not transfer_found:  # it's claim and stake, so transfer is direct to stake
             claim_event = self.base.make_event_from_transaction(
@@ -65,7 +64,7 @@ class OmniDecoder(CliqueAirdropDecoderInterface):
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.AIRDROP,
                 asset=Asset(OMNI_TOKEN_ID),
-                balance=Balance(amount=FVal(claimed_amount)),
+                amount=FVal(claimed_amount),
                 location_label=claiming_address,
                 notes=notes,
                 counterparty=CPT_OMNI,
@@ -78,7 +77,7 @@ class OmniDecoder(CliqueAirdropDecoderInterface):
                         event.event_subtype == HistoryEventSubType.DEPOSIT_ASSET and
                         event.location_label == claiming_address and
                         event.asset.identifier == OMNI_TOKEN_ID and
-                        event.balance.amount == claimed_amount and
+                        event.amount == claimed_amount and
                         event.address == OMNI_STAKING_CONTRACT
                 ):
                     maybe_reshuffle_events(
@@ -112,7 +111,7 @@ class OmniDecoder(CliqueAirdropDecoderInterface):
                 event.location_label == user_address and
                 event.address == OMNI_STAKING_CONTRACT and
                 event.asset.identifier == OMNI_TOKEN_ID and
-                event.balance.amount == staked_amount
+                event.amount == staked_amount
             ):
                 event.event_type = HistoryEventType.STAKING
                 event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
@@ -127,7 +126,7 @@ class OmniDecoder(CliqueAirdropDecoderInterface):
                 event_type=HistoryEventType.STAKING,
                 event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
                 asset=Asset(OMNI_TOKEN_ID),
-                balance=Balance(amount=FVal(staked_amount)),
+                amount=FVal(staked_amount),
                 location_label=user_address,
                 notes=notes,
                 counterparty=CPT_OMNI,

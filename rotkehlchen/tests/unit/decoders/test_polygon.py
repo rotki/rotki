@@ -1,7 +1,6 @@
 
 import pytest
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.modules.polygon.constants import POLYGON_MIGRATION_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
@@ -31,7 +30,7 @@ def test_matic_to_pol_migration(ethereum_inquirer, ethereum_accounts):
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        balance=Balance(amount=FVal(gas_str)),
+        amount=FVal(gas_str),
         location_label=ethereum_accounts[0],
         notes=f'Burn {gas_str} ETH for gas',
         counterparty=CPT_GAS,
@@ -43,7 +42,7 @@ def test_matic_to_pol_migration(ethereum_inquirer, ethereum_accounts):
         event_type=HistoryEventType.INFORMATIONAL,
         event_subtype=HistoryEventSubType.APPROVE,
         asset=A_ETH_MATIC,
-        balance=Balance(amount=ZERO),
+        amount=ZERO,
         location_label=ethereum_accounts[0],
         notes=f'Revoke MATIC spending approval of {ethereum_accounts[0]} by {POLYGON_MIGRATION_ADDRESS}',  # noqa: E501
         address=POLYGON_MIGRATION_ADDRESS,
@@ -55,7 +54,7 @@ def test_matic_to_pol_migration(ethereum_inquirer, ethereum_accounts):
         event_type=HistoryEventType.MIGRATE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_ETH_MATIC,
-        balance=Balance(amount=FVal(amount)),
+        amount=FVal(amount),
         location_label=ethereum_accounts[0],
         notes=f'Migrate {amount} MATIC to POL',
         counterparty=CPT_POLYGON,
@@ -68,7 +67,7 @@ def test_matic_to_pol_migration(ethereum_inquirer, ethereum_accounts):
         event_type=HistoryEventType.MIGRATE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=Asset('eip155:1/erc20:0x455e53CBB86018Ac2B8092FdCd39d8444aFFC3F6'),
-        balance=Balance(amount=FVal(amount)),
+        amount=FVal(amount),
         location_label=ethereum_accounts[0],
         notes=f'Receive {amount} POL from MATIC->POL migration',
         counterparty=CPT_POLYGON,

@@ -79,7 +79,7 @@ class EthereumTransactionDecoder(EVMTransactionDecoderWithDSProxy):
             for event in decoded_events:
                 if event.asset == A_GTC and event.event_type == HistoryEventType.RECEIVE:
                     event.event_subtype = HistoryEventSubType.AIRDROP
-                    event.notes = f'Claim {event.balance.amount} GTC from the GTC airdrop'
+                    event.notes = f'Claim {event.amount} GTC from the GTC airdrop'
                     event.extra_data = {AIRDROP_IDENTIFIER_KEY: 'gitcoin'}
             return DEFAULT_DECODING_OUTPUT
 
@@ -87,7 +87,7 @@ class EthereumTransactionDecoder(EVMTransactionDecoderWithDSProxy):
             for event in decoded_events:
                 if event.asset == A_1INCH and event.event_type == HistoryEventType.RECEIVE:
                     event.event_subtype = HistoryEventSubType.AIRDROP
-                    event.notes = f'Claim {event.balance.amount} 1INCH from the 1INCH airdrop'
+                    event.notes = f'Claim {event.amount} 1INCH from the 1INCH airdrop'
                     event.extra_data = {AIRDROP_IDENTIFIER_KEY: '1inch'}
             return DEFAULT_DECODING_OUTPUT
 

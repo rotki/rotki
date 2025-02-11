@@ -2,14 +2,13 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.base.modules.efp.constants import EFP_LIST_REGISTRY
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.efp.constants import CPT_EFP
 from rotkehlchen.constants.assets import A_ETH
-from rotkehlchen.constants.misc import ONE
+from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -41,7 +40,7 @@ def test_efp_list_creation(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=FVal(gas_amount)),
+            amount=FVal(gas_amount),
             location_label=user_address,
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
@@ -53,7 +52,7 @@ def test_efp_list_creation(
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
-            balance=Balance(),
+            amount=ZERO,
             location_label=user_address,
             notes=f'Create EFP primary list for {user_address}',
             counterparty=CPT_EFP,
@@ -65,7 +64,7 @@ def test_efp_list_creation(
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.NONE,
             asset=Asset(f'eip155:8453/erc721:{EFP_LIST_REGISTRY}/183'),
-            balance=Balance(amount=ONE),
+            amount=ONE,
             location_label=user_address,
             notes=f'Receive EFP list NFT for {user_address}',
             counterparty=CPT_EFP,
@@ -92,7 +91,7 @@ def test_efp_list_operations_base(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=FVal(gas_amount)),
+            amount=FVal(gas_amount),
             location_label=user_address,
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
@@ -104,7 +103,7 @@ def test_efp_list_operations_base(
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
-            balance=Balance(),
+            amount=ZERO,
             location_label=user_address,
             notes='Follow 0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045 on EFP',
             counterparty=CPT_EFP,
@@ -116,7 +115,7 @@ def test_efp_list_operations_base(
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
-            balance=Balance(),
+            amount=ZERO,
             location_label=user_address,
             notes='Add top8 tag to 0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12 on EFP',
             counterparty=CPT_EFP,
@@ -128,7 +127,7 @@ def test_efp_list_operations_base(
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
-            balance=Balance(),
+            amount=ZERO,
             location_label=user_address,
             notes='Add top8 tag to 0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045 on EFP',
             counterparty=CPT_EFP,
@@ -140,7 +139,7 @@ def test_efp_list_operations_base(
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
-            balance=Balance(),
+            amount=ZERO,
             location_label=user_address,
             notes='Follow 0x983110309620D911731Ac0932219af06091b6744 on EFP',
             counterparty=CPT_EFP,
@@ -166,7 +165,7 @@ def test_efp_list_operations_optimism(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=FVal(gas_amount)),
+            amount=FVal(gas_amount),
             location_label=user_address,
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
@@ -178,7 +177,7 @@ def test_efp_list_operations_optimism(
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
-            balance=Balance(),
+            amount=ZERO,
             location_label=user_address,
             notes='Unfollow 0x14536667Cd30e52C0b458BaACcB9faDA7046E056 on EFP',
             counterparty=CPT_EFP,
@@ -190,7 +189,7 @@ def test_efp_list_operations_optimism(
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
-            balance=Balance(),
+            amount=ZERO,
             location_label=user_address,
             notes='Follow 0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045 on EFP',
             counterparty=CPT_EFP,
@@ -216,7 +215,7 @@ def test_efp_list_operations_ethereum(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=FVal(gas_amount)),
+            amount=FVal(gas_amount),
             location_label=user_address,
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
@@ -228,7 +227,7 @@ def test_efp_list_operations_ethereum(
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
-            balance=Balance(),
+            amount=ZERO,
             location_label=user_address,
             notes='Follow 0x653223a381fBbE16ddb1EC44C7a1c31ffFFBb1E9 on EFP',
             counterparty=CPT_EFP,
@@ -240,7 +239,7 @@ def test_efp_list_operations_ethereum(
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
-            balance=Balance(),
+            amount=ZERO,
             location_label=user_address,
             notes='Follow 0x881475210E75b814D5b711090a064942b6f30605 on EFP',
             counterparty=CPT_EFP,

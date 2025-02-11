@@ -1,7 +1,6 @@
 import logging
 from typing import Any
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS
@@ -74,7 +73,7 @@ class BlurDecoder(DecoderInterface):
             event_type=HistoryEventType.STAKING,
             event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
             asset=Asset(BLUR_IDENTIFIER),
-            balance=Balance(amount=stake_amount_norm),
+            amount=stake_amount_norm,
             location_label=user_address,
             notes=f'Stake {stake_amount_norm} BLUR',
             counterparty=CPT_BLUR,
@@ -97,7 +96,7 @@ class BlurDecoder(DecoderInterface):
                 event.event_type == HistoryEventType.RECEIVE and
                 event.event_subtype == HistoryEventSubType.NONE and
                 event.asset.identifier == BLUR_IDENTIFIER and
-                event.balance.amount == amount and
+                event.amount == amount and
                 event.location_label == user_address
             ):
                 event.event_type = HistoryEventType.STAKING
@@ -127,7 +126,7 @@ class BlurDecoder(DecoderInterface):
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.AIRDROP,
             asset=Asset(BLUR_IDENTIFIER),
-            balance=Balance(amount=claim_amount_norm),
+            amount=claim_amount_norm,
             location_label=user,
             notes=f'Claim {claim_amount_norm} BLUR from Blur airdrop',
             counterparty=CPT_BLUR,

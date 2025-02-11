@@ -975,10 +975,10 @@ def test_blockchain_balances_refresh(
         collateral=Balance(FVal(3), FVal(54)),
         debt=Balance(FVal(0)),
         collateralization_ratio=None,
-        liquidation_ratio=FVal(0),
+        liquidation_ratio=ZERO,
         liquidation_price=None,
         urn=ethereum_accounts[0],
-        stability_fee=FVal(0),
+        stability_fee=ZERO,
     )]
     vaults_patch = patch('rotkehlchen.chain.ethereum.modules.makerdao.vaults.MakerdaoVaults.get_vaults', side_effect=lambda: makerdao_vault)  # noqa: E501
 

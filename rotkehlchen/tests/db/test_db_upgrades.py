@@ -2954,12 +2954,12 @@ def test_upgrade_db_46_to_47(user_data_dir, messages_aggregator):
         ).fetchone()[0] == 0
 
         # assert block events state after upgrade
-        result = cursor.execute("SELECT identifier, entry_type, event_identifier, sequence_index, timestamp, location, location_label, asset, amount, usd_value, notes, type, subtype FROM history_events WHERE event_identifier IN ('BP1_17153311', 'BP1_17153312')").fetchall()  # noqa: E501
+        result = cursor.execute("SELECT identifier, entry_type, event_identifier, sequence_index, timestamp, location, location_label, asset, amount, notes, type, subtype FROM history_events WHERE event_identifier IN ('BP1_17153311', 'BP1_17153312')").fetchall()  # noqa: E501
         assert result == [
-            (1, 4, 'BP1_17153311', 0, 1682911787000, 'f', '0x8ff1E3bD9b935208521D33F74430Bd5fA4387120', 'ETH', '0.1', '100', 'Validator 4242 produced block 17153311 with 0.1 ETH going to 0x8ff1E3bD9b935208521D33F74430Bd5fA4387120 as the block reward', 'staking', 'block production'),  # noqa: E501
-            (2, 4, 'BP1_17153311', 1, 1682911787000, 'f', '0x8ff1E3bD9b935208521D33F74430Bd5fA4387120', 'ETH', '0.05', '50', 'Validator 4242 produced block 17153311. Relayer reported 0.05 ETH as the MEV reward going to 0x8ff1E3bD9b935208521D33F74430Bd5fA4387120', 'informational', 'mev reward'),  # noqa: E501
-            (4, 4, 'BP1_17153312', 0, 1683911787000, 'f', '0x6EF6f6436605793b1c551727B26295Cd4E74bC43', 'ETH', '0.2', '200', 'Validator 4242 produced block 17153312 with 0.2 ETH going to 0x6EF6f6436605793b1c551727B26295Cd4E74bC43 as the block reward', 'informational', 'block production'),  # noqa: E501
-            (5, 4, 'BP1_17153312', 1, 1683911787000, 'f', '0x8ff1E3bD9b935208521D33F74430Bd5fA4387120', 'ETH', '0.06', '60', 'Validator 4242 produced block 17153312. Relayer reported 0.06 ETH as the MEV reward going to 0x8ff1E3bD9b935208521D33F74430Bd5fA4387120', 'informational', 'mev reward'),  # noqa: E501
+            (1, 4, 'BP1_17153311', 0, 1682911787000, 'f', '0x8ff1E3bD9b935208521D33F74430Bd5fA4387120', 'ETH', '0.1', 'Validator 4242 produced block 17153311 with 0.1 ETH going to 0x8ff1E3bD9b935208521D33F74430Bd5fA4387120 as the block reward', 'staking', 'block production'),  # noqa: E501
+            (2, 4, 'BP1_17153311', 1, 1682911787000, 'f', '0x8ff1E3bD9b935208521D33F74430Bd5fA4387120', 'ETH', '0.05', 'Validator 4242 produced block 17153311. Relayer reported 0.05 ETH as the MEV reward going to 0x8ff1E3bD9b935208521D33F74430Bd5fA4387120', 'informational', 'mev reward'),  # noqa: E501
+            (4, 4, 'BP1_17153312', 0, 1683911787000, 'f', '0x6EF6f6436605793b1c551727B26295Cd4E74bC43', 'ETH', '0.2', 'Validator 4242 produced block 17153312 with 0.2 ETH going to 0x6EF6f6436605793b1c551727B26295Cd4E74bC43 as the block reward', 'informational', 'block production'),  # noqa: E501
+            (5, 4, 'BP1_17153312', 1, 1683911787000, 'f', '0x8ff1E3bD9b935208521D33F74430Bd5fA4387120', 'ETH', '0.06', 'Validator 4242 produced block 17153312. Relayer reported 0.06 ETH as the MEV reward going to 0x8ff1E3bD9b935208521D33F74430Bd5fA4387120', 'informational', 'mev reward'),  # noqa: E501
         ]
         result = cursor.execute('SELECT identifier, validator_index, is_exit_or_blocknumber FROM eth_staking_events_info').fetchall()  # noqa: E501
         assert result == [(1, 4242, 17153311), (2, 4242, 17153311), (4, 4242, 17153312), (5, 4242, 17153312)]  # noqa: E501
@@ -3005,7 +3005,7 @@ def test_latest_upgrade_correctness(user_data_dir):
 
     # Execute upgrade
     db = _init_db_with_target_version(
-        target_version=46,
+        target_version=47,
         user_data_dir=user_data_dir,
         msg_aggregator=msg_aggregator,
         resume_from_backup=False,
@@ -3027,7 +3027,7 @@ def test_latest_upgrade_correctness(user_data_dir):
     result = cursor.execute("SELECT name FROM sqlite_master WHERE type='view'")
     views_after_creation = {x[0] for x in result}
 
-    assert cursor.execute("SELECT value FROM settings WHERE name='version'").fetchone()[0] == '46'
+    assert cursor.execute("SELECT value FROM settings WHERE name='version'").fetchone()[0] == '47'
     removed_tables = {'asset_movements', 'asset_movement_category'}
     removed_views = set()
     missing_tables = tables_before - tables_after_upgrade

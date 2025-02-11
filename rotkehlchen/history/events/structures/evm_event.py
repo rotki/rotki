@@ -3,7 +3,6 @@ from enum import auto
 from typing import TYPE_CHECKING, Any, Final, cast
 
 from rotkehlchen.accounting.mixins.event import AccountingEventType
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.types import ActionType
 from rotkehlchen.accounting.types import EventAccountingRuleStatus
 from rotkehlchen.assets.asset import Asset
@@ -25,6 +24,7 @@ from rotkehlchen.serialization.deserialize import deserialize_fval, deserialize_
 from rotkehlchen.types import (
     ChecksumEvmAddress,
     EVMTxHash,
+    FVal,
     Location,
     TimestampMS,
     deserialize_evm_tx_hash,
@@ -89,7 +89,7 @@ class EvmEvent(HistoryBaseEntry):  # hash in superclass
             event_type: HistoryEventType,
             event_subtype: HistoryEventSubType,
             asset: Asset,
-            balance: Balance,
+            amount: FVal,
             location_label: str | None = None,
             notes: str | None = None,
             identifier: int | None = None,
@@ -112,7 +112,7 @@ class EvmEvent(HistoryBaseEntry):  # hash in superclass
             event_type=event_type,
             event_subtype=event_subtype,
             asset=asset,
-            balance=balance,
+            amount=amount,
             location_label=location_label,
             notes=notes,
             identifier=identifier,
@@ -185,7 +185,6 @@ class EvmEvent(HistoryBaseEntry):  # hash in superclass
     def deserialize_from_db(cls: type['EvmEvent'], entry: tuple) -> 'EvmEvent':
         entry = cast('EVM_EVENT_DB_TUPLE_READ', entry)
         amount = deserialize_fval(entry[7], 'amount', 'evm event')
-        usd_value = deserialize_fval(entry[8], 'usd_value', 'evm event')
         return cls(
             identifier=entry[0],
             event_identifier=entry[1],
@@ -194,15 +193,15 @@ class EvmEvent(HistoryBaseEntry):  # hash in superclass
             location=Location.deserialize_from_db(entry[4]),
             location_label=entry[5],
             asset=Asset(entry[6]).check_existence(),
-            balance=Balance(amount, usd_value),
-            notes=entry[9],
-            event_type=HistoryEventType.deserialize(entry[10]),
-            event_subtype=HistoryEventSubType.deserialize(entry[11]),
-            extra_data=cls.deserialize_extra_data(entry=entry, extra_data=entry[12]),
-            tx_hash=deserialize_evm_tx_hash(entry[13]),
-            counterparty=entry[14],
-            product=EvmProduct.deserialize(entry[15]) if entry[15] is not None else None,
-            address=deserialize_optional(input_val=entry[16], fn=string_to_evm_address),
+            amount=amount,
+            notes=entry[8],
+            event_type=HistoryEventType.deserialize(entry[9]),
+            event_subtype=HistoryEventSubType.deserialize(entry[10]),
+            extra_data=cls.deserialize_extra_data(entry=entry, extra_data=entry[11]),
+            tx_hash=deserialize_evm_tx_hash(entry[12]),
+            counterparty=entry[13],
+            product=EvmProduct.deserialize(entry[14]) if entry[14] is not None else None,
+            address=deserialize_optional(input_val=entry[15], fn=string_to_evm_address),
         )
 
     def has_details(self) -> bool:

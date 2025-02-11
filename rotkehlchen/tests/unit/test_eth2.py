@@ -7,7 +7,6 @@ from unittest.mock import patch
 import pytest
 import requests
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.accounts import BlockchainAccountData
 from rotkehlchen.chain.ethereum.modules.eth2.constants import CPT_ETH2, UNKNOWN_VALIDATOR_INDEX
 from rotkehlchen.chain.ethereum.modules.eth2.structures import (
@@ -124,7 +123,7 @@ def test_get_validators_to_query_for_stats(database):
             event=EthWithdrawalEvent(
                 validator_index=3,
                 timestamp=ts_sec_to_ms(Timestamp(1617512800 + DAY_IN_SECONDS)),
-                balance=Balance(amount=ONE),
+                amount=ONE,
                 withdrawal_address=make_evm_address(),
                 is_exit=True,
             ),
@@ -139,7 +138,7 @@ def test_get_validators_to_query_for_stats(database):
             event=EthWithdrawalEvent(
                 validator_index=3,
                 timestamp=ts_sec_to_ms(Timestamp(1617512800)),
-                balance=Balance(amount=ONE),
+                amount=ONE,
                 withdrawal_address=make_evm_address(),
                 is_exit=True,
             ),
@@ -633,7 +632,7 @@ def test_deposits_pubkey_re(eth2: 'Eth2', database):
                 event_type=HistoryEventType.STAKING,
                 event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
                 asset=A_ETH,
-                balance=Balance(amount=FVal(32)),
+                amount=FVal(32),
                 notes=f'Deposit 32 ETH to validator with pubkey {pubkey1}. Deposit index: 519464. Withdrawal credentials: 0x00c5af874f28011e2f559e1214131da5f11b12845921b0d8e436f0cd37d683a8',  # noqa: E501
                 counterparty=CPT_ETH2,
             ), EvmEvent(
@@ -644,7 +643,7 @@ def test_deposits_pubkey_re(eth2: 'Eth2', database):
                 event_type=HistoryEventType.SPEND,
                 event_subtype=HistoryEventSubType.FEE,
                 asset=A_ETH,
-                balance=Balance(amount=FVal('0.01')),
+                amount=FVal('0.01'),
                 notes='Some fees',
                 counterparty=CPT_GAS,
             ), EvmEvent(
@@ -656,7 +655,7 @@ def test_deposits_pubkey_re(eth2: 'Eth2', database):
                 event_type=HistoryEventType.STAKING,
                 event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
                 asset=A_ETH,
-                balance=Balance(amount=FVal(32)),
+                amount=FVal(32),
                 notes=f'Deposit 32 ETH to validator with pubkey {pubkey2}. Deposit index: 529464. Withdrawal credentials: 0x00a5a0074f28011e2f559e1214131da5f11b12845921b0d8e436f0cd37d683a8',  # noqa: E501
                 counterparty=CPT_ETH2,
             )],
@@ -706,7 +705,7 @@ def test_eth_validators_performance(eth2, database, ethereum_accounts):
             EthBlockEvent(
                 validator_index=vindex1,
                 timestamp=timestampms,
-                balance=Balance(block_reward_1),
+                amount=block_reward_1,
                 fee_recipient=vindex1_address,
                 fee_recipient_tracked=True,
                 block_number=block_number,
@@ -714,7 +713,7 @@ def test_eth_validators_performance(eth2, database, ethereum_accounts):
             ), EthBlockEvent(
                 validator_index=vindex1,
                 timestamp=TimestampMS(timestampms + (1 * (HOUR_IN_SECONDS * 1000))),
-                balance=Balance(mev_reward_1),
+                amount=mev_reward_1,
                 fee_recipient=vindex1_address,
                 fee_recipient_tracked=True,
                 block_number=block_number,
@@ -722,7 +721,7 @@ def test_eth_validators_performance(eth2, database, ethereum_accounts):
             ), EthBlockEvent(
                 validator_index=vindex2,
                 timestamp=TimestampMS(timestampms + (2 * (HOUR_IN_SECONDS * 1000))),
-                balance=Balance(block_reward_2),  # since mev builder gets it we shouldn't count it
+                amount=block_reward_2,  # since mev builder gets it we shouldn't count it
                 fee_recipient=mev_builder_address,
                 fee_recipient_tracked=False,
                 block_number=block_number + 1,
@@ -730,7 +729,7 @@ def test_eth_validators_performance(eth2, database, ethereum_accounts):
             ), EthBlockEvent(
                 validator_index=vindex2,
                 timestamp=TimestampMS(timestampms + (3 * (HOUR_IN_SECONDS * 1000))),
-                balance=Balance(mev_reward_2),
+                amount=mev_reward_2,
                 fee_recipient=vindex2_address,
                 fee_recipient_tracked=True,
                 block_number=block_number + 1,
@@ -743,7 +742,7 @@ def test_eth_validators_performance(eth2, database, ethereum_accounts):
                 event_type=HistoryEventType.STAKING,
                 event_subtype=HistoryEventSubType.MEV_REWARD,
                 asset=A_ETH,
-                balance=Balance(mev_reward_1),
+                amount=mev_reward_1,
                 location_label=vindex1_address,
                 notes=f'Received {mev_reward_1} ETH from {mev_builder_address}',
                 extra_data={'validator_index': vindex1},
@@ -755,21 +754,21 @@ def test_eth_validators_performance(eth2, database, ethereum_accounts):
                 event_type=HistoryEventType.STAKING,
                 event_subtype=HistoryEventSubType.MEV_REWARD,
                 asset=A_ETH,
-                balance=Balance(mev_reward_2),
+                amount=mev_reward_2,
                 location_label=vindex2_address,
                 notes=f'Received {mev_reward_2} ETH from {mev_builder_address}',
                 extra_data={'validator_index': vindex2},
             ), EthWithdrawalEvent(
                 validator_index=vindex1,
                 timestamp=TimestampMS(timestampms + (6 * (HOUR_IN_SECONDS * 1000))),
-                balance=Balance(withdrawal_1),
+                amount=withdrawal_1,
                 withdrawal_address=vindex1_address,
                 is_exit=False,
             ), EthBlockEvent(
                 identifier=8,
                 validator_index=vindex2,
                 timestamp=TimestampMS(timestampms + (7 * (HOUR_IN_SECONDS * 1000))),
-                balance=Balance(no_mev_block_reward_2),
+                amount=no_mev_block_reward_2,
                 fee_recipient=vindex2_address,
                 fee_recipient_tracked=True,
                 block_number=16212625,
@@ -778,7 +777,7 @@ def test_eth_validators_performance(eth2, database, ethereum_accounts):
                 identifier=9,
                 validator_index=vindex1,
                 timestamp=TimestampMS(timestampms + (36 * (HOUR_IN_SECONDS * 1000))),
-                balance=Balance(exit_1),
+                amount=exit_1,
                 withdrawal_address=vindex1_address,
                 is_exit=True,
             ),
@@ -861,7 +860,7 @@ def test_eth_validators_performance_recent(eth2, database, ethereum_accounts):
             EthBlockEvent(  # to see combining with other fields works
                 validator_index=vindex1,
                 timestamp=TimestampMS(1666693607000),
-                balance=Balance(block_reward_1),
+                amount=block_reward_1,
                 fee_recipient=ethereum_accounts[0],
                 fee_recipient_tracked=True,
                 block_number=15824493,
@@ -941,7 +940,7 @@ def test_combine_block_with_tx_events(eth2, database):
             EthBlockEvent(
                 validator_index=vindex1,
                 timestamp=timestampms,
-                balance=Balance(FVal('0.126419309459217215')),
+                amount=FVal('0.126419309459217215'),
                 fee_recipient=mev_builder_address,
                 fee_recipient_tracked=True,
                 block_number=block_number,
@@ -949,7 +948,7 @@ def test_combine_block_with_tx_events(eth2, database):
             ), EthBlockEvent(
                 validator_index=vindex1,
                 timestamp=timestampms,
-                balance=Balance(mev_reward),
+                amount=mev_reward,
                 fee_recipient=vindex1_address,
                 fee_recipient_tracked=True,
                 block_number=block_number,
@@ -962,7 +961,7 @@ def test_combine_block_with_tx_events(eth2, database):
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_ETH,
-                balance=Balance(mev_reward),
+                amount=mev_reward,
                 location_label=vindex1_address,
                 notes=f'Received {mev_reward} ETH from {mev_builder_address}',
             ),
@@ -987,7 +986,7 @@ def test_combine_block_with_tx_events(eth2, database):
         event_type=HistoryEventType.STAKING,
         event_subtype=HistoryEventSubType.MEV_REWARD,
         asset=A_ETH,
-        balance=Balance(mev_reward),
+        amount=mev_reward,
         location_label=vindex1_address,
         notes=f'Received {mev_reward} ETH from {mev_builder_address} as mev reward for block {block_number} in {tx_hash.hex()}',  # pylint: disable=no-member  # noqa: E501
         event_identifier=EthBlockEvent.form_event_identifier(block_number),
@@ -1028,7 +1027,7 @@ def test_refresh_activated_validators_deposits(eth2, database):
         validator_index=validator1.validator_index,
         sequence_index=1,
         timestamp=TimestampMS(360000),
-        balance=Balance(FVal(32)),
+        amount=FVal(32),
         depositor=string_to_evm_address('0xA3E5ff1230a38243BB64Dc1423Df40B63a4CA0c3'),
     ), EthDepositEvent(
         identifier=2,
@@ -1036,7 +1035,7 @@ def test_refresh_activated_validators_deposits(eth2, database):
         validator_index=UNKNOWN_VALIDATOR_INDEX,  # actual value should be 207003
         sequence_index=2,
         timestamp=TimestampMS(460000),
-        balance=Balance(FVal(32)),
+        amount=FVal(32),
         depositor=string_to_evm_address('0xf879704602696cD6a567eA569F5D95b4dd51b5FD'),
         extra_data={'public_key': validator2.public_key},
     ), EthDepositEvent(
@@ -1045,7 +1044,7 @@ def test_refresh_activated_validators_deposits(eth2, database):
         validator_index=UNKNOWN_VALIDATOR_INDEX,  # actual value should be 4523
         sequence_index=3,
         timestamp=TimestampMS(660000),
-        balance=Balance(FVal(32)),
+        amount=FVal(32),
         depositor=string_to_evm_address('0xFCD50905214325355A57aE9df084C5dd40D5D478'),
         extra_data={'public_key': validator3.public_key},
     )]

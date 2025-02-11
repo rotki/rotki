@@ -90,7 +90,7 @@ class Compoundv2Decoder(DecoderInterface):
             if (
                 event.event_type == HistoryEventType.SPEND and
                 event.asset == underlying_asset and
-                event.balance.amount == mint_amount and
+                event.amount == mint_amount and
                 event.address == compound_token.evm_address
             ):
                 event.event_type = HistoryEventType.DEPOSIT
@@ -139,13 +139,13 @@ class Compoundv2Decoder(DecoderInterface):
         out_event = in_event = None
         for event in decoded_events:
             # Find the transfer event which should have come before the redeeming
-            if event.event_type == HistoryEventType.RECEIVE and event.asset == underlying_asset and event.balance.amount == redeem_amount:  # noqa: E501
+            if event.event_type == HistoryEventType.RECEIVE and event.asset == underlying_asset and event.amount == redeem_amount:  # noqa: E501
                 event.event_type = HistoryEventType.WITHDRAWAL
                 event.event_subtype = HistoryEventSubType.REDEEM_WRAPPED
                 event.counterparty = CPT_COMPOUND
                 event.notes = f'Withdraw {redeem_amount} {underlying_asset.symbol} from compound'
                 in_event = event
-            if event.event_type == HistoryEventType.SPEND and event.asset == compound_token and event.balance.amount == redeem_tokens:  # noqa: E501
+            if event.event_type == HistoryEventType.SPEND and event.asset == compound_token and event.amount == redeem_tokens:  # noqa: E501
                 event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
                 event.counterparty = CPT_COMPOUND
                 event.notes = f'Return {redeem_tokens} {compound_token.symbol} to compound'
@@ -187,7 +187,7 @@ class Compoundv2Decoder(DecoderInterface):
             if (
                 event.event_type == HistoryEventType.RECEIVE and
                 event.asset.identifier == underlying_asset and
-                event.balance.amount == amount and
+                event.amount == amount and
                 event.address == compound_token.evm_address
             ):
                 event.event_subtype = HistoryEventSubType.GENERATE_DEBT
@@ -201,10 +201,10 @@ class Compoundv2Decoder(DecoderInterface):
             ):
                 event.event_subtype = HistoryEventSubType.REWARD
                 event.counterparty = CPT_COMPOUND
-                event.notes = f'Collect {event.balance.amount} COMP from compound'
+                event.notes = f'Collect {event.amount} COMP from compound'
             elif (
                 event.event_type == HistoryEventType.SPEND and
-                event.balance.amount == amount and
+                event.amount == amount and
                 (
                     (underlying_asset == self.eth and event.address == MAXIMILLION_ADDR) or
                     (event.location_label == payer and event.address == compound_token.evm_address)
@@ -282,7 +282,7 @@ class Compoundv2Decoder(DecoderInterface):
                 event.event_subtype == HistoryEventSubType.NONE and
                 event.location_label == borrower and
                 event.address == liquidator_address and
-                event.balance.amount == seized_collateral_amount and
+                event.amount == seized_collateral_amount and
                 event.asset == collateral_ctoken
             ):
                 event.event_type = HistoryEventType.LOSS
@@ -293,7 +293,7 @@ class Compoundv2Decoder(DecoderInterface):
                 event.event_type == HistoryEventType.SPEND and
                 event.event_subtype == HistoryEventSubType.PAYBACK_DEBT and
                 event.location_label == liquidator_address and
-                event.balance.amount == repaid_amount and
+                event.amount == repaid_amount and
                 event.asset == repaying_asset and
                 event.counterparty == CPT_COMPOUND
             ):
@@ -303,7 +303,7 @@ class Compoundv2Decoder(DecoderInterface):
                 event.event_type == HistoryEventType.RECEIVE and
                 event.event_subtype == HistoryEventSubType.NONE and
                 event.location_label == liquidator_address and
-                event.balance.amount == seized_collateral_amount and
+                event.amount == seized_collateral_amount and
                 event.asset == collateral_ctoken
             ):
                 event.event_subtype = HistoryEventSubType.LIQUIDATE
@@ -366,7 +366,7 @@ class Compoundv2Decoder(DecoderInterface):
             if event.event_type == HistoryEventType.RECEIVE and event.event_subtype == HistoryEventSubType.NONE and event.location_label == supplier_address and event.asset == A_COMP and event.address == COMPTROLLER_PROXY_ADDRESS:  # noqa: E501
                 event.event_subtype = HistoryEventSubType.REWARD
                 event.counterparty = CPT_COMPOUND
-                event.notes = f'Collect {event.balance.amount} COMP from compound'
+                event.notes = f'Collect {event.amount} COMP from compound'
                 break
 
         else:  # not found, so transfer may come after

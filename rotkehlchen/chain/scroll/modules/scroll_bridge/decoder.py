@@ -86,14 +86,14 @@ class ScrollBridgeDecoder(DecoderInterface):
                 event.event_type == expected_event_type and
                 event.location_label == user_address and
                 event.asset == A_ETH and
-                event.balance.amount == amount
+                event.amount == amount
             ):
                 event.event_type = new_event_type
                 event.event_subtype = HistoryEventSubType.BRIDGE
                 event.counterparty = CPT_SCROLL
                 event.address = L2_ETH_GATEWAY
                 event.notes = (
-                    f'Bridge {event.balance.amount} ETH from {from_chain.label()} '
+                    f'Bridge {event.amount} ETH from {from_chain.label()} '
                     f'to {to_chain.label()} via Scroll bridge'
                 )
                 break
@@ -139,7 +139,7 @@ class ScrollBridgeDecoder(DecoderInterface):
                 # Address for USDC is the gateway's address
                 event.address in (ZERO_ADDRESS, L2_USDC_GATEWAY) and
                 event.asset == asset and
-                event.balance.amount == amount
+                event.amount == amount
             ):
                 bridge_match_transfer(
                     event=event,
@@ -185,7 +185,7 @@ class ScrollBridgeDecoder(DecoderInterface):
                 event.event_type == HistoryEventType.RECEIVE and
                 event.location_label == to_address and
                 event.asset == A_ETH and
-                event.balance.amount == amount
+                event.amount == amount
             ):
                 event.event_type = HistoryEventType.WITHDRAWAL
                 event.event_subtype = HistoryEventSubType.BRIDGE

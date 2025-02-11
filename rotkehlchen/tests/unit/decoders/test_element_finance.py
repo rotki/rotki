@@ -1,6 +1,5 @@
 import pytest
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.ethereum.airdrops import AIRDROP_IDENTIFIER_KEY
 from rotkehlchen.chain.ethereum.modules.airdrops.constants import CPT_ELEMENT_FINANCE
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
@@ -33,7 +32,7 @@ def test_claim_airdrop(ethereum_inquirer):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=FVal('0.0061843862')),
+            amount=FVal('0.0061843862'),
             location_label=ADDY,
             notes='Burn 0.0061843862 ETH for gas',
             counterparty=CPT_GAS,
@@ -45,7 +44,7 @@ def test_claim_airdrop(ethereum_inquirer):
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.AIRDROP,
             asset=A_ELFI,
-            balance=Balance(amount=FVal('613.8986657935664')),
+            amount=FVal('613.8986657935664'),
             location_label=ADDY,
             notes='Claim 613.8986657935664 ELFI from element-finance airdrop and delegate it to 0x7BAFC0D5c5892f2041FD9F2415A7611042218e22',  # noqa: E501
             counterparty=CPT_ELEMENT_FINANCE,

@@ -526,7 +526,7 @@ class Gemini(ExchangeInterface):
                     event_type=deserialize_asset_movement_event_type(entry['type']),
                     timestamp=ts_sec_to_ms(timestamp),
                     asset=asset,
-                    balance=Balance(deserialize_asset_amount_force_positive(entry['amount'])),
+                    amount=deserialize_asset_amount_force_positive(entry['amount']),
                     unique_id=str(entry['eid']),
                     extra_data=maybe_set_transaction_extra_data(
                         address=deserialize_asset_movement_address(entry, 'destination', asset),

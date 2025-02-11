@@ -298,7 +298,7 @@ class Bitstamp(ExchangeInterface):
                         crypto_movement.event_type == asset_movement.event_type and
                         crypto_movement.asset == asset_movement.asset and
                         'fee' in asset_movement.extra_data and
-                        crypto_movement.balance.amount == asset_movement.balance.amount + asset_movement.extra_data['fee'] and  # noqa: E501
+                        crypto_movement.amount == asset_movement.amount + asset_movement.extra_data['fee'] and  # noqa: E501
                         abs(crypto_movement.timestamp - asset_movement.timestamp) <= BITSTAMP_MATCHING_TOLERANCE  # noqa: E501
                 ):
                     asset_movement.extra_data.update(crypto_movement.extra_data)  # type: ignore  # crypto_movement.extra_data should always be set here
@@ -762,7 +762,7 @@ class Bitstamp(ExchangeInterface):
             location=Location.BITSTAMP,
             event_type=event_type,
             asset=asset,
-            balance=Balance(abs(amount)),
+            amount=abs(amount),
             unique_id=transaction_id,
             extra_data=maybe_set_transaction_extra_data(
                 address=address,

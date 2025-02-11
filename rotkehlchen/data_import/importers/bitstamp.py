@@ -3,9 +3,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 from uuid import uuid4
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.converters import asset_from_bitstamp
-from rotkehlchen.constants import ZERO
 from rotkehlchen.data_import.importers.constants import BITSTAMP_EVENT_PREFIX
 from rotkehlchen.data_import.utils import BaseExchangeImporter
 from rotkehlchen.db.drivers.gevent import DBCursor
@@ -77,10 +75,7 @@ class BitstampTransactionsImporter(BaseExchangeImporter):
                 timestamp=timestamp,
                 location=Location.BITSTAMP,
                 asset=sold_currency,
-                balance=Balance(
-                    amount=sold_amount,
-                    usd_value=ZERO,
-                ),
+                amount=sold_amount,
                 notes=f'Spend {sold_amount} {sold_currency} as the result of a trade on Bitstamp',
                 event_type=HistoryEventType.TRADE,
                 event_subtype=HistoryEventSubType.SPEND,
@@ -91,10 +86,7 @@ class BitstampTransactionsImporter(BaseExchangeImporter):
                 timestamp=timestamp,
                 location=Location.BITSTAMP,
                 asset=bought_currency,
-                balance=Balance(
-                    amount=bought_amount,
-                    usd_value=ZERO,
-                ),
+                amount=bought_amount,
                 notes=f'Receive {bought_amount} {bought_currency} as the result of a trade on Bitstamp',  # noqa: E501
                 event_type=HistoryEventType.TRADE,
                 event_subtype=HistoryEventSubType.RECEIVE,
@@ -105,10 +97,7 @@ class BitstampTransactionsImporter(BaseExchangeImporter):
                 timestamp=timestamp,
                 location=Location.BITSTAMP,
                 asset=fee_currency,
-                balance=Balance(
-                    amount=fee_amount,
-                    usd_value=ZERO,
-                ),
+                amount=fee_amount,
                 notes=f'Fee of {fee_amount} {fee_currency} as the result of a trade on Bitstamp',
                 event_type=HistoryEventType.TRADE,
                 event_subtype=HistoryEventSubType.FEE,
@@ -134,10 +123,7 @@ class BitstampTransactionsImporter(BaseExchangeImporter):
                 timestamp=timestamp,
                 location=Location.BITSTAMP,
                 asset=asset,
-                balance=Balance(
-                    amount=amount,
-                    usd_value=ZERO,
-                ),
+                amount=amount,
                 notes=f'{transaction_type} of {amount} {asset} on Bitstamp',
                 event_type=event_type,
                 event_subtype=event_subtype,

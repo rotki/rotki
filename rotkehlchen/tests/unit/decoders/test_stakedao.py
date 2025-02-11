@@ -1,6 +1,5 @@
 import pytest
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.modules.stakedao.constants import (
     CPT_STAKEDAO,
@@ -37,7 +36,7 @@ def test_claim_one(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=FVal('0.003543266133945936')),
+            amount=FVal('0.003543266133945936'),
             location_label=user_address,
             notes='Burn 0.003543266133945936 ETH for gas',
             counterparty=CPT_GAS,
@@ -50,7 +49,7 @@ def test_claim_one(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.REWARD,
             asset=A_CRV,
-            balance=Balance(amount=FVal(amount_str)),
+            amount=FVal(amount_str),
             location_label=user_address,
             notes=f'Claim {amount_str} CRV from StakeDAO veCRV bribes for the period starting at {timestamp_to_date(period, formatstr="%d/%m/%Y %H:%M:%S")}',  # noqa: E501
             counterparty=CPT_STAKEDAO,
@@ -78,7 +77,7 @@ def test_old_claim(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=FVal(gas_str)),
+            amount=FVal(gas_str),
             location_label=user_address,
             notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
@@ -91,7 +90,7 @@ def test_old_claim(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.REWARD,
             asset=Asset('eip155:1/erc20:0x41D5D79431A913C4aE7d69a668ecdfE5fF9DFB68'),
-            balance=Balance(amount=FVal(amount_str)),
+            amount=FVal(amount_str),
             location_label=user_address,
             notes=f'Claim {amount_str} INV from StakeDAO veCRV bribes for the period starting at {timestamp_to_date(period, formatstr="%d/%m/%Y %H:%M:%S")}',  # noqa: E501
             counterparty=CPT_STAKEDAO,
@@ -122,7 +121,7 @@ def test_claim_multiple(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=FVal('0.002833214770290904')),
+            amount=FVal('0.002833214770290904'),
             location_label=user_address,
             notes='Burn 0.002833214770290904 ETH for gas',
             counterparty=CPT_GAS,
@@ -135,7 +134,7 @@ def test_claim_multiple(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.REWARD,
             asset=A_CRV,
-            balance=Balance(amount=FVal(amount1_str)),
+            amount=FVal(amount1_str),
             location_label=user_address,
             notes=f'Claim {amount1_str} CRV from StakeDAO veCRV bribes for the period starting at {timestamp_to_date(period, formatstr="%d/%m/%Y %H:%M:%S")}',  # noqa: E501
             counterparty=CPT_STAKEDAO,
@@ -149,7 +148,7 @@ def test_claim_multiple(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.REWARD,
             asset=A_CRV,
-            balance=Balance(amount=FVal(amount2_str)),
+            amount=FVal(amount2_str),
             location_label=user_address,
             notes=f'Claim {amount2_str} CRV from StakeDAO veCRV bribes for the period starting at {timestamp_to_date(period, formatstr="%d/%m/%Y %H:%M:%S")}',  # noqa: E501
             counterparty=CPT_STAKEDAO,

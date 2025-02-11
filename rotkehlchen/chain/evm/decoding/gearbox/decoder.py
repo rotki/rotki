@@ -148,19 +148,19 @@ class GearboxCommonDecoder(DecoderInterface, ReloadableCacheDecoderMixin):
             if (
                 event.event_type == HistoryEventType.SPEND and
                 event.event_subtype == HistoryEventSubType.NONE and
-                event.balance.amount == amount and
+                event.amount == amount and
                 event.location_label == user_address
             ):
                 event.event_type = HistoryEventType.DEPOSIT
                 event.event_subtype = HistoryEventSubType.DEPOSIT_FOR_WRAPPED
                 event.counterparty = CPT_GEARBOX
-                event.notes = f'Deposit {event.balance.amount} {event.asset.symbol_or_name()} to Gearbox'  # noqa: E501
+                event.notes = f'Deposit {event.amount} {event.asset.symbol_or_name()} to Gearbox'
             elif (
                 # in case of just providing lp, this event is already decoded here and doesnt need an ActionItem  # noqa: E501
                 event.event_type == HistoryEventType.RECEIVE and
                 event.event_subtype == HistoryEventSubType.NONE and
                 event.location_label == user_address and
-                event.balance.amount == shares
+                event.amount == shares
             ):
                 event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
                 event.counterparty = CPT_GEARBOX
@@ -195,21 +195,21 @@ class GearboxCommonDecoder(DecoderInterface, ReloadableCacheDecoderMixin):
                 event.event_type == HistoryEventType.RECEIVE and
                 event.event_subtype == HistoryEventSubType.NONE and
                 event.location_label == user_address and
-                event.balance.amount == amount
+                event.amount == amount
             ):
                 event.event_type = HistoryEventType.WITHDRAWAL
                 event.event_subtype = HistoryEventSubType.REDEEM_WRAPPED
                 event.counterparty = CPT_GEARBOX
-                event.notes = f'Withdraw {event.balance.amount} {event.asset.symbol_or_name()} from Gearbox'  # noqa: E501
+                event.notes = f'Withdraw {event.amount} {event.asset.symbol_or_name()} from Gearbox'  # noqa: E501
             elif (
                 event.event_type == HistoryEventType.SPEND and
                 event.event_subtype == HistoryEventSubType.NONE and
-                event.balance.amount == shares and
+                event.amount == shares and
                 event.location_label == user_address
             ):
                 event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
                 event.counterparty = CPT_GEARBOX
-                event.notes = f'Return {event.balance.amount} {event.asset.symbol_or_name()}'
+                event.notes = f'Return {event.amount} {event.asset.symbol_or_name()}'
 
         return DEFAULT_DECODING_OUTPUT
 
@@ -234,7 +234,7 @@ class GearboxCommonDecoder(DecoderInterface, ReloadableCacheDecoderMixin):
             if (
                 event.event_type == HistoryEventType.SPEND and
                 event.event_subtype == HistoryEventSubType.NONE and
-                event.balance.amount == amount and
+                event.amount == amount and
                 event.location_label == user_address
             ):
                 event.event_type = HistoryEventType.STAKING
@@ -258,7 +258,7 @@ class GearboxCommonDecoder(DecoderInterface, ReloadableCacheDecoderMixin):
             if (
                 event.event_type == HistoryEventType.RECEIVE and
                 event.event_subtype == HistoryEventSubType.NONE and
-                event.balance.amount == amount and
+                event.amount == amount and
                 event.location_label == user_address
             ):
                 event.event_type = HistoryEventType.STAKING

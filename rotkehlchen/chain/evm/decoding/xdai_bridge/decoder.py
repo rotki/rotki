@@ -2,7 +2,6 @@ import abc
 import logging
 from typing import TYPE_CHECKING, Any
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.ethereum.decoding.constants import GNOSIS_CPT_DETAILS
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
@@ -89,7 +88,7 @@ class XdaiBridgeCommonDecoder(DecoderInterface, abc.ABC):
                 event_type=new_event_type,
                 event_subtype=HistoryEventSubType.BRIDGE,
                 asset=self.bridged_asset,
-                balance=Balance(amount),
+                amount=amount,
                 location_label=to_address,
                 notes='',
                 counterparty=None,
@@ -101,7 +100,7 @@ class XdaiBridgeCommonDecoder(DecoderInterface, abc.ABC):
                 to_address=to_address,
                 from_chain=from_chain,
                 to_chain=to_chain,
-                amount=event.balance.amount,
+                amount=event.amount,
                 asset=self.bridged_asset,
                 expected_event_type=HistoryEventType.RECEIVE,
                 new_event_type=new_event_type,
@@ -115,7 +114,7 @@ class XdaiBridgeCommonDecoder(DecoderInterface, abc.ABC):
                 event.location_label == expected_location_label and
                 event.address == self.bridge_address and
                 event.asset == self.bridged_asset and
-                event.balance.amount == amount
+                event.amount == amount
             ):
                 bridge_match_transfer(
                     event=event,
@@ -123,7 +122,7 @@ class XdaiBridgeCommonDecoder(DecoderInterface, abc.ABC):
                     to_address=bytes_to_address(context.tx_log.data[0:32]),
                     from_chain=from_chain,
                     to_chain=to_chain,
-                    amount=event.balance.amount,
+                    amount=event.amount,
                     asset=self.bridged_asset,
                     expected_event_type=expected_event_type,
                     new_event_type=new_event_type,

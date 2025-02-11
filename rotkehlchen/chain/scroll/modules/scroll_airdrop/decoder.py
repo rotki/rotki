@@ -76,7 +76,7 @@ class ScrollAirdropDecoder(DecoderInterface):
                 event.counterparty = CPT_SCROLL
                 event.event_subtype = HistoryEventSubType.AIRDROP
                 event.extra_data = {AIRDROP_IDENTIFIER_KEY: 'scroll'}
-                event.notes = f'Receive {event.balance.amount} SCR from scroll airdrop'
+                event.notes = f'Receive {event.amount} SCR from scroll airdrop'
 
         return DEFAULT_DECODING_OUTPUT
 

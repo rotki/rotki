@@ -13,7 +13,6 @@ from typing import TYPE_CHECKING, Any, Optional, Protocol
 import gevent
 from gevent.lock import Semaphore
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.types import ActionType
 from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessageType
 from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token, get_token
@@ -857,7 +856,7 @@ class EVMTransactionDecoder(ABC):
                 event_type=event_type,
                 event_subtype=event_subtype,
                 asset=self.value_asset,
-                balance=Balance(amount=amount),
+                amount=amount,
                 location_label=location_label,
                 notes=f'{verb} {amount} {self.value_asset.symbol} {preposition} {counterparty_or_address}',  # noqa: E501
                 address=address,
@@ -882,7 +881,7 @@ class EVMTransactionDecoder(ABC):
             event_type=event_type,
             event_subtype=event_subtype,
             asset=self.value_asset,
-            balance=Balance(amount=amount),
+            amount=amount,
             location_label=location_label,
             notes=f'{verb} {amount} {self.value_asset.symbol} {preposition} {counterparty_or_address}',  # noqa: E501
             address=address,
@@ -964,7 +963,7 @@ class EVMTransactionDecoder(ABC):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
             asset=token,
-            balance=Balance(amount=amount),
+            amount=amount,
             location_label=owner_address,
             notes=notes,
             address=spender_address,
@@ -998,7 +997,7 @@ class EVMTransactionDecoder(ABC):
                     event_type=event_type,
                     event_subtype=HistoryEventSubType.FEE,
                     asset=self.value_asset,
-                    balance=Balance(amount=eth_burned_as_gas),
+                    amount=eth_burned_as_gas,
                     location_label=location_label,
                     notes=notes,
                     counterparty=CPT_GAS,
@@ -1033,7 +1032,7 @@ class EVMTransactionDecoder(ABC):
                 event_type=HistoryEventType.DEPLOY,
                 event_subtype=event_subtype,
                 asset=self.value_asset,
-                balance=Balance(amount=amount),
+                amount=amount,
                 location_label=tx.from_address,
                 notes='Contract deployment',
                 address=None,  # TODO: Find out contract address
@@ -1093,11 +1092,11 @@ class EVMTransactionDecoder(ABC):
                     action_item.from_event_type == transfer.event_type and
                     action_item.from_event_subtype == transfer.event_subtype and
                     (
-                        (action_item.amount is None or action_item.amount == transfer.balance.amount) or  # noqa: E501
+                        (action_item.amount is None or action_item.amount == transfer.amount) or
                         (
                             action_item.amount_error_tolerance is not None and
                             action_item.amount is not None and
-                            abs(action_item.amount - transfer.balance.amount) < action_item.amount_error_tolerance  # noqa: E501
+                            abs(action_item.amount - transfer.amount) < action_item.amount_error_tolerance  # noqa: E501
                         )
                     ) and
                     (action_item.location_label is None or action_item.location_label == transfer.location_label)  # noqa: E501
@@ -1118,7 +1117,7 @@ class EVMTransactionDecoder(ABC):
                 if action_item.to_notes is not None:
                     format_kwargs = {}
                     if '{amount}' in action_item.to_notes:
-                        format_kwargs['amount'] = str(transfer.balance.amount)
+                        format_kwargs['amount'] = str(transfer.amount)
                     if '{symbol}' in action_item.to_notes:
                         format_kwargs['symbol'] = found_token.symbol
 

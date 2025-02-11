@@ -1,6 +1,5 @@
 import pytest
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.ethereum.airdrops import AIRDROP_IDENTIFIER_KEY
 from rotkehlchen.chain.ethereum.modules.shutter.constants import (
     CPT_SHUTTER,
@@ -32,7 +31,7 @@ def test_airdrop_claim(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=FVal(gas_amount_str)),
+            amount=FVal(gas_amount_str),
             location_label=ethereum_accounts[0],
             notes=f'Burn {gas_amount_str} ETH for gas',
             counterparty=CPT_GAS,
@@ -44,7 +43,7 @@ def test_airdrop_claim(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_SHU,
-            balance=Balance(amount=FVal(claimed_amount)),
+            amount=FVal(claimed_amount),
             location_label=ethereum_accounts[0],
             notes=f'Claim {claimed_amount} SHU from shutter airdrop into the vesting contract: 0x22714964e6b9F17798A9e1AD3f2BAb87279876FC',  # noqa: E501
             counterparty=CPT_SHUTTER,
@@ -72,7 +71,7 @@ def test_shu_delegation(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=FVal(gas_amount_str)),
+            amount=FVal(gas_amount_str),
             location_label=ethereum_accounts[0],
             notes=f'Burn {gas_amount_str} ETH for gas',
             counterparty=CPT_GAS,
@@ -84,7 +83,7 @@ def test_shu_delegation(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.GOVERNANCE,
             asset=A_SHU,
-            balance=Balance(),
+            amount=FVal(0),
             location_label=ethereum_accounts[0],
             notes=f'Change SHU Delegate for 0x561075538e7B20613Aa0C3fAa8459ac293011584 from {ethereum_accounts[0]} to 0x9Cc9C7F874eD77df06dCd41D95a2C858cd2a2506',  # noqa: E501
             counterparty=CPT_SHUTTER,

@@ -4,7 +4,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal
 from uuid import uuid4
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.converters import LOCATION_TO_ASSET_MAPPING
 from rotkehlchen.assets.utils import symbol_to_asset_or_token
 from rotkehlchen.constants import ZERO
@@ -173,7 +172,7 @@ class CointrackingImporter(BaseExchangeImporter):
                 event_type=movement_type,
                 timestamp=ts_sec_to_ms(timestamp),
                 asset=asset,
-                balance=Balance(amount),
+                amount=amount,
             )]
             if fee != ZERO:
                 events.append(AssetMovement(
@@ -182,7 +181,7 @@ class CointrackingImporter(BaseExchangeImporter):
                     event_type=movement_type,
                     timestamp=ts_sec_to_ms(timestamp),
                     asset=fee_currency,
-                    balance=Balance(fee),
+                    amount=fee,
                     is_fee=True,
                 ))
             self.add_history_events(write_cursor, events)
@@ -214,7 +213,7 @@ class CointrackingImporter(BaseExchangeImporter):
                 event_type=event_type,
                 event_subtype=event_subtype,
                 asset=asset,
-                balance=Balance(amount),
+                amount=amount,
                 notes=f'Stake reward of {amount} {asset.symbol} in {location!s}',
             )
             self.add_history_events(write_cursor, [event])

@@ -106,7 +106,7 @@ class GivethDecoder(GivethDecoderBase):
                     event.event_type == HistoryEventType.SPEND and
                     event.asset.identifier == send_token_id and
                     event.address == send_to_address and
-                    amount == event.balance.amount
+                    amount == event.amount
             ):
                 out_event = event
                 event.event_type = send_type
@@ -122,7 +122,7 @@ class GivethDecoder(GivethDecoderBase):
                 event.event_type = receive_type
                 event.event_subtype = receive_subtype
                 event.counterparty = CPT_GIVETH
-                event.notes = receive_notes.format(amount=event.balance.amount)
+                event.notes = receive_notes.format(amount=event.amount)
 
         if in_event is None or out_event is None:
             log.error(f'Could not find the GIV/PoW token transfers for {context.transaction}')

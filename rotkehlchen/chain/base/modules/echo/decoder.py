@@ -157,7 +157,7 @@ class EchoDecoder(DecoderInterface):
             if (
                 event.event_type == HistoryEventType.SPEND and
                 event.event_subtype == HistoryEventSubType.NONE and
-                event.balance.amount == asset_normalized_value(
+                event.amount == asset_normalized_value(
                     amount=fund_amount,
                     asset=event.asset.resolve_to_crypto_asset(),
                 )
@@ -167,7 +167,7 @@ class EchoDecoder(DecoderInterface):
                 event.location_label = user_address
                 event.address = deal_address
                 event.counterparty = CPT_ECHO
-                event.notes = f'Fund {event.balance.amount} {event.asset.symbol_or_name()} to {deal_address} on Echo'  # noqa:E501
+                event.notes = f'Fund {event.amount} {event.asset.symbol_or_name()} to {deal_address} on Echo'  # noqa:E501
                 break
         else:
             log.error(f'Could not find funding event for {self.evm_inquirer.chain_name} for Echo funding {transaction.tx_hash.hex()}')  # noqa:E501

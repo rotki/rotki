@@ -21,7 +21,7 @@ def match_airdrop_claim(
 ) -> bool:
     """It matches a transfer event to an airdrop claim, changes the required fields
      then returns `True` if a match was found"""
-    if not (event.event_type == HistoryEventType.RECEIVE and event.location_label == user_address and amount == event.balance.amount and asset == event.asset):  # noqa: E501
+    if not (event.event_type == HistoryEventType.RECEIVE and event.location_label == user_address and amount == event.amount and asset == event.asset):  # noqa: E501
         return False
 
     event.event_subtype = HistoryEventSubType.AIRDROP

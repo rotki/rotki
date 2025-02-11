@@ -5,7 +5,6 @@ from typing import Any
 
 from eth_utils.address import to_checksum_address
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.types import EventAccountingRuleStatus
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -151,7 +150,7 @@ def make_ethereum_event(
         event_type=event_type,
         event_subtype=event_subtype,
         asset=asset,
-        balance=Balance(amount=ONE, usd_value=ONE),
+        amount=ONE,
         counterparty=counterparty,
         address=address,
         product=product,

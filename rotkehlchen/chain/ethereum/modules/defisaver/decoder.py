@@ -1,7 +1,6 @@
 import logging
 from typing import Any
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
@@ -10,6 +9,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
 )
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
@@ -32,7 +32,7 @@ class DefisaverDecoder(DecoderInterface):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
-            balance=Balance(),
+            amount=ZERO,
             location_label=context.transaction.from_address,
             notes=f'Subscribe to defisaver automation with subscription id {sub_id} for proxy {proxy}',  # noqa: E501
             address=context.tx_log.address,
@@ -48,7 +48,7 @@ class DefisaverDecoder(DecoderInterface):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
-            balance=Balance(),
+            amount=ZERO,
             location_label=context.transaction.from_address,
             notes=f'Deactivate defisaver automation subscription with id {sub_id}',
             address=context.tx_log.address,

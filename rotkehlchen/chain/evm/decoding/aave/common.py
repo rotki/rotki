@@ -3,7 +3,6 @@ from abc import abstractmethod
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any, Literal, Optional
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.chain.ethereum.constants import RAY
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
@@ -110,7 +109,7 @@ class Commonv2v3LikeDecoder(DecoderInterface):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
             asset=token,
-            balance=Balance(),
+            amount=FVal(0),
             location_label=user,
             notes=f'{"Enable" if tx_log.topics[0] == ENABLE_COLLATERAL else "Disable"} {token.symbol} as collateral on {self.label}',  # noqa: E501
             counterparty=self.counterparty,
@@ -151,7 +150,7 @@ class Commonv2v3LikeDecoder(DecoderInterface):
             if (
                 event.address is not None and
                 (event.location_label == user or (event.location_label == on_behalf_of and user in self.native_gateways)) and  # noqa: E501
-                (self.counterparty == CPT_AAVE_V3 or event.balance.amount == amount) and  # For aave v3 we can't match amounts exactly  # noqa: E501
+                (self.counterparty == CPT_AAVE_V3 or event.amount == amount) and  # For aave v3 we can't match amounts exactly  # noqa: E501
                 event.event_subtype == HistoryEventSubType.NONE and (
                     self._address_is_aave_contract(queried_address=event.address) or
                     event.address == ZERO_ADDRESS or
@@ -173,7 +172,7 @@ class Commonv2v3LikeDecoder(DecoderInterface):
                 ):
                     event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
                     resolved_asset = event.asset.resolve_to_asset_with_symbol()
-                    event.notes = f'Receive {event.balance.amount} {resolved_asset.symbol} from {self.label}'  # noqa: E501
+                    event.notes = f'Receive {event.amount} {resolved_asset.symbol} from {self.label}'  # noqa: E501
                     event.counterparty = self.counterparty
                     receive_event = event
 
@@ -232,7 +231,7 @@ class Commonv2v3LikeDecoder(DecoderInterface):
                     self._token_is_aave_contract(event.asset)
                 ):
                     event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
-                    event.notes = f'Return {event.balance.amount} {event.asset.symbol_or_name()} to {self.label}'  # noqa: E501
+                    event.notes = f'Return {event.amount} {event.asset.symbol_or_name()} to {self.label}'  # noqa: E501
                     return_event = event
                     event.counterparty = self.counterparty
 
@@ -265,7 +264,7 @@ class Commonv2v3LikeDecoder(DecoderInterface):
         for event in decoded_events:
             if (
                 event.address is not None and
-                event.balance.amount == amount and
+                event.amount == amount and
                 event.event_subtype == HistoryEventSubType.NONE and
                 event.location_label == user and
                 event.event_type == HistoryEventType.RECEIVE and (
@@ -325,14 +324,14 @@ class Commonv2v3LikeDecoder(DecoderInterface):
                     event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
                     resolved_asset = event.asset.resolve_to_asset_with_symbol()
                     event.counterparty = self.counterparty
-                    event.notes = f'Return {event.balance.amount} {resolved_asset.symbol} to {self.label}'  # noqa: E501
+                    event.notes = f'Return {event.amount} {resolved_asset.symbol} to {self.label}'
                     return_event = event
                     if repayer != user:
                         event.notes += f' for {user}'
                 elif event.address != ZERO_ADDRESS:
                     event.event_subtype = HistoryEventSubType.PAYBACK_DEBT
                     event.counterparty = self.counterparty
-                    event.notes = f'Repay {event.balance.amount} {token.symbol} on {self.label}'
+                    event.notes = f'Repay {event.amount} {token.symbol} on {self.label}'
                     repay_event = event
                     if repayer != user:
                         event.notes += f' for {user}'
@@ -413,7 +412,7 @@ class Commonv2v3LikeDecoder(DecoderInterface):
             if (  # not checking subtype NONE as in the stkAAVE case it can already be decoded as RECEIVE_WRAPPED  # noqa: E501
                     event.event_type == HistoryEventType.RECEIVE and
                     event.asset == reward_token and
-                    event.balance.amount == amount
+                    event.amount == amount
             ):
                 event.event_subtype = HistoryEventSubType.REWARD
                 event.counterparty = self.counterparty

@@ -2,7 +2,6 @@ import logging
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS, SIMPLE_CLAIM
@@ -69,7 +68,7 @@ class GivethDecoderBase(DecoderInterface, ABC):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
             asset=Asset(self.giv_token_id),
-            balance=Balance(amount),
+            amount=amount,
             location_label=user,
             notes=f'Lock {amount} GIV for {rounds} round/s',
             address=context.tx_log.address,
@@ -84,7 +83,7 @@ class GivethDecoderBase(DecoderInterface, ABC):
             ):
                 event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
                 event.counterparty = CPT_GIVETH
-                event.notes = f'Receive {event.balance.amount} POW after locking GIV'
+                event.notes = f'Receive {event.amount} POW after locking GIV'
                 receive_event = event
                 break
 
@@ -110,7 +109,7 @@ class GivethDecoderBase(DecoderInterface, ABC):
                     event.event_type == HistoryEventType.RECEIVE and
                     event.asset.identifier == self.giv_token_id and
                     event.location_label == user and
-                    amount == event.balance.amount
+                    amount == event.amount
             ):
                 event.event_subtype = HistoryEventSubType.REWARD
                 event.counterparty = CPT_GIVETH

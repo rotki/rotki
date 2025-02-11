@@ -1,6 +1,5 @@
 import pytest
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.ethereum.airdrops import AIRDROP_IDENTIFIER_KEY
 from rotkehlchen.chain.ethereum.modules.airdrops.constants import CPT_SHAPESHIFT
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -28,7 +27,7 @@ def test_airdrop_claim(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.AIRDROP,
             asset=A_FOX,
-            balance=Balance(amount=FVal('100')),
+            amount=FVal('100'),
             location_label=ethereum_accounts[0],
             notes='Claim 100 FOX from shapeshift airdrop',
             counterparty=CPT_SHAPESHIFT,

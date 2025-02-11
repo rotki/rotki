@@ -1,6 +1,5 @@
 import pytest
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.modules.juicebox.constants import CPT_JUICEBOX, TERMINAL_3_1_2
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
@@ -32,7 +31,7 @@ def test_donation(ethereum_inquirer, ethereum_accounts):
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        balance=Balance(amount=FVal(gas_fees)),
+        amount=FVal(gas_fees),
         location_label=user_address,
         notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
@@ -44,7 +43,7 @@ def test_donation(ethereum_inquirer, ethereum_accounts):
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.DONATE,
         asset=A_ETH,
-        balance=Balance(amount=FVal(donated_amount)),
+        amount=FVal(donated_amount),
         location_label=user_address,
         notes=f'Donate {donated_amount} ETH at Juicebox to project Free Alexey & Roman with memo: "Opensource is not a crime. Privacy is normal. Thank you for fighting for us and good luck.\nhttps://jbm.infura-ipfs.io/ipfs/QmT9hZuHJjGidc8nrdZYskwRbr2hai9rwVodjCuvUNTvKL https://jbm.infura-ipfs.io/ipfs/QmXWAeCpUdLYrzYbpxWq4Ajnhf5trssicHPwGRkPWY5Fx9"',  # noqa: E501
         address=TERMINAL_3_1_2,
@@ -57,7 +56,7 @@ def test_donation(ethereum_inquirer, ethereum_accounts):
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.NONE,
         asset=Asset('eip155:1/erc721:0x723932B58a7c6AEf036d1Fe17654E845d0f0fae5/4000000011'),
-        balance=Balance(amount=ONE),
+        amount=ONE,
         location_label=user_address,
         notes='Receive an NFT for donating via Juicebox',
         counterparty=CPT_JUICEBOX,
@@ -70,7 +69,7 @@ def test_donation(ethereum_inquirer, ethereum_accounts):
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.NONE,
         asset=Asset('eip155:1/erc721:0x723932B58a7c6AEf036d1Fe17654E845d0f0fae5/3000000016'),
-        balance=Balance(amount=ONE),
+        amount=ONE,
         location_label=user_address,
         notes='Receive an NFT for donating via Juicebox',
         counterparty=CPT_JUICEBOX,
@@ -97,7 +96,7 @@ def test_fund_raising(ethereum_inquirer, ethereum_accounts):
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        balance=Balance(amount=FVal(gas_fees)),
+        amount=FVal(gas_fees),
         location_label=user_address,
         notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
@@ -109,7 +108,7 @@ def test_fund_raising(ethereum_inquirer, ethereum_accounts):
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.NONE,
         asset=A_ETH,
-        balance=Balance(amount=FVal(paid_amount)),
+        amount=FVal(paid_amount),
         location_label=user_address,
         notes=f'Pay {paid_amount} ETH at Juicebox to project octra NCS community raise',
         address=TERMINAL_3_1_2,

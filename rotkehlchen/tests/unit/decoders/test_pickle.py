@@ -1,6 +1,5 @@
 import pytest
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.airdrops import AIRDROP_IDENTIFIER_KEY
 from rotkehlchen.chain.ethereum.modules.pickle_finance.constants import (
@@ -36,7 +35,7 @@ def test_pickle_deposit(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(FVal(gas_str)),
+            amount=FVal(gas_str),
             location_label=ethereum_accounts[0],
             notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
@@ -48,7 +47,7 @@ def test_pickle_deposit(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
             asset=EvmToken('eip155:1/erc20:0xf4d2888d29D722226FafA5d9B24F9164c092421E'),
-            balance=Balance(FVal(deposit_str)),
+            amount=FVal(deposit_str),
             location_label=ethereum_accounts[0],
             notes=f'Deposit {deposit_str} LOOKS in pickle contract',
             counterparty=CPT_PICKLE,
@@ -61,7 +60,7 @@ def test_pickle_deposit(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
             asset=EvmToken('eip155:1/erc20:0xf4d2888d29D722226FafA5d9B24F9164c092421E'),
-            balance=Balance(FVal(approve_str)),
+            amount=FVal(approve_str),
             location_label=ethereum_accounts[0],
             notes=f'Set LOOKS spending approval of {ethereum_accounts[0]} by {PICKLE_JAR} to {approve_str}',  # noqa: E501
             address=PICKLE_JAR,
@@ -73,7 +72,7 @@ def test_pickle_deposit(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
             asset=EvmToken('eip155:1/erc20:0xb4EBc2C371182DeEa04B2264B9ff5AC4F0159C69'),
-            balance=Balance(FVal(withdraw_str)),
+            amount=FVal(withdraw_str),
             location_label=ethereum_accounts[0],
             notes=f'Receive {withdraw_str} pLOOKS after depositing in pickle contract',
             counterparty=CPT_PICKLE,
@@ -98,7 +97,7 @@ def test_pickle_withdraw(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(FVal(gas_str)),
+            amount=FVal(gas_str),
             location_label=ethereum_accounts[0],
             notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
@@ -110,7 +109,7 @@ def test_pickle_withdraw(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.RETURN_WRAPPED,
             asset=EvmToken('eip155:1/erc20:0xb4EBc2C371182DeEa04B2264B9ff5AC4F0159C69'),
-            balance=Balance(amount=FVal(deposit_str)),
+            amount=FVal(deposit_str),
             location_label=ethereum_accounts[0],
             notes=f'Return {deposit_str} pLOOKS to the pickle contract',
             counterparty=CPT_PICKLE,
@@ -123,7 +122,7 @@ def test_pickle_withdraw(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
             asset=EvmToken('eip155:1/erc20:0xf4d2888d29D722226FafA5d9B24F9164c092421E'),
-            balance=Balance(FVal(withdraw_str)),
+            amount=FVal(withdraw_str),
             location_label=ethereum_accounts[0],
             notes=f'Unstake {withdraw_str} LOOKS from the pickle contract',
             counterparty=CPT_PICKLE,
@@ -148,7 +147,7 @@ def test_claim_cornichon(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(FVal(gas_str)),
+            amount=FVal(gas_str),
             location_label=ethereum_accounts[0],
             notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
@@ -160,7 +159,7 @@ def test_claim_cornichon(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.AIRDROP,
             asset=EvmToken(CORN_TOKEN_ID),
-            balance=Balance(FVal(amount_str)),
+            amount=FVal(amount_str),
             location_label=ethereum_accounts[0],
             notes=f'Claim {amount_str} CORN from the pickle finance hack compensation airdrop',
             counterparty=CPT_PICKLE,

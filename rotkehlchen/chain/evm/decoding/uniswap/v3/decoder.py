@@ -2,7 +2,6 @@ import logging
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any, Literal, NamedTuple, Optional
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.utils import (
@@ -84,7 +83,7 @@ def _find_from_asset_and_amount(events: list['EvmEvent']) -> tuple[Asset, FVal] 
             elif from_asset != event.asset:  # We currently support only single `from_asset`.
                 return None  # unexpected event
 
-            from_amount += event.balance.amount
+            from_amount += event.amount
 
     if from_asset is None:
         return None
@@ -152,14 +151,14 @@ class Uniswapv3CommonDecoder(DecoderInterface):
                     to_asset = event.asset
                 elif to_asset != event.asset:  # We currently support only single `to_asset`.
                     return None  # unexpected event
-                to_amount += event.balance.amount
+                to_amount += event.amount
             elif event.event_type == HistoryEventType.RECEIVE and event.asset != self.native_currency and to_asset is None:  # noqa: E501
                 # Some other swaps have only a single receive event. The structure is:
                 # spend1, spend2, ..., spendN, receive
                 # In this case the receive event won't be decoded as a trade and we check it here.
                 # to_asset should be None here since it should be the only receive event.
                 to_asset = event.asset
-                to_amount = event.balance.amount
+                to_amount = event.amount
 
         if to_asset is None:
             return None
@@ -235,9 +234,9 @@ class Uniswapv3CommonDecoder(DecoderInterface):
         2. If there is a refund, receiving native currency from the router.
         3. Receiving tokens from the router.
         """
-        from_amount = send_native_event.balance.amount
+        from_amount = send_native_event.amount
         if receive_native_event is not None:
-            from_amount -= receive_native_event.balance.amount  # a refund
+            from_amount -= receive_native_event.amount  # a refund
 
         to_data = self._find_to_asset_and_amount(decoded_events)
         if to_data is None:
@@ -263,7 +262,7 @@ class Uniswapv3CommonDecoder(DecoderInterface):
             from_asset=from_data[0],
             from_amount=from_data[1],
             to_asset=self.native_currency,
-            to_amount=receive_native_event.balance.amount,
+            to_amount=receive_native_event.amount,
         )
 
     def _decode_token_to_token_swap(
@@ -355,7 +354,7 @@ class Uniswapv3CommonDecoder(DecoderInterface):
             event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
             asset=from_crypto_asset,
-            balance=Balance(amount=swap_data.from_amount),
+            amount=swap_data.from_amount,
             location_label=transaction.from_address,
             notes=f'Swap {swap_data.from_amount} {from_crypto_asset.symbol} via {CPT_UNISWAP_V3} auto router',  # noqa: E501
             counterparty=CPT_UNISWAP_V3,
@@ -369,7 +368,7 @@ class Uniswapv3CommonDecoder(DecoderInterface):
             event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=to_crypto_asset,
-            balance=Balance(amount=swap_data.to_amount),
+            amount=swap_data.to_amount,
             location_label=transaction.from_address,
             notes=f'Receive {swap_data.to_amount} {to_crypto_asset.symbol} as the result of a swap via {CPT_UNISWAP_V3} auto router',  # noqa: E501
             counterparty=CPT_UNISWAP_V3,
@@ -451,7 +450,7 @@ class Uniswapv3CommonDecoder(DecoderInterface):
             )
             if (
                 token_0_matches_asset is True and
-                event.balance.amount == resolved_assets_and_amounts[0].amount and
+                event.amount == resolved_assets_and_amounts[0].amount and
                 event.event_type == from_event_type[0] and
                 event.event_subtype == from_event_type[1]
             ):
@@ -460,7 +459,7 @@ class Uniswapv3CommonDecoder(DecoderInterface):
                 event.event_subtype = to_event_type[1]
                 event.counterparty = CPT_UNISWAP_V3
                 event.notes = notes.format(
-                    amount=event.balance.amount,
+                    amount=event.amount,
                     asset=maybe_event_asset_symbol,
                     pool_id=liquidity_pool_id,
                 )
@@ -473,7 +472,7 @@ class Uniswapv3CommonDecoder(DecoderInterface):
             )
             if (
                 token_1_matches_asset is True and
-                event.balance.amount == resolved_assets_and_amounts[1].amount and
+                event.amount == resolved_assets_and_amounts[1].amount and
                 event.event_type == from_event_type[0] and
                 event.event_subtype == from_event_type[1]
             ):
@@ -482,7 +481,7 @@ class Uniswapv3CommonDecoder(DecoderInterface):
                 event.event_subtype = to_event_type[1]
                 event.counterparty = CPT_UNISWAP_V3
                 event.notes = notes.format(
-                    amount=event.balance.amount,
+                    amount=event.amount,
                     asset=maybe_event_asset_symbol,
                     pool_id=liquidity_pool_id,
                 )
@@ -538,7 +537,7 @@ class Uniswapv3CommonDecoder(DecoderInterface):
                 token_identifier=context.event.asset.identifier,
                 collection_identifier=self.uniswap_v3_nft,
             ) and
-            context.event.balance.amount == ONE and
+            context.event.amount == ONE and
             context.event.address == ZERO_ADDRESS and
             context.event.event_type == HistoryEventType.RECEIVE and
             context.event.event_subtype == HistoryEventSubType.NONE

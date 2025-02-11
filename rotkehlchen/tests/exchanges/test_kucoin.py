@@ -369,7 +369,7 @@ def test_deserialize_asset_movement_deposit(mock_kucoin: 'Kucoin') -> None:
         location_label=mock_kucoin.name,
         event_type=HistoryEventType.DEPOSIT,
         asset=A_ETH,
-        balance=Balance(ONE),
+        amount=ONE,
         unique_id='3e2414d82acce78d38be7fe9',
         extra_data={
             'address': '0x5bedb060b8eb8d823e2414d82acce78d38be7fe9',
@@ -381,7 +381,7 @@ def test_deserialize_asset_movement_deposit(mock_kucoin: 'Kucoin') -> None:
         location_label=mock_kucoin.name,
         event_type=HistoryEventType.DEPOSIT,
         asset=A_ETH,
-        balance=Balance(FVal('0.01')),
+        amount=FVal('0.01'),
         unique_id='3e2414d82acce78d38be7fe9',
         is_fee=True,
     )]
@@ -413,7 +413,7 @@ def test_deserialize_asset_movement_withdrawal(mock_kucoin: 'Kucoin') -> None:
         location_label=mock_kucoin.name,
         event_type=HistoryEventType.WITHDRAWAL,
         asset=A_ETH,
-        balance=Balance(ONE),
+        amount=ONE,
         unique_id='5c2dc64e03aa675aa263f1ac',
         extra_data={
             'address': '0x5bedb060b8eb8d823e2414d82acce78d38be7fe9',
@@ -425,7 +425,7 @@ def test_deserialize_asset_movement_withdrawal(mock_kucoin: 'Kucoin') -> None:
         location_label=mock_kucoin.name,
         event_type=HistoryEventType.WITHDRAWAL,
         asset=A_ETH,
-        balance=Balance(FVal('0.01')),
+        amount=FVal('0.01'),
         unique_id='5c2dc64e03aa675aa263f1ac',
         is_fee=True,
     )]
@@ -721,7 +721,7 @@ def test_query_asset_movements_sandbox(
         event_type=HistoryEventType.DEPOSIT,
         timestamp=TimestampMS(1612556652000),
         asset=A_KCS,
-        balance=Balance(ONE),
+        amount=ONE,
         unique_id='5bbb57386d99522d9f954c5a',
         extra_data={
             'address': '0x5f047b29041bcfdbf0e4478cdfa753a336ba6989',
@@ -733,7 +733,7 @@ def test_query_asset_movements_sandbox(
         event_type=HistoryEventType.DEPOSIT,
         timestamp=TimestampMS(1612556652000),
         asset=A_KCS,
-        balance=Balance(FVal('0.0001')),
+        amount=FVal('0.0001'),
         unique_id='5bbb57386d99522d9f954c5a',
         is_fee=True,
     ), AssetMovement(
@@ -742,7 +742,7 @@ def test_query_asset_movements_sandbox(
         event_type=HistoryEventType.DEPOSIT,
         timestamp=TimestampMS(1612556651000),
         asset=A_LINK,
-        balance=Balance(FVal('1000')),
+        amount=FVal('1000'),
         unique_id='5bbb57386d99522d9f954c5b',
         extra_data={
             'address': '0x5f047b29041bcfdbf0e4478cdfa753a336ba6989',
@@ -754,7 +754,7 @@ def test_query_asset_movements_sandbox(
         event_type=HistoryEventType.DEPOSIT,
         timestamp=TimestampMS(1612556651000),
         asset=A_LINK,
-        balance=Balance(FVal('0.01')),
+        amount=FVal('0.01'),
         unique_id='5bbb57386d99522d9f954c5b',
         is_fee=True,
     ), AssetMovement(
@@ -763,7 +763,7 @@ def test_query_asset_movements_sandbox(
         event_type=HistoryEventType.WITHDRAWAL,
         timestamp=TimestampMS(1612556652000),
         asset=A_BSV,
-        balance=Balance(FVal('2.5')),
+        amount=FVal('2.5'),
         unique_id='5c2dc64e03aa675aa263f1a4',
         extra_data={
             'address': '1DrT5xUaJ3CBZPDeFR2qdjppM6dzs4rsMt',
@@ -775,7 +775,7 @@ def test_query_asset_movements_sandbox(
         event_type=HistoryEventType.WITHDRAWAL,
         timestamp=TimestampMS(1612556652000),
         asset=A_BSV,
-        balance=Balance(FVal('0.25')),
+        amount=FVal('0.25'),
         unique_id='5c2dc64e03aa675aa263f1a4',
         is_fee=True,
     )]

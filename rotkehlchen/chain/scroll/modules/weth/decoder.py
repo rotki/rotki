@@ -30,7 +30,7 @@ class WethDecoder(EthBaseWethDecoder):
             if (
                 event.event_type == HistoryEventType.SPEND and
                 event.address == self.wrapped_token.evm_address and
-                event.balance.amount == deposited_amount and
+                event.amount == deposited_amount and
                 event.asset == self.base_asset
             ):
                 event.counterparty = self.counterparty
@@ -40,7 +40,7 @@ class WethDecoder(EthBaseWethDecoder):
             elif (
                 event.event_type == HistoryEventType.RECEIVE and
                 event.event_subtype == HistoryEventSubType.NONE and
-                event.balance.amount == deposited_amount and
+                event.amount == deposited_amount and
                 event.asset == self.wrapped_token
             ):  # scroll WETH does emit an event on transfer so we can edit the event instead of creating a new one  # noqa: E501
                 event.notes = f'Receive {deposited_amount} WETH'
@@ -65,7 +65,7 @@ class WethDecoder(EthBaseWethDecoder):
             if (
                 event.event_type == HistoryEventType.RECEIVE and
                 event.address == self.wrapped_token.evm_address and
-                event.balance.amount == withdrawn_amount and
+                event.amount == withdrawn_amount and
                 event.asset == self.base_asset
             ):
                 in_event = event
@@ -74,7 +74,7 @@ class WethDecoder(EthBaseWethDecoder):
             elif (
                 event.event_type == HistoryEventType.SPEND and
                 event.event_subtype == HistoryEventSubType.NONE and
-                event.balance.amount == withdrawn_amount and
+                event.amount == withdrawn_amount and
                 event.asset == self.wrapped_token
             ):  # scroll WETH does emit an event on transfer so we can edit the event instead of creating a new one  # noqa: E501
                 event.notes = f'Unwrap {withdrawn_amount} WETH'

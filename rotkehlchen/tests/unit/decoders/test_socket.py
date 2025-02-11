@@ -1,6 +1,5 @@
 import pytest
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.socket_bridge.constants import CPT_SOCKET, GATEWAY_ADDRESS
@@ -29,7 +28,7 @@ def test_optimism_to_arb_bridge(optimism_inquirer, optimism_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=FVal(gas_amount)),
+            amount=FVal(gas_amount),
             location_label=user_address,
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
@@ -41,7 +40,7 @@ def test_optimism_to_arb_bridge(optimism_inquirer, optimism_accounts):
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.BRIDGE,
             asset=Asset('eip155:10/erc20:0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85'),
-            balance=Balance(amount=FVal(bridged_amount)),
+            amount=FVal(bridged_amount),
             location_label=user_address,
             notes=f'Bridge {bridged_amount} USDC to {user_address} at Arbitrum One using Socket',
             counterparty=CPT_SOCKET,
@@ -70,7 +69,7 @@ def test_bridge_eth(arbitrum_one_inquirer, arbitrum_one_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=FVal(gas_amount)),
+            amount=FVal(gas_amount),
             location_label=user_address,
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
@@ -82,7 +81,7 @@ def test_bridge_eth(arbitrum_one_inquirer, arbitrum_one_accounts):
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.BRIDGE,
             asset=A_ETH,
-            balance=Balance(amount=FVal(bridged_amount)),
+            amount=FVal(bridged_amount),
             location_label=user_address,
             notes=f'Bridge {bridged_amount} ETH to {user_address} at Base using Socket',
             counterparty=CPT_SOCKET,

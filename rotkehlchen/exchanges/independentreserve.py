@@ -213,7 +213,7 @@ def _asset_movement_from_independentreserve(raw_tx: dict) -> AssetMovement | Non
             location='IndependentReserve',
         )),
         asset=asset,
-        balance=Balance(amount),
+        amount=amount,
         unique_id=raw_tx.get('TransactionGuid'),
         extra_data=maybe_set_transaction_extra_data(
             address=address,

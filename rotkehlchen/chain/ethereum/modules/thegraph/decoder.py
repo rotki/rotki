@@ -1,7 +1,6 @@
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.ethereum.modules.thegraph.constants import CONTRACT_STAKING
 from rotkehlchen.chain.ethereum.utils import (
     token_normalized_value,
@@ -74,7 +73,7 @@ class ThegraphDecoder(ThegraphCommonDecoder):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
             asset=self.token,
-            balance=Balance(amount=FVal(transferred_delegation_tokens)),
+            amount=FVal(transferred_delegation_tokens),
             notes=f'Delegation of {transferred_delegation_tokens} GRT transferred from indexer {indexer} to L2 indexer {indexer_l2}.',  # noqa: E501
             location_label=context.transaction.from_address,
             counterparty=CPT_THEGRAPH,
@@ -97,7 +96,7 @@ class ThegraphDecoder(ThegraphCommonDecoder):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
             asset=self.token,
-            balance=Balance(),
+            amount=FVal(0),
             location_label=context.transaction.from_address,
             notes='Approve contract transfer',
             counterparty=CPT_THEGRAPH,
@@ -119,10 +118,10 @@ class ThegraphDecoder(ThegraphCommonDecoder):
                 event.event_type == HistoryEventType.SPEND and
                 event.event_subtype == HistoryEventSubType.NONE and
                 event.location_label == context.transaction.from_address and
-                event.balance.amount == amount
+                event.amount == amount
             ):
                 event.event_subtype = HistoryEventSubType.FEE
-                event.notes = f'Deposit {event.balance.amount} ETH to {event.address} contract to pay for the gas in L2.'  # noqa: E501
+                event.notes = f'Deposit {event.amount} ETH to {event.address} contract to pay for the gas in L2.'  # noqa: E501
                 event.counterparty = CPT_THEGRAPH
                 event.extra_data = {'indexer': indexer}
                 break

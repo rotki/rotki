@@ -826,7 +826,7 @@ def test_deserialize_asset_movement_deposit(mock_bitstamp: 'Bitstamp') -> None:
         location_label=mock_bitstamp.name,
         event_type=HistoryEventType.DEPOSIT,
         asset=asset,
-        balance=Balance(FVal('0.50000000')),
+        amount=FVal('0.50000000'),
         unique_id='2',
         extra_data={
             'reference': '2',
@@ -838,7 +838,7 @@ def test_deserialize_asset_movement_deposit(mock_bitstamp: 'Bitstamp') -> None:
         location_label=mock_bitstamp.name,
         event_type=HistoryEventType.DEPOSIT,
         asset=asset,
-        balance=Balance(FVal('0.00050000')),
+        amount=FVal('0.00050000'),
         unique_id='2',
         is_fee=True,
     )]
@@ -863,7 +863,7 @@ def test_deserialize_asset_movement_deposit(mock_bitstamp: 'Bitstamp') -> None:
         location_label=mock_bitstamp.name,
         event_type=HistoryEventType.DEPOSIT,
         asset=asset,
-        balance=Balance(FVal('1000.51')),
+        amount=FVal('1000.51'),
         unique_id='3',
         extra_data={
             'reference': '3',
@@ -875,7 +875,7 @@ def test_deserialize_asset_movement_deposit(mock_bitstamp: 'Bitstamp') -> None:
         location_label=mock_bitstamp.name,
         event_type=HistoryEventType.DEPOSIT,
         asset=asset,
-        balance=Balance(FVal('0.1')),
+        amount=FVal('0.1'),
         unique_id='3',
         is_fee=True,
     )]
@@ -900,7 +900,7 @@ def test_deserialize_asset_movement_deposit(mock_bitstamp: 'Bitstamp') -> None:
         location_label=mock_bitstamp.name,
         event_type=HistoryEventType.DEPOSIT,
         asset=asset,
-        balance=Balance(FVal('1000.51')),
+        amount=FVal('1000.51'),
         unique_id='3',
         extra_data={
             'reference': '3',
@@ -912,7 +912,7 @@ def test_deserialize_asset_movement_deposit(mock_bitstamp: 'Bitstamp') -> None:
         location_label=mock_bitstamp.name,
         event_type=HistoryEventType.DEPOSIT,
         asset=asset,
-        balance=Balance(FVal('0.1')),
+        amount=FVal('0.1'),
         unique_id='3',
         is_fee=True,
     )]
@@ -939,7 +939,7 @@ def test_deserialize_asset_movement_withdrawal(mock_bitstamp: 'Bitstamp') -> Non
         location_label=mock_bitstamp.name,
         event_type=HistoryEventType.WITHDRAWAL,
         asset=asset,
-        balance=Balance(FVal('10000.00000000')),
+        amount=FVal('10000.00000000'),
         unique_id='5',
         extra_data={
             'reference': '5',
@@ -951,7 +951,7 @@ def test_deserialize_asset_movement_withdrawal(mock_bitstamp: 'Bitstamp') -> Non
         location_label=mock_bitstamp.name,
         event_type=HistoryEventType.WITHDRAWAL,
         asset=asset,
-        balance=Balance(FVal('50.00000000')),
+        amount=FVal('50.00000000'),
         unique_id='5',
         is_fee=True,
     )]
@@ -976,7 +976,7 @@ def test_deserialize_asset_movement_withdrawal(mock_bitstamp: 'Bitstamp') -> Non
         location_label=mock_bitstamp.name,
         event_type=HistoryEventType.WITHDRAWAL,
         asset=asset,
-        balance=Balance(FVal('500')),
+        amount=FVal('500'),
         unique_id='5',
         extra_data={
             'reference': '5',
@@ -988,7 +988,7 @@ def test_deserialize_asset_movement_withdrawal(mock_bitstamp: 'Bitstamp') -> Non
         location_label=mock_bitstamp.name,
         event_type=HistoryEventType.WITHDRAWAL,
         asset=asset,
-        balance=Balance(FVal('0.1')),
+        amount=FVal('0.1'),
         unique_id='5',
         is_fee=True,
     )]
@@ -1009,7 +1009,7 @@ def test_query_online_deposits_withdrawals(mock_bitstamp, start_ts, since_id):
         location=Location.BITSTAMP,
         event_type=HistoryEventType.WITHDRAWAL,
         asset=asset_usd,
-        balance=Balance(FVal('10000')),
+        amount=FVal('10000'),
         unique_id='5',
         extra_data={'reference': '5'},
     ), AssetMovement(
@@ -1017,7 +1017,7 @@ def test_query_online_deposits_withdrawals(mock_bitstamp, start_ts, since_id):
         location=Location.BITSTAMP,
         event_type=HistoryEventType.WITHDRAWAL,
         asset=asset_usd,
-        balance=Balance(FVal('50')),
+        amount=FVal('50'),
         unique_id='5',
         is_fee=True,
     ), AssetMovement(
@@ -1025,7 +1025,7 @@ def test_query_online_deposits_withdrawals(mock_bitstamp, start_ts, since_id):
         location=Location.BITSTAMP,
         event_type=HistoryEventType.DEPOSIT,
         asset=asset_btc,
-        balance=Balance(FVal('0.5')),
+        amount=FVal('0.5'),
         unique_id='2',
         extra_data={'reference': '5'},
     ), AssetMovement(
@@ -1033,7 +1033,7 @@ def test_query_online_deposits_withdrawals(mock_bitstamp, start_ts, since_id):
         location=Location.BITSTAMP,
         event_type=HistoryEventType.DEPOSIT,
         asset=asset_btc,
-        balance=Balance(FVal('0.0005')),
+        amount=FVal('0.0005'),
         unique_id='2',
         is_fee=True,
     )]

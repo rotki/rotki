@@ -2,7 +2,6 @@ import logging
 from abc import ABC
 from typing import TYPE_CHECKING, Any, Optional
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.ethereum.abi import decode_event_data_abi
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.constants import ETH_SPECIAL_ADDRESS, ZERO_ADDRESS
@@ -34,6 +33,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
 )
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -167,7 +167,7 @@ class GitcoinV2CommonDecoder(DecoderInterface, ABC):
                 event.counterparty = CPT_GITCOIN
                 event.notes = notes
                 event.address = recipient_address
-                event.balance = Balance(amount)
+                event.amount = amount
                 event.location_label = sender_address
                 break
         else:  # no event found, so create a new one
@@ -177,7 +177,7 @@ class GitcoinV2CommonDecoder(DecoderInterface, ABC):
                 event_type=new_type,
                 event_subtype=HistoryEventSubType.DONATE,
                 asset=asset,
-                balance=Balance(amount),
+                amount=amount,
                 location_label=sender_address,
                 notes=notes,
                 counterparty=CPT_GITCOIN,
@@ -218,7 +218,7 @@ class GitcoinV2CommonDecoder(DecoderInterface, ABC):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPLY,
             asset=A_ETH,
-            balance=Balance(),
+            amount=ZERO,
             location_label=sender,
             notes=f'Register for a gitcoin round with recipient id {recipient_id}',
             counterparty=CPT_GITCOIN,
@@ -274,7 +274,7 @@ class GitcoinV2CommonDecoder(DecoderInterface, ABC):
         expected_type = HistoryEventType.RECEIVE
         notes = f'Receive a gitcoin donation of {amount} {asset.symbol} from {origin}'
         for event in context.decoded_events:
-            if event.event_type == expected_type and event.event_subtype == HistoryEventSubType.NONE and event.asset == asset and event.balance.amount == amount and event.asset == asset:  # noqa: E501
+            if event.event_type == expected_type and event.event_subtype == HistoryEventSubType.NONE and event.asset == asset and event.amount == amount and event.asset == asset:  # noqa: E501
                 event.event_type = new_type
                 event.event_subtype = HistoryEventSubType.DONATE
                 event.counterparty = CPT_GITCOIN
@@ -354,7 +354,7 @@ class GitcoinV2CommonDecoder(DecoderInterface, ABC):
 
         # else only receiver tracked
         for event in context.decoded_events:
-            if event.event_type == HistoryEventType.RECEIVE and event.event_subtype == HistoryEventSubType.NONE and event.asset == asset and event.balance.amount == amount:  # noqa: E501
+            if event.event_type == HistoryEventType.RECEIVE and event.event_subtype == HistoryEventSubType.NONE and event.asset == asset and event.amount == amount:  # noqa: E501
                 event.event_subtype = HistoryEventSubType.DONATE
                 event.counterparty = CPT_GITCOIN
                 event.notes = f'Receive a gitcoin donation of {amount} {asset.symbol} from {donator}'  # noqa: E501
@@ -378,7 +378,7 @@ class GitcoinV2CommonDecoder(DecoderInterface, ABC):
                 event_type=HistoryEventType.INFORMATIONAL,
                 event_subtype=HistoryEventSubType.CREATE,
                 asset=A_ETH,
-                balance=Balance(),
+                amount=ZERO,
                 location_label=context.transaction.from_address,
                 notes=f'Create gitcoin project with id {project_id} and owner {owner}',
                 counterparty=CPT_GITCOIN,
@@ -393,7 +393,7 @@ class GitcoinV2CommonDecoder(DecoderInterface, ABC):
                 event_type=HistoryEventType.INFORMATIONAL,
                 event_subtype=HistoryEventSubType.UPDATE,
                 asset=A_ETH,
-                balance=Balance(),
+                amount=ZERO,
                 location_label=context.transaction.from_address,
                 notes=f'Update gitcoin project with id {project_id}',
                 counterparty=CPT_GITCOIN,
@@ -422,7 +422,7 @@ class GitcoinV2CommonDecoder(DecoderInterface, ABC):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.CREATE,
             asset=A_ETH,
-            balance=Balance(),
+            amount=ZERO,
             location_label=context.transaction.from_address,
             notes=f'Create gitcoin profile for {name} with id {profile_id} and owner {owner}',
             counterparty=CPT_GITCOIN,
@@ -444,7 +444,7 @@ class GitcoinV2CommonDecoder(DecoderInterface, ABC):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.UPDATE,
             asset=A_ETH,
-            balance=Balance(),
+            amount=ZERO,
             location_label=context.transaction.from_address,
             notes=f'Update gitcoin profile {profile_id} metadata',
             counterparty=CPT_GITCOIN,
@@ -471,7 +471,7 @@ class GitcoinV2CommonDecoder(DecoderInterface, ABC):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPLY,
             asset=A_ETH,
-            balance=Balance(),
+            amount=ZERO,
             location_label=context.transaction.from_address,
             notes=f'Apply to gitcoin round with project application id 0x{application_id}',
             counterparty=CPT_GITCOIN,
@@ -493,7 +493,7 @@ class GitcoinV2CommonDecoder(DecoderInterface, ABC):
         amount = asset_normalized_value(raw_amount, token)
 
         for event in reversed(context.decoded_events):  # transfer event should be right before
-            if event.event_type == HistoryEventType.RECEIVE and event.event_subtype == HistoryEventSubType.NONE and event.asset == token and event.balance.amount == amount and event.location_label == grantee:  # noqa: E501
+            if event.event_type == HistoryEventType.RECEIVE and event.event_subtype == HistoryEventSubType.NONE and event.asset == token and event.amount == amount and event.location_label == grantee:  # noqa: E501
                 event.event_subtype = HistoryEventSubType.DONATE
                 event.counterparty = CPT_GITCOIN
                 event.notes = f'Receive matching payout of {amount} {token.symbol} for a gitcoin round'  # noqa: E501

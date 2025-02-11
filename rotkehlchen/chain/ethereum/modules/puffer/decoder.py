@@ -61,7 +61,7 @@ class PufferDecoder(DecoderInterface):
                     event.event_subtype == HistoryEventSubType.NONE and
                     event.location_label == claimer and
                     event.asset.identifier == asset_id and
-                    event.balance.amount == claimed_amount
+                    event.amount == claimed_amount
             ):
                 event.event_subtype = HistoryEventSubType.AIRDROP
                 event.counterparty = CPT_PUFFER

@@ -1,6 +1,5 @@
 import pytest
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.modules.paladin.constants import (
     CPT_PALADIN,
@@ -33,7 +32,7 @@ def test_claim(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=FVal(gas)),
+            amount=FVal(gas),
             location_label=user_address,
             notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
@@ -45,7 +44,7 @@ def test_claim(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.REWARD,
             asset=Asset('eip155:1/erc20:0xCdF7028ceAB81fA0C6971208e83fa7872994beE5'),
-            balance=Balance(amount=FVal(amount)),
+            amount=FVal(amount),
             location_label=user_address,
             notes=f'Claim {amount} T from Paladin veCRV bribes for the period starting at {timestamp_to_date(period, formatstr="%d/%m/%Y %H:%M:%S")}',  # noqa: E501
             counterparty=CPT_PALADIN,

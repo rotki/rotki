@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING
 import pytest
 import requests
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -49,7 +48,7 @@ def fixture_setup_historical_data(rotkehlchen_api_server: 'APIServer') -> None:
             event_subtype=HistoryEventSubType.NONE,
             location=Location.BLOCKCHAIN,
             asset=A_BTC,
-            balance=Balance(amount=FVal('2')),
+            amount=FVal('2'),
             notes='Receive BTC',
         ),
         HistoryEvent(  # another receive
@@ -60,7 +59,7 @@ def fixture_setup_historical_data(rotkehlchen_api_server: 'APIServer') -> None:
             event_subtype=HistoryEventSubType.NONE,
             location=Location.BLOCKCHAIN,
             asset=A_ETH,
-            balance=Balance(amount=FVal('10')),
+            amount=FVal('10'),
             notes='Receive ETH',
         ),
         HistoryEvent(  # Day 3: Partial spend
@@ -71,7 +70,7 @@ def fixture_setup_historical_data(rotkehlchen_api_server: 'APIServer') -> None:
             event_subtype=HistoryEventSubType.NONE,
             location=Location.BLOCKCHAIN,
             asset=A_BTC,
-            balance=Balance(amount=FVal('0.5')),
+            amount=FVal('0.5'),
             notes='BTC partial spend',
         ),
         AssetMovement(  # AssetMovements should be ignored
@@ -79,7 +78,7 @@ def fixture_setup_historical_data(rotkehlchen_api_server: 'APIServer') -> None:
             location=Location.COINBASE,
             event_type=HistoryEventType.WITHDRAWAL,
             asset=A_BTC,
-            balance=Balance(FVal('3')),
+            amount=FVal('3'),
         ),
     ]
     with db.user_write() as write_cursor:
@@ -242,7 +241,7 @@ def test_get_historical_asset_amounts_over_time_with_negative_amount(
             event_subtype=HistoryEventSubType.NONE,
             location=Location.BLOCKCHAIN,
             asset=A_BTC,
-            balance=Balance(amount=FVal('1.6')),  # spending more than remaining balance  # noqa: E501
+            amount=FVal('1.6'),  # spending more than remaining balance
             notes='BTC first overspend attempt',
         ),
         HistoryEvent(
@@ -253,7 +252,7 @@ def test_get_historical_asset_amounts_over_time_with_negative_amount(
             event_subtype=HistoryEventSubType.NONE,
             location=Location.BLOCKCHAIN,
             asset=A_BTC,
-            balance=Balance(amount=FVal('0.7')),
+            amount=FVal('0.7'),
             notes='BTC second overspend attempt',
         ),
     ]
@@ -300,7 +299,7 @@ def test_get_historical_assets_in_collection_amounts_over_time(
             event_subtype=HistoryEventSubType.NONE,
             location=Location.BLOCKCHAIN,
             asset=Asset('eip155:1/erc20:0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599'),  # WBTC
-            balance=Balance(amount=FVal('1.6')),  # spending more than remaining balance  # noqa: E501
+            amount=FVal('1.6'),  # spending more than remaining balance
             notes='BTC first overspend attempt',
         ),
         HistoryEvent(
@@ -311,7 +310,7 @@ def test_get_historical_assets_in_collection_amounts_over_time(
             event_subtype=HistoryEventSubType.NONE,
             location=Location.BLOCKCHAIN,
             asset=Asset('eip155:100/erc20:0x8e5bBbb09Ed1ebdE8674Cda39A0c169401db4252'),  # WBTC
-            balance=Balance(amount=FVal('0.7')),
+            amount=FVal('0.7'),
             notes='BTC second overspend attempt',
         ),
     ]
@@ -443,7 +442,7 @@ def test_get_historical_netvalue(
                     event_subtype=HistoryEventSubType.NONE,
                     location=Location.BLOCKCHAIN,
                     asset=A_EUR,
-                    balance=Balance(amount=FVal('20000')),  # Enough EUR to buy BTC
+                    amount=FVal('20000'),  # Enough EUR to buy BTC
                     notes='Receive EUR',
                 ),
             ],
@@ -612,7 +611,7 @@ def test_get_historical_netvalue_with_negative_amount(
             event_subtype=HistoryEventSubType.NONE,
             location=Location.BLOCKCHAIN,
             asset=A_BTC,
-            balance=Balance(amount=FVal('1.6')),  # spending more than remaining balance  # noqa: E501
+            amount=FVal('1.6'),  # spending more than remaining balance
             notes='BTC first overspend attempt',
         ),
         HistoryEvent(
@@ -623,7 +622,7 @@ def test_get_historical_netvalue_with_negative_amount(
             event_subtype=HistoryEventSubType.NONE,
             location=Location.BLOCKCHAIN,
             asset=A_BTC,
-            balance=Balance(amount=FVal('0.7')),
+            amount=FVal('0.7'),
             notes='BTC second overspend attempt',
         ),
     ]

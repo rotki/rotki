@@ -2,7 +2,6 @@ import csv
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.converters import asset_from_uphold
 from rotkehlchen.constants import ZERO
 from rotkehlchen.data_import.utils import BaseExchangeImporter, SkippedCSVEntry, hash_csv_row
@@ -88,7 +87,7 @@ Activity from uphold with uphold transaction id:
                     location=Location.UPHOLD,
                     event_type=event_type,
                     event_subtype=HistoryEventSubType.NONE,
-                    balance=Balance(amount=destination_amount),
+                    amount=destination_amount,
                     asset=destination_asset,
                     notes=notes,
                 )
@@ -121,7 +120,7 @@ Activity from uphold with uphold transaction id:
                     event_type=HistoryEventType.WITHDRAWAL,
                     timestamp=ts_sec_to_ms(timestamp),
                     asset=origin_asset,
-                    balance=Balance(origin_amount),
+                    amount=origin_amount,
                 )]
                 if fee != ZERO:
                     events.append(AssetMovement(
@@ -130,7 +129,7 @@ Activity from uphold with uphold transaction id:
                         event_type=HistoryEventType.WITHDRAWAL,
                         timestamp=ts_sec_to_ms(timestamp),
                         asset=fee_asset,
-                        balance=Balance(fee),
+                        amount=fee,
                         is_fee=True,
                     ))
                 self.add_history_events(write_cursor, events)
@@ -159,7 +158,7 @@ Activity from uphold with uphold transaction id:
                     event_type=HistoryEventType.DEPOSIT,
                     timestamp=ts_sec_to_ms(timestamp),
                     asset=origin_asset,
-                    balance=Balance(origin_amount),
+                    amount=origin_amount,
                 )]
                 if fee != ZERO:
                     events.append(AssetMovement(
@@ -168,7 +167,7 @@ Activity from uphold with uphold transaction id:
                         event_type=HistoryEventType.DEPOSIT,
                         timestamp=ts_sec_to_ms(timestamp),
                         asset=fee_asset,
-                        balance=Balance(fee),
+                        amount=fee,
                         is_fee=True,
                     ))
                 self.add_history_events(write_cursor, events)

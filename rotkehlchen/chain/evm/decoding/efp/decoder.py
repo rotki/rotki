@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING, Any, Final
 
 from eth_utils import to_checksum_address
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
@@ -15,6 +14,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.globaldb.cache import (
     globaldb_get_unique_cache_value,
@@ -134,7 +134,7 @@ class EfpCommonDecoder(DecoderInterface, ABC):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
-            balance=Balance(),
+            amount=ZERO,
             location_label=address,
             notes=notes,
             counterparty=CPT_EFP,

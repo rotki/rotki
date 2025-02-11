@@ -1,7 +1,6 @@
 import logging
 from typing import TYPE_CHECKING, Any
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS
@@ -13,6 +12,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
@@ -94,7 +94,7 @@ class SafeDecoder(DecoderInterface):
                     event.event_subtype == HistoryEventSubType.NONE and
                     event.location_label == holder and
                     event.asset == self.safe_token and
-                    event.balance.amount == amount
+                    event.amount == amount
             ):
 
                 event.event_type = HistoryEventType.DEPOSIT
@@ -122,7 +122,7 @@ class SafeDecoder(DecoderInterface):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
             asset=self.safe_token,
-            balance=Balance(amount=amount),
+            amount=amount,
             location_label=holder,
             notes=f'Start unlock of {amount} SAFE from Safe{{Pass}}',
             address=context.tx_log.address,
@@ -175,7 +175,7 @@ class SafeDecoder(DecoderInterface):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
             asset=self.safe_token,
-            balance=Balance(),
+            amount=ZERO,
             location_label=account,
             notes='Claim and start vesting of SAFE tokens from Safe{Pass}',
             address=context.tx_log.address,

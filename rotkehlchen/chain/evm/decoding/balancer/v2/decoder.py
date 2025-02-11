@@ -84,7 +84,7 @@ class Balancerv2CommonDecoder(BalancerCommonDecoder):
                 event.address == ZERO_ADDRESS
             ):  # exit pool: return wrapped token
                 event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
-                event.notes = f'Return {event.balance.amount} {token.symbol} to a Balancer v2 pool'
+                event.notes = f'Return {event.amount} {token.symbol} to a Balancer v2 pool'
                 event.counterparty = CPT_BALANCER_V2
                 send_events.append(event)
 
@@ -96,7 +96,7 @@ class Balancerv2CommonDecoder(BalancerCommonDecoder):
                 event.event_type = HistoryEventType.WITHDRAWAL
                 event.event_subtype = HistoryEventSubType.REDEEM_WRAPPED
                 event.counterparty = CPT_BALANCER_V2
-                event.notes = f'Receive {event.balance.amount} {token.symbol} after removing liquidity from a Balancer v2 pool'  # noqa: E501
+                event.notes = f'Receive {event.amount} {token.symbol} after removing liquidity from a Balancer v2 pool'  # noqa: E501
                 receive_events.append(event)
 
             if (
@@ -106,7 +106,7 @@ class Balancerv2CommonDecoder(BalancerCommonDecoder):
             ):  # join pool: receive wrapped token
                 event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
                 event.counterparty = CPT_BALANCER_V2
-                event.notes = f'Receive {event.balance.amount} {token.symbol} from a Balancer v2 pool'  # noqa: E501
+                event.notes = f'Receive {event.amount} {token.symbol} from a Balancer v2 pool'
                 receive_events.append(event)
 
             if (
@@ -117,7 +117,7 @@ class Balancerv2CommonDecoder(BalancerCommonDecoder):
                 event.event_type = HistoryEventType.DEPOSIT
                 event.event_subtype = HistoryEventSubType.DEPOSIT_FOR_WRAPPED
                 event.counterparty = CPT_BALANCER_V2
-                event.notes = f'Deposit {event.balance.amount} {token.symbol} to a Balancer v2 pool'  # noqa: E501
+                event.notes = f'Deposit {event.amount} {token.symbol} to a Balancer v2 pool'
                 send_events.append(event)
 
         # in _check_deposits_withdrawals we expect the receive to be the last event.
@@ -188,13 +188,13 @@ class Balancerv2CommonDecoder(BalancerCommonDecoder):
             )
             for event in context.decoded_events:
                 if (
-                    event.asset == self.evm_inquirer.native_token and event.balance.amount == amount_of_eth and  # noqa: E501
+                    event.asset == self.evm_inquirer.native_token and event.amount == amount_of_eth and  # noqa: E501
                     event.event_type == HistoryEventType.SPEND and
                     event.event_subtype == HistoryEventSubType.NONE
                 ):
                     event.event_type = HistoryEventType.TRADE
                     event.event_subtype = HistoryEventSubType.SPEND
-                    event.notes = f'Swap {event.balance.amount} {self.evm_inquirer.native_token.symbol} in Balancer v2'  # noqa: E501
+                    event.notes = f'Swap {event.amount} {self.evm_inquirer.native_token.symbol} in Balancer v2'  # noqa: E501
                     event.counterparty = CPT_BALANCER_V2
 
         return DecodingOutput(action_items=[action_item])
@@ -220,10 +220,10 @@ class Balancerv2CommonDecoder(BalancerCommonDecoder):
             isinstance(context.action_items[-1].asset, EvmToken) is False and
             not ((
                 context.action_items[-1].asset.evm_address != context.tx_log.address and  # type: ignore[attr-defined]  # mypy fails to understand that due the previous statement in the or this check won't be evaluated if the asset isn't a token
-                context.action_items[-1].amount != context.event.balance.amount
+                context.action_items[-1].amount != context.event.amount
             ) or (
                 context.action_items[-1].extra_data['from_token'] != context.tx_log.address and
-                context.action_items[-1].extra_data['amount_in'] != context.event.balance.amount
+                context.action_items[-1].extra_data['amount_in'] != context.event.amount
             ))
         ):
             return FAILED_ENRICHMENT_OUTPUT
@@ -231,10 +231,10 @@ class Balancerv2CommonDecoder(BalancerCommonDecoder):
         context.event.counterparty = CPT_BALANCER_V2
         if context.event.event_type == HistoryEventType.RECEIVE:
             context.event.event_subtype = HistoryEventSubType.RECEIVE
-            context.event.notes = f'Receive {context.event.balance.amount} {asset.symbol} as the result of a swap via Balancer v2'  # noqa: E501
+            context.event.notes = f'Receive {context.event.amount} {asset.symbol} as the result of a swap via Balancer v2'  # noqa: E501
         else:
             context.event.event_subtype = HistoryEventSubType.SPEND
-            context.event.notes = f'Swap {context.event.balance.amount} {asset.symbol} via Balancer v2'  # noqa: E501
+            context.event.notes = f'Swap {context.event.amount} {asset.symbol} via Balancer v2'
 
         context.event.event_type = HistoryEventType.TRADE
 

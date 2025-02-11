@@ -1,6 +1,5 @@
 import pytest
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.arbitrum_one.modules.clrfund.constants import CPT_CLRFUND
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
@@ -32,7 +31,7 @@ def test_ethstaker_matching_claim(arbitrum_one_inquirer, arbitrum_one_accounts):
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.DONATE,
             asset=EvmToken('eip155:42161/erc20:0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1'),
-            balance=Balance(FVal(amount)),
+            amount=FVal(amount),
             location_label=user,
             notes=f'Claim {amount} DAI as matching funds payout of clrfund Ethstaker round for {user}',  # noqa: E501
             counterparty=CPT_CLRFUND,
@@ -60,7 +59,7 @@ def test_add_recipient(arbitrum_one_inquirer, arbitrum_one_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=FVal(gas)),
+            amount=FVal(gas),
             location_label=user,
             notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
@@ -72,7 +71,7 @@ def test_add_recipient(arbitrum_one_inquirer, arbitrum_one_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(FVal(amount)),
+            amount=FVal(amount),
             location_label=user,
             notes=f'Apply to clrfund Ethstaker round with rotki and pay a {amount} ETH fee',
             counterparty=CPT_CLRFUND,
@@ -100,7 +99,7 @@ def test_voted(arbitrum_one_inquirer, arbitrum_one_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=FVal(gas)),
+            amount=FVal(gas),
             location_label=user,
             notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
@@ -112,7 +111,7 @@ def test_voted(arbitrum_one_inquirer, arbitrum_one_accounts):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
-            balance=Balance(),
+            amount=FVal(0),
             location_label=user,
             notes='Vote in Clrfund Ethstaker round',
             counterparty=CPT_CLRFUND,
@@ -140,7 +139,7 @@ def test_contribution(arbitrum_one_inquirer, arbitrum_one_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=FVal(gas)),
+            amount=FVal(gas),
             location_label=user,
             notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
@@ -152,7 +151,7 @@ def test_contribution(arbitrum_one_inquirer, arbitrum_one_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.DONATE,
             asset=EvmToken('eip155:42161/erc20:0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1'),
-            balance=Balance(FVal(amount)),
+            amount=FVal(amount),
             location_label=user,
             notes=f'Donate {amount} DAI to Clrfund Ethstaker round',
             counterparty=CPT_CLRFUND,

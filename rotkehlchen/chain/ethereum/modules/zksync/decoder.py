@@ -54,7 +54,7 @@ class ZksyncDecoder(DecoderInterface):
             if event.event_type == HistoryEventType.SPEND and event.location_label == user_address:
                 resolved_event_asset = event.asset.resolve_to_crypto_asset()
                 event_raw_amount = asset_raw_value(
-                    amount=event.balance.amount,
+                    amount=event.amount,
                     asset=resolved_event_asset,
                 )
                 if event_raw_amount != amount_raw:
@@ -65,7 +65,7 @@ class ZksyncDecoder(DecoderInterface):
                 event.event_subtype = HistoryEventSubType.BRIDGE
                 event.counterparty = CPT_ZKSYNC
                 crypto_asset = resolved_event_asset
-                event.notes = f'Deposit {event.balance.amount} {crypto_asset.symbol} to zksync'
+                event.notes = f'Deposit {event.amount} {crypto_asset.symbol} to zksync'
                 break
 
         return DEFAULT_DECODING_OUTPUT
@@ -80,7 +80,7 @@ class ZksyncDecoder(DecoderInterface):
                 event.event_type = HistoryEventType.WITHDRAWAL
                 event.event_subtype = HistoryEventSubType.BRIDGE
                 event.counterparty = CPT_ZKSYNC
-                event.notes = f'Withdraw {event.balance.amount} {event.asset.symbol_or_name()} from zksync'  # noqa: E501
+                event.notes = f'Withdraw {event.amount} {event.asset.symbol_or_name()} from zksync'
 
         return DEFAULT_DECODING_OUTPUT
 

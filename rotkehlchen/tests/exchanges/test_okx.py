@@ -1,7 +1,6 @@
 import warnings as test_warnings
 from unittest.mock import patch
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_okx
 from rotkehlchen.constants.assets import A_ETH, A_SOL, A_USDC, A_USDT
@@ -753,7 +752,7 @@ def test_okx_query_deposits_withdrawals(mock_okx: 'Okx') -> None:
             event_type=HistoryEventType.DEPOSIT,
             timestamp=TimestampMS(1669963555000),
             asset=A_USDT,
-            balance=Balance(FVal(2500.180327)),
+            amount=FVal(2500.180327),
             unique_id='0xfd12f8850218dc9d1d706c2dbd6c38f495988109c220bf8833255697b85c92db',
             extra_data={
                 'address': '0xAAB27b150451726EC7738aa1d0A94505c8729bd1',
@@ -766,7 +765,7 @@ def test_okx_query_deposits_withdrawals(mock_okx: 'Okx') -> None:
             event_type=HistoryEventType.DEPOSIT,
             timestamp=TimestampMS(1669405596000),
             asset=A_USDC,
-            balance=Balance(FVal(990.795352)),
+            amount=FVal(990.795352),
             unique_id='0xcea993d53b2c1f79430a003fb8facb5cd6b83b6cb6a502b6233d83eb338ba8ba',
             extra_data={
                 'address': '0xAAB27b150451726EC7738aa1d0A94505c8729bd1',
@@ -779,7 +778,7 @@ def test_okx_query_deposits_withdrawals(mock_okx: 'Okx') -> None:
             event_type=HistoryEventType.WITHDRAWAL,
             timestamp=TimestampMS(1671542569000),
             asset=A_SOL,
-            balance=Balance(FVal(49.86051649)),
+            amount=FVal(49.86051649),
             unique_id='46tgp3RHNuQqQrHbms1NtPFkRRwsabCajvEUPXBryVuH6qJmQysn1V9VhTYBEJmVQq8s8fbfv4WFW3oj2LtwRzyU',
             extra_data={
                 'address': '9ZLfHwxzgbZi3eiK43duZVJ2nXft3mtkRMjs9YD5Yds2',
@@ -792,7 +791,7 @@ def test_okx_query_deposits_withdrawals(mock_okx: 'Okx') -> None:
             event_type=HistoryEventType.WITHDRAWAL,
             timestamp=TimestampMS(1671542569000),
             asset=A_SOL,
-            balance=Balance(FVal(0.008)),
+            amount=FVal(0.008),
             unique_id='46tgp3RHNuQqQrHbms1NtPFkRRwsabCajvEUPXBryVuH6qJmQysn1V9VhTYBEJmVQq8s8fbfv4WFW3oj2LtwRzyU',
             is_fee=True,
         ),
@@ -802,7 +801,7 @@ def test_okx_query_deposits_withdrawals(mock_okx: 'Okx') -> None:
             event_type=HistoryEventType.WITHDRAWAL,
             timestamp=TimestampMS(1670953159000),
             asset=A_USDT,
-            balance=Balance(FVal(421.169831)),
+            amount=FVal(421.169831),
             unique_id='0x9444b018c33c5adb58ee171bc18e61c56078495e37ae88833007a46c02b4552f',
             extra_data={
                 'address': '0x388C818CA8B9251b393131C08a736A67ccB19297',
@@ -815,7 +814,7 @@ def test_okx_query_deposits_withdrawals(mock_okx: 'Okx') -> None:
             event_type=HistoryEventType.WITHDRAWAL,
             timestamp=TimestampMS(1670953159000),
             asset=A_USDT,
-            balance=Balance(FVal(0.1)),
+            amount=FVal(0.1),
             unique_id='0x9444b018c33c5adb58ee171bc18e61c56078495e37ae88833007a46c02b4552f',
             is_fee=True,
         ),
