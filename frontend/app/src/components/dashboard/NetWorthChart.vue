@@ -208,7 +208,9 @@ function prepareData() {
 }
 
 watch(chartData, () => {
-  prepareData();
+  if (chart) {
+    prepareData();
+  }
 });
 
 const { backgroundColor, baseColor, fontColor, getCanvasCtx, gradient, gridColor } = useGraph(chartId);

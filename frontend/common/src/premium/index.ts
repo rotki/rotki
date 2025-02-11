@@ -34,7 +34,8 @@ export interface StatisticsApi {
   timedHistoricalBalances: (asset: string, start: number, end: number, collectionId?: number) => Promise<TimedAssetHistoricalBalances>;
   fetchNetValue: () => Promise<void>;
   netValue: (startingData: number) => Ref<NetValue>;
-  queryHistoricalAssetPrices: (payload: HistoricalAssetPricePayload, ignoreCache: boolean) => Promise<HistoricalAssetPriceResponse>;
+  isQueryingDailyPrices: ComputedRef<boolean>;
+  queryHistoricalAssetPrices: (payload: HistoricalAssetPricePayload) => Promise<HistoricalAssetPriceResponse>;
   historicalAssetPriceStatus: Ref<HistoricalPriceQueryStatusData | undefined>;
 }
 
