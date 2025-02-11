@@ -1,6 +1,5 @@
 import pytest
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.evm.decoding.constants import CPT_BASE, CPT_GAS
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -27,7 +26,7 @@ def test_deposit_eth(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=FVal('0.0008732662')),
+            amount=FVal('0.0008732662'),
             location_label=user_address,
             notes='Burn 0.0008732662 ETH for gas',
             counterparty=CPT_GAS,
@@ -39,7 +38,7 @@ def test_deposit_eth(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.BRIDGE,
             asset=A_ETH,
-            balance=Balance(amount=FVal('200')),
+            amount=FVal('200'),
             location_label=user_address,
             notes='Bridge 200 ETH from Ethereum to Base via Base bridge',
             counterparty=CPT_BASE,
@@ -63,7 +62,7 @@ def test_withdraw_eth(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=FVal('0.0011436799352069')),
+            amount=FVal('0.0011436799352069'),
             location_label=user_address,
             notes='Burn 0.0011436799352069 ETH for gas',
             counterparty=CPT_GAS,
@@ -75,7 +74,7 @@ def test_withdraw_eth(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.BRIDGE,
             asset=A_ETH,
-            balance=Balance(amount=FVal('0.003')),
+            amount=FVal('0.003'),
             location_label=user_address,
             notes='Bridge 0.003 ETH from Base to Ethereum via Base bridge',
             counterparty=CPT_BASE,
@@ -99,7 +98,7 @@ def test_deposit_token(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=FVal('0.00227258431919723')),
+            amount=FVal('0.00227258431919723'),
             location_label=user_address,
             notes='Burn 0.00227258431919723 ETH for gas',
             counterparty=CPT_GAS,
@@ -111,7 +110,7 @@ def test_deposit_token(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.BRIDGE,
             asset=Asset('eip155:1/erc20:0xBe9895146f7AF43049ca1c1AE358B0541Ea49704'),
-            balance=Balance(amount=FVal('104.9426')),
+            amount=FVal('104.9426'),
             location_label=user_address,
             notes='Bridge 104.9426 cbETH from Ethereum to Base via Base bridge',
             counterparty=CPT_BASE,
@@ -135,7 +134,7 @@ def test_withdraw_token(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=FVal('0.002955477492625515')),
+            amount=FVal('0.002955477492625515'),
             location_label=user_address,
             notes='Burn 0.002955477492625515 ETH for gas',
             counterparty=CPT_GAS,
@@ -147,7 +146,7 @@ def test_withdraw_token(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.BRIDGE,
             asset=Asset('eip155:1/erc20:0xBe9895146f7AF43049ca1c1AE358B0541Ea49704'),
-            balance=Balance(amount=FVal('189.09')),
+            amount=FVal('189.09'),
             location_label=user_address,
             notes='Bridge 189.09 cbETH from Base to Ethereum via Base bridge',
             counterparty=CPT_BASE,

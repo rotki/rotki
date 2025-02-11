@@ -3,7 +3,6 @@ import pytest
 from rotkehlchen.accounting.accountant import Accountant
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.pnl import PNL, PnlTotals
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.ethereum.constants import SHAPPELA_TIMESTAMP
 from rotkehlchen.chain.ethereum.modules.eth2.structures import (
     ValidatorDailyStats,
@@ -55,10 +54,7 @@ def test_kraken_staking_events(accountant, google_service, event_start_timestamp
             location=Location.KRAKEN,
             location_label='Kraken 1',
             asset=A_ETH2,
-            balance=Balance(
-                amount=FVal(0.0000541090),
-                usd_value=FVal(0.212353475950),
-            ),
+            amount=FVal(0.0000541090),
             notes=None,
             event_type=HistoryEventType.STAKING,
             event_subtype=HistoryEventSubType.REWARD,
@@ -69,10 +65,7 @@ def test_kraken_staking_events(accountant, google_service, event_start_timestamp
             location=Location.KRAKEN,
             location_label='Kraken 1',
             asset=A_ETH2,
-            balance=Balance(
-                amount=FVal(0.0000541090),
-                usd_value=FVal(0.212353475950),
-            ),
+            amount=FVal(0.0000541090),
             notes=None,
             event_type=HistoryEventType.STAKING,
             event_subtype=HistoryEventSubType.REWARD,
@@ -146,7 +139,7 @@ def test_mev_events(accountant: Accountant, ethereum_accounts: list[ChecksumEvmA
             identifier=13674,
             validator_index=610696,
             timestamp=TimestampMS(1687117319000),
-            balance=Balance(FVal('0.126419309459217215')),
+            amount=FVal('0.126419309459217215'),
             fee_recipient=fee_recipient,
             fee_recipient_tracked=True,
             block_number=17508810,
@@ -158,10 +151,7 @@ def test_mev_events(accountant: Accountant, ethereum_accounts: list[ChecksumEvmA
             location=Location.KRAKEN,
             location_label='Kraken 1',
             asset=A_ETH2,
-            balance=Balance(
-                amount=FVal(0.0000541090),
-                usd_value=FVal(0.212353475950),
-            ),
+            amount=FVal(0.0000541090),
             notes=None,
             event_type=HistoryEventType.STAKING,
             event_subtype=HistoryEventSubType.REWARD,
@@ -190,7 +180,7 @@ def test_mev_events(accountant: Accountant, ethereum_accounts: list[ChecksumEvmA
             identifier=13674,
             validator_index=610696,
             timestamp=TimestampMS(1687117319000),
-            balance=Balance(FVal('0.126419309459217215')),
+            amount=FVal('0.126419309459217215'),
             fee_recipient=mevbot_address,
             fee_recipient_tracked=False,
             block_number=block_number,
@@ -200,7 +190,7 @@ def test_mev_events(accountant: Accountant, ethereum_accounts: list[ChecksumEvmA
             identifier=13675,
             validator_index=610696,
             timestamp=TimestampMS(1687117319000),
-            balance=Balance(FVal(mev_amount)),
+            amount=FVal(mev_amount),
             fee_recipient=fee_recipient,
             fee_recipient_tracked=True,
             block_number=block_number,
@@ -214,7 +204,7 @@ def test_mev_events(accountant: Accountant, ethereum_accounts: list[ChecksumEvmA
             location_label=fee_recipient,
             address=mevbot_address,
             asset=A_ETH2,
-            balance=Balance(FVal(mev_amount)),
+            amount=FVal(mev_amount),
             notes=(mev_notes := f'Receive {mev_amount} ETH from {mevbot_address} as mev reward for block {block_number} in {tx_hash.hex()}'),  # pylint: disable=no-member  # noqa: E501
             event_type=HistoryEventType.STAKING,
             event_subtype=HistoryEventSubType.MEV_REWARD,
@@ -225,10 +215,7 @@ def test_mev_events(accountant: Accountant, ethereum_accounts: list[ChecksumEvmA
             location=Location.KRAKEN,
             location_label='Kraken 1',
             asset=A_ETH2,
-            balance=Balance(
-                amount=FVal(0.0000541090),
-                usd_value=FVal(0.212353475950),
-            ),
+            amount=FVal(0.0000541090),
             notes=None,
             event_type=HistoryEventType.STAKING,
             event_subtype=HistoryEventSubType.REWARD,
@@ -275,7 +262,7 @@ def test_validator_exit_pnl(
                 identifier=9,
                 validator_index=vindex1,
                 timestamp=TimestampMS(1666693607000),
-                balance=Balance(FVal(33)),
+                amount=FVal(33),
                 withdrawal_address=ethereum_accounts[0],
                 is_exit=True,
             ),

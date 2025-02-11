@@ -30,10 +30,10 @@ from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType
+from rotkehlchen.history.price import query_usd_price_zero_if_error
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium, has_premium_check
-from rotkehlchen.tasks.utils import query_missing_prices_of_base_entries
 from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind, Timestamp
 
 if TYPE_CHECKING:
@@ -130,16 +130,28 @@ class AMMSwapPlatform:
             event_asset_is_token_0 = event.asset in asset_list
             if event.event_subtype == HistoryEventSubType.DEPOSIT_FOR_WRAPPED:
                 if event_asset_is_token_0 is True:
-                    pool_aggregated_amount[pool_token].profit_loss0 -= event.balance.amount
+                    pool_aggregated_amount[pool_token].profit_loss0 -= event.amount
                 else:
-                    pool_aggregated_amount[pool_token].profit_loss1 -= event.balance.amount
-                pool_aggregated_amount[pool_token].usd_profit_loss -= event.balance.usd_value
+                    pool_aggregated_amount[pool_token].profit_loss1 -= event.amount
+
+                usd_value = query_usd_price_zero_if_error(
+                    asset=event.asset,
+                    time=event.get_timestamp_in_sec(),
+                    location=f'_calculate_events_balances for {self.counterparties}',
+                )
+                pool_aggregated_amount[pool_token].usd_profit_loss -= event.amount * usd_value
             else:  # event_type == HistoryEventSubType.REDEEM_WRAPPED
                 if event_asset_is_token_0 is True:
-                    pool_aggregated_amount[pool_token].profit_loss0 += event.balance.amount
+                    pool_aggregated_amount[pool_token].profit_loss0 += event.amount
                 else:
-                    pool_aggregated_amount[pool_token].profit_loss1 += event.balance.amount
-                pool_aggregated_amount[pool_token].usd_profit_loss += event.balance.usd_value
+                    pool_aggregated_amount[pool_token].profit_loss1 += event.amount
+
+                usd_value = query_usd_price_zero_if_error(
+                    asset=event.asset,
+                    time=event.get_timestamp_in_sec(),
+                    location=f'_calculate_events_balances for {self.counterparties}',
+                )
+                pool_aggregated_amount[pool_token].usd_profit_loss += event.amount * usd_value
 
         # Instantiate `LiquidityPoolEventsBalance` per pool using
         # `pool_aggregated_amount`. If `pool_balance` exists (all events case),
@@ -196,11 +208,6 @@ class AMMSwapPlatform:
                     HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
                     HistoryEventSubType.REDEEM_WRAPPED,
                 ],
-            )
-            entries_missing_prices = db.get_base_entries_missing_prices(query_filter=dbfilter)
-            query_missing_prices_of_base_entries(
-                database=self.database,
-                entries_missing_prices=entries_missing_prices,
             )
             with self.database.conn.read_ctx() as cursor:
                 events = db.get_history_events(

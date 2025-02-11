@@ -42,7 +42,7 @@ class PaladinDecoder(DecoderInterface):
         )
         normalized_amount = token_normalized_value(amount, claimed_token)
         for event in context.decoded_events:
-            if event.event_type == HistoryEventType.RECEIVE and event.event_subtype == HistoryEventSubType.NONE and event.asset == claimed_token and event.balance.amount == normalized_amount and event.location_label == user_address:  # noqa: E501
+            if event.event_type == HistoryEventType.RECEIVE and event.event_subtype == HistoryEventSubType.NONE and event.asset == claimed_token and event.amount == normalized_amount and event.location_label == user_address:  # noqa: E501
                 event.event_subtype = HistoryEventSubType.REWARD
                 event.counterparty = CPT_PALADIN
                 event.notes = f'Claim {normalized_amount} {claimed_token.symbol} from Paladin veCRV bribes for the period starting at {timestamp_to_date(period, formatstr="%d/%m/%Y %H:%M:%S")}'  # noqa: E501

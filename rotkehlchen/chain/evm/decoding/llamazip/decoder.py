@@ -54,7 +54,7 @@ class LlamazipCommonDecoder(DecoderInterface, abc.ABC):
                 spend_event.counterparty = CPT_LLAMAZIP
                 spend_event.event_type = HistoryEventType.TRADE
                 spend_event.event_subtype = HistoryEventSubType.SPEND
-                spend_event.notes = f'Swap {event.balance.amount} {event.asset.symbol_or_name()} in LlamaZip'  # noqa: E501
+                spend_event.notes = f'Swap {event.amount} {event.asset.symbol_or_name()} in LlamaZip'  # noqa: E501
             elif (
                 event.event_type == HistoryEventType.RECEIVE and
                 event.event_subtype == HistoryEventSubType.NONE and
@@ -64,7 +64,7 @@ class LlamazipCommonDecoder(DecoderInterface, abc.ABC):
                 receive_event.counterparty = CPT_LLAMAZIP
                 receive_event.event_type = HistoryEventType.TRADE
                 receive_event.event_subtype = HistoryEventSubType.RECEIVE
-                receive_event.notes = f'Receive {event.balance.amount} {event.asset.symbol_or_name()} as the result of a swap in LlamaZip'  # noqa: E501
+                receive_event.notes = f'Receive {event.amount} {event.asset.symbol_or_name()} as the result of a swap in LlamaZip'  # noqa: E501
 
         if None not in (spend_event, receive_event):
             maybe_reshuffle_events(

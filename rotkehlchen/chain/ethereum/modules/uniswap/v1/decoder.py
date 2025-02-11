@@ -55,7 +55,7 @@ class Uniswapv1Decoder(DecoderInterface):
                     event.event_type = HistoryEventType.TRADE
                     event.event_subtype = HistoryEventSubType.SPEND
                     event.counterparty = CPT_UNISWAP_V1
-                    event.notes = f'Swap {event.balance.amount} {crypto_asset.symbol} in uniswap-v1 from {event.location_label}'  # noqa: E501
+                    event.notes = f'Swap {event.amount} {crypto_asset.symbol} in uniswap-v1 from {event.location_label}'  # noqa: E501
                     out_event = event
                 elif event.event_type == HistoryEventType.TRADE and event.event_subtype == HistoryEventSubType.RECEIVE and event.counterparty == CPT_UNISWAP_V1:  # noqa: E501
                     in_event = event
@@ -73,7 +73,7 @@ class Uniswapv1Decoder(DecoderInterface):
                     event.event_type = HistoryEventType.TRADE
                     event.event_subtype = HistoryEventSubType.RECEIVE
                     event.counterparty = CPT_UNISWAP_V1
-                    event.notes = f'Receive {event.balance.amount} {crypto_asset.symbol} from uniswap-v1 swap in {event.location_label}'  # noqa: E501
+                    event.notes = f'Receive {event.amount} {crypto_asset.symbol} from uniswap-v1 swap in {event.location_label}'  # noqa: E501
                     in_event = event
                 elif event.event_type == HistoryEventType.TRADE and event.event_subtype == HistoryEventSubType.SPEND and event.counterparty == CPT_UNISWAP_V1:  # noqa: E501
                     out_event = event

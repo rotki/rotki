@@ -2,7 +2,6 @@ import logging
 from collections.abc import Callable
 from typing import Any, Final
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
@@ -62,7 +61,7 @@ class PolygonPosBridgeDecoder(DecoderInterface):
                     to_address=user_address,
                     from_chain=ChainID.ETHEREUM,
                     to_chain=ChainID.POLYGON_POS,
-                    amount=event.balance.amount,
+                    amount=event.amount,
                     asset=event.asset.resolve_to_asset_with_symbol(),
                     expected_event_type=HistoryEventType.RECEIVE,
                     new_event_type=HistoryEventType.WITHDRAWAL,
@@ -93,7 +92,7 @@ class PolygonPosBridgeDecoder(DecoderInterface):
                 event_type=HistoryEventType.WITHDRAWAL,
                 event_subtype=HistoryEventSubType.BRIDGE,
                 asset=asset,
-                balance=Balance(amount=amount),
+                amount=amount,
                 location_label=user_address,
                 notes=f'Bridge {amount} {asset.resolve_to_asset_with_symbol().symbol} from Ethereum to Polygon POS via Polygon bridge',  # noqa: E501
                 counterparty=CPT_POLYGON,
@@ -156,7 +155,7 @@ class PolygonPosBridgeDecoder(DecoderInterface):
                     to_address=user_address,
                     from_chain=ChainID.POLYGON_POS,
                     to_chain=ChainID.ETHEREUM,
-                    amount=event.balance.amount,
+                    amount=event.amount,
                     asset=event_token,
                     expected_event_type=HistoryEventType.SPEND,
                     new_event_type=HistoryEventType.DEPOSIT,

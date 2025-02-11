@@ -489,8 +489,8 @@ class DBHistoryEvents:
                     data = (
                         entry[data_start_idx:data_start_idx + 4] +
                         location_label_tuple +
-                        entry[data_start_idx + 7:data_start_idx + 9] +
-                        entry[data_start_idx + 11:data_start_idx + 12] +
+                        entry[data_start_idx + 7:data_start_idx + 8] +
+                        entry[data_start_idx + 10:data_start_idx + 12] +
                         entry[data_start_idx + HISTORY_BASE_ENTRY_LENGTH + EVM_FIELD_LENGTH:data_start_idx + HISTORY_BASE_ENTRY_LENGTH + EVM_FIELD_LENGTH + ETH_STAKING_FIELD_LENGTH + 1]  # noqa: E501
                     )
                     if entry_type == HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT:
@@ -735,22 +735,12 @@ class DBHistoryEvents:
         by asset
         TODO: At the moment this function is used by liquity and kraken. Change it to use a filter
         instead of query string and bindings when the refactor of the history events is made.
+
+        TODO: @yabirgb: Adjust this function after removing the usd value from the db
         """
         usd_value = ZERO
-        try:
-            query = 'SELECT SUM(CAST(usd_value AS REAL)) FROM history_events ' + query_filters
-            result = cursor.execute(query, bindings).fetchone()[0]  # count(*) always returns
-            if result is not None:
-                usd_value = deserialize_fval(
-                    value=result,
-                    name='usd value in history events stats',
-                    location='get_value_stats',
-                )
-        except DeserializationError as e:
-            log.error(f'Didnt get correct valid usd_value for history_events query. {e!s}')
-
         query = (
-            f'SELECT asset, SUM(CAST(amount AS REAL)), SUM(CAST(usd_value AS REAL)) '
+            f'SELECT asset, SUM(CAST(amount AS REAL)), 0 '
             f'FROM history_events {query_filters}'
             f' GROUP BY asset;'
         )

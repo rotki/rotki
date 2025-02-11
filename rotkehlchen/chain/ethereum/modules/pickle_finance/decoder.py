@@ -80,11 +80,11 @@ class PickleFinanceDecoder(MerkleClaimDecoderInterface):
                 amount=amount_raw,
                 asset=context.event.asset.resolve_to_crypto_asset(),
             )
-            if context.event.balance.amount == amount:
+            if context.event.amount == amount:
                 context.event.event_type = HistoryEventType.DEPOSIT
                 context.event.event_subtype = HistoryEventSubType.DEPOSIT_FOR_WRAPPED
                 context.event.counterparty = CPT_PICKLE
-                context.event.notes = f'Deposit {context.event.balance.amount} {crypto_asset.symbol} in pickle contract'  # noqa: E501
+                context.event.notes = f'Deposit {context.event.amount} {crypto_asset.symbol} in pickle contract'  # noqa: E501
                 return TransferEnrichmentOutput(matched_counterparty=CPT_PICKLE)
         elif (  # Deposit receive wrapped
             context.event.event_type == HistoryEventType.RECEIVE and
@@ -96,11 +96,11 @@ class PickleFinanceDecoder(MerkleClaimDecoderInterface):
                 amount=amount_raw,
                 asset=context.event.asset.resolve_to_crypto_asset(),
             )
-            if context.event.balance.amount == amount:
+            if context.event.amount == amount:
                 context.event.event_type = HistoryEventType.RECEIVE
                 context.event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
                 context.event.counterparty = CPT_PICKLE
-                context.event.notes = f'Receive {context.event.balance.amount} {crypto_asset.symbol} after depositing in pickle contract'  # noqa: E501
+                context.event.notes = f'Receive {context.event.amount} {crypto_asset.symbol} after depositing in pickle contract'  # noqa: E501
                 context.event.address = context.tx_log.address
                 return TransferEnrichmentOutput(matched_counterparty=CPT_PICKLE)
         elif (  # Withdraw send wrapped
@@ -117,11 +117,11 @@ class PickleFinanceDecoder(MerkleClaimDecoderInterface):
                 amount=amount_raw,
                 asset=context.event.asset.resolve_to_crypto_asset(),
             )
-            if context.event.balance.amount == amount:
+            if context.event.amount == amount:
                 context.event.event_type = HistoryEventType.SPEND
                 context.event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
                 context.event.counterparty = CPT_PICKLE
-                context.event.notes = f'Return {context.event.balance.amount} {crypto_asset.symbol} to the pickle contract'  # noqa: E501
+                context.event.notes = f'Return {context.event.amount} {crypto_asset.symbol} to the pickle contract'  # noqa: E501
                 context.event.address = context.tx_log.address
                 return TransferEnrichmentOutput(matched_counterparty=CPT_PICKLE)
         elif (  # Withdraw receive asset
@@ -138,11 +138,11 @@ class PickleFinanceDecoder(MerkleClaimDecoderInterface):
                 amount=amount_raw,
                 asset=context.event.asset.resolve_to_crypto_asset(),
             )
-            if context.event.balance.amount == amount:
+            if context.event.amount == amount:
                 context.event.event_type = HistoryEventType.WITHDRAWAL
                 context.event.event_subtype = HistoryEventSubType.REDEEM_WRAPPED
                 context.event.counterparty = CPT_PICKLE
-                context.event.notes = f'Unstake {context.event.balance.amount} {crypto_asset.symbol} from the pickle contract'  # noqa: E501
+                context.event.notes = f'Unstake {context.event.amount} {crypto_asset.symbol} from the pickle contract'  # noqa: E501
                 return TransferEnrichmentOutput(matched_counterparty=CPT_PICKLE)
 
         return FAILED_ENRICHMENT_OUTPUT

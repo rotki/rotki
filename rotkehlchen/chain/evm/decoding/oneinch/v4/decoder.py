@@ -132,7 +132,7 @@ class Oneinchv3n4DecoderBase(OneinchCommonDecoder, ABC):
                 event.event_type = HistoryEventType.TRADE
                 event.event_subtype = HistoryEventSubType.RECEIVE
                 event.counterparty = self.counterparty
-                event.notes = f'Receive {event.balance.amount} {event.asset.symbol_or_name()} as a result of a {self.counterparty} swap'  # noqa: E501
+                event.notes = f'Receive {event.amount} {event.asset.symbol_or_name()} as a result of a {self.counterparty} swap'  # noqa: E501
                 event.address = self.router_address
                 in_event = event
             elif (
@@ -145,7 +145,7 @@ class Oneinchv3n4DecoderBase(OneinchCommonDecoder, ABC):
                 event.event_type = HistoryEventType.TRADE
                 event.event_subtype = HistoryEventSubType.SPEND
                 event.counterparty = self.counterparty
-                event.notes = f'Swap {event.balance.amount} {event.asset.symbol_or_name()} in {self.counterparty}'  # noqa: E501
+                event.notes = f'Swap {event.amount} {event.asset.symbol_or_name()} in {self.counterparty}'  # noqa: E501
                 event.address = self.router_address
                 out_event = event
 

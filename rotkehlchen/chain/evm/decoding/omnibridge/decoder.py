@@ -83,7 +83,7 @@ class OmnibridgeCommonDecoder(DecoderInterface, abc.ABC):
         )
 
         for event in context.decoded_events:
-            if bridged_asset == A_WETH and event.asset == A_ETH and event.balance.amount == amount:
+            if bridged_asset == A_WETH and event.asset == A_ETH and event.amount == amount:
                 if event.event_type == HistoryEventType.RECEIVE:
                     # Use transaction.from_address in ETH withdrawals since tx_log.topics[2] has other data  # noqa: E501
                     expected_location_label = context.transaction.from_address
@@ -100,7 +100,7 @@ class OmnibridgeCommonDecoder(DecoderInterface, abc.ABC):
                 event.location_label == expected_location_label and
                 event.address in (expected_address, ZERO_ADDRESS) and
                 event.asset == expected_asset and
-                event.balance.amount == amount
+                event.amount == amount
             ):
                 bridge_match_transfer(
                     event=event,
@@ -108,7 +108,7 @@ class OmnibridgeCommonDecoder(DecoderInterface, abc.ABC):
                     to_address=to_address,
                     from_chain=from_chain,
                     to_chain=to_chain,
-                    amount=event.balance.amount,
+                    amount=event.amount,
                     asset=bridged_asset,
                     expected_event_type=expected_event_type,
                     new_event_type=new_event_type,

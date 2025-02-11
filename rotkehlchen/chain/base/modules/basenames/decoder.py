@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING, Any, Final
 
 import requests
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.ethereum.abi import decode_event_data_abi_str
 from rotkehlchen.chain.evm.decoding.ens.decoder import EnsCommonDecoder
 from rotkehlchen.chain.evm.decoding.structures import (
@@ -15,6 +14,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.resolver import tokenid_belongs_to_collection
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError
@@ -184,7 +184,7 @@ class BasenamesDecoder(EnsCommonDecoder):
                 event.event_type = HistoryEventType.TRADE
                 event.event_subtype = HistoryEventSubType.SPEND
                 event.counterparty = CPT_BASENAMES
-                event.notes = f'Register {self.display_name} name {fullname} for {event.balance.amount} ETH until {self.timestamp_to_date(expires)}'  # noqa: E501
+                event.notes = f'Register {self.display_name} name {fullname} for {event.amount} ETH until {self.timestamp_to_date(expires)}'  # noqa: E501
                 event.extra_data = {'name': fullname, 'expires': expires}
                 spend_event = event
             elif event.event_type == HistoryEventType.RECEIVE and tokenid_belongs_to_collection(
@@ -203,7 +203,7 @@ class BasenamesDecoder(EnsCommonDecoder):
                 event_type=HistoryEventType.TRADE,
                 event_subtype=HistoryEventSubType.SPEND,
                 asset=A_ETH,
-                balance=Balance(),
+                amount=ZERO,
                 location_label=bytes_to_address(context.tx_log.topics[2]),
                 notes=f'Register {self.display_name} name {fullname} until {self.timestamp_to_date(expires)}',  # noqa: E501
                 counterparty=CPT_BASENAMES,

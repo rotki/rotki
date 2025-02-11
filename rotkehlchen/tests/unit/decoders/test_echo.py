@@ -1,7 +1,6 @@
 
 import pytest
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.base.modules.echo.constants import CPT_ECHO
 from rotkehlchen.chain.base.modules.echo.decoder import FUNDING_CONDUIT
@@ -30,7 +29,7 @@ def test_echo_fund(base_inquirer, base_accounts):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
             asset=USDC_TOKEN,
-            balance=Balance(amount=FVal(5887)),
+            amount=FVal(5887),
             location_label=base_accounts[0],
             notes=f'Set USDC spending approval of {base_accounts[0]} by {FUNDING_CONDUIT} to {fund_amount}',  # noqa:E501
             address=FUNDING_CONDUIT,
@@ -43,7 +42,7 @@ def test_echo_fund(base_inquirer, base_accounts):
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
             asset=USDC_TOKEN,
-            balance=Balance(amount=FVal(5887)),
+            amount=FVal(5887),
             location_label=base_accounts[0],
             counterparty=CPT_ECHO,
             notes=f'Fund {fund_amount} USDC to {deal_address} on Echo',
@@ -67,7 +66,7 @@ def test_echo_refund(base_inquirer, base_accounts):
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.REMOVE_ASSET,
             asset=USDC_TOKEN,
-            balance=Balance(amount=FVal(2000)),
+            amount=FVal(2000),
             location_label=base_accounts[0],
             counterparty=CPT_ECHO,
             notes=f'Refund 2000 USDC from {deal_address} on Echo',

@@ -3,7 +3,6 @@ import logging
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.converters import asset_from_blockfi
 from rotkehlchen.constants import ZERO
 from rotkehlchen.data_import.utils import (
@@ -76,7 +75,7 @@ class BlockfiTransactionsImporter(BaseExchangeImporter):
                 event_type=HistoryEventType.DEPOSIT,
                 timestamp=ts_sec_to_ms(timestamp),
                 asset=asset,
-                balance=Balance(abs_amount),
+                amount=abs_amount,
             )])
         elif entry_type in {'Withdrawal', 'Wire Withdrawal', 'ACH Withdrawal'}:
             self.add_history_events(write_cursor, [AssetMovement(
@@ -84,7 +83,7 @@ class BlockfiTransactionsImporter(BaseExchangeImporter):
                 event_type=HistoryEventType.WITHDRAWAL,
                 timestamp=ts_sec_to_ms(timestamp),
                 asset=asset,
-                balance=Balance(abs_amount),
+                amount=abs_amount,
             )])
         elif entry_type == 'Withdrawal Fee':
             self.add_history_events(write_cursor, [AssetMovement(
@@ -92,7 +91,7 @@ class BlockfiTransactionsImporter(BaseExchangeImporter):
                 event_type=HistoryEventType.WITHDRAWAL,
                 timestamp=ts_sec_to_ms(timestamp),
                 asset=asset,
-                balance=Balance(abs_amount),
+                amount=abs_amount,
                 is_fee=True,
             )])
         elif entry_type in {'Interest Payment', 'Bonus Payment', 'Referral Bonus'}:
@@ -103,7 +102,7 @@ class BlockfiTransactionsImporter(BaseExchangeImporter):
                 location=Location.BLOCKFI,
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.NONE,
-                balance=Balance(amount=abs_amount),
+                amount=abs_amount,
                 asset=asset,
                 notes=f'{entry_type} from BlockFi',
             )
@@ -114,7 +113,7 @@ class BlockfiTransactionsImporter(BaseExchangeImporter):
                 event_type=HistoryEventType.WITHDRAWAL if raw_amount < ZERO else HistoryEventType.DEPOSIT,  # noqa: E501
                 timestamp=ts_sec_to_ms(timestamp),
                 asset=asset,
-                balance=Balance(abs_amount),
+                amount=abs_amount,
             )])
         elif entry_type == 'Trade':
             raise SkippedCSVEntry('Entry is a trade.')

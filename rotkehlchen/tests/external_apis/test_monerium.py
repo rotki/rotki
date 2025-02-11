@@ -4,7 +4,6 @@ import gevent
 import pytest
 import requests
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.api.server import APIServer
 from rotkehlchen.chain.evm.decoding.monerium.constants import CPT_MONERIUM
 from rotkehlchen.constants.assets import A_ETH_EURE
@@ -66,7 +65,7 @@ def test_send_bank_transfer(task_manager, database, monerium_credentials):  # py
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.NONE,
         asset=A_ETH_EURE,
-        balance=Balance(amount=FVal(amount_str)),
+        amount=FVal(amount_str),
         location_label=user_address,
         notes=f'Burn {amount_str} EURe',
         counterparty=CPT_MONERIUM,
@@ -110,7 +109,7 @@ def test_receive_bank_transfer(task_manager, database, monerium_credentials):  #
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.NONE,
         asset=A_ETH_EURE,
-        balance=Balance(amount=FVal(amount_str)),
+        amount=FVal(amount_str),
         location_label=user_address,
         notes=f'Mint {amount_str} EURe',
         counterparty=CPT_MONERIUM,
@@ -156,7 +155,7 @@ def test_bridge_via_monerium(task_manager, database, monerium_credentials):  # p
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.NONE,
         asset=A_ETH_EURE,
-        balance=Balance(amount=FVal(amount_str)),
+        amount=FVal(amount_str),
         location_label=eth_user_address,
         notes=f'Burn {amount_str} EURe',
         counterparty=CPT_MONERIUM,
@@ -169,7 +168,7 @@ def test_bridge_via_monerium(task_manager, database, monerium_credentials):  # p
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.NONE,
         asset=A_ETH_EURE,
-        balance=Balance(amount=FVal(amount_str)),
+        amount=FVal(amount_str),
         location_label=gnosis_user_address,
         notes=f'Mint {amount_str} EURe',
         counterparty=CPT_MONERIUM,
@@ -218,7 +217,7 @@ def test_query_info_on_redecode_request(rotkehlchen_api_server: APIServer):
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.NONE,
         asset=A_ETH_EURE,
-        balance=Balance(amount=FVal(amount_str)),
+        amount=FVal(amount_str),
         location_label=gnosis_user_address,
         notes=f'Burn {amount_str} EURe',
         counterparty=CPT_MONERIUM,

@@ -18,7 +18,6 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.assets.converters import asset_from_binance
 from rotkehlchen.constants import ZERO
-from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
 from rotkehlchen.db.constants import BINANCE_MARKETS_KEY
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -26,7 +25,6 @@ from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import InputError, RemoteError
-from rotkehlchen.errors.price import NoPriceForGivenTimestamp
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import (
     BinancePair,
@@ -52,7 +50,6 @@ from rotkehlchen.history.events.structures.asset_movement import (
 )
 from rotkehlchen.history.events.structures.base import HistoryBaseEntry, HistoryEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
@@ -72,7 +69,7 @@ from rotkehlchen.types import (
     TimestampMS,
 )
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import ts_ms_to_sec, ts_now_in_ms, ts_sec_to_ms
+from rotkehlchen.utils.misc import ts_now_in_ms, ts_sec_to_ms
 from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
 from rotkehlchen.utils.mixins.lockable import protect_with_lock
 
@@ -771,20 +768,6 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
                         )
                         continue
 
-                    try:
-                        usd_price = PriceHistorian.query_historical_price(
-                            from_asset=asset,
-                            to_asset=A_USD,
-                            timestamp=ts_ms_to_sec(timestamp),
-                        )
-                        usd_value = usd_price * interest_received
-                    except NoPriceForGivenTimestamp as e:
-                        log.error(
-                            f'Could not find USD price of {asset} at {timestamp}. {e!s} '
-                            f'Using zero usd_value for lending history entry.',
-                        )
-                        usd_value = ZERO
-
                     event = HistoryEvent(
                         event_identifier=hashlib.sha256(str(entry).encode()).hexdigest(),  # entry hash  # noqa: E501
                         sequence_index=0,  # since event_identifier is always different
@@ -792,10 +775,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
                         location=self.location,
                         location_label=self.name,  # the name of the CEX instance
                         asset=asset,
-                        balance=Balance(
-                            amount=interest_received,
-                            usd_value=usd_value,
-                        ),
+                        amount=interest_received,
                         notes=notes,
                         event_type=HistoryEventType.RECEIVE,
                         event_subtype=HistoryEventSubType.REWARD,
@@ -861,20 +841,6 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
                     )
                     continue
 
-                try:
-                    usd_price = PriceHistorian.query_historical_price(
-                        from_asset=asset,
-                        to_asset=A_USD,
-                        timestamp=ts_ms_to_sec(timestamp),
-                    )
-                    usd_value = usd_price * interest_received
-                except NoPriceForGivenTimestamp as e:
-                    log.error(
-                        f'Could not find USD price of {asset} at {timestamp}. {e!s} '
-                        f'Using zero usd_value for lending history entry.',
-                    )
-                    usd_value = ZERO
-
                 event = HistoryEvent(
                     event_identifier=hashlib.sha256(str(entry).encode()).hexdigest(),  # entry hash
                     sequence_index=0,  # since event_identifier is always different
@@ -882,10 +848,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
                     location=self.location,
                     location_label=self.name,  # the name of the CEX instance
                     asset=asset,
-                    balance=Balance(
-                        amount=interest_received,
-                        usd_value=usd_value,
-                    ),
+                    amount=interest_received,
                     notes=notes,
                     event_type=HistoryEventType.RECEIVE,
                     event_subtype=HistoryEventSubType.REWARD,

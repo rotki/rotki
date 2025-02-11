@@ -68,7 +68,7 @@ class BaseBridgeDecoder(DecoderInterface):
                 event.location_label == expected_location_label and
                 event.address == contract_address and
                 event.asset == asset and
-                (amount is None or event.balance.amount == amount)
+                (amount is None or event.amount == amount)
             ):
                 bridge_match_transfer(
                     event=event,
@@ -76,7 +76,7 @@ class BaseBridgeDecoder(DecoderInterface):
                     to_address=to_address,
                     from_chain=from_chain,
                     to_chain=to_chain,
-                    amount=event.balance.amount,
+                    amount=event.amount,
                     asset=asset,
                     expected_event_type=expected_event_type,
                     new_event_type=new_event_type,

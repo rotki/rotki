@@ -2,7 +2,6 @@ import logging
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import AssetWithSymbol
 from rotkehlchen.assets.utils import TokenEncounterInfo
 from rotkehlchen.chain.ethereum.airdrops import AIRDROP_IDENTIFIER_KEY
@@ -49,6 +48,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
 )
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.db.filtering import EvmEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -119,7 +119,7 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
                 event.event_type = HistoryEventType.STAKING
                 event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
                 asset = event.asset.resolve_to_crypto_asset()
-                event.notes = f'Deposit {event.balance.amount} {asset.symbol} in EigenLayer'
+                event.notes = f'Deposit {event.amount} {asset.symbol} in EigenLayer'
                 event.extra_data = {'strategy': strategy}
                 event.product = EvmProduct.STAKING
                 event.counterparty = CPT_EIGENLAYER
@@ -156,7 +156,7 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
                 event.event_subtype = event_subtype
                 event.counterparty = CPT_EIGENLAYER
                 event.product = EvmProduct.STAKING
-                event.notes = notes.format(amount=event.balance.amount, symbol=event.asset.resolve_to_crypto_asset().symbol)  # noqa: E501
+                event.notes = notes.format(amount=event.amount, symbol=event.asset.resolve_to_crypto_asset().symbol)  # noqa: E501
                 break
         else:
             log.error(f'Could not match eigenlayer withdrawal event in {context.transaction.tx_hash.hex()}')  # noqa: E501
@@ -182,7 +182,7 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
                 event.event_type == HistoryEventType.RECEIVE and
                 event.location_label == claiming_address and
                 event.asset.identifier == EIGEN_TOKEN_ID and
-                event.balance.amount == claimed_amount
+                event.amount == claimed_amount
             ):
                 event.event_type = HistoryEventType.RECEIVE
                 event.event_subtype = HistoryEventSubType.AIRDROP
@@ -217,7 +217,7 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
-            balance=Balance(),
+            amount=ZERO,
             location_label=owner,
             notes=notes,
             counterparty=CPT_EIGENLAYER,
@@ -237,7 +237,7 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.CREATE,
             asset=A_ETH,
-            balance=Balance(),
+            amount=ZERO,
             location_label=owner,
             notes=f'Deploy eigenpod {eigenpod_address}{suffix}',
             counterparty=CPT_EIGENLAYER,
@@ -277,7 +277,7 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
-            balance=Balance(),
+            amount=ZERO,
             location_label=pod_owner,
             notes=notes,
             counterparty=CPT_EIGENLAYER,
@@ -295,14 +295,14 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
                     event.event_type == HistoryEventType.RECEIVE and
                     event.asset == A_ETH and
                     event.location_label == recipient and
-                    event.balance.amount == amount
+                    event.amount == amount
             ):  # not sure if TRANSFER/NONE is best match here but
                 # since withdrawals are already tracked by validator index
                 # at this point we need to make it into an event that counts
                 # as transfer between accounts to avoid double counting
                 event.event_type = HistoryEventType.TRANSFER
                 event.event_subtype = HistoryEventSubType.NONE
-                event.notes = f'Withdraw {event.balance.amount} ETH from Eigenlayer delayed withdrawals'  # noqa: E501
+                event.notes = f'Withdraw {event.amount} ETH from Eigenlayer delayed withdrawals'
                 event.counterparty = CPT_EIGENLAYER
 
         log.error(f'Did not find matching eigenlayer ETH transfer for delayed withdrawal claim in {context.transaction.tx_hash.hex()}. Skipping')  # noqa: E501
@@ -346,7 +346,7 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
                     event_type=HistoryEventType.INFORMATIONAL,
                     event_subtype=HistoryEventSubType.NONE,
                     asset=withdrawal_event.asset,
-                    balance=Balance(),
+                    amount=ZERO,
                     location_label=context.transaction.from_address,
                     notes=f'Complete eigenlayer withdrawal of {withdrawal_event.asset.resolve_to_asset_with_symbol().symbol}',  # noqa: E501
                     counterparty=CPT_EIGENLAYER,
@@ -369,7 +369,7 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
                         event.event_type = HistoryEventType.WITHDRAWAL
                         event.event_subtype = HistoryEventSubType.REMOVE_ASSET
                         event.counterparty = CPT_EIGENLAYER
-                        event.notes = f'Withdraw {event.balance.amount} {event.asset.resolve_to_asset_with_symbol().symbol} from Eigenlayer'  # noqa: E501
+                        event.notes = f'Withdraw {event.amount} {event.asset.resolve_to_asset_with_symbol().symbol} from Eigenlayer'  # noqa: E501
                         break
 
                 else:  # could not find the transfer, withdrawn as shares and not tokens
@@ -388,7 +388,7 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
                 event_type=HistoryEventType.INFORMATIONAL,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_ETH,
-                balance=Balance(),
+                amount=ZERO,
                 location_label=context.transaction.from_address,
                 notes=f'Complete eigenlayer withdrawal {withdrawal_root}',
                 counterparty=CPT_EIGENLAYER,
@@ -424,7 +424,7 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
                 event_type=HistoryEventType.INFORMATIONAL,
                 event_subtype=HistoryEventSubType.REMOVE_ASSET,
                 asset=underlying_token,
-                balance=Balance(),
+                amount=ZERO,
                 location_label=location_label,
                 notes=f'Queue withdrawal of {underlying_amount} {underlying_token.symbol} from Eigenlayer{suffix}',  # noqa: E501
                 counterparty=CPT_EIGENLAYER,
@@ -521,7 +521,7 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
             asset=underlying_tokens[0],
-            balance=Balance(),
+            amount=ZERO,
             location_label=staker,
             notes=notes,
             counterparty=CPT_EIGENLAYER,
@@ -540,7 +540,7 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
-            balance=Balance(),
+            amount=ZERO,
             location_label=context.transaction.from_address,
             notes=f'Start an eigenpod checkpoint of {validators_num} validators at beacon blockroot {beacon_blockroot}',  # noqa: E501
             counterparty=CPT_EIGENLAYER,
@@ -560,7 +560,7 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
-            balance=Balance(),
+            amount=ZERO,
             location_label=context.transaction.from_address,
             notes=f'Finalize an eigenpod checkpoint and {action} restaking across all validators',
             counterparty=CPT_EIGENLAYER,
@@ -578,7 +578,7 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
-            balance=Balance(),
+            amount=ZERO,
             location_label=context.transaction.from_address,
             notes=f'Update validator {validator_index} restaking balance to {validator_balance}',
             counterparty=CPT_EIGENLAYER,
@@ -618,7 +618,7 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
         amount = token_normalized_value(token_amount=amount_raw, token=token)
 
         for event in context.decoded_events:
-            if event.event_type == HistoryEventType.RECEIVE and event.event_subtype == HistoryEventSubType.NONE and event.asset == token and event.balance.amount == amount:  # noqa: E501
+            if event.event_type == HistoryEventType.RECEIVE and event.event_subtype == HistoryEventSubType.NONE and event.asset == token and event.amount == amount:  # noqa: E501
                 event.event_subtype = HistoryEventSubType.REWARD
                 event.counterparty = CPT_EIGENLAYER
                 verb = 'Claim' if self.base.is_tracked(claimer) else 'Receive'

@@ -1,7 +1,6 @@
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.modules.makerdao.constants import MAKERDAO_ICON, MAKERDAO_LABEL
 from rotkehlchen.chain.ethereum.modules.makerdao.sai.constants import CPT_SAI
@@ -104,7 +103,7 @@ class MakerdaosaiDecoder(DecoderInterface):
                         event.event_type = HistoryEventType.WITHDRAWAL
                         event.event_subtype = HistoryEventSubType.REMOVE_ASSET
                         event.counterparty = CPT_SAI
-                        event.notes = f'Withdraw {event.balance.amount} {self.eth.symbol} from CDP {cdp_id}'  # noqa: E501
+                        event.notes = f'Withdraw {event.amount} {self.eth.symbol} from CDP {cdp_id}'  # noqa: E501
                         return DEFAULT_DECODING_OUTPUT
 
         return DEFAULT_DECODING_OUTPUT
@@ -121,7 +120,7 @@ class MakerdaosaiDecoder(DecoderInterface):
             if (
                 event.event_type == HistoryEventType.SPEND and
                 event.event_subtype.NONE and
-                event.balance.amount > ZERO and
+                event.amount > ZERO and
                 event.asset in (self.eth, self.weth) and
                 event.counterparty != CPT_GAS
             ):
@@ -136,7 +135,7 @@ class MakerdaosaiDecoder(DecoderInterface):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
             asset=self.eth,
-            balance=Balance(),
+            amount=ZERO,
             location_label=cdp_creator,
             counterparty=CPT_SAI,
             notes=f'Create CDP {cdp_id}',
@@ -160,7 +159,7 @@ class MakerdaosaiDecoder(DecoderInterface):
             if (
                 event.event_type == HistoryEventType.INFORMATIONAL and
                 event.event_subtype == HistoryEventSubType.NONE and
-                event.balance.amount == ZERO and
+                event.amount == ZERO and
                 event.counterparty == CPT_SAI and
                 event.asset == self.eth
             ):
@@ -174,7 +173,7 @@ class MakerdaosaiDecoder(DecoderInterface):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
             asset=self.eth,
-            balance=Balance(),
+            amount=ZERO,
             location_label=cdp_creator,
             counterparty=CPT_SAI,
             notes=f'Close CDP {cdp_id}',
@@ -199,7 +198,7 @@ class MakerdaosaiDecoder(DecoderInterface):
                 decoded_event.asset == self.sai and
                 decoded_event.event_type == HistoryEventType.RECEIVE and
                 decoded_event.event_subtype == HistoryEventSubType.GENERATE_DEBT and
-                decoded_event.balance.amount == amount_withdrawn and
+                decoded_event.amount == amount_withdrawn and
                 decoded_event.counterparty == CPT_SAI
             ):
                 # this is to avoid having duplicated history events
@@ -213,7 +212,7 @@ class MakerdaosaiDecoder(DecoderInterface):
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.GENERATE_DEBT,
                 asset=self.sai,
-                balance=Balance(amount=amount_withdrawn),
+                amount=amount_withdrawn,
                 location_label=withdrawer,
                 counterparty=CPT_SAI,
                 notes=f'Borrow {amount_withdrawn} {self.sai.symbol} from CDP {cdp_id}',
@@ -254,7 +253,7 @@ class MakerdaosaiDecoder(DecoderInterface):
                 event.event_type == HistoryEventType.SPEND and
                 event.event_subtype == HistoryEventSubType.NONE and
                 event.asset == self.sai and
-                event.balance.amount == amount_paid
+                event.amount == amount_paid
             ):
                 event.event_subtype = HistoryEventSubType.PAYBACK_DEBT
                 event.counterparty = CPT_SAI
@@ -265,7 +264,7 @@ class MakerdaosaiDecoder(DecoderInterface):
                 event.event_type == HistoryEventType.SPEND and
                 event.event_subtype == HistoryEventSubType.PAYBACK_DEBT and
                 event.asset == self.sai and
-                event.balance.amount == amount_paid
+                event.amount == amount_paid
             ):
                 # this is to avoid having duplicated history events
                 # which is caused by the tx_logs containing similar log entries
@@ -278,7 +277,7 @@ class MakerdaosaiDecoder(DecoderInterface):
                 event_type=HistoryEventType.SPEND,
                 event_subtype=HistoryEventSubType.PAYBACK_DEBT,
                 asset=self.sai,
-                balance=Balance(amount=amount_paid),
+                amount=amount_paid,
                 location_label=depositor,
                 counterparty=CPT_SAI,
                 notes=f'Repay {amount_paid} {self.sai.symbol} to CDP {cdp_id}',
@@ -325,7 +324,7 @@ class MakerdaosaiDecoder(DecoderInterface):
                     event_type=HistoryEventType.LOSS,
                     event_subtype=HistoryEventSubType.LIQUIDATE,
                     asset=self.peth,
-                    balance=Balance(amount=amount),
+                    amount=amount,
                     location_label=liquidator,
                     notes=f'Liquidate {amount} {self.peth.symbol} for CDP {cdp_id}',
                     counterparty=CPT_SAI,
@@ -354,7 +353,7 @@ class MakerdaosaiDecoder(DecoderInterface):
             ):
                 event.event_type = HistoryEventType.DEPOSIT
                 event.event_subtype = HistoryEventSubType.DEPOSIT_FOR_WRAPPED
-                event.notes = f'Supply {event.balance.amount} {self.eth.symbol} to Sai vault'
+                event.notes = f'Supply {event.amount} {self.eth.symbol} to Sai vault'
                 event.counterparty = CPT_SAI
                 return DEFAULT_DECODING_OUTPUT
 
@@ -373,7 +372,7 @@ class MakerdaosaiDecoder(DecoderInterface):
                     ):
                         event.event_type = HistoryEventType.DEPOSIT
                         event.event_subtype = HistoryEventSubType.DEPOSIT_FOR_WRAPPED
-                        event.notes = f'Supply {event.balance.amount} {self.eth.symbol} to Sai vault'  # noqa: E501
+                        event.notes = f'Supply {event.amount} {self.eth.symbol} to Sai vault'
                         event.counterparty = CPT_SAI
                         return DEFAULT_DECODING_OUTPUT
 
@@ -392,14 +391,14 @@ class MakerdaosaiDecoder(DecoderInterface):
             if context.event.asset == self.weth:
                 context.event.event_type = HistoryEventType.DEPOSIT
                 context.event.event_subtype = HistoryEventSubType.DEPOSIT_FOR_WRAPPED
-                context.event.notes = f'Supply {context.event.balance.amount} {self.weth.symbol} to Sai vault'  # noqa: E501
+                context.event.notes = f'Supply {context.event.amount} {self.weth.symbol} to Sai vault'  # noqa: E501
                 context.event.counterparty = CPT_SAI
                 return TransferEnrichmentOutput(matched_counterparty=CPT_SAI)
 
             if context.event.asset == self.peth:
                 context.event.event_type = HistoryEventType.DEPOSIT
                 context.event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
-                context.event.notes = f'Increase CDP collateral by {context.event.balance.amount} {self.peth.symbol}'  # noqa: E501
+                context.event.notes = f'Increase CDP collateral by {context.event.amount} {self.peth.symbol}'  # noqa: E501
                 context.event.counterparty = CPT_SAI
                 return TransferEnrichmentOutput(matched_counterparty=CPT_SAI)
 
@@ -411,14 +410,14 @@ class MakerdaosaiDecoder(DecoderInterface):
             if context.event.asset == self.weth:
                 context.event.event_type = HistoryEventType.WITHDRAWAL
                 context.event.event_subtype = HistoryEventSubType.REMOVE_ASSET
-                context.event.notes = f'Withdraw {context.event.balance.amount} {self.weth.symbol} from Sai vault'  # noqa: E501
+                context.event.notes = f'Withdraw {context.event.amount} {self.weth.symbol} from Sai vault'  # noqa: E501
                 context.event.counterparty = CPT_SAI
                 return TransferEnrichmentOutput(matched_counterparty=CPT_SAI)
 
             if context.event.asset == self.peth:
                 context.event.event_type = HistoryEventType.WITHDRAWAL
                 context.event.event_subtype = HistoryEventSubType.REMOVE_ASSET
-                context.event.notes = f'Decrease CDP collateral by {context.event.balance.amount} {self.peth.symbol}'  # noqa: E501
+                context.event.notes = f'Decrease CDP collateral by {context.event.amount} {self.peth.symbol}'  # noqa: E501
                 context.event.counterparty = CPT_SAI
                 return TransferEnrichmentOutput(matched_counterparty=CPT_SAI)
 
@@ -442,7 +441,7 @@ class MakerdaosaiDecoder(DecoderInterface):
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
                 asset=self.peth,
-                balance=Balance(amount=amount),
+                amount=amount,
                 location_label=owner,
                 counterparty=CPT_SAI,
                 notes=f'Receive {amount} {self.peth.symbol} from Sai Vault',
@@ -475,7 +474,7 @@ class MakerdaosaiDecoder(DecoderInterface):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
-            balance=Balance(),
+            amount=ZERO,
             location_label=owner,
             notes=f'Migrate Sai CDP {old_cdp_id} to Dai CDP {new_cdp_id}',
             counterparty=CPT_SAI,

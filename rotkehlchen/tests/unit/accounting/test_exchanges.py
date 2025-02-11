@@ -5,7 +5,6 @@ from unittest.mock import patch
 import pytest
 
 from rotkehlchen.accounting.mixins.event import AccountingEventType
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.api.server import APIServer
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings
@@ -98,13 +97,13 @@ def test_exchanges_removed_api_keys(rotkehlchen_api_server_with_exchanges: APISe
                 location=Location.COINBASE,
                 event_type=HistoryEventType.DEPOSIT,
                 asset=A_BTC,
-                balance=Balance(ONE),
+                amount=ONE,
             ), AssetMovement(
                 timestamp=TimestampMS(1611426201000),
                 location=Location.COINBASE,
                 event_type=HistoryEventType.DEPOSIT,
                 asset=A_BTC,
-                balance=Balance(FVal(0.00001)),
+                amount=FVal(0.00001),
                 is_fee=True,
             )],
         )
@@ -195,7 +194,7 @@ def test_process_kraken_events(rotkehlchen_api_server_with_exchanges: APIServer)
             asset=A_ETH,
             event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
-            balance=Balance(amount=FVal('0.0025')),
+            amount=FVal('0.0025'),
             notes='SPEND 0.0025 ETH in kraken',
         ), HistoryEvent(  # should be ignored as part of the trade
             identifier=8,
@@ -206,7 +205,7 @@ def test_process_kraken_events(rotkehlchen_api_server_with_exchanges: APIServer)
             asset=A_EUR,
             event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
-            balance=Balance(amount=FVal('0.0025')),
+            amount=FVal('0.0025'),
             notes='Receive 0.0025 EUR in kraken',
         ), HistoryEvent(  # should be processed
             identifier=9,
@@ -217,7 +216,7 @@ def test_process_kraken_events(rotkehlchen_api_server_with_exchanges: APIServer)
             asset=A_KSM,
             event_type=HistoryEventType.STAKING,
             event_subtype=HistoryEventSubType.REWARD,
-            balance=Balance(amount=FVal('0.1932938')),
+            amount=FVal('0.1932938'),
             notes='Staking reward of 0.1932938 ETH in kraken',
         ), HistoryEvent(  # should be processed
             identifier=10,
@@ -228,7 +227,7 @@ def test_process_kraken_events(rotkehlchen_api_server_with_exchanges: APIServer)
             asset=Asset('ETHW'),
             event_type=HistoryEventType.ADJUSTMENT,
             event_subtype=HistoryEventSubType.RECEIVE,
-            balance=Balance(amount=FVal('0.1932938')),
+            amount=FVal('0.1932938'),
             notes='Receive forked asset',
         ), HistoryEvent(  # should be ignored
             identifier=11,
@@ -239,7 +238,7 @@ def test_process_kraken_events(rotkehlchen_api_server_with_exchanges: APIServer)
             asset=Asset('BTC'),
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
-            balance=Balance(amount=ONE),
+            amount=ONE,
             notes='Deposit BTC brrrrr',
         )]
 

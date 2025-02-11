@@ -1,7 +1,6 @@
 import logging
 from typing import TYPE_CHECKING, Any
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.chain.ethereum.utils import (
     token_normalized_value,
@@ -156,7 +155,7 @@ class HopCommonDecoder(DecoderInterface):
                 event.event_type = HistoryEventType.WITHDRAWAL
                 event.event_subtype = HistoryEventSubType.BRIDGE
                 event.notes = self._generate_bridge_note(
-                    amount=event.balance.amount, asset=event.asset,
+                    amount=event.amount, asset=event.asset,
                 )
                 event.counterparty = CPT_HOP
                 break
@@ -206,14 +205,14 @@ class HopCommonDecoder(DecoderInterface):
                 event.counterparty = CPT_HOP
 
                 if bonder_fee > ZERO:
-                    event.balance.amount = amount - bonder_fee
+                    event.amount = amount - bonder_fee
                     fee_event = self.base.make_event_next_index(
                         tx_hash=event.tx_hash,
                         timestamp=context.transaction.timestamp,
                         event_type=HistoryEventType.SPEND,
                         event_subtype=HistoryEventSubType.FEE,
                         asset=event.asset,
-                        balance=Balance(amount=bonder_fee),
+                        amount=bonder_fee,
                         location_label=event.location_label,
                         notes=f'Spend {bonder_fee} {event.asset.symbol_or_name()} as a hop fee',
                         counterparty=CPT_HOP,
@@ -225,7 +224,7 @@ class HopCommonDecoder(DecoderInterface):
                         events_list=context.decoded_events,
                     )
                 event.notes = self._generate_bridge_note(
-                    amount=event.balance.amount,
+                    amount=event.amount,
                     asset=event.asset,
                     recipient=recipient,
                     sender=string_to_evm_address(event.location_label) if event.location_label else None,  # noqa: E501
@@ -245,7 +244,7 @@ class HopCommonDecoder(DecoderInterface):
                 event.event_type = HistoryEventType.DEPOSIT
                 event.event_subtype = HistoryEventSubType.BRIDGE
                 event.counterparty = CPT_HOP
-                event.notes = f'Burn {event.balance.amount} of Hop {event.asset.symbol_or_name()}'
+                event.notes = f'Burn {event.amount} of Hop {event.asset.symbol_or_name()}'
                 break
 
         return DEFAULT_DECODING_OUTPUT
@@ -266,12 +265,12 @@ class HopCommonDecoder(DecoderInterface):
                 event.asset.identifier == bridge.identifier and
                 event.event_type == HistoryEventType.RECEIVE and
                 event.event_subtype == HistoryEventSubType.NONE and
-                event.balance.amount == amount
+                event.amount == amount
             ):
                 event.event_type = HistoryEventType.WITHDRAWAL
                 event.event_subtype = HistoryEventSubType.BRIDGE
                 event.notes = self._generate_bridge_note(
-                    amount=event.balance.amount, asset=event.asset,
+                    amount=event.amount, asset=event.asset,
                 )
                 event.counterparty = CPT_HOP
                 break
@@ -314,7 +313,7 @@ class HopCommonDecoder(DecoderInterface):
                 event.event_subtype = HistoryEventSubType.BRIDGE
                 event.counterparty = CPT_HOP
                 event.notes = self._generate_bridge_note(
-                    amount=event.balance.amount,
+                    amount=event.amount,
                     asset=event.asset,
                     recipient=recipient,
                     sender=string_to_evm_address(event.location_label) if event.location_label else None,  # noqa: E501
@@ -351,12 +350,12 @@ class HopCommonDecoder(DecoderInterface):
                 event.event_type == HistoryEventType.SPEND and
                 event.event_subtype == HistoryEventSubType.NONE and
                 event.location_label == user_address and
-                event.balance.amount in token_amounts
+                event.amount in token_amounts
             ):
                 event.event_type = HistoryEventType.DEPOSIT
                 event.event_subtype = HistoryEventSubType.DEPOSIT_FOR_WRAPPED
                 event.counterparty = CPT_HOP
-                event.notes = f'Deposit {event.balance.amount} {event.asset.symbol_or_name()} to Hop'  # noqa: E501
+                event.notes = f'Deposit {event.amount} {event.asset.symbol_or_name()} to Hop'
                 if out_event1 is None:
                     out_event1 = event
                 else:
@@ -369,7 +368,7 @@ class HopCommonDecoder(DecoderInterface):
                 event.event_type = HistoryEventType.RECEIVE
                 event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
                 event.counterparty = CPT_HOP
-                event.notes = f'Receive {event.balance.amount} {event.asset.symbol_or_name()} after providing liquidity in Hop'  # noqa: E501
+                event.notes = f'Receive {event.amount} {event.asset.symbol_or_name()} after providing liquidity in Hop'  # noqa: E501
                 in_event = event
                 try:
                     self._process_hop_lp_token(
@@ -453,22 +452,22 @@ class HopCommonDecoder(DecoderInterface):
                 event.event_type == HistoryEventType.SPEND and
                 event.event_subtype == HistoryEventSubType.NONE and
                 event.location_label == user_address and
-                event.balance.amount == lp_amount
+                event.amount == lp_amount
             ):
                 event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
                 event.counterparty = CPT_HOP
-                event.notes = f'Return {event.balance.amount} {event.asset.symbol_or_name()}'
+                event.notes = f'Return {event.amount} {event.asset.symbol_or_name()}'
                 out_event = event
             elif (
                 event.event_type == HistoryEventType.RECEIVE and
                 event.event_subtype == HistoryEventSubType.NONE and
                 event.location_label == user_address and
-                event.balance.amount in token_amounts
+                event.amount in token_amounts
             ):
                 event.event_type = HistoryEventType.WITHDRAWAL
                 event.event_subtype = HistoryEventSubType.REDEEM_WRAPPED
                 event.counterparty = CPT_HOP
-                event.notes = f'Withdraw {event.balance.amount} {event.asset.symbol_or_name()} from Hop'  # noqa: E501
+                event.notes = f'Withdraw {event.amount} {event.asset.symbol_or_name()} from Hop'
                 if in_event1 is None:
                     in_event1 = event
                 else:
@@ -551,7 +550,7 @@ class HopCommonDecoder(DecoderInterface):
             if (
                 event.event_type == event_type and
                 event.event_subtype == HistoryEventSubType.NONE and
-                event.balance.amount == amount
+                event.amount == amount
             ):
                 event.event_type = HistoryEventType.STAKING
                 event.event_subtype = event_subtype

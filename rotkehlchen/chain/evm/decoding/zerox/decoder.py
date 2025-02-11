@@ -62,19 +62,19 @@ class ZeroxCommonDecoder(DecoderInterface):
             send_event.address = self.router_address
             send_event.event_type = HistoryEventType.TRADE
             send_event.event_subtype = HistoryEventSubType.SPEND
-            send_event.notes = f'Swap {send_event.balance.amount} {send_event.asset.symbol_or_name()} via the 0x protocol'  # noqa: E501
+            send_event.notes = f'Swap {send_event.amount} {send_event.asset.symbol_or_name()} via the 0x protocol'  # noqa: E501
         if receive_event is not None:
             receive_event.counterparty = CPT_ZEROX
             receive_event.address = self.router_address
             receive_event.event_type = HistoryEventType.TRADE
             receive_event.event_subtype = HistoryEventSubType.RECEIVE
-            receive_event.notes = f'Receive {receive_event.balance.amount} {receive_event.asset.symbol_or_name()} as the result of a swap via the 0x protocol'  # noqa: E501
+            receive_event.notes = f'Receive {receive_event.amount} {receive_event.asset.symbol_or_name()} as the result of a swap via the 0x protocol'  # noqa: E501
         if fee_event is not None:
             fee_event.counterparty = CPT_ZEROX
             fee_event.address = self.router_address
             fee_event.event_type = HistoryEventType.SPEND
             fee_event.event_subtype = HistoryEventSubType.FEE
-            fee_event.notes = f'Spend {fee_event.balance.amount} {fee_event.asset.symbol_or_name()} as a 0x protocol fee'  # noqa: E501
+            fee_event.notes = f'Spend {fee_event.amount} {fee_event.asset.symbol_or_name()} as a 0x protocol fee'  # noqa: E501
 
     def _merge_split_swap_events(
             self,
@@ -93,12 +93,12 @@ class ZeroxCommonDecoder(DecoderInterface):
 
         if summed_send_event is not None:
             for event in send_events[1:]:
-                summed_send_event.balance += event.balance
+                summed_send_event.amount += event.amount
                 events_to_remove.add(event)
-            summed_send_event.balance.amount -= return_amount
+            summed_send_event.amount -= return_amount
         if summed_receive_event is not None:
             for event in receive_events[1:]:
-                summed_receive_event.balance += event.balance
+                summed_receive_event.amount += event.amount
                 events_to_remove.add(event)
 
         self._update_send_receive_fee_events(
@@ -154,7 +154,7 @@ class ZeroxCommonDecoder(DecoderInterface):
         return_amount = ZERO
         for event in receive_events:
             if event.asset == sent_asset:
-                return_amount = event.balance.amount
+                return_amount = event.amount
                 decoded_events.remove(event)
             else:
                 received_asset = event.asset

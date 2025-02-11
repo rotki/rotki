@@ -6,7 +6,6 @@ from more_itertools import peekable
 from rotkehlchen.accounting.cost_basis.base import CostBasisInfo
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.pnl import PNL
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.processed_event import ProcessedAccountingEvent
 from rotkehlchen.chain.evm.decoding.cowswap.constants import CPT_COWSWAP
 from rotkehlchen.constants import ONE, ZERO
@@ -40,7 +39,7 @@ def test_cowswap_swap_with_fee(accountant: 'Accountant'):
         event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_WBTC,
-        balance=Balance(amount=FVal(swap_amount_str)),
+        amount=FVal(swap_amount_str),
         location_label=user_address,
         notes=f'Swap {swap_amount_str} WBTC in cowswap',
         counterparty=CPT_COWSWAP,
@@ -53,7 +52,7 @@ def test_cowswap_swap_with_fee(accountant: 'Accountant'):
         event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_USDC,
-        balance=Balance(amount=FVal(receive_amount_str)),
+        amount=FVal(receive_amount_str),
         location_label=user_address,
         notes=f'Receive {receive_amount_str} USDC as the result of a swap in cowswap',
         counterparty=CPT_COWSWAP,
@@ -66,7 +65,7 @@ def test_cowswap_swap_with_fee(accountant: 'Accountant'):
         event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_WBTC,
-        balance=Balance(amount=FVal(fee_amount_str)),
+        amount=FVal(fee_amount_str),
         location_label=user_address,
         notes=f'Spend {fee_amount_str} WBTC as a cowswap fee',
         counterparty=CPT_COWSWAP,

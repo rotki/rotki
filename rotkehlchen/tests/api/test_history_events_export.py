@@ -9,7 +9,6 @@ import pytest
 import requests
 
 from rotkehlchen.accounting.export.csv import FILENAME_HISTORY_EVENTS_CSV
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.api.server import APIServer
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -249,7 +248,7 @@ def test_history_export_csv_free_limit(
             event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
-            balance=Balance(FVal(1)),
+            amount=FVal(1),
         ), HistoryEvent(
             event_identifier=event_identifiers[1],
             sequence_index=0,
@@ -258,7 +257,7 @@ def test_history_export_csv_free_limit(
             event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
-            balance=Balance(FVal(2)),
+            amount=FVal(2),
         ), HistoryEvent(
             event_identifier=event_identifiers[2],
             sequence_index=0,
@@ -267,7 +266,7 @@ def test_history_export_csv_free_limit(
             event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
-            balance=Balance(FVal(3)),
+            amount=FVal(3),
         ),
     )
 

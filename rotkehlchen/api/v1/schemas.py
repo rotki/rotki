@@ -14,7 +14,7 @@ from marshmallow import INCLUDE, Schema, fields, post_load, validate, validates_
 from marshmallow.exceptions import ValidationError
 from werkzeug.datastructures import FileStorage
 
-from rotkehlchen.accounting.structures.balance import Balance, BalanceType
+from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.accounting.structures.types import ActionType
 from rotkehlchen.accounting.types import SchemaEventType
 from rotkehlchen.assets.asset import Asset, AssetWithNameAndType, AssetWithOracles, EvmToken
@@ -200,20 +200,6 @@ class AsyncIgnoreCacheQueryArgumentSchema(AsyncQueryArgumentSchema):
 class TimestampRangeSchema(Schema):
     from_timestamp = TimestampField(load_default=Timestamp(0))
     to_timestamp = TimestampField(load_default=ts_now)
-
-
-class BalanceSchema(Schema):
-    amount = AmountField(required=True)
-    usd_value = AmountField(required=True)
-
-    @post_load
-    def make_balance_entry(
-            self,
-            data: dict[str, Any],
-            **_kwargs: Any,
-    ) -> Balance:
-        """Create a Balance struct. This should not raise since it's checked by Marshmallow"""
-        return Balance(amount=data['amount'], usd_value=data['usd_value'])
 
 
 class AsyncTaskSchema(Schema):
@@ -843,7 +829,7 @@ class CreateHistoryEventSchema(Schema):
 
     class BaseSchema(Schema):
         timestamp = TimestampMSField(required=True)
-        balance = fields.Nested(BalanceSchema, required=True)
+        amount = AmountField(required=True)
         identifier = fields.Integer(required=True)
 
     class BaseEventSchema(BaseSchema):
@@ -1008,14 +994,14 @@ class CreateHistoryEventSchema(Schema):
                 fee_asset=data['fee_asset'],
                 event_type=data['event_type'],
                 identifier=data.get('identifier'),
-                amount=data['balance'].amount,
+                amount=data['amount'],
                 extra_data=extra_data,
                 fee_identifier=CreateHistoryEventSchema.history_event_context.get()['schema'].get_fee_event_identifier(data),
                 location_label=data['location_label'],
             ) if fee is not None else [AssetMovement(
                 is_fee=False,
                 asset=data['asset'],
-                balance=data['balance'],
+                amount=data['amount'],
                 location=data['location'],
                 unique_id=data['unique_id'],
                 timestamp=data['timestamp'],

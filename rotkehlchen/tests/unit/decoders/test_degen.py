@@ -2,7 +2,6 @@ from typing import Final
 
 import pytest
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.base.decoding.decoder import BaseTransactionDecoder
 from rotkehlchen.chain.base.modules.degen.constants import (
@@ -45,7 +44,7 @@ def test_claim_airdrop_2(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(FVal(gas_amount)),
+            amount=FVal(gas_amount),
             location_label=user_address,
             counterparty=CPT_GAS,
             notes=f'Burn {gas_amount} ETH for gas',
@@ -57,7 +56,7 @@ def test_claim_airdrop_2(
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.AIRDROP,
             asset=DEGEN_TOKEN,
-            balance=Balance(FVal(claimed_amount)),
+            amount=FVal(claimed_amount),
             location_label=user_address,
             counterparty=CPT_DEGEN,
             address=CLAIM_AIRDROP_2_CONTRACT,
@@ -90,7 +89,7 @@ def test_claim_airdrop_3(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(FVal(gas_amount)),
+            amount=FVal(gas_amount),
             location_label=user_address,
             counterparty=CPT_GAS,
             notes=f'Burn {gas_amount} ETH for gas',
@@ -102,7 +101,7 @@ def test_claim_airdrop_3(
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.AIRDROP,
             asset=DEGEN_TOKEN,
-            balance=Balance(FVal(claimed_amount)),
+            amount=FVal(claimed_amount),
             location_label=user_address,
             counterparty=CPT_DEGEN,
             address=CLAIM_AIRDROP_3_CONTRACT,

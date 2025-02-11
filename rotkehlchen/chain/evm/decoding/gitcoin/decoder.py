@@ -82,7 +82,7 @@ class GitcoinOldCommonDecoder(CommonGrantsDecoderMixin):
         )
 
         for event in context.decoded_events:
-            if event.asset == asset and event.balance.amount == amount:
+            if event.asset == asset and event.amount == amount:
                 if dst_tracked:
                     event.event_type = HistoryEventType.RECEIVE
                     event.event_subtype = HistoryEventSubType.DONATE

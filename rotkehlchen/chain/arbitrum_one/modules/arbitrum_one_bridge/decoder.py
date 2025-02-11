@@ -188,7 +188,7 @@ class ArbitrumOneBridgeDecoder(ArbitrumDecoderInterface):
                     event.event_type == HistoryEventType.SPEND and
                     event.location_label == from_address and
                     event.asset == A_ETH and
-                    event.balance.amount == amount
+                    event.amount == amount
             ):
                 bridge_match_transfer(
                     event=event,
@@ -231,13 +231,13 @@ class ArbitrumOneBridgeDecoder(ArbitrumDecoderInterface):
                     event.event_type == HistoryEventType.RECEIVE and
                     event.location_label == to_address and
                     event.asset == A_ETH and
-                    event.balance.amount == from_wei(FVal(transaction.value))
+                    event.amount == from_wei(FVal(transaction.value))
             ):
                 event.event_type = HistoryEventType.WITHDRAWAL
                 event.event_subtype = HistoryEventSubType.BRIDGE
                 event.counterparty = CPT_ARBITRUM_ONE
                 event.notes = (
-                    f'Bridge {event.balance.amount} ETH from Ethereum to Arbitrum '
+                    f'Bridge {event.amount} ETH from Ethereum to Arbitrum '
                     f'One via Arbitrum One bridge'
                 )
                 break
@@ -272,7 +272,7 @@ class ArbitrumOneBridgeDecoder(ArbitrumDecoderInterface):
                     event.event_type == HistoryEventType.RECEIVE and
                     event.location_label == to_address and
                     event.address == ZERO_ADDRESS and
-                    event.balance.amount == amount
+                    event.amount == amount
             ):
                 event.event_type = HistoryEventType.WITHDRAWAL
                 event.event_subtype = HistoryEventSubType.BRIDGE

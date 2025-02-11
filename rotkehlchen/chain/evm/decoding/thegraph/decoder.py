@@ -3,7 +3,6 @@ from typing import TYPE_CHECKING, Any, Final
 
 from eth_typing.abi import ABI
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
@@ -15,6 +14,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
 )
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.history.events.structures.evm_event import EvmProduct
@@ -111,10 +111,10 @@ class ThegraphCommonDecoder(DecoderInterface):
                 event.event_type == HistoryEventType.SPEND and
                 event.event_subtype == HistoryEventSubType.NONE
             ):
-                initial_amount_norm = event.balance.amount
+                initial_amount_norm = event.amount
                 event.event_type = HistoryEventType.STAKING
                 event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
-                event.balance = Balance(amount=stake_amount_norm)
+                event.amount = stake_amount_norm
                 event.notes = f'Delegate {stake_amount_norm} GRT to indexer {indexer}'
                 event.counterparty = CPT_THEGRAPH
                 event.extra_data = {'indexer': indexer}
@@ -130,7 +130,7 @@ class ThegraphCommonDecoder(DecoderInterface):
                         event_type=HistoryEventType.SPEND,
                         event_subtype=HistoryEventSubType.FEE,
                         asset=self.token,
-                        balance=Balance(amount=tokens_burnt),
+                        amount=tokens_burnt,
                         location_label=delegator,
                         notes=f'Burn {tokens_burnt} GRT as delegation tax',
                         counterparty=CPT_THEGRAPH,
@@ -174,7 +174,7 @@ class ThegraphCommonDecoder(DecoderInterface):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
             asset=self.token,
-            balance=Balance(),
+            amount=ZERO,
             location_label=delegator,
             notes=(
                 f'Undelegate {tokens_amount_norm} GRT from indexer {indexer}.'

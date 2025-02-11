@@ -26,7 +26,6 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium, has_premium_check
 from rotkehlchen.types import ChecksumEvmAddress, Timestamp
 from rotkehlchen.utils.interfaces import EthereumModule
-from rotkehlchen.utils.misc import ts_ms_to_sec
 
 from .common import (
     AaveBalances,
@@ -267,31 +266,31 @@ class Aave(EthereumModule):
             if event.asset in earned_atoken_balances:
                 prev_balance = earned_atoken_balances[event.asset]
 
+            usd_price = query_usd_price_zero_if_error(
+                asset=event.asset,
+                time=event.get_timestamp_in_sec(),
+                location=f'aave interest event {event.event_identifier} from history',
+            )
+            event_balance = Balance(amount=event.amount, usd_value=event.amount * usd_price)
             if event.event_subtype in (HistoryEventSubType.GENERATE_DEBT, HistoryEventSubType.DEPOSIT_FOR_WRAPPED):  # noqa: E501
-                historical_borrow_balances[event.asset] -= event.balance.amount
+                historical_borrow_balances[event.asset] -= event.amount
             elif event.event_subtype in (HistoryEventSubType.PAYBACK_DEBT, HistoryEventSubType.REDEEM_WRAPPED, HistoryEventSubType.REWARD):  # noqa: E501
                 if event.event_subtype == HistoryEventSubType.REWARD:
-                    atokens_balances[event.asset] += event.balance
+                    atokens_balances[event.asset] += event_balance
                 else:
                     if event.extra_data is not None and 'is_liquidation' in event.extra_data:
-                        total_earned[event.asset] += event.balance
-                    historical_borrow_balances[event.asset] += event.balance.amount
+                        total_earned[event.asset] += event_balance
+                    historical_borrow_balances[event.asset] += event.amount
             elif event.event_subtype == HistoryEventSubType.LIQUIDATE:
                 # At liquidation you lose the collateral asset
-                total_lost[event.asset] += event.balance
+                total_lost[event.asset] += event_balance
             elif event.event_subtype == (HistoryEventSubType.GENERATE_DEBT, HistoryEventSubType.RECEIVE_WRAPPED):  # noqa: E501
-                atokens_balances[event.asset] += event.balance
+                atokens_balances[event.asset] += event_balance
             elif event.event_subtype == (HistoryEventSubType.PAYBACK_DEBT, HistoryEventSubType.RETURN_WRAPPED):  # noqa: E501
-                atokens_balances[event.asset] -= event.balance
+                atokens_balances[event.asset] -= event_balance
 
             if event.asset in atokens_balances:
                 amount_diff = atokens_balances[event.asset].amount - prev_balance.amount
-                usd_price = query_usd_price_zero_if_error(
-                    asset=event.asset,
-                    time=ts_ms_to_sec(event.timestamp),
-                    location=f'aave interest event {event.event_identifier} from history',
-                    msg_aggregator=self.msg_aggregator,
-                )
                 earned_atoken_balances[event.asset] += Balance(amount=amount_diff, usd_value=amount_diff * usd_price)  # noqa: E501
 
         for borrowed_asset, amount in historical_borrow_balances.items():

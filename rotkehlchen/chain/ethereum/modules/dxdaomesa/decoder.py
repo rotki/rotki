@@ -3,7 +3,6 @@ import os
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
@@ -74,7 +73,7 @@ class DxdaomesaDecoder(DecoderInterface):
 
         for event in context.decoded_events:
             # Find the transfer event which should come before the deposit
-            if event.event_type == HistoryEventType.SPEND and event.asset == deposited_asset and event.balance.amount == amount and event.address == self.contract.address:  # noqa: E501
+            if event.event_type == HistoryEventType.SPEND and event.asset == deposited_asset and event.amount == amount and event.address == self.contract.address:  # noqa: E501
                 event.event_type = HistoryEventType.DEPOSIT
                 event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
                 event.counterparty = CPT_DXDAO_MESA
@@ -94,7 +93,7 @@ class DxdaomesaDecoder(DecoderInterface):
 
         for event in context.decoded_events:
             # Find the transfer event which should come before the withdraw
-            if event.event_type == HistoryEventType.RECEIVE and event.asset == withdraw_asset and event.balance.amount == amount and event.address == self.contract.address:  # noqa: E501
+            if event.event_type == HistoryEventType.RECEIVE and event.asset == withdraw_asset and event.amount == amount and event.address == self.contract.address:  # noqa: E501
                 event.event_type = HistoryEventType.WITHDRAWAL
                 event.event_subtype = HistoryEventSubType.REMOVE_ASSET
                 event.counterparty = CPT_DXDAO_MESA
@@ -123,7 +122,7 @@ class DxdaomesaDecoder(DecoderInterface):
             event_subtype=HistoryEventSubType.REMOVE_ASSET,
             location_label=user,
             asset=token,
-            balance=Balance(amount=amount),
+            amount=amount,
             notes=f'Request a withdrawal of {amount} {token.symbol} from DXDao Mesa',
             counterparty=CPT_DXDAO_MESA,
             address=context.transaction.to_address,
@@ -157,7 +156,7 @@ class DxdaomesaDecoder(DecoderInterface):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.PLACE_ORDER,
             asset=sell_token,
-            balance=Balance(amount=sell_amount),
+            amount=sell_amount,
             notes=f'Place an order in DXDao Mesa to sell {sell_amount} {sell_token.symbol} for {buy_amount} {buy_token.symbol}',  # noqa: E501
             counterparty=CPT_DXDAO_MESA,
             address=context.transaction.to_address,

@@ -561,7 +561,6 @@ CREATE TABLE IF NOT EXISTS history_events (
     location_label TEXT,
     asset TEXT NOT NULL,
     amount TEXT NOT NULL,
-    usd_value TEXT NOT NULL,
     notes TEXT,
     type TEXT NOT NULL,
     subtype TEXT NOT NULL,

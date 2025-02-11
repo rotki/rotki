@@ -386,7 +386,7 @@ class ZerionSDK:
             token_address=token_address,
             token_name=token_name,
             token_symbol=token_symbol,
-            balance=Balance(amount=normalized_value, usd_value=usd_value),
+            balance=Balance(normalized_value, usd_value=usd_value),
         )
 
     def handle_protocols(
@@ -423,5 +423,5 @@ class ZerionSDK:
             token_address=deserialize_evm_address(token_address),
             token_name=token_name,
             token_symbol=token_symbol,
-            balance=Balance(amount=normalized_balance, usd_value=normalized_balance * usd_price),
+            balance=Balance(normalized_balance, usd_value=normalized_balance * usd_price),
         )

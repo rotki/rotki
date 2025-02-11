@@ -52,17 +52,17 @@ class KyberCommonDecoder(DecoderInterface):
             crypto_asset = event.asset.symbol_or_name()
             # it can happen that a spend event get decoded first by an amm decoder. To make sure
             # that the event matches we check both event type and subtype
-            if (event.event_type == HistoryEventType.SPEND or event.event_subtype == HistoryEventSubType.SPEND) and event.location_label == sender and event.asset == source_asset and event.balance.amount == spent_amount:  # noqa: E501
+            if (event.event_type == HistoryEventType.SPEND or event.event_subtype == HistoryEventSubType.SPEND) and event.location_label == sender and event.asset == source_asset and event.amount == spent_amount:  # noqa: E501
                 event.event_type = HistoryEventType.TRADE
                 event.event_subtype = HistoryEventSubType.SPEND
                 event.counterparty = counterparty
-                event.notes = f'Swap {event.balance.amount} {crypto_asset} in kyber'
+                event.notes = f'Swap {event.amount} {crypto_asset} in kyber'
                 out_event = event
-            elif (event.event_type == HistoryEventType.RECEIVE or event.event_subtype == HistoryEventSubType.RECEIVE) and event.location_label == sender and event.balance.amount == return_amount and destination_asset == event.asset:  # noqa: E501
+            elif (event.event_type == HistoryEventType.RECEIVE or event.event_subtype == HistoryEventSubType.RECEIVE) and event.location_label == sender and event.amount == return_amount and destination_asset == event.asset:  # noqa: E501
                 event.event_type = HistoryEventType.TRADE
                 event.event_subtype = HistoryEventSubType.RECEIVE
                 event.counterparty = counterparty
-                event.notes = f'Receive {event.balance.amount} {crypto_asset} from kyber swap'
+                event.notes = f'Receive {event.amount} {crypto_asset} from kyber swap'
                 in_event = event
 
             if out_event is not None and in_event is not None:

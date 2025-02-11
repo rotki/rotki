@@ -1,10 +1,10 @@
 import pytest
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.drips.v1.constants import CPT_DRIPS
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_DAI, A_ETH
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -28,7 +28,7 @@ def test_project_collect_and_split(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=FVal(gas)),
+            amount=FVal(gas),
             location_label=ethereum_accounts[0],
             notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
@@ -40,7 +40,7 @@ def test_project_collect_and_split(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.DONATE,
             asset=A_DAI,
-            balance=Balance(amount=FVal(amount)),
+            amount=FVal(amount),
             location_label=ethereum_accounts[0],
             notes=f'Collect {amount} DAI from Drips v1 and forward 741.347728395061079769 DAI to dependencies for splitting',  # noqa: E501
             counterparty=CPT_DRIPS,
@@ -71,7 +71,7 @@ def test_project_collect_and_split(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_DAI,
-            balance=Balance(),
+            amount=ZERO,
             location_label=ethereum_accounts[0],
             notes=f'Split {amount} DAI from Drips v1 and forward to {target}',
             counterparty=CPT_DRIPS,
@@ -96,7 +96,7 @@ def test_enduser_collect(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=FVal(gas)),
+            amount=FVal(gas),
             location_label=ethereum_accounts[0],
             notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
@@ -108,7 +108,7 @@ def test_enduser_collect(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.DONATE,
             asset=A_DAI,
-            balance=Balance(amount=FVal(amount)),
+            amount=FVal(amount),
             location_label=ethereum_accounts[0],
             notes=f'Collect {amount} DAI from Drips v1',
             counterparty=CPT_DRIPS,
@@ -133,7 +133,7 @@ def test_splits_updated(ethereum_inquirer, ethereum_accounts):
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        balance=Balance(amount=FVal(gas)),
+        amount=FVal(gas),
         location_label=ethereum_accounts[0],
         notes=f'Burn {gas} ETH for gas',
         counterparty=CPT_GAS,
@@ -161,7 +161,7 @@ def test_splits_updated(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
-            balance=Balance(),
+            amount=ZERO,
             location_label=ethereum_accounts[0],
             notes=f'Setup Drips v1 rule to drip {percent}% of incoming drip funds to {address}',
             counterparty=CPT_DRIPS,
@@ -176,7 +176,7 @@ def test_splits_updated(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.DONATE,
             asset=A_DAI,
-            balance=Balance(amount=FVal(amount)),
+            amount=FVal(amount),
             location_label=ethereum_accounts[0],
             notes=f'Collect {amount} DAI from Drips v1 and forward 49.99999999999968 DAI to dependencies for splitting',  # noqa: E501
             counterparty=CPT_DRIPS,
@@ -203,7 +203,7 @@ def test_splits_updated(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_DAI,
-            balance=Balance(),
+            amount=ZERO,
             location_label=ethereum_accounts[0],
             notes=f'Split {amount} DAI from Drips v1 and forward to {address}',
             counterparty=CPT_DRIPS,
@@ -227,7 +227,7 @@ def test_give(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=FVal(gas)),
+            amount=FVal(gas),
             location_label=ethereum_accounts[0],
             notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
@@ -239,7 +239,7 @@ def test_give(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.DONATE,
             asset=A_DAI,
-            balance=Balance(amount=FVal(amount)),
+            amount=FVal(amount),
             location_label=ethereum_accounts[0],
             notes=f'Deposit {amount} DAI to Drips v1 as a donation for 0x308Fd8FB79379dEAD5A360FFb6Dd2D1AFf9F5EE4',  # noqa: E501
             counterparty=CPT_DRIPS,
@@ -265,7 +265,7 @@ def test_set_drips(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=FVal(gas)),
+            amount=FVal(gas),
             location_label=ethereum_accounts[0],
             notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
@@ -277,7 +277,7 @@ def test_set_drips(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.DONATE,
             asset=A_DAI,
-            balance=Balance(amount=FVal(amount)),
+            amount=FVal(amount),
             location_label=ethereum_accounts[0],
             notes=f'Deposit {amount} DAI to Drips v1 to start dripping donations',
             counterparty=CPT_DRIPS,
@@ -290,7 +290,7 @@ def test_set_drips(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
-            balance=Balance(),
+            amount=ZERO,
             location_label=ethereum_accounts[0],
             notes=f'Drip {per_sec_amount} DAI per second to 0xb8150a1B6945e75D05769D685b127b41E6335Bbc until {decoder.decoders["Dripsv1"].timestamp_to_date(end_ts)}',  # noqa: E501
             counterparty=CPT_DRIPS,
@@ -303,7 +303,7 @@ def test_set_drips(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
-            balance=Balance(),
+            amount=ZERO,
             location_label=ethereum_accounts[0],
             notes=f'Drip {per_sec_amount} DAI per second to 0xBABEEbC4f9dEbc9DA0ABf1Bbe5680554F8c97438 until {decoder.decoders["Dripsv1"].timestamp_to_date(end_ts)}',  # noqa: E501
             counterparty=CPT_DRIPS,

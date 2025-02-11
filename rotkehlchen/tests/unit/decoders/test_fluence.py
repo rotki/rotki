@@ -1,6 +1,5 @@
 import pytest
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.modules.fluence.constants import (
     CPT_FLUENCE,
@@ -32,7 +31,7 @@ def test_airdrop_claim(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=FVal(gas_amount_str)),
+            amount=FVal(gas_amount_str),
             location_label=ethereum_accounts[0],
             notes=f'Burn {gas_amount_str} ETH for gas',
             counterparty=CPT_GAS,
@@ -44,7 +43,7 @@ def test_airdrop_claim(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.NONE,
             asset=EvmToken('eip155:1/erc20:0x6081d7F04a8c31e929f25152d4ad37c83638C62b'),
-            balance=Balance(amount=FVal(claimed_amount)),
+            amount=FVal(claimed_amount),
             location_label=ethereum_accounts[0],
             notes=f'Claim {claimed_amount} FLT-DROP from Fluence dev rewards',
             counterparty=CPT_FLUENCE,
@@ -70,7 +69,7 @@ def test_airdrop_swap(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=FVal(gas_amount_str)),
+            amount=FVal(gas_amount_str),
             location_label=ethereum_accounts[0],
             notes=f'Burn {gas_amount_str} ETH for gas',
             counterparty=CPT_GAS,
@@ -82,7 +81,7 @@ def test_airdrop_swap(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.NONE,
             asset=EvmToken('eip155:1/erc20:0x6081d7F04a8c31e929f25152d4ad37c83638C62b'),
-            balance=Balance(amount=FVal(claimed_amount)),
+            amount=FVal(claimed_amount),
             location_label=ethereum_accounts[0],
             notes=f'Burn {claimed_amount} FLT-DROP',
             counterparty=CPT_FLUENCE,
@@ -95,7 +94,7 @@ def test_airdrop_swap(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.AIRDROP,
             asset=EvmToken('eip155:1/erc20:0x236501327e701692a281934230AF0b6BE8Df3353'),
-            balance=Balance(amount=FVal(claimed_amount)),
+            amount=FVal(claimed_amount),
             location_label=ethereum_accounts[0],
             notes=f'Claim {claimed_amount} FLT by burning FLT-DROP',
             counterparty=CPT_FLUENCE,

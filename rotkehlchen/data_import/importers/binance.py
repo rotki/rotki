@@ -5,7 +5,6 @@ from collections import Counter, defaultdict
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Final
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.converters import asset_from_binance
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_USD
@@ -140,7 +139,7 @@ class BinanceTransferEntry(BinanceMultipleEntry):
                 event_type=HistoryEventType.TRANSFER,
                 event_subtype=HistoryEventSubType.NONE,
                 asset=row['Coin'],
-                balance=Balance(amount=abs(row['Change'])),
+                amount=abs(row['Change']),
                 location_label='CSV import',
                 notes=row['Operation'],
             ),
@@ -388,7 +387,7 @@ class BinanceDepositWithdrawEntry(BinanceSingleEntry):
             event_type=HistoryEventType.WITHDRAWAL if data['Operation'] == 'Withdraw' else HistoryEventType.DEPOSIT,  # else clause also covers 'Buy Crypto' & 'Fiat Deposit'  # noqa: E501
             timestamp=ts_sec_to_ms(timestamp),
             asset=asset,
-            balance=Balance(abs(data['Change'])),
+            amount=abs(data['Change']),
         )])
 
 
@@ -421,7 +420,7 @@ class BinanceDistributionEntry(BinanceSingleEntry):
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.REWARD,
                 asset=data['Coin'],
-                balance=Balance(amount=data['Change']),
+                amount=data['Change'],
                 location_label='CSV import',
                 notes=f'Reward from {data["Operation"]}',
             ),
@@ -454,7 +453,7 @@ class BinanceStakingRewardsEntry(BinanceSingleEntry):
             location=Location.BINANCE,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.NONE,
-            balance=Balance(amount=data['Change']),
+            amount=data['Change'],
             asset=data['Coin'],
             notes=f'Imported from binance CSV file. Binance operation: {data["Operation"]}',
         )
@@ -507,7 +506,7 @@ class BinanceEarnProgram(BinanceSingleEntry):
                 event_type=HistoryEventType.STAKING,
                 event_subtype=HistoryEventSubType.REWARD,
                 asset=asset,
-                balance=Balance(amount=amount),
+                amount=amount,
                 location_label='CSV import',
                 notes=f'Reward from {data["Operation"]}',
             )
@@ -524,7 +523,7 @@ class BinanceEarnProgram(BinanceSingleEntry):
                 event_type=HistoryEventType.STAKING,
                 event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
                 asset=asset,
-                balance=Balance(amount=amount),
+                amount=amount,
                 location_label='CSV import',
                 notes=f'Deposit in {data["Operation"]}',
             )
@@ -541,7 +540,7 @@ class BinanceEarnProgram(BinanceSingleEntry):
                 event_type=HistoryEventType.STAKING,
                 event_subtype=HistoryEventSubType.REMOVE_ASSET,
                 asset=asset,
-                balance=Balance(amount=amount),
+                amount=amount,
                 location_label='CSV import',
                 notes=f'Unstake {asset} in {data["Operation"]}',
             )
@@ -589,7 +588,7 @@ class BinanceUSDMProgram(BinanceSingleEntry):
             event_type=event_type,
             event_subtype=event_subtype,
             asset=data['Coin'],
-            balance=Balance(amount=amount),
+            amount=amount,
             location_label='CSV import',
             notes=notes,
         )
@@ -641,7 +640,7 @@ class BinancePOSEntry(BinanceSingleEntry):
             location=Location.BINANCE,
             event_type=event_type,
             event_subtype=event_subtype,
-            balance=Balance(amount=abs(data['Change'])),
+            amount=abs(data['Change']),
             asset=data['Coin'],
             notes=f'Imported from binance CSV file. Binance operation: {data["Operation"]}',
         )

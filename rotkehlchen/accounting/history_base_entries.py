@@ -124,7 +124,7 @@ class EventsAccountant:
             location=event.location,
             timestamp=timestamp,
             asset=event.asset,
-            amount=event.balance.amount,
+            amount=event.amount,
             taxable=event_settings.taxable,
             count_entire_amount_spend=event_settings.count_entire_amount_spend,
             count_cost_basis_pnl=event_settings.count_cost_basis_pnl,
@@ -153,13 +153,13 @@ class EventsAccountant:
         """
         fee_info = None
         if fee_event is not None:
-            fee_info = (fee_event.balance.amount, fee_event.asset)
+            fee_info = (fee_event.amount, fee_event.asset)
 
         prices = self.pot.get_prices_for_swap(
             timestamp=timestamp,
-            amount_in=in_event.balance.amount,
+            amount_in=in_event.amount,
             asset_in=in_event.asset,
-            amount_out=out_event.balance.amount,
+            amount_out=out_event.amount,
             asset_out=out_event.asset,
             fee_info=fee_info,
         )
@@ -176,7 +176,7 @@ class EventsAccountant:
             location=out_event.location,
             timestamp=timestamp,
             asset=out_event.asset,
-            amount=out_event.balance.amount,
+            amount=out_event.amount,
             taxable=event_settings.taxable,
             given_price=prices[0],
             count_entire_amount_spend=False,
@@ -189,7 +189,7 @@ class EventsAccountant:
             'location': in_event.location,
             'timestamp': timestamp,
             'asset': in_event.asset,
-            'amount': in_event.balance.amount,
+            'amount': in_event.amount,
             'taxable': False,  # acquisitions in swaps are never taxable
             'given_price': prices[1],
             'extra_data': extra_data,
@@ -211,7 +211,7 @@ class EventsAccountant:
             else:
                 # Otherwise we make it a normal spend event
                 fee_taxable = True
-                fee_taxable_amount_ratio = trade_taxable_amount / out_event.balance.amount
+                fee_taxable_amount_ratio = trade_taxable_amount / out_event.amount
 
             events_to_add_queue.extend([
                 (self.pot.add_in_event, add_in_event_kwargs),
@@ -222,7 +222,7 @@ class EventsAccountant:
                     'location': fee_event.location,
                     'timestamp': timestamp,
                     'asset': fee_event.asset,
-                    'amount': fee_event.balance.amount,
+                    'amount': fee_event.amount,
                     'taxable': fee_taxable,
                     'given_price': fee_price,
                     # By setting the taxable amount ratio we determine how much of the fee

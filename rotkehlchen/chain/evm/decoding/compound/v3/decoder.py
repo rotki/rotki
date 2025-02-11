@@ -2,7 +2,6 @@ import logging
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
@@ -18,6 +17,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -105,10 +105,10 @@ class Compoundv3CommonDecoder(DecoderInterface):
         amount = asset_normalized_value(amount_raw, reward_token)
 
         for event in context.decoded_events:
-            if event.event_type == HistoryEventType.RECEIVE and event.event_subtype == HistoryEventSubType.NONE and event.location_label == recipient and event.asset == reward_token and event.address == self.rewards_address and event.balance.amount == amount:  # noqa: E501
+            if event.event_type == HistoryEventType.RECEIVE and event.event_subtype == HistoryEventSubType.NONE and event.location_label == recipient and event.asset == reward_token and event.address == self.rewards_address and event.amount == amount:  # noqa: E501
                 event.event_subtype = HistoryEventSubType.REWARD
                 event.counterparty = CPT_COMPOUND_V3
-                event.notes = f'Collect {event.balance.amount} {reward_token.symbol} from compound'
+                event.notes = f'Collect {event.amount} {reward_token.symbol} from compound'
                 break
 
         return DEFAULT_DECODING_OUTPUT
@@ -128,7 +128,7 @@ class Compoundv3CommonDecoder(DecoderInterface):
                 event.event_type == HistoryEventType.SPEND and
                 event.event_subtype == HistoryEventSubType.RETURN_WRAPPED
             )) and event.counterparty == CPT_COMPOUND_V3 and event.notes is not None:
-                event.notes = event.notes.format(amount=event.balance.amount)  # set the amount
+                event.notes = event.notes.format(amount=event.amount)  # set the amount
                 break
         return decoded_events
 
@@ -176,7 +176,7 @@ class Compoundv3CommonDecoder(DecoderInterface):
             if (
                     event.event_type == HistoryEventType.SPEND and
                     event.event_subtype == HistoryEventSubType.NONE and
-                    asset_matches and amount == event.balance.amount and
+                    asset_matches and amount == event.amount and
                     compound_token_matches
             ):
                 event.counterparty = CPT_COMPOUND_V3
@@ -264,14 +264,14 @@ class Compoundv3CommonDecoder(DecoderInterface):
                 if sending_ctoken:
                     event.event_type = HistoryEventType.WITHDRAWAL
                     event.event_subtype = HistoryEventSubType.REDEEM_WRAPPED
-                    event.notes = f'Withdraw {event.balance.amount} {event.asset.symbol_or_name()} from Compound v3'  # noqa: E501
+                    event.notes = f'Withdraw {event.amount} {event.asset.symbol_or_name()} from Compound v3'  # noqa: E501
                     paired_event = event
                     action_from_event_type = HistoryEventType.SPEND
                     action_to_event_subtype = HistoryEventSubType.RETURN_WRAPPED
                     action_to_notes = f'Return {{amount}} {compound_token.symbol} to Compound v3'  # {amount} to be replaced in post decoding  # noqa: E501
                 else:
                     event.event_subtype = HistoryEventSubType.GENERATE_DEBT
-                    event.notes = f'Borrow {event.balance.amount} {event.asset.symbol_or_name()} from Compound v3'  # noqa: E501
+                    event.notes = f'Borrow {event.amount} {event.asset.symbol_or_name()} from Compound v3'  # noqa: E501
 
                 event.counterparty = CPT_COMPOUND_V3
                 break
@@ -316,7 +316,7 @@ class Compoundv3CommonDecoder(DecoderInterface):
             if (
                 event.event_type in {HistoryEventType.SPEND, HistoryEventType.RECEIVE} and
                 event.event_subtype == HistoryEventSubType.NONE and
-                event.balance.amount == collateral_amount and
+                event.amount == collateral_amount and
                 event.asset == collateral_asset and
                 event.address == compound_token.evm_address
             ):
@@ -338,7 +338,7 @@ class Compoundv3CommonDecoder(DecoderInterface):
                     timestamp=context.transaction.timestamp,
                     event_type=HistoryEventType.INFORMATIONAL,
                     event_subtype=HistoryEventSubType.NONE,
-                    balance=Balance(),
+                    amount=ZERO,
                     asset=event.asset,
                     location_label=event.location_label,
                     counterparty=event.counterparty,

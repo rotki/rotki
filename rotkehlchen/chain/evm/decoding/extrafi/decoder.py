@@ -2,7 +2,6 @@ import logging
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.ethereum.utils import (
@@ -100,14 +99,14 @@ class ExtrafiCommonDecoder(DecoderInterface, ReloadableCacheDecoderMixin):
                 if asset_normalized_value(
                     amount=token_amount,
                     asset=(asset := event.asset.resolve_to_crypto_asset()),
-                ) != event.balance.amount:
+                ) != event.amount:
                     continue
 
                 event.event_type = HistoryEventType.DEPOSIT
                 event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
                 event.counterparty = CPT_EXTRAFI
                 event.extra_data = {'reserve_index': int.from_bytes(context.tx_log.topics[1])}  # index of the extrafi position. Used to query for balances later  # noqa: E501
-                event.notes = f'Deposit {event.balance.amount} {asset.symbol} into Extrafi lend'
+                event.notes = f'Deposit {event.amount} {asset.symbol} into Extrafi lend'
                 if on_behalf_of != user:
                     event.notes += f' on behalf of {on_behalf_of}'
 
@@ -129,7 +128,7 @@ class ExtrafiCommonDecoder(DecoderInterface, ReloadableCacheDecoderMixin):
                 event.event_type = HistoryEventType.WITHDRAWAL
                 event.event_subtype = HistoryEventSubType.REMOVE_ASSET
                 event.counterparty = CPT_EXTRAFI
-                event.notes = f'Withdraw {event.balance.amount} {event.asset.symbol_or_name()} from Extrafi lend'  # noqa: E501
+                event.notes = f'Withdraw {event.amount} {event.asset.symbol_or_name()} from Extrafi lend'  # noqa: E501
                 if on_behalf_of != user:
                     event.notes += f' on behalf of {on_behalf_of}'
 
@@ -166,7 +165,7 @@ class ExtrafiCommonDecoder(DecoderInterface, ReloadableCacheDecoderMixin):
         for event in context.decoded_events:
             if (
                 event.event_type == HistoryEventType.RECEIVE and
-                event.balance.amount == amount and
+                event.amount == amount and
                 event.asset == self.extra_token_id and
                 event.location_label == recipient
             ):
@@ -195,13 +194,13 @@ class ExtrafiCommonDecoder(DecoderInterface, ReloadableCacheDecoderMixin):
             if (
                 event.location_label == user and
                 event.asset == token_identifier and
-                event.balance.amount == token_normalized_value(token_amount=amount, token=(token := EvmToken(token_identifier))) and  # noqa: E501
+                event.amount == token_normalized_value(token_amount=amount, token=(token := EvmToken(token_identifier))) and  # noqa: E501
                 event.maybe_get_direction() == EventDirection.IN
             ):
                 event.event_type = HistoryEventType.RECEIVE
                 event.event_subtype = HistoryEventSubType.REWARD
                 event.counterparty = CPT_EXTRAFI
-                event.notes = f'Claim {event.balance.amount} {token.symbol_or_name()} from Extrafi'
+                event.notes = f'Claim {event.amount} {token.symbol_or_name()} from Extrafi'
                 break
         else:
             log.error(f'Could not find extrafi reward transfer at {context.transaction}')
@@ -221,7 +220,7 @@ class ExtrafiCommonDecoder(DecoderInterface, ReloadableCacheDecoderMixin):
         for event in context.decoded_events:
             if (
                 event.asset == self.extra_token_id and
-                event.balance.amount == amount and
+                event.amount == amount and
                 event.event_type == HistoryEventType.SPEND and
                 event.event_subtype == HistoryEventSubType.NONE and
                 event.location_label == bytes_to_address(context.tx_log.topics[2])
@@ -252,14 +251,14 @@ class ExtrafiCommonDecoder(DecoderInterface, ReloadableCacheDecoderMixin):
             if (
                 event.maybe_get_direction() == EventDirection.IN and
                 (
-                    asset_normalized_value(amount_0_received, event.asset) == event.balance.amount or  # type: ignore  # noqa: E501
-                    asset_normalized_value(amount_1_received, event.asset) == event.balance.amount  # type: ignore
+                    asset_normalized_value(amount_0_received, event.asset) == event.amount or  # type: ignore
+                    asset_normalized_value(amount_1_received, event.asset) == event.amount  # type: ignore
                 )
             ):
                 event.counterparty = CPT_EXTRAFI
                 event.event_type = HistoryEventType.WITHDRAWAL
                 event.event_subtype = HistoryEventSubType.REMOVE_ASSET
-                event.notes = f'Withdraw {event.balance.amount} {event.asset.symbol_or_name()} from Extrafi {self._farm_name(vault_id)}'  # noqa: E501
+                event.notes = f'Withdraw {event.amount} {event.asset.symbol_or_name()} from Extrafi {self._farm_name(vault_id)}'  # noqa: E501
                 break
         else:
             log.error(f'Could not find withdrawal event for extrafi at {context.transaction}')
@@ -291,7 +290,7 @@ class ExtrafiCommonDecoder(DecoderInterface, ReloadableCacheDecoderMixin):
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.GENERATE_DEBT,
                 asset=borrow_token,
-                balance=Balance(amount=amount),
+                amount=amount,
                 location_label=manager,
                 notes=f'Borrow {amount} {borrow_token.symbol_or_name()} in Extrafi {self._farm_name(vault_id)}',  # noqa: E501
                 address=context.tx_log.address,
@@ -303,7 +302,7 @@ class ExtrafiCommonDecoder(DecoderInterface, ReloadableCacheDecoderMixin):
                 event_type=HistoryEventType.DEPOSIT,
                 event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
                 asset=borrow_token,
-                balance=Balance(amount=amount),
+                amount=amount,
                 location_label=manager,
                 notes=f'Deposit {amount} {borrow_token.symbol_or_name()} in Extrafi {self._farm_name(vault_id)}',  # noqa: E501
                 address=context.tx_log.address,
@@ -322,8 +321,8 @@ class ExtrafiCommonDecoder(DecoderInterface, ReloadableCacheDecoderMixin):
                 event.maybe_get_direction() == EventDirection.OUT and
                 event.location_label == manager and
                 (
-                    event.balance.amount == asset_normalized_value(amount_0_invested, event.asset) or  # type: ignore  # noqa: E501
-                    event.balance.amount == asset_normalized_value(amount_1_invested, event.asset)  # type: ignore
+                    event.amount == asset_normalized_value(amount_0_invested, event.asset) or  # type: ignore
+                    event.amount == asset_normalized_value(amount_1_invested, event.asset)  # type: ignore
                 )
             ):
                 event.counterparty = CPT_EXTRAFI
@@ -333,7 +332,7 @@ class ExtrafiCommonDecoder(DecoderInterface, ReloadableCacheDecoderMixin):
                     'vault_id': vault_id,
                     'vault_position': int.from_bytes(context.tx_log.topics[2]),
                 }
-                event.notes = f'Deposit {event.balance.amount} {event.asset.symbol_or_name()} in Extrafi {self._farm_name(vault_id)}'  # noqa: E501
+                event.notes = f'Deposit {event.amount} {event.asset.symbol_or_name()} in Extrafi {self._farm_name(vault_id)}'  # noqa: E501
                 if amount_0_invested == 0 or amount_1_invested == 0:
                     # It means we have decoded the only existing event and we can exit the logic
                     break
@@ -359,7 +358,7 @@ class ExtrafiCommonDecoder(DecoderInterface, ReloadableCacheDecoderMixin):
             if event.maybe_get_direction() != EventDirection.OUT or event.counterparty == CPT_GAS:
                 continue
 
-            comparing_amount = event.balance.amount
+            comparing_amount = event.amount
             if (
                 refund_event is not None and
                 event.asset == refund_event.asset and
@@ -367,7 +366,7 @@ class ExtrafiCommonDecoder(DecoderInterface, ReloadableCacheDecoderMixin):
             ):
                 # When there is a refund in the transaction we need to check that the amount
                 # matches taking into account that we sent a little bit more
-                comparing_amount -= refund_event.balance.amount
+                comparing_amount -= refund_event.amount
 
             if not (
                 comparing_amount == asset_normalized_value(
@@ -384,13 +383,13 @@ class ExtrafiCommonDecoder(DecoderInterface, ReloadableCacheDecoderMixin):
             event.counterparty = CPT_EXTRAFI
             event.event_type = HistoryEventType.SPEND
             event.event_subtype = HistoryEventSubType.PAYBACK_DEBT
-            event.notes = f'Repay {event.balance.amount} {event.asset.symbol_or_name()} in Extrafi {self._farm_name(vault_id)}'  # noqa: E501
+            event.notes = f'Repay {event.amount} {event.asset.symbol_or_name()} in Extrafi {self._farm_name(vault_id)}'  # noqa: E501
 
             if refund_event is not None:
                 refund_event.counterparty = CPT_EXTRAFI
                 refund_event.event_type = HistoryEventType.WITHDRAWAL
                 refund_event.event_subtype = HistoryEventSubType.REFUND
-                refund_event.notes = f'Receive {refund_event.balance.amount} {refund_event.asset.symbol_or_name()} as refund from Extrafi'  # noqa: E501
+                refund_event.notes = f'Receive {refund_event.amount} {refund_event.asset.symbol_or_name()} as refund from Extrafi'  # noqa: E501
 
                 maybe_reshuffle_events(
                     ordered_events=[event, refund_event],
@@ -430,11 +429,11 @@ class ExtrafiCommonDecoder(DecoderInterface, ReloadableCacheDecoderMixin):
             if (
                 event.event_type == HistoryEventType.RECEIVE and
                 event.asset == token and
-                token_normalized_value(token_amount=claimed, token=token) == event.balance.amount
+                token_normalized_value(token_amount=claimed, token=token) == event.amount
             ):
                 event.event_subtype = HistoryEventSubType.REWARD
                 event.counterparty = CPT_EXTRAFI
-                event.notes = f'Claim {event.balance.amount} {token.symbol_or_name()} from Extrafi lending'  # noqa: E501
+                event.notes = f'Claim {event.amount} {token.symbol_or_name()} from Extrafi lending'
                 break
 
         return DEFAULT_DECODING_OUTPUT

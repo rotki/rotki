@@ -2,7 +2,6 @@ import logging
 from collections.abc import Callable, Sequence
 from typing import TYPE_CHECKING, Any, Literal
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
@@ -95,23 +94,23 @@ class Aavev3LikeCommonDecoder(Commonv2v3LikeDecoder):
                 continue
 
             asset = event.asset.resolve_to_evm_token()
-            if amounts[1] == event.balance.amount and event.address == ZERO_ADDRESS:
+            if amounts[1] == event.amount and event.address == ZERO_ADDRESS:
                 # we are transferring the debt token
                 event.event_type = HistoryEventType.LOSS
                 event.event_subtype = HistoryEventSubType.LIQUIDATE
-                event.notes = f'An {self.label} position got liquidated for {event.balance.amount} {asset.symbol}'  # noqa: E501
+                event.notes = f'An {self.label} position got liquidated for {event.amount} {asset.symbol}'  # noqa: E501
                 event.counterparty = self.counterparty
                 event.address = context.tx_log.address
-            elif amounts[0] == event.balance.amount and event.address == ZERO_ADDRESS:
+            elif amounts[0] == event.amount and event.address == ZERO_ADDRESS:
                 # we are transferring the aTOKEN
                 event.event_subtype = HistoryEventSubType.PAYBACK_DEBT
-                event.notes = f'Payback {event.balance.amount} {asset.symbol} for an {self.label} position'  # noqa: E501
+                event.notes = f'Payback {event.amount} {asset.symbol} for an {self.label} position'
                 event.counterparty = self.counterparty
                 event.address = context.tx_log.address
                 event.extra_data = {'is_liquidation': True}  # adding this field to the decoded event to differentiate paybacks happening in liquidations.  # noqa: E501
             elif event.address == self.treasury:  # fee
                 event.event_subtype = HistoryEventSubType.FEE
-                event.notes = f'Spend {event.balance.amount} {asset.symbol} as an {self.label} fee'
+                event.notes = f'Spend {event.amount} {asset.symbol} as an {self.label} fee'
                 event.counterparty = self.counterparty
 
     def _decode_incentives(self, context: 'DecoderContext') -> DecodingOutput:
@@ -178,12 +177,12 @@ class Aavev3LikeCommonDecoder(Commonv2v3LikeDecoder):
                 if migrateout_event is not None:  # this is migrating from v2
                     event.event_type = HistoryEventType.MIGRATE
                     event.event_subtype = HistoryEventSubType.RECEIVE
-                    event.notes = f'Receive {event.balance.amount} {event.asset.symbol_or_name()} from migrating an AAVE v2 position to v3'  # noqa: E501
+                    event.notes = f'Receive {event.amount} {event.asset.symbol_or_name()} from migrating an AAVE v2 position to v3'  # noqa: E501
                     event.address = None  # no need to have zero address
                     migratein_event = event
                 else:
                     event.event_subtype = HistoryEventSubType.INTEREST
-                    event.notes = f'Receive {event.balance.amount} {event.asset.symbol_or_name()} as interest earned from {self.label}'  # noqa: E501
+                    event.notes = f'Receive {event.amount} {event.asset.symbol_or_name()} as interest earned from {self.label}'  # noqa: E501
                     maybe_earned_event = event  # this may also be the mint transfer event which was already decoded (for some chains and assets) -- remember it to check it down later  # noqa: E501
 
                 event.counterparty = self.counterparty
@@ -260,12 +259,12 @@ class Aavev3LikeCommonDecoder(Commonv2v3LikeDecoder):
                         maybe_earned_event and
                         withdrawing_native_token and
                         a_token == maybe_earned_event.asset and
-                        balance_increase == maybe_earned_event.balance.amount and
+                        balance_increase == maybe_earned_event.amount and
                         token_event.location_label == maybe_earned_event.location_label
                 ):
                     earned_event = maybe_earned_event  # and since this is native token edit it
                     earned_event.asset = self.evm_inquirer.native_token
-                    earned_event.notes = f'Receive {earned_event.balance.amount} {earned_token.symbol} as interest earned from {self.label}'  # noqa: E501
+                    earned_event.notes = f'Receive {earned_event.amount} {earned_token.symbol} as interest earned from {self.label}'  # noqa: E501
 
                 else:  # if not, create it
                     decoded_events.append(earned_event := self.base.make_event_from_transaction(
@@ -274,32 +273,32 @@ class Aavev3LikeCommonDecoder(Commonv2v3LikeDecoder):
                         event_type=HistoryEventType.RECEIVE,
                         event_subtype=HistoryEventSubType.INTEREST,
                         asset=earned_token,
-                        balance=Balance(amount=balance_increase),
+                        amount=balance_increase,
                         location_label=token_event.location_label,
                         notes=f'Receive {balance_increase} {earned_token.symbol} as interest earned from {self.label}',  # noqa: E501
                         counterparty=self.counterparty,
                     ))
 
         if supply_event is not None and receive_event is not None:  # re-assign the receive amount
-            receive_event.balance.amount = supply_event.balance.amount
-            receive_event.notes = f'Receive {supply_event.balance.amount} {a_token.symbol} from {self.label}'  # noqa: E501
+            receive_event.amount = supply_event.amount
+            receive_event.notes = f'Receive {supply_event.amount} {a_token.symbol} from {self.label}'  # noqa: E501
 
         if withdraw_event is not None:
             if return_event is not None:  # re-assign the withdraw amount
-                withdraw_event.balance.amount = return_event.balance.amount
-                withdraw_event.notes = f'Withdraw {return_event.balance.amount} {token.symbol} from {self.label}'  # noqa: E501
+                withdraw_event.amount = return_event.amount
+                withdraw_event.notes = f'Withdraw {return_event.amount} {token.symbol} from {self.label}'  # noqa: E501
             elif receive_event is not None:
                 # receiving aToken, while withdrawing means interest > returned amount
                 return_event = receive_event  # save it as return event
                 receive_event = None  # remove the receive event
                 # re-assign the values to the return event
-                return_event.balance.amount = withdraw_event.balance.amount
+                return_event.amount = withdraw_event.amount
                 return_event.event_type = HistoryEventType.SPEND
                 return_event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
-                return_event.notes = f'Return {withdraw_event.balance.amount} {a_token.symbol} to {self.label}'  # noqa: E501
+                return_event.notes = f'Return {withdraw_event.amount} {a_token.symbol} to {self.label}'  # noqa: E501
 
         if earned_event is not None and corrected_amount is not None and return_event is not None:
-            return_event.balance.amount = corrected_amount
+            return_event.amount = corrected_amount
 
         maybe_reshuffle_events(
             ordered_events=[supply_event, return_event, withdraw_event, receive_event, earned_event],  # noqa: E501

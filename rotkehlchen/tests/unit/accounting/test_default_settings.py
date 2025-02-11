@@ -11,7 +11,6 @@ from rotkehlchen.accounting.cost_basis.base import (
 )
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.pnl import PNL
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.processed_event import ProcessedAccountingEvent
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.constants import ONE, ZERO
@@ -116,7 +115,7 @@ def _gain_one_ether(
         location=Location.ETHEREUM,
         location_label=EXAMPLE_ADDRESS,
         asset=A_ETH,
-        balance=Balance(amount=ONE),
+        amount=ONE,
         notes='Received 1 ETH',
         event_type=event_type,
         event_subtype=event_subtype,
@@ -138,7 +137,7 @@ def test_accounting_no_settings(accounting_pot: 'AccountingPot'):
         event_type=HistoryEventType.INFORMATIONAL,
         event_subtype=HistoryEventSubType.NONE,
         asset=A_ETH,
-        balance=Balance(),
+        amount=FVal(0),
     )
     consumed_num = accounting_pot.events_accountant.process(
         event=event,
@@ -225,7 +224,7 @@ def test_accounting_spend_settings(
         location=Location.ETHEREUM,
         location_label=EXAMPLE_ADDRESS,
         asset=A_ETH,
-        balance=Balance(amount=FVal(0.5)),
+        amount=FVal(0.5),
         notes='Send 0.5 ETH to 0xABC',
         event_type=event_type,
         event_subtype=event_subtype,
@@ -300,7 +299,7 @@ def test_accounting_swap_settings(accounting_pot: 'AccountingPot', counterparty:
         location=Location.ETHEREUM,
         location_label=EXAMPLE_ADDRESS,
         asset=A_ETH,
-        balance=Balance(amount=ONE),
+        amount=ONE,
         notes='Swap 1 ETH in a uniswap pool',
         event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
@@ -313,7 +312,7 @@ def test_accounting_swap_settings(accounting_pot: 'AccountingPot', counterparty:
         location=Location.ETHEREUM,
         location_label=EXAMPLE_ADDRESS,
         asset=A_DAI,
-        balance=Balance(amount=FVal(3000)),
+        amount=FVal(3000),
         notes='Receive 3000 DAI as the result of a swap',
         event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,

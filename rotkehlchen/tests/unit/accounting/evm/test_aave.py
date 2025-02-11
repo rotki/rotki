@@ -10,7 +10,6 @@ from rotkehlchen.accounting.cost_basis.base import (
 )
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.pnl import PNL
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.processed_event import ProcessedAccountingEvent
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE_V2
@@ -44,7 +43,7 @@ def test_v2_withdraw(accountant: 'Accountant'):
         event_type=HistoryEventType.DEPOSIT,
         event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
         asset=A_DAI,
-        balance=Balance(amount=FVal('1000')),
+        amount=FVal('1000'),
         location_label=USER_ADDRESS,
         notes='Deposit 1000 DAI into AAVE v2',
         counterparty=CPT_AAVE_V2,
@@ -56,7 +55,7 @@ def test_v2_withdraw(accountant: 'Accountant'):
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
         asset=Asset('eip155:1/erc20:0x028171bCA77440897B824Ca71D1c56caC55b68A3'),
-        balance=Balance(amount=FVal('1000')),
+        amount=FVal('1000'),
         location_label=USER_ADDRESS,
         notes='Receive 1000 aDAI from AAVE v2',
         counterparty=CPT_AAVE_V2,
@@ -68,7 +67,7 @@ def test_v2_withdraw(accountant: 'Accountant'):
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.RETURN_WRAPPED,
         asset=Asset('eip155:1/erc20:0x028171bCA77440897B824Ca71D1c56caC55b68A3'),
-        balance=Balance(amount=FVal('1050')),
+        amount=FVal('1050'),
         location_label=USER_ADDRESS,
         notes='Return 1050 aDAI to AAVE v2',
         counterparty=CPT_AAVE_V2,
@@ -80,7 +79,7 @@ def test_v2_withdraw(accountant: 'Accountant'):
         event_type=HistoryEventType.WITHDRAWAL,
         event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
         asset=A_DAI,
-        balance=Balance(amount=FVal('1050')),
+        amount=FVal('1050'),
         location_label=USER_ADDRESS,
         notes='Withdraw 1050 DAI from AAVE v2',
         counterparty=CPT_AAVE_V2,
@@ -172,7 +171,7 @@ def test_v2_payback(accountant: 'Accountant'):
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
         asset=Asset('eip155:1/erc20:0xcd9D82d33bd737De215cDac57FE2F7f04DF77FE0'),
-        balance=Balance(amount=FVal('1000')),
+        amount=FVal('1000'),
         location_label=USER_ADDRESS,
         notes='Receive 1000 variableDebtREN from AAVE v2',
         counterparty=CPT_AAVE_V2,
@@ -184,7 +183,7 @@ def test_v2_payback(accountant: 'Accountant'):
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.GENERATE_DEBT,
         asset=A_REN,
-        balance=Balance(amount=FVal('1000')),
+        amount=FVal('1000'),
         location_label=USER_ADDRESS,
         notes='Borrow 1000 REN from AAVE v2 with variable APY 0.80%',
         counterparty=CPT_AAVE_V2,
@@ -196,7 +195,7 @@ def test_v2_payback(accountant: 'Accountant'):
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.RETURN_WRAPPED,
         asset=Asset('eip155:1/erc20:0xcd9D82d33bd737De215cDac57FE2F7f04DF77FE0'),
-        balance=Balance(amount=FVal('1050')),
+        amount=FVal('1050'),
         location_label=USER_ADDRESS,
         notes='Return 1050 variableDebtREN to AAVE v2',
         counterparty=CPT_AAVE_V2,
@@ -208,7 +207,7 @@ def test_v2_payback(accountant: 'Accountant'):
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.PAYBACK_DEBT,
         asset=A_REN,
-        balance=Balance(amount=FVal('1050')),
+        amount=FVal('1050'),
         location_label=USER_ADDRESS,
         notes='Repay 1050 REN on AAVE v2',
         counterparty=CPT_AAVE_V2,

@@ -78,7 +78,7 @@ class GivethDecoder(GivethDecoderBase):
                     event.event_type == HistoryEventType.SPEND and
                     event.asset.identifier == self.giv_token_id and
                     event.address == GNOSIS_GIVPOWERSTAKING_WRAPPER and
-                    amount == event.balance.amount
+                    amount == event.amount
             ):
                 out_event = event
                 event.event_type = HistoryEventType.DEPOSIT

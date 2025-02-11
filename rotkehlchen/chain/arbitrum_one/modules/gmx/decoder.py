@@ -1,7 +1,6 @@
 import logging
 from typing import TYPE_CHECKING, Any, Literal
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset, CryptoAsset
 from rotkehlchen.chain.arbitrum_one.decoding.interfaces import ArbitrumDecoderInterface
 from rotkehlchen.chain.arbitrum_one.modules.gmx.constants import (
@@ -88,22 +87,22 @@ class GmxDecoder(ArbitrumDecoderInterface):
             if (
                 event.asset == token_out and
                 event.event_type == HistoryEventType.SPEND and
-                event.balance.amount == amount_out
+                event.amount == amount_out
             ):
                 event.counterparty = CPT_GMX
                 event.event_type = HistoryEventType.TRADE
                 event.event_subtype = HistoryEventSubType.SPEND
-                event.notes = f'Swap {event.balance.amount} {token_out.symbol} in GMX'
+                event.notes = f'Swap {event.amount} {token_out.symbol} in GMX'
                 out_event = event
             elif (
                 event.asset == token_in and
                 event.event_type == HistoryEventType.RECEIVE and
-                event.balance.amount == amount_in
+                event.amount == amount_in
             ):
                 event.counterparty = CPT_GMX
                 event.event_type = HistoryEventType.TRADE
                 event.event_subtype = HistoryEventSubType.RECEIVE
-                event.notes = f'Receive {event.balance.amount} {token_in.symbol} as the result of a GMX swap'  # noqa: E501
+                event.notes = f'Receive {event.amount} {token_in.symbol} as the result of a GMX swap'  # noqa: E501
                 in_event = event
 
         if not (out_event and in_event):
@@ -164,7 +163,7 @@ class GmxDecoder(ArbitrumDecoderInterface):
                 event.location_label == account and
                 event.event_type == base_event_type and
                 (
-                    (verb_text == 'increase' and event.balance.amount == transferred_amount) or
+                    (verb_text == 'increase' and event.amount == transferred_amount) or
                     verb_text == 'decrease'  # when it is a decrease we don't know the amount that will be received  # noqa: E501
                 ) and
                 _asset_matches(token=path_token, event_asset=event.asset)
@@ -175,12 +174,12 @@ class GmxDecoder(ArbitrumDecoderInterface):
                 position_type = 'long position' if is_long is True else 'short position'
                 event_asset = event.asset.resolve_to_asset_with_symbol()
                 if verb_text == 'increase':
-                    event.balance.amount = amount_change  # we will create a fee event
+                    event.amount = amount_change  # we will create a fee event
                     note_proposition = 'with'
                 else:
                     note_proposition = 'withdrawing'
 
-                event.notes = f'{verb_text.capitalize()} {position_type} {note_proposition} {event.balance.amount} {event_asset.symbol} in GMX'  # noqa: E501
+                event.notes = f'{verb_text.capitalize()} {position_type} {note_proposition} {event.amount} {event_asset.symbol} in GMX'  # noqa: E501
 
                 # And now create a new event for the fee
                 context.decoded_events.append(self.base.make_event_from_transaction(
@@ -189,7 +188,7 @@ class GmxDecoder(ArbitrumDecoderInterface):
                     event_type=HistoryEventType.SPEND,
                     event_subtype=HistoryEventSubType.FEE,
                     asset=A_ETH,
-                    balance=Balance(amount=fee_amount),
+                    amount=fee_amount,
                     location_label=event.location_label,
                     notes=f'Spend {fee_amount} ETH as GMX fee',
                     counterparty=CPT_GMX,
@@ -220,7 +219,7 @@ class GmxDecoder(ArbitrumDecoderInterface):
             if (
                 event.location_label == account and
                 event.event_type == HistoryEventType.SPEND and
-                event.balance.amount == amount
+                event.amount == amount
             ):
                 event.counterparty = CPT_GMX
                 event.event_type = HistoryEventType.STAKING
@@ -231,12 +230,12 @@ class GmxDecoder(ArbitrumDecoderInterface):
             elif (
                 event.location_label == account and
                 event.event_type == HistoryEventType.RECEIVE and
-                event.balance.amount == amount
+                event.amount == amount
             ):
                 event.counterparty = CPT_GMX
                 event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
                 asset = event.asset.resolve_to_crypto_asset()
-                event.notes = f'Receive {event.balance.amount} {asset.symbol} after staking in GMX'
+                event.notes = f'Receive {event.amount} {asset.symbol} after staking in GMX'
 
         return DEFAULT_DECODING_OUTPUT
 

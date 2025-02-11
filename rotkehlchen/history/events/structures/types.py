@@ -20,7 +20,6 @@ EVM_EVENT_DB_TUPLE_READ = tuple[
     str | None,  # location label
     str,            # asset
     str,            # amount
-    str,            # usd value
     str | None,  # notes
     str,            # type
     str,            # subtype

@@ -65,7 +65,7 @@ class GnosisPayDecoder(DecoderInterface, ReloadableDecoderMixin):
             ):
                 event.counterparty = CPT_GNOSIS_PAY
                 event.event_subtype = HistoryEventSubType.CASHBACK
-                event.notes = f'Receive cashback of {event.balance.amount} GNO from Gnosis Pay'
+                event.notes = f'Receive cashback of {event.amount} GNO from Gnosis Pay'
 
         return DEFAULT_DECODING_OUTPUT
 
@@ -78,7 +78,7 @@ class GnosisPayDecoder(DecoderInterface, ReloadableDecoderMixin):
             ):
                 event.counterparty = CPT_GNOSIS_PAY
                 event.event_subtype = HistoryEventSubType.REWARD
-                event.notes = f'Receive referral reward of {event.balance.amount} {event.asset.resolve_to_asset_with_symbol().symbol} from Gnosis Pay'  # noqa: E501
+                event.notes = f'Receive referral reward of {event.amount} {event.asset.resolve_to_asset_with_symbol().symbol} from Gnosis Pay'  # noqa: E501
 
         return DEFAULT_DECODING_OUTPUT
 
@@ -92,7 +92,7 @@ class GnosisPayDecoder(DecoderInterface, ReloadableDecoderMixin):
                 asset = event.asset.resolve_to_asset_with_symbol()
                 event.counterparty = CPT_GNOSIS_PAY
                 event.event_subtype = HistoryEventSubType.REFUND
-                event.notes = f'Receive refund of {event.balance.amount} {asset.symbol} from Gnosis Pay'  # noqa: E501
+                event.notes = f'Receive refund of {event.amount} {asset.symbol} from Gnosis Pay'
 
                 if (
                         self.gnosispay_api is not None and
@@ -100,7 +100,7 @@ class GnosisPayDecoder(DecoderInterface, ReloadableDecoderMixin):
                             new_notes := self.gnosispay_api.maybe_find_update_refund(
                                 tx_hash=context.transaction.tx_hash,
                                 tx_timestamp=context.transaction.timestamp,
-                                amount=event.balance.amount,
+                                amount=event.amount,
                                 asset=asset,
                             )) is not None
                 ):
@@ -128,11 +128,11 @@ class GnosisPayDecoder(DecoderInterface, ReloadableDecoderMixin):
                     event.event_type == HistoryEventType.SPEND and
                     event.event_subtype == HistoryEventSubType.NONE and
                     event.asset == token and
-                    event.balance.amount == amount
+                    event.amount == amount
             ):
                 event.counterparty = CPT_GNOSIS_PAY
                 event.event_subtype = HistoryEventSubType.PAYMENT
-                event.notes = f'Spend {event.balance.amount} {token.symbol} via Gnosis Pay'
+                event.notes = f'Spend {event.amount} {token.symbol} via Gnosis Pay'
                 if (
                         self.gnosispay_api is not None and
                         (

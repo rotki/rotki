@@ -57,7 +57,7 @@ class Odosv2Decoder(Odosv2DecoderBase):
                 event.address == ODOS_AIRDROP_DISTRIBUTOR and
                 event.asset.identifier == ODOS_ASSET_ID and
                 event.location_label == recipient and
-                event.balance.amount == amount and
+                event.amount == amount and
                 event.event_type == HistoryEventType.RECEIVE and
                 event.event_subtype == HistoryEventSubType.NONE
             ):

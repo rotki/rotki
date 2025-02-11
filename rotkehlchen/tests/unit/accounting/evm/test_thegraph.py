@@ -10,7 +10,6 @@ from rotkehlchen.accounting.cost_basis.base import (
 )
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.pnl import PNL
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.processed_event import ProcessedAccountingEvent
 from rotkehlchen.chain.evm.decoding.thegraph.constants import CPT_THEGRAPH
 from rotkehlchen.constants.assets import A_GRT
@@ -43,7 +42,7 @@ def test_delegation_reward(accountant: 'Accountant'):
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.NONE,
         asset=A_GRT,
-        balance=Balance(amount=FVal('1000')),
+        amount=FVal('1000'),
         location_label=USER_ADDRESS,
         notes='Acquire 1000 GRT',
         counterparty=None,
@@ -56,7 +55,7 @@ def test_delegation_reward(accountant: 'Accountant'):
         event_type=HistoryEventType.STAKING,
         event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
         asset=A_GRT,
-        balance=Balance(amount=FVal('995')),
+        amount=FVal('995'),
         location_label=USER_ADDRESS,
         notes='Delegate 995 GRT to indexer',
         counterparty=CPT_THEGRAPH,
@@ -69,7 +68,7 @@ def test_delegation_reward(accountant: 'Accountant'):
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_GRT,
-        balance=Balance(amount=FVal('5')),
+        amount=FVal('5'),
         location_label=USER_ADDRESS,
         notes='Burn 5 GRT as delegation tax',
         counterparty=CPT_THEGRAPH,
@@ -82,7 +81,7 @@ def test_delegation_reward(accountant: 'Accountant'):
         event_type=HistoryEventType.STAKING,
         event_subtype=HistoryEventSubType.REMOVE_ASSET,
         asset=A_GRT,
-        balance=Balance(amount=FVal('1005')),
+        amount=FVal('1005'),
         location_label=USER_ADDRESS,
         notes='Withdraw 1005 GRT from indexer',
         counterparty=CPT_THEGRAPH,

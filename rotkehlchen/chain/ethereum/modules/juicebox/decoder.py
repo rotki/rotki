@@ -89,7 +89,7 @@ class JuiceboxDecoder(DecoderInterface):
                 event.event_type == HistoryEventType.SPEND and
                 event.event_subtype == HistoryEventSubType.NONE and
                 event.asset == A_ETH and
-                event.balance.amount == amount and
+                event.amount == amount and
                 event.location_label == decoded_data[0]
             ):
                 event.counterparty = CPT_JUICEBOX

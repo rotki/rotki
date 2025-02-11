@@ -2,7 +2,6 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.scroll.constants import CPT_SCROLL
 from rotkehlchen.chain.scroll.modules.scroll_airdrop.constants import (
@@ -40,7 +39,7 @@ def test_claim_scroll_airdop(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=FVal(gas_amount)),
+            amount=FVal(gas_amount),
             location_label=user_address,
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
@@ -52,7 +51,7 @@ def test_claim_scroll_airdop(
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.AIRDROP,
             asset=A_SCR,
-            balance=Balance(amount=FVal(airdrop_amount)),
+            amount=FVal(airdrop_amount),
             location_label=user_address,
             notes=f'Claim {airdrop_amount} SCR from scroll airdrop',
             counterparty=CPT_SCROLL,
@@ -79,7 +78,7 @@ def test_receive_offchain_scroll_airdop(
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.AIRDROP,
             asset=A_SCR,
-            balance=Balance(amount=FVal(airdrop_amount)),
+            amount=FVal(airdrop_amount),
             location_label=user_address,
             notes=f'Receive {airdrop_amount} SCR from scroll airdrop',
             counterparty=CPT_SCROLL,

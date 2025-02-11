@@ -354,7 +354,7 @@ class CalendarReminderCreator(CustomizableDateMixin):
                 timestamp=Timestamp(locktime),
                 color=CRV_CALENDAR_COLOR,
                 counterparty=CPT_CURVE,
-                description=f'Lock period for {crv_event.balance.amount} CRV in vote escrow ends on {self.timestamp_to_date(locktime)}',  # noqa: E501
+                description=f'Lock period for {crv_event.amount} CRV in vote escrow ends on {self.timestamp_to_date(locktime)}',  # noqa: E501
             )
             if entry_id is not None:
                 crv_calendar_entries.append(entry_id)
@@ -456,12 +456,12 @@ class CalendarReminderCreator(CustomizableDateMixin):
             try:
                 asset_symbol = bridge_event.asset.resolve_to_asset_with_symbol().symbol
                 if (entry_id := self.create_or_update_calendar_entry_from_event(
-                        name=f'Claim {bridge_event.balance.amount} {asset_symbol} bridge deposit on Ethereum',  # noqa: E501
+                        name=f'Claim {bridge_event.amount} {asset_symbol} bridge deposit on Ethereum',  # noqa: E501
                         event=bridge_event,
                         color=BRIDGE_CALENDAR_COLOR,
                         counterparty=bridge_event.counterparty,  # type: ignore[arg-type]  # counterparty is always present
                         timestamp=ts_ms_to_sec(TimestampMS(bridge_event.timestamp + WEEK_IN_SECONDS * 1000)),  # noqa: E501
-                        description=f'Bridge deposit of {bridge_event.balance.amount} {asset_symbol} is ready to claim on Ethereum',  # noqa: E501
+                        description=f'Bridge deposit of {bridge_event.amount} {asset_symbol} is ready to claim on Ethereum',  # noqa: E501
                 )) is not None:
                     bridge_calendar_entries.append(entry_id)
             except UnknownAsset:

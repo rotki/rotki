@@ -27,7 +27,7 @@ class ThegraphAccountant(ModuleAccountantInterface):
             event: 'EvmEvent',
             other_events: Iterator['EvmEvent'],  # pylint: disable=unused-argument
     ) -> int:
-        self.assets_supplied[event.location_label] += event.balance.amount  # type: ignore[index]
+        self.assets_supplied[event.location_label] += event.amount  # type: ignore[index]
         return 1
 
     def _process_withdraw(
@@ -37,7 +37,7 @@ class ThegraphAccountant(ModuleAccountantInterface):
             other_events: Iterator['EvmEvent'],  # pylint: disable=unused-argument
     ) -> int:
         address = cast('ChecksumEvmAddress', event.location_label)
-        self.assets_supplied[address] -= event.balance.amount
+        self.assets_supplied[address] -= event.amount
         if self.assets_supplied[address] < ZERO:
             gain = -1 * self.assets_supplied[address]
             resolved_asset = event.asset.resolve_to_asset_with_symbol()

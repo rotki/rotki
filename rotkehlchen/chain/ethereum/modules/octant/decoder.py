@@ -73,12 +73,12 @@ class OctantDecoder(DecoderInterface):
                     event.event_type == expected_type and
                     event.asset == self.glm and
                     event.address == OCTANT_DEPOSITS and
-                    event.balance.amount == amount
+                    event.amount == amount
             ):
                 event.event_type = new_type
                 event.event_subtype = new_subtype
                 event.counterparty = CPT_OCTANT
-                event.notes = f'{verb} {event.balance.amount} GLM {preposition} Octant'
+                event.notes = f'{verb} {event.amount} GLM {preposition} Octant'
                 event.sequence_index = context.tx_log.log_index + 1  # push it after approval if any  # noqa: E501
                 break
         else:
@@ -102,11 +102,11 @@ class OctantDecoder(DecoderInterface):
                     event.event_type == HistoryEventType.RECEIVE and
                     event.asset == A_ETH and
                     event.location_label == user and
-                    event.balance.amount == amount
+                    event.amount == amount
             ):
                 event.event_subtype = HistoryEventSubType.REWARD
                 event.counterparty = CPT_OCTANT
-                event.notes = f'Claim {event.balance.amount} ETH as Octant epoch {epoch} reward'
+                event.notes = f'Claim {event.amount} ETH as Octant epoch {epoch} reward'
                 break
         else:
             log.error(f'Could not find corresponding ETH receive transaction for Octant rewards withdrawal at: {context.transaction.tx_hash.hex()}')  # noqa: E501

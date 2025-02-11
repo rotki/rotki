@@ -33,8 +33,7 @@ from rotkehlchen.constants.timing import (
 from rotkehlchen.db.cache import DBCacheDynamic, DBCacheStatic
 from rotkehlchen.db.calendar import CalendarEntry
 from rotkehlchen.db.evmtx import DBEvmTx
-from rotkehlchen.db.filtering import EvmTransactionsFilterQuery, HistoryEventFilterQuery
-from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.db.filtering import EvmTransactionsFilterQuery
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.api import PremiumAuthenticationError
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
@@ -59,7 +58,7 @@ from rotkehlchen.tasks.calendar import (
     maybe_create_calendar_reminders,
     notify_reminders,
 )
-from rotkehlchen.tasks.utils import query_missing_prices_of_base_entries, should_run_periodic_task
+from rotkehlchen.tasks.utils import should_run_periodic_task
 from rotkehlchen.types import (
     EVM_CHAINS_WITH_TRANSACTIONS,
     SUPPORTED_BITCOIN_CHAINS,
@@ -167,7 +166,6 @@ class TaskManager:
             self._maybe_query_evm_transactions,
             self._maybe_schedule_exchange_history_query,
             self._maybe_schedule_evm_txreceipts,
-            self._maybe_query_missing_prices,
             self._maybe_decode_evm_transactions,
             self._maybe_check_premium_status,
             self._maybe_check_data_updates,
@@ -427,28 +425,6 @@ class TaskManager:
             start_ts=0,
             end_ts=now,
             fail_callback=exchange_fail_cb,
-        )]
-
-    def _maybe_query_missing_prices(self) -> Optional[list[gevent.Greenlet]]:
-        query_filter = HistoryEventFilterQuery.make(limit=100)
-        db = DBHistoryEvents(self.database)
-        entries = db.get_base_entries_missing_prices(
-            query_filter=query_filter,
-            ignored_assets=list(self.base_entries_ignore_set),
-        )
-        if len(entries) == 0:
-            return None
-
-        task_name = 'Periodically query history events prices'
-        log.debug(f'Scheduling task to {task_name}')
-        return [self.greenlet_manager.spawn_and_track(
-            after_seconds=None,
-            task_name=task_name,
-            exception_is_error=True,
-            method=query_missing_prices_of_base_entries,
-            database=self.database,
-            entries_missing_prices=entries,
-            base_entries_ignore_set=self.base_entries_ignore_set,
         )]
 
     def _maybe_decode_evm_transactions(self) -> Optional[list[gevent.Greenlet]]:

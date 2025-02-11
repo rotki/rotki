@@ -3,7 +3,6 @@ from unittest.mock import patch
 
 import pytest
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.converters import Asset
 from rotkehlchen.constants.assets import A_ENS, A_SOL, A_USDC
 from rotkehlchen.constants.misc import ONE
@@ -199,7 +198,7 @@ def test_process_movements(function_scope_coinbaseprime: Coinbaseprime):
     assert processed_deposited.event_type == HistoryEventType.DEPOSIT
     assert processed_deposited.asset == A_ETH
     assert processed_deposited.location_label == function_scope_coinbaseprime.name
-    assert processed_deposited.balance.amount == FVal(100)
+    assert processed_deposited.amount == FVal(100)
     assert processed_deposited.timestamp == 1697050985000
     assert processed_deposited.extra_data == {
         'transaction_id': tx_hash,
@@ -241,7 +240,7 @@ def test_process_movements(function_scope_coinbaseprime: Coinbaseprime):
     assert processed_withdrawal.event_type == HistoryEventType.WITHDRAWAL
     assert processed_withdrawal.asset == Asset('ICP')
     assert processed_deposited.location_label == function_scope_coinbaseprime.name
-    assert processed_withdrawal.balance.amount == FVal(250)
+    assert processed_withdrawal.amount == FVal(250)
     assert processed_withdrawal.timestamp == 1728713653000
     assert processed_withdrawal.extra_data == {
         'transaction_id': icp_tx_hash,
@@ -389,7 +388,7 @@ def test_history_events(function_scope_coinbaseprime: Coinbaseprime):
             location_label=function_scope_coinbaseprime.name,
             event_type=HistoryEventType.DEPOSIT,
             asset=A_ETH,
-            balance=Balance(FVal(100)),
+            amount=FVal(100),
             unique_id=fourth_id,
             extra_data={
                 'address': movement_address,
@@ -403,7 +402,7 @@ def test_history_events(function_scope_coinbaseprime: Coinbaseprime):
             location=Location.COINBASEPRIME,
             event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
-            balance=Balance(amount=FVal(50)),
+            amount=FVal(50),
             asset=A_USD,
             notes='Swap 50 USD in Coinbase Prime',
         ), HistoryEvent(
@@ -414,7 +413,7 @@ def test_history_events(function_scope_coinbaseprime: Coinbaseprime):
             location=Location.COINBASEPRIME,
             event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
-            balance=Balance(amount=FVal(50)),
+            amount=FVal(50),
             asset=A_USDC,
             notes='Receive 50 USDC from a Coinbase Prime conversion',
         ), HistoryEvent(
@@ -425,7 +424,7 @@ def test_history_events(function_scope_coinbaseprime: Coinbaseprime):
             location=Location.COINBASEPRIME,
             event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
-            balance=Balance(amount=FVal(150)),
+            amount=FVal(150),
             asset=A_USDC,
             notes='Swap 150 USDC in Coinbase Prime',
         ), HistoryEvent(
@@ -436,7 +435,7 @@ def test_history_events(function_scope_coinbaseprime: Coinbaseprime):
             location=Location.COINBASEPRIME,
             event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
-            balance=Balance(amount=FVal(150)),
+            amount=FVal(150),
             asset=A_USD,
             notes='Receive 150 USD from a Coinbase Prime conversion',
         ), HistoryEvent(
@@ -447,7 +446,7 @@ def test_history_events(function_scope_coinbaseprime: Coinbaseprime):
             location=Location.COINBASEPRIME,
             event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.FEE,
-            balance=Balance(amount=ONE),
+            amount=ONE,
             asset=A_USDC,
             notes='Spend 1 USDC as Coinbase Prime conversion fee',
         ), HistoryEvent(
@@ -458,7 +457,7 @@ def test_history_events(function_scope_coinbaseprime: Coinbaseprime):
             location=Location.COINBASEPRIME,
             event_type=HistoryEventType.STAKING,
             event_subtype=HistoryEventSubType.REWARD,
-            balance=Balance(amount=FVal(20)),
+            amount=FVal(20),
             asset=A_ETH,
             notes='Receive 20 ETH as Coinbase Prime staking reward',
         ),

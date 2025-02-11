@@ -33,21 +33,21 @@ class SdaiDecoder(DecoderInterface):
             if (
                 event.event_type == HistoryEventType.SPEND and
                 event.event_subtype == HistoryEventSubType.NONE and
-                event.balance.amount == amount
+                event.amount == amount
             ):
                 asset = event.asset.resolve_to_crypto_asset()
                 event.counterparty = CPT_SDAI
                 event.event_type = HistoryEventType.DEPOSIT
                 event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
-                event.notes = f'Deposit {event.balance.amount} {asset.symbol} into the Savings xDAI contract'  # noqa: E501
+                event.notes = f'Deposit {event.amount} {asset.symbol} into the Savings xDAI contract'  # noqa: E501
             elif (
                 event.event_type == HistoryEventType.RECEIVE and
                 event.event_subtype == HistoryEventSubType.NONE and
-                event.balance.amount == shares
+                event.amount == shares
             ):
                 event.event_type = HistoryEventType.WITHDRAWAL
                 event.event_subtype = HistoryEventSubType.REMOVE_ASSET
-                event.notes = f'Withdraw {event.balance.amount} sDAI from the Savings xDAI contract'  # noqa: E501
+                event.notes = f'Withdraw {event.amount} sDAI from the Savings xDAI contract'
                 event.counterparty = CPT_SDAI
 
         return DEFAULT_DECODING_OUTPUT
@@ -62,21 +62,21 @@ class SdaiDecoder(DecoderInterface):
             if (
                 event.event_type == HistoryEventType.SPEND and
                 event.event_subtype == HistoryEventSubType.NONE and
-                event.balance.amount == shares
+                event.amount == shares
             ):
                 event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
                 event.event_type = HistoryEventType.DEPOSIT
-                event.notes = f'Return {event.balance.amount} sDAI to the Savings xDAI contract'
+                event.notes = f'Return {event.amount} sDAI to the Savings xDAI contract'
                 event.counterparty = CPT_SDAI
             elif (
                 event.event_type == HistoryEventType.RECEIVE and
                 event.event_subtype == HistoryEventSubType.NONE and
-                event.balance.amount == amount
+                event.amount == amount
             ):
                 asset = event.asset.resolve_to_crypto_asset()
                 event.event_type = HistoryEventType.WITHDRAWAL
                 event.event_subtype = HistoryEventSubType.REMOVE_ASSET
-                event.notes = f'Withdraw {event.balance.amount} {asset.symbol} from the Savings xDAI contract'  # noqa: E501
+                event.notes = f'Withdraw {event.amount} {asset.symbol} from the Savings xDAI contract'  # noqa: E501
                 event.counterparty = CPT_SDAI
 
         return DEFAULT_DECODING_OUTPUT
