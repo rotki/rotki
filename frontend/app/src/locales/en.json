@@ -3773,7 +3773,8 @@
       "view_all": "View All"
     },
     "title": "Notifications",
-    "view_calendar": "View Calendar"
+    "view_calendar": "View Calendar",
+    "message_overflow": "The total amount of notifications received has exceeded the limit of 200. Older notifications have been removed."
   },
   "oracle_cache_management": {
     "clear_error": "Clearing the cache for {fromAsset} to {toAsset} failed: {error}",

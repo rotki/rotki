@@ -10,18 +10,17 @@ const visibleNotification = ref(createNotification());
 const notificationStore = useNotificationsStore();
 const { queue } = storeToRefs(notificationStore);
 const { displayed } = notificationStore;
-
-async function dismiss(id: number) {
-  await displayed([id]);
-  set(visibleNotification, { ...get(visibleNotification), display: false });
-}
-
-async function dismissAll() {
-  await displayed(get(queue).map(({ id }) => id));
-  set(visibleNotification, { ...get(visibleNotification), display: false });
-}
-
 const { showNotificationBar } = storeToRefs(useAreaVisibilityStore());
+
+function dismiss(id: number) {
+  displayed([id]);
+  set(visibleNotification, { ...get(visibleNotification), display: false });
+}
+
+function dismissAll() {
+  displayed(get(queue).map(({ id }) => id));
+  set(visibleNotification, { ...get(visibleNotification), display: false });
+}
 
 function checkQueue() {
   if (get(showNotificationBar))
