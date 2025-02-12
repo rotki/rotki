@@ -135,7 +135,7 @@ def test_query_trade_history(poloniex):
 
     with patch.object(poloniex.session, 'get', side_effect=mock_api_return):
         trades = poloniex.query_trade_history(
-            start_ts=0,
+            start_ts=1500000000,
             end_ts=1565732120,
             only_cache=False,
         )
@@ -175,7 +175,7 @@ def test_query_trade_history_unexpected_data(poloniex):
 
         with patch.object(poloniex.session, 'get', side_effect=mock_api_return):
             trades, _ = poloniex.query_online_trade_history(
-                start_ts=0,
+                start_ts=1500000000,
                 end_ts=1565732120,
             )
 
@@ -244,7 +244,7 @@ def test_query_trade_history_unknown_asset(poloniex):
 
     with patch.object(poloniex.session, 'get', side_effect=mock_api_return):
         trades, _ = poloniex.query_online_trade_history(
-            start_ts=0,
+            start_ts=1500000000,
             end_ts=1565732120,
         )
 
