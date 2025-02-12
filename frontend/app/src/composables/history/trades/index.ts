@@ -12,6 +12,7 @@ import { useHistoryStore } from '@/store/history';
 import { useTradesApi } from '@/composables/api/history/trades';
 import { useStatusUpdater } from '@/composables/status';
 import { useLocations } from '@/composables/locations';
+import { awaitParallelExecution } from '@/utils/await-parallel-execution';
 import type { MaybeRef } from '@vueuse/core';
 import type { Collection, CollectionResponse } from '@/types/collection';
 import type { EntryWithMeta } from '@/types/history/meta';
@@ -100,7 +101,9 @@ export function useTrades(): UseTradesReturn {
 
     try {
       setStatus(isFirstLoad() ? Status.LOADING : Status.REFRESHING);
-      await Promise.all(locations.map(syncTradesTask));
+      await awaitParallelExecution(locations, location => location, async (location) => {
+        await syncTradesTask(location);
+      }, 2);
       await fetchAssociatedLocations();
       setStatus(Status.LOADED);
     }
