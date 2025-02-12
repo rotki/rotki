@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, patch
 import gevent
 import gevent.lock
 import pytest
+from freezegun import freeze_time
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import EvmToken, UnderlyingToken
@@ -1129,10 +1130,50 @@ def test_snapshots_dont_happen_always(rotkehlchen_api_server: 'APIServer') -> No
             return_value=Timestamp(0),
         ):
             gevent.sleep(1)  # wait for 1 second to save the next timestamp
+            task_manager.last_balance_query_ts = Timestamp(0)  # reset last query timestamp
             task_manager.schedule()
             gevent.joinall(rotki.greenlet_manager.greenlets)
 
         assert cursor.execute(query).fetchone()[0] == 2
+
+
+@pytest.mark.parametrize('max_tasks_num', [5])
+def test_failed_snapshot_waits_to_retry(rotkehlchen_api_server: 'APIServer') -> None:
+    """Regression test for an issue where if the balance query failed,
+    it would keep retrying over and over with no wait time.
+    """
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    task_manager = rotki.task_manager
+    assert task_manager is not None
+    task_manager.potential_tasks = [task_manager._maybe_update_snapshot_balances]
+    task_manager.should_schedule = True
+
+    def mock_query_balances(**kwargs):
+        """Raise RemoteError to simulate a failed balance snapshot."""
+        raise RemoteError
+
+    with patch.object(
+        target=rotki.chains_aggregator,
+        attribute='query_balances',
+        side_effect=mock_query_balances,
+    ) as query_patch:
+        # Schedule the task and check that we got one query_balances call
+        task_manager.schedule()
+        gevent.joinall(rotki.greenlet_manager.greenlets)
+        assert query_patch.call_count == 1
+
+        # Schedule again - query_balances shouldn't get called a second time.
+        task_manager.schedule()
+        gevent.joinall(rotki.greenlet_manager.greenlets)
+        assert query_patch.call_count == 1
+
+        # Move time into the future
+        future_timestamp = datetime.datetime.now(tz=datetime.UTC) + datetime.timedelta(seconds=WEEK_IN_SECONDS)  # noqa: E501
+        with freeze_time(future_timestamp):
+            # Schedule again - query_balances should get called a second time now.
+            task_manager.schedule()
+            gevent.joinall(rotki.greenlet_manager.greenlets)
+            assert query_patch.call_count == 2
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[

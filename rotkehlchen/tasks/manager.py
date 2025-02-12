@@ -148,6 +148,7 @@ class TaskManager:
         self.deactivate_premium = deactivate_premium
         self.activate_premium = activate_premium
         self.query_balances = query_balances
+        self.last_balance_query_ts = Timestamp(0)
         self.query_yearn_vaults = query_yearn_vaults
         self.query_morpho_vaults = query_morpho_vaults
         self.query_morpho_reward_distributors = query_morpho_reward_distributors
@@ -551,7 +552,10 @@ class TaskManager:
         and the current time exceeds the `balance_save_frequency`.
         """
         with self.database.conn.read_ctx() as read_cursor:
-            if not self.database.should_save_balances(read_cursor):
+            if not self.database.should_save_balances(
+                cursor=read_cursor,
+                last_query_ts=self.last_balance_query_ts,
+            ):
                 return None
 
         maybe_detect_new_tokens(self.database)

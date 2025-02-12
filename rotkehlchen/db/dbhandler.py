@@ -3338,16 +3338,23 @@ class DBHandler:
             )
             return {Location.deserialize_from_db(loc[0]) for loc in cursor}
 
-    def should_save_balances(self, cursor: 'DBCursor') -> bool:
+    def should_save_balances(
+            self,
+            cursor: 'DBCursor',
+            last_query_ts: Timestamp | None = None,
+    ) -> bool:
         """
-        Returns whether or not we can save data to the database depending on
-        the balance data saving frequency setting
+        Returns whether we should save a balance snapshot depending on whether the last snapshot
+        and last query timestamps are older than the period defined by the save frequency setting.
         """
-        last_save = self.get_last_balance_save_time(cursor)
         settings = self.get_settings(cursor)
         # Setting is saved in hours, convert to seconds here
         period = settings.balance_save_frequency * 60 * 60
         now = ts_now()
+        if last_query_ts is not None and now - last_query_ts < period:
+            return False
+
+        last_save = self.get_last_balance_save_time(cursor)
         return now - last_save > period
 
     def get_rpc_nodes(
