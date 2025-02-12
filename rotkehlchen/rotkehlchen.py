@@ -122,7 +122,7 @@ from rotkehlchen.types import (
 from rotkehlchen.usage_analytics import maybe_submit_usage_analytics
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.datadir import maybe_restructure_rotki_data_directory
-from rotkehlchen.utils.misc import combine_dicts
+from rotkehlchen.utils.misc import combine_dicts, ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.bitcoin.xpub import XpubData
@@ -997,6 +997,9 @@ class Rotkehlchen:
             requested_save_data=requested_save_data,
             save_despite_errors=save_despite_errors,
         )
+
+        if self.task_manager is not None:
+            self.task_manager.last_balance_query_ts = ts_now()
 
         balances: dict[str, dict[Asset, Balance]] = {}
         problem_free = True
