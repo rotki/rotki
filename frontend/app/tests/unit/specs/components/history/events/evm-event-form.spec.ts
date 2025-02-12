@@ -45,10 +45,7 @@ describe('evmEventForm.vue', () => {
     timestamp: 1686495083,
     location: 'ethereum',
     asset: asset.symbol,
-    balance: {
-      amount: bigNumberify(610),
-      usdValue: bigNumberify(0),
-    },
+    amount: bigNumberify(610),
     eventType: 'receive',
     eventSubtype: '',
     locationLabel: '0xfDb7EEc5eBF4c4aC7734748474123aC25C6eDCc8',
@@ -146,7 +143,7 @@ describe('evmEventForm.vue', () => {
       );
 
       expect((wrapper.find('[data-cy=amount] input').element as HTMLInputElement).value).toBe(
-        groupHeader.balance.amount.toString(),
+        groupHeader.amount.toString(),
       );
 
       expect((wrapper.find('[data-cy=sequenceIndex] input').element as HTMLInputElement).value.replace(',', '')).toBe(

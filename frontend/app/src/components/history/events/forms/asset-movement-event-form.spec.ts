@@ -34,11 +34,8 @@ describe('forms/AssetMovementEventForm.vue', () => {
   };
 
   const groupHeader: AssetMovementEvent = {
+    amount: bigNumberify(10),
     asset: asset.symbol,
-    balance: {
-      amount: bigNumberify(10),
-      usdValue: bigNumberify(40),
-    },
     entryType: HistoryEventEntryType.ASSET_MOVEMENT_EVENT,
     eventIdentifier: 'STJ6KRHJYGA',
     eventSubtype: 'remove asset',
@@ -96,7 +93,7 @@ describe('forms/AssetMovementEventForm.vue', () => {
       );
 
       expect((wrapper.find('[data-cy=amount] input').element as HTMLInputElement).value).toBe(
-        groupHeader.balance.amount.toString(),
+        groupHeader.amount.toString(),
       );
 
       expect(

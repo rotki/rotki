@@ -11,10 +11,7 @@
           "timestamp": 1680334463,
           "location": "ethereum",
           "asset": "ETH",
-          "balance": {
-            "amount": "0.0024980571",
-            "usd_value": "0"
-          },
+          "amount": "0.0024980571",
           "event_type": "spend",
           "event_subtype": "fee",
           "location_label": "0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12",
@@ -39,10 +36,7 @@
           "timestamp": 1677849167,
           "location": "ethereum",
           "asset": "ETH",
-          "balance": {
-            "amount": "0.0022708314684517",
-            "usd_value": "0"
-          },
+          "amount": "0.0022708314684517",
           "event_type": "spend",
           "event_subtype": "fee",
           "location_label": "0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12",
@@ -67,10 +61,7 @@
           "timestamp": 1677704327,
           "location": "ethereum",
           "asset": "ETH",
-          "balance": {
-            "amount": "0.000605053608852",
-            "usd_value": "0"
-          },
+          "amount": "0.000605053608852",
           "event_type": "spend",
           "event_subtype": "fee",
           "location_label": "0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12",
@@ -95,10 +86,7 @@
           "timestamp": 1677225479,
           "location": "ethereum",
           "asset": "ETH",
-          "balance": {
-            "amount": "0.0026514967733886",
-            "usd_value": "0"
-          },
+          "amount": "0.0026514967733886",
           "event_type": "spend",
           "event_subtype": "fee",
           "location_label": "0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12",
@@ -123,10 +111,7 @@
           "timestamp": 1677214547,
           "location": "ethereum",
           "asset": "ETH",
-          "balance": {
-            "amount": "0.002388246250999312",
-            "usd_value": "0"
-          },
+          "amount": "0.002388246250999312",
           "event_type": "spend",
           "event_subtype": "fee",
           "location_label": "0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12",
@@ -151,10 +136,7 @@
           "timestamp": 1675964171,
           "location": "ethereum",
           "asset": "ETH",
-          "balance": {
-            "amount": "0.000988476766795847",
-            "usd_value": "0"
-          },
+          "amount": "0.000988476766795847",
           "event_type": "spend",
           "event_subtype": "fee",
           "location_label": "0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12",
