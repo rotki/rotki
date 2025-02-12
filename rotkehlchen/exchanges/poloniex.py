@@ -6,7 +6,7 @@ import logging
 import operator
 from collections.abc import Sequence
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Final, Literal
 from urllib.parse import urlencode
 
 import gevent
@@ -14,7 +14,7 @@ import requests
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.converters import asset_from_poloniex
-from rotkehlchen.constants import ZERO
+from rotkehlchen.constants import DAY_IN_SECONDS, ZERO
 from rotkehlchen.constants.assets import A_LEND
 from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
 from rotkehlchen.db.settings import CachedSettings
@@ -61,9 +61,6 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
-
-
-PUBLIC_API_ENDPOINTS = ('/currencies',)
 
 
 def trade_from_poloniex(poloniex_trade: dict[str, Any]) -> Trade:
@@ -120,6 +117,9 @@ def trade_from_poloniex(poloniex_trade: dict[str, Any]) -> Trade:
 
 
 class Poloniex(ExchangeInterface):
+    PUBLIC_API_ENDPOINTS: Final = ('/currencies',)
+    TRADES_LIMIT: Final = 100
+    TRADES_MAX_INTERVAL: Final = DAY_IN_SECONDS * 180 * 1000
 
     def __init__(
             self,
@@ -216,7 +216,7 @@ class Poloniex(ExchangeInterface):
          - RemoteError if there is a problem with the response
          - ConnectionError if there is a problem connecting to poloniex.
         """
-        if path in PUBLIC_API_ENDPOINTS:
+        if path in self.PUBLIC_API_ENDPOINTS:
             log.debug(f'Querying poloniex for {path}')
             response = self.session.get(self.uri + path, timeout=CachedSettings().get_timeout_tuple())  # noqa: E501
         else:
@@ -308,21 +308,23 @@ class Poloniex(ExchangeInterface):
             end: Timestamp,
     ) -> list[dict[str, Any]]:
         """Returns poloniex trade history"""
-        limit = 100
         data: list[dict[str, Any]] = []
         start_ms = start * 1000
         end_ms = end * 1000
-        while True:
+        current_start_ms = start_ms
+        while current_start_ms < end_ms:
             new_data = self.api_query_list('/trades', {
-                'startTime': start_ms,
-                'endTime': end_ms,
-                'limit': limit,
+                'startTime': current_start_ms,
+                'endTime': (current_end_ms := min(current_start_ms + self.TRADES_MAX_INTERVAL, end_ms)),  # noqa: E501
+                'limit': self.TRADES_LIMIT,
             })
             results_length = len(new_data)
-            if data == [] and results_length < limit:
-                return new_data  # simple case - only one query needed
+            if results_length < self.TRADES_LIMIT:
+                data = new_data
+                current_start_ms = current_end_ms
+                continue  # simple case - only one query needed for this 180 day chunk
 
-            latest_ts_ms = start_ms
+            latest_ts_ms = current_start_ms
             # add results to data and prepare for next query
             existing_ids = {x['id'] for x in data}
             for trade in new_data:
@@ -346,11 +348,12 @@ class Poloniex(ExchangeInterface):
                     )
                     continue
 
-            if results_length < limit:
-                break  # last query has less than limit. We are done.
+            if results_length < self.TRADES_LIMIT:
+                current_start_ms = current_end_ms
+                continue  # last query has less than limit. We are done with this 180 day chunk.
 
             # otherwise we query again from the last ts seen in the last result
-            start_ms = latest_ts_ms
+            current_start_ms = latest_ts_ms
             continue
 
         return data
