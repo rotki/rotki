@@ -22,7 +22,7 @@ class TraceProfiler:
         self.datadir = datadir
         self.profiling = True
 
-        now = datetime.datetime.now(tz=datetime.UTC)
+        now = datetime.datetime.now(tz=datetime.timezone.utc)
         trace_file = f'{now:%Y%m%d_%H%M}_trace.pickle'
         trace_path = os.path.join(self.datadir, trace_file)
         self.trace_stream = open(trace_path, 'wb')  # noqa: SIM115  # we close at stop()
