@@ -214,7 +214,7 @@ export function useBlockchainAccountsApi(): UseBlockchainAccountsApiReturn {
   const addEth2Validator = async (payload: Eth2Validator): Promise<PendingTask> => {
     const response = await api.instance.put<ActionResult<PendingTask>>(
       '/blockchains/eth2/validators',
-      snakeCaseTransformer({ ...payload, asyncQuery: true }),
+      snakeCaseTransformer({ ...nonEmptyProperties(payload, true), asyncQuery: true }),
       {
         validateStatus: validAuthorizedStatus,
       },
