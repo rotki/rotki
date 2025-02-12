@@ -39,10 +39,7 @@ describe('ethBlockEventForm.vue', () => {
     timestamp: 1697442021000,
     location: 'ethereum',
     asset: asset.symbol,
-    balance: {
-      amount: bigNumberify('100'),
-      usdValue: bigNumberify('2000'),
-    },
+    amount: bigNumberify('100'),
     eventType: 'staking',
     eventSubtype: 'mev reward',
     locationLabel: '0x106B62Fdd27B748CF2Da3BacAB91a2CaBaeE6dCa',

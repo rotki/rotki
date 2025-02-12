@@ -148,7 +148,6 @@ const rules = {
 };
 
 const numericAmount = bigNumberifyFromRef(amount);
-const numericUsdValue = bigNumberifyFromRef(usdValue);
 
 const { getPayloadNotes, saveHistoryEventHandler } = useHistoryEventsForm();
 
@@ -211,8 +210,7 @@ function applyEditableData(entry: EvmHistoryEvent) {
   set(eventType, entry.eventType);
   set(eventSubtype, entry.eventSubtype || 'none');
   set(asset, entry.asset);
-  set(amount, entry.balance.amount.toFixed());
-  set(usdValue, entry.balance.usdValue.toFixed());
+  set(amount, entry.amount.toFixed());
   set(address, entry.address ?? '');
   set(locationLabel, entry.locationLabel ?? '');
   set(notes, entry.notes ?? '');
@@ -248,11 +246,8 @@ async function save(): Promise<boolean> {
 
   const payload: NewEvmHistoryEventPayload = {
     address: get(address) || null,
+    amount: get(numericAmount).isNaN() ? Zero : get(numericAmount),
     asset: get(asset),
-    balance: {
-      amount: get(numericAmount).isNaN() ? Zero : get(numericAmount),
-      usdValue: get(numericUsdValue).isNaN() || get(isInformationalEvent) ? Zero : get(numericUsdValue),
-    },
     counterparty: get(counterparty) || null,
     entryType: HistoryEventEntryType.EVM_EVENT,
     eventIdentifier: get(eventIdentifier) ?? null,

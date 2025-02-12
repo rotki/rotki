@@ -138,8 +138,7 @@ function applyEditableData(entry: EthDepositEvent) {
   set(txHash, entry.txHash);
   set(eventIdentifier, entry.eventIdentifier);
   set(datetime, convertFromTimestamp(entry.timestamp, DateFormat.DateMonthYearHourMinuteSecond, true));
-  set(amount, entry.balance.amount.toFixed());
-  set(usdValue, entry.balance.usdValue.toFixed());
+  set(amount, entry.amount.toFixed());
   set(validatorIndex, entry.validatorIndex.toString());
   set(depositor, entry.locationLabel);
   set(extraData, entry.extraData || {});

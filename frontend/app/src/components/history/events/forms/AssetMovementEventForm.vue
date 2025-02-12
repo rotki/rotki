@@ -171,12 +171,11 @@ function applyEditableData(entry: AssetMovementEvent, feeEvent?: AssetMovementEv
   set(locationLabel, entry.locationLabel ?? '');
   set(eventType, entry.eventType);
   set(asset, entry.asset ?? '');
-  set(amount, entry.balance.amount.toFixed());
-  set(usdValue, entry.balance.usdValue.toFixed());
+  set(amount, entry.amount.toFixed());
   set(notes, entry.notes ?? '');
 
   if (feeEvent) {
-    set(fee, feeEvent.balance.amount.toFixed());
+    set(fee, feeEvent.amount.toFixed());
     set(feeAsset, feeEvent.asset ?? '');
     set(hasFee, true);
   }
