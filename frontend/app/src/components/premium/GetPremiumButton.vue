@@ -2,6 +2,15 @@
 import { usePremium } from '@/composables/premium';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
 
+withDefaults(
+  defineProps<{
+    hideOnSmallScreen?: boolean;
+  }>(),
+  {
+    hideOnSmallScreen: false,
+  },
+);
+
 const { t } = useI18n();
 const premium = usePremium();
 const { isLgAndDown } = useBreakpoint();
@@ -14,7 +23,7 @@ const { isLgAndDown } = useBreakpoint();
   >
     <RuiTooltip
       :popper="{ placement: 'bottom' }"
-      :disabled="!isLgAndDown"
+      :disabled="!(isLgAndDown && hideOnSmallScreen)"
       :open-delay="400"
     >
       <template #activator>
@@ -23,8 +32,9 @@ const { isLgAndDown } = useBreakpoint();
           premium
         >
           <RuiButton
-            class="lg:!py-2 [&_span]:!hidden lg:[&_span]:!block"
+            :class="{ '[&_span]:!hidden lg:[&_span]:!block': hideOnSmallScreen }"
             :rounded="false"
+            class="lg:!py-2"
             color="primary"
             data-cy="get-premium-button"
           >
