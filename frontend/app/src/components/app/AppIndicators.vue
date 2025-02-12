@@ -31,7 +31,7 @@ const { showHelpBar, showNotesSidebar, showNotificationBar, showPinned } = store
     <BackButton />
   </div>
   <div class="flex overflow-hidden h-full items-center">
-    <GetPremiumButton />
+    <GetPremiumButton hide-on-small-screen />
     <RouterLink
       v-if="isDevelopment && isSmAndUp"
       to="/playground"
