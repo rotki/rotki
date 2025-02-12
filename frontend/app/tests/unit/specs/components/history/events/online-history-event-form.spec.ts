@@ -40,10 +40,7 @@ describe('onlineHistoryEventForm.vue', () => {
     timestamp: 1696741486185,
     location: 'kraken',
     asset: asset.symbol,
-    balance: {
-      amount: bigNumberify(10),
-      usdValue: bigNumberify(40),
-    },
+    amount: bigNumberify(10),
     eventType: 'staking',
     eventSubtype: 'reward',
     locationLabel: 'Kraken 1',
@@ -128,7 +125,7 @@ describe('onlineHistoryEventForm.vue', () => {
       );
 
       expect((wrapper.find('[data-cy=amount] input').element as HTMLInputElement).value).toBe(
-        groupHeader.balance.amount.toString(),
+        groupHeader.amount.toString(),
       );
 
       expect((wrapper.find('[data-cy=sequenceIndex] input').element as HTMLInputElement).value.replace(',', '')).toBe(

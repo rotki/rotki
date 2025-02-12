@@ -123,8 +123,7 @@ function reset() {
 function applyEditableData(entry: EthBlockEvent) {
   set(eventIdentifier, entry.eventIdentifier);
   set(datetime, convertFromTimestamp(entry.timestamp, DateFormat.DateMonthYearHourMinuteSecond, true));
-  set(amount, entry.balance.amount.toFixed());
-  set(usdValue, entry.balance.usdValue.toFixed());
+  set(amount, entry.amount.toFixed());
   set(blockNumber, entry.blockNumber.toString());
   set(validatorIndex, entry.validatorIndex.toString());
   set(feeRecipient, entry.locationLabel);

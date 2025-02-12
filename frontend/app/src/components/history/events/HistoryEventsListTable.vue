@@ -119,7 +119,7 @@ function hideEventAction(item: HistoryEventEntry): boolean {
         />
         <HistoryEventNote
           v-bind="getEventNoteAttrs(item)"
-          :amount="item.balance.amount"
+          :amount="item.amount"
           :chain="getChain(item.location)"
           :no-tx-hash="isNoTxHash(item)"
           class="break-words leading-6 md:col-span-3 lg:col-span-7"
