@@ -1306,3 +1306,28 @@ def test_balances_get_deleted_when_removing_validator(rotkehlchen_api_server: 'A
     ), json={'async_query': False})
     result = assert_proper_sync_response_with_result(response)
     assert len(result['totals']['assets']) == 0  # no assets in balances
+
+
+@pytest.mark.vcr(match_on=['beaconchain_matcher'])
+@pytest.mark.parametrize('network_mocking', [False])
+@pytest.mark.parametrize('ethereum_modules', [['eth2']])
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
+def test_balances_of_exited_validators_are_not_queried(rotkehlchen_api_server: 'APIServer') -> None:  # noqa: E501
+    """Test that the balances of exited validators are not queried at all."""
+    response = requests.put(  # add an exited validator
+        api_url_for(
+            rotkehlchen_api_server,
+            'eth2validatorsresource',
+        ), json={'validator_index': CLEAN_HISTORY_VALIDATOR3},
+    )
+    assert_proper_sync_response_with_result(response)
+
+    with patch('rotkehlchen.chain.ethereum.modules.eth2.beacon.BeaconInquirer.get_balances') as get_balances:  # noqa: E501
+        response = requests.get(api_url_for(
+            rotkehlchen_api_server,
+            'blockchainbalancesresource',
+        ))
+        result = assert_proper_sync_response_with_result(response)
+        assert get_balances.call_count == 0
+        assert result['per_account'] == {}
+        assert result['totals'] == {'assets': {}, 'liabilities': {}}
