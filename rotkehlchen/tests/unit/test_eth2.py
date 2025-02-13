@@ -163,7 +163,7 @@ def mock_query_validator_daily_stats(beaconchain: 'BeaconChain', network_mocking
 
     return patch.object(
         beaconchain.session,
-        'get',
+        'request',
         new=mock_query if network_mocking else requests.get,
     )
 

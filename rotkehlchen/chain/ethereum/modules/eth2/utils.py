@@ -1,8 +1,11 @@
 import logging
 from collections.abc import Sequence
+from typing import Literal
 
 from rotkehlchen.api.v1.types import IncludeExcludeFilterData
-from rotkehlchen.chain.ethereum.modules.eth2.constants import DEFAULT_VALIDATOR_CHUNK_SIZE
+from rotkehlchen.chain.ethereum.modules.eth2.constants import (
+    DEFAULT_BEACONCHAIN_API_VALIDATOR_CHUNK_SIZE,
+)
 from rotkehlchen.db.filtering import (
     EthStakingEventFilterQuery,
     EthWithdrawalFilterQuery,
@@ -41,18 +44,12 @@ def form_withdrawal_notes(is_exit: bool, validator_index: int, amount: FVal) -> 
 
 def calculate_query_chunks(
         indices_or_pubkeys: Sequence[int | Eth2PubKey],
-        chunk_size: int = DEFAULT_VALIDATOR_CHUNK_SIZE,
+        chunk_size: Literal[80, 100] = DEFAULT_BEACONCHAIN_API_VALIDATOR_CHUNK_SIZE,
 ) -> list[Sequence[int | Eth2PubKey]]:
-    """Create chunks of queries.
+    """Split validator queries into chunks to respect API limits.
 
-    Beaconcha.in allows up to 100 validator or public keys in one query for most calls.
-    Also has a URI length limit of ~8190, so seems no more than 80 public keys can be per call.
-
-    Beacon nodes API has as similar limit
-    https://ethereum.github.io/beacon-APIs/#/Beacon/getStateValidators
-    If you cross it they will return 414 status error.
-
-    They are creating a POST endpoint to get rid of this limit.
+    For POST endpoints: up to 100 validators per request
+    For GET endpoints: up to 80 validators per request (due to URL length limit of ~8190)
     """
     if len(indices_or_pubkeys) == 0:
         return []

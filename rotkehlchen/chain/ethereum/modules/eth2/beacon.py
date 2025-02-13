@@ -4,7 +4,7 @@ import operator
 from collections import defaultdict
 from collections.abc import Sequence
 from http import HTTPStatus
-from typing import TYPE_CHECKING, Literal, overload
+from typing import TYPE_CHECKING, Any, Literal, overload
 
 import requests
 
@@ -25,7 +25,11 @@ from rotkehlchen.utils.misc import from_gwei
 from rotkehlchen.utils.network import create_session
 from rotkehlchen.utils.serialization import jsonloads_dict
 
-from .constants import BEACONCHAIN_MAX_EPOCH, DEFAULT_VALIDATOR_CHUNK_SIZE, FREE_VALIDATORS_LIMIT
+from .constants import (
+    BEACONCHAIN_MAX_EPOCH,
+    DEFAULT_BEACONCHAIN_API_VALIDATOR_CHUNK_SIZE,
+    FREE_VALIDATORS_LIMIT,
+)
 from .structures import ValidatorDailyStats, ValidatorDetails, ValidatorID
 from .utils import calculate_query_chunks, epoch_to_timestamp
 
@@ -53,33 +57,62 @@ class BeaconNode:
         - RemoteError if we can't connect to the given rpc endpoint
         """
         self.rpc_endpoint = rpc_endpoint.rstrip('/')
-        result = self.query('eth/v1/node/version')
+        result = self.query(method='GET', endpoint='eth/v1/node/version')
         try:
-            version = result['version']  # type: ignore  # related to the overload problem below
+            version = result['version']
         except KeyError as e:
             raise RemoteError(f'Failed to parse the node version response from {rpc_endpoint}') from e  # noqa: E501
 
         log.info(f'Connected to {rpc_endpoint} with beacon node {version}')
 
     @overload
-    def query(self, querystr: Literal['/eth/v1/node/version']) -> dict:  # type: ignore  # not sure how to fix the overlapping type at overload here
+    def query(  # type: ignore  # not sure how to fix the overlapping type at overload here
+            self,
+            method: Literal['GET'],
+            endpoint: Literal['eth/v1/node/version'],
+            data: dict[str, Any] | None = None,
+    ) -> dict:
         ...
 
     @overload
-    def query(self, querystr: str) -> list[dict]:
+    def query(
+            self,
+            method: Literal['POST'],
+            endpoint: Literal['eth/v1/beacon/states/head/validators'],
+            data: dict[str, Any],
+    ) -> list[dict]:
         ...
 
-    def query(self, querystr: str) -> list[dict] | dict:
+    @overload
+    def query(
+            self,
+            method: Literal['GET', 'POST'],
+            endpoint: str,
+            data: dict[str, Any] | None = None,
+    ) -> list[dict]:
+        ...
+
+    def query(
+            self,
+            method: Literal['GET', 'POST'],
+            endpoint: str,
+            data: dict[str, Any] | None = None,
+    ) -> dict | list[dict]:
         """
         May raise:
         - RemoteError due to problems querying the node
         """
-        querystr = self.rpc_endpoint + '/' + querystr
-        log.debug(f'Querying beacon node {querystr}')
+        url = self.rpc_endpoint + '/' + endpoint
+        log.debug(f'Querying beacon node {endpoint} with {data=}')
         try:
-            response = self.session.get(querystr, timeout=CachedSettings().get_timeout_tuple())
+            response = self.session.request(
+                url=url,
+                json=data,
+                method=method,
+                timeout=CachedSettings().get_timeout_tuple(),
+            )
         except requests.exceptions.RequestException as e:
-            raise RemoteError(f'Querying beacon node {querystr} failed due to {e!s}') from e
+            raise RemoteError(f'Querying beacon node {url} failed due to {e!s}') from e
 
         if response.status_code != HTTPStatus.OK:
             raise RemoteError(
@@ -92,19 +125,19 @@ class BeaconNode:
             json_ret = jsonloads_dict(response.text)
         except json.JSONDecodeError as e:
             raise RemoteError(
-                f'Beaconchain node query {querystr} returned invalid JSON response: {response.text}',  # noqa: E501
+                f'Beaconchain node query {url} returned invalid JSON response: {response.text}',
             ) from e
 
         if (data := json_ret.get('data')) is None:
-            raise RemoteError(f'Beaconchain node query {querystr} did not contain a data key. Response: {json_ret}')  # noqa: E501
+            raise RemoteError(f'Beaconchain node query {url} did not contain a data key. Response: {json_ret}')  # noqa: E501
 
         return data
 
     def query_chunked(
             self,
             indices_or_pubkeys: Sequence[int | Eth2PubKey],
-            querystr: str,
-            chunk_size: int = DEFAULT_VALIDATOR_CHUNK_SIZE,
+            endpoint: Literal['eth/v1/beacon/states/head/validators'],
+            chunk_size: Literal[80, 100] = DEFAULT_BEACONCHAIN_API_VALIDATOR_CHUNK_SIZE,
     ) -> list[dict]:
         """
         May raise:
@@ -113,7 +146,11 @@ class BeaconNode:
         chunks = calculate_query_chunks(indices_or_pubkeys, chunk_size=chunk_size)
         data = []
         for chunk in chunks:
-            data.extend(self.query(querystr.format(chunk=','.join(str(x) for x in chunk))))
+            data.extend(self.query(
+                endpoint=endpoint,
+                method='POST',
+                data={'ids': [str(x) for x in chunk]},
+            ))
 
         return data
 
@@ -167,7 +204,7 @@ class BeaconInquirer:
             try:
                 node_results = self.node.query_chunked(
                     indices_or_pubkeys=indices_or_pubkeys,
-                    querystr='eth/v1/beacon/states/head/validators?id={chunk}',
+                    endpoint='eth/v1/beacon/states/head/validators',
                 )
             except RemoteError as e:  # log and try beaconcha.in
                 log.error(f'Querying validator balances via a beacon node failed due to {e!s}')
@@ -209,7 +246,7 @@ class BeaconInquirer:
             try:
                 node_results = self.node.query_chunked(
                     indices_or_pubkeys=indices_or_pubkeys,
-                    querystr='eth/v1/beacon/states/head/validators?id={chunk}',
+                    endpoint='eth/v1/beacon/states/head/validators',
                 )
             except RemoteError as e:  # log and try beaconcha.in
                 log.error(f'Querying validator data via a beacon node failed due to {e!s}')

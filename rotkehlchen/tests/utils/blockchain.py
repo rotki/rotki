@@ -207,7 +207,7 @@ def mock_beaconchain(
 
         return MockResponse(200, response)
 
-    return patch.object(beaconchain.session, 'get', wraps=mock_requests_get)
+    return patch.object(beaconchain.session, 'request', wraps=mock_requests_get)
 
 
 def mock_etherscan_query(

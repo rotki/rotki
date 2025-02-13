@@ -208,7 +208,7 @@ def patch_etherscan_request(etherscan, mock_data: dict[str, Any]):
 
 
 BEACONCHAIN_ETH1_CALL_RE = re.compile(r'https://beaconcha.in/api/v1/validator/eth1/(.*)')
-BEACONCHAIN_VALIDATOR_CALL_RE = re.compile(r'https://beaconcha.in/api/v1/validator/(.*)')
+BEACONCHAIN_VALIDATOR_CALL_RE = re.compile(r'https://beaconcha.in/api/v1/validator')
 BEACONCHAIN_OTHER_CALL_RE = re.compile(r'https://beaconcha.in/api/v1/validator/(.*)/(.*)')
 
 
@@ -232,9 +232,8 @@ def patch_eth2_requests(eth2, mock_data):
                 'validatorindex': entry[2],
             } for entry in validator_data]
 
-        elif (validator_match := BEACONCHAIN_VALIDATOR_CALL_RE.search(url)) is not None:
-            encoded_args = validator_match.group(1)
-            arg_len = len(encoded_args.split(','))
+        elif BEACONCHAIN_VALIDATOR_CALL_RE.search(url) is not None:
+            arg_len = len(kwargs['json']['indicesOrPubkey'].split(','))
             validator_data = mock_data.get('validator')
             assert len(validator_data) == arg_len, 'Mocked beaconchain validator response does not match arguments'  # noqa: E501
             response_data['data'] = validator_data
@@ -260,7 +259,7 @@ def patch_eth2_requests(eth2, mock_data):
         return MockResponse(200, json.dumps(response_data, separators=(',', ':')))
     return patch.object(
         eth2.beacon_inquirer.beaconchain.session,
-        'get',
+        'request',
         wraps=mock_beaconchain_query,
     )
 

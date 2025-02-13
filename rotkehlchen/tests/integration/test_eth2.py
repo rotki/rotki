@@ -448,7 +448,7 @@ def test_details_with_beacon_node(eth2: 'Eth2'):
     """
     with patch(  # create the beacon node attribute
         'rotkehlchen.chain.ethereum.modules.eth2.beacon.BeaconNode.query',
-        new=lambda *args: {'version': 1},
+        new=lambda *args, **kwargs: {'version': 1},
     ):
         eth2.beacon_inquirer.set_rpc_endpoint('http://42.42.42.42:6969/')
 
