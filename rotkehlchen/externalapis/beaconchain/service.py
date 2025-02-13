@@ -69,7 +69,8 @@ class BeaconChain(ExternalServiceWithApiKey):
             self,
             module: Literal['validator', 'execution'],
             endpoint: Literal['performance', 'eth1', 'deposits', 'produced', 'stats'] | None,
-            encoded_args: str,
+            encoded_args: str = '',
+            data: dict[str, Any] | None = None,
             extra_args: dict[str, Any] | None = None,
     ) -> list[dict[str, Any]] | dict[str, Any]:
         """
@@ -77,7 +78,7 @@ class BeaconChain(ExternalServiceWithApiKey):
         - RemoteError due to problems querying beaconcha.in API
         """
         if endpoint is None:  # for now only validator data
-            query_str = f'{self.url}{module}/{encoded_args}'
+            query_str = f'{self.url}{module}'
         elif endpoint in ('eth1', 'stats'):
             query_str = f'{self.url}{module}/{endpoint}/{encoded_args}'
         else:
@@ -96,10 +97,15 @@ class BeaconChain(ExternalServiceWithApiKey):
         retries_num = times
         timeout = (CachedSettings().get_timeout_tuple()[0], BEACONCHAIN_READ_TIMEOUT)
         backoff_in_seconds = 10
-        log.debug(f'Querying beaconcha.in API for {query_str}')
+        log.debug(f'Querying beaconcha.in API for {query_str} with {data=}')
         while True:
             try:
-                response = self.session.get(query_str, timeout=timeout)
+                response = self.session.request(
+                    method='POST' if endpoint is None and module == 'validator' else 'GET',
+                    url=query_str,
+                    json=data,
+                    timeout=timeout,
+                )
             except requests.exceptions.RequestException as e:
                 raise RemoteError(f'Querying {query_str} failed due to {e!s}') from e
 
@@ -190,7 +196,7 @@ class BeaconChain(ExternalServiceWithApiKey):
             result = self._query(
                 module=module,
                 endpoint=endpoint,
-                encoded_args=','.join(str(x) for x in chunk),
+                data={'indicesOrPubkey': ','.join(str(x) for x in chunk)},
             )
             if isinstance(result, list):
                 data.extend(result)
@@ -213,7 +219,10 @@ class BeaconChain(ExternalServiceWithApiKey):
         The offset unfortunately also starts from latest entry so no way to store
         anything to avoid extra calls at the moment.
         """
-        chunks = calculate_query_chunks(indices_or_pubkeys)
+        chunks = calculate_query_chunks(
+            indices_or_pubkeys=indices_or_pubkeys,
+            chunk_size=80,
+        )
         data: list[dict[str, Any]] = []
         for chunk in chunks:
             offset = 0
@@ -238,7 +247,7 @@ class BeaconChain(ExternalServiceWithApiKey):
         """Returns data for the given validators
 
         Essentially calls:
-        https://beaconcha.in/api/v1/docs/index.html#/Validator/get_api_v1_validator__indexOrPubkey_
+        https://beaconcha.in/api/v1/docs/index.html#/Validator/post_api_v1_validator
 
         May raise:
         - RemoteError if there is problems querying Beaconcha.in
