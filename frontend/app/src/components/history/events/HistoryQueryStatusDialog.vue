@@ -1,15 +1,11 @@
 <script setup lang="ts">
 import SuccessDisplay from '@/components/display/SuccessDisplay.vue';
 import EventDecodingStatusDetails from '@/components/history/events/EventDecodingStatusDetails.vue';
-import TransactionQueryStatusSteps from '@/components/history/events/tx/query-status/TransactionQueryStatusSteps.vue';
-import TransactionQueryStatusDetails
-  from '@/components/history/events/tx/query-status/TransactionQueryStatusDetails.vue';
-import TransactionQueryStatusCurrent
-  from '@/components/history/events/tx/query-status/TransactionQueryStatusCurrent.vue';
 import HistoryEventsQueryStatusDetails
   from '@/components/history/events/query-status/HistoryEventsQueryStatusDetails.vue';
 import HistoryEventsQueryStatusCurrent
   from '@/components/history/events/query-status/HistoryEventsQueryStatusCurrent.vue';
+import EvmTransactionQueryStatus from '@/components/history/events/tx/query-status/EvmTransactionQueryStatus.vue';
 import type { Blockchain } from '@rotki/common';
 import type {
   EvmTransactionQueryData,
@@ -100,26 +96,10 @@ const usedLoading = logicOr(loading, loadingDebounced);
             </div>
           </div>
 
-          <div>
-            <h6 class="text-body-1 font-medium">
-              {{ t('transactions.query_status.title') }}
-            </h6>
-            <TransactionQueryStatusCurrent
-              :only-chains="onlyChains"
-              class="text-subtitle-2 text-rui-text-secondary my-2"
-            />
-            <div
-              v-for="item in transactions"
-              :key="getKey(item)"
-              class="py-1"
-            >
-              <TransactionQueryStatusDetails :item="item" />
-              <TransactionQueryStatusSteps
-                :item="item"
-                :class="$style.stepper"
-              />
-            </div>
-          </div>
+          <EvmTransactionQueryStatus
+            :transactions="transactions"
+            :only-chains="onlyChains"
+          />
 
           <RuiDivider class="-my-2" />
 
@@ -176,8 +156,5 @@ const usedLoading = logicOr(loading, loadingDebounced);
   max-height: calc(90vh - 11.875rem);
   min-height: 50vh;
 
-  .stepper {
-    @apply overflow-hidden #{!important};
-  }
 }
 </style>
