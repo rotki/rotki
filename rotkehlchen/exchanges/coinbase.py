@@ -65,7 +65,9 @@ from rotkehlchen.utils.serialization import jsonloads_dict
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import AssetWithOracles
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.fval import FVal
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
+    from rotkehlchen.types import Asset, TimestampMS
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -232,6 +234,7 @@ class Coinbase(ExchangeInterface):
         # Maps advanced trade order ids to the trade currency so unneeded events can be
         # skipped when both the debit and credit part of the trade is present.
         self.advanced_orders_to_currency: dict[str, str] = {}
+        self.staking_events: set[tuple[TimestampMS, Asset, FVal]] = set()
 
     def is_legacy_key(self, api_key: str) -> bool:
         if LEGACY_RE.match(api_key):
@@ -595,6 +598,7 @@ class Coinbase(ExchangeInterface):
         account_info = self._get_active_account_info(account_data)
 
         now = ts_now()
+        self.staking_events = set()
         conversion_pairs: defaultdict[str, list[dict]] = defaultdict(list)
         for account_id, last_update_timestamp in account_info:
             with self.db.conn.read_ctx() as cursor:
@@ -711,6 +715,9 @@ class Coinbase(ExchangeInterface):
             ):
                 if (history_event := self._deserialize_history_event(transaction)) is not None:
                     history_events.append(history_event)
+
+                    if tx_type in ('staking_transfer', 'unstaking_transfer'):
+                        self.staking_events.add((history_event.timestamp, history_event.asset, history_event.balance.amount))  # noqa: E501
 
             # 'tx' represents uncategorized transactions that don't fit other specific types.
             # Used as fallback when a transaction's nature is unclear.
@@ -1104,6 +1111,11 @@ class Coinbase(ExchangeInterface):
                 notes += f' {"from coinbase earn" if tx_type == "send" else "as " + tx_type}'
 
             if tx_type in ('staking_transfer', 'unstaking_transfer'):
+                # Staking transfers appear twice (in the normal & staking accounts), so skip if
+                # we've already seen a similar event (amounts match since we force positive above).
+                if (timestamp_ms, asset, amount) in self.staking_events:
+                    return None
+
                 event_type = HistoryEventType.STAKING
                 if tx_type == 'staking_transfer':
                     event_subtype = HistoryEventSubType.DEPOSIT_ASSET
@@ -1113,6 +1125,10 @@ class Coinbase(ExchangeInterface):
                     verb = 'Unstake'
 
                 notes = f'{verb} {amount} {asset.symbol_or_name()} in Coinbase'
+            elif tx_type == 'staking_reward':
+                event_type = HistoryEventType.STAKING
+                event_subtype = HistoryEventSubType.REWARD
+                notes = f'Receive {amount} {asset.symbol_or_name()} as Coinbase staking reward'
             elif tx_type in ('incentives_shared_clawback', 'clawback'):
                 event_type, event_subtype = HistoryEventType.SPEND, HistoryEventSubType.CLAWBACK
                 notes = f'Coinbase clawback of {amount} {asset.symbol_or_name()}'
