@@ -2,13 +2,17 @@
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import HistoryEventsQueryStatusLine from '@/components/history/events/query-status/HistoryEventsQueryStatusLine.vue';
 import LocationIcon from '@/components/history/LocationIcon.vue';
+import LazyLoader from '@/components/helper/LazyLoader.vue';
 import type { HistoryEventsQueryData } from '@/types/websocket-messages';
 
 defineProps<{ item: HistoryEventsQueryData }>();
 </script>
 
 <template>
-  <div class="flex items-center">
+  <LazyLoader
+    min-height="40px"
+    class="flex items-center pl-0.5"
+  >
     <LocationIcon
       icon
       :item="item.location"
@@ -48,5 +52,5 @@ defineProps<{ item: HistoryEventsQueryData }>();
         </template>
       </i18n-t>
     </RuiTooltip>
-  </div>
+  </LazyLoader>
 </template>

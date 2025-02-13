@@ -2,6 +2,7 @@
 import { TaskType } from '@/types/task-type';
 import { useTaskStore } from '@/store/tasks';
 import { useTransactionQueryStatus } from '@/composables/history/events/query-status/tx-query-status';
+import LazyLoader from '@/components/helper/LazyLoader.vue';
 import type { EvmTransactionQueryData } from '@/types/websocket-messages';
 
 const props = defineProps<{ item: EvmTransactionQueryData }>();
@@ -45,12 +46,16 @@ function isStepInProgress(stepIndex: number): boolean {
 </script>
 
 <template>
-  <RuiStepper
+  <LazyLoader
     v-if="hasProgress"
-    class="[&_hr]:!hidden [&>div]:!py-0"
-    :class="[isSmAndDown ? 'ml-8' : 'ml-2']"
-    :steps="steps"
-    :step="getStatusData(item).index"
-    :orientation="isSmAndDown ? 'vertical' : 'horizontal'"
-  />
+    min-height="40px"
+  >
+    <RuiStepper
+      class="[&_hr]:!hidden [&>div]:!py-0"
+      :class="[isSmAndDown ? 'ml-8' : 'ml-2']"
+      :steps="steps"
+      :step="getStatusData(item).index"
+      :orientation="isSmAndDown ? 'vertical' : 'horizontal'"
+    />
+  </LazyLoader>
 </template>
