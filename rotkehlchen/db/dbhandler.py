@@ -45,6 +45,7 @@ from rotkehlchen.db.cache import (
     DBCacheDynamic,
     DBCacheStatic,
     ExtraTxArgType,
+    IndexArgType,
     LabeledLocationArgsType,
     LabeledLocationIdArgsType,
 )
@@ -752,6 +753,15 @@ class DBHandler:
     ) -> ChecksumEvmAddress | None:
         ...
 
+    @overload
+    def get_dynamic_cache(
+            self,
+            cursor: 'DBCursor',
+            name: Literal[DBCacheDynamic.LAST_PRODUCED_BLOCKS_QUERY_TS],
+            **kwargs: Unpack[IndexArgType],
+    ) -> Timestamp | None:
+        ...
+
     def get_dynamic_cache(
             self,
             cursor: 'DBCursor',
@@ -844,6 +854,16 @@ class DBHandler:
             name: Literal[DBCacheDynamic.EXTRA_INTERNAL_TX],
             value: ChecksumEvmAddress,
             **kwargs: Unpack[ExtraTxArgType],
+    ) -> None:
+        ...
+
+    @overload
+    def set_dynamic_cache(
+            self,
+            write_cursor: 'DBCursor',
+            name: Literal[DBCacheDynamic.LAST_PRODUCED_BLOCKS_QUERY_TS],
+            value: Timestamp,
+            **kwargs: Unpack[IndexArgType],
     ) -> None:
         ...
 

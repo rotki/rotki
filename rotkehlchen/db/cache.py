@@ -18,7 +18,6 @@ class DBCacheStatic(Enum):
     LAST_SPAM_ASSETS_DETECT_KEY: Final = 'last_spam_assets_detect_key'
     LAST_AUGMENTED_SPAM_ASSETS_DETECT_KEY: Final = 'last_augmented_spam_assets_detect_key'
     LAST_EVENTS_PROCESSING_TASK_TS: Final = 'last_events_processing_task_ts'
-    LAST_PRODUCED_BLOCKS_QUERY_TS: Final = 'last_produced_blocks_query_ts'
     LAST_WITHDRAWALS_EXIT_QUERY_TS: Final = 'last_withdrawals_exit_query_ts'
     LAST_MONERIUM_QUERY_TS: Final = 'last_monerium_query_ts'
     LAST_AAVE_V3_ASSETS_UPDATE: Final = 'last_aave_v3_assets_update'
@@ -43,6 +42,11 @@ class LabeledLocationIdArgsType(LabeledLocationArgsType):
 class AddressArgType(TypedDict):
     """Type of kwargs, used to get the value of `DBCacheDynamic.WITHDRAWALS_TS` and `DBCacheDynamic.WITHDRAWALS_IDX`"""  # noqa: E501
     address: ChecksumEvmAddress
+
+
+class IndexArgType(TypedDict):
+    """Type of kwargs, used to get the value of `DBCacheDynamic.LAST_PRODUCED_BLOCKS_QUERY_TS`"""
+    index: int
 
 
 class ExtraTxArgType(TypedDict):
@@ -70,6 +74,7 @@ class DBCacheDynamic(Enum):
     WITHDRAWALS_TS: Final = 'ethwithdrawalsts_{address}', _deserialize_timestamp_from_str
     WITHDRAWALS_IDX: Final = 'ethwithdrawalsidx_{address}', _deserialize_int_from_str
     EXTRA_INTERNAL_TX: Final = f'{EXTRAINTERNALTXPREFIX}_{{chain_id}}_{{receiver}}_{{tx_hash}}', string_to_evm_address  # noqa: E501
+    LAST_PRODUCED_BLOCKS_QUERY_TS: Final = 'last_produced_blocks_query_ts_{index}', _deserialize_timestamp_from_str  # noqa: E501
 
     @overload
     def get_db_key(self, **kwargs: Unpack[LabeledLocationArgsType]) -> str:
@@ -85,6 +90,10 @@ class DBCacheDynamic(Enum):
 
     @overload
     def get_db_key(self, **kwargs: Unpack[ExtraTxArgType]) -> str:
+        ...
+
+    @overload
+    def get_db_key(self, **kwargs: Unpack[IndexArgType]) -> str:
         ...
 
     def get_db_key(self, **kwargs: Any) -> str:
