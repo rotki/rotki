@@ -80,6 +80,16 @@ def fixture_setup_historical_data(rotkehlchen_api_server: 'APIServer') -> None:
             asset=A_BTC,
             amount=FVal('3'),
         ),
+        HistoryEvent(  # Staking deposit/withdrawals should also be ignored
+            event_identifier='btc_spend_1',
+            sequence_index=4,
+            timestamp=ts_sec_to_ms(Timestamp(START_TS + DAY_IN_SECONDS * 2)),
+            event_type=HistoryEventType.STAKING,
+            event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+            location=Location.BLOCKCHAIN,
+            asset=A_BTC,
+            balance=Balance(amount=FVal('1')),
+        ),
     ]
     with db.user_write() as write_cursor:
         DBHistoryEvents(database=db).add_history_events(
@@ -277,7 +287,7 @@ def test_get_historical_asset_amounts_over_time_with_negative_amount(
     assert len(result['times']) == len(result['values'])
     assert len(result['times']) == 2
 
-    assert result['last_event_identifier'] == [5, events[0].event_identifier]
+    assert result['last_event_identifier'] == [6, events[0].event_identifier]
     assert result['times'][0] == START_TS  # Initial timestamp
     assert result['times'][1] == START_TS + DAY_IN_SECONDS * 2  # First spend
     assert result['values'][0] == '2'  # Initial balance
@@ -335,7 +345,7 @@ def test_get_historical_assets_in_collection_amounts_over_time(
     assert len(result['times']) == len(result['values'])
     assert len(result['times']) == 2
 
-    assert result['last_event_identifier'] == [5, events[0].event_identifier]
+    assert result['last_event_identifier'] == [6, events[0].event_identifier]
     assert result['times'][0] == START_TS  # Initial timestamp
     assert result['times'][1] == START_TS + DAY_IN_SECONDS * 2  # First spend
     assert result['values'][0] == '2'  # Initial balance
