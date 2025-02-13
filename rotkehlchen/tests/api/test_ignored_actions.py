@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING
 import pytest
 import requests
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.constants.assets import A_DAI, A_ETH
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryEvent
@@ -156,7 +155,7 @@ def test_ignore_history_events_in_accountant(rotkehlchen_api_server: 'APIServer'
             location=Location.BLOCKCHAIN,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.NONE,
-            balance=Balance(FVal(1000)),
+            amount=FVal(1000),
             asset=A_ETH,
         ), HistoryEvent(
             event_identifier='b',
@@ -165,7 +164,7 @@ def test_ignore_history_events_in_accountant(rotkehlchen_api_server: 'APIServer'
             location=Location.BLOCKCHAIN,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.NONE,
-            balance=Balance(FVal(5)),
+            amount=FVal(5),
             asset=A_DAI,
             notes='boo',
         ),

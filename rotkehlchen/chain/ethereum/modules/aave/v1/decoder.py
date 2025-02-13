@@ -46,14 +46,14 @@ class Aavev1Decoder(DecoderInterface):
 
         deposit_event = receive_event = None
         for event in context.decoded_events:
-            if event.event_type == HistoryEventType.SPEND and event.location_label == user_address and amount == event.balance.amount and reserve_asset == event.asset:  # noqa: E501
+            if event.event_type == HistoryEventType.SPEND and event.location_label == user_address and amount == event.amount and reserve_asset == event.asset:  # noqa: E501
                 # find the deposit transfer (can also be an ETH internal transfer)
                 event.event_type = HistoryEventType.DEPOSIT
                 event.event_subtype = HistoryEventSubType.DEPOSIT_FOR_WRAPPED
                 event.counterparty = CPT_AAVE_V1
                 event.notes = f'Deposit {amount} {reserve_asset.symbol} to aave-v1 from {event.location_label}'  # noqa: E501
                 deposit_event = event
-            elif event.event_type == HistoryEventType.RECEIVE and event.location_label == user_address and amount == event.balance.amount and atoken == event.asset:  # noqa: E501
+            elif event.event_type == HistoryEventType.RECEIVE and event.location_label == user_address and amount == event.amount and atoken == event.asset:  # noqa: E501
                 # find the receive aToken transfer
                 event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
                 event.counterparty = CPT_AAVE_V1
@@ -62,7 +62,7 @@ class Aavev1Decoder(DecoderInterface):
             elif event.event_type == HistoryEventType.RECEIVE and event.location_label == user_address and event.address == ZERO_ADDRESS and event.asset == atoken:  # noqa: E501
                 event.event_subtype = HistoryEventSubType.REWARD
                 event.counterparty = CPT_AAVE_V1
-                event.notes = f'Gain {event.balance.amount} {atoken.symbol} from aave-v1 as interest'  # noqa: E501
+                event.notes = f'Gain {event.amount} {atoken.symbol} from aave-v1 as interest'
 
         maybe_reshuffle_events(
             ordered_events=[deposit_event, receive_event],
@@ -82,13 +82,13 @@ class Aavev1Decoder(DecoderInterface):
 
         receive_event = return_event = interest_event = None
         for event in context.decoded_events:
-            if event.event_type == HistoryEventType.RECEIVE and event.location_label == user_address and amount == event.balance.amount and reserve_asset == event.asset:  # noqa: E501
+            if event.event_type == HistoryEventType.RECEIVE and event.location_label == user_address and amount == event.amount and reserve_asset == event.asset:  # noqa: E501
                 event.event_type = HistoryEventType.WITHDRAWAL
                 event.event_subtype = HistoryEventSubType.REDEEM_WRAPPED
                 event.counterparty = CPT_AAVE_V1
                 event.notes = f'Withdraw {amount} {reserve_asset.symbol} from aave-v1'
                 receive_event = event
-            elif event.event_type == HistoryEventType.SPEND and event.location_label == user_address and amount == event.balance.amount and atoken == event.asset:  # noqa: E501
+            elif event.event_type == HistoryEventType.SPEND and event.location_label == user_address and amount == event.amount and atoken == event.asset:  # noqa: E501
                 # find the redeem aToken transfer
                 event.event_type = HistoryEventType.SPEND
                 event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
@@ -98,7 +98,7 @@ class Aavev1Decoder(DecoderInterface):
             elif event.event_type == HistoryEventType.RECEIVE and event.location_label == user_address and event.address == ZERO_ADDRESS and event.asset == atoken:  # noqa: E501
                 event.event_subtype = HistoryEventSubType.REWARD
                 event.counterparty = CPT_AAVE_V1
-                event.notes = f'Gain {event.balance.amount} {atoken.symbol} from aave-v1 as interest'  # noqa: E501
+                event.notes = f'Gain {event.amount} {atoken.symbol} from aave-v1 as interest'
                 interest_event = event
 
         maybe_reshuffle_events(
@@ -119,17 +119,17 @@ class Aavev1Decoder(DecoderInterface):
             if event.event_type == HistoryEventType.SPEND and asset_normalized_value(
                 amount=int.from_bytes(context.tx_log.data[32:64]),  # debt amount
                 asset=asset,
-            ) == event.balance.amount:
+            ) == event.amount:
                 # we are transferring the debt token
                 event.event_subtype = HistoryEventSubType.PAYBACK_DEBT
-                event.notes = f'Payback {event.balance.amount} {asset.symbol} for an aave-v1 position'  # noqa: E501
+                event.notes = f'Payback {event.amount} {asset.symbol} for an aave-v1 position'
                 event.counterparty = CPT_AAVE_V1
                 event.address = context.tx_log.address
                 event.extra_data = {'is_liquidation': True}  # adding this field to the decoded event to differentiate paybacks happening in liquidations.  # noqa: E501
             elif event.event_type == HistoryEventType.RECEIVE:
                 event.event_subtype = HistoryEventSubType.GENERATE_DEBT
                 event.counterparty = CPT_AAVE_V1
-                event.notes = f'Interest payment of {event.balance.amount} {asset.symbol} for aave-v1 position'  # noqa: E501
+                event.notes = f'Interest payment of {event.amount} {asset.symbol} for aave-v1 position'  # noqa: E501
                 event.address = context.tx_log.address
 
         return DEFAULT_DECODING_OUTPUT

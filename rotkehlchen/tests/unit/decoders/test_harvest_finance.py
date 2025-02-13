@@ -1,6 +1,5 @@
 import pytest
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.airdrops import AIRDROP_IDENTIFIER_KEY
 from rotkehlchen.chain.ethereum.modules.harvest_finance.constants import (
@@ -33,7 +32,7 @@ def test_claim_grain(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(FVal(gas_str)),
+            amount=FVal(gas_str),
             location_label=ethereum_accounts[0],
             notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
@@ -45,7 +44,7 @@ def test_claim_grain(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.AIRDROP,
             asset=EvmToken(GRAIN_TOKEN_ID),
-            balance=Balance(FVal(amount_str)),
+            amount=FVal(amount_str),
             location_label=ethereum_accounts[0],
             notes=f'Claim {amount_str} GRAIN from the harvest finance hack compensation airdrop',
             counterparty=CPT_HARVEST_FINANCE,

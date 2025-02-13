@@ -1,6 +1,5 @@
 import pytest
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.modules.votium.constants import CPT_VOTIUM, VOTIUM_CONTRACTS
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
@@ -31,7 +30,7 @@ def test_votium_claim_1(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=FVal(gas)),
+            amount=FVal(gas),
             location_label=user_address,
             notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
@@ -44,7 +43,7 @@ def test_votium_claim_1(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.REWARD,
             asset=EvmToken('eip155:1/erc20:0x3432B6A60D23Ca0dFCa7761B7ab56459D9C964D0'),
-            balance=Balance(amount=FVal(amount)),
+            amount=FVal(amount),
             location_label=user_address,
             notes=f'Receive {amount} FXS from votium bribe',
             counterparty=CPT_VOTIUM,
@@ -72,7 +71,7 @@ def test_votium_claim_2(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=FVal(gas)),
+            amount=FVal(gas),
             location_label=user_address,
             notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
@@ -85,7 +84,7 @@ def test_votium_claim_2(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.REWARD,
             asset=A_GNO,
-            balance=Balance(amount=FVal(amount)),
+            amount=FVal(amount),
             location_label=user_address,
             notes=f'Receive {amount} GNO from votium bribe',
             counterparty=CPT_VOTIUM,

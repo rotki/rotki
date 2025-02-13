@@ -1,6 +1,5 @@
 import pytest
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.modules.lockedgno.constants import (
     CPT_LOCKEDGNO,
@@ -34,7 +33,7 @@ def test_lock_gno(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=FVal('0.009134740180642554')),
+            amount=FVal('0.009134740180642554'),
             location_label=user_address,
             notes='Burn 0.009134740180642554 ETH for gas',
             counterparty=CPT_GAS,
@@ -47,7 +46,7 @@ def test_lock_gno(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
             asset=A_GNO,
-            balance=Balance(amount=FVal(amount_str)),
+            amount=FVal(amount_str),
             location_label=user_address,
             notes=f'Deposit {amount_str} GNO to the locking contract',
             counterparty=CPT_LOCKEDGNO,
@@ -60,7 +59,7 @@ def test_lock_gno(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
             asset=EvmToken('eip155:1/erc20:0x4f8AD938eBA0CD19155a835f617317a6E788c868'),
-            balance=Balance(amount=FVal(amount_str)),
+            amount=FVal(amount_str),
             location_label=user_address,
             notes=f'Receive {amount_str} locked GNO from the locking contract',
             counterparty=CPT_LOCKEDGNO,
@@ -88,7 +87,7 @@ def test_unlock_gno(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=FVal('0.003240606189784113')),
+            amount=FVal('0.003240606189784113'),
             location_label=user_address,
             notes='Burn 0.003240606189784113 ETH for gas',
             counterparty=CPT_GAS,
@@ -101,7 +100,7 @@ def test_unlock_gno(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
             asset=A_GNO,
-            balance=Balance(amount=FVal(amount_str)),
+            amount=FVal(amount_str),
             location_label=user_address,
             notes=f'Receive {amount_str} GNO back from the locking contract',
             counterparty=CPT_LOCKEDGNO,
@@ -114,7 +113,7 @@ def test_unlock_gno(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.RETURN_WRAPPED,
             asset=EvmToken('eip155:1/erc20:0x4f8AD938eBA0CD19155a835f617317a6E788c868'),
-            balance=Balance(amount=FVal(amount_str)),
+            amount=FVal(amount_str),
             location_label=user_address,
             notes=f'Return {amount_str} locked GNO to the locking contract',
             counterparty=CPT_LOCKEDGNO,

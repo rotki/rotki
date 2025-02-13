@@ -657,7 +657,7 @@ def mock_history_processing(
         assert tx_events[0].event_type == HistoryEventType.SPEND
         assert tx_events[0].event_subtype == HistoryEventSubType.FEE
         assert tx_events[0].counterparty == CPT_GAS
-        assert tx_events[0].balance.amount == gas_in_eth
+        assert tx_events[0].amount == gas_in_eth
         assert tx_events[1].location_label == ETH_ADDRESS1
         assert tx_events[1].event_type == HistoryEventType.DEPLOY
         assert tx_events[1].event_subtype == HistoryEventSubType.SPEND
@@ -666,23 +666,23 @@ def mock_history_processing(
         assert tx_events[2].event_type == HistoryEventType.SPEND
         assert tx_events[2].event_subtype == HistoryEventSubType.FEE
         assert tx_events[2].counterparty == CPT_GAS
-        assert tx_events[2].balance.amount == gas_in_eth
+        assert tx_events[2].amount == gas_in_eth
         assert tx_events[3].location_label == ETH_ADDRESS2
         assert tx_events[3].event_type == HistoryEventType.TRANSFER
         assert tx_events[3].event_subtype == HistoryEventSubType.NONE
         assert tx_events[3].address == ETH_ADDRESS1
-        assert tx_events[3].balance.amount == FVal('4.00003E-11')
+        assert tx_events[3].amount == FVal('4.00003E-11')
 
         assert tx_events[4].location_label == ETH_ADDRESS3
         assert tx_events[4].event_type == HistoryEventType.SPEND
         assert tx_events[4].event_subtype == HistoryEventSubType.FEE
         assert tx_events[4].counterparty == CPT_GAS
-        assert tx_events[4].balance.amount == gas_in_eth
+        assert tx_events[4].amount == gas_in_eth
         assert tx_events[5].location_label == ETH_ADDRESS3
         assert tx_events[5].event_type == HistoryEventType.TRANSFER
         assert tx_events[5].event_subtype == HistoryEventSubType.NONE
         assert tx_events[5].address == ETH_ADDRESS1
-        assert tx_events[5].balance.amount == FVal('5.005203E-10')
+        assert tx_events[5].amount == FVal('5.005203E-10')
 
         return 1  # need to return a report id
 

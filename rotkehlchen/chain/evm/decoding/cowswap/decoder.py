@@ -4,7 +4,6 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Final, Literal, Optional, cast
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value, token_normalized_value
 from rotkehlchen.chain.evm.constants import ETH_SPECIAL_ADDRESS
@@ -110,7 +109,7 @@ class CowswapCommonDecoder(DecoderInterface, abc.ABC):
                 ):
                     event.event_type = HistoryEventType.DEPOSIT
                     event.event_subtype = HistoryEventSubType.PLACE_ORDER
-                    event.notes = f'Deposit {event.balance.amount} {self.native_asset.symbol} to swap it for {target_token.symbol} in cowswap'  # noqa: E501
+                    event.notes = f'Deposit {event.amount} {self.native_asset.symbol} to swap it for {target_token.symbol} in cowswap'  # noqa: E501
                     event.counterparty = CPT_COWSWAP
 
         elif context.tx_log.topics[0] in (INVALIDATE_NATIVE_ASSET_ORDER_SIGNATURE, REFUND_NATIVE_ASSET_ORDER_SIGNATURE):  # noqa: E501
@@ -124,10 +123,10 @@ class CowswapCommonDecoder(DecoderInterface, abc.ABC):
                     event.counterparty = CPT_COWSWAP
                     if context.tx_log.topics[0] == INVALIDATE_NATIVE_ASSET_ORDER_SIGNATURE:
                         event.event_subtype = HistoryEventSubType.CANCEL_ORDER
-                        event.notes = f'Invalidate an order that intended to swap {event.balance.amount} {self.native_asset.symbol} in cowswap'  # noqa: E501
+                        event.notes = f'Invalidate an order that intended to swap {event.amount} {self.native_asset.symbol} in cowswap'  # noqa: E501
                     else:  # Refund
                         event.event_subtype = HistoryEventSubType.REFUND
-                        event.notes = f'Refund {event.balance.amount} unused {self.native_asset.symbol} from cowswap'  # noqa: E501
+                        event.notes = f'Refund {event.amount} unused {self.native_asset.symbol} from cowswap'  # noqa: E501
 
         return DEFAULT_DECODING_OUTPUT
 
@@ -221,7 +220,7 @@ class CowswapCommonDecoder(DecoderInterface, abc.ABC):
                     log.error(f'Could not find direction of event {event}. Should never happen')
                     continue
 
-                related_transfer_events[direction, event.asset, event.balance.amount] = event
+                related_transfer_events[direction, event.asset, event.amount] = event
 
         trades_events: list[tuple[EvmEvent, EvmEvent, EvmEvent | None, CowswapSwapData]] = []
         for swap_data in all_swap_data:
@@ -245,7 +244,7 @@ class CowswapCommonDecoder(DecoderInterface, abc.ABC):
                     event_type=HistoryEventType.SPEND,  # Is customized later
                     event_subtype=HistoryEventSubType.NONE,
                     asset=swap_data.from_asset,
-                    balance=Balance(amount=swap_data.from_amount),
+                    amount=swap_data.from_amount,
                     location_label=receive_event.location_label,
                     notes=None,  # Is set later
                     counterparty=CPT_COWSWAP,
@@ -274,7 +273,7 @@ class CowswapCommonDecoder(DecoderInterface, abc.ABC):
                     event_type=HistoryEventType.TRADE,
                     event_subtype=HistoryEventSubType.FEE,
                     asset=swap_data.from_asset,
-                    balance=Balance(amount=swap_data.fee_amount),
+                    amount=swap_data.fee_amount,
                     location_label=receive_event.location_label,
                     notes=f'Spend {swap_data.fee_amount} {swap_data.from_asset.symbol_or_name()} as a cowswap fee',  # noqa: E501
                     counterparty=CPT_COWSWAP,
@@ -317,15 +316,15 @@ class CowswapCommonDecoder(DecoderInterface, abc.ABC):
             decoded_events=decoded_events,
         )
         for spend_event, receive_event, fee_event, swap_data in relevant_trades:
-            spend_event.balance = Balance(amount=swap_data.from_amount)
+            spend_event.amount = swap_data.from_amount
             spend_event.counterparty = CPT_COWSWAP
             receive_event.counterparty = CPT_COWSWAP
             spend_event.event_type = HistoryEventType.TRADE
             receive_event.event_type = HistoryEventType.TRADE
             spend_event.event_subtype = HistoryEventSubType.SPEND
             receive_event.event_subtype = HistoryEventSubType.RECEIVE
-            spend_event.notes = f'Swap {spend_event.balance.amount} {spend_event.asset.symbol_or_name()} in a cowswap {swap_data.order_type} order'  # noqa: E501
-            receive_event.notes = f'Receive {receive_event.balance.amount} {receive_event.asset.symbol_or_name()} as the result of a cowswap {swap_data.order_type} order'  # noqa: E501
+            spend_event.notes = f'Swap {spend_event.amount} {spend_event.asset.symbol_or_name()} in a cowswap {swap_data.order_type} order'  # noqa: E501
+            receive_event.notes = f'Receive {receive_event.amount} {receive_event.asset.symbol_or_name()} as the result of a cowswap {swap_data.order_type} order'  # noqa: E501
             maybe_reshuffle_events(
                 ordered_events=[spend_event, receive_event, fee_event],
                 events_list=decoded_events,
@@ -393,10 +392,10 @@ class CowswapCommonDecoderWithVCOW(CowswapCommonDecoder):
         for event in decoded_events:
             if event.event_type == HistoryEventType.SPEND and event.event_subtype == HistoryEventSubType.RETURN_WRAPPED and event.counterparty == CPT_COWSWAP and event.asset == self.vcow_token:  # noqa: E501
                 out_event = event
-                event.notes = f'Exchange {event.balance.amount} vested vCOW for COW'
+                event.notes = f'Exchange {event.amount} vested vCOW for COW'
             elif event.event_type == HistoryEventType.WITHDRAWAL and event.event_subtype == HistoryEventSubType.REDEEM_WRAPPED and event.counterparty == CPT_COWSWAP and event.asset == self.cow_token:  # noqa: E501
                 in_event = event
-                event.notes = f'Claim {event.balance.amount} COW from vesting tokens'
+                event.notes = f'Claim {event.amount} COW from vesting tokens'
 
         if out_event and in_event:
             maybe_reshuffle_events(
@@ -427,7 +426,7 @@ class CowswapCommonDecoderWithVCOW(CowswapCommonDecoder):
             ):
                 event.event_type = HistoryEventType.TRADE
                 event.event_subtype = HistoryEventSubType.SPEND
-                event.notes = f'Pay {event.balance.amount} {event.asset.symbol_or_name()} to claim vCOW'  # noqa: E501
+                event.notes = f'Pay {event.amount} {event.asset.symbol_or_name()} to claim vCOW'
                 claim_has_payment = True
                 out_event = event
                 continue

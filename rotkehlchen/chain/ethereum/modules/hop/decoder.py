@@ -62,7 +62,7 @@ class HopDecoder(HopCommonDecoder, GovernableDecoderInterface):
         amount = self._get_bridge_asset_amount(amount_raw=amount_raw, identifier=bridge.identifier)
 
         for event in context.decoded_events:
-            if event.event_type == HistoryEventType.SPEND and event.address == context.tx_log.address and event.asset.identifier == bridge.identifier and event.balance.amount == amount:  # noqa: E501
+            if event.event_type == HistoryEventType.SPEND and event.address == context.tx_log.address and event.asset.identifier == bridge.identifier and event.amount == amount:  # noqa: E501
                 event.event_type = HistoryEventType.DEPOSIT
                 event.event_subtype = HistoryEventSubType.BRIDGE
                 event.counterparty = CPT_HOP

@@ -2,7 +2,6 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.modules.blur.constants import (
     BLUR_IDENTIFIER,
@@ -37,7 +36,7 @@ def test_blur_claim_and_stake(ethereum_inquirer: 'EthereumInquirer', ethereum_ac
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=FVal(gas_fees)),
+            amount=FVal(gas_fees),
             location_label=ethereum_accounts[0],
             notes=f'Burn {gas_fees} ETH for gas',
             counterparty=CPT_GAS,
@@ -49,7 +48,7 @@ def test_blur_claim_and_stake(ethereum_inquirer: 'EthereumInquirer', ethereum_ac
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.AIRDROP,
             asset=Asset(BLUR_IDENTIFIER),
-            balance=Balance(amount=FVal(stake_amount)),
+            amount=FVal(stake_amount),
             location_label=ethereum_accounts[0],
             notes=f'Claim {stake_amount} BLUR from Blur airdrop',
             counterparty=CPT_BLUR,
@@ -62,7 +61,7 @@ def test_blur_claim_and_stake(ethereum_inquirer: 'EthereumInquirer', ethereum_ac
             event_type=HistoryEventType.STAKING,
             event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
             asset=Asset(BLUR_IDENTIFIER),
-            balance=Balance(amount=FVal(stake_amount)),
+            amount=FVal(stake_amount),
             location_label=ethereum_accounts[0],
             notes=f'Stake {stake_amount} BLUR',
             counterparty=CPT_BLUR,
@@ -88,7 +87,7 @@ def test_blur_stake(ethereum_inquirer: 'EthereumInquirer', ethereum_accounts: li
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=FVal(gas_fees)),
+            amount=FVal(gas_fees),
             location_label=ethereum_accounts[0],
             notes=f'Burn {gas_fees} ETH for gas',
             counterparty=CPT_GAS,
@@ -100,7 +99,7 @@ def test_blur_stake(ethereum_inquirer: 'EthereumInquirer', ethereum_accounts: li
             event_type=HistoryEventType.STAKING,
             event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
             asset=Asset(BLUR_IDENTIFIER),
-            balance=Balance(amount=FVal(stake_amount)),
+            amount=FVal(stake_amount),
             location_label=ethereum_accounts[0],
             notes=f'Stake {stake_amount} BLUR',
             counterparty=CPT_BLUR,
@@ -125,7 +124,7 @@ def test_blur_unstake(ethereum_inquirer: 'EthereumInquirer', ethereum_accounts: 
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=FVal(gas_fees)),
+            amount=FVal(gas_fees),
             location_label=ethereum_accounts[0],
             notes=f'Burn {gas_fees} ETH for gas',
             tx_hash=tx_hash,
@@ -137,7 +136,7 @@ def test_blur_unstake(ethereum_inquirer: 'EthereumInquirer', ethereum_accounts: 
             event_type=HistoryEventType.STAKING,
             event_subtype=HistoryEventSubType.REMOVE_ASSET,
             asset=Asset(BLUR_IDENTIFIER),
-            balance=Balance(amount=FVal(unstake_amount)),
+            amount=FVal(unstake_amount),
             location_label=ethereum_accounts[0],
             notes=f'Unstake {unstake_amount} BLUR',
             tx_hash=tx_hash,

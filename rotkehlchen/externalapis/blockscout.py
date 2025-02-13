@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING, Any, Literal, overload
 import gevent
 import requests
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings
@@ -252,11 +251,11 @@ class Blockscout(ExternalServiceWithApiKey):
                     withdrawals.append(EthWithdrawalEvent(
                         validator_index=validator_index,
                         timestamp=ts_sec_to_ms(iso8601ts_to_timestamp(entry['timestamp'])),
-                        balance=Balance(amount=from_wei(deserialize_fval(
+                        amount=from_wei(deserialize_fval(
                             value=entry['amount'],
                             name='withdrawal amount',
                             location='blockscout staking withdrawals query',
-                        ))),
+                        )),
                         withdrawal_address=address,
                         is_exit=False,  # is figured out later in a periodic task
                     ))

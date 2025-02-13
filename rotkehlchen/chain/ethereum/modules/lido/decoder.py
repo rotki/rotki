@@ -58,7 +58,7 @@ class LidoDecoder(DecoderInterface):
             if (
                 event.address == self.steth_evm_address and
                 event.asset == A_ETH and
-                event.balance.amount == collateral_amount and
+                event.amount == collateral_amount and
                 event.event_type == HistoryEventType.SPEND and
                 event.location_label == sender
             ):

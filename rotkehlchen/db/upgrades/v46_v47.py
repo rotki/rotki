@@ -267,4 +267,9 @@ def upgrade_v46_to_v47(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
             (json.dumps(oracles), 'historical_price_oracles'),
         )
 
+    @progress_step(description='Remove old accounting rules')
+    def _drop_usd_value_column(write_cursor: 'DBCursor') -> None:
+        """Drops the usd value column from history events"""
+        write_cursor.execute('ALTER TABLE history_events DROP COLUMN usd_value;')
+
     perform_userdb_upgrade_steps(db=db, progress_handler=progress_handler, should_vacuum=True)

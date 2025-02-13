@@ -4,7 +4,6 @@ from collections.abc import Callable, Mapping
 from enum import StrEnum, auto
 from typing import TYPE_CHECKING, Any, Final, Literal, overload
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.abi import decode_event_data_abi_str
 from rotkehlchen.chain.ethereum.airdrops import AIRDROP_IDENTIFIER_KEY
@@ -18,6 +17,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     DecodingOutput,
 )
+from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
@@ -196,7 +196,7 @@ class MerkleClaimDecoderInterface(DecoderInterface, ABC):
                 event.event_type == HistoryEventType.RECEIVE and
                 event.location_label == claiming_address and
                 event.asset.identifier == token_id and
-                event.balance.amount == claimed_amount
+                event.amount == claimed_amount
             ):
                 event.event_type = HistoryEventType.RECEIVE
                 event.event_subtype = HistoryEventSubType.AIRDROP
@@ -299,7 +299,7 @@ class GovernableDecoderInterface(DecoderInterface, ABC):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.GOVERNANCE,
             asset=A_ETH,
-            balance=Balance(),
+            amount=FVal(0),
             location_label=voter_address,
             notes=notes,
             address=context.tx_log.address,
@@ -370,7 +370,7 @@ class GovernableDecoderInterface(DecoderInterface, ABC):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.GOVERNANCE,
             asset=A_ETH,
-            balance=Balance(),
+            amount=ZERO,
             location_label=context.transaction.from_address,
             notes=notes,
             address=context.tx_log.address,
@@ -568,7 +568,7 @@ class CommonGrantsDecoderMixin(DecoderInterface, ABC):
                     event.event_type == HistoryEventType.RECEIVE and
                     event.event_subtype == HistoryEventSubType.NONE and
                     event.asset == asset and
-                    event.balance.amount == amount and
+                    event.amount == amount and
                     event.location_label == claimee
             ):
                 event.event_subtype = HistoryEventSubType.DONATE

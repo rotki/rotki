@@ -212,7 +212,7 @@ class EnsDecoder(GovernableDecoderInterface, EnsCommonDecoder):
         for event_idx, event in enumerate(context.decoded_events):
             if event.event_type == HistoryEventType.RECEIVE and event.asset == A_ETH and event.address in {ENS_REGISTRAR_CONTROLLER_1, ENS_REGISTRAR_CONTROLLER_2}:  # noqa: E501
                 # remove ETH refund event
-                refund_from_registrar = event.balance.amount
+                refund_from_registrar = event.amount
                 to_remove_indices.append(event_idx)
 
             # Find the ETH transfer event which should be before the registered event
@@ -220,10 +220,10 @@ class EnsDecoder(GovernableDecoderInterface, EnsCommonDecoder):
                 expected_amount = amount
                 if refund_from_registrar:
                     expected_amount = amount + refund_from_registrar
-                if event.balance.amount != expected_amount:
+                if event.amount != expected_amount:
                     return DEFAULT_DECODING_OUTPUT  # registration amount did not match
 
-                event.balance.amount = amount  # adjust the spent amount too, after refund
+                event.amount = amount  # adjust the spent amount too, after refund
                 event.event_type = HistoryEventType.TRADE
                 event.event_subtype = HistoryEventSubType.SPEND
                 event.counterparty = CPT_ENS
@@ -266,7 +266,7 @@ class EnsDecoder(GovernableDecoderInterface, EnsCommonDecoder):
         for idx, event in enumerate(context.decoded_events):
             if event.event_type == HistoryEventType.RECEIVE and event.event_subtype == HistoryEventSubType.NONE and event.asset == A_ETH and event.address == context.tx_log.address:  # noqa: E501
                 refund_event_idx = idx
-                refund_amount = event.balance.amount
+                refund_amount = event.amount
 
                 if context.tx_log.address == ENS_REGISTRAR_CONTROLLER_1:  # old controller
                     # old controller logs actual cost after refund
@@ -274,12 +274,12 @@ class EnsDecoder(GovernableDecoderInterface, EnsCommonDecoder):
                 # else new controller logs the msg.value, which is the brutto value
 
             # Find the transfer event which should be before the name renewed event
-            if event.event_type == HistoryEventType.SPEND and event.asset == A_ETH and event.balance.amount == checked_cost and event.address == context.tx_log.address:  # noqa: E501
-                event.balance.amount -= refund_amount  # get correct amount spent
+            if event.event_type == HistoryEventType.SPEND and event.asset == A_ETH and event.amount == checked_cost and event.address == context.tx_log.address:  # noqa: E501
+                event.amount -= refund_amount  # get correct amount spent
                 event.event_type = HistoryEventType.RENEW
                 event.event_subtype = HistoryEventSubType.NONE
                 event.counterparty = CPT_ENS
-                event.notes = f'Renew ENS name {fullname} for {event.balance.amount} ETH until {self.timestamp_to_date(expires)}'  # noqa: E501
+                event.notes = f'Renew ENS name {fullname} for {event.amount} ETH until {self.timestamp_to_date(expires)}'  # noqa: E501
                 event.extra_data = {'name': fullname, 'expires': expires}
 
         if refund_event_idx is not None:

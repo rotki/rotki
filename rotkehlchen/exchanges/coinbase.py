@@ -1133,7 +1133,7 @@ class Coinbase(ExchangeInterface):
                 event_type=event_type,
                 event_subtype=event_subtype,
                 asset=asset,
-                balance=Balance(amount),
+                amount=amount,
                 location_label=self.name,
                 notes=notes,
             )

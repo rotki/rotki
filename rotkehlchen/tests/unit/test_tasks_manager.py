@@ -7,7 +7,6 @@ import gevent.lock
 import pytest
 from freezegun import freeze_time
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import EvmToken, UnderlyingToken
 from rotkehlchen.chain.bitcoin.hdkey import HDKey
 from rotkehlchen.chain.bitcoin.xpub import XpubData
@@ -18,7 +17,7 @@ from rotkehlchen.chain.evm.decoding.spark.constants import CPT_SPARK
 from rotkehlchen.chain.evm.decoding.thegraph.constants import CPT_THEGRAPH
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode, string_to_evm_address
 from rotkehlchen.constants.assets import A_COMP, A_DAI, A_GRT, A_LUSD, A_USDC, A_USDT
-from rotkehlchen.constants.misc import ONE
+from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.constants.timing import DATA_UPDATES_REFRESH, DAY_IN_SECONDS, WEEK_IN_SECONDS
 from rotkehlchen.db.cache import DBCacheDynamic, DBCacheStatic
 from rotkehlchen.db.calendar import CalendarEntry, CalendarFilterQuery, DBCalendar
@@ -360,7 +359,7 @@ def test_update_snapshot_balances(rotkehlchen_instance: 'Rotkehlchen'):
                     event_type=HistoryEventType.RECEIVE,
                     event_subtype=HistoryEventSubType.NONE,
                     asset=A_USDT,
-                    balance=Balance(ONE),
+                    amount=ONE,
                     location_label=accounts[0],
                     tx_hash=make_evm_tx_hash(),
                 ), EvmEvent(  # USDT was received before last_balance_save
@@ -371,7 +370,7 @@ def test_update_snapshot_balances(rotkehlchen_instance: 'Rotkehlchen'):
                     event_type=HistoryEventType.WITHDRAWAL,
                     event_subtype=HistoryEventSubType.REMOVE_ASSET,
                     asset=A_USDT,
-                    balance=Balance(),
+                    amount=ZERO,
                     location_label=accounts[0],
                     tx_hash=make_evm_tx_hash(),
                 ), EvmEvent(  # is a new receive event of this token after last_balance_save
@@ -382,7 +381,7 @@ def test_update_snapshot_balances(rotkehlchen_instance: 'Rotkehlchen'):
                     event_type=HistoryEventType.TRADE,
                     event_subtype=HistoryEventSubType.RECEIVE,
                     asset=A_DAI,
-                    balance=Balance(ONE),
+                    amount=ONE,
                     location_label=accounts[1],
                     tx_hash=make_evm_tx_hash(),
                 ), EvmEvent(  # is a new receive event of this token after last_balance_save
@@ -393,7 +392,7 @@ def test_update_snapshot_balances(rotkehlchen_instance: 'Rotkehlchen'):
                     event_type=HistoryEventType.TRADE,
                     event_subtype=HistoryEventSubType.RECEIVE,
                     asset=A_USDC,
-                    balance=Balance(ONE),
+                    amount=ONE,
                     location_label=accounts[2],
                     tx_hash=make_evm_tx_hash(),
                 ),
@@ -1207,7 +1206,7 @@ def test_graph_query_query_delegations(
                     event_type=HistoryEventType.INFORMATIONAL,
                     event_subtype=HistoryEventSubType.APPROVE,
                     asset=A_GRT,
-                    balance=Balance(),
+                    amount=ZERO,
                     location_label=user_address,
                     notes='Approve contract transfer',
                     counterparty=CPT_THEGRAPH,

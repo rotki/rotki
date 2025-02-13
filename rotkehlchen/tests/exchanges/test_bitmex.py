@@ -3,7 +3,6 @@ from unittest.mock import patch
 
 import pytest
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_BTC, A_USDT
@@ -85,7 +84,7 @@ def test_bitmex_api_withdrawals_deposit_and_query_after_subquery(
         event_type=HistoryEventType.DEPOSIT,
         timestamp=TimestampMS(1536486278000),
         asset=A_BTC,
-        balance=Balance(FVal('0.46966992')),
+        amount=FVal('0.46966992'),
     ), AssetMovement(
         identifier=3,
         event_identifier='e0f2ca47943d1769d568c8a7a5348ffdbd0ed11a98e3444eebc3370f1fc1f52d',
@@ -94,7 +93,7 @@ def test_bitmex_api_withdrawals_deposit_and_query_after_subquery(
         event_type=HistoryEventType.WITHDRAWAL,
         timestamp=TimestampMS(1536536707000),
         asset=A_BTC,
-        balance=Balance(FVal('0.007')),
+        amount=FVal('0.007'),
         extra_data={'address': 'mv4rnyY3Su5gjcDNzbMLKBQkBicCtHUtFB'},
     ), AssetMovement(
         identifier=4,
@@ -104,7 +103,7 @@ def test_bitmex_api_withdrawals_deposit_and_query_after_subquery(
         event_type=HistoryEventType.WITHDRAWAL,
         timestamp=TimestampMS(1536536707000),
         asset=A_BTC,
-        balance=Balance(FVal('0.003')),
+        amount=FVal('0.003'),
         is_fee=True,
     ), AssetMovement(
         identifier=2,
@@ -114,7 +113,7 @@ def test_bitmex_api_withdrawals_deposit_and_query_after_subquery(
         event_type=HistoryEventType.DEPOSIT,
         timestamp=TimestampMS(1536563759000),
         asset=A_BTC,
-        balance=Balance(FVal('0.38474377')),
+        amount=FVal('0.38474377'),
     ), AssetMovement(
         identifier=1,
         event_identifier='d4307315ea24915446578e8f8015a5ea95e30194769a62ce8f92f43c2b876bac',
@@ -123,7 +122,7 @@ def test_bitmex_api_withdrawals_deposit_and_query_after_subquery(
         event_type=HistoryEventType.DEPOSIT,
         timestamp=TimestampMS(1537014656000),
         asset=A_BTC,
-        balance=Balance(FVal(0.16960386)),
+        amount=FVal(0.16960386),
     )]
     assert result == expected_result
     # also make sure that asset movements contain Asset and not strings

@@ -3,7 +3,6 @@ from unittest.mock import patch
 
 import pytest
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ADA, A_BEST, A_ETH, A_EUR, A_LTC, A_USDT
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
@@ -235,7 +234,7 @@ def test_asset_movements(database, mock_bitpanda):
         event_type=HistoryEventType.WITHDRAWAL,
         timestamp=TimestampMS(1597072246000),
         asset=A_ETH,
-        balance=Balance(FVal('1.55165264')),
+        amount=FVal('1.55165264'),
         extra_data={
             'address': '0x54dca71a34f498e3053cba240895e51da5f89d24',
             'transaction_id': '0xe45c1befc0968d2dab0374bc8d1aa3e193136dc769596d42e4d3274475bc7c60',
@@ -248,7 +247,7 @@ def test_asset_movements(database, mock_bitpanda):
         event_type=HistoryEventType.WITHDRAWAL,
         timestamp=TimestampMS(1597072246000),
         asset=A_ETH,
-        balance=Balance(FVal('0.00762000')),
+        amount=FVal('0.00762000'),
         is_fee=True,
     ), AssetMovement(
         identifier=1,
@@ -258,7 +257,7 @@ def test_asset_movements(database, mock_bitpanda):
         event_type=HistoryEventType.DEPOSIT,
         timestamp=TimestampMS(1631088548000),
         asset=A_EUR,
-        balance=Balance(FVal('25.00')),
+        amount=FVal('25.00'),
     ), AssetMovement(
         identifier=2,
         event_identifier='7db139d1cf52facb8f9043e2fe73e924c3b58d54b27f38574d9a73e74a1c5bd1',
@@ -267,7 +266,7 @@ def test_asset_movements(database, mock_bitpanda):
         event_type=HistoryEventType.WITHDRAWAL,
         timestamp=TimestampMS(1631888548000),
         asset=A_EUR,
-        balance=Balance(FVal('50.00')),
+        amount=FVal('50.00'),
     ), AssetMovement(
         identifier=3,
         event_identifier='7db139d1cf52facb8f9043e2fe73e924c3b58d54b27f38574d9a73e74a1c5bd1',
@@ -276,7 +275,7 @@ def test_asset_movements(database, mock_bitpanda):
         event_type=HistoryEventType.WITHDRAWAL,
         timestamp=TimestampMS(1631888548000),
         asset=A_EUR,
-        balance=Balance(FVal('0.01')),
+        amount=FVal('0.01'),
         is_fee=True,
     ), AssetMovement(
         identifier=4,
@@ -286,7 +285,7 @@ def test_asset_movements(database, mock_bitpanda):
         event_type=HistoryEventType.DEPOSIT,
         timestamp=TimestampMS(1633849272000),
         asset=A_USDT,
-        balance=Balance(FVal('6608.34105600')),
+        amount=FVal('6608.34105600'),
         extra_data={
             'address': '0x54dca71a34f498e3053cba240895e51da5f89d24',
             'transaction_id': '0x28cb2ba8ac14bdedb0ad021662b631952ce2514f1e3ff7870882ebe8a8c1b03f',

@@ -2,7 +2,6 @@
 from collections.abc import Sequence
 from typing import Any
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.ethereum.modules.gitcoin.constants import GITCOIN_GRANTS_OLD1
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -36,7 +35,7 @@ KEYS_IN_ENTRY_TYPE: dict[HistoryBaseEntryType, set[str]] = {
 
 
 def pop_multiple_keys(serialized_event: dict[str, Any], entry_type: HistoryBaseEntryType):
-    valid_keys = KEYS_IN_ENTRY_TYPE[entry_type].union({'entry_type', 'timestamp', 'balance', 'location_label', 'identifier'})  # noqa: E501
+    valid_keys = KEYS_IN_ENTRY_TYPE[entry_type].union({'entry_type', 'timestamp', 'amount', 'location_label', 'identifier'})  # noqa: E501
     event_keys = set(serialized_event.keys())
     for field in event_keys:
         if field not in valid_keys:
@@ -80,7 +79,7 @@ def predefined_events_to_insert() -> list['HistoryBaseEntry']:
         location=Location.ETHEREUM,
         event_type=HistoryEventType.INFORMATIONAL,
         asset=A_DAI,
-        balance=Balance(amount=FVal('1.542'), usd_value=FVal('1.675')),
+        amount=FVal('1.542'),
         location_label='0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',
         notes=f'Set DAI spending approval of 0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12 by {GITCOIN_GRANTS_OLD1} to 1',  # noqa: E501
         event_subtype=HistoryEventSubType.APPROVE,
@@ -92,7 +91,7 @@ def predefined_events_to_insert() -> list['HistoryBaseEntry']:
         location=Location.ETHEREUM,
         event_type=HistoryEventType.INFORMATIONAL,
         asset=A_USDT,
-        balance=Balance(amount=FVal('1.542'), usd_value=FVal('1.675')),
+        amount=FVal('1.542'),
         location_label='0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',
         notes=f'Set USDT spending approval of 0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12 by {GITCOIN_GRANTS_OLD1} to 1',  # noqa: E501
         event_subtype=HistoryEventSubType.APPROVE,
@@ -104,7 +103,7 @@ def predefined_events_to_insert() -> list['HistoryBaseEntry']:
         location=Location.ETHEREUM,
         event_type=HistoryEventType.SPEND,
         asset=A_ETH,
-        balance=Balance(amount=FVal('0.0001'), usd_value=FVal('5.31')),
+        amount=FVal('0.0001'),
         location_label='0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',
         notes='Burn 0.0001 ETH for gas',
         event_subtype=HistoryEventSubType.FEE,
@@ -118,7 +117,7 @@ def predefined_events_to_insert() -> list['HistoryBaseEntry']:
         event_type=HistoryEventType.DEPOSIT,
         event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
         asset=A_ETH,
-        balance=Balance(amount=FVal('0.0001'), usd_value=FVal('5.31')),
+        amount=FVal('0.0001'),
         location_label='0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',
         notes='Deposit something somewhere',
         counterparty='somewhere',
@@ -129,7 +128,7 @@ def predefined_events_to_insert() -> list['HistoryBaseEntry']:
         location=Location.ETHEREUM,
         event_type=HistoryEventType.RECEIVE,
         asset=A_ETH,
-        balance=Balance(amount=ONE, usd_value=FVal('1525.11')),
+        amount=ONE,
         location_label='0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',
         notes='Receive 1 ETH from 0x0EbD2E2130b73107d0C45fF2E16c93E7e2e10e3a',
         event_subtype=HistoryEventSubType.NONE,
@@ -141,17 +140,14 @@ def predefined_events_to_insert() -> list['HistoryBaseEntry']:
         location=Location.KRAKEN,
         location_label='Kraken',
         asset=A_ETH2,
-        balance=Balance(
-            amount=FVal('0.0000400780'),
-            usd_value=FVal('0.051645312360'),
-        ),
+        amount=FVal('0.0000400780'),
         event_type=HistoryEventType.STAKING,
         event_subtype=HistoryEventSubType.REWARD,
         notes='Staking reward from kraken',
     ), EthWithdrawalEvent(
         validator_index=295601,
         timestamp=TimestampMS(1681392599000),
-        balance=Balance(amount=FVal('1.631508097')),
+        amount=FVal('1.631508097'),
         withdrawal_address=string_to_evm_address('0xB9D7934878B5FB9610B3fE8A5e441e8fad7E293f'),
         is_exit=False,
     ), EthDepositEvent(
@@ -159,12 +155,12 @@ def predefined_events_to_insert() -> list['HistoryBaseEntry']:
         validator_index=295601,
         sequence_index=1,
         timestamp=TimestampMS(1691379127000),
-        balance=Balance(FVal(32)),
+        amount=FVal(32),
         depositor=string_to_evm_address('0x0EbD2E2130b73107d0C45fF2E16c93E7e2e10e3a'),
     ), EthBlockEvent(
         validator_index=295601,
         timestamp=TimestampMS(1691693607000),
-        balance=Balance(FVal('0.126419309459217215')),
+        amount=FVal('0.126419309459217215'),
         fee_recipient=string_to_evm_address('0x690B9A9E9aa1C9dB991C7721a92d351Db4FaC990'),
         fee_recipient_tracked=True,
         block_number=15824493,

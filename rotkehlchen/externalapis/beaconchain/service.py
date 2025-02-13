@@ -8,7 +8,6 @@ import gevent
 import requests
 from gevent.lock import Semaphore
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.ethereum.modules.eth2.structures import ValidatorDailyStats, ValidatorID
 from rotkehlchen.chain.ethereum.modules.eth2.utils import calculate_query_chunks
 from rotkehlchen.constants.misc import ZERO
@@ -312,7 +311,7 @@ class BeaconChain(ExternalServiceWithApiKey):
                 block_event = EthBlockEvent(
                     validator_index=proposer_index,
                     timestamp=timestamp,
-                    balance=Balance(amount=block_reward),
+                    amount=block_reward,
                     fee_recipient=fee_recipient,
                     fee_recipient_tracked=fee_recipient in ethereum_tracked_accounts,
                     block_number=blocknumber,
@@ -327,7 +326,7 @@ class BeaconChain(ExternalServiceWithApiKey):
                         mev_event = EthBlockEvent(
                             validator_index=proposer_index,
                             timestamp=timestamp,
-                            balance=Balance(amount=mev_reward),
+                            amount=mev_reward,
                             fee_recipient=producer_fee_recipient,
                             fee_recipient_tracked=producer_fee_recipient in ethereum_tracked_accounts,  # noqa: E501
                             block_number=blocknumber,

@@ -4,7 +4,6 @@ from uuid import uuid4
 import gevent
 import pytest
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -21,7 +20,7 @@ def make_history_event():
         timestamp=TimestampMS(randint(1000, 16433333000)),
         location=Location.BLOCKCHAIN,
         asset=A_ETH,
-        balance=Balance(amount=FVal(randint(1, 1642323))),
+        amount=FVal(randint(1, 1642323)),
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.NONE,
         notes='asdsad',

@@ -402,7 +402,7 @@ def test_deserialize_asset_movement_deposit(mock_woo: 'Woo') -> None:
         event_type=HistoryEventType.DEPOSIT,
         timestamp=TimestampMS(1579399877000),
         asset=A_ETH,
-        balance=Balance(FVal(1000)),
+        amount=FVal(1000),
         unique_id='202029292829292',
         extra_data={
             'address': '0x70fd25717f769c7f9a46b319f0f9103c0d887af0',
@@ -439,7 +439,7 @@ def test_deserialize_asset_movement_withdrawal(mock_woo: 'Woo') -> None:
         event_type=HistoryEventType.WITHDRAWAL,
         timestamp=TimestampMS(1686677756000),
         asset=A_SOL,
-        balance=Balance(FVal(12.71)),
+        amount=FVal(12.71),
         unique_id='23061317355600291',
         extra_data={
             'address': 'D2egh1gRCHNuDLWhdcxPVEVvmiMB6KGMKAgQm6vR1diL',

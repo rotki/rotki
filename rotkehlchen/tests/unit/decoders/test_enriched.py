@@ -1,6 +1,5 @@
 import pytest
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.airdrops import AIRDROP_IDENTIFIER_KEY
 from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
@@ -8,7 +7,6 @@ from rotkehlchen.chain.ethereum.modules.airdrops.constants import CPT_ONEINCH
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.fval import FVal
@@ -96,10 +94,7 @@ def test_1inch_claim(database, ethereum_inquirer, eth_transactions):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(
-                amount=FVal(0.00393701451),
-                usd_value=ZERO,
-            ),
+            amount=FVal(0.00393701451),
             location_label='0xc931De6d845846E332a52D045072E3feF540Bd5d',
             notes='Burn 0.00393701451 ETH for gas',
             counterparty=CPT_GAS,
@@ -113,7 +108,7 @@ def test_1inch_claim(database, ethereum_inquirer, eth_transactions):
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.AIRDROP,
             asset=EvmToken('eip155:1/erc20:0x111111111117dC0aa78b770fA6A738034120C302'),
-            balance=Balance(amount=FVal('609.397099685988397871'), usd_value=ZERO),
+            amount=FVal('609.397099685988397871'),
             location_label='0xc931De6d845846E332a52D045072E3feF540Bd5d',
             notes='Claim 609.397099685988397871 1INCH from the 1INCH airdrop',
             counterparty=CPT_ONEINCH,
@@ -192,10 +187,7 @@ def test_gitcoin_claim(database, ethereum_inquirer, eth_transactions):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(
-                amount=FVal(0.00393701451),
-                usd_value=ZERO,
-            ),
+            amount=FVal(0.00393701451),
             location_label='0xdF5CEF8Dc0CEA8DC200F09280915d1CD7a016BDe',
             notes='Burn 0.00393701451 ETH for gas',
             counterparty=CPT_GAS,
@@ -207,7 +199,7 @@ def test_gitcoin_claim(database, ethereum_inquirer, eth_transactions):
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.AIRDROP,
             asset=EvmToken('eip155:1/erc20:0xDe30da39c46104798bB5aA3fe8B9e0e1F348163F'),
-            balance=Balance(amount=FVal('271.5872'), usd_value=ZERO),
+            amount=FVal('271.5872'),
             location_label='0xdF5CEF8Dc0CEA8DC200F09280915d1CD7a016BDe',
             notes='Claim 271.5872 GTC from the GTC airdrop',
             counterparty=None,

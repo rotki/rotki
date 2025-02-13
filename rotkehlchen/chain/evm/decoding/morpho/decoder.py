@@ -2,7 +2,6 @@ import logging
 from collections.abc import Callable, Mapping
 from typing import TYPE_CHECKING, Any, Final
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.ethereum.utils import should_update_protocol_cache, token_normalized_value
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface, ReloadableDecoderMixin
@@ -148,11 +147,11 @@ class MorphoCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
                     event.asset == underlying_token or
                     (event.asset == A_ETH and underlying_token == self.weth)  # WETH vaults can have an ETH send event  # noqa: E501
                 ) and
-                event.balance.amount == assets_amount
+                event.amount == assets_amount
             ):
                 event.event_type = HistoryEventType.DEPOSIT
                 event.event_subtype = HistoryEventSubType.DEPOSIT_FOR_WRAPPED
-                event.notes = f'Deposit {event.balance.amount} {event.asset.resolve_to_asset_with_symbol().symbol} in a Morpho vault'  # noqa: E501
+                event.notes = f'Deposit {event.amount} {event.asset.resolve_to_asset_with_symbol().symbol} in a Morpho vault'  # noqa: E501
                 event.counterparty = CPT_MORPHO
                 event.extra_data = {'vault': vault_token.evm_address}  # Used when querying balances  # noqa: E501
                 spend_event = event
@@ -161,10 +160,10 @@ class MorphoCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
                 event.event_subtype == HistoryEventSubType.NONE and
                 event.address == ZERO_ADDRESS and
                 event.asset == vault_token and
-                event.balance.amount == shares_amount
+                event.amount == shares_amount
             ):
                 event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
-                event.notes = f'Receive {event.balance.amount} {event.asset.resolve_to_asset_with_symbol().symbol} after deposit in a Morpho vault'  # noqa: E501
+                event.notes = f'Receive {event.amount} {event.asset.resolve_to_asset_with_symbol().symbol} after deposit in a Morpho vault'  # noqa: E501
                 event.counterparty = CPT_MORPHO
                 receive_event = event
 
@@ -178,7 +177,7 @@ class MorphoCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
                 event_type=HistoryEventType.DEPOSIT,
                 event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
                 asset=underlying_token,
-                balance=Balance(amount=assets_amount),
+                amount=assets_amount,
                 location_label=receive_event.location_label,
                 notes=f'Deposit {assets_amount} {underlying_token.symbol} in a Morpho vault',
                 counterparty=CPT_MORPHO,
@@ -206,10 +205,10 @@ class MorphoCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
                 event.event_subtype == HistoryEventSubType.NONE and
                 event.address == ZERO_ADDRESS and
                 event.asset == vault_token and
-                event.balance.amount == shares_amount
+                event.amount == shares_amount
             ):
                 event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
-                event.notes = f'Return {event.balance.amount} {event.asset.resolve_to_asset_with_symbol().symbol} to a Morpho vault'  # noqa: E501
+                event.notes = f'Return {event.amount} {event.asset.resolve_to_asset_with_symbol().symbol} to a Morpho vault'  # noqa: E501
                 event.counterparty = CPT_MORPHO
                 spend_event = event
             elif (
@@ -219,11 +218,11 @@ class MorphoCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
                     event.asset == underlying_token or
                     (event.asset == A_ETH and underlying_token == self.weth)  # WETH vaults can have an ETH receive event  # noqa: E501
                 ) and
-                event.balance.amount == assets_amount
+                event.amount == assets_amount
             ):
                 event.event_type = HistoryEventType.WITHDRAWAL
                 event.event_subtype = HistoryEventSubType.REDEEM_WRAPPED
-                event.notes = f'Withdraw {event.balance.amount} {event.asset.resolve_to_asset_with_symbol().symbol} from a Morpho vault'  # noqa: E501
+                event.notes = f'Withdraw {event.amount} {event.asset.resolve_to_asset_with_symbol().symbol} from a Morpho vault'  # noqa: E501
                 event.counterparty = CPT_MORPHO
                 receive_event = event
 
@@ -237,7 +236,7 @@ class MorphoCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
                 event_type=HistoryEventType.WITHDRAWAL,
                 event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
                 asset=underlying_token,
-                balance=Balance(amount=assets_amount),
+                amount=assets_amount,
                 location_label=spend_event.location_label,
                 notes=f'Withdraw {assets_amount} {underlying_token.symbol} from a Morpho vault',
                 counterparty=CPT_MORPHO,
@@ -283,7 +282,7 @@ class MorphoCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
             ):
                 event.event_subtype = HistoryEventSubType.REWARD
                 event.counterparty = CPT_MORPHO
-                event.notes = f'Claim {event.balance.amount} {event.asset.resolve_to_asset_with_symbol().symbol} from Morpho'  # noqa: E501
+                event.notes = f'Claim {event.amount} {event.asset.resolve_to_asset_with_symbol().symbol} from Morpho'  # noqa: E501
                 break
         else:
             log.error(f'Failed to find Morpho reward claim event in {context.transaction}')

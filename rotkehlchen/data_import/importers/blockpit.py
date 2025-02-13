@@ -3,7 +3,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal
 from uuid import uuid4
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.assets.converters import LOCATION_TO_ASSET_MAPPING
 from rotkehlchen.assets.utils import symbol_to_asset_or_token
@@ -120,7 +119,7 @@ class BlockpitImporter(BaseExchangeImporter):
                 event_type=movement_type,
                 timestamp=ts_sec_to_ms(timestamp),
                 asset=asset_resolver(csv_row[f'{direction} Asset']),
-                balance=Balance(deserialize_asset_amount(csv_row[f'{direction} Amount'])),
+                amount=deserialize_asset_amount(csv_row[f'{direction} Amount']),
             )]
             if fee_amount != ZERO:
                 events.append(AssetMovement(
@@ -129,7 +128,7 @@ class BlockpitImporter(BaseExchangeImporter):
                     event_type=movement_type,
                     timestamp=ts_sec_to_ms(timestamp),
                     asset=fee_currency,
-                    balance=Balance(fee_amount),
+                    amount=fee_amount,
                     is_fee=True,
                 ))
             self.add_history_events(write_cursor, events)
@@ -175,7 +174,7 @@ class BlockpitImporter(BaseExchangeImporter):
                 event_type=event_type,
                 event_subtype=event_subtype,
                 asset=asset,
-                balance=Balance(amount),
+                amount=amount,
                 notes=f'{event_description} {amount} {asset.symbol} in {location!s}',
             )
 
@@ -188,7 +187,7 @@ class BlockpitImporter(BaseExchangeImporter):
                     event_type=HistoryEventType.SPEND,
                     event_subtype=HistoryEventSubType.FEE,
                     asset=fee_currency,
-                    balance=Balance(fee_amount),
+                    amount=fee_amount,
                     notes=f'Fee of {fee_amount} {fee_currency.symbol} in {location!s}',
                 )
                 self.add_history_events(write_cursor, [fee_event, event])

@@ -206,7 +206,7 @@ def _process_conversions(raw_data: dict[str, Any]) -> list[HistoryEvent]:
             location=Location.COINBASEPRIME,
             event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
-            balance=Balance(amount=converted_amount),
+            amount=converted_amount,
             asset=from_asset,
             notes=f'Swap {converted_amount} {from_asset.symbol} in Coinbase Prime',
         ), HistoryEvent(
@@ -216,7 +216,7 @@ def _process_conversions(raw_data: dict[str, Any]) -> list[HistoryEvent]:
             location=Location.COINBASEPRIME,
             event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
-            balance=Balance(amount=converted_amount),
+            amount=converted_amount,
             asset=to_asset,
             notes=f'Receive {converted_amount} {to_asset.symbol} from a Coinbase Prime conversion',
         ),
@@ -234,7 +234,7 @@ def _process_conversions(raw_data: dict[str, Any]) -> list[HistoryEvent]:
             location=Location.COINBASEPRIME,
             event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.FEE,
-            balance=Balance(amount=fee_amount),
+            amount=fee_amount,
             asset=(fee_asset := asset_from_coinbase(raw_data['fee_symbol'])),
             notes=f'Spend {fee_amount} {fee_asset.symbol} as Coinbase Prime conversion fee',
         ))
@@ -258,11 +258,11 @@ def _process_reward(raw_data: dict[str, Any]) -> list[HistoryEvent]:
         location=Location.COINBASEPRIME,
         event_type=HistoryEventType.STAKING,
         event_subtype=HistoryEventSubType.REWARD,
-        balance=Balance(amount=(amount := deserialize_fval(
+        amount=(amount := deserialize_fval(
             value=raw_data['amount'],
             name='history_event reward',
             location='coinbase prime',
-        ))),
+        )),
         asset=(asset := asset_from_coinbase(raw_data['symbol'])),
         notes=f'Receive {amount} {asset.symbol} as Coinbase Prime staking reward',
     )]

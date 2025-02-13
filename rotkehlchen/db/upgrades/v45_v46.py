@@ -133,8 +133,8 @@ def upgrade_v45_to_v46(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
             event.location.serialize_for_db(),
             event.location_label,
             event.asset.identifier,
-            str(event.balance.amount),
-            str(event.balance.usd_value),
+            str(event.amount),
+            '0',  # usd value will be removed in a later upgrade
             event.notes,
             event.event_type.serialize(),
             event.event_subtype.serialize(),

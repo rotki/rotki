@@ -95,22 +95,22 @@ class OpenOceanDecoder(DecoderInterface, ABC):
                 (event.event_type == HistoryEventType.SPEND and event.event_subtype == HistoryEventSubType.NONE) or  # noqa: E501
                 (event.event_type == HistoryEventType.TRADE and event.event_subtype == HistoryEventSubType.SPEND)) and  # noqa: E501
                 (spend_asset is None or event.asset == spend_asset) and
-                (spend_amount is None or event.balance.amount == spend_amount)
+                (spend_amount is None or event.amount == spend_amount)
             ):
                 event.event_type = HistoryEventType.TRADE
                 event.event_subtype = HistoryEventSubType.SPEND
-                event.notes = f'Swap {event.balance.amount} {event.asset.resolve_to_asset_with_symbol().symbol} in {OPENOCEAN_LABEL}'  # noqa: E501
+                event.notes = f'Swap {event.amount} {event.asset.resolve_to_asset_with_symbol().symbol} in {OPENOCEAN_LABEL}'  # noqa: E501
                 event.counterparty = CPT_OPENOCEAN
                 out_event = event
             elif ((
                 (event.event_type == HistoryEventType.RECEIVE and event.event_subtype == HistoryEventSubType.NONE) or  # noqa: E501
                 (event.event_type == HistoryEventType.TRADE and event.event_subtype == HistoryEventSubType.RECEIVE)) and  # noqa: E501
                 (receive_asset is None or event.asset == receive_asset) and
-                (receive_amount is None or event.balance.amount == receive_amount)
+                (receive_amount is None or event.amount == receive_amount)
             ):
                 event.event_type = HistoryEventType.TRADE
                 event.event_subtype = HistoryEventSubType.RECEIVE
-                event.notes = f'Receive {event.balance.amount} {event.asset.resolve_to_asset_with_symbol().symbol} from {OPENOCEAN_LABEL} swap'  # noqa: E501
+                event.notes = f'Receive {event.amount} {event.asset.resolve_to_asset_with_symbol().symbol} from {OPENOCEAN_LABEL} swap'  # noqa: E501
                 event.counterparty = CPT_OPENOCEAN
                 in_event = event
 

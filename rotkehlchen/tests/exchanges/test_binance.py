@@ -934,7 +934,6 @@ def test_binance_query_lending_interests_history(
 
     with (
         patch.object(binance.session, 'request', side_effect=mock_my_lendings),
-        patch('rotkehlchen.exchanges.binance.PriceHistorian', price_historian),
         binance.db.conn.cursor() as cursor,
     ):
         assert binance.query_lending_interests_history(

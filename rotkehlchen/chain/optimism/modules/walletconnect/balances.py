@@ -47,9 +47,9 @@ class WalletconnectBalances(ProtocolWithBalance):
             amount = ZERO
             for event in events:
                 if event.event_subtype == HistoryEventSubType.DEPOSIT_ASSET and event.asset == wct_token:  # noqa: E501
-                    amount += event.balance.amount
+                    amount += event.amount
                 elif event.event_subtype == HistoryEventSubType.REMOVE_ASSET and event.asset == wct_token:  # noqa: E501
-                    amount -= event.balance.amount
+                    amount -= event.amount
 
             if amount <= ZERO:
                 continue

@@ -1,7 +1,6 @@
 import logging
 from typing import Any
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
@@ -48,7 +47,7 @@ class GolemDecoder(DecoderInterface):
             event_type=HistoryEventType.MIGRATE,
             event_subtype=HistoryEventSubType.SPEND,
             asset=Asset('eip155:1/erc20:0xa74476443119A942dE498590Fe1f2454d7D4aC0d'),
-            balance=Balance(amount=amount),
+            amount=amount,
             location_label=from_address,
             notes=f'Migrate {amount} GNT to GLM',
             counterparty=CPT_GOLEM,
@@ -57,7 +56,7 @@ class GolemDecoder(DecoderInterface):
         # now find the GLM in event, edit it and push it after the out event
         in_event = None
         for event in context.decoded_events:
-            if event.event_type == HistoryEventType.RECEIVE and event.asset == A_GLM and event.balance.amount == amount and event.location_label == from_address:  # noqa: E501
+            if event.event_type == HistoryEventType.RECEIVE and event.asset == A_GLM and event.amount == amount and event.location_label == from_address:  # noqa: E501
                 event.event_type = HistoryEventType.MIGRATE
                 event.event_subtype = HistoryEventSubType.RECEIVE
                 event.notes = f'Receive {amount} GLM from GNT->GLM migration'

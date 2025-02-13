@@ -1,7 +1,6 @@
 
 import pytest
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.db.dbhandler import DBHandler
@@ -49,7 +48,7 @@ def test_query_withdrawals(eth_blockscout: Blockscout, database: DBHandler):
                 identifier=183,
                 validator_index=747239,
                 timestamp=TimestampMS(1689555347000),
-                balance=Balance(amount=FVal('0.003935554')),
+                amount=FVal('0.003935554'),
                 withdrawal_address=address,
                 is_exit=False,
             )
@@ -59,7 +58,7 @@ def test_query_withdrawals(eth_blockscout: Blockscout, database: DBHandler):
                 identifier=174,
                 validator_index=747236,
                 timestamp=TimestampMS(1690528667000),
-                balance=Balance(amount=FVal('0.014550492')),
+                amount=FVal('0.014550492'),
                 withdrawal_address=address,
                 is_exit=False,
             )
@@ -69,7 +68,7 @@ def test_query_withdrawals(eth_blockscout: Blockscout, database: DBHandler):
                 identifier=61,
                 validator_index=747239,
                 timestamp=TimestampMS(1695990095000),
-                balance=Balance(amount=FVal('0.016267026')),
+                amount=FVal('0.016267026'),
                 withdrawal_address=address,
                 is_exit=False,
             )
@@ -79,8 +78,8 @@ def test_query_withdrawals(eth_blockscout: Blockscout, database: DBHandler):
         assert x.validator_index in (763318, 763317, 763316, 763315, 763314, 747239, 747238, 747237, 747236, 747235, 747234)  # noqa: E501
         assert x.is_exit_or_blocknumber is False
         assert x.asset == A_ETH
-        assert isinstance(x.balance.amount, FVal)
-        assert FVal('0.003') <= x.balance.amount <= FVal('0.09')
+        assert isinstance(x.amount, FVal)
+        assert FVal('0.003') <= x.amount <= FVal('0.09')
 
 
 @pytest.mark.vcr

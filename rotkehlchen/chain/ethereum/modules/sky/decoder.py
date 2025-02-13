@@ -51,7 +51,7 @@ class SkyDecoder(DecoderInterface):
             token_decimals=DEFAULT_TOKEN_DECIMALS,
         )
         for event in context.decoded_events:
-            if event.balance.amount != amount:
+            if event.amount != amount:
                 continue
 
             if (
@@ -90,7 +90,7 @@ class SkyDecoder(DecoderInterface):
         for event in context.decoded_events:
             if (
                 event.location_label == user and
-                event.balance.amount == mkr_amount and
+                event.amount == mkr_amount and
                 event.asset == A_MKR
             ):
                 event.counterparty = CPT_SKY
@@ -100,7 +100,7 @@ class SkyDecoder(DecoderInterface):
                 mkr_event = event
             elif (
                 event.location_label == user and
-                event.balance.amount == sky_amount and
+                event.amount == sky_amount and
                 event.asset == SKY_ASSET and
                 event.event_type == HistoryEventType.RECEIVE
             ):
@@ -166,7 +166,7 @@ class SkyDecoder(DecoderInterface):
                 event_subtype = HistoryEventSubType.DEPOSIT_ASSET
 
             if (
-                event.balance.amount == assets_amount and
+                event.amount == assets_amount and
                 event.asset == USDS_ASSET
             ):
                 event.counterparty = CPT_SKY
@@ -179,12 +179,12 @@ class SkyDecoder(DecoderInterface):
 
                 if is_deposit:
                     verb, preposition = ('Withdraw', 'from') if is_incoming_event else ('Deposit', 'to')  # noqa: E501
-                    event.notes = f'{verb} {event.balance.amount} USDS {preposition} sUSDS contract'  # noqa: E501
+                    event.notes = f'{verb} {event.amount} USDS {preposition} sUSDS contract'
                 else:
                     verb, preposition = ('Withdraw', 'from') if is_incoming_event else ('Return', 'to')  # noqa: E501
-                    event.notes = f'{verb} {event.balance.amount} USDS {preposition} sUSDS contract'  # noqa: E501
+                    event.notes = f'{verb} {event.amount} USDS {preposition} sUSDS contract'
 
-            elif event.balance.amount == shares_amount and event.asset == SUSDS_ASSET:
+            elif event.amount == shares_amount and event.asset == SUSDS_ASSET:
                 event.counterparty = CPT_SKY
                 event.event_type = event_type
                 event.event_subtype = event_subtype
@@ -194,7 +194,7 @@ class SkyDecoder(DecoderInterface):
                     out_event = event
 
                 verb, preposition = ('Withdraw', 'from') if is_incoming_event and not is_deposit else ('Return', 'to')  # noqa: E501
-                event.notes = f'{verb} {event.balance.amount} sUSDS {preposition} sUSDS contract'
+                event.notes = f'{verb} {event.amount} sUSDS {preposition} sUSDS contract'
 
         if not is_deposit and None in (in_event, out_event):
             log.error(f'Failed to decode sUSDS event at {context.transaction}')

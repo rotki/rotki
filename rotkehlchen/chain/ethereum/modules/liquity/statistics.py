@@ -44,7 +44,7 @@ BINDINGS_STABILITY_POOL_EVENTS = [
     HistoryEventSubType.REWARD.serialize(),
 ]
 QUERY_STABILITY_POOL_DEPOSITS = (
-    'SELECT SUM(CAST(amount AS REAL)), SUM(CAST(usd_value AS REAL)) '
+    'SELECT SUM(CAST(amount AS REAL)), 0 '  # TODO: @yabirgb: Adjust the USD value removed here
     'FROM history_events WHERE asset=? AND type=? AND subtype=?'
 )
 

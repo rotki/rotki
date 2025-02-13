@@ -3,7 +3,6 @@ from enum import Enum, auto
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.converters import asset_from_bittrex
 from rotkehlchen.data_import.utils import BaseExchangeImporter, maybe_set_transaction_extra_data
 from rotkehlchen.db.drivers.gevent import DBCursor
@@ -162,7 +161,7 @@ class BittrexImporter(BaseExchangeImporter):
                 location='Bittrex tx history import',
             )),
             asset=asset,
-            balance=Balance(deserialize_asset_amount_force_positive(amount)),
+            amount=deserialize_asset_amount_force_positive(amount),
             unique_id=(transaction_id := get_key_if_has_val(csv_row, tx_id_key)),
             extra_data=maybe_set_transaction_extra_data(
                 address=deserialize_asset_movement_address(csv_row, address_key, asset),

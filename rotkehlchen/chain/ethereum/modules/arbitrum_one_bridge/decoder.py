@@ -92,7 +92,7 @@ class ArbitrumOneBridgeDecoder(DecoderInterface):
                 event.event_type == expected_event_type and
                 event.location_label == user_address and
                 event.asset == self.eth and
-                event.balance.amount == amount
+                event.amount == amount
             ):
                 event.event_type = new_event_type
                 event.event_subtype = HistoryEventSubType.BRIDGE
@@ -135,7 +135,7 @@ class ArbitrumOneBridgeDecoder(DecoderInterface):
             if (
                 event.event_type == expected_event_type and
                 event.asset == asset and
-                event.balance.amount == amount
+                event.amount == amount
             ):
                 bridge_match_transfer(
                     event=event,
@@ -156,7 +156,7 @@ class ArbitrumOneBridgeDecoder(DecoderInterface):
             ):
                 event.counterparty = CPT_ARBITRUM_ONE
                 event.notes = (
-                    f'Spend {event.balance.amount} ETH to bridge ERC20 tokens to Arbitrum One'
+                    f'Spend {event.amount} ETH to bridge ERC20 tokens to Arbitrum One'
                 )
 
         return DEFAULT_DECODING_OUTPUT

@@ -1,7 +1,6 @@
 import logging
 from typing import TYPE_CHECKING, Any, Final, Literal
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.ethereum.airdrops import AIRDROP_IDENTIFIER_KEY
 from rotkehlchen.chain.ethereum.modules.convex.constants import CONVEX_CPT_DETAILS, CPT_CONVEX
 from rotkehlchen.chain.ethereum.modules.ens.constants import CPT_ENS, ENS_CPT_DETAILS
@@ -235,7 +234,7 @@ class AirdropsDecoder(MerkleClaimDecoderInterface):
                     event_type=HistoryEventType.RECEIVE,
                     event_subtype=HistoryEventSubType.AIRDROP,
                     asset=A_ELFI,
-                    balance=Balance(amount=amount),
+                    amount=amount,
                     location_label=user_address,
                     notes=f'Claim {amount} ELFI from element-finance airdrop and {delegate_str}',
                     counterparty=CPT_ELEMENT_FINANCE,

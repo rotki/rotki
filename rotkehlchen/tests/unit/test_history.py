@@ -2,7 +2,6 @@ import pytest
 
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.pnl import PNL, PnlTotals
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.ethereum.modules.eth2.structures import ValidatorDailyStats
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH, A_ETH2
@@ -53,10 +52,7 @@ def test_pnl_processing_with_eth2_staking_setting(accountant, db_settings):
             location=Location.KRAKEN,
             location_label='Kraken 1',
             asset=A_ETH2,
-            balance=Balance(
-                amount=FVal(0.0000541090),
-                usd_value=FVal(0.212353475950),
-            ),
+            amount=FVal(0.0000541090),
             notes=None,
             event_type=HistoryEventType.STAKING,
             event_subtype=HistoryEventSubType.REWARD,  # 0.0000541090 * 1837.31 = 0.09941500679
@@ -67,10 +63,7 @@ def test_pnl_processing_with_eth2_staking_setting(accountant, db_settings):
             location=Location.KRAKEN,
             location_label='Kraken 1',
             asset=A_ETH,
-            balance=Balance(
-                amount=FVal(0.0000541090),
-                usd_value=FVal(0.212353475950),
-            ),
+            amount=FVal(0.0000541090),
             notes=None,
             event_type=HistoryEventType.STAKING,
             event_subtype=HistoryEventSubType.REWARD,  # 0.0000541090 * 4072.51 = 0.22035944359

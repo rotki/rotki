@@ -1,10 +1,10 @@
 import pytest
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.optimism.constants import CPT_OPTIMISM
 from rotkehlchen.chain.optimism.modules.optimism_governor.decoder import GOVERNOR_ADDRESS
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -27,7 +27,7 @@ def test_vote_cast(optimism_inquirer, optimism_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=Asset('ETH'),
-            balance=Balance(amount=FVal('0.000656986283649328')),
+            amount=FVal('0.000656986283649328'),
             location_label=user_address,
             notes='Burn 0.000656986283649328 ETH for gas',
             counterparty=CPT_GAS,
@@ -39,7 +39,7 @@ def test_vote_cast(optimism_inquirer, optimism_accounts):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.GOVERNANCE,
             asset=Asset('ETH'),
-            balance=Balance(),
+            amount=ZERO,
             location_label=user_address,
             notes='Vote FOR optimism governance proposal https://vote.optimism.io/proposals/51738314696473345172141808043782330430064117614433447104828853768775712054864',
             counterparty=CPT_OPTIMISM,
@@ -66,7 +66,7 @@ def test_vote_cast_with_params(optimism_inquirer, optimism_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=Asset('ETH'),
-            balance=Balance(amount=FVal('0.000033338918413158')),
+            amount=FVal('0.000033338918413158'),
             location_label=user_address,
             notes='Burn 0.000033338918413158 ETH for gas',
             counterparty=CPT_GAS,
@@ -78,7 +78,7 @@ def test_vote_cast_with_params(optimism_inquirer, optimism_accounts):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.GOVERNANCE,
             asset=Asset('ETH'),
-            balance=Balance(),
+            amount=ZERO,
             location_label=user_address,
             notes='Vote AGAINST optimism governance proposal https://vote.optimism.io/proposals/16633367863894036056841722161407059007904922838583677995599242776177398115322',
             counterparty=CPT_OPTIMISM,
@@ -104,7 +104,7 @@ def test_vote_cast_with_reason(optimism_inquirer, optimism_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=Asset('ETH'),
-            balance=Balance(amount=FVal(gas_amount)),
+            amount=FVal(gas_amount),
             location_label=user_address,
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
@@ -116,7 +116,7 @@ def test_vote_cast_with_reason(optimism_inquirer, optimism_accounts):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.GOVERNANCE,
             asset=Asset('ETH'),
-            balance=Balance(),
+            amount=ZERO,
             location_label=user_address,
             notes='Vote AGAINST optimism governance proposal https://vote.optimism.io/proposals/10572947036210533292634221606922807092762967787561796032397523909369599512554 with reasoning: https://shorturl.at/abHS4',  # noqa: E501
             counterparty=CPT_OPTIMISM,

@@ -159,7 +159,7 @@ class CurveLendCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
                 event.event_type == HistoryEventType.SPEND and
                 event.event_subtype == HistoryEventSubType.NONE and
                 event.asset == underlying_token and
-                event.balance.amount == assets_amount
+                event.amount == assets_amount
             ):
                 event.event_type = HistoryEventType.DEPOSIT
                 event.event_subtype = HistoryEventSubType.DEPOSIT_FOR_WRAPPED
@@ -171,7 +171,7 @@ class CurveLendCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
                 event.event_subtype == HistoryEventSubType.NONE and
                 event.address == ZERO_ADDRESS and
                 event.asset == vault_token and
-                event.balance.amount == shares_amount
+                event.amount == shares_amount
             ):
                 event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
                 event.notes = f'Receive {shares_amount} {vault_token.symbol} after deposit in a Curve lending vault'  # noqa: E501
@@ -204,7 +204,7 @@ class CurveLendCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
                 event.event_subtype == HistoryEventSubType.NONE and
                 event.address == ZERO_ADDRESS and
                 event.asset == vault_token and
-                event.balance.amount == shares_amount
+                event.amount == shares_amount
             ):
                 event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
                 event.notes = f'Return {shares_amount} {vault_token.symbol} to a Curve lending vault'  # noqa: E501
@@ -214,7 +214,7 @@ class CurveLendCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
                 event.event_type == HistoryEventType.RECEIVE and
                 event.event_subtype == HistoryEventSubType.NONE and
                 event.asset == underlying_token and
-                event.balance.amount == assets_amount
+                event.amount == assets_amount
             ):
                 event.event_type = HistoryEventType.WITHDRAWAL
                 event.event_subtype = HistoryEventSubType.REDEEM_WRAPPED
@@ -423,11 +423,11 @@ class CurveLendCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
                 event.event_subtype == HistoryEventSubType.NONE and
                 event.address == self.leverage_zap and
                 event.asset == borrowed_token and
-                event.balance.amount == borrowed_amount
+                event.amount == borrowed_amount
             ):
                 event.event_type = HistoryEventType.DEPOSIT
                 event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
-                event.notes = f'Deposit {event.balance.amount} {borrowed_token.symbol} into a leveraged Curve position'  # noqa: E501
+                event.notes = f'Deposit {event.amount} {borrowed_token.symbol} into a leveraged Curve position'  # noqa: E501
                 event.counterparty = CPT_CURVE
                 event.extra_data = {'vault_controller': controller_address}
                 break
@@ -461,18 +461,18 @@ class CurveLendCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
                 event.event_type == HistoryEventType.SPEND and
                 event.event_subtype == HistoryEventSubType.NONE and
                 event.asset == collateral_token and
-                event.balance.amount == collateral_amount
+                event.amount == collateral_amount
             ):
                 event.event_type = HistoryEventType.DEPOSIT
                 event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
-                event.notes = f'Deposit {event.balance.amount} {event.asset.resolve_to_asset_with_symbol().symbol} as collateral on Curve'  # noqa: E501
+                event.notes = f'Deposit {event.amount} {event.asset.resolve_to_asset_with_symbol().symbol} as collateral on Curve'  # noqa: E501
                 event.counterparty = CPT_CURVE
                 out_event = event
             elif (
                 event.event_type == HistoryEventType.RECEIVE and
                 event.event_subtype == HistoryEventSubType.NONE and
                 event.asset == borrowed_token and
-                event.balance.amount == borrowed_amount
+                event.amount == borrowed_amount
             ):
                 event.event_type = HistoryEventType.WITHDRAWAL
                 event.event_subtype = HistoryEventSubType.GENERATE_DEBT
@@ -547,7 +547,7 @@ class CurveLendCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
             ):
                 event.event_type = HistoryEventType.WITHDRAWAL
                 event.event_subtype = HistoryEventSubType.REMOVE_ASSET
-                event.notes = f'Withdraw {event.balance.amount} {event.asset.resolve_to_asset_with_symbol().symbol} from Curve after repaying loan'  # noqa: E501
+                event.notes = f'Withdraw {event.amount} {event.asset.resolve_to_asset_with_symbol().symbol} from Curve after repaying loan'  # noqa: E501
                 event.counterparty = CPT_CURVE
                 in_event = event
 

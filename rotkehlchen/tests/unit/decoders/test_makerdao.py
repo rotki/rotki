@@ -1,6 +1,5 @@
 import pytest
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.ethereum.modules.makerdao.constants import CPT_VAULT
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS, CPT_SDAI
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -30,7 +29,7 @@ def test_makerdao_simple_transaction(ethereum_inquirer):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=FVal(0.00926134)),
+            amount=FVal(0.00926134),
             location_label='0x648aA14e4424e0825A5cE739C8C68610e143FB79',
             notes='Burn 0.00926134 ETH for gas',
             counterparty=CPT_GAS,
@@ -42,7 +41,7 @@ def test_makerdao_simple_transaction(ethereum_inquirer):
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.REMOVE_ASSET,
             asset=A_ETH,
-            balance=Balance(amount=FVal(0.6)),
+            amount=FVal(0.6),
             location_label='0x648aA14e4424e0825A5cE739C8C68610e143FB79',
             notes='Withdraw 0.6 ETH from ETH-A MakerDAO vault',
             counterparty=CPT_VAULT,
@@ -68,7 +67,7 @@ def test_withdraw_dai_from_sdai(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=FVal('0.001301015216220134')),
+            amount=FVal('0.001301015216220134'),
             location_label=user_address,
             notes='Burn 0.001301015216220134 ETH for gas',
             tx_hash=tx_hash,
@@ -80,7 +79,7 @@ def test_withdraw_dai_from_sdai(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
             asset=A_SDAI,
-            balance=Balance(amount=FVal('16.020774067834506624')),
+            amount=FVal('16.020774067834506624'),
             location_label=user_address,
             notes='Return 16.020774067834506624 sDAI to sDAI contract',
             tx_hash=tx_hash,
@@ -93,7 +92,7 @@ def test_withdraw_dai_from_sdai(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.REMOVE_ASSET,
             asset=A_DAI,
-            balance=Balance(amount=FVal('16.601085935411927527')),
+            amount=FVal('16.601085935411927527'),
             location_label=user_address,
             notes='Withdraw 16.601085935411927527 DAI from sDAI contract',
             tx_hash=tx_hash,
@@ -119,7 +118,7 @@ def test_deposit_dai_to_sdai(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=FVal(0.00152049387145495)),
+            amount=FVal(0.00152049387145495),
             location_label=user_address,
             notes='Burn 0.00152049387145495 ETH for gas',
             tx_hash=tx_hash,
@@ -131,7 +130,7 @@ def test_deposit_dai_to_sdai(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
             asset=A_DAI,
-            balance=Balance(amount=FVal(16.58145794)),
+            amount=FVal(16.58145794),
             location_label=user_address,
             notes='Deposit 16.58145794 DAI to sDAI contract',
             tx_hash=tx_hash,
@@ -144,7 +143,7 @@ def test_deposit_dai_to_sdai(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.REMOVE_ASSET,
             asset=A_SDAI,
-            balance=Balance(amount=FVal('16.020774067834506624')),
+            amount=FVal('16.020774067834506624'),
             location_label=user_address,
             notes='Withdraw 16.020774067834506624 sDAI from sDAI contract',
             tx_hash=tx_hash,

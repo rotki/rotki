@@ -57,7 +57,7 @@ class XdaiBridgeDecoder(XdaiBridgeCommonDecoder):
         ):
             context.event.event_type = HistoryEventType.DEPOSIT
             context.event.event_subtype = HistoryEventSubType.BRIDGE
-            context.event.notes = f'Bridge {context.event.balance.amount} DAI from Ethereum to Gnosis via Gnosis Chain bridge'  # noqa: E501
+            context.event.notes = f'Bridge {context.event.amount} DAI from Ethereum to Gnosis via Gnosis Chain bridge'  # noqa: E501
             context.event.counterparty = CPT_GNOSIS_CHAIN
             context.event.address = BRIDGE_ADDRESS
             return TransferEnrichmentOutput(matched_counterparty=CPT_GNOSIS_CHAIN)

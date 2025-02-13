@@ -120,7 +120,7 @@ class DepositableAccountantInterface(ModuleAccountantInterface):
             # We have peeked. Consume the iterator now so it is advanced correctly.
             next(other_events)
             events_consumed += 1
-            if next_event.balance.amount == ZERO:
+            if next_event.amount == ZERO:
                 continue
 
             pot.add_asset_change_event(
@@ -130,7 +130,7 @@ class DepositableAccountantInterface(ModuleAccountantInterface):
                 location=next_event.location,
                 timestamp=next_event.get_timestamp_in_sec(),
                 asset=next_event.asset,
-                amount=next_event.balance.amount,
+                amount=next_event.amount,
                 taxable=False,  # Deposits and withdrawals are not taxable
                 count_entire_amount_spend=False,
                 count_cost_basis_pnl=False,

@@ -4,7 +4,6 @@ from unittest.mock import patch
 
 import pytest
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.ethereum.modules.eth2.structures import ValidatorDetails
 from rotkehlchen.chain.ethereum.modules.eth2.utils import epoch_to_timestamp, form_withdrawal_notes
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -79,7 +78,7 @@ def test_withdrawals(eth2: 'Eth2', database, ethereum_accounts, query_method):
                 identifier=1,
                 validator_index=582738,
                 timestamp=TimestampMS(1682309159000),
-                balance=Balance(amount=FVal('0.001188734')),
+                amount=FVal('0.001188734'),
                 withdrawal_address=ethereum_accounts[1],
                 is_exit=False,
             )
@@ -89,7 +88,7 @@ def test_withdrawals(eth2: 'Eth2', database, ethereum_accounts, query_method):
                 identifier=1,
                 validator_index=583243,
                 timestamp=TimestampMS(1682309531000),
-                balance=Balance(amount=FVal('0.001650449')),
+                amount=FVal('0.001650449'),
                 withdrawal_address=ethereum_accounts[0],
                 is_exit=False,
             )
@@ -99,7 +98,7 @@ def test_withdrawals(eth2: 'Eth2', database, ethereum_accounts, query_method):
                 identifier=1,
                 validator_index=582738,
                 timestamp=TimestampMS(1683060887000),
-                balance=Balance(amount=FVal('0.045701079')),
+                amount=FVal('0.045701079'),
                 withdrawal_address=ethereum_accounts[1],
                 is_exit=False,
             )
@@ -109,7 +108,7 @@ def test_withdrawals(eth2: 'Eth2', database, ethereum_accounts, query_method):
                 identifier=1,
                 validator_index=583243,
                 timestamp=TimestampMS(1688958443000),
-                balance=Balance(amount=FVal('0.049877787')),
+                amount=FVal('0.049877787'),
                 withdrawal_address=ethereum_accounts[0],
                 is_exit=False,
             )
@@ -119,7 +118,7 @@ def test_withdrawals(eth2: 'Eth2', database, ethereum_accounts, query_method):
                 identifier=1,
                 validator_index=582738,
                 timestamp=TimestampMS(1698368939000),
-                balance=Balance(amount=FVal('0.016899759')),
+                amount=FVal('0.016899759'),
                 withdrawal_address=ethereum_accounts[1],
                 is_exit=False,
             )
@@ -129,7 +128,7 @@ def test_withdrawals(eth2: 'Eth2', database, ethereum_accounts, query_method):
                 identifier=1,
                 validator_index=583243,
                 timestamp=TimestampMS(1698369239000),
-                balance=Balance(amount=FVal('0.016747361')),
+                amount=FVal('0.016747361'),
                 withdrawal_address=ethereum_accounts[0],
                 is_exit=False,
             )
@@ -137,8 +136,8 @@ def test_withdrawals(eth2: 'Eth2', database, ethereum_accounts, query_method):
 
         assert x.is_exit_or_blocknumber is False
         assert x.asset == A_ETH
-        assert isinstance(x.balance.amount, FVal)
-        assert FVal('0.01') <= x.balance.amount <= FVal('0.06')
+        assert isinstance(x.amount, FVal)
+        assert FVal('0.01') <= x.amount <= FVal('0.06')
 
     assert account0_events == 47
     assert account1_events == 47
@@ -184,7 +183,7 @@ def test_block_production(eth2: 'Eth2', database, ethereum_accounts):
     expected_events = [EthBlockEvent(
         validator_index=vindex1,
         timestamp=TimestampMS(1666693607000),
-        balance=Balance(FVal('0.126419309459217215')),
+        amount=FVal('0.126419309459217215'),
         fee_recipient=string_to_evm_address('0x690B9A9E9aa1C9dB991C7721a92d351Db4FaC990'),
         fee_recipient_tracked=False,
         block_number=15824493,
@@ -192,7 +191,7 @@ def test_block_production(eth2: 'Eth2', database, ethereum_accounts):
     ), EthBlockEvent(
         validator_index=vindex1,
         timestamp=TimestampMS(1666693607000),
-        balance=Balance(FVal('0.126458404824519798')),
+        amount=FVal('0.126458404824519798'),
         fee_recipient=vindex1_address,
         fee_recipient_tracked=True,
         block_number=15824493,
@@ -200,7 +199,7 @@ def test_block_production(eth2: 'Eth2', database, ethereum_accounts):
     ), EthBlockEvent(
         validator_index=vindex1,
         timestamp=TimestampMS(1668068651000),
-        balance=Balance(FVal('0.095134860916352597')),
+        amount=FVal('0.095134860916352597'),
         fee_recipient=string_to_evm_address('0x95222290DD7278Aa3Ddd389Cc1E1d165CC4BAfe5'),
         fee_recipient_tracked=False,
         block_number=15938405,
@@ -208,7 +207,7 @@ def test_block_production(eth2: 'Eth2', database, ethereum_accounts):
     ), EthBlockEvent(
         validator_index=vindex1,
         timestamp=TimestampMS(1668068651000),
-        balance=Balance(FVal('0.109978419256414016')),
+        amount=FVal('0.109978419256414016'),
         fee_recipient=vindex1_address,
         fee_recipient_tracked=True,
         block_number=15938405,
@@ -216,7 +215,7 @@ def test_block_production(eth2: 'Eth2', database, ethereum_accounts):
     ), EthBlockEvent(
         validator_index=vindex2,
         timestamp=TimestampMS(1670267915000),
-        balance=Balance(FVal('0.025900962606266958')),
+        amount=FVal('0.025900962606266958'),
         fee_recipient=vindex2_address,
         fee_recipient_tracked=True,
         block_number=16120623,
@@ -224,7 +223,7 @@ def test_block_production(eth2: 'Eth2', database, ethereum_accounts):
     ), EthBlockEvent(
         validator_index=vindex2,
         timestamp=TimestampMS(1671379127000),
-        balance=Balance(FVal('0.02290370247079784')),
+        amount=FVal('0.02290370247079784'),
         fee_recipient=vindex2_address,
         fee_recipient_tracked=True,
         block_number=16212625,
@@ -232,7 +231,7 @@ def test_block_production(eth2: 'Eth2', database, ethereum_accounts):
     ), EthBlockEvent(
         validator_index=vindex2,
         timestamp=TimestampMS(1674734363000),
-        balance=Balance(FVal('0.012922327272245232')),
+        amount=FVal('0.012922327272245232'),
         fee_recipient=vindex2_address,
         fee_recipient_tracked=True,
         block_number=16490846,
@@ -240,7 +239,7 @@ def test_block_production(eth2: 'Eth2', database, ethereum_accounts):
     ), EthBlockEvent(
         validator_index=vindex2,
         timestamp=TimestampMS(1675143275000),
-        balance=Balance(FVal('0.016091543022603308')),
+        amount=FVal('0.016091543022603308'),
         fee_recipient=vindex2_address,
         fee_recipient_tracked=True,
         block_number=16524748,
@@ -248,7 +247,7 @@ def test_block_production(eth2: 'Eth2', database, ethereum_accounts):
     ), EthBlockEvent(
         validator_index=vindex1,
         timestamp=TimestampMS(1675926299000),
-        balance=Balance(FVal('0.156090536122554115')),
+        amount=FVal('0.156090536122554115'),
         fee_recipient=string_to_evm_address('0xAAB27b150451726EC7738aa1d0A94505c8729bd1'),
         fee_recipient_tracked=False,
         block_number=16589592,
@@ -256,7 +255,7 @@ def test_block_production(eth2: 'Eth2', database, ethereum_accounts):
     ), EthBlockEvent(
         validator_index=vindex1,
         timestamp=TimestampMS(1675926299000),
-        balance=Balance(FVal('0.155599501480976115')),
+        amount=FVal('0.155599501480976115'),
         fee_recipient=vindex1_address,
         fee_recipient_tracked=True,
         block_number=16589592,
@@ -264,7 +263,7 @@ def test_block_production(eth2: 'Eth2', database, ethereum_accounts):
     ), EthBlockEvent(
         validator_index=vindex2,
         timestamp=TimestampMS(1676596919000),
-        balance=Balance(FVal('0.004759289463309382')),
+        amount=FVal('0.004759289463309382'),
         fee_recipient=vindex2_address,
         fee_recipient_tracked=True,
         block_number=16645139,
@@ -272,7 +271,7 @@ def test_block_production(eth2: 'Eth2', database, ethereum_accounts):
     ), EthBlockEvent(
         validator_index=vindex1,
         timestamp=TimestampMS(1681593839000),
-        balance=Balance(FVal('0.013231650982632651')),
+        amount=FVal('0.013231650982632651'),
         fee_recipient=string_to_evm_address('0xFeebabE6b0418eC13b30aAdF129F5DcDd4f70CeA'),
         fee_recipient_tracked=False,
         block_number=17055026,
@@ -280,7 +279,7 @@ def test_block_production(eth2: 'Eth2', database, ethereum_accounts):
     ), EthBlockEvent(
         validator_index=vindex1,
         timestamp=TimestampMS(1681593839000),
-        balance=Balance(FVal('0.013233591104431482')),
+        amount=FVal('0.013233591104431482'),
         fee_recipient=vindex1_address,
         fee_recipient_tracked=True,
         block_number=17055026,
@@ -306,14 +305,14 @@ def test_withdrawals_detect_exit(eth2: 'Eth2', database):
             identifier=1,
             validator_index=slashed_index,
             timestamp=TimestampMS(1680982251000),
-            balance=Balance(FVal('0.016073')),
+            amount=FVal('0.016073'),
             withdrawal_address=slashed_address,
             is_exit=False,
         ), EthWithdrawalEvent(
             identifier=2,
             validator_index=slashed_index,
             timestamp=TimestampMS(1681571243000),
-            balance=Balance(slashed_exit_amount),
+            amount=slashed_exit_amount,
             withdrawal_address=slashed_address,
             is_exit=False,
         ),
@@ -321,28 +320,28 @@ def test_withdrawals_detect_exit(eth2: 'Eth2', database):
             identifier=3,
             validator_index=active_index,
             timestamp=TimestampMS(1699319051000),
-            balance=Balance(FVal('0.017197')),
+            amount=FVal('0.017197'),
             withdrawal_address=active_address,
             is_exit=False,
         ), EthWithdrawalEvent(
             identifier=4,
             validator_index=exited_index,
             timestamp=TimestampMS(1699648427000),
-            balance=Balance(FVal('0.017073')),
+            amount=FVal('0.017073'),
             withdrawal_address=exited_address,
             is_exit=False,
         ), EthWithdrawalEvent(
             identifier=5,
             validator_index=active_index,
             timestamp=TimestampMS(1699976207000),
-            balance=Balance(FVal('0.017250')),
+            amount=FVal('0.017250'),
             withdrawal_address=active_address,
             is_exit=False,
         ), EthWithdrawalEvent(
             identifier=6,
             validator_index=exited_index,
             timestamp=TimestampMS(1699976207000),
-            balance=Balance(exit_amount),
+            amount=exit_amount,
             withdrawal_address=exited_address,
             is_exit=False,
         ),
@@ -541,7 +540,7 @@ def test_block_with_mev_and_block_reward_and_multiple_mev_txs(
         identifier=4,
         validator_index=vindex,
         timestamp=timestamp,
-        balance=Balance(FVal('0.013925706716354256')),
+        amount=FVal('0.013925706716354256'),
         fee_recipient=user_address,
         fee_recipient_tracked=True,
         block_number=block_number,
@@ -550,7 +549,7 @@ def test_block_with_mev_and_block_reward_and_multiple_mev_txs(
         identifier=5,
         validator_index=vindex,
         timestamp=timestamp,
-        balance=Balance(FVal('0.022204362489834771')),
+        amount=FVal('0.022204362489834771'),
         fee_recipient=user_address,
         fee_recipient_tracked=True,
         block_number=block_number,
@@ -566,7 +565,7 @@ def test_block_with_mev_and_block_reward_and_multiple_mev_txs(
         event_type=HistoryEventType.STAKING,
         event_subtype=HistoryEventSubType.MEV_REWARD,
         asset=A_ETH,
-        balance=Balance(FVal(amount)),
+        amount=FVal(amount),
         location_label=user_address,
         address=mevbot_address,
         notes=f'Receive {amount} ETH from {mevbot_address} as mev reward for block {block_number} in {tx_hash.hex()}',  # noqa: E501

@@ -112,7 +112,7 @@ def decode_uniswap_v2_like_swap(
     received_eth = ZERO
     for event in decoded_events:
         if event.asset == A_ETH and event.event_type == HistoryEventType.RECEIVE:
-            received_eth += event.balance.amount
+            received_eth += event.amount
 
     for event in decoded_events:
         # When we look for the spend event we have to take into consideration the case
@@ -127,17 +127,17 @@ def decode_uniswap_v2_like_swap(
         if (
             event.event_type == HistoryEventType.SPEND and
             (
-                event.balance.amount == (spend_eth := asset_normalized_value(
+                event.amount == (spend_eth := asset_normalized_value(
                     amount=amount_in,
                     asset=crypto_asset,
                 )) or
-                (event.asset == A_ETH and spend_eth + received_eth == event.balance.amount)
+                (event.asset == A_ETH and spend_eth + received_eth == event.amount)
             )
         ):
             event.event_type = HistoryEventType.TRADE
             event.event_subtype = HistoryEventSubType.SPEND
             event.counterparty = counterparty
-            event.notes = f'Swap {event.balance.amount} {crypto_asset.symbol} in {counterparty} from {event.location_label}'  # noqa: E501
+            event.notes = f'Swap {event.amount} {crypto_asset.symbol} in {counterparty} from {event.location_label}'  # noqa: E501
             out_event = event
         elif (  # out_event is already decoded
             event.event_type == HistoryEventType.TRADE and
@@ -148,7 +148,7 @@ def decode_uniswap_v2_like_swap(
         elif (
             (maybe_buyer == transaction.from_address or event.asset == A_ETH) and
             event.event_type in (HistoryEventType.RECEIVE, HistoryEventType.TRANSFER) and
-            event.balance.amount == asset_normalized_value(
+            event.amount == asset_normalized_value(
                 amount=amount_out,
                 asset=crypto_asset,
             )
@@ -156,11 +156,11 @@ def decode_uniswap_v2_like_swap(
             event.event_type = HistoryEventType.TRADE
             event.event_subtype = HistoryEventSubType.RECEIVE
             event.counterparty = counterparty
-            event.notes = f'Receive {event.balance.amount} {crypto_asset.symbol} in {counterparty} from {event.location_label}'  # noqa: E501
+            event.notes = f'Receive {event.amount} {crypto_asset.symbol} in {counterparty} from {event.location_label}'  # noqa: E501
             in_event = event
         elif (
             event.event_type == HistoryEventType.RECEIVE and
-            event.balance.amount != asset_normalized_value(
+            event.amount != asset_normalized_value(
                 amount=amount_out,
                 asset=crypto_asset,
             ) and
@@ -173,7 +173,7 @@ def decode_uniswap_v2_like_swap(
             event.event_type = HistoryEventType.WITHDRAWAL
             event.event_subtype = HistoryEventSubType.REFUND
             event.counterparty = counterparty
-            event.notes = f'Refund of {event.balance.amount} {crypto_asset.symbol} in {counterparty} due to price change'  # noqa: E501
+            event.notes = f'Refund of {event.amount} {crypto_asset.symbol} in {counterparty} due to price change'  # noqa: E501
 
     maybe_reshuffle_events(ordered_events=[out_event, in_event], events_list=decoded_events)
     return DEFAULT_DECODING_OUTPUT
@@ -311,7 +311,7 @@ def decode_uniswap_like_deposit_and_withdrawals(
             event.event_type == from_event_type[0] and
             event.event_subtype == from_event_type[1] and
             (resolved_asset in (asset_0, token0)) and
-            event.balance.amount == asset_normalized_value(amount0_raw, resolved_asset)
+            event.amount == asset_normalized_value(amount0_raw, resolved_asset)
         ):
             asset_0 = resolved_asset  # here we know exactly if it is ETH or WETH (or any other asset) so assign the asset  # noqa: E501
             event0_idx = idx
@@ -319,7 +319,7 @@ def decode_uniswap_like_deposit_and_withdrawals(
             event.event_type == from_event_type[0] and
             event.event_subtype == from_event_type[1] and
             (resolved_asset in (asset_1, token1)) and
-            event.balance.amount == asset_normalized_value(amount1_raw, resolved_asset)
+            event.amount == asset_normalized_value(amount1_raw, resolved_asset)
         ):
             asset_1 = resolved_asset
             event1_idx = idx
@@ -331,7 +331,7 @@ def decode_uniswap_like_deposit_and_withdrawals(
         ):
             event.counterparty = counterparty
             event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
-            event.notes = f'Receive {event.balance.amount} {resolved_asset.symbol} from {counterparty} pool'  # noqa: E501
+            event.notes = f'Receive {event.amount} {resolved_asset.symbol} from {counterparty} pool'  # noqa: E501
             GlobalDBHandler.set_token_protocol_if_missing(
                 token=event.asset.resolve_to_evm_token(),
                 new_protocol=UNISWAP_PROTOCOL if resolved_asset.symbol.startswith('UNI-V2') else SUSHISWAP_PROTOCOL,  # noqa: E501
@@ -344,7 +344,7 @@ def decode_uniswap_like_deposit_and_withdrawals(
         ):
             event.counterparty = counterparty
             event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
-            event.notes = f'Send {event.balance.amount} {resolved_asset.symbol} to {counterparty} pool'  # noqa: E501
+            event.notes = f'Send {event.amount} {resolved_asset.symbol} to {counterparty} pool'
 
     new_action_items = []
     extra_data = {'pool_address': pool_address}

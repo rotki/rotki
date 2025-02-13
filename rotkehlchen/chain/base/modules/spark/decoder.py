@@ -45,7 +45,7 @@ class SparkDecoder(DecoderInterface):
             if (
                 event.event_type == HistoryEventType.SPEND and
                 event.event_subtype == HistoryEventSubType.NONE and
-                event.balance.amount == amount_in and
+                event.amount == amount_in and
                 event.location_label == receiver and
                 event.asset == asset_in
             ):
@@ -61,7 +61,7 @@ class SparkDecoder(DecoderInterface):
             elif (
                 event.event_type == HistoryEventType.RECEIVE and
                 event.event_subtype == HistoryEventSubType.NONE and
-                event.balance.amount == amount_out and
+                event.amount == amount_out and
                 event.location_label == receiver and
                 event.asset == asset_out
             ):

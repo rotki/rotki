@@ -83,7 +83,7 @@ class AuraFinanceCommonDecoder(DecoderInterface):
             if (
                 event.event_type == HistoryEventType.SPEND and
                 event.event_subtype == HistoryEventSubType.NONE and
-                event.balance.amount == locked_amount
+                event.amount == locked_amount
             ):
                 event.counterparty = CPT_AURA_FINANCE
                 event.event_type = HistoryEventType.DEPOSIT
@@ -114,13 +114,13 @@ class AuraFinanceCommonDecoder(DecoderInterface):
                 event.counterparty = CPT_AURA_FINANCE
                 event.event_subtype = HistoryEventSubType.FEE
                 # Calculate bridge fee, accounting for potential refunds
-                actual_bridge_fee = event.balance.amount if refund_event is None else event.balance.amount - refund_event.balance.amount  # noqa: E501
-                event.balance.amount = actual_bridge_fee
+                actual_bridge_fee = event.amount if refund_event is None else event.amount - refund_event.amount  # noqa: E501
+                event.amount = actual_bridge_fee
                 event.notes = f'Pay {actual_bridge_fee} {self.evm_inquirer.native_token.symbol} as bridge fee (to Ethereum)'  # noqa: E501
             if (
                 event.event_type == HistoryEventType.SPEND and
                 event.event_subtype == HistoryEventSubType.NONE and
-                event.balance.amount == locked_amount and
+                event.amount == locked_amount and
                 event.address == ZERO_ADDRESS
             ):
                 event.counterparty = CPT_AURA_FINANCE
@@ -158,14 +158,14 @@ class AuraFinanceCommonDecoder(DecoderInterface):
                 (
                     # there's an aura token transfer as reward but the RewardPaid
                     # event is not emitted for that so that's handled here.
-                    event.balance.amount == asset_normalized_value(
+                    event.amount == asset_normalized_value(
                         amount=amount_paid,
                         asset=(crypto_asset := event.asset.resolve_to_crypto_asset()),
                     ) or
                     event.asset in self.base_reward_tokens
                 )
             ):
-                event.notes = f'Claim {event.balance.amount} {crypto_asset.symbol} from Aura Finance'  # noqa: E501
+                event.notes = f'Claim {event.amount} {crypto_asset.symbol} from Aura Finance'
                 event.event_subtype = HistoryEventSubType.REWARD
                 event.counterparty = CPT_AURA_FINANCE
 
@@ -192,14 +192,14 @@ class AuraFinanceCommonDecoder(DecoderInterface):
         for event in context.decoded_events:
             token = event.asset.resolve_to_asset_with_symbol()
             if (
-                (received_amount is None or event.balance.amount == received_amount) and
+                (received_amount is None or event.amount == received_amount) and
                 event.event_subtype == HistoryEventSubType.NONE and
                 event.event_type == HistoryEventType.RECEIVE and
                 event.address == ZERO_ADDRESS
             ):
                 receive_event = event
                 event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
-                event.notes = f'Receive {received_amount or event.balance.amount} {token.symbol} {receive_note_suffix}'  # noqa: E501
+                event.notes = f'Receive {received_amount or event.amount} {token.symbol} {receive_note_suffix}'  # noqa: E501
                 event.extra_data = {'deposit_events_num': len(deposit_events)}
                 event.counterparty = CPT_AURA_FINANCE
             elif (
@@ -211,7 +211,7 @@ class AuraFinanceCommonDecoder(DecoderInterface):
                     event.event_subtype == HistoryEventSubType.DEPOSIT_FOR_WRAPPED and
                     event.counterparty == CPT_BALANCER_V2
                 )) and
-                event.balance.amount == deposited_amount
+                event.amount == deposited_amount
             ):
                 event.event_type = HistoryEventType.DEPOSIT
                 event.event_subtype = HistoryEventSubType.DEPOSIT_FOR_WRAPPED
@@ -237,7 +237,7 @@ class AuraFinanceCommonDecoder(DecoderInterface):
             if (
                 event.event_type == HistoryEventType.RECEIVE and
                 event.event_subtype == HistoryEventSubType.NONE and
-                event.balance.amount == withdrawn_amount
+                event.amount == withdrawn_amount
             ):
                 event.notes = f'Withdraw {withdrawn_amount} {event.asset.symbol_or_name()} from an Aura gauge'  # noqa: E501
                 event.event_type = HistoryEventType.WITHDRAWAL

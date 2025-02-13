@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING, Any, Generic, TypedDict, TypeVar
 
 from rotkehlchen.accounting.constants import DEFAULT, EVENT_CATEGORY_MAPPINGS, EXCHANGE
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.types import ActionType
 from rotkehlchen.accounting.types import EventAccountingRuleStatus
 from rotkehlchen.assets.asset import Asset
@@ -50,7 +49,6 @@ HISTORY_EVENT_DB_TUPLE_WRITE = tuple[
     str | None,     # location label
     str,            # asset
     str,            # amount
-    str,            # usd value
     str | None,     # notes
     str,            # type
     str,            # subtype
@@ -83,7 +81,7 @@ class HistoryBaseEntryData(TypedDict, Generic[ExtraDataType]):
     event_type: HistoryEventType
     event_subtype: HistoryEventSubType
     asset: Asset
-    balance: Balance
+    amount: FVal
     location_label: str | None
     notes: str | None
     identifier: int | None
@@ -105,7 +103,7 @@ class HistoryBaseEntry(AccountingEventMixin, ABC, Generic[ExtraDataType]):
             event_type: HistoryEventType,
             event_subtype: HistoryEventSubType,
             asset: Asset,
-            balance: Balance,
+            amount: FVal,
             location_label: str | None = None,
             notes: str | None = None,
             identifier: int | None = None,
@@ -127,7 +125,7 @@ class HistoryBaseEntry(AccountingEventMixin, ABC, Generic[ExtraDataType]):
         self.event_type = event_type
         self.event_subtype = event_subtype
         self.asset = asset
-        self.balance = balance
+        self.amount = amount
         self.location_label = location_label
         self.notes = notes
         self.identifier = identifier
@@ -161,7 +159,7 @@ class HistoryBaseEntry(AccountingEventMixin, ABC, Generic[ExtraDataType]):
             self.event_type == other.event_type and  # type: ignore
             self.event_subtype == other.event_subtype and  # type: ignore
             self.asset == other.asset and  # type: ignore
-            self.balance == other.balance and  # type: ignore
+            self.amount == other.amount and  # type: ignore
             self.location_label == other.location_label and  # type: ignore
             self.notes == other.notes and  # type: ignore
             self.identifier == other.identifier and  # type: ignore
@@ -178,7 +176,7 @@ class HistoryBaseEntry(AccountingEventMixin, ABC, Generic[ExtraDataType]):
             f'{self.event_type=}',
             f'{self.event_subtype=}',
             f'{self.asset=}',
-            f'{self.balance=}',
+            f'{self.amount=}',
             f'{self.location_label=}',
             f'{self.notes=}',
             f'{self.identifier=}',
@@ -189,12 +187,12 @@ class HistoryBaseEntry(AccountingEventMixin, ABC, Generic[ExtraDataType]):
         return (
             (
                 'history_events(entry_type, event_identifier, sequence_index,'
-                'timestamp, location, location_label, asset, amount, usd_value, notes,'
-                'type, subtype, extra_data) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+                'timestamp, location, location_label, asset, amount, notes,'
+                'type, subtype, extra_data) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
             ), (
                 'UPDATE history_events SET entry_type=?, event_identifier=?, '
                 'sequence_index=?, timestamp=?, location=?, location_label=?, asset=?, '
-                'amount=?, usd_value=?, notes=?, type=?, subtype=?, extra_data=?'
+                'amount=?, notes=?, type=?, subtype=?, extra_data=?'
             ), (
                 self.entry_type.value,
                 self.event_identifier,
@@ -203,8 +201,7 @@ class HistoryBaseEntry(AccountingEventMixin, ABC, Generic[ExtraDataType]):
                 self.location.serialize_for_db(),
                 self.location_label,
                 self.asset.identifier,
-                str(self.balance.amount),
-                str(self.balance.usd_value),
+                str(self.amount),
                 self.notes,
                 self.event_type.serialize(),
                 self.event_subtype.serialize(),
@@ -270,7 +267,7 @@ class HistoryBaseEntry(AccountingEventMixin, ABC, Generic[ExtraDataType]):
             'location': str(self.location),
             'location_label': self.location_label,
             'asset': self.asset.identifier,
-            'balance': self.balance.serialize(),
+            'amount': str(self.amount),
             'notes': self.notes,
             'identifier': self.identifier,
             'entry_type': self.entry_type.serialize(),
@@ -281,26 +278,26 @@ class HistoryBaseEntry(AccountingEventMixin, ABC, Generic[ExtraDataType]):
         if self.location == Location.KRAKEN and not self.notes:
             if self.event_type == HistoryEventType.TRADE:
                 if self.event_subtype == HistoryEventSubType.SPEND:
-                    serialized_data['notes'] = f'Swap {self.balance.amount} {self.asset.symbol_or_name()} in Kraken'  # noqa: E501
+                    serialized_data['notes'] = f'Swap {self.amount} {self.asset.symbol_or_name()} in Kraken'  # noqa: E501
                 elif self.event_subtype == HistoryEventSubType.RECEIVE:
-                    serialized_data['notes'] = f'Receive {self.balance.amount} {self.asset.symbol_or_name()} as a result of a Kraken swap'  # noqa: E501
+                    serialized_data['notes'] = f'Receive {self.amount} {self.asset.symbol_or_name()} as a result of a Kraken swap'  # noqa: E501
                 elif self.event_subtype == HistoryEventSubType.FEE:
-                    serialized_data['notes'] = f'Spend {self.balance.amount} {self.asset.symbol_or_name()} as Kraken trading fee'  # noqa: E501
+                    serialized_data['notes'] = f'Spend {self.amount} {self.asset.symbol_or_name()} as Kraken trading fee'  # noqa: E501
 
             elif self.event_type == HistoryEventType.STAKING:
                 if self.event_subtype == HistoryEventSubType.REWARD:
-                    serialized_data['notes'] = f'Gain {self.balance.amount} {self.asset.symbol_or_name()} from Kraken staking'  # noqa: E501
+                    serialized_data['notes'] = f'Gain {self.amount} {self.asset.symbol_or_name()} from Kraken staking'  # noqa: E501
                 elif self.event_subtype == HistoryEventSubType.FEE:
-                    serialized_data['notes'] = f'Spend {self.balance.amount} {self.asset.symbol_or_name()} as Kraken staking fee'  # noqa: E501
+                    serialized_data['notes'] = f'Spend {self.amount} {self.asset.symbol_or_name()} as Kraken staking fee'  # noqa: E501
 
             elif self.event_type == HistoryEventType.WITHDRAWAL:
                 if self.event_subtype == HistoryEventSubType.REMOVE_ASSET:
-                    serialized_data['notes'] = f'Withdraw {self.balance.amount} {self.asset.symbol_or_name()} from Kraken'  # noqa: E501
+                    serialized_data['notes'] = f'Withdraw {self.amount} {self.asset.symbol_or_name()} from Kraken'  # noqa: E501
                 elif self.event_subtype == HistoryEventSubType.FEE:
-                    serialized_data['notes'] = f'Spend {self.balance.amount} {self.asset.symbol_or_name()} as Kraken withdrawal fee'  # noqa: E501
+                    serialized_data['notes'] = f'Spend {self.amount} {self.asset.symbol_or_name()} as Kraken withdrawal fee'  # noqa: E501
 
             elif self.event_type == HistoryEventType.DEPOSIT and self.event_subtype == HistoryEventSubType.DEPOSIT_ASSET:  # noqa: E501
-                serialized_data['notes'] = f'Deposit {self.balance.amount} {self.asset.symbol_or_name()} to Kraken'  # noqa: E501
+                serialized_data['notes'] = f'Deposit {self.amount} {self.asset.symbol_or_name()} to Kraken'  # noqa: E501
 
         return serialized_data
 
@@ -313,12 +310,11 @@ class HistoryBaseEntry(AccountingEventMixin, ABC, Generic[ExtraDataType]):
         """
         new_dict: dict[str, Any] = {}
         entry = self.serialize()
-        balance = entry.pop('balance')
         for key, value in entry.items():
             new_dict[key] = value
             if key == 'asset':
                 new_dict['asset_symbol'] = self.asset.symbol_or_name()
-                new_dict['amount'] = balance['amount']
+                new_dict['amount'] = entry['amount']
                 new_dict['fiat_value'] = fiat_value
 
             if key == 'sequence_index':
@@ -388,17 +384,10 @@ class HistoryBaseEntry(AccountingEventMixin, ABC, Generic[ExtraDataType]):
                 notes=deserialize_optional(data['notes'], str),
                 identifier=deserialize_optional(data['identifier'], int),
                 asset=Asset(data['asset']).check_existence(),
-                balance=Balance(
-                    amount=deserialize_fval(
-                        value=data['balance']['amount'],
-                        name='balance amount',
-                        location='history base entry',
-                    ),
-                    usd_value=deserialize_fval(
-                        value=data['balance']['usd_value'],
-                        name='balance usd value',
-                        location='history base entry',
-                    ),
+                amount=deserialize_fval(
+                    value=data['amount'],
+                    name='balance amount',
+                    location='history base entry',
                 ),
                 extra_data=data['extra_data'],
             )
@@ -459,7 +448,7 @@ class HistoryEvent(HistoryBaseEntry):
             event_type: HistoryEventType,
             event_subtype: HistoryEventSubType,
             asset: Asset,
-            balance: Balance,
+            amount: FVal,
             location_label: str | None = None,
             notes: str | None = None,
             identifier: int | None = None,
@@ -473,7 +462,7 @@ class HistoryEvent(HistoryBaseEntry):
             event_type=event_type,
             event_subtype=event_subtype,
             asset=asset,
-            balance=balance,
+            amount=amount,
             location_label=location_label,
             notes=notes,
             identifier=identifier,
@@ -501,7 +490,6 @@ class HistoryEvent(HistoryBaseEntry):
         - UnknownAsset
         """
         amount = deserialize_fval(entry[7], 'amount', 'history event')
-        usd_value = deserialize_fval(entry[8], 'usd_value', 'history event')
         return cls(
             identifier=entry[0],
             event_identifier=entry[1],
@@ -510,11 +498,11 @@ class HistoryEvent(HistoryBaseEntry):
             location=Location.deserialize_from_db(entry[4]),
             location_label=entry[5],
             asset=Asset(entry[6]).check_existence(),
-            balance=Balance(amount, usd_value),
-            notes=entry[9],
-            event_type=HistoryEventType.deserialize(entry[10]),
-            event_subtype=HistoryEventSubType.deserialize(entry[11]),
-            extra_data=cls.deserialize_extra_data(entry=entry, extra_data=entry[12]),
+            amount=amount,
+            notes=entry[8],
+            event_type=HistoryEventType.deserialize(entry[9]),
+            event_subtype=HistoryEventSubType.deserialize(entry[10]),
+            extra_data=cls.deserialize_extra_data(entry=entry, extra_data=entry[11]),
         )
 
     @classmethod
@@ -557,7 +545,7 @@ class HistoryEvent(HistoryBaseEntry):
                     location=self.location,
                     timestamp=timestamp,
                     asset=self.asset,
-                    amount=self.balance.amount,
+                    amount=self.amount,
                     taxable=True,
                 )
                 return 1

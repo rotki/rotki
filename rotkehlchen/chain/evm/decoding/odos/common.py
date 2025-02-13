@@ -2,7 +2,6 @@ import logging
 from collections import defaultdict
 from typing import TYPE_CHECKING
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
@@ -119,7 +118,7 @@ class OdosCommonDecoderBase(DecoderInterface):
                     event_type=HistoryEventType.SPEND,
                     event_subtype=HistoryEventSubType.FEE,
                     asset=held_asset,
-                    balance=Balance(amount=amount),
+                    amount=amount,
                     location_label=sender,
                     notes=f'Spend {amount} {held_asset.symbol_or_name()} as an {self.label} fee',
                     counterparty=self.counterparties()[0].identifier,
@@ -139,7 +138,7 @@ class OdosCommonDecoderBase(DecoderInterface):
         in_events, out_events = [], []
         for event in context.decoded_events:
             if (
-                ((input_amount := input_tokens.get(event.asset.identifier)) == event.balance.amount) or  # noqa: E501
+                ((input_amount := input_tokens.get(event.asset.identifier)) == event.amount) or
                 input_amount == ZERO  # this means https://docs.odos.xyz/product/sor/v2/#max-balance-swapping  # noqa: E501
             ) and (
                 (
@@ -152,12 +151,12 @@ class OdosCommonDecoderBase(DecoderInterface):
             ):
                 event.event_type = HistoryEventType.TRADE
                 event.event_subtype = HistoryEventSubType.SPEND
-                event.notes = f'Swap {event.balance.amount} {event.asset.symbol_or_name()} in {self.label}'  # noqa: E501
+                event.notes = f'Swap {event.amount} {event.asset.symbol_or_name()} in {self.label}'
                 event.address = self.router_address
                 event.counterparty = self.counterparties()[0].identifier
                 out_events.append(event)
 
-            elif output_tokens.get(event.asset.identifier) == event.balance.amount and (
+            elif output_tokens.get(event.asset.identifier) == event.amount and (
                 (
                     event.event_type == HistoryEventType.RECEIVE and
                     event.event_subtype == HistoryEventSubType.NONE
@@ -168,7 +167,7 @@ class OdosCommonDecoderBase(DecoderInterface):
             ):
                 event.event_type = HistoryEventType.TRADE
                 event.event_subtype = HistoryEventSubType.RECEIVE
-                event.notes = f'Receive {event.balance.amount} {event.asset.symbol_or_name()} as the result of a swap in {self.label}'  # noqa: E501
+                event.notes = f'Receive {event.amount} {event.asset.symbol_or_name()} as the result of a swap in {self.label}'  # noqa: E501
                 event.address = self.router_address
                 event.counterparty = self.counterparties()[0].identifier
                 in_events.append(event)

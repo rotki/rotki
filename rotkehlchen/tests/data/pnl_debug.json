@@ -7,10 +7,7 @@
       "timestamp": 1651258550000,
       "location": "blockchain",
       "asset": "ETH",
-      "balance": {
-        "amount": "3.55448345",
-        "usd_value": "24455.415502078435"
-      },
+      "amount": "3.55448345",
       "event_type": "receive",
       "event_subtype": null,
       "accounting_event_type": "history event",
@@ -25,10 +22,7 @@
       "timestamp": 1651259834000,
       "location": "blockchain",
       "asset": "ETH",
-      "balance": {
-        "amount": "0.009",
-        "usd_value": "33.85395142596176076"
-      },
+      "amount": "0.009",
       "event_type": "spend",
       "accounting_event_type": "history event",
       "event_subtype": "fee",
@@ -134,10 +128,7 @@
       "timestamp": 1643381545000,
       "location": "binance",
       "asset": "eip155:1/erc20:0x68A118Ef45063051Eac49c7e647CE5Ace48a68a5",
-      "balance": {
-        "amount": "444.44",
-        "usd_value": "33.33"
-      },
+      "amount": "444.44",
       "event_type": "deposit",
       "accounting_event_type": "asset movement",
       "event_subtype": "deposit asset",

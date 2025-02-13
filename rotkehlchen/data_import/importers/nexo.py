@@ -3,7 +3,6 @@ import logging
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.converters import asset_from_nexo
 from rotkehlchen.constants import ZERO
 from rotkehlchen.data_import.utils import (
@@ -99,7 +98,7 @@ class NexoImporter(BaseExchangeImporter):
                 location=Location.NEXO,
                 event_type=HistoryEventType.DEPOSIT,
                 asset=asset,
-                balance=Balance(amount),
+                amount=amount,
                 unique_id=transaction,
             )])
         elif entry_type in {'Withdrawal', 'Withdraw Exchanged'}:
@@ -108,7 +107,7 @@ class NexoImporter(BaseExchangeImporter):
                 location=Location.NEXO,
                 event_type=HistoryEventType.WITHDRAWAL,
                 asset=asset,
-                balance=Balance(amount),
+                amount=amount,
                 unique_id=transaction,
             )])
         elif entry_type == 'Withdrawal Fee':
@@ -117,7 +116,7 @@ class NexoImporter(BaseExchangeImporter):
                 location=Location.NEXO,
                 event_type=HistoryEventType.WITHDRAWAL,
                 asset=asset,
-                balance=Balance(amount),
+                amount=amount,
                 unique_id=transaction,
                 is_fee=True,
             )])
@@ -143,7 +142,7 @@ class NexoImporter(BaseExchangeImporter):
                 location=Location.NEXO,
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.NONE,
-                balance=Balance(amount=amount),
+                amount=amount,
                 asset=asset,
                 location_label=transaction,
                 notes=f'{entry_type} from Nexo',
@@ -159,7 +158,7 @@ class NexoImporter(BaseExchangeImporter):
                 location=Location.NEXO,
                 event_type=HistoryEventType.LOSS,
                 event_subtype=HistoryEventSubType.LIQUIDATE,
-                balance=Balance(amount=input_amount),
+                amount=input_amount,
                 asset=input_asset,
                 location_label=transaction,
                 notes=f'{entry_type} from Nexo',
@@ -172,7 +171,7 @@ class NexoImporter(BaseExchangeImporter):
                 timestamp=ts_sec_to_ms(timestamp),
                 location=Location.NEXO,
                 asset=asset,
-                balance=Balance(amount=amount),
+                amount=amount,
                 event_type=HistoryEventType.SPEND,
                 location_label=transaction,
                 event_subtype=HistoryEventSubType.PAYBACK_DEBT,
@@ -187,7 +186,7 @@ class NexoImporter(BaseExchangeImporter):
                 sequence_index=0,
                 timestamp=(timestamp_ms := ts_sec_to_ms(timestamp)),
                 location=Location.NEXO,
-                balance=Balance(amount=input_amount),
+                amount=input_amount,
                 event_type=HistoryEventType.TRADE,
                 event_subtype=HistoryEventSubType.SPEND,
                 asset=input_asset,
@@ -201,7 +200,7 @@ class NexoImporter(BaseExchangeImporter):
                 timestamp=timestamp_ms,
                 location=Location.NEXO,
                 event_subtype=HistoryEventSubType.RECEIVE,
-                balance=Balance(amount=amount),
+                amount=amount,
                 location_label=transaction,
                 asset=asset,
                 notes=f'{entry_type} from Nexo',

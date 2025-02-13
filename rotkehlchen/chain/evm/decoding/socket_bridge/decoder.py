@@ -81,7 +81,7 @@ class SocketBridgeDecoder(DecoderInterface):
             if (
                 event.location_label == sender and
                 event.asset == bridged_asset and
-                event.balance.amount == amount and
+                event.amount == amount and
                 event.event_type == HistoryEventType.SPEND
             ):
                 if self.base.is_tracked(receiver):  # if receiver is not tracked we are spending it  # noqa: E501

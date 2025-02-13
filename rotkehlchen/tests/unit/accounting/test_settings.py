@@ -5,7 +5,6 @@ import pytest
 from rotkehlchen.accounting.accountant import Accountant
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.pnl import PNL, PnlTotals
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.constants import ONE, ZERO
@@ -124,7 +123,7 @@ def test_include_gas_costs(accountant, google_service):
             location=Location.ETHEREUM,
             location_label=addr1,
             asset=A_ETH,
-            balance=Balance(amount=FVal('0.000030921')),
+            amount=FVal('0.000030921'),
             notes='Burn 0.000030921 ETH for gas',
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -336,7 +335,7 @@ def test_eth_withdrawal_not_taxable(accountant: Accountant, staking_taxable: boo
             identifier=3,
             validator_index=1,
             timestamp=TimestampMS(1699319051000),
-            balance=Balance(staking_reward),
+            amount=staking_reward,
             withdrawal_address=make_evm_address(),
             is_exit=False,
         ),
@@ -377,7 +376,7 @@ def test_eth_withdrawal_respects_db_settings(
             identifier=3,
             validator_index=1,
             timestamp=TimestampMS(1699319051000),
-            balance=Balance(staking_reward),
+            amount=staking_reward,
             withdrawal_address=make_evm_address(),
             is_exit=False,
         ),

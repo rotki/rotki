@@ -18,7 +18,6 @@ from rotkehlchen.history.events.structures.base import HistoryBaseEntry, History
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import has_premium_check
 from rotkehlchen.tasks.manager import TaskManager
-from rotkehlchen.tasks.utils import query_missing_prices_of_base_entries
 from rotkehlchen.types import EVM_CHAINS_WITH_TRANSACTIONS, Location, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import timestamp_to_date
@@ -219,13 +218,6 @@ class HistoryQueryingManager:
         # After 3865 we have a recurring task that queries for missing prices, but
         # we make sure that the returned values have their correct value calculated
         db = DBHistoryEvents(self.db)
-        if task_manager is not None:
-            entries = db.get_base_entries_missing_prices(filter_query)
-            query_missing_prices_of_base_entries(
-                database=task_manager.database,
-                entries_missing_prices=entries,
-                base_entries_ignore_set=task_manager.base_entries_ignore_set,
-            )
         has_premium = has_premium_check(self.chains_aggregator.premium)
         events, filter_total_found, _ = db.get_history_events_and_limit_info(
             cursor=cursor,

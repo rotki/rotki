@@ -5,7 +5,6 @@ from more_itertools import peekable
 
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.pnl import PNL
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.processed_event import ProcessedAccountingEvent
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.evm.decoding.balancer.constants import CPT_BALANCER_V1
@@ -37,7 +36,7 @@ DEPOSIT_ENTRIES = [
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
         asset=Asset('eip155:1/erc20:0x72Cd8f4504941Bf8c5a21d1Fd83A96499FD71d2C'),
-        balance=Balance(amount=FVal('1675.495956074927519908')),
+        amount=FVal('1675.495956074927519908'),
         location_label=USER_ADDRESS,
         notes='Receive 1675.495956074927519908 BPT from a Balancer v1 pool',
         counterparty=CPT_BALANCER_V1,
@@ -51,7 +50,7 @@ DEPOSIT_ENTRIES = [
         event_type=HistoryEventType.DEPOSIT,
         event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
         asset=Asset('eip155:1/erc20:0xe2f2a5C287993345a840Db3B0845fbC70f5935a5'),
-        balance=Balance(amount=FVal('131578.947368421052491563')),
+        amount=FVal('131578.947368421052491563'),
         location_label=USER_ADDRESS,
         notes='Deposit 131578.947368421052491563 mUSD to a Balancer v1 pool',
         counterparty=CPT_BALANCER_V1,
@@ -65,7 +64,7 @@ DEPOSIT_ENTRIES = [
         event_type=HistoryEventType.DEPOSIT,
         event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
         asset=A_USDC,
-        balance=Balance(amount=FVal('131421.703252')),
+        amount=FVal('131421.703252'),
         location_label=USER_ADDRESS,
         notes='Deposit 131421.703252 USDC to a Balancer v1 pool',
         counterparty=CPT_BALANCER_V1,
@@ -79,7 +78,7 @@ DEPOSIT_ENTRIES = [
         event_type=HistoryEventType.WITHDRAWAL,
         event_subtype=HistoryEventSubType.REFUND,
         asset=Asset('eip155:1/erc20:0xe2f2a5C287993345a840Db3B0845fbC70f5935a5'),
-        balance=Balance(amount=FVal('6578.947368421052624578')),
+        amount=FVal('6578.947368421052624578'),
         location_label=USER_ADDRESS,
         notes='Refunded 6578.947368421052624578 mUSD after depositing in Balancer V1 pool',
         counterparty=CPT_BALANCER_V1,
@@ -93,7 +92,7 @@ DEPOSIT_ENTRIES = [
         event_type=HistoryEventType.WITHDRAWAL,
         event_subtype=HistoryEventSubType.REFUND,
         asset=A_USDC,
-        balance=Balance(amount=FVal('6571.085163')),
+        amount=FVal('6571.085163'),
         location_label=USER_ADDRESS,
         notes='Refunded 6571.085163 USDC after depositing in Balancer V1 pool',
         counterparty=CPT_BALANCER_V1,
@@ -107,7 +106,7 @@ DEPOSIT_ENTRIES = [
         event_type=HistoryEventType.INFORMATIONAL,
         event_subtype=HistoryEventSubType.APPROVE,
         asset=Asset('eip155:1/erc20:0xe2f2a5C287993345a840Db3B0845fbC70f5935a5'),
-        balance=Balance(amount=FVal('1.157920892373161954235709850E+59')),
+        amount=FVal('1.157920892373161954235709850E+59'),
         location_label=USER_ADDRESS,
         notes='Approve 115792089237316195423570985000000000000000000000000000000000 mUSD of 0x549C0421c69Be943A2A60e76B19b4A801682cBD3 for spending by 0x9ED47950144e51925166192Bf0aE95553939030a',  # noqa: E501
         counterparty='0x9ED47950144e51925166192Bf0aE95553939030a',
