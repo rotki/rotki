@@ -1009,7 +1009,14 @@ class DBHandler:
         cursor.execute(query, tuples)
         mapping = defaultdict(set)
         for entry in cursor:
-            mapping[ActionType.deserialize_from_db(entry[0])].add(entry[1])
+            mapping[entry[0]].add(entry[1])
+
+        for map_key in list(mapping.keys()):
+            # To avoid doing a deserialization for each trade we use the string key
+            # of the ActionType and deserialize it at the end. Assigning to a new key
+            # and deleting the old one doesn't copy the pointed set in the dict.
+            mapping[ActionType.deserialize_from_db(map_key)] = mapping[map_key]
+            del mapping[map_key]
 
         return mapping
 
