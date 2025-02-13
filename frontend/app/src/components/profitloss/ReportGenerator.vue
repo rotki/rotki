@@ -40,6 +40,7 @@ function importReportData() {
 }
 
 const isDevelopment = checkIfDevelopment();
+const isDemoMode = import.meta.env.VITE_DEMO_MODE !== undefined;
 const accountSettingsRoute = Routes.SETTINGS_ACCOUNTING;
 </script>
 
@@ -98,7 +99,7 @@ const accountSettingsRoute = Routes.SETTINGS_ACCOUNTING;
               <RuiTooltip
                 :open-delay="400"
                 :popper="{ placement: 'top' }"
-                :disabled="isDevelopment"
+                :disabled="isDevelopment && !isDemoMode"
                 class="h-full"
               >
                 <template #activator>
@@ -109,7 +110,7 @@ const accountSettingsRoute = Routes.SETTINGS_ACCOUNTING;
                     <template #prepend>
                       <RuiIcon name="lu-bug" />
                     </template>
-                    <span v-if="isDevelopment">
+                    <span v-if="isDevelopment && !isDemoMode">
                       {{ t('profit_loss_reports.debug.title') }}
                     </span>
                   </RuiButton>
