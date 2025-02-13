@@ -4066,7 +4066,8 @@
     },
     "chart_limit": {
       "title": "This graph is not included in the FREE version",
-      "description": "Experience the full potential of rotki with a Premium subscription."
+      "description": "Experience the full potential of rotki with a Premium subscription.",
+      "statistic": "This statistic view is not included in the FREE version"
     },
     "get": "Get premium",
     "premium_active": "@:premium_settings.title is active",

@@ -78,7 +78,7 @@ function onLoadStart() {
     />
     <img
       v-else-if="error"
-      src="/assets/images/placeholder.svg"
+      src="/assets/images/placeholder/image.svg"
       :class="{ 'object-contain': contain }"
       :style="style"
       :sizes="sizes"
