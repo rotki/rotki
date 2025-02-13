@@ -72,7 +72,11 @@ class Compound(EthereumModule, CompoundV2, CompoundV3):
             given_defi_balances: 'GIVEN_DEFI_BALANCES',
             given_eth_balances: 'GIVEN_ETH_BALANCES',
     ) -> tuple[ADDRESS_TO_ASSETS, ADDRESS_TO_ASSETS, ADDRESS_TO_ASSETS, ADDRESS_TO_ASSETS]:
-        """Processes all events and returns a dictionary of earned balances totals"""
+        """Processes all events and returns a dictionary of earned balances totals
+
+        This function queries the value of the events on each call. This is for Compound
+        in the defi section that will be deprecated.
+        """
         assets: ADDRESS_TO_ASSETS = defaultdict(lambda: defaultdict(Balance))
         loss_assets: ADDRESS_TO_ASSETS = defaultdict(lambda: defaultdict(Balance))
         rewards_assets: ADDRESS_TO_ASSETS = defaultdict(lambda: defaultdict(Balance))

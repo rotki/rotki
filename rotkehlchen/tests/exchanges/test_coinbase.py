@@ -479,7 +479,7 @@ def test_coinbase_staking_events(
         event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
         asset=asset_from_coinbase('DOT'),
         location_label=coinbase.name,
-        balance=Balance(FVal('5.5776172514')),
+        amount=FVal('5.5776172514'),
         notes='Stake 5.5776172514 DOT in Coinbase',
     )]
 

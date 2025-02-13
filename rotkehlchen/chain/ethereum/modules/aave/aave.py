@@ -253,7 +253,10 @@ class Aave(EthereumModule):
     ) -> tuple[dict[Asset, Balance], dict[Asset, Balance], dict[Asset, Balance]]:
         """
         Returns a tuple of mapping of losses due to liquidation/borrowing and
-        earnings due to keeping the principal repaid by the liquidation
+        earnings due to keeping the principal repaid by the liquidation.
+
+        This function queries the value of the events on each call. This is for Aave V1 and
+        Aave V2 in the defi section that will be deprecated.
         """
         historical_borrow_balances: dict[Asset, FVal] = defaultdict(FVal)
         total_lost: dict[Asset, Balance] = defaultdict(Balance)

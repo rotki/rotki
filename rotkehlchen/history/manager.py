@@ -215,8 +215,6 @@ class HistoryQueryingManager:
                     f'{",".join(exchange_names)}',
                 )
 
-        # After 3865 we have a recurring task that queries for missing prices, but
-        # we make sure that the returned values have their correct value calculated
         db = DBHistoryEvents(self.db)
         has_premium = has_premium_check(self.chains_aggregator.premium)
         events, filter_total_found, _ = db.get_history_events_and_limit_info(

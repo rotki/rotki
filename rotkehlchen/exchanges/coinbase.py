@@ -717,7 +717,7 @@ class Coinbase(ExchangeInterface):
                     history_events.append(history_event)
 
                     if tx_type in ('staking_transfer', 'unstaking_transfer'):
-                        self.staking_events.add((history_event.timestamp, history_event.asset, history_event.balance.amount))  # noqa: E501
+                        self.staking_events.add((history_event.timestamp, history_event.asset, history_event.amount))  # noqa: E501
 
             # 'tx' represents uncategorized transactions that don't fit other specific types.
             # Used as fallback when a transaction's nature is unclear.

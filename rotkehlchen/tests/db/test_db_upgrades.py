@@ -3005,7 +3005,7 @@ def test_latest_upgrade_correctness(user_data_dir):
 
     # Execute upgrade
     db = _init_db_with_target_version(
-        target_version=47,
+        target_version=ROTKEHLCHEN_DB_VERSION,
         user_data_dir=user_data_dir,
         msg_aggregator=msg_aggregator,
         resume_from_backup=False,
@@ -3027,7 +3027,9 @@ def test_latest_upgrade_correctness(user_data_dir):
     result = cursor.execute("SELECT name FROM sqlite_master WHERE type='view'")
     views_after_creation = {x[0] for x in result}
 
-    assert cursor.execute("SELECT value FROM settings WHERE name='version'").fetchone()[0] == '47'
+    assert cursor.execute(
+        "SELECT value FROM settings WHERE name='version'",
+    ).fetchone()[0] == str(ROTKEHLCHEN_DB_VERSION)
     removed_tables = {'asset_movements', 'asset_movement_category'}
     removed_views = set()
     missing_tables = tables_before - tables_after_upgrade
