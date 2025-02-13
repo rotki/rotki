@@ -5,12 +5,30 @@ import { useAreaVisibilityStore } from '@/store/session/visibility';
 import NavigationMenu from '@/components/NavigationMenu.vue';
 import RotkiLogo from '@/components/common/RotkiLogo.vue';
 
+const demoMode = import.meta.env.VITE_DEMO_MODE;
 const { isMini, showDrawer } = storeToRefs(useAreaVisibilityStore());
 const { appVersion } = storeToRefs(useMainStore());
-
 const { isXlAndDown } = useBreakpoint();
-
 const route = useRoute();
+
+const version = computed<string>(() => {
+  const version = get(appVersion);
+  if (demoMode === undefined) {
+    return version;
+  }
+
+  const sanitizedVersion = version.replace('.dev', '');
+  const splitVersion = sanitizedVersion.split('.');
+  if (demoMode === 'minor') {
+    splitVersion[1] = `${parseInt(splitVersion[1]) + 1}`;
+    splitVersion[2] = '0';
+  }
+  else if (demoMode === 'patch') {
+    splitVersion[2] = `${parseInt(splitVersion[2]) + 1}`;
+  }
+  return splitVersion.join('.');
+});
+
 watch(route, () => {
   if (get(showDrawer) && get(isXlAndDown))
     set(showDrawer, false);
@@ -49,7 +67,7 @@ watch(route, () => {
       v-if="!isMini"
       class="p-2 text-center border-t border-default text-overline"
     >
-      {{ appVersion }}
+      {{ version }}
     </div>
   </RuiNavigationDrawer>
 </template>

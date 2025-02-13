@@ -8,6 +8,8 @@ import AmountInput from '@/components/inputs/AmountInput.vue';
 
 const { t } = useI18n();
 
+const isDemo = import.meta.env.VITE_DEMO_MODE !== undefined;
+
 const labels = [
   {
     description: t('user_dropdown.change_privacy_mode.normal_mode.description'),
@@ -56,7 +58,7 @@ watch([enabled, multiplier], setData);
           @click="togglePrivacyMode()"
         >
           <RuiBadge
-            :model-value="enabled"
+            :model-value="enabled && !isDemo"
             color="error"
             dot
             placement="top"

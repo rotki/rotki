@@ -40,6 +40,7 @@ const showIgnoredAssets = useRefPropVModel(toggles, 'showIgnoredAssets');
 const { txChains } = useSupportedChains();
 const txChainIds = useArrayMap(txChains, x => x.id);
 
+const isDemoMode = import.meta.env.VITE_DEMO_MODE !== undefined;
 const isDevelopment = checkIfDevelopment();
 
 function redecodePageTransactions(): void {
@@ -92,7 +93,7 @@ function redecodePageTransactions(): void {
       </RuiButton>
 
       <RuiButton
-        v-if="isDevelopment"
+        v-if="isDevelopment && !isDemoMode"
         class="!py-2"
         @click="redecodePageTransactions()"
       >

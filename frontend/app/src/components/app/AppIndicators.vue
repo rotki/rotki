@@ -17,6 +17,7 @@ import GlobalSearch from '@/components/GlobalSearch.vue';
 import SyncIndicator from '@/components/status/sync/SyncIndicator.vue';
 
 const isDevelopment = checkIfDevelopment();
+const isDemoMode = import.meta.env.VITE_DEMO_MODE !== undefined;
 
 const { isSmAndUp } = useBreakpoint();
 
@@ -33,7 +34,7 @@ const { showHelpBar, showNotesSidebar, showNotificationBar, showPinned } = store
   <div class="flex overflow-hidden h-full items-center">
     <GetPremiumButton hide-on-small-screen />
     <RouterLink
-      v-if="isDevelopment && isSmAndUp"
+      v-if="isDevelopment && isSmAndUp && !isDemoMode"
       to="/playground"
     >
       <RuiButton
