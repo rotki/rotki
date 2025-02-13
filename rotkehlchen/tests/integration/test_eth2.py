@@ -30,6 +30,7 @@ from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.modules.eth2.eth2 import Eth2
+    from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
 
 
@@ -45,10 +46,18 @@ def test_withdrawals(eth2: 'Eth2', database, ethereum_accounts, query_method):
 
     Test that the sources we can query agree with each other.
     """
-    to_ts = ts_now()
-    patch_ctx = patch.object(eth2.ethereum.etherscan, 'get_withdrawals', side_effect=RemoteError) if query_method == 'blockscout' else nullcontext()  # noqa: E501
+    with database.user_write() as write_cursor:
+        # Add validators for both addresses so that withdrawals get queried.
+        DBEth2(database).add_or_update_validators(write_cursor, [
+            ValidatorDetails(validator_index=1, public_key=Eth2PubKey('0xfoo1'), withdrawal_address=ethereum_accounts[0]),  # noqa: E501
+            ValidatorDetails(validator_index=2, public_key=Eth2PubKey('0xfoo2'), withdrawal_address=ethereum_accounts[1]),  # noqa: E501
+        ])
 
-    with patch_ctx:
+    to_ts = ts_now()
+    with (
+        patch.object(eth2.ethereum.etherscan, 'get_withdrawals', side_effect=RemoteError) if query_method == 'blockscout' else nullcontext(),  # noqa: E501
+        patch.object(eth2, 'detect_exited_validators', side_effect=lambda *args, **kwargs: None),
+    ):
         eth2.query_services_for_validator_withdrawals(addresses=ethereum_accounts, to_ts=to_ts)
     dbevents = DBHistoryEvents(database)
     with database.conn.read_ctx() as cursor:
@@ -386,9 +395,16 @@ def test_withdrawals_detect_exit(eth2: 'Eth2', database):
 @pytest.mark.freeze_time('2023-11-20 07:07:55 GMT')
 def test_query_no_withdrawals(
         eth2: 'Eth2',
+        database: 'DBHandler',
         ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
     """Test that if an address has no withdrawals we correctly handle it"""
+    with database.user_write() as write_cursor:
+        # Add a validator associated with the address so that withdrawals get queried.
+        DBEth2(database).add_or_update_validators(write_cursor, [
+            ValidatorDetails(validator_index=1, public_key=Eth2PubKey('0xfoo1'), withdrawal_address=ethereum_accounts[0]),  # noqa: E501
+        ])
+
     etherscan_patch = patch.object(eth2.ethereum.etherscan, 'get_withdrawals', side_effect=eth2.ethereum.etherscan.get_withdrawals)  # noqa: E501
     blockscout_patch = patch.object(eth2.ethereum.blockscout, 'query_withdrawals', side_effect=eth2.ethereum.blockscout.query_withdrawals)  # noqa: E501
 

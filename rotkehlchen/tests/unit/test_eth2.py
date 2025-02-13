@@ -1087,7 +1087,7 @@ def test_query_chunked_endpoint_with_offset_pagination(eth2):
     """
     validator_indices = range(450000, 450000 + 194)
     result = eth2.beacon_inquirer.beaconchain._query_chunked_endpoint_with_pagination(
-        indices_or_pubkeys=validator_indices,
+        indices=validator_indices,
         module='execution',
         endpoint='produced',
         limit=50,

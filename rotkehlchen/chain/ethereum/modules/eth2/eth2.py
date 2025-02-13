@@ -389,14 +389,25 @@ class Eth2(EthereumModule):
 
     def query_single_address_withdrawals(self, address: ChecksumEvmAddress, to_ts: Timestamp) -> None:  # noqa: E501
         with self.database.conn.read_ctx() as cursor:
-            last_query = self.database.get_dynamic_cache(
-                cursor=cursor,
-                name=DBCacheDynamic.WITHDRAWALS_TS,
-                address=address,
-            )
+            # Get the last query timestamp for this address and a count of this address's
+            # validators that are either active, exited but never queried, or exited and
+            # queried but exited_timestamp is after last query timestamp.
+            key_name = DBCacheDynamic.WITHDRAWALS_TS.get_db_key(address=address)
+            last_query, validator_count = cursor.execute(
+                'SELECT kv.value, COUNT(*) FROM eth2_validators ev '
+                'LEFT JOIN key_value_cache kv ON kv.name=? WHERE ev.withdrawal_address=? AND '
+                '(ev.exited_timestamp IS NULL OR kv.name IS NULL OR ev.exited_timestamp > kv.value)',  # noqa: E501
+                (key_name, address),
+            ).fetchone()
+
+        if validator_count == 0:
+            return
 
         from_ts = Timestamp(0)
-        if last_query is not None and to_ts - (from_ts := last_query) <= HOUR_IN_SECONDS * 3:
+        if (
+            last_query is not None and
+            to_ts - (from_ts := Timestamp(int(last_query))) <= HOUR_IN_SECONDS * 3
+        ):
             return
 
         log.debug(f'Querying {address} ETH withdrawals from {from_ts} to {to_ts}')

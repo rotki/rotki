@@ -3878,14 +3878,13 @@ class RestAPI:
                     addresses=self.rotkehlchen.chains_aggregator.accounts.eth,
                     to_ts=ts_now(),
                 )
-            else:  # block production
-                with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
-                    cursor.execute('SELECT validator_index FROM eth2_validators')
-                    indices = [row[0] for row in cursor]
-                if len(indices) != 0:
-                    log.debug(f'Querying information for validator indices {indices}')
+            else:  # block production  # noqa: PLR5501, E501  # ruff thinks this should be elif but that makes the logic confusing
+                if len(indices := eth2.beacon_inquirer.beaconchain.get_validators_to_query_for_blocks()) != 0:  # noqa: E501
+                    log.debug(f'Querying block production information for validator indices {indices}')  # noqa: E501
                     eth2.beacon_inquirer.beaconchain.get_and_store_produced_blocks(indices)
                     eth2.combine_block_with_tx_events()
+                else:
+                    log.debug('No active or un-queried validators found. Skipping query of block production information.')  # noqa: E501
         except RemoteError as e:
             return wrap_in_fail_result(
                 message=str(e),

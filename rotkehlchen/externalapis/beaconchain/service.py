@@ -11,7 +11,8 @@ from gevent.lock import Semaphore
 from rotkehlchen.chain.ethereum.modules.eth2.structures import ValidatorDailyStats, ValidatorID
 from rotkehlchen.chain.ethereum.modules.eth2.utils import calculate_query_chunks
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.db.cache import DBCacheStatic
+from rotkehlchen.constants.timing import DAY_IN_SECONDS
+from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError
@@ -209,7 +210,7 @@ class BeaconChain(ExternalServiceWithApiKey):
 
     def _query_chunked_endpoint_with_pagination(
             self,
-            indices_or_pubkeys: list[int | Eth2PubKey],
+            indices: list[int],
             module: Literal['execution'],
             endpoint: Literal['produced'],
             limit: int,
@@ -222,7 +223,7 @@ class BeaconChain(ExternalServiceWithApiKey):
         anything to avoid extra calls at the moment.
         """
         chunks = calculate_query_chunks(
-            indices_or_pubkeys=indices_or_pubkeys,
+            indices_or_pubkeys=indices,
             chunk_size=80,  # reduce number of validators to 80 due to URL length
         )
         data: list[dict[str, Any]] = []
@@ -262,16 +263,54 @@ class BeaconChain(ExternalServiceWithApiKey):
             endpoint=None,
         )
 
+    def _get_validators_to_query_for_blocks(
+            self,
+            where: str,
+            bindings: tuple[int] | None = None,
+    ) -> list[int]:
+        """Get a list of indices for validators that need to be queried for produced blocks.
+        Args:
+            `where`: SQL where clause to filter the validators
+            `bindings`: Query bindings needed by the where clause
+        """
+        with self.db.conn.read_ctx() as cursor:
+            key_name = DBCacheDynamic.LAST_PRODUCED_BLOCKS_QUERY_TS.value[0][:30]
+            cursor.execute(
+                'SELECT ev.validator_index FROM eth2_validators ev '
+                f"LEFT JOIN key_value_cache kv ON kv.name = '{key_name}' || ev.validator_index "
+                f'{where} ORDER BY ev.validator_index',
+                bindings or (),
+            )
+            return [row[0] for row in cursor]
+
+    def get_validators_to_query_for_blocks(self) -> list[int]:
+        """Get indices of validators that are either active, exited but never queried,
+        or exited and queried but exited timestamp is after last query timestamp.
+        """
+        return self._get_validators_to_query_for_blocks(
+            where='WHERE kv.name IS NULL OR ev.exited_timestamp IS NULL OR ev.exited_timestamp > kv.value',  # noqa: E501
+        )
+
+    def get_outdated_validators_to_query_for_blocks(self) -> list[int]:
+        """Get indices of validators that have not already been queried for blocks
+        within the last day, and that are either active, exited but never queried,
+        or exited and queried but exited timestamp is after last query timestamp.
+        """
+        return self._get_validators_to_query_for_blocks(
+            where='WHERE kv.name IS NULL OR (kv.value <= ? AND (ev.exited_timestamp IS NULL OR ev.exited_timestamp > kv.value))',  # noqa: E501
+            bindings=(ts_now() - DAY_IN_SECONDS,),
+        )
+
     def get_and_store_produced_blocks(
             self,
-            indices_or_pubkeys: list[int | Eth2PubKey],
+            indices: list[int],
     ) -> None:
         with self.produced_blocks_lock:
-            return self._get_and_store_produced_blocks(indices_or_pubkeys)
+            self._get_and_store_produced_blocks(indices)
 
     def _get_and_store_produced_blocks(
             self,
-            indices_or_pubkeys: list[int | Eth2PubKey],
+            indices: list[int],
     ) -> None:
         """Get blocks produced by a set of validator indices/pubkeys and store the
         data in the DB.
@@ -296,7 +335,7 @@ class BeaconChain(ExternalServiceWithApiKey):
         """
         # This will query everything. It's not filterable by time
         data = self._query_chunked_endpoint_with_pagination(
-            indices_or_pubkeys=indices_or_pubkeys,
+            indices=indices,
             module='execution',
             endpoint='produced',
             limit=50,
@@ -352,11 +391,14 @@ class BeaconChain(ExternalServiceWithApiKey):
                         dbevents.add_history_event(write_cursor=write_cursor, event=mev_event)
 
             with self.db.user_write() as write_cursor:
-                self.db.set_static_cache(
-                    write_cursor=write_cursor,
-                    name=DBCacheStatic.LAST_PRODUCED_BLOCKS_QUERY_TS,
-                    value=ts_now(),
-                )
+                now = ts_now()
+                for index in indices:
+                    self.db.set_dynamic_cache(
+                        write_cursor=write_cursor,
+                        name=DBCacheDynamic.LAST_PRODUCED_BLOCKS_QUERY_TS,
+                        value=now,
+                        index=index,
+                    )
 
         except KeyError as e:  # raising and not continuing since if 1 key missing something is off  # noqa: E501
             raise RemoteError(

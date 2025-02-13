@@ -11,16 +11,19 @@ from rotkehlchen.assets.asset import EvmToken, UnderlyingToken
 from rotkehlchen.chain.bitcoin.hdkey import HDKey
 from rotkehlchen.chain.bitcoin.xpub import XpubData
 from rotkehlchen.chain.ethereum.constants import LAST_GRAPH_DELEGATIONS
+from rotkehlchen.chain.ethereum.modules.eth2.structures import ValidatorDetails
 from rotkehlchen.chain.ethereum.modules.thegraph.constants import CONTRACT_STAKING
 from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE_V3
 from rotkehlchen.chain.evm.decoding.spark.constants import CPT_SPARK
 from rotkehlchen.chain.evm.decoding.thegraph.constants import CPT_THEGRAPH
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode, string_to_evm_address
+from rotkehlchen.constants import HOUR_IN_SECONDS
 from rotkehlchen.constants.assets import A_COMP, A_DAI, A_GRT, A_LUSD, A_USDC, A_USDT
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.constants.timing import DATA_UPDATES_REFRESH, DAY_IN_SECONDS, WEEK_IN_SECONDS
 from rotkehlchen.db.cache import DBCacheDynamic, DBCacheStatic
 from rotkehlchen.db.calendar import CalendarEntry, CalendarFilterQuery, DBCalendar
+from rotkehlchen.db.eth2 import DBEth2
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings, ModifiableDBSettings
@@ -54,6 +57,7 @@ from rotkehlchen.types import (
     SPAM_PROTOCOL,
     ChainID,
     ChecksumEvmAddress,
+    Eth2PubKey,
     EvmTokenKind,
     EvmTransaction,
     EVMTxHash,
@@ -586,38 +590,107 @@ def test_maybe_kill_running_tx_query_tasks(rotkehlchen_api_server, ethereum_acco
         assert len(rotki.task_manager.running_greenlets) == 0
 
 
-@pytest.mark.parametrize('ethereum_accounts', [['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12', '0x9531C059098e3d194fF87FebB587aB07B30B1306']])  # noqa: E501
+@pytest.mark.parametrize('ethereum_accounts', [[
+    '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',
+    '0x9531C059098e3d194fF87FebB587aB07B30B1306',
+    '0x706A70067BE19BdadBea3600Db0626859Ff25D74',
+]])
 @pytest.mark.parametrize('ethereum_modules', [['eth2']])
 @pytest.mark.parametrize('max_tasks_num', [5])
 def test_maybe_query_ethereum_withdrawals(task_manager, ethereum_accounts):
     task_manager.potential_tasks = [task_manager._maybe_query_withdrawals]
-    query_patch = patch.object(
-        task_manager.chains_aggregator.get_module('eth2'),
-        'query_services_for_validator_withdrawals',
-        side_effect=lambda *args, **kwargs: None,
-    )
+    eth2 = task_manager.chains_aggregator.get_module('eth2')
+    with task_manager.database.user_write() as cursor:
+        # Add an active and an exited validator, and also leave one address with no validators
+        DBEth2(task_manager.database).add_or_update_validators(cursor, [
+            ValidatorDetails(validator_index=1, public_key=Eth2PubKey('0xfoo1'), withdrawal_address=ethereum_accounts[0]),  # noqa: E501
+            ValidatorDetails(validator_index=2, public_key=Eth2PubKey('0xfoo2'), withdrawal_address=ethereum_accounts[1], exited_timestamp=Timestamp(1730000000)),  # noqa: E501
+        ])
 
-    with query_patch as query_mock:
-        task_manager.schedule()
-        gevent.sleep(0)  # context switch for execution of task
-        assert query_mock.call_count == 1
+    def maybe_run_task(
+            expected_call_count: int,
+            expected_addresses: list[ChecksumEvmAddress],
+    ) -> None:
+        queried_addresses = []
 
-        # test the used query ranges
-        for hours_ago, expected_call_count, msg in (
-                (5, 2, 'should have ran again'),
-                (1, 2, 'should not have ran again'),
+        def mock_get_withdrawals(address, *args, **kwargs) -> set:
+            """Assert that addresses queried matches the expected addresses."""
+            queried_addresses.append(address)
+            return set()
+
+        with (
+            patch.object(
+                eth2.ethereum.etherscan,
+                'get_withdrawals',
+                side_effect=mock_get_withdrawals,
+            ) as get_withdrawals_mock,
+            patch.object(
+                eth2,
+                'detect_exited_validators',
+                side_effect=lambda *args, **kwargs: None,
+            ),
         ):
-            with task_manager.database.user_write() as write_cursor:
-                for address in ethereum_accounts:
-                    task_manager.database.set_dynamic_cache(
-                        write_cursor=write_cursor,
-                        name=DBCacheDynamic.WITHDRAWALS_TS,
-                        value=ts_now() - 3600 * hours_ago,
-                        address=address,
-                    )
             task_manager.schedule()
-            gevent.sleep(0)  # context switch for execution of task
-            assert query_mock.call_count == expected_call_count, msg
+            gevent.sleep(0)
+            assert get_withdrawals_mock.call_count == expected_call_count
+            assert queried_addresses == expected_addresses
+
+    # Both addresses with validators should be queried initially
+    maybe_run_task(expected_call_count=2, expected_addresses=ethereum_accounts[:2])
+    # Shouldn't run now since all addresses are recently queried.
+    maybe_run_task(expected_call_count=0, expected_addresses=[])
+
+    # Move time into the future.
+    with freeze_time(datetime.datetime.now(tz=datetime.UTC) + datetime.timedelta(seconds=HOUR_IN_SECONDS * 5)):  # noqa: E501
+        # Only the address with an active validator should be queried.
+        maybe_run_task(expected_call_count=1, expected_addresses=[ethereum_accounts[0]])
+
+
+@pytest.mark.parametrize('ethereum_accounts', [['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']])
+@pytest.mark.parametrize('ethereum_modules', [['eth2']])
+@pytest.mark.parametrize('max_tasks_num', [5])
+def test_maybe_query_produced_blocks(task_manager, ethereum_accounts):
+    task_manager.potential_tasks = [task_manager._maybe_query_produced_blocks]
+    original_get_and_store_blocks = task_manager.chains_aggregator.beaconchain._get_and_store_produced_blocks  # noqa: E501
+    with task_manager.database.user_write() as cursor:
+        # Add both an active and an exited validator
+        DBEth2(task_manager.database).add_or_update_validators(cursor, [
+            ValidatorDetails(validator_index=1, public_key=Eth2PubKey('0xfoo1'), withdrawal_address=ethereum_accounts[0]),  # noqa: E501
+            ValidatorDetails(validator_index=2, public_key=Eth2PubKey('0xfoo2'), withdrawal_address=ethereum_accounts[0], exited_timestamp=Timestamp(1730000000)),  # noqa: E501
+        ])
+
+    def maybe_run_task(expected_call_count: int, expected_indices: list[int]) -> None:
+
+        def mock_get_blocks(indices: list[int]) -> None:
+            """Assert that both validators are queried."""
+            assert indices == expected_indices
+            original_get_and_store_blocks(indices)
+
+        with (
+            patch.object(
+                task_manager.chains_aggregator.beaconchain,
+                '_get_and_store_produced_blocks',
+                side_effect=mock_get_blocks,
+            ) as get_blocks_mock,
+            patch.object(
+                task_manager.chains_aggregator.beaconchain,
+                '_query_chunked_endpoint_with_pagination',
+                side_effect=lambda *args, **kwargs: [],
+            ),
+        ):
+            task_manager.schedule()
+            gevent.sleep(0)
+            assert get_blocks_mock.call_count == expected_call_count
+
+    # Both validators should be queried initially
+    maybe_run_task(expected_call_count=1, expected_indices=[1, 2])
+    # Shouldn't run now since all indices are recently queried.
+    maybe_run_task(expected_call_count=0, expected_indices=[])
+
+    # Move time into the future.
+    with freeze_time(datetime.datetime.now(tz=datetime.UTC) + datetime.timedelta(seconds=WEEK_IN_SECONDS)):  # noqa: E501
+        # Should only query the active validator
+        maybe_run_task(expected_call_count=1, expected_indices=[1])
 
 
 @pytest.mark.parametrize('max_tasks_num', [5])

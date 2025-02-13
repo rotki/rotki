@@ -550,21 +550,12 @@ class TaskManager:
 
     def _maybe_query_produced_blocks(self) -> Optional[list[gevent.Greenlet]]:
         """Schedules the blocks production query if enough time has passed"""
-        with self.database.conn.read_ctx() as cursor:
-            result = self.database.get_static_cache(
-                cursor=cursor, name=DBCacheStatic.LAST_PRODUCED_BLOCKS_QUERY_TS,
-            )
-            if result is not None and ts_now() - result <= DAY_IN_SECONDS:
-                return None
-
-            cursor.execute('SELECT validator_index FROM eth2_validators')
-            indices = [row[0] for row in cursor]
-
-        if len(indices) == 0:
+        if (
+            self.chains_aggregator.get_module('eth2') is None or
+            self.chains_aggregator.beaconchain.produced_blocks_lock.locked() or
+            len(indices := self.chains_aggregator.beaconchain.get_outdated_validators_to_query_for_blocks()) == 0  # noqa: E501
+        ):
             return None
-
-        if self.chains_aggregator.beaconchain.produced_blocks_lock.locked():
-            return None  # task is already running, either api or periodic
 
         task_name = 'Periodically query produced blocks'
         log.debug(f'Scheduling task to {task_name}')
@@ -573,37 +564,29 @@ class TaskManager:
             task_name=task_name,
             exception_is_error=True,
             method=self.chains_aggregator.beaconchain.get_and_store_produced_blocks,
-            indices_or_pubkeys=indices,
+            indices=indices,
         )]
 
     def _maybe_query_withdrawals(self) -> Optional[list[gevent.Greenlet]]:
         """Schedules the eth withdrawal query if enough time has passed"""
-        eth2 = self.chains_aggregator.get_module('eth2')
-        if eth2 is None:
+        if (eth2 := self.chains_aggregator.get_module('eth2')) is None:
             return None
 
         if eth2.withdrawals_query_lock.locked():
             return None  # already running
 
         now = ts_now()
-        addresses = self.chains_aggregator.accounts.eth
         with self.database.conn.read_ctx() as cursor:
-            end_timestamps = cursor.execute(
-                'SELECT value FROM key_value_cache WHERE name LIKE ?',
-                (DBCacheDynamic.WITHDRAWALS_TS.value[0].replace('{address}', '%'),),
-            ).fetchall()
-
-        should_query = False
-        if len(end_timestamps) != len(addresses):
-            should_query = True
-        else:
-            for entry in end_timestamps:
-                if now - int(entry[0]) >= HOUR_IN_SECONDS * 3:
-                    should_query = True
-                    break
-
-        if not should_query:
-            return None
+            # Get user addresses that have validators that may need to be queried
+            key_name = DBCacheDynamic.WITHDRAWALS_TS.value[0][:17]
+            cursor.execute(
+                'SELECT DISTINCT ev.withdrawal_address FROM eth2_validators ev '
+                f"LEFT JOIN key_value_cache kv ON kv.name = '{key_name}' || ev.withdrawal_address "
+                'WHERE kv.value <= ? OR kv.name IS NULL',
+                (ts_now() - HOUR_IN_SECONDS * 3,),
+            )
+            if len(addresses := [row[0] for row in cursor]) == 0:
+                return None
 
         task_name = 'Periodically query ethereum withdrawals'
         log.debug(f'Scheduling task to {task_name}')
@@ -621,8 +604,7 @@ class TaskManager:
 
         Not putting a lock as it should probably not be a too heavy task?
         """
-        eth2 = self.chains_aggregator.get_module('eth2')
-        if eth2 is None:
+        if (eth2 := self.chains_aggregator.get_module('eth2')) is None:
             return None
 
         with self.database.conn.read_ctx() as cursor:
