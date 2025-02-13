@@ -119,9 +119,9 @@ class Eth2(EthereumModule):
             self.detect_and_refresh_validators(addresses)
 
         with self.database.conn.read_ctx() as cursor:
-            pubkey_to_ownership = dbeth2.get_pubkey_to_ownership(cursor)
+            pubkey_to_ownership = dbeth2.get_active_pubkeys_to_ownership(cursor)
 
-        if len(pubkey_to_ownership) == []:
+        if len(pubkey_to_ownership) == 0:
             return {}  # nothing detected
 
         balances = self.beacon_inquirer.get_balances(
