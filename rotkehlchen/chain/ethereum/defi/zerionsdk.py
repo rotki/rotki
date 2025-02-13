@@ -321,7 +321,7 @@ class ZerionSDK:
                             log.error(
                                 f'Deserialization error trying to get single balance '
                                 f'in {protocol.name}. {balances[0]}'
-                                f' Skipping underliying balance',
+                                f' Skipping underlying balance',
                             )
                             # In this case we just skip the underlying balance
                             continue
