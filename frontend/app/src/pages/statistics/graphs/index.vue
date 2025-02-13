@@ -2,7 +2,7 @@
 import { PremiumStatistics } from '@/premium/premium';
 import { NoteLocation } from '@/types/notes';
 import { usePremium } from '@/composables/premium';
-import NoPremiumPlaceholder from '@/components/premium/NoPremiumPlaceholder.vue';
+import StatisticPlaceholder from '@/components/graphs/StatisticPlaceholder.vue';
 
 definePage({
   meta: {
@@ -12,15 +12,11 @@ definePage({
 });
 
 const premium = usePremium();
-const { t } = useI18n();
 </script>
 
 <template>
   <div class="container">
-    <NoPremiumPlaceholder
-      v-if="!premium"
-      :text="t('statistics.no_premium_label')"
-    />
-    <PremiumStatistics v-else />
+    <PremiumStatistics v-if="premium" />
+    <StatisticPlaceholder v-else />
   </div>
 </template>

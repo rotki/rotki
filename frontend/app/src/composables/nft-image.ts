@@ -22,7 +22,7 @@ export function useNftImage(mediaUrl: Ref<string | null>): UseNftImageReturnType
     }
   };
 
-  const placeholder = './assets/images/placeholder.svg';
+  const placeholder = './assets/images/placeholder/image.svg';
 
   const shouldRender = computed<boolean>(() => {
     const media = get(mediaUrl);
