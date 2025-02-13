@@ -74,7 +74,7 @@ def patch_etherscan(etherscan, response_msg):
 
 def test_maximum_rate_limit_reached(temp_etherscan, **kwargs):  # pylint: disable=unused-argument
     """
-    Test that we can handle etherscan's rate limit repsponse properly
+    Test that we can handle etherscan's rate limit response properly
 
     Regression test for https://github.com/rotki/rotki/issues/772"
     """
