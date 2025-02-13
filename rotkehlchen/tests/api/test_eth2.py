@@ -83,7 +83,6 @@ def _prepare_clean_validators(rotkehlchen_api_server: 'APIServer') -> None:
 
 @pytest.mark.vcr(
     filter_query_parameters=['apikey'],
-    allow_playback_repeats=True,
     match_on=['beaconchain_matcher'],
 )
 @pytest.mark.freeze_time('2024-06-20 18:18:00 GMT')
@@ -313,10 +312,10 @@ def test_staking_performance(
             ]},
     )
     result = assert_proper_sync_response_with_result(response)
-    expected_withdrawals_str, expected_outstanding_consensus_str = '0.931083313', '0.012038559'
+    expected_withdrawals_str, expected_outstanding_consensus_str = '0.931083313', '0.004313006'
     # we don't compare directly the dict values because they come from the database and sqlite
     # handles REAL SUM in a non-accurate way to the decimal point, plus it differs between OSes.
-    expected_execution_blocks, expected_withdrawals, expected_outstanding_consensus, expected_apr = FVal('0.050711686670683926'), FVal(expected_withdrawals_str), FVal(expected_outstanding_consensus_str), FVal('0.0357145299327897914654288755952596541234774409066056206397907463329126771149047')  # noqa: E501
+    expected_execution_blocks, expected_withdrawals, expected_outstanding_consensus, expected_apr = FVal('0.050711686670683926'), FVal(expected_withdrawals_str), FVal(expected_outstanding_consensus_str), FVal('0.035473696762025140316173838831466687839186696867031144007246316068503435499705')  # noqa: E501
     expected_sum = expected_execution_blocks + expected_withdrawals + expected_execution_mev + expected_outstanding_consensus  # noqa: E501
     assert FVal(result['sums'].pop('execution_blocks')).is_close(expected_execution_blocks)
     assert FVal(result['sums'].pop('execution_mev')).is_close(expected_execution_mev)
@@ -335,7 +334,6 @@ def test_staking_performance(
 
 @pytest.mark.vcr(
     filter_query_parameters=['apikey'],
-    allow_playback_repeats=True,
     match_on=['beaconchain_matcher'],
 )
 @pytest.mark.parametrize('ethereum_accounts', [[
@@ -407,7 +405,7 @@ def test_staking_performance_filtering_pagination(
         assert get_balances.call_count == 1  # make sure cache works
 
     # now filter by validator state
-    active_validators, exited_validators = 180, 222
+    active_validators, exited_validators = 1, 401
     for status, expected_num in (('active', active_validators), ('exited', exited_validators)):
         response = requests.put(
             api_url_for(
@@ -867,7 +865,6 @@ def test_add_delete_validator_errors(
 
 @pytest.mark.vcr(
     filter_query_parameters=['apikey'],
-    allow_playback_repeats=True,
     match_on=['beaconchain_matcher'],
 )
 @pytest.mark.freeze_time('2024-02-04 00:00:00 GMT')
@@ -1073,7 +1070,8 @@ def test_query_combined_mev_reward_and_block_production_events(rotkehlchen_api_s
         json={'group_by_event_ids': True},
     )
     result = assert_proper_sync_response_with_result(response)
-    assert len(result['entries']) == result['entries_found'] == result['entries_total'] == 7
+    assert len(result['entries']) == result['entries_found'] == 7
+    assert result['entries_total'] == 21
     event_identifier = None
     for entry in result['entries']:
         if entry['entry']['block_number'] == block_number:
@@ -1095,11 +1093,11 @@ def test_query_combined_mev_reward_and_block_production_events(rotkehlchen_api_s
     )
     result = assert_proper_sync_response_with_result(response)
     assert len(result['entries']) == result['entries_found'] == 3
-    assert result['entries_total'] == 12
+    assert result['entries_total'] == 34
     for outer_entry in result['entries']:
         entry = outer_entry['entry']
         if entry['sequence_index'] == 0:
-            assert entry['identifier'] == 10
+            assert entry['identifier'] == 32
             assert entry['event_identifier'] == event_identifier
             assert entry['entry_type'] == 'eth block event'
             assert entry['event_type'] == 'informational'  # fee recipient not tracked
@@ -1107,7 +1105,7 @@ def test_query_combined_mev_reward_and_block_production_events(rotkehlchen_api_s
             assert entry['validator_index'] == vindex1
             assert entry['amount'] == '0.126419309459217215'
         elif entry['sequence_index'] == 1:
-            assert entry['identifier'] == 11
+            assert entry['identifier'] == 33
             assert entry['event_identifier'] == event_identifier
             assert entry['entry_type'] == 'eth block event'
             assert entry['event_type'] == 'informational'
@@ -1194,7 +1192,6 @@ def test_query_combined_mev_reward_and_block_production_events(rotkehlchen_api_s
 
 @pytest.mark.vcr(
     filter_query_parameters=['apikey'],
-    allow_playback_repeats=True,
     match_on=['beaconchain_matcher'],
 )
 @pytest.mark.freeze_time('2024-02-11 15:06:00 GMT')
