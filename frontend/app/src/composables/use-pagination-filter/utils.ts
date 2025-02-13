@@ -102,7 +102,7 @@ function arrayToApiSorting<T extends NonNullable<unknown>>(sorting: SingleColumn
 function singleToApiSorting<T extends NonNullable<unknown>>(sorting: SingleColumnSorting<T>): ApiSorting {
   return {
     ascending: [sorting.direction === 'asc'],
-    orderByAttributes: [transformCase(sorting.column)],
+    orderByAttributes: sorting.column ? [transformCase(sorting.column)] : [],
   };
 }
 
