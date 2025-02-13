@@ -311,7 +311,7 @@ export function usePaginationFilters<
     const sortParams = isEqual(sorting, defaultSorting())
       ? undefined
       : {
-          sort: Array.isArray(sorting) ? sorting.map(item => item.column) : [sorting.column],
+          sort: Array.isArray(sorting) ? sorting.map(item => item.column) : (sorting.column ? [sorting.column] : []),
           sortOrder: Array.isArray(sorting) ? sorting.map(item => item.direction) : [sorting.direction],
         };
 
