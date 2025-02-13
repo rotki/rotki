@@ -10,6 +10,7 @@ from rotkehlchen.db.filtering import (
     DBFilter,
     DBIgnoredAssetsFilter,
     DBMultiStringFilter,
+    DBMultiValueFilter,
     DBNestedFilter,
     DBNotEqualFilter,
     DBTimestampFilter,
@@ -25,7 +26,6 @@ from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.types import (
     EventDirection,
     HistoryEventSubType,
-    HistoryEventType,
 )
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -292,6 +292,14 @@ class HistoricalBalancesManager:
                     to_ts=to_ts,
                     from_ts=from_ts,
                     scaling_factor=FVal(1000),  # timestamp of events are stored in ms
+                ), DBMultiValueFilter(
+                    and_op=True,
+                    column='subtype',
+                    values=[  # Skip all DEPOSIT_ASSET and REMOVE_ASSET events since they don't affect the balance.  # noqa: E501
+                        HistoryEventSubType.DEPOSIT_ASSET.serialize(),
+                        HistoryEventSubType.REMOVE_ASSET.serialize(),
+                    ],
+                    operator='NOT IN',
                 ),
             ]
             if assets is not None:  # filter for the specific assets
@@ -329,14 +337,8 @@ class HistoricalBalancesManager:
                 trade_bindings,
             )
             cursor2.execute(
-                f'SELECT {HISTORY_BASE_ENTRY_FIELDS} FROM history_events WHERE {" AND ".join(event_where_clauses)} '  # noqa: E501
-                f'AND NOT ((type=? AND subtype=?) OR (type=? AND subtype=?)) ORDER BY timestamp',
-                event_bindings + [
-                    HistoryEventType.DEPOSIT.serialize(),
-                    HistoryEventSubType.DEPOSIT_ASSET.serialize(),
-                    HistoryEventType.WITHDRAWAL.serialize(),
-                    HistoryEventSubType.REMOVE_ASSET.serialize(),
-                ],  # Skip DEPOSIT/DEPOSIT_ASSET and WITHDRAWAL/REMOVE_ASSET events since they don't affect the balance.  # noqa: E501
+                f'SELECT {HISTORY_BASE_ENTRY_FIELDS} FROM history_events WHERE {" AND ".join(event_where_clauses)} ORDER BY timestamp',  # noqa: E501
+                event_bindings,
             )
 
             trades_buffer = deque(cursor1.fetchmany(BATCH_SIZE))

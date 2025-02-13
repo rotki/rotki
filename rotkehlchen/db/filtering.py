@@ -605,13 +605,12 @@ class DBMultiValueFilter(DBFilter, Generic[T]):
     operator: Literal['IN', 'NOT IN'] = 'IN'
 
     def prepare(self) -> tuple[list[str], Sequence[T]]:
-        suffix = ''  # for NOT IN comparison remember NULL is a special case
-        if self.operator == 'NOT IN':
-            suffix = f' OR {self.column} IS NULL'
-        return (
-            [f'{self.column} {self.operator} ({", ".join(["?"] * len(self.values))}){suffix}'],
-            self.values,
-        )
+        placeholders = ', '.join(['?'] * len(self.values))
+        query = f'{self.column} {self.operator} ({placeholders})'
+        if self.operator == 'NOT IN':  # NOT IN needs special treatment of NULL
+            query = f'({query} OR {self.column} IS NULL)'  # Enclose in parentheses so OR works when combined with other filters  # noqa: E501
+
+        return [query], self.values
 
 
 class DBMultiStringFilter(DBMultiValueFilter[str]):
