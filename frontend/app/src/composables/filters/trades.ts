@@ -1,10 +1,10 @@
 import { z } from 'zod';
-import { type TradeType, TradeTypeEnum } from '@/types/history/trade';
 import { getDateInputISOFormat } from '@/utils/date';
 import { useHistoryStore } from '@/store/history';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { assetDeserializer, assetSuggestions, dateDeserializer, dateSerializer, dateValidator } from '@/utils/assets';
+import { TradeType } from '@/types/history/trade';
 import type {
   MatchedKeyword,
   SearchMatcher,
@@ -64,8 +64,8 @@ export function useTradeFilters(): FilterSchema<Filters, Matcher> {
       key: TradeFilterKeys.ACTION,
       keyValue: TradeFilterValueKeys.ACTION,
       string: true,
-      suggestions: (): TradeType[] => Object.values(TradeTypeEnum),
-      validate: (type): boolean => Object.values(TradeTypeEnum).includes(type),
+      suggestions: (): TradeType[] => Object.values(TradeType),
+      validate: (type): boolean => Object.values(TradeType).map(item => item.toString()).includes(type),
     },
     {
       description: t('closed_trades.filter.start_date'),
