@@ -1,4 +1,5 @@
 import warnings as test_warnings
+from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
 import pytest
@@ -23,6 +24,9 @@ from rotkehlchen.tests.utils.exchanges import TRANSACTIONS_RESPONSE, mock_normal
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import Location, TimestampMS, TradeType
 from rotkehlchen.utils.misc import ts_now
+
+if TYPE_CHECKING:
+    from rotkehlchen.db.dbhandler import DBHandler
 
 
 @pytest.fixture(name='mock_coinbase')
@@ -433,6 +437,54 @@ def test_coinbase_query_trade_history_paginated(function_scope_coinbase):
     )
 
 
+def test_coinbase_staking_events(
+        database: 'DBHandler',
+        function_scope_coinbase: 'Coinbase',
+) -> None:
+    """Regression test for a problem where staking events were shown twice."""
+    coinbase = function_scope_coinbase
+    original_api_query = coinbase._api_query
+
+    def mock_api_query(endpoint: str, **kwargs: Any) -> list:
+        """Mock coinbase api query to return some staking events for the transactions endpoint.
+        Otherwise call the original query function so it uses mock_normal_coinbase_query.
+        """
+        if '/transactions' in endpoint:
+            return [
+                {'amount': {'amount': '5.5776172514', 'currency': 'DOT'}, 'created_at': '2024-01-01T16:19:24Z', 'id': 'tx_id_1', 'native_amount': {'amount': '46.68', 'currency': 'USD'}, 'resource': 'transaction', 'resource_path': '/v2/accounts/account_id_1/transactions/tx_id_1', 'status': 'completed', 'type': 'staking_transfer'},  # noqa: E501
+                {'amount': {'amount': '-5.5776172514', 'currency': 'DOT'}, 'created_at': '2024-01-01T16:19:24Z', 'id': 'tx_id_2', 'native_amount': {'amount': '-46.68', 'currency': 'USD'}, 'resource': 'transaction', 'resource_path': '/v2/accounts/account_id_2/transactions/tx_id_2', 'status': 'completed', 'type': 'staking_transfer'},  # noqa: E501
+            ]
+
+        return original_api_query(endpoint, kwargs)
+
+    with (
+        patch.object(coinbase, '_api_query', side_effect=mock_api_query),
+        patch.object(coinbase.session, 'get', side_effect=mock_normal_coinbase_query),
+    ):
+        coinbase.query_history_events()
+
+    with database.conn.read_ctx() as cursor:
+        events = DBHistoryEvents(database).get_history_events(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(location=Location.COINBASE),
+            has_premium=True,
+        )
+
+    assert events == [HistoryEvent(
+        identifier=1,
+        event_identifier='CBE_tx_id_1',
+        sequence_index=0,
+        timestamp=TimestampMS(1704125964000),
+        location=Location.COINBASE,
+        event_type=HistoryEventType.STAKING,
+        event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+        asset=asset_from_coinbase('DOT'),
+        location_label=coinbase.name,
+        balance=Balance(FVal('5.5776172514')),
+        notes='Stake 5.5776172514 DOT in Coinbase',
+    )]
+
+
 def test_coinbase_query_history_events(
         database,
         function_scope_coinbase,
@@ -536,12 +588,12 @@ def test_coinbase_query_history_events(
         sequence_index=0,
         timestamp=TimestampMS(1611512633000),
         location=Location.COINBASE,
-        event_type=HistoryEventType.RECEIVE,
-        event_subtype=HistoryEventSubType.NONE,
+        event_type=HistoryEventType.STAKING,
+        event_subtype=HistoryEventSubType.REWARD,
         asset=asset_from_coinbase('SOL'),
         location_label=coinbase.name,
         balance=Balance(amount=FVal('0.025412'), usd_value=ZERO),
-        notes='',
+        notes='Receive 0.025412 SOL as Coinbase staking reward',
     ), AssetMovement(
         identifier=7,
         event_identifier='1181793af14ed42cb443d55ce50f68deef95b320c114025cb25a988f005a3a76',
