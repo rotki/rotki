@@ -40,10 +40,7 @@ describe('onlineHistoryEventForm.vue', () => {
     timestamp: 1696741486185,
     location: 'kraken',
     asset: asset.symbol,
-    balance: {
-      amount: bigNumberify(10),
-      usdValue: bigNumberify(40),
-    },
+    amount: bigNumberify(10),
     eventType: 'staking',
     eventSubtype: 'reward',
     locationLabel: 'Kraken 1',

@@ -43,10 +43,7 @@ describe('ethDepositEventForm.vue', () => {
     timestamp: 1697522243000,
     location: 'ethereum',
     asset: asset.symbol,
-    balance: {
-      amount: bigNumberify('3.2'),
-      usdValue: bigNumberify('5082.048'),
-    },
+    amount: bigNumberify('3.2'),
     eventType: 'staking',
     eventSubtype: 'deposit asset',
     locationLabel: '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',

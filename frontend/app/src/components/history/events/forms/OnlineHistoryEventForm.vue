@@ -98,7 +98,6 @@ const rules = {
 };
 
 const numericAmount = bigNumberifyFromRef(amount);
-const numericUsdValue = bigNumberifyFromRef(usdValue);
 
 const { getPayloadNotes, saveHistoryEventHandler } = useHistoryEventsForm();
 
@@ -151,8 +150,7 @@ function applyEditableData(entry: OnlineHistoryEvent) {
   set(eventType, entry.eventType);
   set(eventSubtype, entry.eventSubtype || 'none');
   set(asset, entry.asset);
-  set(amount, entry.balance.amount.toFixed());
-  set(usdValue, entry.balance.usdValue.toFixed());
+  set(amount, entry.amount.toFixed());
   set(locationLabel, entry.locationLabel ?? '');
   set(notes, entry.notes ?? '');
 }
@@ -181,11 +179,8 @@ async function save(): Promise<boolean> {
   const usedNotes = getPayloadNotes(get(notes), editable?.notes);
 
   const payload: NewOnlineHistoryEventPayload = {
+    amount: get(numericAmount).isNaN() ? Zero : get(numericAmount),
     asset: get(asset),
-    balance: {
-      amount: get(numericAmount).isNaN() ? Zero : get(numericAmount),
-      usdValue: get(numericUsdValue).isNaN() ? Zero : get(numericUsdValue),
-    },
     entryType: HistoryEventEntryType.HISTORY_EVENT,
     eventIdentifier: get(eventIdentifier),
     eventSubtype: get(eventSubtype),

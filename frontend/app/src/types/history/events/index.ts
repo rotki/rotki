@@ -1,4 +1,4 @@
-import { Balance, HistoryEventEntryType, NumericString } from '@rotki/common';
+import { type Balance, HistoryEventEntryType, NumericString } from '@rotki/common';
 import { z } from 'zod';
 import { EntryMeta } from '@/types/history/meta';
 import { CollectionCommonFields } from '@/types/collection';
@@ -68,8 +68,8 @@ export const HistoryEventDetail = z
 export type HistoryEventDetail = z.infer<typeof HistoryEventDetail>;
 
 export const CommonHistoryEvent = z.object({
+  amount: NumericString,
   asset: z.string(),
-  balance: Balance,
   eventIdentifier: z.string(),
   eventSubtype: z.string(),
   eventType: z.string(),

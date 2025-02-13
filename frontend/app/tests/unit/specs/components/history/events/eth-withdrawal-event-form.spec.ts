@@ -39,10 +39,7 @@ describe('ethWithdrawalEventForm.vue', () => {
     timestamp: 1697517629000,
     location: 'ethereum',
     asset: asset.symbol,
-    balance: {
-      amount: bigNumberify('2.5'),
-      usdValue: bigNumberify('3973.525'),
-    },
+    amount: bigNumberify('2.5'),
     eventType: 'staking',
     eventSubtype: 'remove asset',
     locationLabel: '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',

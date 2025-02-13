@@ -45,10 +45,7 @@ describe('evmEventForm.vue', () => {
     timestamp: 1686495083,
     location: 'ethereum',
     asset: asset.symbol,
-    balance: {
-      amount: bigNumberify(610),
-      usdValue: bigNumberify(0),
-    },
+    amount: bigNumberify(610),
     eventType: 'receive',
     eventSubtype: '',
     locationLabel: '0xfDb7EEc5eBF4c4aC7734748474123aC25C6eDCc8',

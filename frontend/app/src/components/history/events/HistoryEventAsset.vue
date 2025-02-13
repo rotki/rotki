@@ -39,7 +39,7 @@ const { navigateToDetails } = useAssetPageNavigation(eventAsset);
       class="flex flex-col"
     >
       <AmountDisplay
-        :value="event.balance.amount"
+        :value="event.amount"
         :asset="event.asset"
         :resolution-options="{
           collectionParent: false,
@@ -47,8 +47,8 @@ const { navigateToDetails } = useAssetPageNavigation(eventAsset);
       />
       <AmountDisplay
         :key="event.timestamp"
-        :amount="event.balance.amount"
-        :value="event.balance.usdValue"
+        :amount="event.amount"
+        :value="Zero"
         :price-asset="event.asset"
         :fiat-currency="CURRENCY_USD"
         class="text-rui-text-secondary"
