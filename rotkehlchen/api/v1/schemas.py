@@ -3,6 +3,7 @@ import operator
 import tempfile
 import typing
 from collections.abc import Callable
+from contextvars import ContextVar
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Final, Literal, cast, get_args
 
@@ -834,6 +835,7 @@ class CreateHistoryEventSchema(Schema):
     """Schema used when adding a new event in the EVM transactions view"""
     include_identifier: bool = False
     entry_type = SerializableEnumField(enum_class=HistoryBaseEntryType, required=True)
+    history_event_context: ContextVar = ContextVar('history_event_context')
 
     def __init__(self, dbhandler: 'DBHandler') -> None:
         super().__init__()
@@ -910,7 +912,7 @@ class CreateHistoryEventSchema(Schema):
                 data: dict[str, Any],
                 **_kwargs: Any,
         ) -> dict[str, Any]:
-            database = self.context['schema'].database
+            database = CreateHistoryEventSchema.history_event_context.get()['schema'].database
             with database.conn.read_ctx() as cursor:
                 tracked_accounts = database.get_blockchain_accounts(cursor)
             data['fee_recipient_tracked'] = data['fee_recipient'] in tracked_accounts.get(SupportedBlockchain.ETHEREUM)  # noqa: E501
@@ -1008,7 +1010,7 @@ class CreateHistoryEventSchema(Schema):
                 identifier=data.get('identifier'),
                 amount=data['balance'].amount,
                 extra_data=extra_data,
-                fee_identifier=self.context['schema'].get_fee_event_identifier(data),
+                fee_identifier=CreateHistoryEventSchema.history_event_context.get()['schema'].get_fee_event_identifier(data),
                 location_label=data['location_label'],
             ) if fee is not None else [AssetMovement(
                 is_fee=False,
@@ -1047,7 +1049,8 @@ class CreateHistoryEventSchema(Schema):
     ) -> dict[str, Any]:
         entry_type = data.pop('entry_type')  # already used to decide schema
         exclude = () if self.include_identifier else ('identifier',)
-        return self.ENTRY_TO_SCHEMA[entry_type](exclude=exclude, context={'schema': self}).load(data)  # noqa: E501
+        self.history_event_context.set({'schema': self})
+        return self.ENTRY_TO_SCHEMA[entry_type](exclude=exclude).load(data)
 
     class Meta:  # need it to validate extra fields in make_history_base_entry
         unknown = INCLUDE
