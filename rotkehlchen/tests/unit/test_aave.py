@@ -1,5 +1,4 @@
 from typing import TYPE_CHECKING
-from unittest.mock import patch
 
 import pytest
 
@@ -62,18 +61,14 @@ def test_aave_v1_events_stats(
         premium=rotki_premium_object,
         msg_aggregator=database.msg_aggregator,
     )
-    with patch(
-        'rotkehlchen.chain.ethereum.modules.aave.aave.query_usd_price_zero_if_error',
-        new=lambda *args, **kwargs: ONE,
-    ):
-        stats = aave.get_stats_for_addresses(
-            addresses=[string_to_evm_address('0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12')],
-            from_timestamp=Timestamp(0),
-            to_timestamp=ts_now(),
-            given_defi_balances={},
-            given_eth_balances={},
-        )
 
+    stats = aave.get_stats_for_addresses(
+        addresses=[string_to_evm_address('0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12')],
+        from_timestamp=Timestamp(0),
+        to_timestamp=ts_now(),
+        given_defi_balances={},
+        given_eth_balances={},
+    )
     expected_stats = {
         '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12': AaveStats(
             total_earned_interest={

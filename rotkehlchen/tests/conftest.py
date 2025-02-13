@@ -248,7 +248,7 @@ def vcr_config() -> dict[str, Any]:
     since it cannot detect dynamic usage (request.getfixturevalue) in pytest-recording
     """
     if 'RECORD_CASSETTES' in os.environ:
-        record_mode = 'new_episodes'
+        record_mode = 'once'
     else:
         record_mode = 'none'
 

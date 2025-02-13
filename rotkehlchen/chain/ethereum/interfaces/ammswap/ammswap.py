@@ -103,7 +103,9 @@ class AMMSwapPlatform:
         """Given an address' mint/burn history events, process each event (grouping by pool)
         aggregating the token0, token1 and USD amounts for calculating the profit/loss in the
         pool. Finally return a list of <LiquidityPoolEventsBalance>, where each
-        contains the profit/loss and events per pool.
+        contains the profit/loss and events per pool. This function queries USD value of the
+        events each time the logic is called. This is for uniswap/sushiswap in the defi section
+        that will be deprecated.
 
         If `balances` is empty that means either the address does not have
         balances in the protocol or the endpoint has been called with a
