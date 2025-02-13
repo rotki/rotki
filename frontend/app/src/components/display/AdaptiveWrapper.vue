@@ -24,7 +24,7 @@ const { isDark } = useRotkiTheme();
 
 const { circle, padding } = toRefs(props);
 
-const radius = computed(() => (get(circle) ? '50%' : '4px'));
+const radius = computed(() => (get(circle) ? '50%' : '6px'));
 </script>
 
 <template>
