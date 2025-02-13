@@ -3,17 +3,13 @@ import DateDisplay from '@/components/display/DateDisplay.vue';
 import TransactionQueryStatusLine from '@/components/history/events/tx/query-status/TransactionQueryStatusLine.vue';
 import EvmChainIcon from '@/components/helper/display/icons/EvmChainIcon.vue';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
-import LazyLoader from '@/components/helper/LazyLoader.vue';
 import type { EvmTransactionQueryData } from '@/types/websocket-messages';
 
 defineProps<{ item: EvmTransactionQueryData }>();
 </script>
 
 <template>
-  <LazyLoader
-    min-height="40px"
-    class="flex items-center"
-  >
+  <div class="flex items-center">
     <AdaptiveWrapper>
       <EvmChainIcon
         :chain="item.evmChain"
@@ -34,6 +30,7 @@ defineProps<{ item: EvmTransactionQueryData }>();
         <RuiIcon
           class="text-rui-text-secondary"
           name="lu-circle-help"
+          size="18"
         />
       </template>
 
@@ -53,5 +50,5 @@ defineProps<{ item: EvmTransactionQueryData }>();
         </template>
       </i18n-t>
     </RuiTooltip>
-  </LazyLoader>
+  </div>
 </template>

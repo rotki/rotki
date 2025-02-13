@@ -1,15 +1,8 @@
 <script setup lang="ts">
 import SuccessDisplay from '@/components/display/SuccessDisplay.vue';
 import EventDecodingStatusDetails from '@/components/history/events/EventDecodingStatusDetails.vue';
-import TransactionQueryStatusSteps from '@/components/history/events/tx/query-status/TransactionQueryStatusSteps.vue';
-import TransactionQueryStatusDetails
-  from '@/components/history/events/tx/query-status/TransactionQueryStatusDetails.vue';
-import TransactionQueryStatusCurrent
-  from '@/components/history/events/tx/query-status/TransactionQueryStatusCurrent.vue';
-import HistoryEventsQueryStatusDetails
-  from '@/components/history/events/query-status/HistoryEventsQueryStatusDetails.vue';
-import HistoryEventsQueryStatusCurrent
-  from '@/components/history/events/query-status/HistoryEventsQueryStatusCurrent.vue';
+import EvmTransactionQueryStatus from '@/components/history/events/tx/query-status/EvmTransactionQueryStatus.vue';
+import HistoryEventsQueryStatus from '@/components/history/events/query-status/HistoryEventsQueryStatus.vue';
 import type { Blockchain } from '@rotki/common';
 import type {
   EvmTransactionQueryData,
@@ -17,23 +10,22 @@ import type {
   HistoryEventsQueryData,
 } from '@/types/websocket-messages';
 
-const props = withDefaults(
-  defineProps<{
-    onlyChains?: Blockchain[];
-    locations?: string[];
-    transactions?: EvmTransactionQueryData[];
-    decodingStatus: EvmUnDecodedTransactionsData[];
-    events?: HistoryEventsQueryData[];
-    getKey: (item: EvmTransactionQueryData | HistoryEventsQueryData) => string;
-    loading: boolean;
-  }>(),
-  {
-    events: () => [],
-    locations: () => [],
-    onlyChains: () => [],
-    transactions: () => [],
-  },
-);
+interface HistoryQueryStatusDialogProps {
+  onlyChains?: Blockchain[];
+  locations?: string[];
+  transactions?: EvmTransactionQueryData[];
+  decodingStatus: EvmUnDecodedTransactionsData[];
+  events?: HistoryEventsQueryData[];
+  getKey: (item: EvmTransactionQueryData | HistoryEventsQueryData) => string;
+  loading: boolean;
+}
+
+const props = withDefaults(defineProps<HistoryQueryStatusDialogProps>(), {
+  events: () => [],
+  locations: () => [],
+  onlyChains: () => [],
+  transactions: () => [],
+});
 
 const { t } = useI18n();
 
@@ -83,43 +75,15 @@ const usedLoading = logicOr(loading, loadingDebounced);
         </template>
 
         <div :class="$style.content">
-          <div>
-            <h6 class="text-body-1 font-medium">
-              {{ t('transactions.query_status_events.title') }}
-            </h6>
-            <HistoryEventsQueryStatusCurrent
-              :locations="locations"
-              class="text-subtitle-2 text-rui-text-secondary mt-2"
-            />
-            <div
-              v-for="item in events"
-              :key="getKey(item)"
-              class="py-1"
-            >
-              <HistoryEventsQueryStatusDetails :item="item" />
-            </div>
-          </div>
+          <HistoryEventsQueryStatus
+            :locations="locations"
+            :events="events"
+          />
 
-          <div>
-            <h6 class="text-body-1 font-medium">
-              {{ t('transactions.query_status.title') }}
-            </h6>
-            <TransactionQueryStatusCurrent
-              :only-chains="onlyChains"
-              class="text-subtitle-2 text-rui-text-secondary my-2"
-            />
-            <div
-              v-for="item in transactions"
-              :key="getKey(item)"
-              class="py-1"
-            >
-              <TransactionQueryStatusDetails :item="item" />
-              <TransactionQueryStatusSteps
-                :item="item"
-                :class="$style.stepper"
-              />
-            </div>
-          </div>
+          <EvmTransactionQueryStatus
+            :transactions="transactions"
+            :only-chains="onlyChains"
+          />
 
           <RuiDivider class="-my-2" />
 
@@ -176,8 +140,5 @@ const usedLoading = logicOr(loading, loadingDebounced);
   max-height: calc(90vh - 11.875rem);
   min-height: 50vh;
 
-  .stepper {
-    @apply overflow-hidden #{!important};
-  }
 }
 </style>
