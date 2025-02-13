@@ -15,7 +15,7 @@ const { getChain } = useSupportedChains();
   <i18n-t
     :keypath="getItemTranslationKey(item)"
     tag="div"
-    class="flex items-center py-2 text-no-wrap flex-wrap text-body-2 gap-2"
+    class="flex items-center py-2 text-no-wrap flex-wrap text-body-2 gap-x-2 gap-y-1"
   >
     <template #status>
       <span>

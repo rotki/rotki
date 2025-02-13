@@ -2,7 +2,6 @@
 import { TaskType } from '@/types/task-type';
 import { useTaskStore } from '@/store/tasks';
 import { useTransactionQueryStatus } from '@/composables/history/events/query-status/tx-query-status';
-import LazyLoader from '@/components/helper/LazyLoader.vue';
 import type { EvmTransactionQueryData } from '@/types/websocket-messages';
 
 const props = defineProps<{ item: EvmTransactionQueryData }>();
@@ -10,7 +9,7 @@ const props = defineProps<{ item: EvmTransactionQueryData }>();
 const { t } = useI18n();
 const { getStatusData } = useTransactionQueryStatus();
 const { isTaskRunning } = useTaskStore();
-const { isSmAndDown } = useBreakpoint();
+const { isMdAndDown } = useBreakpoint();
 
 const { item } = toRefs(props);
 
@@ -46,16 +45,12 @@ function isStepInProgress(stepIndex: number): boolean {
 </script>
 
 <template>
-  <LazyLoader
+  <RuiStepper
     v-if="hasProgress"
-    min-height="40px"
-  >
-    <RuiStepper
-      class="[&_hr]:!hidden [&>div]:!py-0"
-      :class="[isSmAndDown ? 'ml-8' : 'ml-2']"
-      :steps="steps"
-      :step="getStatusData(item).index"
-      :orientation="isSmAndDown ? 'vertical' : 'horizontal'"
-    />
-  </LazyLoader>
+    class="overflow-visible [&_hr]:!hidden [&>div]:!py-0 -mt-2 md:-mt-3"
+    :class="[isMdAndDown ? 'ml-8' : 'ml-2']"
+    :steps="steps"
+    :step="getStatusData(item).index"
+    :orientation="isMdAndDown ? 'vertical' : 'horizontal'"
+  />
 </template>
