@@ -4,6 +4,7 @@ from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.eas.constants import CPT_EAS
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -41,7 +42,7 @@ def test_attest_optimism(optimism_inquirer, optimism_accounts):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.ATTEST,
             asset=A_ETH,
-            amount=FVal(0),
+            amount=ZERO,
             location_label=user_address,
             notes='Attest to https://optimism.easscan.org/attestation/view/0x3045bf8797f8e528219d48b23d28b661be5be17d13c28f61f4f6cced1b349c65',
             counterparty=CPT_EAS,

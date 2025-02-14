@@ -137,7 +137,7 @@ def test_accounting_no_settings(accounting_pot: 'AccountingPot'):
         event_type=HistoryEventType.INFORMATIONAL,
         event_subtype=HistoryEventSubType.NONE,
         asset=A_ETH,
-        amount=FVal(0),
+        amount=ZERO,
     )
     consumed_num = accounting_pot.events_accountant.process(
         event=event,
@@ -369,7 +369,7 @@ def test_accounting_swap_settings(accounting_pot: 'AccountingPot', counterparty:
         asset=A_DAI,
         free_amount=FVal(3000),
         taxable_amount=ZERO,
-        price=Price(FVal(1)),
+        price=Price(ONE),
         pnl=PNL(free=ZERO, taxable=ZERO),
         cost_basis=None,
         index=2,

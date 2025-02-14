@@ -229,7 +229,7 @@ def test_v2_payback(accountant: 'Accountant'):
             timestamp=TS1,
             asset=Asset('eip155:1/erc20:0xcd9D82d33bd737De215cDac57FE2F7f04DF77FE0'),
             free_amount=FVal(1000),
-            taxable_amount=FVal(0),
+            taxable_amount=ZERO,
             price=Price(ONE),
             pnl=PNL(taxable=ZERO, free=ZERO),
             cost_basis=None,

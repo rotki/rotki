@@ -4,6 +4,7 @@ from unittest.mock import patch
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_okx
 from rotkehlchen.constants.assets import A_ETH, A_SOL, A_USDC, A_USDT
+from rotkehlchen.constants.misc import ONE
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.exchanges.okx import Okx, OkxEndpoint
@@ -625,7 +626,7 @@ def test_okx_query_trades(mock_okx: Okx):
             quote_asset=A_USDT,
             trade_type=TradeType.SELL,
             amount=AssetAmount(FVal(3600)),
-            rate=Price(FVal(1)),
+            rate=Price(ONE),
             fee=Fee(FVal(3.6)),
             fee_currency=A_USDT,
             link='555555555555555555',
@@ -638,7 +639,7 @@ def test_okx_query_trades(mock_okx: Okx):
             quote_asset=A_USDT,
             trade_type=TradeType.SELL,
             amount=AssetAmount(FVal(850)),
-            rate=Price(FVal(1)),
+            rate=Price(ONE),
             fee=Fee(FVal(0.85)),
             fee_currency=A_USDT,
             link='555555555555555555',

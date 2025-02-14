@@ -5,7 +5,7 @@ import pytest
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.pnl import PNL, PnlTotals
 from rotkehlchen.chain.evm.decoding.paraswap.constants import CPT_PARASWAP
-from rotkehlchen.constants import ZERO
+from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_ETH, A_WBTC
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
@@ -113,6 +113,6 @@ def test_paraswap_swap_with_fee(accountant: 'Accountant', db_settings: dict):
         })
         assert fee_spent_event.price == Price(FVal(0.1))  # BTC swapped(€10) / ETH received(€100)
         assert fee_spent_event.cost_basis is not None  # Fee is taxable this time
-        assert fee_spent_event.cost_basis.taxable_amount == FVal(1)
+        assert fee_spent_event.cost_basis.taxable_amount == ONE
         assert fee_spent_event.cost_basis.taxable_bought_cost == FVal(0.1)  # BTC swapped(€10) / ETH received(€100)  # noqa: E501
     assert_pnl_totals_close(expected_pnls, accountant.pots[0].pnls)

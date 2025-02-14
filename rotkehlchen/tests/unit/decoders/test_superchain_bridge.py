@@ -9,6 +9,7 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.optimism.constants import CPT_OPTIMISM
 from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
 from rotkehlchen.constants.assets import A_ETH, A_OPTIMISM_ETH
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -359,7 +360,7 @@ def test_prove_withdrawal(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
-            amount=FVal(0),
+            amount=ZERO,
             location_label=user_address,
             notes='Prove optimism bridge withdrawal 0xa030ef121ef8a49271b3201cc277c919063e740cc2fefe9b50d2f7327359710b',  # noqa: E501
             counterparty=CPT_OPTIMISM,

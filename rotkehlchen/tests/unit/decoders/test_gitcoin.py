@@ -4,6 +4,7 @@ from rotkehlchen.chain.ethereum.modules.gitcoin.constants import GITCOIN_GOVERNO
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS, CPT_GITCOIN
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_DAI, A_ETH, A_POLYGON_POS_MATIC, A_SAI
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -190,7 +191,7 @@ def test_gitcoin_vote_cast(ethereum_inquirer):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.GOVERNANCE,
             asset=A_ETH,
-            amount=FVal(0),
+            amount=ZERO,
             location_label=ADDY,
             notes='Vote FOR gitcoin governance proposal https://www.tally.xyz/gov/gitcoin/proposal/31',
             counterparty=CPT_GITCOIN,

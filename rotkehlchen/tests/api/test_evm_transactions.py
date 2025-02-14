@@ -8,6 +8,7 @@ import requests
 from rotkehlchen.chain.ethereum.modules.makerdao.sai.constants import CPT_SAI
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmTransactionsFilterQuery
 from rotkehlchen.db.history_events import (
@@ -146,7 +147,7 @@ def test_evm_transaction_hash_addition(rotkehlchen_api_server: 'APIServer') -> N
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
-            amount=FVal(0),
+            amount=ZERO,
             location_label='0x01349510117dC9081937794939552463F5616dfb',
             notes='Create CDP 131',
             counterparty=CPT_SAI,

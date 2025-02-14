@@ -11,6 +11,7 @@ import requests
 from rotkehlchen.accounting.export.csv import FILENAME_HISTORY_EVENTS_CSV
 from rotkehlchen.api.server import APIServer
 from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.constants.misc import ONE
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryEvent
@@ -229,7 +230,7 @@ def test_history_export_csv_errors(
 
 @pytest.mark.vcr(filter_query_parameters=['api_key'])
 @pytest.mark.parametrize('start_with_valid_premium', [True, False])
-@pytest.mark.parametrize('default_mock_price_value', [FVal(1)])
+@pytest.mark.parametrize('default_mock_price_value', [ONE])
 def test_history_export_csv_free_limit(
         rotkehlchen_api_server_with_exchanges: APIServer,
         start_with_valid_premium: bool,
@@ -248,7 +249,7 @@ def test_history_export_csv_free_limit(
             event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
-            amount=FVal(1),
+            amount=ONE,
         ), HistoryEvent(
             event_identifier=event_identifiers[1],
             sequence_index=0,

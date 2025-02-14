@@ -10,6 +10,7 @@ from rotkehlchen.chain.ethereum.modules.omni.constants import (
 )
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -97,7 +98,7 @@ def test_stake(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
             asset=Asset(OMNI_TOKEN_ID),
-            amount=FVal(0),
+            amount=ZERO,
             location_label=ethereum_accounts[0],
             notes=f'Revoke OMNI spending approval of {ethereum_accounts[0]} by {OMNI_STAKING_CONTRACT}',  # noqa: E501
             address=OMNI_STAKING_CONTRACT,

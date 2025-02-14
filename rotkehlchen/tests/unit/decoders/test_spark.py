@@ -7,6 +7,7 @@ from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.spark.constants import CPT_SPARK
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH, A_XDAI
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -149,7 +150,7 @@ def test_deposit_to_spark(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
             asset=Asset('eip155:1/erc20:0xa3931d71877C0E7a3148CB7Eb4463524FEc27fbD'),
-            amount=FVal(0),
+            amount=ZERO,
             location_label=user_address,
             notes='Enable sUSDS as collateral on Spark',
             counterparty=CPT_SPARK,
@@ -220,7 +221,7 @@ def test_withdraw_from_spark(gnosis_inquirer, gnosis_accounts):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
             asset=Asset('eip155:100/erc20:0x6A023CCd1ff6F2045C3309768eAd9E68F978f6e1'),
-            amount=FVal(0),
+            amount=ZERO,
             location_label=user_address,
             notes='Disable WETH as collateral on Spark',
             counterparty=CPT_SPARK,

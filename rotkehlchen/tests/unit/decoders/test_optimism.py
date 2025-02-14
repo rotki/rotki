@@ -12,6 +12,7 @@ from rotkehlchen.chain.optimism.modules.airdrops.decoder import (
     OPTIMISM_FOUNDATION_ADDRESS,
 )
 from rotkehlchen.constants.assets import A_ETH, A_OP
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -247,7 +248,7 @@ def test_optimism_delegate_change(optimism_inquirer):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.GOVERNANCE,
             asset=A_OP,
-            amount=FVal(0),
+            amount=ZERO,
             location_label=ADDY,
             notes=f'Change OP Delegate from {ADDY} to {ADDY}',
             counterparty=CPT_OPTIMISM,

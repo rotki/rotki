@@ -298,7 +298,7 @@ def test_direct_profit_currency_fiat_trades(accountant, google_service):
             base_asset=A_ETH,
             quote_asset=A_EUR,
             trade_type=TradeType.BUY,
-            amount=AssetAmount(FVal(1)),
+            amount=AssetAmount(ONE),
             rate=buy_price,  # But we bought in discount
             fee=Fee(ZERO),
             fee_currency=A_EUR,
@@ -309,7 +309,7 @@ def test_direct_profit_currency_fiat_trades(accountant, google_service):
             base_asset=A_ETH,
             quote_asset=A_EUR,
             trade_type=TradeType.SELL,
-            amount=AssetAmount(FVal(1)),
+            amount=AssetAmount(ONE),
             rate=sell_price,  # But we sold for more than oracle
             fee=Fee(ZERO),
             fee_currency=A_EUR,
@@ -345,7 +345,7 @@ def test_other_currency_fiat_trades(accountant, google_service):
             base_asset=A_ETH,
             quote_asset=A_USD,
             trade_type=TradeType.BUY,
-            amount=AssetAmount(FVal(1)),
+            amount=AssetAmount(ONE),
             rate=buy_price,  # But we bought in discount
             fee=Fee(ZERO),
             fee_currency=A_USD,
@@ -356,7 +356,7 @@ def test_other_currency_fiat_trades(accountant, google_service):
             base_asset=A_ETH,
             quote_asset=A_USD,  # USD/EUR -> 0.8878
             trade_type=TradeType.SELL,
-            amount=AssetAmount(FVal(1)),
+            amount=AssetAmount(ONE),
             rate=sell_price,  # But we sold for more than oracle
             fee=Fee(ZERO),
             fee_currency=A_USD,

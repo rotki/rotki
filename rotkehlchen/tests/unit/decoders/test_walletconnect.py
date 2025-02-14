@@ -12,6 +12,7 @@ from rotkehlchen.chain.optimism.modules.walletconnect.constants import (
     WCT_TOKEN_ID,
 )
 from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -180,7 +181,7 @@ def test_increase_lock(
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
             asset=Asset(WCT_TOKEN_ID),
-            amount=FVal(0),
+            amount=ZERO,
             location_label=user_address,
             notes=f'Increase WCT staking expiration until {decoder.decoders["Walletconnect"].timestamp_to_date(unlock_time)}',  # type: ignore  # noqa: E501
             counterparty=CPT_WALLETCONNECT,

@@ -11,7 +11,7 @@ from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.chain.ethereum.defi.zerionsdk import ZERION_ADAPTER_ADDRESS
 from rotkehlchen.chain.evm.constants import BALANCE_SCANNER_ADDRESS
 from rotkehlchen.chain.evm.types import NodeName, Web3Node, string_to_evm_address
-from rotkehlchen.constants import ZERO
+from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.constants.resolver import strethaddress_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
@@ -645,7 +645,7 @@ def setup_evm_addresses_activity_mock(
 
     def mock_avax_balance(account):
         if account in avalanche_addresses:
-            return FVal(1)
+            return ONE
         return ZERO
 
     def mock_zksync_lite_query_api(url, options):  # pylint: disable=unused-argument

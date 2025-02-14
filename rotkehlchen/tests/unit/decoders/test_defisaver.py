@@ -3,6 +3,7 @@ import pytest
 from rotkehlchen.chain.ethereum.modules.defisaver.constants import CPT_DEFISAVER, SUB_STORAGE
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -42,7 +43,7 @@ def test_subscribe(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
-            amount=FVal(0),
+            amount=ZERO,
             location_label=user_address,
             notes='Subscribe to defisaver automation with subscription id 175 for proxy 0x81D1Eb6CAAE8C82999F1aeC30b095B54255e39f5',  # noqa: E501
             counterparty=CPT_DEFISAVER,
@@ -84,7 +85,7 @@ def test_deactivate_sub(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
-            amount=FVal(0),
+            amount=ZERO,
             location_label=user_address,
             notes='Deactivate defisaver automation subscription with id 175',
             counterparty=CPT_DEFISAVER,

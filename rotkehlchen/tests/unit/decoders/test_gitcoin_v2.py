@@ -4,7 +4,7 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS, CPT_GITCOIN
 from rotkehlchen.chain.evm.decoding.gitcoinv2.constants import PROFILE_REGISTRY
 from rotkehlchen.constants.assets import A_ARB, A_DAI, A_ETH, A_POLYGON_POS_MATIC
-from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -277,7 +277,7 @@ def test_optimism_many_donations_different_strategies(optimism_inquirer, optimis
         assert event.event_type == HistoryEventType.SPEND
         assert event.event_subtype == HistoryEventSubType.DONATE
         assert event.asset == op_dai
-        assert FVal(1) <= event.amount <= FVal(5)
+        assert ONE <= event.amount <= FVal(5)
         assert event.location_label == user_address
         assert event.notes.startswith('Make a gitcoin donation')
         assert event.counterparty == CPT_GITCOIN

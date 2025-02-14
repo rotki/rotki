@@ -165,7 +165,7 @@ def assert_cointracking_import_results(rotki: Rotkehlchen, websocket_connection:
         assert event.location_label is None
         if event.asset == A_AXS:
             assert event.timestamp == 1641386280000
-            assert event.amount == FVal(1)
+            assert event.amount == ONE
             assert event.notes == 'Stake reward of 1.00000000 AXS in binance'
         else:
             assert event.asset == A_ETH
@@ -1433,7 +1433,7 @@ def assert_bitmex_import_wallet_history(rotki: Rotkehlchen):
             close_time=Timestamp(1576738800),
             profit_loss=AssetAmount(FVal(0.00000373)),
             pl_currency=A_BTC,
-            fee=Fee(FVal(0)),
+            fee=Fee(ZERO),
             fee_currency=A_BTC,
             link='Imported from BitMEX CSV file. Transact Type: RealisedPNL',
             notes='PnL from trade on XBTUSD',
@@ -1444,7 +1444,7 @@ def assert_bitmex_import_wallet_history(rotki: Rotkehlchen):
             close_time=Timestamp(1576825200),
             profit_loss=AssetAmount(FVal(0.00000016)),
             pl_currency=A_BTC,
-            fee=Fee(FVal(0)),
+            fee=Fee(ZERO),
             fee_currency=A_BTC,
             link='Imported from BitMEX CSV file. Transact Type: RealisedPNL',
             notes='PnL from trade on XBTUSD',
@@ -1455,7 +1455,7 @@ def assert_bitmex_import_wallet_history(rotki: Rotkehlchen):
             close_time=Timestamp(1576911600),
             profit_loss=AssetAmount(FVal(-0.00000123)),
             pl_currency=A_BTC,
-            fee=Fee(FVal(0)),
+            fee=Fee(ZERO),
             fee_currency=A_BTC,
             link='Imported from BitMEX CSV file. Transact Type: RealisedPNL',
             notes='PnL from trade on XBTUSD',
@@ -1466,7 +1466,7 @@ def assert_bitmex_import_wallet_history(rotki: Rotkehlchen):
             close_time=Timestamp(1576998000),
             profit_loss=AssetAmount(FVal(-0.00000075)),
             pl_currency=A_BTC,
-            fee=Fee(FVal(0)),
+            fee=Fee(ZERO),
             fee_currency=A_BTC,
             link='Imported from BitMEX CSV file. Transact Type: RealisedPNL',
             notes='PnL from trade on XBTUSD',
@@ -1477,7 +1477,7 @@ def assert_bitmex_import_wallet_history(rotki: Rotkehlchen):
             close_time=Timestamp(1577084400),
             profit_loss=AssetAmount(FVal(-0.00000203)),
             pl_currency=A_BTC,
-            fee=Fee(FVal(0)),
+            fee=Fee(ZERO),
             fee_currency=A_BTC,
             link='Imported from BitMEX CSV file. Transact Type: RealisedPNL',
             notes='PnL from trade on XBTUSD',
@@ -1488,7 +1488,7 @@ def assert_bitmex_import_wallet_history(rotki: Rotkehlchen):
             close_time=Timestamp(1577170800),
             profit_loss=AssetAmount(FVal(-0.00000201)),
             pl_currency=A_BTC,
-            fee=Fee(FVal(0)),
+            fee=Fee(ZERO),
             fee_currency=A_BTC,
             link='Imported from BitMEX CSV file. Transact Type: RealisedPNL',
             notes='PnL from trade on XBTUSD',
@@ -1499,7 +1499,7 @@ def assert_bitmex_import_wallet_history(rotki: Rotkehlchen):
             close_time=Timestamp(1577257200),
             profit_loss=AssetAmount(FVal(0.00085517)),
             pl_currency=A_BTC,
-            fee=Fee(FVal(0)),
+            fee=Fee(ZERO),
             fee_currency=A_BTC,
             link='Imported from BitMEX CSV file. Transact Type: RealisedPNL',
             notes='PnL from trade on XBTUSD',

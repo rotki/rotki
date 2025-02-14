@@ -15,6 +15,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
 from rotkehlchen.chain.evm.decoding.thegraph.constants import CPT_THEGRAPH
 from rotkehlchen.chain.evm.decoding.thegraph.decoder import ThegraphCommonDecoder
 from rotkehlchen.constants.assets import A_GRT
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -96,7 +97,7 @@ class ThegraphDecoder(ThegraphCommonDecoder):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
             asset=self.token,
-            amount=FVal(0),
+            amount=ZERO,
             location_label=context.transaction.from_address,
             notes='Approve contract transfer',
             counterparty=CPT_THEGRAPH,

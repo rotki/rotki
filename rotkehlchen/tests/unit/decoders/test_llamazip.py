@@ -11,6 +11,7 @@ from rotkehlchen.chain.optimism.modules.llamazip.decoder import (
     ROUTER_ADDRESSES as OPTIMISM_ROUTER_ADDRESSES,
 )
 from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -195,7 +196,7 @@ def test_llamazip_arbitrum_swap_token_to_eth(arbitrum_one_inquirer, arbitrum_one
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
             asset=a_usdce,
-            amount=FVal(0),
+            amount=ZERO,
             location_label=arbitrum_one_accounts[0],
             notes=f'Revoke USDC.e spending approval of {arbitrum_one_accounts[0]} by {ARBITRUM_ROUTER_ADDRESSES[0]}',  # noqa: E501
             address=ARBITRUM_ROUTER_ADDRESSES[0],
@@ -311,7 +312,7 @@ def test_llamazip_arbitrum_swap_token_to_token(arbitrum_one_inquirer, arbitrum_o
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
             asset=a_weth,
-            amount=FVal(0),
+            amount=ZERO,
             location_label=arbitrum_one_accounts[0],
             notes=f'Revoke WETH spending approval of {arbitrum_one_accounts[0]} by {ARBITRUM_ROUTER_ADDRESSES[0]}',  # noqa: E501
             address=ARBITRUM_ROUTER_ADDRESSES[0],

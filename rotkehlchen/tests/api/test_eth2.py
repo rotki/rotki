@@ -640,7 +640,7 @@ def test_add_get_edit_delete_eth2_validators(
             identifier=3,
             validator_index=validators[2].validator_index,  # type: ignore[arg-type]  # validator indexes are defined above and will not be None
             timestamp=TimestampMS(1671379127000),
-            amount=FVal(1),
+            amount=ONE,
             fee_recipient=make_evm_address(),
             fee_recipient_tracked=True,
             block_number=42,

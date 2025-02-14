@@ -1134,7 +1134,7 @@ def test_kraken_event_serialization_with_custom_asset(database):
             event_type=event_type,
             event_subtype=event_subtype,
             asset=custom_asset,
-            amount=FVal(1),
+            amount=ONE,
             location_label='my kraken',
         )
         assert event.serialize()['notes'] == expected_notes
