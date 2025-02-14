@@ -436,6 +436,10 @@ class DBEvmTx:
                     (result[0],),
                 )
                 tx_receipt_log.topics = [x[0] for x in other_cursor]
+                if len(tx_receipt_log.topics) == 0:
+                    log.debug(f'Ignoring anonymous tx log in {tx_hash.hex()} at {chain_id}')
+                    continue
+
                 tx_receipt.logs.append(tx_receipt_log)
 
         return tx_receipt

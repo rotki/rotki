@@ -152,7 +152,7 @@ def test_deposit_with_anonymous_event(database, ethereum_inquirer, ethereum_acco
         ), EthDepositEvent(
             tx_hash=evmhash,
             validator_index=validator.validator_index,
-            sequence_index=432,
+            sequence_index=431,
             timestamp=timestamp,
             amount=FVal('32'),
             depositor=proxy_address,
