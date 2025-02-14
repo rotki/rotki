@@ -27,6 +27,7 @@ beforeAll(() => {
       queryHistoricalRates: vi.fn().mockResolvedValue({ taskId: 1 }),
       queryFiatExchangeRates: vi.fn().mockResolvedValue({ taskId: 1 }),
       queryPrices: vi.fn().mockResolvedValue({ taskId: 1 }),
+      queryCachedPrices: vi.fn().mockResolvedValue({}),
     }),
   }));
 

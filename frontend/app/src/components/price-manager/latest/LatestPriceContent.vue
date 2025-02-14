@@ -176,7 +176,8 @@ onMounted(async () => {
           <AmountDisplay
             :loading="!row.usdPrice || row.usdPrice.lt(0)"
             show-currency="symbol"
-            :price-asset="row.fromAsset"
+            :price-asset="row.toAsset"
+            :amount="row.price"
             :price-of-asset="row.usdPrice"
             fiat-currency="USD"
             :value="row.usdPrice"
