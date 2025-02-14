@@ -7,7 +7,7 @@ import requests
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants import DAY_IN_SECONDS
+from rotkehlchen.constants import DAY_IN_SECONDS, ONE
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.exchanges.data_structures import Trade
@@ -88,7 +88,7 @@ def fixture_setup_historical_data(rotkehlchen_api_server: 'APIServer') -> None:
             event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
             location=Location.BLOCKCHAIN,
             asset=A_BTC,
-            balance=Balance(amount=FVal('1')),
+            amount=ONE,
         ),
     ]
     with db.user_write() as write_cursor:
