@@ -6,6 +6,7 @@ from rotkehlchen.chain.ethereum.modules.airdrops.decoder import ENS_ADDRESS
 from rotkehlchen.chain.ethereum.modules.hedgey.constants import CPT_HEDGEY, VOTING_TOKEN_LOCKUPS
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.constants.assets import A_ENS, A_ETH
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -45,7 +46,7 @@ def test_delegate_vested_tokens_with_vault_creation(
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.GOVERNANCE,
             asset=A_ENS,
-            amount=FVal(0),
+            amount=ZERO,
             location_label=user_address,
             notes=f'Change ENS delegate for {user_address} Hedgey token lockup 290 to 0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',  # noqa: E501
             tx_hash=tx_hash,
@@ -85,7 +86,7 @@ def test_delegate_plans(
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.GOVERNANCE,
             asset=A_ENS,
-            amount=FVal(0),
+            amount=ZERO,
             location_label=user_address,
             notes=f'Change ENS delegate for {user_address} Hedgey token lockup 290 from 0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12 to 0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',  # noqa: E501
             tx_hash=tx_hash,

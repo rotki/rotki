@@ -21,6 +21,7 @@ from rotkehlchen.chain.evm.constants import GENESIS_HASH
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.zksync_lite.constants import ZKL_IDENTIFIER
 from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.constants.misc import ONE
 from rotkehlchen.db.custom_assets import DBCustomAssets
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryEvent
@@ -291,7 +292,7 @@ def test_encoding(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(1),
+            amount=ONE,
             notes=unicode_notes,
         )]),
     )

@@ -10,6 +10,7 @@ from rotkehlchen.chain.evm.decoding.balancer.v2.constants import VAULT_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_BAL, A_DAI, A_ETH, A_USDC, A_WETH, A_XDAI
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.cache import globaldb_set_general_cache_values
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
@@ -903,7 +904,7 @@ def test_reth_arb(
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
             asset=Asset('eip155:42161/erc20:0xEC70Dcb4A1EFa46b8F2D97C310C9c4790ba5ffA8'),
-            amount=FVal(0),
+            amount=ZERO,
             location_label=user_address,
             notes='Revoke rETH spending approval of 0x5dCFE1fb21Fb50fA793de3bA8519e6F9Be6C0617 by 0xBA12222222228d8Ba445958a75a0704d566BF2C8',  # noqa: E501
             address=string_to_evm_address('0xBA12222222228d8Ba445958a75a0704d566BF2C8'),

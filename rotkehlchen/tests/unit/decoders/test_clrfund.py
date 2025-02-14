@@ -5,6 +5,7 @@ from rotkehlchen.chain.arbitrum_one.modules.clrfund.constants import CPT_CLRFUND
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -111,7 +112,7 @@ def test_voted(arbitrum_one_inquirer, arbitrum_one_accounts):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
-            amount=FVal(0),
+            amount=ZERO,
             location_label=user,
             notes='Vote in Clrfund Ethstaker round',
             counterparty=CPT_CLRFUND,

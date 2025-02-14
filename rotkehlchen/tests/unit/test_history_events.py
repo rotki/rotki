@@ -10,7 +10,6 @@ from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.history_events import DBHistoryEvents
-from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import (
     HistoryEvent,
     HistoryEventSubType,
@@ -40,7 +39,7 @@ def test_serialize_with_invalid_type_subtype():
         event_type=event_type,
         event_subtype=HistoryEventSubType.NONE,
         asset=A_ETH,
-        amount=FVal(1),
+        amount=ONE,
     )
     event.event_subtype = event_subtype  # do here cause ctor will raise for invalid subtype
     assert event.serialize_for_api(

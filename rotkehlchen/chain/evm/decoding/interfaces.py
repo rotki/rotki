@@ -299,7 +299,7 @@ class GovernableDecoderInterface(DecoderInterface, ABC):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.GOVERNANCE,
             asset=A_ETH,
-            amount=FVal(0),
+            amount=ZERO,
             location_label=voter_address,
             notes=notes,
             address=context.tx_log.address,

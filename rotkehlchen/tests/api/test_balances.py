@@ -973,7 +973,7 @@ def test_blockchain_balances_refresh(
         owner=ethereum_accounts[0],
         collateral_asset=A_USDT.resolve_to_crypto_asset(),
         collateral=Balance(FVal(3), FVal(54)),
-        debt=Balance(FVal(0)),
+        debt=Balance(ZERO),
         collateralization_ratio=None,
         liquidation_ratio=ZERO,
         liquidation_price=None,
@@ -986,7 +986,7 @@ def test_blockchain_balances_refresh(
     a_dai = A_DAI.resolve_to_evm_token()
     account_balance = {ethereum_accounts[0]: BalanceSheet(
         assets=defaultdict(Balance, {
-            a_usdc: Balance(FVal(1), FVal(24)),
+            a_usdc: Balance(ONE, FVal(24)),
             a_dai: Balance(FVal(2), FVal(42)),
         }),
     )}

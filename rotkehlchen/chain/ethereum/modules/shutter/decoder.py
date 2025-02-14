@@ -13,6 +13,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
 )
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.constants.assets import A_SHU
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -103,7 +104,7 @@ class ShutterDecoder(DecoderInterface):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.GOVERNANCE,
             asset=self.shu,
-            amount=FVal(0),
+            amount=ZERO,
             location_label=context.transaction.from_address,
             notes=f'Change SHU Delegate{delegator_note} from {bytes_to_address(context.tx_log.topics[2])} to {bytes_to_address(context.tx_log.topics[3])}',  # noqa: E501
             counterparty=CPT_SHUTTER,

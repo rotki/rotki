@@ -22,6 +22,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
 )
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
@@ -109,7 +110,7 @@ class Commonv2v3LikeDecoder(DecoderInterface):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
             asset=token,
-            amount=FVal(0),
+            amount=ZERO,
             location_label=user,
             notes=f'{"Enable" if tx_log.topics[0] == ENABLE_COLLATERAL else "Disable"} {token.symbol} as collateral on {self.label}',  # noqa: E501
             counterparty=self.counterparty,

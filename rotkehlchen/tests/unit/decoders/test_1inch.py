@@ -26,6 +26,7 @@ from rotkehlchen.constants.assets import (
     A_WETH,
     A_XDAI,
 )
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -68,7 +69,7 @@ def test_1inchv1_swap(ethereum_inquirer):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
             asset=A_CHI,
-            amount=FVal(0),
+            amount=ZERO,
             location_label=ADDY,
             notes=f'Revoke CHI spending approval of {ADDY} by {chispender_addy}',
             address=chispender_addy,
@@ -865,7 +866,7 @@ def test_1inch_base_v6_swap(base_inquirer, base_accounts):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
             asset=Asset('eip155:8453/erc20:0xAd1C24dE53fAD18270D5C99026302E989D212b41'),
-            amount=FVal(0),
+            amount=ZERO,
             location_label=base_accounts[0],
             notes=f'Revoke BERD spending approval of {base_accounts[0]} by {ONEINCH_V6_ROUTER}',
             address=ONEINCH_V6_ROUTER,

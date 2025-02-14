@@ -839,7 +839,7 @@ def test_gauge_vote(ethereum_accounts, ethereum_transaction_decoder) -> None:
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.GOVERNANCE,
             asset=Asset('ETH'),
-            amount=FVal(0),
+            amount=ZERO,
             location_label=user_address,
             notes='Reset vote for 0x740BA8aa0052E07b925908B380248cb03f3DE5cB curve gauge',
             counterparty=CPT_CURVE,

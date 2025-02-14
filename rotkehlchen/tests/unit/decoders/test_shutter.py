@@ -7,6 +7,7 @@ from rotkehlchen.chain.ethereum.modules.shutter.constants import (
 )
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.constants.assets import A_ETH, A_SHU
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -83,7 +84,7 @@ def test_shu_delegation(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.GOVERNANCE,
             asset=A_SHU,
-            amount=FVal(0),
+            amount=ZERO,
             location_label=ethereum_accounts[0],
             notes=f'Change SHU Delegate for 0x561075538e7B20613Aa0C3fAa8459ac293011584 from {ethereum_accounts[0]} to 0x9Cc9C7F874eD77df06dCd41D95a2C858cd2a2506',  # noqa: E501
             counterparty=CPT_SHUTTER,

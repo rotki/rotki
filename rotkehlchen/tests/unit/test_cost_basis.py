@@ -899,15 +899,15 @@ def test_accounting_average_cost_basis(accountant: Accountant):
     assert manager.current_amount == current_amount == FVal(2)
 
     # Step 2. Add a spend with positive pnl
-    add_out_event(pot, amount=FVal(1), price=Price(FVal(15)))  # Sell 1 ETH for $15  pnl: 1 * (15 - 10) = $5  # noqa: E501
+    add_out_event(pot, amount=ONE, price=Price(FVal(15)))  # Sell 1 ETH for $15  pnl: 1 * (15 - 10) = $5  # noqa: E501
     assert events[1].pnl.taxable == events[1].taxable_amount * (events[1].price - current_total_acb / current_amount) == FVal(5)  # noqa: E501
     current_total_acb *= (current_amount - events[1].taxable_amount) / current_amount  # total acb: 20 * (2 - 1) / 2 = $10  # noqa: E501
     current_amount -= events[1].taxable_amount  # 1
     assert manager.current_total_acb == current_total_acb == FVal(10)
-    assert manager.current_amount == current_amount == FVal(1)
+    assert manager.current_amount == current_amount == ONE
 
     # Step 3. Add another acquisition
-    add_in_event(pot, amount=FVal(1), price=Price(FVal(30)))  # Buy 1 ETH for $30  total acb: 10 + 1 * 30 = $40  # noqa: E501
+    add_in_event(pot, amount=ONE, price=Price(FVal(30)))  # Buy 1 ETH for $30  total acb: 10 + 1 * 30 = $40  # noqa: E501
     assert events[2].pnl.taxable == ZERO  # No profit for acquisitions
     current_total_acb += events[2].price * events[2].free_amount
     current_amount += events[2].free_amount  # 2
@@ -947,12 +947,12 @@ def test_accounting_average_cost_basis(accountant: Accountant):
     assert manager.current_amount == current_amount == ZERO
 
     # Step 8. Add one more acquisition
-    add_in_event(pot, amount=FVal(1), price=Price(FVal(10)))  # Buy 1 ETH for $10  total acb: 0 + 1 * 10 = $10  # noqa: E501
+    add_in_event(pot, amount=ONE, price=Price(FVal(10)))  # Buy 1 ETH for $10  total acb: 0 + 1 * 10 = $10  # noqa: E501
     assert events[7].pnl.taxable == ZERO  # No profit for acquisitions
     current_total_acb += events[7].price * events[7].free_amount
     current_amount += events[7].free_amount  # 1
     assert manager.current_total_acb == current_total_acb == FVal(10)
-    assert manager.current_amount == current_amount == FVal(1)
+    assert manager.current_amount == current_amount == ONE
 
     # Step 9. Check that negative pnl is correctly handled
     add_out_event(pot, amount=FVal(0.5), price=Price(FVal(5)))  # Sell 0.5 ETH for $5  pnl: 0.5 * (5 - 10) = -$2.5  # noqa: E501

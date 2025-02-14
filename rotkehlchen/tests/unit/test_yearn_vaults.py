@@ -1,11 +1,12 @@
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.ethereum.modules.yearn.vaults import YearnVaultBalance
 from rotkehlchen.constants.assets import A_DAI, A_YV1_DAIUSDCTTUSD
+from rotkehlchen.constants.misc import ONE
 from rotkehlchen.fval import FVal
 
 
 def test_yearn_vaults_serialize():
-    test_amount = Balance(FVal(1), FVal(1))
+    test_amount = Balance(ONE, ONE)
     balance = YearnVaultBalance(
         underlying_token=A_DAI,
         vault_token=A_YV1_DAIUSDCTTUSD,

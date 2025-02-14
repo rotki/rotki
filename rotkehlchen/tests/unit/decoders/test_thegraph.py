@@ -11,6 +11,7 @@ from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.thegraph.constants import CPT_THEGRAPH
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH, A_GRT, A_GRT_ARB
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent, EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -161,7 +162,7 @@ def test_thegraph_contract_transfer_approval(ethereum_inquirer):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
             asset=A_GRT,
-            amount=FVal(0),
+            amount=ZERO,
             location_label=ADDY_ROTKI,
             notes='Approve contract transfer',
             counterparty=CPT_THEGRAPH,
@@ -302,7 +303,7 @@ def test_thegraph_undelegate(ethereum_inquirer):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_GRT,
-            amount=FVal(0),
+            amount=ZERO,
             location_label=ADDY_USER,
             notes=f'Undelegate {undelegate_amount} GRT from indexer {indexer_address}. Lock expires in {lock_time} seconds',  # noqa: E501
             counterparty=CPT_THEGRAPH,
@@ -468,7 +469,7 @@ def test_thegraph_undelegate_arbitrum_one(arbitrum_one_inquirer):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_GRT_ARB,
-            amount=FVal(0),
+            amount=ZERO,
             location_label=ADDY_USER_2_ARB,
             notes=f'Undelegate {undelegate_amount} GRT from indexer {indexer_address}. Lock expires in {lock_time} seconds',  # noqa: E501
             counterparty=CPT_THEGRAPH,

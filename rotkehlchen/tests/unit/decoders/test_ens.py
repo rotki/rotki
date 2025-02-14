@@ -707,7 +707,7 @@ def test_transfer_ens_name(database, ethereum_inquirer, action, ethereum_account
         event_type=event_type,
         event_subtype=HistoryEventSubType.NONE,
         asset=Asset(f'eip155:1/erc721:0x57f1887a8BF19b14fC0dF6Fd9B2acc9Af147eA85/{token_id}'),
-        amount=FVal(1),
+        amount=ONE,
         location_label=from_address,
         notes=notes,
         counterparty=CPT_ENS,
@@ -822,7 +822,7 @@ def test_for_truncated_labelhash(ethereum_inquirer, ethereum_accounts, add_subgr
             event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=Asset(f'eip155:1/erc721:0x57f1887a8BF19b14fC0dF6Fd9B2acc9Af147eA85/{token_id}'),
-            amount=FVal(1),
+            amount=ONE,
             location_label=user_address,
             notes=f'Receive ENS name cantillon.eth from {ENS_REGISTRAR_CONTROLLER_1} to {user_address}',  # noqa: E501
             counterparty=CPT_ENS,
