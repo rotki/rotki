@@ -1,11 +1,13 @@
-from typing import Final
+from typing import TYPE_CHECKING, Final
 
 import pytest
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.modules.zerox.constants import ZEROX_ROUTER
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
+from rotkehlchen.chain.evm.decoding.cowswap.constants import CPT_COWSWAP
 from rotkehlchen.chain.evm.decoding.zerox.constants import CPT_ZEROX
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.optimism.modules.zerox.constants import ZEROX_ROUTER as OP_ZEROX_ROUTER
 from rotkehlchen.constants.assets import A_ETH, A_OP, A_POLYGON_POS_MATIC, A_SNX, A_USDC, A_USDT
 from rotkehlchen.constants.resolver import strethaddress_to_identifier
@@ -17,6 +19,10 @@ from rotkehlchen.tests.unit.decoders.test_metamask import A_OPTIMISM_USDC
 from rotkehlchen.tests.utils.constants import A_OPTIMISM_USDT
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
+
+if TYPE_CHECKING:
+    from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
+
 
 A_AI: Final = Asset(strethaddress_to_identifier('0x2598c30330D5771AE9F983979209486aE26dE875'))
 A_DRGN: Final = Asset(strethaddress_to_identifier('0x419c4dB4B9e25d6Db2AD9691ccb832C8D9fDA05E'))
@@ -1188,4 +1194,41 @@ def test_swap_optimism_with_return(optimism_inquirer, optimism_accounts):
         notes=f'Receive {received_amount} USDC.e as the result of a swap via the 0x protocol',
         counterparty=CPT_ZEROX,
         address=OP_ZEROX_ROUTER,
+    )]
+
+
+@pytest.mark.vcr
+@pytest.mark.parametrize('ethereum_accounts', [['0x43F9A40200310CE535EdF5EA0eb71afB53779BA4']])
+def test_swap_anon_event(ethereum_inquirer: 'EthereumInquirer', ethereum_accounts):
+    """zerox has a special contract for swaps that emits an anonymous event that causes the
+    logic of some post decoding rules to fail. This is a regression test for this contract.
+    """
+    tx_hash = deserialize_evm_tx_hash('0x5871cd5d19d749135ac563eddb4cb04bd0d13f05414666a887b1628f5968b7dc')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    assert events == [EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1733427911000)),
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.TRADE,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=Asset('eip155:1/erc20:0x58D97B57BB95320F9a05dC918Aef65434969c2B2'),
+        amount=FVal(swap_amount := '7734.443526456381826329'),
+        location_label=ethereum_accounts[0],
+        notes=f'Swap {swap_amount} MORPHO in a cowswap market order',
+        counterparty=CPT_COWSWAP,
+        address=(address := string_to_evm_address('0x9008D19f58AAbD9eD0D60971565AA8510560ab41')),
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.TRADE,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=Asset('eip155:1/erc20:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'),
+        amount=FVal(received_amount := '17631.876781'),
+        location_label=ethereum_accounts[0],
+        notes=f'Receive {received_amount} USDC as the result of a cowswap market order',
+        counterparty=CPT_COWSWAP,
+        address=address,
     )]

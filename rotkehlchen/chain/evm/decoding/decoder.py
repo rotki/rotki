@@ -420,7 +420,7 @@ class EVMTransactionDecoder(ABC):
                 result = method(context)
             else:
                 result = method(context, *mapping_result[1:])
-        except (DeserializationError, ConversionError, UnknownAsset, WrongAssetType) as e:
+        except (DeserializationError, ConversionError, UnknownAsset, WrongAssetType, IndexError) as e:  # noqa: E501
             log.error(traceback.format_exc())
             self.msg_aggregator.add_error(
                 f'Decoding tx log with index {context.tx_log.log_index} of transaction '
