@@ -931,34 +931,35 @@ class RestAPI:
         except RemoteError as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
 
-        trades_result = []
+        with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
+            mapping = self.rotkehlchen.data.db.get_ignored_action_ids(cursor, ActionType.TRADE)
+            total_entries = self.rotkehlchen.data.db.get_entries_count(
+                cursor=cursor,
+                entries_table='trades',
+            )
+
+        ignored_ids = mapping.get(ActionType.TRADE, set())
+        entries_result = []
         for trade in trades:
             serialized_trade = self.trade_schema.dump(trade)
             serialized_trade['trade_id'] = trade.identifier
-            trades_result.append(serialized_trade)
+            if (
+                (is_trade_ignored := trade.identifier in ignored_ids) and
+                include_ignored_trades is False
+            ):
+                continue
 
-        with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
-            mapping = self.rotkehlchen.data.db.get_ignored_action_ids(cursor, ActionType.TRADE)
-            ignored_ids = mapping.get(ActionType.TRADE, set())
-            entries_result = []
-            for entry in trades_result:
-                is_trade_ignored = entry['trade_id'] in ignored_ids
-                if include_ignored_trades is False and is_trade_ignored is True:
-                    continue
+            entries_result.append({
+                'entry': serialized_trade,
+                'ignored_in_accounting': is_trade_ignored,
+            })
 
-                entries_result.append(
-                    {'entry': entry, 'ignored_in_accounting': is_trade_ignored},
-                )
-
-            result = {
-                'entries': entries_result,
-                'entries_found': filter_total_found,
-                'entries_total': self.rotkehlchen.data.db.get_entries_count(
-                    cursor=cursor,
-                    entries_table='trades',
-                ),
-                'entries_limit': FREE_TRADES_LIMIT if self.rotkehlchen.premium is None else -1,
-            }
+        result = {
+            'entries': entries_result,
+            'entries_found': filter_total_found,
+            'entries_total': total_entries,
+            'entries_limit': FREE_TRADES_LIMIT if self.rotkehlchen.premium is None else -1,
+        }
 
         return {'result': result, 'message': '', 'status_code': HTTPStatus.OK}
 
