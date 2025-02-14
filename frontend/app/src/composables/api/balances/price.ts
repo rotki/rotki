@@ -7,7 +7,7 @@ import {
   validWithSessionAndExternalService,
   validWithoutSessionStatus,
 } from '@/services/utils';
-import { HistoricPrices, type HistoricPricesPayload, type OracleCacheMeta } from '@/types/prices';
+import { AssetPriceResponse, HistoricPrices, type HistoricPricesPayload, type OracleCacheMeta } from '@/types/prices';
 import type { ActionResult } from '@rotki/common';
 import type { SupportedCurrency } from '@/types/currencies';
 import type { PriceOracle } from '@/types/settings/price-oracle';
@@ -15,6 +15,7 @@ import type { PendingTask } from '@/types/task';
 
 interface UsePriceApiReturn {
   queryPrices: (assets: string[], targetAsset: string, ignoreCache: boolean) => Promise<PendingTask>;
+  queryCachedPrices: (assets: string[], targetAsset: string) => Promise<AssetPriceResponse>;
   queryFiatExchangeRates: (currencies: SupportedCurrency[]) => Promise<PendingTask>;
   queryHistoricalRate: (fromAsset: string, toAsset: string, timestamp: number) => Promise<PendingTask>;
   queryHistoricalRates: (payload: HistoricPricesPayload) => Promise<PendingTask>;
@@ -124,6 +125,23 @@ export function usePriceApi(): UsePriceApiReturn {
     return handleResponse(response);
   };
 
+  const queryCachedPrices = async (assets: string[], targetAsset: string): Promise<AssetPriceResponse> => {
+    const response = await api.instance.post<ActionResult<AssetPriceResponse>>(
+      '/assets/prices/latest',
+      snakeCaseTransformer({
+        assets,
+        asyncQuery: false,
+        ignoreCache: false,
+        targetAsset,
+      }),
+      {
+        validateStatus: validWithSessionAndExternalService,
+      },
+    );
+
+    return AssetPriceResponse.parse(handleResponse(response));
+  };
+
   const queryFiatExchangeRates = async (currencies: SupportedCurrency[]): Promise<PendingTask> => {
     const response = await api.instance.get<ActionResult<PendingTask>>('/exchange_rates', {
       params: {
@@ -141,6 +159,7 @@ export function usePriceApi(): UsePriceApiReturn {
     createPriceCache,
     deletePriceCache,
     getPriceCache,
+    queryCachedPrices,
     queryFiatExchangeRates,
     queryHistoricalRate,
     queryHistoricalRates,

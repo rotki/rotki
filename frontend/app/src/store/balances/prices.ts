@@ -38,12 +38,27 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
     createPriceCache,
     deletePriceCache,
     getPriceCache,
+    queryCachedPrices,
     queryFiatExchangeRates,
     queryHistoricalRate,
     queryPrices,
   } = usePriceApi();
   const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
   const { currencies } = useCurrencies();
+
+  const assetPricesWithCurrentCurrency = ref<AssetPrices>({});
+
+  const assetWithManualPrices = computed(() => Object.entries(prices.value)
+    .filter(([, price]) => price.isManualPrice)
+    .map(([asset]) => asset));
+
+  watch([assetWithManualPrices, currencySymbol], async ([assets, symbol]) => {
+    if (assets.length === 0)
+      return;
+
+    const data = await queryCachedPrices(assets, symbol);
+    set(assetPricesWithCurrentCurrency, data);
+  });
 
   const fetchPrices = async (payload: FetchPricePayload): Promise<void> => {
     const taskType = TaskType.UPDATE_PRICES;
@@ -242,19 +257,33 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
     return get(asset) === currency || (currency === 'EUR' && get(assetInfo(asset))?.collectionId === '240');
   });
 
+  /**
+   * @deprecated
+   * TODO: Remove this immediately.
+   * Hacky way to prevent double conversion (try to replicate `match_main_currency` that has been removed)
+   * @param {MaybeRef<string>} asset
+   */
   const assetPrice = (asset: MaybeRef<string>): ComputedRef<BigNumber | undefined> =>
     computed(() => {
       if (get(isAssetPriceEqualToCurrentCurrency(asset)))
         return One;
 
-      return get(prices)[get(asset)]?.value;
+      const assetVal = get(asset);
+
+      return get(assetPricesWithCurrentCurrency)[assetVal]?.value ?? get(prices)[assetVal]?.value;
     });
 
   const isManualAssetPrice = (asset: MaybeRef<string>): ComputedRef<boolean> =>
     computed(() => get(prices)[get(asset)]?.isManualPrice || false);
 
+  /**
+   * @deprecated
+   * TODO: Remove this immediately.
+   * Hacky way to prevent double conversion (try to replicate `match_main_currency` that has been removed)
+   * @param {MaybeRef<string>} asset
+   */
   const isAssetPriceInCurrentCurrency = (asset: MaybeRef<string>): ComputedRef<boolean> =>
-    isAssetPriceEqualToCurrentCurrency(asset);
+    computed(() => (get(isAssetPriceEqualToCurrentCurrency(asset)) || !!get(assetPricesWithCurrentCurrency)[get(asset)]?.value));
 
   watch([exchangeRates, currencySymbol], ([rates, symbol]) => {
     if (Object.keys(rates).length > 0) {
