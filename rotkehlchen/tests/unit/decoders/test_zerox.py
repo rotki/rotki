@@ -1215,7 +1215,7 @@ def test_swap_anon_event(ethereum_inquirer: 'EthereumInquirer', ethereum_account
         asset=Asset('eip155:1/erc20:0x58D97B57BB95320F9a05dC918Aef65434969c2B2'),
         amount=FVal(swap_amount := '7734.443526456381826329'),
         location_label=ethereum_accounts[0],
-        notes=f'Swap {swap_amount} MORPHO in a cowswap market order',
+        notes=f'Swap {swap_amount} MORPHO in a cowswap twap order',
         counterparty=CPT_COWSWAP,
         address=(address := string_to_evm_address('0x9008D19f58AAbD9eD0D60971565AA8510560ab41')),
     ), EvmEvent(
@@ -1228,7 +1228,7 @@ def test_swap_anon_event(ethereum_inquirer: 'EthereumInquirer', ethereum_account
         asset=Asset('eip155:1/erc20:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'),
         amount=FVal(received_amount := '17631.876781'),
         location_label=ethereum_accounts[0],
-        notes=f'Receive {received_amount} USDC as the result of a cowswap market order',
+        notes=f'Receive {received_amount} USDC as the result of a cowswap twap order',
         counterparty=CPT_COWSWAP,
         address=address,
     )]
