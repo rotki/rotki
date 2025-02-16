@@ -359,7 +359,7 @@ class HopCommonDecoder(DecoderInterface):
                 if out_event1 is None:
                     out_event1 = event
                 else:
-                    out_event2 = event  # type: ignore # not unreachabla
+                    out_event2 = event
             elif (
                 event.event_type == HistoryEventType.RECEIVE and
                 event.event_subtype == HistoryEventSubType.NONE and
@@ -471,7 +471,7 @@ class HopCommonDecoder(DecoderInterface):
                 if in_event1 is None:
                     in_event1 = event
                 else:
-                    in_event2 = event  # type: ignore # not unreachabla
+                    in_event2 = event
 
         maybe_reshuffle_events(
             ordered_events=[out_event, in_event1, in_event2],

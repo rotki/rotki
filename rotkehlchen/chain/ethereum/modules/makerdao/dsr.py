@@ -201,7 +201,7 @@ class MakerdaoDsr(HasDSProxy):
         for event in events:
             if event['transactionIndex'] == transaction_index:
                 if value is not None:
-                    log.error(  # type: ignore
+                    log.error(
                         'Mistaken assumption: There is multiple vat.move events for '
                         'the same transaction',
                     )
