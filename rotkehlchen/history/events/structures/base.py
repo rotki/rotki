@@ -365,7 +365,7 @@ class HistoryBaseEntry(AccountingEventMixin, ABC, Generic[ExtraDataType]):
             return None
 
     @classmethod
-    def _deserialize_base_history_data(cls: type[T], data: dict[str, Any]) -> HistoryBaseEntryData:
+    def _deserialize_base_history_data(cls, data: dict[str, Any]) -> HistoryBaseEntryData:
         """Deserializes the base history event data to a typed dict
 
         May raise:

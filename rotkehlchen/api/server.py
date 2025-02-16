@@ -435,10 +435,10 @@ class APIServer:
     def unhandled_exception(exception: Exception) -> Response:
         """ Flask.errorhandler when an exception wasn't correctly handled """
         if __debug__:
-            logger.exception(exception)
+            logger.exception(exception)  # noqa: LOG004  -- this is an error handler
         log.critical(
             'Unhandled exception when processing endpoint request',
-            exc_info=True,
+            exc_info=True,  # noqa: LOG014  -- this is an error handler
             exception=str(exception),
         )
         return api_response(wrap_in_fail_result(str(exception)), HTTPStatus.INTERNAL_SERVER_ERROR)
