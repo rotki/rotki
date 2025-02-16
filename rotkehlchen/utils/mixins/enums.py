@@ -1,6 +1,6 @@
 from abc import ABCMeta, abstractmethod
 from enum import Enum, EnumMeta
-from typing import Any, TypeVar
+from typing import Any, Self, TypeVar
 
 from rotkehlchen.errors.serialization import DeserializationError
 
@@ -9,7 +9,7 @@ T = TypeVar('T')
 
 class ABCEnumMeta(EnumMeta, ABCMeta):
     """Taken from https://stackoverflow.com/questions/56131308/create-an-abstract-enum-class"""
-    def __new__(cls: type[T], *args: Any, **kw: Any) -> T:
+    def __new__(cls: type[T], *args: Any, **kw: Any) -> T:  # the noqa is due to https://github.com/astral-sh/ruff/issues/16127 # noqa: PYI019, E501
         abstract_enum_cls = super().__new__(cls, *args, **kw)  # type: ignore
         # Only check abstractions if members were defined.
         if abstract_enum_cls._member_map_:
@@ -74,7 +74,7 @@ class SerializableEnumNameMixin(SerializableEnumMixin):
         return str(self)
 
     @classmethod
-    def deserialize(cls: type[S], value: str) -> S:
+    def deserialize(cls, value: str) -> Self:
         """May raise DeserializationError if the given value can't be deserialized"""
         if not isinstance(value, str):
             raise DeserializationError(
@@ -98,7 +98,7 @@ class SerializableEnumValueMixin(SerializableEnumMixin):
         return ' '.join(word.lower() for word in self.value.split('_'))  # pylint: disable=no-member
 
     @classmethod
-    def deserialize(cls: type[S], value: str) -> S:
+    def deserialize(cls, value: str) -> Self:
         """May raise DeserializationError if the given value can't be deserialized"""
         if not isinstance(value, str):
             raise DeserializationError(
@@ -123,7 +123,7 @@ class SerializableEnumIntValueMixin(SerializableEnumMixin):
         return ' '.join(word.lower() for word in self.value.split('_'))  # pylint: disable=no-member
 
     @classmethod
-    def deserialize(cls: type[S], value: str) -> S:
+    def deserialize(cls, value: str) -> Self:
         """May raise DeserializationError if the given value can't be deserialized"""
         if not isinstance(value, str):
             raise DeserializationError(
@@ -148,7 +148,7 @@ class DBCharEnumMixIn(SerializableEnumNameMixin, DBEnumMixIn):
         return chr(self.value + 64)
 
     @classmethod
-    def deserialize_from_db(cls: type[D], value: str) -> D:
+    def deserialize_from_db(cls, value: str) -> Self:
         """May raise a DeserializationError if something is wrong with the DB data"""
         if not isinstance(value, str):
             raise DeserializationError(
@@ -169,7 +169,7 @@ class DBIntEnumMixIn(SerializableEnumNameMixin, DBEnumMixIn):
         return self.value
 
     @classmethod
-    def deserialize_from_db(cls: type[D], value: int) -> D:
+    def deserialize_from_db(cls, value: int) -> Self:
         """May raise a DeserializationError if something is wrong with the DB data"""
         try:
             return cls(value)

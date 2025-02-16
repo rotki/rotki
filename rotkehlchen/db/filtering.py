@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Collection, Sequence
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from typing import Any, Generic, Literal, NamedTuple, TypeVar
+from typing import Any, Generic, Literal, NamedTuple, Self, TypeVar
 
 from rotkehlchen.accounting.types import SchemaEventType
 from rotkehlchen.api.v1.types import IncludeExcludeFilterData
@@ -372,14 +372,14 @@ class DBFilterQuery(ABC):
 
     @classmethod
     def create(
-            cls: type[T_FilterQ],
+            cls,
             and_op: bool,
             limit: int | None,
             offset: int | None,
             order_by_case_sensitive: bool = True,
             order_by_rules: list[tuple[str, bool]] | None = None,
             group_by_field: str | None = None,
-    ) -> T_FilterQ:
+    ) -> Self:
         if limit is None or offset is None:
             pagination = None
         else:
@@ -864,7 +864,7 @@ class HistoryBaseEntryFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWith
 
     @classmethod
     def make(
-            cls: type[T_HistoryBaseEntryFilterQ],
+            cls,
             and_op: bool = True,
             order_by_rules: list[tuple[str, bool]] | None = None,
             limit: int | None = None,
@@ -885,7 +885,7 @@ class HistoryBaseEntryFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWith
             entry_types: IncludeExcludeFilterData | None = None,
             exclude_ignored_assets: bool = False,
             customized_events_only: bool = False,
-    ) -> T_HistoryBaseEntryFilterQ:
+    ) -> Self:
         """May raise:
         - InvalidFilter for invalid combination of filters
         """
@@ -1136,7 +1136,7 @@ class EthStakingEventFilterQuery(HistoryBaseEntryFilterQuery, ABC):
 
     @classmethod
     def make(
-            cls: type[T_EthSTakingFilterQ],
+            cls,
             and_op: bool = True,
             order_by_rules: list[tuple[str, bool]] | None = None,
             limit: int | None = None,
@@ -1158,7 +1158,7 @@ class EthStakingEventFilterQuery(HistoryBaseEntryFilterQuery, ABC):
             exclude_ignored_assets: bool = False,
             customized_events_only: bool = False,
             validator_indices: list[int] | None = None,
-    ) -> T_EthSTakingFilterQ:
+    ) -> Self:
         if entry_types is None:
             entry_type_values = [HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT, HistoryBaseEntryType.ETH_BLOCK_EVENT, HistoryBaseEntryType.ETH_DEPOSIT_EVENT]  # noqa: E501
             entry_types = IncludeExcludeFilterData(values=entry_type_values)
