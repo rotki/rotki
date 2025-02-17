@@ -792,6 +792,13 @@ class Eth2(EthereumModule):
         """
         self._adjust_blockproduction_at_account_modification(address, HistoryEventType.INFORMATIONAL)  # noqa: E501
 
+        with self.database.conn.write_ctx() as write_cursor:
+            self.database.delete_dynamic_cache(
+                write_cursor=write_cursor,
+                name=DBCacheDynamic.WITHDRAWALS_TS,
+                address=address,
+            )
+
     def deactivate(self) -> None:
         with self.database.user_write() as write_cursor:
             self.database.delete_eth2_daily_stats(write_cursor)

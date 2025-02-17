@@ -16,6 +16,7 @@ from rotkehlchen.chain.ethereum.modules.eth2.structures import (
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.eth2 import DBEth2
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -646,6 +647,13 @@ def test_add_get_edit_delete_eth2_validators(
         )]
     with database.user_write() as cursor:
         dbevents.add_history_events(cursor, events)
+        assert validators[0].validator_index is not None
+        database.set_dynamic_cache(
+            write_cursor=cursor,
+            name=DBCacheDynamic.LAST_PRODUCED_BLOCKS_QUERY_TS,
+            value=Timestamp(1739807677),
+            index=validators[0].validator_index,
+        )
 
     with database.conn.read_ctx() as cursor:  # assert events are in the DB
         assert events == dbevents.get_history_events(
@@ -676,6 +684,12 @@ def test_add_get_edit_delete_eth2_validators(
             filter_query=HistoryEventFilterQuery.make(),
             has_premium=True,
         )
+        # Also confirm that the associated cached timestamp is removed
+        assert database.get_dynamic_cache(
+            cursor=cursor,
+            name=DBCacheDynamic.LAST_PRODUCED_BLOCKS_QUERY_TS,
+            index=validators[0].validator_index,
+        ) is None
 
     response = requests.get(
         api_url_for(
