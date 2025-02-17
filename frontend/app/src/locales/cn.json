@@ -3476,9 +3476,6 @@
       "title": "质押地点"
     }
   },
-  "statistics": {
-    "no_premium_label": "统计是"
-  },
   "statistics_graph_settings": {
     "infer_zero_timed_balances": {
       "label": "为在特定时间没有余额的资产推断零时间余额。这对于在图表中显示零余额期间很有用。",

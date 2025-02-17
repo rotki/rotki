@@ -3,8 +3,10 @@ import GetPremiumButton from '@/components/premium/GetPremiumButton.vue';
 
 defineProps<{
   title: string;
-  description: string;
+  description?: string;
 }>();
+
+const { t } = useI18n();
 </script>
 
 <template>
@@ -22,7 +24,7 @@ defineProps<{
         {{ title }}
       </div>
       <div class="text-rui-text-secondary">
-        {{ description }}
+        {{ description || t('premium_settings.chart_limit.description') }}
       </div>
     </div>
     <GetPremiumButton />

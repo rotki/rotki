@@ -3377,9 +3377,6 @@
       "title": "Staking Locations"
     }
   },
-  "statistics": {
-    "no_premium_label": "Statistics are"
-  },
   "statistics_graph_settings": {
     "infer_zero_timed_balances": {
       "label": "Infer zero timed balances for assets that have no balance at a specific time. This is useful for showing zero balance periods in graphs.",

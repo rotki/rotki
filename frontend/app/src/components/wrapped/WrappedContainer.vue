@@ -11,7 +11,6 @@ import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import CounterpartyDisplay from '@/components/history/CounterpartyDisplay.vue';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
-import WrappedScore from '@/components/wrapped/WrappedScore.vue';
 import WrappedCard from '@/components/wrapped/WrappedCard.vue';
 import { usePremium } from '@/composables/premium';
 import { useExternalApiKeys } from '@/composables/settings/api-keys/external';
@@ -501,11 +500,6 @@ defineExpose({
           {{ item.transactions }} {{ t('explorers.tx') }}
         </template>
       </WrappedCard>
-
-      <WrappedScore
-        :is-current-year="isHighlightedYear"
-        :score="summary.score"
-      />
     </template>
   </div>
 </template>

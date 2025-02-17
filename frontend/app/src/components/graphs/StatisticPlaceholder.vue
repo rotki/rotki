@@ -10,7 +10,6 @@ const { t } = useI18n();
     <GetPremiumPlaceholder
       class="absolute z-1 pt-40 top-0 left-1/2 transform -translate-x-1/2"
       :title="t('premium_settings.chart_limit.statistic')"
-      :description="t('premium_settings.chart_limit.description')"
     />
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
       <AppImage src="./assets/images/placeholder/net_value_graph_placeholder.png" />

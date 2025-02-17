@@ -13,7 +13,6 @@ const { t } = useI18n();
     </template>
     <GetPremiumPlaceholder
       :title="t('premium_settings.chart_limit.title')"
-      :description="t('premium_settings.chart_limit.description')"
       class="flex flex-col items-center justify-center text-center bg-contain bg-no-repeat bg-center aspect-[25/9]"
       :style="{
         backgroundImage: `url('./assets/images/placeholder/asset_amount_and_value_partial.png')`,

@@ -3615,7 +3615,7 @@
     "statistics": "Statistics",
     "statistics_sub": {
       "graphs": "Graphs",
-      "history_events": "History Events Wrapped"
+      "history_events": "Events Analysis"
     },
     "tag_manager": "Tag Manager"
   },
@@ -4402,9 +4402,6 @@
       "title": "Staking Locations"
     }
   },
-  "statistics": {
-    "no_premium_label": "Statistics are"
-  },
   "statistics_graph_settings": {
     "infer_zero_timed_balances": {
       "label": "Infer zero timed balances for assets that have no balance at a specific time. This is useful for showing zero balance periods in graphs.",
@@ -5003,10 +5000,11 @@
     "message": "rotki's minimum supported Windows version is Windows 8(6.2)"
   },
   "wrapped": {
-    "title": "rotki Wrapped {year}",
+    "title": "Events Analysis",
     "get_data": "Get data",
+    "free_limit": "This events analysis view is not included in the FREE version",
     "filter_by_date": "Filter by date",
-    "year_subtitle": "Your DeFi journey in Numbers",
+    "year_subtitle": "Your DeFi Activity Breakdown",
     "exchange_activity": "Trades by exchange",
     "transactions_by_chain": "Transactions per chain",
     "protocol_activity": "Number of transactions by protocol",
@@ -5017,12 +5015,7 @@
     "gnosis_payments": "Gnosis Pay top single payments by currency",
     "top_days": "Your busiest transaction days",
     "loading": "Hang on, we are refreshing your history events to make sure your wrapped data is up to date.",
-    "history_events_nudge": "History events need to be queried and decoded. Navigate to {link} to ensure your wrapped data is up to date.",
-    "score_title": "This year, you were a {name}",
-    "score_title_period": "This period, you were a {name}",
-    "score_header": "Your rotki score",
-    "made_with_love": "Made with love, by",
-    "share": "Share with your friends"
+    "history_events_nudge": "History events need to be queried and decoded. Navigate to {link} to ensure your wrapped data is up to date."
   },
   "yearn_asset_table": {
     "headers": {
