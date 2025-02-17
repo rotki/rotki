@@ -18,7 +18,6 @@ import HistoryEventTypeForm from '@/components/history/events/forms/HistoryEvent
 import LocationSelector from '@/components/helper/LocationSelector.vue';
 import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
 import { useFormStateWatcher } from '@/composables/form';
-import { logger } from '@/utils/logging';
 import type { NewOnlineHistoryEventPayload, OnlineHistoryEvent } from '@/types/history/events';
 
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
@@ -160,7 +159,6 @@ function applyGroupHeaderData(entry: OnlineHistoryEvent) {
 
 async function save(): Promise<boolean> {
   if (!(await get(v$).$validate())) {
-    logger.debug(get(v$).$errors);
     return false;
   }
 

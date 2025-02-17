@@ -18,7 +18,7 @@ vi.mock('json-editor-vue', () => ({
   template: '<input />',
 }));
 
-describe('historyEventForm.vue', () => {
+describe('component/HistoryEventForm.vue', () => {
   let wrapper: VueWrapper<InstanceType<typeof HistoryEventForm>>;
 
   const createWrapper = () => {
