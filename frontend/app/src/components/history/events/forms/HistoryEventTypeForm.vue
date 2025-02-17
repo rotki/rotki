@@ -5,62 +5,37 @@ import HistoryEventTypeCombination from '@/components/history/events/HistoryEven
 import type { Validation } from '@vuelidate/core';
 import type { ActionDataEntry } from '@/types/action';
 
-const props = withDefaults(
-  defineProps<{
-    eventType: string;
-    eventSubtype: string;
-    counterparty?: string | null;
-    location?: string | null;
-    v$: Validation;
-    disableWarning?: boolean;
-  }>(),
-  {
-    counterparty: null,
-    disableWarning: false,
-    location: null,
-  },
-);
+interface HistoryEventTypeFormProps {
+  counterparty?: string | null;
+  location?: string | null;
+  v$: Validation;
+  disableWarning?: boolean;
+}
 
-const emit = defineEmits<{
-  (e: 'update:event-type', eventType: string): void;
-  (e: 'update:event-subtype', eventSubtype: string): void;
-}>();
+const eventType = defineModel<string>('eventType', { required: true });
+const eventSubType = defineModel<string | undefined>('eventSubtype', { required: true });
 
-const { counterparty, eventSubtype, eventType, location, v$ } = toRefs(props);
-
-const eventTypeModel = computed({
-  get() {
-    return get(eventType);
-  },
-  set(newValue: string | null) {
-    emit('update:event-type', newValue || '');
-  },
+const props = withDefaults(defineProps<HistoryEventTypeFormProps>(), {
+  counterparty: null,
+  disableWarning: false,
+  location: null,
 });
 
-const eventSubtypeModel = computed({
-  get() {
-    return get(eventSubtype);
-  },
-  set(newValue: string | null) {
-    emit('update:event-subtype', newValue || '');
-  },
-});
-const { getEventTypeData, historyEventSubTypesData, historyEventTypeGlobalMapping, historyEventTypesData }
-  = useHistoryEventMappings();
+const { counterparty, location, v$ } = toRefs(props);
 
-const historyTypeCombination = computed(() =>
-  get(
-    getEventTypeData(
-      {
-        counterparty: get(counterparty),
-        eventSubtype: get(eventSubtype),
-        eventType: get(eventType),
-        location: get(location),
-      },
-      false,
-    ),
-  ),
-);
+const {
+  getEventTypeData,
+  historyEventSubTypesData,
+  historyEventTypeGlobalMapping,
+  historyEventTypesData,
+} = useHistoryEventMappings();
+
+const historyTypeCombination = computed(() => get(getEventTypeData({
+  counterparty: get(counterparty),
+  eventSubtype: get(eventSubType) ?? 'none',
+  eventType: get(eventType),
+  location: get(location),
+}, false)));
 
 const showHistoryEventTypeCombinationWarning = computed(() => {
   const validator = get(v$);
@@ -94,7 +69,7 @@ const { t } = useI18n();
   <div>
     <div class="grid md:grid-cols-3 gap-4">
       <RuiAutoComplete
-        v-model="eventTypeModel"
+        v-model="eventType"
         variant="outlined"
         :label="t('transactions.events.form.event_type.label')"
         :options="historyEventTypesData"
@@ -106,7 +81,7 @@ const { t } = useI18n();
         @blur="v$.eventType.$touch()"
       />
       <RuiAutoComplete
-        v-model="eventSubtypeModel"
+        v-model="eventSubType"
         variant="outlined"
         :label="t('transactions.events.form.event_subtype.label')"
         :options="historyEventSubTypeFilteredData"

@@ -1,4 +1,4 @@
-import { type Balance, HistoryEventEntryType, NumericString } from '@rotki/common';
+import { type BigNumber, HistoryEventEntryType, NumericString } from '@rotki/common';
 import { z } from 'zod';
 import { EntryMeta } from '@/types/history/meta';
 import { CollectionCommonFields } from '@/types/collection';
@@ -182,7 +182,7 @@ export interface EditEthBlockEventPayload {
   entryType: typeof HistoryEventEntryType.ETH_BLOCK_EVENT;
   identifier: number;
   timestamp: number;
-  balance: Balance;
+  amount: BigNumber;
   validatorIndex: number;
   blockNumber: number;
   feeRecipient: string;
@@ -196,7 +196,7 @@ export interface EditEthDepositEventPayload {
   entryType: typeof HistoryEventEntryType.ETH_DEPOSIT_EVENT;
   identifier: number;
   timestamp: number;
-  balance: Balance;
+  amount: BigNumber;
   validatorIndex: number;
   txHash: string;
   eventIdentifier: string | null;
@@ -211,7 +211,7 @@ export interface EditEthWithdrawalEventPayload {
   entryType: typeof HistoryEventEntryType.ETH_WITHDRAWAL_EVENT;
   identifier: number;
   timestamp: number;
-  balance: Balance;
+  amount: BigNumber;
   validatorIndex: number;
   withdrawalAddress: string;
   isExit: boolean;
@@ -224,7 +224,7 @@ export interface EditAssetMovementEventPayload {
   entryType: typeof HistoryEventEntryType.ASSET_MOVEMENT_EVENT;
   identifier: number;
   timestamp: number;
-  balance: Balance;
+  amount: BigNumber;
   eventType: string;
   location: string;
   locationLabel: string | null;

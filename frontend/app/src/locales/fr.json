@@ -3988,11 +3988,6 @@
             "valid": "L'adresse du destinataire de commission est invalide, remplissez-la avec une adresse valide"
           }
         },
-        "fiat_value": {
-          "validation": {
-            "non_empty": "Le champ valeur {currency} ne peut pas être vide."
-          }
-        },
         "is_exit": {
           "label": "Est-ce sorti?"
         },

@@ -4682,11 +4682,6 @@
             "valid": "The fee recipient is invalid, fill it with valid address"
           }
         },
-        "fiat_value": {
-          "validation": {
-            "non_empty": "The {currency} value field cannot be empty."
-          }
-        },
         "is_exit": {
           "label": "Is Exited?"
         },

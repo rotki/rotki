@@ -10,7 +10,6 @@ import { DateFormat } from '@/types/date-format';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 import { bigNumberifyFromRef } from '@/utils/bignumbers';
 import HistoryEventAssetPriceForm from '@/components/history/events/forms/HistoryEventAssetPriceForm.vue';
-import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useSessionSettingsStore } from '@/store/settings/session';
 import { useHistoryEventsForm } from '@/composables/history/events/form';
 import AmountInput from '@/components/inputs/AmountInput.vue';
@@ -19,6 +18,7 @@ import HistoryEventTypeForm from '@/components/history/events/forms/HistoryEvent
 import LocationSelector from '@/components/helper/LocationSelector.vue';
 import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
 import { useFormStateWatcher } from '@/composables/form';
+import { logger } from '@/utils/logging';
 import type { NewOnlineHistoryEventPayload, OnlineHistoryEvent } from '@/types/history/events';
 
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
@@ -40,8 +40,6 @@ const { t } = useI18n();
 
 const { editableItem, groupHeader, nextSequence } = toRefs(props);
 
-const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-
 const lastLocation = useLocalStorage('rotki.history_event.location', TRADE_LOCATION_EXTERNAL);
 
 const assetPriceForm = ref<InstanceType<typeof HistoryEventAssetPriceForm>>();
@@ -51,10 +49,9 @@ const sequenceIndex = ref<string>('');
 const datetime = ref<string>('');
 const location = ref<string>('');
 const eventType = ref<string>('');
-const eventSubtype = ref<string>('');
+const eventSubtype = ref<string>('none');
 const asset = ref<string>('');
 const amount = ref<string>('');
-const usdValue = ref<string>('');
 const locationLabel = ref<string>('');
 const notes = ref<string>('');
 
@@ -87,19 +84,12 @@ const rules = {
     required: helpers.withMessage(t('transactions.events.form.sequence_index.validation.non_empty'), required),
   },
   timestamp: { externalServerValidation },
-  usdValue: {
-    required: helpers.withMessage(
-      t('transactions.events.form.fiat_value.validation.non_empty', {
-        currency: get(currencySymbol),
-      }),
-      required,
-    ),
-  },
 };
 
 const numericAmount = bigNumberifyFromRef(amount);
 
 const { getPayloadNotes, saveHistoryEventHandler } = useHistoryEventsForm();
+const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
 
 const states = {
   amount,
@@ -112,7 +102,6 @@ const states = {
   notes,
   sequenceIndex,
   timestamp: datetime,
-  usdValue,
 };
 
 const v$ = useVuelidate(
@@ -123,7 +112,14 @@ const v$ = useVuelidate(
     $externalResults: errorMessages,
   },
 );
+
 useFormStateWatcher(states, stateUpdated);
+
+const locationLabelSuggestions = computed(() =>
+  get(connectedExchanges)
+    .map(item => item.name)
+    .filter(item => !!item),
+);
 
 function reset() {
   set(sequenceIndex, get(nextSequence) || '0');
@@ -132,10 +128,9 @@ function reset() {
   set(location, get(lastLocation));
   set(locationLabel, '');
   set(eventType, '');
-  set(eventSubtype, '');
+  set(eventSubtype, 'none');
   set(asset, '');
   set(amount, '0');
-  set(usdValue, '0');
   set(notes, '');
   set(errorMessages, {});
 
@@ -161,17 +156,13 @@ function applyGroupHeaderData(entry: OnlineHistoryEvent) {
   set(locationLabel, entry.locationLabel ?? '');
   set(eventIdentifier, entry.eventIdentifier);
   set(datetime, convertFromTimestamp(entry.timestamp, DateFormat.DateMonthYearHourMinuteSecond, true));
-  set(usdValue, '0');
 }
 
-watch(errorMessages, (errors) => {
-  if (!isEmpty(errors))
-    get(v$).$validate();
-});
-
 async function save(): Promise<boolean> {
-  if (!(await get(v$).$validate()))
+  if (!(await get(v$).$validate())) {
+    logger.debug(get(v$).$errors);
     return false;
+  }
 
   const timestamp = convertToTimestamp(get(datetime), DateFormat.DateMonthYearHourMinuteSecond, true);
 
@@ -200,11 +191,6 @@ async function save(): Promise<boolean> {
   );
 }
 
-watch(location, (location: string) => {
-  if (location)
-    set(lastLocation, location);
-});
-
 function checkPropsData() {
   const editable = get(editableItem);
   if (editable) {
@@ -219,17 +205,21 @@ function checkPropsData() {
   reset();
 }
 
+watch(errorMessages, (errors) => {
+  if (!isEmpty(errors))
+    get(v$).$validate();
+});
+
+watch(location, (location: string) => {
+  if (location)
+    set(lastLocation, location);
+});
+
 watch([groupHeader, editableItem], checkPropsData);
+
 onMounted(() => {
   checkPropsData();
 });
-
-const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
-const locationLabelSuggestions = computed(() =>
-  get(connectedExchanges)
-    .map(item => item.name)
-    .filter(item => !!item),
-);
 
 defineExpose({
   save,
@@ -286,7 +276,6 @@ defineExpose({
       ref="assetPriceForm"
       v-model:asset="asset"
       v-model:amount="amount"
-      v-model:usd-value="usdValue"
       :v$="v$"
       :datetime="datetime"
     />

@@ -3543,11 +3543,6 @@
             "non_empty": "The event type field cannot be empty."
           }
         },
-        "fiat_value": {
-          "validation": {
-            "non_empty": "The {currency} value field cannot be empty."
-          }
-        },
         "location": {
           "validation": {
             "non_empty": "The location field cannot be empty."

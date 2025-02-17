@@ -3668,11 +3668,6 @@
             "non_empty": "事件类型字段不能为空。"
           }
         },
-        "fiat_value": {
-          "validation": {
-            "non_empty": "{currency} 值字段不能为空。"
-          }
-        },
         "location": {
           "validation": {
             "non_empty": "位置字段不能为空。"
