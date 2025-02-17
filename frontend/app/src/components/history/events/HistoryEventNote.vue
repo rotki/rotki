@@ -64,7 +64,7 @@ function isLinkType(t: any): t is keyof ExplorerUrls {
       <template v-if="note.type === NoteType.FLAG && note.countryCode">
         <Flag
           :iso="note.countryCode"
-          class="mr-1"
+          class="mx-1 rounded-sm"
         />
       </template>
       <template v-else-if="note.type === NoteType.WORD && note.word">
