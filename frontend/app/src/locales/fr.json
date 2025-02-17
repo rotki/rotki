@@ -3749,9 +3749,6 @@
       "title": "Emplacements de participation"
     }
   },
-  "statistics": {
-    "no_premium_label": "Les statistiques sont"
-  },
   "statistics_graph_settings": {
     "infer_zero_timed_balances": {
       "label": "Infer zéro timed balances pour les actifs qui n'ont pas de solde à un moment précis. C'est utile pour montrer les périodes de solde zéro dans les graphiques.",

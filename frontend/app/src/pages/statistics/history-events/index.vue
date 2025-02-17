@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { NoteLocation } from '@/types/notes';
 import { usePremium } from '@/composables/premium';
-import NoPremiumPlaceholder from '@/components/premium/NoPremiumPlaceholder.vue';
 import WrappedContainer from '@/components/wrapped/WrappedContainer.vue';
+import WrappedContainerPlaceholder from '@/components/wrapped/WrappedContainerPlaceholder.vue';
 
 definePage({
   meta: {
@@ -12,20 +12,13 @@ definePage({
 });
 
 const premium = usePremium();
-const { t } = useI18n();
 </script>
 
 <template>
   <div class="container">
-    <NoPremiumPlaceholder
-      v-if="!premium"
-      :text="t('statistics.no_premium_label')"
-    />
-    <div
-      v-else
-      class="max-w-[800px] mx-auto"
-    >
-      <WrappedContainer />
-    </div>
+    <RuiCard class="max-w-[800px] mx-auto">
+      <WrappedContainer v-if="premium" />
+      <WrappedContainerPlaceholder v-else />
+    </RuiCard>
   </div>
 </template>
