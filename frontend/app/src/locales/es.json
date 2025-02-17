@@ -1,6 +1,6 @@
 {
   "aave_lending": {
-    "header": "Aave Préstamo ({asset})",
+    "header": "Préstamo en Aave ({asset})",
     "history": "Aave History"
   },
   "about": {
@@ -25,11 +25,11 @@
   },
   "account_balances": {
     "confirm_delete": {
-      "description_xpub": "¿Estás seguro de que quieres deletar? {address}",
-      "title": "Deletar cuenta"
+      "description_xpub": "¿Estás seguro de que quieres eliminar? {address}",
+      "title": "Eliminar cuenta"
     },
     "data_table": {
-      "loading": " Por favor, espera mientras Rotki queries la blockchain..."
+      "loading": " Por favor, espera mientras rotki consulta la blockchain..."
     },
     "detect_tokens": {
       "tooltip": {
@@ -46,7 +46,7 @@
   "account_form": {
     "advanced_tooltip": "Mostrar las opciones avanzadas de xpub | Ocultar las opciones avanzadas de xpub",
     "error": {
-      "description": "Error al añadir una cuenta: {error}",
+      "description": "Error anãdiendo cuenta: {error}",
       "title": "Añadir una cuenta"
     },
     "labels": {
