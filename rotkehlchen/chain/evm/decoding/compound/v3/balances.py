@@ -66,7 +66,7 @@ class Compoundv3Balances(ProtocolWithBalance):
         )
 
     def _extract_unique_collateral_tokens(self) -> dict[ChecksumEvmAddress, set[CompoundArguments]]:  # noqa: E501
-        """Fetch"""
+        """Fetch the unique collateral tokens we need to query the comet contracts for"""
         unique_collaterals: dict[ChecksumEvmAddress, set[CompoundArguments]] = defaultdict(set)
         for user_address, events in self.addresses_with_activity(
             event_types={(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_FOR_WRAPPED)},
@@ -76,22 +76,24 @@ class Compoundv3Balances(ProtocolWithBalance):
                     continue
 
                 try:
-                    unique_collaterals[event.address].add(
-                        CompoundArguments(
-                            user_address=user_address,
-                            compound_asset=EvmToken(evm_address_to_identifier(
-                                address=event.asset.resolve_to_evm_token().evm_address,
-                                chain_id=self.evm_inquirer.chain_id,
-                                token_type=EvmTokenKind.ERC20,
-                            )),
-                        ),
-                    )
-                except (UnknownAsset, WrongAssetType) as e:
-                    log.error(
-                        "Failed to resolve compound v3 supply event's token and/or its "
-                        f'underlying token in {event.location} {event.tx_hash.hex()} due to {e!s}. Skipping.',  # noqa: E501
+                    compound_token = event.asset.resolve_to_evm_token()
+                except (UnknownAsset, WrongAssetType):
+                    log.warning(
+                        'Skipping compound v3 supply event during balance query since the asset '
+                        'is not an EVM token so not needed in COMET query',
                     )
                     continue
+
+                unique_collaterals[event.address].add(
+                    CompoundArguments(
+                        user_address=user_address,
+                        compound_asset=EvmToken(evm_address_to_identifier(
+                            address=compound_token.evm_address,
+                            chain_id=self.evm_inquirer.chain_id,
+                            token_type=EvmTokenKind.ERC20,
+                        )),
+                    ),
+                )
 
         return unique_collaterals
 
