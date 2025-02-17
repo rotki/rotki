@@ -18,6 +18,7 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.timing import DAY_IN_SECONDS, HOUR_IN_SECONDS
+from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.eth2 import DBEth2
 from rotkehlchen.db.evmtx import DBEvmTx
@@ -50,6 +51,7 @@ from rotkehlchen.utils.misc import ts_now, ts_sec_to_ms
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.modules.eth2.eth2 import Eth2
     from rotkehlchen.history.price import PriceHistorian
+    from rotkehlchen.types import ChecksumEvmAddress
 
 ADDR1 = string_to_evm_address('0xfeF0E7635281eF8E3B705e9C5B86e1d3B0eAb397')
 ADDR2 = string_to_evm_address('0x00F8a0D8EE1c21151BCcB416bCa1C152f9952D19')
@@ -1169,3 +1171,28 @@ def test_refresh_validator_data_after_v40_v41_upgrade(eth2):
             (3, 5231, '0xb052a2b421770b99c2348b652fbdc770b2a27a87bf56993dff212d839556d70e7b68f5d953133624e11774b8cb81129d', '1.0', '0x5675801e9346eA8165e7Eb80dcCD01dCa65c0f3A', 1606824023, None, None),  # noqa: E501
         ]
         assert cursor.execute('SELECT COUNT(*) from eth2_daily_staking_details').fetchone()[0] == 3
+
+
+@pytest.mark.parametrize('ethereum_accounts', [['0x0fdAe061cAE1Ad4Af83b27A96ba5496ca992139b']])
+def test_clean_cache_on_account_removal(
+        ethereum_accounts: list['ChecksumEvmAddress'],
+        database: 'DBHandler',
+) -> None:
+    """Test that last withdrawal query timestamps are removed from the cache when """
+    with database.conn.write_ctx() as write_cursor:
+        database.set_dynamic_cache(
+            write_cursor=write_cursor,
+            name=DBCacheDynamic.WITHDRAWALS_TS,
+            address=ethereum_accounts[0],
+            value=Timestamp(1739807677),
+        )
+        database.remove_single_blockchain_accounts(
+            write_cursor=write_cursor,
+            blockchain=SupportedBlockchain.ETHEREUM,
+            accounts=ethereum_accounts,
+        )
+        assert database.get_dynamic_cache(
+            cursor=write_cursor,
+            name=DBCacheDynamic.WITHDRAWALS_TS,
+            address=ethereum_accounts[0],
+        ) is None

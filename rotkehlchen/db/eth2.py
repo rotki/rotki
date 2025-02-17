@@ -13,6 +13,7 @@ from rotkehlchen.chain.ethereum.modules.eth2.structures import (
 from rotkehlchen.chain.ethereum.modules.eth2.utils import form_withdrawal_notes
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.timing import DAY_IN_SECONDS, HOUR_IN_SECONDS
+from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.filtering import (
     ETH_STAKING_EVENT_JOIN,
     EthStakingEventFilterQuery,
@@ -319,9 +320,10 @@ class DBEth2:
         question_marks = ['?'] * indices_num
         with self.db.user_write() as cursor:
             # Delete from the validators table. This should also delete from daily_staking_details
+            placeholders = ','.join(question_marks)
             cursor.execute(
                 f'DELETE FROM eth2_validators WHERE validator_index IN '
-                f'({",".join(question_marks)})',
+                f'({placeholders})',
                 validator_indices,
             )
             if cursor.rowcount != len(validator_indices):
@@ -337,6 +339,15 @@ class DBEth2:
                 f'FROM eth_staking_events_info S WHERE S.validator_index IN '
                 f'({",".join(question_marks)})) AND entry_type != ?',
                 (*validator_indices, HistoryBaseEntryType.ETH_DEPOSIT_EVENT.serialize_for_db()),
+            )
+
+            # Delete cached timestamps
+            cursor.execute(
+                f'DELETE FROM key_value_cache WHERE name IN ({placeholders})',
+                [
+                    DBCacheDynamic.LAST_PRODUCED_BLOCKS_QUERY_TS.get_db_key(index=index)
+                    for index in validator_indices
+                ],
             )
 
     @staticmethod
