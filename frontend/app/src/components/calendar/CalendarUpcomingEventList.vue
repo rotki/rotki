@@ -13,7 +13,7 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: 'edit', event: CalendarEvent): void;
+  edit: [event: CalendarEvent];
 }>();
 
 const groupedEvents = computed(() => {
@@ -41,21 +41,21 @@ function edit(event: CalendarEvent) {
 <template>
   <div class="flex flex-col gap-4">
     <div
-      v-for="(events, date) in groupedEvents"
+      v-for="(calendarEvents, date) in groupedEvents"
       :key="date"
       class="flex flex-col gap-2"
     >
       <DateDisplay
-        :timestamp="events[0].timestamp"
+        :timestamp="calendarEvents[0].timestamp"
         no-time
         hide-tooltip
         class="cursor-pointer text-sm font-bold"
-        @click="handleDateClick(events[0].timestamp)"
+        @click="handleDateClick(calendarEvents[0].timestamp)"
       />
 
       <div class="flex flex-col gap-4">
         <CalendarEventList
-          v-for="event in events"
+          v-for="event in calendarEvents"
           :key="event.identifier"
           v-model:selected-date="selectedDate"
           :visible-date="visibleDate"

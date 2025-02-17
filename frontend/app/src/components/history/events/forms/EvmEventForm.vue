@@ -10,7 +10,6 @@ import { DateFormat } from '@/types/date-format';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 import { bigNumberifyFromRef } from '@/utils/bignumbers';
 import HistoryEventAssetPriceForm from '@/components/history/events/forms/HistoryEventAssetPriceForm.vue';
-import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useBlockchainStore } from '@/store/blockchain';
 import { useHistoryEventsForm } from '@/composables/history/events/form';
 import { useSupportedChains } from '@/composables/info/chains';
@@ -26,26 +25,24 @@ import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
 import { useFormStateWatcher } from '@/composables/form';
 import type { EvmHistoryEvent, NewEvmHistoryEventPayload } from '@/types/history/events';
 
+interface HistoryEventFormProps {
+  editableItem?: EvmHistoryEvent;
+  nextSequence?: string;
+  groupHeader?: EvmHistoryEvent;
+}
+
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
 
-const props = withDefaults(
-  defineProps<{
-    editableItem?: EvmHistoryEvent;
-    nextSequence?: string;
-    groupHeader?: EvmHistoryEvent;
-  }>(),
-  {
-    editableItem: undefined,
-    groupHeader: undefined,
-    nextSequence: '',
-  },
-);
+const props = withDefaults(defineProps<HistoryEventFormProps>(), {
+  editableItem: undefined,
+  groupHeader: undefined,
+  nextSequence: '',
+});
 
 const { t } = useI18n();
 
 const { editableItem, groupHeader, nextSequence } = toRefs(props);
 
-const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { historyEventProductsMapping } = useHistoryEventProductMappings();
 const { counterparties } = useHistoryEventCounterpartyMappings();
 
@@ -59,10 +56,9 @@ const sequenceIndex = ref<string>('');
 const datetime = ref<string>('');
 const location = ref<string>('');
 const eventType = ref<string>('');
-const eventSubtype = ref<string>('');
+const eventSubtype = ref<string>('none');
 const asset = ref<string>('');
 const amount = ref<string>('');
-const usdValue = ref<string>('');
 const address = ref<string>('');
 const locationLabel = ref<string>('');
 const notes = ref<string>('');
@@ -137,19 +133,13 @@ const rules = {
       isValidTxHash(value)),
     required: helpers.withMessage(t('transactions.events.form.tx_hash.validation.non_empty'), required),
   },
-  usdValue: {
-    required: helpers.withMessage(
-      t('transactions.events.form.fiat_value.validation.non_empty', {
-        currency: get(currencySymbol),
-      }),
-      required,
-    ),
-  },
 };
 
 const numericAmount = bigNumberifyFromRef(amount);
 
 const { getPayloadNotes, saveHistoryEventHandler } = useHistoryEventsForm();
+const { getAddresses } = useBlockchainStore();
+const { txChainsToLocation } = useSupportedChains();
 
 const states = {
   address,
@@ -166,7 +156,6 @@ const states = {
   sequenceIndex,
   timestamp: datetime,
   txHash,
-  usdValue,
 };
 
 const v$ = useVuelidate(
@@ -179,6 +168,8 @@ const v$ = useVuelidate(
 );
 useFormStateWatcher(states, stateUpdated);
 
+const addressSuggestions = computed(() => getAddresses(Blockchain.ETH));
+
 function reset() {
   set(sequenceIndex, get(nextSequence) || '0');
   set(txHash, '');
@@ -188,10 +179,9 @@ function reset() {
   set(address, '');
   set(locationLabel, '');
   set(eventType, '');
-  set(eventSubtype, '');
+  set(eventSubtype, 'none');
   set(asset, '');
   set(amount, '0');
-  set(usdValue, '0');
   set(notes, '');
   set(counterparty, '');
   set(product, '');
@@ -227,7 +217,6 @@ function applyGroupHeaderData(entry: EvmHistoryEvent) {
   set(locationLabel, entry.locationLabel ?? '');
   set(txHash, entry.txHash);
   set(datetime, convertFromTimestamp(entry.timestamp, DateFormat.DateMonthYearHourMinuteSecond, true));
-  set(usdValue, '0');
 }
 
 watch(errorMessages, (errors) => {
@@ -236,8 +225,9 @@ watch(errorMessages, (errors) => {
 });
 
 async function save(): Promise<boolean> {
-  if (!(await get(v$).$validate()))
+  if (!(await get(v$).$validate())) {
     return false;
+  }
 
   const timestamp = convertToTimestamp(get(datetime), DateFormat.DateMonthYearHourMinuteSecond, true);
 
@@ -271,11 +261,6 @@ async function save(): Promise<boolean> {
   );
 }
 
-watch(location, (location: string) => {
-  if (location)
-    set(lastLocation, location);
-});
-
 function checkPropsData() {
   const editable = get(editableItem);
   if (editable) {
@@ -290,11 +275,12 @@ function checkPropsData() {
   reset();
 }
 
-watch([groupHeader, editableItem], checkPropsData);
-
-onMounted(() => {
-  checkPropsData();
+watch(location, (location: string) => {
+  if (location)
+    set(lastLocation, location);
 });
+
+watch([groupHeader, editableItem], checkPropsData);
 
 watch(historyEventLimitedProducts, (products) => {
   const selected = get(product);
@@ -302,11 +288,9 @@ watch(historyEventLimitedProducts, (products) => {
     set(product, '');
 });
 
-const { txChainsToLocation } = useSupportedChains();
-
-const { getAddresses } = useBlockchainStore();
-
-const addressSuggestions = computed(() => getAddresses(Blockchain.ETH));
+onMounted(() => {
+  checkPropsData();
+});
 
 defineExpose({
   save,
@@ -364,7 +348,6 @@ defineExpose({
       ref="assetPriceForm"
       v-model:asset="asset"
       v-model:amount="amount"
-      v-model:usd-value="usdValue"
       :v$="v$"
       :datetime="datetime"
       :hide-price-fields="isInformationalEvent"

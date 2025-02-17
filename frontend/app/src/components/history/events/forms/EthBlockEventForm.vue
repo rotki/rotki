@@ -9,7 +9,6 @@ import HistoryEventAssetPriceForm from '@/components/history/events/forms/Histor
 import { DateFormat } from '@/types/date-format';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 import { bigNumberifyFromRef } from '@/utils/bignumbers';
-import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useBlockchainStore } from '@/store/blockchain';
 import { useHistoryEventsForm } from '@/composables/history/events/form';
 import AutoCompleteWithSearchSync from '@/components/inputs/AutoCompleteWithSearchSync.vue';
@@ -18,30 +17,26 @@ import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
 import { useFormStateWatcher } from '@/composables/form';
 import type { EthBlockEvent, NewEthBlockEventPayload } from '@/types/history/events';
 
-const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
+interface EthBlockEventFormProps {
+  editableItem?: EthBlockEvent;
+  groupHeader?: EthBlockEvent;
+}
 
-const props = withDefaults(
-  defineProps<{
-    editableItem?: EthBlockEvent;
-    groupHeader?: EthBlockEvent;
-  }>(),
-  {
-    editableItem: undefined,
-    groupHeader: undefined,
-  },
-);
+const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
+const props = withDefaults(defineProps<EthBlockEventFormProps>(), {
+  editableItem: undefined,
+  groupHeader: undefined,
+});
 
 const { t } = useI18n();
 
 const { editableItem, groupHeader } = toRefs(props);
-const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
 const assetPriceForm = ref<InstanceType<typeof HistoryEventAssetPriceForm>>();
 
 const eventIdentifier = ref<string>('');
 const datetime = ref<string>('');
 const amount = ref<string>('');
-const usdValue = ref<string>('');
 const blockNumber = ref<string>('');
 const validatorIndex = ref<string>('');
 const feeRecipient = ref<string>('');
@@ -68,21 +63,12 @@ const rules = {
     required: helpers.withMessage(t('transactions.events.form.fee_recipient.validation.non_empty'), required),
   },
   timestamp: { externalServerValidation: () => true },
-  usdValue: {
-    required: helpers.withMessage(
-      t('transactions.events.form.fiat_value.validation.non_empty', {
-        currency: get(currencySymbol),
-      }),
-      required,
-    ),
-  },
   validatorIndex: {
     required: helpers.withMessage(t('transactions.events.form.validator_index.validation.non_empty'), required),
   },
 };
 
 const numericAmount = bigNumberifyFromRef(amount);
-const numericUsdValue = bigNumberifyFromRef(usdValue);
 
 const { saveHistoryEventHandler } = useHistoryEventsForm();
 
@@ -92,7 +78,6 @@ const states = {
   eventIdentifier,
   feeRecipient,
   timestamp: datetime,
-  usdValue,
   validatorIndex,
 };
 
@@ -110,7 +95,6 @@ function reset() {
   set(eventIdentifier, null);
   set(datetime, convertFromTimestamp(dayjs().valueOf(), DateFormat.DateMonthYearHourMinuteSecond, true));
   set(amount, '0');
-  set(usdValue, '0');
   set(blockNumber, '');
   set(validatorIndex, '');
   set(feeRecipient, '');
@@ -136,7 +120,6 @@ function applyGroupHeaderData(entry: EthBlockEvent) {
   set(blockNumber, entry.blockNumber.toString());
   set(validatorIndex, entry.validatorIndex.toString());
   set(datetime, convertFromTimestamp(entry.timestamp, DateFormat.DateMonthYearHourMinuteSecond, true));
-  set(usdValue, '0');
 }
 
 watch(errorMessages, (errors) => {
@@ -145,16 +128,14 @@ watch(errorMessages, (errors) => {
 });
 
 async function save(): Promise<boolean> {
-  if (!(await get(v$).$validate()))
+  if (!(await get(v$).$validate())) {
     return false;
+  }
 
   const timestamp = convertToTimestamp(get(datetime), DateFormat.DateMonthYearHourMinuteSecond, true);
 
   const payload: NewEthBlockEventPayload = {
-    balance: {
-      amount: get(numericAmount).isNaN() ? Zero : get(numericAmount),
-      usdValue: get(numericUsdValue).isNaN() ? Zero : get(numericUsdValue),
-    },
+    amount: get(numericAmount).isNaN() ? Zero : get(numericAmount),
     blockNumber: parseInt(get(blockNumber)),
     entryType: HistoryEventEntryType.ETH_BLOCK_EVENT,
     eventIdentifier: get(eventIdentifier),
@@ -242,7 +223,6 @@ defineExpose({
     <HistoryEventAssetPriceForm
       ref="assetPriceForm"
       v-model:amount="amount"
-      v-model:usd-value="usdValue"
       asset="ETH"
       :v$="v$"
       :datetime="datetime"

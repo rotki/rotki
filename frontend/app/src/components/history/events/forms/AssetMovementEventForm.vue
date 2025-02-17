@@ -10,7 +10,6 @@ import { DateFormat } from '@/types/date-format';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 import { bigNumberifyFromRef } from '@/utils/bignumbers';
 import HistoryEventAssetPriceForm from '@/components/history/events/forms/HistoryEventAssetPriceForm.vue';
-import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useHistoryEventsForm } from '@/composables/history/events/form';
 import LocationSelector from '@/components/helper/LocationSelector.vue';
 import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
@@ -22,12 +21,14 @@ import { useSessionSettingsStore } from '@/store/settings/session';
 import { useFormStateWatcher } from '@/composables/form';
 import type { AssetMovementEvent, NewAssetMovementEventPayload } from '@/types/history/events';
 
-const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
-
-const props = withDefaults(defineProps<{
+interface AssetMovementEventFormProps {
   editableItem?: AssetMovementEvent;
   groupEvents?: AssetMovementEvent[];
-}>(), {
+}
+
+const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
+
+const props = withDefaults(defineProps<AssetMovementEventFormProps>(), {
   editableItem: undefined,
   groupEvents: () => [],
 });
@@ -36,18 +37,13 @@ const { t } = useI18n();
 
 const { editableItem, groupEvents } = toRefs(props);
 
-const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-
-const historyEventTypesData = [
-  {
-    identifier: 'deposit',
-    label: t('backend_mappings.events.history_event_type.deposit'),
-  },
-  {
-    identifier: 'withdrawal',
-    label: t('backend_mappings.events.history_event_type.withdrawal'),
-  },
-];
+const historyEventTypesData = [{
+  identifier: 'deposit',
+  label: t('backend_mappings.events.history_event_type.deposit'),
+}, {
+  identifier: 'withdrawal',
+  label: t('backend_mappings.events.history_event_type.withdrawal'),
+}];
 
 const assetPriceForm = ref<InstanceType<typeof HistoryEventAssetPriceForm>>();
 
@@ -58,7 +54,6 @@ const locationLabel = ref<string>('');
 const eventType = ref<string>('');
 const asset = ref<string>('');
 const amount = ref<string>('');
-const usdValue = ref<string>('');
 const notes = ref<string>('');
 const hasFee = ref<boolean>(false);
 const fee = ref<string>('');
@@ -97,14 +92,6 @@ const rules = {
   locationLabel: { externalServerValidation },
   notes: { externalServerValidation },
   timestamp: { externalServerValidation },
-  usdValue: {
-    required: helpers.withMessage(
-      t('transactions.events.form.fiat_value.validation.non_empty', {
-        currency: get(currencySymbol),
-      }),
-      required,
-    ),
-  },
 };
 
 const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
@@ -121,7 +108,6 @@ const states = {
   locationLabel,
   notes,
   timestamp: datetime,
-  usdValue,
 };
 
 const v$ = useVuelidate(
@@ -136,7 +122,6 @@ useFormStateWatcher(states, stateUpdated);
 
 const lastLocation = useLocalStorage('rotki.history_event.location', TRADE_LOCATION_EXTERNAL);
 const numericAmount = bigNumberifyFromRef(amount);
-const numericUsdValue = bigNumberifyFromRef(usdValue);
 const locationLabelSuggestions = computed<string[]>(() => {
   const suggestions: string[] = [];
 
@@ -157,7 +142,6 @@ function reset() {
   set(eventType, 'deposit');
   set(asset, '');
   set(amount, '0');
-  set(usdValue, '0');
   set(notes, '');
   set(errorMessages, {});
 
@@ -185,19 +169,17 @@ function applyEditableData(entry: AssetMovementEvent, feeEvent?: AssetMovementEv
 }
 
 async function save(): Promise<boolean> {
-  if (!(await get(v$).$validate()))
+  if (!(await get(v$).$validate())) {
     return false;
+  }
 
   const timestamp = convertToTimestamp(get(datetime), DateFormat.DateMonthYearHourMinuteSecond, true);
 
   const editable = get(editableItem);
 
   let payload: NewAssetMovementEventPayload = {
+    amount: get(numericAmount).isNaN() ? Zero : get(numericAmount),
     asset: get(asset),
-    balance: {
-      amount: get(numericAmount).isNaN() ? Zero : get(numericAmount),
-      usdValue: get(numericUsdValue).isNaN() ? Zero : get(numericUsdValue),
-    },
     entryType: HistoryEventEntryType.ASSET_MOVEMENT_EVENT,
     eventIdentifier: get(eventIdentifier),
     eventType: get(eventType),
@@ -305,7 +287,6 @@ defineExpose({
       ref="assetPriceForm"
       v-model:asset="asset"
       v-model:amount="amount"
-      v-model:usd-value="usdValue"
       :v$="v$"
       :datetime="datetime"
     />
