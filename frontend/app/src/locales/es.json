@@ -1,14 +1,14 @@
 {
   "aave_lending": {
-    "header": "Aave Loan ({asset})",
+    "header": "Préstamo en Aave ({asset})",
     "history": "Aave History"
   },
   "about": {
-    "app_version": "App Version:",
+    "app_version": "Version de la App:",
     "components": {
       "build": "Build:",
-      "title": "Premium Components",
-      "version": "Premium Version:"
+      "title": "Componenes Premium",
+      "version": "Versión Premium:"
     },
     "copy_data_directory_tooltip": "Copy data directory",
     "copy_information_tooltip": "Copy the application information",
@@ -25,56 +25,56 @@
   },
   "account_balances": {
     "confirm_delete": {
-      "description_xpub": "Are you sure you want to delete {address}",
-      "title": "Account delete"
+      "description_xpub": "¿Estás seguro de que quieres eliminar {address}?",
+      "title": "Eliminar cuenta"
     },
     "data_table": {
-      "loading": "Please wait while rotki queries the blockchain..."
+      "loading": "Por favor, espera mientras rotki consulta la blockchain..."
     },
     "detect_tokens": {
       "tooltip": {
-        "last_detected": "Last detected: {time}",
+        "last_detected": "Última detección: : {time}",
         "redetect": "Re-detectar tokens"
       }
     },
     "edit_tooltip": "Editar cuenta",
     "headers": {
-      "usd_value": "{symbol} value"
+      "usd_value": "{symbol} valor"
     },
-    "refresh_tooltip": "Refresh {blockchain} balances ignoring any cached entries"
+    "refresh_tooltip": "Actualizar los saldos de {blockchain} ignorando cualquier entrada en caché"
   },
   "account_form": {
-    "advanced_tooltip": "Display the advanced xpub options | Hide the advanced xpub options",
+    "advanced_tooltip": "Mostrar las opciones avanzadas de xpub | Ocultar las opciones avanzadas de xpub",
     "error": {
-      "description": "Error while adding account: {error}",
+      "description": "Error anãdiendo cuenta: {error}",
       "title": "Añadir una cuenta"
     },
     "labels": {
       "addresses": "Direcciones",
-      "addresses_entries": "no entries | {count} unique entry | {count} unique entries",
-      "addresses_hint": "Insert multiple comma separated addresses",
+      "addresses_entries": "sin entradas | {count} entrada única | {count} entradas únicas",
+      "addresses_hint": "Inserte múltiples direcciones separadas por comas",
       "blockchain": "Elija cadena de bloques | Elija cadenas de bloques",
       "btc": {
-        "derivation_path": "Derivation Path",
+        "derivation_path": "Ruta de Derivación",
         "xpub": "XPUB"
       },
       "multiple": "Añadir múltiples direcciones"
     },
     "validation": {
       "address_non_empty": "La dirección no puede estar vacía",
-      "xpub_non_empty": "The XPUB field cannot be empty"
+      "xpub_non_empty": "El campo XPUB no puede estar vacío"
     }
   },
   "account_management": {
-    "about_tooltip": "Show the application's about modal",
+    "about_tooltip": "Mostrar la ventana de información de la aplicación",
     "creation": {
-      "error": "Account creation failed"
+      "error": "Error en la creación de la cuenta"
     }
   },
   "account_settings": {
     "cost_basis_method_settings": {
       "labels": {
-        "acb": "Average Cost Basis",
+        "acb": "Costo Promedio",
         "fifo": "First In, First Out",
         "hifo": "Highest In, First Out",
         "lifo": "Last In, First Out"
@@ -89,13 +89,13 @@
     },
     "messages": {
       "cost_basis": {
-        "disabled": "Successfully disabled past cost basis calculation",
-        "enabled": "Successfully enabled past cost basis calculation",
-        "error": "Failed to change cost basis calculation: {message}"
+        "disabled": "Cálculo de la base de costo anterior desactivado con éxito",
+        "enabled": "Cálculo de la base de costo anterior habilitado con éxito",
+        "error": "Error al cambiar el cálculo de la base de costo: {message}"
       },
       "cost_basis_method": {
-        "error": "Failed to change cost basis method to {method}: {message}",
-        "success": "Successfully change cost basis method to {method}"
+        "error": "Error al cambiar el método de base de costo a {method}: {message}",
+        "success": "Método de base de costo cambiado con éxito a {method}"
       },
       "crypto_to_crypto": "Error setting crypto to crypto: {message}",
       "eth_staking_taxable_after_withdrawal": {
