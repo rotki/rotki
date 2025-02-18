@@ -63,7 +63,10 @@ export function useExchangeApi(): UseExchangeApiReturn {
     if (mode === 'edit') {
       response = await api.instance.patch<ActionResult<boolean>>(
         '/exchanges',
-        snakeCaseTransformer(nonEmptyProperties(payload, true)),
+        snakeCaseTransformer(nonEmptyProperties(payload, {
+          alwaysPickKeys: ['binanceMarkets'],
+          removeEmptyString: true,
+        })),
         {
           validateStatus: validStatus,
         },
@@ -72,7 +75,9 @@ export function useExchangeApi(): UseExchangeApiReturn {
     else {
       response = await api.instance.put<ActionResult<boolean>>(
         '/exchanges',
-        snakeCaseTransformer(nonEmptyProperties(payload, true)),
+        snakeCaseTransformer(nonEmptyProperties(payload, {
+          removeEmptyString: true,
+        })),
         {
           validateStatus: validStatus,
         },

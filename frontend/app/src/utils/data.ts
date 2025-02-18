@@ -20,10 +20,19 @@ export function uniqueObjects<T>(arr: T[], getUniqueId: (item: T) => string): T[
 /**
  * Takes an object and returns the same object without any null values
  * or empty array properties.
- * @param object any object
- * @param removeEmptyString if set it will also remove empty string properties
+ * @param object - Any object to process
+ * @param options - Configuration options
+ * @param options.removeEmptyString - If true, empty string properties will be removed
+ * @param options.alwaysPickKeys - Array of keys that will always be included in the returned value
+ * @returns A new object with non-empty properties
  */
-export function nonEmptyProperties<T extends object>(object: T, removeEmptyString = false): Partial<NonNullable<T>> {
+export function nonEmptyProperties<T extends object>(
+  object: T,
+  { alwaysPickKeys = [], removeEmptyString = false }: {
+    removeEmptyString?: boolean;
+    alwaysPickKeys?: (keyof T)[];
+  } = {},
+): Partial<NonNullable<T>> {
   const partial: Partial<T> = {};
   const keys = Object.keys(object);
   if (object instanceof BigNumber)
@@ -32,6 +41,11 @@ export function nonEmptyProperties<T extends object>(object: T, removeEmptyStrin
   for (const obKey of keys) {
     const key = obKey as keyof T;
     const val = object[key];
+
+    if (alwaysPickKeys.includes(key)) {
+      partial[key] = val;
+    }
+
     if (removeEmptyString && val === '')
       continue;
 

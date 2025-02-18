@@ -61,6 +61,32 @@ describe('utils/data', () => {
     ).toStrictEqual({ a: { number } });
   });
 
+  it('also remove empty strings', () => {
+    expect(
+      nonEmptyProperties({
+        a: '',
+        b: 'test',
+        c: 123,
+        d: [],
+      }, {
+        removeEmptyString: true,
+      }),
+    ).toStrictEqual({ b: 'test', c: 123 });
+  });
+
+  it('alwaysPickKeys option works', () => {
+    expect(
+      nonEmptyProperties({
+        a: '',
+        b: 'test',
+        c: 123,
+        d: [],
+      }, {
+        alwaysPickKeys: ['a', 'd'],
+      }),
+    ).toStrictEqual({ a: '', b: 'test', c: 123, d: [] });
+  });
+
   it('convert values to rems', () => {
     expect(toRem('10px')).toStrictEqual('0.625rem');
     expect(toRem('10')).toStrictEqual('10rem');

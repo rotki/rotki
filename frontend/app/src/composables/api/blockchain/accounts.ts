@@ -77,7 +77,9 @@ export function useBlockchainAccountsApi(): UseBlockchainAccountsApiReturn {
   const addBlockchainAccount = async (chain: string, pay: XpubAccountPayload | AccountPayload[]): Promise<PendingTask> => {
     const url = !Array.isArray(pay) ? `/blockchains/${chain}/xpub` : `/blockchains/${chain}/accounts`;
     const payload = Array.isArray(pay) ? { accounts: pay } : { ...omit(pay, ['xpub']), ...pay.xpub };
-    return performAsyncQuery(url, nonEmptyProperties(payload, true));
+    return performAsyncQuery(url, nonEmptyProperties(payload, {
+      removeEmptyString: true,
+    }));
   };
 
   const removeBlockchainAccount = async (blockchain: string, accounts: string[]): Promise<PendingTask> => {
@@ -214,7 +216,9 @@ export function useBlockchainAccountsApi(): UseBlockchainAccountsApiReturn {
   const addEth2Validator = async (payload: Eth2Validator): Promise<PendingTask> => {
     const response = await api.instance.put<ActionResult<PendingTask>>(
       '/blockchains/eth2/validators',
-      snakeCaseTransformer({ ...nonEmptyProperties(payload, true), asyncQuery: true }),
+      snakeCaseTransformer({ ...nonEmptyProperties(payload, {
+        removeEmptyString: true,
+      }), asyncQuery: true }),
       {
         validateStatus: validAuthorizedStatus,
       },
