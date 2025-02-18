@@ -66,6 +66,7 @@ from rotkehlchen.balances.manual import (
 from rotkehlchen.chain.accounts import SingleBlockchainAccountData
 from rotkehlchen.chain.bitcoin.xpub import XpubManager
 from rotkehlchen.chain.ethereum.airdrops import check_airdrops, fetch_airdrops_metadata
+from rotkehlchen.chain.ethereum.constants import CPT_KRAKEN
 from rotkehlchen.chain.ethereum.defi.protocols import DEFI_PROTOCOLS
 from rotkehlchen.chain.ethereum.modules.convex.convex_cache import (
     query_convex_data,
@@ -4547,17 +4548,18 @@ class RestAPI:
                 query_filter=table_filter,
             )
             value_query_filters, value_bindings = value_filter.prepare(with_pagination=False, with_order=False)  # noqa: E501
-            usd_value, amounts = history_events_db.get_value_stats(
+            asset_amounts_and_value, total_usd = history_events_db.get_amount_and_value_stats(
                 cursor=cursor,
                 query_filters=value_query_filters,
                 bindings=value_bindings,
+                counterparty=CPT_KRAKEN,
             )
             result = {
                 'entries': events,
                 'entries_found': entries_found,
                 'entries_limit': entries_limit,
                 'entries_total': entries_total,
-                'total_usd_value': usd_value,
+                'total_usd_value': total_usd,
                 'assets': history_events_db.get_entries_assets_history_events(
                     cursor=cursor,
                     query_filter=table_filter,
@@ -4567,7 +4569,7 @@ class RestAPI:
                         'asset': entry[0],
                         'amount': entry[1],
                         'usd_value': entry[2],
-                    } for entry in amounts
+                    } for entry in asset_amounts_and_value
                 ],
             }
 

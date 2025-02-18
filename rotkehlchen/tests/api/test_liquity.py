@@ -415,7 +415,7 @@ def test_staking_stats(rotkehlchen_api_server: APIServer, ethereum_accounts: lis
     assert FVal(address_0_data['total_deposited_stability_pool']) == FVal('3974')
     assert FVal(address_1_data['total_deposited_stability_pool']) == FVal('1000')
     assert FVal(global_stats['total_deposited_stability_pool']) == FVal(address_0_data['total_deposited_stability_pool']) + FVal(address_1_data['total_deposited_stability_pool'])  # noqa: E501
-    assert address_0_data['stability_pool_gains'][0]['amount'] == '444.0'
+    assert address_0_data['stability_pool_gains'][0]['amount'] == '444'
     assert address_1_data['stability_pool_gains'][0]['amount'] == '4240.34942308358'
     assert len(global_stats['staking_gains']) == 1
     assert len(global_stats['stability_pool_gains']) == 1

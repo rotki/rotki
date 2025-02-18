@@ -914,9 +914,9 @@ def test_kraken_staking(rotkehlchen_api_server_with_exchanges, start_with_valid_
     else:
         assert result['entries_limit'] == FREE_HISTORY_EVENTS_LIMIT
     assert result['entries_total'] == 4
-    assert result['received'] == [  # TODO: @yabirgb adjust usd value
-        {'asset': 'ETH2', 'amount': '0.000053862', 'usd_value': '0'},
-        {'asset': 'XTZ', 'amount': '0.00001', 'usd_value': '0'},
+    assert result['received'] == [
+        {'asset': 'XTZ', 'amount': '0.0000100000', 'usd_value': '0.000046300000'},
+        {'asset': 'ETH2', 'amount': '0.0000538620', 'usd_value': '0.219353533620'},
     ]
 
     # test that the correct number of entries is returned with pagination
