@@ -45,7 +45,7 @@ export interface ExchangePayload {
 
 export interface ExchangeFormData extends ExchangePayload {
   readonly mode: 'edit' | 'add';
-  readonly newName: string;
+  readonly newName?: string;
 }
 
 const ExchangeSavingsEvent = AssetBalance.extend({
