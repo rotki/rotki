@@ -10,44 +10,42 @@ import { timezones } from '@/data/timezones';
 import { changeDateFormat, convertDateByTimezone, getDateInputISOFormat, guessTimezone, isValidDate } from '@/utils/date';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
-const props = withDefaults(
-  defineProps<{
-    label?: string;
-    hint?: string;
-    persistentHint?: boolean;
-    modelValue: string;
-    limitNow?: boolean;
-    allowEmpty?: boolean;
-    milliseconds?: boolean;
-    disabled?: boolean;
-    errorMessages?: string[] | string;
-    hideDetails?: boolean;
-    dateOnly?: boolean;
-    inputOnly?: boolean;
-    hideTimezoneSelector?: boolean;
-    dense?: boolean;
-  }>(),
-  {
-    allowEmpty: false,
-    dateOnly: false,
-    dense: false,
-    disabled: false,
-    errorMessages: () => [],
-    hideDetails: false,
-    hideTimezoneSelector: false,
-    hint: '',
-    inputOnly: false,
-    label: '',
-    limitNow: false,
-    milliseconds: false,
-    persistentHint: false,
-  },
-);
+interface DateTimePickerProps {
+  label?: string;
+  hint?: string;
+  persistentHint?: boolean;
+  limitNow?: boolean;
+  allowEmpty?: boolean;
+  milliseconds?: boolean;
+  disabled?: boolean;
+  errorMessages?: string[] | string;
+  hideDetails?: boolean;
+  dateOnly?: boolean;
+  inputOnly?: boolean;
+  hideTimezoneSelector?: boolean;
+  dense?: boolean;
+}
 
-const emit = defineEmits<{ (e: 'update:model-value', value: string): void }>();
+const modelValue = defineModel<string>({ required: true });
+
+const props = withDefaults(defineProps<DateTimePickerProps>(), {
+  allowEmpty: false,
+  dateOnly: false,
+  dense: false,
+  disabled: false,
+  errorMessages: () => [],
+  hideDetails: false,
+  hideTimezoneSelector: false,
+  hint: '',
+  inputOnly: false,
+  label: '',
+  limitNow: false,
+  milliseconds: false,
+  persistentHint: false,
+});
 
 const { allowEmpty, dateOnly, errorMessages, limitNow, milliseconds } = toRefs(props);
-const imask = ref<InputMask<any> | null>(null);
+const iMask = ref<InputMask<any>>();
 
 const { t } = useI18n();
 
@@ -62,8 +60,54 @@ const dateTimeFormatWithSecond = computed<string>(() => `${get(dateTimeFormat)}:
 const dateTimeFormatWithMilliseconds = computed<string>(() => `${get(dateTimeFormatWithSecond)}.SSS`);
 
 const currentValue = ref<string>('');
-const selectedTimezone = ref<string>('');
+const selectedTimezone = ref<string>(guessTimezone());
 const inputField = ref();
+
+const dateFormatErrorMessage = computed<string>(() => {
+  const dateFormat = get(dateOnlyFormat);
+  if (get(milliseconds)) {
+    return t('date_time_picker.milliseconds_format', {
+      dateFormat,
+    });
+  }
+  else if (get(dateOnly)) {
+    return t('date_time_picker.date_only_format', {
+      dateFormat,
+    });
+  }
+  else {
+    return t('date_time_picker.default_format', {
+      dateFormat,
+    });
+  }
+});
+
+const rules = {
+  date: {
+    isOnLimit: helpers.withMessage(t('date_time_picker.limit_now'), (v: string): boolean => isDateOnLimit(v)),
+    isValidFormat: helpers.withMessage(
+      () => get(dateFormatErrorMessage),
+      (v: string): boolean => {
+        if (get(allowEmpty) && !v)
+          return true;
+
+        return isValidFormat(v);
+      },
+    ),
+  },
+  timezone: {
+    required: helpers.withMessage(t('date_time_picker.timezone_field.non_empty'), required),
+  },
+};
+
+const v$ = useVuelidate(rules, {
+  date: currentValue,
+  timezone: selectedTimezone,
+}, {
+  $autoDirty: true,
+  $externalResults: computed(() => ({ date: get(errorMessages) })),
+  $stopPropagation: true,
+});
 
 function isValidFormat(date: string): boolean {
   return (
@@ -97,63 +141,16 @@ function isValid(date: string): boolean {
   return isValidFormat(date) && isDateOnLimit(date);
 }
 
-const dateFormatErrorMessage = computed<string>(() => {
-  const dateFormat = get(dateOnlyFormat);
-  return get(milliseconds)
-    ? t('date_time_picker.milliseconds_format', {
-      dateFormat,
-    })
-    : get(dateOnly)
-      ? t('date_time_picker.date_only_format', {
-        dateFormat,
-      })
-      : t('date_time_picker.default_format', {
-        dateFormat,
-      });
-});
+function updateIMaskValue(value: string) {
+  if (!isDefined(iMask)) {
+    return;
+  }
+  nextTick(() => {
+    get(iMask).value = value;
+  });
+}
 
-const rules = {
-  date: {
-    isOnLimit: helpers.withMessage(t('date_time_picker.limit_now'), (v: string): boolean => isDateOnLimit(v)),
-    isValidFormat: helpers.withMessage(
-      () => get(dateFormatErrorMessage),
-      (v: string): boolean => {
-        if (get(allowEmpty) && !v)
-          return true;
-
-        return isValidFormat(v);
-      },
-    ),
-  },
-  timezone: {
-    required: helpers.withMessage(t('date_time_picker.timezone_field.non_empty'), required),
-  },
-};
-
-const v$ = useVuelidate(
-  rules,
-  {
-    date: currentValue,
-    timezone: selectedTimezone,
-  },
-  {
-    $autoDirty: true,
-    $externalResults: computed(() => ({ date: get(errorMessages) })),
-    $stopPropagation: true,
-  },
-);
-
-watch(errorMessages, (errors) => {
-  if (!isEmpty(errors))
-    get(v$).$validate();
-});
-
-function onValueChange(value: string) {
-  const imaskVal = get(imask)!;
-
-  if (!value && imaskVal)
-    imaskVal.value = '';
-
+function convertToUserDateFormat(value: string) {
   const millisecondsVal = get(milliseconds);
   const changedDateTimezone = convertDateByTimezone(
     value,
@@ -163,45 +160,44 @@ function onValueChange(value: string) {
     millisecondsVal,
   );
 
-  const newValue = changeDateFormat(
+  return changeDateFormat(
     changedDateTimezone,
     DateFormat.DateMonthYearHourMinuteSecond,
     get(dateInputFormat),
     millisecondsVal,
   );
+}
 
-  if (imaskVal) {
-    imaskVal.value = newValue;
+function onValueChange(value: string) {
+  if (!value && isDefined(iMask)) {
+    updateIMaskValue('');
+  }
+  const newValue = convertToUserDateFormat(value);
+
+  if (isDefined(iMask)) {
+    updateIMaskValue(newValue);
     set(currentValue, newValue);
   }
 }
 
-watch(() => props.modelValue, onValueChange);
-watch(selectedTimezone, () => onValueChange(props.modelValue));
-
-function input(dateTime: string) {
-  emit('update:model-value', dateTime);
-}
-
 function emitIfValid(value: string) {
-  if (isValid(value)) {
-    const changedDateTimezone = convertDateByTimezone(
-      value,
-      get(dateInputFormat),
-      get(selectedTimezone),
-      guessTimezone(),
-      get(milliseconds),
-    );
-
-    const formattedValue = changeDateFormat(
-      changedDateTimezone,
-      get(dateInputFormat),
-      DateFormat.DateMonthYearHourMinuteSecond,
-      get(milliseconds),
-    );
-
-    input(formattedValue);
+  if (!isValid(value)) {
+    return;
   }
+  const changedDateTimezone = convertDateByTimezone(
+    value,
+    get(dateInputFormat),
+    get(selectedTimezone),
+    guessTimezone(),
+    get(milliseconds),
+  );
+  const formattedValue = changeDateFormat(
+    changedDateTimezone,
+    get(dateInputFormat),
+    DateFormat.DateMonthYearHourMinuteSecond,
+    get(milliseconds),
+  );
+  set(modelValue, formattedValue);
 }
 
 function setNow() {
@@ -212,7 +208,7 @@ function setNow() {
   emitIfValid(nowInString);
 }
 
-function initImask() {
+function initIMask() {
   const inputWrapper = get(inputField)!;
   const input = inputWrapper.$el.querySelector('input') as HTMLInputElement;
 
@@ -294,41 +290,60 @@ function initImask() {
     }
   }
 
-  const newImask = IMask(input, {
+  const newIMask = IMask(input, {
     mask,
   });
 
-  newImask.on('accept', () => {
-    const unmasked = get(imask)?.unmaskedValue;
-    const value = get(imask)?.value;
+  if (isDefined(modelValue)) {
+    nextTick(() => {
+      const value = convertToUserDateFormat(get(modelValue));
+      newIMask.value = value;
+      set(currentValue, value);
+    });
+  }
+
+  newIMask.on('accept', () => {
+    const unmasked = get(iMask)?.unmaskedValue;
+    const value = get(iMask)?.value;
     const prev = get(currentValue);
     set(currentValue, value);
     if (prev === undefined) {
-      // Reset validation when imask just created
+      // Reset validation when iMask just created
       get(v$).$reset();
     }
     if (value && unmasked)
       emitIfValid(value);
   });
 
-  set(imask, newImask);
+  set(iMask, newIMask);
 }
-
-onMounted(() => {
-  set(selectedTimezone, guessTimezone());
-  initImask();
-});
 
 function focus() {
   const inputWrapper = get(inputField)!;
   const input = inputWrapper.$el.querySelector('input') as HTMLInputElement;
 
   nextTick(() => {
-    const formattedValue = get(imask)!.value;
+    const formattedValue = get(iMask)!.value;
     input.value = formattedValue;
     set(currentValue, formattedValue);
   });
 }
+
+watch(modelValue, onValueChange);
+watch(selectedTimezone, () => onValueChange(get(modelValue)));
+watch(errorMessages, (errors) => {
+  if (!isEmpty(errors))
+    get(v$).$validate();
+});
+
+onMounted(() => {
+  initIMask();
+});
+
+onBeforeUnmount(() => {
+  get(iMask)?.destroy();
+  set(iMask, undefined);
+});
 
 defineExpose({
   valid: computed(() => !get(v$).$invalid),
