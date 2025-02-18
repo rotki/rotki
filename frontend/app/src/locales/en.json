@@ -4421,7 +4421,8 @@
       "historical_events_processing": "Historical events and prices",
       "snapshot": "Snapshot data",
       "title": "Data Source",
-      "warning": "Using historical events, processing will not take Manual Balance into account, it will be added to the current balance. It will fallback to snapshot data if we can't use the historical events and prices"
+      "warning": "Using historical events, processing will not take Manual Balance into account, it will be added to the current balance. It will fallback to snapshot data if we can't use the historical events and prices",
+      "remember_state_for_asset": "Remember my selection for {asset}"
     },
     "tooltip": "Asset graph setting"
   },
