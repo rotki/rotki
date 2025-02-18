@@ -79,6 +79,10 @@ def bybit_symbol_to_base_quote(
         split_symbol = symbol.split('2L')
     elif '2S' in symbol:
         split_symbol = symbol.split('2S')
+    elif '3L' in symbol:
+        split_symbol = symbol.split('3L')
+    elif '3S' in symbol:
+        split_symbol = symbol.split('3S')
     elif '2' in symbol:
         split_symbol = symbol.split('2')
 
