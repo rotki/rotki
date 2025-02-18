@@ -15,6 +15,7 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_binance
 from rotkehlchen.constants.assets import A_ADA, A_BNB, A_BTC, A_DOT, A_ETH, A_EUR, A_USDT, A_WBTC
 from rotkehlchen.constants.misc import ONE
+from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.constants import BINANCE_MARKETS_KEY
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import RemoteError
@@ -252,6 +253,15 @@ def test_binance_query_trade_history(function_scope_binance):
 
     with patch.object(binance.session, 'request', side_effect=mock_my_trades):
         trades = binance.query_trade_history(start_ts=0, end_ts=1638529919, only_cache=False)
+
+    with function_scope_binance.db.conn.read_ctx() as cursor:
+        assert function_scope_binance.db.get_dynamic_cache(
+            cursor=cursor,
+            name=DBCacheDynamic.BINANCE_PAIR_LAST_ID,
+            location=function_scope_binance.location.serialize(),
+            location_name=function_scope_binance.name,
+            queried_pair='BNBBTC',
+        ) == 28457
 
     expected_trades = [Trade(
         timestamp=1499865549,

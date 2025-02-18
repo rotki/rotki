@@ -293,34 +293,37 @@ def mock_exchange_responses(rotki: Rotkehlchen, remote_errors: bool):
             # Can't mock unknown assets in binance trade query since
             # only all known pairs are queried
             payload = '[]'
-            if params.get('symbol') == 'ETHBTC':
-                payload = """[{
-                "symbol": "ETHBTC",
-                "id": 1,
-                "orderId": 1,
-                "price": "0.0063213",
-                "qty": "5.0",
-                "commission": "0.005",
-                "commissionAsset": "ETH",
-                "time": 1512561941000,
-                "isBuyer": true,
-                "isMaker": false,
-                "isBestMatch": true
-                }]"""
-            elif params.get('symbol') == 'RDNETH':
-                payload = """[{
-                "symbol": "RDNETH",
-                "id": 2,
-                "orderId": 2,
-                "price": "0.0063213",
-                "qty": "5.0",
-                "commission": "0.005",
-                "commissionAsset": "RDN",
-                "time": 1512561942000,
-                "isBuyer": false,
-                "isMaker": false,
-                "isBestMatch": true
-                }]"""
+            # ensure that if the endpoint gets queried twice we don't return new trades.
+            # The first time it's always queried with fromId = 0
+            if params['fromId'] == 0:
+                if params.get('symbol') == 'ETHBTC':
+                    payload = """[{
+                    "symbol": "ETHBTC",
+                    "id": 1,
+                    "orderId": 1,
+                    "price": "0.0063213",
+                    "qty": "5.0",
+                    "commission": "0.005",
+                    "commissionAsset": "ETH",
+                    "time": 1512561941000,
+                    "isBuyer": true,
+                    "isMaker": false,
+                    "isBestMatch": true
+                    }]"""
+                elif params.get('symbol') == 'RDNETH':
+                    payload = """[{
+                    "symbol": "RDNETH",
+                    "id": 2,
+                    "orderId": 2,
+                    "price": "0.0063213",
+                    "qty": "5.0",
+                    "commission": "0.005",
+                    "commissionAsset": "RDN",
+                    "time": 1512561942000,
+                    "isBuyer": false,
+                    "isMaker": false,
+                    "isBestMatch": true
+                    }]"""
         elif (
                 'capital/deposit' in url or
                 'capital/withdraw' in url or
