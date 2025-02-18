@@ -42,6 +42,7 @@ from rotkehlchen.constants.misc import NFT_DIRECTIVE, USERDB_NAME
 from rotkehlchen.constants.timing import HOUR_IN_SECONDS
 from rotkehlchen.db.cache import (
     AddressArgType,
+    BinancePairLastTradeArgsType,
     DBCacheDynamic,
     DBCacheStatic,
     ExtraTxArgType,
@@ -703,6 +704,15 @@ class DBHandler:
     def get_dynamic_cache(
             self,
             cursor: 'DBCursor',
+            name: Literal[DBCacheDynamic.BINANCE_PAIR_LAST_ID],
+            **kwargs: Unpack[BinancePairLastTradeArgsType],
+    ) -> int | None:
+        ...
+
+    @overload
+    def get_dynamic_cache(
+            self,
+            cursor: 'DBCursor',
             name: Literal[DBCacheDynamic.LAST_QUERY_TS],
             **kwargs: Unpack[LabeledLocationIdArgsType],
     ) -> Timestamp | None:
@@ -794,6 +804,16 @@ class DBHandler:
             name: Literal[DBCacheDynamic.LAST_CRYPTOTX_OFFSET],
             value: int,
             **kwargs: Unpack[LabeledLocationArgsType],
+    ) -> None:
+        ...
+
+    @overload
+    def set_dynamic_cache(
+            self,
+            write_cursor: 'DBCursor',
+            name: Literal[DBCacheDynamic.BINANCE_PAIR_LAST_ID],
+            value: int,
+            **kwargs: Unpack[BinancePairLastTradeArgsType],
     ) -> None:
         ...
 

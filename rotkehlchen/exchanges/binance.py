@@ -19,6 +19,7 @@ from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.assets.converters import asset_from_binance
 from rotkehlchen.constants import ZERO
 from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
+from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.constants import BINANCE_MARKETS_KEY
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.ranges import DBQueryRanges
@@ -1125,6 +1126,11 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
             end_ts: Timestamp,
     ) -> tuple[list[Trade], tuple[Timestamp, Timestamp]]:
         """
+        For trades coming from api/myTrades this function won't respect the provided range and
+        will always query all the trades until now. The reason is that binance forces us to query
+        all the pairs and we use the cache at BINANCE_PAIR_LAST_ID to remember which one was the
+        last trade queried on each market speeding up the queries. For fiat payments the time
+        range is respected.
 
         May raise due to api query and unexpected id:
         - RemoteError
@@ -1133,14 +1139,27 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
         self.first_connection()
         if self.selected_pairs is not None:
             iter_markets = list(set(self.selected_pairs).intersection(set(self._symbols_to_pair.keys())))  # noqa: E501
+            log.debug(f'Will query the following binance markets: {iter_markets}')
         else:
             iter_markets = list(self._symbols_to_pair.keys())
+            log.debug('Will query all the binance markets')
 
         raw_data = []
         # Limit of results to return. 1000 is max limit according to docs
         limit = 1000
         for symbol in iter_markets:
-            last_trade_id = 0
+            with self.db.conn.read_ctx() as cursor:
+                last_trade_id = self.db.get_dynamic_cache(  # api returns trades with id >= last_trade_id  # noqa: E501
+                    cursor=cursor,
+                    name=DBCacheDynamic.BINANCE_PAIR_LAST_ID,
+                    location=self.location.serialize(),
+                    location_name=self.name,
+                    queried_pair=symbol,
+                ) or 0
+
+            log.debug(
+                f'Will query binance trades on {self.name} for {symbol=} after {last_trade_id=}',
+            )
             len_result = limit
             while len_result == limit:
                 # We know that myTrades returns a list from the api docs
@@ -1170,9 +1189,11 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
 
             raw_data.sort(key=operator.itemgetter('time'))
 
-        trades = []
+        trades: list[Trade] = []
+        last_trade_by_pair: dict[str, Trade] = {}
         for raw_trade in raw_data:
             try:
+                trade_pair = raw_trade['symbol']
                 trade = trade_from_binance(
                     binance_trade=raw_trade,
                     binance_symbols_to_pair=self.symbols_to_pair,
@@ -1205,14 +1226,24 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
                 )
                 continue
 
-            # Since binance does not respect the given timestamp range, limit the range here
-            if trade.timestamp < start_ts:
-                continue
-
-            if trade.timestamp > end_ts:
-                break
-
+            # trades are ordered in asc order by us
+            last_trade_by_pair[trade_pair] = trade
             trades.append(trade)
+
+        with self.db.conn.write_ctx() as write_cursor:
+            for symbol, trade in last_trade_by_pair.items():
+                if trade.link is None:
+                    log.error(f'Missing link field in binance trade {trade}')
+                    continue
+
+                self.db.set_dynamic_cache(
+                    write_cursor=write_cursor,
+                    name=DBCacheDynamic.BINANCE_PAIR_LAST_ID,
+                    value=int(trade.link),
+                    location=self.location.serialize(),
+                    location_name=self.name,
+                    queried_pair=symbol,
+                )
 
         fiat_payments = self._query_online_fiat_payments(start_ts=start_ts, end_ts=end_ts)
         if fiat_payments:
