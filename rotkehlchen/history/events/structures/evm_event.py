@@ -29,6 +29,7 @@ from rotkehlchen.types import (
     TimestampMS,
     deserialize_evm_tx_hash,
 )
+from rotkehlchen.utils.misc import timestamp_to_date, ts_ms_to_sec
 from rotkehlchen.utils.mixins.enums import SerializableEnumNameMixin
 
 if TYPE_CHECKING:
@@ -258,6 +259,13 @@ class EvmEvent(HistoryBaseEntry):  # hash in superclass
             f'{self.address=}',
         ]
         return f'EvmEvent({", ".join(fields)})'
+
+    def __str__(self) -> str:
+        return (
+            f'{self.event_type} / {self.event_subtype} EvmEvent in {self.location} with '
+            f'tx_hash={self.tx_hash.hex()} and time '
+            f'{timestamp_to_date(ts_ms_to_sec(self.timestamp))} using {self.asset}'
+        )
 
     # -- Methods of AccountingEventMixin
     @staticmethod

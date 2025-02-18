@@ -60,6 +60,7 @@ class DepositableAccountantInterface(ModuleAccountantInterface):
     representing the position in the pool. Examples are:
     - Curve
     - Balancer
+    - Aura
     """
 
     def _process_deposit_or_withdrawal(
@@ -104,8 +105,9 @@ class DepositableAccountantInterface(ModuleAccountantInterface):
             elif next_event.event_identifier != event.event_identifier:
                 # ensure that we only process entries of the same event group.
                 log.error(
-                    'In _process_deposit_or_withdrawal the next event belongs to a different '
-                    f'group when processing {event}. Next event is {next_event}. Skipping',
+                    f'In _process_deposit_or_withdrawal with {idx=} and {events_to_consume=} the '
+                    f'next event belongs to a different group when processing {event}. Next '
+                    f'event is {next_event}. Skipping.',
                 )
                 return events_consumed
 

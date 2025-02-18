@@ -407,7 +407,7 @@ class HistoryBaseEntry(AccountingEventMixin, ABC, Generic[ExtraDataType]):
 
     def __str__(self) -> str:
         return (
-            f'{self.event_subtype} event at {self.location} and time '
+            f'{self.event_type} / {self.event_subtype} event at {self.location} and time '
             f'{timestamp_to_date(ts_ms_to_sec(self.timestamp))} using {self.asset}'
         )
 
