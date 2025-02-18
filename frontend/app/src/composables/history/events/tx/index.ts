@@ -118,13 +118,18 @@ export const useHistoryTransactions = createSharedComposable(() => {
     accounts: EvmChainAddress[],
     type: TransactionChainType = TransactionChainType.EVM,
   ): Promise<void> => {
+    logger.debug(`syncing ${evmChain} transactions for ${accounts.length} addresses`);
     await awaitParallelExecution(
       accounts,
       item => item.evmChain + item.address,
       async item => syncTransactionTask(item, type),
       2,
     );
-    queue.queue(evmChain, async () => decodeTransactionsTask(evmChain, type));
+    logger.debug(`queued ${evmChain} transactions for decoding`);
+    queue.queue(evmChain, async () => {
+      await decodeTransactionsTask(evmChain, type);
+      logger.debug(`finished decoding ${evmChain} transactions`);
+    });
   };
 
   const getEvmAccounts = (chains: string[] = []): { address: string; evmChain: string }[] =>
@@ -159,6 +164,7 @@ export const useHistoryTransactions = createSharedComposable(() => {
 
     if (!get(isEth2Enabled) && eth2QueryTypes.includes(queryType))
       return;
+    logger.debug(`querying for ${queryType} events`);
 
     const taskType = TaskType.QUERY_ONLINE_EVENTS;
 
@@ -191,12 +197,14 @@ export const useHistoryTransactions = createSharedComposable(() => {
         });
       }
     }
+    logger.debug(`finished querying for ${queryType} events`);
   };
 
   const refreshTransactionsHandler = async (
     addresses: EvmChainAddress[],
     type: TransactionChainType = TransactionChainType.EVM,
   ): Promise<void> => {
+    logger.debug(`refreshing ${type} transactions for ${addresses.length} addresses`);
     const groupedByChains = Object.entries(groupBy(addresses, account => account.evmChain)).map(
       ([evmChain, data]) => ({
         data,
@@ -216,6 +224,7 @@ export const useHistoryTransactions = createSharedComposable(() => {
     const isEvm = type === TransactionChainType.EVM;
     if (addresses.length > 0)
       setStatus(get(isTaskRunning(TaskType.TX, { isEvm })) ? Status.REFRESHING : Status.LOADED);
+    logger.debug(`finished refreshing ${type} transactions for ${addresses.length} addresses`);
   };
 
   const queryExchange = async (payload: Exchange): Promise<void> => {
