@@ -25,7 +25,7 @@
   },
   "account_balances": {
     "confirm_delete": {
-      "description_xpub": "¿Estás seguro de que quieres eliminar? {address}",
+      "description_xpub": "¿Estás seguro de que quieres eliminar {address}?",
       "title": "Eliminar cuenta"
     },
     "data_table": {
