@@ -1,15 +1,42 @@
 <script setup lang="ts">
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
+import { useAssetStatisticState } from '@/composables/settings/use-asset-statistic-state';
+
+const props = defineProps<{
+  asset?: string;
+}>();
+
+const emit = defineEmits<{
+  preference: [preference?: 'events' | 'snapshot'];
+}>();
+
+const { asset } = toRefs(props);
+
+const {
+  getPreference,
+  name,
+  rememberStateForAsset,
+  suppressIfPerAsset,
+  useHistoricalAssetBalances,
+} = useAssetStatisticState(asset);
 
 const { t } = useI18n();
 
-const useHistoricalAssetBalances = ref<boolean>(false);
-const { useHistoricalAssetBalances: enabled } = storeToRefs(useFrontendSettingsStore());
+watch(useHistoricalAssetBalances, () => {
+  if (!isDefined(asset) || !get(rememberStateForAsset)) {
+    return;
+  }
 
-onMounted(() => {
-  set(useHistoricalAssetBalances, get(enabled));
+  emit('preference', getPreference(get(asset)));
+});
+
+watchImmediate(asset, (asset) => {
+  if (!asset || !get(rememberStateForAsset)) {
+    return;
+  }
+
+  emit('preference', getPreference(asset));
 });
 </script>
 
@@ -45,7 +72,7 @@ onMounted(() => {
           color="primary"
           :hint="t('statistics_graph_settings.source.warning')"
           size="sm"
-          @update:model-value="updateImmediate($event)"
+          @update:model-value="suppressIfPerAsset(() => updateImmediate($event))"
         >
           <RuiRadio
             :label="t('statistics_graph_settings.source.snapshot')"
@@ -57,6 +84,11 @@ onMounted(() => {
           />
         </RuiRadioGroup>
       </SettingsOption>
+      <RuiCheckbox
+        v-if="asset"
+        v-model="rememberStateForAsset"
+        :label="t('statistics_graph_settings.source.remember_state_for_asset', { asset: name })"
+      />
     </div>
   </RuiMenu>
 </template>
