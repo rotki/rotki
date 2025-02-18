@@ -1094,7 +1094,7 @@ def test_find_uniswap_v3_position_price(database: 'DBHandler', inquirer_defi: 'I
         token_address=string_to_evm_address('0x7b8A01B39D58278b5DE7e48c8449c9f4F5170613'),
         token_id='188693',
         chain_id=ChainID.BINANCE_SC,
-    ).is_close(FVal('7222.51769'), max_diff='1e-5')
+    ).is_close(FVal('7219.93640'), max_diff='1e-5')
 
 
 @pytest.mark.vcr

@@ -1328,7 +1328,7 @@ def test_optimism_giveth_staked_balances(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 @pytest.mark.parametrize('ethereum_manager_connect_at_start', [(INFURA_ETH_NODE,)])
-@pytest.mark.parametrize('ethereum_accounts', [['0xb7ef87eD0133d4e0b37B34dfE7E8a6d719475c9d']])
+@pytest.mark.parametrize('ethereum_accounts', [['0x561fe975d925CC259D5aFF7A4d83612Fb4758103']])
 def test_uniswapv3_balances_ethereum(
         ethereum_inquirer: 'EthereumInquirer',
         ethereum_accounts: list[ChecksumEvmAddress],
@@ -1337,7 +1337,7 @@ def test_uniswapv3_balances_ethereum(
     """Check that Uniswap V3 LP positions are properly detected on ethereum"""
     _, tx_decoder = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
-        tx_hash=deserialize_evm_tx_hash('0x51d0b4f6ebacc7ead7e2b5908534490ae146dd82088e93a160099195426cfdae'),
+        tx_hash=deserialize_evm_tx_hash('0xc20a48dc99d805116ac94ce8a7f669ce174d7cefa6712c3858b605365c314f80'),
     )
     protocol_balances_inquirer = UniswapV3Balances(
         evm_inquirer=ethereum_inquirer,
@@ -1345,10 +1345,10 @@ def test_uniswapv3_balances_ethereum(
     )
     protocol_balances = protocol_balances_inquirer.query_balances()
     user_balance = protocol_balances[ethereum_accounts[0]]
-    position_nft = Asset('eip155:1/erc721:0xC36442b4a4522E871399CD717aBDD847Ab11FE88/911955')
+    position_nft = Asset('eip155:1/erc721:0xC36442b4a4522E871399CD717aBDD847Ab11FE88/931287')
     assert user_balance.assets[position_nft] == Balance(
         amount=ONE,
-        usd_value=FVal('12930.1584283882143278557406730896536923907140450801108446985682371193666378972'),
+        usd_value=FVal('1079.26539536305871313957103164322012047931617819770314565623847023176368686119'),
     )
 
 
