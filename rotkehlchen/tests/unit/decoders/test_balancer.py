@@ -136,7 +136,6 @@ def test_balancer_v1_join(ethereum_inquirer, ethereum_accounts, load_global_cach
             notes='Receive 0.042569019597126949 BPT from a Balancer v1 pool',
             counterparty=CPT_BALANCER_V1,
             address=string_to_evm_address('0x13830EB6444768cCea2C9d41308195Ceb18eF772'),
-            extra_data={'deposit_events_num': 1},
         ),
     ]
 
@@ -179,7 +178,6 @@ def test_balancer_v1_exit(ethereum_inquirer, ethereum_accounts, load_global_cach
             counterparty=CPT_BALANCER_V1,
             address=string_to_evm_address('0x59A19D8c652FA0284f44113D0ff9aBa70bd46fB4'),
             identifier=None,
-            extra_data={'withdrawal_events_num': 2},
         ), EvmEvent(
             tx_hash=tx_hash,
             sequence_index=2,
@@ -312,7 +310,6 @@ def test_deposit_with_excess_tokens(ethereum_inquirer, ethereum_accounts, load_g
             location_label=user_address,
             notes='Receive 1675.495956074927519908 BPT from a Balancer v1 pool',
             counterparty=CPT_BALANCER_V1,
-            extra_data={'deposit_events_num': 4},
             address=string_to_evm_address('0x9ED47950144e51925166192Bf0aE95553939030a'),
         ),
     ]
@@ -478,7 +475,6 @@ def test_balancer_v1_non_proxy_join(
             counterparty=CPT_BALANCER_V1,
             notes=f'Receive {receive_amt} BCoW-80QQQ-20WETH from a Balancer v1 pool',
             address=balancer_qqq_weth_pool_token.evm_address,
-            extra_data={'deposit_events_num': 2},
         ),
     ]
     assert events == expected_events
@@ -521,7 +517,6 @@ def test_balancer_v1_non_proxy_exit(ethereum_inquirer, ethereum_accounts, load_g
             counterparty=CPT_BALANCER_V1,
             notes=f'Return {return_amt} BCoW-50sfrxETH-50FXS to a Balancer v1 pool',
             address=pool_address,
-            extra_data={'withdrawal_events_num': 2},
         ), EvmEvent(
             tx_hash=tx_hash,
             sequence_index=2,
@@ -590,7 +585,6 @@ def test_balancer_v1_exit_arbitrum(arbitrum_one_inquirer, arbitrum_one_accounts,
             counterparty=CPT_BALANCER_V1,
             notes=f'Return {return_amt} BCoW-50USDC-50wstETH to a Balancer v1 pool',
             address=pool_address,
-            extra_data={'withdrawal_events_num': 2},
         ), EvmEvent(
             tx_hash=tx_hash,
             sequence_index=2,
@@ -714,7 +708,6 @@ def test_balancer_v1_join_gnosis(gnosis_inquirer, gnosis_accounts, load_global_c
             counterparty=CPT_BALANCER_V1,
             notes=f'Receive {receive_amt} BCoW-50GNO-50COW from a Balancer v1 pool',
             address=balancer_gno_cow_pool_token.evm_address,
-            extra_data={'deposit_events_num': 2},
         ),
     ]
     assert events == expected_events
@@ -752,7 +745,6 @@ def test_balancer_v2_exit_ethereum(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_BALANCER_V2,
             notes=f'Return {return_amt} weETH/ezETH/rswETH to a Balancer v2 pool',
             address=ZERO_ADDRESS,
-            extra_data={'withdrawal_events_num': 1},
         ), EvmEvent(
             tx_hash=tx_hash,
             sequence_index=2,
@@ -803,7 +795,6 @@ def test_balancer_v2_exit_gnosis(gnosis_inquirer, gnosis_accounts):
             counterparty=CPT_BALANCER_V2,
             notes=f'Return {return_amt} crvUSD/sDAI to a Balancer v2 pool',
             address=ZERO_ADDRESS,
-            extra_data={'withdrawal_events_num': 1},
         ), EvmEvent(
             tx_hash=tx_hash,
             sequence_index=2,
@@ -867,7 +858,6 @@ def test_balancer_v2_join_gnosis(gnosis_inquirer, gnosis_accounts):
             counterparty=CPT_BALANCER_V2,
             notes=f'Receive {receive_amt} crvUSD/sDAI from a Balancer v2 pool',
             address=ZERO_ADDRESS,
-            extra_data={'deposit_events_num': 1},
         ),
     ]
     assert events == expected_events
@@ -934,7 +924,6 @@ def test_reth_arb(
             counterparty=CPT_BALANCER_V2,
             notes=f'Receive {receive_amt} rETH/wETH BPT from a Balancer v2 pool',
             address=ZERO_ADDRESS,
-            extra_data={'deposit_events_num': 1},
         ),
     ]
     assert events == expected_events
@@ -1031,7 +1020,6 @@ def test_balancer_v2_join_with_gauge_deposit(
             counterparty=CPT_BALANCER_V2,
             notes=f'Receive {receive_amount} bpt-stablebeets from a Balancer v2 pool',
             address=ZERO_ADDRESS,
-            extra_data={'deposit_events_num': 2},
         ), EvmEvent(
             tx_hash=tx_hash,
             sequence_index=61,

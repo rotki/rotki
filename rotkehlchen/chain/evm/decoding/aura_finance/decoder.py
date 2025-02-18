@@ -200,7 +200,6 @@ class AuraFinanceCommonDecoder(DecoderInterface):
                 receive_event = event
                 event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
                 event.notes = f'Receive {received_amount or event.amount} {token.symbol} {receive_note_suffix}'  # noqa: E501
-                event.extra_data = {'deposit_events_num': len(deposit_events)}
                 event.counterparty = CPT_AURA_FINANCE
             elif (
                 ((

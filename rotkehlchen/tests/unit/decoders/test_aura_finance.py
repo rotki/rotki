@@ -70,7 +70,6 @@ def test_aura_finance_deposit_arb(arbitrum_one_inquirer, arbitrum_one_accounts):
             notes=f'Receive {receive_amount} stkauraBAL from auraBAL vault',
             counterparty=CPT_AURA_FINANCE,
             address=ZERO_ADDRESS,
-            extra_data={'deposit_events_num': 1},
         ),
     ]
     assert events == expected_events
@@ -282,7 +281,6 @@ def test_aura_finance_booster_deposit_ethereum(ethereum_inquirer, ethereum_accou
             notes=f'Receive {receive_amount} auraECLP-GYD-USDT-vault from an Aura gauge',
             counterparty=CPT_AURA_FINANCE,
             address=ZERO_ADDRESS,
-            extra_data={'deposit_events_num': 1},
         ),
     ]
     assert events == expected_events

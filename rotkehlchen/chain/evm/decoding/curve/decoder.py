@@ -1,6 +1,6 @@
 import logging
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.utils import TokenEncounterInfo
@@ -240,7 +240,6 @@ class CurveCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin)
             # 3. Withdrawal 2
             # etc.
             if len(withdrawn_assets) > 0:
-                return_event.extra_data = {'withdrawal_events_num': len(withdrawn_assets)}
                 # for deposit zap contracts, this is handled using an action item
                 if (
                     user_or_contract_address in self.curve_deposit_contracts or
@@ -259,12 +258,6 @@ class CurveCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin)
                     action_items[0].paired_events_data = ((return_event,), True)
                     return DecodingOutput(action_items=action_items)
 
-                self._set_extra_data(
-                    action_type='removal',
-                    return_or_receive_event=return_event,
-                    withdrawal_or_deposit_events=withdrawal_events,
-                    all_events=decoded_events,
-                )
                 maybe_reshuffle_events(
                     ordered_events=[return_event] + withdrawal_events,
                     events_list=decoded_events,
@@ -409,20 +402,11 @@ class CurveCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin)
                     to_event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
                     to_notes='Receive {amount} {symbol} after depositing in a curve pool',  # amount and symbol set at actionitem process  # noqa: E501
                     to_counterparty=CPT_CURVE,
-                    extra_data={
-                        'deposit_events_num': len(deposit_events),
-                    },
                     paired_events_data=(deposit_events, True),
                 )],
             )
 
         if receive_event is not None and len(deposit_events) > 0:
-            self._set_extra_data(
-                action_type='addition',
-                return_or_receive_event=receive_event,
-                withdrawal_or_deposit_events=deposit_events,
-                all_events=decoded_events,
-            )
             maybe_reshuffle_events(
                 ordered_events=deposit_events + [receive_event],
                 events_list=decoded_events,
@@ -797,24 +781,6 @@ class CurveCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin)
             context.event.counterparty = CPT_CURVE
             return TransferEnrichmentOutput(matched_counterparty=CPT_CURVE)
         return FAILED_ENRICHMENT_OUTPUT
-
-    @staticmethod
-    def _set_extra_data(
-            action_type: Literal['addition', 'removal'],
-            return_or_receive_event: 'EvmEvent',
-            withdrawal_or_deposit_events: list['EvmEvent'],
-            all_events: list['EvmEvent'],
-    ) -> list['EvmEvent']:
-        """This method adds the extra info to the in/out event depending on the action_type."""
-        if action_type == 'addition':
-            return_or_receive_event.extra_data = {
-                'deposit_events_num': len(withdrawal_or_deposit_events),
-            }
-        else:  # can only be removal
-            return_or_receive_event.extra_data = {
-                'withdrawal_events_num': len(withdrawal_or_deposit_events),
-            }
-        return all_events
 
     # -- DecoderInterface methods
 
