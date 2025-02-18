@@ -116,7 +116,7 @@ pub async fn check_icon(
                                 // Since we tried long ago enough retry again
                                 tokio::spawn(icons::query_icon_remotely(
                                     payload.asset_id,
-                                    state.data_dir.clone(),
+                                    path,
                                     state.coingecko.clone(),
                                 ));
                                 StatusCode::ACCEPTED.into_response()
