@@ -161,3 +161,32 @@ def test_change_credentials(rotkehlchen_api_server: APIServer) -> None:
                 name='KuCoin',
             )[Location.KUCOIN][0]
             assert credentials_in_db == get_current_credentials(kucoin) == TEST_CREDENTIALS_3
+
+
+def test_binance_selected_pairs_persist_after_restart(rotkehlchen_api_server: APIServer) -> None:
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    expected_trade_pairs = ['ETHBTC', 'BTCUSDT', 'NEOBTC']
+    with patch('rotkehlchen.exchanges.binance.Binance.validate_api_key', return_value=(True, '')):
+        rotki.setup_exchange(
+            name='binance 1',
+            location=Location.BINANCE,
+            api_key=make_api_key(),
+            api_secret=make_api_secret(),
+            binance_selected_trade_pairs=expected_trade_pairs,
+        )
+
+    # simulate a restart of the app.
+    rotki.exchange_manager.connected_exchanges.clear()
+    with rotki.data.db.conn.read_ctx() as cursor:
+        exchange_credentials = rotki.data.db.get_exchange_credentials(cursor)
+        rotki.exchange_manager.initialize_exchanges(
+            exchange_credentials=exchange_credentials,
+            database=rotki.data.db,
+        )
+
+    assert Location.BINANCE in rotki.exchange_manager.connected_exchanges
+    assert len(rotki.exchange_manager.connected_exchanges[Location.BINANCE]) == 1
+
+    selected_pairs = rotki.exchange_manager.connected_exchanges[Location.BINANCE][0].selected_pairs  # type: ignore[attr-defined] # binance has the attribute present
+    assert isinstance(selected_pairs, list)
+    assert selected_pairs == expected_trade_pairs

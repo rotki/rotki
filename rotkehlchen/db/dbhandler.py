@@ -1919,9 +1919,11 @@ class DBHandler:
                         extras[key] = KrakenAccountType.deserialize(entry[1])
                     except DeserializationError as e:
                         log.error(f'Couldnt deserialize kraken account type from DB. {e!s}')
-                        continue
-                else:
-                    extras[key] = entry[1]
+                else:  # can only be BINANCE_MARKETS_KEY
+                    try:
+                        extras[key] = json.loads(entry[1])
+                    except json.JSONDecodeError as e:
+                        log.error(f'Could not deserialize binance markets from DB. {e!s}')
 
         return extras
 
