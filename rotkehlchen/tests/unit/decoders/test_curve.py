@@ -191,7 +191,6 @@ def test_curve_deposit(database, ethereum_transaction_decoder):
             notes='Receive 392698.416886553664731892 a3CRV after depositing in curve pool 0xDeBF20617708857ebe4F679508E7b7863a8A8EeE',  # noqa: E501
             counterparty=CPT_CURVE,
             address=ZERO_ADDRESS,
-            extra_data={'deposit_events_num': 2},
         )]
     assert len(events) == 4
     assert events == expected_events
@@ -341,7 +340,6 @@ def test_curve_deposit_eth(database, ethereum_transaction_decoder):
             notes='Receive 0.385232873991059423 steCRV after depositing in curve pool 0xDC24316b9AE028F1497c275EB9192a3Ea0f67022',  # noqa: E501
             counterparty=CPT_CURVE,
             address=ZERO_ADDRESS,
-            extra_data={'deposit_events_num': 2},
         )]
     assert len(events) == 5
     assert events == expected_events
@@ -457,7 +455,6 @@ def test_curve_remove_liquidity(
             notes='Return 3108.372467134893484707 linkCRV',
             counterparty=CPT_CURVE,
             address=ZERO_ADDRESS,
-            extra_data={'withdrawal_events_num': 1},
         ), EvmEvent(
             tx_hash=evmhash,
             sequence_index=2,
@@ -571,7 +568,6 @@ def test_curve_remove_liquidity_with_internal(database, ethereum_transaction_dec
             notes='Return 0.991695529556581896 steCRV',
             counterparty=CPT_CURVE,
             address=ZERO_ADDRESS,
-            extra_data={'withdrawal_events_num': 1},
         ), EvmEvent(
             tx_hash=evmhash,
             sequence_index=2,
@@ -730,7 +726,6 @@ def test_curve_remove_imbalanced(database, ethereum_transaction_decoder):
             location_label=location_label,
             notes='Return 584.093916507047953183 yDAI+yUSDC+yUSDT+yTUSD',
             counterparty=CPT_CURVE,
-            extra_data={'withdrawal_events_num': 1},
             address=string_to_evm_address('0xbBC81d23Ea2c3ec7e56D39296F0cbB648873a5d3'),
         ), EvmEvent(
             tx_hash=evmhash,
@@ -801,7 +796,6 @@ def test_deposit_multiple_tokens(ethereum_transaction_decoder, ethereum_accounts
             notes='Receive 9.423568821947938716 crvPlain3andSUSD after depositing in curve pool 0xA5407eAE9Ba41422680e2e00537571bcC53efBfD',  # noqa: E501
             counterparty=CPT_CURVE,
             address=ZERO_ADDRESS,
-            extra_data={'deposit_events_num': 1},
         ),
     ]
     assert events == expected_events
@@ -1281,7 +1275,6 @@ def test_curve_usdn_add_liquidity(ethereum_transaction_decoder, ethereum_account
             counterparty=CPT_CURVE,
             notes='Receive 2676.003172633078929284 usdn3CRV after depositing in a curve pool',
             address=string_to_evm_address('0x094d12e5b541784701FD8d65F11fc0598FBC6332'),
-            extra_data={'deposit_events_num': 1},
         ),
     ]
     assert events == expected_events
@@ -1326,7 +1319,6 @@ def test_curve_usdn_remove_liquidity(ethereum_transaction_decoder, ethereum_acco
             location_label=user_address,
             notes='Return 22876.332126821513165437 usdn3CRV',
             counterparty=CPT_CURVE,
-            extra_data={'withdrawal_events_num': 4},
             address=string_to_evm_address('0x094d12e5b541784701FD8d65F11fc0598FBC6332'),
         ), EvmEvent(
             tx_hash=evmhash,
@@ -1438,7 +1430,6 @@ def test_3pool_add_liquidity(ethereum_transaction_decoder, ethereum_accounts, lo
             counterparty=CPT_CURVE,
             notes='Receive 195463.032550265720355345 pax-usdp3CRV-f after depositing in a curve pool',  # noqa: E501
             address=string_to_evm_address('0x0000000000000000000000000000000000000000'),
-            extra_data={'deposit_events_num': 1},
         ),
     ]
     assert events == expected_events
@@ -1483,7 +1474,6 @@ def test_3pool_remove_liquidity(ethereum_transaction_decoder, ethereum_accounts,
             location_label=user_address,
             notes='Return 95093.489007941270920107 3CRVlvUSD3CRV-f',
             counterparty=CPT_CURVE,
-            extra_data={'withdrawal_events_num': 4},
             address=string_to_evm_address('0xA79828DF1850E8a3A3064576f380D90aECDD3359'),
         ), EvmEvent(
             tx_hash=evmhash,
@@ -1585,7 +1575,6 @@ def test_remove_from_aave_pool(ethereum_transaction_decoder, ethereum_accounts, 
             notes='Return 2619.297635390037009904 a3CRV',
             counterparty=CPT_CURVE,
             address=ZERO_ADDRESS,
-            extra_data={'withdrawal_events_num': 1},
         ), EvmEvent(
             tx_hash=evmhash,
             sequence_index=2,
@@ -1673,7 +1662,6 @@ def test_deposit_via_zap_in_metapool(ethereum_transaction_decoder, ethereum_acco
             notes='Receive 958.206985908299016385 3CRVlvUSD3CRV-f after depositing in a curve pool',  # noqa: E501
             counterparty=CPT_CURVE,
             address=string_to_evm_address('0x0000000000000000000000000000000000000000'),
-            extra_data={'deposit_events_num': 2},
         ),
     ]
     assert events == expected_events
@@ -1722,7 +1710,6 @@ def test_no_zap_event(ethereum_transaction_decoder, ethereum_accounts, load_glob
             notes='Return 44107.783344489319243346 MIM-3LP3CRV-f',
             counterparty=CPT_CURVE,
             address=string_to_evm_address('0xA79828DF1850E8a3A3064576f380D90aECDD3359'),
-            extra_data={'withdrawal_events_num': 1},
         ), EvmEvent(
             tx_hash=evmhash,
             sequence_index=114,
@@ -1844,7 +1831,6 @@ def test_curve_deposit_polygon(polygon_pos_inquirer, polygon_pos_accounts, load_
             notes=f'Receive {received_amount} am3CRV after depositing in curve pool {pool_address}',  # noqa: E501
             counterparty=CPT_CURVE,
             address=ZERO_ADDRESS,
-            extra_data={'deposit_events_num': 1},
         ),
     ]
     assert expected_events == events
@@ -2092,7 +2078,6 @@ def test_deposit_via_zap_arbitrum(arbitrum_one_inquirer, arbitrum_one_accounts, 
             notes=f'Receive {receive_amount} crvUSDT-gauge after depositing in a curve pool',
             counterparty=CPT_CURVE,
             address=ZERO_ADDRESS,
-            extra_data={'deposit_events_num': 1},
         ),
     ]
     assert events == expected_events
@@ -2386,7 +2371,6 @@ def test_liquidity_withdrawal(gnosis_inquirer, gnosis_accounts, load_global_cach
             notes=f'Return {returned_amount} crvEUReUSD',
             counterparty=CPT_CURVE,
             address=string_to_evm_address('0xE3FFF29d4DC930EBb787FeCd49Ee5963DADf60b6'),
-            extra_data={'withdrawal_events_num': 1},
         ), EvmEvent(
             tx_hash=tx_hash,
             sequence_index=2,
@@ -2446,7 +2430,6 @@ def test_monerium_eure_v2(gnosis_inquirer, gnosis_accounts, load_global_caches):
             notes=f'Return {returned_amount} crvEUReUSD',
             counterparty=CPT_CURVE,
             address=string_to_evm_address('0xE3FFF29d4DC930EBb787FeCd49Ee5963DADf60b6'),
-            extra_data={'withdrawal_events_num': 2},
         ), EvmEvent(
             tx_hash=tx_hash,
             sequence_index=11,

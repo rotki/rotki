@@ -209,10 +209,8 @@ class BalancerCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMix
         for pool_token_event, token_related_events in related_events_map.items():
             if pool_token_event.event_type == HistoryEventType.RECEIVE:
                 ordered_events = token_related_events + [pool_token_event]
-                pool_token_event.extra_data = {'deposit_events_num': len(token_related_events)}
             else:
                 ordered_events = [pool_token_event] + token_related_events
-                pool_token_event.extra_data = {'withdrawal_events_num': len(token_related_events)}
 
             # Sort events: wrapped token first, then related events
             maybe_reshuffle_events(
