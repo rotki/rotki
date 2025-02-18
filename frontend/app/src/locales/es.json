@@ -29,7 +29,7 @@
       "title": "Eliminar cuenta"
     },
     "data_table": {
-      "loading": " Por favor, espera mientras rotki consulta la blockchain..."
+      "loading": "Por favor, espera mientras rotki consulta la blockchain..."
     },
     "detect_tokens": {
       "tooltip": {
