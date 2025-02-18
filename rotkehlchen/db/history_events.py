@@ -1,11 +1,13 @@
 import copy
 import json
 import logging
+from collections import defaultdict
 from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING, Any, Literal, Optional, overload
 
 from pysqlcipher3 import dbapi2 as sqlcipher
 
+from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessageType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.limits import FREE_HISTORY_EVENTS_LIMIT
@@ -50,6 +52,7 @@ from rotkehlchen.history.events.structures.eth2 import (
 )
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventType
+from rotkehlchen.history.price import query_usd_price_or_use_default
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval
 from rotkehlchen.types import (
@@ -725,24 +728,16 @@ class DBHistoryEvents:
         ).fetchone()[0]
         return count_without_limit, count_with_limit
 
-    def get_value_stats(
+    def get_amount_stats(
             self,
             cursor: 'DBCursor',
             query_filters: str,
             bindings: list[Any],
-    ) -> tuple[FVal, list[tuple[str, FVal, FVal]]]:
-        """Returns the sum of the USD value at the time of acquisition and the amount received
-        by asset
-        TODO: At the moment this function is used by liquity and kraken. Change it to use a filter
-        instead of query string and bindings when the refactor of the history events is made.
-
-        TODO: @yabirgb: Adjust this function after removing the usd value from the db
-        """
-        usd_value = ZERO
+    ) -> list[tuple[str, FVal]]:
+        """Returns the sum of the amounts received by asset"""
         query = (
-            f'SELECT asset, SUM(CAST(amount AS REAL)), 0 '
-            f'FROM history_events {query_filters}'
-            f' GROUP BY asset;'
+            'SELECT asset, SUM(CAST(amount AS REAL))'
+            f'FROM history_events {query_filters} GROUP BY asset;'
         )
         cursor.execute(query, bindings)
         assets_amounts = []
@@ -752,17 +747,85 @@ class DBHistoryEvents:
                 amount = deserialize_fval(
                     value=row[1],
                     name='total amount in history events stats',
-                    location='get_value_stats',
+                    location='get_amount_stats',
                 )
-                sum_of_usd_values = deserialize_fval(
-                    value=row[2],
-                    name='total usd value in history events stats',
-                    location='get_value_stats',
-                )
-                assets_amounts.append((asset, amount, sum_of_usd_values))
+                assets_amounts.append((asset, amount))
             except DeserializationError as e:
                 log.debug(f'Failed to deserialize amount {row[1]}. {e!s}')
-        return usd_value, assets_amounts
+        return assets_amounts
+
+    def get_amount_and_value_stats(
+            self,
+            cursor: 'DBCursor',
+            query_filters: str,
+            bindings: list[Any],
+            counterparty: str,
+    ) -> tuple[list[tuple[str, FVal, FVal]], FVal]:
+        """Returns the sum of the amounts received by asset and the sum of USD value
+        at the time of the events and the total USD value of all the assets queried.
+        """
+        total_events = cursor.execute(
+            f'SELECT COUNT(*) FROM history_events {query_filters}',
+            bindings,
+        ).fetchone()[0]
+
+        assets_amounts: dict[str, FVal] = defaultdict(FVal)
+        assets_value: dict[str, FVal] = defaultdict(FVal)
+        total_usd_value: FVal = ZERO
+        query_location: str = 'get_amount_stats'
+        log.debug(f'Will process {counterparty} stats for {total_events} events')
+        # Scales the number of events needed to send a WS message. Start from 5 and scale up to 50
+        # linearly if total events >= 1000.
+        send_ws_every_events = min(50, max(5, 5 + max(0, total_events - 50) // 20))
+        for idx, row in enumerate(cursor.execute(
+            f'SELECT asset, amount, timestamp FROM history_events {query_filters};',
+            bindings,
+        )):
+            if idx % send_ws_every_events == 0:
+                self.db.msg_aggregator.add_message(
+                    message_type=WSMessageType.PROGRESS_UPDATES,
+                    data={
+                        'total': total_events,
+                        'processed': idx,
+                        'subtype': str(ProgressUpdateSubType.STATS_PRICE_QUERY),
+                        'counterparty': counterparty,
+                    },
+                )
+
+            try:
+                asset = row[0]  # existence is guaranteed due the foreign key relation
+                amount = deserialize_fval(
+                    value=row[1],
+                    name='total amount in history events stats',
+                    location=query_location,
+                )
+                usd_price = query_usd_price_or_use_default(
+                    asset=Asset(asset),
+                    time=ts_ms_to_sec(row[2]),
+                    default_value=ZERO,
+                    location=query_location,
+                )
+                assets_amounts[asset] += amount
+                assets_value[asset] += (usd_value := amount * usd_price)
+                total_usd_value += usd_value
+            except DeserializationError as e:
+                log.debug(f'Failed to deserialize amount {row[1]}. {e!s}')
+
+        # send final message
+        self.db.msg_aggregator.add_message(
+            message_type=WSMessageType.PROGRESS_UPDATES,
+            data={
+                'total': total_events,
+                'processed': total_events,
+                'subtype': str(ProgressUpdateSubType.STATS_PRICE_QUERY),
+                'counterparty': counterparty,
+            },
+        )
+        final_amounts = []
+        for asset, amount in assets_amounts.items():
+            final_amounts.append((asset, amount, assets_value[asset]))
+
+        return final_amounts, total_usd_value
 
     def get_hidden_event_ids(self, cursor: 'DBCursor') -> list[int]:
         """Returns all event identifiers that should be hidden in the UI

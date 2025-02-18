@@ -37,6 +37,8 @@ class ProgressUpdateSubType(Enum):
     PROTOCOL_CACHE_UPDATES = auto()
     CSV_IMPORT_RESULT = auto()
     HISTORICAL_PRICE_QUERY_STATUS = auto()
+    STATS_PRICE_QUERY = auto()
+    LIQUITY_STAKING_QUERY = auto()
 
     def __str__(self) -> str:
         return self.name.lower()  # pylint: disable=no-member

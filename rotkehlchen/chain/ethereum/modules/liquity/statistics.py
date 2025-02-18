@@ -1,13 +1,22 @@
+import logging
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
+from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.modules.liquity.constants import CPT_LIQUITY
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_LQTY, A_LUSD
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.history.price import query_usd_price_or_use_default
+from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.serialization.deserialize import deserialize_fval
 from rotkehlchen.types import ChecksumEvmAddress
+from rotkehlchen.user_messages import MessagesAggregator, WSMessageType
+from rotkehlchen.utils.misc import ts_ms_to_sec
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -44,12 +53,61 @@ BINDINGS_STABILITY_POOL_EVENTS = [
     HistoryEventSubType.REWARD.serialize(),
 ]
 QUERY_STABILITY_POOL_DEPOSITS = (
-    'SELECT SUM(CAST(amount AS REAL)), 0 '  # TODO: @yabirgb: Adjust the USD value removed here
-    'FROM history_events WHERE asset=? AND type=? AND subtype=?'
+    'SELECT amount, timestamp, asset FROM history_events JOIN evm_events_info ON '
+    'history_events.identifier=evm_events_info.identifier WHERE counterparty=? '
+    'AND asset=? AND type=? AND subtype=?'
 )
 
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
-def _get_stats(
+
+def calculate_pool_metrics(
+        cursor: 'DBCursor',
+        query: str,
+        bindings: Sequence[Any],
+) -> tuple[FVal, FVal]:
+    """Calculate total amount and value for stability pool transactions"""
+    cursor.execute(query, bindings)
+    total_amount, total_value = ZERO, ZERO
+    for raw_amount, timestamp, asset in cursor:
+        price = query_usd_price_or_use_default(
+            asset=Asset(asset),
+            time=ts_ms_to_sec(timestamp),
+            default_value=ZERO,
+            location='stability_pool_price',
+        )
+        try:
+            amount = deserialize_fval(
+                value=raw_amount,
+                name='amount',
+                location='calculate_pool_metrics',
+            )
+        except DeserializationError:
+            log.error(f'Failed to deserialize amount {raw_amount} when reading liquity events')
+            continue
+
+        total_amount += amount
+        total_value += amount * price
+
+    return total_amount, total_value
+
+
+def staking_query_progress(
+        msg_aggregator: MessagesAggregator,
+        step: Literal[0, 1, 2, 3, 4],
+) -> None:
+    msg_aggregator.add_message(
+        message_type=WSMessageType.PROGRESS_UPDATES,
+        data={
+            'total': 4,
+            'processed': step,
+            'subtype': str(ProgressUpdateSubType.LIQUITY_STAKING_QUERY),
+        },
+    )
+
+
+def _get_amount_and_value_stats(
         cursor: 'DBCursor',
         history_events_db: DBHistoryEvents,
         query_staking: str,
@@ -59,35 +117,48 @@ def _get_stats(
         query_stability_pool_deposits: str,
         deposit_pool_bindings: list[Any],
         withdrawal_pool_bindings: list[Any],
+        msg_aggregator: MessagesAggregator,
 ) -> dict[str, Any]:
     """
     Query the database using the given pre-computed filters and create a report
     with all the information related to staking
     """
-    total_usd_staking_rewards, staking_rewards_breakdown = history_events_db.get_value_stats(
+    staking_query_progress(msg_aggregator=msg_aggregator, step=0)
+    staking_rewards_breakdown, total_usd_gains_staking = history_events_db.get_amount_and_value_stats(  # noqa: E501
         cursor=cursor,
         query_filters=query_staking,
         bindings=bindings_staking,
+        counterparty=CPT_LIQUITY,
     )
-    total_usd_stability_rewards, stability_rewards_breakdown = history_events_db.get_value_stats(
+    staking_query_progress(msg_aggregator=msg_aggregator, step=1)
+    stability_rewards_breakdown, total_usd_gains_stability_pool = history_events_db.get_amount_and_value_stats(  # noqa: E501
         cursor=cursor,
         query_filters=query_stability_pool,
         bindings=bindings_stability_pool,
+        counterparty=CPT_LIQUITY,
     )
+    staking_query_progress(msg_aggregator=msg_aggregator, step=2)
     # get stats about LUSD deposited in the stability pool
-    cursor.execute(query_stability_pool_deposits, deposit_pool_bindings)
-    stability_pool_deposits = cursor.fetchone()
-
-    cursor.execute(query_stability_pool_deposits, withdrawal_pool_bindings)
-    stability_pool_withdrawals = cursor.fetchone()
+    stability_pool_amount_deposited, stability_pool_value_deposited = calculate_pool_metrics(
+        cursor=cursor,
+        query=query_stability_pool_deposits,
+        bindings=deposit_pool_bindings,
+    )
+    staking_query_progress(msg_aggregator=msg_aggregator, step=3)
+    stability_pool_amount_withdrawn, stability_pool_value_withdrawn = calculate_pool_metrics(
+        cursor=cursor,
+        query=query_stability_pool_deposits,
+        bindings=withdrawal_pool_bindings,
+    )
+    staking_query_progress(msg_aggregator=msg_aggregator, step=4)
 
     return {
-        'total_usd_gains_stability_pool': total_usd_stability_rewards,
-        'total_usd_gains_staking': total_usd_staking_rewards,
-        'total_deposited_stability_pool': FVal(stability_pool_deposits[0]) if stability_pool_deposits[0] is not None else ZERO,  # noqa: E501
-        'total_withdrawn_stability_pool': FVal(stability_pool_withdrawals[0]) if stability_pool_withdrawals[0] is not None else ZERO,  # noqa: E501
-        'total_deposited_stability_pool_usd_value': FVal(stability_pool_deposits[1]) if stability_pool_deposits[1] is not None else ZERO,  # noqa: E501
-        'total_withdrawn_stability_pool_usd_value': FVal(stability_pool_withdrawals[1]) if stability_pool_withdrawals[1] is not None else ZERO,  # noqa: E501
+        'total_usd_gains_stability_pool': total_usd_gains_stability_pool,
+        'total_usd_gains_staking': total_usd_gains_staking,
+        'total_deposited_stability_pool': stability_pool_amount_deposited,
+        'total_withdrawn_stability_pool': stability_pool_amount_withdrawn,
+        'total_deposited_stability_pool_usd_value': stability_pool_value_deposited,
+        'total_withdrawn_stability_pool_usd_value': stability_pool_value_withdrawn,
         'staking_gains': [
             {
                 'asset': entry[0],
@@ -117,7 +188,7 @@ def get_stats(database: 'DBHandler', addresses: Sequence[ChecksumEvmAddress]) ->
 
     history_events_db = DBHistoryEvents(database)
     with database.conn.read_ctx() as cursor:
-        result['global_stats'] = _get_stats(
+        result['global_stats'] = _get_amount_and_value_stats(
             cursor=cursor,
             history_events_db=history_events_db,
             query_staking=QUERY_STAKING_EVENTS,
@@ -125,8 +196,9 @@ def get_stats(database: 'DBHandler', addresses: Sequence[ChecksumEvmAddress]) ->
             query_stability_pool=QUERY_STABILITY_POOL_EVENTS,
             bindings_stability_pool=BINDINGS_STABILITY_POOL_EVENTS,
             query_stability_pool_deposits=QUERY_STABILITY_POOL_DEPOSITS,
-            deposit_pool_bindings=[A_LUSD.identifier, HistoryEventType.STAKING.serialize(), HistoryEventSubType.DEPOSIT_ASSET.serialize()],  # noqa: E501
-            withdrawal_pool_bindings=[A_LUSD.identifier, HistoryEventType.STAKING.serialize(), HistoryEventSubType.REMOVE_ASSET.serialize()],  # noqa: E501
+            deposit_pool_bindings=[CPT_LIQUITY, A_LUSD.identifier, HistoryEventType.STAKING.serialize(), HistoryEventSubType.DEPOSIT_ASSET.serialize()],  # noqa: E501
+            withdrawal_pool_bindings=[CPT_LIQUITY, A_LUSD.identifier, HistoryEventType.STAKING.serialize(), HistoryEventSubType.REMOVE_ASSET.serialize()],  # noqa: E501
+            msg_aggregator=database.msg_aggregator,
         )
 
         result['by_address'] = {}
@@ -134,7 +206,7 @@ def get_stats(database: 'DBHandler', addresses: Sequence[ChecksumEvmAddress]) ->
         query_stability_pool_events_with_address = QUERY_STABILITY_POOL_EVENTS + ' AND location_label=?'  # noqa: E501
         query_stability_pool_deposits = QUERY_STABILITY_POOL_DEPOSITS + ' AND location_label=?'
         for address in addresses:
-            result['by_address'][address] = _get_stats(
+            result['by_address'][address] = _get_amount_and_value_stats(
                 cursor=cursor,
                 history_events_db=history_events_db,
                 query_staking=query_staking_events_with_address,
@@ -142,8 +214,9 @@ def get_stats(database: 'DBHandler', addresses: Sequence[ChecksumEvmAddress]) ->
                 query_stability_pool=query_stability_pool_events_with_address,
                 bindings_stability_pool=[*BINDINGS_STABILITY_POOL_EVENTS, address],
                 query_stability_pool_deposits=query_stability_pool_deposits,
-                deposit_pool_bindings=[A_LUSD.identifier, HistoryEventType.STAKING.serialize(), HistoryEventSubType.DEPOSIT_ASSET.serialize(), address],  # noqa: E501
-                withdrawal_pool_bindings=[A_LUSD.identifier, HistoryEventType.STAKING.serialize(), HistoryEventSubType.REMOVE_ASSET.serialize(), address],  # noqa: E501
+                deposit_pool_bindings=[CPT_LIQUITY, A_LUSD.identifier, HistoryEventType.STAKING.serialize(), HistoryEventSubType.DEPOSIT_ASSET.serialize(), address],  # noqa: E501
+                withdrawal_pool_bindings=[CPT_LIQUITY, A_LUSD.identifier, HistoryEventType.STAKING.serialize(), HistoryEventSubType.REMOVE_ASSET.serialize(), address],  # noqa: E501
+                msg_aggregator=database.msg_aggregator,
             )
 
     return result
