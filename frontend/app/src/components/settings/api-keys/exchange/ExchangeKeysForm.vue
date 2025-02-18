@@ -65,12 +65,32 @@ const apiSecret = useRefPropVModel(modelValue, 'apiSecret', {
     return get(isCoinbase) ? value.replace(/\\n/g, '\n') : value;
   },
 });
+
+const asteriskPlaceholder = '*'.repeat(30);
+
+function refWithAsterisk(comp: WritableComputedRef<string>): WritableComputedRef<string> {
+  return computed({
+    get() {
+      if (get(editMode) && !get(editKeys)) {
+        return asteriskPlaceholder;
+      }
+      return get(comp);
+    },
+    set(value: string) {
+      set(comp, value);
+    },
+  });
+}
+
+const apiKeyModel = refWithAsterisk(apiKey);
+const apiSecretModel = refWithAsterisk(apiSecret);
+
 const passphrase = useRefPropVModel(modelValue, 'passphrase');
 const krakenAccountType = useRefPropVModel(modelValue, 'krakenAccountType');
 
 const name = computed<string>({
   get() {
-    return get(editMode) ? get(newNameProp) : get(nameProp);
+    return get(editMode) ? (get(newNameProp) || '') : get(nameProp);
   },
   set(value?: string) {
     if (get(editMode)) {
@@ -151,7 +171,13 @@ const v$ = useVuelidate({
       requiredIf(logicAnd(sensitiveFieldEditable, requiresPassphrase)),
     ),
   },
-}, modelValue, { $autoDirty: true });
+}, {
+  apiKey,
+  apiSecret,
+  name: nameProp,
+  newName: newNameProp,
+  passphrase,
+}, { $autoDirty: true });
 
 function onExchangeChange(exchange?: string) {
   const name = exchange ?? '';
@@ -257,7 +283,8 @@ defineExpose({
     <ExchangeKeysFormStructure :location="modelValue.location">
       <template #apiKey="{ label, hint, className }">
         <RuiRevealableTextField
-          v-model.trim="apiKey"
+          v-model.trim="apiKeyModel"
+          :text-color="editMode && !editKeys && toMessages(v$.apiKey).length === 0 ? 'success' : undefined"
           variant="outlined"
           color="primary"
           :disabled="editMode && !editKeys"
@@ -273,9 +300,10 @@ defineExpose({
       <template #apiSecret="{ label, hint, className }">
         <RuiRevealableTextField
           v-if="requiresApiSecret"
-          v-model.trim="apiSecret"
+          v-model.trim="apiSecretModel"
           variant="outlined"
           color="primary"
+          :text-color="editMode && !editKeys && toMessages(v$.apiKey).length === 0 ? 'success' : undefined"
           :disabled="editMode && !editKeys"
           :error-messages="toMessages(v$.apiSecret)"
           data-cy="api-secret"

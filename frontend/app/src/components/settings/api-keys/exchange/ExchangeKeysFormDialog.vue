@@ -31,7 +31,7 @@ async function save(): Promise<void> {
   const exchange = get(modelValue);
   const success = await setupExchange({
     ...exchange,
-    newName: exchange.name === exchange.newName ? '' : exchange.newName,
+    newName: exchange.name === exchange.newName ? undefined : exchange.newName,
   });
 
   set(submitting, false);
