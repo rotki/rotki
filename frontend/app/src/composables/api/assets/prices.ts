@@ -29,7 +29,11 @@ interface UseAssetPriceApiReturn {
 export function useAssetPricesApi(): UseAssetPriceApiReturn {
   const fetchHistoricalPrices = async (payload?: Partial<ManualPricePayload>): Promise<HistoricalPrice[]> => {
     const response = await api.instance.get<ActionResult<HistoricalPrice[]>>('/assets/prices/historical', {
-      params: payload ? snakeCaseTransformer(nonEmptyProperties(payload, true)) : null,
+      params: payload
+        ? snakeCaseTransformer(nonEmptyProperties(payload, {
+          removeEmptyString: true,
+        }))
+        : null,
       validateStatus: validWithoutSessionStatus,
     });
 
@@ -72,7 +76,11 @@ export function useAssetPricesApi(): UseAssetPriceApiReturn {
   const fetchLatestPrices = async (payload?: Partial<ManualPricePayload>): Promise<ManualPrice[]> => {
     const response = await api.instance.post<ActionResult<ManualPrice[]>>(
       '/assets/prices/latest/all',
-      payload ? snakeCaseTransformer(nonEmptyProperties(payload, true)) : null,
+      payload
+        ? snakeCaseTransformer(nonEmptyProperties(payload, {
+          removeEmptyString: true,
+        }))
+        : null,
       {
         validateStatus: validStatus,
       },

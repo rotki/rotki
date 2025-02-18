@@ -320,8 +320,8 @@ export function usePaginationFilters<
       ...(page > 1 ? { page: page.toString() } : {}),
       ...sortParams,
       ...selectedFilters,
-      ...nonEmptyProperties(extraParamsConverted, true),
-      ...nonEmptyProperties(queryParamsOnlyConverted, true),
+      ...nonEmptyProperties(extraParamsConverted, { removeEmptyString: true }),
+      ...nonEmptyProperties(queryParamsOnlyConverted, { removeEmptyString: true }),
     };
   };
 
