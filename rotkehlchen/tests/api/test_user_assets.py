@@ -656,6 +656,7 @@ def test_replace_asset(
     expected_balances[0]['usd_value'] = str(FVal(balances[0]['amount']) * FVal('1.5'))
     expected_balances[0]['tags'] = None
     expected_balances[0]['identifier'] = 1
+    expected_api_balances = expected_balances
 
     if not only_in_globaldb:
         response = requests.put(
@@ -684,7 +685,9 @@ def test_replace_asset(
             ), json={'async_query': False},
         )
         result = assert_proper_sync_response_with_result(response)
-        assert result['balances'] == expected_balances
+        assert len(expected_balances) == 1
+        expected_api_balances = [{**expected_balances[0], 'asset_is_missing': False}]
+        assert result['balances'] == expected_api_balances
         assert cursor.execute(
             'SELECT COUNT(*) from manually_tracked_balances WHERE asset=?;',
             (user_asset1_id,),
@@ -717,8 +720,8 @@ def test_replace_asset(
             ), json={'async_query': False},
         )
         result = assert_proper_sync_response_with_result(response)
-        expected_balances[0]['asset'] = 'ICP'
-        assert result['balances'] == expected_balances
+        expected_api_balances[0]['asset'] = 'ICP'
+        assert result['balances'] == expected_api_balances
         # check the previous asset is not in userdb anymore
         assert cursor.execute(
             'SELECT COUNT(*) FROM assets WHERE identifier=?', (user_asset1_id,),
@@ -799,6 +802,7 @@ def test_replace_asset_not_in_globaldb(
         'tags': None,
         'location': 'external',
         'balance_type': 'asset',
+        'asset_is_missing': False,
     }]
     # check the previous asset is not in globaldb owned assets
     global_cursor = globaldb.conn.cursor()
