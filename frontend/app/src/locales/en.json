@@ -3981,6 +3981,8 @@
       "max_visible_required": "You cannot show more than {availableAssets} assets",
       "min_visible_required": "You have to show at least one asset.",
       "negative_amount_detected": "Negative amount detected during historical processing.",
+      "history_events_no_data": "No data can be showed from history events processing.",
+      "fallback_to_snapshot": "Use snapshot data instead",
       "netvalue_over_time": "Netvalue over time",
       "no_balance_snapshot_data_available": "No balance snapshot data available.",
       "range_selector": {
@@ -4421,7 +4423,7 @@
       "historical_events_processing": "Historical events and prices",
       "snapshot": "Snapshot data",
       "title": "Data Source",
-      "warning": "Using historical events, processing will not take Manual Balance into account, it will be added to the current balance. It will fallback to snapshot data if we can't use the historical events and prices",
+      "warning": "Using historical events, processing will not take Manual Balance into account, it will be added to the current balance.",
       "remember_state_for_asset": "Remember my selection for {asset}"
     },
     "tooltip": "Asset graph setting"

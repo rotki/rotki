@@ -18,6 +18,7 @@ interface UseGraphReturn {
   backgroundColor: ComputedRef<string>;
   fontColor: ComputedRef<string>;
   gridColor: ComputedRef<string>;
+  thirdColor: ComputedRef<string>;
 }
 
 export function useGraph(canvasId: string): UseGraphReturn {
@@ -50,6 +51,8 @@ export function useGraph(canvasId: string): UseGraphReturn {
   const secondaryColor = computed(() => (get(isDark) ? white : secondaryBlack));
   const backgroundColor = computed(() => (!get(isDark) ? white : secondaryBlack));
 
+  const thirdColor = computed(() => get(usedTheme).primary);
+
   const fontColor = computed(() => (get(isDark) ? white : 'rgba(0,0,0,.8)'));
   const gridColor = computed(() => (get(isDark) ? '#555' : '#ddd'));
 
@@ -61,6 +64,7 @@ export function useGraph(canvasId: string): UseGraphReturn {
     gradient,
     gridColor,
     secondaryColor,
+    thirdColor,
   };
 }
 

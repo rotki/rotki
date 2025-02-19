@@ -28,6 +28,9 @@ export default {
     '[&_span]:!text-xs',
     '!text-center',
     '[&>div>div>div]:font-normal',
+    'bg-white/[0.9]',
+    'dark:bg-[#1E1E1E]/[0.9]',
+    'border-rui-warning-lighter',
   ],
   plugins: [generated],
 };

@@ -136,6 +136,7 @@ export type GraphApi = (canvasId: string) => {
   backgroundColor: ComputedRef<string>;
   fontColor: ComputedRef<string>;
   gridColor: ComputedRef<string>;
+  thirdColor: ComputedRef<string>;
 };
 
 export interface PremiumApi {
