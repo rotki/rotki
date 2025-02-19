@@ -87,6 +87,9 @@ watchImmediate(asset, (asset) => {
       <RuiCheckbox
         v-if="asset"
         v-model="rememberStateForAsset"
+        hide-details
+        class="mt-3"
+        color="primary"
         :label="t('statistics_graph_settings.source.remember_state_for_asset', { asset: name })"
       />
     </div>
