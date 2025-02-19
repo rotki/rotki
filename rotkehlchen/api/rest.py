@@ -2122,7 +2122,11 @@ class RestAPI:
         return OK_RESULT
 
     def _get_manually_tracked_balances(self, usd_value_threshold: FVal | None) -> dict[str, Any]:
-        db_entries = get_manually_tracked_balances(db=self.rotkehlchen.data.db, balance_type=None)
+        db_entries = get_manually_tracked_balances(
+            db=self.rotkehlchen.data.db,
+            balance_type=None,
+            include_entries_with_missing_assets=True,
+        )
         # Filter balances if threshold is set
         if usd_value_threshold is not None:
             db_entries = [
@@ -2130,11 +2134,7 @@ class RestAPI:
                 if entry.value.usd_value > usd_value_threshold
             ]
 
-        balances = process_result(
-            {
-                'balances': db_entries,
-            },
-        )
+        balances = process_result({'balances': db_entries})
         return _wrap_in_ok_result(balances)
 
     @async_api_call()

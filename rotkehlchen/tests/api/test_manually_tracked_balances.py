@@ -4,14 +4,16 @@ from copy import deepcopy
 from http import HTTPStatus
 from operator import itemgetter
 from typing import TYPE_CHECKING, Any, Literal
+from unittest.mock import patch
 
 import pytest
 import requests
 
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import Asset, AssetResolver
 from rotkehlchen.constants import ZERO
-from rotkehlchen.constants.assets import A_BNB
+from rotkehlchen.constants.assets import A_BNB, A_ETH
 from rotkehlchen.fval import FVal
+from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
@@ -93,6 +95,8 @@ def assert_balances_match(
                 else:
                     assert set(val) == set(expected_balances[idx][key])
                 continue
+            if key == 'asset_is_missing':
+                continue
 
             msg = f'Expected balances {key} is {expected_balances[idx][key]} but got {val}'
             assert expected_balances[idx][key] == val, msg
@@ -164,6 +168,7 @@ def _populate_initial_balances(api_server: 'APIServer') -> list[dict[str, Any]]:
 def test_add_and_query_manually_tracked_balances(
         rotkehlchen_api_server: 'APIServer',
         ethereum_accounts: list[ChecksumEvmAddress],
+        globaldb: GlobalDBHandler,
 ) -> None:
     """Test that adding and querying manually tracked balances via the API works fine"""
     async_query = random.choice([False, True])
@@ -241,6 +246,22 @@ def test_add_and_query_manually_tracked_balances(
             'ETH',
             A_RDN.identifier,
         }
+
+    # delete an asset and check that all the entries are returned but the one with the
+    # deleted asset is marked with the flag
+    globaldb.delete_asset_by_identifier(A_ETH.identifier)
+    AssetResolver.clean_memory_cache()
+    with patch.object(globaldb, '_packaged_db_conn', globaldb.conn):
+        response = requests.get(
+            api_url_for(
+                rotkehlchen_api_server,
+                'manuallytrackedbalancesresource',
+            ),
+        )
+
+    result = assert_proper_sync_response_with_result(response)
+    for entry in result['balances']:
+        assert entry['asset_is_missing'] == (entry['asset'] == A_ETH.identifier)
 
 
 A_CYFM = Asset('eip155:1/erc20:0x3f06B5D78406cD97bdf10f5C420B241D32759c80')

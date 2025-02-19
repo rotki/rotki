@@ -1,8 +1,9 @@
-from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, NamedTuple
+from dataclasses import asdict, dataclass, field
+from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceType
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.fval import FVal
@@ -14,42 +15,52 @@ if TYPE_CHECKING:
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
-class ManuallyTrackedBalance:
+class _BaseManualBalance:
     identifier: int
     asset: Asset
     label: str
-    amount: FVal
     location: Location
     tags: list[str] | None
     balance_type: BalanceType
+    asset_is_missing: bool = field(default=False)  # set to true when the asset points to an asset that is unknown to the db  # noqa: E501
 
 
-class ManuallyTrackedBalanceWithValue(NamedTuple):
-    identifier: int
-    asset: Asset
-    label: str
-    value: Balance
-    location: Location
-    tags: list[str] | None
-    balance_type: BalanceType
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+class ManuallyTrackedBalance(_BaseManualBalance):
+    amount: FVal = field(default=ZERO)
+
+
+@dataclass(init=True, frozen=False)
+class ManuallyTrackedBalanceWithValue(_BaseManualBalance):
+    value: Balance = field(default_factory=Balance)
 
     def serialize(self) -> dict[str, Any]:
-        result = self._asdict()  # pylint: disable=no-member
+        result = asdict(self)  # pylint: disable=no-member
         del result['value']
+        result['asset'] = result['asset']['identifier']
         return {**result, **self.value.serialize()}
 
 
 def get_manually_tracked_balances(
         db: 'DBHandler',
         balance_type: BalanceType | None = None,
+        include_entries_with_missing_assets: bool = False,
 ) -> list[ManuallyTrackedBalanceWithValue]:
-    """Gets the manually tracked balances"""
+    """Gets the manually tracked balances
+    If `include_entries_with_missing_assets` is set to True then entries with unknown assets
+    are included in the returned list.
+    """
     with db.conn.read_ctx() as cursor:
-        balances = db.get_manually_tracked_balances(cursor, balance_type=balance_type)
+        balances = db.get_manually_tracked_balances(
+            cursor=cursor,
+            balance_type=balance_type,
+            include_entries_with_missing_assets=include_entries_with_missing_assets,
+        )
+
     balances_with_value = []
     for entry in balances:
         try:
-            price = Inquirer.find_usd_price(entry.asset)
+            price = Inquirer.find_usd_price(entry.asset) if not entry.asset_is_missing else ZERO_PRICE  # noqa: E501
         except RemoteError as e:
             db.msg_aggregator.add_warning(
                 f'Could not find price for {entry.asset.identifier} during '
@@ -66,6 +77,7 @@ def get_manually_tracked_balances(
             location=entry.location,
             tags=entry.tags,
             balance_type=entry.balance_type,
+            asset_is_missing=entry.asset_is_missing,
         ))
 
     return balances_with_value
