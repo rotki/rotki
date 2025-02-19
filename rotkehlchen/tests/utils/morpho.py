@@ -71,6 +71,26 @@ def create_base_morpho_vault_tokens_for_bundler_test(
     return re7_token, pyth_token
 
 
+def create_base_morpho_ionic_weth_vault_token(database: 'DBHandler') -> 'EvmToken':
+    """Ensure the ionicWETH vault token is in the database for proper decoding.
+    Returns the vault token.
+    """
+    return get_or_create_evm_token(
+        userdb=database,
+        evm_address=string_to_evm_address('0x5A32099837D89E3a794a44fb131CBbAD41f87a8C'),
+        chain_id=ChainID.BASE,
+        symbol='ionicWETH',
+        name='Ionic Ecosystem WETH',
+        decimals=18,
+        protocol=MORPHO_VAULT_PROTOCOL,
+        underlying_tokens=[UnderlyingToken(
+            address=string_to_evm_address('0x4200000000000000000000000000000000000006'),
+            token_kind=EvmTokenKind.ERC20,
+            weight=ONE,
+        )],
+    )
+
+
 def create_ethereum_morpho_vault_token(database: 'DBHandler') -> 'EvmToken':
     """Ensure vault token for Ethereum tests is in the database for proper decoding.
     Returns the vault token.
