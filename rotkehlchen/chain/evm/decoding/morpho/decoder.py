@@ -13,6 +13,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.errors.misc import NotERC20Conformant, NotERC721Conformant
 from rotkehlchen.globaldb.cache import globaldb_get_general_cache_values
@@ -130,31 +131,35 @@ class MorphoCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
     def _decode_deposit(
             self,
             context: DecoderContext,
-    ) -> tuple['EvmEvent | None', 'EvmEvent | None']:
+    ) -> tuple[list['EvmEvent'], 'EvmEvent | None']:
         """Decode events associated with a deposit.
-        Returns out_event and in_event in a tuple to be used for reordering."""
+        Returns out_events and in_event in a tuple to be used for reordering."""
         if (tokens_and_amounts := self._get_vault_event_tokens_and_amounts(context)) is None:
             log.error(f'Failed to find tokens and amounts for Morpho vault deposit transaction {context.transaction}')  # noqa: E501
-            return None, None
+            return [], None
 
         vault_token, underlying_token, shares_amount, assets_amount = tokens_and_amounts
-        spend_event, receive_event = None, None
+        spend_events, spent_amount, receive_event, is_weth_vault = [], ZERO, None, False
         for event in context.decoded_events:
             if (
                 event.event_type == HistoryEventType.SPEND and
                 event.event_subtype == HistoryEventSubType.NONE and
                 (
                     event.asset == underlying_token or
-                    (event.asset == A_ETH and underlying_token == self.weth)  # WETH vaults can have an ETH send event  # noqa: E501
+                    (is_weth_vault := (event.asset == A_ETH and underlying_token == self.weth))  # WETH vaults can have an ETH send event  # noqa: E501
                 ) and
-                event.amount == assets_amount
+                (
+                    event.amount == assets_amount or
+                    (is_weth_vault and event.address in self.bundlers)
+                )
             ):
                 event.event_type = HistoryEventType.DEPOSIT
                 event.event_subtype = HistoryEventSubType.DEPOSIT_FOR_WRAPPED
                 event.notes = f'Deposit {event.amount} {event.asset.resolve_to_asset_with_symbol().symbol} in a Morpho vault'  # noqa: E501
                 event.counterparty = CPT_MORPHO
                 event.extra_data = {'vault': vault_token.evm_address}  # Used when querying balances  # noqa: E501
-                spend_event = event
+                spend_events.append(event)
+                spent_amount += event.amount
             elif (
                 event.event_type == HistoryEventType.RECEIVE and
                 event.event_subtype == HistoryEventSubType.NONE and
@@ -167,25 +172,30 @@ class MorphoCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
                 event.counterparty = CPT_MORPHO
                 receive_event = event
 
-            if spend_event is not None and receive_event is not None:
-                return spend_event, receive_event
+            if (is_weth_vault is False and len(spend_events) == 1) and receive_event is not None:
+                return spend_events, receive_event
 
-        if receive_event is not None and spend_event is None:
-            spend_event = self.base.make_event_from_transaction(
+        if (
+            receive_event is not None and
+            (len(spend_events) == 0 or (is_weth_vault and spent_amount != assets_amount))
+        ):  # Create a deposit event for funds moved from another vault if the spend events don't cover the deposited amount.  # noqa: E501
+            deposit_event = self.base.make_event_from_transaction(
                 transaction=context.transaction,
                 tx_log=context.tx_log,
                 event_type=HistoryEventType.DEPOSIT,
                 event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
                 asset=underlying_token,
-                amount=assets_amount,
+                amount=(amount := assets_amount - spent_amount),
                 location_label=receive_event.location_label,
-                notes=f'Deposit {assets_amount} {underlying_token.symbol} in a Morpho vault',
+                notes=f'Deposit {amount} {underlying_token.symbol} in a Morpho vault',
                 counterparty=CPT_MORPHO,
                 address=vault_token.evm_address,
+                extra_data={'vault': vault_token.evm_address},  # Used when querying balances  # noqa: E501
             )
-            context.decoded_events.append(spend_event)
+            context.decoded_events.append(deposit_event)
+            spend_events.append(deposit_event)
 
-        return spend_event, receive_event
+        return spend_events, receive_event
 
     def _decode_withdraw(
             self,
@@ -249,18 +259,19 @@ class MorphoCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
     def _decode_vault_events(self, context: DecoderContext) -> DecodingOutput:
         """Decode events from Morpho vaults."""
         if context.tx_log.topics[0] == DEPOSIT_TOPIC:
-            out_event, in_event = self._decode_deposit(context=context)
+            out_events, in_event = self._decode_deposit(context=context)
         elif context.tx_log.topics[0] == WITHDRAW_TOPIC:
             out_event, in_event = self._decode_withdraw(context=context)
+            out_events = [out_event] if out_event is not None else []
         else:
             return DEFAULT_DECODING_OUTPUT
 
-        if out_event is None or in_event is None:
+        if len(out_events) == 0 or in_event is None:
             log.error(f'Failed to find both out and in events for Morpho vault transaction {context.transaction}')  # noqa: E501
             return DEFAULT_DECODING_OUTPUT
 
         maybe_reshuffle_events(
-            ordered_events=[out_event, in_event],
+            ordered_events=out_events + [in_event],
             events_list=context.decoded_events,
         )
         return DEFAULT_DECODING_OUTPUT

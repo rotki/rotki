@@ -15,6 +15,7 @@ from rotkehlchen.history.events.structures.types import HistoryEventSubType, His
 from rotkehlchen.tests.unit.decoders.test_zerox import A_BASE_USDC
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.tests.utils.morpho import (
+    create_base_morpho_ionic_weth_vault_token,
     create_base_morpho_vault_token,
     create_base_morpho_vault_tokens_for_bundler_test,
     create_ethereum_morpho_vault_token,
@@ -183,15 +184,30 @@ def test_morpho_deposit_base_bundler(
             location=Location.BASE,
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
-            asset=A_WETH_BASE,
-            amount=FVal('0.081308574347035883'),
+            asset=A_ETH,
+            amount=FVal('0.000000064185529703'),
             location_label=user_address,
-            notes='Deposit 0.081308574347035883 WETH in a Morpho vault',
+            notes='Deposit 0.000000064185529703 ETH in a Morpho vault',
             counterparty=CPT_MORPHO,
-            address=pyth_token.evm_address,
+            address=string_to_evm_address('0x23055618898e202386e6c13955a58D3C68200BFB'),
+            extra_data={'vault': '0x80D9964fEb4A507dD697b4437Fc5b25b618CE446'},
         ), EvmEvent(
             tx_hash=tx_hash,
             sequence_index=338,
+            timestamp=timestamp,
+            location=Location.BASE,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
+            asset=A_WETH_BASE,
+            amount=FVal('0.081308510161506180'),
+            location_label=user_address,
+            notes='Deposit 0.081308510161506180 WETH in a Morpho vault',
+            counterparty=CPT_MORPHO,
+            address=pyth_token.evm_address,
+            extra_data={'vault': '0x80D9964fEb4A507dD697b4437Fc5b25b618CE446'},
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=339,
             timestamp=timestamp,
             location=Location.BASE,
             event_type=HistoryEventType.RECEIVE,
@@ -459,3 +475,70 @@ def test_morpho_claim_reward_ethereum(
             address=string_to_evm_address('0x330eefa8a787552DC5cAd3C3cA644844B1E61Ddb'),
         ),
     ]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('base_accounts', [['0x706A70067BE19BdadBea3600Db0626859Ff25D74']])
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_morpho_deposit_eth_and_weth_base(
+        base_inquirer: 'BaseInquirer',
+        base_accounts: list['ChecksumEvmAddress'],
+) -> None:
+    tx_hash = deserialize_evm_tx_hash('0x70df73acae65e1bb2568799d4d2cae0a0a56158383598475317832fb9066d930')  # noqa: E501
+    vault_token = create_base_morpho_ionic_weth_vault_token(database=base_inquirer.database)
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
+    timestamp, user_address, gas_amount, deposit1_amount, deposit2_amount, receive_amount = TimestampMS(1737414513000), base_accounts[0], '0.000014687937701214', '0.030990676336768753', '0.000009323663231247', '0.030971714651894301'  # noqa: E501
+    assert events == [EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=0,
+        timestamp=timestamp,
+        location=Location.BASE,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal(gas_amount),
+        location_label=user_address,
+        notes=f'Burn {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.BASE,
+        event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
+        asset=A_ETH,
+        amount=FVal(deposit1_amount),
+        location_label=user_address,
+        notes=f'Deposit {deposit1_amount} ETH in a Morpho vault',
+        counterparty=CPT_MORPHO,
+        address=string_to_evm_address('0x23055618898e202386e6c13955a58D3C68200BFB'),
+        extra_data={'vault': vault_token.evm_address},
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=2,
+        timestamp=timestamp,
+        location=Location.BASE,
+        event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
+        asset=A_WETH_BASE,
+        amount=FVal(deposit2_amount),
+        location_label=user_address,
+        notes=f'Deposit {deposit2_amount} WETH in a Morpho vault',
+        counterparty=CPT_MORPHO,
+        address=string_to_evm_address('0x23055618898e202386e6c13955a58D3C68200BFB'),
+        extra_data={'vault': vault_token.evm_address},
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=3,
+        timestamp=timestamp,
+        location=Location.BASE,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+        asset=vault_token,
+        amount=FVal(receive_amount),
+        location_label=user_address,
+        notes=f'Receive {receive_amount} ionicWETH after deposit in a Morpho vault',
+        counterparty=CPT_MORPHO,
+        address=ZERO_ADDRESS,
+    )]
