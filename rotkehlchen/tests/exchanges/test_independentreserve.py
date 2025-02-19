@@ -8,7 +8,6 @@ from rotkehlchen.constants.assets import A_AUD, A_ETC, A_ETH
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.exchanges.data_structures import Location, Trade, TradeType
 from rotkehlchen.exchanges.independentreserve import (
-    IR_TO_WORLD,
     Independentreserve,
     independentreserve_asset,
 )
@@ -92,7 +91,6 @@ def test_query_balances(
     assert msg == ''
     assets_seen = {0}
     for asset, balance in balances.items():
-        assert asset in IR_TO_WORLD.values()
         assert asset not in assets_seen
         assets_seen.add(asset)
         assert balance.amount == FVal('150.55')
