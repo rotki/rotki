@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useTemplateRef } from 'vue';
 import { truncateAddress } from '@/utils/truncate';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
@@ -9,13 +10,28 @@ const props = withDefaults(
   defineProps<{
     suggestion: Suggestion;
     chip?: boolean;
+    editMode?: boolean;
   }>(),
   {
     chip: false,
+    editMode: false,
   },
 );
 
-const { suggestion } = toRefs(props);
+const emit = defineEmits<{
+  'cancel-edit': [];
+  'update:search': [value: string];
+}>();
+
+const { editMode, suggestion } = toRefs(props);
+
+const search = ref<string>('');
+
+const inputWidth = computed(() => Math.min(get(search).length + 2, 25));
+const editInput = useTemplateRef<InstanceType<typeof HTMLInputElement>>('editInput');
+
+const { assetInfo } = useAssetInfoRetrieval();
+const { getChainName } = useSupportedChains();
 
 const isBoolean = computed(() => {
   const item = get(suggestion);
@@ -23,9 +39,6 @@ const isBoolean = computed(() => {
 
   return typeof value === 'boolean';
 });
-
-const { assetInfo } = useAssetInfoRetrieval();
-const { getChainName } = useSupportedChains();
 
 const asset = computed<{ identifier: string; symbol: string } | undefined>(() => {
   const item = get(suggestion);
@@ -68,6 +81,40 @@ const displayValue = computed(() => {
 
   return value;
 });
+
+const keyCodeToPropagate: string[] = ['Enter', 'Esc', 'ArrowUp', 'ArrowDown'] as const;
+
+function onKeyDown(e: KeyboardEvent) {
+  if (!keyCodeToPropagate.includes(e.code)) {
+    e.stopPropagation();
+  }
+
+  if (e.code === 'Esc') {
+    cancelEdit();
+  }
+}
+
+function cancelEdit() {
+  emit('cancel-edit');
+}
+
+watch(editMode, (curr, prev) => {
+  if (curr && !prev) {
+    setTimeout(() => {
+      get(editInput)?.focus?.();
+    }, 200);
+  }
+});
+
+onClickOutside(editInput, () => {
+  setTimeout(() => {
+    cancelEdit();
+  }, 100);
+});
+
+watch(search, (value) => {
+  emit('update:search', value);
+});
 </script>
 
 <template>
@@ -85,27 +132,39 @@ const displayValue = computed(() => {
       >
         <span>{{ suggestion.exclude ? '!=' : '=' }}</span>
       </span>
-      <div
-        v-if="suggestion.asset && asset"
-        class="flex items-center gap-2"
-        :class="{ 'ml-2': !chip }"
-      >
-        <AssetIcon
-          :identifier="asset.identifier"
-          padding="1.5px"
-          :size="chip ? '16px' : '18px'"
-          :chain-icon-size="chip ? '9px' : '11px'"
-        />
-        <span class="font-normal text-sm">
-          {{ asset.symbol }}
+      <input
+        v-if="editMode"
+        ref="editInput"
+        v-model="search"
+        class="edit-input border border-rui-primary-lighter outline-none px-1 h-5 rounded-sm tabular-nums bg-rui-grey-300 dark:bg-rui-grey-900"
+        :style="{ width: `${inputWidth}ch` }"
+        @click.prevent.stop=""
+        @keydown="onKeyDown($event)"
+        @keydown.esc="cancelEdit()"
+      />
+      <template v-else>
+        <div
+          v-if="suggestion.asset && asset"
+          class="flex items-center gap-2"
+          :class="{ 'ml-2': !chip }"
+        >
+          <AssetIcon
+            :identifier="asset.identifier"
+            padding="1.5px"
+            :size="chip ? '16px' : '18px'"
+            :chain-icon-size="chip ? '9px' : '11px'"
+          />
+          <span class="font-normal text-sm">
+            {{ asset.symbol }}
+          </span>
+        </div>
+        <span
+          v-else-if="displayValue"
+          class="font-normal"
+        >
+          {{ truncateAddress(displayValue, 10) }}
         </span>
-      </div>
-      <span
-        v-else-if="displayValue"
-        class="font-normal"
-      >
-        {{ truncateAddress(displayValue, 10) }}
-      </span>
+      </template>
     </template>
   </span>
 </template>

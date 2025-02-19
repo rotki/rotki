@@ -65,10 +65,34 @@ const selectedMatcher = computed(() => {
 
 const usedKeys = computed(() => get(selection).map(entry => entry.key));
 
+const suggestionBeingEdited = ref<Suggestion>();
+
+function isSuggestionBeingEdited(suggestion: Suggestion) {
+  const edited = get(suggestionBeingEdited);
+  if (!edited)
+    return false;
+
+  return getSuggestionText(suggestion).text === getSuggestionText(edited).text;
+}
+
 function clickItem(item: Suggestion) {
   if (typeof item.value !== 'boolean') {
-    selectItem(item);
+    set(suggestionBeingEdited, item);
+    set(search, `${item.key}${item.exclude ? '!=' : '='}`);
   }
+}
+
+function cancelEditSuggestion() {
+  set(suggestionBeingEdited, undefined);
+  set(search, '');
+}
+
+function updateEditSuggestionSearch(value: string) {
+  const beingEdited = get(suggestionBeingEdited);
+  if (!beingEdited)
+    return;
+
+  set(search, `${beingEdited.key}${beingEdited.exclude ? '!=' : '='}${value}`);
 }
 
 function matcherForKey(searchKey: string | undefined) {
@@ -150,6 +174,10 @@ function updateMatches(pairs: Suggestion[]) {
   emit('update:matches', matched);
 }
 
+function findBeingSelectedIndex(selection: Suggestion[]) {
+  return selection.findIndex(sel => isSuggestionBeingEdited(sel));
+}
+
 function applyFilter(filter: Suggestion) {
   let newSelection = [...get(selection)];
   const key = filter.key;
@@ -160,7 +188,23 @@ function applyFilter(filter: Suggestion) {
   if (index >= 0 && (!matcher.multiple || newSelection[index].exclude !== filter.exclude))
     newSelection = newSelection.filter(item => item.key !== key);
 
-  newSelection.push(filter);
+  let beingEditedIndex = -1;
+
+  const beingEdited = get(suggestionBeingEdited);
+  if (beingEdited) {
+    beingEditedIndex = findBeingSelectedIndex(newSelection);
+    if (beingEditedIndex > -1) {
+      newSelection.splice(beingEditedIndex, 1);
+    }
+    set(suggestionBeingEdited, undefined);
+  }
+
+  if (beingEditedIndex === -1) {
+    newSelection.push(filter);
+  }
+  else {
+    newSelection.splice(beingEditedIndex, 0, filter);
+  }
 
   updateMatches(newSelection);
   set(search, '');
@@ -224,6 +268,9 @@ async function applySuggestion() {
           }),
         );
       }
+      else {
+        set(suggestionBeingEdited, undefined);
+      }
     }
     if (!key)
       get(input).blur();
@@ -281,16 +328,6 @@ function getSuggestionText(suggestion: Suggestion) {
     startSelection,
     text: `${suggestion.key}${operator}${value}`,
   };
-}
-
-async function selectItem(suggestion: Suggestion) {
-  await nextTick(async () => {
-    const suggestionText = getSuggestionText(suggestion);
-    set(search, suggestionText.text);
-    await nextTick(() => {
-      get(input)?.setSelectionRange?.(suggestionText.startSelection, suggestionText.endSelection);
-    });
-  });
 }
 
 function restoreSelection(matches: MatchedKeywordWithBehaviour<any>): void {
@@ -372,6 +409,9 @@ const { t } = useI18n();
           ref="input"
           v-model:search-input="search"
           :model-value="selection"
+          :class="{
+            '[&_input:not(.edit-input)]:hidden': !!suggestionBeingEdited,
+          }"
           variant="outlined"
           dense
           :disabled="disabled"
@@ -400,7 +440,10 @@ const { t } = useI18n();
             >
               <SuggestedItem
                 chip
+                :edit-mode="isSuggestionBeingEdited(item)"
                 :suggestion="item"
+                @cancel-edit="cancelEditSuggestion()"
+                @update:search="updateEditSuggestionSearch($event)"
               />
             </RuiChip>
           </template>
