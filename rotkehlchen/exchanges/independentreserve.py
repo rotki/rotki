@@ -13,51 +13,18 @@ import requests
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import AssetWithOracles
+from rotkehlchen.assets.utils import symbol_to_asset_or_token
 from rotkehlchen.constants import ZERO
-from rotkehlchen.constants.assets import (
-    A_AAVE,
-    A_ADA,
-    A_AUD,
-    A_BAT,
-    A_BCH,
-    A_BTC,
-    A_COMP,
-    A_DAI,
-    A_DOGE,
-    A_DOT,
-    A_EOS,
-    A_ETC,
-    A_ETH,
-    A_ETH_MATIC,
-    A_GRT,
-    A_LINK,
-    A_LTC,
-    A_MANA,
-    A_MKR,
-    A_NZD,
-    A_OMG,
-    A_PMGT,
-    A_SAND,
-    A_SGD,
-    A_SNX,
-    A_SOL,
-    A_UNI,
-    A_USD,
-    A_USDC,
-    A_USDT,
-    A_XLM,
-    A_XRP,
-    A_YFI,
-    A_ZRX,
-)
+from rotkehlchen.constants.assets import A_BTC
 from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
 from rotkehlchen.db.settings import CachedSettings
-from rotkehlchen.errors.asset import UnknownAsset
+from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import Location, MarginPosition, Price, Trade
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
 from rotkehlchen.fval import FVal
+from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.base import HistoryBaseEntry
 from rotkehlchen.history.events.structures.types import HistoryEventType
@@ -87,53 +54,18 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-IR_TO_WORLD = {
-    'Xbt': A_BTC,
-    'Eth': A_ETH,
-    'Xrp': A_XRP,
-    'Ada': A_ADA,
-    'Dot': A_DOT,
-    'Uni': A_UNI,
-    'Link': A_LINK,
-    'Usdt': A_USDT,
-    'Usdc': A_USDC,
-    'Bch': A_BCH,
-    'Ltc': A_LTC,
-    'Mkr': A_MKR,
-    'Dai': A_DAI,
-    'Comp': A_COMP,
-    'Snx': A_SNX,
-    'Grt': A_GRT,
-    'Eos': A_EOS,
-    'Xlm': A_XLM,
-    'Etc': A_ETC,
-    'Bat': A_BAT,
-    'Pmgt': A_PMGT,
-    'Yfi': A_YFI,
-    'Aave': A_AAVE,
-    'Zrx': A_ZRX,
-    'Omg': A_OMG,
-    'Aud': A_AUD,
-    'Usd': A_USD,
-    'Nzd': A_NZD,
-    'Sgd': A_SGD,
-    'Doge': A_DOGE,
-    'Matic': A_ETH_MATIC,
-    'Mana': A_MANA,
-    'Sand': A_SAND,
-    'Sol': A_SOL,
-}
-
-
 def independentreserve_asset(symbol: str) -> AssetWithOracles:
     """Returns the asset corresponding to the independentreserve symbol
 
-    May raise UnknownAsset
+    May raise:
+    - UnsupportedAsset
+    - UnknownAsset
     """
-    asset = IR_TO_WORLD.get(symbol)
-    if asset is None:
-        raise UnknownAsset(symbol)
-    return asset.resolve_to_asset_with_oracles()
+    return symbol_to_asset_or_token(GlobalDBHandler.get_assetid_from_exchange_name(
+        exchange=Location.INDEPENDENTRESERVE,
+        symbol=symbol,
+        default=symbol,
+    ))
 
 
 def _trade_from_independentreserve(raw_trade: dict) -> Trade:
@@ -142,6 +74,7 @@ def _trade_from_independentreserve(raw_trade: dict) -> Trade:
     https://www.independentreserve.com/products/api#GetClosedFilledOrders
     May raise:
     - DeserializationError
+    - UnsupportedAsset
     - UnknownAsset
     - KeyError
     """
@@ -178,6 +111,7 @@ def _asset_movement_from_independentreserve(raw_tx: dict) -> AssetMovement | Non
     https://www.independentreserve.com/products/api#GetTransactions
     May raise:
     - DeserializationError
+    - UnsupportedAsset
     - UnknownAsset
     - KeyError
     """
@@ -360,6 +294,12 @@ class Independentreserve(ExchangeInterface):
                 usd_price = Inquirer.find_usd_price(asset=asset)
                 amount = deserialize_asset_amount(entry['TotalBalance'])
                 account_guids.append(entry['AccountGuid'])
+            except UnsupportedAsset as e:
+                log.error(
+                    f'Found unsupported {self.name} asset {e.identifier}. '
+                    f'Ignoring its balance query.',
+                )
+                continue
             except UnknownAsset as e:
                 self.send_unknown_asset_message(
                     asset_identifier=e.identifier,
@@ -433,6 +373,12 @@ class Independentreserve(ExchangeInterface):
                 if trade.timestamp < start_ts or trade.timestamp > end_ts:
                     continue
                 trades.append(trade)
+            except UnsupportedAsset as e:
+                log.error(
+                    f'Found unsupported {self.name} asset {e.identifier}. '
+                    f'Ignoring this trade entry {raw_trade}.',
+                )
+                continue
             except UnknownAsset as e:
                 self.send_unknown_asset_message(
                     asset_identifier=e.identifier,
@@ -492,6 +438,12 @@ class Independentreserve(ExchangeInterface):
                     movement = _asset_movement_from_independentreserve(entry)
                     if movement:
                         movements.append(movement)
+                except UnsupportedAsset as e:
+                    log.error(
+                        f'Found unsupported {self.name} asset {e.identifier}. '
+                        f'Ignoring this asset movement entry {entry}.',
+                    )
+                    continue
                 except UnknownAsset as e:
                     self.send_unknown_asset_message(
                         asset_identifier=e.identifier,
