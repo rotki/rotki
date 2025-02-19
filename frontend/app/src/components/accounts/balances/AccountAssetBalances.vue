@@ -5,23 +5,25 @@ import { useBalancePricesStore } from '@/store/balances/prices';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
+import { CURRENCY_USD } from '@/types/currencies';
+import RowAppend from '@/components/helper/RowAppend.vue';
+import { sum } from '@/utils/balances';
 import type { AssetBalance, BigNumber } from '@rotki/common';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 
-type AssetWithPrice = AssetBalance & {
+interface AssetWithPrice extends AssetBalance {
   price: BigNumber;
-};
+}
 
-const props = withDefaults(
-  defineProps<{
-    assets: AssetBalance[];
-    title: string;
-    flat?: boolean;
-  }>(),
-  {
-    flat: false,
-  },
-);
+interface AccountAssetBalancesProps {
+  assets: AssetBalance[];
+  title: string;
+  flat?: boolean;
+}
+
+const props = withDefaults(defineProps<AccountAssetBalancesProps>(), {
+  flat: false,
+});
 
 const { t } = useI18n();
 const { assets } = toRefs(props);
@@ -50,6 +52,8 @@ const sorted = computed<AssetWithPrice[]>(() => {
 
   return data;
 });
+
+const totalValue = computed<BigNumber>(() => sum(get(assetsWithPrice)));
 
 const headers = computed<DataTableColumn<AssetWithPrice>[]>(() => [
   {
@@ -139,6 +143,19 @@ const headers = computed<DataTableColumn<AssetWithPrice>[]>(() => [
           :value="row.usdValue"
           show-currency="symbol"
         />
+      </template>
+      <template #body.append>
+        <RowAppend
+          label-colspan="3"
+          :label="t('common.total')"
+          class="[&>td]:p-4"
+        >
+          <AmountDisplay
+            :fiat-currency="CURRENCY_USD"
+            :value="totalValue"
+            show-currency="symbol"
+          />
+        </RowAppend>
       </template>
     </RuiDataTable>
   </RuiCard>
