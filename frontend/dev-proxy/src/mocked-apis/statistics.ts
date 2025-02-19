@@ -10,6 +10,9 @@ export function statistics(server: Application, componentsDir: string): void {
     let latest = 0;
     let latestFile = '';
     for (const content of contents) {
+      if (!content.endsWith('.js')) {
+        continue;
+      }
       const file = path.join(dist, content);
       const { birthtimeMs } = fs.statSync(file);
       if (birthtimeMs > latest) {
