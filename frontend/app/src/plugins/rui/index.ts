@@ -421,6 +421,7 @@ export function createRuiPlugin(defaults: Partial<RuiOptions['defaults']>): RuiP
         LuDonateFill,
         LuReceiveDonationFill,
         LuHistoryEventsFill,
+        LuFileX,
         // remaining from prev version of premium components
         RiEqualLine,
         RiMoonLine,
