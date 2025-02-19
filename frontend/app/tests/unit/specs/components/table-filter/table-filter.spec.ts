@@ -152,7 +152,8 @@ describe('table-filter/TableFilter.vue', () => {
 
     await nextTick();
 
-    expect((wrapper.find('input').element as HTMLInputElement).value).toBe('type=type 2');
+    expect((wrapper.find('input.edit-input').element as HTMLInputElement).value).toBe('');
+    expect((wrapper.find('input:not(.edit-input)').element as HTMLInputElement).value).toBe('type=');
   });
 
   it('choose suggestions with exclusion', async () => {
