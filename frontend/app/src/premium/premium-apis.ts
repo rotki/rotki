@@ -136,21 +136,18 @@ export function userSettings(): UserSettingsApi {
 export function balancesApi(): BalancesApi {
   const { assetPrice, exchangeRate } = useBalancePricesStore();
   const { balancesByLocation } = useBalancesBreakdown();
-  const { balances, nonManualBalances } = useAggregatedBalances();
+  const { balances } = useAggregatedBalances();
   const { createKey, historicPriceInCurrentCurrency, isPending } = useHistoricCachePriceStore();
   const { queryOnlyCacheHistoricalRates } = usePriceApi();
   const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
   return {
-    // TODO: deprecate on the next major components version (it's only here for backwards compat)
-    aggregatedBalances: balances(false, false),
     assetPrice: (asset: string) => computed(() => get(assetPrice(asset)) ?? One),
-    balances: (groupMultiChain = false) => balances(false, groupMultiChain),
+    balances: (groupMultiChain = false, exclude = []) => balances(false, groupMultiChain, exclude),
     byLocation: balancesByLocation,
     exchangeRate: (currency: string) => computed(() => get(exchangeRate(currency)) ?? One),
     historicPriceInCurrentCurrency,
     isHistoricPricePending: (asset: string, timestamp: number) => isPending(createKey(asset, timestamp)),
-    nonManualBalances: (groupMultiChain = false) => nonManualBalances(false, groupMultiChain),
     queryOnlyCacheHistoricalRates: async (asset: string, timestamp: number[]): Promise<Record<string, BigNumber>> => {
       const data = await queryOnlyCacheHistoricalRates({
         assetsTimestamp: timestamp.map(item => [asset, item.toString()]),
