@@ -19,7 +19,9 @@ import type { MaybeRef } from '@vueuse/core';
 import type { AllBalancePayload } from '@/types/blockchain/accounts';
 
 export const useBalances = createSharedComposable(() => {
-  const { fetchManualBalances, updatePrices: updateManualPrices } = useManualBalancesStore();
+  const manualBalancesStore = useManualBalancesStore();
+  const { manualBalancesData } = storeToRefs(manualBalancesStore);
+  const { fetchManualBalances, updatePrices: updateManualPrices } = manualBalancesStore;
   const { updatePrices: updateChainPrices } = useBlockchainStore();
   const { fetchConnectedExchangeBalances, updatePrices: updateExchangePrices } = useExchangeBalancesStore();
   const { refreshAccounts } = useBlockchains();
@@ -40,6 +42,12 @@ export const useBalances = createSharedComposable(() => {
     updateExchangePrices(pricesConvertedToUsd);
   };
 
+  const filterMissingAssets = (assets: string[]): string[] => {
+    const manualBalances = get(manualBalancesData);
+    const missingAssets = manualBalances.filter(item => item.assetIsMissing).map(item => item.asset);
+    return assets.filter(item => !missingAssets.includes(item));
+  };
+
   const refreshPrices = async (ignoreCache = false, selectedAssets: string[] | null = null): Promise<void> => {
     const unique = selectedAssets ? selectedAssets.filter(uniqueStrings) : null;
     const { setStatus } = useStatusUpdater(Section.PRICES);
@@ -49,7 +57,7 @@ export const useBalances = createSharedComposable(() => {
 
     await fetchPrices({
       ignoreCache,
-      selectedAssets: get(unique && unique.length > 0 ? unique : assets()),
+      selectedAssets: filterMissingAssets(unique && unique.length > 0 ? unique : get(assets())),
     });
     adjustPrices(get(prices));
     setStatus(Status.LOADED);

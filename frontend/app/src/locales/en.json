@@ -3476,6 +3476,10 @@
       "message": "Are you sure you want to delete this entry?",
       "title": "Delete manually tracked balance"
     },
+    "missing_asset": {
+      "title": "Asset is Missing",
+      "tooltip": "You are using a GlobalDB where this asset is missing. Edit the event to set a different asset, or delete this entry."
+    },
     "delete_tooltip": "Delete balance",
     "edit_tooltip": "Edit balance",
     "refresh": {
