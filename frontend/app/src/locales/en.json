@@ -3972,6 +3972,23 @@
     "statistics": {
       "asset_amount_and_value_over_time": "Asset amount and value over time",
       "check_problematic_event": "Check the problematic event",
+      "discrepancy": {
+        "title": "There is a mismatch between the amount from the last event and the amount in the current balance.",
+        "dialog_title": "Amount mismatch",
+        "bigger_than": "is bigger than (>)",
+        "less_than": "is smaller than (<)",
+        "amount_from_last_event": "Amount from last event",
+        "amount_from_current_balance": "Amount from current balance",
+        "amount_without_manual_balance": "Amount from current balance (without manual balance)",
+        "reasons": {
+          "title": "Here are the possible reasons:",
+          "line_1": "The history events or the balances haven't fully loaded. If this is the case, you need to wait until all sources are queried.",
+          "line_2": "You have a manual balance that increases the amount, but you haven't specified the custom event to acquire the asset. Conversely, you have custom events (e.g., from a CSV import), but you haven't specified the manual balance.",
+          "line_3": "The asset is being staked and counted as part of the balances, but it isn't detected in the history events until it's fully withdrawn.",
+          "line_4": "Some events are not properly decoded by rotki, or there may be mistakes in the custom events you created. ",
+          "link": "See asset in history events"
+        }
+      },
       "fetch_daily_prices": "Fetch daily prices",
       "fetch_daily_prices_hint": "rotki will try to get the daily prices of the assets to fill the gap between events.",
       "fetching_graph_data": "Fetching graph data",

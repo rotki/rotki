@@ -13,9 +13,11 @@ import type { AssetBalanceWithPrice } from '@rotki/common';
 import type { MaybeRef } from '@vueuse/core';
 import type { AssetPriceInfo } from '@/types/prices';
 import type { ComputedRef } from 'vue';
+import type { AssetBalances } from '@/types/balances';
 
 interface UseAggregatedBalancesReturn {
   balances: (hideIgnored?: boolean, groupMultiChain?: boolean) => ComputedRef<AssetBalanceWithPrice[]>;
+  nonManualBalances: (hideIgnored?: boolean, groupMultiChain?: boolean) => ComputedRef<AssetBalanceWithPrice[]>;
   liabilities: (hideIgnored?: boolean) => ComputedRef<AssetBalanceWithPrice[]>;
   assetPriceInfo: (identifier: MaybeRef<string>, groupMultiChain?: MaybeRef<boolean>) => ComputedRef<AssetPriceInfo>;
   assets: (hideIgnored?: boolean) => ComputedRef<string[]>;
@@ -32,10 +34,14 @@ export function useAggregatedBalances(): UseAggregatedBalancesReturn {
   const { toSortedAssetBalanceWithPrice } = useBalanceSorting();
   const { lpAggregatedBalances } = useLiquidityPosition();
 
-  const balances = (hideIgnored = true, groupMultiChain = true): ComputedRef<AssetBalanceWithPrice[]> =>
+  const createBalanceComputed = (
+    balanceSources: Ref<AssetBalances>[],
+    hideIgnored = true,
+    groupMultiChain = true,
+  ): ComputedRef<AssetBalanceWithPrice[]> =>
     computed<AssetBalanceWithPrice[]>(() => {
       const ownedAssets = sumAssetBalances(
-        [get(aggregatedTotals), get(exchangeBalances), get(manualBalances)],
+        balanceSources.map(source => get(source)),
         getAssociatedAssetIdentifier,
       );
 
@@ -46,6 +52,12 @@ export function useAggregatedBalances(): UseAggregatedBalancesReturn {
         groupMultiChain,
       );
     });
+
+  const balances = (hideIgnored = true, groupMultiChain = true): ComputedRef<AssetBalanceWithPrice[]> =>
+    createBalanceComputed([aggregatedTotals, exchangeBalances, manualBalances], hideIgnored, groupMultiChain);
+
+  const nonManualBalances = (hideIgnored = true, groupMultiChain = true): ComputedRef<AssetBalanceWithPrice[]> =>
+    createBalanceComputed([aggregatedTotals, exchangeBalances], hideIgnored, groupMultiChain);
 
   const liabilities = (hideIgnored = true): ComputedRef<AssetBalanceWithPrice[]> =>
     computed<AssetBalanceWithPrice[]>(() => {
@@ -106,5 +118,6 @@ export function useAggregatedBalances(): UseAggregatedBalancesReturn {
     assets,
     balances,
     liabilities,
+    nonManualBalances,
   };
 }

@@ -71,6 +71,7 @@ export interface BalancesApi {
   byLocation: Ref<Record<string, BigNumber>>;
   aggregatedBalances: Ref<AssetBalanceWithPrice[]>;
   balances: (groupMultiChain?: boolean) => ComputedRef<AssetBalanceWithPrice[]>;
+  nonManualBalances: (groupMultiChain?: boolean) => ComputedRef<AssetBalanceWithPrice[]>;
   exchangeRate: (currency: string) => Ref<BigNumber>;
   historicPriceInCurrentCurrency: (asset: string, timestamp: number) => ComputedRef<BigNumber>;
   queryOnlyCacheHistoricalRates: (asset: string, timestamp: number[]) => Promise<Record<number, BigNumber>>;
