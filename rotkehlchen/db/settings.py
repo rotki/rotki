@@ -1,4 +1,5 @@
 import json
+import logging
 from collections.abc import Sequence
 from dataclasses import dataclass, field, fields
 from typing import TYPE_CHECKING, Any, Literal, NamedTuple, Optional
@@ -11,6 +12,7 @@ from rotkehlchen.db.constants import UpdateType
 from rotkehlchen.db.utils import str_to_bool
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.types import DEFAULT_HISTORICAL_PRICE_ORACLES_ORDER, HistoricalPriceOracle
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.oracles.structures import DEFAULT_CURRENT_PRICE_ORACLES_ORDER, CurrentPriceOracle
 from rotkehlchen.types import (
     AVAILABLE_MODULES_MAP,
@@ -27,6 +29,9 @@ from rotkehlchen.types import (
 
 if TYPE_CHECKING:
     from rotkehlchen.user_messages import MessagesAggregator
+
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 ROTKEHLCHEN_DB_VERSION = 47
 ROTKEHLCHEN_TRANSIENT_DB_VERSION = 1
@@ -360,10 +365,7 @@ def db_settings_from_dict(
         elif key == 'address_name_priority':
             specified_args[key] = json.loads(value)
         else:
-            if key == 'eth_rpc_endpoint':
-                continue  # temporary since setting is removed in migration and may still get here
-
-            msg_aggregator.add_warning(
+            log.error(
                 f'Unknown DB setting {key} given. Ignoring it. Should not '
                 f'happen so please open an issue in Github.',
             )

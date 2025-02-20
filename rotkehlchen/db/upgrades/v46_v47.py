@@ -272,4 +272,9 @@ def upgrade_v46_to_v47(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         """Drops the usd value column from history events"""
         write_cursor.execute('ALTER TABLE history_events DROP COLUMN usd_value;')
 
+    @progress_step(description='Remove old setting')
+    def _remove_old_setting(write_cursor: 'DBCursor') -> None:
+        """Removes a key that wasn't correctly deleted for one user and might affect others"""
+        write_cursor.execute("DELETE FROM settings WHERE name='last_data_upload_ts'")
+
     perform_userdb_upgrade_steps(db=db, progress_handler=progress_handler, should_vacuum=True)
