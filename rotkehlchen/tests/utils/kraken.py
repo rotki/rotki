@@ -19,7 +19,16 @@ from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_now
 from rotkehlchen.utils.serialization import jsonloads_dict
 
-KRAKEN_DELISTED = ('XDAO', 'XXVN', 'ZKRW', 'XNMC', 'BSV', 'XICN')
+KRAKEN_DELISTED = (
+    'XDAO',
+    'XXVN',
+    'ZKRW',
+    'XNMC',
+    'BSV',
+    'XICN',
+    'PLA',
+    'WAVES',
+)
 
 KRAKEN_SPECIFIC_TRADES_HISTORY_RESPONSE = """{
     "trades": {

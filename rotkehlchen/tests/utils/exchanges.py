@@ -1442,14 +1442,18 @@ def mock_normal_coinbase_query(url, **kwargs):  # pylint: disable=unused-argumen
     raise AssertionError(f'Unexpected url {url} for test')
 
 
-def get_exchange_asset_symbols(exchange: Location) -> set[str]:
-    """Queries and returns all the asset symbols for a given exchange from the globalDB."""
+def get_exchange_asset_symbols(
+        exchange: Location,
+        query_suffix: Literal[' OR location IS NULL;', ';'] = ' OR location IS NULL;',
+) -> set[str]:
+    """Get all asset symbols for an exchange from the global database.
+
+    Using ';' returns only symbols specific to the exchange, while the default
+    ' OR location IS NULL;' includes exchange-specific and generic symbols.
+    """
     with GlobalDBHandler().conn.read_ctx() as cursor:
-        cursor.execute(
-            'SELECT exchange_symbol FROM location_asset_mappings WHERE location IS ? OR location IS NULL;',  # noqa: E501
-            (exchange.serialize_for_db(),),
-        )
-        return {asset[0] for asset in cursor}
+        querystr = 'SELECT exchange_symbol FROM location_asset_mappings WHERE location IS ?' + query_suffix  # noqa: E501
+        return {asset[0] for asset in cursor.execute(querystr, (exchange.serialize_for_db(),))}
 
 
 def kraken_to_world_pair(pair: str) -> tuple[AssetWithOracles, AssetWithOracles]:
