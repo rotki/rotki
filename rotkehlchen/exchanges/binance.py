@@ -700,7 +700,13 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
         May raise:
         - RemoteError
         - BinancePermissionError
+
+        Returns True if there is an error, otherwise returns False.
         """
+        if self.location == Location.BINANCEUS:
+            log.debug('Skipping query of simple earn history as Binance US does not support it.')
+            return False
+
         ranges = DBQueryRanges(self.db)
         history_events_db = DBHistoryEvents(self.db)
 
