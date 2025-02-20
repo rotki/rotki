@@ -90,7 +90,14 @@ async function refresh() {
 }
 
 function edit(balance: ManualBalanceWithPrice) {
-  emit('edit', omit(balance, ['usdValue', 'usdPrice']));
+  emit('edit', {
+    ...omit(balance, [
+      'usdValue',
+      'usdPrice',
+      'assetIsMissing',
+    ]),
+    asset: balance.assetIsMissing ? '' : balance.asset,
+  });
 }
 
 function getRowClass(item: ManualBalance) {
@@ -238,13 +245,36 @@ watchDebounced(
       </template>
       <template #item.asset="{ row }">
         <AssetDetails
+          v-if="!row.assetIsMissing"
           class="[&>div]:max-w-[12rem] xl:[&>div]:max-w-[16rem] 2xl:[&>div]:max-w-[20rem]"
           opens-details
           :asset="row.asset"
         />
+        <template v-else>
+          <RuiTooltip :open-delay="200">
+            <template #activator>
+              <RuiChip
+                color="warning"
+                size="sm"
+                class="[&_[class*=prepend]]:bg-rui-warning-darker my-4 !cursor-pointer"
+              >
+                <template #prepend>
+                  <RuiIcon
+                    name="lu-circle-alert"
+                    size="16"
+                  />
+                </template>
+
+                {{ t('manual_balances_table.missing_asset.title') }}
+              </RuiChip>
+            </template>
+            {{ t('manual_balances_table.missing_asset.tooltip') }}
+          </RuiTooltip>
+        </template>
       </template>
       <template #item.usdPrice="{ row }">
         <AmountDisplay
+          v-if="!row.assetIsMissing"
           :loading="!row.usdPrice || row.usdPrice.lt(0)"
           no-scramble
           show-currency="symbol"
@@ -252,6 +282,9 @@ watchDebounced(
           :price-of-asset="row.usdPrice"
           :value="row.usdPrice"
         />
+        <template v-else>
+          -
+        </template>
       </template>
       <template #item.amount="{ row }">
         <AmountDisplay
@@ -261,6 +294,7 @@ watchDebounced(
       </template>
       <template #item.usdValue="{ row }">
         <AmountDisplay
+          v-if="!row.assetIsMissing"
           show-currency="symbol"
           :amount="row.amount"
           :price-asset="row.asset"
@@ -268,6 +302,9 @@ watchDebounced(
           fiat-currency="USD"
           :value="row.usdValue"
         />
+        <template v-else>
+          -
+        </template>
       </template>
       <template #item.location="{ row }">
         <LocationDisplay

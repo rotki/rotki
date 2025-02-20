@@ -6,6 +6,7 @@ import type { PaginationRequestPayload } from '@/types/common';
 const RawManualBalance = z.object({
   amount: NumericString,
   asset: z.string(),
+  assetIsMissing: z.boolean().optional(),
   balanceType: z.nativeEnum(BalanceType),
   label: z.string(),
   location: z.string(),
