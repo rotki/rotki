@@ -84,7 +84,6 @@ from rotkehlchen.constants.assets import (
     A_YV1_WETH,
     A_YV1_YFI,
 )
-from rotkehlchen.constants.misc import CURRENCYCONVERTER_API_KEY
 from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.constants.resolver import ethaddress_to_identifier, evm_address_to_identifier
 from rotkehlchen.constants.timing import DAY_IN_SECONDS, MONTH_IN_SECONDS
@@ -95,7 +94,6 @@ from rotkehlchen.errors.misc import (
     InputError,
     NotERC20Conformant,
     RemoteError,
-    UnableToDecryptRemoteData,
 )
 from rotkehlchen.errors.price import PriceQueryUnsupportedAsset
 from rotkehlchen.errors.serialization import DeserializationError
@@ -132,7 +130,6 @@ from rotkehlchen.types import (
 from rotkehlchen.utils.data_structures import LRUCacheWithRemove
 from rotkehlchen.utils.misc import timestamp_to_daystart_timestamp, ts_now
 from rotkehlchen.utils.mixins.penalizable_oracle import PenalizablePriceOracleMixin
-from rotkehlchen.utils.network import request_get_dict
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.arbitrum_one.manager import ArbitrumOneManager
@@ -284,29 +281,6 @@ def get_underlying_asset_price(token: EvmToken) -> tuple[Price | None, CurrentPr
             price = Price(usd_price)
 
     return price, oracle
-
-
-def _query_currency_converterapi(base: FiatAsset, quote: FiatAsset) -> Price | None:
-    log.debug(
-        'Query free.currencyconverterapi.com fiat pair',
-        base_currency=base.identifier,
-        quote_currency=quote.identifier,
-    )
-    pair = f'{base.identifier}_{quote.identifier}'
-    querystr = (
-        f'https://free.currconv.com/api/v7/convert?'
-        f'q={pair}&compact=ultra&apiKey={CURRENCYCONVERTER_API_KEY}'
-    )
-    try:
-        resp = request_get_dict(querystr)
-        return Price(FVal(resp[pair]))  # can raise too
-    except (ValueError, RemoteError, KeyError, UnableToDecryptRemoteData):
-        log.error(
-            'Querying free.currencyconverterapi.com fiat pair failed',
-            base_currency=base.identifier,
-            quote_currency=quote.identifier,
-        )
-        return None
 
 
 T = TypeVar('T', bound=Callable[..., Any])
@@ -1384,11 +1358,6 @@ class Inquirer:
 
             if price:  # the quote asset may not be found
                 return price, CurrentPriceOracle.FIAT
-
-        # else price remains None -- query backup api
-        price = _query_currency_converterapi(base, quote)
-        if price is not None:
-            return price, CurrentPriceOracle.FIAT
 
         # Check cache
         price_cache_entry = GlobalDBHandler.get_historical_price(
