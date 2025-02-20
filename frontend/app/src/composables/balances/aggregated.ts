@@ -9,15 +9,14 @@ import { useLiquidityPosition } from '@/composables/defi';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useBalanceSorting } from '@/composables/balances/sorting';
 import { useManualAssetBalances } from '@/composables/balances/manual';
-import type { AssetBalanceWithPrice } from '@rotki/common';
+import type { AssetBalanceWithPrice, ExclusionSource } from '@rotki/common';
 import type { MaybeRef } from '@vueuse/core';
 import type { AssetPriceInfo } from '@/types/prices';
 import type { ComputedRef } from 'vue';
 import type { AssetBalances } from '@/types/balances';
 
 interface UseAggregatedBalancesReturn {
-  balances: (hideIgnored?: boolean, groupMultiChain?: boolean) => ComputedRef<AssetBalanceWithPrice[]>;
-  nonManualBalances: (hideIgnored?: boolean, groupMultiChain?: boolean) => ComputedRef<AssetBalanceWithPrice[]>;
+  balances: (hideIgnored?: boolean, groupMultiChain?: boolean, exclude?: ExclusionSource[]) => ComputedRef<AssetBalanceWithPrice[]>;
   liabilities: (hideIgnored?: boolean) => ComputedRef<AssetBalanceWithPrice[]>;
   assetPriceInfo: (identifier: MaybeRef<string>, groupMultiChain?: MaybeRef<boolean>) => ComputedRef<AssetPriceInfo>;
   assets: (hideIgnored?: boolean) => ComputedRef<string[]>;
@@ -34,14 +33,24 @@ export function useAggregatedBalances(): UseAggregatedBalancesReturn {
   const { toSortedAssetBalanceWithPrice } = useBalanceSorting();
   const { lpAggregatedBalances } = useLiquidityPosition();
 
-  const createBalanceComputed = (
-    balanceSources: Ref<AssetBalances>[],
+  const balances = (
     hideIgnored = true,
     groupMultiChain = true,
+    exclude: ExclusionSource[] = [],
   ): ComputedRef<AssetBalanceWithPrice[]> =>
     computed<AssetBalanceWithPrice[]>(() => {
+      const map = {
+        blockchain: aggregatedTotals,
+        exchange: exchangeBalances,
+        manual: manualBalances,
+      } as const;
+
+      const sources: AssetBalances[] = Object.entries(map)
+        .filter(([key]) => !exclude.includes(key as ExclusionSource))
+        .map(([_key, value]) => get(value));
+
       const ownedAssets = sumAssetBalances(
-        balanceSources.map(source => get(source)),
+        sources,
         getAssociatedAssetIdentifier,
       );
 
@@ -52,12 +61,6 @@ export function useAggregatedBalances(): UseAggregatedBalancesReturn {
         groupMultiChain,
       );
     });
-
-  const balances = (hideIgnored = true, groupMultiChain = true): ComputedRef<AssetBalanceWithPrice[]> =>
-    createBalanceComputed([aggregatedTotals, exchangeBalances, manualBalances], hideIgnored, groupMultiChain);
-
-  const nonManualBalances = (hideIgnored = true, groupMultiChain = true): ComputedRef<AssetBalanceWithPrice[]> =>
-    createBalanceComputed([aggregatedTotals, exchangeBalances], hideIgnored, groupMultiChain);
 
   const liabilities = (hideIgnored = true): ComputedRef<AssetBalanceWithPrice[]> =>
     computed<AssetBalanceWithPrice[]>(() => {
@@ -118,6 +121,5 @@ export function useAggregatedBalances(): UseAggregatedBalancesReturn {
     assets,
     balances,
     liabilities,
-    nonManualBalances,
   };
 }
