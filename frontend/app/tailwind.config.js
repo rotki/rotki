@@ -30,7 +30,11 @@ export default {
     '[&>div>div>div]:font-normal',
     'bg-white/[0.9]',
     'dark:bg-[#1E1E1E]/[0.9]',
-    'border-rui-warning-lighter',
+    'list-decimal',
+    '!leading-4',
+    'lg:col-span-2',
+    'min-h-[560px]',
+    '!pt-0',
   ],
   plugins: [generated],
 };

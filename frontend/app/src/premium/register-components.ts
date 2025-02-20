@@ -1,5 +1,7 @@
 /* eslint-disable import/max-dependencies */
 import {
+  RuiAccordion,
+  RuiAccordions,
   RuiAlert,
   RuiButton,
   RuiButtonGroup,
@@ -68,6 +70,8 @@ function ruiRegister(app: App): void {
   app.component('RuiDialog', RuiDialog);
   app.component('RuiColorPicker', RuiColorPicker);
   app.component('RuiProgress', RuiProgress);
+  app.component('RuiAccordions', RuiAccordions);
+  app.component('RuiAccordion', RuiAccordion);
 }
 
 export function registerComponents(app: App): void {

@@ -136,7 +136,7 @@ export function userSettings(): UserSettingsApi {
 export function balancesApi(): BalancesApi {
   const { assetPrice, exchangeRate } = useBalancePricesStore();
   const { balancesByLocation } = useBalancesBreakdown();
-  const { balances } = useAggregatedBalances();
+  const { balances, nonManualBalances } = useAggregatedBalances();
   const { createKey, historicPriceInCurrentCurrency, isPending } = useHistoricCachePriceStore();
   const { queryOnlyCacheHistoricalRates } = usePriceApi();
   const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
@@ -150,6 +150,7 @@ export function balancesApi(): BalancesApi {
     exchangeRate: (currency: string) => computed(() => get(exchangeRate(currency)) ?? One),
     historicPriceInCurrentCurrency,
     isHistoricPricePending: (asset: string, timestamp: number) => isPending(createKey(asset, timestamp)),
+    nonManualBalances: (groupMultiChain = false) => nonManualBalances(false, groupMultiChain),
     queryOnlyCacheHistoricalRates: async (asset: string, timestamp: number[]): Promise<Record<string, BigNumber>> => {
       const data = await queryOnlyCacheHistoricalRates({
         assetsTimestamp: timestamp.map(item => [asset, item.toString()]),
