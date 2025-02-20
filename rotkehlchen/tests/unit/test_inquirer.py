@@ -63,7 +63,6 @@ from rotkehlchen.inquirer import (
     DEFAULT_RATE_LIMIT_WAITING_TIME,
     CurrentPriceOracle,
     Inquirer,
-    _query_currency_converterapi,
 )
 from rotkehlchen.interfaces import CurrentPriceOracleInterface
 from rotkehlchen.tests.conftest import TestEnvironment, requires_env
@@ -103,23 +102,6 @@ UNDERLYING_ASSET_PRICES = {
     A_CRV: FVal('10'),
     A_USD: FVal('1'),
 }
-
-
-@pytest.mark.skipif(
-    'CI' in os.environ,
-    reason='This test would contribute in rate limiting of these apis',
-)
-@pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_query_realtime_price_apis(inquirer):
-    """Query some of the exchange rates APIs we use.
-
-    For x-rates.com we already have a test in externalapis directory
-    """
-    result = _query_currency_converterapi(A_USD, A_EUR)
-    assert result and isinstance(result, FVal)
-    usd = A_USD.resolve_to_fiat_asset()
-    result = inquirer.query_historical_fiat_exchange_rates(usd, A_CNY, 1411603200)
-    assert result == FVal('6.133938')
 
 
 @pytest.mark.skipif(

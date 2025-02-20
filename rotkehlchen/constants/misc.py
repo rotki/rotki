@@ -2,8 +2,6 @@ from typing import Final
 
 from rotkehlchen.fval import FVal
 
-CURRENCYCONVERTER_API_KEY: Final = 'ecb823a26920906eafa3'
-
 ZERO: Final = FVal(0)
 ONE: Final = FVal(1)
 EXP18: Final = FVal(1e18)
