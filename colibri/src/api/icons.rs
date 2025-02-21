@@ -17,6 +17,8 @@ pub struct AssetIconRequest {
     asset_id: String,
     // hash used to inform the consumer if the file has changed locally or not
     match_header: Option<String>,
+    #[serde(default)]
+    use_collection_icon: bool, // default is false
 }
 
 /// Used when checking the state of an icon locally
@@ -26,6 +28,8 @@ pub struct AssetIconCheck {
     asset_id: String,
     // true if we should delete the local file and pull it again
     force_refresh: Option<bool>,
+    #[serde(default)]
+    use_collection_icon: bool,
 }
 
 /// The handler for the get icon endpoint
@@ -40,6 +44,7 @@ pub async fn get_icon(
     let path = icons::get_asset_path(
         &payload.asset_id,
         state.data_dir.as_path(),
+        payload.use_collection_icon,
         state.globaldb.as_ref(),
     )
     .await;
@@ -76,6 +81,7 @@ pub async fn check_icon(
     let path = icons::get_asset_path(
         &payload.asset_id,
         state.data_dir.as_path(),
+        payload.use_collection_icon,
         state.globaldb.as_ref(),
     )
     .await;
