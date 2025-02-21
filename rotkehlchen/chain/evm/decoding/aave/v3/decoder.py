@@ -214,7 +214,6 @@ class Aavev3LikeCommonDecoder(Commonv2v3LikeDecoder):
         else:  # if not identified, return the decoded events
             return decoded_events
 
-        withdrawing_native_token = withdraw_event is not None and withdraw_event.asset == self.evm_inquirer.native_token  # noqa: E501
         token = token_event.asset.resolve_to_evm_token() if token_event.asset != self.evm_inquirer.native_token else self.evm_inquirer.native_token  # noqa: E501
         a_token = wrapped_event.asset.resolve_to_evm_token()
         earned_event, corrected_amount = None, None
@@ -230,43 +229,34 @@ class Aavev3LikeCommonDecoder(Commonv2v3LikeDecoder):
                     )
                 ) > 0
             ):  # parse the mint amount and balance_increase
-                if withdrawing_native_token:
-                    earned_token = self.evm_inquirer.native_token
-                else:
-                    earned_token_address = a_token.evm_address
-                    if _log.topics[0] == BURN:
-                        # when we get some interest less than the total token to be returned,
-                        # the net burned token is slightly less. So save its corrected
-                        # amount and assign it later
-                        corrected_amount = asset_normalized_value(
-                            amount=int.from_bytes(_log.data[:32]),
-                            asset=token,
-                        )
-                        if not isinstance(token, EvmToken):
-                            log.error(f'At {self.label} {transaction} got a BURN event for a native token. Should not happen')  # noqa: E501
-                            return decoded_events  # error out
-
-                        earned_token_address = token.evm_address
-
-                    earned_token = get_or_create_evm_token(
-                        userdb=self.evm_inquirer.database,
-                        evm_address=earned_token_address,
-                        chain_id=self.evm_inquirer.chain_id,
-                        evm_inquirer=self.evm_inquirer,
+                earned_token_address = a_token.evm_address
+                if _log.topics[0] == BURN:
+                    # when we get some interest less than the total token to be returned,
+                    # the net burned token is slightly less. So save its corrected
+                    # amount and assign it later
+                    corrected_amount = asset_normalized_value(
+                        amount=int.from_bytes(_log.data[:32]),
+                        asset=token,
                     )
+                    if not isinstance(token, EvmToken):
+                        log.error(f'At {self.label} {transaction} got a BURN event for a native token. Should not happen')  # noqa: E501
+                        return decoded_events  # error out
 
-                if (  # check if the earned event was already detected
-                        maybe_earned_event and
-                        withdrawing_native_token and
-                        a_token == maybe_earned_event.asset and
-                        balance_increase == maybe_earned_event.amount and
-                        token_event.location_label == maybe_earned_event.location_label
+                    earned_token_address = token.evm_address
+
+                earned_token = get_or_create_evm_token(
+                    userdb=self.evm_inquirer.database,
+                    evm_address=earned_token_address,
+                    chain_id=self.evm_inquirer.chain_id,
+                    evm_inquirer=self.evm_inquirer,
+                )
+
+                if (  # check if we need to create the earned event
+                        maybe_earned_event is None or
+                        a_token != maybe_earned_event.asset or
+                        balance_increase != maybe_earned_event.amount or
+                        token_event.location_label != maybe_earned_event.location_label
                 ):
-                    earned_event = maybe_earned_event  # and since this is native token edit it
-                    earned_event.asset = self.evm_inquirer.native_token
-                    earned_event.notes = f'Receive {earned_event.amount} {earned_token.symbol} as interest earned from {self.label}'  # noqa: E501
-
-                else:  # if not, create it
                     decoded_events.append(earned_event := self.base.make_event_from_transaction(
                         transaction=transaction,
                         tx_log=_log,
@@ -297,11 +287,15 @@ class Aavev3LikeCommonDecoder(Commonv2v3LikeDecoder):
                 return_event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
                 return_event.notes = f'Return {withdraw_event.amount} {a_token.symbol} to {self.label}'  # noqa: E501
 
-        if earned_event is not None and corrected_amount is not None and return_event is not None:
+        if (
+            (maybe_earned_event is not None or earned_event is not None) and
+            corrected_amount is not None and
+            return_event is not None
+        ):
             return_event.amount = corrected_amount
 
         maybe_reshuffle_events(
-            ordered_events=[supply_event, return_event, withdraw_event, receive_event, earned_event],  # noqa: E501
+            ordered_events=[supply_event, maybe_earned_event, return_event, withdraw_event, receive_event, earned_event],  # noqa: E501
             events_list=decoded_events,
         )
         return decoded_events
