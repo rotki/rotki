@@ -8,11 +8,17 @@ import { config } from 'dotenv';
 import consola from 'consola';
 import { assert } from '@rotki/common';
 import { omit } from 'es-toolkit';
+import { cac } from 'cac';
 import type { Buffer } from 'node:buffer';
 
 interface OutputListener {
   out: (buffer: Buffer) => void;
   err: (buffer: Buffer) => void;
+}
+
+interface BackendEnv {
+  VITE_BACKEND_URL: string;
+  VITE_COLIBRI_URL: string;
 }
 
 const DEFAULT_BACKEND_PORT = 4242;
@@ -24,18 +30,11 @@ const ROTKI = 'rotki';
 const BACKEND = 'backend';
 const COLIBRI = 'colibri';
 
-const scriptArgs = process.argv;
-const noElectron = scriptArgs.includes('--web');
-
-const webPort = getPort('--web-port', DEFAULT_BACKEND_PORT);
-const colibriPort = getPort('--colibri-port', DEFAULT_COLIBRI_PORT);
-
-function getPort(arg: string, defaultValue: number): number {
-  const portValue = getArg(arg);
-  if (!portValue) {
+function getPort(port: string, defaultValue: number): number {
+  if (!port) {
     return defaultValue;
   }
-  const portNumber = Number.parseInt(portValue);
+  const portNumber = parseInt(port);
   if (!isFinite(portNumber) || portNumber < 0 || portNumber > 65535) {
     return defaultValue;
   }
@@ -71,11 +70,6 @@ export async function selectPort(startPort: number): Promise<number> {
   throw new Error('no free ports found');
 }
 
-function getArg(flag: string): string | undefined {
-  if (scriptArgs.includes(flag) && scriptArgs.length > scriptArgs.indexOf(flag) + 1)
-    return scriptArgs[scriptArgs.indexOf(flag) + 1];
-}
-
 function checkForCargo(): boolean {
   try {
     const cargoVersion = execSync('cargo --version', { encoding: 'utf-8' });
@@ -87,15 +81,6 @@ function checkForCargo(): boolean {
     return false;
   }
 }
-
-const profilingArgs = getArg('--profiling-args');
-const profilingCmd = getArg('--profiling-cmd');
-
-if (profilingCmd)
-  process.env.ROTKI_BACKEND_PROFILING_CMD = profilingCmd;
-
-if (profilingArgs)
-  process.env.ROTKI_BACKEND_PROFILING_ARGS = profilingArgs;
 
 const colors = {
   red: (msg: string) => `\u001B[31m${msg}\u001B[0m`,
@@ -178,7 +163,7 @@ function startProcess(
   return child;
 }
 
-function terminateSubprocesses() {
+function terminateSubprocesses(): void {
   let subprocess;
   // eslint-disable-next-line no-cond-assign
   while ((subprocess = subprocesses.pop())) {
@@ -203,33 +188,28 @@ function terminateSubprocesses() {
   }
 }
 
-process.on('SIGINT', () => {
-  logger.info(`preparing to terminate subprocesses`);
-  terminateSubprocesses();
-  exit(0);
-});
-
-if (startDevProxy) {
-  logger.info('Starting dev-proxy');
-  startProcess('pnpm run --filter @rotki/dev-proxy serve', colors.green(PROXY), PROXY);
+function getDebuggerPort(): number | null {
+  try {
+    const debuggerPort = process.env.DEBUGGER_PORT;
+    if (debuggerPort) {
+      const portNum = Number.parseInt(debuggerPort);
+      return isFinite(portNum) && (portNum > 0 || portNum < 65535) ? portNum : null;
+    }
+    return null;
+  }
+  catch {
+    return null;
+  }
 }
 
-logger.info('Starting @rotki/common watch');
-
-startProcess('pnpm run --filter @rotki/common watch', colors.blue(COMMON), COMMON);
-
-let backendEnv: {
-  VITE_BACKEND_URL: string;
-  VITE_COLIBRI_URL: string;
-} | undefined;
-
-if (noElectron) {
+async function startPythonBackend(
+  webPort: number,
+  logDir: string,
+  profilingArgs?: string,
+  profilingCmd?: string,
+): Promise<number> {
   const availableWebPort = await selectPort(webPort);
   logger.info(`Starting python backend at port: ${availableWebPort}`);
-
-  const logDir = path.join(process.cwd(), 'logs');
-  if (!fs.existsSync(logDir))
-    fs.mkdirSync(logDir);
 
   const args = [
     ...(profilingArgs ? profilingArgs.split(' ') : []),
@@ -247,7 +227,10 @@ if (noElectron) {
   startProcess(profilingCmd ?? 'python', colors.yellow(BACKEND), BACKEND, args, {
     cwd: path.join('..'),
   });
+  return availableWebPort;
+}
 
+async function startColibriService(colibriPort: number, logDir: string): Promise<number> {
   const availableColibriPort = await selectPort(colibriPort);
 
   logger.info(`Starting colibri at port: ${availableColibriPort}`);
@@ -260,42 +243,108 @@ if (noElectron) {
   startProcess('cargo run -- ', colors.red(COLIBRI), COLIBRI, colibriArgs, {
     cwd: path.join('..', 'colibri'),
   });
+  return availableColibriPort;
+}
 
-  backendEnv = {
+async function startBackendServices(
+  webPort: number,
+  colibriPort: number,
+  profilingArgs?: string,
+  profilingCmd?: string,
+): Promise<BackendEnv> {
+  const logDir = path.join(process.cwd(), 'logs');
+  if (!fs.existsSync(logDir))
+    fs.mkdirSync(logDir);
+
+  const availableWebPort = await startPythonBackend(webPort, logDir, profilingArgs, profilingCmd);
+  const availableColibriPort = await startColibriService(colibriPort, logDir);
+
+  return {
     VITE_BACKEND_URL: `http://localhost:${availableWebPort}`,
     VITE_COLIBRI_URL: `http://localhost:${availableColibriPort}`,
   };
 }
 
-logger.info('Starting rotki dev mode');
+function startDevServer(noElectron: boolean, backendEnv?: BackendEnv) {
+  logger.info('Starting rotki dev mode');
 
-function getDebuggerPort() {
-  try {
-    const debuggerPort = process.env.DEBUGGER_PORT;
-    if (debuggerPort) {
-      const portNum = Number.parseInt(debuggerPort);
-      return isFinite(portNum) && (portNum > 0 || portNum < 65535) ? portNum : null;
-    }
-    return null;
-  }
-  catch {
-    return null;
-  }
+  const debuggerPort = getDebuggerPort();
+  const args = debuggerPort ? ` --remote-debugging-port=${debuggerPort}` : '';
+  if (args)
+    logger.info(`starting rotki with args: ${args}`);
+
+  const serveCmd = noElectron ? 'pnpm run --filter rotki serve' : 'pnpm run --filter rotki electron:serve';
+  const cmd = platform() === 'win32' ? serveCmd : `sleep 20 && ${serveCmd}`;
+
+  const devRotkiProcess = startProcess(`${cmd} ${args}`, colors.magenta(ROTKI), ROTKI, [], {
+    env: backendEnv,
+  });
+
+  devRotkiProcess.on('exit', () => {
+    logger.info('dev rotki process exited, terminating subprocesses');
+    terminateSubprocesses();
+    process.exit(0);
+  });
 }
-const debuggerPort = getDebuggerPort();
-const args = debuggerPort ? ` --remote-debugging-port=${debuggerPort}` : '';
-if (args)
-  logger.info(`starting rotki with args: ${args}`);
 
-const serveCmd = noElectron ? 'pnpm run --filter rotki serve' : 'pnpm run --filter rotki electron:serve';
-const cmd = platform() === 'win32' ? serveCmd : `sleep 20 && ${serveCmd}`;
+async function startDevelopmentEnvironment(
+  webPort: number,
+  colibriPort: number,
+  noElectron: boolean,
+  profilingArgs?: string,
+  profilingCmd?: string,
+): Promise<void> {
+  process.on('SIGINT', () => {
+    logger.info(`preparing to terminate subprocesses`);
+    terminateSubprocesses();
+    exit(0);
+  });
 
-const devRotkiProcess = startProcess(`${cmd} ${args}`, colors.magenta(ROTKI), ROTKI, [], {
-  env: backendEnv,
-});
+  if (startDevProxy) {
+    logger.info('Starting dev-proxy');
+    startProcess('pnpm run --filter @rotki/dev-proxy serve', colors.green(PROXY), PROXY);
+  }
 
-devRotkiProcess.on('exit', () => {
-  logger.info('dev rotki process exited, terminating subprocesses');
-  terminateSubprocesses();
-  process.exit(0);
-});
+  logger.info('Starting @rotki/common watch');
+
+  startProcess('pnpm run --filter @rotki/common watch', colors.blue(COMMON), COMMON);
+
+  let backendEnv: BackendEnv | undefined;
+
+  if (noElectron) {
+    backendEnv = await startBackendServices(webPort, colibriPort, profilingArgs, profilingCmd);
+  }
+
+  startDevServer(noElectron, backendEnv);
+}
+
+function setupProfilingEnvironment({ profilingArgs, profilingCmd }: { profilingCmd?: string; profilingArgs?: string }): void {
+  if (profilingCmd)
+    process.env.ROTKI_BACKEND_PROFILING_CMD = profilingCmd;
+
+  if (profilingArgs)
+    process.env.ROTKI_BACKEND_PROFILING_ARGS = profilingArgs;
+}
+
+const cli = cac();
+
+cli.command('[]', 'Start the development environment')
+  .option('--web-port <number>', 'The port to use for the web server', {
+    default: DEFAULT_BACKEND_PORT,
+  })
+  .option('--colibri-port <number>', 'The port to use for the colibri server', {
+    default: DEFAULT_COLIBRI_PORT,
+  })
+  .option('--profiling-args <string>', 'Arguments to pass to the backend process')
+  .option('--profiling-cmd <string>', 'Command to use to start the backend process')
+  .action(async (options) => {
+    const webPort = getPort(options.webPort, DEFAULT_BACKEND_PORT);
+    const colibriPort = getPort(options.colibriPort, DEFAULT_COLIBRI_PORT);
+    const noElectron = options.web;
+
+    setupProfilingEnvironment(options);
+    await startDevelopmentEnvironment(webPort, colibriPort, noElectron, options.profilingArgs, options.profilingCmd);
+  });
+
+cli.help();
+cli.parse();
