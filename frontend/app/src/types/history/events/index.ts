@@ -232,6 +232,7 @@ export interface EditAssetMovementEventPayload {
   asset: string;
   fee: string | null;
   feeAsset: string | null;
+  notes: string | null;
 }
 
 export type NewAssetMovementEventPayload = Omit<EditAssetMovementEventPayload, 'identifier'>;

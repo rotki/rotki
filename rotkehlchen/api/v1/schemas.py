@@ -962,6 +962,7 @@ class CreateHistoryEventSchema(Schema):
         event_identifier = fields.String(required=False, load_default=None)
         asset = AssetField(required=True, expected_type=Asset, form_with_incomplete_data=True)
         fee_asset = AssetField(load_default=None, required=False, expected_type=Asset, form_with_incomplete_data=True)  # noqa: E501
+        notes = fields.String(required=False, load_default=None)
 
         @post_load
         def make_history_base_entry(
@@ -998,6 +999,7 @@ class CreateHistoryEventSchema(Schema):
                 extra_data=extra_data,
                 fee_identifier=CreateHistoryEventSchema.history_event_context.get()['schema'].get_fee_event_identifier(data),
                 location_label=data['location_label'],
+                given_notes=data['notes'],
             ) if fee is not None else [AssetMovement(
                 is_fee=False,
                 asset=data['asset'],
@@ -1010,6 +1012,7 @@ class CreateHistoryEventSchema(Schema):
                 extra_data=extra_data,
                 event_identifier=data['event_identifier'],
                 location_label=data['location_label'],
+                given_notes=data['notes'],
             )]
 
             return {'events': events}

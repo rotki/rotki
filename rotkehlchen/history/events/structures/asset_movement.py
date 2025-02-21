@@ -66,12 +66,21 @@ class AssetMovement(HistoryBaseEntry[AssetMovementExtraData | None]):
             extra_data: AssetMovementExtraData | None = None,
             is_fee: bool = False,
             location_label: str | None = None,
+            notes_suffix: str | None = None,
+            given_notes: str | None = None,
     ) -> None:
         """
+        An asset movement (deposit/withdrawal) event. Important to note that the amount of
+        the deposit/withdrawal is after the fee. So if you withdraw 1000 USDC and pay 1 USDC fee
+        and the final amount that hits your address is 999. Then the amount should be 999
+        and the fee should be 1
+
         `unique_id`: Unique identifier for this asset movement.
             Either the exchange transaction id or the associated onchain transaction hash.
             Used in conjunction with location to generate the event identifier.
         `is_fee`: Controls whether this represents a fee event.
+        `notes_suffix`: Adds some extra information to the notes of the event.
+        `notes`: Use provided notes for the asset movement instead of auto-generating them.
         """
         location_name = get_formatted_location_name(location)
         asset_symbol = asset.resolve_to_asset_with_symbol().symbol
@@ -87,6 +96,11 @@ class AssetMovement(HistoryBaseEntry[AssetMovementExtraData | None]):
             else:
                 event_subtype = HistoryEventSubType.REMOVE_ASSET
                 notes = f'Withdraw {amount} {asset_symbol} from {location_name}'
+
+        if given_notes is not None:
+            notes = given_notes
+        elif notes_suffix is not None:
+            notes += notes_suffix
 
         super().__init__(
             event_identifier=event_identifier if event_identifier is not None else self._create_event_identifier(  # noqa: E501
@@ -158,6 +172,7 @@ class AssetMovement(HistoryBaseEntry[AssetMovementExtraData | None]):
             asset=Asset(entry[6]).check_existence(),
             amount=amount,
             extra_data=cls.deserialize_extra_data(entry=entry, extra_data=entry[11]),
+            given_notes=entry[8],
         )
 
     @classmethod
@@ -183,6 +198,7 @@ class AssetMovement(HistoryBaseEntry[AssetMovementExtraData | None]):
             asset=base_data['asset'],
             amount=base_data['amount'],
             extra_data=base_data['extra_data'],
+            given_notes=base_data['notes'],
         )
 
     def __repr__(self) -> str:
@@ -234,9 +250,13 @@ def create_asset_movement_with_fee(
         identifier: int | None = None,
         fee_identifier: int | None = None,
         extra_data: AssetMovementExtraData | None = None,
+        notes_suffix: str | None = None,
+        given_notes: str | None = None,
 ) -> list[AssetMovement]:
     """Create an asset movement and its corresponding fee event.
     Returns the new asset movements in a list.
+
+    The given_notes are only for the non-fee event.
     """
     events = [AssetMovement(
         location=location,
@@ -248,6 +268,8 @@ def create_asset_movement_with_fee(
         identifier=identifier,
         extra_data=extra_data,
         location_label=location_label,
+        notes_suffix=notes_suffix,
+        given_notes=given_notes,
     )]
     if fee != ZERO:
         events.append(AssetMovement(
@@ -260,6 +282,7 @@ def create_asset_movement_with_fee(
             amount=fee,
             is_fee=True,
             location_label=location_label,
+            notes_suffix=notes_suffix,
         ))
 
     return events
