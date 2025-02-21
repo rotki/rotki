@@ -187,6 +187,7 @@ async function save(): Promise<boolean> {
     feeAsset: null,
     location: get(location),
     locationLabel: get(locationLabel),
+    notes: get(notes),
     timestamp,
   };
 
