@@ -6,12 +6,22 @@ import KrakenStakingReceived from '@/components/staking/kraken/KrakenStakingRece
 import KrakenStakingOverview from '@/components/staking/kraken/KrakenStakingOverview.vue';
 import KrakenDateFilter from '@/components/staking/kraken/KrakenDateFilter.vue';
 import { useBalancePricesStore } from '@/store/balances/prices';
+import { useHistoricCachePriceStore } from '@/store/prices/historic';
 import type { KrakenStakingDateFilter } from '@/types/staking';
 
 const modelValue = defineModel<KrakenStakingDateFilter>({ required: true });
 
+defineProps<{
+  loading: boolean;
+}>();
+
+const { t } = useI18n();
+
 const { events } = toRefs(useKrakenStakingStore());
 const { assetPrice } = useBalancePricesStore();
+
+const { getProtocolStatsPriceQueryStatus } = useHistoricCachePriceStore();
+const krakenHistoricPriceStatus = getProtocolStatsPriceQueryStatus('kraken');
 
 const earnedAssetsData = computed<[boolean, AssetBalance[]]>(() => {
   const earned = get(events).received;
@@ -37,11 +47,24 @@ const earnedAssetsData = computed<[boolean, AssetBalance[]]>(() => {
 
 <template>
   <div class="flex flex-col gap-4">
-    <div class="flex justify-end">
-      <div class="w-full md:w-1/2 md:-mr-2">
-        <KrakenDateFilter
-          v-model="modelValue"
+    <div class="grid md:grid-cols-2 gap-x-4 gap-y-2">
+      <KrakenDateFilter v-model="modelValue" />
+
+      <div
+        v-if="loading && krakenHistoricPriceStatus"
+        class="flex items-center gap-2 text-rui-text-secondary text-sm"
+      >
+        <RuiProgress
+          thickness="2"
+          size="18"
+          color="primary"
+          variant="indeterminate"
+          circular
         />
+        {{ t('kraken_staking_events.query_historical_price', {
+          processed: krakenHistoricPriceStatus.processed,
+          total: krakenHistoricPriceStatus.total,
+        }) }}
       </div>
     </div>
     <div class="grid md:grid-cols-2 gap-4">

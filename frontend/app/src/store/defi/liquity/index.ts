@@ -1,4 +1,5 @@
 import {
+  type CommonQueryStatusData,
   LiquityBalancesWithCollateralInfo,
   LiquityPoolDetails,
   LiquityStakingDetails,
@@ -22,6 +23,8 @@ export const useLiquityStore = defineStore('defi/liquity', () => {
   const staking = ref<LiquityStakingDetails>({});
   const stakingPools = ref<LiquityPoolDetails>({});
   const statistics = ref<LiquityStatistics | null>(null);
+
+  const stakingQueryStatus = ref<CommonQueryStatusData>();
 
   const isPremium = usePremium();
   const { activeModules } = useModules();
@@ -179,6 +182,10 @@ export const useLiquityStore = defineStore('defi/liquity', () => {
     resetStatus({ section: Section.DEFI_LIQUITY_STATISTICS });
   };
 
+  const setStakingQueryStatus = (data: CommonQueryStatusData | null): void => {
+    set(stakingQueryStatus, data);
+  };
+
   return {
     balances,
     fetchBalances,
@@ -186,8 +193,10 @@ export const useLiquityStore = defineStore('defi/liquity', () => {
     fetchStaking,
     fetchStatistics,
     reset,
+    setStakingQueryStatus,
     staking,
     stakingPools,
+    stakingQueryStatus,
     statistics,
   };
 });

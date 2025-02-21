@@ -10,10 +10,12 @@ import ActiveModules from '@/components/defi/ActiveModules.vue';
 import LiquityStakingDetails from '@/components/staking/liquity/LiquityStakingDetails.vue';
 import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
 import NoPremiumPlaceholder from '@/components/premium/NoPremiumPlaceholder.vue';
+import { useHistoricCachePriceStore } from '@/store/prices/historic';
 
 const modules = [Module.LIQUITY];
 const { isModuleEnabled } = useModules();
-const { fetchPools, fetchStaking, fetchStatistics } = useLiquityStore();
+const { fetchPools, fetchStaking, fetchStatistics, setStakingQueryStatus } = useLiquityStore();
+const { resetProtocolStatsPriceQueryStatus } = useHistoricCachePriceStore();
 const { shouldShowLoadingScreen } = useStatusStore();
 const moduleEnabled = isModuleEnabled(modules[0]);
 const premium = usePremium();
@@ -23,6 +25,9 @@ const LUSD_ID = 'eip155:1/erc20:0x5f98805A4E8be255a32880FDeC7F6728C6568bA0';
 const LQTY_ID = 'eip155:1/erc20:0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D';
 
 async function fetch(refresh = false) {
+  resetProtocolStatsPriceQueryStatus('liquity');
+  setStakingQueryStatus(null);
+
   await Promise.all([
     fetchStaking(refresh),
     fetchPools(refresh),

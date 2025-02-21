@@ -1,7 +1,7 @@
 import type {
+  CommonQueryStatusData,
   HistoricalAssetPricePayload,
   HistoricalAssetPriceResponse,
-  HistoricalPriceQueryStatusData,
   LocationData,
   NetValue,
   OwnedAssets,
@@ -38,7 +38,7 @@ export interface StatisticsApi {
   netValue: (startingData: number) => Ref<NetValue>;
   isQueryingDailyPrices: ComputedRef<boolean>;
   queryHistoricalAssetPrices: (payload: HistoricalAssetPricePayload) => Promise<HistoricalAssetPriceResponse>;
-  historicalAssetPriceStatus: Ref<HistoricalPriceQueryStatusData | undefined>;
+  historicalAssetPriceStatus: Ref<CommonQueryStatusData | undefined>;
 }
 
 export interface DateUtilities {

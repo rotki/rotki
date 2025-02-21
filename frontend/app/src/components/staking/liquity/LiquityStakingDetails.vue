@@ -24,6 +24,7 @@ import LiquityPools from '@/components/staking/liquity/LiquityPools.vue';
 import HashLink from '@/components/helper/HashLink.vue';
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
+import { useHistoricCachePriceStore } from '@/store/prices/historic';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 
 const emit = defineEmits<{
@@ -32,7 +33,10 @@ const emit = defineEmits<{
 
 const selectedAccounts = ref<BlockchainAccount<AddressData>[]>([]);
 const liquityStore = useLiquityStore();
-const { staking, stakingPools, statistics } = toRefs(liquityStore);
+const { staking, stakingPools, stakingQueryStatus, statistics } = storeToRefs(liquityStore);
+
+const { getProtocolStatsPriceQueryStatus } = useHistoricCachePriceStore();
+const liquityHistoricPriceStatus = getProtocolStatsPriceQueryStatus('liquity');
 
 const { isLoading } = useStatusStore();
 const loading = isLoading(Section.DEFI_LIQUITY_STAKING);
@@ -247,76 +251,112 @@ function refresh() {
         </RuiTooltip>
       </div>
     </template>
-    <div class="flex gap-4 items-start">
+    <div class="grid md:grid-cols-2 gap-x-4 gap-y-2">
       <BlockchainAccountSelector
         v-model="selectedAccounts"
         :label="t('liquity_staking_details.select_account')"
         :chains="chains"
-        class="md:w-[25rem]"
         dense
         outlined
         :usable-addresses="availableAddresses"
       />
 
-      <RuiMenu
-        v-if="proxyInformation"
-        :popper="{ placement: 'right-start' }"
-        menu-class="max-w-[25rem]"
+      <div
+        v-if="proxyInformation || loading"
+        class="flex flex-wrap items-center gap-2"
       >
-        <template #activator="{ attrs }">
-          <RuiButton
-            variant="text"
-            class="!p-2"
-            icon
-            v-bind="attrs"
-          >
-            <RuiIcon name="lu-info" />
-          </RuiButton>
-        </template>
-        <div class="p-3 px-4">
-          <div
-            v-for="(proxies, key, index) in proxyInformation"
-            :key="key"
-          >
-            <div class="flex flex-row items-center gap-2">
-              <HashLink
-                :text="key"
-                class="bg-rui-grey-300 dark:bg-rui-grey-800 pr-1 rounded-full m-0.5"
-              />
-              <span class="text-sm">
-                {{
-                  t('liquity_staking_details.has_proxy_addresses', {
-                    length: proxies.length,
-                  })
-                }}
-              </span>
-            </div>
-            <div
-              class="ml-3 pl-4 pt-2"
-              :class="$style['proxies-wrapper']"
+        <RuiMenu
+          v-if="proxyInformation"
+          :popper="{ placement: 'right-start' }"
+          menu-class="max-w-[25rem]"
+        >
+          <template #activator="{ attrs }">
+            <RuiButton
+              variant="text"
+              class="!p-2"
+              icon
+              v-bind="attrs"
             >
-              <div
-                v-for="proxy in proxies"
-                :key="proxy"
-                class="mb-1 flex"
-                :class="$style['proxies-item']"
-              >
+              <RuiIcon name="lu-info" />
+            </RuiButton>
+          </template>
+          <div class="p-3 px-4">
+            <div
+              v-for="(proxies, key, index) in proxyInformation"
+              :key="key"
+            >
+              <div class="flex flex-row items-center gap-2">
                 <HashLink
-                  :text="proxy"
+                  :text="key"
                   class="bg-rui-grey-300 dark:bg-rui-grey-800 pr-1 rounded-full m-0.5"
                 />
+                <span class="text-sm">
+                  {{
+                    t('liquity_staking_details.has_proxy_addresses', {
+                      length: proxies.length,
+                    })
+                  }}
+                </span>
               </div>
+              <div
+                class="ml-3 pl-4 pt-2"
+                :class="$style['proxies-wrapper']"
+              >
+                <div
+                  v-for="proxy in proxies"
+                  :key="proxy"
+                  class="mb-1 flex"
+                  :class="$style['proxies-item']"
+                >
+                  <HashLink
+                    :text="proxy"
+                    class="bg-rui-grey-300 dark:bg-rui-grey-800 pr-1 rounded-full m-0.5"
+                  />
+                </div>
+              </div>
+              <RuiDivider
+                v-if="index < Object.keys(proxyInformation).length - 1"
+                class="my-4"
+              />
             </div>
-            <RuiDivider
-              v-if="index < Object.keys(proxyInformation).length - 1"
-              class="my-4"
-            />
+          </div>
+        </RuiMenu>
+
+        <div
+          v-if="loading && (stakingQueryStatus || liquityHistoricPriceStatus)"
+          class="flex items-center gap-3 text-rui-text-secondary text-sm"
+        >
+          <RuiProgress
+            thickness="2"
+            size="18"
+            color="primary"
+            variant="indeterminate"
+            circular
+          />
+          <div>
+            <div v-if="stakingQueryStatus">
+              {{
+                t('liquity_staking_details.query_staking_data', {
+                  processed: stakingQueryStatus.processed,
+                  total: stakingQueryStatus.total,
+                })
+              }}
+            </div>
+
+            <div v-if="liquityHistoricPriceStatus">
+              {{
+                t('liquity_staking_details.query_historical_price', {
+                  processed: liquityHistoricPriceStatus.processed,
+                  total: liquityHistoricPriceStatus.total,
+                })
+              }}
+            </div>
           </div>
         </div>
-      </RuiMenu>
+      </div>
     </div>
 
-    <div class="flex flex-row flex-wrap gap-4">
+    <div class="grid md:grid-cols-2 gap-4">
       <LiquityPools
         class="flex-1"
         :pool="aggregatedStakingPool"
