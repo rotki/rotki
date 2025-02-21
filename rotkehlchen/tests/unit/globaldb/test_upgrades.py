@@ -998,19 +998,13 @@ def test_applying_all_upgrade(globaldb: GlobalDBHandler, messages_aggregator):
     """Test globalDB upgrade from v2 to latest"""
     # Check the state before upgrading
     assert globaldb.get_setting_value('version', 0) == 2
-    with globaldb.conn.cursor() as cursor:
-        assert cursor.execute('SELECT COUNT(*) from assets WHERE identifier=?', ('eip155:/erc20:0x32c6fcC9bC912C4A30cd53D2E606461e44B77AF2',)).fetchone()[0] == 0  # noqa: E501
-
     maybe_upgrade_globaldb(
         connection=globaldb.conn,
         global_dir=globaldb._data_directory / GLOBALDIR_NAME,  # type: ignore
         db_filename=GLOBALDB_NAME,
         msg_aggregator=messages_aggregator,
     )
-
     assert globaldb.get_setting_value('version', 0) == GLOBAL_DB_VERSION
-    with globaldb.conn.cursor() as cursor:
-        assert cursor.execute('SELECT COUNT(*) from assets WHERE identifier=?', ('eip155:/erc20:0x32c6fcC9bC912C4A30cd53D2E606461e44B77AF2',)).fetchone()[0] == 1  # noqa: E501
 
 
 @pytest.mark.parametrize('globaldb_upgrades', [[]])

@@ -824,6 +824,7 @@ def test_load_from_packaged_db(globaldb: GlobalDBHandler):
         # to the right one
         conn = sqlite3.connect(dest_file, check_same_thread=False)
         conn.cursor().execute('UPDATE assets SET name="my eth" WHERE identifier="ETH"')
+        conn.commit()
         conn.close()
 
         # set the permissions for the copy of the globaldb to read only. This ensures

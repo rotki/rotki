@@ -489,7 +489,7 @@ def test_querying_daily_stats_twice(
     request the second time"""
     eth2.add_validator(validator_index=1118010, public_key=None, ownership_proportion=ONE)
     with eth2.database.conn.cursor() as cursor:
-        stats = eth2.get_validator_daily_stats(
+        stats, _, _ = eth2.get_validator_daily_stats(
             cursor=cursor,
             filter_query=Eth2DailyStatsFilterQuery.make(),
             only_cache=False,
@@ -500,7 +500,7 @@ def test_querying_daily_stats_twice(
             'rotkehlchen.chain.ethereum.modules.eth2.beacon.BeaconInquirer.query_validator_daily_stats',
             wraps=eth2.beacon_inquirer.query_validator_daily_stats,
         ) as patched_query:
-            stats = eth2.get_validator_daily_stats(
+            eth2.get_validator_daily_stats(
                 cursor=cursor,
                 filter_query=Eth2DailyStatsFilterQuery.make(),
                 only_cache=False,

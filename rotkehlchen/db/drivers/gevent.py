@@ -74,9 +74,13 @@ class DBCursor:
             exctype: type[BaseException] | None,
             value: BaseException | None,
             traceback: TracebackType | None,
-    ) -> bool:
+    ) -> Literal[False]:
+        """Closes the cursor when exiting the context.
+        Returns False to indicate that exceptions should not be suppressed.
+        See https://docs.python.org/3/library/stdtypes.html#contextmanager.__exit__
+        """
         self.close()
-        return True
+        return False
 
     def execute(self, statement: str, *bindings: Sequence) -> 'DBCursor':
         if __debug__:
