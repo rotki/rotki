@@ -329,6 +329,7 @@ function setupProfilingEnvironment({ profilingArgs, profilingCmd }: { profilingC
 const cli = cac();
 
 cli.command('[]', 'Start the development environment')
+  .option('--web', 'Start without electron as a web service (starts the backend too)')
   .option('--web-port <number>', 'The port to use for the web server', {
     default: DEFAULT_BACKEND_PORT,
   })
