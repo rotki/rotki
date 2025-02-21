@@ -49,7 +49,7 @@ fn extract_chain_id_and_address(identifier: &str) -> Option<(u64, String)> {
     Some((chain_id, address))
 }
 
-async fn smaldapp_image_query(
+async fn smoldapp_image_query(
     client: &Client,
     url: &str,
     extension: &'static str,
@@ -86,7 +86,9 @@ async fn smaldapp_image_query(
 
 // extract the bytes for an image from the provided CDN
 async fn query_image_from_cdn(url: &str) -> Option<Bytes> {
-    smaldapp_image_query(&Client::new(), url, "").await.map(|(bytes, _)| bytes)
+    smoldapp_image_query(&Client::new(), url, "")
+        .await
+        .map(|(bytes, _)| bytes)
 }
 
 async fn query_token_icon_and_extension(
@@ -109,7 +111,7 @@ async fn query_token_icon_and_extension(
     ];
 
     for (url, extension) in urls {
-        if let Some(response) = smaldapp_image_query(&client, &url, extension).await {
+        if let Some(response) = smoldapp_image_query(&client, &url, extension).await {
             return Some(response);
         }
     }
@@ -169,18 +171,24 @@ async fn retrieve_icon_bytes(path: PathBuf) -> Option<(Bytes, String)> {
 pub async fn get_asset_path(
     asset_id: &str,
     data_dir: &Path,
+    use_collection_icon: bool,
     globaldb: &globaldb::GlobalDB,
 ) -> PathBuf {
-    let new_asset_id = match globaldb.get_collection_main_asset(asset_id).await {
-        Err(e) => {
-            error!(
-                "Failed to get collection main asset id for {} due to {}",
-                asset_id, e
-            );
-            asset_id.to_string()
+    let new_asset_id: String = if use_collection_icon {
+        match globaldb.get_collection_main_asset(asset_id).await {
+            Err(e) => {
+                error!(
+                    "Failed to get collection main asset id for {} due to {}",
+                    asset_id, e
+                );
+                asset_id.to_string()
+            }
+            Ok(result) => result.unwrap_or_else(|| asset_id.to_string()),
         }
-        Ok(result) => result.unwrap_or_else(|| asset_id.to_string()),
+    } else {
+        asset_id.to_string()
     };
+
     const ASSETS_PATH: &str = "images/assets/all/";
     data_dir
         .join(ASSETS_PATH)
@@ -309,7 +317,10 @@ pub async fn query_icon_remotely(
 
 #[cfg(test)]
 mod tests {
-    use crate::icons::query_token_icon_and_extension;
+    use std::path::Path;
+
+    use crate::create_globaldb;
+    use crate::icons::{get_asset_path, query_token_icon_and_extension};
     use axum::body::Bytes;
     use mockito;
 
@@ -336,5 +347,16 @@ mod tests {
             .create();
         let r = query_token_icon_and_extension(10, address, server.url().as_str()).await;
         assert_eq!(r, None);
+    }
+
+    #[tokio::test]
+    async fn test_collection_flag() {
+        let globaldb = create_globaldb!().await.unwrap();
+        let asset_id = "XDAI";
+        let base_path = Path::new("/fake/base/path");
+        let mut icon_path = get_asset_path(asset_id, base_path, false, &globaldb).await;
+        assert_eq!(base_path.join("images/assets/all/XDAI_small"), icon_path);
+        icon_path = get_asset_path(asset_id, base_path, true, &globaldb).await;
+        assert_eq!(base_path.join("images/assets/all/eip155%3A1%2Ferc20%3A0x6B175474E89094C44Da98b954EedeAC495271d0F_small"), icon_path);
     }
 }
