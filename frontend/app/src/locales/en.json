@@ -4092,9 +4092,9 @@
       "api_secret": "API Secret"
     },
     "chart_limit": {
-      "title": "This graph is not included in the FREE version",
+      "title": "The graph is not included in the FREE version",
       "description": "Experience the full potential of rotki with a Premium subscription.",
-      "statistic": "This statistic view is not included in the FREE version"
+      "statistic": "The statistics view is not included in the FREE version"
     },
     "get": "Get premium",
     "premium_active": "@:premium_settings.title is active",
@@ -5025,7 +5025,7 @@
   "wrapped": {
     "title": "Events Analysis",
     "get_data": "Get data",
-    "free_limit": "This events analysis view is not included in the FREE version",
+    "free_limit": "The events analysis view is not included in the FREE version",
     "filter_by_date": "Filter by date",
     "year_subtitle": "Your DeFi Activity Breakdown",
     "exchange_activity": "Trades by exchange",
