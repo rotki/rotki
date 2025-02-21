@@ -84,16 +84,16 @@ const dateFormatErrorMessage = computed<string>(() => {
 
 const rules = {
   date: {
-    isOnLimit: helpers.withMessage(t('date_time_picker.limit_now'), (v: string): boolean => isDateOnLimit(v)),
-    isValidFormat: helpers.withMessage(
+    isFormatValid: helpers.withMessage(
       () => get(dateFormatErrorMessage),
       (v: string): boolean => {
-        if (get(allowEmpty) && !v)
+        if (get(allowEmpty) && (!v || !/\d/.test(v)))
           return true;
 
         return isValidFormat(v);
       },
     ),
+    isOnLimit: helpers.withMessage(t('date_time_picker.limit_now'), (v: string): boolean => isDateOnLimit(v)),
   },
   timezone: {
     required: helpers.withMessage(t('date_time_picker.timezone_field.non_empty'), required),
@@ -119,7 +119,7 @@ function isValidFormat(date: string): boolean {
 }
 
 function isDateOnLimit(date: string): boolean {
-  if (!get(limitNow))
+  if (!get(limitNow) || !isValidFormat(date))
     return true;
 
   const now = dayjs();
@@ -383,7 +383,7 @@ defineExpose({
             icon
             size="sm"
             class="!p-1.5"
-            v-bind="attrs"
+            v-bind="{ ...attrs, tabIndex: -1 }"
           >
             <RuiIcon name="lu-earth" />
           </RuiButton>
@@ -403,6 +403,7 @@ defineExpose({
         variant="text"
         type="button"
         :disabled="disabled"
+        :tabindex="-1"
         icon
         size="sm"
         class="!p-1.5"

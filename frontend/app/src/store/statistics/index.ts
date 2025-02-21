@@ -1,6 +1,5 @@
 import {
   type BigNumber,
-  type CommonQueryStatusData,
   type HistoricalAssetPricePayload,
   HistoricalAssetPriceResponse,
   type NetValue,
@@ -55,8 +54,6 @@ export const useStatisticsStore = defineStore('statistics', () => {
   const { exchangeRate } = useBalancePricesStore();
   const { assetName } = useAssetInfoRetrieval();
   const premium = usePremium();
-
-  const historicalAssetPriceStatus = ref<CommonQueryStatusData>();
 
   const api = useStatisticsApi();
   const { balances, liabilities } = useAggregatedBalances();
@@ -208,10 +205,6 @@ export const useStatisticsStore = defineStore('statistics', () => {
     }
   };
 
-  const setHistoricalAssetPriceStatus = (status: CommonQueryStatusData): void => {
-    set(historicalAssetPriceStatus, status);
-  };
-
   watch(premium, async () => {
     if (get(logged))
       await fetchNetValue();
@@ -221,10 +214,8 @@ export const useStatisticsStore = defineStore('statistics', () => {
     fetchHistoricalAssetPrice,
     fetchNetValue,
     getNetValue,
-    historicalAssetPriceStatus,
     netValue,
     overall,
-    setHistoricalAssetPriceStatus,
     totalNetWorth,
     totalNetWorthUsd,
   };

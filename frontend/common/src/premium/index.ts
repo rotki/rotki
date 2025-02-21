@@ -36,7 +36,10 @@ export interface StatisticsApi {
   netValue: (startingData: number) => Ref<NetValue>;
   isQueryingDailyPrices: ComputedRef<boolean>;
   queryHistoricalAssetPrices: (payload: HistoricalAssetPricePayload) => Promise<HistoricalAssetPriceResponse>;
-  historicalAssetPriceStatus: Ref<CommonQueryStatusData | undefined>;
+  historicalDailyPriceStatus: Ref<CommonQueryStatusData | undefined>;
+  historicalPriceStatus: Ref<CommonQueryStatusData | undefined>;
+  cancelHistoricPriceTask: () => Promise<void>;
+  cancelDailyHistoricPriceTask: () => Promise<void>;
 }
 
 export interface DateUtilities {

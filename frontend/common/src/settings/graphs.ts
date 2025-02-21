@@ -32,7 +32,6 @@ export interface Timeframe {
   readonly xAxisTimeUnit: TimeUnit;
   readonly xAxisStepSize: number;
   readonly xAxisLabelDisplayFormat: string;
-  readonly tooltipTimeFormat: string;
   readonly timestampRange: number;
 }
 
@@ -40,26 +39,23 @@ export type Timeframes = {
   readonly [timeframe in TimeFramePeriod]: Timeframe;
 };
 
-type TimeframeDefaults = Pick<Timeframe, 'xAxisLabelDisplayFormat' | 'tooltipTimeFormat' | 'xAxisTimeUnit'>;
+type TimeframeDefaults = Pick<Timeframe, 'xAxisLabelDisplayFormat' | 'xAxisTimeUnit'>;
 
 function unitDefaults(timeUnit: TimeUnit): TimeframeDefaults {
   if (timeUnit === TimeUnit.DAY) {
     return {
-      tooltipTimeFormat: 'ddd',
       xAxisLabelDisplayFormat: 'ddd',
       xAxisTimeUnit: timeUnit,
     };
   }
   if (timeUnit === TimeUnit.WEEK) {
     return {
-      tooltipTimeFormat: 'MMM D',
       xAxisLabelDisplayFormat: 'MMM D',
       xAxisTimeUnit: timeUnit,
     };
   }
   if (timeUnit === TimeUnit.MONTH) {
     return {
-      tooltipTimeFormat: 'MMM D, YYYY',
       xAxisLabelDisplayFormat: 'MMM YYYY',
       xAxisTimeUnit: timeUnit,
     };
@@ -158,14 +154,12 @@ export function getTimeframeByRange(startDate: number, endDate: number): Timefra
   if (range < dayTimestamp) {
     return {
       ...usedTimeframe,
-      tooltipTimeFormat: 'MMM D HH:mm',
     };
   }
 
   if (usedTimeframe.xAxisTimeUnit === TimeUnit.DAY && !current) {
     return {
       ...usedTimeframe,
-      tooltipTimeFormat: 'MMM D',
       xAxisLabelDisplayFormat: 'MMM D',
     };
   }

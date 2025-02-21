@@ -47,10 +47,9 @@ export function assetsApi(): AssetsApi {
 
 export function statisticsApi(): StatisticsApi {
   const { isAssetIgnored } = useIgnoredAssetsStore();
-  const statisticsStore = useStatisticsStore();
 
-  const { fetchHistoricalAssetPrice, fetchNetValue, getNetValue } = statisticsStore;
-  const { historicalAssetPriceStatus } = storeToRefs(statisticsStore);
+  const { fetchHistoricalAssetPrice, fetchNetValue, getNetValue } = useStatisticsStore();
+  const { historicalDailyPriceStatus, historicalPriceStatus } = storeToRefs(useHistoricCachePriceStore());
   const {
     queryLatestAssetValueDistribution,
     queryLatestLocationValueDistribution,
@@ -59,16 +58,21 @@ export function statisticsApi(): StatisticsApi {
   } = useStatisticsApi();
   const { queryOwnedAssets } = useAssetManagementApi();
 
-  const { isTaskRunning } = useTaskStore();
+  const { cancelTaskByTaskType, isTaskRunning } = useTaskStore();
 
   return {
     async assetValueDistribution(): Promise<TimedAssetBalances> {
       return queryLatestAssetValueDistribution();
     },
-    async fetchNetValue(): Promise<void> {
-      await fetchNetValue();
+    async cancelDailyHistoricPriceTask(): Promise<void> {
+      await cancelTaskByTaskType(TaskType.FETCH_DAILY_HISTORIC_PRICE);
     },
-    historicalAssetPriceStatus,
+    async cancelHistoricPriceTask(): Promise<void> {
+      await cancelTaskByTaskType(TaskType.FETCH_HISTORIC_PRICE);
+    },
+    fetchNetValue,
+    historicalDailyPriceStatus,
+    historicalPriceStatus,
     isQueryingDailyPrices: isTaskRunning(TaskType.FETCH_DAILY_HISTORIC_PRICE),
     async locationValueDistribution(): Promise<LocationData> {
       return queryLatestLocationValueDistribution();

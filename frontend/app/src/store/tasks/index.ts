@@ -14,6 +14,7 @@ import {
 import { removeKey } from '@/utils/data';
 import { logger } from '@/utils/logging';
 import { useTaskApi } from '@/composables/api/task';
+import { arrayify } from '@/utils/array';
 import type { ActionResult } from '@rotki/common';
 
 const USER_CANCELLED_TASK = 'task_cancelled_by_user';
@@ -184,6 +185,14 @@ export const useTaskStore = defineStore('tasks', () => {
     }
   };
 
+  const cancelTaskByTaskType = async (taskTypes: TaskType | TaskType[]): Promise<void> => {
+    const types = arrayify(taskTypes);
+
+    const tasks = get(taskList).filter(item => types.includes(item.type));
+
+    await Promise.allSettled(tasks.map(async task => cancelTask(task)));
+  };
+
   const awaitTask = async <R, M extends TaskMeta>(
     id: number,
     type: TaskType,
@@ -349,6 +358,7 @@ export const useTaskStore = defineStore('tasks', () => {
     addTask,
     awaitTask,
     cancelTask,
+    cancelTaskByTaskType,
     hasRunningTasks,
     isTaskRunning,
     locked,

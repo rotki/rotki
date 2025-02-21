@@ -7,7 +7,6 @@ import {
   getTimeframeByRange,
 } from '@rotki/common';
 import { Chart, type ChartConfiguration, type ChartOptions, type TooltipOptions } from 'chart.js';
-import dayjs from 'dayjs';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useGraph, useTooltip } from '@/composables/graphs';
@@ -15,6 +14,7 @@ import ExportSnapshotDialog from '@/components/dashboard/ExportSnapshotDialog.vu
 import SnapshotActionButton from '@/components/dashboard/SnapshotActionButton.vue';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import GraphTooltipWrapper from '@/components/graphs/GraphTooltipWrapper.vue';
+import { displayDateFormatter } from '@/data/date-formatter';
 import type { ValueOverTime } from '@/types/graphs';
 
 type ActiveRangeButton = 'start' | 'end' | 'both';
@@ -29,7 +29,7 @@ const { t } = useI18n();
 
 const { chartData } = toRefs(props);
 const { graphZeroBased, showGraphRangeSelector } = storeToRefs(useFrontendSettingsStore());
-const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
+const { currencySymbol, dateDisplayFormat } = storeToRefs(useGeneralSettingsStore());
 const { isDark } = useRotkiTheme();
 
 const selectedTimestamp = ref<number>(0);
@@ -312,7 +312,7 @@ function createTooltip(): Partial<TooltipOptions> {
 
     const { x, y } = item.parsed;
 
-    const time = dayjs(x).format(get(activeTimeframe).tooltipTimeFormat);
+    const time = displayDateFormatter.format(new Date(x), get(dateDisplayFormat));
 
     set(tooltipContent, {
       currentBalance: get(showVirtualCurrentData) && item.dataIndex === get(balanceData).length - 1,
@@ -626,27 +626,19 @@ onBeforeUnmount(() => {
       />
       <GraphTooltipWrapper :tooltip-option="tooltipDisplayOption">
         <template #content>
-          <div>
-            <div class="font-bold text-center">
-              <AmountDisplay
-                force-currency
-                show-currency="symbol"
-                :value="tooltipContent.value"
-                :fiat-currency="currencySymbol"
-              />
-            </div>
+          <div class="py-1">
             <div
-              v-if="tooltipContent.currentBalance"
-              class="text-rui-text-secondary text-center"
+              class="text-rui-text-secondary text-xs mb-1"
             >
-              {{ t('net_worth_chart.current_balance') }}
+              {{ tooltipContent.currentBalance ? t('net_worth_chart.current_balance') : tooltipContent.time }}
             </div>
-            <div
-              v-else
-              class="text-rui-text-secondary text-center"
-            >
-              {{ tooltipContent.time }}
-            </div>
+            <AmountDisplay
+              class="font-bold"
+              force-currency
+              show-currency="symbol"
+              :value="tooltipContent.value"
+              :fiat-currency="currencySymbol"
+            />
           </div>
         </template>
       </GraphTooltipWrapper>
