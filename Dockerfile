@@ -12,7 +12,7 @@ RUN if [ "$BUILDARCH" != "amd64" ]; then \
       apt-get update && \
       apt-get install -y build-essential python3 --no-install-recommends; \
     fi && \
-    npm install -g pnpm@9 && \
+    npm install -g pnpm@10 && \
     pnpm install --frozen-lockfile && \
     pnpm run docker:build
 
