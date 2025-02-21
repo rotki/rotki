@@ -7,15 +7,17 @@ import { useGeneralSettingsStore } from '@/store/settings/general';
 import { usePriceApi } from '@/composables/api/balances/price';
 import { useItemCache } from '@/composables/item-cache';
 import type { StatsPriceQueryData } from '@/types/websocket-messages';
-import type { BigNumber } from '@rotki/common';
+import type { BigNumber, CommonQueryStatusData } from '@rotki/common';
 import type { TaskMeta } from '@/types/task';
 
 export const useHistoricCachePriceStore = defineStore('prices/historic-cache', () => {
   const statsPriceQueryStatus = ref<Record<string, StatsPriceQueryData>>({});
+  const historicalPriceStatus = ref<CommonQueryStatusData>();
+  const historicalDailyPriceStatus = ref<CommonQueryStatusData>();
 
   const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
   const { queryHistoricalRates } = usePriceApi();
-  const { awaitTask } = useTaskStore();
+  const { awaitTask, cancelTaskByTaskType } = useTaskStore();
   const { t } = useI18n();
   const { notify } = useNotificationsStore();
 
@@ -120,7 +122,8 @@ export const useHistoricCachePriceStore = defineStore('prices/historic-cache', (
     });
   };
 
-  watch(currencySymbol, () => {
+  watch(currencySymbol, async () => {
+    await cancelTaskByTaskType([TaskType.FETCH_HISTORIC_PRICE, TaskType.FETCH_DAILY_HISTORIC_PRICE]);
     reset();
   });
 
@@ -146,16 +149,28 @@ export const useHistoricCachePriceStore = defineStore('prices/historic-cache', (
     set(statsPriceQueryStatus, currentData);
   };
 
+  const setHistoricalDailyPriceStatus = (status: CommonQueryStatusData): void => {
+    set(historicalDailyPriceStatus, status);
+  };
+
+  const setHistoricalPriceStatus = (status: CommonQueryStatusData): void => {
+    set(historicalPriceStatus, status);
+  };
+
   return {
     cache,
     createKey,
     getProtocolStatsPriceQueryStatus,
+    historicalDailyPriceStatus,
+    historicalPriceStatus,
     historicPriceInCurrentCurrency,
     isPending,
     reset,
     resetHistoricalPricesData,
     resetProtocolStatsPriceQueryStatus,
     retrieve,
+    setHistoricalDailyPriceStatus,
+    setHistoricalPriceStatus,
     setStatsPriceQueryStatus,
   };
 });

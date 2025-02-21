@@ -3709,7 +3709,7 @@
       "fetch_daily_prices_hint": "rotki will try to get the daily prices of the assets to fill the gap between events.",
       "fetching_graph_data": "Fetching graph data",
       "fetching_graph_daily_data": "Fetching graph daily data ({processed}/{total})",
-      "fetching_historical_prices": "Fetching historical prices",
+      "fetching_historical_prices": "Fetching historical prices ({processed}/{total})",
       "max_visible": "Maximum assets to show",
       "max_visible_required": "You cannot show more than {availableAssets} assets",
       "min_visible_required": "You have to show at least one asset.",

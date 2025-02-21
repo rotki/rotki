@@ -34,6 +34,7 @@ export const SocketMessageProgressUpdateSubType = {
   EVM_UNDECODED_TRANSACTIONS: 'evm_undecoded_transactions',
   HISTORICAL_PRICE_QUERY_STATUS: 'historical_price_query_status',
   LIQUITY_STAKING_QUERY: 'liquity_staking_query',
+  MULTIPLE_PRICES_QUERY_STATUS: 'multiple_prices_query_status',
   PROTOCOL_CACHE_UPDATES: 'protocol_cache_updates',
   STATS_PRICE_QUERY: 'stats_price_query',
 } as const;
@@ -192,6 +193,10 @@ export const StatsPriceQueryDataWithSubtype = StatsPriceQueryData.extend({
   subtype: z.literal(SocketMessageProgressUpdateSubType.STATS_PRICE_QUERY),
 });
 
+export const MultiplePricesQueryStatusWithSubtype = CommonQueryStatusData.extend({
+  subtype: z.literal(SocketMessageProgressUpdateSubType.MULTIPLE_PRICES_QUERY_STATUS),
+});
+
 export const CsvImportResult = z.object({
   messages: z.array(z.object({
     isError: z.boolean(),
@@ -216,6 +221,7 @@ export const ProgressUpdateResultData = z.discriminatedUnion('subtype', [
   CsvImportResultWithSubtype,
   LiquityStakingQueryDataWithSubtype,
   StatsPriceQueryDataWithSubtype,
+  MultiplePricesQueryStatusWithSubtype,
 ]);
 
 export type ProgressUpdateResultData = z.infer<typeof ProgressUpdateResultData>;
