@@ -1,8 +1,8 @@
 import {
   type BigNumber,
+  type CommonQueryStatusData,
   type HistoricalAssetPricePayload,
   HistoricalAssetPriceResponse,
-  type HistoricalPriceQueryStatusData,
   type NetValue,
   type TimeFramePeriod,
   TimeUnit,
@@ -55,7 +55,7 @@ export const useStatisticsStore = defineStore('statistics', () => {
   const { exchangeRate } = useBalancePricesStore();
   const { assetName } = useAssetInfoRetrieval();
 
-  const historicalAssetPriceStatus = ref<HistoricalPriceQueryStatusData>();
+  const historicalAssetPriceStatus = ref<CommonQueryStatusData>();
 
   const api = useStatisticsApi();
   const { lpTotal } = useLiquidityPosition();
@@ -210,7 +210,7 @@ export const useStatisticsStore = defineStore('statistics', () => {
     }
   };
 
-  const setHistoricalAssetPriceStatus = (status: HistoricalPriceQueryStatusData): void => {
+  const setHistoricalAssetPriceStatus = (status: CommonQueryStatusData): void => {
     set(historicalAssetPriceStatus, status);
   };
 

@@ -3214,7 +3214,8 @@
     }
   },
   "kraken_staking_events": {
-    "refresh_tooltip": "Refresh your Kraken staking events"
+    "refresh_tooltip": "Refresh your Kraken staking events",
+    "query_historical_price": "Querying Kraken historical prices ({processed}/{total})"
   },
   "kraken_staking_overview": {
     "current": "current",
@@ -3276,7 +3277,9 @@
   "liquity_staking_details": {
     "has_proxy_addresses": "has {length} proxy address(es):",
     "refresh_tooltip": "Refresh the staked amounts and prices",
-    "select_account": "Select account"
+    "select_account": "Select account",
+    "query_staking_data": "Querying Liquity staking data ({processed}/{total})",
+    "query_historical_price": "Querying Liquity historical prices ({processed}/{total})"
   },
   "liquity_staking_events": {
     "title": "Stake Events"

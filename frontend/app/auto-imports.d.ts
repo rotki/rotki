@@ -18,6 +18,7 @@ declare global {
   const BaseAsset: typeof import('@rotki/common')['BaseAsset']
   const BigNumber: typeof import('@rotki/common')['BigNumber']
   const Blockchain: typeof import('@rotki/common')['Blockchain']
+  const CommonQueryStatusData: typeof import('@rotki/common')['CommonQueryStatusData']
   const DARK_THEME: typeof import('@rotki/common')['DARK_THEME']
   const EffectScope: typeof import('vue')['EffectScope']
   const Eth2DailyStats: typeof import('@rotki/common')['Eth2DailyStats']
@@ -451,6 +452,7 @@ declare module 'vue' {
     readonly BaseAsset: UnwrapRef<typeof import('@rotki/common')['BaseAsset']>
     readonly BigNumber: UnwrapRef<typeof import('@rotki/common')['BigNumber']>
     readonly Blockchain: UnwrapRef<typeof import('@rotki/common')['Blockchain']>
+    readonly CommonQueryStatusData: UnwrapRef<typeof import('@rotki/common')['CommonQueryStatusData']>
     readonly DARK_THEME: UnwrapRef<typeof import('@rotki/common')['DARK_THEME']>
     readonly EffectScope: UnwrapRef<typeof import('vue')['EffectScope']>
     readonly Eth2DailyStats: UnwrapRef<typeof import('@rotki/common')['Eth2DailyStats']>
@@ -460,7 +462,6 @@ declare module 'vue' {
     readonly EvmTokenKindEnum: UnwrapRef<typeof import('@rotki/common')['EvmTokenKindEnum']>
     readonly HistoricalAssetPricePayload: UnwrapRef<typeof import('@rotki/common')['HistoricalAssetPricePayload']>
     readonly HistoricalAssetPriceResponse: UnwrapRef<typeof import('@rotki/common')['HistoricalAssetPriceResponse']>
-    readonly HistoricalPriceQueryStatusData: UnwrapRef<typeof import('@rotki/common')['HistoricalPriceQueryStatusData']>
     readonly HistoryEventEntryType: UnwrapRef<typeof import('@rotki/common')['HistoryEventEntryType']>
     readonly LIGHT_THEME: UnwrapRef<typeof import('@rotki/common')['LIGHT_THEME']>
     readonly LiquityBalances: UnwrapRef<typeof import('@rotki/common')['LiquityBalances']>

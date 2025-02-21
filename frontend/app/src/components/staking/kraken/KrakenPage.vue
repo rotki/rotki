@@ -11,6 +11,7 @@ import AppImage from '@/components/common/AppImage.vue';
 import FullSizeContent from '@/components/common/FullSizeContent.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import { useBalances } from '@/composables/balances';
+import { useHistoricCachePriceStore } from '@/store/prices/historic';
 import type { RouteLocationRaw } from 'vue-router';
 import type { KrakenStakingDateFilter } from '@/types/staking';
 
@@ -21,6 +22,8 @@ const store = useKrakenStakingStore();
 const { $reset, load } = store;
 const { events } = toRefs(store);
 const { connectedExchanges } = storeToRefs(useExchangesStore());
+const { resetProtocolStatsPriceQueryStatus } = useHistoricCachePriceStore();
+
 const { refreshPrices } = useBalances();
 
 const { t } = useI18n();
@@ -41,6 +44,7 @@ const isKrakenConnected = computed(() => {
 });
 
 async function refresh(ignoreCache: boolean = false) {
+  resetProtocolStatsPriceQueryStatus('kraken');
   await load(ignoreCache, get(filters));
   const assets = get(events).received.map(item => item.asset);
   await refreshPrices(ignoreCache, assets);
@@ -120,6 +124,7 @@ onUnmounted(() => {
     <KrakenStaking
       v-else
       v-model="filters"
+      :loading="refreshing"
     />
   </TablePageLayout>
 </template>

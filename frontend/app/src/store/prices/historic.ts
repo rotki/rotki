@@ -6,10 +6,13 @@ import { useNotificationsStore } from '@/store/notifications';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { usePriceApi } from '@/composables/api/balances/price';
 import { useItemCache } from '@/composables/item-cache';
+import type { StatsPriceQueryData } from '@/types/websocket-messages';
 import type { BigNumber } from '@rotki/common';
 import type { TaskMeta } from '@/types/task';
 
 export const useHistoricCachePriceStore = defineStore('prices/historic-cache', () => {
+  const statsPriceQueryStatus = ref<Record<string, StatsPriceQueryData>>({});
+
   const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
   const { queryHistoricalRates } = usePriceApi();
   const { awaitTask } = useTaskStore();
@@ -121,14 +124,39 @@ export const useHistoricCachePriceStore = defineStore('prices/historic-cache', (
     reset();
   });
 
+  const getProtocolStatsPriceQueryStatus = (counterparty: string): ComputedRef<StatsPriceQueryData | undefined> => computed(() => get(statsPriceQueryStatus)[counterparty]);
+
+  const setStatsPriceQueryStatus = (data: StatsPriceQueryData): void => {
+    const currentData = {
+      ...get(statsPriceQueryStatus),
+    };
+
+    currentData[data.counterparty] = data;
+
+    set(statsPriceQueryStatus, currentData);
+  };
+
+  const resetProtocolStatsPriceQueryStatus = (counterparty: string): void => {
+    const currentData = {
+      ...get(statsPriceQueryStatus),
+    };
+
+    delete currentData[counterparty];
+
+    set(statsPriceQueryStatus, currentData);
+  };
+
   return {
     cache,
     createKey,
+    getProtocolStatsPriceQueryStatus,
     historicPriceInCurrentCurrency,
     isPending,
     reset,
     resetHistoricalPricesData,
+    resetProtocolStatsPriceQueryStatus,
     retrieve,
+    setStatsPriceQueryStatus,
   };
 });
 
