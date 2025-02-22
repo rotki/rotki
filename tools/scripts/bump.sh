@@ -44,9 +44,9 @@ if [ "$1" != 'minor' ] && [ "$1" != 'major' ] && [ "$1" != 'patch' ]; then
 fi
 
 PNPM_VERSION="$(pnpm -v)"
-vercomp $PNPM_VERSION "9.0.0"
+vercomp $PNPM_VERSION "10.0.0"
 if [ "$?" == '2' ]; then
-    echo 'pnpm version should be > 9.0.0'
+    echo 'pnpm version should be > 10.0.0'
     exit 1
 fi
 
