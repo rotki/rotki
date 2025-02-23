@@ -81,7 +81,7 @@ def _handle_images(data_dir: Path, icons_path: Path | None) -> None:
 
 
 def maybe_restructure_rotki_data_directory(data_dir: Path) -> None:
-    """Restructures the data directory to contain users under a specficic subdirectory
+    """Restructures the data directory to contain users under a specific subdirectory
     and other kind of data under other ones. Essentially implement:
     https://github.com/rotki/rotki/issues/4841
 
