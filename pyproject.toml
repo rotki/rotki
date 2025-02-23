@@ -107,7 +107,7 @@ module = [
     "rotkehlchen.tests.api.test_history",
     "rotkehlchen.tests.api.test_icons",
     "rotkehlchen.tests.api.test_ignored_actions",
-    "rotkehlchen.tests.api.test_liquidy",
+    "rotkehlchen.tests.api.test_liquity",
     "rotkehlchen.tests.api.test_location_asset_mappings",
     "rotkehlchen.tests.api.test_locations",
     "rotkehlchen.tests.api.test_periodic",
