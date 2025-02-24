@@ -1,6 +1,6 @@
 import random
 from http import HTTPStatus
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pytest
 import requests
@@ -22,6 +22,9 @@ from rotkehlchen.tests.utils.api import (
 from rotkehlchen.tests.utils.constants import A_GBP
 from rotkehlchen.types import Price, Timestamp
 
+if TYPE_CHECKING:
+    from rotkehlchen.tests.fixtures.websockets import WebsocketReader
+
 
 @pytest.mark.parametrize('mocked_price_queries', [{
     'BTC': {
@@ -39,7 +42,12 @@ from rotkehlchen.types import Price, Timestamp
     },
     'XRP': {'USD': {1611166335: FVal('0')}},
 }])
-def test_get_historical_assets_price(rotkehlchen_api_server: APIServer) -> None:
+@pytest.mark.parametrize('legacy_messages_via_websockets', [True])
+def test_get_historical_assets_price(
+        rotkehlchen_api_server: APIServer,
+        websocket_connection: 'WebsocketReader',
+        legacy_messages_via_websockets: bool,  # pylint: disable=unused-argument
+) -> None:
     """Test given a list of asset-timestamp tuples it returns the asset price
     at the given timestamp.
     """
@@ -80,6 +88,16 @@ def test_get_historical_assets_price(rotkehlchen_api_server: APIServer) -> None:
     }
     assert result['assets']['XRP'] == {'1611166335': '0'}
     assert result['target_asset'] == 'USD'
+    websocket_connection.wait_until_messages_num(num=3, timeout=2)
+    for expected_processed_events in (0, 5, 6):
+        assert websocket_connection.pop_message() == {
+            'type': 'progress_updates',
+            'data': {
+                'total': 6,
+                'processed': expected_processed_events,
+                'subtype': 'multiple_prices_query_status',
+            },
+        }
 
 
 def _assert_expected_prices(

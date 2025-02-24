@@ -507,3 +507,25 @@ Kraken and Liquity query prices for historical events and they report the status
 - ``total``: Total number of history events that need their price queried.
 - ``processed``: Number of events processed.
 - ``subtype``: Set to "stats_price_query" to identify prices queries for statistics.
+
+
+Multiple timestamp price queries
+=================================
+
+Track the progress for when we need to query prices at multiple timestamps.
+
+::
+
+    {
+        "type": "progress_updates",
+        "data": {
+            "total": 6,
+            "processed": 5,
+            "subtype": "multiple_prices_query_status"
+        }
+    }
+
+
+- ``total``: Total number of combinations asset-price that will be queried.
+- ``processed``: Number of prices queried.
+- ``subtype``: Set to "multiple_prices_query_status" to identify prices queries.

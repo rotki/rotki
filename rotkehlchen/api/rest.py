@@ -3356,42 +3356,6 @@ class RestAPI:
         else:
             return api_response(result=OK_RESULT)
 
-    @staticmethod
-    def _get_historical_assets_price(
-            assets_timestamp: list[tuple[Asset, Timestamp]],
-            target_asset: Asset,
-    ) -> dict[str, Any]:
-        """Return the price of the assets at the given timestamps in the target
-        asset currency.
-        """
-        log.debug(
-            f'Querying the historical {target_asset.identifier} price of these assets: '
-            f'{", ".join(f"{asset.identifier} at {ts}" for asset, ts in assets_timestamp)}',
-            assets_timestamp=assets_timestamp,
-        )
-        assets_price: defaultdict[Asset, defaultdict] = defaultdict(lambda: defaultdict(lambda: ZERO_PRICE))  # noqa: E501
-        for asset, timestamp in assets_timestamp:
-            try:
-                price = PriceHistorian().query_historical_price(
-                    from_asset=asset,
-                    to_asset=target_asset,
-                    timestamp=timestamp,
-                )
-            except (RemoteError, NoPriceForGivenTimestamp) as e:
-                log.warning(
-                    f'Could not query the historical {target_asset.identifier} price for '
-                    f'{asset.identifier} at time {timestamp} due to: {e!s}. Skipping',
-                )
-                continue
-
-            assets_price[asset][timestamp] = price
-
-        result = {
-            'assets': {k: dict(v) for k, v in assets_price.items()},
-            'target_asset': target_asset,
-        }
-        return _wrap_in_ok_result(process_result(result))
-
     @async_api_call()
     def get_historical_assets_price(
             self,
@@ -3413,10 +3377,16 @@ class RestAPI:
 
             return _wrap_in_ok_result(result)
 
-        return self._get_historical_assets_price(
+        assets_price = PriceHistorian.query_multiple_prices(
             assets_timestamp=assets_timestamp,
             target_asset=target_asset,
+            msg_aggregator=self.rotkehlchen.msg_aggregator,
         )
+        result = {
+            'assets': {k: dict(v) for k, v in assets_price.items()},
+            'target_asset': target_asset,
+        }
+        return _wrap_in_ok_result(process_result(result))
 
     @async_api_call()
     def sync_data(self, action: Literal['upload', 'download']) -> dict[str, Any]:
