@@ -185,12 +185,10 @@ async function importSnapshot() {
         </div>
         <SnapshotImportDialog
           v-model="importSnapshotDialog"
-          :balance-file="balanceSnapshotFile"
-          :location-file="locationDataSnapshotFile"
+          v-model:balance-file="balanceSnapshotFile"
+          v-model:location-file="locationDataSnapshotFile"
           :loading="importSnapshotLoading"
           @import="importSnapshot()"
-          @update:balance-file="balanceSnapshotFile = $event"
-          @update:location-file="locationDataSnapshotFile = $event"
         />
       </div>
     </div>

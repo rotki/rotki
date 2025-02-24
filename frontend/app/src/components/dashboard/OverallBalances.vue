@@ -4,7 +4,6 @@ import dayjs from 'dayjs';
 import { Section } from '@/types/status';
 import { isPeriodAllowed } from '@/utils/settings';
 import { useStatusStore } from '@/store/status';
-import { useSessionAuthStore } from '@/store/session/auth';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useStatisticsStore } from '@/store/statistics';
 import { useSessionSettingsStore } from '@/store/settings/session';
@@ -22,7 +21,7 @@ const { update } = sessionStore;
 const { timeframe } = storeToRefs(sessionStore);
 const premium = usePremium();
 const statistics = useStatisticsStore();
-const { fetchNetValue, getNetValue } = statistics;
+const { getNetValue } = statistics;
 const { totalNetWorth } = storeToRefs(statistics);
 const frontendStore = useFrontendSettingsStore();
 const { visibleTimeframes } = storeToRefs(frontendStore);
@@ -101,13 +100,6 @@ async function setTimeframe(value: TimeFrameSetting) {
   sessionStore.update({ timeframe: value });
   await frontendStore.updateSetting({ lastKnownTimeframe: value });
 }
-
-const { logged } = storeToRefs(useSessionAuthStore());
-
-watch(premium, async () => {
-  if (get(logged))
-    await fetchNetValue();
-});
 
 onMounted(() => {
   const isPremium = get(premium);

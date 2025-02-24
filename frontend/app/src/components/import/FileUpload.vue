@@ -166,6 +166,12 @@ watch(uploaded, (uploaded) => {
 
 watch(errorMessage, message => onError(message));
 
+watch(file, (file) => {
+  if (!file) {
+    removeFile();
+  }
+});
+
 function formatFileFilter(fileFilter: string) {
   return fileFilter
     .split(',')
