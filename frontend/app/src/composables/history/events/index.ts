@@ -26,6 +26,7 @@ interface UseHistoryEventsReturn {
   addHistoryEvent: (event: NewHistoryEventPayload) => Promise<ActionStatus<ValidationErrors | string>>;
   editHistoryEvent: (event: EditHistoryEventPayload) => Promise<ActionStatus<ValidationErrors | string>>;
   deleteHistoryEvent: (eventIds: number[], forceDelete?: boolean) => Promise<ActionStatus>;
+  getEarliestEventTimestamp: () => Promise<number | undefined>;
 }
 
 export function useHistoryEvents(): UseHistoryEventsReturn {
@@ -140,10 +141,27 @@ export function useHistoryEvents(): UseHistoryEventsReturn {
     return { message, success };
   };
 
+  const getEarliestEventTimestamp = async (): Promise<number | undefined> => {
+    const response = await fetchHistoryEvents({
+      ascending: [true],
+      groupByEventIds: true,
+      limit: 1,
+      offset: 0,
+      orderByAttributes: ['timestamp'],
+    });
+
+    if (response.data.length === 1) {
+      return Math.floor(response.data[0].timestamp / 1000);
+    }
+
+    return undefined;
+  };
+
   return {
     addHistoryEvent,
     deleteHistoryEvent,
     editHistoryEvent,
     fetchHistoryEvents,
+    getEarliestEventTimestamp,
   };
 }
