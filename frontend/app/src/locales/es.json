@@ -514,12 +514,6 @@
           "message": "Failure to fetch the queriable addresses: {message}"
         }
       },
-      "fetch_watchers": {
-        "error": {
-          "message": "Error: {message}",
-          "title": "Fetching watchers"
-        }
-      },
       "force_sync": {
         "error": {
           "message": "There was an error while performing the sync: {error}",

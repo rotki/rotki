@@ -634,12 +634,6 @@
           "message": "Échec de la récupération des adresses interrogeables : {message}"
         }
       },
-      "fetch_watchers": {
-        "error": {
-          "message": "Erreur : {message}",
-          "title": "Récupération des observateurs"
-        }
-      },
       "force_sync": {
         "error": {
           "message": "Une erreur est survenue lors de la synchronisation : {error}",

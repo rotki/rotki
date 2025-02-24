@@ -7,7 +7,6 @@ import { useLocationStore } from '@/store/locations';
 import { useWhitelistedAssetsStore } from '@/store/assets/whitelisted';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useTagStore } from '@/store/session/tags';
-import { useWatchersStore } from '@/store/session/watchers';
 import { useSessionAuthStore } from '@/store/session/auth';
 import { useBalances } from '@/composables/balances';
 import { useStatusUpdater } from '@/composables/status';
@@ -16,7 +15,6 @@ interface UseDataLoaderReturn { load: () => void }
 
 export function useDataLoader(): UseDataLoaderReturn {
   const { shouldFetchData } = storeToRefs(useSessionAuthStore());
-  const { fetchWatchers } = useWatchersStore();
   const { fetchTags } = useTagStore();
   const { fetchIgnoredAssets } = useIgnoredAssetsStore();
   const { fetchWhitelistedAssets } = useWhitelistedAssetsStore();
@@ -31,7 +29,6 @@ export function useDataLoader(): UseDataLoaderReturn {
     await Promise.allSettled([
       fetchIgnoredAssets(),
       fetchWhitelistedAssets(),
-      fetchWatchers(),
       fetch(),
       fetchNetValue(),
     ]);

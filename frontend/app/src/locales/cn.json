@@ -519,12 +519,6 @@
           "message": "获取可查询地址失败：{message}"
         }
       },
-      "fetch_watchers": {
-        "error": {
-          "message": "错误：{message}",
-          "title": "获取观察者"
-        }
-      },
       "force_sync": {
         "error": {
           "message": "执行同步时出错：{error}",
