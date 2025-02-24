@@ -3,10 +3,16 @@ import FileUpload from '@/components/import/FileUpload.vue';
 
 const model = defineModel<boolean>({ required: true });
 
-const props = withDefaults(
+const balanceFile = defineModel<File>('balanceFile', {
+  default: undefined,
+});
+
+const locationFile = defineModel<File>('locationFile', {
+  default: undefined,
+});
+
+withDefaults(
   defineProps<{
-    balanceFile?: File;
-    locationFile?: File;
     loading?: boolean;
     persistent?: boolean;
   }>(),
@@ -18,28 +24,9 @@ const props = withDefaults(
 
 const emit = defineEmits<{
   (e: 'import'): boolean;
-  (e: 'update:balance-file', file?: File): void;
-  (e: 'update:location-file', file?: File): void;
 }>();
 
 const { t } = useI18n();
-const balanceFile = computed<File | undefined>({
-  get() {
-    return props.balanceFile;
-  },
-  set(value) {
-    emit('update:balance-file', value);
-  },
-});
-
-const locationFile = computed<File | undefined>({
-  get() {
-    return props.locationFile;
-  },
-  set(value) {
-    emit('update:location-file', value);
-  },
-});
 
 const complete = logicAnd(balanceFile, locationFile);
 </script>
