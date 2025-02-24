@@ -4,7 +4,6 @@ import { logger } from '@/utils/logging';
 import { BalanceSource } from '@/types/settings/frontend-settings';
 import { useExchangeBalancesStore } from '@/store/balances/exchanges';
 import { useManualBalancesStore } from '@/store/balances/manual';
-import { useWatchersStore } from '@/store/session/watchers';
 import { usePeriodicStore } from '@/store/session/periodic';
 import { useSessionAuthStore } from '@/store/session/auth';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
@@ -16,7 +15,6 @@ import { useMessageHandling } from '@/composables/message-handling';
 
 const PERIODIC = 'periodic';
 const TASK = 'task';
-const WATCHER = 'watcher';
 const BALANCES = 'balances';
 
 export const useMonitorStore = defineStore('monitor', () => {
@@ -25,7 +23,6 @@ export const useMonitorStore = defineStore('monitor', () => {
   const { canRequestData } = storeToRefs(useSessionAuthStore());
   const { check } = usePeriodicStore();
   const { consume } = useMessageHandling();
-  const { fetchWatchers } = useWatchersStore();
   const { monitor } = useTaskStore();
   const { autoRefresh } = useBalances();
   const { fetchManualBalances } = useManualBalancesStore();
@@ -76,24 +73,6 @@ export const useMonitorStore = defineStore('monitor', () => {
     }
   };
 
-  const startWatcherMonitoring = (restarting: boolean): void => {
-    const activeMonitors = get(monitors);
-    if (!activeMonitors[WATCHER]) {
-      if (!restarting && get(canRequestData))
-        startPromise(fetchWatchers());
-
-      // check for watchers every 6 minutes (approx. half the firing time
-      // of the server-side watchers)
-      activeMonitors[WATCHER] = setInterval(() => {
-        if (!get(canRequestData))
-          return;
-
-        startPromise(fetchWatchers());
-      }, 360000);
-      set(monitors, activeMonitors);
-    }
-  };
-
   const startBalanceRefresh = (): void => {
     const period = get(refreshPeriod) * 60 * 1000;
     const activeMonitors = get(monitors);
@@ -113,7 +92,6 @@ export const useMonitorStore = defineStore('monitor', () => {
   const start = function (restarting = false): void {
     startPromise(connectWebSocket(restarting));
     startTaskMonitoring(restarting);
-    startWatcherMonitoring(restarting);
     startBalanceRefresh();
   };
 

@@ -48,33 +48,6 @@ export interface SessionSettings {
   animationsEnabled: boolean;
 }
 
-export const WatcherType = 'makervault_collateralization_ratio';
-
-export const WatcherOpTypes = z.enum(['lt', 'le', 'gt', 'ge']);
-
-export const BaseWatcher = z.object({
-  identifier: z.string(),
-});
-
-export const MakerVaultCollateralizationRatioArgs = z.object({
-  op: WatcherOpTypes,
-  ratio: z.string(),
-  vaultId: z.string(),
-});
-
-export const MakerVaultCollateralizationRatioWatcher = BaseWatcher.extend({
-  args: MakerVaultCollateralizationRatioArgs,
-  type: z.literal(WatcherType),
-});
-
-export const Watcher = MakerVaultCollateralizationRatioWatcher;
-
-export type Watcher = z.infer<typeof Watcher>;
-
-export const Watchers = z.array(Watcher);
-
-export type Watchers = z.infer<typeof Watchers>;
-
 export type QueriedAddresses = {
   readonly [module in CamelCase<Module>]?: string[];
 };
