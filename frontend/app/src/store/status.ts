@@ -1,5 +1,5 @@
 import { isEmpty } from 'es-toolkit/compat';
-import { Section, Status, defiSections } from '@/types/status';
+import { Section, Status } from '@/types/status';
 import type { StatusPayload } from '@/types/action';
 
 type SectionStatus = Record<string, Status>;
@@ -25,17 +25,6 @@ function matchesStatus(statuses: SectionStatus, subsection: string, fn: (status:
 
 export const useStatusStore = defineStore('status', () => {
   const status = ref<StatusState>({});
-
-  const resetDefiStatus = (): void => {
-    const copy = { ...get(status) };
-
-    defiSections.forEach((section) => {
-      if (copy[section])
-        delete copy[section];
-    });
-
-    set(status, copy);
-  };
 
   const resetStatus = (section: Section, subsection: string = defaultSection): void => {
     const statuses = { ...get(status) };
@@ -101,7 +90,6 @@ export const useStatusStore = defineStore('status', () => {
     detailsLoading,
     getStatus,
     isLoading,
-    resetDefiStatus,
     resetStatus,
     setStatus,
     shouldShowLoadingScreen,

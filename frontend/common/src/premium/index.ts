@@ -11,11 +11,9 @@ import type {
 } from '../statistics';
 import type { Theme, Themes } from '../settings/themes';
 import type { DebugSettings, FrontendSettingsPayload, TimeUnit } from '../settings/frontend';
-import type { LpType, ProfitLossModel } from '../defi/common';
 import type { MaybeRef } from '@vueuse/core';
 import type { ComputedRef, Ref } from 'vue';
 import type { AssetInfo } from '../data';
-import type { XswapBalance, XswapPool, XswapPoolProfit } from '../defi/xswap';
 import type { BigNumber } from '../numbers';
 import type { AssetBalanceWithPrice } from '../balances';
 
@@ -53,22 +51,6 @@ export interface DateUtilities {
   convertToTimestamp: (date: string, dateFormat?: string) => number;
 }
 
-export interface CompoundApi {
-  compoundRewards: Ref<ProfitLossModel[]>;
-  compoundDebtLoss: Ref<ProfitLossModel[]>;
-  compoundLiquidationProfit: Ref<ProfitLossModel[]>;
-  compoundInterestProfit: Ref<ProfitLossModel[]>;
-}
-
-export interface SushiApi {
-  balances: (addresses: string[]) => Ref<XswapBalance[]>;
-  poolProfit: (addresses: string[]) => Ref<XswapPoolProfit[]>;
-  addresses: Ref<string[]>;
-  pools: Ref<XswapPool[]>;
-  fetchBalances: (refresh: boolean) => Promise<void>;
-  fetchEvents: (refresh: boolean) => Promise<void>;
-}
-
 export interface BalancesApi {
   byLocation: Ref<Record<string, BigNumber>>;
   balances: (groupMultiChain?: boolean, exclude?: ExclusionSource[]) => ComputedRef<AssetBalanceWithPrice[]>;
@@ -87,16 +69,13 @@ export interface AssetsApi {
 
 export interface UtilsApi {
   truncate: (text: string, length: number) => string;
-  getPoolName: (type: LpType, assets: string[]) => string;
 }
 
 export interface DataUtilities {
   readonly assets: AssetsApi;
   readonly utils: UtilsApi;
   readonly statistics: StatisticsApi;
-  readonly compound: CompoundApi;
   readonly balances: BalancesApi;
-  readonly sushi: SushiApi;
 }
 
 export interface UserSettingsApi {
@@ -129,7 +108,7 @@ export interface SettingsApi {
   };
 }
 
-export type GraphApi = (canvasId: string) => {
+export interface GraphApi {
   getCanvasCtx: () => CanvasRenderingContext2D;
   baseColor: ComputedRef<string>;
   gradient: ComputedRef<CanvasGradient>;
@@ -138,11 +117,13 @@ export type GraphApi = (canvasId: string) => {
   fontColor: ComputedRef<string>;
   gridColor: ComputedRef<string>;
   thirdColor: ComputedRef<string>;
-};
+}
+
+type GetGraphApi = (canvasId: string) => GraphApi;
 
 export interface PremiumApi {
   readonly date: DateUtilities;
   readonly data: DataUtilities;
   readonly settings: SettingsApi;
-  readonly graphs: GraphApi;
+  readonly graphs: GetGraphApi;
 }

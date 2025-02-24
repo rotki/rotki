@@ -1,8 +1,4 @@
 {
-  "aave_lending": {
-    "header": "Prêt Aave ({asset})",
-    "history": "Historique Aave"
-  },
   "about": {
     "app_version": "Version de l'appli :",
     "components": {
@@ -387,24 +383,6 @@
       }
     },
     "defi": {
-      "aave_balances": {
-        "error": {
-          "description": "Échec de la récupération des soldes Aave : {error}",
-          "title": "Soldes Aave"
-        },
-        "task": {
-          "title": "Interrogation des soldes Aave"
-        }
-      },
-      "aave_history": {
-        "error": {
-          "description": "Échec de la récupération de l'historique Aave : {error}",
-          "title": "Historique Aave"
-        },
-        "task": {
-          "title": "Interrogation de l'historique Aave"
-        }
-      },
       "airdrops": {
         "error": {
           "description": "Échec de la récupération des airdrops : {error}",
@@ -412,51 +390,6 @@
         },
         "task": {
           "title": "Interrogation des airdrops"
-        }
-      },
-      "balances": {
-        "error": {
-          "description": "Échec de la récupération des soldes DeFi : {error}",
-          "title": "Soldes DeFi"
-        },
-        "task": {
-          "title": "Interrogation des soldes DeFi"
-        }
-      },
-      "compound": {
-        "error": {
-          "description": "Échec de la récupération des soldes Compound : {error}",
-          "title": "Soldes Compound"
-        },
-        "task": {
-          "title": "Interrogation des soldes Compound"
-        }
-      },
-      "compound_history": {
-        "error": {
-          "description": "Échec de la récupération de l'historique Compound : {error}",
-          "title": "Historique Compound"
-        },
-        "task": {
-          "title": "Interrogation de l'historique Compound"
-        }
-      },
-      "dsr_balances": {
-        "error": {
-          "description": "Échec de la récupération des soldes DSR : {error}",
-          "title": "Soldes DSR"
-        },
-        "task": {
-          "title": "Interrogation des soldes DSR"
-        }
-      },
-      "dsr_history": {
-        "error": {
-          "description": "Échec de la récupération de l'historique DSR : {error}",
-          "title": "Historique DSR"
-        },
-        "task": {
-          "title": "Interrogation de l'historique DSR"
         }
       },
       "liquity": {
@@ -495,69 +428,6 @@
         },
         "task": {
           "title": "Interrogation des statistiques Liquity"
-        }
-      },
-      "makerdao_vault_details": {
-        "error": {
-          "description": "Échec de la récupération des détails du coffre-fort MakerDAO : {error}",
-          "title": "Détails du coffre-fort MakerDAO"
-        },
-        "task": {
-          "title": "Interrogation des détails du coffre-fort MakerDAO"
-        }
-      },
-      "makerdao_vaults": {
-        "error": {
-          "description": "Échec de la récupération des coffres-forts MakerDAO : {error}",
-          "title": "Coffres-forts MakerDAO"
-        },
-        "task": {
-          "title": "Interrogation des coffres-forts MakerDAO"
-        }
-      },
-      "sushiswap_balances": {
-        "error": {
-          "description": "Échec de la requête des soldes Sushiswap : {message}",
-          "title": "Soldes Sushiswap"
-        },
-        "task": {
-          "title": "Interrogation des soldes Sushiswap"
-        }
-      },
-      "sushiswap_events": {
-        "error": {
-          "description": "Échec de la requête des événements Sushiswap : {message}",
-          "title": "Événements Sushiswap"
-        },
-        "task": {
-          "title": "Interrogation des événements Sushiswap"
-        }
-      },
-      "uniswap": {
-        "error": {
-          "description": "Échec de la récupération des soldes Uniswap V{v} : {error}",
-          "title": "Soldes Uniswap V{v}"
-        },
-        "task": {
-          "title": "Interrogation des soldes Uniswap V{v}"
-        }
-      },
-      "uniswap_events": {
-        "error": {
-          "description": "Échec de la récupération des événements Uniswap : {error}",
-          "title": "Interrogation des événements Uniswap"
-        },
-        "task": {
-          "title": "Interrogation des événements Uniswap"
-        }
-      },
-      "yearn_vaults": {
-        "error": {
-          "description": "Échec de la récupération des soldes des coffres yearn.finance {version} : {error}",
-          "title": "Soldes des coffres yearn.finance {version}"
-        },
-        "task": {
-          "title": "Interrogation des soldes des coffres yearn.finance {version}"
         }
       }
     },
@@ -1396,14 +1266,6 @@
     },
     "title": "Solde blockchain par actif"
   },
-  "borrowing": {
-    "header": "Prêts garantis",
-    "loading": "Attendez s'il vous plaît pendant le chargement de vos engagements...",
-    "select_loan": "Sélectionner un prêt",
-    "select_loan_hint": "Sélectionnez un prêt pour voir les informations",
-    "total_collateral_locked": "Collatéral total verrouillé",
-    "total_outstanding_debt": "Dettes totales en souffrance"
-  },
   "change_password": {
     "button": "Changer de mot de passe",
     "labels": {
@@ -1518,7 +1380,6 @@
     "claimed": "Réclamé",
     "counterparty": "Contrepartie",
     "datetime": "Date/Heure",
-    "deposits": "Dépôts",
     "description": "Description",
     "details": "Détails",
     "events": "Événements",
@@ -1558,10 +1419,6 @@
     "website": "site web",
     "unknown": "Inconnu",
     "all": "Tous"
-  },
-  "compound_lending": {
-    "header": "Prêt Compound ({asset})",
-    "history": "Historique Compound"
   },
   "conflict_dialog": {
     "action": {
@@ -1707,10 +1564,6 @@
     },
     "liabilities": {
       "title": "Passifs"
-    },
-    "liquidity_position": {
-      "refresh_tooltip": "Rafraîchir les jetons LP",
-      "title": "Jetons LP"
     },
     "manual_balances": {
       "add": "Ajouter un solde manuel",
@@ -1947,37 +1800,6 @@
     "milliseconds_format": "La date doit être au format {dateFormat} [HH:mm[:ss[.SSS]]]",
     "timezone_field": {
       "non_empty": "Le fuseau horaire doit être spécifié"
-    }
-  },
-  "decentralized_overview": {
-    "empty_subtitle": "Veuillez ajouter au moins un compte ETH qui a des soldes DeFi",
-    "empty_title": "Aucun récapitulatif DeFi ne peut être affiché",
-    "loading": "Patientez s'il vous plaît pendant que vos soldes DeFi se chargent...",
-    "title": "Aperçu DeFi"
-  },
-  "defi_overview": {
-    "multiple_assets": "Plusieurs actifs"
-  },
-  "defi_protocol_selector": {
-    "filter_all": "Afficher tous les résultats",
-    "filter_specific": "Afficher les résultats pour le protocole sélectionné",
-    "label": "Filtrer les protocoles(s)"
-  },
-  "defi_wizard": {
-    "steps": {
-      "select_modules": {
-        "hint": "Si aucun module n'est spécifié, la requête des modules pris en charge sera désactivée.",
-        "subtitle": "Sélectionnez les modules que vous souhaitez activer.",
-        "title": "Sélectionner des modules"
-      },
-      "setup": {
-        "description_line_one": "rotki tentera par défaut de récupérer des informations pour tous vos comptes et modules disponibles. La récupération peut prendre beaucoup de temps en fonction du nombre de comptes que vous avez.",
-        "description_line_three": "Vous pouvez utiliser les paramètres par défaut si vous souhaitez disposer d'informations sur tous les protocoles pour tous les comptes automatiquement. (Les paramètres du module peuvent être modifiés ultérieurement).",
-        "description_line_two": "Pour réduire le temps de requête, vous pouvez spécifier uniquement les modules DeFi et comptes qui vous intéressent.",
-        "subtitle": "Sélectionnez les options pour améliorer votre expérience DeFi avec rotki",
-        "title": "Configuration DeFi",
-        "used_default": "Utiliser les paramètres par défaut"
-      }
     }
   },
   "docker_warning": {
@@ -2702,37 +2524,6 @@
     },
     "title": "Gagné par actif"
   },
-  "lending": {
-    "currently_deposited": "Actuellement déposés",
-    "effective_interest_rate": "Taux d'intérêt efficace",
-    "effective_interest_rate_tooltip": "Le taux d'intérêt dans l'ensemble des protocoles dans lesquels vous prêtez activement, pondéré en fonction de la position relative dans chaque protocole.",
-    "history": "Historique",
-    "loading": "Patientez pendant le chargement de vos soldes...",
-    "profit_earned": "Bénéfice gagné"
-  },
-  "lending_asset_table": {
-    "headers": {
-      "effective_interest_rate": "Taux d'intérêt efficace",
-      "usd_value": "Valeur en {currency}"
-    }
-  },
-  "liabilities": {
-    "no_selection": "Sélectionnez un prêt pour voir plus d'informations"
-  },
-  "liquidity_pool_details": {
-    "liquidity": "Liquidité",
-    "title": "Total dans les pools",
-    "tooltip": "Afficher les détails sur les actifs du pool",
-    "total_amount": "Montant total",
-    "total_value_in_symbol": "Valeur totale en {symbol}"
-  },
-  "liquidity_pool_selector": {
-    "label": "Filtrer par (des) pool(s)"
-  },
-  "liquity_lending": {
-    "header": "Coffre Liquity {troveId}",
-    "trove_events": "Événements du coffre"
-  },
   "liquity_page": {
     "no_premium": "Participation à Liquity"
   },
@@ -2771,43 +2562,6 @@
       "hide": "Montrer moins",
       "show": "Montrer plus"
     }
-  },
-  "loan_collateral": {
-    "apy": "APY",
-    "current_ratio": "Taux actuel",
-    "liquidation_price": "Prix de liquidation",
-    "locked_collateral": "Collatéral verrouillé",
-    "per_asset": "Actifs de collatéral",
-    "ratio": "Taux de collatéralisation",
-    "stable_apr": "TAEG stable",
-    "title": "Collatéral",
-    "variable_apr": "TAEG variable",
-    "watchers": {
-      "add": "Ajouter un observateur de taux de collatéralisation",
-      "dialog": {
-        "label": "Taux de collatéralisation",
-        "message": "Ajouter / Modifier / Supprimer des observateurs pour le coffre Maker #{identifier} avec un taux de collatéralisation actuel {collateralizationRatio} et un taux de liquidation {liquidationRatio}.",
-        "title": "Observateurs de taux de collatéralisation"
-      },
-      "edit": "Modifier {n} observateur de taux de collatéralisation | Modifier {n} observateurs de taux de collatéralisation"
-    }
-  },
-  "loan_debt": {
-    "outstanding_debt": "Dette exigible",
-    "title": "Dette"
-  },
-  "loan_header": {
-    "owned_by": "Propriété de :"
-  },
-  "loan_liquidation": {
-    "liquidated_collateral": "Garantie liquidée",
-    "liquidation_events": "Événements de liquidation",
-    "liquidation_price": "Prix de liquidation",
-    "minimum_ratio": "Taux minimum",
-    "no_events": "Aucun événement de liquidation n'est survenu pour ce prêt.",
-    "outstanding_debt": "Dette exigible au moment de la liquidation",
-    "title": "Liquidation",
-    "total_value_lost": "Valeur totale perdue"
   },
   "loan_stake": {
     "no_lqty_staked": "Aucun LQTY engagé",
@@ -2882,14 +2636,6 @@
   "macos_unsupported": {
     "header": "Version macOS non prise en charge",
     "message": "La version macOS minimale prise en charge par rotki est High Sierra(10.13)"
-  },
-  "maker_dao_vault_loan": {
-    "borrowing_history": "Historique des emprunts",
-    "header": "Coffre Maker Vault #{identifier} ({collateralType})"
-  },
-  "makerdao_vault_debt": {
-    "stability_fee": "Frais de stabilité",
-    "total_lost": "Perte totale due aux intérêts"
   },
   "manage_user_assets": {
     "export": {
@@ -3022,17 +2768,7 @@
     "dashboard": "Tableau de bord",
     "defi": "DeFi",
     "defi_sub": {
-      "airdrops": "Airdrops",
-      "deposits_sub": {
-        "liquidity": "Pools de liquidité",
-        "liquidity_sub": {
-          "sushiswap": "Sushiswap",
-          "uniswap_v2": "Uniswap v2"
-        },
-        "protocols": "Protocoles"
-      },
-      "liabilities": "Passifs",
-      "overview": "Aperçu"
+      "airdrops": "Airdrops"
     },
     "history": "Historique",
     "history_sub": {
@@ -3227,23 +2963,6 @@
   "overall_balances": {
     "loading": "CHARGMENT",
     "premium_hint": "Obtenez l'expérience complète en passant à rotki premium"
-  },
-  "overview": {
-    "details_dialog": {
-      "subtitle": "Détails de l'actif du protocole"
-    },
-    "stat_card": {
-      "content": {
-        "labels": {
-          "total_collateral": "Collatéral total",
-          "total_debt": "Dette totale",
-          "total_deposited": "Total déposé"
-        }
-      },
-      "headers": {
-        "borrowing": "Passif"
-      }
-    }
   },
   "percentage_display": {
     "symbol": "%"
@@ -3770,10 +3489,6 @@
     "refresh_tooltip": "Rafraîchir les soldes de {name}",
     "title": "Soldes de {name}"
   },
-  "sushiswap": {
-    "loading": " Veuillez patienter pendant le chargement de vos pools de liquidités...",
-    "premium": "Caractéristique Sushiswap"
-  },
   "sync_buttons": {
     "download_tooltip": "Tirer les données enregistrées depuis le serveur et remplacer votre base de données locale",
     "upload_tooltip": "Pousser votre base de données locale vers le serveur et remplacer toutes les données qui s'y trouvent"
@@ -4185,13 +3900,6 @@
       "valid": "Veuillez entrer une adresse ETH valide"
     }
   },
-  "uniswap": {
-    "assets_non_premium": "Mettez à niveau vers @:uniswap.premium pour voir les informations sur les actifs",
-    "loading": "Attendez s'il vous plaît pendant le chargement de vos pools de liquidités...",
-    "loading_non_premium": "Le chargement des soldes de pool de liquidité peut prendre un certain temps... Considérez la mise à niveau vers {0} pour des temps de chargement plus rapides.",
-    "premium": "premium",
-    "price_range": "Plage de prix"
-  },
   "update_indicator": {
     "version": "Une version mise à jour ({appVersion}) de rotki est disponible"
   },
@@ -4244,29 +3952,6 @@
   "validator_filter_input": {
     "label": "Sélectionnez un validateur"
   },
-  "watcher_dialog": {
-    "add_error": "Erreur lors de l'ajout de l'observateur : {message}",
-    "add_success": "Observateur ajouté avec succès.",
-    "add_watcher": "Ajouter un observateur",
-    "delete_error": "Erreur lors de la suppression de l'observateur : {message}",
-    "delete_success": "Observateur supprimé avec succès.",
-    "edit": "Modifier les contrôleurs",
-    "edit_error": "Erreur lors de la modification de l'observateur : {message}",
-    "edit_success": "Observateur modifié avec succès.",
-    "labels": {
-      "operation": "Opération",
-      "type": "Type d'observateur"
-    },
-    "ratio": {
-      "ge": ">= (supérieur ou égal à)",
-      "gt": ">  (supérieur à)",
-      "le": "<= (inférieur ou égal à)",
-      "lt": "<  (inférieur à)"
-    },
-    "types": {
-      "make_collateralization_ratio": "Observateur du ratio de collatéralisation (Maker)"
-    }
-  },
   "welcome": {
     "update": {
       "learn_more": "En savoir plus",
@@ -4277,15 +3962,5 @@
   "win_unsupported": {
     "header": "Version Windows non prise en charge",
     "message": "La version minimale prise en charge de rotki est Windows 8(6.2)"
-  },
-  "yearn_asset_table": {
-    "headers": {
-      "roi": "ROI",
-      "underlying_asset": "Actif sous-jacent",
-      "vault": "Coffre",
-      "vault_asset": "Actif du coffre",
-      "version": "Version"
-    },
-    "title": "Coffres Yearn"
   }
 }

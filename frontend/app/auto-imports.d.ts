@@ -440,8 +440,6 @@ import { UnwrapRef } from 'vue'
 declare module 'vue' {
   interface GlobalComponents {}
   interface ComponentCustomProperties {
-    readonly AaveBalances: UnwrapRef<typeof import('@rotki/common')['AaveBalances']>
-    readonly AaveHistory: UnwrapRef<typeof import('@rotki/common')['AaveHistory']>
     readonly AssetBalance: UnwrapRef<typeof import('@rotki/common')['AssetBalance']>
     readonly AssetBalanceWithPriceBeforeBreakdown: UnwrapRef<typeof import('@rotki/common')['AssetBalanceWithPriceBeforeBreakdown']>
     readonly AssetCollection: UnwrapRef<typeof import('@rotki/common')['AssetCollection']>
@@ -477,7 +475,6 @@ declare module 'vue' {
     readonly LiquityStatisticDetails: UnwrapRef<typeof import('@rotki/common')['LiquityStatisticDetails']>
     readonly LiquityStatistics: UnwrapRef<typeof import('@rotki/common')['LiquityStatistics']>
     readonly LocationData: UnwrapRef<typeof import('@rotki/common')['LocationData']>
-    readonly LpType: UnwrapRef<typeof import('@rotki/common')['LpType']>
     readonly NetValue: UnwrapRef<typeof import('@rotki/common')['NetValue']>
     readonly NoPrice: UnwrapRef<typeof import('@rotki/common')['NoPrice']>
     readonly NotificationCategory: UnwrapRef<typeof import('@rotki/common')['NotificationCategory']>
@@ -502,12 +499,6 @@ declare module 'vue' {
     readonly TimedAssetBalances: UnwrapRef<typeof import('@rotki/common')['TimedAssetBalances']>
     readonly TimedAssetHistoricalBalances: UnwrapRef<typeof import('@rotki/common')['TimedAssetHistoricalBalances']>
     readonly TimedBalances: UnwrapRef<typeof import('@rotki/common')['TimedBalances']>
-    readonly UnderlyingToken: UnwrapRef<typeof import('@rotki/common')['UnderlyingToken']>
-    readonly XswapAsset: UnwrapRef<typeof import('@rotki/common')['XswapAsset']>
-    readonly XswapBalance: UnwrapRef<typeof import('@rotki/common')['XswapBalance']>
-    readonly XswapBalances: UnwrapRef<typeof import('@rotki/common')['XswapBalances']>
-    readonly XswapEvents: UnwrapRef<typeof import('@rotki/common')['XswapEvents']>
-    readonly XswapPool: UnwrapRef<typeof import('@rotki/common')['XswapPool']>
     readonly Zero: UnwrapRef<typeof import('@rotki/common')['Zero']>
     readonly acceptHMRUpdate: UnwrapRef<typeof import('pinia')['acceptHMRUpdate']>
     readonly assert: UnwrapRef<typeof import('@rotki/common')['assert']>

@@ -16,7 +16,6 @@ import { useNonFungibleBalancesStore } from '@/store/balances/non-fungible';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useNotificationsStore } from '@/store/notifications';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { useLiquidityPosition } from '@/composables/defi';
 import { useAggregatedBalances } from '@/composables/balances/aggregated';
 import { useStatisticsApi } from '@/composables/api/statistics/statistics-api';
 import { isTaskCancelled } from '@/utils';
@@ -60,7 +59,6 @@ export const useStatisticsStore = defineStore('statistics', () => {
   const historicalAssetPriceStatus = ref<CommonQueryStatusData>();
 
   const api = useStatisticsApi();
-  const { lpTotal } = useLiquidityPosition();
   const { balances, liabilities } = useAggregatedBalances();
   const { awaitTask } = useTaskStore();
   const { logged } = storeToRefs(useSessionAuthStore());
@@ -69,13 +67,10 @@ export const useStatisticsStore = defineStore('statistics', () => {
     const aggregatedBalances = get(balances());
     const totalLiabilities = get(liabilities());
     const nftTotal = includeNft ? get(nonFungibleTotalValue) : 0;
-
-    const lpTotalBalance = get(lpTotal);
-
     const assetValue = aggregatedBalances.reduce((sum, value) => sum.plus(value.usdValue), Zero);
     const liabilityValue = totalLiabilities.reduce((sum, value) => sum.plus(value.usdValue), Zero);
 
-    return assetValue.plus(nftTotal).plus(lpTotalBalance).minus(liabilityValue);
+    return assetValue.plus(nftTotal).minus(liabilityValue);
   });
 
   const totalNetWorth = computed<BigNumber>(() => {

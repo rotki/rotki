@@ -52,8 +52,6 @@ export const WatcherType = 'makervault_collateralization_ratio';
 
 export const WatcherOpTypes = z.enum(['lt', 'le', 'gt', 'ge']);
 
-export type WatcherOpTypes = z.infer<typeof WatcherOpTypes>;
-
 export const BaseWatcher = z.object({
   identifier: z.string(),
 });

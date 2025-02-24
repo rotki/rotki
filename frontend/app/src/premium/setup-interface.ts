@@ -5,16 +5,22 @@ import { convertToTimestamp, getDateInputISOFormat } from '@/utils/date';
 import {
   assetsApi,
   balancesApi,
-  compoundApi,
   statisticsApi,
-  sushiApi,
   userSettings,
   utilsApi,
 } from '@/premium/premium-apis';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGraph } from '@/composables/graphs';
-import type { DataUtilities, DateUtilities, PremiumInterface, SettingsApi, Themes, TimeUnit } from '@rotki/common';
+import type {
+  DataUtilities,
+  DateUtilities,
+  PremiumApi,
+  PremiumInterface,
+  SettingsApi,
+  Themes,
+  TimeUnit,
+} from '@rotki/common';
 import type { DateFormat } from '@/types/date-format';
 import type { FrontendSettingsPayload } from '@/types/settings/frontend-settings';
 
@@ -52,9 +58,7 @@ function data(): DataUtilities {
   return {
     assets: assetsApi(),
     balances: balancesApi(),
-    compound: compoundApi(),
     statistics: statisticsApi(),
-    sushi: sushiApi(),
     utils: utilsApi(),
   };
 }
@@ -90,7 +94,7 @@ function settings(): SettingsApi {
 
 export function usePremiumApi(): PremiumInterface {
   return {
-    api: () => ({
+    api: (): PremiumApi => ({
       data: data(),
       date,
       graphs: useGraph,

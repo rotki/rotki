@@ -102,18 +102,3 @@ export const SUPPORTED_MODULES: SupportedModule[] = [
     name: 'Liquity',
   },
 ];
-
-export enum DefiProtocol {
-  YEARN_VAULTS = 'yearn_vaults',
-  YEARN_VAULTS_V2 = 'yearn_vaults_v2',
-  AAVE = 'aave',
-  MAKERDAO_DSR = 'makerdao_dsr',
-  MAKERDAO_VAULTS = 'makerdao_vaults',
-  COMPOUND = 'compound',
-  UNISWAP = 'uniswap',
-  LIQUITY = 'liquity',
-}
-
-export function isDefiProtocol(protocol: any): protocol is DefiProtocol {
-  return Object.values(DefiProtocol).includes(protocol);
-}

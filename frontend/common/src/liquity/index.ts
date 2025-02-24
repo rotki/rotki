@@ -11,11 +11,7 @@ const LiquityBalance = z.object({
   troveId: z.number(),
 });
 
-export type LiquityBalance = z.infer<typeof LiquityBalance>;
-
 export const LiquityBalances = z.record(LiquityBalance);
-
-export type LiquityBalances = z.infer<typeof LiquityBalances>;
 
 export const LiquityBalancesWithCollateralInfo = z.object({
   balances: LiquityBalances,

@@ -70,13 +70,6 @@ export function isOnlineHistoryEvent(event: HistoryEvent): event is OnlineHistor
   return isOnlineHistoryEventType(event.entryType);
 }
 
-export function isOnlineHistoryEventRef(event: MaybeRef<HistoryEvent>): ComputedRef<OnlineHistoryEvent | undefined> {
-  return computed(() => {
-    const eventVal = get(event);
-    return isOnlineHistoryEvent(eventVal) ? eventVal : undefined;
-  });
-}
-
 export function isEthDepositEventType(type: HistoryEventEntryType): boolean {
   return type === HistoryEventEntryType.ETH_DEPOSIT_EVENT;
 }

@@ -1,8 +1,8 @@
 import { Chart, type TooltipModel, registerables } from 'chart.js';
 import zoomPlugin from 'chartjs-plugin-zoom';
 import { useDarkMode } from '@/composables/dark-mode';
-import type { BigNumber, TooltipDisplayOption } from '@rotki/common';
-import type { ComputedRef, Ref } from 'vue';
+import type { BigNumber, GraphApi, TooltipDisplayOption } from '@rotki/common';
+import type { Ref } from 'vue';
 
 export function initGraph(): void {
   Chart.defaults.font.family = 'Roboto';
@@ -10,18 +10,7 @@ export function initGraph(): void {
   Chart.register(zoomPlugin);
 }
 
-interface UseGraphReturn {
-  getCanvasCtx: () => CanvasRenderingContext2D;
-  baseColor: ComputedRef<string>;
-  gradient: ComputedRef<CanvasGradient>;
-  secondaryColor: ComputedRef<string>;
-  backgroundColor: ComputedRef<string>;
-  fontColor: ComputedRef<string>;
-  gridColor: ComputedRef<string>;
-  thirdColor: ComputedRef<string>;
-}
-
-export function useGraph(canvasId: string): UseGraphReturn {
+export function useGraph(canvasId: string): GraphApi {
   const getCanvasCtx = (): CanvasRenderingContext2D => {
     const canvas = document.getElementById(canvasId);
     assert(canvas && canvas instanceof HTMLCanvasElement, 'Canvas could not be found');

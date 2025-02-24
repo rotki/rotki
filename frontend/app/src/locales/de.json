@@ -1,8 +1,4 @@
 {
-  "aave_lending": {
-    "header": "Aave Darlehnen ({asset})",
-    "history": "Aave Verlauf"
-  },
   "about": {
     "copy_data_directory_tooltip": "Datenverzeichnis kopieren",
     "copy_information_tooltip": "Programminformationen kopieren",

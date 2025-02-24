@@ -73,8 +73,6 @@ const DashboardTablesVisibleColumns = z.object({
   [DashboardTableType.NFT]: TableColumnEnum.default(Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS),
 });
 
-export type DashboardTablesVisibleColumns = z.infer<typeof DashboardTablesVisibleColumns>;
-
 const VersionUpdateCheckFrequency = z.number().min(-1).max(Constraints.MAX_HOURS_DELAY).int();
 
 export enum SupportedLanguage {
