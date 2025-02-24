@@ -4,12 +4,9 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Final, Literal, overload
 from unittest.mock import _patch, patch
 
-from rotkehlchen.assets.asset import AssetWithOracles
-from rotkehlchen.assets.converters import asset_from_kraken
 from rotkehlchen.constants import ONE
-from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH, A_ETH2, A_EUR
+from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
 from rotkehlchen.db.dbhandler import DBHandler
-from rotkehlchen.errors.asset import UnprocessableTradePair
 from rotkehlchen.exchanges.binance import BINANCE_BASE_URL, BINANCEUS_BASE_URL, Binance
 from rotkehlchen.exchanges.bitcoinde import Bitcoinde
 from rotkehlchen.exchanges.bitfinex import Bitfinex
@@ -86,7 +83,7 @@ POLONIEX_MOCK_DEPOSIT_WITHDRAWALS_RESPONSE: Final = """{
       "withdrawalRequestsId": 3,
       "status": "COMPLETE: 0xbd4da74e1a0b81c21d056c6f58a5b306de85d21ddf89992693b812bb117eace4"
     }, {
-      "currency": "DIS",
+      "currency": "BALLS",
       "timestamp": 1478994442,
       "amount": "10.0",
       "fee": "0.1",
@@ -1454,49 +1451,3 @@ def get_exchange_asset_symbols(
     with GlobalDBHandler().conn.read_ctx() as cursor:
         querystr = 'SELECT exchange_symbol FROM location_asset_mappings WHERE location IS ?' + query_suffix  # noqa: E501
         return {asset[0] for asset in cursor.execute(querystr, (exchange.serialize_for_db(),))}
-
-
-def kraken_to_world_pair(pair: str) -> tuple[AssetWithOracles, AssetWithOracles]:
-    """Turns a pair from kraken to our base/quote asset tuple
-
-    Can throw:
-        - UnknownAsset if one of the assets of the pair are not known
-        - DeserializationError if one of the assets is not a sting
-        - UnprocessableTradePair if the pair can't be processed and
-          split into its base/quote assets
-    """
-    kraken_assets = get_exchange_asset_symbols(Location.KRAKEN)
-
-    # handle dark pool pairs
-    if pair[-2:] == '.d':
-        pair = pair[:-2]
-
-    if len(pair) == 6 and pair[0:3] in {'EUR', 'USD', 'AUD'}:
-        # This is for the FIAT to FIAT pairs that kraken introduced
-        base_asset_str = pair[0:3]
-        quote_asset_str = pair[3:]
-    elif pair == 'ETHDAI':
-        return A_ETH.resolve_to_asset_with_oracles(), A_DAI.resolve_to_asset_with_oracles()
-    elif pair == 'ETH2.SETH':
-        return A_ETH2.resolve_to_asset_with_oracles(), A_ETH.resolve_to_asset_with_oracles()
-    elif pair[0:2] in kraken_assets:
-        base_asset_str = pair[0:2]
-        quote_asset_str = pair[2:]
-    elif pair[0:3] in kraken_assets or pair[0:3] in {'XBT', 'ETH', 'XDG', 'LTC', 'XRP'}:
-        base_asset_str = pair[0:3]
-        quote_asset_str = pair[3:]
-    elif pair[0:4] in kraken_assets:
-        base_asset_str = pair[0:4]
-        quote_asset_str = pair[4:]
-    elif pair[0:5] in kraken_assets:
-        base_asset_str = pair[0:5]
-        quote_asset_str = pair[5:]
-    elif pair[0:6] in kraken_assets:
-        base_asset_str = pair[0:6]
-        quote_asset_str = pair[6:]
-    else:
-        raise UnprocessableTradePair(pair)
-
-    base_asset = asset_from_kraken(base_asset_str)
-    quote_asset = asset_from_kraken(quote_asset_str)
-    return base_asset, quote_asset

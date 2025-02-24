@@ -817,7 +817,7 @@ def assert_nexo_results(rotki: Rotkehlchen, websocket_connection: WebsocketReade
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.NONE,
         amount=FVal('0.10000001'),
-        asset=symbol_to_asset_or_token('NEXO'),
+        asset=Asset('eip155:1/erc20:0xB62132e35a6c13ee1EE0f84dC5d40bad8d815206'),
         location_label='NXTabcdefghij',
         notes='Cashback from Nexo',
     ), AssetMovement(
