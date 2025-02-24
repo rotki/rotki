@@ -23,6 +23,7 @@ import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 import { logger } from '@/utils/logging';
+import { useHistoryEvents } from '@/composables/history/events';
 import type { BigNumber } from '@rotki/common';
 
 const props = defineProps<{
@@ -45,12 +46,28 @@ const end = ref('');
 const start = ref('');
 const summary = ref<WrapStatisticsResult>();
 
+const { getEarliestEventTimestamp } = useHistoryEvents();
+
 const { isFirstLoad, loading: sectionLoading } = useStatusUpdater(Section.HISTORY_EVENT);
 const eventTaskLoading = isTaskRunning(TaskType.TRANSACTIONS_DECODING);
 const protocolCacheUpdatesLoading = isTaskRunning(TaskType.REFRESH_GENERAL_CACHE);
 const onlineHistoryEventsLoading = isTaskRunning(TaskType.QUERY_ONLINE_EVENTS);
 
 const refreshing = logicOr(sectionLoading, eventTaskLoading, onlineHistoryEventsLoading, protocolCacheUpdatesLoading);
+
+const historyEventsReady = logicAnd(!isFirstLoad(), logicNot(refreshing));
+const debouncedHistoryEventsReady = debouncedRef(historyEventsReady, 500);
+const usedHistoryEventsReady = logicAnd(historyEventsReady, debouncedHistoryEventsReady);
+
+watchImmediate(usedHistoryEventsReady, async (curr, old) => {
+  if (curr && !old && get(start) === '') {
+    const earliestEventTimestamp = await getEarliestEventTimestamp();
+
+    if (earliestEventTimestamp) {
+      set(start, convertFromTimestamp(earliestEventTimestamp));
+    }
+  }
+});
 
 const gnosisPayResult = computed(() => {
   const gnosisMaxPaymentsByCurrency = get(summary)?.gnosisMaxPaymentsByCurrency;
@@ -90,33 +107,24 @@ const gnosisPayResult = computed(() => {
   return result;
 });
 
-const currentYear = computed(() => dayjs().year());
-
 async function fetchData() {
   if (get(loading))
     return;
 
   try {
-    const endVal = get(end);
+    let endVal = get(end);
     const startVal = get(start);
 
-    if (!startVal || !endVal) {
-      const year = props.highlightedYear ?? get(currentYear);
-      const range = getYearRange(year);
-
-      if (!startVal) {
-        set(start, range.start);
-      }
-      if (!endVal) {
-        set(end, range.end);
-      }
+    if (!endVal) {
+      endVal = convertFromTimestamp(dayjs().unix());
+      set(end, endVal);
     }
 
     set(loading, true);
     const response = await fetchWrapStatistics(
       {
-        end: convertToTimestamp(get(end)),
-        start: convertToTimestamp(get(start)),
+        end: convertToTimestamp(endVal),
+        start: startVal ? convertToTimestamp(startVal) : 0,
       },
     );
     set(summary, response);
@@ -268,6 +276,7 @@ defineExpose({
         hide-timezone-selector
         :disabled="loading"
         class="flex-1"
+        allow-empty
         :label="t('generate.labels.end_date')"
       />
       <RuiButton
