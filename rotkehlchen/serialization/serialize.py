@@ -21,24 +21,16 @@ from rotkehlchen.chain.ethereum.interfaces.ammswap.types import (
     LiquidityPoolAsset,
     LiquidityPoolEventsBalance,
 )
-from rotkehlchen.chain.ethereum.modules.aave.aave import (
-    AaveBalances,
-    AaveBorrowingBalance,
-    AaveLendingBalance,
-)
-from rotkehlchen.chain.ethereum.modules.aave.common import AaveStats
 from rotkehlchen.chain.ethereum.modules.compound.utils import CompoundBalance
 from rotkehlchen.chain.ethereum.modules.liquity.trove import Trove
-from rotkehlchen.chain.ethereum.modules.makerdao.dsr import DSRAccountReport, DSRCurrentBalances
+from rotkehlchen.chain.ethereum.modules.makerdao.dsr import DSRCurrentBalances
 from rotkehlchen.chain.ethereum.modules.makerdao.vaults import (
     MakerdaoVault,
-    MakerdaoVaultDetails,
     VaultEvent,
     VaultEventType,
 )
 from rotkehlchen.chain.ethereum.modules.nft.structures import NFTResult
 from rotkehlchen.chain.ethereum.modules.pickle_finance.main import DillBalance
-from rotkehlchen.chain.ethereum.modules.yearn.vaults import YearnVaultBalance
 from rotkehlchen.chain.evm.accounting.structures import TxAccountingTreatment
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode
@@ -135,12 +127,8 @@ def _process_entry(entry: Any) -> str | (list[Any] | (dict[str, Any] | Any)):
     if isinstance(entry, (
             Trade |
             MakerdaoVault |
-            DSRAccountReport |
             Balance |
-            AaveLendingBalance |
-            AaveBorrowingBalance |
             CompoundBalance |
-            YearnVaultBalance |
             LiquidityPool |
             LiquidityPoolAsset |
             LiquidityPoolEventsBalance |
@@ -156,12 +144,9 @@ def _process_entry(entry: Any) -> str | (list[Any] | (dict[str, Any] | Any)):
             VersionCheckResult |
             DSRCurrentBalances |
             VaultEvent |
-            MakerdaoVaultDetails |
-            AaveBalances |
             DefiBalance |
             DefiProtocolBalances |
-            BlockchainAccountData |
-            AaveStats
+            BlockchainAccountData
     )):
         return process_result(entry._asdict())
     if isinstance(entry, tuple):

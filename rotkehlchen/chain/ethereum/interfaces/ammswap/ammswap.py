@@ -14,27 +14,19 @@ from typing import TYPE_CHECKING
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.chain.ethereum.interfaces.ammswap.types import (
     AddressToLPBalances,
-    AggregatedAmount,
     AssetToPrice,
-    LiquidityPool,
-    LiquidityPoolEventsBalance,
 )
 from rotkehlchen.chain.ethereum.modules.uniswap.utils import uniswap_lp_token_balances
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
-from rotkehlchen.constants.assets import A_ETH, A_WETH
 from rotkehlchen.constants.prices import ZERO_PRICE
-from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.db.filtering import EvmEventFilterQuery
-from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
-from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType
-from rotkehlchen.history.price import query_usd_price_zero_if_error
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.premium.premium import Premium, has_premium_check
-from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind, Timestamp
+from rotkehlchen.premium.premium import Premium
+from rotkehlchen.types import ChecksumEvmAddress
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
@@ -53,8 +45,7 @@ SUSHISWAP_TRADES_PREFIX = 'sushiswap_trades'
 class AMMSwapPlatform:
     """
     AMM Module interface
-    This class uses decoded events from protocols following the Uniswap design to query balances
-    and stats.
+    This class uses decoded events from protocols following the Uniswap design to query balances.
     The counterparties provided are the ones used to filter the history events for querying the
     pools with balances and the mint/burn events. For example CPT_SUSHISWAP
     """
@@ -94,139 +85,6 @@ class AMMSwapPlatform:
                 unknown_assets.add(known_asset)
 
         return asset_price
-
-    def _calculate_events_balances(
-            self,
-            events: list[EvmEvent],
-            balances: list[LiquidityPool],
-    ) -> list[LiquidityPoolEventsBalance]:
-        """Given an address' mint/burn history events, process each event (grouping by pool)
-        aggregating the token0, token1 and USD amounts for calculating the profit/loss in the
-        pool. Finally return a list of <LiquidityPoolEventsBalance>, where each
-        contains the profit/loss and events per pool. This function queries USD value of the
-        events each time the logic is called. This is for uniswap/sushiswap in the defi section
-        that will be deprecated.
-
-        If `balances` is empty that means either the address does not have
-        balances in the protocol or the endpoint has been called with a
-        specific time range.
-        """
-        events_balances: list[LiquidityPoolEventsBalance] = []
-        pool_balance: dict[ChecksumEvmAddress, LiquidityPool] = (
-            {pool.address: pool for pool in balances}
-        )
-        pool_aggregated_amount: dict[EvmToken, AggregatedAmount] = defaultdict(AggregatedAmount)
-        # Populate `pool_aggregated_amount` dict, being the keys the pools'
-        # addresses and the values the aggregated amounts from their events
-        for event in events:
-            if event.extra_data is None or (pool_address := event.extra_data.get('pool_address')) is None:  # noqa: E501
-                continue
-
-            pool_token = EvmToken(evm_address_to_identifier(address=pool_address, chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20))  # noqa: E501
-            underlying0 = EvmToken(evm_address_to_identifier(address=pool_token.underlying_tokens[0].address, chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20))  # noqa: E501
-            if underlying0 != A_WETH:
-                asset_list: tuple[EvmToken] | tuple[Asset, Asset] = (underlying0,)
-            else:
-                asset_list = (A_ETH, A_WETH)
-
-            event_asset_is_token_0 = event.asset in asset_list
-            if event.event_subtype == HistoryEventSubType.DEPOSIT_FOR_WRAPPED:
-                if event_asset_is_token_0 is True:
-                    pool_aggregated_amount[pool_token].profit_loss0 -= event.amount
-                else:
-                    pool_aggregated_amount[pool_token].profit_loss1 -= event.amount
-
-                usd_value = query_usd_price_zero_if_error(
-                    asset=event.asset,
-                    time=event.get_timestamp_in_sec(),
-                    location=f'_calculate_events_balances for {self.counterparties}',
-                )
-                pool_aggregated_amount[pool_token].usd_profit_loss -= event.amount * usd_value
-            else:  # event_type == HistoryEventSubType.REDEEM_WRAPPED
-                if event_asset_is_token_0 is True:
-                    pool_aggregated_amount[pool_token].profit_loss0 += event.amount
-                else:
-                    pool_aggregated_amount[pool_token].profit_loss1 += event.amount
-
-                usd_value = query_usd_price_zero_if_error(
-                    asset=event.asset,
-                    time=event.get_timestamp_in_sec(),
-                    location=f'_calculate_events_balances for {self.counterparties}',
-                )
-                pool_aggregated_amount[pool_token].usd_profit_loss += event.amount * usd_value
-
-        # Instantiate `LiquidityPoolEventsBalance` per pool using
-        # `pool_aggregated_amount`. If `pool_balance` exists (all events case),
-        # factorise in the current pool balances in the totals.
-        for pool, aggregated_amount in pool_aggregated_amount.items():
-            profit_loss0 = aggregated_amount.profit_loss0
-            profit_loss1 = aggregated_amount.profit_loss1
-            usd_profit_loss = aggregated_amount.usd_profit_loss
-
-            # Add current pool balances by looking up the pool
-            if pool in pool_balance:
-                pool_balance_for_token = pool_balance[pool.evm_address]
-                token0 = pool_balance_for_token.assets[0].token
-                token1 = pool_balance_for_token.assets[1].token
-                profit_loss0 += pool_balance_for_token.assets[0].user_balance.amount
-                profit_loss1 += pool_balance_for_token.assets[1].user_balance.amount
-                usd_profit_loss += pool_balance_for_token.user_balance.usd_value
-            else:
-                # NB: get `token0` and `token1` from any pool event
-                token0 = EvmToken(evm_address_to_identifier(address=pool.underlying_tokens[0].address, chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20))  # noqa: E501
-                token1 = EvmToken(evm_address_to_identifier(address=pool.underlying_tokens[1].address, chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20))  # noqa: E501
-
-            events_balance = LiquidityPoolEventsBalance(
-                pool_address=pool.evm_address,
-                token0=token0,
-                token1=token1,
-                profit_loss0=profit_loss0,
-                profit_loss1=profit_loss1,
-                usd_profit_loss=usd_profit_loss,
-            )
-            events_balances.append(events_balance)
-
-        return events_balances
-
-    def get_stats_for_addresses(
-            self,
-            addresses: list[ChecksumEvmAddress],
-            from_timestamp: Timestamp,
-            to_timestamp: Timestamp,
-    ) -> dict[ChecksumEvmAddress, list[LiquidityPoolEventsBalance]]:
-        """Use the provided addresses and filters to query mint/burn events and calculate stats
-        from them. Prices for events missing them are queried before calculating any USD value.
-        """
-        db = DBHistoryEvents(self.database)
-        stats = {}
-        balances = self.get_balances(addresses)
-        for address in addresses:
-            dbfilter = EvmEventFilterQuery.make(
-                counterparties=self.counterparties,
-                location_labels=[address],
-                from_ts=from_timestamp,
-                to_ts=to_timestamp,
-                event_subtypes=[
-                    HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
-                    HistoryEventSubType.REDEEM_WRAPPED,
-                ],
-            )
-            with self.database.conn.read_ctx() as cursor:
-                events = db.get_history_events(
-                    cursor=cursor,
-                    filter_query=dbfilter,
-                    has_premium=has_premium_check(self.premium),
-                    group_by_event_ids=False,
-                )
-
-            if len(events) == 0:
-                continue
-
-            stats[address] = self._calculate_events_balances(
-                events=events,
-                balances=balances.get(address, []),
-            )
-        return stats
 
     def _get_lp_addresses(
             self,

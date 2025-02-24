@@ -1,100 +1,34 @@
-import logging
-from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Literal, NamedTuple
+from typing import TYPE_CHECKING, NamedTuple
 
 from gevent.lock import Semaphore
 
-from rotkehlchen.accounting.structures.balance import AssetBalance, Balance
-from rotkehlchen.accounting.structures.defi import DefiEvent, DefiEventType
+from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.ethereum.constants import RAY
 from rotkehlchen.chain.ethereum.defi.defisaver_proxy import HasDSProxy
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants import ONE, ZERO
+from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_DAI
 from rotkehlchen.errors.misc import RemoteError
-from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
-from rotkehlchen.history.price import query_usd_price_or_use_default
 from rotkehlchen.inquirer import Inquirer
-from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.types import (
     ChecksumEvmAddress,
-    EVMTxHash,
     Price,
-    Timestamp,
-    deserialize_evm_tx_hash,
 )
-from rotkehlchen.utils.misc import hexstr_to_int, ts_now
 
-from .constants import MAKERDAO_REQUERY_PERIOD, RAD
+from .constants import RAD
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.user_messages import MessagesAggregator
 
-logger = logging.getLogger(__name__)
-log = RotkehlchenLogsAdapter(logger)
-
-
-@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
-class DSRMovement:
-    movement_type: Literal['deposit', 'withdrawal']
-    address: ChecksumEvmAddress
-    # normalized balance in DSR DAI (RAD precision 10**45)
-    normalized_balance: int
-    # gain so far in DSR DAI (RAD precision 10**45)
-    gain_so_far: int = field(init=False)
-    gain_so_far_usd_value: FVal = field(init=False)
-    # dai balance in DSR DAI (RAD precision 10**45)
-    amount: int
-    amount_usd_value: FVal
-    block_number: int
-    timestamp: Timestamp
-    tx_hash: EVMTxHash
-
-    def __str__(self) -> str:
-        """Used in DefiEvent processing during accounting"""
-        return f'Makerdao DSR {self.movement_type}'
-
 
 class DSRCurrentBalances(NamedTuple):
     balances: dict[ChecksumEvmAddress, Balance]
     # The percentage of the current DSR. e.g. 8% would be 8.00
     current_dsr: FVal
-
-
-class DSRAccountReport(NamedTuple):
-    movements: list[DSRMovement]
-    gain_so_far: int
-    gain_so_far_usd_value: FVal
-
-    def serialize(self) -> dict[str, Any]:
-        serialized_report = {
-            'gain_so_far': {
-                'amount': str(_dsrdai_to_dai(self.gain_so_far)),
-                'usd_value': str(self.gain_so_far_usd_value),
-            },
-            'movements': [],
-        }
-        for movement in self.movements:
-            serialized_movement = {
-                'movement_type': movement.movement_type,
-                'gain_so_far': {
-                    'amount': str(_dsrdai_to_dai(movement.gain_so_far)),
-                    'usd_value': str(movement.gain_so_far_usd_value),
-                },
-                'value': {
-                    'amount': str(_dsrdai_to_dai(movement.amount)),
-                    'usd_value': str(movement.amount_usd_value),
-                },
-                'block_number': movement.block_number,
-                'timestamp': movement.timestamp,
-                'tx_hash': movement.tx_hash.hex(),
-            }
-            serialized_report['movements'].append(serialized_movement)  # type: ignore
-        return serialized_report
 
 
 def _dsrdai_to_dai(value: int | FVal) -> FVal:
@@ -119,16 +53,13 @@ class MakerdaoDsr(HasDSProxy):
             msg_aggregator=msg_aggregator,
         )
         self.reset_last_query_ts()
-        self.historical_dsr_reports: dict[ChecksumEvmAddress, DSRAccountReport] = {}
         self.lock = Semaphore()
         self.dai = A_DAI.resolve_to_evm_token()
-        self.makerdao_dai_join = self.ethereum.contracts.contract(string_to_evm_address('0x9759A6Ac90977b93B58547b4A71c78317f391A28'))  # noqa: E501
         self.makerdao_pot = self.ethereum.contracts.contract(string_to_evm_address('0x197E90f9FAD81970bA7976f33CbD77088E5D7cf7'))  # noqa: E501
 
     def reset_last_query_ts(self) -> None:
         """Reset the last query timestamps, effectively cleaning the caches"""
         self.ethereum.proxies_inquirer.reset_last_query_ts()
-        self.last_historical_dsr_query_ts = 0
 
     def get_current_dsr(self) -> DSRCurrentBalances:
         """Gets the current DSR balance for all accounts that have DAI in DSR
@@ -164,318 +95,3 @@ class MakerdaoDsr(HasDSProxy):
             # https://docs.makerdao.com/smart-contract-modules/rates-module#a-note-on-setting-rates
             current_dsr_percentage = ((FVal(current_dsr / RAY) ** 31622400) % 1) * 100
             return DSRCurrentBalances(balances=balances, current_dsr=current_dsr_percentage)
-
-    def _get_vat_join_exit_at_transaction(
-            self,
-            movement_type: Literal['join', 'exit'],
-            proxy_address: ChecksumEvmAddress,
-            block_number: int,
-            transaction_index: int,
-    ) -> int | None:
-        """Returns values in DSR DAI that were deposited/withdrawn at a block number and tx index
-
-        DSR DAI means they need they have a lot more digits than normal DAI and they
-        need to be divided by RAD (10**45) in order to get real DAI value. Keeping
-        it like that since most calculations deal with RAD precision in DSR.
-
-        Returns None if no value was found of if there was an error with conversion.
-
-        May raise:
-        - RemoteError if etherscan is used and there is a problem with
-        reaching it or with the returned result.
-        - BlockchainQueryError if an ethereum node is used and the contract call
-        queries fail for some reason
-        """
-        argument_filters = {
-            'sig': '0x3b4da69f' if movement_type == 'join' else '0xef693bed',
-            'usr': proxy_address,
-        }
-        events = self.makerdao_dai_join.get_logs(
-            node_inquirer=self.ethereum,
-            event_name='LogNote',
-            argument_filters=argument_filters,
-            from_block=block_number,
-            to_block=block_number,
-        )
-        value = None
-        for event in events:
-            if event['transactionIndex'] == transaction_index:
-                if value is not None:
-                    log.error(
-                        'Mistaken assumption: There is multiple vat.move events for '
-                        'the same transaction',
-                    )
-                try:
-                    value = hexstr_to_int(event['topics'][3])
-                    break
-                except DeserializationError:
-                    value = None
-
-        return value * RAY if value is not None else None  # turn it from DAI to RAD
-
-    def _historical_dsr_for_account(
-            self,
-            account: ChecksumEvmAddress,
-            proxy: ChecksumEvmAddress,
-    ) -> DSRAccountReport:
-        """Creates a historical DSR report for a single account
-
-        May raise:
-        - RemoteError if etherscan is used and there is a problem with
-        reaching it or with the returned result.
-        - BlockchainQueryError if an ethereum node is used and the contract call
-        queries fail for some reason
-        """
-        movements = []
-        join_normalized_balances = []
-        exit_normalized_balances = []
-        argument_filters = {
-            'sig': '0x049878f3',  # join
-            'usr': proxy,
-        }
-        join_events = self.makerdao_pot.get_logs_since_deployment(
-            node_inquirer=self.ethereum,
-            event_name='LogNote',
-            argument_filters=argument_filters,
-        )
-        for join_event in join_events:
-            try:
-                wad_val = hexstr_to_int(join_event['topics'][2])
-                tx_hash = deserialize_evm_tx_hash(join_event['transactionHash'])
-            except DeserializationError as e:
-                msg = f'Error at reading DSR join event topics. {e!s}. Skipping event...'
-                self.msg_aggregator.add_error(msg)
-                continue
-            join_normalized_balances.append(wad_val)
-
-            # and now get the deposit amount
-            block_number = join_event['blockNumber']
-            dai_value = self._get_vat_join_exit_at_transaction(
-                movement_type='join',
-                proxy_address=proxy,
-                block_number=block_number,
-                transaction_index=join_event['transactionIndex'],
-            )
-            if dai_value is None:
-                self.msg_aggregator.add_error(
-                    'Did not find corresponding vat.move event for pot join. Skipping ...',
-                )
-                continue
-
-            timestamp = self.ethereum.get_event_timestamp(join_event)
-            usd_price = query_usd_price_or_use_default(
-                asset=A_DAI,
-                time=timestamp,
-                default_value=ONE,
-                location='DSR deposit',
-            )
-            movements.append(
-                DSRMovement(
-                    movement_type='deposit',
-                    address=account,
-                    normalized_balance=wad_val,
-                    amount=dai_value,
-                    amount_usd_value=_dsrdai_to_dai(dai_value) * usd_price,
-                    block_number=join_event['blockNumber'],
-                    timestamp=timestamp,
-                    tx_hash=tx_hash,
-                ),
-            )
-
-        argument_filters = {
-            'sig': '0x7f8661a1',  # exit
-            'usr': proxy,
-        }
-        exit_events = self.makerdao_pot.get_logs_since_deployment(
-            node_inquirer=self.ethereum,
-            event_name='LogNote',
-            argument_filters=argument_filters,
-        )
-        for exit_event in exit_events:
-            try:
-                wad_val = hexstr_to_int(exit_event['topics'][2])
-                tx_hash = deserialize_evm_tx_hash(exit_event['transactionHash'])
-            except DeserializationError as e:
-                msg = f'Error at reading DSR exit event topics. {e!s}. Skipping event...'
-                self.msg_aggregator.add_error(msg)
-                continue
-            exit_normalized_balances.append(wad_val)
-
-            block_number = exit_event['blockNumber']
-            # and now get the withdrawal amount
-            dai_value = self._get_vat_join_exit_at_transaction(
-                movement_type='exit',
-                proxy_address=proxy,
-                block_number=block_number,
-                transaction_index=exit_event['transactionIndex'],
-            )
-            if dai_value is None:
-                self.msg_aggregator.add_error(
-                    'Did not find corresponding vat.move event for pot exit. Skipping ...',
-                )
-                continue
-
-            timestamp = self.ethereum.get_event_timestamp(exit_event)
-            usd_price = query_usd_price_or_use_default(
-                asset=A_DAI,
-                time=timestamp,
-                default_value=ONE,
-                location='DSR withdrawal',
-            )
-            movements.append(
-                DSRMovement(
-                    movement_type='withdrawal',
-                    address=account,
-                    normalized_balance=wad_val,
-                    amount=dai_value,
-                    amount_usd_value=_dsrdai_to_dai(dai_value) * usd_price,
-                    block_number=exit_event['blockNumber'],
-                    timestamp=timestamp,
-                    tx_hash=tx_hash,
-                ),
-            )
-
-        normalized_balance = 0
-        amount_in_dsr = 0
-        movements.sort(key=lambda x: x.block_number)
-
-        for idx, m in enumerate(movements):
-            if m.normalized_balance == 0:
-                # skip 0 amount/balance movements. Consider last gain as last gain so far.
-                if idx == 0:
-                    m.gain_so_far = 0
-                    m.gain_so_far_usd_value = ZERO
-                else:
-                    m.gain_so_far = movements[idx - 1].gain_so_far
-                    m.gain_so_far_usd_value = movements[idx - 1].gain_so_far_usd_value
-                continue
-
-            if normalized_balance == m.normalized_balance:
-                m.gain_so_far = m.amount - amount_in_dsr
-            else:
-                current_chi = FVal(m.amount) / FVal(m.normalized_balance)
-                gain_so_far = normalized_balance * current_chi - amount_in_dsr
-                m.gain_so_far = gain_so_far.to_int(exact=False)
-
-            usd_price = query_usd_price_or_use_default(
-                asset=A_DAI,
-                time=m.timestamp,
-                default_value=ONE,
-                location='DSR movement',
-            )
-            m.gain_so_far_usd_value = _dsrdai_to_dai(m.gain_so_far) * usd_price
-            if m.movement_type == 'deposit':
-                normalized_balance += m.normalized_balance
-                amount_in_dsr += m.amount
-            else:  # withdrawal
-                amount_in_dsr -= m.amount
-                normalized_balance -= m.normalized_balance
-
-        chi = self.makerdao_pot.call(self.ethereum, 'chi')
-        normalized_balance *= chi
-        gain = normalized_balance - amount_in_dsr
-        try:
-            current_dai_price = Inquirer.find_usd_price(A_DAI)
-        except RemoteError:
-            current_dai_price = Price(ONE)
-
-        # Calculate the total gain so far in USD
-        unaccounted_gain = _dsrdai_to_dai(gain)
-        last_usd_value = ZERO
-        last_dai_gain = 0
-        if len(movements) != 0:
-            last_usd_value = movements[-1].gain_so_far_usd_value
-            last_dai_gain = movements[-1].gain_so_far
-            unaccounted_gain = _dsrdai_to_dai(gain - last_dai_gain)
-        gain_so_far_usd_value = unaccounted_gain * current_dai_price + last_usd_value
-
-        return DSRAccountReport(
-            movements=movements,
-            gain_so_far=gain,
-            gain_so_far_usd_value=gain_so_far_usd_value,
-        )
-
-    def get_historical_dsr(self) -> dict[ChecksumEvmAddress, DSRAccountReport]:
-        """Gets the historical DSR report per account
-
-            This is a premium only call. Check happens only in the API level.
-        """
-        now = ts_now()
-        if now - self.last_historical_dsr_query_ts < MAKERDAO_REQUERY_PERIOD:
-            return self.historical_dsr_reports
-
-        with self.lock:
-            proxy_mappings = self.ethereum.proxies_inquirer.get_accounts_having_proxy()
-            reports = {}
-            for account, proxy in proxy_mappings.items():
-                report = self._historical_dsr_for_account(account, proxy)
-                if len(report.movements) == 0:
-                    # This proxy has never had any DSR events
-                    continue
-
-                reports[account] = report
-
-        self.historical_dsr_reports = reports
-        self.last_historical_dsr_query_ts = ts_now()
-        return self.historical_dsr_reports
-
-    def get_history_events(
-            self,
-            from_timestamp: Timestamp,
-            to_timestamp: Timestamp,
-    ) -> list[DefiEvent]:
-        """Gets the history events from DSR for accounting
-
-            This is a premium only call. Check happens only in the API level.
-        """
-        history = self.get_historical_dsr()
-        events = []
-        for report in history.values():
-            total_balance = Balance()
-            counted_profit = Balance()
-            for movement in report.movements:
-                if movement.timestamp < from_timestamp:
-                    continue
-                if movement.timestamp > to_timestamp:
-                    break
-
-                pnl = got_asset = got_balance = spent_asset = spent_balance = None
-                balance = Balance(
-                    amount=_dsrdai_to_dai(movement.amount),
-                    usd_value=movement.amount_usd_value,
-                )
-                if movement.movement_type == 'deposit':
-                    spent_asset = self.dai
-                    spent_balance = balance
-                    total_balance -= balance
-                else:
-                    got_asset = self.dai
-                    got_balance = balance
-                    total_balance += balance
-                    if total_balance.amount - counted_profit.amount > ZERO:
-                        pnl_balance = total_balance - counted_profit
-                        counted_profit += pnl_balance
-                        pnl = [AssetBalance(asset=A_DAI, balance=pnl_balance)]
-
-                events.append(DefiEvent(
-                    timestamp=movement.timestamp,
-                    wrapped_event=movement,
-                    event_type=DefiEventType.DSR_EVENT,
-                    got_asset=got_asset,
-                    got_balance=got_balance,
-                    spent_asset=spent_asset,
-                    spent_balance=spent_balance,
-                    pnl=pnl,
-                    # Depositing and withdrawing from DSR is not counted in
-                    # cost basis. DAI were always yours, you did not rebuy them
-                    count_spent_got_cost_basis=False,
-                    tx_hash=movement.tx_hash,
-                ))
-
-        return events
-
-    # -- Methods following the EthereumModule interface -- #
-    def on_account_removal(self, address: ChecksumEvmAddress) -> None:
-        super().on_account_removal(address)
-        with self.lock:
-            self.historical_dsr_reports.pop(address, 'None')
