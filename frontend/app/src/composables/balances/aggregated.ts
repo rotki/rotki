@@ -5,7 +5,6 @@ import { useBlockchainStore } from '@/store/blockchain';
 import { useExchangeBalancesStore } from '@/store/balances/exchanges';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
-import { useLiquidityPosition } from '@/composables/defi';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useBalanceSorting } from '@/composables/balances/sorting';
 import { useManualAssetBalances } from '@/composables/balances/manual';
@@ -31,7 +30,6 @@ export function useAggregatedBalances(): UseAggregatedBalancesReturn {
 
   const { getAssociatedAssetIdentifier } = useAssetInfoRetrieval();
   const { toSortedAssetBalanceWithPrice } = useBalanceSorting();
-  const { lpAggregatedBalances } = useLiquidityPosition();
 
   const balances = (
     hideIgnored = true,
@@ -93,10 +91,7 @@ export function useAggregatedBalances(): UseAggregatedBalancesReturn {
       return asset;
     });
 
-    const lpBalances = get(lpAggregatedBalances);
-    const lpAssets = lpBalances.map(item => item.asset).filter(item => !!item);
-
-    assets.push(...liabilitiesAsset, ...lpAssets, ...additional);
+    assets.push(...liabilitiesAsset, ...additional);
     return assets.filter(uniqueStrings);
   });
 

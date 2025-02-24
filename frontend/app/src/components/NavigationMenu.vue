@@ -117,31 +117,9 @@ const navItems: MenuItem[] = [
     ],
   },
   {
-    class: 'defi',
-    type: 'group',
-    ...Routes.DEFI,
-    items: [
-      {
-        class: 'defi-overview',
-        type: 'item',
-        ...Routes.DEFI_OVERVIEW,
-      },
-      {
-        class: 'defi-deposits',
-        type: 'item',
-        ...Routes.DEFI_DEPOSITS,
-      },
-      {
-        class: 'defi-liabilities',
-        type: 'item',
-        ...Routes.DEFI_LIABILITIES,
-      },
-      {
-        class: 'defi-airdrops',
-        type: 'item',
-        ...Routes.DEFI_AIRDROPS,
-      },
-    ],
+    class: 'airdrops',
+    type: 'item',
+    ...Routes.AIRDROPS,
   },
   {
     class: 'statistics',

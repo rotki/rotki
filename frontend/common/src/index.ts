@@ -12,8 +12,6 @@ export * from './color';
 
 export * from './data';
 
-export * from './defi';
-
 export * from './history';
 
 export * from './liquity';

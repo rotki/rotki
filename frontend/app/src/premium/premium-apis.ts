@@ -1,7 +1,5 @@
 import { isNft } from '@/utils/nft';
 import { truncateAddress } from '@/utils/truncate';
-import { useSushiswapStore } from '@/store/defi/sushiswap';
-import { useCompoundStore } from '@/store/defi/compound';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
@@ -9,7 +7,6 @@ import { useSessionSettingsStore } from '@/store/settings/session';
 import { useStatisticsStore } from '@/store/statistics';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useAggregatedBalances } from '@/composables/balances/aggregated';
-import { useLiquidityPosition } from '@/composables/defi';
 import { useBalancesBreakdown } from '@/composables/balances/breakdown';
 import { useAssetManagementApi } from '@/composables/api/assets/management';
 import { useStatisticsApi } from '@/composables/api/statistics/statistics-api';
@@ -22,12 +19,9 @@ import type {
   AssetsApi,
   BalancesApi,
   BigNumber,
-  CompoundApi,
   LocationData,
   OwnedAssets,
-  ProfitLossModel,
   StatisticsApi,
-  SushiApi,
   TimedAssetBalances,
   TimedAssetHistoricalBalances,
   TimedBalances,
@@ -160,38 +154,8 @@ export function balancesApi(): BalancesApi {
   };
 }
 
-type ProfitLossRef = ComputedRef<ProfitLossModel[]>;
-
-export function compoundApi(): CompoundApi {
-  const { debtLoss, interestProfit, liquidationProfit, rewards } = storeToRefs(useCompoundStore());
-
-  return {
-    compoundDebtLoss: debtLoss as ProfitLossRef,
-    compoundInterestProfit: interestProfit as ProfitLossRef,
-    compoundLiquidationProfit: liquidationProfit as ProfitLossRef,
-    compoundRewards: rewards as ProfitLossRef,
-  };
-}
-
-export function sushiApi(): SushiApi {
-  const store = useSushiswapStore();
-  const { addresses, pools } = toRefs(store);
-
-  const { balanceList, fetchBalances, fetchEvents, poolProfit } = store;
-
-  return {
-    addresses,
-    balances: balanceList,
-    fetchBalances,
-    fetchEvents,
-    poolProfit,
-    pools,
-  };
-}
-
 export function utilsApi(): UtilsApi {
   return {
-    getPoolName: useLiquidityPosition().getPoolName,
     truncate: truncateAddress,
   };
 }

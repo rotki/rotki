@@ -121,17 +121,7 @@ function createFactory(component: string, options?: { loading?: Component; error
 
 export const PremiumStatistics = createFactory('PremiumStatistics');
 
-export const CompoundLendingDetails = createFactory('CompoundLendingDetails');
-
-export const CompoundBorrowingDetails = createFactory('CompoundBorrowingDetails');
-
-export const AaveBorrowingDetails = createFactory('AaveBorrowingDetails');
-
-export const AaveEarnedDetails = createFactory('AaveEarnedDetails');
-
 export const EthStaking = createFactory('EthStaking');
-
-export const UniswapDetails = createFactory('UniswapDetails');
 
 export const AssetAmountAndValueOverTime = createFactory('AssetAmountAndValueOverTime');
 
@@ -143,8 +133,6 @@ export const ThemeSwitch = createFactory('ThemeSwitch', {
 });
 
 export const ThemeManager = createFactory('ThemeManager');
-
-export const Sushi = createFactory('Sushi');
 
 declare global {
   interface Window {

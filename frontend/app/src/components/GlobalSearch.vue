@@ -127,26 +127,7 @@ function getRoutes(keyword: string): SearchItemWithoutValue[] {
       ...Routes.HISTORY_EVENTS,
       texts: [Routes.HISTORY.text, Routes.HISTORY_EVENTS.text],
     },
-    {
-      ...Routes.DEFI_OVERVIEW,
-      texts: [Routes.DEFI.text, Routes.DEFI_OVERVIEW.text],
-    },
-    {
-      ...Routes.DEFI_DEPOSITS_PROTOCOLS,
-      texts: [Routes.DEFI.text, Routes.DEFI_DEPOSITS.text, Routes.DEFI_DEPOSITS_PROTOCOLS.text],
-    },
-    {
-      ...Routes.DEFI_DEPOSITS_LIQUIDITY,
-      texts: [Routes.DEFI.text, Routes.DEFI_DEPOSITS.text, Routes.DEFI_DEPOSITS_LIQUIDITY.text],
-    },
-    {
-      ...Routes.DEFI_LIABILITIES,
-      texts: [Routes.DEFI.text, Routes.DEFI_LIABILITIES.text],
-    },
-    {
-      ...Routes.DEFI_AIRDROPS,
-      texts: [Routes.DEFI.text, Routes.DEFI_AIRDROPS.text],
-    },
+    { ...Routes.AIRDROPS },
     { ...Routes.STATISTICS },
     { ...Routes.STAKING },
     { ...Routes.PROFIT_LOSS_REPORTS },

@@ -23,11 +23,6 @@ const { t } = useI18n();
         {{ t('module_settings.subtitle') }}
       </template>
       <div class="flex flex-col gap-4 pt-4">
-        <RuiAlert
-          type="warning"
-        >
-          {{ t('decentralized_overview.deprecated_warning') }}
-        </RuiAlert>
         <RuiAlert type="info">
           {{ t('module_settings.hint') }}
         </RuiAlert>

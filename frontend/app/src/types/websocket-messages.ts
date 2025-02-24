@@ -209,8 +209,6 @@ export const CsvImportResultWithSubtype = CsvImportResult.extend({
   subtype: z.literal(SocketMessageProgressUpdateSubType.CSV_IMPORT_RESULT),
 });
 
-export type CsvImportResultWithSubtype = z.infer<typeof CsvImportResultWithSubtype>;
-
 export const ProgressUpdateResultData = z.discriminatedUnion('subtype', [
   EvmUnDecodedTransactionsDataWithSubtype,
   ProtocolCacheUpdatesDataWithSubtype,

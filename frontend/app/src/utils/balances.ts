@@ -5,7 +5,6 @@ import type {
   AssetBalance,
   AssetBalanceWithPrice,
   BigNumber,
-  HasBalance,
   Writeable,
 } from '@rotki/common';
 import type { MaybeRef } from '@vueuse/core';
@@ -96,10 +95,6 @@ export function sumAssetBalances(
 
 export function sum(balances: { usdValue: BigNumber }[]): BigNumber {
   return bigNumberSum(balances.map(account => account.usdValue));
-}
-
-export function balanceUsdValueSum(balances: HasBalance[]): BigNumber {
-  return balances.reduce((sum, balance) => sum.plus(balance.balance.usdValue), Zero);
 }
 
 export function sortAssetBalances<T extends AssetBalance = AssetBalanceWithPrice>(data: T[], sort: DataTableSortData<T>, assetInfo: AssetInfoReturn): T[] {

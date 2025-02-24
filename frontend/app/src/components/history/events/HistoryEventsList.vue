@@ -46,7 +46,7 @@ const events = computed<HistoryEventEntry[]>(() => {
     .sort((a, b) => Number(a.sequenceIndex) - Number(b.sequenceIndex));
 });
 
-const ignoredInAccounting = computed(() => !!get(eventGroup).ignoredInAccounting);
+const ignoredInAccounting = computed(() => get(eventGroup).ignoredInAccounting);
 
 const showDropdown = computed(() => {
   const length = get(events).length;

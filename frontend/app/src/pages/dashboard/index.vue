@@ -14,7 +14,6 @@ import { useRefresh } from '@/composables/balances/refresh';
 import { useAggregatedBalances } from '@/composables/balances/aggregated';
 import NftBalanceTable from '@/components/dashboard/NftBalanceTable.vue';
 import DashboardAssetTable from '@/components/dashboard/DashboardAssetTable.vue';
-import LiquidityProviderBalanceTable from '@/components/dashboard/liquity-provider/LiquidityProviderBalanceTable.vue';
 import PriceRefresh from '@/components/helper/PriceRefresh.vue';
 import ManualBalanceCardList from '@/components/dashboard/ManualBalanceCardList.vue';
 import SummaryCardCreateButton from '@/components/dashboard/summary-card/SummaryCardCreateButton.vue';
@@ -199,7 +198,6 @@ const Type = DashboardTableType;
         :loading="isAnyLoading"
         :balances="aggregatedBalances"
       />
-      <LiquidityProviderBalanceTable class="mt-8" />
       <DashboardAssetTable
         v-if="aggregatedLiabilities.length > 0"
         class="mt-8"

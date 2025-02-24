@@ -1,8 +1,4 @@
 {
-  "aave_lending": {
-    "header": "Préstamo en Aave ({asset})",
-    "history": "Aave History"
-  },
   "about": {
     "app_version": "Version de la App:",
     "components": {
@@ -293,78 +289,6 @@
       }
     },
     "defi": {
-      "aave_balances": {
-        "error": {
-          "description": "Failed to retrieve Aave balances: {error}",
-          "title": "Aave balances"
-        },
-        "task": {
-          "title": "Querying Aave balances"
-        }
-      },
-      "aave_history": {
-        "error": {
-          "description": "Failed to retrieve Aave history: {error}",
-          "title": "Aave history"
-        },
-        "task": {
-          "title": "Querying Aave history"
-        }
-      },
-      "airdrops": {
-        "error": {
-          "description": "Failed to retrieve airdrops: {error}",
-          "title": "Airdrops"
-        },
-        "task": {
-          "title": "Querying airdrops"
-        }
-      },
-      "balances": {
-        "error": {
-          "description": "Failed to retrieve DeFi balances: {error}",
-          "title": "DeFi Balances"
-        },
-        "task": {
-          "title": "Querying DeFi balances"
-        }
-      },
-      "compound": {
-        "error": {
-          "description": "Failed to retrieve Compound balances: {error}",
-          "title": "Compound Balances"
-        },
-        "task": {
-          "title": "Querying Compound balances"
-        }
-      },
-      "compound_history": {
-        "error": {
-          "description": "Failed to retrieve Compound history: {error}",
-          "title": "Compound History"
-        },
-        "task": {
-          "title": "Querying Compound history"
-        }
-      },
-      "dsr_balances": {
-        "error": {
-          "description": "Failed to retrieve DSR balances: {error}",
-          "title": "DSR Balances"
-        },
-        "task": {
-          "title": "Querying DSR Balances"
-        }
-      },
-      "dsr_history": {
-        "error": {
-          "description": "Failed to retrieve DSR history: {error}",
-          "title": "DSR History"
-        },
-        "task": {
-          "title": "Querying DSR History"
-        }
-      },
       "liquity": {
         "task": {
           "title": "Querying Liquity Balances"
@@ -401,69 +325,6 @@
         },
         "task": {
           "title": "Querying Liquity Statistics"
-        }
-      },
-      "makerdao_vault_details": {
-        "error": {
-          "description": "Failed to retrieve MakerDAO Vault details: {error}",
-          "title": "MakerDAO Vault details"
-        },
-        "task": {
-          "title": "Querying MakerDAO Vault details"
-        }
-      },
-      "makerdao_vaults": {
-        "error": {
-          "description": "Failed to retrieve MakerDAO Vaults: {error}",
-          "title": "MakerDAO Vaults"
-        },
-        "task": {
-          "title": "Querying MakerDAO Vaults"
-        }
-      },
-      "sushiswap_balances": {
-        "error": {
-          "description": "Failed to query Sushiswap balances: {message}",
-          "title": "Sushiswap balances"
-        },
-        "task": {
-          "title": "Querying Sushiswap balances"
-        }
-      },
-      "sushiswap_events": {
-        "error": {
-          "description": "Failed to query Sushiswap events: {message}",
-          "title": "Sushiswap events"
-        },
-        "task": {
-          "title": "Querying Sushiswap events"
-        }
-      },
-      "uniswap": {
-        "error": {
-          "description": "Failed to retrieve Uniswap V{v} balances: {error}",
-          "title": "Uniswap V{v} balances"
-        },
-        "task": {
-          "title": "Querying Uniswap V{v} balances"
-        }
-      },
-      "uniswap_events": {
-        "error": {
-          "description": "Failed to retrieve Uniswap events: {error}",
-          "title": "Querying Uniswap events"
-        },
-        "task": {
-          "title": "Querying Uniswap events"
-        }
-      },
-      "yearn_vaults": {
-        "error": {
-          "description": "Failed to retrieve yearn.finance Vaults {version} balances: {error}",
-          "title": "yearn.finance Vaults {version} balances"
-        },
-        "task": {
-          "title": "Querying yearn.finance Vaults {version} balances"
         }
       }
     },
@@ -1223,14 +1084,6 @@
     },
     "title": "Blockchain Balances per asset"
   },
-  "borrowing": {
-    "header": "Collateralized Loans",
-    "loading": "Please wait while your liabilities are getting loaded...",
-    "select_loan": "Select Loan",
-    "select_loan_hint": "Please select a loan to see information",
-    "total_collateral_locked": "Total collateral locked",
-    "total_outstanding_debt": "Total outstanding debt"
-  },
   "change_password": {
     "button": "Change Password",
     "labels": {
@@ -1344,7 +1197,6 @@
     "claimed": "Reclamada",
     "counterparty": "Counterparty",
     "datetime": "Date/Time",
-    "deposits": "Depositos",
     "description": "Descripción",
     "details": "Detalles",
     "events": "Eventos",
@@ -1376,10 +1228,6 @@
     "visit_website": "To get a premium subscription please visit our {0}.",
     "unknown": "Desconocido",
     "all": "Todos"
-  },
-  "compound_lending": {
-    "header": "Compound Loan ({asset})",
-    "history": "Compound History"
   },
   "conflict_dialog": {
     "action": {
@@ -1520,10 +1368,6 @@
     },
     "liabilities": {
       "title": "Liabilities"
-    },
-    "liquidity_position": {
-      "refresh_tooltip": "Refrescar LP Tokens",
-      "title": "LP Tokens"
     },
     "manual_balances": {
       "add": "Add a manual balance",
@@ -1749,37 +1593,6 @@
     "limit_now": "Cannot use future date",
     "timezone_field": {
       "non_empty": "Timezone should be specified"
-    }
-  },
-  "decentralized_overview": {
-    "empty_subtitle": "Please add at least one ETH account that has DeFi balances",
-    "empty_title": "No DeFi overview can be shown",
-    "loading": "Please wait while your defi balances are getting loaded...",
-    "title": "Defi Overview"
-  },
-  "defi_overview": {
-    "multiple_assets": "Multiple assets"
-  },
-  "defi_protocol_selector": {
-    "filter_all": "Showing all results",
-    "filter_specific": "Showing results for selected protocol",
-    "label": "Filter protocol(s)"
-  },
-  "defi_wizard": {
-    "steps": {
-      "select_modules": {
-        "hint": "If no modules are specified, querying for the supported modules will be disabled.",
-        "subtitle": "Select the modules you would like to activate.",
-        "title": "Select Modules"
-      },
-      "setup": {
-        "description_line_one": "rotki will attempt by default to retrieve information for all your accounts and available modules. The retrieval might require a lot of time based on the number of accounts you have.",
-        "description_line_three": "You can use the default settings if you want to have information for all protocols fetched for all accounts automatically. (Module Settings can be changed at a later time).",
-        "description_line_two": "To reduce the query time you can specify only the DeFi modules and accounts you are interested in.",
-        "subtitle": "Select options to improve your rotki DeFi experience",
-        "title": "Setup DeFi",
-        "used_default": "Use Default"
-      }
     }
   },
   "ens_names": {
@@ -2425,37 +2238,6 @@
     },
     "title": "Earned Per Asset"
   },
-  "lending": {
-    "currently_deposited": "Currently Deposited",
-    "effective_interest_rate": "Effective Savings Rate",
-    "effective_interest_rate_tooltip": "The savings rate across all of the protocols in which you are actively lending, weighted based on the relative position in each protocol.",
-    "history": "History",
-    "loading": "Please wait while your balances are getting loaded...",
-    "profit_earned": "Profit Earned"
-  },
-  "lending_asset_table": {
-    "headers": {
-      "effective_interest_rate": "Effective Interest Rate",
-      "usd_value": "{currency} value"
-    }
-  },
-  "liabilities": {
-    "no_selection": "Select a loan to view more information"
-  },
-  "liquidity_pool_details": {
-    "liquidity": "Liquidity",
-    "title": "Total in pools",
-    "tooltip": "Show details about the pool assets",
-    "total_amount": "Total amount",
-    "total_value_in_symbol": "Total {symbol} value"
-  },
-  "liquidity_pool_selector": {
-    "label": "Filter by pool(s)"
-  },
-  "liquity_lending": {
-    "header": "Liquity Trove {troveId}",
-    "trove_events": "Trove Events"
-  },
   "liquity_page": {
     "no_premium": "Liquity Staking"
   },
@@ -2471,43 +2253,6 @@
   },
   "liquity_staking_events": {
     "title": "Stake Events"
-  },
-  "loan_collateral": {
-    "apy": "APY",
-    "current_ratio": "Current ratio",
-    "liquidation_price": "Liquidation Price",
-    "locked_collateral": "Locked up collateral",
-    "per_asset": "Collateral Assets",
-    "ratio": "Collateralization Ratio",
-    "stable_apr": "Stable APR",
-    "title": "Collateral",
-    "variable_apr": "Variable APR",
-    "watchers": {
-      "add": "Add collateralization ratio watcher",
-      "dialog": {
-        "label": "Collateralization Ratio",
-        "message": "Add / Edit / Delete watchers for Maker Vault #{identifier} with current collateralization ratio {collateralizationRatio} and liquidation ratio {liquidationRatio}.",
-        "title": "Collateralization watchers"
-      },
-      "edit": "Edit {n} collateralization watcher | Edit {n} collateralization watchers"
-    }
-  },
-  "loan_debt": {
-    "outstanding_debt": "Outstanding debt",
-    "title": "Debt"
-  },
-  "loan_header": {
-    "owned_by": "Owned by:"
-  },
-  "loan_liquidation": {
-    "liquidated_collateral": "Liquidated collateral",
-    "liquidation_events": "Liquidation Events",
-    "liquidation_price": "Liquidation price",
-    "minimum_ratio": "Minimum ratio",
-    "no_events": "No liquidation events have occurred for this loan.",
-    "outstanding_debt": "Outstanding debt at liquidation",
-    "title": "Liquidation",
-    "total_value_lost": "Total value lost"
   },
   "loan_stake": {
     "no_lqty_staked": "No LQTY staked",
@@ -2565,14 +2310,6 @@
   "macos_unsupported": {
     "header": "Unsupported macOS Version",
     "message": "rotki's minimum supported macOs version is High Sierra(10.13)"
-  },
-  "maker_dao_vault_loan": {
-    "borrowing_history": "Borrowing History",
-    "header": "Maker Vault #{identifier} ({collateralType})"
-  },
-  "makerdao_vault_debt": {
-    "stability_fee": "Stability fee",
-    "total_lost": "Total lost due to interest"
   },
   "manage_user_assets": {
     "export": {
@@ -2696,17 +2433,7 @@
     "dashboard": "Dashboard",
     "defi": "DeFi",
     "defi_sub": {
-      "airdrops": "Airdrops",
-      "deposits_sub": {
-        "liquidity": "Liquidity Pools",
-        "liquidity_sub": {
-          "sushiswap": "Sushiswap",
-          "uniswap_v2": "Uniswap v2"
-        },
-        "protocols": "Protocolos"
-      },
-      "liabilities": "Liabilities",
-      "overview": "Overview"
+      "airdrops": "Airdrops"
     },
     "history": "Historial",
     "history_sub": {
@@ -2880,23 +2607,6 @@
   "overall_balances": {
     "loading": "Cargando",
     "premium_hint": "Get the full experience by upgrading to rotki premium"
-  },
-  "overview": {
-    "details_dialog": {
-      "subtitle": "Protocol asset details"
-    },
-    "stat_card": {
-      "content": {
-        "labels": {
-          "total_collateral": "Total Collateral",
-          "total_debt": "Total Debt",
-          "total_deposited": "Total Deposited"
-        }
-      },
-      "headers": {
-        "borrowing": "Liabilities"
-      }
-    }
   },
   "percentage_display": {
     "symbol": "%"
@@ -3376,10 +3086,6 @@
     "refresh_tooltip": "Refresh {name} balances",
     "title": "{name} balances"
   },
-  "sushiswap": {
-    "loading": "Please wait while your liquidity pools are getting loaded...",
-    "premium": "Sushiswap feature"
-  },
   "sync_buttons": {
     "download_tooltip": "Pull the saved data from the server and replace your local database",
     "upload_tooltip": "Push your local database to the server and replace all data there"
@@ -3653,13 +3359,6 @@
       "out_of_range": "Weight can be from 1-100%"
     }
   },
-  "uniswap": {
-    "assets_non_premium": "Upgrade to @:uniswap.premium to see assets information",
-    "loading": "Please wait while your liquidity pools are getting loaded...",
-    "loading_non_premium": "Loading the liquidity pool balances might take a while... Consider upgrading to {0} for faster load times.",
-    "premium": "premium",
-    "price_range": "Price Range"
-  },
   "update_indicator": {
     "version": "An Updated Version ({appVersion}) of rotki is available"
   },
@@ -3712,41 +3411,8 @@
   "validator_filter_input": {
     "label": "Select validator"
   },
-  "watcher_dialog": {
-    "add_error": "Error adding the watcher: {message}",
-    "add_success": "Successfully added watcher.",
-    "add_watcher": "Add watcher",
-    "delete_error": "Error deleting the watcher: {message}",
-    "delete_success": "Successfully deleted watcher.",
-    "edit": "Edit watchers",
-    "edit_error": "Error editing the watcher: {message}",
-    "edit_success": "Successfully edited watcher.",
-    "labels": {
-      "operation": "Operation",
-      "type": "Watcher Type"
-    },
-    "ratio": {
-      "ge": ">= (greater than or equal to)",
-      "gt": ">  (greater than)",
-      "le": "<= (less than or equal to)",
-      "lt": "<  (less than)"
-    },
-    "types": {
-      "make_collateralization_ratio": "Collateralization Ratio Watcher (Maker)"
-    }
-  },
   "win_unsupported": {
     "header": "Unsupported Windows Version",
     "message": "rotki's minimum supported Windows version is Windows 8(6.2)"
-  },
-  "yearn_asset_table": {
-    "headers": {
-      "roi": "ROI",
-      "underlying_asset": "Underlying Asset",
-      "vault": "Vault",
-      "vault_asset": "Vault Asset",
-      "version": "Version"
-    },
-    "title": "Yearn Vaults"
   }
 }
