@@ -1,10 +1,12 @@
 import logging
-from collections.abc import Sequence
+from collections import defaultdict
+from collections.abc import Mapping, Sequence
 from contextlib import suppress
 from http import HTTPStatus
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
+from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessageType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.polygon_pos.constants import POLYGON_POS_POL_HARDFORK
 from rotkehlchen.constants import HOUR_IN_SECONDS, ONE
@@ -319,3 +321,59 @@ class PriceHistorian:
             time=timestamp,
             rate_limited=rate_limited,
         )
+
+    @staticmethod
+    def query_multiple_prices(
+            assets_timestamp: list[tuple[Asset, Timestamp]],
+            target_asset: Asset,
+            msg_aggregator: 'MessagesAggregator',
+    ) -> Mapping[Asset, Mapping[Timestamp, Price]]:
+        """Return the price of the assets at the given timestamps in the target
+        asset currency.
+        """
+        log.debug(
+            f'Querying the historical {target_asset.identifier} price of these assets: '
+            f'{", ".join(f"{asset.identifier} at {ts}" for asset, ts in assets_timestamp)}',
+            assets_timestamp=assets_timestamp,
+        )
+        assets_price: defaultdict[Asset, defaultdict] = defaultdict(
+            lambda: defaultdict(lambda: ZERO_PRICE),
+        )
+        send_ws_every_prices = msg_aggregator.how_many_events_per_ws(
+            total_events=(total_events := len(assets_timestamp)),
+        )
+        price_historian = PriceHistorian()
+        for idx, (asset, timestamp) in enumerate(assets_timestamp):
+            if idx % send_ws_every_prices == 0:
+                msg_aggregator.add_message(
+                    message_type=WSMessageType.PROGRESS_UPDATES,
+                    data={
+                        'total': total_events,
+                        'processed': idx,
+                        'subtype': str(ProgressUpdateSubType.MULTIPLE_PRICES_QUERY_STATUS),
+                    },
+                )
+
+            try:
+                assets_price[asset][timestamp] = price_historian.query_historical_price(
+                    from_asset=asset,
+                    to_asset=target_asset,
+                    timestamp=timestamp,
+                )
+            except (RemoteError, NoPriceForGivenTimestamp) as e:
+                log.warning(
+                    f'Could not query the historical {target_asset.identifier} price for '
+                    f'{asset.identifier} at time {timestamp} due to: {e!s}. Skipping',
+                )
+                continue
+
+        msg_aggregator.add_message(
+            message_type=WSMessageType.PROGRESS_UPDATES,
+            data={
+                'total': total_events,
+                'processed': total_events,
+                'subtype': str(ProgressUpdateSubType.MULTIPLE_PRICES_QUERY_STATUS),
+            },
+        )
+
+        return assets_price

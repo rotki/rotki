@@ -774,9 +774,7 @@ class DBHistoryEvents:
         total_usd_value: FVal = ZERO
         query_location: str = 'get_amount_stats'
         log.debug(f'Will process {counterparty} stats for {total_events} events')
-        # Scales the number of events needed to send a WS message. Start from 5 and scale up to 50
-        # linearly if total events >= 1000.
-        send_ws_every_events = min(50, max(5, 5 + max(0, total_events - 50) // 20))
+        send_ws_every_events = self.db.msg_aggregator.how_many_events_per_ws(total_events)
         for idx, row in enumerate(cursor.execute(
             f'SELECT asset, amount, timestamp FROM history_events {query_filters};',
             bindings,

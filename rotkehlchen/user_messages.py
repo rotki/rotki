@@ -95,3 +95,11 @@ class MessagesAggregator:
         while len(self.errors) != 0:
             result.append(self.errors.pop())
         return result
+
+    @staticmethod
+    def how_many_events_per_ws(total_events: int) -> int:
+        """
+        Scales the number of events needed to send a WS message. Start from 5 and scale up to 50
+        linearly if total events >= 1000.
+        """
+        return min(50, max(5, 5 + max(0, total_events - 50) // 20))
