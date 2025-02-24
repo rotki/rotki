@@ -63,7 +63,18 @@
   "pnpm": {
     "patchedDependencies": {
       "bignumber.js@9.1.2": "patches/bignumber.js@9.1.2.patch"
-    }
+    },
+    "ignoredBuiltDependencies": [
+      "@parcel/watcher",
+      "core-js-pure",
+      "cypress",
+      "esbuild",
+      "msw",
+      "vue-demi"
+    ],
+    "onlyBuiltDependencies": [
+      "electron"
+    ]
   },
   "lint-staged": {
     "*": "eslint"
