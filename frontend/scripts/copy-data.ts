@@ -162,7 +162,7 @@ function resolveDataDirectory(): string {
 
 const cli = cac();
 
-cli.command('[]', 'Copy data from the data folder to the develop_data folder')
+cli.command('', 'Copy data from the data folder to the develop_data folder')
   .option('--replace', 'Replaces the existing data in the develop_data folder with data from the data folder', {
     default: false,
   })
