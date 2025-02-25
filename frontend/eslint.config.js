@@ -54,4 +54,12 @@ export default rotki({
   rules: {
     'import/no-cycle': 'off',
   },
+}, {
+  files: ['**/locales/**/*.json'],
+  rules: {
+    'jsonc/sort-keys': ['error', 'asc', {
+      caseSensitive: true,
+      natural: true,
+    }],
+  },
 });

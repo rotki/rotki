@@ -123,10 +123,10 @@
     "trade": {
       "labels": {
         "calculate_past_cost_basis": "Calculate past cost basis when creating the report",
-        "include_fees_in_cost_basis": "Take into account cost basis fees",
         "cost_basis_method": "Cost basis method",
         "eth_staking_taxable_after_withdrawal_enabled": "Should omit ETH staking events from accounting until withdrawals are enabled",
         "include_crypto2crypto": "Take into account crypto to crypto trades",
+        "include_fees_in_cost_basis": "Take into account cost basis fees",
         "include_gas_costs": "Take into account Ethereum gas costs",
         "tax_free": "Is there a tax free period?",
         "taxfree_after_period": "Tax free after how many days"
@@ -378,11 +378,11 @@
         "title": "History Events Query"
       },
       "missing_rule": {
-        "title": "Γεγονός που λείπει λογιστικός κανόνας",
+        "add_rule": "Προσθήκη λογιστικού κανόνα που λείπει",
+        "edit": "Επεξεργασία συμβάντος",
         "message": "Το γεγονός αυτό δεν θα υποβληθεί σε λογιστική επεξεργασία. Για να το χειριστείτε, πρέπει να επιλέξετε μία από αυτές τις επιλογές:",
         "re_decode": "Επανακωδικοποίηση συμβάντος",
-        "edit": "Επεξεργασία συμβάντος",
-        "add_rule": "Προσθήκη λογιστικού κανόνα που λείπει"
+        "title": "Γεγονός που λείπει λογιστικός κανόνας"
       }
     },
     "history_events_export": {
@@ -449,10 +449,6 @@
         "description": "Αποτυχημένο ερώτημα online συμβάντων με τύπο ερωτήματος {queryType}: {error}",
         "title": "Ερώτημα online συμβάντων"
       },
-      "task": {
-        "description": "Αίτημα για νέα συμβάντα τύπου {queryType}",
-        "title": "Ερώτημα για online συμβάντα"
-      },
       "skipped": {
         "csv_export": {
           "message": {
@@ -461,6 +457,10 @@
           },
           "title": "Εξαγωγή σε CSV"
         }
+      },
+      "task": {
+        "description": "Αίτημα για νέα συμβάντα τύπου {queryType}",
+        "title": "Ερώτημα για online συμβάντα"
       }
     },
     "reports": {
@@ -817,13 +817,13 @@
       "edit_title": "Επεξεργασία της χαρτογράφησης",
       "exchange": "Exchange",
       "filter_by_exchange": "Φιλτράρισμα με βάση την ανταλλαγή",
+      "filter_by_location_symbol": "Φίλτρο ανά σύμβολο περιουσιακού στοιχείου",
       "form": {
         "asset_non_empty": "Το πεδίο αναγνωρισμένο περιουσιακό στοιχείο δεν μπορεί να είναι κενό",
         "location_non_empty": "Το πεδίο τοποθεσία δεν μπορεί να είναι κενό",
         "location_symbol_non_empty": "Το πεδίο Σύμβολο περιουσιακού στοιχείου δεν μπορεί να είναι κενό"
       },
       "location_symbol": "Σύμβολο περιουσιακού στοιχείου",
-      "filter_by_location_symbol": "Φίλτρο ανά σύμβολο περιουσιακού στοιχείου",
       "recognized_as": "Αναγνωρίζεται ως",
       "save_for_all": "Αποθήκευση αυτής της αντιστοίχισης για όλες τις ανταλλαγές",
       "subtitle": "Μπορείτε να συνδέσετε σύμβολα περιουσιακών στοιχείων σε ένα κεντρικό ανταλλακτήριο με περιουσιακά στοιχεία που αναγνωρίζονται από το rotki. Αυτό είναι απαραίτητο για να μπορεί το rotki να επεξεργάζεται περιουσιακά στοιχεία στα ανταλλακτήρια."
@@ -1157,12 +1157,11 @@
     "title": "Exchange Trades"
   },
   "collapsed_pending_tasks": {
-    "title": "{count} εκκρεμής εργασία | {count} εκκρεμείς εργασίες",
     "cancel_task": "Ακύρωση εργασίας",
-    "cancel_task_info": "Αυτή η ενέργεια θα αφήσει την εκτελούμενη διεργασία ({title}) σε ημιτελή κατάσταση, είστε σίγουροι ότι θέλετε να την ακυρώσετε;"
+    "cancel_task_info": "Αυτή η ενέργεια θα αφήσει την εκτελούμενη διεργασία ({title}) σε ημιτελή κατάσταση, είστε σίγουροι ότι θέλετε να την ακυρώσετε;",
+    "title": "{count} εκκρεμής εργασία | {count} εκκρεμείς εργασίες"
   },
   "common": {
-    "entry_type": "Τύπος εισόδου",
     "account": "Account",
     "actions": {
       "back": "Back",
@@ -1199,6 +1198,7 @@
     },
     "actions_text": "Ενέργειες",
     "address": "Address",
+    "all": "Όλα",
     "amount": "Amount",
     "asset": "Asset",
     "assets": "Assets",
@@ -1210,6 +1210,7 @@
     "datetime": "Date/Time",
     "description": "Description",
     "details": "Details",
+    "entry_type": "Τύπος εισόδου",
     "events": "Events",
     "here": "here",
     "ignored_in_accounting": "Ignored in Accounting",
@@ -1233,11 +1234,10 @@
     "tx_hash": "Tx Hash",
     "type": "Type",
     "unclaimed": "αδιεκδίκητος",
+    "unknown": "Άγνωστος",
     "validator_index": "Validator Index",
     "value_in_symbol": "{symbol} Value",
-    "visit_website": "To get a premium subscription please visit our {0}.",
-    "unknown": "Άγνωστος",
-    "all": "Όλα"
+    "visit_website": "To get a premium subscription please visit our {0}."
   },
   "conflict_dialog": {
     "action": {
@@ -1245,15 +1245,16 @@
       "remote": "Remote"
     },
     "action_hint": {
-      "top": "Εντοπίστηκαν τοπικές αλλαγές. Έχετε δύο επιλογές:",
-      "bottom": "Μπορείτε επίσης να διαχειριστείτε τις συγκρούσεις μεμονωμένα."
+      "bottom": "Μπορείτε επίσης να διαχειριστείτε τις συγκρούσεις μεμονωμένα.",
+      "top": "Εντοπίστηκαν τοπικές αλλαγές. Έχετε δύο επιλογές:"
     },
     "hint": "Οι καταχωρήσεις περιουσιακών στοιχείων {conflicts} δεν μπορούν να ενημερωθούν αυτόματα. {remaining} Οι υπόλοιπες καταχωρήσεις απαιτούν την εισαγωγή δεδομένων από τον χρήστη.",
-    "resolve_all_hint": "Όλες οι συγκρούσεις θα επιλυθούν με τη χρήση δεδομένων {source}.",
     "keep_local": "Κρατήστε τα όλα τοπικά",
-    "keep_remote": "Διατηρήστε όλα τα απομακρυσμένα",
     "keep_local_tooltip": "Δεν θα ενημερωθεί κανένα επηρεαζόμενο περιουσιακό στοιχείο. Ενδέχεται να χρειαστούν χειροκίνητες ενημερώσεις.",
+    "keep_remote": "Διατηρήστε όλα τα απομακρυσμένα",
     "keep_remote_tooltip": "Ενημερώστε όλα τα περιουσιακά στοιχεία. Δεν απαιτούνται περαιτέρω ενέργειες.",
+    "manage": "Διαχείριση συγκρούσεων",
+    "resolve_all_hint": "Όλες οι συγκρούσεις θα επιλυθούν με τη χρήση δεδομένων {source}.",
     "subtitle": "Οι καταχωρήσεις περιουσιακών στοιχείων {conflicts} δεν μπορούν να ενημερωθούν αυτόματα. {remaining} Οι υπόλοιπες καταχωρήσεις απαιτούν την εισαγωγή δεδομένων από τον χρήστη.",
     "table": {
       "headers": {
@@ -1262,8 +1263,7 @@
         "remote": "Remote"
       }
     },
-    "title": "Ανιχνεύονται συγκρούσεις",
-    "manage": "Διαχείριση συγκρούσεων"
+    "title": "Ανιχνεύονται συγκρούσεις"
   },
   "connection_failure": {
     "default": "Connect to default",
@@ -1528,8 +1528,8 @@
   },
   "data_table": {
     "items_no": "Αντικείμενα #",
-    "rows_per_page": "Γραμμές ανα σελίδα",
-    "no_data": "Δεν υπάρχουν διαθέσιμα στοιχεία"
+    "no_data": "Δεν υπάρχουν διαθέσιμα στοιχεία",
+    "rows_per_page": "Γραμμές ανα σελίδα"
   },
   "database_backups": {
     "action": {
@@ -1611,11 +1611,11 @@
     }
   },
   "error": {
-    "process_running": "A rotki backend process is already running. This is known to cause problems with the operation of the application. Please kill these processes pids: [{pids}] and restart the application.",
     "generic": {
-      "title": "Κάτι πήγε στραβά",
-      "message": "Αντιμετωπίσαμε ένα εσωτερικό σφάλμα κατά την επεξεργασία του αιτήματός σας. Εάν αυτό το πρόβλημα παραμένει, επικοινωνήστε με την ομάδα υποστήριξής μας με τα παρακάτω στοιχεία: \nΚωδικός σφάλματος: {code} \nΜήνυμα σφάλματος: {message} \nΔιαδρομή: {path}"
-    }
+      "message": "Αντιμετωπίσαμε ένα εσωτερικό σφάλμα κατά την επεξεργασία του αιτήματός σας. Εάν αυτό το πρόβλημα παραμένει, επικοινωνήστε με την ομάδα υποστήριξής μας με τα παρακάτω στοιχεία: \nΚωδικός σφάλματος: {code} \nΜήνυμα σφάλματος: {message} \nΔιαδρομή: {path}",
+      "title": "Κάτι πήγε στραβά"
+    },
+    "process_running": "A rotki backend process is already running. This is known to cause problems with the operation of the application. Please kill these processes pids: [{pids}] and restart the application."
   },
   "error_screen": {
     "backend_error": "There is a problem with the backend.",
@@ -1740,6 +1740,11 @@
     "tx_url": "Transactions will open at {txUrl}"
   },
   "external_services": {
+    "alchemy": {
+      "description": "rotki uses alchemy to obtain price information about assets in your portfolio. An API key is needed if you want it included in your list of oracles.",
+      "hint": "Enter your Alchemy API key",
+      "title": "Alchemy"
+    },
     "api_key": "API key",
     "beaconchain": {
       "description": "rotki uses Beaconcha.in to obtain information about ETH staking in your portfolio. An API key is only needed if you are being rate-limited.",
@@ -1760,11 +1765,6 @@
       "description": "rotki uses cryptocompare to obtain price information about assets in your portfolio. An API key is only needed if you have a lot of assets and are being rate-limited.",
       "hint": "Enter your CryptoCompare API key",
       "title": "CryptoCompare"
-    },
-    "alchemy": {
-      "description": "rotki uses alchemy to obtain price information about assets in your portfolio. An API key is needed if you want it included in your list of oracles.",
-      "hint": "Enter your Alchemy API key",
-      "title": "Alchemy"
     },
     "delete_error": {
       "description": "Error while removing the external service api keys: {message}"
@@ -1942,10 +1942,10 @@
     },
     "labels": {
       "btc_derivation_gap": "BTC derivation gap limit",
+      "chains_to_skip_detection": "Αλυσίδες EVM για τις οποίες πρέπει να παραλειφθεί η αυτόματη ανίχνευση",
       "date_display_format": "Date display format",
       "date_input_format": "Date input format",
-      "treat_eth2_as_eth": "Should treat ETH2 (Staked ETH) as ETH",
-      "chains_to_skip_detection": "Αλυσίδες EVM για τις οποίες πρέπει να παραλειφθεί η αυτόματη ανίχνευση"
+      "treat_eth2_as_eth": "Should treat ETH2 (Staked ETH) as ETH"
     },
     "nft_setting": {
       "label": {
@@ -1955,15 +1955,15 @@
           "only_allow_whitelisted": "Επιτρέψτε εικόνες μόνο από τομείς στη λίστα επιτρεπόμενων"
         },
         "whitelist_domains": "Προσθήκη διαδικτυακών τομέων στην λίστα επιτρεπομένων",
+        "whitelisted_domain_entries": "Δεν υπάρχουν καταχωρήσεις | {count} μοναδική καταχώρηση | {count} μοναδικές καταχωρήσεις",
         "whitelisted_domains": "Επιλεγμένοι τομείς",
-        "whitelisted_domains_hint": "Εισάγετε έναν ή περισσότερους τομείς που χωρίζονται με κόμμα. Πατήστε το κουμπί αποθήκευσης στα δεξιά για να αποθηκεύσετε τις αλλαγές",
-        "whitelisted_domain_entries": "Δεν υπάρχουν καταχωρήσεις | {count} μοναδική καταχώρηση | {count} μοναδικές καταχωρήσεις"
+        "whitelisted_domains_hint": "Εισάγετε έναν ή περισσότερους τομείς που χωρίζονται με κόμμα. Πατήστε το κουμπί αποθήκευσης στα δεξιά για να αποθηκεύσετε τις αλλαγές"
       },
-      "title": "NFT settings",
       "messages": {
         "error": "Σφάλμα καθορισμού επιτρεπόμενων τομέων για την απεικόνιση των NFTs",
         "success": "Οι επιτρεπόμενοι τομείς για την απεικόνιση των NFTs αποθηκεύτηκαν με επιτυχία"
-      }
+      },
+      "title": "NFT settings"
     },
     "rpc_node_setting": {
       "title": "RPC node setting"
@@ -1980,6 +1980,10 @@
       "btc_derivation_gap": {
         "error": "Error setting the BTC derivation gap limit",
         "success": "The BTC derivation gap limit was successfully changed to {limit}"
+      },
+      "chains_to_skip_detection": {
+        "error": "Σφάλμα ρύθμισης των αλυσίδων EVM για τις οποίες θα παραλειφθεί η αυτόματη ανίχνευση μαρκών",
+        "success": "Αλυσίδες EVM για τις οποίες πρέπει να παραλείψετε την αυτόματη ανίχνευση token αποθηκεύτηκαν με επιτυχία"
       },
       "currency": {
         "error": "Error setting the main currency",
@@ -2012,10 +2016,6 @@
       },
       "treat_eth2_as_eth": {
         "error": "Error change setting for treat ETH2 (Staked ETH) as ETH"
-      },
-      "chains_to_skip_detection": {
-        "error": "Σφάλμα ρύθμισης των αλυσίδων EVM για τις οποίες θα παραλειφθεί η αυτόματη ανίχνευση μαρκών",
-        "success": "Αλυσίδες EVM για τις οποίες πρέπει να παραλείψετε την αυτόματη ανίχνευση token αποθηκεύτηκαν με επιτυχία"
       }
     }
   },
@@ -2108,8 +2108,8 @@
   "import_data": {
     "binance": {
       "line_one": "Οι στήλες που επεξεργαζόμαστε περιλαμβάνουν: User_ID, UTC_Time, Account, Operation, Coin, Change και Remark.",
-      "line_two": "Μπορείτε να λάβετε το αρχείο CSV από τη διεύθυνση {link}.",
       "line_three": "Λόγω της μορφής CSV της Binance, υπάρχει πιθανότητα να μην εισαχθούν όλα τα δεδομένα. Εάν συμβεί αυτό, θα λάβετε μια προειδοποίηση.",
+      "line_two": "Μπορείτε να λάβετε το αρχείο CSV από τη διεύθυνση {link}.",
       "name": "Binance"
     },
     "bisq": {
@@ -2169,6 +2169,12 @@
       "name": "Custom Import"
     },
     "description": "You can manually import data from the services below by dragging the file on the respective area or clicking the select button.",
+    "kucoin": {
+      "import": "Εισαγωγή {0} από Kucoin",
+      "import_types": "συναλλαγές",
+      "line_one": "Υποστηρίζουμε την εισαγωγή εμπορικών συναλλαγών τύπου αρχείου csv.",
+      "name": "Kucoin"
+    },
     "nexo": {
       "import": "Import {0} from Nexo",
       "import_transactions": "transactions",
@@ -2195,12 +2201,6 @@
       "line_one": "[Experimental] If you find an issue with the imported data, let us know so we can adapt the code accordingly.",
       "line_two": "Uphold lets you export a transactions file. It can be found under activity at the top right of the activity list.",
       "name": "Uphold"
-    },
-    "kucoin": {
-      "import": "Εισαγωγή {0} από Kucoin",
-      "import_types": "συναλλαγές",
-      "line_one": "Υποστηρίζουμε την εισαγωγή εμπορικών συναλλαγών τύπου αρχείου csv.",
-      "name": "Kucoin"
     }
   },
   "input_mode_select": {
@@ -2208,9 +2208,9 @@
       "label": "Εισαγωγή διευθύνσεων από πορτοφόλι προγράμματος περιήγησης",
       "missing": "Δεν μπορούμε να εντοπίσουμε κανένα πορτοφόλι σε αυτό το πρόγραμμα περιήγησης.",
       "missing_tooltip": {
-        "wallet_is_not_installed": "Αυτό το πρόγραμμα περιήγησης δεν έχει εγκατεστημένα πορτοφόλια. Μπορείτε να μεταβείτε στο κατάστημα επεκτάσεων του προγράμματος περιήγησής σας και να εγκαταστήσετε ένα.",
+        "title": "Εδώ είναι η κοινή αιτία:",
         "wallet_is_not_enabled": "Η επέκταση για το πορτοφόλι είναι απενεργοποιημένη. Μπορείτε να την ενεργοποιήσετε στο μενού Extensions/Add-Ons, ανάλογα με το πρόγραμμα περιήγησής σας.",
-        "title": "Εδώ είναι η κοινή αιτία:"
+        "wallet_is_not_installed": "Αυτό το πρόγραμμα περιήγησης δεν έχει εγκατεστημένα πορτοφόλια. Μπορείτε να μεταβείτε στο κατάστημα επεκτάσεων του προγράμματος περιήγησής σας και να εγκαταστήσετε ένα."
       }
     },
     "manual_add": {
@@ -2273,8 +2273,8 @@
     "total_asset_price": "Total Asset Price"
   },
   "login": {
-    "button_no_account": "Δεν έχετε λογαριασμό;",
     "button_create_account": "Δημιουργήστε λογαριασμό",
+    "button_no_account": "Δεν έχετε λογαριασμό;",
     "credential_error": {
       "description": "Εάν δεν έχετε δημιουργήσει ακόμη λογαριασμό εφαρμογής, θα πρέπει να το κάνετε για να συνδεθείτε.",
       "support": "Εάν χρειάζεστε βοήθεια, επικοινωνήστε μαζί μας στο κανάλι υποστήριξης στο discord.",
@@ -2435,18 +2435,18 @@
     "title": "Module Settings"
   },
   "navigation_menu": {
+    "api_keys": "API Keys",
+    "api_keys_sub": {
+      "exchanges": "Ανταλλακτήρια",
+      "external_services": "External Services",
+      "premium": "rotki Premium"
+    },
     "balances": "Υπόλοιπα",
     "balances_sub": {
       "blockchain_balances": "Υπόλοιπα Blockchain",
       "exchange_balances": "Υπόλοιπα Ανταλλακτηρίων",
       "manual_balances": "Χειροκίνητα Υπόλοιπα",
       "non_fungible_balances": "Υπόλοιπα NFT"
-    },
-    "api_keys": "API Keys",
-    "api_keys_sub": {
-      "exchanges": "Ανταλλακτήρια",
-      "external_services": "External Services",
-      "premium": "rotki Premium"
     },
     "dashboard": "Ταμπλό",
     "defi": "DeFi",
@@ -2463,8 +2463,8 @@
     "manage_address_book": "Διαχείριση βιβλίου διευθύνσεων",
     "manage_assets": "Διαχείριση περιουσιακών στοιχείων",
     "manage_assets_sub": {
-      "custom_assets": "Προσαρμοσμένα περιουσιακά στοιχεία",
       "assets": "Περιουσιακά στοιχεία",
+      "custom_assets": "Προσαρμοσμένα περιουσιακά στοιχεία",
       "newly_detected": "Πρόσφατα εντοπισμένα Tokens"
     },
     "manage_prices": "Διαχείριση τιμών",
@@ -2556,11 +2556,11 @@
     },
     "missing_api_key": {
       "action": "Εισάγετε κλειδί",
-      "get_key": "Λήψη κλειδιού API",
       "etherscan": {
         "message": "Τα ερωτήματα Rotki για την αλυσίδα {location} λειτουργούν πιο αργά επειδή δεν έχετε {location} {service} API key configured. Πατήστε @.quote:notification_messages.missing_api_key.get_key για να φτιάξετε ένα ή @.quote:notification_messages.missing_api_key.action για να το προσθέσετε στην εφαρμογή.",
         "title": "Κλειδί API {location} {service}"
-      }
+      },
+      "get_key": "Λήψη κλειδιού API"
     },
     "new_detected_token": {
       "action": "See more",
@@ -2988,25 +2988,25 @@
     "progress": "{progress} %"
   },
   "purge_selector": {
-    "centralized_exchanges": "Κεντρικοποιημένα ανταλλακτήρια",
     "centralized_exchange_to_clear": {
-      "label": "Κεντρικοποιημένα ανταλλακτήρια για εκκαθάριση",
-      "hint": "Αδειάστε αυτό το πεδίο για να αφαιρέσετε τα δεδομένα για όλα τα κεντρικοποιημένα ανταλλακτήρια."
+      "hint": "Αδειάστε αυτό το πεδίο για να αφαιρέσετε τα δεδομένα για όλα τα κεντρικοποιημένα ανταλλακτήρια.",
+      "label": "Κεντρικοποιημένα ανταλλακτήρια για εκκαθάριση"
     },
+    "centralized_exchanges": "Κεντρικοποιημένα ανταλλακτήρια",
     "chain_to_clear": {
-      "label": "chain για εκκαθάριση",
-      "hint": "Αδειάστε αυτό το πεδίο για να αφαιρέσετε τα δεδομένα συναλλαγής για όλες τις αλυσίδες"
+      "hint": "Αδειάστε αυτό το πεδίο για να αφαιρέσετε τα δεδομένα συναλλαγής για όλες τις αλυσίδες",
+      "label": "chain για εκκαθάριση"
+    },
+    "decentralized_exchange_to_clear": {
+      "hint": "Αδειάστε αυτό το πεδίο για να καταργήσετε τα δεδομένα για όλα τα αποκεντρωμένα ανταλλακτήρια",
+      "label": "Αποκεντρωμένα ανταλλακτήρια για εκκαθάριση"
     },
     "decentralized_exchanges": "Αποκεντρωμένα ανταλλακτήρια",
-    "decentralized_exchange_to_clear": {
-      "label": "Αποκεντρωμένα ανταλλακτήρια για εκκαθάριση",
-      "hint": "Αδειάστε αυτό το πεδίο για να καταργήσετε τα δεδομένα για όλα τα αποκεντρωμένα ανταλλακτήρια"
+    "defi_module_to_clear": {
+      "hint": "Αδειάστε αυτό το πεδίο για να αφαιρέσετε τα δεδομένα για όλες τις μονάδες defi",
+      "label": "Μονάδα DeFi για εκκαθάριση"
     },
     "defi_modules": "DeFi Modules",
-    "defi_module_to_clear": {
-      "label": "Μονάδα DeFi για εκκαθάριση",
-      "hint": "Αδειάστε αυτό το πεδίο για να αφαιρέσετε τα δεδομένα για όλες τις μονάδες defi"
-    },
     "label": "Επιλέξτε μια πηγή δεδομένων",
     "transactions": "Συναλλαγές"
   },
@@ -3196,18 +3196,18 @@
   "transactions": {
     "actions": {
       "add_event": "Add a new event",
-      "redecode_events": "Redecode events",
-      "delete_transaction": "Διαγραφή συναλλαγών και συμβάντων"
+      "delete_transaction": "Διαγραφή συναλλαγών και συμβάντων",
+      "redecode_events": "Redecode events"
     },
     "dialog": {
       "add_tx": "Προσθήκη συναλλαγής με hash tx",
       "delete": {
-        "message": "Είστε σίγουροι ότι θέλετε να διαγράψετε αυτή τη συναλλαγή και τα συμβάντα της; Θα πρέπει να καθαρίσετε όλες τις συναλλαγές ή να προσθέσετε από τη συναλλαγή έχει να τα αποκαταστήσετε.",
-        "title": "Διαγραφή συναλλαγής και συμβάντων",
         "error": {
           "message": "Απέτυχε: {message}",
           "title": "Διαγραφή συναλλαγής EVM"
-        }
+        },
+        "message": "Είστε σίγουροι ότι θέλετε να διαγράψετε αυτή τη συναλλαγή και τα συμβάντα της; Θα πρέπει να καθαρίσετε όλες τις συναλλαγές ή να προσθέσετε από τη συναλλαγή έχει να τα αποκαταστήσετε.",
+        "title": "Διαγραφή συναλλαγής και συμβάντων"
       }
     },
     "events": {
@@ -3304,8 +3304,8 @@
         "reprocess": {
           "action": "Επανεπεξεργασία των συμβάντων",
           "failed": {
-            "title": "Σφάλμα κατά την επανεπεξεργασία των αγνοημένων συμβάντων",
-            "no_processed_events": "Δεν έχουν επεξεργαστεί αγνοημένα εξωτερικά συμβάντα"
+            "no_processed_events": "Δεν έχουν επεξεργαστεί αγνοημένα εξωτερικά συμβάντα",
+            "title": "Σφάλμα κατά την επανεπεξεργασία των αγνοημένων συμβάντων"
           },
           "success": {
             "all": "Όλα τα αγνοημένα εξωτερικά συμβάντα έχουν επεξεργαστεί",
@@ -3332,6 +3332,11 @@
       "validator_index": "filter by validator index(es)"
     },
     "ignore": "Ignore Tx in Accounting",
+    "query_all": {
+      "done_group": "Ολοκληρώθηκε η αναζήτηση όλων των συμβάντων και των συναλλαγών",
+      "group": "Διερεύνηση συμβάντων και συναλλαγών",
+      "modal_title": "Κατάσταση ερώτησης"
+    },
     "query_status": {
       "date_range": "Querying {status} for {address} between {start} and {end}",
       "done_date_range": "Done querying all transactions for {address} between {start} and {end}",
@@ -3358,11 +3363,6 @@
       "latest_period_date_range": "Η τελευταία περίοδος που ζητήθηκε επιτυχώς είναι μεταξύ {start} και {end}",
       "latest_period_end_date": "Η τελευταία περίοδος που ζητήθηκε επιτυχώς είναι μέχρι το {end}",
       "title": "Ιστορικό Γεγονότα Κατάσταση ερώτησης"
-    },
-    "query_all": {
-      "done_group": "Ολοκληρώθηκε η αναζήτηση όλων των συμβάντων και των συναλλαγών",
-      "group": "Διερεύνηση συμβάντων και συναλλαγών",
-      "modal_title": "Κατάσταση ερώτησης"
     },
     "refresh_tooltip": "Fetch latest events",
     "title": "History Events",
