@@ -7,7 +7,7 @@ name = "rotkehlchen"
 authors = [
     {name = "Rotki Solutions GmbH", email = "info@rotki.com"},
 ]
-description = "Acccounting, asset management and tax report helper for cryptocurrencies"
+description = "Accounting, asset management and tax report helper for cryptocurrencies"
 readme = "README.md"
 requires-python = ">=3.11"
 keywords = ["accounting tax-report", "portfolio asset-management", "cryptocurrencies"]
@@ -107,7 +107,7 @@ module = [
     "rotkehlchen.tests.api.test_history",
     "rotkehlchen.tests.api.test_icons",
     "rotkehlchen.tests.api.test_ignored_actions",
-    "rotkehlchen.tests.api.test_liquidy",
+    "rotkehlchen.tests.api.test_liquity",
     "rotkehlchen.tests.api.test_location_asset_mappings",
     "rotkehlchen.tests.api.test_locations",
     "rotkehlchen.tests.api.test_periodic",
