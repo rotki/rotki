@@ -6,7 +6,7 @@ import {
   type CalendarEventRequestPayload,
 } from '@/types/history/calendar';
 import { api } from '@/services/rotkehlchen-api';
-import { snakeCaseTransformer } from '@/services/axios-tranformers';
+import { snakeCaseTransformer } from '@/services/axios-transformers';
 import { handleResponse } from '@/services/utils';
 import { mapCollectionResponse } from '@/utils/collection';
 import type { Collection } from '@/types/collection';
