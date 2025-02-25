@@ -1,5 +1,5 @@
 import random
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from unittest.mock import _patch, patch
 
 import pytest
@@ -241,7 +241,7 @@ def test_stability_pool(rotkehlchen_api_server: APIServer) -> None:
     eth_multicall = rotki.chains_aggregator.ethereum.node_inquirer.contracts.contract(string_to_evm_address('0x5BA1e12693Dc8F9c48aAD8770482f4739bEeD696'))  # noqa: E501
 
     def mock_etherscan_transaction_response(etherscan: 'Etherscan') -> _patch:
-        def mocked_request_dict(url: str, params: dict[str, str], *_args, **_kwargs) -> MockResponse:  # noqa: E501
+        def mocked_request_dict(url: str, params: dict[str, str], *_args: Any, **_kwargs: Any) -> MockResponse:  # noqa: E501
             # if '0xeefBa1e63905eF1D7ACbA5a8513c70307C1cE441' in url:
             if params.get('to') == eth_multicall.address:
                 if (data := params.get('data', '')).startswith('0x252dba42'):  # aggregate
