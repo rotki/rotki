@@ -1,7 +1,7 @@
 import { ProcessSkippedHistoryEventsResponse, SkippedHistoryEventsSummary } from '@/types/history/events';
 import { api } from '@/services/rotkehlchen-api';
 import { handleResponse, validStatus } from '@/services/utils';
-import { snakeCaseTransformer } from '@/services/axios-tranformers';
+import { snakeCaseTransformer } from '@/services/axios-transformers';
 import { downloadFileByBlobResponse } from '@/utils/download';
 import type { ActionStatus } from '@/types/action';
 import type { ActionResult } from '@rotki/common';
