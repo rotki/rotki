@@ -10,7 +10,7 @@ import {
 } from '@/types/settings/frontend-settings';
 import { TableColumn } from '@/types/table-column';
 import { DateFormat } from '@/types/date-format';
-import { snakeCaseTransformer } from '@/services/axios-tranformers';
+import { snakeCaseTransformer } from '@/services/axios-transformers';
 import { OtherSettings } from '@/types/user';
 
 describe('types/user', () => {
