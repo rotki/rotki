@@ -1,4 +1,4 @@
-import { setupTransformer, snakeCaseTransformer } from '@/services/axios-tranformers';
+import { setupTransformer, snakeCaseTransformer } from '@/services/axios-transformers';
 import { api } from '@/services/rotkehlchen-api';
 import { handleResponse, validStatus, validWithSessionStatus } from '@/services/utils';
 import { type ExternalServiceKey, ExternalServiceKeys } from '@/types/user';
