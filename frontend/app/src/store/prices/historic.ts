@@ -83,7 +83,7 @@ export const useHistoricCachePriceStore = defineStore('prices/historic-cache', (
     };
   };
 
-  const { cache, deleteCacheKey, isPending, reset, retrieve } = useItemCache<BigNumber>(async keys =>
+  const { cache, deleteCacheKey, isPending, reset, retrieve, unknown } = useItemCache<BigNumber>(async keys =>
     fetchHistoricPrices(keys),
   );
 
@@ -101,6 +101,7 @@ export const useHistoricCachePriceStore = defineStore('prices/historic-cache', (
     const oneHourInMs = 60 * 60;
     const keysToBeDeleted = new Set<string>();
     const cacheKeys = Object.keys(get(cache));
+    const unknownKeys = get(unknown).keys();
 
     items.forEach((item) => {
       const targetTime = item.timestamp;
@@ -108,7 +109,7 @@ export const useHistoricCachePriceStore = defineStore('prices/historic-cache', (
       const upperBound = targetTime + oneHourInMs;
 
       // Do deletion for (timestamp - 1 hour) and (timestamp + 1 hour)
-      cacheKeys.forEach((cacheKey) => {
+      [...cacheKeys, ...unknownKeys].forEach((cacheKey) => {
         const [cacheAsset, cacheTimestamp] = cacheKey.split('#');
         const cacheTime = parseInt(cacheTimestamp, 10);
 
