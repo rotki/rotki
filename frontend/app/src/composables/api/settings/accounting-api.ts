@@ -11,7 +11,7 @@ import {
 } from '@/types/settings/accounting';
 import { handleResponse, validStatus } from '@/services/utils';
 import { api } from '@/services/rotkehlchen-api';
-import { snakeCaseTransformer } from '@/services/axios-tranformers';
+import { snakeCaseTransformer } from '@/services/axios-transformers';
 import type { PendingTask } from '@/types/task';
 import type { CollectionResponse } from '@/types/collection';
 import type { ActionResult } from '@rotki/common';
