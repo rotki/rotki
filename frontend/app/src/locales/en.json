@@ -3717,8 +3717,8 @@
         "title": "There is a mismatch between the amount of asset in the last event and the amount in the current balance."
       },
       "fallback_to_snapshot": "Use snapshot data instead",
-      "fetch_daily_prices": "Fetch daily prices",
-      "fetch_daily_prices_hint": "rotki will try to get the daily prices of the assets to fill the gap between events.",
+      "fetch_prices": "Fetch prices",
+      "fetch_prices_hint": "rotki will try to get the daily prices of the assets to fill the gap between events.",
       "fetching_graph_daily_data": "Fetching graph daily data ({processed}/{total})",
       "fetching_graph_data": "Fetching graph data",
       "fetching_historical_prices": "Fetching historical prices ({processed}/{total})",
@@ -3740,6 +3740,7 @@
       "search_asset_to_see_graph": "Search for an asset to see the graph",
       "select_asset": "Search for an asset",
       "show_graph_for_selected_range": "Show the graph for the selected range",
+      "some_prices_are_missing": "Some points are hidden because prices are missing.\nClick \"Fetch prices\" to try retrieving the prices.",
       "value_distribution_by_asset": "Value distribution by asset",
       "value_distribution_by_location": "Value distribution by location",
       "visible_percentage": "% of visible items only:"

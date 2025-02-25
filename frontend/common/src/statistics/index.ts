@@ -51,6 +51,7 @@ export const HistoricalAssetPricePayload = z.object({
   asset: z.string(),
   fromTimestamp: z.number(),
   interval: z.number(),
+  onlyCachePeriod: z.number().optional(),
   toTimestamp: z.number(),
 });
 
