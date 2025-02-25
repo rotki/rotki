@@ -15,7 +15,7 @@ import {
 } from '@/types/settings/frontend-settings';
 import { TableColumn } from '@/types/table-column';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { camelCaseTransformer } from '@/services/axios-tranformers';
+import { camelCaseTransformer } from '@/services/axios-transformers';
 import { useSettingsApi } from '@/composables/api/settings/settings-api';
 
 vi.mock('@/composables/api/settings/settings-api', () => ({
