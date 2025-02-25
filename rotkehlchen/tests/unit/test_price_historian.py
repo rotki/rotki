@@ -5,7 +5,8 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from rotkehlchen.chain.ethereum.oracles.uniswap import UniswapV2Oracle, UniswapV3Oracle
-from rotkehlchen.constants.assets import A_BTC, A_USD
+from rotkehlchen.constants.assets import A_AAVE, A_BTC, A_USD
+from rotkehlchen.constants.misc import ONE
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset
 from rotkehlchen.externalapis.alchemy import Alchemy
@@ -13,6 +14,7 @@ from rotkehlchen.externalapis.coingecko import Coingecko
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.externalapis.defillama import Defillama
 from rotkehlchen.fval import FVal
+from rotkehlchen.globaldb.handler import _prioritize_manual_balances_query
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.history.types import (
     DEFAULT_HISTORICAL_PRICE_ORACLES_ORDER,
@@ -24,6 +26,7 @@ from rotkehlchen.types import Price, Timestamp
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import FiatAsset
+    from rotkehlchen.globaldb.handler import GlobalDBHandler
     from rotkehlchen.inquirer import Inquirer
 
 
@@ -215,16 +218,16 @@ def test_cached_price_returns_without_oracle_calls(globaldb, fake_price_historia
         )
 
 
-def test_get_historical_prices(globaldb):
+def test_get_historical_prices(globaldb: 'GlobalDBHandler') -> None:
     ts1 = Timestamp(1611595470)
-    price1, price2, price3, price4 = 30000, 35000, 45000, 77000
+    price1, price2, price3, price4 = Price(FVal(30000)), Price(FVal(35000)), Price(FVal(45000)), Price(FVal(77000))  # noqa: E501
     # Add price at timestamp
     globaldb.add_single_historical_price(
         HistoricalPrice(
             from_asset=A_BTC,
             to_asset=A_USD,
             price=price1,
-            timestamp=ts1,
+            timestamp=Timestamp(ts1),
             source=HistoricalPriceOracle.MANUAL,
         ),
     )
@@ -233,7 +236,7 @@ def test_get_historical_prices(globaldb):
             from_asset=A_BTC,
             to_asset=A_USD,
             price=price2,
-            timestamp=ts1 + 3600 * 4,
+            timestamp=Timestamp(ts1 + 3600 * 4),
             source=HistoricalPriceOracle.MANUAL,
         ),
     )
@@ -242,7 +245,7 @@ def test_get_historical_prices(globaldb):
             from_asset=A_BTC,
             to_asset=A_USD,
             price=price3,
-            timestamp=ts1 + DAY_IN_SECONDS + 3600,
+            timestamp=Timestamp(ts1 + DAY_IN_SECONDS + 3600),
             source=HistoricalPriceOracle.MANUAL,
         ),
     )
@@ -251,22 +254,56 @@ def test_get_historical_prices(globaldb):
             from_asset=A_BTC,
             to_asset=A_USD,
             price=price4,
-            timestamp=ts1 + 4 * DAY_IN_SECONDS + 3600,
+            timestamp=Timestamp(ts1 + 4 * DAY_IN_SECONDS + 3600),
             source=HistoricalPriceOracle.MANUAL,
         ),
     )
 
     result = globaldb.get_historical_prices(
         query_data=[
-            (A_BTC, A_USD, ts1 - 3600),
-            (A_BTC, A_USD, ts1 + 3600 * 6),
-            (A_BTC, A_USD, ts1 + DAY_IN_SECONDS - 3600 * 2),
-            (A_BTC, A_USD, ts1 + 2 * DAY_IN_SECONDS + 3600 * 4),
-            (A_BTC, A_USD, ts1 + 4 * DAY_IN_SECONDS - 3600),
+            (A_BTC, A_USD, Timestamp(ts1 - 3600)),
+            (A_BTC, A_USD, Timestamp(ts1 + 3600 * 6)),
+            (A_BTC, A_USD, Timestamp(ts1 + DAY_IN_SECONDS - 3600 * 2)),
+            (A_BTC, A_USD, Timestamp(ts1 + 2 * DAY_IN_SECONDS + 3600 * 4)),
+            (A_BTC, A_USD, Timestamp(ts1 + 4 * DAY_IN_SECONDS - 3600)),
         ],
         max_seconds_distance=DAY_IN_SECONDS,
     )
     assert [price1, price2, price3, None, price4] == [x.price if x is not None else None for x in result]  # noqa: E501
+
+    # check that we prioritize the manual price
+    globaldb.add_single_historical_price(
+        HistoricalPrice(
+            from_asset=A_AAVE,
+            to_asset=A_USD,
+            price=Price(ONE),
+            timestamp=Timestamp(ts1),
+            source=HistoricalPriceOracle.COINGECKO,
+        ),
+    )
+    globaldb.add_single_historical_price(
+        HistoricalPrice(
+            from_asset=A_AAVE,
+            to_asset=A_USD,
+            price=Price(FVal(3)),
+            timestamp=Timestamp(ts1),
+            source=HistoricalPriceOracle.MANUAL,
+        ),
+    )
+    single_price = globaldb.get_historical_price(
+        from_asset=A_AAVE,
+        to_asset=A_USD,
+        timestamp=Timestamp(ts1),
+        max_seconds_distance=DAY_IN_SECONDS,
+    )
+    batch_result = globaldb.get_historical_prices(
+        query_data=[(A_AAVE, A_USD, Timestamp(ts1))],
+        max_seconds_distance=DAY_IN_SECONDS,
+    )
+    assert single_price is not None
+    assert batch_result[0] is not None
+    assert single_price.price == batch_result[0].price == FVal(3)
+    assert batch_result[0].source == HistoricalPriceOracle.MANUAL
 
 
 @pytest.mark.parametrize('should_mock_price_queries', [False])
@@ -293,3 +330,9 @@ def test_oracle_instance_caches_price(price_historian):
             timestamp=expected_timestamp,
             price=expected_price,
         )])
+
+
+def test_price_priority_order():
+    """Test to ensure that we detect changes on the constant value returned"""
+    _, priority_value = _prioritize_manual_balances_query()
+    assert priority_value == HistoricalPriceOracle.MANUAL.serialize_for_db()

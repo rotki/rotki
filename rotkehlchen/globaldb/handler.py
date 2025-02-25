@@ -84,6 +84,16 @@ ALL_ASSETS_TABLES_QUERY_WITH_COLLECTIONS = (
 )
 
 
+def _prioritize_manual_balances_query() -> tuple[str, Literal['A']]:
+    """Prioritize manual price if it exists and choose the timestamp closest to the target.
+    Return the order statement for the query and the type to prioritize already serialized.
+    """
+    return (
+        ' ORDER BY CASE WHEN source_type=? THEN 0 ELSE 1 END, ABS(timestamp - ?)',
+        'A',  # HistoricalPriceOracle.MANUAL.serialize_for_db(),
+    )
+
+
 class GlobalDBHandler:
     """A singleton class controlling the global DB"""
     __instance: Optional['GlobalDBHandler'] = None
@@ -1202,22 +1212,23 @@ class GlobalDBHandler:
         If no price can be found returns None
         """
         querystr = (
-            'SELECT from_asset, to_asset, source_type, timestamp, '
-            'price, MIN(ABS(timestamp - ?)) FROM price_history '
-            'WHERE from_asset=? AND to_asset=? '
-            'AND timestamp between ? AND ?'
+            'SELECT from_asset, to_asset, source_type, timestamp, price FROM price_history '
+            'WHERE from_asset=? AND to_asset=? AND timestamp between ? AND ?'
         )
-        querylist = [timestamp, from_asset.identifier, to_asset.identifier, timestamp - max_seconds_distance, timestamp + max_seconds_distance]  # noqa: E501
+        querylist = [from_asset.identifier, to_asset.identifier, timestamp - max_seconds_distance, timestamp + max_seconds_distance]  # noqa: E501
         if source is not None:
             querystr += ' AND source_type=? '
             querylist.append(source.serialize_for_db())
 
+        # prioritize manual price if it exists and choose the timestamp closest to the target
+        order_str, priority_type = _prioritize_manual_balances_query()
+        querystr += order_str
+        querylist += [priority_type, timestamp]
+
         with GlobalDBHandler().conn.read_ctx() as cursor:
-            result = cursor.execute(querystr, tuple(querylist)).fetchone()
-            if result[0] is None:
+            if (result := cursor.execute(querystr, querylist).fetchone()) is None:
                 return None
 
-        # The result tuple last entry MIN(ABS()) is disregarded in deserialize_from_db
         return HistoricalPrice.deserialize_from_db(result)
 
     @staticmethod
@@ -1230,7 +1241,7 @@ class GlobalDBHandler:
         that could be found in the DB and None for those that could not be found.
         """
         querystr = (
-            'SELECT from_asset, to_asset, source_type, timestamp, price, MIN(ABS(timestamp - ?)) '
+            'SELECT from_asset, to_asset, source_type, timestamp, price '
             'FROM price_history WHERE from_asset=? AND to_asset=? AND timestamp BETWEEN ? AND ?'
         )
         querylist: list[tuple] = []
@@ -1238,17 +1249,20 @@ class GlobalDBHandler:
             querystr += ' AND source_type=? '
             serialized_source = source.serialize_for_db()
             for from_asset, to_asset, timestamp in query_data:
-                querylist.append((timestamp, from_asset.identifier, to_asset.identifier, timestamp - max_seconds_distance, timestamp + max_seconds_distance, serialized_source))  # noqa: E501
+                querylist.append((from_asset.identifier, to_asset.identifier, timestamp - max_seconds_distance, timestamp + max_seconds_distance, serialized_source))  # noqa: E501
 
         else:
             for from_asset, to_asset, timestamp in query_data:
-                querylist.append((timestamp, from_asset.identifier, to_asset.identifier, timestamp - max_seconds_distance, timestamp + max_seconds_distance))  # noqa: E501
+                querylist.append((from_asset.identifier, to_asset.identifier, timestamp - max_seconds_distance, timestamp + max_seconds_distance))  # noqa: E501
 
+        order_str, priority_type = _prioritize_manual_balances_query()
+        querystr += order_str
         prices_results: list[HistoricalPrice | None] = []
         with GlobalDBHandler().conn.read_ctx() as cursor:
             for query_entry, (_, _, queried_timestamp) in zip(querylist, query_data, strict=True):
-                result = cursor.execute(querystr, query_entry).fetchone()  # below last index of the result tuple is ignored in deserialize  # noqa: E501
-                if result[0] is None:
+                # to the params add the arguments to prioritize manual prices
+                result = cursor.execute(querystr, query_entry + (priority_type, queried_timestamp)).fetchone()  # below last index of the result tuple is ignored in deserialize  # noqa: E501
+                if result is None:
                     prices_results.append(None)
                     continue
 
