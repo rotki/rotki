@@ -1,5 +1,5 @@
 import { TaskType } from '@/types/task-type';
-import { jsonTransformer } from '@/services/axios-tranformers';
+import { jsonTransformer } from '@/services/axios-transformers';
 import { downloadFileByTextContent } from '@/utils/download';
 import { isTaskCancelled } from '@/utils';
 import { defaultCollectionState, mapCollectionResponse } from '@/utils/collection';
