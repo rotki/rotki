@@ -2745,6 +2745,23 @@
   "module_settings": {
     "title": "Paramètres du module"
   },
+  "modules": {
+    "dashboard": {
+      "liquidity_pools": {
+        "pool_details": {
+          "premium_only": "Mettez à niveau vers premium pour voir les informations sur les actifs"
+        },
+        "pool_table": {
+          "refresh_tooltip": "Rafraîchir les jetons LP",
+          "title": "Jetons LP"
+        },
+        "task": {
+          "error_message": "Une erreur s'est produite lors de la récupération des soldes de {protocol}: {message}",
+          "title": "Récupération des soldes de {protocol}"
+        }
+      }
+    }
+  },
   "navigation_menu": {
     "api_keys": "Clés d'API",
     "api_keys_sub": {
