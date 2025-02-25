@@ -557,12 +557,12 @@ def assert_queried_addresses_match(
 def test_queried_addresses_per_protocol(rotkehlchen_api_server: 'APIServer') -> None:
     # First add some queried addresses per protocol
     address1 = make_evm_address()
-    data = {'module': 'aave', 'address': address1}
+    data = {'module': 'eth2', 'address': address1}
     response = requests.put(
         api_url_for(rotkehlchen_api_server, 'queriedaddressesresource'), json=data,
     )
     result = assert_proper_sync_response_with_result(response)
-    assert result == {'aave': [address1]}
+    assert result == {'eth2': [address1]}
 
     address2 = make_evm_address()
     data = {'module': 'makerdao_vaults', 'address': address2}
@@ -571,29 +571,29 @@ def test_queried_addresses_per_protocol(rotkehlchen_api_server: 'APIServer') -> 
     )
     result = assert_proper_sync_response_with_result(response)
     assert_queried_addresses_match(result, {
-        'aave': [address1],
+        'eth2': [address1],
         'makerdao_vaults': [address2],
     })
 
     # add same address to another module/protocol
-    data = {'module': 'aave', 'address': address2}
+    data = {'module': 'eth2', 'address': address2}
     response = requests.put(
         api_url_for(rotkehlchen_api_server, 'queriedaddressesresource'), json=data,
     )
     result = assert_proper_sync_response_with_result(response)
     assert_queried_addresses_match(result, {
-        'aave': [address1, address2],
+        'eth2': [address1, address2],
         'makerdao_vaults': [address2],
     })
 
     # try to add an address that already exists for a module/protocol and assert we get an error
-    data = {'module': 'aave', 'address': address1}
+    data = {'module': 'eth2', 'address': address1}
     response = requests.put(
         api_url_for(rotkehlchen_api_server, 'queriedaddressesresource'), json=data,
     )
     assert_error_response(
         response=response,
-        contained_in_msg=f'{address1} is already in the queried addresses for aave',
+        contained_in_msg=f'{address1} is already in the queried addresses for eth2',
         status_code=HTTPStatus.CONFLICT,
     )
 
@@ -605,7 +605,7 @@ def test_queried_addresses_per_protocol(rotkehlchen_api_server: 'APIServer') -> 
     )
     result = assert_proper_sync_response_with_result(response)
     assert_queried_addresses_match(result, {
-        'aave': [address1, address2],
+        'eth2': [address1, address2],
         'makerdao_vaults': [address2],
         'makerdao_dsr': [address3],
     })
@@ -615,7 +615,7 @@ def test_queried_addresses_per_protocol(rotkehlchen_api_server: 'APIServer') -> 
     )
     result = assert_proper_sync_response_with_result(response)
     assert_queried_addresses_match(result, {
-        'aave': [address1, address2],
+        'eth2': [address1, address2],
         'makerdao_vaults': [address2],
     })
 
@@ -634,7 +634,7 @@ def test_queried_addresses_per_protocol(rotkehlchen_api_server: 'APIServer') -> 
     response = requests.get(api_url_for(rotkehlchen_api_server, 'queriedaddressesresource'))
     result = assert_proper_sync_response_with_result(response)
     assert_queried_addresses_match(result, {
-        'aave': [address1, address2],
+        'eth2': [address1, address2],
         'makerdao_vaults': [address2],
     })
 

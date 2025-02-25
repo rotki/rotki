@@ -39,10 +39,6 @@ if TYPE_CHECKING:
 ModuleName = Literal[
     'makerdao_dsr',
     'makerdao_vaults',
-    'aave',
-    'compound',
-    'yearn_vaults',
-    'yearn_vaults_v2',
     'uniswap',
     'loopring',
     'eth2',
@@ -64,10 +60,6 @@ PurgeableModuleName = ModuleName | OnlyPurgeableModuleName
 AVAILABLE_MODULES_MAP = {
     'makerdao_dsr': 'MakerDAO DSR',
     'makerdao_vaults': 'MakerDAO Vaults',
-    'aave': 'Aave',
-    'compound': 'Compound',
-    'yearn_vaults': 'Yearn Vaults',
-    'yearn_vaults_v2': 'Yearn V2 Vaults',
     'uniswap': 'Uniswap',
     'loopring': 'Loopring',
     'eth2': 'Eth2',
@@ -77,7 +69,7 @@ AVAILABLE_MODULES_MAP = {
     'nfts': 'NFTs',
 }
 
-DEFAULT_OFF_MODULES = {'makerdao_dsr', 'yearn_vaults'}
+DEFAULT_OFF_MODULES = {'makerdao_dsr'}
 
 
 UNISWAP_PROTOCOL: Final = 'UNI-V2'

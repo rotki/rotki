@@ -683,9 +683,7 @@ def test_aave_v3_balances(blockchain: 'ChainsAggregator') -> None:
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [[
     '0x1107F797c1af4982b038Eb91260b3f9A90eecee9', '0x887380Bb5F5fF5C87BEcc46F0867Fec460F7c5a6',
-    '0x577e1290fE9561A9654b7b42B1C10c7Ea90c8a07', '0x1b622CA9C74185A7e21351Ae9AC5ea74b9e8a75b',
 ]])
-@pytest.mark.parametrize('ethereum_modules', [['compound']])
 def test_compound_v3_token_balances_liabilities(
         blockchain: 'ChainsAggregator', ethereum_accounts: list['ChecksumEvmAddress'],
 ) -> None:
@@ -746,10 +744,8 @@ def test_compound_v3_token_balances_liabilities(
         return Balance(
             amount=FVal(amount), usd_value=FVal(amount) * CURRENT_PRICE_MOCK,
         )
-    assert blockchain.balances.eth[ethereum_accounts[0]].liabilities[A_USDC] == get_balance('20833.286308')  # noqa: E501
+    assert blockchain.balances.eth[ethereum_accounts[0]].liabilities[A_USDC] == get_balance('48076.773054')  # noqa: E501
     assert blockchain.balances.eth[ethereum_accounts[1]].assets[c_usdc_v3] == get_balance('0.32795')  # noqa: E501
-    assert blockchain.balances.eth[ethereum_accounts[2]].liabilities[A_USDC] == get_balance('0')
-    assert blockchain.balances.eth[ethereum_accounts[3]].liabilities[A_USDC] == get_balance('134508.993003')  # noqa: E501
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])

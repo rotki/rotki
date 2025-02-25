@@ -2114,16 +2114,6 @@ class Eth2StakePerformanceResource(BaseMethodView):
         )
 
 
-class DefiBalancesResource(BaseMethodView):
-
-    get_schema = AsyncQueryArgumentSchema()
-
-    @require_loggedin_user()
-    @use_kwargs(get_schema, location='json_and_query')
-    def get(self, async_query: bool) -> Response:
-        return self.rest_api.get_defi_balances(async_query=async_query)
-
-
 class NamedEthereumModuleDataResource(BaseMethodView):
     delete_schema = NamedEthereumModuleDataSchema()
 
@@ -2143,86 +2133,6 @@ class EthereumModuleResource(BaseMethodView):
 
     def get(self) -> Response:
         return self.rest_api.supported_modules()
-
-
-class MakerdaoDSRBalanceResource(BaseMethodView):
-
-    get_schema = AsyncQueryArgumentSchema()
-
-    @require_loggedin_user()
-    @use_kwargs(get_schema, location='json_and_query')
-    def get(self, async_query: bool) -> Response:
-        return self.rest_api.get_makerdao_dsr_balance(async_query=async_query)
-
-
-class MakerdaoDSRHistoryResource(BaseMethodView):
-
-    get_schema = AsyncQueryArgumentSchema()
-
-    @require_premium_user(active_check=False)
-    @use_kwargs(get_schema, location='json_and_query')
-    def get(self, async_query: bool) -> Response:
-        return self.rest_api.get_makerdao_dsr_history(async_query=async_query)
-
-
-class MakerdaoVaultsResource(BaseMethodView):
-
-    get_schema = AsyncQueryArgumentSchema()
-
-    @require_loggedin_user()
-    @use_kwargs(get_schema, location='json_and_query')
-    def get(self, async_query: bool) -> Response:
-        return self.rest_api.get_makerdao_vaults(async_query=async_query)
-
-
-class MakerdaoVaultDetailsResource(BaseMethodView):
-
-    get_schema = AsyncQueryArgumentSchema()
-
-    @require_premium_user(active_check=False)
-    @use_kwargs(get_schema, location='json_and_query')
-    def get(self, async_query: bool) -> Response:
-        return self.rest_api.get_makerdao_vault_details(async_query=async_query)
-
-
-class AaveBalancesResource(BaseMethodView):
-
-    get_schema = AsyncQueryArgumentSchema()
-
-    @require_loggedin_user()
-    @use_kwargs(get_schema, location='json_and_query')
-    def get(self, async_query: bool) -> Response:
-        return self.rest_api.get_aave_balances(async_query=async_query)
-
-
-class CompoundBalancesResource(BaseMethodView):
-
-    get_schema = AsyncQueryArgumentSchema()
-
-    @require_loggedin_user()
-    @use_kwargs(get_schema, location='json_and_query')
-    def get(self, async_query: bool) -> Response:
-        return self.rest_api.get_compound_balances(async_query=async_query)
-
-
-class YearnVaultsBalancesResource(BaseMethodView):
-
-    get_schema = AsyncQueryArgumentSchema()
-
-    @require_loggedin_user()
-    @use_kwargs(get_schema, location='json_and_query')
-    def get(self, async_query: bool) -> Response:
-        return self.rest_api.get_yearn_vaults_balances(async_query=async_query)
-
-
-class YearnVaultsV2BalancesResource(BaseMethodView):
-
-    get_schema = AsyncQueryArgumentSchema()
-
-    @require_loggedin_user()
-    @use_kwargs(get_schema, location='json_and_query')
-    def get(self, async_query: bool) -> Response:
-        return self.rest_api.get_yearn_vaults_v2_balances(async_query=async_query)
 
 
 class LoopringBalancesResource(BaseMethodView):
@@ -2325,30 +2235,6 @@ class ModuleStatsResource(BaseMethodView):
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
     ) -> Response:
-        if module == ModuleWithStats.AAVE:
-            return self.rest_api.get_module_stats_using_balances(
-                async_query=async_query,
-                module=module.serialize(),
-                from_timestamp=from_timestamp,
-                to_timestamp=to_timestamp,
-            )
-
-        if module == ModuleWithStats.COMPOUND:
-            return self.rest_api.get_module_stats_using_balances(
-                async_query=async_query,
-                module=module.serialize(),
-                from_timestamp=from_timestamp,
-                to_timestamp=to_timestamp,
-            )
-
-        if module in (ModuleWithStats.UNISWAP, ModuleWithStats.SUSHISWAP):
-            return self.rest_api.get_module_stats(
-                async_query=async_query,
-                module=module.serialize(),
-                from_timestamp=from_timestamp,
-                to_timestamp=to_timestamp,
-            )
-
         if module == ModuleWithStats.LIQUITY:
             return self.rest_api.get_liquity_stats(async_query=async_query)
 

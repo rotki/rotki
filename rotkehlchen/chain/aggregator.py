@@ -43,8 +43,6 @@ from rotkehlchen.chain.ethereum.modules import (
     MakerdaoDsr,
     MakerdaoVaults,
     PickleFinance,
-    YearnVaults,
-    YearnVaultsV2,
 )
 from rotkehlchen.chain.ethereum.modules.aave.balances import AaveBalances
 from rotkehlchen.chain.ethereum.modules.blur.balances import BlurBalances
@@ -132,8 +130,6 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.binance_sc.manager import BinanceSCManager
     from rotkehlchen.chain.ethereum.interfaces.balances import ProtocolWithBalance
     from rotkehlchen.chain.ethereum.manager import EthereumManager
-    from rotkehlchen.chain.ethereum.modules.aave.aave import Aave
-    from rotkehlchen.chain.ethereum.modules.compound.compound import Compound
     from rotkehlchen.chain.ethereum.modules.eth2.eth2 import Eth2
     from rotkehlchen.chain.ethereum.modules.eth2.structures import (
         ValidatorDailyStats,
@@ -488,14 +484,6 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         return
 
     @overload
-    def get_module(self, module_name: Literal['aave']) -> Optional['Aave']:
-        ...
-
-    @overload
-    def get_module(self, module_name: Literal['compound']) -> Optional['Compound']:
-        ...
-
-    @overload
     def get_module(self, module_name: Literal['eth2']) -> Optional['Eth2']:
         ...
 
@@ -517,14 +505,6 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
 
     @overload
     def get_module(self, module_name: Literal['sushiswap']) -> Optional['Sushiswap']:
-        ...
-
-    @overload
-    def get_module(self, module_name: Literal['yearn_vaults']) -> YearnVaults | None:
-        ...
-
-    @overload
-    def get_module(self, module_name: Literal['yearn_vaults_v2']) -> YearnVaultsV2 | None:
         ...
 
     @overload

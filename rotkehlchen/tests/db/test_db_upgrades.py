@@ -2892,6 +2892,21 @@ def test_upgrade_db_46_to_47(user_data_dir, messages_aggregator):
         assert cursor.execute(
             "SELECT COUNT(*) FROM settings WHERE name='last_data_upload_ts'",
         ).fetchone()[0] == 1
+        assert json.loads(cursor.execute(
+            "SELECT value FROM settings WHERE name='active_modules'",
+        ).fetchone()[0]) == ['aave', 'sushiswap', 'uniswap', 'nfts', 'loopring', 'eth2', 'compound', 'makerdao_vaults', 'liquity', 'yearn_vaults_v2', 'yearn_vaults', 'pickle_finance']  # noqa: E501
+        assert set(cursor.execute(
+            "SELECT * FROM multisettings WHERE name LIKE 'queried_address_%'",
+        ).fetchall()) == {
+            ('queried_address_aave', '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'),
+            ('queried_address_aave', '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045'),
+            ('queried_address_yearn_vaults', '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'),
+            ('queried_address_yearn_vaults', '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045'),
+            ('queried_address_yearn_vaults_v2', '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'),
+            ('queried_address_yearn_vaults_v2', '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045'),
+            ('queried_address_compound', '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'),
+            ('queried_address_compound', '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045'),
+        }
 
     with db_v46.conn.read_ctx() as cursor:
         assert db_v46.get_dynamic_cache(
@@ -2979,6 +2994,12 @@ def test_upgrade_db_46_to_47(user_data_dir, messages_aggregator):
         assert cursor.execute(
             "SELECT COUNT(*) FROM settings WHERE name='last_data_upload_ts'",
         ).fetchone()[0] == 0
+        assert json.loads(cursor.execute(
+            "SELECT value FROM settings WHERE name='active_modules'",
+        ).fetchone()[0]) == ['sushiswap', 'uniswap', 'nfts', 'loopring', 'eth2', 'makerdao_vaults', 'liquity', 'pickle_finance']  # noqa: E501
+        assert cursor.execute(
+            "SELECT * FROM multisettings WHERE name LIKE 'queried_address_%'",
+        ).fetchall() == []
 
     db.logout()
 
