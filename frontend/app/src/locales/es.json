@@ -2410,6 +2410,15 @@
   "module_settings": {
     "title": "Module Settings"
   },
+  "modules": {
+    "dashboard": {
+      "liquidity_pools": {
+        "pool_table": {
+          "refresh_tooltip": "Refrescar LP Tokens"
+        }
+      }
+    }
+  },
   "navigation_menu": {
     "api_keys": "API Keys",
     "api_keys_sub": {

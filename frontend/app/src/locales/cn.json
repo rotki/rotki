@@ -2489,6 +2489,23 @@
   "module_settings": {
     "title": "模块设置"
   },
+  "modules": {
+    "dashboard": {
+      "liquidity_pools": {
+        "pool_details": {
+          "premium_only": "升级到溢价以查看资产信息"
+        },
+        "pool_table": {
+          "refresh_tooltip": "刷新 LP 代币",
+          "title": "LP代币"
+        },
+        "task": {
+          "error_message": "检索 {protocol} 余额时出错：{message}",
+          "title": "获取 {protocol} 余额"
+        }
+      }
+    }
+  },
   "navigation_menu": {
     "api_keys": "API Keys",
     "api_keys_sub": {

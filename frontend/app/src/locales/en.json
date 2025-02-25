@@ -3277,6 +3277,23 @@
     "subtitle": "Manage and view your module settings.",
     "title": "Module Settings"
   },
+  "modules": {
+    "dashboard": {
+      "liquidity_pools": {
+        "pool_details": {
+          "premium_only": "See your complete assets overview with a Premium account "
+        },
+        "pool_table": {
+          "refresh_tooltip": "Refresh LP Tokens",
+          "title": "LP Tokens"
+        },
+        "task": {
+          "error_message": "There was an error while fetching {protocol} balances: {message}",
+          "title": "Fetching {protocol} balances"
+        }
+      }
+    }
+  },
   "navigation_menu": {
     "accounts": "Accounts",
     "accounts_sub": {

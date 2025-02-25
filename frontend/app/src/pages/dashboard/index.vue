@@ -24,6 +24,7 @@ import BlockchainBalanceRefreshBehaviourMenu
 import ExchangeBox from '@/components/dashboard/ExchangeBox.vue';
 import OverallBalances from '@/components/dashboard/OverallBalances.vue';
 import DynamicMessageDisplay from '@/components/dashboard/DynamicMessageDisplay.vue';
+import PoolTable from '@/modules/dashboard/liquidity-pools/PoolTable.vue';
 
 definePage({
   meta: {
@@ -198,6 +199,7 @@ const Type = DashboardTableType;
         :loading="isAnyLoading"
         :balances="aggregatedBalances"
       />
+      <PoolTable class="mt-8" />
       <DashboardAssetTable
         v-if="aggregatedLiabilities.length > 0"
         class="mt-8"
