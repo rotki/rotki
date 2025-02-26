@@ -37,7 +37,7 @@ describe('moduleSelector.vue', () => {
     api = useSettingsApi();
     document.body.dataset.app = 'true';
 
-    setModules([Module.AAVE]);
+    setModules([Module.ETH2]);
     wrapper = createWrapper();
     api.setSettings = vi.fn();
   });
@@ -47,7 +47,7 @@ describe('moduleSelector.vue', () => {
   });
 
   it('displays active modules', () => {
-    expect((wrapper.find('[data-cy=aave-module-switch] input').element as HTMLInputElement).checked).toBeTruthy();
+    expect((wrapper.find('[data-cy=eth2-module-switch] input').element as HTMLInputElement).checked).toBeTruthy();
   });
 
   it('disables module on click', async () => {
@@ -57,11 +57,11 @@ describe('moduleSelector.vue', () => {
       accounting: {},
       other: { havePremium: false, premiumShouldSync: false },
     });
-    expect((wrapper.find('[data-cy=aave-module-switch] input').element as HTMLInputElement).checked).toBeTruthy();
-    await wrapper.find('[data-cy=aave-module-switch] input').trigger('input', { target: false });
+    expect((wrapper.find('[data-cy=eth2-module-switch] input').element as HTMLInputElement).checked).toBeTruthy();
+    await wrapper.find('[data-cy=eth2-module-switch] input').trigger('input', { target: false });
     await nextTick();
     await flushPromises();
-    expect((wrapper.find('[data-cy=aave-module-switch] input').element as HTMLInputElement).checked).toBeFalsy();
+    expect((wrapper.find('[data-cy=eth2-module-switch] input').element as HTMLInputElement).checked).toBeFalsy();
     expect(settingsStore.activeModules).toEqual([]);
   });
 });

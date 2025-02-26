@@ -1,12 +1,8 @@
 import { z } from 'zod';
 
 export enum Module {
-  YEARN = 'yearn_vaults',
-  YEARN_V2 = 'yearn_vaults_v2',
-  COMPOUND = 'compound',
   MAKERDAO_VAULTS = 'makerdao_vaults',
   MAKERDAO_DSR = 'makerdao_dsr',
-  AAVE = 'aave',
   UNISWAP = 'uniswap',
   LOOPRING = 'loopring',
   ETH2 = 'eth2',
@@ -37,11 +33,6 @@ export interface SupportedModule {
 
 export const SUPPORTED_MODULES: SupportedModule[] = [
   {
-    icon: './assets/images/protocols/aave.svg',
-    identifier: Module.AAVE,
-    name: 'Aave',
-  },
-  {
     icon: './assets/images/protocols/makerdao.svg',
     identifier: Module.MAKERDAO_VAULTS,
     name: 'MakerDAO Vaults',
@@ -50,21 +41,6 @@ export const SUPPORTED_MODULES: SupportedModule[] = [
     icon: './assets/images/protocols/makerdao.svg',
     identifier: Module.MAKERDAO_DSR,
     name: 'MakerDAO DSR',
-  },
-  {
-    icon: './assets/images/protocols/compound.svg',
-    identifier: Module.COMPOUND,
-    name: 'Compound',
-  },
-  {
-    icon: './assets/images/protocols/yearn_vaults.svg',
-    identifier: Module.YEARN,
-    name: 'yearn.finance',
-  },
-  {
-    icon: './assets/images/protocols/yearn_vaults.svg',
-    identifier: Module.YEARN_V2,
-    name: 'yearn.finance v2',
   },
   {
     icon: './assets/images/protocols/uniswap.svg',
