@@ -8,6 +8,8 @@ if TYPE_CHECKING:
 
 
 class AssetType(DBCharEnumMixIn):
+    """Represents the asset type and is a direct mapping to the global DB enum.
+    We removed 19 (Binance) and 27 (Avalanche) since they are EVM tokens"""
     FIAT = 1
     OWN_CHAIN = 2
     EVM_TOKEN = 3
@@ -26,12 +28,10 @@ class AssetType(DBCharEnumMixIn):
     TRON_TOKEN = 16
     ONTOLOGY_TOKEN = 17
     VECHAIN_TOKEN = 18
-    BINANCE_TOKEN = 19
     EOS_TOKEN = 20
     FUSION_TOKEN = 21
     LUNIVERSE_TOKEN = 22
     OTHER = 23  # OTHER and OWN chain are probably the same thing -- needs checking
-    AVALANCHE_TOKEN = 24
     SOLANA_TOKEN = 25
     NFT = 26
     CUSTOM_ASSET = 27
