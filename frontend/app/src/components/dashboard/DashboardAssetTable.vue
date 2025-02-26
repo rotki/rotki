@@ -19,6 +19,10 @@ import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import VisibleColumnsSelector from '@/components/dashboard/VisibleColumnsSelector.vue';
 import DashboardExpandableTable from '@/components/dashboard/DashboardExpandableTable.vue';
+import { useManualBalancesStore } from '@/store/balances/manual';
+import ManualBalanceMissingAssetWarning
+  from '@/components/accounts/manual-balances/ManualBalanceMissingAssetWarning.vue';
+import { Routes } from '@/router/routes';
 import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import type { AssetBalance, AssetBalanceWithPrice, BigNumber, Nullable } from '@rotki/common';
 
@@ -53,11 +57,17 @@ const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { exchangeRate } = useBalancePricesStore();
 const { assetInfo, assetName, assetSymbol } = useAssetInfoRetrieval();
 const { dashboardTablesVisibleColumns } = storeToRefs(useFrontendSettingsStore());
+const { missingCustomAssets } = storeToRefs(useManualBalancesStore());
 const statisticsStore = useStatisticsStore();
 const { totalNetWorthUsd } = storeToRefs(statisticsStore);
+const router = useRouter();
 
 function assetFilter(item: Nullable<AssetBalance>) {
   return assetFilterByKeyword(item, get(search), assetName, assetSymbol);
+}
+
+function isAssetMissing(item: AssetBalanceWithPrice) {
+  return get(missingCustomAssets).includes(item.asset);
 }
 
 const totalInUsd = computed(() => aggregateTotal(get(balances), CURRENCY_USD, One));
@@ -170,6 +180,18 @@ const tableHeaders = computed<DataTableColumn<AssetBalanceWithPrice>[]>(() => {
   return headers;
 });
 
+function redirectToManualBalance(item: AssetBalanceWithPrice) {
+  const tableType = props.tableType;
+  if ([DashboardTableType.ASSETS, DashboardTableType.LIABILITIES].includes(tableType)) {
+    router.push({
+      path: `${Routes.BALANCES_MANUAL}/${tableType.toLowerCase()}`,
+      query: {
+        asset: item.asset,
+      },
+    });
+  }
+}
+
 watch(search, () => setPage(1));
 </script>
 
@@ -226,14 +248,24 @@ watch(search, () => setPage(1));
       @update:pagination="setTablePagination($event)"
     >
       <template #item.asset="{ row }">
+        <ManualBalanceMissingAssetWarning
+          v-if="isAssetMissing(row)"
+          @click="redirectToManualBalance(row)"
+        />
+
         <AssetDetails
+          v-else
           opens-details
           :asset="row.asset"
           :is-collection-parent="!!row.breakdown"
         />
       </template>
       <template #item.usdPrice="{ row }">
+        <template v-if="isAssetMissing(row)">
+          -
+        </template>
         <AmountDisplay
+          v-else
           :loading="!row.usdPrice || row.usdPrice.lt(0)"
           no-scramble
           show-currency="symbol"
