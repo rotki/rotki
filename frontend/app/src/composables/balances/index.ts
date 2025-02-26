@@ -20,7 +20,7 @@ import type { AllBalancePayload } from '@/types/blockchain/accounts';
 
 export const useBalances = createSharedComposable(() => {
   const manualBalancesStore = useManualBalancesStore();
-  const { manualBalancesData } = storeToRefs(manualBalancesStore);
+  const { missingCustomAssets } = storeToRefs(manualBalancesStore);
   const { fetchManualBalances, updatePrices: updateManualPrices } = manualBalancesStore;
   const { updatePrices: updateChainPrices } = useBlockchainStore();
   const { fetchConnectedExchangeBalances, updatePrices: updateExchangePrices } = useExchangeBalancesStore();
@@ -43,8 +43,7 @@ export const useBalances = createSharedComposable(() => {
   };
 
   const filterMissingAssets = (assets: string[]): string[] => {
-    const manualBalances = get(manualBalancesData);
-    const missingAssets = manualBalances.filter(item => item.assetIsMissing).map(item => item.asset);
+    const missingAssets = get(missingCustomAssets);
     return assets.filter(item => !missingAssets.includes(item));
   };
 

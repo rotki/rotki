@@ -55,6 +55,8 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
 
   const manualLabels = computed<string[]>(() => get(manualBalancesData).map(x => x.label));
 
+  const missingCustomAssets = computed<string[]>(() => get(manualBalancesData).filter(item => item.assetIsMissing).map(item => item.asset));
+
   const manualBalanceByLocation = computed<LocationBalance[]>(() => {
     const mainCurrency = get(currencySymbol);
     const balances = get(manualBalances);
@@ -317,6 +319,7 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
     manualBalancesData,
     manualLabels,
     manualLiabilities,
+    missingCustomAssets,
     save,
     updatePrices,
   };
