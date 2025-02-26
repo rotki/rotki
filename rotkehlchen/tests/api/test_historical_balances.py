@@ -26,6 +26,7 @@ from rotkehlchen.tests.utils.api import (
     assert_proper_sync_response_with_result,
     wait_for_async_task,
 )
+from rotkehlchen.tests.utils.constants import A_DASH
 from rotkehlchen.types import AssetAmount, ChainID, Location, Price, Timestamp, TradeType
 from rotkehlchen.utils.misc import timestamp_to_daystart_timestamp, ts_sec_to_ms
 
@@ -687,7 +688,10 @@ def test_get_historical_netvalue_with_negative_amount(
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('should_mock_price_queries', [False])
-def test_get_historical_prices_per_asset(rotkehlchen_api_server: 'APIServer') -> None:
+def test_get_historical_prices_per_asset(
+        rotkehlchen_api_server: 'APIServer',
+        globaldb: 'GlobalDBHandler',
+) -> None:
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
@@ -789,3 +793,36 @@ def test_get_historical_prices_per_asset(rotkehlchen_api_server: 'APIServer') ->
         contained_in_msg='from_timestamp must be smaller than to_timestamp',
         status_code=HTTPStatus.BAD_REQUEST,
     )
+
+    # test only cached prices
+    globaldb.add_historical_prices([HistoricalPrice(
+        from_asset=A_DASH,
+        to_asset=A_EUR,
+        source=HistoricalPriceOracle.CRYPTOCOMPARE,
+        timestamp=START_TS,
+        price=Price(FVal('10')),
+    ), HistoricalPrice(
+        from_asset=A_DASH,
+        to_asset=A_EUR,
+        source=HistoricalPriceOracle.CRYPTOCOMPARE,
+        timestamp=Timestamp(START_TS + DAY_IN_SECONDS),
+        price=Price(FVal('20')),
+    )])
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'historicalpricesperassetresource',
+        ),
+        json={
+            'asset': 'DASH',
+            'from_timestamp': START_TS,
+            'to_timestamp': START_TS + (DAY_IN_SECONDS * 10),
+            'interval': DAY_IN_SECONDS,
+            'only_cache_period': 3600,
+        },
+    )
+    result = assert_proper_sync_response_with_result(response)
+    assert result['prices'] == {
+        str(START_TS): '10',
+        str(START_TS + DAY_IN_SECONDS): '20',
+    }

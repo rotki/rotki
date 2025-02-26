@@ -14124,6 +14124,8 @@ Historical Balance Queries
     Gets historical price data for a specific asset within a given time range at specified intervals.
     Returns both the available prices and timestamps where price data is missing.
 
+    If ``only_cache_period`` is provided, the endpoint will only return prices found in cache within the specified time period around each timestamp. This is useful for scenarios requiring immediate responses, such as graph rendering.
+
     .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``.
 
@@ -14143,11 +14145,12 @@ Historical Balance Queries
           "async_query": false
         }
 
-      :reqjsonarr string asset: The asset identifier to query prices for
-      :reqjsonarr integer interval: The time interval between price queries in seconds
-      :reqjsonarr integer from_timestamp: The start timestamp of the query range
-      :reqjsonarr integer to_timestamp: The end timestamp of the query range
-      :reqjsonarr boolean async_query: (Optional) Whether to process the request asynchronously
+    :reqjsonarr string asset: The asset identifier to query prices for
+    :reqjsonarr integer interval: The time interval between price queries in seconds
+    :reqjsonarr integer from_timestamp: The start timestamp of the query range
+    :reqjsonarr integer to_timestamp: The end timestamp of the query range
+     :reqjson integer only_cache_period: (Optional) Time period in seconds around each timestamp to search for cached prices. If omitted, falls back to querying historical prices
+    :reqjsonarr boolean async_query: (Optional) Whether to process the request asynchronously
 
     **Example Response:**
 

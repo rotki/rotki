@@ -5423,14 +5423,30 @@ class RestAPI:
             interval: int,
             to_timestamp: Timestamp,
             from_timestamp: Timestamp,
+            only_cache_period: int | None = None,
     ) -> dict[str, Any]:
-        prices, no_prices_ts = {}, []
+        prices = {}
+        no_prices_ts: list[Timestamp] = []
         with (db := self.rotkehlchen.data.db).conn.read_ctx() as cursor:
             main_currency = db.get_setting(cursor=cursor, name='main_currency')
 
         total_intervals = (to_timestamp - from_timestamp) // interval + 1
-        processed_count, current_ts = 0, from_timestamp
-        while current_ts <= to_timestamp:
+        timestamps = [Timestamp(from_timestamp + (i * interval)) for i in range(total_intervals)]
+
+        if only_cache_period is not None:
+            for price_result in GlobalDBHandler.get_historical_prices(
+                query_data=[(asset, main_currency, ts) for ts in timestamps],
+                max_seconds_distance=only_cache_period,
+            ):
+                if price_result is not None:
+                    prices[price_result.timestamp] = str(price_result.price)
+
+            return _wrap_in_ok_result(result={
+                'prices': prices,
+                'no_prices_timestamps': no_prices_ts,
+            })
+
+        for processed_count, current_ts in enumerate(timestamps, 1):
             try:
                 price = PriceHistorian.query_historical_price(
                     from_asset=asset,
@@ -5442,8 +5458,6 @@ class RestAPI:
             else:
                 prices[current_ts] = str(price)
 
-            processed_count += 1
-            current_ts += interval  # type: ignore[assignment]  # they are both integers
             if processed_count % 10 == 0:  # Send progress update every 10 price queries
                 db.msg_aggregator.add_message(
                     message_type=WSMessageType.PROGRESS_UPDATES,

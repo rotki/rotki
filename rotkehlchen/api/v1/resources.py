@@ -3459,6 +3459,7 @@ class HistoricalPricesPerAssetResource(BaseMethodView):
             async_query: bool,
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
+            only_cache_period: int | None = None,
     ) -> Response:
         return self.rest_api.get_historical_prices_per_asset(
             asset=asset,
@@ -3466,4 +3467,5 @@ class HistoricalPricesPerAssetResource(BaseMethodView):
             async_query=async_query,
             to_timestamp=to_timestamp,
             from_timestamp=from_timestamp,
+            only_cache_period=only_cache_period,
         )
