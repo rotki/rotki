@@ -1,10 +1,9 @@
 import logging
 from dataclasses import dataclass
-from typing import Any, NamedTuple
+from typing import Any
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import EvmToken
-from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -49,38 +48,3 @@ class LiquidityPool:
 
 AddressToLPBalances = dict[ChecksumEvmAddress, list[LiquidityPool]]
 AssetToPrice = dict[ChecksumEvmAddress, Price]
-
-
-class ProtocolBalance(NamedTuple):
-    """Container structure for uniswap LP balances
-
-    Known assets are all assets we have an oracle for
-    Unknown assets are those we would have to try to query through uniswap directly
-    """
-    address_balances: AddressToLPBalances
-
-
-class LiquidityPoolEventsBalance(NamedTuple):
-    pool_address: ChecksumEvmAddress
-    token0: EvmToken
-    token1: EvmToken
-    profit_loss0: FVal
-    profit_loss1: FVal
-    usd_profit_loss: FVal
-
-    def serialize(self) -> dict[str, Any]:
-        return {
-            'pool_address': self.pool_address,
-            'token0': self.token0.serialize(),
-            'token1': self.token1.serialize(),
-            'profit_loss0': str(self.profit_loss0),
-            'profit_loss1': str(self.profit_loss1),
-            'usd_profit_loss': str(self.usd_profit_loss),
-        }
-
-
-@dataclass(init=True, repr=True)
-class AggregatedAmount:
-    profit_loss0: FVal = ZERO
-    profit_loss1: FVal = ZERO
-    usd_profit_loss: FVal = ZERO

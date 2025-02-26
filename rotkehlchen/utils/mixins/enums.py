@@ -137,9 +137,6 @@ class SerializableEnumIntValueMixin(SerializableEnumMixin):
             raise DeserializationError(f'Failed to deserialize {cls.__name__} value {value}') from e  # noqa: E501
 
 
-D = TypeVar('D', bound=DBEnumMixIn)
-
-
 class DBCharEnumMixIn(SerializableEnumNameMixin, DBEnumMixIn):
     """A serializable enum with an int value that also goes into
     the DB and gets saved as an ASCII character"""

@@ -64,32 +64,6 @@ def query_usd_price_or_use_default(
     return usd_price
 
 
-def query_usd_price_zero_if_error(
-        asset: Asset,
-        time: Timestamp,
-        location: str,
-        msg_aggregator: 'MessagesAggregator | None' = None,
-) -> Price:
-    try:
-        usd_price = PriceHistorian().query_historical_price(
-            from_asset=asset,
-            to_asset=A_USD,
-            timestamp=time,
-        )
-    except (RemoteError, NoPriceForGivenTimestamp):
-        msg = (
-            f'Could not query usd price for {asset!s} and time {time} '
-            f'when processing {location}. Using zero price'
-        )
-        if msg_aggregator is not None:
-            msg_aggregator.add_error(msg)
-        else:
-            log.error(msg)
-        usd_price = ZERO_PRICE
-
-    return usd_price
-
-
 class PriceHistorian:
     __instance: Optional['PriceHistorian'] = None
     _cryptocompare: 'Cryptocompare'

@@ -283,9 +283,6 @@ class AssetWithOracles(AssetWithSymbol, abc.ABC):
     def has_coingecko(self) -> bool:
         return self.coingecko is not None and self.coingecko != ''
 
-    def has_oracle(self) -> bool:
-        return self.has_coingecko() or self.cryptocompare is not None
-
     def to_dict(self) -> dict[str, Any]:
         return super().to_dict() | {
             'cryptocompare': self.cryptocompare,

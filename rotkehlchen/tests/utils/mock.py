@@ -127,11 +127,6 @@ def patch_web3_request(given_web3, test_specific_mock_data):
     )
 
 
-ETHERSCAN_ACTION_RE = re.compile(r'.*action=(.*?)&(.*)')
-ETHERSCAN_ETH_CALL_RE = re.compile(r'&to=(.*)&data=(.*)&.*')
-ETHERSCAN_BLOCKNOBYTIME_RE = re.compile(r'&timestamp=(.*)&closest=(.*)&.*')
-
-
 def _mock_etherscan_eth_call(counter, url, params, eth_call_data):
     if (
         (contract_to := params.get('to')) is None or

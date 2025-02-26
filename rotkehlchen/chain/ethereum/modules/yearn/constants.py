@@ -2,8 +2,6 @@ from typing import Final
 
 from rotkehlchen.chain.evm.types import string_to_evm_address
 
-BLOCKS_PER_YEAR = 2425846
-
 CPT_YEARN_V1: Final = 'yearn-v1'
 CPT_YEARN_V2: Final = 'yearn-v2'
 CPT_YEARN_V3: Final = 'yearn-v3'
