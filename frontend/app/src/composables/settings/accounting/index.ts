@@ -181,8 +181,8 @@ export function useAccountingSettings(): UseAccountingSettingReturn {
           description: result
             ? t('actions.accounting_rules.export.message.success')
             : t('actions.accounting_rules.export.message.failure', {
-              description: taskMessage,
-            }),
+                description: taskMessage,
+              }),
           success: !!result,
           title: t('actions.accounting_rules.export.title'),
         };

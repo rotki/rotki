@@ -162,9 +162,9 @@ function filter(item: BlockchainAccount, queryText: string) {
 
   return item.tags
     ? item.tags
-      .map(tag => getTextToken(tag))
-      .join(' ')
-      .includes(query)
+        .map(tag => getTextToken(tag))
+        .join(' ')
+        .includes(query)
     : false;
 }
 

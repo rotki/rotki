@@ -70,8 +70,8 @@ async function exportCSV(): Promise<void> {
         message: result
           ? t('actions.history_events_export.message.success')
           : t('actions.history_events_export.message.failure', {
-            description: taskMessage,
-          }),
+              description: taskMessage,
+            }),
         severity: result ? Severity.INFO : Severity.ERROR,
         title: t('actions.history_events_export.title'),
       };

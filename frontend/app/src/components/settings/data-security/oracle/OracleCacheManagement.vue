@@ -141,16 +141,16 @@ async function fetchPrices() {
   const to = get(assetSymbol(toAssetVal));
   const message = status.success
     ? t('oracle_cache_management.notification.success', {
-      fromAsset: from,
-      source,
-      toAsset: to,
-    })
+        fromAsset: from,
+        source,
+        toAsset: to,
+      })
     : t('oracle_cache_management.notification.error', {
-      error: status.message,
-      fromAsset: from,
-      source,
-      toAsset: to,
-    });
+        error: status.message,
+        fromAsset: from,
+        source,
+        toAsset: to,
+      });
   const title = t('oracle_cache_management.notification.title');
 
   notify({

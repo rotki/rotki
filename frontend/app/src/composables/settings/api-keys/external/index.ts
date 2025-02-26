@@ -138,11 +138,11 @@ export const useExternalApiKeys = createSharedComposable((t: ReturnType<typeof u
       setStatus(name, {
         message: isPayloadWithCredential
           ? t('external_services.set_credential.success.message', {
-            serviceName,
-          })
+              serviceName,
+            })
           : t('external_services.set.success.message', {
-            serviceName,
-          }),
+              serviceName,
+            }),
         success: true,
       });
       await postConfirmAction?.();
@@ -152,11 +152,11 @@ export const useExternalApiKeys = createSharedComposable((t: ReturnType<typeof u
       setStatus(name, {
         message: isPayloadWithCredential
           ? t('external_services.set_credential.error.message', {
-            error: errorMessage,
-          })
+              error: errorMessage,
+            })
           : t('external_services.set.error.message', {
-            error: errorMessage,
-          }),
+              error: errorMessage,
+            }),
       });
     }
     finally {

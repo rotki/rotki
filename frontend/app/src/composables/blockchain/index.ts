@@ -227,8 +227,8 @@ export function useBlockchains(): UseBlockchainsReturn {
 
         else
           failedToAddAccounts.push(result.account);
-      }
-      , 2,
+      },
+      2,
     );
 
     if (failedToAddAccounts.length > 0)
@@ -291,8 +291,8 @@ export function useBlockchains(): UseBlockchainsReturn {
           assert(!('xpub' in result.account));
           failedToAddAccounts.push(result.account);
         }
-      }
-      , 2,
+      },
+      2,
     );
 
     if (failedToAddAccounts.length > 0)

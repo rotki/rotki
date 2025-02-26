@@ -61,8 +61,8 @@ export function useAddressBookImport(): UseAddressBookImport {
       const message = error instanceof CSVMissingHeadersError
         ? t('address_book.import.import_error.invalid_format')
         : t('address_book.import.import_error.message', {
-          error,
-        });
+            error,
+          });
       logger.error(message);
       notify({
         display: true,

@@ -1,6 +1,6 @@
 import type { Ref } from 'vue';
 
-interface UseCommonTablePropsReturn< V extends NonNullable<unknown>> {
+interface UseCommonTablePropsReturn<V extends NonNullable<unknown>> {
   selected: Ref<V[]>;
   openDialog: Ref<boolean>;
   editableItem: Ref<V | undefined>;

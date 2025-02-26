@@ -140,54 +140,54 @@ export function sortAndFilterAccounts<T extends BlockchainAccountBalance>(
   const filtered = !hasFilter
     ? accounts.map(account => applyExclusionFilter(account, excluded, groupId => getAccounts?.(groupId) ?? []))
     : accounts.filter(account => filterAccount(account, {
-      address,
-      category,
-      chain,
-      label,
-      tags,
-    }, { getLabel })).map((account) => {
+        address,
+        category,
+        chain,
+        label,
+        tags,
+      }, { getLabel })).map((account) => {
       /**
        * Second stage filtering for groups. Let's say that we have a group that has a tag `Public`
        * on an account that is on optimism. If I filter by `chain=optimism` and `tag=Public` only this
        * account will appear. If the group includes another account with `tag=Public` and a different one
        * with `chain=optimism` this will skipped (see return)
        */
-      if (account.type === 'group' && ((tags && tags.length > 0) || (chain && chain.length > 0))) {
-        const groupAccounts = getAccounts?.(getGroupId(account));
-        if (groupAccounts) {
-          const matchesWithoutChains = groupAccounts.filter(account => filterAccount(account, {
-            address: undefined, // we only this to the group
-            label: undefined, // we only this to the group
-            tags,
-          }, { getLabel }));
+        if (account.type === 'group' && ((tags && tags.length > 0) || (chain && chain.length > 0))) {
+          const groupAccounts = getAccounts?.(getGroupId(account));
+          if (groupAccounts) {
+            const matchesWithoutChains = groupAccounts.filter(account => filterAccount(account, {
+              address: undefined, // we only this to the group
+              label: undefined, // we only this to the group
+              tags,
+            }, { getLabel }));
 
-          const matches = matchesWithoutChains.filter(account => filterAccount(account, {
-            chain,
-          }, { getLabel }));
+            const matches = matchesWithoutChains.filter(account => filterAccount(account, {
+              chain,
+            }, { getLabel }));
 
-          if (matches.length === 0)
-            return null;
+            if (matches.length === 0)
+              return null;
 
-          const chains = matches.map(match => match.chain).filter(uniqueStrings);
-          const groupId = getGroupId({ chains, data: account.data });
-          const exclusion = excluded[groupId];
-          const usdValue = sum(matches);
-          const includedUsdValue = exclusion ? sum(matches.filter(match => !exclusion.includes(match.chain))) : undefined;
+            const chains = matches.map(match => match.chain).filter(uniqueStrings);
+            const groupId = getGroupId({ chains, data: account.data });
+            const exclusion = excluded[groupId];
+            const usdValue = sum(matches);
+            const includedUsdValue = exclusion ? sum(matches.filter(match => !exclusion.includes(match.chain))) : undefined;
 
-          return {
-            ...account,
-            allChains: groupAccounts.map(item => item.chain),
-            chains,
-            expansion: matches.length === 1 ? matches[0].expansion : 'accounts',
-            includedUsdValue,
-            tags: matches.flatMap(match => match.tags ?? []).filter(uniqueStrings),
-            usdValue,
-          };
+            return {
+              ...account,
+              allChains: groupAccounts.map(item => item.chain),
+              chains,
+              expansion: matches.length === 1 ? matches[0].expansion : 'accounts',
+              includedUsdValue,
+              tags: matches.flatMap(match => match.tags ?? []).filter(uniqueStrings),
+              usdValue,
+            };
+          }
         }
-      }
 
-      return applyExclusionFilter(account, excluded, groupId => getAccounts?.(groupId) ?? []);
-    }).filter(nonNull);
+        return applyExclusionFilter(account, excluded, groupId => getAccounts?.(groupId) ?? []);
+      }).filter(nonNull);
 
   const getSortElement = <T extends BlockchainAccountBalance>(key: keyof T, item: T): string | T[keyof T] => {
     if (key === 'label')
@@ -199,16 +199,16 @@ export function sortAndFilterAccounts<T extends BlockchainAccountBalance>(
   const sorted = orderByAttributes.length <= 0
     ? filtered
     : filtered.sort((a, b) => {
-      for (const [i, attr] of orderByAttributes.entries()) {
-        const key = camelCase(attr) as keyof T;
-        const asc = ascending[i];
+        for (const [i, attr] of orderByAttributes.entries()) {
+          const key = camelCase(attr) as keyof T;
+          const asc = ascending[i];
 
-        const order = sortBy(getSortElement(key, a), getSortElement(key, b), asc);
-        if (order)
-          return order;
-      }
-      return 0;
-    });
+          const order = sortBy(getSortElement(key, a), getSortElement(key, b), asc);
+          if (order)
+            return order;
+        }
+        return 0;
+      });
 
   return {
     data: sorted.slice(offset, offset + limit),

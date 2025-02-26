@@ -130,9 +130,9 @@ export function useHistoryEventFilter(
 
     const eventsWithValidatorIndexIncluded
       = !entryTypesVal
-      || entryTypesVal.some(
-        type => isWithdrawalEventType(type) || isEthBlockEventType(type) || isEthDepositEventType(type),
-      );
+        || entryTypesVal.some(
+          type => isWithdrawalEventType(type) || isEthBlockEventType(type) || isEthDepositEventType(type),
+        );
 
     if (!disabled?.protocols && evmOrEthDepositEventsIncluded) {
       const counterpartiesVal = get(counterparties);

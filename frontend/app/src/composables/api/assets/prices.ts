@@ -31,8 +31,8 @@ export function useAssetPricesApi(): UseAssetPriceApiReturn {
     const response = await api.instance.get<ActionResult<HistoricalPrice[]>>('/assets/prices/historical', {
       params: payload
         ? snakeCaseTransformer(nonEmptyProperties(payload, {
-          removeEmptyString: true,
-        }))
+            removeEmptyString: true,
+          }))
         : null,
       validateStatus: validWithoutSessionStatus,
     });
@@ -78,8 +78,8 @@ export function useAssetPricesApi(): UseAssetPriceApiReturn {
       '/assets/prices/latest/all',
       payload
         ? snakeCaseTransformer(nonEmptyProperties(payload, {
-          removeEmptyString: true,
-        }))
+            removeEmptyString: true,
+          }))
         : null,
       {
         validateStatus: validStatus,
