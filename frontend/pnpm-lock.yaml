@@ -6,7 +6,7 @@ settings:
 
 patchedDependencies:
   bignumber.js@9.1.2:
-    hash: 3bd0afc07a38804339aa22a15f1bf257b36d28ad4d2d7e97daaf89a69c91c7aa
+    hash: 2c35359c8347a121958cdaae415acc2ab014f4c2112e5b45239b23e35670aa10
     path: patches/bignumber.js@9.1.2.patch
 
 importers:
@@ -99,7 +99,7 @@ importers:
         version: 1.7.9(debug@4.4.0)
       bignumber.js:
         specifier: 9.1.2
-        version: 9.1.2(patch_hash=3bd0afc07a38804339aa22a15f1bf257b36d28ad4d2d7e97daaf89a69c91c7aa)
+        version: 9.1.2(patch_hash=2c35359c8347a121958cdaae415acc2ab014f4c2112e5b45239b23e35670aa10)
       chart.js:
         specifier: 4.4.7
         version: 4.4.7
@@ -344,7 +344,7 @@ importers:
         version: 12.7.0(typescript@5.6.3)
       bignumber.js:
         specifier: 9.1.2
-        version: 9.1.2(patch_hash=3bd0afc07a38804339aa22a15f1bf257b36d28ad4d2d7e97daaf89a69c91c7aa)
+        version: 9.1.2(patch_hash=2c35359c8347a121958cdaae415acc2ab014f4c2112e5b45239b23e35670aa10)
       tsup:
         specifier: 8.4.0
         version: 8.4.0(jiti@1.21.7)(postcss@8.5.3)(tsx@4.19.3)(typescript@5.6.3)(yaml@2.7.0)
@@ -10167,7 +10167,7 @@ snapshots:
     dependencies:
       tweetnacl: 0.14.5
 
-  bignumber.js@9.1.2(patch_hash=3bd0afc07a38804339aa22a15f1bf257b36d28ad4d2d7e97daaf89a69c91c7aa): {}
+  bignumber.js@9.1.2(patch_hash=2c35359c8347a121958cdaae415acc2ab014f4c2112e5b45239b23e35670aa10): {}
 
   binary-extensions@2.3.0: {}
 
@@ -11306,7 +11306,7 @@ snapshots:
       eslint: 9.21.0(jiti@1.21.7)
       eslint-plugin-es-x: 7.8.0(eslint@9.21.0(jiti@1.21.7))
       get-tsconfig: 4.10.0
-      globals: 15.14.0
+      globals: 15.15.0
       ignore: 5.3.2
       minimatch: 9.0.5
       semver: 7.7.1
@@ -11342,7 +11342,7 @@ snapshots:
       core-js-compat: 3.40.0
       eslint: 9.21.0(jiti@1.21.7)
       esquery: 1.6.0
-      globals: 15.14.0
+      globals: 15.15.0
       indent-string: 4.0.0
       is-builtin-module: 3.2.1
       jsesc: 3.1.0
@@ -15248,7 +15248,7 @@ snapshots:
     dependencies:
       assert-plus: 1.0.0
       core-util-is: 1.0.2
-      extsprintf: 1.3.0
+      extsprintf: 1.4.1
 
   verror@1.10.1:
     dependencies:
