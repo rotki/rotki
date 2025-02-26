@@ -63,7 +63,7 @@ class SuperchainL2SideBridgeCommonDecoder(DecoderInterface, ABC):
 
         See:
              https://github.com/makerdao/optimism-dai-bridge
-             https://docs.optimism.io/builders/app-developers/bridging/custom-bridge
+             https://docs.optimism.io/app-developers/bridging/custom-bridge
         """
         if context.tx_log.topics[0] not in {DEPOSIT_FINALIZED, WITHDRAWAL_INITIATED}:
             return DEFAULT_DECODING_OUTPUT
