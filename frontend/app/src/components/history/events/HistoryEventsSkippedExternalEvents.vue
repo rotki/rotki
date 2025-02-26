@@ -131,9 +131,9 @@ async function reProcessSkippedEvents() {
         description:
           successful < total
             ? t('transactions.events.skipped.reprocess.success.some', {
-              successful,
-              total,
-            })
+                successful,
+                total,
+              })
             : t('transactions.events.skipped.reprocess.success.all'),
         success: true,
         title: t('transactions.events.skipped.reprocess.success.title'),

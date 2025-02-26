@@ -121,8 +121,8 @@ const formatType = (string?: string | null) => toSentenceCase(string ?? 'EVM tok
 function getAsset(item: SupportedAsset) {
   const name
     = item.name
-    ?? item.symbol
-    ?? (isEvmIdentifier(item.identifier) ? getAddressFromEvmIdentifier(item.identifier) : item.identifier);
+      ?? item.symbol
+      ?? (isEvmIdentifier(item.identifier) ? getAddressFromEvmIdentifier(item.identifier) : item.identifier);
 
   return {
     customAssetType: item.customAssetType ?? '',

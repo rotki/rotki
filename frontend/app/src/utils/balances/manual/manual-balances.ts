@@ -61,28 +61,28 @@ export function sortAndFilterManualBalance(
   const filtered = !hasFilter
     ? balances
     : balances.filter(balance =>
-      filterBalance(balance, {
-        asset,
-        label,
-        location,
-        tags,
-      }),
-    );
+        filterBalance(balance, {
+          asset,
+          label,
+          location,
+          tags,
+        }),
+      );
 
   const sorted
     = orderByAttributes.length <= 0
       ? filtered
       : filtered.sort((a, b) => {
-        for (const [i, attr] of orderByAttributes.entries()) {
-          const key = camelCase(attr) as keyof ManualBalanceWithValue;
-          const asc = ascending[i];
+          for (const [i, attr] of orderByAttributes.entries()) {
+            const key = camelCase(attr) as keyof ManualBalanceWithValue;
+            const asc = ascending[i];
 
-          const order = sortBy(a[key], b[key], asc);
-          if (order)
-            return order;
-        }
-        return 0;
-      });
+            const order = sortBy(a[key], b[key], asc);
+            if (order)
+              return order;
+          }
+          return 0;
+        });
 
   const total = filtered.reduce((acc, item) => {
     const price = resolvers.resolveAssetPrice(item.asset);

@@ -49,24 +49,24 @@ export function sortAndFilterValidators(
   const filtered = !hasFilter
     ? validators
     : validators.filter(validator => filterValidator(validator, {
-      index,
-      publicKey,
-      status,
-    }));
+        index,
+        publicKey,
+        status,
+      }));
 
   const sorted = orderByAttributes.length <= 0
     ? filtered
     : filtered.sort((a, b) => {
-      for (const [i, attr] of orderByAttributes.entries()) {
-        const key = camelCase(attr) as keyof EthereumValidator;
-        const asc = ascending[i];
+        for (const [i, attr] of orderByAttributes.entries()) {
+          const key = camelCase(attr) as keyof EthereumValidator;
+          const asc = ascending[i];
 
-        const order = sortBy(a[key], b[key], asc);
-        if (order)
-          return order;
-      }
-      return 0;
-    });
+          const order = sortBy(a[key], b[key], asc);
+          if (order)
+            return order;
+        }
+        return 0;
+      });
 
   return {
     data: sorted.slice(offset, offset + limit),

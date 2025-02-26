@@ -288,8 +288,8 @@ export function useAccountImportExport(): UseAccountImportExportReturn {
       const message = error instanceof CSVMissingHeadersError
         ? t('blockchain_balances.import_error.invalid_format')
         : t('blockchain_balances.import_error.message', {
-          error,
-        });
+            error,
+          });
       logger.error(message);
       notify({
         display: true,
