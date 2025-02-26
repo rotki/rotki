@@ -58,7 +58,7 @@ class SuperchainL1SideCommonBridgeDecoder(DecoderInterface, ABC):
 
         See:
              https://github.com/makerdao/optimism-dai-bridge
-             https://docs.optimism.io/builders/app-developers/bridging/custom-bridge
+             https://docs.optimism.io/app-developers/bridging/custom-bridge
         """
         if context.tx_log.topics[0] not in {
             ETH_DEPOSIT_INITIATED,
