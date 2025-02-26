@@ -1,6 +1,5 @@
 from typing import Final
 
-from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode, string_to_evm_address
 from rotkehlchen.constants import ONE
 from rotkehlchen.fval import FVal
@@ -26,8 +25,6 @@ ETHEREUM_ETHERSCAN_NODE: Final = WeightedNode(
 
 RAY_DIGITS: Final = 27
 RAY: Final = 10**RAY_DIGITS
-
-ETH_MANTISSA: Final = 10 ** DEFAULT_TOKEN_DECIMALS
 
 ARCHIVE_NODE_CHECK_ADDRESS: Final = string_to_evm_address('0x50532e4Be195D1dE0c2E6DfA46D9ec0a4Fee6861')  # noqa: E501
 ARCHIVE_NODE_CHECK_BLOCK: Final = 87042

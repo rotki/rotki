@@ -46,20 +46,6 @@ raw_trade2 = {
     'notes': 'notes can be here',
 }
 
-raw_trade3 = {
-    'timestamp': 1557985746,
-    'location': 'kraken',
-    'base_asset': 'ETH',
-    'quote_asset': 'BTC',
-    'trade_type': 'sell',
-    'amount': '2.80',
-    'rate': '0.1234',
-    'fee': '0.01',
-    'fee_currency': 'ETH',
-    'link': 'a link can be here',
-    'notes': 'notes can be here',
-}
-
 
 def test_deserialize_trade():
     trade1 = deserialize_trade(raw_trade1)

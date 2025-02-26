@@ -141,7 +141,6 @@ class TaskManager:
         self.last_xpub_derivation_ts = 0
         self.last_evm_tx_query_ts: defaultdict[tuple[ChecksumEvmAddress, SupportedBlockchain], int] = defaultdict(int)  # noqa: E501
         self.last_exchange_query_ts: defaultdict[ExchangeLocationID, int] = defaultdict(int)
-        self.base_entries_ignore_set: set[str] = set()
         self.prepared_cryptocompare_query = False
         self.running_greenlets: dict[Callable, list[gevent.Greenlet]] = {}
         self.deactivate_premium = deactivate_premium

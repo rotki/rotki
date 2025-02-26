@@ -19,7 +19,6 @@ from rotkehlchen.chain.ethereum.defi.structures import (
 from rotkehlchen.chain.ethereum.interfaces.ammswap.types import (
     LiquidityPool,
     LiquidityPoolAsset,
-    LiquidityPoolEventsBalance,
 )
 from rotkehlchen.chain.ethereum.modules.compound.utils import CompoundBalance
 from rotkehlchen.chain.ethereum.modules.liquity.trove import Trove
@@ -131,7 +130,6 @@ def _process_entry(entry: Any) -> str | (list[Any] | (dict[str, Any] | Any)):
             CompoundBalance |
             LiquidityPool |
             LiquidityPoolAsset |
-            LiquidityPoolEventsBalance |
             ManuallyTrackedBalanceWithValue |
             Trove |
             DillBalance |

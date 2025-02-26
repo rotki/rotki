@@ -28,7 +28,6 @@ if TYPE_CHECKING:
 # DAI/WETH pool: 0xA478c2975Ab1Ea89e8196811F51A7B7Ade33eB11
 # From that pool find a holder and test
 LP_HOLDER_ADDRESS = string_to_evm_address('0x1778CB9fd8D489C740568A9bF16004D948d9b6bF')
-LP_V3_HOLDER_ADDRESS = string_to_evm_address('0xEf45d2ad5e0E01e4B57A6229B590c7982997Ace8')
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[LP_HOLDER_ADDRESS]])

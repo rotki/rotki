@@ -20,12 +20,19 @@ from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
-from rotkehlchen.constants.assets import A_AAVE, A_DAI, A_ETH, A_POLYGON_POS_MATIC, A_REN, A_WETH
+from rotkehlchen.constants.assets import (
+    A_AAVE,
+    A_AETH_V1,
+    A_DAI,
+    A_ETH,
+    A_POLYGON_POS_MATIC,
+    A_REN,
+    A_WETH,
+)
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent, EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.tests.utils.aave import A_ADAI_V1, A_AETH_V1
 from rotkehlchen.tests.utils.decoders import patch_decoder_reload_data
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import (
@@ -42,6 +49,8 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.chain.polygon_pos.node_inquirer import PolygonPOSInquirer
 
+
+A_ADAI_V1 = Asset('eip155:1/erc20:0xfC1E690f61EFd961294b3e1Ce3313fBD8aa4f85d')
 ADDY = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'
 ADDY2 = '0x5727c0481b90a129554395937612d8b9301D6c7b'
 

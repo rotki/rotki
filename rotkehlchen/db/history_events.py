@@ -1,4 +1,3 @@
-import copy
 import json
 import logging
 from collections import defaultdict
@@ -25,10 +24,7 @@ from rotkehlchen.db.constants import (
 from rotkehlchen.db.filtering import (
     ALL_EVENTS_DATA_JOIN,
     EVM_EVENT_JOIN,
-    DBEqualsFilter,
     DBIgnoredAssetsFilter,
-    DBIgnoreValuesFilter,
-    DBNotEqualFilter,
     EthDepositEventFilterQuery,
     EthWithdrawalFilterQuery,
     EvmEventFilterQuery,
@@ -51,7 +47,6 @@ from rotkehlchen.history.events.structures.eth2 import (
     EthWithdrawalEvent,
 )
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
-from rotkehlchen.history.events.structures.types import HistoryEventType
 from rotkehlchen.history.price import query_usd_price_or_use_default
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval
@@ -597,37 +592,6 @@ class DBHistoryEvents:
             entries_limit=entries_limit,
         )
         return events, count_without_limit, count_with_limit
-
-    def get_base_entries_missing_prices(
-            self,
-            query_filter: HistoryBaseEntryFilterQuery,
-            ignored_assets: list[str] | None = None,
-    ) -> list[tuple[str, FVal, Asset, Timestamp]]:
-        """
-        Searches base entries missing usd prices that have not previously been checked in
-        this session.
-        """
-        # Use a deepcopy to avoid mutations in the filter query if it is used later
-        new_query_filter = copy.deepcopy(query_filter)
-        new_query_filter.filters.append(
-            DBEqualsFilter(and_op=True, column='usd_value', value='0'),
-        )
-        new_query_filter.filters.append(  # exclude informational events
-            DBNotEqualFilter(
-                and_op=True,
-                column='type',
-                value=HistoryEventType.INFORMATIONAL.serialize(),
-            ),
-        )
-        if ignored_assets is not None:
-            new_query_filter.filters.append(
-                DBIgnoreValuesFilter(
-                    and_op=True,
-                    column='history_events.identifier',
-                    values=ignored_assets,
-                ),
-            )
-        return self.rows_missing_prices_in_base_entries(filter_query=new_query_filter)
 
     def rows_missing_prices_in_base_entries(
             self,

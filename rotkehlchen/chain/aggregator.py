@@ -1510,9 +1510,6 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
     ) -> 'EvmManager':  # type ignore below due to inability to understand limitation
         return self.get_chain_manager(chain_id.to_blockchain())  # type: ignore[arg-type]
 
-    def is_contract(self, address: ChecksumEvmAddress, chain: SUPPORTED_EVM_CHAINS_TYPE) -> bool:
-        return self.get_chain_manager(chain).node_inquirer.get_code(address) != '0x'
-
     def is_safe_proxy_or_eoa(
             self,
             address: ChecksumEvmAddress,

@@ -1093,27 +1093,6 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
 
         return events
 
-    def get_event_timestamp(self, event: dict[str, Any]) -> Timestamp:
-        """Reads an event returned either by etherscan or web3 and gets its timestamp
-
-        Etherscan events contain a timestamp. Normal web3 events don't so it needs to
-        be queried from the block number
-
-        We could also add this to the get_logs() call but would add unnecessary
-        rpc calls for get_block_by_number() for each log entry. Better have it
-        lazy queried like this.
-
-        TODO: Perhaps better approach would be a log event class for this
-        """
-        if 'timeStamp' in event:
-            # event from etherscan
-            return Timestamp(event['timeStamp'])
-
-        # event from web3
-        block_number = event['blockNumber']
-        block_data = self.get_block_by_number(block_number)
-        return Timestamp(block_data['timestamp'])
-
     def multicall(
             self,
             calls: list[tuple[ChecksumEvmAddress, str]],

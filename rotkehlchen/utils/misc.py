@@ -254,10 +254,6 @@ def bytes_to_address(value: bytes) -> ChecksumEvmAddress:
     return bytes32hexstr_to_address(bytes_to_hexstr(value))
 
 
-def address_to_bytes32_hexstr(address: ChecksumEvmAddress) -> str:
-    return '0x' + 24 * '0' + address.lower()[2:]
-
-
 def address_to_bytes32(address: ChecksumEvmAddress) -> bytes:
     return unhexlify(24 * '0' + address.lower()[2:])
 

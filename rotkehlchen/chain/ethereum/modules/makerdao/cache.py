@@ -1,7 +1,7 @@
 import json
 import logging
 from collections.abc import Iterator
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from eth_utils.address import to_checksum_address
 
@@ -19,7 +19,6 @@ from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
-    from rotkehlchen.chain.evm.contracts import EvmContract
     from rotkehlchen.db.drivers.gevent import DBCursor
 
 logger = logging.getLogger(__name__)
@@ -66,17 +65,6 @@ def collateral_type_to_underlying_asset(collateral_type: str) -> CryptoAsset | N
 
     # note sure if special case needed but this makes it equivalent with how code was with mappings
     return A_ETH if underlying_asset == A_WETH else underlying_asset  # type: ignore
-
-
-def collateral_type_to_join_contract(collateral_type: str, ethereum: 'EthereumInquirer') -> Optional['EvmContract']:  # noqa: E501
-    """Get the underlying asset for a collateral type by asking the global DB cache"""
-    with GlobalDBHandler().conn.read_ctx() as cursor:
-        info = _collateral_type_to_info(cursor, collateral_type)
-
-        if info is None:
-            return None
-
-        return ethereum.contracts.contract_by_address(string_to_evm_address(info[2]))
 
 
 def ilk_cache_foreach(
