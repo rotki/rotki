@@ -7,7 +7,7 @@ import {
   type SupportedAssets,
 } from '@/types/asset';
 import { api } from '@/services/rotkehlchen-api';
-import { snakeCaseTransformer } from '@/services/axios-tranformers';
+import { snakeCaseTransformer } from '@/services/axios-transformers';
 import { handleResponse, validStatus } from '@/services/utils';
 import { mapCollectionResponse } from '@/utils/collection';
 import type { MaybeRef } from '@vueuse/core';

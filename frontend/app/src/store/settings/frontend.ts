@@ -1,6 +1,6 @@
 import { BigNumber } from '@rotki/common';
 import { getBnFormat } from '@/data/amount-formatter';
-import { snakeCaseTransformer } from '@/services/axios-tranformers';
+import { snakeCaseTransformer } from '@/services/axios-transformers';
 import {
   type FrontendSettings,
   type FrontendSettingsPayload,

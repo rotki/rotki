@@ -1,6 +1,6 @@
 import { api } from '@/services/rotkehlchen-api';
 import { handleResponse, validWithSessionStatus } from '@/services/utils';
-import { snakeCaseTransformer } from '@/services/axios-tranformers';
+import { snakeCaseTransformer } from '@/services/axios-transformers';
 import type { ActionResult } from '@rotki/common';
 import type { Messages, PeriodicClientQueryResult } from '@/types/session';
 import type { PendingTask } from '@/types/task';

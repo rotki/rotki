@@ -7,7 +7,7 @@ import {
   ReportActionableItem,
   Reports,
 } from '@/types/reports';
-import { snakeCaseTransformer } from '@/services/axios-tranformers';
+import { snakeCaseTransformer } from '@/services/axios-transformers';
 import { handleResponse, validStatus, validTaskStatus } from '@/services/utils';
 import { api } from '@/services/rotkehlchen-api';
 import { downloadFileByBlobResponse } from '@/utils/download';

@@ -17,7 +17,7 @@ import { CurrencyLocationEnum } from '@/types/currency-location';
 import { DateFormatEnum } from '@/types/date-format';
 import { TableColumnEnum } from '@/types/table-column';
 import { BaseSuggestion, SavedFilterLocation } from '@/types/filtering';
-import { camelCaseTransformer } from '@/services/axios-tranformers';
+import { camelCaseTransformer } from '@/services/axios-transformers';
 
 export const FRONTEND_SETTINGS_SCHEMA_VERSION = 1;
 

@@ -1,4 +1,4 @@
-import { snakeCaseTransformer } from '@/services/axios-tranformers';
+import { snakeCaseTransformer } from '@/services/axios-transformers';
 import { handleResponse, validFileOperationStatus, validStatus, validWithoutSessionStatus } from '@/services/utils';
 import { api } from '@/services/rotkehlchen-api';
 import { downloadFileByBlobResponse } from '@/utils/download';

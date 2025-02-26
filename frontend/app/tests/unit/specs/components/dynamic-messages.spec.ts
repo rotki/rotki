@@ -1,7 +1,7 @@
 import { HttpResponse, http } from 'msw';
 import dayjs from 'dayjs';
 import { describe, expect, it, vi } from 'vitest';
-import { camelCaseTransformer } from '@/services/axios-tranformers';
+import { camelCaseTransformer } from '@/services/axios-transformers';
 import { useDynamicMessages } from '@/composables/dynamic-messages';
 import { server } from '../../setup-files/server';
 import type { DashboardMessage, WelcomeMessage } from '@/types/dynamic-messages';

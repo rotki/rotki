@@ -1,5 +1,5 @@
 import { handleResponse, validWithSessionAndExternalService } from '@/services/utils';
-import { snakeCaseTransformer } from '@/services/axios-tranformers';
+import { snakeCaseTransformer } from '@/services/axios-transformers';
 import { api } from '@/services/rotkehlchen-api';
 import type { ProtocolMetadata } from '@/types/defi';
 import type { ActionResult } from '@rotki/common';
