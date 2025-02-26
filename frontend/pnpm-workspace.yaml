@@ -3,3 +3,14 @@ packages:
   - common
   - dev-proxy
   - 'eslint/*'
+
+ignoredBuiltDependencies:
+  - core-js-pure
+  - cypress
+  - msw
+
+onlyBuiltDependencies:
+  - electron
+  - esbuild
+  - '@parcel/watcher'
+  - vue-demi
