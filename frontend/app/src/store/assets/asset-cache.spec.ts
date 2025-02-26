@@ -18,9 +18,9 @@ describe('store::assets/cache', () => {
   it('should cache assets', async () => {
     const key = 'KEY';
     const asset = {
+      isCustomAsset: false,
       name: 'KEY Asset',
       symbol: 'KEY',
-      isCustomAsset: false,
     };
     const mapping: AssetMap = {
       assetCollections: {},
@@ -59,9 +59,9 @@ describe('store::assets/cache', () => {
   it('should only re-request asset if cache entry expires', async () => {
     const key = 'KEY';
     const asset = {
+      isCustomAsset: false,
       name: 'KEY Asset',
       symbol: 'KEY',
-      isCustomAsset: false,
     };
     const mapping: AssetMap = {
       assetCollections: {},
@@ -86,9 +86,9 @@ describe('store::assets/cache', () => {
       const mapping: AssetMap = { assetCollections: {}, assets: {} };
       for (const id of identifier) {
         mapping.assets[id] = {
-          symbol: id,
-          name: `name ${id}`,
           isCustomAsset: false,
+          name: `name ${id}`,
+          symbol: id,
         };
       }
       return Promise.resolve(mapping);
@@ -115,5 +115,45 @@ describe('store::assets/cache', () => {
     const entries = Object.entries(get(store.cache));
     expect(entries).toHaveLength(500);
     expect(entries.map(([id]) => id)).toContain('AST-0');
+  });
+
+  it('should not delete cache if the request after expiry hits any error', async () => {
+    const assetMapping = useAssetInfoApi().assetMapping;
+    vi.mocked(assetMapping).mockImplementation(async (identifier): Promise<AssetMap> => {
+      const mapping: AssetMap = { assetCollections: {}, assets: {} };
+      for (const id of identifier) {
+        mapping.assets[id] = {
+          isCustomAsset: false,
+          name: `name ${id}`,
+          symbol: id,
+        };
+      }
+      return Promise.resolve(mapping);
+    });
+
+    for (let i = 0; i < 50; i++) {
+      store.retrieve(`AST-${i}`);
+    }
+
+    vi.advanceTimersByTime(4000);
+    await flushPromises();
+
+    const entries = Object.entries(get(store.cache));
+    expect(entries).toHaveLength(50);
+
+    vi.advanceTimersByTime(600_000);
+    await flushPromises();
+
+    vi.mocked(assetMapping).mockImplementation(async (): Promise<AssetMap> => Promise.reject(new Error('Network error')));
+
+    for (let i = 0; i < 50; i++) {
+      store.retrieve(`AST-${i}`);
+    }
+
+    vi.advanceTimersByTime(4000);
+    await flushPromises();
+
+    const secondPart = Object.entries(get(store.cache));
+    expect(secondPart).toHaveLength(50);
   });
 });

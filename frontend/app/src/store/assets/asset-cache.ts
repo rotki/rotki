@@ -1,6 +1,7 @@
 import { useNotificationsStore } from '@/store/notifications';
 import { useItemCache } from '@/composables/item-cache';
 import { useAssetInfoApi } from '@/composables/api/assets/info';
+import { logger } from '@/utils/logging';
 import type { AssetCollection, AssetInfo } from '@rotki/common';
 import type { AssetMap } from '@/types/asset';
 
@@ -11,11 +12,12 @@ export const useAssetCacheStore = defineStore('assets/cache', () => {
   const { t } = useI18n();
   const { notify } = useNotificationsStore();
 
-  const getAssetMappingHandler = async (identifiers: string[]): Promise<AssetMap> => {
+  const getAssetMappingHandler = async (identifiers: string[]): Promise<AssetMap | undefined> => {
     try {
       return await assetMapping(identifiers);
     }
     catch (error: any) {
+      logger.error(error);
       notify({
         display: true,
         message: t('asset_search.error.message', {
@@ -23,10 +25,7 @@ export const useAssetCacheStore = defineStore('assets/cache', () => {
         }),
         title: t('asset_search.error.title'),
       });
-      return {
-        assetCollections: {},
-        assets: {},
-      };
+      return undefined;
     }
   };
 
@@ -34,6 +33,9 @@ export const useAssetCacheStore = defineStore('assets/cache', () => {
     async (keys: string[]) => {
       const response = await getAssetMappingHandler(keys);
       return function* (): Generator<{ item: AssetInfo; key: string }, void> {
+        if (!response)
+          return;
+
         for (const key of keys) {
           const { assetCollections, assets } = response;
           set(fetchedAssetCollections, {
