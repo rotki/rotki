@@ -5,7 +5,7 @@ import {
   type EthStakingPayload,
   EthStakingPerformanceResponse,
 } from '@rotki/common';
-import { snakeCaseTransformer } from '@/services/axios-tranformers';
+import { snakeCaseTransformer } from '@/services/axios-transformers';
 import { api } from '@/services/rotkehlchen-api';
 import { handleResponse, validWithSessionAndExternalService } from '@/services/utils';
 import { nonEmptyProperties } from '@/utils/data';

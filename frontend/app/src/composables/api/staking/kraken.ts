@@ -1,4 +1,4 @@
-import { snakeCaseTransformer } from '@/services/axios-tranformers';
+import { snakeCaseTransformer } from '@/services/axios-transformers';
 import { api } from '@/services/rotkehlchen-api';
 import { handleResponse, validWithSessionAndExternalService } from '@/services/utils';
 import { KrakenStakingEvents, type KrakenStakingPagination, emptyPagination } from '@/types/staking';

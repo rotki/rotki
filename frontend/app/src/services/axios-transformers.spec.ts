@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { camelCaseTransformer, noRootCamelCaseTransformer, snakeCaseTransformer } from '@/services/axios-tranformers';
+import { camelCaseTransformer, noRootCamelCaseTransformer, snakeCaseTransformer } from '@/services/axios-transformers';
 
 describe('axios transformers', () => {
   it('transform json to camelCase', () => {
@@ -7,8 +7,8 @@ describe('axios transformers', () => {
     const parsed = JSON.parse(json);
     expect(camelCaseTransformer(parsed)).toMatchObject({
       amount: '10',
-      testLabel: 'label',
       data: [{ amount: '2', usdValue: '10' }],
+      testLabel: 'label',
     });
   });
 
@@ -25,11 +25,11 @@ describe('axios transformers', () => {
 
   it('transform capital to snake_case', () => {
     const object = {
-      ETH: 1,
       BTC: 2,
+      ETH: 1,
     };
 
-    expect(JSON.stringify(snakeCaseTransformer(object))).toMatch('{"ETH":1,"BTC":2}');
+    expect(snakeCaseTransformer(object)).toMatchObject(JSON.parse('{"ETH":1,"BTC":2}'));
   });
 
   it('transformer no root', () => {
@@ -38,8 +38,8 @@ describe('axios transformers', () => {
     const transformed = noRootCamelCaseTransformer(parsed);
     expect(transformed).toMatchObject({
       _amount_: {
-        aCbc: '1',
         aAbc: '2',
+        aCbc: '1',
       },
     });
   });

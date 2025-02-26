@@ -1,4 +1,4 @@
-import { snakeCaseTransformer } from '@/services/axios-tranformers';
+import { snakeCaseTransformer } from '@/services/axios-transformers';
 import { api } from '@/services/rotkehlchen-api';
 import { handleResponse } from '@/services/utils';
 import { type UserNote, UserNoteCollectionResponse, type UserNotesRequestPayload } from '@/types/notes';

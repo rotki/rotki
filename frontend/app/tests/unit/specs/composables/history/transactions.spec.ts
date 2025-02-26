@@ -23,7 +23,7 @@ vi.mock('@/store/tasks', async () => {
 });
 
 vi.mock('@/composables/api/history/events', async () => {
-  const { camelCaseTransformer } = await import('@/services/axios-tranformers');
+  const { camelCaseTransformer } = await import('@/services/axios-transformers.ts');
   const historyEvents = await import('../../../fixtures/history-events.json');
   return {
     useHistoryEventsApi: vi.fn().mockReturnValue({

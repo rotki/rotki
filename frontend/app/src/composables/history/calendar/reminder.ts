@@ -1,5 +1,5 @@
 import { api } from '@/services/rotkehlchen-api';
-import { snakeCaseTransformer } from '@/services/axios-tranformers';
+import { snakeCaseTransformer } from '@/services/axios-transformers';
 import { handleResponse } from '@/services/utils';
 import {
   type CalendarReminderAddResponse,

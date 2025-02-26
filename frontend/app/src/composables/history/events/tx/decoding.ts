@@ -1,6 +1,6 @@
 import { groupBy } from 'es-toolkit';
 import { TaskType } from '@/types/task-type';
-import { snakeCaseTransformer } from '@/services/axios-tranformers';
+import { snakeCaseTransformer } from '@/services/axios-transformers';
 import { Section } from '@/types/status';
 import {
   type ChainAndTxHash,

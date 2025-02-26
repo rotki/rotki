@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { api } from '@/services/rotkehlchen-api';
-import { snakeCaseTransformer } from '@/services/axios-tranformers';
+import { snakeCaseTransformer } from '@/services/axios-transformers';
 import { nonEmptyProperties } from '@/utils/data';
 import type { ActionResult } from '@rotki/common';
 

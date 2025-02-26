@@ -1,6 +1,6 @@
 import { api } from '@/services/rotkehlchen-api';
 import { handleResponse, validStatus, validWithoutSessionStatus } from '@/services/utils';
-import { snakeCaseTransformer } from '@/services/axios-tranformers';
+import { snakeCaseTransformer } from '@/services/axios-transformers';
 import { IgnoredAssetResponse } from '@/types/asset';
 import type { ActionResult } from '@rotki/common';
 
