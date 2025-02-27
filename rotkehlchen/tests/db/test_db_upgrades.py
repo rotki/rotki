@@ -2741,13 +2741,13 @@ def test_upgrade_db_46_to_47(user_data_dir, messages_aggregator):
 
         with GlobalDBHandler().conn.read_ctx() as global_db_cursor:
             assert global_db_cursor.execute(
-                'SELECT COUNT(*) FROM assets WHERE identifier IN (?, ?)',
-                (uniswap_erc20_token.identifier, uniswap_erc721_token.identifier),
-            ).fetchone()[0] == 0 if expect_removed else 2
+                'SELECT COUNT(*) FROM assets WHERE identifier IN (?, ?, ?)',
+                (uniswap_erc20_token.identifier, uniswap_erc721_token.identifier, basename_token.identifier),  # noqa: E501
+            ).fetchone()[0] == 0 if expect_removed else 3
             assert global_db_cursor.execute(
-                'SELECT COUNT(*) FROM assets WHERE identifier = ?',
-                (erc721_token_with_id.identifier,),
-            ).fetchone()[0] == 1  # tokens with collectible ids shouldn't be modified
+                'SELECT COUNT(*) FROM assets WHERE identifier IN (?, ?)',
+                (erc721_token_with_id.identifier, basename_token_with_id.identifier),
+            ).fetchone()[0] == 2  # tokens with collectible ids shouldn't be modified
 
         if expect_removed:
             temp_erc721_data = user_db_cursor.execute('SELECT * FROM temp_erc721_data').fetchall()
@@ -2784,6 +2784,21 @@ def test_upgrade_db_46_to_47(user_data_dir, messages_aggregator):
         chain_id=ChainID.ETHEREUM,
         token_kind=EvmTokenKind.ERC721,
         collectible_id='12345',
+    )
+    basename_token = get_or_create_evm_token(
+        userdb=db_v46,
+        evm_address=string_to_evm_address('0x03c4738Ee98aE44591e1A4A4F3CaB6641d95DD9a'),
+        name='Base name',
+        chain_id=ChainID.BASE,
+        token_kind=EvmTokenKind.ERC721,
+    )
+    basename_token_with_id = get_or_create_evm_token(
+        userdb=db_v46,
+        evm_address=string_to_evm_address('0x03c4738Ee98aE44591e1A4A4F3CaB6641d95DD9a'),
+        name='Base name',
+        chain_id=ChainID.BASE,
+        token_kind=EvmTokenKind.ERC721,
+        collectible_id='4242',
     )
 
     address, tx_hash = make_evm_address(), make_evm_tx_hash()
@@ -2917,6 +2932,9 @@ def test_upgrade_db_46_to_47(user_data_dir, messages_aggregator):
         assert cursor.execute('SELECT * FROM timed_balances').fetchall() == [
             ('A', 1740603997, 'eip155:56/erc20:0x211FfbE424b90e25a15531ca322adF1559779E45', '10', '10'),  # noqa: E501
             ('A', 1740603998, 'BUX', '5', '5'),
+            ('A', 1740603897, 'eip155:1/erc721:0xFaC7BEA255a6990f749363002136aF6556b31e04', '1', '100'),  # noqa: E501
+            ('A', 1740603897, 'eip155:8453/erc721:0x03c4738Ee98aE44591e1A4A4F3CaB6641d95DD9a', '1', '100'),  # noqa: E501
+            ('A', 1740603897, 'eip155:8453/erc721:0x03c4738Ee98aE44591e1A4A4F3CaB6641d95DD9a/26612040215479394739615825115912800930061094786769410446114278812336794170041', '1', '100'),  # noqa: E501
             ('A', 1, uniswap_erc20_token.identifier, '1', '1'),
         ]
         assert cursor.execute("SELECT * FROM trades WHERE location='A'").fetchall() == [
@@ -3032,6 +3050,7 @@ def test_upgrade_db_46_to_47(user_data_dir, messages_aggregator):
         assert cursor.execute('SELECT * FROM timed_balances').fetchall() == [
             ('A', 1740603997, 'eip155:56/erc20:0x211FfbE424b90e25a15531ca322adF1559779E45', '10', '10'),  # noqa: E501
             ('A', 1740603998, 'eip155:56/erc20:0x211FfbE424b90e25a15531ca322adF1559779E45', '5', '5'),  # noqa: E501
+            ('A', 1740603897, 'eip155:8453/erc721:0x03c4738Ee98aE44591e1A4A4F3CaB6641d95DD9a/26612040215479394739615825115912800930061094786769410446114278812336794170041', '1', '100'),  # noqa: E501
         ]
         assert cursor.execute("SELECT * FROM trades WHERE location='A'").fetchall() == [
             ('1', 1740603997, 'A', 'eip155:56/erc20:0x211FfbE424b90e25a15531ca322adF1559779E45', 'ETH', 'A', '10', '0.1', '0.01', 'eip155:56/erc20:0x211FfbE424b90e25a15531ca322adF1559779E45', 'A link', 'trade notes'),  # noqa: E501

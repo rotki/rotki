@@ -110,45 +110,52 @@ def upgrade_v46_to_v47(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         with the same address that were incorrectly added.
         """
         with (globaldb_conn := GlobalDBHandler().conn).read_ctx() as global_db_cursor:
-            identifiers_to_remove = tuple(entry[0] for entry in global_db_cursor.execute(
+            globaldb_identifiers_to_remove = tuple(entry[0] for entry in global_db_cursor.execute(
                 'SELECT identifier FROM assets WHERE identifier IN ('
                 "SELECT identifier FROM evm_tokens WHERE token_kind = 'B' "
                 "UNION SELECT REPLACE(identifier, 'erc721', 'erc20') "
                 "FROM evm_tokens WHERE token_kind = 'B') AND "
-                "LENGTH(identifier) <= 62;",  # Skip identifiers with collectible ids (will be longer than 62)  # noqa: E501
+                "identifier NOT LIKE 'eip155:%/erc721:0x%/%'",  # Skip identifiers with collectible ids # noqa: E501
             ))
 
-        if (num_to_remove := len(identifiers_to_remove)) == 0:
+        if (num_to_remove := len(globaldb_identifiers_to_remove)) != 0:
+            log.debug(f'Deleting {num_to_remove} globaldb assets...')
+            placeholders = ','.join(['?'] * len(globaldb_identifiers_to_remove))
+            tables_with_assets = (
+                ('assets', 'identifier'),
+                ('evm_tokens', 'identifier'),
+                ('common_asset_details', 'identifier'),
+                ('multiasset_mappings', 'asset'),
+                ('price_history', 'from_asset'),
+                ('price_history', 'to_asset'),
+                ('underlying_tokens_list', 'identifier'),
+                ('underlying_tokens_list', 'parent_token_entry'),
+                ('user_owned_assets', 'asset_id'),
+            )
+            total = len(tables_with_assets)
+            with globaldb_conn.write_ctx() as global_db_write_cursor:
+                log.debug('Deleting from globaldb...')
+                # We disable foreign keys because that ended up being the fastest way to delete
+                # the assets. Without that a CASCADE deletion happens but it turned to be really
+                # slow, around ~8 mins in my case with ~300 assets to delete and ~30K assets in my
+                # globaldb. First I tried adding indexes in the globaldb to the tables that
+                # reference the assets table but it lowered the time only to ~6-7 minutes.
+                # With direct deletion without FKs it's almost instant.
+                global_db_write_cursor.executescript('PRAGMA foreign_keys = OFF;')
+                for step, (table_name, column_name) in enumerate(tables_with_assets, start=1):
+                    log.debug(f'{step}/{total}: Deleting references in the {table_name} table for {column_name}')  # noqa: E501
+                    global_db_write_cursor.execute(f'DELETE FROM {table_name} WHERE {column_name} IN ({placeholders})', globaldb_identifiers_to_remove)  # noqa: E501
+
+                global_db_write_cursor.executescript('PRAGMA foreign_keys = ON;')
+
+        userdb_identifiers_to_remove = tuple(set({
+            x[0] for x in write_cursor.execute(
+                "SELECT identifier FROM assets WHERE identifier LIKE 'eip155:%/erc721:0x%' "
+                "AND identifier NOT LIKE 'eip155:%/erc721:0x%/%'",
+            )}).union(set(globaldb_identifiers_to_remove)))
+        if len(userdb_identifiers_to_remove) == 0:
+            log.debug('No identifiers to remove from userDB')
             return
-
-        log.debug(f'Deleting {num_to_remove} assets...')
-        placeholders = ','.join(['?'] * len(identifiers_to_remove))
-        tables_with_assets = (
-            ('assets', 'identifier'),
-            ('evm_tokens', 'identifier'),
-            ('common_asset_details', 'identifier'),
-            ('multiasset_mappings', 'asset'),
-            ('price_history', 'from_asset'),
-            ('price_history', 'to_asset'),
-            ('underlying_tokens_list', 'identifier'),
-            ('underlying_tokens_list', 'parent_token_entry'),
-            ('user_owned_assets', 'asset_id'),
-        )
-        total = len(tables_with_assets)
-        with globaldb_conn.write_ctx() as global_db_write_cursor:
-            log.debug('Deleting from globaldb...')
-            # We disable foreign keys because that ended up being the fastest way to delete
-            # the assets. Without that a CASCADE deletion happens but it turned to be really
-            # slow, around ~8 mins in my case with ~300 assets to delete and ~30K assets in my
-            # globaldb. First I tried adding indexes in the globaldb to the tables that reference
-            # the assets table but it lowered the time only to ~6-7 minutes. With direct deletion
-            # without FKs it's almost instant.
-            global_db_write_cursor.executescript('PRAGMA foreign_keys = OFF;')
-            for step, (table_name, column_name) in enumerate(tables_with_assets, start=1):
-                log.debug(f'{step}/{total}: Deleting references in the {table_name} table for {column_name}')  # noqa: E501
-                global_db_write_cursor.execute(f'DELETE FROM {table_name} WHERE {column_name} IN ({placeholders})', identifiers_to_remove)  # noqa: E501
-
-            global_db_write_cursor.executescript('PRAGMA foreign_keys = ON;')
 
         log.debug('Deleting from user db...')
         # Load any data associated with these identifiers that might actually be valuable and
@@ -156,7 +163,7 @@ def upgrade_v46_to_v47(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         # For 99% of users no data should be found here.
         selected_data = {}
         tables_to_delete_from = []
-        values_placeholders = ','.join(['(?)'] * len(identifiers_to_remove))
+        values_placeholders = ','.join(['(?)'] * len(userdb_identifiers_to_remove))
         for table, columns in (
             ('history_events', ('asset',)),
             ('manually_tracked_balances', ('asset',)),
@@ -171,7 +178,7 @@ def upgrade_v46_to_v47(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
                 f'WITH asset_list(value) AS (VALUES {values_placeholders}) '
                 f'SELECT * FROM {table} '
                 f'WHERE EXISTS (SELECT 1 FROM asset_list WHERE value IN ({column_str}))',
-                identifiers_to_remove,
+                userdb_identifiers_to_remove,
             ).fetchall()
             if len(result) > 0:
                 selected_data[table] = result
@@ -202,7 +209,7 @@ def upgrade_v46_to_v47(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
                 f'WITH asset_list(value) AS (VALUES {values_placeholders}) '
                 f'DELETE FROM {table} '
                 f'WHERE EXISTS (SELECT 1 FROM asset_list WHERE value IN ({column_str}))',
-                identifiers_to_remove,
+                userdb_identifiers_to_remove,
             )
 
     @progress_step(description='Reset exchanges events and cache')
