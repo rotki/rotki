@@ -11,6 +11,7 @@ from rotkehlchen.chain.base.modules.odos.v2.constants import (
 )
 from rotkehlchen.chain.base.node_inquirer import BaseInquirer
 from rotkehlchen.chain.binance_sc.modules.odos.v2.constants import ODOS_V2_ROUTER as BSC_ROUTER
+from rotkehlchen.chain.ethereum.airdrops import AIRDROP_IDENTIFIER_KEY
 from rotkehlchen.chain.ethereum.modules.odos.v2.constants import ODOS_V2_ROUTER as ETH_ROUTER
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.odos.v2.constants import CPT_ODOS_V2
@@ -898,4 +899,5 @@ def test_airdrop_claim(
         notes=f'Claim {received_amount} ODOS from Odos airdrop',
         address=ODOS_AIRDROP_DISTRIBUTOR,
         counterparty=CPT_ODOS_V2,
+        extra_data={AIRDROP_IDENTIFIER_KEY: 'odos'},
     )]

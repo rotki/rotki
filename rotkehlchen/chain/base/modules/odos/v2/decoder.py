@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING, Any
 
+from rotkehlchen.chain.ethereum.airdrops import AIRDROP_IDENTIFIER_KEY
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS
 from rotkehlchen.chain.evm.decoding.odos.v2.constants import CPT_ODOS_V2
@@ -64,6 +65,7 @@ class Odosv2Decoder(Odosv2DecoderBase):
                 event.event_subtype = HistoryEventSubType.AIRDROP
                 event.counterparty = CPT_ODOS_V2
                 event.notes = f'Claim {amount} ODOS from Odos airdrop'
+                event.extra_data = {AIRDROP_IDENTIFIER_KEY: 'odos'}
 
         return DEFAULT_DECODING_OUTPUT
 
