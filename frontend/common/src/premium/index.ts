@@ -118,7 +118,6 @@ export interface GraphApi {
   backgroundColor: ComputedRef<string>;
   fontColor: ComputedRef<string>;
   gridColor: ComputedRef<string>;
-  thirdColor: ComputedRef<string>;
 }
 
 type GetGraphApi = (canvasId: string) => GraphApi;
