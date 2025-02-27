@@ -963,6 +963,7 @@ def test_upgrade_v10_v11(globaldb: GlobalDBHandler, messages_aggregator):
         assert cursor.execute("SELECT COUNT(*) FROM common_asset_details WHERE identifier IN ('BIDR', 'TEDDY')").fetchone()[0] == 0  # noqa: E501
         assert cursor.execute("SELECT type FROM assets WHERE identifier='BVND'").fetchone()[0] == 'W'  # noqa: E501
         assert cursor.execute("SELECT COUNT(*) FROM assets WHERE identifier='eip155:56/erc20:0x0409633A72D846fc5BBe2f98D88564D35987904D'").fetchone()[0] == 1  # noqa: E501
+        assert cursor.execute("SELECT swapped_for FROM common_asset_details WHERE identifier='PHX'").fetchone()[0] == 'eip155:56/erc20:0x0409633A72D846fc5BBe2f98D88564D35987904D'  # noqa: E501
 
 
 @pytest.mark.parametrize('custom_globaldb', ['v2_global.db'])

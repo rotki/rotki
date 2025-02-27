@@ -352,9 +352,9 @@ class RotkiDataUpdater:
         """Applies location asset mappings updates in the global DB"""
         log.info(f'Applying update for location asset mappings to v{version}')
         for update_function, entry_type, raw_data_key in (
-            (GlobalDBHandler.add_location_asset_mappings, LocationAssetMappingUpdateEntry, 'additions'),  # noqa: E501
-            (GlobalDBHandler.update_location_asset_mappings, LocationAssetMappingUpdateEntry, 'updates'),  # noqa: E501
             (GlobalDBHandler.delete_location_asset_mappings, LocationAssetMappingDeleteEntry, 'deletions'),  # noqa: E501
+            (GlobalDBHandler.update_location_asset_mappings, LocationAssetMappingUpdateEntry, 'updates'),  # noqa: E501
+            (GlobalDBHandler.add_location_asset_mappings, LocationAssetMappingUpdateEntry, 'additions'),  # noqa: E501
         ):
             entries, raw_data = [], data.get(raw_data_key)
             if raw_data is None:
