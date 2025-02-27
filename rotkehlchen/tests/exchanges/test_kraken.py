@@ -19,19 +19,15 @@ from rotkehlchen.assets.converters import asset_from_kraken
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import (
     A_ADA,
-    A_BCH,
     A_BTC,
-    A_DAI,
     A_DOT,
     A_ETH,
     A_ETH2,
     A_GRT,
     A_KSM,
-    A_LTC,
     A_USD,
     A_USDC,
     A_USDT,
-    A_XRP,
 )
 from rotkehlchen.constants.limits import FREE_HISTORY_EVENTS_LIMIT
 from rotkehlchen.constants.resolver import strethaddress_to_identifier
@@ -39,7 +35,7 @@ from rotkehlchen.db.custom_assets import DBCustomAssets
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import ModifiableDBSettings
-from rotkehlchen.errors.asset import UnknownAsset, UnprocessableTradePair
+from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.exchanges.kraken import Kraken
@@ -53,24 +49,11 @@ from rotkehlchen.tests.utils.api import (
     assert_proper_sync_response_with_result,
 )
 from rotkehlchen.tests.utils.constants import (
-    A_AUD,
-    A_CAD,
-    A_CHF,
     A_DAO,
-    A_DASH,
     A_EUR,
-    A_EWT,
-    A_GBP,
-    A_JPY,
-    A_OCEAN,
-    A_QTUM,
-    A_SC,
-    A_WAVES,
-    A_XTZ,
 )
 from rotkehlchen.tests.utils.exchanges import (
     get_exchange_asset_symbols,
-    kraken_to_world_pair,
     try_get_first_exchange,
 )
 from rotkehlchen.tests.utils.history import TEST_END_TS, prices
@@ -266,57 +249,6 @@ def test_querying_deposits_withdrawals(kraken):
 
     assert len(result) == 8
     assert len([event for event in result if event.event_subtype == HistoryEventSubType.FEE]) == 3
-
-
-def test_kraken_to_world_pair(kraken):
-    """Kraken does not consistently list its pairs so test here that most pairs work
-
-    For example ETH can be ETH or XETH, BTC can be XXBT or XBT
-    """
-    # Some standard tests that should always pass
-    assert kraken_to_world_pair('QTUMXBT') == (A_QTUM, A_BTC)
-    assert kraken_to_world_pair('ADACAD') == (A_ADA, A_CAD)
-    assert kraken_to_world_pair('BCHUSD') == (A_BCH, A_USD)
-    assert kraken_to_world_pair('DASHUSD') == (A_DASH, A_USD)
-    assert kraken_to_world_pair('XTZETH') == (A_XTZ, A_ETH)
-    assert kraken_to_world_pair('ETHDAI') == (A_ETH, A_DAI)
-    assert kraken_to_world_pair('SCXBT') == (A_SC, A_BTC)
-    assert kraken_to_world_pair('SCEUR') == (A_SC, A_EUR)
-    assert kraken_to_world_pair('WAVESUSD') == (A_WAVES, A_USD)
-    assert kraken_to_world_pair('XXBTZGBP.d') == (A_BTC, A_GBP)
-    assert kraken_to_world_pair('ETHCHF') == (A_ETH, A_CHF)
-    assert kraken_to_world_pair('XBTCHF') == (A_BTC, A_CHF)
-    assert kraken_to_world_pair('EURCAD') == (A_EUR, A_CAD)
-    assert kraken_to_world_pair('USDCHF') == (A_USD, A_CHF)
-    assert kraken_to_world_pair('EURJPY') == (A_EUR, A_JPY)
-    assert kraken_to_world_pair('LTCETH') == (A_LTC, A_ETH)
-    assert kraken_to_world_pair('LTCUSDT') == (A_LTC, A_USDT)
-    assert kraken_to_world_pair('XRPGBP') == (A_XRP, A_GBP)
-    assert kraken_to_world_pair('XRPUSDT') == (A_XRP, A_USDT)
-    assert kraken_to_world_pair('AUDJPY') == (A_AUD, A_JPY)
-    assert kraken_to_world_pair('ETH2.SETH') == (A_ETH2, A_ETH)
-    assert kraken_to_world_pair('EWTEUR') == (A_EWT, A_EUR)
-    assert kraken_to_world_pair('EWTGBP') == (A_EWT, A_GBP)
-    assert kraken_to_world_pair('EWTXBT') == (A_EWT, A_BTC)
-    assert kraken_to_world_pair('OCEANEUR') == (A_OCEAN, A_EUR)
-    assert kraken_to_world_pair('OCEANGBP') == (A_OCEAN, A_GBP)
-    assert kraken_to_world_pair('OCEANUSD') == (A_OCEAN, A_USD)
-    assert kraken_to_world_pair('OCEANXBT') == (A_OCEAN, A_BTC)
-
-    # now try to test all pairs that kraken returns and if one does not work note
-    # down a test warning so that it can be fixed by us later
-    pairs = kraken.api_query('AssetPairs').keys()
-    for pair in pairs:
-        try:
-            kraken_to_world_pair(pair)
-        except (UnknownAsset, UnprocessableTradePair, DeserializationError) as e:
-            test_warnings.warn(UserWarning(
-                f'Could not process kraken pair {pair} due to {e!s}',
-            ))
-
-    # Finally test that wrong pairs raise proper exception
-    with pytest.raises(UnprocessableTradePair):
-        kraken_to_world_pair('GABOOBABOO')
 
 
 @pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])

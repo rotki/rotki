@@ -84,6 +84,10 @@ def migrate_to_v11(connection: 'DBConnection', progress_handler: 'DBUpgradeProgr
         write_cursor.execute(f'DELETE FROM assets WHERE identifier IN ({",".join(["?"] * len(changed_ids))})', changed_ids)  # noqa: E501
         write_cursor.execute("UPDATE assets SET type='W' WHERE type IN ('S', 'X')")
         write_cursor.execute("DELETE FROM asset_types WHERE type IN ('S', 'X')")
+        write_cursor.execute(
+            'UPDATE common_asset_details SET swapped_for=? WHERE identifier=?',
+            ('eip155:56/erc20:0x0409633A72D846fc5BBe2f98D88564D35987904D', 'PHX'),
+        )
 
     perform_globaldb_upgrade_steps(
         connection=connection,

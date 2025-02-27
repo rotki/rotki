@@ -315,6 +315,7 @@ def test_get_asset_with_symbol(globaldb):
         Asset('eip155:42161/erc20:0xba5DdD1f9d7F570dc94a51479a000E3BCE967196').resolve_to_evm_token(),
         Asset('eip155:10/erc20:0x76FB31fb4af56892A25e32cFC43De717950c9278').resolve_to_evm_token(),
         Asset('eip155:250/erc20:0x6a07A792ab2965C72a5B8088d3a069A7aC3a993B').resolve_to_evm_token(),
+        Asset('eip155:8453/erc20:0x63706e401c06ac8513145b7687A14804d17f814b').resolve_to_evm_token(),
     ]
     assert globaldb.get_assets_with_symbol('AAVE') == expected_assets
     # finally non existing asset

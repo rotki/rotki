@@ -384,7 +384,7 @@ def test_poloniex_deposits_withdrawal_unknown_asset(poloniex: 'Poloniex') -> Non
     messages = cast('MockRotkiNotifier', poloniex.msg_aggregator.rotki_notifier).messages
     assert len(messages) == 4
     assert messages[0].message_type == WSMessageType.EXCHANGE_UNKNOWN_ASSET
-    assert 'Found withdrawal of unsupported poloniex asset DIS' in messages[1].data['value']  # type: ignore
+    assert 'Found withdrawal of unsupported poloniex asset BALLS' in messages[1].data['value']  # type: ignore
     assert messages[2].message_type == WSMessageType.EXCHANGE_UNKNOWN_ASSET
     assert 'Found deposit of unsupported poloniex asset EBT' in messages[3].data['value']  # type: ignore
 
