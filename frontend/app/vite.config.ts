@@ -6,7 +6,6 @@ import AutoImport from 'unplugin-auto-import/vite';
 import Components from 'unplugin-vue-components/vite';
 import { defineConfig } from 'vitest/config';
 import checker from 'vite-plugin-checker';
-import { splitVendorChunkPlugin } from 'vite';
 import VueRouter from 'unplugin-vue-router/vite';
 import { VueRouterAutoImports } from 'unplugin-vue-router';
 import istanbul from 'vite-plugin-istanbul';
@@ -66,7 +65,6 @@ export default defineConfig({
     include: ['imask', 'vanilla-jsoneditor'],
   },
   plugins: [
-    splitVendorChunkPlugin(),
     VueRouter({
       importMode: 'async',
     }),
@@ -156,6 +154,36 @@ export default defineConfig({
     rollupOptions: {
       external: ['electron', ...builtinModules.flatMap(p => [p, `node:${p}`])],
       input: join(PACKAGE_ROOT, 'index.html'),
+      output: {
+        chunkFileNames: (assetInfo: { name: string }) => {
+          const currentName = assetInfo.name;
+          const name = currentName.endsWith('.vue_vue_type_style_index_0_lang')
+            || currentName.endsWith('.vue_vue_type_script_setup_true_lang')
+            ? currentName.split('.')[0]
+            : currentName;
+          return `${name}-[hash].js`;
+        },
+        manualChunks: {
+          'vue-vendor': ['vue', 'vue-router', 'pinia', 'vue-i18n'],
+          'common': ['@rotki/common', 'bignumber.js'],
+          'ui-vendor': ['@rotki/ui-library'],
+          'chart': ['chart.js', 'chartjs-plugin-zoom'],
+          'editor': ['vanilla-jsoneditor'],
+          'utils': [
+            '@vueuse/math',
+            '@vueuse/core',
+            '@vueuse/shared',
+            '@vuelidate/core',
+            '@vuelidate/validators',
+            'axios',
+            'es-toolkit',
+            'imask',
+            'dayjs',
+            'consola',
+            'zod',
+          ],
+        },
+      },
     },
     emptyOutDir: false,
   },
