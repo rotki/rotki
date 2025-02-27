@@ -13,12 +13,14 @@ const additional = ['ETC'] as const;
 const supportedExplorers = [...Object.values(Blockchain), ...additional];
 
 const selection = ref<Blockchain | (typeof additional)[number]>(Blockchain.ETH);
-const store = useFrontendSettingsStore();
-const { explorers } = storeToRefs(store);
-
 const address = ref<string>('');
 const tx = ref<string>('');
 const block = ref<string>('');
+const token = ref<string>('');
+
+const store = useFrontendSettingsStore();
+const { explorers } = storeToRefs(store);
+const { t } = useI18n();
 
 const defaultUrls = computed<ExplorerUrls>(() => explorerUrls[get(selection)]);
 
@@ -43,16 +45,18 @@ const blockUrl = useValueOrDefault(
   useRefMap(defaultUrls, ({ block }) => block || null),
 );
 
+const tokenUrl = useValueOrDefault(
+  useRefMap(userUrls, setting => setting?.token),
+  useRefMap(defaultUrls, ({ token }) => token || null),
+);
+
 function onChange() {
   const setting = get(userUrls);
   set(address, setting?.address ?? '');
   set(tx, setting?.transaction ?? '');
   set(block, setting?.block ?? '');
+  set(token, setting?.token ?? '');
 }
-
-onMounted(() => {
-  onChange();
-});
 
 async function save(type: keyof ExplorerUrls, newValue?: string) {
   const setting = get(userUrls);
@@ -73,19 +77,9 @@ async function save(type: keyof ExplorerUrls, newValue?: string) {
   });
 }
 
-async function saveAddress(newAddress?: string) {
-  await save('address', newAddress);
-}
-
-async function saveTransaction(newTransaction?: string) {
-  await save('transaction', newTransaction);
-}
-
-async function saveBlock(newBlock?: string) {
-  await save('block', newBlock);
-}
-
-const { t } = useI18n();
+onMounted(() => {
+  onChange();
+});
 </script>
 
 <template>
@@ -138,7 +132,7 @@ const { t } = useI18n();
         :label="t('explorers.address')"
         :hint="t('explorers.address_url', { addressUrl })"
         :placeholder="addressUrl"
-        @save-data="saveAddress($event)"
+        @save-data="save('address', $event)"
       />
       <ExplorerInput
         v-if="txUrl"
@@ -146,7 +140,7 @@ const { t } = useI18n();
         :label="t('explorers.tx')"
         :hint="t('explorers.tx_url', { txUrl })"
         :placeholder="txUrl"
-        @save-data="saveTransaction($event)"
+        @save-data="save('transaction', $event)"
       />
       <ExplorerInput
         v-if="blockUrl"
@@ -154,7 +148,15 @@ const { t } = useI18n();
         :label="t('explorers.block')"
         :hint="t('explorers.block_url', { blockUrl })"
         :placeholder="blockUrl"
-        @save-data="saveBlock($event)"
+        @save-data="save('block', $event)"
+      />
+      <ExplorerInput
+        v-if="tokenUrl"
+        v-model="token"
+        :label="t('explorers.token')"
+        :hint="t('explorers.token_url', { tokenUrl })"
+        :placeholder="tokenUrl"
+        @save-data="save('token', $event)"
       />
     </div>
   </SettingsItem>

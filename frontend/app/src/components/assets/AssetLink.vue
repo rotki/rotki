@@ -33,7 +33,7 @@ const { navigateToDetails } = useAssetPageNavigation(asset);
     <HashLink
       v-if="address && link"
       link-only
-      type="address"
+      type="token"
       :text="address"
       :evm-chain="assetDetails?.evmChain"
     />

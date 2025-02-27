@@ -203,6 +203,7 @@ async function markAsSpam(identifiers?: string | string[]): Promise<void> {
           :chain="row.evmChain"
           :text="row.address"
           hide-alias-name
+          type="token"
         />
       </template>
 

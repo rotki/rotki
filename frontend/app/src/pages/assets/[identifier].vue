@@ -178,7 +178,7 @@ async function toggleWhitelistAsset() {
           <HashLink
             v-if="address"
             :chain="chain"
-            type="address"
+            type="token"
             :text="address"
             link-only
             size="18"
