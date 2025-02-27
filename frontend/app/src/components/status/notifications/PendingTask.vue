@@ -2,19 +2,39 @@
 import dayjs from 'dayjs';
 import { TaskType } from '@/types/task-type';
 import { useReportsStore } from '@/store/reports';
+import { useHistoricCachePriceStore } from '@/store/prices/historic';
+import { calculatePercentage } from '@/utils/calculation';
 import type { Task, TaskMeta } from '@/types/task';
 
 const props = defineProps<{ task: Task<TaskMeta> }>();
 const emit = defineEmits<{ (e: 'cancel', task: Task<TaskMeta>): void }>();
 
 const { task } = toRefs(props);
-const isHistory = computed(() => task.value.type === TaskType.TRADE_HISTORY);
-
 const { progress: taskProgress } = storeToRefs(useReportsStore());
+const { historicalDailyPriceStatus } = storeToRefs(useHistoricCachePriceStore());
 const { t } = useI18n();
 
-const time = computed(() => dayjs(task.value.time).format('LLL'));
-const progress = useToNumber(taskProgress);
+const hasDeterminateProgress = computed(() => {
+  const { type } = get(task);
+  return type === TaskType.TRADE_HISTORY || type === TaskType.FETCH_DAILY_HISTORIC_PRICE;
+});
+
+const time = computed<string>(() => dayjs(task.value.time).format('LLL'));
+
+const progress = computed<number | undefined>(() => {
+  const { type } = get(task);
+  if (type === TaskType.TRADE_HISTORY) {
+    return parseInt(get(taskProgress));
+  }
+  else if (type === TaskType.FETCH_DAILY_HISTORIC_PRICE) {
+    if (!isDefined(historicalDailyPriceStatus)) {
+      return 0;
+    }
+    const { processed, total } = get(historicalDailyPriceStatus);
+    return parseInt(calculatePercentage(bigNumberify(processed), bigNumberify(total)));
+  }
+  return undefined;
+});
 </script>
 
 <template>
@@ -36,10 +56,10 @@ const progress = useToNumber(taskProgress);
     <RuiProgress
       color="primary"
       circular
-      :variant="isHistory ? 'determinate' : 'indeterminate'"
+      :variant="hasDeterminateProgress ? 'determinate' : 'indeterminate'"
       :value="progress"
       size="24"
-      :show-label="isHistory"
+      :show-label="hasDeterminateProgress"
       thickness="2"
     />
     <RuiTooltip
