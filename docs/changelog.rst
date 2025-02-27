@@ -40,6 +40,7 @@ Changelog
 * :bug:`-` Some specific cases of yearn v2 vault deposit/withdrawals that had problems will now be decoded properly.
 * :bug:`-` Deleting an ethereum address will now remove the withdrawals cache for that address so re-adding it will now properly detect ethereum staking withdrawals again.
 * :bug:`-` Fix double count of cowswap fees.
+* :bug:`-` Odos airdrop will appear as claimed or unclaimed instead of as unknown.
 * :bug:`-` Fix an error when merging two assets if they both appear at the same snapshot.
 * :bug:`-` Allow rotki app to be minimized using the shortcut for each platform.
 * :bug:`-` Deleting Kusama, Polkadot, or Beaconchain RPC URL should now work properly again.
