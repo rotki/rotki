@@ -3724,7 +3724,7 @@
       "fetching_graph_daily_data": "Fetching graph daily data ({processed}/{total})",
       "fetching_graph_data": "Fetching graph data",
       "fetching_historical_prices": "Fetching historical prices ({processed}/{total})",
-      "history_events_no_data": "No data can be showed from history events processing.",
+      "history_events_no_data": "No data can be shown from history events processing.",
       "max_visible": "Maximum assets to show",
       "max_visible_required": "You cannot show more than {availableAssets} assets",
       "min_visible_required": "You have to show at least one asset.",
