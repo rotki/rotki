@@ -109,12 +109,12 @@ selfkey_asset_data = AssetData(
     coingecko='selfkey',
     protocol=None,
 )
-bidr_asset_data = AssetData(
-    identifier='BIDR',
-    name='Binance IDR Stable Coin',
-    symbol='BIDR',
-    asset_type=AssetType.BINANCE_TOKEN,
-    started=Timestamp(1593475200),
+mobi_asset_data = AssetData(
+    identifier='MOBI',
+    name='Mobius',
+    symbol='MOBI',
+    asset_type=AssetType.STELLAR_TOKEN,
+    started=Timestamp(1501632000),
     forked=None,
     swapped_for=None,
     address=None,
@@ -122,19 +122,19 @@ bidr_asset_data = AssetData(
     token_kind=None,
     decimals=None,
     cryptocompare=None,
-    coingecko='binanceidr',
+    coingecko='mobius',
     protocol=None,
 )
-bidr_asset = CryptoAsset.initialize(
-    identifier='BIDR',
-    name='Binance IDR Stable Coin',
-    symbol='BIDR',
-    asset_type=AssetType.BINANCE_TOKEN,
-    started=Timestamp(1593475200),
+mobi_asset = CryptoAsset.initialize(
+    identifier='MOBI',
+    name='Mobius',
+    symbol='MOBI',
+    asset_type=AssetType.STELLAR_TOKEN,
+    started=Timestamp(1501632000),
     forked=None,
     swapped_for=None,
     cryptocompare=None,
-    coingecko='binanceidr',
+    coingecko='mobius',
 )
 
 
@@ -305,7 +305,7 @@ def test_get_asset_with_symbol(globaldb):
     assert expected_assets.issubset(set(asset_data))
     assert all('key' in asset.symbol.lower() for asset in asset_data) is True
     # only non-ethereum token
-    assert globaldb.get_assets_with_symbol('BIDR') == [bidr_asset]
+    assert globaldb.get_assets_with_symbol('MOBI') == [mobi_asset]
     # only ethereum token
     expected_assets = [
         Asset('eip155:1/erc20:0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9').resolve_to_evm_token(),
@@ -423,34 +423,34 @@ def test_get_all_asset_data_specific_ids(globaldb):
 
     asset_data = globaldb.get_all_asset_data(
         mapping=False,
-        specific_ids=['BTC', 'ETH', selfkey_id, 'BIDR'],
+        specific_ids=['BTC', 'ETH', selfkey_id, 'MOBI'],
     )
     assert asset_data == [
         selfkey_asset_data,
-        bidr_asset_data,
         btc_asset_data,
         eth_asset_data,
+        mobi_asset_data,
     ]
 
     asset_data = globaldb.get_all_asset_data(
         mapping=True,
         serialized=True,
-        specific_ids=['BTC', 'ETH', selfkey_id, 'BIDR'],
+        specific_ids=['BTC', 'ETH', selfkey_id, 'MOBI'],
     )
     assert asset_data == {
         selfkey_id: selfkey_asset_data.serialize(),
-        'BIDR': bidr_asset_data.serialize(),
+        'MOBI': mobi_asset_data.serialize(),
         'BTC': btc_asset_data.serialize(),
         'ETH': eth_asset_data.serialize(),
     }
     asset_data = globaldb.get_all_asset_data(
         mapping=True,
         serialized=False,
-        specific_ids=['BTC', 'ETH', selfkey_id, 'BIDR'],
+        specific_ids=['BTC', 'ETH', selfkey_id, 'MOBI'],
     )
     assert asset_data == {
         selfkey_id: selfkey_asset_data,
-        'BIDR': bidr_asset_data,
+        'MOBI': mobi_asset_data,
         'BTC': btc_asset_data,
         'ETH': eth_asset_data,
     }

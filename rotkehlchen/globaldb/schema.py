@@ -65,8 +65,7 @@ INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('P', 16);
 INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('Q', 17);
 /* VECHAIN TOKEN */
 INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('R', 18);
-/* BINANCE TOKEN */
-INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('S', 19);
+/* BINANCE TOKEN - WAS ('S', 19) and is now removed */
 /* EOS TOKEN */
 INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('T', 20);
 /* FUSION TOKEN */
@@ -75,8 +74,7 @@ INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('U', 21);
 INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('V', 22);
 /* OTHER */
 INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('W', 23);
-/* AVALANCHE TOKEN */
-INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('X', 24);
+/* AVALANCHE TOKEN - WAS ('X', 24) and is now removed */
 /* SOLANA TOKEN */
 INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('Y', 25);
 /* NFT */

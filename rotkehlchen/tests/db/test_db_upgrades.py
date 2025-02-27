@@ -2750,9 +2750,10 @@ def test_upgrade_db_46_to_47(user_data_dir, messages_aggregator):
             ).fetchone()[0] == 1  # tokens with collectible ids shouldn't be modified
 
         if expect_removed:
-            assert user_db_cursor.execute('SELECT * FROM temp_erc721_data').fetchall() == [
+            temp_erc721_data = user_db_cursor.execute('SELECT * FROM temp_erc721_data').fetchall()
+            assert temp_erc721_data == [
                 ('history_events', '[[7, 2, "TEST1", 0, 1, "f", "0x706A70067BE19BdadBea3600Db0626859Ff25D74", "eip155:1/erc721:0xC36442b4a4522E871399CD717aBDD847Ab11FE88", "1", "0", "", "11", "16", ""]]'),  # noqa: E501
-                ('manually_tracked_balances', '[[1, "eip155:1/erc721:0xC36442b4a4522E871399CD717aBDD847Ab11FE88", "Test Balance", "5", "A", "A"]]'),  # noqa: E501
+                ('manually_tracked_balances', '[[3, "eip155:1/erc721:0xC36442b4a4522E871399CD717aBDD847Ab11FE88", "Test Balance", "5", "A", "A"]]'),  # noqa: E501
             ]
 
     _use_prepared_db(user_data_dir, 'v46_rotkehlchen.db')
@@ -2907,6 +2908,29 @@ def test_upgrade_db_46_to_47(user_data_dir, messages_aggregator):
             ('queried_address_compound', '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'),
             ('queried_address_compound', '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045'),
         }
+        # Before tests for the avalanche/binance tokens deletion
+        assert cursor.execute('SELECT * FROM manually_tracked_balances').fetchall() == [
+            (1, 'TEDDY', 'My Teddy balance', '10', 'A', 'A'),
+            (2, 'BUX', 'My BUX balance', '20', 'A', 'A'),
+            (3, 'eip155:1/erc721:0xC36442b4a4522E871399CD717aBDD847Ab11FE88', 'Test Balance', '5', 'A', 'A'),  # noqa: E501
+        ]
+        assert cursor.execute('SELECT * FROM timed_balances').fetchall() == [
+            ('A', 1740603997, 'eip155:56/erc20:0x211FfbE424b90e25a15531ca322adF1559779E45', '10', '10'),  # noqa: E501
+            ('A', 1740603998, 'BUX', '5', '5'),
+            ('A', 1, uniswap_erc20_token.identifier, '1', '1'),
+        ]
+        assert cursor.execute("SELECT * FROM trades WHERE location='A'").fetchall() == [
+            ('1', 1740603997, 'A', 'BUX', 'ETH', 'A', '10', '0.1', '0.01', 'BUX', 'A link', 'trade notes'),  # noqa: E501
+        ]
+        assert cursor.execute(
+            "SELECT COUNT(*) FROM multisettings WHERE name='ignored_asset' AND value IN ('BUX', 'TEDDY', 'BIDR')",  # noqa: E501
+        ).fetchone()[0] == 3
+        assert cursor.execute(
+            "SELECT COUNT(*) FROM multisettings WHERE name='ignored_asset' AND value IN ('eip155:56/erc20:0x211FfbE424b90e25a15531ca322adF1559779E45', 'eip155:43114/erc20:0x094bd7B2D99711A1486FB94d4395801C6d0fdDcC')",  # noqa: E501
+        ).fetchone()[0] == 0
+        assert cursor.execute(  # this is BIDR's actual evm token. Testing the already exists case for ignore asset  # noqa: E501
+            "SELECT COUNT(*) FROM multisettings WHERE name='ignored_asset' AND value ='eip155:56/erc20:0x9A2f5556e9A637e8fBcE886d8e3cf8b316a1D8a2'",  # noqa: E501
+        ).fetchone()[0] == 1
 
     with db_v46.conn.read_ctx() as cursor:
         assert db_v46.get_dynamic_cache(
@@ -2964,7 +2988,7 @@ def test_upgrade_db_46_to_47(user_data_dir, messages_aggregator):
             (bybit_location, coinbase_location, gemini_location, ''),
         ).fetchone()[0] == 0
         assert cursor.execute('SELECT id FROM trades').fetchall() == [  # ensure trades with empty link is preserved  # noqa: E501
-            ('trade_1',), ('trade_3',), ('trade_5',), ('trade_7',),
+            ('1',), ('trade_1',), ('trade_3',), ('trade_5',), ('trade_7',),
         ]
         assert cursor.execute(  # verify query ranges for bybit, coinbase and gemini are deleted
             'SELECT COUNT(*) FROM used_query_ranges WHERE name IN (?, ?, ?)',
@@ -3000,6 +3024,24 @@ def test_upgrade_db_46_to_47(user_data_dir, messages_aggregator):
         assert cursor.execute(
             "SELECT * FROM multisettings WHERE name LIKE 'queried_address_%'",
         ).fetchall() == []
+        # After tests for the avalanche/binance tokens deletion
+        assert cursor.execute('SELECT * FROM manually_tracked_balances').fetchall() == [
+            (1, 'eip155:43114/erc20:0x094bd7B2D99711A1486FB94d4395801C6d0fdDcC', 'My Teddy balance', '10', 'A', 'A'),  # noqa: E501
+            (2, 'eip155:56/erc20:0x211FfbE424b90e25a15531ca322adF1559779E45', 'My BUX balance', '20', 'A', 'A'),  # noqa: E501
+        ]
+        assert cursor.execute('SELECT * FROM timed_balances').fetchall() == [
+            ('A', 1740603997, 'eip155:56/erc20:0x211FfbE424b90e25a15531ca322adF1559779E45', '10', '10'),  # noqa: E501
+            ('A', 1740603998, 'eip155:56/erc20:0x211FfbE424b90e25a15531ca322adF1559779E45', '5', '5'),  # noqa: E501
+        ]
+        assert cursor.execute("SELECT * FROM trades WHERE location='A'").fetchall() == [
+            ('1', 1740603997, 'A', 'eip155:56/erc20:0x211FfbE424b90e25a15531ca322adF1559779E45', 'ETH', 'A', '10', '0.1', '0.01', 'eip155:56/erc20:0x211FfbE424b90e25a15531ca322adF1559779E45', 'A link', 'trade notes'),  # noqa: E501
+        ]
+        assert cursor.execute(
+            "SELECT COUNT(*) FROM multisettings WHERE name='ignored_asset' AND value IN ('BUX', 'TEDDY', 'BIDR')",  # noqa: E501
+        ).fetchone()[0] == 0
+        assert cursor.execute(
+            "SELECT COUNT(*) FROM multisettings WHERE name='ignored_asset' AND value IN ('eip155:56/erc20:0x211FfbE424b90e25a15531ca322adF1559779E45', 'eip155:43114/erc20:0x094bd7B2D99711A1486FB94d4395801C6d0fdDcC', 'eip155:56/erc20:0x9A2f5556e9A637e8fBcE886d8e3cf8b316a1D8a2')",  # noqa: E501
+        ).fetchone()[0] == 3
 
     db.logout()
 

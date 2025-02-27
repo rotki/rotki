@@ -308,4 +308,65 @@ def upgrade_v46_to_v47(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         """Removes a key that wasn't correctly deleted for one user and might affect others"""
         write_cursor.execute("DELETE FROM settings WHERE name='last_data_upload_ts'")
 
+    @progress_step(description='Upgrading old style binance and avalanche tokens')
+    def _upgrade_binance_avalanche_tokens(write_cursor: 'DBCursor') -> None:
+        """If a user has any old style binance and avalanche tokens that were upgraded in the
+        global DB we have to upgrade them here"""
+        changed_ids_mappings = {
+            'BIDR': 'eip155:56/erc20:0x9A2f5556e9A637e8fBcE886d8e3cf8b316a1D8a2',
+            'COS': 'eip155:56/erc20:0x96Dd399F9c3AFda1F194182F71600F1B65946501',
+            'PHB': 'eip155:56/erc20:0x0409633A72D846fc5BBe2f98D88564D35987904D',
+            'BUX': 'eip155:56/erc20:0x211FfbE424b90e25a15531ca322adF1559779E45',  # already exists in packaged DB  # noqa: E501
+            'LNCHX': 'eip155:56/erc20:0xC43570263e924C8cF721F4b9c72eEd1AEC4Eb7DF',
+            'POLX': 'eip155:56/erc20:0xbe510da084E084e3C27b20D79C135Dc841135c7F',
+            'ICA': 'eip155:56/erc20:0x0ca2f09eCa544b61b91d149dEA2580c455c564b2',
+            'TEDDY': 'eip155:43114/erc20:0x094bd7B2D99711A1486FB94d4395801C6d0fdDcC',
+        }
+        # Get all tables that reference assets via foreign keys
+        fk_table_data = write_cursor.execute(
+        "SELECT m.name as table_name, p.'from' as column_name "
+        "FROM sqlite_master m JOIN pragma_foreign_key_list(m.name) p "
+        "ON m.name != 'assets' WHERE p.'table' = 'assets' AND m.type = 'table'",
+        ).fetchall()
+
+        for old_id, new_id in changed_ids_mappings.items():
+            # Check if the new ID already exists
+            write_cursor.execute('SELECT COUNT(*) FROM assets WHERE identifier=?', (new_id,))
+            if write_cursor.fetchone()[0] != 0:  # exists so for each foreign key relation update it  # noqa: E501
+                for table_name, column_name in fk_table_data:
+                    write_cursor.execute(
+                        f'UPDATE {table_name} SET {column_name}=? WHERE {column_name}=?',
+                        (new_id, old_id),
+                    )
+
+                # and finally delete the old asset
+                write_cursor.execute('DELETE FROM assets WHERE identifier = ?', (old_id,))
+
+            else:  # does not exist, so just modify
+                write_cursor.execute(
+                    'UPDATE assets SET identifier=? WHERE identifier=?', (new_id, old_id),
+                )
+
+        # finally check if the ignored_assets contain any of these tokens and replace them
+        entries = write_cursor.execute(
+            "SELECT value FROM multisettings WHERE name='ignored_asset' AND value "
+            f"IN({','.join(['?'] * len(changed_ids_mappings))})",
+            list(changed_ids_mappings),
+        ).fetchall()
+        for entry in entries:
+            write_cursor.execute(
+                "SELECT COUNT(*) FROM multisettings WHERE name='ignored_asset' AND value=?",
+                (changed_ids_mappings[entry[0]],),
+            )
+            if write_cursor.fetchone()[0] != 0:  # exists so can't update, just delete the old one
+                write_cursor.execute(
+                    "DELETE FROM multisettings WHERE name='ignored_asset' AND value=?",
+                    (entry[0],),
+                )
+            else:
+                write_cursor.execute(
+                    "UPDATE multisettings SET value=? WHERE name='ignored_asset' AND value=?",
+                    (changed_ids_mappings[entry[0]], entry[0]),
+                )
+
     perform_userdb_upgrade_steps(db=db, progress_handler=progress_handler, should_vacuum=True)
