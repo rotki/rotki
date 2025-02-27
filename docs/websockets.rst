@@ -477,14 +477,14 @@ Liquity staking has several products whose price needs to be remotely queried. T
         "data": {
             "total": 4,
             "processed": 1,
-            "subtype": "liquity_statking_query"
+            "subtype": "liquity_staking_query"
         }
     }
 
 
 - ``total``: Total number of products that the staking logic has to check.
 - ``processed``: Number of products queried.
-- ``subtype``: Set to "liquity_statking_query" to identify liquity staking queries.
+- ``subtype``: Set to "liquity_staking_query" to identify liquity staking queries.
 
 
 Async prices queries
