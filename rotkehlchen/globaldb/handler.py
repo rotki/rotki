@@ -939,7 +939,7 @@ class GlobalDBHandler:
                 # should not really happen since API should check for this
                 msg = (
                     f'Ethereum token with address {entry.evm_address} can not be put '
-                    f'in the DB due to asset with identifier {entry.identifier} dosent exist'
+                    f'in the DB due to asset with identifier {entry.identifier} doesnt exist'
                 )
             else:
                 msg = f'Ethereum token with identifier {entry.identifier} already exists in the DB'
