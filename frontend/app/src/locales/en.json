@@ -2261,6 +2261,8 @@
     "chain_selector": "Blockchain",
     "subtitle": "Set the external explorer urls for addresses and transaction",
     "title": "Blockchain explorers",
+    "token": "Token",
+    "token_url": "Tokens will open at {tokenUrl}",
     "tx": "Transactions",
     "tx_url": "Transactions will open at {txUrl}"
   },

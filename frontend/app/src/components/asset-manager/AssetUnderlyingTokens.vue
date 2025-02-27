@@ -40,6 +40,7 @@ const tableHeaders = computed<DataTableColumn<UnderlyingToken>[]>(() => [
         <HashLink
           :text="row.address"
           full-address
+          type="token"
         />
       </template>
       <template #item.tokenKind="{ row }">

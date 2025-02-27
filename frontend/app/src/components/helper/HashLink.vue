@@ -12,48 +12,48 @@ import { useScramble } from '@/composables/scramble';
 import TagDisplay from '@/components/tags/TagDisplay.vue';
 import EnsAvatar from '@/components/display/EnsAvatar.vue';
 
+interface HashLinkProps {
+  showIcon?: boolean;
+  text?: string;
+  fullAddress?: boolean;
+  linkOnly?: boolean;
+  noLink?: boolean;
+  copyOnly?: boolean;
+  baseUrl?: string;
+  chain?: string;
+  evmChain?: string;
+  buttons?: boolean;
+  size?: number | string;
+  truncateLength?: number;
+  type?: keyof ExplorerUrls | 'label';
+  disableScramble?: boolean;
+  hideAliasName?: boolean;
+  location?: string;
+}
+
 defineOptions({
   inheritAttrs: false,
 });
 
-const props = withDefaults(
-  defineProps<{
-    showIcon?: boolean;
-    text?: string;
-    fullAddress?: boolean;
-    linkOnly?: boolean;
-    noLink?: boolean;
-    copyOnly?: boolean;
-    baseUrl?: string;
-    chain?: string;
-    evmChain?: string;
-    buttons?: boolean;
-    size?: number | string;
-    truncateLength?: number;
-    type?: keyof ExplorerUrls | 'label';
-    disableScramble?: boolean;
-    hideAliasName?: boolean;
-    location?: string;
-  }>(),
-  {
-    baseUrl: undefined,
-    buttons: false,
-    chain: Blockchain.ETH,
-    copyOnly: false,
-    disableScramble: false,
-    evmChain: undefined,
-    fullAddress: false,
-    hideAliasName: false,
-    linkOnly: false,
-    location: undefined,
-    noLink: false,
-    showIcon: true,
-    size: 12,
-    text: '',
-    truncateLength: 4,
-    type: 'address',
-  },
-);
+const props = withDefaults(defineProps<HashLinkProps>(), {
+  baseUrl: undefined,
+  buttons: false,
+  chain: Blockchain.ETH,
+  copyOnly: false,
+  disableScramble: false,
+  evmChain: undefined,
+  fullAddress: false,
+  hideAliasName: false,
+  linkOnly: false,
+  location: undefined,
+  noLink: false,
+  showIcon: true,
+  size: 12,
+  text: '',
+  truncateLength: 4,
+  type: 'address',
+});
+
 const { t } = useI18n();
 const { copy } = useClipboard();
 
@@ -128,15 +128,22 @@ const base = computed<string>(() => {
 
     if (explorerSetting || defaultExplorer)
       base = explorerSetting?.[linkType] ?? defaultExplorer[linkType];
+
+    // for token missing fallback to address
+    if (!base && linkType === 'token')
+      base = explorerSetting?.address ?? defaultExplorer.address;
   }
 
   if (!base)
     return '';
-
   return base.endsWith('/') ? base : `${base}/`;
 });
 
-const url = computed<string>(() => get(base) + get(text));
+const url = computed<string>(() => {
+  const isToken = get(type) === 'token';
+  const linkText = isToken ? get(text).replace('/', '?a=') : get(text);
+  return get(base) + linkText;
+});
 
 const displayUrl = computed<string>(() => get(base) + truncateAddress(get(text), 10));
 

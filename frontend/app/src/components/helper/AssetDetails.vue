@@ -56,7 +56,7 @@ const currentAsset = computed<AssetInfoWithId>(() => ({
     />
     <HashLink
       v-if="link && address"
-      type="address"
+      type="token"
       :evm-chain="assetDetails?.evmChain"
       link-only
       :text="address"

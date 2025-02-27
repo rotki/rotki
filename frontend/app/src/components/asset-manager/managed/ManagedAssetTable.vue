@@ -305,6 +305,7 @@ const disabledRows = computed(() => {
               v-if="row.address"
               :text="row.address"
               :chain="row?.evmChain ? getChain(row.evmChain) : undefined"
+              type="token"
               hide-alias-name
             />
           </template>

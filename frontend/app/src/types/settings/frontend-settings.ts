@@ -39,6 +39,7 @@ const ProfitLossTimeframe = z.object({
 const ExplorerEndpoints = z.object({
   address: z.string().optional(),
   block: z.string().optional(),
+  token: z.string().optional(),
   transaction: z.string().optional(),
 });
 
