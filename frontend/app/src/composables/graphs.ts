@@ -40,8 +40,6 @@ export function useGraph(canvasId: string): GraphApi {
   const secondaryColor = computed(() => (get(isDark) ? white : secondaryBlack));
   const backgroundColor = computed(() => (!get(isDark) ? white : secondaryBlack));
 
-  const thirdColor = computed(() => get(usedTheme).primary);
-
   const fontColor = computed(() => (get(isDark) ? 'rgba(255,255,255,.5)' : 'rgba(0,0,0,.7)'));
   const gridColor = computed(() => (get(isDark) ? '#555' : '#ddd'));
 
@@ -53,7 +51,6 @@ export function useGraph(canvasId: string): GraphApi {
     gradient,
     gridColor,
     secondaryColor,
-    thirdColor,
   };
 }
 
