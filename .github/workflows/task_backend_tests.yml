@@ -2,6 +2,9 @@ name: Backend Tests
 
 on:
   workflow_call:
+    secrets:
+      CODECOV_TOKEN:
+        required: false
     inputs:
       os:
         required: true
@@ -9,6 +12,8 @@ on:
       test_environment:
         required: true
         type: string
+
+permissions: { }
 
 jobs:
   test-backend:
@@ -23,13 +28,16 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        test-group: [api, decoders, others]
+        test-group: [ api, decoders, others ]
+    permissions:
+      contents: read
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 2
           persist-credentials: false
+
       - name: Checkout test caching
         uses: actions/checkout@v4
         with:
@@ -37,6 +45,7 @@ jobs:
           path: test-caching
           fetch-depth: 0
           persist-credentials: false
+
       - name: Ensure VCR branch is fully rebased
         if: github.event_name == 'pull_request' || github.event_name == 'push'
         env:
@@ -67,31 +76,36 @@ jobs:
           [ "$(git rev-parse "remotes/origin/$TARGET_BRANCH")" = "$(git merge-base "remotes/origin/$TARGET_BRANCH" "$SOURCE_BRANCH")" ] &&
           echo "VCR setup: $SOURCE_BRANCH fully rebased on $TARGET_BRANCH" && exit ||
           echo "VCR setup: $SOURCE_BRANCH not fully rebased on $TARGET_BRANCH" && exit 1
+
       - name: Load env
         uses: rotki/action-env@v2
         with:
           env_file: .github/.env.ci
+
       - name: Setup python
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: 'pip'
+
       - name: Install uv
         run: |
           pip install --upgrade uv
+
       - name: Cache rotkehlchen test directory
         uses: actions/cache@v4
         with:
           path: ~/.cache/.rotkehlchen-test-dir
           key: ${{ runner.os }}-testdir
+
       - name: Setup minupnpc
         if: runner.os == 'Windows'
-        run: |          
+        run: |
           $MINIUPNPC_ZIP = "miniupnpc_64bit_py39-2.2.24.zip"
           echo "`nFetching miniupnpc for windows`n"
           $PYTHON_LOCATION = ((python -c "import os, sys; print(os.path.dirname(sys.executable))") | Out-String).trim()
           $PYTHON_DIRECTORY = Split-Path -Path $PYTHON_LOCATION -Leaf        
-                    
+          
           $DLL_PATH = (Join-Path $PYTHON_LOCATION "miniupnpc.dll")
           
           echo "miniupnpc.dll will be installed in $PYTHON_LOCATION"
@@ -105,14 +119,17 @@ jobs:
           Get-ChildItem -Path $PYTHON_LOCATION
           (Get-Command python).Path
         shell: powershell
+
       - name: Install dependencies
         run: |
           uv pip install --system --upgrade wheel pytest-cov
           uv pip install --system -r requirements_dev.txt
           uv pip install --system -e .
+
       - name: Install pytest annotation plugin
-        run: |     
+        run: |
           uv pip install --system pytest-github-actions-annotate-failures
+
       - name: Run tests
         env:
           PYTEST_ARGS: '--durations=150'
@@ -140,6 +157,7 @@ jobs:
           
           python pytestgeventwrapper.py --dead-fixtures
         shell: bash
+
       - name: Upload coverage
         uses: codecov/codecov-action@v4
         with:

@@ -1,11 +1,13 @@
 name: Rotki Docker Release
 on:
   release:
-    types: [published]
+    types: [ published ]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
   cancel-in-progress: true
+
+permissions: { }
 
 jobs:
   docker:
@@ -21,14 +23,17 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USER }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+
       - name: Rotki Version
         id: rotki_version
         run: echo "version=${GITHUB_REF#refs/*/}" >> "$GITHUB_OUTPUT"
+
       - name: Cache regctl
         uses: actions/cache@v4
         with:
           path: regctl-linux-amd64
           key: ${{ runner.os }}-regctl-${{ env.REGCTL }}
+
       - name: Publish ${{ github.repository }}:latest from ${{ steps.rotki_version.outputs.version }}
         run: |
           if [[ ! -f "regctl-linux-amd64" ]]; then
@@ -41,10 +46,9 @@ jobs:
             echo checksum failed
             exit 1
           fi
+
       - name: Publish latest to hub.docker.com
         run: ./regctl-linux-amd64 image copy "${REPOSITORY}:${VERSION}" "${REPOSITORY}:latest"
         env:
           REPOSITORY: ${{ github.repository }}
           VERSION: ${{ steps.rotki_version.outputs.version }}
-
-
