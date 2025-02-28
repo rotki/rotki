@@ -118,6 +118,8 @@ async function fetchHistoricPrices() {
   if (!timestampVal || !assetVal)
     return;
 
+  const oldUsdPrice = get(numericUsdValue).dividedBy(get(numericAmount));
+
   if (assetVal === CURRENCY_USD) {
     set(fetchedAssetToUsdPrice, '1');
   }
@@ -128,8 +130,12 @@ async function fetchHistoricPrices() {
       toAsset: CURRENCY_USD,
     });
 
-    if (price.gt(0))
+    if (price.gt(0)) {
       set(fetchedAssetToUsdPrice, price.toFixed());
+    }
+    else {
+      set(assetToUsdPrice, oldUsdPrice.toFixed());
+    }
   }
 
   if (!get(isCurrentCurrencyUsd)) {
@@ -146,8 +152,12 @@ async function fetchHistoricPrices() {
       toAsset: currentCurrency,
     });
 
-    if (price.gt(0))
+    if (price.gt(0)) {
       set(fetchedAssetToFiatPrice, price.toFixed());
+    }
+    else {
+      set(assetToFiatPrice, oldUsdPrice.toFixed());
+    }
   }
 }
 
