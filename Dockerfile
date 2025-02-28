@@ -2,7 +2,6 @@
 FROM --platform=$BUILDPLATFORM node:20-bookworm AS frontend-build-stage
 
 ARG BUILDARCH
-ENV COREPACK_ENABLE_STRICT=0
 ENV CYPRESS_INSTALL_BINARY=0
 ENV NODE_OPTIONS="--max-old-space-size=4096"
 
@@ -12,7 +11,8 @@ RUN if [ "$BUILDARCH" != "amd64" ]; then \
       apt-get update && \
       apt-get install -y build-essential python3 --no-install-recommends; \
     fi && \
-    npm install -g pnpm@10 && \
+    npm install -g corepack@latest && \
+    corepack enable && \
     pnpm install --frozen-lockfile && \
     pnpm run docker:build
 
