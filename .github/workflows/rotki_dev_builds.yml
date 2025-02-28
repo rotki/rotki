@@ -291,6 +291,7 @@ jobs:
             REVISION=${{ github.sha }}
             ROTKI_VERSION=${{ steps.rotki_version.outputs.version }}
           labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ github.repository }}
           outputs: type=image,"name=${{ github.repository }}",push-by-digest=true,name-canonical=true,push=true
 
       - name: Export digest

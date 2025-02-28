@@ -445,8 +445,7 @@ jobs:
           file: ./Dockerfile
           platforms: ${{ matrix.platform.name }}
           provenance: mode=max
-          tags: |
-            ${{ github.repository }}:${{ steps.rotki_version.outputs.version }}
+          tags: ${{ github.repository }}
           build-args: |
             REVISION=${{ github.sha }}
             ROTKI_VERSION=${{ steps.rotki_version.outputs.version }}
