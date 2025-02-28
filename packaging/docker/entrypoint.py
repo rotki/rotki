@@ -124,7 +124,7 @@ def load_config_from_env() -> dict[str, Any]:
     }
 
 
-def load_config() -> list[str]:
+def load_config() -> tuple[list[str], str | None]:
     env_config = load_config_from_env()
     file_config = load_config_from_file()
 
@@ -154,13 +154,15 @@ def load_config() -> list[str]:
         if file_config.get('sqlite_instructions') is not None:
             sqlite_instructions = file_config.get('sqlite_instructions')
 
+    log_level = loglevel if loglevel is not None else DEFAULT_LOG_LEVEL
+
     args = [
         '--data-dir',
         '/data',
         '--logfile',
         '/logs/rotki.log',
         '--loglevel',
-        loglevel if loglevel is not None else DEFAULT_LOG_LEVEL,
+        log_level,
     ]
 
     if log_from_other_modules is True:
@@ -174,12 +176,12 @@ def load_config() -> list[str]:
 
     if sqlite_instructions is not None:
         args.extend(('--sqlite-instructions', int(sqlite_instructions)))
-    return args
+    return args, log_level
 
 
 cleanup_tmp()
 
-config_args = load_config()
+config_args, log_level = load_config()
 base_args = [
     '/usr/sbin/rotki',
     '--rest-api-port',
@@ -210,6 +212,8 @@ colibri_cmd = [
     '--data-directory=/data',
     '--logfile-path=/logs/colibri.log',
     '--port=4343',
+    f'--log-level={log_level}',
+    '--api-cors=http://localhost:*/*,app://.',
 ]
 
 colibri = subprocess.Popen(colibri_cmd)
