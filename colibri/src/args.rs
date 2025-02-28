@@ -47,6 +47,7 @@ pub struct Args {
     pub max_logfiles_num: usize,
     pub max_size_in_mb: usize,
     pub log_level: RotkiLogLevel,
+    pub api_cors: Vec<String>
 }
 
 pub fn parse_args() -> Args {
@@ -119,6 +120,12 @@ pub fn parse_args() -> Args {
                 .default_value("50")
                 .help("Max size in MB for each one of the log files"),
         )
+        .arg(
+            Arg::new("api-cors")
+                .long("api-cors")
+                .default_value("http://localhost:*/*")
+                .help("Comma separated list of domains for the API to accept cross origin requests.")
+        )
         .get_matches();
 
     Args {
@@ -132,5 +139,10 @@ pub fn parse_args() -> Args {
         max_logfiles_num: *matches.get_one::<usize>("max-logfiles-num").unwrap(),
         log_level: *matches.get_one::<RotkiLogLevel>("log-level").unwrap(),
         max_size_in_mb: *matches.get_one::<usize>("max-size-in-mb").unwrap(),
+        api_cors: matches.get_one::<String>("api-cors")
+                .unwrap()
+                .split(',')
+                .map(|s| s.trim().to_string())
+                .collect(),
     }
 }

@@ -9,6 +9,15 @@ export class ColibriConfigBuilder {
   private cmd: string = '';
   private workDir: string = '../../';
 
+  withCors(url: string) {
+    assert(this.cmd !== '', 'Command must be set first');
+    const corsUrl = url.endsWith('/')
+      ? url.slice(0, Math.max(0, url.length - 1))
+      : url;
+    this.args.push(`--api-cors=${corsUrl}`);
+    return this;
+  }
+
   withPort(port: number): this {
     assert(this.cmd !== '', 'Command must be set first');
     this.args.push(`--port=${port}`);
@@ -68,8 +77,12 @@ export const ColibriConfig = {
   create(isDev: boolean): ColibriConfigBuilder {
     const baseConfig = new ColibriConfigBuilder();
     const resourcesDir = process.resourcesPath ? process.resourcesPath : import.meta.dirname;
-    return isDev
-      ? baseConfig.setCommand('cargo').setWorkDir('../../colibri')
-      : baseConfig.setCommand('colibri').setWorkDir(path.join(resourcesDir, 'colibri'));
+    if (isDev) {
+      const devServerUrl = import.meta.env.VITE_DEV_SERVER_URL as string;
+      return baseConfig.setCommand('cargo').setWorkDir('../../colibri').withCors(devServerUrl);
+    }
+    else {
+      return baseConfig.setCommand('colibri').setWorkDir(path.join(resourcesDir, 'colibri')).withCors('app://*');
+    }
   },
 };

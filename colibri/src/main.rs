@@ -11,6 +11,7 @@ use tower_http::{
     cors::{AllowOrigin, CorsLayer},
     trace::TraceLayer,
 };
+use glob::Pattern;
 
 mod api;
 mod args;
@@ -57,10 +58,35 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         )
         .with_state(state);
 
+    let cors_patterns: Vec<Pattern> = args.api_cors
+        .iter()
+        .filter_map(|pattern| {
+            match Pattern::new(pattern) {
+                Ok(glob) => {
+                    Some(glob)
+                },
+                Err(e) => {
+                    error!("Found pattern {} not valid for API CORS due to {}", pattern, e);
+                    None
+                }
+            }
+        })
+        .collect();
+
     // configure cors to allow only requests from the localhost
     let cors_layer = CorsLayer::new().allow_origin(AllowOrigin::predicate(
-        |origin: &HeaderValue, _request_parts: &RequestParts| {
-            origin.as_bytes().starts_with(b"http://localhost")
+        move |origin: &HeaderValue, _request_parts: &RequestParts| {
+            if let Ok(origin_str) = origin.to_str() {
+                // Check if the origin matches any of our glob patterns
+                for pattern in &cors_patterns {
+                    if pattern.matches(origin_str) {
+                        error!("matched on {}", pattern);
+                        return true;
+                    }
+                    error!("failed to match CORS on {}", pattern);
+                }
+            }
+            false
         },
     ));
 
