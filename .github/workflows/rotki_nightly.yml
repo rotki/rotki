@@ -7,6 +7,8 @@ on:
     branches:
       - tests
 
+permissions: { }
+
 jobs:
   linux:
     uses: ./.github/workflows/task_backend_tests.yml
@@ -14,16 +16,22 @@ jobs:
     with:
       os: ubuntu-20.04
       test_environment: nightly
-    secrets: inherit
+    secrets:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+    permissions:
+      contents: read
 
   macos:
     uses: ./.github/workflows/task_backend_tests.yml
     if: ${{ always() && (github.repository == 'rotki/rotki' || github.event_name != 'schedule') }}
-    needs: ['linux']
+    needs: [ 'linux' ]
     with:
       os: macos-latest
       test_environment: nightly
-    secrets: inherit
+    secrets:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+    permissions:
+      contents: read
 
   windows:
     uses: ./.github/workflows/task_backend_tests.yml
@@ -31,33 +39,49 @@ jobs:
     with:
       os: windows-latest
       test_environment: nightly
-    secrets: inherit
+    secrets:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+    permissions:
+      contents: read
 
   e2e:
     uses: ./.github/workflows/task_e2e_tests.yml
     if: ${{ always() && (github.repository == 'rotki/rotki' || github.event_name != 'schedule') }}
     needs: [ 'macos' ]
-    secrets: inherit
+    secrets:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+    permissions:
+      contents: read
+      actions: write
 
   unittest-frontend:
     uses: ./.github/workflows/task_fe_unit_tests.yml
     if: ${{ always() && (github.repository == 'rotki/rotki' || github.event_name != 'schedule') }}
+    secrets:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+    permissions:
+      contents: read
 
   verify-link:
     uses: ./.github/workflows/task_fe_external_links_verification.yml
     if: ${{ always() && (github.repository == 'rotki/rotki' || github.event_name != 'schedule') }}
+    permissions:
+      contents: read
 
   notify:
     name: 'Success check'
     if: ${{ always() && (github.repository == 'rotki/rotki' || github.event_name != 'schedule') }}
     needs: [ 'linux', 'macos', 'windows' ]
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
           persist-credentials: false
+
       - name: Check if any task failed
         run: |
           pip install requests

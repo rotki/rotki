@@ -14,6 +14,8 @@ concurrency:
 env:
   PYTHON_MACOS: 11
 
+permissions: { }
+
 jobs:
   build-linux:
     name: Build linux binary
@@ -22,44 +24,36 @@ jobs:
       CI: true
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     runs-on: ubuntu-20.04
+    permissions:
+      contents: read
+      actions: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           persist-credentials: false
+
       - name: Load env
         uses: rotki/action-env@v2
         with:
           env_file: .github/.env.ci
+
       - name: Setup python
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          cache: 'pip'
-      - name: Setup node
-        uses: actions/setup-node@v4
-        with:
-          node-version-file: 'frontend/.nvmrc'
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v3
         with:
           package_json_file: frontend/package.json
-      - name: Get pnpm store directory
-        id: pnpm-cache
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path)" >> "$GITHUB_OUTPUT"
-      - name: Setup pnpm cache
-        uses: actions/cache@v4
+
+      - name: Setup node
+        uses: actions/setup-node@v4
         with:
-          path: |
-            ${{ steps.pnpm-cache.outputs.STORE_PATH }}
-            frontend/app/components.d.ts
-            ~/.cache/Cypress
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
+          node-version-file: 'frontend/.nvmrc'
+
       - name: Package
         id: packaging
         run: |
@@ -68,6 +62,7 @@ jobs:
           uv pip install --system -r requirements_packaging.txt
           echo "::endgroup::"
           ./package.py --build full
+
       - name: Upload files
         uses: actions/upload-artifact@v4
         with:
@@ -101,56 +96,44 @@ jobs:
       NODE_OPTIONS: --max-old-space-size=4096
     environment: macos_sign
     runs-on: ${{ matrix.os.runner }}
+    permissions:
+      contents: read
+      actions: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           persist-credentials: false
+
       - name: Load env
         uses: rotki/action-env@v2
         with:
           env_file: .github/.env.ci
+
       - name: Add rust target for building deps
         if: ${{ matrix.os.arch == 'arm64' }}
         run: rustup target add aarch64-apple-darwin
+
       - name: Cache python pkg
         uses: actions/cache@v4
         with:
           path: ~/python*.pkg
           key: ${{ runner.os }}-python-${{ env.PYTHON_VERSION }}-${{ env.PYTHON_MACOS }}-${{ matrix.os.arch }}
-      - name: Cache python dependencies
-        uses: actions/cache@v4
-        with:
-          path: ~/Library/Caches/pip
-          key: ${{ runner.os }}-${{ matrix.os.arch }}-pip-${{ hashFiles('**/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-${{ matrix.os.arch }}-pip-
+
       - name: Set up python
         run: packaging/setup-macos-python.sh "${PYTHON_VERSION}" "${PYTHON_MACOS}"
-      - name: Setup node
-        uses: actions/setup-node@v4
-        with:
-          node-version-file: 'frontend/.nvmrc'
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v3
         with:
           package_json_file: frontend/package.json
-      - name: Get pnpm store directory
-        id: pnpm-cache
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path)" >> "$GITHUB_OUTPUT"
-      - name: Setup pnpm cache
-        uses: actions/cache@v4
+
+      - name: Setup node
+        uses: actions/setup-node@v4
         with:
-          path: |
-            ${{ steps.pnpm-cache.outputs.STORE_PATH }}
-            frontend/app/components.d.ts
-            ~/Library/Caches/Cypress
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
+          node-version-file: 'frontend/.nvmrc'
+
       - name: Package
         id: packaging
         run: |
@@ -168,6 +151,7 @@ jobs:
           IDENTITY: ${{ secrets.IDENTITY }}
           APPLEID: ${{ secrets.APPLEID }}
           APPLEIDPASS: ${{ secrets.APPLEIDPASS }}
+
       - name: Upload files (${{ matrix.os.arch }})
         uses: actions/upload-artifact@v4
         with:
@@ -175,6 +159,7 @@ jobs:
           path: |
             dist/rotki-darwin_*.dmg
             dist/rotki-darwin_*.dmg.sha512
+
       - name: Upload colibri files
         uses: actions/upload-artifact@v4
         with:
@@ -188,47 +173,38 @@ jobs:
     env:
       CI: true
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      BUILD_DEPENDENCIES: "build-dependencies"
     runs-on: windows-latest
     environment: windows_sign
+    permissions:
+      contents: read
+      actions: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           persist-credentials: false
+
       - name: Load env
         uses: rotki/action-env@v2
         with:
           env_file: .github/.env.ci
+
       - name: Set up python
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          cache: 'pip'
-      - name: Setup node
-        uses: actions/setup-node@v4
-        with:
-          node-version-file: 'frontend/.nvmrc'
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v3
         with:
           package_json_file: frontend/package.json
-      - name: Get pnpm store directory
-        id: pnpm-cache
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path)" >> "$GITHUB_OUTPUT"
-      - name: Setup pnpm cache
-        uses: actions/cache@v4
+
+      - name: Setup node
+        uses: actions/setup-node@v4
         with:
-          path: |            
-            ${{ steps.pnpm-cache.outputs.STORE_PATH }}
-            frontend/app/components.d.ts
-            ~\AppData\Local\Cypress
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
+          node-version-file: 'frontend/.nvmrc'
+
       - name: Build rotki
         id: packaging
         env:
@@ -241,6 +217,7 @@ jobs:
           echo ::endgroup::
           python .\package.py --build full
         shell: powershell
+
       - name: Upload files
         uses: actions/upload-artifact@v4
         with:
@@ -254,6 +231,9 @@ jobs:
     if: ${{ github.repository == 'rotki/rotki' || github.event_name != 'schedule' }}
     runs-on: ${{ matrix.platform.runner }}
     environment: docker
+    permissions:
+      contents: read
+      actions: write
     strategy:
       fail-fast: false
       matrix:
@@ -273,7 +253,7 @@ jobs:
         id: prepare
         run: |
           platform=${{ matrix.platform.name }}
-          echo "PLATFORM_PAIR=${platform//\//-}" >> $GITHUB_ENV
+          echo "PLATFORM_PAIR=${platform//\//-}" >> "$GITHUB_ENV"
 
       - name: Docker meta
         id: meta
@@ -310,16 +290,17 @@ jobs:
           build-args: |
             REVISION=${{ github.sha }}
             ROTKI_VERSION=${{ steps.rotki_version.outputs.version }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
           labels: ${{ steps.meta.outputs.labels }}
           outputs: type=image,"name=${{ github.repository }}",push-by-digest=true,name-canonical=true,push=true
 
       - name: Export digest
+        env:
+          TEMP: ${{ runner.temp }}
+          DIGEST: ${{ steps.build.outputs.digest }}
         run: |
-          mkdir -p ${{ runner.temp }}/digests
-          digest="${{ steps.build.outputs.digest }}"
-          touch "${{ runner.temp }}/digests/${digest#sha256:}"
+          mkdir -p "${TEMP}/digests"
+          digest="${DIGEST}"
+          touch "${TEMP}/digests/${digest#sha256:}"
 
       - name: Upload digest
         uses: actions/upload-artifact@v4
@@ -363,13 +344,18 @@ jobs:
 
       - name: Create manifest list and push
         working-directory: ${{ runner.temp }}/digests
+        env:
+          REPOSITORY: ${{ github.repository }}
         run: |
           docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
-            $(printf '${{ github.repository }}@sha256:%s ' *)
+            $(printf "${REPOSITORY}@sha256:%s " *)
 
       - name: Inspect image
+        env:
+          REPOSITORY: ${{ github.repository }}
+          VERSION: ${{ steps.meta.outputs.version }}
         run: |
-          docker buildx imagetools inspect "${{ github.repository }}:${{ steps.meta.outputs.version }}"
+          docker buildx imagetools inspect "${REPOSITORY}:${VERSION}"
 
   notify:
     name: 'Success check'

@@ -16,6 +16,8 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
   cancel-in-progress: true
 
+permissions: { }
+
 jobs:
   check-changes:
     name: 'Required job check'
@@ -27,11 +29,14 @@ jobs:
       e2e_tasks: ${{ steps.checker.outputs.e2e_tasks }}
       documentation_tasks: ${{ steps.checker.outputs.documentation_tasks }}
       test_environment: ${{ steps.checker.outputs.test_environment }}
+    permissions:
+      contents: read
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           persist-credentials: false
+
       - name: Run check action
         uses: rotki/action-job-checker@v3
         id: checker
@@ -52,17 +57,20 @@ jobs:
   check-typos:
     name: 'Check Typos'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           persist-credentials: false
+
       - name: Run typos checker
         uses: crate-ci/typos@master
 
   code-analyze-frontend:
     name: 'Code analyze frontend'
-    needs: ['check-changes', 'check-typos']
+    needs: [ 'check-changes', 'check-typos' ]
     permissions:
       actions: read
       contents: read
@@ -74,12 +82,15 @@ jobs:
         uses: actions/checkout@v4
         with:
           persist-credentials: false
+
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
           languages: 'javascript'
+
       - name: Autobuild
         uses: github/codeql-action/autobuild@v3
+
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
         with:
@@ -87,101 +98,99 @@ jobs:
 
   lint-frontend:
     name: 'Frontend lint'
-    needs: ['check-changes', 'check-typos']
+    needs: [ 'check-changes', 'check-typos' ]
     if: ${{ needs.check-changes.outputs.frontend_tasks }}
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      CYPRESS_INSTALL_BINARY: 0
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 2
           persist-credentials: false
+
       - name: Load env
         uses: rotki/action-env@v2
         with:
           env_file: .github/.env.ci
-      - name: Setup node
-        uses: actions/setup-node@v4
-        with:
-          node-version-file: 'frontend/.nvmrc'
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v3
         with:
           package_json_file: frontend/package.json
-      - name: Get pnpm store directory
-        id: pnpm-cache
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path)" >> "$GITHUB_OUTPUT"
-      - name: Setup pnpm cache
-        uses: actions/cache@v4
+
+      - name: Setup node
+        uses: actions/setup-node@v4
         with:
-          path: |
-            ~/.cache/Cypress
-            ${{ steps.pnpm-cache.outputs.STORE_PATH }}
-            frontend/app/components.d.ts
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
-      - name: Store eslint cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            frontend/.eslintcache
-          key: ${{ runner.os }}-eslint-${{ github.ref_name }}
-          restore-keys: |
-            ${{ runner.os }}-eslint-${{ github.ref_name }}
-            ${{ runner.os }}-eslint-${{ github.base_ref || github.ref_name }}
+          node-version-file: 'frontend/.nvmrc'
+          cache: 'pnpm'
+          cache-dependency-path: 'frontend/pnpm-lock.yaml'
+
       - name: Install dependencies
         working-directory: ./frontend
         run: pnpm install --frozen-lockfile
+
       - name: Build
         working-directory: ./frontend
         run: |
           if [ ${{ github.event_name }} != 'push' ]; then
             pnpm run build
           fi
+
       - name: Lint code
         working-directory: ./frontend
         run: pnpm run lint:all
 
   unittest-frontend:
     name: 'Frontend unit tests'
-    needs: [ 'check-changes']
+    needs: [ 'check-changes' ]
     if: ${{ github.event_name != 'push' && needs.check-changes.outputs.frontend_tasks }}
     uses: ./.github/workflows/task_fe_unit_tests.yml
+    permissions:
+      contents: read
+    secrets:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
   docs:
     name: 'Documentation build'
-    needs: ['check-changes', 'check-typos']
+    needs: [ 'check-changes', 'check-typos' ]
     if: ${{ github.event_name != 'push' && needs.check-changes.outputs.documentation_tasks }}
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           persist-credentials: false
+
       - name: Load env
         uses: rotki/action-env@v2
         with:
           env_file: .github/.env.ci
+
       - name: Setup python
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: 'pip'
+
       - name: Install dependencies
         run: |
           pip install --upgrade uv
           uv pip install --system -r requirements_docs.txt
           uv pip install --system -e .
           git rev-parse HEAD
+
       - name: Build html docs
         run: cd docs && make html
 
   code-analyze-backend:
     name: 'Code analyze backend'
-    needs: ['check-changes', 'check-typos']
+    needs: [ 'check-changes', 'check-typos' ]
     permissions:
       actions: read
       contents: read
@@ -193,12 +202,15 @@ jobs:
         uses: actions/checkout@v4
         with:
           persist-credentials: false
+
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
           languages: 'python'
+
       - name: Autobuild
         uses: github/codeql-action/autobuild@v3
+
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
         with:
@@ -206,19 +218,27 @@ jobs:
 
   lint-colibri:
     name: 'Colibri lint and test'
-    needs: ['check-changes', 'check-typos']
+    needs: [ 'check-changes', 'check-typos' ]
     if: ${{ github.event_name != 'push' && needs.check-changes.outputs.colibri_tasks }}
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
       - uses: dtolnay/rust-toolchain@clippy
+
       - uses: Swatinem/rust-cache@v2
         with:
           cache-on-failure: true
+
       - run: cargo check --workspace && cargo clippy --workspace
         working-directory: ./colibri
         env:
           RUSTFLAGS: -Dwarnings
+
       - run: cargo test
         working-directory: ./colibri
         env:
@@ -226,47 +246,64 @@ jobs:
 
   lint-backend:
     name: 'Backend lint'
-    needs: ['check-changes', 'check-typos']
+    needs: [ 'check-changes', 'check-typos' ]
     if: ${{ github.event_name != 'push' && needs.check-changes.outputs.backend_tasks }}
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           persist-credentials: false
+
       - name: Load env
         uses: rotki/action-env@v2
         with:
           env_file: .github/.env.ci
+
       - name: Setup python
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
       - name: Set up uv
         run: |
           pip install --upgrade pip
           pip install --no-cache uv
+
       - name: Install dependencies
         run: |
           uv pip install --system -r requirements_lint.txt
           uv pip install --system -e .
           git rev-parse HEAD
+
       - name: Lint
         run: make lint
 
   test-backend:
     if: ${{ github.event_name != 'push' && needs.check-changes.outputs.backend_tasks }}
-    needs: ['lint-backend', 'check-changes']
+    needs: [ 'lint-backend', 'check-changes' ]
     uses: ./.github/workflows/task_backend_tests.yml
     with:
       os: ubuntu-20.04
       test_environment: ${{needs.check-changes.outputs.test_environment}}
+    secrets:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+    permissions:
+      contents: read
 
   test-e2e:
     name: 'Frontend e2e tests'
     needs: check-changes
     if: ${{ github.event_name != 'push' && needs.check-changes.outputs.e2e_tasks }}
-    uses:  ./.github/workflows/task_e2e_tests.yml
+    uses: ./.github/workflows/task_e2e_tests.yml
+    secrets:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+    permissions:
+      contents: read
+      actions: write
 
   done:
     name: 'Success check'

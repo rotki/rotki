@@ -6,12 +6,13 @@ on:
       - develop
       - bugfixes
       - master
+    types: [ synchronize, opened ]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
   cancel-in-progress: true
 
-permissions: {}
+permissions: { }
 
 jobs:
   sql-diff:

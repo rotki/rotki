@@ -2,6 +2,13 @@ name: E2E tests
 
 on:
   workflow_call:
+    secrets:
+      CODECOV_TOKEN:
+        required: false
+      ETHERSCAN_API_KEY:
+        required: false
+
+permissions: { }
 
 jobs:
   e2e:
@@ -13,7 +20,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        group: [app, balances, history]
+        group: [ app, balances, history ]
+    permissions:
+      actions: write
+      contents: read
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -32,32 +42,26 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: 'pip'
 
-      - name: Setup node
-        uses: actions/setup-node@v4
-        with:
-          node-version-file: 'frontend/.nvmrc'
-
       - name: Setup pnpm
         uses: pnpm/action-setup@v3
         with:
           package_json_file: frontend/package.json
 
-      - name: Get pnpm store directory
-        id: pnpm-cache
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path)" >> "$GITHUB_OUTPUT"
+      - name: Setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: 'frontend/.nvmrc'
+          cache: 'pnpm'
+          cache-dependency-path: 'frontend/pnpm-lock.yaml'
 
-      - name: Setup pnpm cache
+      - name: Setup cypress cache
         uses: actions/cache@v4
         with:
           path: |
             ~/.cache/Cypress
-            ${{ steps.pnpm-cache.outputs.STORE_PATH }}
-            frontend/app/components.d.ts
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          key: ${{ runner.os }}-cypress-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
-            ${{ runner.os }}-pnpm-store-
+            ${{ runner.os }}-cypress-
 
       - name: Store test data
         uses: actions/cache@v4

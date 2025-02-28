@@ -2,50 +2,50 @@ name: Frontend Unit Tests
 
 on:
   workflow_call:
+    secrets:
+      CODECOV_TOKEN:
+        required: false
+
+permissions: { }
 
 jobs:
   unit:
     name: 'vitest'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 2
           persist-credentials: false
+
       - name: Load env
         uses: rotki/action-env@v2
         with:
           env_file: .github/.env.ci
-      - name: Setup node
-        uses: actions/setup-node@v4
-        with:
-          node-version-file: 'frontend/.nvmrc'
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v3
         with:
           package_json_file: frontend/package.json
-      - name: Get pnpm store directory
-        id: pnpm-cache
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path)" >> "$GITHUB_OUTPUT"
-      - name: Setup pnpm cache
-        uses: actions/cache@v4
+
+      - name: Setup node
+        uses: actions/setup-node@v4
         with:
-          path: |
-            ~/.cache/Cypress
-            ${{ steps.pnpm-cache.outputs.STORE_PATH }}
-            frontend/app/components.d.ts
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
+          node-version-file: 'frontend/.nvmrc'
+          cache: 'pnpm'
+          cache-dependency-path: 'frontend/pnpm-lock.yaml'
+
       - name: Install dependencies
         working-directory: ./frontend
         run: pnpm install --frozen-lockfile
+
       - name: Run unit tests
         working-directory: ./frontend/app
         run: pnpm run --filter rotki test:unit
+
       - name: Upload coverage
         uses: codecov/codecov-action@v4
         with:
