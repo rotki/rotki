@@ -258,6 +258,7 @@ defineExpose({
         v-model="asset"
         outlined
         :disabled="disableAsset"
+        show-ignored
         data-cy="asset"
         :error-messages="disableAsset ? [''] : toMessages(v$.asset)"
         @blur="v$.asset.$touch()"
