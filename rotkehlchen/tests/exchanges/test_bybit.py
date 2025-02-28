@@ -307,14 +307,35 @@ def test_assets_are_known(bybit_exchange: Bybit):
             ))
 
 
-def test_query_old_trades(bybit_exchange: Bybit) -> None:
-    """Check that we don't exceed the range that can be queried in bybit for trades"""
-    mock_fn = bybit_account_mock(is_unified=True, calls={
-        'order/history': [json.loads('{"nextPageCursor":"","category":"spot","list":[]}')] * 2,
-    })
+def test_query_trades_range(bybit_exchange: Bybit) -> None:
+    """Ensure that the correct ranges are requested when querying for trades in bybit.
+    First we query the oldest timestamp possible and we then query towards closer timestamps.
+    The query window is always 7 days.
+    """
+    range_calls = []
 
+    def mock_fn(path: str, options: dict[str, Any]) -> dict[str, Any]:
+        nonlocal range_calls
+        range_calls.append(((int(options['startTime'])) // 1000, int(options['endTime']) // 1000))
+        if (
+            options is not None and 'startTime' in options and
+            int(options['startTime']) < (ts_now() - DAY_IN_SECONDS * 365 * 2) * 1000
+        ):
+            # simulate an error on Bybit if we query a period of time that is older than the
+            # maximum allowed in the API
+            raise RemoteError(f'Invalid startTime provided: {options["startTime"]}')
+
+        return json.loads('{"nextPageCursor":"","category":"spot","list":[]}')
+
+    bybit_exchange.is_unified_account = True
     with patch.object(bybit_exchange, '_api_query', side_effect=mock_fn):
         bybit_exchange.query_online_trade_history(
-            start_ts=Timestamp(ts_now() - DAY_IN_SECONDS * 365 * 3),
-            end_ts=Timestamp(ts_now() - DAY_IN_SECONDS * 365 - DAY_IN_SECONDS * 360),
+            start_ts=Timestamp(0),
+            end_ts=(end_ts := Timestamp((now := ts_now()) - DAY_IN_SECONDS * 365)),
         )  # remoteError is raised if we don't properly query the logic
+
+    # oldest timestamp that can be queried (2 years) + 5 minutes of margin
+    oldest_plus_delta = now - DAY_IN_SECONDS * 365 * 2 + 60 * 5
+    assert range_calls[0] == (oldest_plus_delta, oldest_plus_delta + DAY_IN_SECONDS * 7)
+    assert range_calls[1][1] - range_calls[1][0] == DAY_IN_SECONDS * 7
+    assert range_calls[-1][1] == end_ts

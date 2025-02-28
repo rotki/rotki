@@ -325,13 +325,12 @@ class Bybit(ExchangeInterface):
         but we don't know when to stop querying into the past. What this function does is iterate
         over the 2 years period moving the queried frame in the maximum allowed time span, that is
         one week:
-        [end ts, end ts - 1 week] -> [end ts - 1w, end ts - 2w] -> ... [end ts - n*w, start ts]
+        [start_ts, start_ts + 1w] -> [start_ts + 1w, start_ts + 2w] ->...->[start_ts + n*w, end_ts]
 
         Since we have a clear limit to stop querying what we do is use the startTime/endTime keys
         to filter the data that we need.
         """
         new_trades: list[Trade] = []
-        upper_ts, lower_ts = end_ts, Timestamp(end_ts - WEEK_IN_SECONDS)
         if self.is_unified_account is True:
             # unified account can query up to 2 years into the past
             earliest_query_start_ts = Timestamp(ts_now() - DAY_IN_SECONDS * 365 * 2)
@@ -339,20 +338,22 @@ class Bybit(ExchangeInterface):
             # classic accounts can query 180 days into the past
             earliest_query_start_ts = Timestamp(ts_now() - DAY_IN_SECONDS * 180)
 
-        if end_ts <= earliest_query_start_ts:  # 0... start_ts ... end_ts ... earliest_query_start
-            return [], (start_ts, end_ts)  # entire query out of range. Bail
+        if end_ts <= earliest_query_start_ts:
+            return [], (start_ts, end_ts)  # entire query out of range
 
-        if start_ts <= earliest_query_start_ts:  # 0 ... start_ts ...  earliest_query_start ... end_ts  # noqa: E501
-            start_ts = Timestamp(earliest_query_start_ts + 60 * 5)  # margin of 5 minutes to avoid possible errors in case of delay  # noqa: E501
+        if start_ts <= earliest_query_start_ts:
+            start_ts = Timestamp(earliest_query_start_ts + 60 * 5)  # 5 minutes safety margin
+            lower_ts = start_ts
 
+        lower_ts, upper_ts = start_ts, Timestamp(start_ts + WEEK_IN_SECONDS)
         while True:
             raw_data = self._paginated_api_query(
                 endpoint='order/history',
                 options={
                     'category': 'spot',
+                    'startTime': str(ts_sec_to_ms(lower_ts)),
                     'endTime': str(ts_sec_to_ms(upper_ts)),
                     'limit': PAGINATION_LIMIT,
-                    'startTime': str(ts_sec_to_ms(lower_ts)),
                 },
             )
             for raw_trade in raw_data:
@@ -396,12 +397,12 @@ class Bybit(ExchangeInterface):
                 else:
                     new_trades.append(trade)
 
-            upper_ts = Timestamp(upper_ts - WEEK_IN_SECONDS)
-            lower_ts = Timestamp(lower_ts - WEEK_IN_SECONDS)
-            if upper_ts <= start_ts:
+            lower_ts = Timestamp(lower_ts + WEEK_IN_SECONDS)
+            upper_ts = Timestamp(upper_ts + WEEK_IN_SECONDS)
+            if lower_ts >= end_ts:
                 break
 
-            lower_ts = max(lower_ts, start_ts)  # don't query more than we need in last iteration
+            upper_ts = min(upper_ts, end_ts)  # don't query more than needed in last iteration
 
         return new_trades, (start_ts, end_ts)
 

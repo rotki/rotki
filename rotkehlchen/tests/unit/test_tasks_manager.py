@@ -30,6 +30,7 @@ from rotkehlchen.db.settings import CachedSettings, ModifiableDBSettings
 from rotkehlchen.db.utils import LocationData
 from rotkehlchen.errors.api import PremiumAuthenticationError
 from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.globaldb.cache import globaldb_set_general_cache_values
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -55,6 +56,7 @@ from rotkehlchen.tests.utils.mock import mock_evm_chains_with_transactions
 from rotkehlchen.tests.utils.premium import VALID_PREMIUM_KEY, VALID_PREMIUM_SECRET
 from rotkehlchen.types import (
     SPAM_PROTOCOL,
+    CacheType,
     ChainID,
     ChecksumEvmAddress,
     Eth2PubKey,
@@ -1348,3 +1350,36 @@ def test_graph_query_query_delegations(
 
             # we expect two addresses and not all 3 tracked ones
             assert cursor.execute("SELECT COUNT(*) FROM key_value_cache WHERE name LIKE 'ethereum_GRAPH_DELEGATIONS%'").fetchone() == (2,)  # noqa: E501
+
+
+@pytest.mark.parametrize('max_tasks_num', [5])
+def test_morpho_reward_task_repetition(task_manager: TaskManager) -> None:
+    """Test that the morpho reward task doesn't keep re-running after the cache has been updated.
+    Regression test for https://github.com/rotki/rotki/pull/9355.
+    """
+    task_manager.should_schedule = True
+    task_manager.potential_tasks = [task_manager._maybe_update_morpho_cache]
+
+    def update_cache():
+        with GlobalDBHandler().conn.write_ctx() as write_cursor:
+            for chain_id in {ChainID.ETHEREUM, ChainID.BASE}:
+                globaldb_set_general_cache_values(
+                    write_cursor=write_cursor,
+                    key_parts=(CacheType.MORPHO_REWARD_DISTRIBUTORS, str(chain_id)),
+                    values=['test'],
+                )
+
+    with (
+        gevent.Timeout(5),  # this should not take long. Otherwise a long running task ran
+        patch.object(target=task_manager, attribute='query_morpho_vaults'),
+        patch.object(
+            target=task_manager,
+            attribute='query_morpho_reward_distributors',
+            side_effect=update_cache,
+        ) as mocked_query_distributors,
+    ):
+        for _ in range(2):
+            task_manager.schedule()
+            if len(task_manager.running_greenlets) != 0:
+                gevent.joinall(task_manager.running_greenlets[task_manager._maybe_update_morpho_cache])
+            assert mocked_query_distributors.call_count == 1  # will only get called once

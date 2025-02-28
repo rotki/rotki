@@ -63,6 +63,7 @@ from rotkehlchen.types import (
     EVM_CHAINS_WITH_TRANSACTIONS,
     SUPPORTED_BITCOIN_CHAINS,
     CacheType,
+    ChainID,
     ChecksumEvmAddress,
     ExchangeLocationID,
     Location,
@@ -678,7 +679,13 @@ class TaskManager:
                 database=self.database,
             ))
 
-        if should_update_protocol_cache(CacheType.MORPHO_REWARD_DISTRIBUTORS) is True:
+        if any(
+            should_update_protocol_cache(
+                cache_key=CacheType.MORPHO_REWARD_DISTRIBUTORS,
+                args=(str(chain_id),),
+            )
+            for chain_id in {ChainID.ETHEREUM, ChainID.BASE}
+        ):
             greenlets.append(self.greenlet_manager.spawn_and_track(
                 after_seconds=None,
                 task_name='Update Morpho reward distributors',
