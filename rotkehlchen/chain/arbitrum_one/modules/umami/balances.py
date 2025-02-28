@@ -6,7 +6,6 @@ from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.assets.utils import get_token
 from rotkehlchen.chain.arbitrum_one.modules.umami.constants import (
     CPT_UMAMI,
-    UMAMI_ASSET_VAULT_ABI,
     UMAMI_MASTERCHEF_ABI,
     UMAMI_STAKING_CONTRACT,
 )
@@ -18,7 +17,6 @@ from rotkehlchen.chain.evm.tokens import get_chunk_size_call_order
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.errors.misc import RemoteError
-from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -74,62 +72,13 @@ class UmamiBalances(ProtocolWithBalance):
         }))) == 0:
             return balances
 
-        vault_tokens = GlobalDBHandler().get_evm_tokens(
-            protocol=CPT_UMAMI,
-            chain_id=self.evm_inquirer.chain_id,
-        )
         gm_vault_addresses = [
             string_to_evm_address('0x959f3807f0Aa7921E18c78B00B2819ba91E52FeF'),
             string_to_evm_address('0x4bCA8D73561aaEee2D3a584b9F4665310de1dD69'),
             string_to_evm_address('0xcd8011AaB161A75058eAb24e0965BAb0b918aF29'),
             string_to_evm_address('0x5f851F67D24419982EcD7b7765deFD64fBb50a97'),
         ]
-        chunk_size, call_order = get_chunk_size_call_order(self.evm_inquirer)
-        for vault_token in vault_tokens:  # get unstaked balances
-            try:
-                vault_contract = EvmContract(
-                    address=vault_token.evm_address,
-                    abi=UMAMI_ASSET_VAULT_ABI,
-                    deployed_block=0,
-                )
-
-                results = self.evm_inquirer.multicall(
-                    calls=[
-                        (
-                            vault_contract.address,
-                            vault_contract.encode(
-                                method_name='balanceOf',
-                                arguments=[address],
-                            ),
-                        ) for address in addresses_with_deposits
-                    ],
-                    call_order=call_order,
-                    calls_chunk_size=chunk_size,
-                )
-
-                if not results:
-                    log.error(f'Failed to query umami vault balances for vault {vault_contract.address}')  # noqa: E501
-                    continue
-
-                for idx, result in enumerate(results):
-                    user_address = addresses_with_deposits[idx]
-                    if (balance := vault_contract.decode(
-                        result=result,
-                        method_name='balanceOf',
-                        arguments=[user_address],
-                    )[0]) == 0:
-                        continue
-
-                    self._process_vault_balance(
-                        balance=balance,
-                        balances=balances,
-                        vault_token=vault_token,
-                        user_address=user_address,
-                    )
-            except RemoteError as e:
-                log.error(f'Failed to query umami balances for vault {vault_token.evm_address}: {e!s}')  # noqa: E501
-                continue
-
+        _, call_order = get_chunk_size_call_order(self.evm_inquirer)
         for user_address in addresses_with_deposits:  # get staked balances.
             try:
                 results = self.evm_inquirer.multicall(
