@@ -8,7 +8,7 @@ from unittest.mock import patch
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
-from rotkehlchen.assets.asset import Asset, EvmToken, UnderlyingToken
+from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.aggregator import CHAIN_TO_BALANCE_PROTOCOLS
 from rotkehlchen.chain.arbitrum_one.constants import ARBITRUM_ONE_ETHERSCAN_NODE
@@ -38,11 +38,6 @@ from rotkehlchen.chain.ethereum.modules.safe.constants import SAFE_TOKEN_ID
 from rotkehlchen.chain.ethereum.modules.thegraph.balances import ThegraphBalances
 from rotkehlchen.chain.ethereum.utils import should_update_protocol_cache
 from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE_V3
-from rotkehlchen.chain.evm.decoding.aura_finance.balances import AuraFinanceBalances
-from rotkehlchen.chain.evm.decoding.aura_finance.constants import CPT_AURA_FINANCE
-from rotkehlchen.chain.evm.decoding.balancer.constants import CPT_BALANCER_V1
-from rotkehlchen.chain.evm.decoding.balancer.v1.balances import Balancerv1Balances
-from rotkehlchen.chain.evm.decoding.balancer.v2.balances import Balancerv2Balances
 from rotkehlchen.chain.evm.decoding.compound.v3.balances import Compoundv3Balances
 from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE
 from rotkehlchen.chain.evm.decoding.curve_lend.balances import CurveLendBalances
@@ -82,7 +77,6 @@ from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.cache import (
     globaldb_get_unique_cache_last_queried_ts_by_key,
-    globaldb_set_general_cache_values,
 )
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.tests.unit.decoders.test_curve_lend import (
@@ -1067,7 +1061,7 @@ def test_umami_balances(
         arbitrum_one_accounts: list[ChecksumEvmAddress],
         inquirer: 'Inquirer',  # pylint: disable=unused-argument
 ) -> None:
-    """Check that staked & unstaked balances of Umami are properly detected."""
+    """Check that staked balances of Umami are properly detected."""
     amount, usd_value, gm_usdc_vault = FVal('46.422107'), FVal('74.988646874055'), Asset('eip155:42161/erc20:0x5f851F67D24419982EcD7b7765deFD64fBb50a97')  # noqa: E501
     _, tx_decoder = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
@@ -1081,130 +1075,6 @@ def test_umami_balances(
     protocol_balances = protocol_balances_inquirer.query_balances()
     user_balance = protocol_balances[arbitrum_one_accounts[0]]
     assert user_balance.assets[gm_usdc_vault] == Balance(
-        amount=amount,
-        usd_value=usd_value,
-    )
-
-
-@pytest.mark.vcr(filter_query_parameters=['apikey'])
-@pytest.mark.parametrize('load_global_caches', [[CPT_BALANCER_V1]])
-@pytest.mark.parametrize('ethereum_accounts', [['0xF01adF04216C35448456fdaA6BBFff4055527Dd1']])
-def test_balancer_v1_balances(
-        globaldb,
-        load_global_caches,
-        ethereum_inquirer: 'EthereumInquirer',
-        ethereum_accounts: list[ChecksumEvmAddress],
-        inquirer: 'Inquirer',  # pylint: disable=unused-argument
-) -> None:
-    with globaldb.conn.write_ctx() as write_cursor:
-        globaldb_set_general_cache_values(
-            write_cursor=write_cursor,
-            key_parts=(CacheType.BALANCER_V1_POOLS, str(ethereum_inquirer.chain_id.value)),
-            values=['0x0ce69A796aBe0c0451585aA88F6F45ebaC9E12dc'],
-        )
-    balancer_qqq_weth_pool_token = get_or_create_evm_token(
-        userdb=ethereum_inquirer.database,
-        evm_address=string_to_evm_address('0x0ce69A796aBe0c0451585aA88F6F45ebaC9E12dc'),
-        chain_id=ChainID.ETHEREUM,
-        token_kind=EvmTokenKind.ERC20,
-        symbol='BCoW-80QQQ-20WETH',
-        name='Balancer CoW AMM 80 QQQ 20 WETH',
-        decimals=18,
-        protocol=CPT_BALANCER_V1,
-        underlying_tokens=[
-            UnderlyingToken(  # including just one of two underlying token.
-                address=string_to_evm_address('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'),
-                token_kind=EvmTokenKind.ERC20,
-                weight=FVal('0.2'),
-            ),
-        ],
-    )
-    amount, usd_value = FVal('4152.559258169060848717'), FVal('4214.758208714533361366494567184512985')  # noqa: E501
-    _, tx_decoder = get_decoded_events_of_transaction(
-        evm_inquirer=ethereum_inquirer,
-        load_global_caches=load_global_caches,
-        tx_hash=deserialize_evm_tx_hash('0xbba2e9e46c773b91b1528e48af1ed479132353473726d75e7a0f74bfb687613e'),
-    )
-    protocol_balances_inquirer = Balancerv1Balances(
-        evm_inquirer=ethereum_inquirer,
-        tx_decoder=tx_decoder,
-    )
-    protocol_balances = protocol_balances_inquirer.query_balances()
-    user_balance = protocol_balances[ethereum_accounts[0]]
-    assert user_balance.assets[balancer_qqq_weth_pool_token] == Balance(
-        amount=amount,
-        usd_value=usd_value,
-    )
-
-
-@pytest.mark.vcr(filter_query_parameters=['apikey'])
-@pytest.mark.parametrize('gnosis_accounts', [['0x63A49B0cA8B5B907dd083ada6D9F6853522Bb975']])
-def test_balancer_v2_balances(
-        gnosis_inquirer: 'GnosisInquirer',
-        gnosis_accounts: list[ChecksumEvmAddress],
-        inquirer: 'Inquirer',  # pylint: disable=unused-argument
-) -> None:
-    amount, usd_value = FVal('2447.961642702451874694'), FVal('2459.833477353114303049279423099206954')  # noqa: E501
-    _, tx_decoder = get_decoded_events_of_transaction(
-        evm_inquirer=gnosis_inquirer,
-        tx_hash=deserialize_evm_tx_hash('0xfa42add74972324dd00d242963b653e2979f56cf8739dd987515470e87dff3e7'),
-    )
-    protocol_balances_inquirer = Balancerv2Balances(
-        evm_inquirer=gnosis_inquirer,
-        tx_decoder=tx_decoder,
-    )
-    protocol_balances = protocol_balances_inquirer.query_balances()
-    user_balance = protocol_balances[gnosis_accounts[0]]
-    assert user_balance.assets[Asset('eip155:100/erc20:0xaa56989Be5E6267fC579919576948DB3e1F10807')] == Balance(  # noqa: E501
-        amount=amount,
-        usd_value=usd_value,
-    )
-
-
-@pytest.mark.vcr(filter_query_parameters=['apikey'])
-@pytest.mark.parametrize('base_accounts', [['0x19e4057A38a730be37c4DA690b103267AAE1d75d']])
-def test_aura_finance_balances(
-        base_inquirer: 'BaseInquirer',
-        base_accounts: list[ChecksumEvmAddress],
-        inquirer: 'Inquirer',  # pylint: disable=unused-argument
-) -> None:
-    aura_weth_usdc_pool_token = get_or_create_evm_token(
-        userdb=base_inquirer.database,
-        evm_address=string_to_evm_address('0x636fCa3ADC5D614E15F5C5a574fFd2CAEE578126'),
-        chain_id=ChainID.BASE,
-        token_kind=EvmTokenKind.ERC20,
-        symbol='AURAECLP-WETH-USDC-vault',
-        name='Gyroscope ECLP WETH/USDC Aura Deposit Vault',
-        decimals=18,
-        protocol=CPT_AURA_FINANCE,
-        underlying_tokens=[
-            UnderlyingToken(
-                address=get_or_create_evm_token(
-                    userdb=base_inquirer.database,
-                    evm_address=string_to_evm_address('0x4c42b5057a8663e2b1ac21685d1502c937a03817'),
-                    chain_id=ChainID.BASE,
-                    token_kind=EvmTokenKind.ERC20,
-                    symbol='ECLP-WETH-USDC',
-                    name='Gyroscope ECLP WETH/USDC',
-                    decimals=18,
-                ).evm_address,
-                token_kind=EvmTokenKind.ERC20,
-                weight=ONE,
-            ),
-        ],
-    )
-    amount, usd_value = FVal('14.162193866305452056'), FVal('21.2432907994581780840')
-    _, tx_decoder = get_decoded_events_of_transaction(
-        evm_inquirer=base_inquirer,
-        tx_hash=deserialize_evm_tx_hash('0x2653c4c5faf160cc66a867a749d4de6f97a8782b37e0b2ceb5e2133525e49a6f'),
-    )
-    protocol_balances_inquirer = AuraFinanceBalances(
-        evm_inquirer=base_inquirer,
-        tx_decoder=tx_decoder,
-    )
-    protocol_balances = protocol_balances_inquirer.query_balances()
-    user_balance = protocol_balances[base_accounts[0]]
-    assert user_balance.assets[aura_weth_usdc_pool_token] == Balance(
         amount=amount,
         usd_value=usd_value,
     )

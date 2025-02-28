@@ -54,9 +54,6 @@ from rotkehlchen.chain.ethereum.modules.hedgey.balances import HedgeyBalances
 from rotkehlchen.chain.ethereum.modules.octant.balances import OctantBalances
 from rotkehlchen.chain.ethereum.modules.safe.balances import SafeBalances
 from rotkehlchen.chain.ethereum.modules.thegraph.balances import ThegraphBalances
-from rotkehlchen.chain.evm.decoding.aura_finance.balances import AuraFinanceBalances
-from rotkehlchen.chain.evm.decoding.balancer.v1.balances import Balancerv1Balances
-from rotkehlchen.chain.evm.decoding.balancer.v2.balances import Balancerv2Balances
 from rotkehlchen.chain.evm.decoding.compound.v3.balances import Compoundv3Balances
 from rotkehlchen.chain.evm.decoding.curve_lend.balances import CurveLendBalances
 from rotkehlchen.chain.evm.decoding.hop.balances import HopBalances
@@ -226,10 +223,7 @@ CHAIN_TO_BALANCE_PROTOCOLS = {
         GearboxBalances,
         SafeBalances,
         AaveBalances,
-        Balancerv1Balances,
-        Balancerv2Balances,
         CurveLendBalances,
-        AuraFinanceBalances,
         UniswapV3Balances,
     ),
     ChainID.OPTIMISM: (
@@ -238,10 +232,8 @@ CHAIN_TO_BALANCE_PROTOCOLS = {
         HopBalances,
         GearboxBalancesOptimism,
         ExtrafiBalancesOp,
-        Balancerv2Balances,
         WalletconnectBalances,
         CurveLendBalances,
-        AuraFinanceBalances,
         GivethOptimismBalances,
         UniswapV3Balances,
     ),
@@ -250,8 +242,6 @@ CHAIN_TO_BALANCE_PROTOCOLS = {
         AerodromeBalances,
         HopBalances,
         ExtrafiBalancesBase,
-        Balancerv2Balances,
-        AuraFinanceBalances,
         UniswapV3Balances,
     ),
     ChainID.ARBITRUM_ONE: (
@@ -261,24 +251,16 @@ CHAIN_TO_BALANCE_PROTOCOLS = {
         HopBalances,
         GearboxBalancesArbitrumOne,
         UmamiBalances,
-        Balancerv1Balances,
-        Balancerv2Balances,
         CurveLendBalances,
-        AuraFinanceBalances,
         UniswapV3Balances,
     ),
     ChainID.POLYGON_POS: (
         Compoundv3Balances,
         HopBalances,
-        Balancerv2Balances,
-        AuraFinanceBalances,
         UniswapV3Balances,
     ),
     ChainID.GNOSIS: (
         HopBalances,
-        Balancerv1Balances,
-        Balancerv2Balances,
-        AuraFinanceBalances,
         GivethGnosisBalances,
     ),
     ChainID.SCROLL: (Compoundv3Balances,),

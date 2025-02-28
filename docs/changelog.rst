@@ -4,6 +4,7 @@ Changelog
 
 * :bug:`-` Fix selected binance trading pairs not being properly loaded when restarting rotki.
 * :bug:`-` rotki will now skip balance queries for exited validators, reducing API rate limits and improving performance.
+* :bug:`-` Aura positions will no longer be double counted.
 * :bug:`-` Unstaked umami balances in arbitrum will no longer be double counted.
 * :feature:`-` The old deprecated DeFi section is now removed.
 * :feature:`-` Support for compound v3 protocol on OP mainnet has now been added. Also USDS in mainnet and AERO in BASE for Compound v3 should be seen properly now. Finally compound interactions that wrap ETH to WETH through the Compound bulker and vice versa should be seen properly now.
