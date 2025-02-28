@@ -497,6 +497,9 @@ jobs:
         with:
           images: |
             ${{ github.repository }}
+          flavor: |
+            latest=false
+            prefix=v,onlatest=false
           tags: |
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
