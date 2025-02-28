@@ -36,6 +36,8 @@ tracing-subscriber = { version = "0.3.16", features = ["env-filter"]}
 # Used to keep log files that rotate when they reach certain size. Is not available in tracing
 # directly (they have a PR but not merged)
 file-rotate = "0.7.6"
+# used when parsing cors. It is from rust itself
+glob = "0.3.2"
 
 [dev-dependencies]
 mockito = "1.6.1"
