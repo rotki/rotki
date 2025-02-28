@@ -367,8 +367,8 @@ class Alchemy(
         May raise:
         - RemoteError
         """
-        assert (api_key := self._get_api_key()) is not None, "Can't be None since Alchemy is added as an oracle only if there is an api key"  # noqa: E501, RUF018
-
+        api_key = self._get_api_key()
+        assert api_key is not None, "Can't be None since Alchemy is added as an oracle only if there is an api key"  # noqa: E501
         url = f'https://api.g.alchemy.com/prices/v1/{api_key}/tokens/{endpoint}'
         log.debug(f'Querying alchemy api: {url=} with {payload=} and {params=}')
         try:
