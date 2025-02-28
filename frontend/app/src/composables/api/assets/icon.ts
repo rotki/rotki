@@ -27,8 +27,9 @@ export function useAssetIconApi(): UseAssetIconApiReturn {
   };
 
   const checkAsset = async (identifier: string, options: CheckAssetOptions): Promise<number> => {
-    const url = `${apiUrls.colibriApiUrl}/assets/icon?asset_id=${encodeURIComponent(identifier)}`;
+    const url = `/assets/icon?asset_id=${encodeURIComponent(identifier)}`;
     const response = await api.instance.head<never>(url, {
+      baseURL: apiUrls.colibriApiUrl,
       signal: options.abortController?.signal,
       validateStatus: code => [200, 202, 404].includes(code),
     });
