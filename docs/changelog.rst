@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :bug:`9547` Bitcoin balance query should work again for users of the linux binary.
+
 * :release:`1.38.0 <2025-02-28>`
 * :bug:`-` Fix selected binance trading pairs not being properly loaded when restarting rotki.
 * :bug:`-` rotki will now skip balance queries for exited validators, reducing API rate limits and improving performance.
