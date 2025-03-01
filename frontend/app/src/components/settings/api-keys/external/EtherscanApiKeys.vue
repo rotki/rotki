@@ -10,6 +10,7 @@ import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 const { t } = useI18n();
 const { keys } = useExternalApiKeys(t);
 const tabIndex = ref<number>(0);
+const router = useRouter();
 const route = useRoute();
 const serviceKeyCardRef = ref<InstanceType<typeof ServiceKeyCard>>();
 const unified = ref(false);
@@ -44,9 +45,10 @@ function setActiveTab(hash: string) {
   });
 }
 
-watch([route, supportedChains], ([route, chains]) => {
+watch([route, supportedChains], async ([route, chains]) => {
   if (route && route.hash && chains.length > 0) {
     setActiveTab(route.hash);
+    await router.replace({ hash: '' });
   }
 }, { immediate: true });
 
