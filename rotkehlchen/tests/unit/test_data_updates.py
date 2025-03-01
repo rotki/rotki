@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
 import pytest
-from packaging.version import Version
 
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
@@ -28,7 +27,6 @@ from rotkehlchen.types import (
     Location,
     SupportedBlockchain,
 )
-from rotkehlchen.utils.version_check import VersionCheckResult
 
 if TYPE_CHECKING:
     from gevent import DBCursor
@@ -287,24 +285,6 @@ def make_mock_github_response(latest: int, min_version: str | None = None, max_v
         return MockResponse(200, json.dumps(result))
 
     return mock_github_response
-
-
-@pytest.fixture(name='our_version')
-def fixture_our_version():
-    """Allow mocking our rotki version since in CI version is 0 and hard to control"""
-    return None
-
-
-@pytest.fixture(name='data_updater')
-def fixture_data_updater(messages_aggregator, database, our_version):
-    """Initialize the DataUpdater object, optionally mocking our rotki version"""
-    with ExitStack() as stack:
-        if our_version is not None:
-            stack.enter_context(patch('rotkehlchen.db.updates.get_current_version', return_value=VersionCheckResult(our_version=Version(our_version))))  # noqa: E501
-        return RotkiDataUpdater(
-            msg_aggregator=messages_aggregator,
-            user_db=database,
-        )
 
 
 def reset_update_type_mappings(data_updater: RotkiDataUpdater) -> None:
