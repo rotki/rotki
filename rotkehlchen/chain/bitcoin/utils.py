@@ -1,4 +1,5 @@
 import hashlib
+import platform
 from enum import Enum, auto
 from typing import Any
 
@@ -90,10 +91,16 @@ def is_valid_base58_address(value: str) -> bool:
     return value == base58check.b58encode(abytes).decode()
 
 
-def hash160(msg: bytes) -> bytes:
-    h = hashlib.new('ripemd160')
-    h.update(hashlib.sha256(msg).digest())
-    return h.digest()
+if platform.system() == 'Linux':
+    from .ripemd160 import ripemd160
+    def hash160(msg: bytes) -> bytes:
+        return ripemd160(hashlib.sha256(msg).digest())
+
+else:
+    def hash160(msg: bytes) -> bytes:
+        h = hashlib.new('ripemd160')
+        h.update(hashlib.sha256(msg).digest())
+        return h.digest()
 
 
 def _calculate_hash160_and_checksum(prefix: bytes, data: bytes) -> tuple[bytes, bytes]:
