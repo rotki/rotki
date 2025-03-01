@@ -154,7 +154,7 @@ def load_config() -> tuple[list[str], str | None]:
         if file_config.get('sqlite_instructions') is not None:
             sqlite_instructions = file_config.get('sqlite_instructions')
 
-    log_level = loglevel if loglevel is not None else DEFAULT_LOG_LEVEL
+    logging_level = loglevel if loglevel is not None else DEFAULT_LOG_LEVEL
 
     args = [
         '--data-dir',
@@ -162,7 +162,7 @@ def load_config() -> tuple[list[str], str | None]:
         '--logfile',
         '/logs/rotki.log',
         '--loglevel',
-        log_level,
+        logging_level,
     ]
 
     if log_from_other_modules is True:
@@ -176,7 +176,7 @@ def load_config() -> tuple[list[str], str | None]:
 
     if sqlite_instructions is not None:
         args.extend(('--sqlite-instructions', int(sqlite_instructions)))
-    return args, log_level
+    return args, logging_level
 
 
 cleanup_tmp()
