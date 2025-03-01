@@ -13,7 +13,6 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.constants.misc import GLOBALDIR_NAME, ONE
 from rotkehlchen.db.constants import UpdateType
-from rotkehlchen.db.updates import RotkiDataUpdater
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.asset_updates.manager import AssetsUpdater
 from rotkehlchen.tests.fixtures.globaldb import create_globaldb
@@ -32,7 +31,7 @@ from rotkehlchen.types import (
 )
 
 if TYPE_CHECKING:
-    from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.db.updates import RotkiDataUpdater
     from rotkehlchen.globaldb.handler import GlobalDBHandler
     from rotkehlchen.types import ChecksumEvmAddress
     from rotkehlchen.user_messages import MessagesAggregator
@@ -450,10 +449,11 @@ def test_oracle_ids_in_asset_collections(globaldb: 'GlobalDBHandler'):
         pytest.fail('oracle IDs do not match:\n' + '\n'.join(mismatches))
 
 
+@pytest.mark.parametrize('our_version', ['1.38.0'])  # set latest version so data can be updated
 def test_remote_updates_consistency_with_packaged_db(
         tmpdir_factory: 'pytest.TempdirFactory',
         messages_aggregator: 'MessagesAggregator',
-        database: 'DBHandler',
+        data_updater: 'RotkiDataUpdater',
 ):
     """Test that the remote updates are consistent with the packaged db for:
     - Location asset mappings
@@ -470,8 +470,7 @@ def test_remote_updates_consistency_with_packaged_db(
         sql_vm_instructions_cb=0,
         messages_aggregator=messages_aggregator,
     )
-    rotki_updater = RotkiDataUpdater(msg_aggregator=messages_aggregator, user_db=database)
-    rotki_updater.check_for_updates(updates=[
+    data_updater.check_for_updates(updates=[
         UpdateType.LOCATION_ASSET_MAPPINGS,
         UpdateType.LOCATION_UNSUPPORTED_ASSETS,
     ])
