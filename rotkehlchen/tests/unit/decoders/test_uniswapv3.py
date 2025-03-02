@@ -7,6 +7,7 @@ from rotkehlchen.chain.base.modules.uniswap.v3.constants import UNISWAP_UNIVERSA
 from rotkehlchen.chain.binance_sc.modules.uniswap.v3.constants import (
     UNISWAP_UNIVERSAL_ROUTER as UNISWAP_UNIVERSAL_ROUTER_BINANCE_SC,
 )
+from rotkehlchen.chain.ethereum.modules.uniswap.v3.constants import UNISWAP_UNIVERSAL_ROUTER_V2
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.cowswap.constants import CPT_COWSWAP
@@ -1091,3 +1092,52 @@ def test_receive_position_token_on_arbitrum(
         notes=f'Receive {receive_amount} DMT from {v3utils_contract} to {user_address}',
         address=v3utils_contract,
     )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0xd48101E479159Ef88668De1E19f055DA42e8Fb8D']])
+def test_uniswap_v3_universal_router_2(ethereum_inquirer, ethereum_accounts):
+    tx_hash = deserialize_evm_tx_hash('0x8c1aab138325e03f5bc20e676b8a242d470922003c3be4a76c386a4e67ce7bce')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    expected_events = [
+        EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=0,
+            timestamp=(timestamp := TimestampMS(1677356075000)),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=FVal(gas_str := '0.003983465486960712'),
+            location_label=ethereum_accounts[0],
+            notes=f'Burn {gas_str} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=A_ETH,
+            amount=FVal(amount_out := '0.000184539583537197'),
+            location_label=ethereum_accounts[0],
+            notes=f'Swap {amount_out} ETH via uniswap-v3 auto router',
+            counterparty=CPT_UNISWAP_V3,
+            address=UNISWAP_UNIVERSAL_ROUTER_V2,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=2,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=EvmToken('eip155:1/erc20:0x744d70FDBE2Ba4CF95131626614a1763DF805B9E'),  # SNT
+            amount=FVal(amount_in := '10'),
+            location_label=ethereum_accounts[0],
+            notes=f'Receive {amount_in} SNT as the result of a swap via uniswap-v3 auto router',
+            counterparty=CPT_UNISWAP_V3,
+            address=UNISWAP_UNIVERSAL_ROUTER_V2,
+        ),
+    ]
+    assert events == expected_events
