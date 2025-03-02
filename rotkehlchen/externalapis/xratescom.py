@@ -44,19 +44,20 @@ def _scrape_xratescom_exchange_rates(url: str) -> dict[FiatAsset, Price]:
     )
     if soup is None:
         raise RemoteError('Could not find <table> while parsing x-rates stats page')
+
     try:
-        tr = soup.table.tbody.tr
+        tr = soup.table.tbody.tr  # type: ignore  # we catch it with the AttributeError
     except AttributeError as e:
         raise RemoteError('Could not find first <tr> while parsing x-rates.com page') from e
 
     while tr is not None:
         secondtd = tr.select('td:nth-of-type(2)')[0]
         try:
-            href = secondtd.a['href']
-        except (AttributeError, KeyError) as e:
+            href = secondtd.a['href']  # type: ignore  # we catch it with the excepts below
+        except (AttributeError, KeyError, TypeError) as e:
             raise RemoteError('Could not find a href of 2nd td while parsing x-rates.com page') from e  # noqa: E501
 
-        parts = href.split('to=')
+        parts = href.split('to=')  # type: ignore  # this is a string
         if len(parts) != 2:
             raise RemoteError(f'Could not find to= in {href} while parsing x-rates.com page')
 
@@ -68,8 +69,8 @@ def _scrape_xratescom_exchange_rates(url: str) -> dict[FiatAsset, Price]:
             continue
 
         try:
-            price = deserialize_price(secondtd.a.text)
-        except DeserializationError as e:
+            price = deserialize_price(secondtd.a.text)  # type: ignore  # we catch it with the AttributeError
+        except (DeserializationError, AttributeError) as e:
             log.debug(f'Could not parse x-rates.com rate of {to_asset.identifier} due to {e!s}. Skipping ...')  # noqa: E501
             tr = tr.find_next_sibling()
             continue
