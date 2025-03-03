@@ -1,9 +1,7 @@
 import logging
 import operator
-import sqlite3
 from collections.abc import Callable, Iterable, Sequence
 from contextlib import suppress
-from functools import wraps
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
@@ -65,7 +63,6 @@ from rotkehlchen.constants.assets import (
     A_FARM_WBTC,
     A_FARM_WETH,
     A_KFEE,
-    A_POLYGON_POS_MATIC,
     A_TUSD,
     A_USD,
     A_USDC,
@@ -195,9 +192,6 @@ def get_underlying_asset_price(token: EvmToken) -> tuple[Price | None, CurrentPr
 
     TODO: This should be eventually pulled from the assets DB. All of these
     need to be updated, to contain proper protocol, and underlying assets.
-
-    This function is neither in inquirer.py or chain/ethereum/defi.py
-    due to recursive import problems
     """
     price, oracle = None, CurrentPriceOracle.BLOCKCHAIN
     if token.protocol in LP_TOKEN_AS_POOL_PROTOCOLS:
@@ -284,49 +278,6 @@ def get_underlying_asset_price(token: EvmToken) -> tuple[Price | None, CurrentPr
 
 
 T = TypeVar('T', bound=Callable[..., Any])
-
-
-def handle_recursion_error(return_price_only: bool = False, return_dict: bool = False) -> Callable:
-    """
-    In the app we saw that having a wrongly configured token which had itself
-    as underlying token created a RecursionError. That recursion error was
-    tracked in the logs as an error with no traceback and sometimes an OperationalError
-    type from sqlite. The recursion error was not only seen here but also in the past
-    so we've decided to catch both of them here.
-
-    This decorator is used with methods that return either a single price, a tuple containing
-    a price and oracle, or a dict that maps assets to either prices or price and oracle tuples.
-    When there is an error, to keep the decorator compatible with the expected returned type,
-    if `return_dict` is True we simply return an empty dict, otherwise if `return_price_only`
-    is True we return only `Price(ZERO)` and if it's False we return a price and oracle tuple.
-    """
-    def decorator(func: T) -> T:
-        @wraps(func)
-        def wrapper(*args, **kwargs):  # type: ignore
-            try:
-                result = func(*args, **kwargs)
-            except (RecursionError, sqlite3.OperationalError) as e:
-                to_asset = kwargs.get('to_asset')
-                if return_dict is True:
-                    from_assets = kwargs.get('from_assets') or kwargs.get('assets')
-                    log.error(
-                        f'Failed to query prices {from_assets=} {to_asset=} '
-                        f'due to a recursion error: {e}.',
-                    )
-                    return {}
-
-                from_asset = kwargs.get('from_asset') or kwargs.get('asset')
-                log.error(
-                    f'Failed to query price {from_asset=} {to_asset=} due to a recursion error: '
-                    f'{e}. Using zero as price.',
-                )
-                if return_price_only:
-                    return Price(ZERO)
-
-                return Price(ZERO), CurrentPriceOracle.BLOCKCHAIN
-            return result
-        return wrapper  # type: ignore
-    return decorator
 
 
 class CachedPriceEntry(NamedTuple):
@@ -512,20 +463,11 @@ class Inquirer:
     ) -> tuple[dict[AssetWithOracles, Price], list[AssetWithOracles]]:
         """Tries to query the current prices of the from_assets
         in to_asset valuation, using the provided oracle instance.
-        Returns a tuple containing the following:
-        1. dict mapping assets to prices found.
-        2. list of assets for which no price was found.
-
-        May raise:
-        - RecursionError if `coming_from_latest_price` is True. Used in the ManualCurrentOracle
+        Returns a tuple containing a dict mapping assets to prices
+        and a list of assets for which no price was found.
         """
-        pol_token, pos_matic_token = None, None
-        if A_POLYGON_POS_MATIC in from_assets and ts_now() > POLYGON_POS_POL_HARDFORK:  # after hardfork, we use different oracles  # noqa: E501
-            from_assets.remove(pos_matic_token := A_POLYGON_POS_MATIC.resolve_to_asset_with_oracles())  # noqa: E501
-            from_assets.append(pol_token := Asset('eip155:1/erc20:0x455e53CBB86018Ac2B8092FdCd39d8444aFFC3F6').resolve_to_asset_with_oracles())  # POL token  # noqa: E501
-
         try:
-            prices = oracle_instance.query_multiple_current_price(
+            prices = oracle_instance.query_multiple_current_prices(
                 from_assets=from_assets,
                 to_asset=to_asset,
             )
@@ -536,24 +478,20 @@ class Inquirer:
             )
             return {}, from_assets
 
-        failed_assets: list[AssetWithOracles] = []
+        failed_assets, now = [], ts_now()
         for from_asset in from_assets:
             if (price := prices.get(from_asset, ZERO_PRICE)) != ZERO_PRICE:
                 Inquirer.set_cached_price(
                     cache_key=(from_asset, to_asset),
                     cached_price=CachedPriceEntry(
                         price=price,
-                        time=ts_now(),
+                        time=now,
                         oracle=oracle,
                     ),
                 )
             else:  # Either from_asset was recorded with ZERO_PRICE or it is not present in prices
                 prices.pop(from_asset, None)
-                failed_assets.append(from_asset if pos_matic_token is None else pos_matic_token)
-
-        if pol_token is not None and (pol_price := prices.get(pol_token)) is not None:
-            prices[pos_matic_token] = pol_price  # type: ignore[index]  # pos_matic_token will not be None if pol_token is not None
-            del prices[pol_token]
+                failed_assets.append(from_asset)
 
         return prices, failed_assets
 
@@ -565,7 +503,7 @@ class Inquirer:
     ) -> dict[Asset, tuple[Price, CurrentPriceOracle]]:
         """Query oracle instances.
         Returns a dict mapping assets to a tuple of the price found and the oracle used.
-        If no oracles are able to find an assets price it will be set to ZERO_PRICE.
+        If no oracles are able to find an asset's price it will be set to ZERO_PRICE.
         """
         instance = Inquirer()
         assert (
@@ -573,23 +511,21 @@ class Inquirer:
             instance._oracle_instances is not None and
             instance._oracles_not_onchain is not None and
             instance._oracle_instances_not_onchain is not None
-        ), (
-            'Inquirer should never be called before setting the oracles'
-        )
+        ), 'Inquirer should never be called before setting the oracles'
 
-        found_prices: dict[Asset, tuple[Price, CurrentPriceOracle]] = {}
-        unknown_prices: list[AssetWithOracles] = []
-
+        # Resolve assets to AssetWithOracles and set
+        # the price of any assets without oracles to ZERO_PRICE
+        found_prices, unpriced_assets = {}, []
+        to_asset = to_asset.resolve_to_asset_with_oracles()
         for from_asset in from_assets:
-            if from_asset.is_asset_with_oracles() is True:
-                unknown_prices.append(from_asset.resolve_to_asset_with_oracles())
+            if from_asset.is_asset_with_oracles():
+                unpriced_assets.append(from_asset.resolve_to_asset_with_oracles())
             else:
                 found_prices[from_asset] = ZERO_PRICE, CurrentPriceOracle.BLOCKCHAIN
 
-        if len(unknown_prices) == 0:
-            return found_prices
+        if len(unpriced_assets) == 0:
+            return found_prices  # no assets with oracles found. Skip querying oracles.
 
-        to_asset = to_asset.resolve_to_asset_with_oracles()
         if skip_onchain:
             oracles = instance._oracles_not_onchain
             oracle_instances = instance._oracle_instances_not_onchain
@@ -607,10 +543,10 @@ class Inquirer:
             ):
                 continue
 
-            prices, unknown_prices = Inquirer._try_oracle_price_query(
+            prices, unpriced_assets = Inquirer._try_oracle_price_query(
                 oracle=oracle,
                 oracle_instance=oracle_instance,
-                from_assets=unknown_prices,
+                from_assets=unpriced_assets,
                 to_asset=to_asset,
             )
             for from_asset, price in prices.items():
@@ -622,13 +558,164 @@ class Inquirer:
                 )
                 found_prices[from_asset] = price, oracle
 
-            if len(unknown_prices) == 0:
+            if len(unpriced_assets) == 0:
                 break
 
         # Set any assets that are still unknown to zero price
-        found_prices.update(dict.fromkeys(unknown_prices, (ZERO_PRICE, CurrentPriceOracle.BLOCKCHAIN)))  # noqa: E501
-
+        found_prices.update(dict.fromkeys(unpriced_assets, (ZERO_PRICE, CurrentPriceOracle.BLOCKCHAIN)))  # noqa: E501
         return found_prices
+
+    @staticmethod
+    def _get_manual_prices(
+            from_assets: list[Asset],
+            to_asset: Asset,
+    ) -> tuple[list[Asset], dict[Asset, tuple[Price, CurrentPriceOracle]]]:
+        """Get manual prices. The type ignores are due to _try_oracle_price_query expecting
+        AssetWithOracles, but we only use Asset here since the manual oracle can handle that.
+        """
+        found_prices = {}
+        prices: dict[Asset, Price]
+        unpriced_assets: list[Asset]
+        prices, unpriced_assets = Inquirer._try_oracle_price_query(  # type: ignore[assignment]
+            oracle=CurrentPriceOracle.MANUALCURRENT,
+            oracle_instance=Inquirer._manualcurrent,
+            from_assets=from_assets,  # type: ignore[arg-type]
+            to_asset=to_asset,  # type: ignore[arg-type]
+        )
+        for from_asset, price in prices.items():
+            found_prices[from_asset] = price, CurrentPriceOracle.MANUALCURRENT
+
+        return unpriced_assets, found_prices
+
+    @staticmethod
+    def _get_special_usd_prices(
+            from_assets: list[Asset],
+            to_asset: Asset,
+    ) -> tuple[list[Asset], dict[Asset, tuple[Price, CurrentPriceOracle]]]:
+        """Handle some special cases when finding usd prices.
+        Returns a tuple containing a list of assets without prices and a dict of found prices.
+        If to_asset is not USD, it will simply return from_assets and an empty dict.
+        """
+        if to_asset != A_USD:
+            return from_assets, {}
+
+        found_prices, assets_without_special_price = {}, []
+        for from_asset in from_assets:
+            if from_asset == A_BSQ:
+                # BSQ is defined as 100 satohis but can be traded. Before we were using an api
+                # to query the BSQ market but it isn't available anymore so we assume BTC_PER_BSQ
+                # to obtain a price based on BTC price.
+                btc_price = Inquirer.find_usd_price(A_BTC)
+                found_prices[from_asset] = Price(BTC_PER_BSQ * btc_price), CurrentPriceOracle.BLOCKCHAIN  # noqa: E501
+            elif from_asset == A_KFEE:  # KFEE is a kraken special asset where 1000 KFEE = 10 USD
+                found_prices[from_asset] = Price(FVal(0.01)), CurrentPriceOracle.FIAT
+            elif (price_and_oracle := Inquirer._maybe_get_evm_token_usd_price(asset=from_asset)) is not None:  # noqa: E501
+                found_prices[from_asset] = price_and_oracle
+            else:
+                assets_without_special_price.append(from_asset)
+
+        return assets_without_special_price, found_prices
+
+    @staticmethod
+    def _maybe_get_evm_token_usd_price(asset: Asset) -> tuple[Price, CurrentPriceOracle] | None:
+        """Maybe get an evm token's usd price via its underlying tokens or protocol logic.
+        Returns a tuple containing the usd price and the oracle used or None if the specified
+        asset is not an evm token, if it has itself as an underlying token or if no price is found.
+        """
+        try:
+            asset = asset.resolve_to_evm_token()
+        except (UnknownAsset, WrongAssetType):
+            return None
+
+        if (  # Prevent recursion if this asset has itself as an underlying token
+            (underlying_tokens := asset.underlying_tokens) is not None and
+            asset.evm_address in (x.address for x in underlying_tokens)
+        ):
+            Inquirer._msg_aggregator.add_error(
+                f'Token {asset} has itself as underlying token. Please edit the '
+                'asset to fix it. Price queries will not work until this is done.',
+            )
+            return None
+
+        price_result, oracle = None, CurrentPriceOracle.BLOCKCHAIN
+        if asset.identifier in Inquirer.special_tokens:
+            ethereum = Inquirer.get_evm_manager(chain_id=ChainID.ETHEREUM)
+            underlying_asset_price, oracle = get_underlying_asset_price(asset)
+            price_result = handle_defi_price_query(
+                ethereum=ethereum.node_inquirer,  # type:ignore  # ethereum is an EthereumManager so the inquirer is of the expected type
+                token=asset,
+                underlying_asset_price=underlying_asset_price,
+            )
+        elif (
+            asset.protocol in ProtocolsWithPriceLogic or
+            underlying_tokens is not None
+        ):
+            price_result, oracle = get_underlying_asset_price(asset)
+
+        if price_result is None or price_result == ZERO_PRICE:
+            return None
+
+        Inquirer.set_cached_price(
+            cache_key=(asset, A_USD),
+            cached_price=CachedPriceEntry(
+                price=(price := Price(price_result)),
+                time=ts_now(),
+                oracle=oracle,
+            ),
+        )
+        return price, oracle
+
+    @staticmethod
+    def _maybe_replace_asset(asset: Asset) -> Asset:
+        """Get the asset to actually use when finding the price of the specified asset.
+        Uses the main asset for collection assets and also handles special cases like ETH2 and POL.
+        Returns either a replacement asset, or the original asset.
+        """
+        if asset == A_ETH2:
+            return A_ETH
+        elif (
+            (collection_main_asset_id := GlobalDBHandler.get_collection_main_asset(asset.identifier)) is not None and  # noqa: E501
+            (collection_main_asset_id != 'eip155:1/erc20:0x455e53CBB86018Ac2B8092FdCd39d8444aFFC3F6' or ts_now() > POLYGON_POS_POL_HARDFORK)  # only use the pol token after the hardfork.  # noqa: E501
+        ):
+            return Asset(collection_main_asset_id)
+
+        return asset
+
+    @staticmethod
+    def _preprocess_assets_to_query(
+            from_assets: list[Asset],
+            to_asset: Asset,
+            ignore_cache: bool = False,
+    ) -> tuple[dict[Asset, tuple[Price, CurrentPriceOracle]], dict[Asset, Asset], list[Asset]]:
+        """Preprocess assets before querying prices, handling replacements, cached prices, etc.
+        Returns a tuple containing a dict of found asset prices, a dict of replaced assets,
+        and a list of assets that still need their prices queried.
+        """
+        found_prices, replaced_assets, unpriced_assets = {}, {}, []
+        for from_asset in from_assets:
+            if from_asset == to_asset:
+                found_prices[from_asset] = Price(ONE), CurrentPriceOracle.MANUALCURRENT
+                continue
+
+            if (asset_to_price := Inquirer._maybe_replace_asset(asset=from_asset)) != from_asset:
+                replaced_assets[from_asset] = asset_to_price
+                if asset_to_price in found_prices or asset_to_price in unpriced_assets:
+                    continue
+
+            if (
+                ignore_cache is False and
+                (cache := Inquirer.get_cached_current_price_entry(cache_key=(asset_to_price, to_asset))) is not None  # noqa: E501
+            ):
+                found_prices[asset_to_price] = cache.price, cache.oracle
+                continue
+
+            try:  # Ensure the asset exists
+                unpriced_assets.append(asset_to_price.check_existence())
+            except UnknownAsset:
+                log.error(f'Tried to ask for {asset_to_price.identifier} price but asset is missing from the DB')  # noqa: E501
+                found_prices[asset_to_price] = ZERO_PRICE, CurrentPriceOracle.MANUALCURRENT
+
+        return found_prices, replaced_assets, unpriced_assets
 
     @staticmethod
     def _find_prices(
@@ -637,117 +724,70 @@ class Inquirer:
             ignore_cache: bool = False,
             skip_onchain: bool = False,
     ) -> dict[Asset, tuple[Price, CurrentPriceOracle]]:
-        """Returns a dict mapping from_assets to tuples containing the following:
-        1. The current price of the 'from_asset' in 'to_asset' valuation.
-        2. Oracle that was used to get the price.
+        """Returns a dict mapping from_assets to tuples containing the current price of the
+        from_asset in to_asset valuation and the oracle that was used to get that price.
 
-        NB: prices for special symbols in any currency but USD are not supported.
+        Note: For special assets, only USD prices are supported in _get_special_usd_prices.
 
         If all options for finding a price are unsuccessful the price will be set to ZERO_PRICE,
         and any errors will be logged in the logs.
-
-        `coming_from_latest_price` is used by manual latest price oracle to handle price loops.
         """
-        found_prices: dict[Asset, tuple[Price, CurrentPriceOracle]] = {}
-        collection_assets: dict[Asset, AssetWithOracles] = {}
-        unpriced_assets: list[Asset] = []
-        for from_asset in from_assets:
-            if from_asset == to_asset:
-                found_prices[from_asset] = Price(ONE), CurrentPriceOracle.MANUALCURRENT
-                continue
-
-            if (collection_main_asset_id := GlobalDBHandler.get_collection_main_asset(from_asset.identifier)) is not None:  # noqa: E501
-                unpriced_assets.append(collection_main_asset := Asset(collection_main_asset_id).resolve_to_asset_with_oracles())  # noqa: E501
-                collection_assets[from_asset] = collection_main_asset
-            else:
-                unpriced_assets.append(from_asset)
-
-        if to_asset == A_USD:
-            found_prices.update(Inquirer.find_usd_prices_and_oracles(
-                assets=unpriced_assets,
-                ignore_cache=ignore_cache,
-            ))
-            return found_prices
-
-        assets_not_in_cache = []
-        if ignore_cache is False:
-            for from_asset in unpriced_assets:
-                if (cache := Inquirer.get_cached_current_price_entry(cache_key=(from_asset, to_asset))) is not None:  # noqa: E501
-                    found_prices[from_asset] = cache.price, cache.oracle
-                else:
-                    assets_not_in_cache.append(from_asset)
-
-        # check manual prices
-        prices, assets_without_manual_price = Inquirer._try_oracle_price_query(
-            oracle=CurrentPriceOracle.MANUALCURRENT,
-            oracle_instance=Inquirer._manualcurrent,
-            from_assets=assets_not_in_cache,  # type: ignore[arg-type]  # Manual current oracle can handle Asset rather than AssetWithOracles
-            to_asset=to_asset,  # type: ignore[arg-type]  # Manual current oracle can handle Asset rather than AssetWithOracles
-        )
-        for from_asset, price in prices.items():
-            found_prices[from_asset] = price, CurrentPriceOracle.MANUALCURRENT
-
-        if to_asset.is_fiat():
-            non_fiat_assets: list[Asset] = []
-            for from_asset in assets_without_manual_price:
-                if from_asset.is_fiat():
-                    with suppress(RemoteError):
-                        price, oracle = Inquirer._query_fiat_pair(
-                            base=from_asset.resolve_to_fiat_asset(),
-                            quote=to_asset.resolve_to_fiat_asset(),
-                        )
-                        found_prices[from_asset] = price, oracle
-                        continue
-
-                non_fiat_assets.append(from_asset)
-        else:
-            non_fiat_assets = assets_without_manual_price  # type: ignore[assignment]  # assets_without_manual_price from manual oracle is actually list[Asset]
-
-        found_prices.update(Inquirer._query_oracle_instances(
-            from_assets=non_fiat_assets,
+        found_prices, replaced_assets, unpriced_assets = Inquirer._preprocess_assets_to_query(
+            from_assets=from_assets,
             to_asset=to_asset,
-            skip_onchain=skip_onchain,
-        ))
+            ignore_cache=ignore_cache,
+        )
+        if len(unpriced_assets) != 0:
+            for func in (
+                Inquirer._get_manual_prices,
+                Inquirer._query_fiat_pairs,
+                Inquirer._get_special_usd_prices,
+            ):
+                unpriced_assets, new_found_prices = func(
+                    from_assets=unpriced_assets,
+                    to_asset=to_asset,
+                )
+                found_prices.update(new_found_prices)
+                if len(unpriced_assets) == 0:
+                    break
+            else:
+                found_prices.update(Inquirer._query_oracle_instances(
+                    from_assets=unpriced_assets,
+                    to_asset=to_asset,
+                    skip_onchain=skip_onchain,
+                ))
 
-        # Make sure we're returning the assets that were originally
-        # requested rather than just a collection's main asset.
-        for asset, main_asset in collection_assets.items():
-            found_prices[asset] = found_prices[main_asset]
-            if main_asset not in from_assets:
-                del found_prices[main_asset]
+        # Only include the assets that were originally requested.
+        for original_asset, replacement_asset in replaced_assets.items():
+            found_prices[original_asset] = found_prices[replacement_asset]
+            if replacement_asset not in from_assets:
+                del found_prices[replacement_asset]
 
         return found_prices
 
     @staticmethod
-    @handle_recursion_error(return_price_only=True)
     def find_price(
             from_asset: Asset,
             to_asset: Asset,
             ignore_cache: bool = False,
             skip_onchain: bool = False,
     ) -> Price:
-        """Wrapper around find_price_and_oracle to ignore
-        the oracle queried when getting a single price.
-        """
-        price, _ = Inquirer.find_price_and_oracle(
-            from_asset=from_asset,
+        """Wrapper for find_prices to get the price of a single asset."""
+        return Inquirer.find_prices(
+            from_assets=[from_asset],
             to_asset=to_asset,
             ignore_cache=ignore_cache,
             skip_onchain=skip_onchain,
-        )
-        return price
+        ).get(from_asset, ZERO_PRICE)
 
     @staticmethod
-    @handle_recursion_error()
     def find_price_and_oracle(
             from_asset: Asset,
             to_asset: Asset,
             ignore_cache: bool = False,
             skip_onchain: bool = False,
     ) -> tuple[Price, CurrentPriceOracle]:
-        """Wrapper around find_prices_and_oracles to include
-        the oracle queried when getting a single price.
-        """
+        """Wrapper for find_prices_and_oracles to get the price and oracle for a single asset."""
         return Inquirer.find_prices_and_oracles(
             from_assets=[from_asset],
             to_asset=to_asset,
@@ -756,14 +796,13 @@ class Inquirer:
         ).get(from_asset, (ZERO_PRICE, CurrentPriceOracle.BLOCKCHAIN))
 
     @staticmethod
-    @handle_recursion_error(return_dict=True)
     def find_prices(
             from_assets: list[Asset],
             to_asset: Asset,
             ignore_cache: bool = False,
             skip_onchain: bool = False,
     ) -> dict[Asset, Price]:
-        """Wrapper around _find_prices to ignore the oracle queried when getting prices."""
+        """Wrapper for _find_prices to ignore the oracle queried when getting prices."""
         return {
             asset: price_and_oracle[0]
             for asset, price_and_oracle in Inquirer._find_prices(
@@ -775,14 +814,13 @@ class Inquirer:
         }
 
     @staticmethod
-    @handle_recursion_error(return_dict=True)
     def find_prices_and_oracles(
             from_assets: list[Asset],
             to_asset: Asset,
             ignore_cache: bool = False,
             skip_onchain: bool = False,
     ) -> dict[Asset, tuple[Price, CurrentPriceOracle]]:
-        """Wrapper around _find_prices to include the oracle queried when getting prices."""
+        """Wrapper for _find_prices to include the oracle queried when getting prices."""
         return Inquirer._find_prices(
             from_assets=from_assets,
             to_asset=to_asset,
@@ -791,32 +829,26 @@ class Inquirer:
         )
 
     @staticmethod
-    @handle_recursion_error(return_price_only=True)
     def find_usd_price(
             asset: Asset,
             ignore_cache: bool = False,
             skip_onchain: bool = False,
     ) -> Price:
-        """Wrapper around find_usd_price_and_oracle to ignore
-        the oracle queried when getting a single usd price.
-        """
-        price, _ = Inquirer.find_usd_price_and_oracle(
-            asset=asset,
+        """Wrapper for find_usd_prices to get the usd price of a single asset."""
+        return Inquirer.find_usd_prices(
+            assets=[asset],
             ignore_cache=ignore_cache,
             skip_onchain=skip_onchain,
-        )
-        return price
+        ).get(asset, ZERO_PRICE)
 
     @staticmethod
-    @handle_recursion_error()
     def find_usd_price_and_oracle(
             asset: Asset,
             ignore_cache: bool = False,
             skip_onchain: bool = False,
     ) -> tuple[Price, CurrentPriceOracle]:
-        """Wrapper around find_usd_prices_and_oracles to include the
-        oracle queried when getting a single usd price.
-        """
+        """Wrapper for find_usd_prices_and_oracles to
+        get the usd price and oracle for a single asset."""
         return Inquirer.find_usd_prices_and_oracles(
             assets=[asset],
             ignore_cache=ignore_cache,
@@ -824,174 +856,32 @@ class Inquirer:
         ).get(asset, (ZERO_PRICE, CurrentPriceOracle.FIAT))
 
     @staticmethod
-    @handle_recursion_error(return_dict=True)
     def find_usd_prices(
             assets: list[Asset],
             ignore_cache: bool = False,
             skip_onchain: bool = False,
     ) -> dict[Asset, Price]:
-        """Wrapper around _find_usd_prices to ignore the oracle queried when getting prices."""
-        return {
-            asset: price_and_oracle[0]
-            for asset, price_and_oracle in Inquirer._find_usd_prices(
-                assets=assets,
-                ignore_cache=ignore_cache,
-                skip_onchain=skip_onchain,
-            ).items()
-        }
-
-    @staticmethod
-    @handle_recursion_error(return_dict=True)
-    def find_usd_prices_and_oracles(
-            assets: list[Asset],
-            ignore_cache: bool = False,
-            skip_onchain: bool = False,
-    ) -> dict[Asset, tuple[Price, CurrentPriceOracle]]:
-        """Wrapper around _find_usd_prices to include the
-        oracles queried when getting usd prices.
-        """
-        return Inquirer._find_usd_prices(
-            assets=assets,
+        """Wrapper for find_prices to get usd prices."""
+        return Inquirer.find_prices(
+            from_assets=assets,
+            to_asset=A_USD,
             ignore_cache=ignore_cache,
             skip_onchain=skip_onchain,
         )
 
     @staticmethod
-    def _find_usd_prices(
+    def find_usd_prices_and_oracles(
             assets: list[Asset],
             ignore_cache: bool = False,
             skip_onchain: bool = False,
     ) -> dict[Asset, tuple[Price, CurrentPriceOracle]]:
-        """Returns a dict mapping assets to a tuple of the price found and the oracle used.
-        If all options for finding a price are unsuccessful the price will be set to ZERO_PRICE,
-        and any errors will be logged in the logs.
-        """
-        found_prices: dict[Asset, tuple[Price, CurrentPriceOracle]] = {}
-
-        # Retrieve prices from the cache, and set
-        assets_without_price: list[Asset] = []
-        for asset in assets:
-            if asset == A_USD:
-                found_prices[asset] = Price(ONE), CurrentPriceOracle.FIAT
-                continue
-            elif asset == A_ETH2:
-                asset = A_ETH  # noqa: PLW2901  # we do want to overwrite the loop variable
-
-            if ignore_cache is False:
-                cache = Inquirer.get_cached_current_price_entry(cache_key=(asset, A_USD))
-                if cache is not None:
-                    found_prices[asset] = cache.price, cache.oracle
-                    continue
-
-            try:
-                resolved_asset = asset.resolve()
-            except UnknownAsset:
-                log.error(f'Tried to ask for {asset.identifier} price but asset is missing from the DB')  # noqa: E501
-                found_prices[asset] = ZERO_PRICE, CurrentPriceOracle.FIAT
-                continue
-
-            if isinstance(resolved_asset, FiatAsset):
-                with suppress(RemoteError):
-                    found_prices[resolved_asset] = Inquirer._query_fiat_pair(
-                        base=resolved_asset,
-                        quote=Inquirer.usd,
-                    )
-                    continue
-
-            assets_without_price.append(resolved_asset)
-
-        if len(assets_without_price) == 0:
-            return found_prices  # All prices have been found in the loop above
-
-        # continue, assets aren't fiat, check manual prices
-        prices, assets_without_price = Inquirer._try_oracle_price_query(  # type: ignore[assignment]  # Manual current oracle uses Asset type
-            oracle=CurrentPriceOracle.MANUALCURRENT,
-            oracle_instance=Inquirer._manualcurrent,
-            from_assets=assets_without_price,  # type: ignore[arg-type]  # Manual current oracle works with Asset type
-            to_asset=A_USD.resolve_to_asset_with_oracles(),
+        """Wrapper for _find_prices to get usd prices and oracles."""
+        return Inquirer._find_prices(
+            from_assets=assets,
+            to_asset=A_USD,
+            ignore_cache=ignore_cache,
+            skip_onchain=skip_onchain,
         )
-        for asset, price in prices.items():
-            found_prices[asset] = price, CurrentPriceOracle.MANUALCURRENT
-
-        for asset in assets_without_price:
-            # Try and check if it is an ethereum token with specified protocol or underlying tokens
-            is_known_protocol = False
-            if isinstance(asset, EvmToken):
-                if asset.protocol is not None:
-                    is_known_protocol = asset.protocol in ProtocolsWithPriceLogic
-                underlying_tokens = asset.underlying_tokens
-
-                # Check if it is a special token
-                if asset.identifier in Inquirer.special_tokens:
-                    ethereum = Inquirer.get_evm_manager(chain_id=ChainID.ETHEREUM)
-                    underlying_asset_price, oracle = get_underlying_asset_price(asset)
-                    usd_price = handle_defi_price_query(
-                        ethereum=ethereum.node_inquirer,  # type:ignore  # ethereum is an EthereumManager so the inquirer is of the expected type
-                        token=asset,
-                        underlying_asset_price=underlying_asset_price,
-                    )
-                    price = ZERO_PRICE if usd_price is None else Price(usd_price)
-
-                    Inquirer.set_cached_price(
-                        cache_key=(asset, A_USD),
-                        cached_price=CachedPriceEntry(
-                            price=price,
-                            time=ts_now(),
-                            oracle=CurrentPriceOracle.BLOCKCHAIN,
-                        ),
-                    )
-                    found_prices[asset] = price, oracle
-                    continue
-
-                if is_known_protocol is True or underlying_tokens is not None:
-                    if (
-                        underlying_tokens is not None and
-                        asset.evm_address in (x.address for x in underlying_tokens)
-                    ):
-                        Inquirer._msg_aggregator.add_error(
-                            f'Token {asset} has itself as underlying token. Please edit the '
-                            'asset to fix it. Price queries will not work until this is done.',
-                        )
-                    else:
-                        result, oracle = get_underlying_asset_price(asset)
-                        if result is not None:
-                            Inquirer.set_cached_price(
-                                cache_key=(asset, A_USD),
-                                cached_price=CachedPriceEntry(
-                                    price=(usd_price := Price(result)),
-                                    time=ts_now(),
-                                    oracle=oracle,
-                                ),
-                            )
-                            found_prices[asset] = usd_price, oracle
-                            continue
-                    # else known protocol on-chain query failed. Continue to external oracles
-
-            if asset == A_BSQ:
-                # BSQ is defined as 100 satohis but can be traded. Before we were using an api
-                # to query the BSQ market but it isn't available anymore so we assume BTC_PER_BSQ
-                # to obtain a price based on BTC price.
-                btc_price = Inquirer.find_usd_price(A_BTC)
-                found_prices[asset] = Price(BTC_PER_BSQ * btc_price), CurrentPriceOracle.BLOCKCHAIN
-                continue
-
-            if asset == A_KFEE:
-                # KFEE is a kraken special asset where 1000 KFEE = 10 USD
-                found_prices[asset] = Price(FVal(0.01)), CurrentPriceOracle.FIAT
-                continue
-
-        # Query prices from the oracles for any assets whose price has not already been found.
-        if len(assets_to_query := [
-            asset for asset in assets_without_price
-            if asset not in found_prices
-        ]) != 0:
-            found_prices.update(Inquirer._query_oracle_instances(
-                from_assets=assets_to_query,
-                to_asset=A_USD,
-                skip_onchain=skip_onchain,
-            ))
-
-        return found_prices
 
     def find_lp_price_from_uniswaplike_pool(
             self,
@@ -1372,13 +1262,12 @@ class Inquirer:
         instance = Inquirer()
         rates = {instance.usd: Price(ONE)}
         for currency in currencies:
-            try:
-                price, _ = Inquirer()._query_fiat_pair(
-                    base=instance.usd,
-                    quote=currency,
-                )
-                rates[currency] = price
-            except RemoteError:
+            if (price_and_oracle := Inquirer()._query_fiat_pair(
+                base=instance.usd,
+                quote=currency,
+            )) is not None:
+                rates[currency], _ = price_and_oracle
+            else:
                 rates[currency] = ZERO_PRICE
 
         return rates
@@ -1436,16 +1325,40 @@ class Inquirer:
         return rate
 
     @staticmethod
+    def _query_fiat_pairs(
+            from_assets: list[Asset],
+            to_asset: Asset,
+    ) -> tuple[list[Asset], dict[Asset, tuple[Price, CurrentPriceOracle]]]:
+        """If to_asset is fiat, query the current price for any fiat assets in from_assets.
+        Returns a tuple containing a list of non fiat assets and a dict of prices found.
+        """
+        if not to_asset.is_fiat():
+            return from_assets, {}
+
+        non_fiat_assets, found_prices = [], {}
+        for from_asset in from_assets:
+            if (
+                from_asset.is_fiat() and
+                (price_and_oracle := Inquirer._query_fiat_pair(
+                    base=from_asset.resolve_to_fiat_asset(),
+                    quote=to_asset.resolve_to_fiat_asset(),
+                )) is not None
+            ):
+                found_prices[from_asset] = price_and_oracle
+                continue
+
+            non_fiat_assets.append(from_asset)
+
+        return non_fiat_assets, found_prices
+
+    @staticmethod
     def _query_fiat_pair(
             base: FiatAsset,
             quote: FiatAsset,
-    ) -> tuple[Price, CurrentPriceOracle]:
-        """Queries the current price between two fiat assets
-
-        If a current price is not found but a cached price within 30 days is found
-        then that one is used.
-
-        May raise RemoteError if a price can not be found
+    ) -> tuple[Price, CurrentPriceOracle] | None:
+        """Queries the current price between two fiat assets.
+        Returns a tuple containing the current price (or a cached price from within
+        the last 30 days) and the oracle. Logs an error and returns None if no price can be found.
         """
         if base == quote:
             return Price(ONE), CurrentPriceOracle.FIAT
@@ -1500,9 +1413,8 @@ class Inquirer:
             return price_cache_entry.price, CurrentPriceOracle.FIAT
 
         # else
-        raise RemoteError(
-            f'Could not find a current {base.identifier} price for {quote.identifier}',
-        )
+        log.error(f'Could not find a current {base.identifier} price for {quote.identifier}')
+        return None
 
     @staticmethod
     def clear() -> None:

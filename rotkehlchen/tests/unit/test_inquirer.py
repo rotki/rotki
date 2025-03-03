@@ -193,11 +193,10 @@ def test_fallback_to_cached_values_within_a_month(inquirer):  # pylint: disable=
         )
         assert result[0] == eurjpy_val
         # The cached response for EUR CNY is too old so we will fail here
-        with pytest.raises(RemoteError):
-            result = inquirer._query_fiat_pair(
-                A_EUR.resolve_to_fiat_asset(),
-                A_CNY.resolve_to_fiat_asset(),
-            )
+        assert inquirer._query_fiat_pair(
+            A_EUR.resolve_to_fiat_asset(),
+            A_CNY.resolve_to_fiat_asset(),
+        ) is None
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
@@ -254,7 +253,7 @@ def test_find_usd_price_cache(inquirer, freezer):  # pylint: disable=unused-argu
 
     cc_patch = patch.object(
         inquirer._cryptocompare,
-        'query_multiple_current_price',
+        'query_multiple_current_prices',
         wraps=mock_query_price,
     )
     inquirer.set_oracles_order(oracles=[CurrentPriceOracle.CRYPTOCOMPARE])
@@ -331,13 +330,13 @@ def test_find_usd_price_no_price_found(inquirer):
     inquirer._oracle_instances = [MagicMock() for _ in inquirer._oracles]
 
     for oracle_instance in inquirer._oracle_instances:
-        oracle_instance.query_multiple_current_price.return_value = {}
+        oracle_instance.query_multiple_current_prices.return_value = {}
 
     price = inquirer.find_usd_price(A_BTC)
 
     assert price == ZERO_PRICE
     for oracle_instance in inquirer._oracle_instances:
-        assert oracle_instance.query_multiple_current_price.call_count == 1
+        assert oracle_instance.query_multiple_current_prices.call_count == 1
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
@@ -349,14 +348,14 @@ def test_find_usd_price_via_second_oracle(inquirer):
     inquirer._oracle_instances = [MagicMock() for _ in inquirer._oracles]
 
     expected_price = Price(FVal('30000'))
-    inquirer._oracle_instances[0].query_multiple_current_price.side_effect = RemoteError
-    inquirer._oracle_instances[1].query_multiple_current_price.return_value = {A_BTC: expected_price}  # noqa: E501
+    inquirer._oracle_instances[0].query_multiple_current_prices.side_effect = RemoteError
+    inquirer._oracle_instances[1].query_multiple_current_prices.return_value = {A_BTC: expected_price}  # noqa: E501
 
     price = inquirer.find_usd_price(A_BTC)
 
     assert price == expected_price
     for oracle_instance in inquirer._oracle_instances[0:2]:
-        assert oracle_instance.query_multiple_current_price.call_count == 1
+        assert oracle_instance.query_multiple_current_prices.call_count == 1
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
@@ -461,19 +460,19 @@ def test_find_aerodrome_lp_token_price(inquirer, base_manager):
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 def test_find_curve_lp_token_price(inquirer: 'Inquirer', blockchain: 'ChainsAggregator'):
     tested_tokens: dict[ChainID, tuple[str, FVal]] = {
-        ChainID.ETHEREUM: ('0xA3D87FffcE63B53E0d54fAa1cc983B7eB0b74A9c', FVal('4062.365420')),
+        ChainID.ETHEREUM: ('0xA3D87FffcE63B53E0d54fAa1cc983B7eB0b74A9c', FVal('2577.551783')),
         # 3CRV-OP-gauge
-        ChainID.OPTIMISM: ('0x4456d13Fc6736e8e8330394c0C622103E06ea419', FVal('2058.823988')),
+        ChainID.OPTIMISM: ('0x4456d13Fc6736e8e8330394c0C622103E06ea419', FVal('1737.730901')),
         # Curve.fi amDAI/amUSDC/amUSDT (am3CRV)
-        ChainID.POLYGON_POS: ('0xE7a24EF0C5e95Ffb0f6684b813A78F2a3AD7D171', FVal('1.139456')),
+        ChainID.POLYGON_POS: ('0xE7a24EF0C5e95Ffb0f6684b813A78F2a3AD7D171', FVal('1.139380')),
         # crvUSDT-gauge
-        ChainID.ARBITRUM_ONE: ('0xB08FEf57bFcc5f7bF0EF69C0c090849d497C8F8A', FVal('2.671811')),
+        ChainID.ARBITRUM_ONE: ('0xB08FEf57bFcc5f7bF0EF69C0c090849d497C8F8A', FVal('1.726938')),
         # tricrypto
-        ChainID.BASE: ('0x63Eb7846642630456707C3efBb50A03c79B89D81', FVal('1.028638')),
+        ChainID.BASE: ('0x63Eb7846642630456707C3efBb50A03c79B89D81', FVal('1.032154')),
         # crvusdusdt-gauge
-        ChainID.GNOSIS: ('0xC2EfDbC1a21D82A677380380eB282a963A6A6ada', FVal('1.001272')),
+        ChainID.GNOSIS: ('0xC2EfDbC1a21D82A677380380eB282a963A6A6ada', FVal('1.000344')),
         # crvUSD/USDT gauge
-        ChainID.BINANCE_SC: ('0x6c816d6Ed4b2B77e121aD7951841A7D0711561b3', FVal('1.004242')),
+        ChainID.BINANCE_SC: ('0x6c816d6Ed4b2B77e121aD7951841A7D0711561b3', FVal('1.004194')),
     }
 
     inquirer.inject_evm_managers([
@@ -918,13 +917,6 @@ def test_recursion_handling_in_inquirer(inquirer: Inquirer, globaldb: GlobalDBHa
     assert price == Price(FVal('10.010'))
 
 
-@pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_recursion_decorator(inquirer: Inquirer):
-    """Test that the decorator handle_recursion_error works properly"""
-    with patch('rotkehlchen.inquirer.Inquirer._find_usd_prices', side_effect=RecursionError):
-        assert inquirer.find_usd_price(A_USDT) == ZERO
-
-
 @pytest.mark.freeze_time
 @pytest.mark.vcr
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
@@ -934,8 +926,8 @@ def test_matic_pol_hardforked_price(inquirer: Inquirer, freezer):
     after_hardfork = Timestamp(POLYGON_POS_POL_HARDFORK + 1)
 
     with patch(
-        'rotkehlchen.externalapis.coingecko.Coingecko.query_multiple_current_price',
-        wraps=inquirer._coingecko.query_multiple_current_price,
+        'rotkehlchen.externalapis.coingecko.Coingecko.query_multiple_current_prices',
+        wraps=inquirer._coingecko.query_multiple_current_prices,
     ) as patched_gecko:
         freezer.move_to(datetime.datetime.fromtimestamp(before_hardfork, tz=datetime.UTC))
         inquirer.find_usd_price(A_POLYGON_POS_MATIC, ignore_cache=True)
@@ -971,7 +963,7 @@ def test_find_vthor_price(inquirer_defi: 'Inquirer', database: 'DBHandler'):
     price = inquirer_defi.find_usd_price(
         asset=Asset('eip155:1/erc20:0x815C23eCA83261b6Ec689b60Cc4a58b54BC24D8D'),
     )
-    assert price.is_close(FVal(0.97656), max_diff=1e-5)
+    assert price.is_close(FVal(0.97656), max_diff='1e-5')
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -981,7 +973,7 @@ def test_find_morpho_vault_price(database: 'DBHandler', inquirer_defi: 'Inquirer
     """Test that we get the correct price for Morpho vault tokens."""
     usual_boosted_usdc_vault = create_ethereum_morpho_vault_token(database=database)
     price = inquirer_defi.find_usd_price(asset=usual_boosted_usdc_vault)
-    assert price.is_close(FVal(1.02611), max_diff=1e-5)
+    assert price.is_close(FVal(1.02611), max_diff='1e-5')
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -1009,7 +1001,7 @@ def test_find_balancer_pool_price(database: 'DBHandler', inquirer_defi: 'Inquire
         )],
     )
     price = inquirer_defi.find_usd_price(asset=pufeth_wseth_token)
-    assert price.is_close(FVal('3400.8425'), max_diff=1e-5)
+    assert price.is_close(FVal('3400.8425'), max_diff='1e-5')
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -1021,7 +1013,7 @@ def test_find_curve_lending_vault_price(
 ) -> None:
     """Test that we get the correct price for Curve lending vault tokens."""
     price = inquirer_defi.find_usd_price(asset=ethereum_vault_token)
-    assert price.is_close(FVal(0.00102), max_diff=1e-5)
+    assert price.is_close(FVal(0.00102), max_diff='1e-5')
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])

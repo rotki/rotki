@@ -56,7 +56,7 @@ class CurrentPriceOracleInterface(abc.ABC):
             Current price between from_asset and to_asset using this oracle's data
         """
 
-    def query_multiple_current_price(
+    def query_multiple_current_prices(
             self,
             from_assets: list[AssetWithOracles],
             to_asset: AssetWithOracles,
