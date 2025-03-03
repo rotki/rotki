@@ -692,15 +692,15 @@ class Coingecko(
             from_asset: AssetWithOracles,
             to_asset: AssetWithOracles,
     ) -> Price:
-        """Wrapper for query_multiple_current_price when only querying a single price.
+        """Wrapper for query_multiple_current_prices when only querying a single price.
         Returns the asset price or ZERO_PRICE if no price is found.
         """
-        return self.query_multiple_current_price(
+        return self.query_multiple_current_prices(
             from_assets=[from_asset],
             to_asset=to_asset,
         ).get(from_asset, ZERO_PRICE)
 
-    def query_multiple_current_price(
+    def query_multiple_current_prices(
             self,
             from_assets: list[AssetWithOracles],
             to_asset: AssetWithOracles,
