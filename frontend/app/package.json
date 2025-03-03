@@ -54,6 +54,7 @@
     "chartjs-plugin-zoom": "2.2.0",
     "consola": "3.4.0",
     "dayjs": "1.11.13",
+    "dexie": "4.0.11",
     "electron-updater": "6.6.0",
     "electron-window-state": "5.0.3",
     "es-toolkit": "1.32.0",

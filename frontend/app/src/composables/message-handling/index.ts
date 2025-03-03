@@ -1,5 +1,5 @@
 import { type Notification, Priority, Severity } from '@rotki/common';
-import { backoff } from '@shared/utils';
+import { backoff, startPromise } from '@shared/utils';
 import {
   type BalanceSnapshotError,
   type DbUploadResult,
@@ -20,7 +20,6 @@ import {
 import { useCalendarReminderHandler } from '@/composables/message-handling/calendar-reminder';
 import { useCsvImportResultHandler } from '@/composables/message-handling/csv-import-result';
 import { useNewTokenDetectedHandler } from '@/composables/message-handling/new-token-detected';
-import { useExchangeUnknownAssetHandler } from '@/composables/message-handling/exchange-unknown-asset';
 import { useHistoryStore } from '@/store/history';
 import { useAccountMigrationStore } from '@/store/blockchain/accounts/migrate';
 import { useNotificationsStore } from '@/store/notifications';
@@ -33,6 +32,7 @@ import { useSessionApi } from '@/composables/api/session';
 import { useBlockchainBalances } from '@/composables/blockchain/balances';
 import { useLiquityStore } from '@/store/defi/liquity';
 import { useHistoricCachePriceStore } from '@/store/prices/historic';
+import { useExchangeUnknownAssetHandler } from '@/modules/asset-manager/missing-mappings/use-exchange-unknown-asset-handler';
 
 interface UseMessageHandling {
   handleMessage: (data: string) => Promise<void>;
@@ -128,7 +128,7 @@ export function useMessageHandling(): UseMessageHandling {
     }
   };
 
-  const handleProgressUpdates = (rawData: ProgressUpdateResultData): Notification | null => {
+  const handleProgressUpdates = async (rawData: ProgressUpdateResultData): Promise<Notification | null> => {
     const subtype = rawData.subtype;
 
     if (subtype === SocketMessageProgressUpdateSubType.CSV_IMPORT_RESULT) {
@@ -167,7 +167,7 @@ export function useMessageHandling(): UseMessageHandling {
     };
 
     if (type === SocketMessageType.MISSING_API_KEY) {
-      addNotification(handleMissingApiKeyMessage(message.data));
+      addNotification(await handleMissingApiKeyMessage(message.data));
     }
     else if (type === SocketMessageType.BALANCES_SNAPSHOT_ERROR) {
       addNotification(handleSnapshotError(message.data));
@@ -205,16 +205,16 @@ export function useMessageHandling(): UseMessageHandling {
       handleDbUploadResult(message.data);
     }
     else if (type === SocketMessageType.ACCOUNTING_RULE_CONFLICT) {
-      addNotification(handleAccountingRuleConflictMessage(message.data));
+      addNotification(await handleAccountingRuleConflictMessage(message.data));
     }
     else if (type === SocketMessageType.CALENDAR_REMINDER) {
-      addNotification(handleCalendarReminder(message.data));
+      addNotification(await handleCalendarReminder(message.data));
     }
     else if (type === SocketMessageType.EXCHANGE_UNKNOWN_ASSET) {
-      addNotification(handleExchangeUnknownAsset(message.data));
+      addNotification(await handleExchangeUnknownAsset(message.data));
     }
     else if (type === SocketMessageType.PROGRESS_UPDATES) {
-      addNotification(handleProgressUpdates(message.data));
+      addNotification(await handleProgressUpdates(message.data));
     }
     else {
       logger.warn(`Unsupported socket message received: '${type}'`);
@@ -239,7 +239,7 @@ export function useMessageHandling(): UseMessageHandling {
       else if (object.type === SocketMessageType.DATA_MIGRATION_STATUS)
         updateDataMigrationStatus(object);
       else if (object.type === SocketMessageType.PROGRESS_UPDATES)
-        handleProgressUpdates(object);
+        startPromise(handleProgressUpdates(object));
       else logger.error('unsupported message:', message);
     }
     catch {

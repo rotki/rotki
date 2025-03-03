@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { Blockchain, CommonQueryStatusData, type Notification } from '@rotki/common';
+import { Blockchain, CommonQueryStatusData, type MaybePromise, type Notification } from '@rotki/common';
 import { EvmChainAddress, EvmChainLikeAddress } from '@/types/history/events';
 import { CalendarEventPayload } from '@/types/history/calendar';
 
@@ -364,5 +364,5 @@ export const WebsocketMessage = z.union([
 export type WebsocketMessage = z.infer<typeof WebsocketMessage>;
 
 export interface CommonMessageHandler<T> {
-  handle: (data: T) => Notification;
+  handle: (data: T) => MaybePromise<Notification>;
 }
