@@ -38,6 +38,7 @@ from rotkehlchen.utils.misc import (
     from_gwei,
     from_wei,
     set_user_agent,
+    timestamp_to_iso8601,
     ts_now,
     ts_sec_to_ms,
 )
@@ -64,6 +65,10 @@ class BeaconChain(ExternalServiceWithApiKey):
         set_user_agent(self.session)
         self.url = f'{BEACONCHAIN_ROOT_URL}/api/v1/'
         self.produced_blocks_lock = Semaphore()
+        self.ratelimited_until = Timestamp(0)
+
+    def is_rate_limited(self) -> bool:
+        return self.ratelimited_until > ts_now()
 
     def _query(
             self,
@@ -78,6 +83,16 @@ class BeaconChain(ExternalServiceWithApiKey):
         May raise:
         - RemoteError due to problems querying beaconcha.in API
         """
+        if self.is_rate_limited():
+            log.error(
+                f'Beaconcha.in is rate limited until {self.ratelimited_until} when processing '
+                f'{module=} {endpoint=} {encoded_args=} with {data=}',
+            )
+            raise RemoteError(
+                'Beaconcha.in is rate limited until '
+                f'{timestamp_to_iso8601(self.ratelimited_until)}. Check logs for more details',
+            )
+
         if endpoint is None:  # for now only validator data
             query_str = f'{self.url}{module}'
         elif endpoint in ('eth1', 'stats'):
@@ -144,6 +159,7 @@ class BeaconChain(ExternalServiceWithApiKey):
                             f'daily limit: {user_daily_rate_limit}/{daily_rate_limit}, '
                             f'monthly limit: {user_month_rate_limit}/{month_rate_limit}',
                         )
+                        self.ratelimited_until = Timestamp(ts_now() + retry_after_secs)
                         raise RemoteError(msg)
                     # else
                     sleep_seconds = retry_after_secs
