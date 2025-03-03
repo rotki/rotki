@@ -1,10 +1,14 @@
 import logging
-from collections.abc import Callable
-from typing import TYPE_CHECKING, Literal
+from collections.abc import Callable, Mapping
+from typing import TYPE_CHECKING, Any, Literal
 
+from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.ethereum.modules.uniswap.v2.constants import SWAP_SIGNATURE as SWAP_V1
-from rotkehlchen.chain.ethereum.utils import asset_normalized_value
-from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
+from rotkehlchen.chain.ethereum.utils import (
+    asset_normalized_value,
+    token_normalized_value_decimals,
+)
+from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS, ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.interfaces import (
     DecoderInterface,
     ReloadablePoolsAndGaugesDecoderMixin,
@@ -23,16 +27,25 @@ from rotkehlchen.chain.evm.decoding.velodrome.constants import (
     REMOVE_LIQUIDITY_EVENT_V1,
     REMOVE_LIQUIDITY_EVENT_V2,
     SWAP_V2,
+    VOTER_CLAIM_REWARDS,
+    VOTER_VOTED,
+    VOTING_ESCROW_CREATE_LOCK,
+    VOTING_ESCROW_METADATA_UPDATE,
+    VOTING_ESCROW_WITHDRAW,
 )
 from rotkehlchen.chain.evm.decoding.velodrome.velodrome_cache import (
     query_velodrome_like_data,
 )
+from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.constants import ONE, ZERO
+from rotkehlchen.globaldb.cache import globaldb_get_general_cache_values
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.evm_event import EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import CacheType, ChecksumEvmAddress
-from rotkehlchen.utils.misc import bytes_to_address
+from rotkehlchen.serialization.deserialize import deserialize_timestamp
+from rotkehlchen.types import CacheType, ChecksumEvmAddress, EvmTokenKind, GeneralCacheType
+from rotkehlchen.utils.misc import bytes_to_address, timestamp_to_date
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.base.node_inquirer import BaseInquirer
@@ -55,7 +68,12 @@ class VelodromeLikeDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixi
             base_tools: 'BaseDecoderTools',
             msg_aggregator: 'MessagesAggregator',
             counterparty: Literal['velodrome', 'aerodrome'],
+            voting_escrow_address: ChecksumEvmAddress,
+            voter_address: ChecksumEvmAddress,
             routers: set[ChecksumEvmAddress],
+            token_symbol: Literal['AERO', 'VELO'],
+            gauge_bribes_cache_type: GeneralCacheType,
+            gauge_fees_cache_type: GeneralCacheType,
             pool_cache_type: CacheType,
             read_fn: Callable[[], tuple[set[ChecksumEvmAddress], set[ChecksumEvmAddress]]],
             pool_token_protocol: str,
@@ -75,6 +93,11 @@ class VelodromeLikeDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixi
         self.counterparty = counterparty
         self.pool_token_protocol = pool_token_protocol
         self.protocol_addresses = routers  # protocol_addresses are updated with pools in post_cache_update_callback  # noqa: E501
+        self.voting_escrow_address = voting_escrow_address
+        self.gauge_bribes_cache_type = gauge_bribes_cache_type
+        self.gauge_fees_cache_type = gauge_fees_cache_type
+        self.voter_address = voter_address
+        self.token_symbol = token_symbol
 
     @property
     def pools(self) -> set[ChecksumEvmAddress]:
@@ -256,3 +279,216 @@ class VelodromeLikeDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixi
                     event.notes = f'Receive {event.amount} {crypto_asset.symbol} rewards from {gauge_address} {self.counterparty} gauge'  # noqa: E501
 
         return DecodingOutput(refresh_balances=found_event_modifying_balances)
+
+    def _decode_voting_escrow_events(self, context: DecoderContext) -> DecodingOutput:
+        if context.tx_log.topics[0] == VOTING_ESCROW_WITHDRAW:
+            return self._decode_withdraw_event(context)
+        elif context.tx_log.topics[0] == VOTING_ESCROW_CREATE_LOCK:
+            return self._decode_create_lock_event(context)
+        elif context.tx_log.topics[0] == VOTING_ESCROW_METADATA_UPDATE:
+            return self._decode_metadata_update_event(context)
+
+        return DEFAULT_DECODING_OUTPUT
+
+    def _decode_withdraw_event(self, context: DecoderContext) -> DecodingOutput:
+        amount = token_normalized_value_decimals(
+            token_amount=int.from_bytes(context.tx_log.data[:32]),
+            token_decimals=DEFAULT_TOKEN_DECIMALS,
+        )
+        token_id = int.from_bytes(context.tx_log.topics[2])
+        for event in context.decoded_events:
+            if (
+                    event.event_type == HistoryEventType.SPEND and
+                    event.event_subtype == HistoryEventSubType.NONE and
+                    event.location_label == bytes_to_address(context.tx_log.topics[1]) and
+                    event.address == ZERO_ADDRESS and
+                    event.amount == ONE
+            ):
+                event.counterparty = self.counterparty
+                event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
+                event.event_type = HistoryEventType.SPEND
+                event.notes = f'Burn veNFT-{token_id} to unlock {amount} {self.token_symbol} from vote escrow'  # noqa: E501
+
+            elif (
+                    event.event_type == HistoryEventType.RECEIVE and
+                    event.event_subtype == HistoryEventSubType.NONE and
+                    event.amount == amount and
+                    event.address == self.voting_escrow_address
+            ):
+                event.counterparty = self.counterparty
+                event.event_type = HistoryEventType.WITHDRAWAL
+                event.event_subtype = HistoryEventSubType.REDEEM_WRAPPED
+                event.notes = f'Receive {amount} {self.token_symbol} from vote escrow after burning veNFT-{token_id}'  # noqa: E501
+
+        return DEFAULT_DECODING_OUTPUT
+
+    def _decode_create_lock_event(self, context: DecoderContext) -> DecodingOutput:
+        in_event, out_event = None, None
+        token_id = int.from_bytes(context.tx_log.topics[2])
+        amount = token_normalized_value_decimals(
+            token_amount=int.from_bytes(context.tx_log.data[:32]),
+            token_decimals=DEFAULT_TOKEN_DECIMALS,
+        )
+        for event in context.decoded_events:
+            if (
+                    event.event_type == HistoryEventType.RECEIVE and
+                    event.event_subtype == HistoryEventSubType.NONE and
+                    event.address == ZERO_ADDRESS and
+                    event.amount == ONE
+            ):
+                event.notes = f'Receive veNFT-{token_id} for locking {amount} {self.token_symbol} in vote escrow'  # noqa: E501
+                event.event_type = HistoryEventType.RECEIVE
+                event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
+                event.counterparty = self.counterparty
+                in_event = event
+
+            elif (
+                    event.event_type == HistoryEventType.SPEND and
+                    event.event_subtype == HistoryEventSubType.NONE and
+                    event.address == self.voting_escrow_address and
+                    event.amount == amount
+            ):
+                event.notes = f'Lock {amount} {self.token_symbol} in vote escrow until {timestamp_to_date((lock_time := deserialize_timestamp(int.from_bytes(context.tx_log.data[32:64]))), formatstr="%d/%m/%Y")}'  # noqa: E501
+                event.event_subtype = HistoryEventSubType.DEPOSIT_FOR_WRAPPED
+                event.extra_data = {
+                    'token_id': token_id,
+                    'lock_time': lock_time,
+                }
+                event.event_type = HistoryEventType.DEPOSIT
+                event.counterparty = self.counterparty
+                out_event = event
+
+        maybe_reshuffle_events(
+            ordered_events=[out_event, in_event],
+            events_list=context.decoded_events,
+        )
+
+        return DEFAULT_DECODING_OUTPUT
+
+    def _decode_metadata_update_event(self, context: DecoderContext) -> DecodingOutput:
+        for event in context.decoded_events:
+            if (
+                    event.event_type == HistoryEventType.DEPOSIT and
+                    event.event_subtype == HistoryEventSubType.DEPOSIT_FOR_WRAPPED and
+                    event.counterparty == self.counterparty
+            ):  # increase amount locked
+                token_id = event.extra_data['token_id']  # type: ignore[index]  # it is always available
+                event.notes = f'Increase locked amount in veNFT-{token_id} by {event.amount} {self.token_symbol}'  # noqa: E501
+                event.event_type = HistoryEventType.DEPOSIT
+                event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
+                event.extra_data = None
+                return DEFAULT_DECODING_OUTPUT
+
+        for tx_log in context.all_logs:  # Handle increase unlock time case
+            if tx_log.topics[0] != VOTING_ESCROW_CREATE_LOCK:
+                continue
+
+            # depositType=3 (i.e. increase unlock time)
+            if int.from_bytes(tx_log.topics[3]) != 3:
+                continue
+
+            return DecodingOutput(event=self.base.make_event_from_transaction(
+                transaction=context.transaction,
+                tx_log=context.tx_log,
+                event_type=HistoryEventType.INFORMATIONAL,
+                event_subtype=HistoryEventSubType.NONE,
+                extra_data={
+                    'token_id': (token_id := int.from_bytes(tx_log.topics[2])),
+                    'lock_time': (new_unlock_time := deserialize_timestamp(int.from_bytes(tx_log.data[32:64]))),  # noqa: E501
+                },
+                amount=ZERO,
+                counterparty=self.counterparty,
+                address=self.voting_escrow_address,
+                location_label=bytes_to_address(tx_log.topics[1]),
+                notes=f'Increase unlock time to {timestamp_to_date(new_unlock_time, "%d/%m/%Y")} for {self.token_symbol} veNFT-{token_id}',  # type: ignore[has-type]  # mypy cannot infer it is a timestamp  # noqa: E501
+                asset=get_or_create_evm_token(
+                    userdb=self.base.database,
+                    evm_address=self.voting_escrow_address,
+                    chain_id=self.evm_inquirer.chain_id,
+                    token_kind=EvmTokenKind.ERC721,
+                    collectible_id=str(token_id),
+                )),
+            )
+
+        return DEFAULT_DECODING_OUTPUT
+
+    def _decode_claim_rewards_events(
+            self,
+            suffix: str,
+            context: DecoderContext,
+    ) -> DecodingOutput:
+        if context.tx_log.topics[0] != VOTER_CLAIM_REWARDS:
+            return DEFAULT_DECODING_OUTPUT
+
+        for event in context.decoded_events:
+            if (
+                event.asset != (reward_token := self.base.get_or_create_evm_asset(bytes_to_address(context.tx_log.topics[2]))) and  # noqa: E501
+                event.amount != asset_normalized_value(
+                    amount=int.from_bytes(context.tx_log.data[:32]),
+                    asset=reward_token,
+                )
+            ):
+                continue
+
+            event.counterparty = self.counterparty
+            event.event_type = HistoryEventType.RECEIVE
+            event.event_subtype = HistoryEventSubType.REWARD
+            event.notes = f'Claim {event.amount} {event.asset.resolve_to_asset_with_symbol().symbol} from {self.counterparty} as a {suffix}'  # noqa: E501
+            return DEFAULT_DECODING_OUTPUT
+
+        return DEFAULT_DECODING_OUTPUT
+
+    def _decode_vote_events(self, context: DecoderContext) -> DecodingOutput:
+        if context.tx_log.topics[0] != VOTER_VOTED:
+            return DEFAULT_DECODING_OUTPUT
+
+        weight = token_normalized_value_decimals(
+            token_amount=int.from_bytes(context.tx_log.data[:32]),
+            token_decimals=DEFAULT_TOKEN_DECIMALS,
+        )
+        return DecodingOutput(event=self.base.make_event_from_transaction(
+            tx_log=context.tx_log,
+            transaction=context.transaction,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=get_or_create_evm_token(
+                userdb=self.base.database,
+                evm_address=self.voting_escrow_address,
+                chain_id=self.evm_inquirer.chain_id,
+                token_kind=EvmTokenKind.ERC721,
+                collectible_id=str(int.from_bytes(context.tx_log.topics[3])),
+            ),
+            amount=ZERO,
+            counterparty=self.counterparty,
+            address=self.voter_address,
+            location_label=bytes_to_address(context.tx_log.topics[1]),
+            notes=f'Cast {weight} votes for pool {bytes_to_address(context.tx_log.topics[2])}',
+        ))
+
+    def reload_data(self) -> Mapping[ChecksumEvmAddress, tuple[Any, ...]] | None:
+        parent_mappings = super().reload_data()
+        decoder_mappings = self.addresses_to_decoders()
+        if parent_mappings is None:
+            return decoder_mappings
+
+        return dict(parent_mappings) | decoder_mappings
+
+    def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
+        decoders = {
+            self.voting_escrow_address: (self._decode_voting_escrow_events,),
+            self.voter_address: (self._decode_vote_events,),
+        }
+        with GlobalDBHandler().conn.read_ctx() as cursor:
+            for addy in globaldb_get_general_cache_values(
+                cursor=cursor,
+                key_parts=[self.gauge_fees_cache_type],
+            ):
+                decoders[string_to_evm_address(addy)] = (lambda context: self._decode_claim_rewards_events(context=context, suffix='fee'),)  # noqa: E501
+
+            for addy in globaldb_get_general_cache_values(
+                cursor=cursor,
+                key_parts=[self.gauge_bribes_cache_type],
+            ):
+                decoders[string_to_evm_address(addy)] = (lambda context: self._decode_claim_rewards_events(context=context, suffix='bribe'),)  # noqa: E501
+
+            return decoders

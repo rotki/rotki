@@ -6,7 +6,7 @@ from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.velodrome.constants import CPT_AERODROME
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants import ZERO
+from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.fval import FVal
@@ -280,6 +280,253 @@ def test_remove_liquidity(base_accounts, base_transaction_decoder, load_global_c
             address=pool_address,
             product=EvmProduct.POOL,
             notes=f'Remove {usdbc_amount} USDbC from aerodrome pool {pool_address}',
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr
+@pytest.mark.parametrize('base_accounts', [['0x123509D7e9e6576263B10100cf7EB016C64F73Ce']])
+def test_unlock_aero(base_accounts, base_transaction_decoder):
+    user_address, evmhash = base_accounts[0], deserialize_evm_tx_hash('0xb4166c9b0c6076197ab2c17bdef8a55b050880d7005d874152a9f23ce7626790')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=base_transaction_decoder.evm_inquirer,
+        tx_hash=evmhash,
+    )
+    expected_events = [
+        EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=0,
+            timestamp=(timestamp := TimestampMS(1740994131000)),
+            location=Location.BASE,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=FVal(gas_str := '0.000002416100602324'),
+            location_label=user_address,
+            counterparty=CPT_GAS,
+            notes=f'Burn {gas_str} ETH for gas',
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=140,
+            timestamp=timestamp,
+            location=Location.BASE,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.RETURN_WRAPPED,
+            asset=Asset('eip155:8453/erc721:0xeBf418Fe2512e7E6bd9b87a8F0f294aCDC67e6B4/71294'),
+            amount=ONE,
+            location_label=user_address,
+            counterparty=CPT_AERODROME,
+            address=ZERO_ADDRESS,
+            notes=f'Burn veNFT-71294 to unlock {(withdrawn_amt := "320.702116818286038014")} AERO from vote escrow',  # noqa: E501
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=141,
+            timestamp=timestamp,
+            location=Location.BASE,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
+            asset=Asset('eip155:8453/erc20:0x940181a94A35A4569E4529A3CDfB74e38FD98631'),
+            amount=FVal(withdrawn_amt),
+            location_label=user_address,
+            counterparty=CPT_AERODROME,
+            address=string_to_evm_address('0xeBf418Fe2512e7E6bd9b87a8F0f294aCDC67e6B4'),
+            notes=f'Receive {withdrawn_amt} AERO from vote escrow after burning veNFT-71294',
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr
+@pytest.mark.parametrize('base_accounts', [['0x1453Acb73B4c13BCE00496Ae00DdC7E4cF484C6c']])
+def test_lock_aero(base_accounts, base_transaction_decoder):
+    user_address, evmhash = base_accounts[0], deserialize_evm_tx_hash('0xe129665629d4df774f6dcad6170bddec73a9a45aed4fb3c5084337b85addce71')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=base_transaction_decoder.evm_inquirer,
+        tx_hash=evmhash,
+    )
+    expected_events = [
+        EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=0,
+            timestamp=(timestamp := TimestampMS(1741005765000)),
+            location=Location.BASE,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=FVal(gas_str := '0.000002595608432929'),
+            location_label=user_address,
+            counterparty=CPT_GAS,
+            notes=f'Burn {gas_str} ETH for gas',
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=309,
+            timestamp=timestamp,
+            location=Location.BASE,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.APPROVE,
+            asset=Asset('eip155:8453/erc20:0x940181a94A35A4569E4529A3CDfB74e38FD98631'),
+            amount=ZERO,
+            location_label=user_address,
+            address=string_to_evm_address('0xeBf418Fe2512e7E6bd9b87a8F0f294aCDC67e6B4'),
+            notes=f'Revoke AERO spending approval of {user_address} by 0xeBf418Fe2512e7E6bd9b87a8F0f294aCDC67e6B4',  # noqa: E501
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=310,
+            timestamp=timestamp,
+            location=Location.BASE,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
+            asset=Asset('eip155:8453/erc20:0x940181a94A35A4569E4529A3CDfB74e38FD98631'),
+            amount=FVal(lock_amount := ONE),
+            location_label=user_address,
+            counterparty=CPT_AERODROME,
+            address=string_to_evm_address('0xeBf418Fe2512e7E6bd9b87a8F0f294aCDC67e6B4'),
+            notes=f'Lock {lock_amount} AERO in vote escrow until 06/03/2025',
+            extra_data={'token_id': 71991, 'lock_time': 1741219200},
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=311,
+            timestamp=timestamp,
+            location=Location.BASE,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+            asset=Asset('eip155:8453/erc721:0xeBf418Fe2512e7E6bd9b87a8F0f294aCDC67e6B4/71991'),
+            amount=ONE,
+            location_label=user_address,
+            counterparty=CPT_AERODROME,
+            address=ZERO_ADDRESS,
+            notes=f'Receive veNFT-71991 for locking {lock_amount} AERO in vote escrow',
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr
+@pytest.mark.parametrize('base_accounts', [['0x0E9B063789909565CEdA1Fba162474405A151E66']])
+def test_increase_locked_amount(base_accounts, base_transaction_decoder):
+    user_address, evmhash = base_accounts[0], deserialize_evm_tx_hash('0xf92e665a95eb270e5362a890628198ac762f8d231754213b49360cce31ab2b86')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=base_transaction_decoder.evm_inquirer,
+        tx_hash=evmhash,
+    )
+    expected_events = [
+        EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=0,
+            timestamp=(timestamp := TimestampMS(1741022997000)),
+            location=Location.BASE,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=FVal(gas_str := '0.000001849342754159'),
+            location_label=user_address,
+            counterparty=CPT_GAS,
+            notes=f'Burn {gas_str} ETH for gas',
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=271,
+            timestamp=timestamp,
+            location=Location.BASE,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.APPROVE,
+            asset=Asset('eip155:8453/erc20:0x940181a94A35A4569E4529A3CDfB74e38FD98631'),
+            amount=FVal(approval_amount := '49071.435306527359498584'),
+            location_label=user_address,
+            address=string_to_evm_address('0xeBf418Fe2512e7E6bd9b87a8F0f294aCDC67e6B4'),
+            notes=f'Set AERO spending approval of {user_address} by 0xeBf418Fe2512e7E6bd9b87a8F0f294aCDC67e6B4 to {approval_amount}',  # noqa: E501
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=272,
+            timestamp=timestamp,
+            location=Location.BASE,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+            asset=Asset('eip155:8453/erc20:0x940181a94A35A4569E4529A3CDfB74e38FD98631'),
+            amount=FVal(lock_amount := '1.774997251222472588'),
+            location_label=user_address,
+            counterparty=CPT_AERODROME,
+            address=string_to_evm_address('0xeBf418Fe2512e7E6bd9b87a8F0f294aCDC67e6B4'),
+            notes=f'Increase locked amount in veNFT-3334 by {lock_amount} AERO',
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr
+@pytest.mark.parametrize('base_accounts', [['0x7264A62ae2f2BbE5Fe003F29108afB3C3dA0Bc16']])
+def test_increase_unlock_time(base_accounts, base_transaction_decoder):
+    user_address, evmhash = base_accounts[0], deserialize_evm_tx_hash('0x6ac4bc89809ef7c5f0fd393fc6d162cb1c041f4d4ccc1ce3339f6c6e5614e753')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=base_transaction_decoder.evm_inquirer,
+        tx_hash=evmhash,
+    )
+    expected_events = [
+        EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=0,
+            timestamp=(timestamp := TimestampMS(1741016501000)),
+            location=Location.BASE,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=FVal(gas_str := '0.000008164704817624'),
+            location_label=user_address,
+            counterparty=CPT_GAS,
+            notes=f'Burn {gas_str} ETH for gas',
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=2854,
+            timestamp=timestamp,
+            location=Location.BASE,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=Asset('eip155:8453/erc721:0xeBf418Fe2512e7E6bd9b87a8F0f294aCDC67e6B4/16247'),
+            amount=ZERO,
+            location_label=user_address,
+            address=string_to_evm_address('0xeBf418Fe2512e7E6bd9b87a8F0f294aCDC67e6B4'),
+            extra_data={'token_id': 16247, 'lock_time': 1744243200},
+            counterparty=CPT_AERODROME,
+            notes='Increase unlock time to 10/04/2025 for AERO veNFT-16247',
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr
+@pytest.mark.parametrize('base_accounts', [['0x051113f273942Ce806965F471665B6215B198A88']])
+def test_vote(base_accounts, base_transaction_decoder):
+    user_address, evmhash = base_accounts[0], deserialize_evm_tx_hash('0x9f4cbe2d67c38f08595fee37b73c65c870dd4784e8756fe41e8bda0b5321ae16')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=base_transaction_decoder.evm_inquirer,
+        tx_hash=evmhash,
+    )
+    expected_events = [
+        EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=0,
+            timestamp=(timestamp := TimestampMS(1741030415000)),
+            location=Location.BASE,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=FVal(gas_str := '0.000005544830737074'),
+            location_label=user_address,
+            counterparty=CPT_GAS,
+            notes=f'Burn {gas_str} ETH for gas',
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=278,
+            timestamp=timestamp,
+            location=Location.BASE,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=Asset('eip155:8453/erc721:0xeBf418Fe2512e7E6bd9b87a8F0f294aCDC67e6B4/3251'),
+            amount=ZERO,
+            location_label=user_address,
+            address=string_to_evm_address('0x16613524e02ad97eDfeF371bC883F2F5d6C480A5'),
+            counterparty=CPT_AERODROME,
+            notes='Cast 1805.00657141664811293 votes for pool 0xDbdfAc0F9268EF02c34Ed58c9Fab3517a98444dc',  # noqa: E501
         ),
     ]
     assert events == expected_events

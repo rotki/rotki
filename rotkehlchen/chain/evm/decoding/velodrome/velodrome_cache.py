@@ -51,6 +51,8 @@ class VelodromePoolData(NamedTuple):
     tick_spacing: int
     token0_address: ChecksumEvmAddress
     token1_address: ChecksumEvmAddress
+    fee_address: ChecksumEvmAddress | None
+    bribe_address: ChecksumEvmAddress | None
     gauge_address: ChecksumEvmAddress | None
     chain_id: Literal[ChainID.OPTIMISM, ChainID.BASE]
 
@@ -91,9 +93,13 @@ def save_velodrome_data_to_cache(
             if pool.chain_id == ChainID.OPTIMISM:
                 pool_key = (CacheType.VELODROME_POOL_ADDRESS,)
                 gauge_key = (CacheType.VELODROME_GAUGE_ADDRESS,)
+                fee_key = (CacheType.VELODROME_GAUGE_FEE_ADDRESS,)
+                bribe_key = (CacheType.VELODROME_GAUGE_BRIBE_ADDRESS,)
             else:
                 pool_key = (CacheType.AERODROME_POOL_ADDRESS,)
                 gauge_key = (CacheType.AERODROME_GAUGE_ADDRESS,)
+                fee_key = (CacheType.AERODROME_GAUGE_FEE_ADDRESS,)
+                bribe_key = (CacheType.AERODROME_GAUGE_BRIBE_ADDRESS,)
 
             globaldb_set_general_cache_values(
                 write_cursor=write_cursor,
@@ -105,6 +111,18 @@ def save_velodrome_data_to_cache(
                     write_cursor=write_cursor,
                     key_parts=gauge_key,  # type: ignore
                     values=[pool.gauge_address],
+                )
+            if pool.fee_address is not None:
+                globaldb_set_general_cache_values(
+                    write_cursor=write_cursor,
+                    key_parts=fee_key,  # type: ignore
+                    values=[pool.fee_address],
+                )
+            if pool.bribe_address is not None:
+                globaldb_set_general_cache_values(
+                    write_cursor=write_cursor,
+                    key_parts=bribe_key,  # type: ignore
+                    values=[pool.bribe_address],
                 )
 
 
@@ -224,6 +242,8 @@ def query_velodrome_data_from_chain_and_maybe_create_tokens(
         try:
             token0_address, token1_address = deserialize_evm_address(pool[7]), deserialize_evm_address(pool[10])  # noqa: E501
             gauge_address = deserialize_evm_address(pool[13])
+            fee_address = deserialize_evm_address(pool[16])
+            bribe_address = deserialize_evm_address(pool[17])
         except DeserializationError as e:
             log.error(
                 f'Skipping velodrome pool {pool[0]}. Could not deserialize an evm address while '
@@ -239,6 +259,8 @@ def query_velodrome_data_from_chain_and_maybe_create_tokens(
             tick_spacing=pool[4],
             token0_address=token0_address,
             token1_address=token1_address,
+            fee_address=fee_address if fee_address != ZERO_ADDRESS else None,
+            bribe_address=bribe_address if bribe_address != ZERO_ADDRESS else None,
             gauge_address=gauge_address if gauge_address != ZERO_ADDRESS else None,
             chain_id=inquirer.chain_id,  # type: ignore
         ))

@@ -1181,6 +1181,10 @@ class CacheType(Enum):
     CURVE_LENDING_VAULT_BORROWED_TOKEN = auto()
     AURA_POOLS = auto()  # stores count of pools in db + chain_id (stringified)
     BALANCER_GAUGES = auto()  # stores gauges + chain_id + version
+    VELODROME_GAUGE_FEE_ADDRESS = auto()
+    VELODROME_GAUGE_BRIBE_ADDRESS = auto()
+    AERODROME_GAUGE_FEE_ADDRESS = auto()
+    AERODROME_GAUGE_BRIBE_ADDRESS = auto()
 
     def serialize(self) -> str:
         # Using custom serialize method instead of SerializableEnumMixin since mixin replaces
@@ -1188,7 +1192,8 @@ class CacheType(Enum):
         # TODO: Shorten all cache types not only velodrome
         if self.name.startswith(('VELODROME', 'AERODROME')):
             parts = self.name.split('_')
-            return parts[0][:4] + parts[1][0]  # Shorten the name that is stored in the db to save space. For example: VELODROME_POOL_ADDRESS -> VELOP  # noqa: E501
+            return parts[0][:4] + ''.join(p[0] for p in parts[1:-1])  # Shorten the name that is stored in the db to save space. For example: VELODROME_POOL_ADDRESS -> VELOP  # noqa: E501
+
         return self.name
 
 
@@ -1243,8 +1248,12 @@ GeneralCacheType = Literal[
     CacheType.CURVE_POOL_TOKENS,
     CacheType.VELODROME_POOL_ADDRESS,
     CacheType.VELODROME_GAUGE_ADDRESS,
+    CacheType.VELODROME_GAUGE_BRIBE_ADDRESS,
+    CacheType.VELODROME_GAUGE_FEE_ADDRESS,
     CacheType.AERODROME_POOL_ADDRESS,
     CacheType.AERODROME_GAUGE_ADDRESS,
+    CacheType.AERODROME_GAUGE_BRIBE_ADDRESS,
+    CacheType.AERODROME_GAUGE_FEE_ADDRESS,
     CacheType.CONVEX_POOL_ADDRESS,
     CacheType.SPAM_ASSET_FALSE_POSITIVE,
     CacheType.GEARBOX_POOL_ADDRESS,

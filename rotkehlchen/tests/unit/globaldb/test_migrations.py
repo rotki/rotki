@@ -11,6 +11,7 @@ from rotkehlchen.globaldb.migrations.manager import (
 from rotkehlchen.globaldb.migrations.migration1 import ilk_mapping
 from rotkehlchen.globaldb.utils import GLOBAL_DB_VERSION
 from rotkehlchen.tests.utils.globaldb import patch_for_globaldb_migrations
+from rotkehlchen.types import CacheType
 
 if TYPE_CHECKING:
     from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -62,3 +63,34 @@ def test_migration2(globaldb: 'GlobalDBHandler'):
 
     with globaldb.conn.read_ctx() as cursor:
         assert cursor.execute('SELECT value FROM unique_cache WHERE key=?', ('YEARN_VAULTS',)).fetchone() is None  # noqa: E501
+
+
+@pytest.mark.parametrize('globaldb_upgrades', [[]])
+@pytest.mark.parametrize('run_globaldb_migrations', [False])
+@pytest.mark.parametrize('custom_globaldb', ['v9_global.db'])
+def test_migration3(globaldb: 'GlobalDBHandler'):
+    with globaldb.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM general_cache WHERE key IN (?, ?, ?, ?)',
+            (
+                CacheType.VELODROME_POOL_ADDRESS.serialize(),
+                CacheType.VELODROME_GAUGE_ADDRESS.serialize(),
+                CacheType.AERODROME_POOL_ADDRESS.serialize(),
+                CacheType.AERODROME_GAUGE_ADDRESS.serialize(),
+            ),
+        ).fetchone()[0] == 1914
+
+    with ExitStack() as stack:
+        patch_for_globaldb_migrations(stack, [MIGRATIONS_LIST[2]])
+        maybe_apply_globaldb_migrations(globaldb.conn)
+
+    with globaldb.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM general_cache WHERE key IN (?, ?, ?, ?)',
+            (
+                CacheType.VELODROME_POOL_ADDRESS.serialize(),
+                CacheType.VELODROME_GAUGE_ADDRESS.serialize(),
+                CacheType.AERODROME_POOL_ADDRESS.serialize(),
+                CacheType.AERODROME_GAUGE_ADDRESS.serialize(),
+            ),
+        ).fetchone()[0] == 0
