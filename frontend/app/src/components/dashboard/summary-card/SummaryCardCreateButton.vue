@@ -1,17 +1,19 @@
 <script setup lang="ts">
 import type { RouteLocationRaw } from 'vue-router';
 
-const props = defineProps<{ to: RouteLocationRaw }>();
+const props = defineProps<{ to?: RouteLocationRaw }>();
 
 const router = useRouter();
 
 function navigate() {
-  router.push(props.to);
+  if (props.to) {
+    router.push(props.to);
+  }
 }
 </script>
 
 <template>
-  <div class="px-6">
+  <div class="px-6 w-full">
     <RuiButton
       variant="text"
       color="primary"

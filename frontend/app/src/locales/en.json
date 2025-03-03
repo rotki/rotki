@@ -1781,6 +1781,11 @@
         "redetect_tokens": "Re-detect tokens and refresh balances",
         "title": "Blockchain refresh button behaviour"
       },
+      "categories": {
+        "bitcoin": "Bitcoin Address",
+        "evm": "EVM Address",
+        "substrate": "Substrate Address"
+      },
       "title": "blockchain"
     },
     "exchange_balances": {
