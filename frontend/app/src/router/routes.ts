@@ -23,6 +23,7 @@ export const Routes = {
   ASSET_MANAGER_CEX_MAPPING: ensureRoute('/asset-manager/more/cex-mapping'),
   ASSET_MANAGER_CUSTOM: ensureRoute('/asset-manager/custom'),
   ASSET_MANAGER_MANAGED: ensureRoute('/asset-manager/managed'),
+  ASSET_MANAGER_MISSING_MAPPINGS: ensureRoute('/asset-manager/more/missing-mappings'),
   ASSET_MANAGER_MORE: ensureRoute('/asset-manager/more'),
   ASSET_MANAGER_NEWLY_DETECTED: ensureRoute('/asset-manager/more/newly-detected'),
   ASSETS: ensureRoute('/assets/:identifier'),
@@ -134,6 +135,11 @@ export const useAppRoutes = createSharedComposable(() => {
       icon: 'lu-manage-assets' as const,
       route: Routes.ASSET_MANAGER_MANAGED,
       text: t('navigation_menu.manage_assets_sub.assets'),
+    },
+    ASSET_MANAGER_MISSING_MAPPINGS: {
+      icon: 'lu-list-todo' as const,
+      route: Routes.ASSET_MANAGER_MISSING_MAPPINGS,
+      text: t('navigation_menu.manage_assets_sub.missing_mappings'),
     },
     ASSET_MANAGER_MORE: {
       icon: 'lu-more-assets' as const,

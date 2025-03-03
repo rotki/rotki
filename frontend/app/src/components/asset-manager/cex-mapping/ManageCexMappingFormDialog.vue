@@ -8,25 +8,22 @@ import type { CexMapping } from '@/types/asset';
 
 const modelValue = defineModel<CexMapping | undefined>({ required: true });
 
-const props = withDefaults(
-  defineProps<{
-    editMode?: boolean;
-  }>(),
-  {
-    editMode: false,
-  },
-);
+const props = withDefaults(defineProps<{
+  editMode?: boolean;
+}>(), {
+  editMode: false,
+});
 
 const emit = defineEmits<{
-  (e: 'refresh'): void;
+  refresh: [mapping: CexMapping];
 }>();
 
 const { t } = useI18n();
 
-const loading = ref(false);
-const errorMessages = ref<Record<string, string[]>>({});
 const form = useTemplateRef<InstanceType<typeof ManageCexMappingForm>>('form');
+const loading = ref(false);
 const stateUpdated = ref(false);
+const errorMessages = ref<Record<string, string[]>>({});
 const forAllExchanges = ref<boolean>(false);
 
 const dialogTitle = computed<string>(() =>
@@ -59,7 +56,8 @@ async function save(): Promise<boolean> {
   try {
     if (editMode)
       success = await editCexMapping(payload);
-    else success = await addCexMapping(payload);
+    else
+      success = await addCexMapping(payload);
   }
   catch (error: any) {
     success = false;
@@ -73,8 +71,9 @@ async function save(): Promise<boolean> {
 
   set(loading, false);
   if (success) {
+    const mapping = get(modelValue);
     set(modelValue, undefined);
-    emit('refresh');
+    emit('refresh', mapping);
   }
   return success;
 }

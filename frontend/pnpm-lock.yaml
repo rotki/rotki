@@ -112,6 +112,9 @@ importers:
       dayjs:
         specifier: 1.11.13
         version: 1.11.13
+      dexie:
+        specifier: 4.0.11
+        version: 4.0.11
       electron-updater:
         specifier: 6.6.0
         version: 6.6.0
@@ -224,6 +227,9 @@ importers:
       electron-store:
         specifier: 8.2.0
         version: 8.2.0
+      fake-indexeddb:
+        specifier: 6.0.0
+        version: 6.0.0
       flush-promises:
         specifier: 1.0.2
         version: 1.0.2
@@ -310,7 +316,7 @@ importers:
         version: 0.11.0(vite@6.2.0(@types/node@20.17.19)(jiti@1.21.7)(sass@1.85.1)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0))(vue-router@4.5.0(vue@3.5.13(typescript@5.6.3)))(vue@3.5.13(typescript@5.6.3))
       vitest:
         specifier: 3.0.7
-        version: 3.0.7(@types/debug@4.1.12)(@types/node@20.17.19)(@vitest/ui@3.0.7)(jiti@1.21.7)(jsdom@26.0.0)(msw@2.7.3(@types/node@20.17.19)(typescript@5.6.3))(sass@1.85.1)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0)
+        version: 3.0.7(@types/debug@4.1.12)(@types/node@20.17.19)(@vitest/ui@3.0.7)(happy-dom@17.2.2)(jiti@1.21.7)(jsdom@26.0.0)(msw@2.7.3(@types/node@20.17.19)(typescript@5.6.3))(sass@1.85.1)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0)
       vue-component-type-helpers:
         specifier: 2.1.10
         version: 2.1.10
@@ -3252,6 +3258,9 @@ packages:
   devlop@1.1.0:
     resolution: {integrity: sha512-RWmIqhcFf1lRYBvNmr7qTNuyCt/7/ns2jbpp1+PalgE/rDQcBT0fioSMUpJ93irlUhC5hrg4cYqe6U+0ImW0rA==}
 
+  dexie@4.0.11:
+    resolution: {integrity: sha512-SOKO002EqlvBYYKQSew3iymBoN2EQ4BDw/3yprjh7kAfFzjBYkaMNa/pZvcA7HSWlcKSQb9XhPe3wKyQ0x4A8A==}
+
   didyoumean@1.2.2:
     resolution: {integrity: sha512-gxtyfqMg7GKyhQmb056K7M3xszy/myH8w+B4RT+QXBQsvAOdc3XymqDDPHx1BgPgsdAA5SIifona89YtRATDzw==}
 
@@ -3782,6 +3791,10 @@ packages:
     resolution: {integrity: sha512-Wrk35e8ydCKDj/ArClo1VrPVmN8zph5V4AtHwIuHhvMXsKf73UT3BOD+azBIW+3wOJ4FhEH7zyaJCFvChjYvMA==}
     engines: {'0': node >=0.6.0}
 
+  fake-indexeddb@6.0.0:
+    resolution: {integrity: sha512-YEboHE5VfopUclOck7LncgIqskAqnv4q0EWbYCaxKKjAvO93c+TJIaBuGy8CBFdbg9nKdpN3AuPRwVBJ4k7NrQ==}
+    engines: {node: '>=18'}
+
   fast-deep-equal@3.1.3:
     resolution: {integrity: sha512-f3qQ9oQy9j2AhBe/H9VC91wLmKBCCU/gDOnKNAYG5hswO7BLKj09Hc5HYNz9cGI++xlpDCIgDaitVs03ATR84Q==}
 
@@ -4132,6 +4145,10 @@ packages:
   hammerjs@2.0.8:
     resolution: {integrity: sha512-tSQXBXS/MWQOn/RKckawJ61vvsDpCom87JgxiYdGwHdOa0ht0vzUWDlfioofFCRU0L+6NGDt6XzbgoJvZkMeRQ==}
     engines: {node: '>=0.8.0'}
+
+  happy-dom@17.2.2:
+    resolution: {integrity: sha512-3I1/CrNi780sdOhuhUnFtgTWhloSc3quSZwsylI41jycx8o97M6Y4aQAu0phSexGusT7+59BxATh4L4xiY0HcA==}
+    engines: {node: '>=18.0.0'}
 
   has-bigints@1.1.0:
     resolution: {integrity: sha512-R3pbpkcIqv2Pm3dUwgjclDRVmWpTJW2DcMzcIhEXEx1oh/CEMObMm3KLmRJOdvhM7o4uQBnwr8pzRK2sJWIqfg==}
@@ -7269,6 +7286,10 @@ packages:
     resolution: {integrity: sha512-6qN4hJdMwfYBtE3YBTTHhoeuUrDBPZmbQaxWAqSALV/MeEnR5z1xd8UKud2RAkFoPkmB+hli1TZSnyi84xz1vQ==}
     engines: {node: '>=18'}
 
+  whatwg-mimetype@3.0.0:
+    resolution: {integrity: sha512-nt+N2dzIutVRxARx1nghPKGv1xHikU7HKdfafKkLNLindmPU/ch3U31NOCGGA/dmPcmb1VlofO0vnKAcsm0o/Q==}
+    engines: {node: '>=12'}
+
   whatwg-mimetype@4.0.0:
     resolution: {integrity: sha512-QaKxh0eNIi2mE9p2vEdzfagOKHCcj1pJ56EEHGQOVxp8r9/iszLUUV7v89x9O1p/T+NlTM5W7jW6+cz4Fq1YVg==}
     engines: {node: '>=18'}
@@ -9484,7 +9505,7 @@ snapshots:
       std-env: 3.8.0
       test-exclude: 7.0.1
       tinyrainbow: 2.0.0
-      vitest: 3.0.7(@types/debug@4.1.12)(@types/node@20.17.19)(@vitest/ui@3.0.7)(jiti@1.21.7)(jsdom@26.0.0)(msw@2.7.3(@types/node@20.17.19)(typescript@5.6.3))(sass@1.85.1)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0)
+      vitest: 3.0.7(@types/debug@4.1.12)(@types/node@20.17.19)(@vitest/ui@3.0.7)(happy-dom@17.2.2)(jiti@1.21.7)(jsdom@26.0.0)(msw@2.7.3(@types/node@20.17.19)(typescript@5.6.3))(sass@1.85.1)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0)
     transitivePeerDependencies:
       - supports-color
 
@@ -9494,7 +9515,7 @@ snapshots:
       eslint: 9.21.0(jiti@1.21.7)
     optionalDependencies:
       typescript: 5.6.3
-      vitest: 3.0.7(@types/debug@4.1.12)(@types/node@20.17.19)(@vitest/ui@3.0.7)(jiti@1.21.7)(jsdom@26.0.0)(msw@2.7.3(@types/node@20.17.19)(typescript@5.6.3))(sass@1.85.1)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0)
+      vitest: 3.0.7(@types/debug@4.1.12)(@types/node@20.17.19)(@vitest/ui@3.0.7)(happy-dom@17.2.2)(jiti@1.21.7)(jsdom@26.0.0)(msw@2.7.3(@types/node@20.17.19)(typescript@5.6.3))(sass@1.85.1)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0)
 
   '@vitest/expect@3.0.7':
     dependencies:
@@ -9540,7 +9561,7 @@ snapshots:
       sirv: 3.0.1
       tinyglobby: 0.2.12
       tinyrainbow: 2.0.0
-      vitest: 3.0.7(@types/debug@4.1.12)(@types/node@20.17.19)(@vitest/ui@3.0.7)(jiti@1.21.7)(jsdom@26.0.0)(msw@2.7.3(@types/node@20.17.19)(typescript@5.6.3))(sass@1.85.1)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0)
+      vitest: 3.0.7(@types/debug@4.1.12)(@types/node@20.17.19)(@vitest/ui@3.0.7)(happy-dom@17.2.2)(jiti@1.21.7)(jsdom@26.0.0)(msw@2.7.3(@types/node@20.17.19)(typescript@5.6.3))(sass@1.85.1)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0)
 
   '@vitest/utils@3.0.7':
     dependencies:
@@ -10832,6 +10853,8 @@ snapshots:
     dependencies:
       dequal: 2.0.3
 
+  dexie@4.0.11: {}
+
   didyoumean@1.2.2: {}
 
   diff-sequences@29.6.3: {}
@@ -11625,6 +11648,8 @@ snapshots:
 
   extsprintf@1.4.1: {}
 
+  fake-indexeddb@6.0.0: {}
+
   fast-deep-equal@3.1.3: {}
 
   fast-diff@1.3.0: {}
@@ -12024,6 +12049,12 @@ snapshots:
   graphql@16.10.0: {}
 
   hammerjs@2.0.8: {}
+
+  happy-dom@17.2.2:
+    dependencies:
+      webidl-conversions: 7.0.0
+      whatwg-mimetype: 3.0.0
+    optional: true
 
   has-bigints@1.1.0: {}
 
@@ -15399,7 +15430,7 @@ snapshots:
       tsx: 4.19.3
       yaml: 2.7.0
 
-  vitest@3.0.7(@types/debug@4.1.12)(@types/node@20.17.19)(@vitest/ui@3.0.7)(jiti@1.21.7)(jsdom@26.0.0)(msw@2.7.3(@types/node@20.17.19)(typescript@5.6.3))(sass@1.85.1)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0):
+  vitest@3.0.7(@types/debug@4.1.12)(@types/node@20.17.19)(@vitest/ui@3.0.7)(happy-dom@17.2.2)(jiti@1.21.7)(jsdom@26.0.0)(msw@2.7.3(@types/node@20.17.19)(typescript@5.6.3))(sass@1.85.1)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0):
     dependencies:
       '@vitest/expect': 3.0.7
       '@vitest/mocker': 3.0.7(msw@2.7.3(@types/node@20.17.19)(typescript@5.6.3))(vite@6.2.0(@types/node@20.17.19)(jiti@1.21.7)(sass@1.85.1)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0))
@@ -15425,6 +15456,7 @@ snapshots:
       '@types/debug': 4.1.12
       '@types/node': 20.17.19
       '@vitest/ui': 3.0.7(vitest@3.0.7)
+      happy-dom: 17.2.2
       jsdom: 26.0.0
     transitivePeerDependencies:
       - jiti
@@ -15584,6 +15616,9 @@ snapshots:
   whatwg-encoding@3.1.1:
     dependencies:
       iconv-lite: 0.6.3
+
+  whatwg-mimetype@3.0.0:
+    optional: true
 
   whatwg-mimetype@4.0.0: {}
 
