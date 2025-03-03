@@ -25,6 +25,8 @@ import ExchangeBox from '@/components/dashboard/ExchangeBox.vue';
 import OverallBalances from '@/components/dashboard/OverallBalances.vue';
 import DynamicMessageDisplay from '@/components/dashboard/DynamicMessageDisplay.vue';
 import PoolTable from '@/modules/dashboard/liquidity-pools/PoolTable.vue';
+import BlockchainSummaryCardCreateButton
+  from '@/components/dashboard/summary-card/BlockchainSummaryCardCreateButton.vue';
 
 definePage({
   meta: {
@@ -132,17 +134,11 @@ const Type = DashboardTableType;
               <template #refreshMenu>
                 <BlockchainBalanceRefreshBehaviourMenu />
               </template>
-              <SummaryCardCreateButton
+
+              <BlockchainSummaryCardCreateButton
                 v-if="blockchainTotals.length === 0"
-                :to="{
-                  path: '/accounts/evm',
-                  query: {
-                    add: 'true',
-                  },
-                }"
-              >
-                {{ t('dashboard.blockchain_balances.add') }}
-              </SummaryCardCreateButton>
+              />
+
               <div
                 v-else
                 data-cy="blockchain-balances"
