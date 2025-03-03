@@ -14,6 +14,8 @@ interface PromiseFunction {
 
 export type Awaitable = VoidFunction | PromiseFunction;
 
+export type MaybePromise<T> = T | Promise<T>;
+
 export type Diff<T, U> = T extends U ? never : T;
 
 export function onlyIfTruthy<T>(value: T): T | undefined {
