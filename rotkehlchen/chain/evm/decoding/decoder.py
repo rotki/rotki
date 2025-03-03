@@ -85,12 +85,48 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
+    from rotkehlchen.user_messages import MessagesAggregator
 
     from .interfaces import DecoderInterface
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 MIN_LOGS_PROCESSED_TO_SLEEP = 1000
+
+
+def decoding_wrapper(
+        msg_aggregator: 'MessagesAggregator | None',
+        transaction_for_logs: EvmTransaction,
+        func: Callable,
+        *args: tuple[Any],
+        **kwargs: Any,
+) -> tuple[Any, bool]:
+    """
+    Wrapper for methods that execute logic from decoders. It handles handles the errors logging
+    them and optionally sending them to the user.
+
+    It returns a tuple where the first argument is the output of func and the second is a boolean
+    set to True if an error was raised from func.
+    """
+    try:
+        return func(*args, **kwargs), False
+    except (
+        UnknownAsset,
+        WrongAssetType,
+        DeserializationError,
+        IndexError,
+        ValueError,
+        ConversionError,
+    ) as e:
+        log.error(traceback.format_exc())
+        log.error(
+            f'Decoding of transactions {transaction_for_logs} failed due to {e} when calling '
+            f'{func.__name__} with {args} {kwargs}',
+        )
+        if msg_aggregator is not None:
+            msg_aggregator.add_error(f'Decoding of transaction {transaction_for_logs} failed. Check logs for more details')  # noqa: E501
+
+    return None, True
 
 
 class EventDecoderFunction(Protocol):
@@ -390,10 +426,18 @@ class EVMTransactionDecoder(ABC):
             if len(tx_log.topics) == 0:
                 continue  # ignore anonymous events
 
-            try:
-                decoding_output = rule(token=token, tx_log=tx_log, transaction=transaction, decoded_events=decoded_events, action_items=action_items, all_logs=all_logs)  # noqa: E501
-            except (DeserializationError, IndexError) as e:
-                self.msg_aggregator.add_error(f'Decoding tx log with index {tx_log.log_index} of {transaction.tx_hash.hex()} through {rule} failed due to {e!s}. Skipping rule.')  # noqa: E501
+            decoding_output, err = decoding_wrapper(
+                msg_aggregator=None,
+                transaction_for_logs=transaction,
+                func=rule,
+                token=token,
+                tx_log=tx_log,
+                transaction=transaction,
+                decoded_events=decoded_events,
+                action_items=action_items,
+                all_logs=all_logs,
+            )
+            if err:
                 continue
 
             if decoding_output.event is not None or len(decoding_output.action_items) > 0:
@@ -413,18 +457,15 @@ class EVMTransactionDecoder(ABC):
         mapping_result = self.rules.address_mappings.get(context.tx_log.address)
         if mapping_result is None:
             return DEFAULT_DECODING_OUTPUT
-        method = mapping_result[0]
 
-        try:
-            if len(mapping_result) == 1:
-                result = method(context)
-            else:
-                result = method(context, *mapping_result[1:])
-        except (DeserializationError, ConversionError, UnknownAsset, WrongAssetType, IndexError) as e:  # noqa: E501
-            log.error(traceback.format_exc())
-            self.msg_aggregator.add_error(
-                f'Decoding tx log with index {context.tx_log.log_index} of transaction '
-                f'{context.transaction.tx_hash.hex()} through {method.__name__} failed due to {e!s}')  # noqa: E501
+        method, *args = mapping_result
+        result, err = decoding_wrapper(  # can't used named arguments with *args
+            None,
+            context.transaction,
+            method,
+            *(context, *args),
+        )
+        if err:
             return DEFAULT_DECODING_OUTPUT
 
         return result
@@ -459,10 +500,14 @@ class EVMTransactionDecoder(ABC):
         # Sort post decoding rules by priority (which is the first element of the tuple)
         rules.sort(key=operator.itemgetter(0))
         for _, rule in rules:
-            try:
-                decoded_events = rule(transaction=transaction, decoded_events=decoded_events, all_logs=all_logs)  # noqa: E501
-            except (DeserializationError, IndexError) as e:
-                log.error(f'Applying post-decoding rule {rule} for {transaction.tx_hash.hex()} failed due to {e!s}. Skipping rule.')  # noqa: E501
+            decoded_events, _ = decoding_wrapper(
+                msg_aggregator=None,
+                transaction_for_logs=transaction,
+                func=rule,
+                transaction=transaction,
+                decoded_events=decoded_events,
+                all_logs=all_logs,
+            )
 
         return decoded_events
 
@@ -521,10 +566,13 @@ class EVMTransactionDecoder(ABC):
                 action_items=action_items,
             )
             if input_data_rules and len(tx_log.topics) != 0 and (input_rule := input_data_rules.get(tx_log.topics[0])) is not None:  # noqa: E501
-                try:  # run specific decoder if the 4bytes signature + topic match
-                    result = input_rule(context)
-                except (DeserializationError, ConversionError, UnknownAsset) as e:
-                    log.error(f'Decoding log {tx_log} of {transaction} via input data rules failed due to {e!s}')  # noqa: E501
+                result, err = decoding_wrapper(
+                    msg_aggregator=None,
+                    transaction_for_logs=context.transaction,
+                    func=input_rule,
+                    context=context,
+                )
+                if err:
                     result = DEFAULT_DECODING_OUTPUT
 
                 if result.event:
@@ -1225,14 +1273,15 @@ class EVMTransactionDecoder(ABC):
         of depositing assets or withdrawing.
         It assumes that the event being decoded has been already filtered and is a transfer.
         Can be overridden by child classes for chain-specific logic."""
+        transfer_enrich: TransferEnrichmentOutput
         for enrich_call in self.rules.token_enricher_rules:
-            try:
-                transfer_enrich: TransferEnrichmentOutput = enrich_call(context)
-            except (UnknownAsset, WrongAssetType) as e:
-                log.error(
-                    f'Failed to enrich {self.evm_inquirer.chain_name} transfer due to '
-                    f'unknown asset {context.event.asset}. {e!s}',
-                )  # Don't try other rules since all of them will fail to resolve the asset
+            transfer_enrich, err = decoding_wrapper(
+                msg_aggregator=None,
+                transaction_for_logs=context.transaction,
+                func=enrich_call,
+                context=context,
+            )
+            if err:
                 return FAILED_ENRICHMENT_OUTPUT
 
             if transfer_enrich != FAILED_ENRICHMENT_OUTPUT:
