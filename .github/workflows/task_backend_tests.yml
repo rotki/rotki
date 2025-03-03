@@ -130,6 +130,29 @@ jobs:
         run: |
           uv pip install --system pytest-github-actions-annotate-failures
 
+      - name: Enable legacy providers
+        if: runner.os == 'Linux'
+        run: |
+          sudo cp /etc/ssl/openssl.cnf /etc/ssl/openssl.cnf.backup
+          sudo bash -c 'cat > /etc/ssl/openssl.cnf' << 'EOF'
+          # OpenSSL configuration to enable legacy provider
+          
+          openssl_conf = openssl_init
+          
+          [openssl_init]
+          providers = provider_sect
+          
+          [provider_sect]
+          default = default_sect
+          legacy = legacy_sect
+          
+          [default_sect]
+          activate = 1
+          
+          [legacy_sect]
+          activate = 1
+          EOF
+
       - name: Run tests
         env:
           PYTEST_ARGS: '--durations=150'
