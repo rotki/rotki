@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Final, Literal, Optional, cast
 
 from rotkehlchen.assets.asset import Asset, EvmToken
+from rotkehlchen.assets.utils import TokenEncounterInfo
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value, token_normalized_value
 from rotkehlchen.chain.evm.constants import ETH_SPECIAL_ADDRESS
 from rotkehlchen.chain.evm.decoding.airdrops import match_airdrop_claim
@@ -30,7 +31,7 @@ from rotkehlchen.history.events.structures.types import (
     HistoryEventType,
 )
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind, EvmTransaction
+from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind, EvmTransaction, EVMTxHash
 from rotkehlchen.utils.misc import bytes_to_address
 
 if TYPE_CHECKING:
@@ -132,7 +133,11 @@ class CowswapCommonDecoder(DecoderInterface, abc.ABC):
 
     # --- Aggregator methods ---
 
-    def _find_trades(self, all_logs: list[EvmTxReceiptLog]) -> list[CowswapSwapData]:
+    def _find_trades(
+            self,
+            tx_hash: EVMTxHash,
+            all_logs: list[EvmTxReceiptLog],
+    ) -> list[CowswapSwapData]:
         """
         Finds the emitted Trade events and decodes them.
         Also handles special cases when native asset is swapped.
@@ -140,8 +145,7 @@ class CowswapCommonDecoder(DecoderInterface, abc.ABC):
         Returns a list of swap data. Each entry in the list contains basic information about a
         swap made in the transaction.
         """
-        trades = []
-
+        trades, tx_info = [], TokenEncounterInfo(tx_hash=tx_hash, description='CowSwap trade')
         for tx_log in all_logs:
             if tx_log.topics[0] != TRADE_SIGNATURE:
                 continue
@@ -159,18 +163,14 @@ class CowswapCommonDecoder(DecoderInterface, abc.ABC):
                 owner_address == self.native_asset_flow_address
             ):
                 from_asset = self.native_asset  # native asset swaps are made by eth flow contract in cowswap  # noqa: E501
-            else:  # token should exist since this is the post-processing stage
-                from_asset = EvmToken(evm_address_to_identifier(
+            else:  # need get_or_create_evm_token because token may not exist if there was a remote error the first time that the token appeared.  # noqa: E501
+                from_asset = self.base.get_or_create_evm_token(
                     address=from_token_address,
-                    chain_id=self.evm_inquirer.chain_id,
-                    token_type=EvmTokenKind.ERC20,
-                ))
-            to_asset = self.native_asset if to_token_address == ETH_SPECIAL_ADDRESS else EvmToken(
-                evm_address_to_identifier(  # token should exist since this is the post-processing stage  # noqa: E501
-                    address=to_token_address,
-                    chain_id=self.evm_inquirer.chain_id,
-                    token_type=EvmTokenKind.ERC20,
-                ),
+                    encounter=tx_info,
+                )
+            to_asset = self.native_asset if to_token_address == ETH_SPECIAL_ADDRESS else self.base.get_or_create_evm_token(  # noqa: E501
+                address=to_token_address,
+                encounter=tx_info,
             )
             fee_amount = asset_normalized_value(amount=raw_fee_amount, asset=from_asset)
             from_amount = asset_normalized_value(amount=raw_from_amount, asset=from_asset)
@@ -309,7 +309,7 @@ class CowswapCommonDecoder(DecoderInterface, abc.ABC):
         3. For each trade finds or generates if missing spend and receive events.
         4. Makes sure that spend-receive pairs are consecutive.
         """
-        all_swap_data = self._find_trades(all_logs)
+        all_swap_data = self._find_trades(tx_hash=transaction.tx_hash, all_logs=all_logs)
         relevant_trades = self._detect_relevant_trades(
             transaction=transaction,
             all_swap_data=all_swap_data,
