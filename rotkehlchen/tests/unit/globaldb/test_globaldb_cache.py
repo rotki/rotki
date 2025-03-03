@@ -272,6 +272,8 @@ class MockEvmContract:
                 7: '0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85',
                 10: '0xdFA46478F9e5EA86d57387849598dbFB2e964b02',
                 13: '0xBe3235e341393e43949aAd6F073982F67BFF412f',
+                16: '0x25dEc77FC1c2b67582DD2237dA427d3E3Be94259',
+                17: '0x0000000000000000000000000000000000000000',
             }]
         else:
             return []

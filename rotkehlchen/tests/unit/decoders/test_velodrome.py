@@ -7,15 +7,17 @@ from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.velodrome.constants import CPT_VELODROME
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.optimism.modules.velodrome.decoder import ROUTER_V1, ROUTER_V2
-from rotkehlchen.constants import ZERO
+from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_ETH, A_OP, A_WETH_OPT
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.fval import FVal
+from rotkehlchen.globaldb.cache import globaldb_set_general_cache_values
 from rotkehlchen.history.events.structures.evm_event import EvmEvent, EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import (
     VELODROME_POOL_PROTOCOL,
+    CacheType,
     ChainID,
     EvmTokenKind,
     Location,
@@ -899,6 +901,304 @@ def test_get_reward_from_gauge_v2(optimism_accounts, optimism_transaction_decode
             address=gauge_address,
             notes=f'Receive 872.22115188616298484 VELO rewards from {gauge_address} velodrome gauge',  # noqa: E501
             product=EvmProduct.GAUGE,
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr
+@pytest.mark.parametrize('optimism_accounts', [['0x04b0f18b9b1FF987C5D5e134516f449aA9a2E004']])
+def test_unlock_velo(optimism_accounts, optimism_transaction_decoder):
+    user_address, evmhash = optimism_accounts[0], deserialize_evm_tx_hash('0x4389501a597f87f6f4c9042704f0040e5327251857d9a5043e4efff873787862')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=optimism_transaction_decoder.evm_inquirer,
+        tx_hash=evmhash,
+    )
+    expected_events = [
+        EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=0,
+            timestamp=(timestamp := TimestampMS(1741003701000)),
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=FVal(gas_str := '0.000000699973735595'),
+            location_label=user_address,
+            counterparty=CPT_GAS,
+            notes=f'Burn {gas_str} ETH for gas',
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=13,
+            timestamp=timestamp,
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.RETURN_WRAPPED,
+            asset=Asset('eip155:10/erc721:0xFAf8FD17D9840595845582fCB047DF13f006787d/27891'),
+            amount=ONE,
+            location_label=user_address,
+            counterparty=CPT_VELODROME,
+            address=ZERO_ADDRESS,
+            notes=f'Burn veNFT-27891 to unlock {(withdrawn_amt := "59.364651461725644131")} VELO from vote escrow',  # noqa: E501
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=14,
+            timestamp=timestamp,
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
+            asset=Asset('eip155:10/erc20:0x9560e827aF36c94D2Ac33a39bCE1Fe78631088Db'),
+            amount=FVal(withdrawn_amt),
+            location_label=user_address,
+            counterparty=CPT_VELODROME,
+            address=string_to_evm_address('0xFAf8FD17D9840595845582fCB047DF13f006787d'),
+            notes=f'Receive {withdrawn_amt} VELO from vote escrow after burning veNFT-27891',
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr
+@pytest.mark.parametrize('optimism_accounts', [['0x6725BF01bF6Ca11FF3bd9Bd6701991DC4EBf24fa']])
+def test_lock_velo(optimism_accounts, optimism_transaction_decoder):
+    user_address, evmhash = optimism_accounts[0], deserialize_evm_tx_hash('0xd5e3d9c5142cf4dd948ad5582a9fa3392e21238a2ae698cb73bafd8c4e02101f')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=optimism_transaction_decoder.evm_inquirer,
+        tx_hash=evmhash,
+    )
+    expected_events = [
+        EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=0,
+            timestamp=(timestamp := TimestampMS(1741011431000)),
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=FVal(gas_str := '0.000001167814501718'),
+            location_label=user_address,
+            counterparty=CPT_GAS,
+            notes=f'Burn {gas_str} ETH for gas',
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=99,
+            timestamp=timestamp,
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.APPROVE,
+            asset=Asset('eip155:10/erc20:0x9560e827aF36c94D2Ac33a39bCE1Fe78631088Db'),
+            amount=ZERO,
+            location_label=user_address,
+            address=string_to_evm_address('0xFAf8FD17D9840595845582fCB047DF13f006787d'),
+            notes=f'Revoke VELO spending approval of {user_address} by 0xFAf8FD17D9840595845582fCB047DF13f006787d',  # noqa: E501
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=100,
+            timestamp=timestamp,
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
+            asset=Asset('eip155:10/erc20:0x9560e827aF36c94D2Ac33a39bCE1Fe78631088Db'),
+            amount=FVal(lock_amount := '110.000687505447225215'),
+            location_label=user_address,
+            counterparty=CPT_VELODROME,
+            address=string_to_evm_address('0xFAf8FD17D9840595845582fCB047DF13f006787d'),
+            notes=f'Lock {lock_amount} VELO in vote escrow until 01/03/2029',
+            extra_data={'token_id': 30079, 'lock_time': 1867017600},
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=101,
+            timestamp=timestamp,
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+            asset=Asset('eip155:10/erc721:0xFAf8FD17D9840595845582fCB047DF13f006787d/30079'),
+            amount=ONE,
+            location_label=user_address,
+            counterparty=CPT_VELODROME,
+            address=ZERO_ADDRESS,
+            notes=f'Receive veNFT-30079 for locking {lock_amount} VELO in vote escrow',
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr
+@pytest.mark.parametrize('optimism_accounts', [['0x9844c3688dAaA98De18fBe52499A6B152236896b']])
+def test_increase_locked_amount(optimism_accounts, optimism_transaction_decoder):
+    user_address, evmhash = optimism_accounts[0], deserialize_evm_tx_hash('0x56a1e78a374981e5ebcfb605cd0835bee4b73a3221b908789fc917d11619ac9b')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=optimism_transaction_decoder.evm_inquirer,
+        tx_hash=evmhash,
+    )
+    expected_events = [
+        EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=0,
+            timestamp=(timestamp := TimestampMS(1741006069000)),
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=FVal(gas_str := '0.00000136036499356'),
+            location_label=user_address,
+            counterparty=CPT_GAS,
+            notes=f'Burn {gas_str} ETH for gas',
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=2,
+            timestamp=timestamp,
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.APPROVE,
+            asset=Asset('eip155:10/erc20:0x9560e827aF36c94D2Ac33a39bCE1Fe78631088Db'),
+            amount=FVal(approval_amount := '366860.961209203199646747'),
+            location_label=user_address,
+            address=string_to_evm_address('0xFAf8FD17D9840595845582fCB047DF13f006787d'),
+            notes=f'Set VELO spending approval of {user_address} by 0xFAf8FD17D9840595845582fCB047DF13f006787d to {approval_amount}',  # noqa: E501
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=3,
+            timestamp=timestamp,
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+            asset=Asset('eip155:10/erc20:0x9560e827aF36c94D2Ac33a39bCE1Fe78631088Db'),
+            amount=FVal(lock_amount := '18792.568241261307681904'),
+            location_label=user_address,
+            counterparty=CPT_VELODROME,
+            address=string_to_evm_address('0xFAf8FD17D9840595845582fCB047DF13f006787d'),
+            notes=f'Increase locked amount in veNFT-20820 by {lock_amount} VELO',
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr
+@pytest.mark.parametrize('optimism_accounts', [['0x923CD36115817D59c51f33e0b5832d7b70ef2530']])
+def test_increase_unlock_time(optimism_accounts, optimism_transaction_decoder):
+    user_address, evmhash = optimism_accounts[0], deserialize_evm_tx_hash('0x513039d46a9b541e2cb7feb798060271a7b58e9e9ed80681c5d5b18f26fb8bfc')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=optimism_transaction_decoder.evm_inquirer,
+        tx_hash=evmhash,
+    )
+    expected_events = [
+        EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=0,
+            timestamp=(timestamp := TimestampMS(1740997763000)),
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=FVal(gas_str := '0.000000573869266137'),
+            location_label=user_address,
+            counterparty=CPT_GAS,
+            notes=f'Burn {gas_str} ETH for gas',
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=19,
+            timestamp=timestamp,
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=Asset('eip155:10/erc721:0xFAf8FD17D9840595845582fCB047DF13f006787d/30064'),
+            amount=ZERO,
+            location_label=user_address,
+            address=string_to_evm_address('0xFAf8FD17D9840595845582fCB047DF13f006787d'),
+            extra_data={'token_id': 30064, 'lock_time': 1749686400},
+            counterparty=CPT_VELODROME,
+            notes='Increase unlock time to 12/06/2025 for VELO veNFT-30064',
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr
+@pytest.mark.parametrize('optimism_accounts', [['0x21814F7481f07BA48d2CA224dBA62Bc1f5B447D0']])
+def test_claim_bribes(optimism_accounts, optimism_transaction_decoder, globaldb):
+    user_address, evmhash = optimism_accounts[0], deserialize_evm_tx_hash('0xfc2df8e001236e5d4d2026f7d9943ef782d225af8676189f684347b1053776bc')  # noqa: E501
+    with globaldb.conn.write_ctx() as write_cursor:
+        globaldb_set_general_cache_values(
+            write_cursor=write_cursor,
+            key_parts=(CacheType.VELODROME_GAUGE_BRIBE_ADDRESS,),
+            values=[string_to_evm_address('0x9015Af1A94d0c9896DB9BF359b62dc9B114d5587')],
+        )
+        globaldb_set_general_cache_values(
+            write_cursor=write_cursor,
+            key_parts=(CacheType.VELODROME_GAUGE_FEE_ADDRESS,),
+            values=[string_to_evm_address('0x7A67D98C71Ca627547c191d8C32d1bcD4d36d823')],
+        )
+
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=optimism_transaction_decoder.evm_inquirer,
+        tx_hash=evmhash,
+    )
+    expected_events = [
+        EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=0,
+            timestamp=(timestamp := TimestampMS(1741027977000)),
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=FVal(gas_str := '0.000001246550912592'),
+            location_label=user_address,
+            counterparty=CPT_GAS,
+            notes=f'Burn {gas_str} ETH for gas',
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=143,
+            timestamp=timestamp,
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.REWARD,
+            asset=Asset('eip155:10/erc20:0x747e42Eb0591547a0ab429B3627816208c734EA7'),
+            amount=FVal(receive_amount_1 := '0.088944623183973897'),
+            location_label=user_address,
+            address=string_to_evm_address('0x9015Af1A94d0c9896DB9BF359b62dc9B114d5587'),
+            counterparty=CPT_VELODROME,
+            notes=f'Claim {receive_amount_1} T from velodrome as a bribe',
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=145,
+            timestamp=timestamp,
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.REWARD,
+            asset=Asset('eip155:10/erc20:0x4200000000000000000000000000000000000042'),
+            amount=FVal(receive_amount_2 := '0.01121889586000788'),
+            location_label=user_address,
+            address=string_to_evm_address('0x9015Af1A94d0c9896DB9BF359b62dc9B114d5587'),
+            counterparty=CPT_VELODROME,
+            notes=f'Claim {receive_amount_2} OP from velodrome as a bribe',
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=147,
+            timestamp=timestamp,
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.REWARD,
+            asset=Asset('eip155:10/erc20:0x0a7B751FcDBBAA8BB988B9217ad5Fb5cfe7bf7A0'),
+            amount=FVal(receive_amount_3 := '0.000002754529300195'),
+            location_label=user_address,
+            address=string_to_evm_address('0x9015Af1A94d0c9896DB9BF359b62dc9B114d5587'),
+            counterparty=CPT_VELODROME,
+            notes=f'Claim {receive_amount_3} ITP from velodrome as a bribe',
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=149,
+            timestamp=timestamp,
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.REWARD,
+            asset=Asset('eip155:10/erc20:0x6c84a8f1c29108F47a79964b5Fe888D4f4D0dE40'),
+            amount=FVal(receive_amount_4 := '0.000000003860478715'),
+            location_label=user_address,
+            address=string_to_evm_address('0x7A67D98C71Ca627547c191d8C32d1bcD4d36d823'),
+            counterparty=CPT_VELODROME,
+            notes=f'Claim {receive_amount_4} tBTC from velodrome as a fee',
         ),
     ]
     assert events == expected_events
