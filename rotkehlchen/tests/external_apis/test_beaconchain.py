@@ -1,9 +1,16 @@
 import warnings as test_warnings
+from http import HTTPStatus
+from typing import Any
+from unittest.mock import patch
 
 import pytest
 
 from rotkehlchen.chain.ethereum.modules.eth2.utils import calculate_query_chunks
+from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.externalapis.beaconchain.service import BeaconChain
+from rotkehlchen.tests.utils.mock import MockResponse
+from rotkehlchen.types import Timestamp
+from rotkehlchen.utils.misc import ts_now
 
 
 @pytest.fixture(scope='session', name='session_beaconchain')
@@ -54,3 +61,60 @@ def test_get_eth1_validator_indices_multiple(session_beaconchain):
     for idx, validator in enumerate(validators):
         assert validator.index == expected_results[idx][0]
         assert validator.public_key == expected_results[idx][1]
+
+
+@pytest.mark.freeze_time('2025-03-03 17:00:00 GMT')
+def test_rate_limit(session_beaconchain: BeaconChain, freezer):
+    """Tests the rate limit logic ensuring that we don't retry beaconchain calls
+    if we are rate limited by them.
+    """
+    requests_made = 0
+
+    def mock_session_get(url: str, **kwargs: dict[str, Any]) -> MockResponse:  # pylint: disable=unused-argument
+        nonlocal requests_made
+        requests_made += 1
+        return MockResponse(
+            status_code=HTTPStatus.TOO_MANY_REQUESTS,
+            headers={'retry-after': 1000},
+            text='Too many requests',
+        )
+
+    with (
+        patch.object(session_beaconchain.session, 'request', mock_session_get),
+        pytest.raises(RemoteError),
+    ):
+        session_beaconchain._query(
+            method='GET',
+            module='execution',
+            endpoint='produced',
+            encoded_args='130,131',
+        )
+
+    assert session_beaconchain.ratelimited_until == Timestamp(ts_now() + 1000)
+    with (  # if we query again we won't try to make a request
+        patch.object(session_beaconchain.session, 'request', mock_session_get),
+        pytest.raises(RemoteError),
+    ):
+        session_beaconchain._query(
+            method='GET',
+            module='execution',
+            endpoint='produced',
+            encoded_args='130,131',
+        )
+
+    assert requests_made == 1
+
+    freezer.tick(1200)  # move the time. We should be able to query again
+    with (
+        patch.object(session_beaconchain.session, 'request', mock_session_get),
+        pytest.raises(RemoteError),
+    ):
+        session_beaconchain._query(
+            method='GET',
+            module='execution',
+            endpoint='produced',
+            encoded_args='130,131',
+        )
+
+    assert session_beaconchain.ratelimited_until == Timestamp(ts_now() + 1000)
+    assert requests_made == 2

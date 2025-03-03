@@ -18,9 +18,14 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-def create_session() -> requests.Session:
-    """Create a requests session with the configuration to retry a maximum
-    of 3 times on connection errors or DNS resolution errors.
+def create_session(max_backoff_secs: float = 30) -> requests.Session:
+    """Create a requests session configured to retry on connection, read, and
+    specific server errors.
+
+    Retries up to 3 times for connection errors (e.g., timeouts, DNS failures), 2 times for
+    read errors, and 1 time for specified server errors (502, 503, 504). Users must check
+    response status codes manually, as bad statuses outside the retry list are not
+    automatically retried.
 
     From the requests docs about max_retries:
     The maximum number of retries each connection should attempt. Note, this applies only
@@ -32,10 +37,41 @@ def create_session() -> requests.Session:
     # like too many requests even when status_forcelist is set to an empty list. This
     # configuration worked fine for what we could test in real scenarios in the e2e tests.
     adapter = HTTPAdapter(max_retries=Retry(
+        # Total retry attempts across all error types (connection, read, status, etc.). As
+        # mentioned in the docs:
+        # Set to None to remove this constraint and fall back on other counts.
+        total=None,
+        # Retries for connection errors (e.g., timeouts, refused connections).
         connect=3,
+        # Retries for read errors (e.g., incomplete responses or dropped connections).
         read=2,
-        status=0,
-        status_forcelist=[],  # by default urllib retries on 413, 429 (rate limit) and 503
+        # Retries for HTTP status codes listed in status_forcelist.
+        status=1,
+        # Don't allow any other type of error. This will warn us about any possible
+        # error not handled.
+        other=0,
+        # Don't raise exceptions on retryable status codes; return the response instead
+        # for manual handling.
+        raise_on_status=False,
+        # Retry only on idempotent methods to avoid side effects.
+        allowed_methods={'DELETE', 'GET', 'HEAD', 'OPTIONS', 'PUT', 'TRACE'},
+        # Limit redirects to 2 hops to avoid infinite redirect loops.
+        redirect=2,
+        # by default urllib retries on 413, 429 (rate limit) and 503. Set it so we only retry
+        # on server errors.
+        status_forcelist=[
+            502,  # Bad Gateway
+            503,  # Service not available
+            504,  # Gateway Timeout
+        ],
+        # Maximum seconds between retries if backoff is enabled (currently irrelevant
+        # with backoff_factor=0).
+        backoff_max=max_backoff_secs,  # type: ignore[call-arg]  # mypy doesn't seem to detect this one
+        # Backoff in retry follows the formula
+        # {backoff factor} * (2 ** ({number of previous retries}))
+        # since we only care about connection errors/read errors that are solved just by
+        # retrying set a low one.
+        backoff_factor=1,
     ))
     session.mount('http://', adapter)
     session.mount('https://', adapter)

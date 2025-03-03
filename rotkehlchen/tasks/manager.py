@@ -552,6 +552,7 @@ class TaskManager:
         """Schedules the blocks production query if enough time has passed"""
         if (
             self.chains_aggregator.get_module('eth2') is None or
+            self.chains_aggregator.beaconchain.is_rate_limited() or
             self.chains_aggregator.beaconchain.produced_blocks_lock.locked() or
             len(indices := self.chains_aggregator.beaconchain.get_outdated_validators_to_query_for_blocks()) == 0  # noqa: E501
         ):
