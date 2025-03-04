@@ -52,17 +52,10 @@ class ManualCurrentOracle(CurrentPriceOracleInterface, DBSetterMixin):
                 return ZERO_PRICE
 
             current_to_asset, current_price = manual_current_result
-
-            # we call _find_price to avoid catching the recursion error at `find_price_and_oracle`.
-            # ManualCurrentOracle does a special handling of RecursionError using
-            # `coming_from_latest_price` to detect recursions on the manual prices and break
-            # it to continue to the next oracle.
-            current_to_asset_price, _ = Inquirer._find_price(
+            current_to_asset_price = Inquirer.find_price(
                 from_asset=current_to_asset,
                 to_asset=to_asset,
-                coming_from_latest_price=True,
             )
-
             return Price(current_price * current_to_asset_price)
         finally:
             # Ensure we remove the pair after processing, even if an error occurs
