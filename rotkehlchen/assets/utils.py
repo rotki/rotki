@@ -124,23 +124,22 @@ def edit_token_and_clean_cache(
     """
     updated_fields = False
 
-    if evm_token.name == evm_token.identifier:
-        if name is not None:
-            object.__setattr__(evm_token, 'name', name)
-            updated_fields = True
-        elif evm_inquirer is not None:
-            # query the chain for available information
-            on_chain_name, _, on_chain_decimals = _query_or_get_given_token_info(
-                evm_inquirer=evm_inquirer,
-                evm_address=evm_token.evm_address,
-                name=name,
-                symbol=evm_token.symbol,
-                decimals=decimals,
-                token_kind=evm_token.token_kind,
-            )
-            object.__setattr__(evm_token, 'name', on_chain_name)
-            object.__setattr__(evm_token, 'decimals', on_chain_decimals)
-            updated_fields = True
+    if name is not None and evm_token.name != name:
+        object.__setattr__(evm_token, 'name', name)
+        updated_fields = True
+    elif evm_token.name == evm_token.identifier and evm_inquirer is not None:
+        # query the chain for available information
+        on_chain_name, _, on_chain_decimals = _query_or_get_given_token_info(
+            evm_inquirer=evm_inquirer,
+            evm_address=evm_token.evm_address,
+            name=name,
+            symbol=evm_token.symbol,
+            decimals=decimals,
+            token_kind=evm_token.token_kind,
+        )
+        object.__setattr__(evm_token, 'name', on_chain_name)
+        object.__setattr__(evm_token, 'decimals', on_chain_decimals)
+        updated_fields = True
 
     if symbol is not None and evm_token.symbol != symbol:
         object.__setattr__(evm_token, 'symbol', symbol)

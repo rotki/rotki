@@ -398,7 +398,7 @@ def test_withdraw_yearn_v2(
             asset=Asset('eip155:1/erc20:0x29059568bB40344487d62f7450E78b8E6C74e0e5'),
             amount=FVal(withdraw_amount),
             location_label=user_address,
-            notes=f'Withdraw {withdraw_amount} YFIETH-f from yearn-v2 vault yvCurve-YFIETH 0.4.3',
+            notes=f'Withdraw {withdraw_amount} YFIETH-f from yearn-v2 vault Curve YFI-ETH Pool yVault',  # noqa: E501
             counterparty=CPT_YEARN_V2,
             address=string_to_evm_address('0x790a60024bC3aea28385b60480f15a0771f26D09'),
         ),
