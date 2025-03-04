@@ -4,6 +4,7 @@ Changelog
 
 * :bug:`-` Prevents too many error notifications when beaconcha.in rate limits the app for long periods of time.
 * :bug:`-` Uniswap v3 swaps in ethereum using the universal router 2 will now be decoded properly.
+* :bug:`-` Fixes an error that might appear for unknown tokens in batched cowswap trades while decoding transactions.
 * :bug:`9547` Bitcoin balance query should work again for users of the linux binary.
 
 * :release:`1.38.0 <2025-02-28>`
