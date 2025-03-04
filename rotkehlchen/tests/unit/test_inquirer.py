@@ -1174,19 +1174,19 @@ def test_batch_price_query(inquirer: 'Inquirer'):
     assert inquirer.find_prices(
         from_assets=[A_BTC, A_BNB, A_AVAX],
         to_asset=A_ETH,
-    ) == {A_BTC: FVal('32.429599'), A_BNB: FVal('0.20951247'), A_AVAX: FVal('0.01060398')}
+    ) == {A_BTC: FVal('40.344918'), A_BNB: FVal('0.2697573'), A_AVAX: FVal('0.00958953')}
 
     assert inquirer.find_prices_and_oracles(
         from_assets=[A_ETC, A_AAVE],
         to_asset=A_USDT,
     ) == {
-        A_ETC: (FVal('26.337366'), CurrentPriceOracle.DEFILLAMA),
-        A_AAVE: (FVal('315.538443'), CurrentPriceOracle.DEFILLAMA),
+        A_ETC: (FVal('19.9960'), CurrentPriceOracle.DEFILLAMA),
+        A_AAVE: (FVal('212.35752'), CurrentPriceOracle.DEFILLAMA),
     }
 
     assert inquirer.find_usd_prices(
         assets=[A_BTC, A_BNB, A_AVAX],
-    ) == {A_BTC: FVal('105193'), A_BNB: FVal('679.6'), A_AVAX: FVal('34.4')}
+    ) == {A_BTC: FVal('88927'), A_BNB: FVal('594.59'), A_AVAX: FVal('21.14')}
 
     assert inquirer.find_usd_prices_and_oracles(
         assets=[
@@ -1195,7 +1195,7 @@ def test_batch_price_query(inquirer: 'Inquirer'):
             (a_air := Asset('eip155:1/erc20:0x27Dce1eC4d3f72C3E457Cc50354f1F975dDEf488')),
         ],
     ) == {
-        A_ETC: (FVal('26.38'), CurrentPriceOracle.COINGECKO),
-        A_AAVE: (FVal('315.63'), CurrentPriceOracle.COINGECKO),
-        a_air: (FVal('0.01301'), CurrentPriceOracle.CRYPTOCOMPARE),
+        A_ETC: (FVal('20.0'), CurrentPriceOracle.COINGECKO),
+        A_AAVE: (FVal('212.45'), CurrentPriceOracle.COINGECKO),
+        a_air: (FVal('0.01054'), CurrentPriceOracle.CRYPTOCOMPARE),
     }

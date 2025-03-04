@@ -1,5 +1,6 @@
 import logging
 from collections import deque
+from enum import StrEnum
 from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Final, Literal, Optional, overload
 
@@ -164,6 +165,15 @@ CRYPTOCOMPARE_SPECIAL_CASES_MAPPING = {
 }
 CRYPTOCOMPARE_SPECIAL_CASES = CRYPTOCOMPARE_SPECIAL_CASES_MAPPING.keys()
 CRYPTOCOMPARE_HOURQUERYLIMIT = 2000
+MAX_FSYMS_CHARS: Final = 300  # Max number of characters supported for the pricemulti endpoint fsyms argument  # noqa: E501
+
+
+class CCApiUrl(StrEnum):
+    PRICE = 'https://min-api.cryptocompare.com/data/price'
+    MULTI_PRICE = 'https://min-api.cryptocompare.com/data/pricemulti'
+    COIN_LIST = 'https://min-api.cryptocompare.com/data/all/coinlist'
+    HISTORICAL_DAYS = 'https://data-api.cryptocompare.com/index/cc/v1/historical/days'
+    HISTORICAL_HOURS = 'https://data-api.cryptocompare.com/index/cc/v1/historical/hours'
 
 
 def _multiply_str_nums(a: str, b: str) -> str:
@@ -246,7 +256,7 @@ class Cryptocompare(
     @overload
     def _api_query(
             self,
-            url: Literal['https://data-api.cryptocompare.com/index/cc/v1/historical/days', 'https://data-api.cryptocompare.com/index/cc/v1/historical/hours'],
+            url: Literal[CCApiUrl.HISTORICAL_DAYS, CCApiUrl.HISTORICAL_HOURS],
             params: dict[str, Any] | None = None,
     ) -> list[dict[str, Any]]:
         """This uses Cryptocompare's Data API service.
@@ -256,14 +266,14 @@ class Cryptocompare(
     @overload
     def _api_query(
             self,
-            url: Literal['https://min-api.cryptocompare.com/data/price', 'https://min-api.cryptocompare.com/data/all/coinlist'],
+            url: Literal[CCApiUrl.PRICE, CCApiUrl.MULTI_PRICE, CCApiUrl.COIN_LIST],
             params: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         ...
 
     def _api_query(
             self,
-            url: str,
+            url: CCApiUrl,
             params: dict[str, Any] | None = None,
     ) -> dict[str, Any] | list[dict[str, Any]]:
         """Queries cryptocompare
@@ -460,10 +470,7 @@ class Cryptocompare(
         ):
             params['instrument'] = f'STARK-{cc_to_asset_symbol}'
 
-        return self._api_query(
-            url='https://data-api.cryptocompare.com/index/cc/v1/historical/hours',
-            params=params,
-        )
+        return self._api_query(url=CCApiUrl.HISTORICAL_HOURS, params=params)
 
     def query_current_price(
             self,
@@ -471,42 +478,90 @@ class Cryptocompare(
             to_asset: AssetWithOracles,
             handling_special_case: bool = False,
     ) -> Price:
-        """Returns the current price of an asset compared to another asset.
-
-        - May raise RemoteError if there is a problem reaching the cryptocompare server
-        or with reading the response returned by the server
-        - May raise PriceQueryUnsupportedAsset if from/to assets are not known to cryptocompare
+        """Wrapper for query_multiple_current_price when only querying a single price.
+        Returns the asset price or ZERO_PRICE if no price is found.
         """
-        special_asset = (
-            from_asset.identifier in CRYPTOCOMPARE_SPECIAL_CASES or
-            to_asset.identifier in CRYPTOCOMPARE_SPECIAL_CASES
-        )
-        if special_asset and not handling_special_case:
-            return self._special_case_handling(
-                method_name='query_current_price',
-                from_asset=from_asset,
-                to_asset=to_asset,
-            )
+        return self.query_multiple_current_prices(
+            from_assets=[from_asset],
+            to_asset=to_asset,
+            handling_special_case=handling_special_case,
+        ).get(from_asset, ZERO_PRICE)
 
+    def query_multiple_current_prices(
+            self,
+            from_assets: 'list[AssetWithOracles]',
+            to_asset: AssetWithOracles,
+            handling_special_case: bool = False,
+    ) -> dict[AssetWithOracles, Price]:
+        """Query the current prices of from_assets to to_asset from cryptocompare.
+
+        Returns a dict mapping assets to prices found. Assets for which a price was not found
+        are not included in the dict.
+
+        May raise:
+        - RemoteError if there is a problem reaching the cryptocompare server
+            or with reading the response returned by the server
+        - PriceQueryUnsupportedAsset if to_asset is not known to cryptocompare
+        """
+        found_prices, unpriced_assets = {}, from_assets
+        # Handle cryptocompare special cases
+        if not handling_special_case:
+            special_assets = from_assets if to_asset.identifier in CRYPTOCOMPARE_SPECIAL_CASES else [  # noqa: E501
+                asset for asset in from_assets if asset.identifier in CRYPTOCOMPARE_SPECIAL_CASES
+            ]
+            for from_asset in special_assets:
+                if (price := self._special_case_handling(
+                    method_name='query_current_price',
+                    from_asset=from_asset,
+                    to_asset=to_asset,
+                )) != ZERO_PRICE:
+                    found_prices[from_asset] = price
+
+            if len(unpriced_assets := [asset for asset in from_assets if asset not in special_assets]) == 0:  # noqa: E501
+                return found_prices
+
+        # Convert assets to cryptocompare symbols and split the from_asset symbols into chunks
         try:
-            cc_from_asset_symbol = from_asset.to_cryptocompare()
             cc_to_asset_symbol = to_asset.to_cryptocompare()
         except UnsupportedAsset as e:
             raise PriceQueryUnsupportedAsset(e.identifier) from e
 
-        result = self._api_query(
-            url='https://min-api.cryptocompare.com/data/price',
-            params={
-                'fsym': cc_from_asset_symbol,
-                'tsyms': cc_to_asset_symbol,
-            },
-        )
-        # Up until 23/09/2020 cryptocompare may return {} due to bug.
-        # Handle that case by assuming 0 if that happens
-        if cc_to_asset_symbol not in result:
-            return ZERO_PRICE
+        symbols_to_assets, fsyms_chunks, current_chunk = {}, [], ''
+        for from_asset in unpriced_assets:
+            try:
+                symbols_to_assets[cc_symbol := from_asset.to_cryptocompare()] = from_asset
+            except UnsupportedAsset as e:
+                log.warning(f'Failed to find cryptocompare {to_asset!s} price for {from_asset!s} due to {e}')  # noqa: E501
+                continue
 
-        return Price(FVal(result[cc_to_asset_symbol]))
+            # Begin next chunk if adding cc_symbol to the current chunk will make it longer than MAX_FSYMS_CHARS  # noqa: E501
+            if len(current_chunk) + len(cc_symbol) > MAX_FSYMS_CHARS:
+                fsyms_chunks.append(current_chunk.rstrip(','))
+                current_chunk = ''
+                continue
+
+            current_chunk += f'{cc_symbol},'  # else, add to the existing chunk
+
+        if len(current_chunk) != 0:
+            fsyms_chunks.append(current_chunk.rstrip(','))
+
+        for fsyms in fsyms_chunks:
+            if ',' in fsyms:
+                result = self._api_query(
+                    url=CCApiUrl.MULTI_PRICE,
+                    params={'fsyms': fsyms, 'tsyms': cc_to_asset_symbol},
+                )
+                for cc_from_symbol, price_result in result.items():
+                    if cc_to_asset_symbol in price_result:
+                        found_prices[symbols_to_assets[cc_from_symbol]] = Price(FVal(price_result[cc_to_asset_symbol]))  # noqa: E501
+            else:
+                result = self._api_query(
+                    url=CCApiUrl.PRICE,
+                    params={'fsym': fsyms, 'tsyms': cc_to_asset_symbol},
+                )
+                found_prices[symbols_to_assets[fsyms]] = Price(FVal(result[cc_to_asset_symbol]))
+
+        return found_prices
 
     def query_endpoint_pricehistorical(
             self,
@@ -560,11 +615,7 @@ class Cryptocompare(
         ):
             params['instrument'] = f'STARK-{cc_to_asset_symbol}'
 
-        result = self._api_query(
-            url='https://data-api.cryptocompare.com/index/cc/v1/historical/days',
-            params=params,
-        )
-        if len(result) == 0:
+        if len(result := self._api_query(url=CCApiUrl.HISTORICAL_DAYS, params=params)) == 0:
             return ZERO_PRICE
 
         try:
@@ -816,7 +867,6 @@ class Cryptocompare(
         or with reading the response returned by the server
         """
         if (data := self.maybe_get_cached_coinlist(considered_recent_secs=WEEK_IN_SECONDS)) is None:  # noqa: E501
-            data = self._api_query('https://min-api.cryptocompare.com/data/all/coinlist')
-            self.cache_coinlist(data)
+            self.cache_coinlist(data := self._api_query(CCApiUrl.COIN_LIST))
 
         return data

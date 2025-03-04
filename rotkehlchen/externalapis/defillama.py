@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any
 import requests
 
 from rotkehlchen.assets.asset import Asset, AssetWithOracles
-from rotkehlchen.constants import ZERO
+from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.db.settings import CachedSettings
@@ -130,83 +130,105 @@ class Defillama(
 
         return f'coingecko:{asset.to_coingecko()}'
 
-    def _deserialize_price(
-            self,
+    @staticmethod
+    def _deserialize_prices(
             result: dict[str, Any],
-            coin_id: str,
-            from_asset: Asset,
-            to_asset: Asset,
-    ) -> Price:
+            coin_id_mapping: dict[str, AssetWithOracles],
+            from_assets: list[AssetWithOracles],
+            to_asset: AssetWithOracles,
+    ) -> dict[AssetWithOracles, Price]:
         """
-        Reads the response from defillama for prices and returns the usd price.
-        If the price is not available, couldn't deserialize the response or the confidence
-        is too low we return ZERO_PRICE instead
+        Reads the response from defillama and returns a dict mapping assets to usd prices.
+        If a price is not available, couldn't be deserialized or the confidence
+        is too low, the asset is skipped. Returns an empty dict if no prices were found.
         """
-        if 'coins' not in result or len(result['coins']) == 0:
+        if 'coins' not in result or len(coins_result := result['coins']) == 0:
             log.warning(
-                f'Queried Defillama current price from {from_asset.identifier} '
-                f'to {to_asset.identifier}. But coins is not available in the result {result}',
+                f'Queried Defillama current price from {from_assets} '
+                f'to {to_asset}. But coins is not available in the result {result}',
             )
-            return ZERO_PRICE
+            return {}
 
-        coin_result_raw = result['coins'][coin_id]
-        try:
-            if (
-                'confidence' in coin_result_raw and
-                FVal(coin_result_raw['confidence']) < MIN_DEFILLAMA_CONFIDENCE
-            ):
-                # Defillama provides a confidence value ranking how good their confidence in
-                # reported price is. When their confidence in the price is lower than 20% ignore
-                # it. Probably a spam token
-                return ZERO_PRICE
-            usd_price = deserialize_price(coin_result_raw['price'])
-        except (KeyError, DeserializationError) as e:
-            error_msg = str(e)
-            if isinstance(e, KeyError):
-                error_msg = f'Missing key in defillama response: {error_msg}.'
+        prices: dict[AssetWithOracles, Price] = {}
+        for coin_id, from_asset in coin_id_mapping.items():
+            try:
+                coin_result_raw = coins_result[coin_id]
+                if (
+                    'confidence' in coin_result_raw and
+                    FVal(coin_result_raw['confidence']) < MIN_DEFILLAMA_CONFIDENCE
+                ):
+                    # Defillama provides a confidence value ranking how good their confidence in
+                    # reported price is. When their confidence in the price is lower than 20%
+                    # ignore it. Probably a spam token
+                    continue
+                prices[from_asset] = deserialize_price(coin_result_raw['price'])
+            except (KeyError, DeserializationError) as e:
+                error_msg = f'Missing key in defillama response: {e!s}.' if isinstance(e, KeyError) else str(e)  # noqa: E501
+                log.warning(
+                    f'Queried Defillama current price from {from_asset.identifier} '
+                    f'to {to_asset.identifier}. But got key error for {error_msg} when '
+                    f'processing the result.',
+                )
+                continue
 
-            log.warning(
-                f'Queried Defillama current price from {from_asset.identifier} '
-                f'to {to_asset.identifier}. But got key error for {error_msg} when '
-                f'processing the result.',
-            )
-            return ZERO_PRICE
-        return usd_price
+        return prices
 
     def query_current_price(
             self,
             from_asset: AssetWithOracles,
             to_asset: AssetWithOracles,
     ) -> Price:
+        """Wrapper for query_multiple_current_price when only querying a single price.
+        Returns the asset price from defillama or ZERO_PRICE if no price is found.
         """
-        Returns a simple price for from_asset to to_asset in Defillama.
+        return self.query_multiple_current_prices(
+            from_assets=[from_asset],
+            to_asset=to_asset,
+        ).get(from_asset, ZERO_PRICE)
+
+    def query_multiple_current_prices(
+            self,
+            from_assets: list[AssetWithOracles],
+            to_asset: AssetWithOracles,
+    ) -> dict[AssetWithOracles, Price]:
+        """Queries simple prices for from_assets to to_asset in Defillama.
+        Returns a dict mapping assets to prices found. Assets for which no price was found
+        are not included in the dict.
 
         May raise:
-        - RemoteError if there is a problem querying defillama
+        - RemoteError if there is a problem querying defillama.
         """
-        try:
-            coin_id = self._get_asset_id(from_asset)
-        except UnsupportedAsset:
-            log.warning(
-                f'Tried to query current price using Defillama from {from_asset} to '
-                f'{to_asset} but {from_asset} is not an EVM token and is not '
-                f'supported by defillama',
-            )
-            return ZERO_PRICE
+        coin_id_mapping: dict[str, AssetWithOracles] = {}
+        for from_asset in from_assets:
+            try:
+                coin_id_mapping[self._get_asset_id(from_asset)] = from_asset
+            except UnsupportedAsset:
+                log.warning(
+                    f'Tried to query current price using Defillama from {from_asset} to '
+                    f'{to_asset} but {from_asset} is not an EVM token and is not '
+                    f'supported by defillama',
+                )
+                continue
 
-        result = self._query(
-            module='prices',
-            subpath=f'current/{coin_id}',
+        if len(coin_id_mapping) == 0:
+            return {}
+
+        usd_prices = self._deserialize_prices(
+            result=self._query(
+                module='prices',
+                subpath=f'current/{",".join(coin_id_mapping.keys())}',
+            ),
+            coin_id_mapping=coin_id_mapping,
+            from_assets=from_assets,
+            to_asset=to_asset,
         )
 
-        usd_price = self._deserialize_price(result, coin_id, from_asset, to_asset)
-        if usd_price == ZERO or to_asset == A_USD:
-            return usd_price
-
-        # We got the price in usd but that is not what we need we should query for the next
-        # step in the chain of prices
-        rate_price = Inquirer.find_price(from_asset=A_USD, to_asset=to_asset)
-        return Price(usd_price * rate_price)
+        # Prices from defillama are usd prices, so get rate from usd to to_asset
+        rate_price = Inquirer.find_price(from_asset=A_USD, to_asset=to_asset) if to_asset != A_USD else ONE  # noqa: E501
+        return {
+            asset: Price(usd_price * rate_price)
+            for asset, usd_price in usd_prices.items() if usd_price != ZERO_PRICE
+        }
 
     def can_query_history(
             self,
@@ -254,8 +276,12 @@ class Defillama(
             subpath=f'historical/{timestamp}/{coin_id}',
         )
 
-        usd_price = self._deserialize_price(result, coin_id, from_asset, to_asset)
-        if usd_price == ZERO:
+        if (usd_price := self._deserialize_prices(
+            result=result,
+            coin_id_mapping={coin_id: from_asset},
+            from_assets=[from_asset],
+            to_asset=to_asset,
+        ).get(from_asset, ZERO_PRICE)) == ZERO_PRICE:
             raise NoPriceForGivenTimestamp(
                 from_asset=from_asset,
                 to_asset=to_asset,

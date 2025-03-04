@@ -1,6 +1,6 @@
 import pytest
 
-from rotkehlchen.constants.assets import A_DAI, A_ETH, A_EUR, A_USD
+from rotkehlchen.constants.assets import A_ARB, A_DAI, A_ETH, A_EUR, A_LINK, A_USD
 from rotkehlchen.externalapis.defillama import Defillama
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import ApiKey, ExternalService, ExternalServiceApiCredentials, Price
@@ -82,3 +82,16 @@ def test_defillama_with_api_key(price_historian, database):  # pylint: disable=u
         timestamp=1597024800,
     )
     assert result == FVal('1.0182482830027697')
+
+
+@pytest.mark.vcr
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+def test_query_multiple_current_prices(session_defillama: 'Defillama', inquirer):
+    assert session_defillama.query_multiple_current_prices(
+        from_assets=[
+            A_ARB.resolve_to_asset_with_oracles(),
+            A_DAI.resolve_to_asset_with_oracles(),
+            A_LINK.resolve_to_asset_with_oracles(),
+        ],
+        to_asset=A_ETH.resolve_to_asset_with_oracles(),
+    ) == {A_ARB: FVal(0.0001843520256), A_DAI: FVal(0.000443575764), A_LINK: FVal(0.007640514)}
