@@ -1105,6 +1105,16 @@ def test_edit_token_with_missing_information(database):
     assert peth.name == 'IDONTEXIST NAME'
     assert peth.decimals == 18
 
+    # Test that editing the name works multiple times. Regression test for a problem where
+    # the name was only updated if the existing name was still the same as the identifier.
+    peth = get_or_create_evm_token(
+        userdb=database,
+        name='IDONTEXIST NAME EDITED',
+        chain_id=ChainID.ETHEREUM,
+        evm_address=token_address,
+    )
+    assert peth.name == 'IDONTEXIST NAME EDITED'
+
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_packaged_db_check_for_constant_assets(globaldb: 'GlobalDBHandler'):
