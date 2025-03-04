@@ -5,6 +5,7 @@ import pytest
 
 from rotkehlchen.assets.asset import Asset, CryptoAsset
 from rotkehlchen.constants.assets import (
+    A_BSC_BNB,
     A_BTC,
     A_CBAT,
     A_CDAI,
@@ -13,6 +14,7 @@ from rotkehlchen.constants.assets import (
     A_CUSDC,
     A_CWBTC,
     A_CZRX,
+    A_DAI,
     A_DPI,
     A_ETH,
     A_EUR,
@@ -353,3 +355,15 @@ def test_special_cases(cryptocompare: 'Cryptocompare') -> None:
     assert current_price == FVal(325.97568)
     assert historical_price.is_close(FVal(116.3550477885))
     assert historical_data[0]['TIMESTAMP'] == 1732694400
+
+
+@pytest.mark.vcr
+def test_query_multiple_current_prices(cryptocompare: 'Cryptocompare'):
+    assert cryptocompare.query_multiple_current_prices(
+        from_assets=[
+            A_BTC.resolve_to_asset_with_oracles(),
+            A_DAI.resolve_to_asset_with_oracles(),
+            A_BSC_BNB.resolve_to_asset_with_oracles(),
+        ],
+        to_asset=A_ETH.resolve_to_asset_with_oracles(),
+    ) == {A_BTC: FVal(40.48), A_DAI: FVal(0.0004486), A_BSC_BNB: FVal(0.2673)}
