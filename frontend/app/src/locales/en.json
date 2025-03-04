@@ -3335,6 +3335,7 @@
       "assets": "Assets",
       "cex_mapping": "Manage CEX Mapping",
       "custom_assets": "Custom Assets",
+      "missing_mappings": "Manage Missing Mappings",
       "more": "More",
       "newly_detected": "Newly Detected Tokens"
     },
@@ -3496,8 +3497,8 @@
       "title": "Balance Snapshot failed"
     },
     "unknown_asset_mapping": {
-      "message": "We could not find a mapping for \"{identifier}\" from {location} ({name}). \n Ignoring its {details}.",
-      "title": "Missing mapping in {location}"
+      "message": "We could not find a mapping for {groupCount} exchange assets",
+      "title": "Missing mappings for some exchanges"
     }
   },
   "notification_popup": {

@@ -34,6 +34,7 @@ declare module 'vue-router/auto-routes' {
     'asset-manager-managed': RouteRecordInfo<'asset-manager-managed', '/asset-manager/managed', Record<never, never>, Record<never, never>>,
     'asset-manager-more': RouteRecordInfo<'asset-manager-more', '/asset-manager/more', Record<never, never>, Record<never, never>>,
     'asset-manager-cex-mapping': RouteRecordInfo<'asset-manager-cex-mapping', '/asset-manager/more/cex-mapping', Record<never, never>, Record<never, never>>,
+    'asset-manager-missing-mappings': RouteRecordInfo<'asset-manager-missing-mappings', '/asset-manager/more/missing-mappings', Record<never, never>, Record<never, never>>,
     'asset-manager-newly-detected': RouteRecordInfo<'asset-manager-newly-detected', '/asset-manager/more/newly-detected', Record<never, never>, Record<never, never>>,
     '/assets/[identifier]': RouteRecordInfo<'/assets/[identifier]', '/assets/:identifier', { identifier: ParamValue<true> }, { identifier: ParamValue<false> }>,
     'balances': RouteRecordInfo<'balances', '/balances', Record<never, never>, Record<never, never>>,

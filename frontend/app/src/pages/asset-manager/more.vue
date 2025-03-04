@@ -13,7 +13,11 @@ const { appRoutes } = useAppRoutes();
 
 const tabs = computed<TabContent[]>(() => {
   const Routes = get(appRoutes);
-  return [Routes.ASSET_MANAGER_CEX_MAPPING, Routes.ASSET_MANAGER_NEWLY_DETECTED];
+  return [
+    Routes.ASSET_MANAGER_CEX_MAPPING,
+    Routes.ASSET_MANAGER_NEWLY_DETECTED,
+    Routes.ASSET_MANAGER_MISSING_MAPPINGS,
+  ];
 });
 
 const { t } = useI18n();
