@@ -2,8 +2,7 @@
 import { externalLinks } from '@shared/external-links';
 import { supportedLanguages } from '@/data/supported-language';
 import { SupportedLanguage } from '@/types/settings/frontend-settings';
-import { useSessionStore } from '@/store/session';
-import { useLastLanguage } from '@/composables/session/language';
+import { useLocale } from '@/composables/session/use-locale';
 import LanguageSelectorItem from '@/components/settings/general/language/LanguageSelectorItem.vue';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
@@ -29,16 +28,14 @@ const { useLocalSetting } = toRefs(props);
 
 const language = ref<SupportedLanguage>(SupportedLanguage.EN);
 
-const { lastLanguage } = useLastLanguage();
+const { adaptiveLanguage, forceUpdateMachineLanguage, lastLanguage } = useLocale();
 
 async function updateSetting(value: string, update: (newValue: any) => Promise<void>) {
   if (get(useLocalSetting))
     set(lastLanguage, value);
-  else await update(value);
+  else
+    await update(value);
 }
-
-const { forceUpdateMachineLanguage } = useLastLanguage();
-const { adaptiveLanguage } = storeToRefs(useSessionStore());
 
 function updateForceUpdateMachineLanguage(event: boolean | null) {
   set(forceUpdateMachineLanguage, event ? 'true' : 'false');

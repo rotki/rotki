@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { externalLinks } from '@shared/external-links';
-import { useSessionStore } from '@/store/session';
 import { useInterop } from '@/composables/electron-interop';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
+import { useUpdateChecker } from '@/modules/session/use-update-checker';
 
 const downloadReady = ref(false);
 const downloading = ref(false);
@@ -10,9 +10,7 @@ const restarting = ref(false);
 const percentage = ref(0);
 const error = ref('');
 
-const store = useSessionStore();
-const { showUpdatePopup } = storeToRefs(store);
-const { checkForUpdate } = store;
+const { checkForUpdate, showUpdatePopup } = useUpdateChecker();
 const { downloadUpdate, installUpdate, isPackaged } = useInterop();
 
 const { t } = useI18n();

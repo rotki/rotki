@@ -4,7 +4,6 @@ import { SYNC_DOWNLOAD, SYNC_UPLOAD, type SyncAction } from '@/types/session/syn
 import { useTaskStore } from '@/store/tasks';
 import { usePremiumStore } from '@/store/session/premium';
 import { usePeriodicStore } from '@/store/session/periodic';
-import { useSessionStore } from '@/store/session';
 import { useSync } from '@/composables/session/sync';
 import { useLinks } from '@/composables/links';
 import AskUserUponSizeDiscrepancySetting from '@/components/settings/general/AskUserUponSizeDiscrepancySetting.vue';
@@ -13,9 +12,10 @@ import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import SyncButtons from '@/components/status/sync/SyncButtons.vue';
 import SyncSettings from '@/components/status/sync/SyncSettings.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
+import { useLogout } from '@/modules/account/use-logout';
 
 const { t } = useI18n();
-const { logout } = useSessionStore();
+const { logout } = useLogout();
 const { lastDataUpload } = storeToRefs(usePeriodicStore());
 const {
   cancelSync,

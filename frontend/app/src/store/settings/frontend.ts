@@ -8,7 +8,6 @@ import {
 } from '@/types/settings/frontend-settings';
 import { logger } from '@/utils/logging';
 import { useSettingsApi } from '@/composables/api/settings/settings-api';
-import { useLastLanguage } from '@/composables/session/language';
 import { useComputedRef } from '@/composables/utils/useComputedRef';
 import { useItemsPerPage } from '@/composables/session/use-items-per-page';
 import type { ActionStatus } from '@/types/action';
@@ -57,14 +56,12 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
   const globalItemsPerPage = useItemsPerPage();
 
   const api = useSettingsApi();
-  const { checkMachineLanguage, forceUpdateMachineLanguage } = useLastLanguage();
 
   function update(update: FrontendSettings): void {
     set(settings, {
       ...get(settings),
       ...update,
     });
-    checkMachineLanguage(language);
     const itemsPerPage = get(settings, 'itemsPerPage');
     if (itemsPerPage !== get(globalItemsPerPage))
       set(globalItemsPerPage, itemsPerPage);
@@ -99,10 +96,6 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
       };
     }
   }
-
-  watch([language, forceUpdateMachineLanguage], () => {
-    checkMachineLanguage(get(language));
-  });
 
   watchDebounced(globalItemsPerPage, async (value, oldValue) => {
     if (oldValue === undefined || value === oldValue)

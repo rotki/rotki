@@ -8,7 +8,6 @@ import { Section, Status } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import { useTaskStore } from '@/store/tasks';
 import { useStatusStore } from '@/store/status';
-import { useSessionStore } from '@/store/session';
 import { useMainStore } from '@/store/main';
 import { useSupportedChains } from '@/composables/info/chains';
 import { createCustomPinia } from '../../../utils/create-pinia';
@@ -52,7 +51,6 @@ describe('accountBalances.vue', () => {
   });
 
   afterEach(() => {
-    useSessionStore().$reset();
     wrapper.unmount();
   });
 

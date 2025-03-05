@@ -1,7 +1,6 @@
 import { ThemeMode, useRotkiTheme } from '@rotki/ui-library';
 import { getColors } from 'theme-colors';
 import { DARK_COLORS, LIGHT_COLORS } from '@/plugins/theme';
-import { useSessionStore } from '@/store/session';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { usePremium } from '@/composables/premium';
 import type { ThemeColors } from '@rotki/common';
@@ -10,11 +9,9 @@ interface ColorScheme { DEFAULT: string; lighter: string; darker: string }
 
 export const useDarkMode = createSharedComposable(() => {
   const { config, setThemeConfig, switchThemeScheme } = useRotkiTheme();
-  const store = useSessionStore();
-  const { darkModeEnabled } = storeToRefs(store);
   const { darkTheme, lightTheme } = storeToRefs(useFrontendSettingsStore());
-
   const premium = usePremium();
+  const darkModeEnabled = useSessionStorage<boolean>('rotki.dark_mode', false);
 
   const updateDarkMode = (enabled: boolean): void => {
     set(darkModeEnabled, enabled);
