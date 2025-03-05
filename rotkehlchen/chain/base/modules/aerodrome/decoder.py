@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Final
+from typing import TYPE_CHECKING
 
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.velodrome.constants import CPT_AERODROME
@@ -7,10 +7,11 @@ from rotkehlchen.chain.evm.decoding.velodrome.decoder import VelodromeLikeDecode
 from rotkehlchen.chain.evm.decoding.velodrome.velodrome_cache import (
     read_aerodrome_pools_and_gauges_from_cache,
 )
-from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.history.events.structures.evm_event import EvmProduct
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import AERODROME_POOL_PROTOCOL, CacheType
+
+from .constants import ROUTER, VOTER_CONTRACT_ADDRESS, VOTING_ESCROW_CONTRACT_ADDRESS
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.base.node_inquirer import BaseInquirer
@@ -19,9 +20,6 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
-
-
-ROUTER: Final = string_to_evm_address('0xcF77a3Ba9A5CA399B7c97c74d54e5b1Beb874E43')
 
 
 class AerodromeDecoder(VelodromeLikeDecoder):
@@ -39,8 +37,8 @@ class AerodromeDecoder(VelodromeLikeDecoder):
             counterparty=CPT_AERODROME,
             routers={ROUTER},
             token_symbol='AERO',
-            voter_address=string_to_evm_address('0x16613524e02ad97eDfeF371bC883F2F5d6C480A5'),
-            voting_escrow_address=string_to_evm_address('0xeBf418Fe2512e7E6bd9b87a8F0f294aCDC67e6B4'),
+            voter_address=VOTER_CONTRACT_ADDRESS,
+            voting_escrow_address=VOTING_ESCROW_CONTRACT_ADDRESS,
             gauge_fees_cache_type=CacheType.AERODROME_GAUGE_FEE_ADDRESS,
             gauge_bribes_cache_type=CacheType.AERODROME_GAUGE_BRIBE_ADDRESS,
             pool_cache_type=CacheType.AERODROME_POOL_ADDRESS,
