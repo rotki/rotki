@@ -229,7 +229,7 @@ defineExpose({
       disable-asset
     />
 
-    <RuiDivider class="my-10" />
+    <RuiDivider class="mb-6" />
 
     <AutoCompleteWithSearchSync
       v-model="feeRecipient"
@@ -249,7 +249,7 @@ defineExpose({
       {{ t('transactions.events.form.is_mev_reward.label') }}
     </RuiCheckbox>
 
-    <RuiDivider class="mb-2 mt-6" />
+    <RuiDivider class="mb-2" />
 
     <RuiAccordions>
       <RuiAccordion

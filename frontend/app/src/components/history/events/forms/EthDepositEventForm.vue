@@ -243,7 +243,7 @@ defineExpose({
       disable-asset
     />
 
-    <RuiDivider class="my-10" />
+    <RuiDivider class="mb-6" />
 
     <div class="grid md:grid-cols-2 gap-4">
       <AutoCompleteWithSearchSync
