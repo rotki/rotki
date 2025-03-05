@@ -21,6 +21,7 @@ from rotkehlchen.chain.arbitrum_one.modules.thegraph.balances import (
     ThegraphBalances as ThegraphBalancesArbitrumOne,
 )
 from rotkehlchen.chain.arbitrum_one.modules.umami.balances import UmamiBalances
+from rotkehlchen.chain.base.modules.aerodrome.balances import AerodromeBalances
 from rotkehlchen.chain.base.modules.extrafi.balances import ExtrafiBalances as ExtrafiBalancesBase
 from rotkehlchen.chain.ethereum.interfaces.balances import ProtocolWithBalance
 from rotkehlchen.chain.ethereum.modules.aave.balances import AaveBalances
@@ -1293,6 +1294,54 @@ def test_hedgey_locked_balances(
     assert user_balance.assets[A_ENS] == Balance(
         amount=FVal('2943.901116977446327568'),
         usd_value=FVal('92114.66595022429558960272'),
+    )
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+@pytest.mark.parametrize('optimism_accounts', [['0xD4dd9a1FAc6D7bBe327c2b4A5Dc3197D0B10874b']])
+def test_velodrome_locked_balances(
+        optimism_inquirer: 'OptimismInquirer',
+        optimism_accounts: list[ChecksumEvmAddress],
+        inquirer_defi: 'Inquirer',  # pylint: disable=unused-argument
+) -> None:
+    _, tx_decoder = get_decoded_events_of_transaction(
+        evm_inquirer=optimism_inquirer,
+        tx_hash=deserialize_evm_tx_hash('0x8747ae5f08613802c76f3c6d4517c87c2133b0231990dd30df32b8c9bb9fa7a1'),
+    )
+    protocol_balances_inquirer = VelodromeBalances(
+        evm_inquirer=optimism_inquirer,
+        tx_decoder=tx_decoder,
+    )
+    protocol_balances = protocol_balances_inquirer.query_balances()
+    user_balance = protocol_balances[optimism_accounts[0]]
+    assert user_balance.assets[Asset('eip155:10/erc20:0x9560e827aF36c94D2Ac33a39bCE1Fe78631088Db')] == Balance(  # noqa: E501
+        amount=FVal('215.817657296359655794'),
+        usd_value=FVal('12.717487091502585436973038'),
+    )
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+@pytest.mark.parametrize('base_accounts', [['0xD10c1617e7afF13759Ad45AA373E89d5251B37cC']])
+def test_aerodrome_locked_balances(
+        base_inquirer: 'BaseInquirer',
+        base_accounts: list[ChecksumEvmAddress],
+        inquirer_defi: 'Inquirer',  # pylint: disable=unused-argument
+) -> None:
+    _, tx_decoder = get_decoded_events_of_transaction(
+        evm_inquirer=base_inquirer,
+        tx_hash=deserialize_evm_tx_hash('0x637a00989340052bbb5a6b63c012c70a3b695223a0da5da95e9b233a524908e2'),
+    )
+    protocol_balances_inquirer = AerodromeBalances(
+        evm_inquirer=base_inquirer,
+        tx_decoder=tx_decoder,
+    )
+    protocol_balances = protocol_balances_inquirer.query_balances()
+    user_balance = protocol_balances[base_accounts[0]]
+    assert user_balance.assets[Asset('eip155:8453/erc20:0x940181a94A35A4569E4529A3CDfB74e38FD98631')] == Balance(  # noqa: E501
+        amount=FVal('927'),
+        usd_value=FVal('538.76313'),
     )
 
 
