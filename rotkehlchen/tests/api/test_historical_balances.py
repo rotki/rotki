@@ -1,5 +1,6 @@
 from http import HTTPStatus
 from typing import TYPE_CHECKING
+from unittest.mock import patch
 
 import pytest
 import requests
@@ -10,6 +11,7 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import DAY_IN_SECONDS, ONE
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.errors.price import NoPriceForGivenTimestamp
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
@@ -18,6 +20,7 @@ from rotkehlchen.history.events.structures.types import (
     HistoryEventSubType,
     HistoryEventType,
 )
+from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.tests.utils.api import (
     api_url_for,
@@ -28,13 +31,14 @@ from rotkehlchen.tests.utils.api import (
 )
 from rotkehlchen.tests.utils.constants import A_DASH
 from rotkehlchen.types import AssetAmount, ChainID, Location, Price, Timestamp, TradeType
-from rotkehlchen.utils.misc import timestamp_to_daystart_timestamp, ts_sec_to_ms
+from rotkehlchen.utils.misc import timestamp_to_daystart_timestamp, ts_now, ts_sec_to_ms
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
     from rotkehlchen.globaldb.handler import GlobalDBHandler
 
 START_TS = Timestamp(1672531200)
+DAY_AFTER_START_TS = Timestamp(START_TS + DAY_IN_SECONDS)
 
 
 @pytest.fixture(name='setup_historical_data')
@@ -128,7 +132,7 @@ def test_get_historical_balance(
             'timestamphistoricalbalanceresource',
         ),
         json={
-            'timestamp': START_TS + DAY_IN_SECONDS,  # Day 2
+            'timestamp': DAY_AFTER_START_TS,  # Day 2
             'async_query': True,
         },
     )
@@ -158,7 +162,7 @@ def test_get_historical_asset_balance(
             write_cursor=write_cursor,
             trades=[
                 Trade(
-                    timestamp=Timestamp(START_TS + DAY_IN_SECONDS),  # Day 2
+                    timestamp=DAY_AFTER_START_TS,  # Day 2
                     location=Location.EXTERNAL,
                     base_asset=A_BTC,
                     quote_asset=A_EUR,
@@ -462,7 +466,7 @@ def test_get_historical_netvalue(
             write_cursor=write_cursor,
             trades=[
                 Trade(
-                    timestamp=Timestamp(START_TS + DAY_IN_SECONDS),  # Day 2
+                    timestamp=DAY_AFTER_START_TS,  # Day 2
                     location=Location.EXTERNAL,
                     base_asset=A_BTC,
                     quote_asset=A_EUR,
@@ -502,7 +506,7 @@ def test_get_historical_netvalue(
 
     expected_timestamps = [
         timestamp_to_daystart_timestamp(START_TS),  # Day 1
-        timestamp_to_daystart_timestamp(Timestamp(START_TS + DAY_IN_SECONDS)),  # Day 2
+        timestamp_to_daystart_timestamp(DAY_AFTER_START_TS),  # Day 2
         timestamp_to_daystart_timestamp(Timestamp(START_TS + DAY_IN_SECONDS * 2)),  # Day 3
     ]
     expected_values = [
@@ -723,7 +727,7 @@ def test_get_historical_prices_per_asset(
         json={
             'asset': 'INVALID',
             'from_timestamp': START_TS,
-            'to_timestamp': START_TS + DAY_IN_SECONDS,
+            'to_timestamp': DAY_AFTER_START_TS,
             'interval': DAY_IN_SECONDS,
         },
     )
@@ -767,13 +771,13 @@ def test_get_historical_prices_per_asset(
         json={
             'asset': 'eip155:8453/erc20:0x5875eEE11Cf8398102FdAd704C9E96607675467a',
             'from_timestamp': START_TS,
-            'to_timestamp': START_TS + DAY_IN_SECONDS,
+            'to_timestamp': DAY_AFTER_START_TS,
             'interval': DAY_IN_SECONDS,
         },
     )
     result = assert_proper_sync_response_with_result(response)
     assert result['prices'] == {}
-    assert result['no_prices_timestamps'] == [START_TS, START_TS + DAY_IN_SECONDS]
+    assert result['no_prices_timestamps'] == [START_TS, DAY_AFTER_START_TS]
 
     # invalid from_timestamp > to_timestamp
     response = requests.post(
@@ -783,7 +787,7 @@ def test_get_historical_prices_per_asset(
         ),
         json={
             'asset': 'BTC',
-            'from_timestamp': START_TS + DAY_IN_SECONDS,
+            'from_timestamp': DAY_AFTER_START_TS,
             'to_timestamp': START_TS,
             'interval': DAY_IN_SECONDS,
         },
@@ -805,7 +809,7 @@ def test_get_historical_prices_per_asset(
         from_asset=A_DASH,
         to_asset=A_EUR,
         source=HistoricalPriceOracle.CRYPTOCOMPARE,
-        timestamp=Timestamp(START_TS + DAY_IN_SECONDS),
+        timestamp=DAY_AFTER_START_TS,
         price=Price(FVal('20')),
     )])
     response = requests.post(
@@ -824,5 +828,98 @@ def test_get_historical_prices_per_asset(
     result = assert_proper_sync_response_with_result(response)
     assert result['prices'] == {
         str(START_TS): '10',
-        str(START_TS + DAY_IN_SECONDS): '20',
+        str(DAY_AFTER_START_TS): '20',
     }
+
+    # test future timestamp exclusion
+    current_time = ts_now()
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'historicalpricesperassetresource',
+        ),
+        json={
+            'asset': 'BTC',
+            'from_timestamp': current_time - DAY_IN_SECONDS,
+            'to_timestamp': (future_ts := current_time + DAY_IN_SECONDS),  # Include timestamp in the future  # noqa: E501
+            'interval': DAY_IN_SECONDS,
+        },
+    )
+    result = assert_proper_sync_response_with_result(response)
+    assert str(future_ts) not in result['prices']
+    assert future_ts not in result['no_prices_timestamps']
+    assert future_ts not in result['rate_limited_prices_timestamps']
+    assert max(int(ts) for ts in result['prices']) <= current_time
+
+    # test excluded timestamps
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'historicalpricesperassetresource',
+        ),
+        json={
+            'asset': 'BTC',
+            'from_timestamp': START_TS,
+            'to_timestamp': START_TS + 2 * DAY_IN_SECONDS,
+            'interval': DAY_IN_SECONDS,
+            'exclude_timestamps': [DAY_AFTER_START_TS],  # Exclude middle timestamp
+        },
+    )
+    result = assert_proper_sync_response_with_result(response)
+    assert str(START_TS) in result['prices']
+    assert str(DAY_AFTER_START_TS) not in result['prices']
+    assert str(START_TS + 2 * DAY_IN_SECONDS) in result['prices']
+    assert DAY_AFTER_START_TS not in result['no_prices_timestamps']
+
+    # Test both rate limited and no price found scenarios
+    original_query_historical_price = PriceHistorian.query_historical_price
+
+    def mock_query_historical_price(from_asset, to_asset, timestamp):
+        # Rate limit for one timestamp
+        if timestamp == DAY_AFTER_START_TS:
+            raise NoPriceForGivenTimestamp(
+                from_asset=from_asset,
+                to_asset=to_asset,
+                time=timestamp,
+                rate_limited=True,
+            )
+        # No price found for another timestamp
+        elif timestamp == START_TS + 2 * DAY_IN_SECONDS:
+            raise NoPriceForGivenTimestamp(
+                from_asset=from_asset,
+                to_asset=to_asset,
+                time=timestamp,
+                rate_limited=False,
+            )
+        # Normal behavior for other timestamps
+        return original_query_historical_price(from_asset, to_asset, timestamp)
+
+    with patch('rotkehlchen.history.price.PriceHistorian.query_historical_price', side_effect=mock_query_historical_price):  # noqa: E501
+        response = requests.post(
+            api_url_for(
+                rotkehlchen_api_server,
+                'historicalpricesperassetresource',
+            ),
+            json={
+                'asset': 'BTC',
+                'from_timestamp': START_TS,
+                'to_timestamp': START_TS + 3 * DAY_IN_SECONDS,
+                'interval': DAY_IN_SECONDS,
+            },
+        )
+        result = assert_proper_sync_response_with_result(response)
+        # The first timestamp should have a price
+        assert str(START_TS) in result['prices']
+
+        # The second timestamp should be rate limited
+        assert str(DAY_AFTER_START_TS) not in result['prices']
+        assert DAY_AFTER_START_TS not in result['no_prices_timestamps']
+        assert DAY_AFTER_START_TS in result['rate_limited_prices_timestamps']
+
+        # The third timestamp should have no price found (not rate limited)
+        assert str(START_TS + 2 * DAY_IN_SECONDS) not in result['prices']
+        assert START_TS + 2 * DAY_IN_SECONDS in result['no_prices_timestamps']
+        assert START_TS + 2 * DAY_IN_SECONDS not in result['rate_limited_prices_timestamps']
+
+        # The fourth timestamp should have a price (uses original function)
+        assert str(START_TS + 3 * DAY_IN_SECONDS) in result['prices']
