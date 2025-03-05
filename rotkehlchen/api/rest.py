@@ -5278,15 +5278,21 @@ class RestAPI:
             interval: int,
             to_timestamp: Timestamp,
             from_timestamp: Timestamp,
+            exclude_timestamps: set[Timestamp],
             only_cache_period: int | None = None,
     ) -> dict[str, Any]:
         prices = {}
         no_prices_ts: list[Timestamp] = []
+        rate_limited_prices_ts: list[Timestamp] = []
         with (db := self.rotkehlchen.data.db).conn.read_ctx() as cursor:
             main_currency = db.get_setting(cursor=cursor, name='main_currency')
 
-        total_intervals = (to_timestamp - from_timestamp) // interval + 1
-        timestamps = [Timestamp(from_timestamp + (i * interval)) for i in range(total_intervals)]
+        # Generate timestamps for each interval between from_timestamp and to_timestamp
+        # Filter out any timestamps that are in the exclude_timestamps or in the future
+        timestamps = [
+            ts for i in range((to_timestamp - from_timestamp) // interval + 1)
+            if (ts := Timestamp(from_timestamp + (i * interval))) not in exclude_timestamps and ts <= ts_now()  # noqa: E501
+        ]
 
         if only_cache_period is not None:
             for price_result in GlobalDBHandler.get_historical_prices(
@@ -5299,6 +5305,7 @@ class RestAPI:
             return _wrap_in_ok_result(result={
                 'prices': prices,
                 'no_prices_timestamps': no_prices_ts,
+                'rate_limited_prices_timestamps': rate_limited_prices_ts,
             })
 
         for processed_count, current_ts in enumerate(timestamps, 1):
@@ -5308,8 +5315,11 @@ class RestAPI:
                     to_asset=main_currency,
                     timestamp=current_ts,
                 )
-            except NoPriceForGivenTimestamp:
-                no_prices_ts.append(current_ts)
+            except NoPriceForGivenTimestamp as e:
+                if e.rate_limited:
+                    rate_limited_prices_ts.append(current_ts)
+                else:
+                    no_prices_ts.append(current_ts)
             else:
                 prices[current_ts] = str(price)
 
@@ -5317,7 +5327,7 @@ class RestAPI:
                 db.msg_aggregator.add_message(
                     message_type=WSMessageType.PROGRESS_UPDATES,
                     data={
-                        'total': total_intervals,
+                        'total': len(timestamps),
                         'processed': processed_count,
                         'subtype': str(ProgressUpdateSubType.HISTORICAL_PRICE_QUERY_STATUS),
                     },
@@ -5326,4 +5336,5 @@ class RestAPI:
         return _wrap_in_ok_result(result={
             'prices': prices,
             'no_prices_timestamps': no_prices_ts,
+            'rate_limited_prices_timestamps': rate_limited_prices_ts,
         })

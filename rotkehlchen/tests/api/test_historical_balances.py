@@ -1,5 +1,6 @@
 from http import HTTPStatus
 from typing import TYPE_CHECKING
+from unittest.mock import patch
 
 import pytest
 import requests
@@ -10,6 +11,7 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import DAY_IN_SECONDS, ONE
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.errors.price import NoPriceForGivenTimestamp
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
@@ -18,6 +20,7 @@ from rotkehlchen.history.events.structures.types import (
     HistoryEventSubType,
     HistoryEventType,
 )
+from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.tests.utils.api import (
     api_url_for,
@@ -28,7 +31,7 @@ from rotkehlchen.tests.utils.api import (
 )
 from rotkehlchen.tests.utils.constants import A_DASH
 from rotkehlchen.types import AssetAmount, ChainID, Location, Price, Timestamp, TradeType
-from rotkehlchen.utils.misc import timestamp_to_daystart_timestamp, ts_sec_to_ms
+from rotkehlchen.utils.misc import timestamp_to_daystart_timestamp, ts_now, ts_sec_to_ms
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
@@ -826,3 +829,96 @@ def test_get_historical_prices_per_asset(
         str(START_TS): '10',
         str(START_TS + DAY_IN_SECONDS): '20',
     }
+
+    # test future timestamp exclusion
+    current_time = ts_now()
+    future_ts = current_time + DAY_IN_SECONDS
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'historicalpricesperassetresource',
+        ),
+        json={
+            'asset': 'BTC',
+            'from_timestamp': current_time - DAY_IN_SECONDS,
+            'to_timestamp': future_ts,  # Include timestamp in the future
+            'interval': DAY_IN_SECONDS,
+        },
+    )
+    result = assert_proper_sync_response_with_result(response)
+    assert str(future_ts) not in result['prices']
+    assert future_ts not in result['no_prices_timestamps']
+    assert future_ts not in result['rate_limited_prices_timestamps']
+
+    # test excluded timestamps
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'historicalpricesperassetresource',
+        ),
+        json={
+            'asset': 'BTC',
+            'from_timestamp': START_TS,
+            'to_timestamp': START_TS + 2 * DAY_IN_SECONDS,
+            'interval': DAY_IN_SECONDS,
+            'exclude_timestamps': [START_TS + DAY_IN_SECONDS],  # Exclude middle timestamp
+        },
+    )
+    result = assert_proper_sync_response_with_result(response)
+    assert str(START_TS) in result['prices']
+    assert str(START_TS + DAY_IN_SECONDS) not in result['prices']
+    assert str(START_TS + 2 * DAY_IN_SECONDS) in result['prices']
+    assert START_TS + DAY_IN_SECONDS not in result['no_prices_timestamps']
+
+    # Test both rate limited and no price found scenarios
+    original_query_historical_price = PriceHistorian.query_historical_price
+
+    def mock_query_historical_price(from_asset, to_asset, timestamp):
+        # Rate limit for one timestamp
+        if timestamp == START_TS + DAY_IN_SECONDS:
+            raise NoPriceForGivenTimestamp(
+                from_asset=from_asset,
+                to_asset=to_asset,
+                time=timestamp,
+                rate_limited=True,
+            )
+        # No price found for another timestamp
+        elif timestamp == START_TS + 2 * DAY_IN_SECONDS:
+            raise NoPriceForGivenTimestamp(
+                from_asset=from_asset,
+                to_asset=to_asset,
+                time=timestamp,
+                rate_limited=False,
+            )
+        # Normal behavior for other timestamps
+        return original_query_historical_price(from_asset, to_asset, timestamp)
+
+    with patch('rotkehlchen.history.price.PriceHistorian.query_historical_price', side_effect=mock_query_historical_price):  # noqa: E501
+        response = requests.post(
+            api_url_for(
+                rotkehlchen_api_server,
+                'historicalpricesperassetresource',
+            ),
+            json={
+                'asset': 'BTC',
+                'from_timestamp': START_TS,
+                'to_timestamp': START_TS + 3 * DAY_IN_SECONDS,
+                'interval': DAY_IN_SECONDS,
+            },
+        )
+        result = assert_proper_sync_response_with_result(response)
+        # The first timestamp should have a price
+        assert str(START_TS) in result['prices']
+
+        # The second timestamp should be rate limited
+        assert str(START_TS + DAY_IN_SECONDS) not in result['prices']
+        assert START_TS + DAY_IN_SECONDS not in result['no_prices_timestamps']
+        assert START_TS + DAY_IN_SECONDS in result['rate_limited_prices_timestamps']
+
+        # The third timestamp should have no price found (not rate limited)
+        assert str(START_TS + 2 * DAY_IN_SECONDS) not in result['prices']
+        assert START_TS + 2 * DAY_IN_SECONDS in result['no_prices_timestamps']
+        assert START_TS + 2 * DAY_IN_SECONDS not in result['rate_limited_prices_timestamps']
+
+        # The fourth timestamp should have a price (uses original function)
+        assert str(START_TS + 3 * DAY_IN_SECONDS) in result['prices']
