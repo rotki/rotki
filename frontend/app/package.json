@@ -40,9 +40,9 @@
     "webpack": "5.98.0"
   },
   "dependencies": {
-    "@reown/appkit": "1.6.6",
-    "@reown/appkit-adapter-wagmi": "1.6.6",
-    "@reown/walletkit": "1.2.1",
+    "@reown/appkit": "1.7.0",
+    "@reown/appkit-adapter-wagmi": "1.7.0",
+    "@reown/walletkit": "1.2.2",
     "@rotki/common": "workspace:*",
     "@rotki/ui-library": "1.12.2",
     "@types/jsdom": "21.1.7",

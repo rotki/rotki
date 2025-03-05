@@ -1,14 +1,12 @@
 <script setup lang="ts">
-import { onUnmounted, ref } from 'vue';
-import { get, set } from '@vueuse/core';
+import AmountInput from '@/components/inputs/AmountInput.vue';
+import { WagmiAdapter } from '@reown/appkit-adapter-wagmi';
 import { baseSepolia } from '@reown/appkit/networks';
 import { createAppKit, useAppKitProvider } from '@reown/appkit/vue';
-import { BrowserProvider, formatEther, parseUnits } from 'ethers';
+import { get, set } from '@vueuse/core';
 import { Core } from '@walletconnect/core';
-import { WagmiAdapter } from '@reown/appkit-adapter-wagmi';
-import AmountInput from '@/components/inputs/AmountInput.vue';
-import Pairing from '@/pages/playground/Pairing.vue';
-import { useInterop } from '@/composables/electron-interop';
+import { BrowserProvider, formatEther, parseUnits } from 'ethers';
+import { onUnmounted, ref } from 'vue';
 
 const PROJECT_ID = 'eca1bd3842e084bfc8ef309b6eb584db';
 
@@ -22,9 +20,9 @@ const sendAmount = ref<string>('');
 const pairUri = ref<string>('');
 
 const metadata = {
-  description: 'Wallet connection and ETH transfer on Base Sepolia',
-  icons: ['https://example.com/icon.png'],
-  name: 'My Base Sepolia ETH App',
+  description: 'Rotki Active Management',
+  icons: ['https://raw.githubusercontent.com/rotki/data/refs/heads/main/assets/default_icons/website_logo.png'],
+  name: 'Rotki Active Management',
   url: 'https://rotki.com',
 };
 
@@ -150,32 +148,6 @@ onUnmounted(async () => {
   await appKit.disconnect();
   console.log('AppKit disconnected');
 });
-
-const { isPackaged } = useInterop();
-
-async function triggerSendETH({ address, value }: { address: string; value: string }): Promise<boolean> {
-  try {
-    const { walletProvider } = useAppKitProvider('eip155');
-    const browserProvider = new BrowserProvider(walletProvider as any);
-    const signer = await browserProvider.getSigner();
-
-    const tx = await signer.sendTransaction({
-      to: address,
-      value,
-    });
-
-    console.log('Transaction sent. Hash:', tx.hash);
-
-    await tx.wait(); // Wait for transaction confirmation
-    console.log('Transaction confirmed:', tx.hash);
-    await fetchBalance(); // Refresh balance
-    return true;
-  }
-  catch (error) {
-    console.error(error);
-    return false;
-  }
-}
 </script>
 
 <template>
@@ -201,7 +173,6 @@ async function triggerSendETH({ address, value }: { address: string; value: stri
 
       <div class="mt-4">
         <div
-          v-if="isPackaged"
           class="flex flex-col gap-2"
         >
           <h2 class="text-xl font-bold">
@@ -249,35 +220,6 @@ async function triggerSendETH({ address, value }: { address: string; value: stri
           Disconnect Wallet
         </RuiButton>
       </div>
-    </div>
-
-    <!-- WalletConnect Pair URI Section -->
-    <!--    <div class="flex items-start mt-4"> -->
-    <!--      <RuiTextField -->
-    <!--        v-model="pairUri" -->
-    <!--        label="Pair URI" -->
-    <!--        variant="outlined" -->
-    <!--        dense -->
-    <!--        class="flex-1" -->
-    <!--        color="primary" -->
-    <!--      /> -->
-    <!--      <RuiButton -->
-    <!--        color="primary" -->
-    <!--        @click="generatePairUri()" -->
-    <!--      > -->
-    <!--        Generate Pair URI -->
-    <!--      </RuiButton> -->
-    <!--    </div> -->
-
-    <div
-      v-if="!isPackaged && connected && walletAddress"
-      class="mt-8 border-t py-8"
-    >
-      <Pairing
-        :address="walletAddress"
-        :metadata="metadata"
-        @send-eth="triggerSendETH($event)"
-      />
     </div>
   </div>
 </template>

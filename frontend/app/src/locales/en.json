@@ -3372,7 +3372,11 @@
       "graphs": "Graphs",
       "history_events": "Events Analysis"
     },
-    "tag_manager": "Tag Manager"
+    "tag_manager": "Tag Manager",
+    "trade": "Trade",
+    "trade_sub": {
+      "send": "Send"
+    }
   },
   "net_worth_chart": {
     "current_balance": "Current balance"
