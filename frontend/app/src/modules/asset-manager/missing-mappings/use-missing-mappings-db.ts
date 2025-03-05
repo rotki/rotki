@@ -1,17 +1,9 @@
-import Dexie, { type EntityTable } from 'dexie';
-import { useLoggedUserIdentifier } from '@/composables/user/use-logged-user-identifier';
 import { type ItemFilter, getPage } from '@/modules/data/pagination';
+import { useDatabase } from '@/modules/data/use-database';
 import type { PaginationRequestPayload } from '@/types/common';
 import type { Collection } from '@/types/collection';
 import type { MaybeRef } from '@vueuse/core';
-
-export interface MissingMapping {
-  id: number;
-  identifier: string;
-  name: string;
-  location: string;
-  details: string;
-}
+import type { MissingMapping } from '@/modules/data/schemas';
 
 interface MissingMappingsFilterParams {
   identifier?: string;
@@ -21,11 +13,7 @@ interface MissingMappingsFilterParams {
 export interface MissingMappingsRequestPayload extends PaginationRequestPayload<MissingMapping>,
   MissingMappingsFilterParams {}
 
-type AddMissingMapping = Omit<MissingMapping, 'id'>;
-
-interface UseMissingMappingsDb extends Dexie {
-  missingMappings: EntityTable<MissingMapping, 'id'>;
-}
+export type AddMissingMapping = Omit<MissingMapping, 'id'>;
 
 interface UseMappingDBReturn {
   put: (mapping: AddMissingMapping) => Promise<number>;
@@ -34,28 +22,14 @@ interface UseMappingDBReturn {
 }
 
 export function useMissingMappingsDB(): UseMappingDBReturn {
-  const userIdentifier = useLoggedUserIdentifier();
-  let dbInstance: UseMissingMappingsDb | undefined;
-
-  function instance(): UseMissingMappingsDb {
-    assert(dbInstance, 'Mappings DB not initialized');
-    return dbInstance;
-  }
-
-  function createMappingsDB(): UseMissingMappingsDb {
-    const db = new Dexie(`${get(userIdentifier)}.mappings`);
-    db.version(1).stores({
-      missingMappings: '++id, [identifier], name, [location], &[identifier+location], details',
-    });
-    return db as UseMissingMappingsDb;
-  }
+  const { db } = useDatabase();
 
   async function put(mapping: AddMissingMapping): Promise<number> {
-    return instance().missingMappings.put(mapping);
+    return db.missingMappings.put(mapping);
   }
 
   async function count(): Promise<number> {
-    return instance().missingMappings.count();
+    return db.missingMappings.count();
   }
 
   async function getData(payload: MaybeRef<MissingMappingsRequestPayload>): Promise<Collection<MissingMapping>> {
@@ -79,7 +53,7 @@ export function useMissingMappingsDB(): UseMappingDBReturn {
       };
     }
 
-    const table = instance().missingMappings;
+    const table = db.missingMappings;
     const { data, total } = await getPage<MissingMapping, 'id'>(table, {
       limit,
       offset,
@@ -94,15 +68,6 @@ export function useMissingMappingsDB(): UseMappingDBReturn {
       total,
     };
   }
-
-  watchImmediate(userIdentifier, (user) => {
-    if (user) {
-      dbInstance = createMappingsDB();
-    }
-    else {
-      dbInstance = undefined;
-    }
-  });
 
   return {
     count,
