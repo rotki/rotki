@@ -3870,6 +3870,7 @@ class HistoricalPricesPerAssetSchema(AsyncQueryArgumentSchema, TimestampRangeSch
         load_default=None,
         validate=webargs.validate.Range(min=1, error='Cache period must be a positive integer'),
     )
+    exclude_timestamps = fields.List(TimestampField(), load_default=list)
     asset = AssetField(expected_type=Asset, required=True)
 
     @validates_schema
@@ -3896,6 +3897,7 @@ class HistoricalPricesPerAssetSchema(AsyncQueryArgumentSchema, TimestampRangeSch
         - Rounds up `to_timestamp` to nearest multiple of interval
         """
         interval = data['interval']
+        data['exclude_timestamps'] = set(data['exclude_timestamps'])
         data['from_timestamp'] = (data['from_timestamp'] // interval) * interval
         data['to_timestamp'] = ((data['to_timestamp'] + interval - 1) // interval) * interval
 
