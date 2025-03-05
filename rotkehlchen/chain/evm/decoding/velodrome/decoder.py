@@ -304,9 +304,9 @@ class VelodromeLikeDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixi
                     event.address == ZERO_ADDRESS and
                     event.amount == ONE
             ):
+                event.event_type = HistoryEventType.BURN
+                event.event_subtype = HistoryEventSubType.NFT
                 event.counterparty = self.counterparty
-                event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
-                event.event_type = HistoryEventType.SPEND
                 event.notes = f'Burn veNFT-{token_id} to unlock {amount} {self.token_symbol} from vote escrow'  # noqa: E501
 
             elif (
@@ -317,7 +317,7 @@ class VelodromeLikeDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixi
             ):
                 event.counterparty = self.counterparty
                 event.event_type = HistoryEventType.WITHDRAWAL
-                event.event_subtype = HistoryEventSubType.REDEEM_WRAPPED
+                event.event_subtype = HistoryEventSubType.REMOVE_ASSET
                 event.notes = f'Receive {amount} {self.token_symbol} from vote escrow after burning veNFT-{token_id}'  # noqa: E501
 
         return DEFAULT_DECODING_OUTPUT
@@ -336,9 +336,9 @@ class VelodromeLikeDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixi
                     event.address == ZERO_ADDRESS and
                     event.amount == ONE
             ):
+                event.event_type = HistoryEventType.MINT
+                event.event_subtype = HistoryEventSubType.NFT
                 event.notes = f'Receive veNFT-{token_id} for locking {amount} {self.token_symbol} in vote escrow'  # noqa: E501
-                event.event_type = HistoryEventType.RECEIVE
-                event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
                 event.counterparty = self.counterparty
                 in_event = event
 
@@ -349,7 +349,7 @@ class VelodromeLikeDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixi
                     event.amount == amount
             ):
                 event.notes = f'Lock {amount} {self.token_symbol} in vote escrow until {timestamp_to_date((lock_time := deserialize_timestamp(int.from_bytes(context.tx_log.data[32:64]))), formatstr="%d/%m/%Y")}'  # noqa: E501
-                event.event_subtype = HistoryEventSubType.DEPOSIT_FOR_WRAPPED
+                event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
                 event.extra_data = {
                     'token_id': token_id,
                     'lock_time': lock_time,
@@ -369,13 +369,11 @@ class VelodromeLikeDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixi
         for event in context.decoded_events:
             if (
                     event.event_type == HistoryEventType.DEPOSIT and
-                    event.event_subtype == HistoryEventSubType.DEPOSIT_FOR_WRAPPED and
+                    event.event_subtype == HistoryEventSubType.DEPOSIT_ASSET and
                     event.counterparty == self.counterparty
             ):  # increase amount locked
                 token_id = event.extra_data['token_id']  # type: ignore[index]  # it is always available
                 event.notes = f'Increase locked amount in veNFT-{token_id} by {event.amount} {self.token_symbol}'  # noqa: E501
-                event.event_type = HistoryEventType.DEPOSIT
-                event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
                 event.extra_data = None
                 return DEFAULT_DECODING_OUTPUT
 

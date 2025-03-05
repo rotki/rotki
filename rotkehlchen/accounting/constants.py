@@ -119,6 +119,12 @@ EVENT_CATEGORY_MAPPINGS = {  # possible combinations of types and subtypes mappe
     HistoryEventType.FAIL: {
         HistoryEventSubType.FEE: {DEFAULT: EventCategory.FAIL},
     },
+    HistoryEventType.MINT: {
+        HistoryEventSubType.NFT: {DEFAULT: EventCategory.MINT_NFT},
+    },
+    HistoryEventType.BURN: {
+        HistoryEventSubType.NFT: {DEFAULT: EventCategory.BURN_NFT},
+    },
 }
 
 # possible color values
@@ -284,6 +290,12 @@ EVENT_CATEGORY_DETAILS = {
     )}, EventCategory.CLAWBACK: {DEFAULT: EventCategoryDetails(
         label='Clawback',
         icon='lu-undo-2',
+    )}, EventCategory.MINT_NFT: {DEFAULT: EventCategoryDetails(
+        label='mint nft',
+        icon='lu-file-image',
+    )}, EventCategory.BURN_NFT: {DEFAULT: EventCategoryDetails(
+        label='burn nft',
+        icon='lu-flame-kindling',
     )},
 }
 

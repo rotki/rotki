@@ -49,6 +49,8 @@ class HistoryEventType(SerializableEnumNameMixin):
     DEPLOY = auto()
     FAIL = auto()
     LOSS = auto()
+    MINT = auto()
+    BURN = auto()
 
 
 class HistoryEventSubType(SerializableEnumNameMixin):
@@ -173,6 +175,8 @@ class EventCategory(Enum):
     CASHBACK = 46, EventDirection.IN
     HACK_LOSS = 47, EventDirection.OUT
     CLAWBACK = 48, EventDirection.OUT
+    MINT_NFT = 49, EventDirection.IN
+    BURN_NFT = 50, EventDirection.OUT
 
     @property
     def direction(self) -> EventDirection:

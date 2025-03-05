@@ -10,10 +10,12 @@ from rotkehlchen.chain.base.modules.basenames.constants import CPT_BASENAMES
 from rotkehlchen.chain.ethereum.airdrops import AIRDROPS_REPO_BASE
 from rotkehlchen.chain.ethereum.modules.ens.constants import CPT_ENS
 from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE
+from rotkehlchen.chain.evm.decoding.velodrome.constants import CPT_VELODROME
 from rotkehlchen.constants import AIRDROPSDIR_NAME, APPDIR_NAME
 from rotkehlchen.constants.timing import DAY_IN_SECONDS, WEEK_IN_SECONDS
 from rotkehlchen.db.calendar import CalendarEntry, CalendarFilterQuery, DBCalendar
 from rotkehlchen.tasks.calendar import (
+    AERO_VELO_CALENDAR_COLOR,
     AIRDROP_CALENDAR_COLOR,
     BRIDGE_CALENDAR_COLOR,
     CRV_CALENDAR_COLOR,
@@ -35,6 +37,7 @@ from rotkehlchen.utils.misc import ts_ms_to_sec, ts_now
 if TYPE_CHECKING:
     from rotkehlchen.chain.base.node_inquirer import BaseInquirer
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
+    from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.types import ChecksumEvmAddress
 
@@ -365,3 +368,45 @@ def test_l2_bridge_claim_reminders(arbitrum_one_accounts, arbitrum_one_inquirer,
             assert len(reminders) == 1
             assert reminders[0].event_id == calendar_entry.identifier
             assert reminders[0].secs_before == 0
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.freeze_time('2025-03-05 00:00:00 GMT')
+@pytest.mark.parametrize('optimism_accounts', [['0xD4dd9a1FAc6D7bBe327c2b4A5Dc3197D0B10874b']])
+def test_locked_velo_calendar_reminders(
+        database: 'DBHandler',
+        optimism_accounts: list['ChecksumEvmAddress'],
+        optimism_inquirer: 'OptimismInquirer',
+) -> None:
+    """Test that reminders are created at lock period end of VELO in vote escrow."""
+    calendar_db = DBCalendar(database)
+    all_calendar_entries = calendar_db.query_calendar_entry(CalendarFilterQuery.make())
+    assert all_calendar_entries['entries_total'] == 0
+
+    events, _ = get_decoded_events_of_transaction(
+        tx_hash=deserialize_evm_tx_hash('0x8747ae5f08613802c76f3c6d4517c87c2133b0231990dd30df32b8c9bb9fa7a1'),
+        evm_inquirer=optimism_inquirer,
+    )
+    reminder_creator = CalendarReminderCreator(database=database, current_ts=ts_now())
+    reminder_creator.maybe_create_locked_aero_vero_reminders()
+
+    new_calendar_entries = calendar_db.query_calendar_entry(CalendarFilterQuery.make())
+    assert new_calendar_entries['entries_found'] == 1
+
+    calendar_entry = new_calendar_entries['entries'][0]
+    assert events[2].extra_data is not None
+    assert calendar_entry == CalendarEntry(
+        identifier=1,
+        name='VELO veNFT-30123 vote escrow lock period ends',
+        timestamp=Timestamp(1741219200),
+        description=f'Lock period for VELO veNFT-30123 in vote escrow ends on {reminder_creator.timestamp_to_date(events[2].extra_data["lock_time"])}',  # noqa: E501
+        counterparty=CPT_VELODROME,
+        blockchain=ChainID.deserialize(events[2].location.to_chain_id()).to_blockchain(),
+        address=optimism_accounts[0],
+        color=AERO_VELO_CALENDAR_COLOR,
+        auto_delete=True,
+    )
+    reminders = calendar_db.query_reminder_entry(event_id=calendar_entry.identifier)['entries']
+    assert len(reminders) == 1
+    assert reminders[0].event_id == calendar_entry.identifier
+    assert reminders[0].secs_before == 0

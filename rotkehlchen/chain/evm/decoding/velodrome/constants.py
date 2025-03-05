@@ -1,5 +1,7 @@
 from typing import Final
 
+from eth_typing import ABI
+
 CPT_VELODROME: Final = 'velodrome'
 CPT_AERODROME: Final = 'aerodrome'
 SWAP_V2: Final = b'\xb3\xe2w6\x06\xab\xfd6\xb5\xbd\x919K:T\xd19\x836\xc6P\x05\xba\xf7\xbfz\x05\xef\xef\xfa\xf7['  # noqa: E501
@@ -14,3 +16,4 @@ VOTING_ESCROW_CREATE_LOCK: Final = b'\x885\xc2*\x0cu\x11\x88\xde\x86h\x1e\x15\x9
 VOTING_ESCROW_METADATA_UPDATE: Final = b"\xf8\xe1\xa1Z\xba\x93\x98\xe0\x19\xf0\xb4\x9d\xf1\xa4\xfd\xe9\x8e\xe1z\xe3E\xcb_k^,'\xf5\x03>\x8c\xe7"  # noqa: E501
 VOTER_CLAIM_REWARDS: Final = b'\x9a\xa0[=p\xa9\xe3\xe2\xf0\x04\xf09d\x889V\x05v3O\xb4\\\x81\xf9\x1bm\xb0:\xd9\xe2\xef\xc9'  # noqa: E501
 VOTER_VOTED: Final = b'E-D\x0e\xfc0\xdf\xa1J\x0e\xf8\x03\xcc\xb5Y6\xaf\x86\x0e\xc6\xa6\x96\x0e\xd2\x7f\x12\x9b\xef\x91?)j'  # noqa: E501
+VOTING_ESCROW_ABI: ABI = [{'inputs': [{'name': '_tokenId', 'type': 'uint256'}], 'name': 'locked', 'outputs': [{'components': [{'name': 'amount', 'type': 'int128'}, {'name': 'end', 'type': 'uint256'}, {'name': 'isPermanent', 'type': 'bool'}], 'name': '', 'type': 'tuple'}], 'stateMutability': 'view', 'type': 'function'}]  # noqa: E501

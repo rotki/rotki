@@ -12,6 +12,7 @@ from rotkehlchen.chain.base.modules.basenames.constants import CPT_BASENAMES
 from rotkehlchen.chain.ethereum.airdrops import check_airdrops
 from rotkehlchen.chain.ethereum.modules.ens.constants import CPT_ENS
 from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE
+from rotkehlchen.chain.evm.decoding.velodrome.constants import CPT_AERODROME, CPT_VELODROME
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.optimism.constants import CPT_OPTIMISM
 from rotkehlchen.constants.timing import DAY_IN_SECONDS, WEEK_IN_SECONDS
@@ -47,6 +48,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 ENS_CALENDAR_COLOR: Final = deserialize_hex_color_code('5298FF')
 CRV_CALENDAR_COLOR: Final = deserialize_hex_color_code('5bf054')
+AERO_VELO_CALENDAR_COLOR: Final = deserialize_hex_color_code('36cfc9')
 AIRDROP_CALENDAR_COLOR: Final = deserialize_hex_color_code('ffd966')
 BRIDGE_CALENDAR_COLOR: Final = deserialize_hex_color_code('fcceee')
 
@@ -365,6 +367,44 @@ class CalendarReminderCreator(CustomizableDateMixin):
             error_msg='Failed to add the CRV lock period end reminders',
         )
 
+    def maybe_create_locked_aero_vero_reminders(self) -> None:
+        """Create reminders for AERO/VERO lock periods in vote escrow history events."""
+        if len(events := self.get_history_events(
+            event_types=[
+                (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET),
+                (HistoryEventType.INFORMATIONAL, HistoryEventSubType.NONE),  # unlock time updates
+            ],
+            counterparties=[CPT_VELODROME, CPT_AERODROME],
+        )) == 0:
+            return
+
+        lock_entries: list[int] = []
+        for event in events:
+            if not (
+                    event.extra_data is not None and
+                    (lock_time := event.extra_data.get('lock_time')) is not None and
+                    (token_id := event.extra_data.get('token_id')) is not None
+            ):
+                continue
+
+            protocol_symbol = 'VELO' if event.counterparty == CPT_VELODROME else 'AERO'
+            entry_id = self.create_or_update_calendar_entry_from_event(
+                event=event,
+                name=f'{protocol_symbol} veNFT-{token_id} vote escrow lock period ends',
+                timestamp=Timestamp(lock_time),
+                color=AERO_VELO_CALENDAR_COLOR,
+                counterparty=event.counterparty,  # type: ignore[arg-type]  # counterparty is either velodrome or aerodrome
+                description=f'Lock period for {protocol_symbol} veNFT-{token_id} in vote escrow ends on {self.timestamp_to_date(lock_time)}',  # noqa: E501
+            )
+            if entry_id is not None:
+                lock_entries.append(entry_id)
+
+        self.maybe_create_reminders(
+            calendar_identifiers=lock_entries,
+            secs_before=[0],
+            error_msg='Failed to create reminders for VELO/AERO vote escrow lock expirations.',
+        )
+
     def maybe_create_airdrop_claim_reminder(self) -> None:
         """Create reminders for airdrop claim deadlines."""
         with self.database.conn.read_ctx() as read_cursor:
@@ -481,6 +521,7 @@ def maybe_create_calendar_reminders(database: DBHandler) -> None:
     reminder_creator = CalendarReminderCreator(database=database, current_ts=current_ts)
     reminder_creator.maybe_create_ens_reminders()
     reminder_creator.maybe_create_locked_crv_reminders()
+    reminder_creator.maybe_create_locked_aero_vero_reminders()
     reminder_creator.maybe_create_airdrop_claim_reminder()
     reminder_creator.maybe_create_l2_bridging_reminder()
 

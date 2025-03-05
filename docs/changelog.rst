@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`9267` rotki now supports decoding of Aerodrome and Velodrome lock transactions, tracking locked balances, and automatic reminders for lock expirations.
 * :feature:`9145` Deposits and withdrawals from Hyperliquid will be decoded.
 * :bug:`-` Uniswap v3 swaps in ethereum using the universal router 2 will now be decoded properly.
 * :bug:`9547` Bitcoin balance query should work again for users of the linux binary.
