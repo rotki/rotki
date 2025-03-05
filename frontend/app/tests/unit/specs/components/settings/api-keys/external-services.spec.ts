@@ -8,7 +8,6 @@ import { createCustomPinia } from '@test/utils/create-pinia';
 import ExternalServices from '@/pages/api-keys/external/index.vue';
 import EvmChainIcon from '@/components/helper/display/icons/EvmChainIcon.vue';
 import ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
-import { useSessionStore } from '@/store/session';
 import { useConfirmStore } from '@/store/confirm';
 import { useExternalServicesApi } from '@/composables/api/settings/external-services-api';
 import ServiceKeyCard from '@/components/settings/api-keys/ServiceKeyCard.vue';
@@ -99,7 +98,6 @@ describe('/settings/api-keys/external-services', () => {
   });
 
   afterEach(() => {
-    useSessionStore().$reset();
     wrapper.unmount();
   });
 

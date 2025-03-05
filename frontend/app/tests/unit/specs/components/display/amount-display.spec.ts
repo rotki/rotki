@@ -9,7 +9,6 @@ import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useHistoricCachePriceStore } from '@/store/prices/historic';
 import { useSessionSettingsStore } from '@/store/settings/session';
-import { useSessionStore } from '@/store/session';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { createCustomPinia } from '../../../utils/create-pinia';
 import { updateGeneralSettings } from '../../../utils/general-settings';
@@ -70,7 +69,6 @@ describe('amountDisplay.vue', () => {
   });
 
   afterEach(() => {
-    useSessionStore().$reset();
     wrapper.unmount();
   });
 

@@ -1,10 +1,9 @@
 import { type VueWrapper, mount } from '@vue/test-utils';
 import { setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { createCustomPinia } from '@test/utils/create-pinia';
+import { libraryDefaults } from '@test/utils/provide-defaults';
 import AssetBalances from '@/components/AssetBalances.vue';
-import { useSessionStore } from '@/store/session';
-import { createCustomPinia } from '../../../utils/create-pinia';
-import { libraryDefaults } from '../../../utils/provide-defaults';
 
 vi.mock('vue-router', () => ({
   useRoute: vi.fn(),
@@ -34,7 +33,6 @@ describe('assetBalances.vue', () => {
   });
 
   afterEach(() => {
-    useSessionStore().$reset();
     wrapper.unmount();
   });
 

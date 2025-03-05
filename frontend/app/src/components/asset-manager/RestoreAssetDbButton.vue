@@ -4,12 +4,12 @@ import { DialogType } from '@/types/dialogs';
 import { TaskType } from '@/types/task-type';
 import { useTaskStore } from '@/store/tasks';
 import { useConfirmStore } from '@/store/confirm';
-import { useSessionStore } from '@/store/session';
 import { useMainStore } from '@/store/main';
 import { useNotificationsStore } from '@/store/notifications';
 import { useAssets } from '@/composables/assets';
 import { useBackendManagement } from '@/composables/backend';
 import ListItem from '@/components/common/ListItem.vue';
+import { useLogout } from '@/modules/account/use-logout';
 
 withDefaults(
   defineProps<{
@@ -22,7 +22,7 @@ type ResetType = 'soft' | 'hard';
 
 const { notify } = useNotificationsStore();
 const { connect, setConnected } = useMainStore();
-const { logout } = useSessionStore();
+const { logout } = useLogout();
 const { restoreAssetsDatabase } = useAssets();
 
 const { restartBackend } = useBackendManagement();

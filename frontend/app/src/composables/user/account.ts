@@ -3,11 +3,11 @@ import { setLastLogin } from '@/utils/account-management';
 import { useMainStore } from '@/store/main';
 import { useSessionAuthStore } from '@/store/session/auth';
 import { useWebsocketStore } from '@/store/websocket';
-import { useSessionStore } from '@/store/session';
 import { useBackendManagement } from '@/composables/backend';
 import { usePremiumReminder } from '@/composables/premium';
 import { useAppNavigation } from '@/composables/navigation';
 import { useLoggedUserIdentifier } from '@/composables/user/use-logged-user-identifier';
+import { useLogin } from '@/modules/account/use-login';
 import type { CreateAccountPayload, LoginCredentials } from '@/types/login';
 import type { Ref } from 'vue';
 
@@ -27,12 +27,10 @@ export function useAccountManagement(): UseAccountManagementReturn {
 
   const { showGetPremiumButton } = usePremiumReminder();
   const { navigateToDashboard } = useAppNavigation();
-  const sessionStore = useSessionStore();
-  const { checkForAssetUpdate } = storeToRefs(sessionStore);
-  const { createAccount, login } = sessionStore;
+  const { createAccount, login } = useLogin();
   const { connect } = useWebsocketStore();
   const authStore = useSessionAuthStore();
-  const { canRequestData, logged, upgradeVisible } = storeToRefs(authStore);
+  const { canRequestData, checkForAssetUpdate, logged, upgradeVisible } = storeToRefs(authStore);
   const { clearUpgradeMessages } = authStore;
   const { isDevelop } = storeToRefs(useMainStore());
   const loggedUserIdentifier = useLoggedUserIdentifier();
@@ -106,11 +104,9 @@ interface UseAutoLoginReturn { autolog: Ref<boolean> }
 export function useAutoLogin(): UseAutoLoginReturn {
   const autolog = ref<boolean>(false);
 
-  const sessionStore = useSessionStore();
-  const { checkForAssetUpdate } = storeToRefs(sessionStore);
-  const { login } = sessionStore;
+  const { login } = useLogin();
   const { connected } = storeToRefs(useMainStore());
-  const { canRequestData, logged } = storeToRefs(useSessionAuthStore());
+  const { canRequestData, checkForAssetUpdate, logged } = storeToRefs(useSessionAuthStore());
   const { resetSessionBackend } = useBackendManagement();
   const { showGetPremiumButton } = usePremiumReminder();
 

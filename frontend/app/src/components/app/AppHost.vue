@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { checkIfDevelopment } from '@shared/utils';
-import { useSessionStore } from '@/store/session';
 import { useSessionSettingsStore } from '@/store/settings/session';
+import { useLocale } from '@/composables/session/use-locale';
 
 const DevApp = defineAsyncComponent(() => import('@/DevApp.vue'));
 
@@ -11,18 +11,11 @@ const route = useRoute();
 const isDevelopment = checkIfDevelopment();
 const isPlayground = computed(() => isDevelopment && get(route).path === '/playground');
 
-const { locale } = useI18n();
-
-const { adaptiveLanguage } = storeToRefs(useSessionStore());
+const { adaptiveLanguage, setLanguage } = useLocale();
 
 onBeforeMount(() => {
   setLanguage(get(adaptiveLanguage));
 });
-
-function setLanguage(language: string) {
-  if (language !== get(locale))
-    set(locale, language);
-}
 
 watch(adaptiveLanguage, (language) => {
   setLanguage(language);
