@@ -3,8 +3,8 @@ import useVuelidate from '@vuelidate/core';
 import { helpers, required, sameAs } from '@vuelidate/validators';
 import { toMessages } from '@/utils/validation';
 import { usePremiumStore } from '@/store/session/premium';
-import { useSessionStore } from '@/store/session';
 import SettingsItem from '@/components/settings/controls/SettingsItem.vue';
+import { useChangePassword } from '@/modules/account/use-change-password';
 
 const currentPassword = ref('');
 const newPassword = ref('');
@@ -29,7 +29,7 @@ const rules = {
 const v$ = useVuelidate(rules, { currentPassword, newPassword, newPasswordConfirm }, { $autoDirty: true });
 
 const { premiumSync } = storeToRefs(usePremiumStore());
-const { changePassword } = useSessionStore();
+const { changePassword } = useChangePassword();
 
 function reset() {
   get(v$).$reset();

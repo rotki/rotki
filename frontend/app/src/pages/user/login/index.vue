@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { useSessionStore } from '@/store/session';
 import { useSessionAuthStore } from '@/store/session/auth';
 import { useUpdateMessage } from '@/composables/update-message';
 import { useDynamicMessages } from '@/composables/dynamic-messages';
@@ -26,10 +25,9 @@ definePage({
 
 const { t } = useI18n();
 const { navigateToDashboard, navigateToUserCreation } = useAppNavigation();
-const { canRequestData, upgradeVisible } = storeToRefs(useSessionAuthStore());
+const { canRequestData, checkForAssetUpdate, upgradeVisible } = storeToRefs(useSessionAuthStore());
 const { backendChanged } = useBackendManagement();
 const { errors, loading, userLogin } = useAccountManagement();
-const { checkForAssetUpdate } = storeToRefs(useSessionStore());
 
 const showUpgradeProgress = computed<boolean>(() => get(upgradeVisible) && get(errors).length === 0);
 

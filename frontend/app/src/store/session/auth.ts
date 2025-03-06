@@ -10,6 +10,7 @@ export const useSessionAuthStore = defineStore('session/auth', () => {
   const incompleteUpgradeConflict = ref<IncompleteUpgradeConflict | undefined>();
   const dbUpgradeStatus = ref<DbUpgradeStatusData | null>(null);
   const dataMigrationStatus = ref<DataMigrationStatusData | null>(null);
+  const checkForAssetUpdate = ref<boolean>(false);
 
   const upgradeVisible: ComputedRef<boolean> = logicOr(dbUpgradeStatus, dataMigrationStatus);
 
@@ -38,6 +39,7 @@ export const useSessionAuthStore = defineStore('session/auth', () => {
 
   return {
     canRequestData,
+    checkForAssetUpdate,
     clearUpgradeMessages,
     conflictExist,
     dataMigrationStatus,

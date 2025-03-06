@@ -1,18 +1,18 @@
 <script setup lang="ts">
 import { useConfirmStore } from '@/store/confirm';
 import { useSessionAuthStore } from '@/store/session/auth';
-import { useSessionStore } from '@/store/session';
 import { usePrivacyMode } from '@/composables/privacy';
 import { useDarkMode } from '@/composables/dark-mode';
 import { useInterop } from '@/composables/electron-interop';
 import ThemeControl from '@/components/premium/ThemeControl.vue';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
+import { useLogout } from '@/modules/account/use-logout';
 
 const { t } = useI18n();
 
 const KEY_REMEMBER_PASSWORD = 'rotki.remember_password';
 
-const { logout } = useSessionStore();
+const { logout } = useLogout();
 const { username } = storeToRefs(useSessionAuthStore());
 const { clearPassword, isPackaged } = useInterop();
 const { privacyModeIcon, togglePrivacyMode } = usePrivacyMode();

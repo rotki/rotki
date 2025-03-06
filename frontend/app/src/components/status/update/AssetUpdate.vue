@@ -2,7 +2,6 @@
 import { useConfirmStore } from '@/store/confirm';
 import { useMessageStore } from '@/store/message';
 import { useMainStore } from '@/store/main';
-import { useSessionStore } from '@/store/session';
 import { useBackendManagement } from '@/composables/backend';
 import { useRestartingStatus } from '@/composables/user/account';
 import { useAssets } from '@/composables/assets';
@@ -11,6 +10,7 @@ import AssetUpdateMessage from '@/components/status/update/AssetUpdateMessage.vu
 import AssetUpdateInlineConfirm from '@/components/status/update/AssetUpdateInlineConfirm.vue';
 import AssetUpdateStatus from '@/components/status/update/AssetUpdateStatus.vue';
 import AssetUpdateSetting from '@/components/status/update/AssetUpdateSetting.vue';
+import { useLogout } from '@/modules/account/use-logout';
 import type { AssetUpdateConflictResult, AssetVersionUpdate, ConflictResolution } from '@/types/asset';
 
 const props = withDefaults(defineProps<{ headless?: boolean }>(), {
@@ -45,7 +45,7 @@ const status = computed(() => {
   return null;
 });
 
-const { logout } = useSessionStore();
+const { logout } = useLogout();
 const { applyUpdates, checkForUpdate } = useAssets();
 const { connect, setConnected } = useMainStore();
 const { restartBackend } = useBackendManagement();

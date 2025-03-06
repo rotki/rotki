@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, it, vi } from 'vitest';
-import { useSessionStore } from '@/store/session';
 import { useAccountManagement } from '@/composables/user/account';
+import { useLogin } from '@/modules/account/use-login';
 
 vi.mock('vue-router', () => ({
   useRoute: vi.fn(),
@@ -9,8 +9,8 @@ vi.mock('vue-router', () => ({
   }),
 }));
 
-vi.mock('@/store/session', () => ({
-  useSessionStore: vi.fn().mockReturnValue({
+vi.mock('@/modules/account/use-login', () => ({
+  useLogin: vi.fn().mockReturnValue({
     login: vi.fn(),
     createAccount: vi.fn(),
   }),
@@ -29,7 +29,7 @@ describe('composables::user/account', () => {
   });
 
   describe('existing account', () => {
-    const { login } = useSessionStore();
+    const { login } = useLogin();
 
     it('login success, should not show error message', async () => {
       const { userLogin, errors } = useAccountManagement();
@@ -58,7 +58,7 @@ describe('composables::user/account', () => {
   });
 
   describe('new account', () => {
-    const { createAccount } = useSessionStore();
+    const { createAccount } = useLogin();
 
     it('create account success, should not show error message', async () => {
       const { createNewAccount, error } = useAccountManagement();
