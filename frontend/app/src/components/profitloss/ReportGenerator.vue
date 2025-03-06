@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { checkIfDevelopment } from '@shared/utils';
 import { Routes } from '@/router/routes';
 import { convertToTimestamp } from '@/utils/date';
 import RangeSelector from '@/components/helper/date/RangeSelector.vue';
@@ -39,8 +38,6 @@ function importReportData() {
   emit('import-data');
 }
 
-const isDevelopment = checkIfDevelopment();
-const isDemoMode = import.meta.env.VITE_DEMO_MODE !== undefined;
 const accountSettingsRoute = Routes.SETTINGS_ACCOUNTING;
 </script>
 
@@ -90,34 +87,22 @@ const accountSettingsRoute = Routes.SETTINGS_ACCOUNTING;
             {{ t('common.actions.generate') }}
           </RuiButton>
         </div>
-        <div class="">
+        <div>
           <RuiMenu
             close-on-content-click
             :popper="{ placement: 'bottom-end' }"
           >
             <template #activator="{ attrs }">
-              <RuiTooltip
-                :open-delay="400"
-                :popper="{ placement: 'top' }"
-                :disabled="isDevelopment && !isDemoMode"
-                class="h-full"
+              <RuiButton
+                class="h-[2.625rem]"
+                size="lg"
+                v-bind="attrs"
               >
-                <template #activator>
-                  <RuiButton
-                    size="lg"
-                    v-bind="attrs"
-                  >
-                    <template #prepend>
-                      <RuiIcon name="lu-bug" />
-                    </template>
-                    <span v-if="isDevelopment && !isDemoMode">
-                      {{ t('profit_loss_reports.debug.title') }}
-                    </span>
-                  </RuiButton>
+                <template #prepend>
+                  <RuiIcon name="lu-bug" />
                 </template>
-
                 {{ t('profit_loss_reports.debug.title') }}
-              </RuiTooltip>
+              </RuiButton>
             </template>
             <div class="py-2">
               <RuiButton
