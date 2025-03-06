@@ -1,30 +1,25 @@
 <script setup lang="ts">
-import SummaryCardRefreshMenu from '@/components/dashboard/summary-card/SummaryCardRefreshMenu.vue';
 import NavigatorLink from '@/components/helper/NavigatorLink.vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
+import SummaryCardRefreshMenu from './SummaryCardRefreshMenu.vue';
 import type { RouteLocationRaw } from 'vue-router';
 
-withDefaults(
-  defineProps<{
-    name: string;
-    isLoading?: boolean;
-    canRefresh?: boolean;
-    navigatesTo?: RouteLocationRaw;
-  }>(),
-  {
-    canRefresh: false,
-    isLoading: false,
-    navigatesTo: undefined,
-  },
-);
+interface SummaryCardProps {
+  name: string;
+  isLoading?: boolean;
+  canRefresh?: boolean;
+  navigatesTo?: RouteLocationRaw;
+}
+
+withDefaults(defineProps<SummaryCardProps>(), {
+  canRefresh: false,
+  isLoading: false,
+  navigatesTo: undefined,
+});
 
 const emit = defineEmits<{
-  (e: 'refresh', balanceSource: string): void;
+  refresh: [source: string];
 }>();
-
-function refresh(balanceSource: string) {
-  emit('refresh', balanceSource.toLowerCase());
-}
 
 const { t } = useI18n();
 </script>
@@ -53,7 +48,7 @@ const { t } = useI18n();
             data-cy="account-balances-refresh-menu"
             :tooltip="t('summary_card.refresh_tooltip', { name })"
             :loading="isLoading"
-            @refresh="refresh(name)"
+            @refresh="emit('refresh', name.toLowerCase())"
           >
             <template
               v-if="$slots.refreshMenu"

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Routes } from '@/router/routes';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useLocations } from '@/composables/locations';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
@@ -7,40 +8,41 @@ import ListItem from '@/components/common/ListItem.vue';
 import type { BigNumber } from '@rotki/common';
 
 const props = defineProps<{
-  location: string;
+  name: string;
   amount: BigNumber;
 }>();
 
-const { location } = toRefs(props);
+const manualBalancesRoute = Routes.BALANCES_MANUAL;
 
-const { exchangeName } = useLocations();
+const { name } = toRefs(props);
 
-const exchangeLocationRoute = computed(() => {
-  const route = Routes.BALANCES_EXCHANGE;
-  return `${route}/${get(location)}`;
-});
+const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
+const { locationData } = useLocations();
+
+const location = locationData(name);
 </script>
 
 <template>
-  <RouterLink :to="exchangeLocationRoute">
+  <RouterLink :to="manualBalancesRoute">
     <ListItem
-      :id="`${location}_box`"
-      class="exchange-box__item group py-1 px-6"
+      data-cy="manual-balance__summary"
+      class="group py-1 px-6"
+      :data-location="name"
     >
       <template #avatar>
         <div class="grayscale group-hover:grayscale-0">
           <LocationDisplay
-            :identifier="location"
+            :identifier="name"
             icon
             size="26px"
           />
         </div>
       </template>
       <div class="flex flex-wrap justify-between gap-1 text-rui-text">
-        {{ exchangeName(location) }}
+        {{ location?.name || toCapitalCase(name) }}
         <AmountDisplay
           show-currency="symbol"
-          fiat-currency="USD"
+          :fiat-currency="currencySymbol"
           :value="amount"
           class="font-medium"
         />
