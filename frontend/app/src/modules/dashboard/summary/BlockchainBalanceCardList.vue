@@ -12,28 +12,28 @@ import ListItem from '@/components/common/ListItem.vue';
 import type { ActionDataEntry } from '@/types/action';
 import type { RouteLocationRaw } from 'vue-router';
 
-const props = defineProps<{
+interface BlockChainBalanceCardListProps {
   total: BlockchainTotal;
-}>();
+}
+
+const props = defineProps<BlockChainBalanceCardListProps>();
 
 const { total } = toRefs(props);
 
 const { getChainAccountType, getChainName } = useSupportedChains();
 
-const amount = useRefMap(total, ({ usdValue }) => usdValue);
-const loading = useRefMap(total, ({ loading }) => loading);
 const chain = useRefMap(total, ({ chain }) => chain);
 const name = getChainName(chain);
 
 const navTarget = computed<RouteLocationRaw>(() => {
-  const balanceChain = get(chain);
-  if (balanceChain === Blockchain.ETH2) {
+  const chain = props.total.chain;
+  if (chain === Blockchain.ETH2) {
     return {
       path: `${Routes.STAKING}/eth`,
     };
   }
 
-  const target = getChainAccountType(balanceChain) ?? 'evm';
+  const target = getChainAccountType(chain) ?? 'evm';
   return {
     path: `${Routes.ACCOUNTS}/${target}`,
   };
@@ -69,8 +69,8 @@ function childData(identifier: string): ActionDataEntry | null {
             <AmountDisplay
               show-currency="symbol"
               fiat-currency="USD"
-              :value="amount"
-              :loading="loading"
+              :value="total.usdValue"
+              :loading="total.loading"
               class="font-medium"
             />
           </div>

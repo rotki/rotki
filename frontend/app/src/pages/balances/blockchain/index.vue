@@ -20,7 +20,7 @@ import BlockchainBalanceRefreshBehaviourMenu
   from '@/components/dashboard/blockchain-balance/BlockchainBalanceRefreshBehaviourMenu.vue';
 import { useBlockchainAccountLoading } from '@/composables/accounts/blockchain/use-account-loading';
 import { useRefresh } from '@/composables/balances/refresh';
-import SummaryCardRefreshMenu from '@/components/dashboard/summary-card/SummaryCardRefreshMenu.vue';
+import SummaryCardRefreshMenu from '@/modules/dashboard/summary/SummaryCardRefreshMenu.vue';
 
 definePage({
   meta: {
