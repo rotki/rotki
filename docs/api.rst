@@ -14149,7 +14149,8 @@ Historical Balance Queries
     :reqjsonarr integer interval: The time interval between price queries in seconds
     :reqjsonarr integer from_timestamp: The start timestamp of the query range
     :reqjsonarr integer to_timestamp: The end timestamp of the query range
-     :reqjson integer only_cache_period: (Optional) Time period in seconds around each timestamp to search for cached prices. If omitted, falls back to querying historical prices
+    :reqjsonarr integer exclude_timestamps: (Optional) List of timestamps to exclude from price queries.
+    :reqjson integer only_cache_period: (Optional) Time period in seconds around each timestamp to search for cached prices. If omitted, falls back to querying historical prices
     :reqjsonarr boolean async_query: (Optional) Whether to process the request asynchronously
 
     **Example Response:**
@@ -14167,13 +14168,15 @@ Historical Balance Queries
               "1672617600": "19500",
               "1672704000": "19800"
             },
-            "no_prices_timestamps": [1672790400, 1672876800]
+            "no_prices_timestamps": [1672790400, 1672876800],
+            "rate_limited_prices_timestamps": [1672790400, 1672876800]
           },
           "status_code": 200
         }
 
       :resjson object prices: Mapping of timestamps to price values in user's profit currency
       :resjson list[integer] no_prices_timestamps: List of timestamps where price data was not available
+      :resjson list[integer] rate_limited_prices_timestamps: List of timestamps where price queries were rate-limited by the data provider
       :statuscode 200: Historical prices returned
       :statuscode 400: Malformed query
       :statuscode 401: User is not logged in
