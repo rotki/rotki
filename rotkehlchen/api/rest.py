@@ -3118,33 +3118,36 @@ class RestAPI:
             target_asset: Asset,
             ignore_cache: bool,
     ) -> dict[str, Any]:
-        """Return the current price of the assets in the target asset currency.
-        """
+        """Return the current price of the assets in the target asset currency."""
         log.debug(
             f'Querying the current {target_asset.identifier} price of these assets: '
             f'{", ".join([asset.identifier for asset in assets])}',
         )
         # Type is list instead of tuple here because you can't serialize a tuple
         assets_price: dict[Asset, list[Price | (int | None)]] = {}
+        non_nft_assets = []
         for asset in assets:
-            if asset != target_asset:
-                if asset.asset_type == AssetType.NFT:
-                    nft_price_data = self._eth_module_query(
-                        module_name='nfts',
-                        method='get_nfts_with_price',
-                        query_specific_balances_before=None,
-                    )
-                    oracle = CurrentPriceOracle.MANUALCURRENT if nft_price_data['manually_input'] is True else CurrentPriceOracle.BLOCKCHAIN  # noqa: E501
-                    assets_price[asset] = [Price(nft_price_data['usd_price']), oracle.value]
-                else:
-                    price, oracle = Inquirer.find_price_and_oracle(
-                        from_asset=asset,
-                        to_asset=target_asset,
-                        ignore_cache=ignore_cache,
-                    )
-                    assets_price[asset] = [price, oracle.value]
+            if asset.asset_type == AssetType.NFT:
+                nft_price_data = self._eth_module_query(
+                    module_name='nfts',
+                    method='get_nfts_with_price',
+                    query_specific_balances_before=None,
+                )
+                oracle = CurrentPriceOracle.MANUALCURRENT if nft_price_data['manually_input'] is True else CurrentPriceOracle.BLOCKCHAIN  # noqa: E501
+                assets_price[asset] = [Price(nft_price_data['usd_price']), oracle.value]
             else:
-                assets_price[asset] = [Price(ONE), CurrentPriceOracle.BLOCKCHAIN.value]
+                non_nft_assets.append(asset)
+
+        if len(non_nft_assets) != 0:
+            found_prices = Inquirer.find_prices_and_oracles(
+                from_assets=non_nft_assets,
+                to_asset=target_asset,
+                ignore_cache=ignore_cache,
+            )
+            assets_price.update({
+                asset: [price_and_oracle[0], price_and_oracle[1].value]
+                for asset, price_and_oracle in found_prices.items()
+            })
 
         result = {
             'assets': assets_price,
