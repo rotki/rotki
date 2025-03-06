@@ -6,6 +6,7 @@ import { RuiTooltipStub } from '../specs/stubs/RuiTooltip';
 import { RuiAutoCompleteStub } from '../specs/stubs/RuiAutoComplete';
 import { server } from './server';
 import type { DatabaseInfo } from '@/types/backup';
+import 'fake-indexeddb/auto';
 
 beforeAll(() => {
   server.listen({

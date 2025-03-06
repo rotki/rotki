@@ -3,62 +3,50 @@ import RowActions from '@/components/helper/RowActions.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import CollectionHandler from '@/components/helper/CollectionHandler.vue';
-import ExchangeInput from '@/components/inputs/ExchangeInput.vue';
 import HintMenuIcon from '@/components/HintMenuIcon.vue';
+import ExchangeMappingFilter from '@/components/asset-manager/cex-mapping/ExchangeMappingFilter.vue';
 import type { DataTableColumn, TablePaginationData } from '@rotki/ui-library';
 import type { Collection } from '@/types/collection';
 import type { CexMapping } from '@/types/asset';
+
+interface ManageCexMappingTableProps {
+  collection: Collection<CexMapping>;
+  loading: boolean;
+}
 
 const locationModel = defineModel<string | undefined>('location', { required: true });
 
 const paginationModel = defineModel<TablePaginationData>('pagination', { required: true });
 
-withDefaults(
-  defineProps<{
-    collection: Collection<CexMapping>;
-    symbol?: string;
-    loading: boolean;
-  }>(),
-  {
-    symbol: undefined,
-  },
-);
+const symbol = defineModel<string>('symbol', { required: true });
+
+defineProps<ManageCexMappingTableProps>();
 
 const emit = defineEmits<{
-  (e: 'update:symbol', symbol?: string): void;
-  (e: 'edit', mapping: CexMapping): void;
-  (e: 'delete', mapping: CexMapping): void;
+  edit: [mapping: CexMapping];
+  delete: [mapping: CexMapping];
 }>();
 
 const { t } = useI18n();
-const tableHeaders = computed<DataTableColumn<CexMapping>[]>(() => [
-  {
-    align: 'center',
-    cellClass: 'py-3',
-    key: 'location',
-    label: t('asset_management.cex_mapping.exchange'),
-  },
-  {
-    align: 'center',
-    cellClass: 'py-3',
-    key: 'locationSymbol',
-    label: t('asset_management.cex_mapping.location_symbol'),
-  },
-  {
-    cellClass: 'py-0 border-x border-default',
-    class: 'border-x border-default',
-    key: 'asset',
-    label: t('asset_management.cex_mapping.recognized_as'),
-  },
-  {
-    key: 'actions',
-    label: '',
-  },
-]);
-
-const edit = (mapping: CexMapping) => emit('edit', mapping);
-const deleteMapping = (mapping: CexMapping) => emit('delete', mapping);
-const onSymbolChange = useDebounceFn((value?: string) => emit('update:symbol', value), 500);
+const cols = computed<DataTableColumn<CexMapping>[]>(() => [{
+  align: 'center',
+  cellClass: 'py-3',
+  key: 'location',
+  label: t('asset_management.cex_mapping.exchange'),
+}, {
+  align: 'center',
+  cellClass: 'py-3',
+  key: 'locationSymbol',
+  label: t('asset_management.cex_mapping.location_symbol'),
+}, {
+  cellClass: 'py-0 border-x border-default',
+  class: 'border-x border-default',
+  key: 'asset',
+  label: t('asset_management.cex_mapping.recognized_as'),
+}, {
+  key: 'actions',
+  label: '',
+}]);
 
 function setPage(page: number) {
   set(paginationModel, {
@@ -74,27 +62,10 @@ function setPage(page: number) {
       <HintMenuIcon>
         {{ t('asset_management.cex_mapping.subtitle') }}
       </HintMenuIcon>
-      <div class="w-full md:w-[40rem] flex flex-col sm:flex-row gap-4">
-        <ExchangeInput
-          v-model="locationModel"
-          :label="t('asset_management.cex_mapping.filter_by_exchange')"
-          class="w-full"
-          dense
-          hide-details
-          clearable
-        />
-        <RuiTextField
-          :model-value="symbol"
-          class="w-full sm:max-w-72"
-          variant="outlined"
-          color="primary"
-          :label="t('asset_management.cex_mapping.filter_by_location_symbol')"
-          clearable
-          hide-details
-          dense
-          @update:model-value="onSymbolChange($event)"
-        />
-      </div>
+      <ExchangeMappingFilter
+        v-model:location="locationModel"
+        v-model:symbol="symbol"
+      />
     </div>
     <CollectionHandler
       :collection="collection"
@@ -107,7 +78,7 @@ function setPage(page: number) {
           dense
           striped
           :loading="loading"
-          :cols="tableHeaders"
+          :cols="cols"
           :sticky-offset="64"
           row-attr="location"
           outlined
@@ -143,8 +114,8 @@ function setPage(page: number) {
             <RowActions
               :edit-tooltip="t('asset_table.edit_tooltip')"
               :delete-tooltip="t('asset_table.delete_tooltip')"
-              @edit-click="edit(row)"
-              @delete-click="deleteMapping(row)"
+              @edit-click="emit('edit', row)"
+              @delete-click="emit('delete', row)"
             />
           </template>
         </RuiDataTable>
