@@ -683,7 +683,7 @@ class Inquirer:
 
     @staticmethod
     def _preprocess_assets_to_query(
-            from_assets: list[Asset],
+            from_assets: Sequence[Asset],
             to_asset: Asset,
             ignore_cache: bool = False,
     ) -> tuple[dict[Asset, tuple[Price, CurrentPriceOracle]], dict[Asset, Asset], list[Asset]]:
@@ -719,7 +719,7 @@ class Inquirer:
 
     @staticmethod
     def _find_prices(
-            from_assets: list[Asset],
+            from_assets: Sequence[Asset],
             to_asset: Asset,
             ignore_cache: bool = False,
             skip_onchain: bool = False,
@@ -758,12 +758,14 @@ class Inquirer:
                 ))
 
         # Only include the assets that were originally requested.
+        unneeded_replacements = set()
         for original_asset, replacement_asset in replaced_assets.items():
             found_prices[original_asset] = found_prices[replacement_asset]
             if replacement_asset not in from_assets:
-                del found_prices[replacement_asset]
+                unneeded_replacements.add(replacement_asset)
 
-        return found_prices
+        needed_assets = set(found_prices) - unneeded_replacements
+        return {asset: found_prices[asset] for asset in needed_assets}
 
     @staticmethod
     def find_price(
@@ -797,7 +799,7 @@ class Inquirer:
 
     @staticmethod
     def find_prices(
-            from_assets: list[Asset],
+            from_assets: Sequence[Asset],
             to_asset: Asset,
             ignore_cache: bool = False,
             skip_onchain: bool = False,
@@ -815,7 +817,7 @@ class Inquirer:
 
     @staticmethod
     def find_prices_and_oracles(
-            from_assets: list[Asset],
+            from_assets: Sequence[Asset],
             to_asset: Asset,
             ignore_cache: bool = False,
             skip_onchain: bool = False,
