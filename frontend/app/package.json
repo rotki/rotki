@@ -113,7 +113,7 @@
     "stylelint-scss": "6.11.1",
     "tailwindcss": "3.4.17",
     "tsx": "4.19.3",
-    "typescript": "5.6.3",
+    "typescript": "5.8.2",
     "unplugin-auto-import": "19.1.1",
     "unplugin-vue-components": "28.4.1",
     "unplugin-vue-router": "0.12.0",

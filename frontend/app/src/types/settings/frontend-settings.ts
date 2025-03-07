@@ -180,7 +180,7 @@ export type FrontendSettings = z.infer<typeof FrontendSettings>;
 
 export type FrontendSettingsPayload = Partial<FrontendSettings>;
 
-export function deserializeFrontendSettings<T extends object>(settings: string): T {
+export function deserializeFrontendSettings(settings: string): object {
   return settings ? camelCaseTransformer(JSON.parse(settings)) : {};
 }
 
