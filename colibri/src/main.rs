@@ -1,5 +1,6 @@
 use axum::{http::Request, routing, Router};
 use database::DBHandler;
+use glob::Pattern;
 use http::{request::Parts as RequestParts, HeaderValue};
 use log::{error, info};
 use std::collections::HashSet;
@@ -11,10 +12,11 @@ use tower_http::{
     cors::{AllowOrigin, CorsLayer},
     trace::TraceLayer,
 };
-use glob::Pattern;
+use crate::blockchain::EvmInquirerManager;
 
 mod api;
 mod args;
+mod blockchain;
 mod coingecko;
 mod database;
 mod globaldb;
@@ -39,12 +41,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         globaldb.clone(),
         coingecko::COINGECKO_BASE_URL.to_string(),
     ));
+    let evm_manager = Arc::new(EvmInquirerManager::new(globaldb.clone()));
+    evm_manager.initialize_rpc_nodes().await;
     let state = Arc::new(api::AppState {
         data_dir: args.data_directory,
         globaldb: globaldb.clone(),
         coingecko,
         userdb: Arc::new(RwLock::new(DBHandler::new())),
         active_tasks: Arc::new(Mutex::new(HashSet::<String>::new())),
+        evm_manager: Arc::new(EvmInquirerManager::new(globaldb.clone())),
     });
 
     let stateless_routes = Router::new().route("/health", routing::get(api::health::status));
@@ -58,7 +63,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         )
         .with_state(state);
 
-    let cors_patterns: Vec<Pattern> = args.api_cors
+    let cors_patterns: Vec<Pattern> = args
+        .api_cors
         .iter()
         .filter_map(|pattern| {
             match Pattern::new(pattern) {

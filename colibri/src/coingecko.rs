@@ -73,11 +73,11 @@ mod test {
 
     #[tokio::test]
     async fn test_coingecko_query() {
-        let globaldb = create_globaldb!().await;
+        let globaldb = create_globaldb!().await.expect("Failed to create globaldb for coingecko");
         let mut server = mockito::Server::new_async().await;
 
         let coingecko = Coingecko::new(
-            Arc::new(globaldb.expect("Failed to create globaldb for coingecko")),
+            Arc::new(globaldb),
             server.url(),
         );
         let json = format!(
@@ -87,14 +87,14 @@ mod test {
 
         // mock successful query
         server
-            .mock("GET", format!("/api/v3/coins/ethereum").as_str())
+            .mock("GET", "/api/v3/coins/ethereum")
             .match_query(mockito::Matcher::Any) // ignore the query args
             .with_body(json)
             .create();
         server
             .mock(
                 "GET",
-                format!("/coins/images/279/thumb/ethereum.png").as_str(),
+                "/coins/images/279/thumb/ethereum.png",
             )
             .with_body(b"Image bytes")
             .create();

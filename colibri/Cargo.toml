@@ -38,6 +38,9 @@ tracing-subscriber = { version = "0.3.16", features = ["env-filter"]}
 file-rotate = "0.7.6"
 # used when parsing cors. It is from rust itself
 glob = "0.3.2"
+# used for smart contract interaction
+alloy = {version = "0.12.3", features = ["contract"]}
+base64 = "0.22.1"
 
 [dev-dependencies]
 mockito = "1.6.1"
