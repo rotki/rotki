@@ -9,6 +9,10 @@ withDefaults(
     tooltipOption: undefined,
   },
 );
+
+defineSlots<{
+  content: () => any;
+}>();
 </script>
 
 <template>

@@ -20,6 +20,10 @@ const props = withDefaults(
     replace: false,
   },
 );
+
+defineSlots<{
+  default: () => any;
+}>();
 </script>
 
 <template>

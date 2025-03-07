@@ -31,6 +31,11 @@ const emit = defineEmits<{
   (e: 'confirm'): void;
 }>();
 
+defineSlots<{
+  'default': () => any;
+  'left-buttons': () => any;
+}>();
+
 const { t } = useI18n();
 
 const openDialog = ref<boolean>(false);

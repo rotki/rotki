@@ -55,6 +55,10 @@ const props = withDefaults(defineProps<{
   usableAddresses: () => [],
 });
 
+defineSlots<{
+  default: () => any;
+}>();
+
 const { chains, hideOnEmptyUsable, multichain, multiple, unique, usableAddresses } = toRefs(props);
 
 const { t } = useI18n();

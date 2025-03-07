@@ -5,6 +5,10 @@ import FullSizeContent from '@/components/common/FullSizeContent.vue';
 
 defineProps<{ text: string }>();
 
+defineSlots<{
+  logo: () => any;
+}>();
+
 const { t } = useI18n();
 const { isMdAndUp } = useBreakpoint();
 </script>

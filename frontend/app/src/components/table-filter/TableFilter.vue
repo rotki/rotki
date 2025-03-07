@@ -18,21 +18,22 @@ defineOptions({
   inheritAttrs: false,
 });
 
-const props = withDefaults(
-  defineProps<{
-    matches: MatchedKeywordWithBehaviour<any>;
-    matchers: SearchMatcher<any, any>[];
-    location?: SavedFilterLocation;
-    disabled?: boolean;
-  }>(),
-  {
-    disabled: false,
-    location: undefined,
-  },
-);
+const props = withDefaults(defineProps<{
+  matches: MatchedKeywordWithBehaviour<any>;
+  matchers: SearchMatcher<any, any>[];
+  location?: SavedFilterLocation;
+  disabled?: boolean;
+}>(), {
+  disabled: false,
+  location: undefined,
+});
 
 const emit = defineEmits<{
   (e: 'update:matches', matches: MatchedKeywordWithBehaviour<any>): void;
+}>();
+
+defineSlots<{
+  tooltip: () => any;
 }>();
 
 const { matchers, matches } = toRefs(props);

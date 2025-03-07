@@ -20,6 +20,11 @@ const props = withDefaults(
   },
 );
 
+defineSlots<{
+  default: () => any;
+  bottom: () => any;
+}>();
+
 const { error, message } = toRefs(props);
 
 const { t } = useI18n();

@@ -24,6 +24,11 @@ const props = withDefaults(
   },
 );
 
+defineSlots<{
+  default: () => any;
+  append: () => any;
+}>();
+
 const { text, truncate, url } = toRefs(props);
 const { isPackaged } = useInterop();
 
@@ -45,14 +50,10 @@ const displayText = computed(() => (get(truncate) ? truncateAddress(get(text)) :
   >
     <slot>{{ displayText }}</slot>
     <template
-      v-for="(_, name) in $slots"
-      #[name]="slotData"
-      :key="name"
+      v-if="$slots.append"
+      #append
     >
-      <slot
-        :name="name"
-        v-bind="slotData"
-      />
+      <slot name="append" />
     </template>
   </RuiButton>
   <a

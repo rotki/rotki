@@ -13,6 +13,10 @@ const props = withDefaults(
   },
 );
 
+defineSlots<{
+  default: () => any;
+}>();
+
 const { asset } = toRefs(props);
 const address = reactify(getAddressFromEvmIdentifier)(asset);
 const { assetInfo } = useAssetInfoRetrieval();

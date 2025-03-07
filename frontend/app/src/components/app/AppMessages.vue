@@ -10,6 +10,10 @@ import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import MessageDialog from '@/components/dialogs/MessageDialog.vue';
 import AddressBookFormDialog from '@/components/address-book-manager/AddressBookFormDialog.vue';
 
+defineSlots<{
+  default: () => any;
+}>();
+
 const { isMacOsVersionUnsupported, isWinVersionUnsupported, startupErrorMessage }
   = storeToRefs(useBackendMessagesStore());
 const store = useMessageStore();

@@ -14,6 +14,10 @@ withDefaults(defineProps<SummaryCardRefreshMenuProps>(), {
 const emit = defineEmits<{
   refresh: [];
 }>();
+
+defineSlots<{
+  refreshMenu: () => any;
+}>();
 </script>
 
 <template>

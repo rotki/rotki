@@ -51,6 +51,10 @@ const emit = defineEmits<{
   'refresh': [payload?: PullEvmTransactionPayload];
 }>();
 
+defineSlots<{
+  'query-status': (props: { colspan: number }) => any;
+}>();
+
 const { groupLoading, groups } = toRefs(props);
 
 const eventsLoading = ref(false);
@@ -74,41 +78,35 @@ const { ignoreSingle, toggle } = useIgnore<HistoryEventEntry>({
 
 const sectionLoading = isLoading(Section.HISTORY_EVENT);
 
-const cols = computed<DataTableColumn<HistoryEventEntry>[]>(() => [
-  {
-    cellClass: '!p-0 w-px',
-    class: '!p-0 w-px',
-    key: 'ignoredInAccounting',
-    label: '',
-  },
-  {
-    cellClass: '!py-2',
-    key: 'txHash',
-    label: t('transactions.events.headers.event_identifier'),
-  },
-  {
-    align: 'end',
-    cellClass: 'text-no-wrap !py-2 w-[12rem]',
-    class: 'w-[12rem]',
-    key: 'timestamp',
-    label: t('common.datetime'),
-    sortable: true,
-  },
-  {
-    align: 'end',
-    cellClass: 'w-[1.25rem] !py-2',
-    class: 'w-[1.25rem]',
-    key: 'action',
-    label: '',
-  },
-  {
-    align: 'end',
-    cellClass: '!w-0 !p-0',
-    class: '!w-0 !p-0',
-    key: 'expand',
-    label: '',
-  },
-]);
+const cols = computed<DataTableColumn<HistoryEventEntry>[]>(() => [{
+  cellClass: '!p-0 w-px',
+  class: '!p-0 w-px',
+  key: 'ignoredInAccounting',
+  label: '',
+}, {
+  cellClass: '!py-2',
+  key: 'txHash',
+  label: t('transactions.events.headers.event_identifier'),
+}, {
+  align: 'end',
+  cellClass: 'text-no-wrap !py-2 w-[12rem]',
+  class: 'w-[12rem]',
+  key: 'timestamp',
+  label: t('common.datetime'),
+  sortable: true,
+}, {
+  align: 'end',
+  cellClass: 'w-[1.25rem] !py-2',
+  class: 'w-[1.25rem]',
+  key: 'action',
+  label: '',
+}, {
+  align: 'end',
+  cellClass: '!w-0 !p-0',
+  class: '!w-0 !p-0',
+  key: 'expand',
+  label: '',
+}]);
 
 const events: Ref<HistoryEventEntry[]> = asyncComputed(async () => {
   const data = get(groups, 'data');

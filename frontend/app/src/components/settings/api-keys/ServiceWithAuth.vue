@@ -27,6 +27,10 @@ const emit = defineEmits<{
   (e: 'save', value: ExternalServicePayloadWithAuth): void;
 }>();
 
+defineSlots<{
+  default: () => any;
+}>();
+
 const { t } = useI18n();
 const { credential, status } = toRefs(props);
 

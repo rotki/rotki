@@ -18,6 +18,13 @@ const props = withDefaults(
   },
 );
 
+defineSlots<{
+  default: () => any;
+  avatar: () => any;
+  title: () => any;
+  subtitle: () => any;
+}>();
+
 const avatarSizeClasses = computed(() => {
   if (props.size === 'md')
     return 'w-10 h-10';

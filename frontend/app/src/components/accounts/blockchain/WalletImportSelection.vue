@@ -4,7 +4,21 @@ import { useClearableMessages } from '@/composables/settings';
 import type { EIP1193Provider, EIP6963ProviderDetail } from '@/types';
 
 const emit = defineEmits<{
-  (e: 'import-addresses', addresses: string[]): void;
+  'import-addresses': [addresses: string[]];
+}>();
+
+defineSlots<{
+  default: (props: {
+    attrs: {
+      onMouseover: () => void;
+      onMouseleave: () => void;
+      onClick: () => void;
+    } | {
+      onMouseover?: undefined;
+      onMouseleave?: undefined;
+      onClick?: undefined;
+    };
+  }) => any;
 }>();
 
 const { t } = useI18n();

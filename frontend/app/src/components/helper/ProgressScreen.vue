@@ -8,6 +8,11 @@ const props = withDefaults(
   { progress: '' },
 );
 
+defineSlots<{
+  default: () => any;
+  message: () => any;
+}>();
+
 const progress = computed(() => {
   const currentProgress = props.progress;
   if (!currentProgress)

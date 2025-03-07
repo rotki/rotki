@@ -4,9 +4,17 @@ import type { RuiIcons } from '@rotki/ui-library';
 defineProps<{
   icon: RuiIcons;
 }>();
+
 const emit = defineEmits<{
-  (e: 'confirm'): void;
-  (e: 'cancel'): void;
+  confirm: [];
+  cancel: [];
+}>();
+
+defineSlots<{
+  title: () => any;
+  default: () => any;
+  cancel: () => any;
+  confirm: () => any;
 }>();
 
 const { t } = useI18n();

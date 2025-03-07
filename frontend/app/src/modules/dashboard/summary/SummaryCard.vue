@@ -21,6 +21,11 @@ const emit = defineEmits<{
   refresh: [source: string];
 }>();
 
+defineSlots<{
+  refreshMenu: () => any;
+  default: () => any;
+}>();
+
 const { t } = useI18n();
 </script>
 

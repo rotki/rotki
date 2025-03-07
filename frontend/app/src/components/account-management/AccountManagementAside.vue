@@ -1,3 +1,9 @@
+<script lang="ts" setup>
+defineSlots<{
+  default: () => any;
+}>();
+</script>
+
 <template>
   <div :class="$style.aside">
     <slot />
