@@ -21,6 +21,9 @@ from rotkehlchen.chain.arbitrum_one.modules.gearbox.balances import (
     GearboxBalances as GearboxBalancesArbitrumOne,
 )
 from rotkehlchen.chain.arbitrum_one.modules.gmx.balances import GmxBalances
+from rotkehlchen.chain.arbitrum_one.modules.hyperliquid.balances import (
+    HyperliquidBalances,
+)
 from rotkehlchen.chain.arbitrum_one.modules.thegraph.balances import (
     ThegraphBalances as ThegraphBalancesArbitrumOne,
 )
@@ -253,6 +256,7 @@ CHAIN_TO_BALANCE_PROTOCOLS = {
         UmamiBalances,
         CurveLendBalances,
         UniswapV3Balances,
+        HyperliquidBalances,
     ),
     ChainID.POLYGON_POS: (
         Compoundv3Balances,

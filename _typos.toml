@@ -4,6 +4,7 @@ extend-exclude = [
     "**/**/*.csv",  # import data
     "**/**/*.json",  # translation files, etc.
     "frontend/pnpm-lock.yaml",  # pnpm lockfile
+    "*.db",  # skip db blobs
 ]
 
 [default]
