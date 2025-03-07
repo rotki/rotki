@@ -8,7 +8,7 @@ use std::collections::HashSet;
 use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::sync::{Mutex, RwLock};
-
+use crate::blockchain::EvmInquirerManager;
 use crate::coingecko;
 use crate::database::DBHandler;
 use crate::globaldb;
@@ -20,4 +20,5 @@ pub struct AppState {
     pub coingecko: Arc<coingecko::Coingecko>,
     pub userdb: Arc<RwLock<DBHandler>>,
     pub active_tasks: Arc<Mutex<HashSet<String>>>,
+    pub evm_manager: Arc<EvmInquirerManager>,
 }

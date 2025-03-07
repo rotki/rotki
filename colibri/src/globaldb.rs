@@ -1,3 +1,4 @@
+use crate::blockchain::{RpcNode, SupportedBlockchain};
 use rusqlite::{Connection, Result};
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -62,6 +63,38 @@ impl GlobalDB {
                 })
         })
     }
+
+    /// Get all active RPC endpoints for a specific blockchain.
+    pub async fn get_rpc_nodes(&self, blockchain: SupportedBlockchain) -> Result<Vec<RpcNode>> {
+        let conn = self.conn.lock().await;
+        conn.prepare("SELECT name, endpoint FROM default_rpc_nodes WHERE blockchain=? AND name NOT LIKE '%etherscan%' AND active=1 AND (CAST(weight as decimal) != 0 OR owned == 1) ORDER BY name;")
+            .and_then(|mut stmt| {
+                let mut rows = stmt.query(rusqlite::params![blockchain.as_str()])?;
+                let mut nodes = Vec::new();
+                while let Some(row) = rows.next()? {
+                    let name: String = row.get(0)?;
+                    let endpoint: String = row.get(1)?;
+                    nodes.push(RpcNode {
+                        name,
+                        endpoint,
+                        blockchain,
+                    });
+                }
+                Ok(nodes)
+            })
+    }
+
+    pub async fn is_uniswap_v3_position(&self, asset_id: &str) -> Result<bool> {
+        let conn = self.conn.lock().await;
+        let mut stmt = conn.prepare(
+            "SELECT 1 FROM evm_tokens
+             WHERE identifier = ?
+             AND protocol = 'UNI-V3'
+             LIMIT 1"
+        )?;
+        let result = stmt.exists(rusqlite::params![asset_id])?;
+        Ok(result)
+    }
 }
 
 /// macro that creates a copy of the globaldb in the rotkehlchen data folder
@@ -71,10 +104,16 @@ impl GlobalDB {
 macro_rules! create_globaldb {
     () => {{
         use crate::globaldb::GlobalDB;
-        use std::{env, fs, path::PathBuf};
+        use std::{env, path::PathBuf, time::SystemTime};
+        use tokio::fs;
 
-        let tmp_dir = env::temp_dir().join("global");
-        fs::create_dir_all(tmp_dir.clone()).expect("Failed to create temp folder for globaldb");
+        let timestamp = SystemTime::now()
+            .duration_since(SystemTime::UNIX_EPOCH)
+            .expect("Time went backwards")
+            .as_nanos();
+        let pid = std::process::id();
+        let tmp_dir = env::temp_dir().join(format!("global_{}_{}", timestamp, pid));
+        fs::create_dir_all(tmp_dir.clone()).await.expect("Failed to create temp folder for globaldb");
         let root_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
         fs::copy(
             (root_path.parent())
@@ -84,7 +123,9 @@ macro_rules! create_globaldb {
                 .join("global.db"),
             tmp_dir.join("global.db"),
         )
+        .await
         .expect("Failed to copy globaldb in create_globaldb macro");
+
         GlobalDB::new(tmp_dir.join("global.db"))
     }};
 }

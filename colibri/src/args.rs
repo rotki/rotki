@@ -27,12 +27,7 @@ fn default_data_dir(is_prod: bool) -> std::io::Result<PathBuf> {
             "Could not find Application Support directory",
             is_prod
         ),
-        os => {
-            return Err(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                format!("Unsupported OS: {}", os),
-            ))
-        }
+        os => return Err(std::io::Error::other(format!("Unsupported OS: {}", os))),
     };
     std::fs::create_dir_all(&datadir)?;
     Ok(datadir)
@@ -124,7 +119,7 @@ pub fn parse_args() -> Args {
             Arg::new("api-cors")
                 .long("api-cors")
                 .default_value("http://localhost:*/*")
-                .help("Comma separated list of domains for the API to accept cross origin requests.")
+                .help("Comma separated list of domains for the API to accept cross origin requests."),
         )
         .get_matches();
 
@@ -139,10 +134,11 @@ pub fn parse_args() -> Args {
         max_logfiles_num: *matches.get_one::<usize>("max-logfiles-num").unwrap(),
         log_level: *matches.get_one::<RotkiLogLevel>("log-level").unwrap(),
         max_size_in_mb: *matches.get_one::<usize>("max-size-in-mb").unwrap(),
-        api_cors: matches.get_one::<String>("api-cors")
-                .unwrap()
-                .split(',')
-                .map(|s| s.trim().to_string())
-                .collect(),
+        api_cors: matches
+            .get_one::<String>("api-cors")
+            .unwrap()
+            .split(',')
+            .map(|s| s.trim().to_string())
+            .collect(),
     }
 }

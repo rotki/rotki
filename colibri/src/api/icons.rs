@@ -90,9 +90,9 @@ pub async fn check_icon(
         Some(found_path) => {
             match fs::metadata(found_path.clone()).await {
                 Ok(metadata) => {
-                    // if file is non empty then everything is okey
+                    // if file is non-empty then everything is okey
                     if metadata.len() > 0 {
-                        match payload.force_refresh {
+                        return match payload.force_refresh {
                             // check if we need to repull it
                             Some(true) => {
                                 if let Err(error) = fs::remove_file(found_path).await {
@@ -103,12 +103,12 @@ pub async fn check_icon(
                                     );
                                     return StatusCode::INTERNAL_SERVER_ERROR.into_response();
                                 };
-                                return query_icon_from_payload(state, payload, path)
+                                query_icon_from_payload(state, payload, path)
                                     .await
-                                    .into_response();
+                                    .into_response()
                             }
-                            None | Some(false) => return StatusCode::OK.into_response(),
-                        }
+                            None | Some(false) => StatusCode::OK.into_response(),
+                        };
                     }
 
                     // check when was the last time that the file got updated
@@ -124,6 +124,7 @@ pub async fn check_icon(
                                     payload.asset_id,
                                     path,
                                     state.coingecko.clone(),
+                                    state.evm_manager.clone(),
                                 ));
                                 StatusCode::ACCEPTED.into_response()
                             }
@@ -171,7 +172,13 @@ async fn query_icon_from_payload(
         let active_tasks = state.active_tasks.clone();
         let task_key = task_name.clone();
         async move {
-            icons::query_icon_remotely(payload.asset_id, path, state.coingecko.clone()).await;
+            icons::query_icon_remotely(
+                payload.asset_id,
+                path,
+                state.coingecko.clone(),
+                state.evm_manager.clone(),
+            )
+            .await;
             active_tasks.lock().await.remove(&task_key);
         }
     });
