@@ -966,6 +966,27 @@ def test_upgrade_v10_v11(globaldb: GlobalDBHandler, messages_aggregator):
         assert cursor.execute("SELECT swapped_for FROM common_asset_details WHERE identifier='PHX'").fetchone()[0] == 'eip155:56/erc20:0x0409633A72D846fc5BBe2f98D88564D35987904D'  # noqa: E501
 
 
+@pytest.mark.parametrize('custom_globaldb', ['v11_global.db'])
+@pytest.mark.parametrize('target_globaldb_version', [11])
+@pytest.mark.parametrize('reload_user_assets', [False])
+def test_upgrade_v11_v12(globaldb: GlobalDBHandler, messages_aggregator):
+    with globaldb.conn.read_ctx() as cursor:
+        assert table_exists(cursor=cursor, name='counterparty_asset_mappings') is False
+
+    with ExitStack() as stack:
+        patch_for_globaldb_upgrade_to(stack, 12)
+        maybe_upgrade_globaldb(
+            connection=globaldb.conn,
+            global_dir=globaldb._data_directory / GLOBALDIR_NAME,  # type: ignore
+            db_filename=GLOBALDB_NAME,
+            msg_aggregator=messages_aggregator,
+        )
+
+    assert globaldb.get_setting_value('version', 0) == 12
+    with globaldb.conn.read_ctx() as cursor:
+        assert table_exists(cursor=cursor, name='counterparty_asset_mappings') is True
+
+
 @pytest.mark.parametrize('custom_globaldb', ['v2_global.db'])
 @pytest.mark.parametrize('target_globaldb_version', [2])
 @pytest.mark.parametrize('reload_user_assets', [False])

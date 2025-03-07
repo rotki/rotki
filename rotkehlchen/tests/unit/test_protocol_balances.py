@@ -17,6 +17,8 @@ from rotkehlchen.chain.arbitrum_one.modules.gearbox.balances import (
 )
 from rotkehlchen.chain.arbitrum_one.modules.gearbox.constants import GEAR_IDENTIFIER_ARB
 from rotkehlchen.chain.arbitrum_one.modules.gmx.balances import GmxBalances
+from rotkehlchen.chain.arbitrum_one.modules.hyperliquid.balances import HyperliquidBalances
+from rotkehlchen.chain.arbitrum_one.modules.hyperliquid.constants import CPT_HYPER
 from rotkehlchen.chain.arbitrum_one.modules.thegraph.balances import (
     ThegraphBalances as ThegraphBalancesArbitrumOne,
 )
@@ -1371,3 +1373,54 @@ def test_all_balance_classes_used():
             unused_classes.add(class_entry)
 
     assert unused_classes == set(), f'Found unused classes {unused_classes}'
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+@pytest.mark.parametrize('arbitrum_one_accounts', [[
+    '0x4E60C2E7181EDFc5471C0cBC8D485706d1b35686',
+    '0x3Ba6eB0e4327B96aDe6D4f3b578724208a590CEF',
+]])
+def test_hyperliquid(
+        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
+        arbitrum_one_accounts: list[ChecksumEvmAddress],
+        inquirer_defi: 'Inquirer',  # pylint: disable=unused-argument
+) -> None:
+    """Check balances in hyperliquid both for spot and perp
+    0x3Ba6eB0e4327B96aDe6D4f3b578724208a590CEF has mainly spot and
+    0x4E60C2E7181EDFc5471C0cBC8D485706d1b35686 has mainly perp balances.
+    """
+    _, tx_decoder = get_decoded_events_of_transaction(
+        evm_inquirer=arbitrum_one_inquirer,
+        tx_hash=deserialize_evm_tx_hash('0x2aa0a70af2347ccc4ba3d5f4eddd362c7cd8118c0f2a3617d4b4fcf78c929ea7'),
+    )
+    get_decoded_events_of_transaction(
+        evm_inquirer=arbitrum_one_inquirer,
+        tx_hash=deserialize_evm_tx_hash('0x2e9ef8a4369c33f1b3adb0d870fc60a1f721cbf4bda1181d6804acb0f41a2d66'),
+    )
+    hyper_balances = HyperliquidBalances(
+        evm_inquirer=arbitrum_one_inquirer,
+        tx_decoder=tx_decoder,
+    )
+    arb_usdc = Asset('eip155:42161/erc20:0xaf88d065e77c8cC2239327C5EDb3A432268e5831')
+    # ensure mappings are set
+    with GlobalDBHandler().conn.write_ctx() as write_cursor:
+        write_cursor.executemany(
+            'INSERT OR IGNORE INTO counterparty_asset_mappings (counterparty, symbol, local_id) VALUES (?, ?, ?)',  # noqa: E501
+            [
+                (CPT_HYPER, 'HYPE', 'HYPE'),
+                (CPT_HYPER, 'USDC', arb_usdc.identifier),
+            ],
+
+        )
+
+    protocol_balances = hyper_balances.query_balances()
+    user_4e = arbitrum_one_accounts[0]
+    user_3b = arbitrum_one_accounts[1]
+    assert protocol_balances[user_4e].assets == {
+        arb_usdc: Balance(amount=FVal(519.955570), usd_value=FVal(519.887455820330)),
+    }
+    assert protocol_balances[user_3b].assets == {
+        Asset('HYPE'): Balance(amount=FVal(14.79852012), usd_value=FVal(232.9287066888)),
+        arb_usdc: Balance(amount=FVal(27.20794226), usd_value=FVal(27.20437801956394)),
+    }
