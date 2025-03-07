@@ -5,7 +5,13 @@ use reqwest::Client;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
-
+use alloy::{
+    primitives::{Address, U256},
+    providers::{ProviderBuilder},
+    sol,
+};
+use base64::prelude::*;
+use crate::blockchain::{get_uniswap_nft_manager, SupportedBlockchain};
 use crate::coingecko;
 use crate::globaldb;
 
@@ -14,6 +20,13 @@ const SMOLDAPP_BASE_URL: &str =
 
 pub enum FileTypeError {
     UnsupportedFileType,
+}
+
+sol! {
+    #[sol(rpc)]
+    interface IERC721Metadata {
+        function tokenURI(uint256 tokenId) external view returns (string memory);
+    }
 }
 
 // Create the response headers from a path
@@ -30,23 +43,29 @@ fn get_headers(extension: &str) -> Result<[(&'static str, &'static str); 2], Fil
     Ok([("Content-Type", content_type), ("mimetype", content_type)])
 }
 
-fn extract_chain_id_and_address(identifier: &str) -> Option<(u64, String)> {
+fn parse_asset_identifier(identifier: &str) -> Option<(u64, String, Option<String>)> {
     let parts: Vec<&str> = identifier.split('/').collect();
-    if parts.len() != 2 {
+    if parts.len() < 2 {
         return None;
     }
 
-    let chain_parts: Vec<&str> = parts[0].split(':').collect();
-    let address_parts: Vec<&str> = parts[1].split(':').collect();
-
-    if chain_parts.len() != 2 || address_parts.len() != 2 {
+    // Parse chain ID
+    let chain_parts: Vec<&str> = parts[0].splitn(2, ':').collect();
+    if chain_parts.len() != 2 || chain_parts[0] != "eip155" {
         return None;
     }
-
     let chain_id = chain_parts[1].parse::<u64>().ok()?;
-    let address = address_parts[1].to_string();
 
-    Some((chain_id, address))
+    // Parse asset type and contract address
+    let asset_parts: Vec<&str> = parts[1].splitn(2, ':').collect();
+    if asset_parts.len() != 2 {
+        return None;
+    }
+    let contract_address = asset_parts[1].to_string();
+
+    // Parse token ID if present (for ERC721)
+    let token_id = parts.get(2).map(|s| s.to_string());
+    Some((chain_id, contract_address, token_id))
 }
 
 async fn smoldapp_image_query(
@@ -119,6 +138,86 @@ async fn query_token_icon_and_extension(
     None
 }
 
+async fn query_uniswap_v3_position_icon(
+    chain_id: u64,
+    token_id: &str,
+    contract_address: &str,
+    globaldb: &globaldb::GlobalDB,
+) -> Option<(Bytes, &'static str)> {
+    let blockchain = SupportedBlockchain::from_chain_id(chain_id)?;
+    let rpc_endpoints = globaldb.get_rpc_nodes(blockchain).await.ok()?;
+    let contract_address = match Address::parse_checksummed(contract_address, None) {
+        Ok(address) => address,
+        Err(_e) => {
+            return None;
+        }
+    };
+    let token_id: U256 = token_id.parse().unwrap();
+
+    // Try all RPC endpoints until one succeeds
+    for rpc_url in rpc_endpoints {
+        let provider = match rpc_url.parse().map(|url| ProviderBuilder::new().on_http(url)) {
+            Ok(provider) => provider,
+            Err(e) => {
+                error!("Failed to setup provider for {}: {}", rpc_url, e);
+                continue;
+            }
+        };
+
+        let contract = IERC721Metadata::new(contract_address, provider);
+        let token_uri = match contract.tokenURI(token_id).call().await {
+            Ok(result) => result._0,
+            Err(e) => {
+                error!("RPC call failed on {}: {}", rpc_url, e);
+                continue;
+            }
+        };
+        let base64_str = match token_uri.strip_prefix("data:application/json;base64,") {
+            Some(data) => data,
+            None => {
+                error!("Invalid token URI format from {}", rpc_url);
+                continue;
+            }
+        };
+        let json_bytes = match BASE64_STANDARD.decode(base64_str) {
+            Ok(bytes) => bytes,
+            Err(e) => {
+                error!("Failed to decode base64 JSON from {}: {}", rpc_url, e);
+                continue;
+            }
+        };
+        let json_data: serde_json::Value = match serde_json::from_slice(&json_bytes) {
+            Ok(json) => json,
+            Err(e) => {
+                error!("Failed to parse JSON from {}: {}", rpc_url, e);
+                continue;
+            }
+        };
+        let image_uri = match json_data.get("image").and_then(|v| v.as_str()) {
+            Some(uri) => uri,
+            None => {
+                error!("No 'image' field in JSON from {}", rpc_url);
+                continue;
+            }
+        };
+        let image_base64 = match image_uri.strip_prefix("data:image/svg+xml;base64,") {
+            Some(data) => data,
+            None => {
+                error!("Invalid image URI format from {}", rpc_url);
+                continue;
+            }
+        };
+        match BASE64_STANDARD.decode(image_base64) {
+            Ok(image_data) => return Some((Bytes::from(image_data), "svg")),
+            Err(e) => {
+                error!("Failed to decode uniswap v3 base64 image from {}: {}", rpc_url, e);
+                continue;
+            }
+        }
+    }
+
+    None
+}
 fn url_encode_identifier(input: &str) -> String {
     input
         .chars()
@@ -247,6 +346,7 @@ async fn write_zero_bytes_file(path: &Path) {
 pub async fn query_icon_remotely(
     asset_id: String,
     path: PathBuf,
+    globaldb: Arc<globaldb::GlobalDB>,
     coingecko: Arc<coingecko::Coingecko>,
 ) {
     // first check for some common identifiers
@@ -270,8 +370,33 @@ pub async fn query_icon_remotely(
         }
     };
 
-    let (icon_bytes, extension) = match extract_chain_id_and_address(&asset_id) {
-        Some((chain_id, address)) => {
+    // Check for Uniswap V3 NFT
+    if let Some((chain_id, contract_address, token_id)) = parse_asset_identifier(&asset_id) {
+        if let Some(manager_address) = get_uniswap_nft_manager(chain_id) {
+            if contract_address.eq_ignore_ascii_case(manager_address) {
+                if let Some(token_id) = token_id {
+                    if let Some((icon_bytes, extension)) = query_uniswap_v3_position_icon(
+                        chain_id,
+                        &token_id,
+                        &contract_address,
+                        &globaldb,
+                    )
+                        .await
+                    {
+                        let _ = tokio::fs::write(path.with_extension(extension), &icon_bytes)
+                            .await
+                            .map_err(|e| {
+                                error!("Failed to write icon: {}", e);
+                            });
+                        return;
+                    }
+                }
+            }
+        }
+    }
+
+    let (icon_bytes, extension) = match parse_asset_identifier(&asset_id) {
+        Some((chain_id, address, _)) => {
             match query_token_icon_and_extension(chain_id, &address, SMOLDAPP_BASE_URL).await {
                 Some((bytes, ext)) => (bytes, ext),
                 None => match coingecko.query_asset_image(&asset_id).await {

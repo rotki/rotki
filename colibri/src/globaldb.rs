@@ -2,6 +2,7 @@ use rusqlite::{Connection, Result};
 use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::sync::Mutex;
+use crate::blockchain::SupportedBlockchain;
 
 #[derive(Clone)]
 pub struct GlobalDB {
@@ -61,6 +62,17 @@ impl GlobalDB {
                     _ => Err(e),
                 })
         })
+    }
+
+    /// Get all active RPC endpoints for a specific blockchain.
+    pub async fn get_rpc_nodes(&self, blockchain: SupportedBlockchain) -> Result<Vec<String>> {
+        let conn = self.conn.lock().await;
+        conn.prepare("SELECT endpoint FROM default_rpc_nodes WHERE blockchain=? AND active=1 AND CAST(weight as decimal) != 0 ORDER BY name;")
+            .and_then(|mut stmt| {
+                let rows = stmt.query(rusqlite::params![blockchain.as_str()])?;
+                rows.mapped(|row| row.get::<_, String>(0))
+                    .collect::<Result<Vec<String>, _>>()
+            })
     }
 }
 

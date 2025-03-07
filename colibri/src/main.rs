@@ -20,6 +20,7 @@ mod database;
 mod globaldb;
 mod icons;
 mod logging;
+mod blockchain;
 
 #[tokio::main(flavor = "multi_thread")]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
