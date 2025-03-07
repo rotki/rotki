@@ -322,6 +322,16 @@ CREATE TABLE IF NOT EXISTS location_asset_mappings (
 );
 """
 
+# Asset mappings for counterparties that are not actual locations.
+DB_CREATE_COUNTERPARTY_ASSET_MAPPINGS = """
+CREATE TABLE IF NOT EXISTS counterparty_asset_mappings (
+    counterparty TEXT NOT NULL,
+    symbol TEXT NOT NULL,
+    local_id TEXT NOT NULL COLLATE NOCASE,
+    PRIMARY KEY (counterparty, symbol)
+);
+"""
+
 DB_CREATE_LOCATION_UNSUPPORTED_ASSETS = """
 CREATE TABLE IF NOT EXISTS location_unsupported_assets (
     location CHAR(1) NOT NULL,
@@ -369,6 +379,7 @@ BEGIN TRANSACTION;
 {DB_CREATE_DEFAULT_RPC_NODES}
 {DB_CREATE_LOCATION_ASSET_MAPPINGS}
 {DB_CREATE_LOCATION_UNSUPPORTED_ASSETS}
+{DB_CREATE_COUNTERPARTY_ASSET_MAPPINGS}
 {DB_CREATE_INDEXES}
 COMMIT;
 PRAGMA foreign_keys=on;

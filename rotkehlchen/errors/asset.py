@@ -52,3 +52,8 @@ class UnprocessableTradePair(Exception):
     def __init__(self, pair: str) -> None:
         self.pair = pair
         super().__init__(f'Unprocessable pair {pair} encountered.')
+
+
+class UnknownCounterpartyMapping(Exception):
+    def __init__(self, symbol: str, counterparty: str) -> None:
+        super().__init__(f'Cannot find {symbol} for counterparty {counterparty}')
