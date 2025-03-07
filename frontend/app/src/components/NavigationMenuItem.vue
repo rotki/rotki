@@ -25,6 +25,10 @@ withDefaults(
   },
 );
 
+defineSlots<{
+  default: () => any;
+}>();
+
 const [DefineImage, ReuseImage] = createReusableTemplate();
 
 const outer = ref<HTMLDivElement>();

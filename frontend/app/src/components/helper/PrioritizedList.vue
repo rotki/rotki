@@ -29,6 +29,12 @@ const props = withDefaults(
 const emit = defineEmits<{
   (e: 'update:model-value', value: PrioritizedListId[]): void;
 }>();
+
+defineSlots<{
+  default: () => any;
+  title: () => any;
+}>();
+
 const { allItems, itemDataName } = toRefs(props);
 const selection = ref<Nullable<PrioritizedListId>>(null);
 

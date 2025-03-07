@@ -14,42 +14,45 @@ defineOptions({
 
 const modelValue = defineModel<string | undefined>({ required: true });
 
-const props = withDefaults(
-  defineProps<{
-    items?: string[];
-    excludes?: string[];
-    hint?: string;
-    successMessages?: string;
-    errorMessages?: string[];
-    label?: string;
-    disabled?: boolean;
-    outlined?: boolean;
-    clearable?: boolean;
-    required?: boolean;
-    showIgnored?: boolean;
-    hideDetails?: boolean;
-    includeNfts?: boolean;
-    asset?: AssetInfoWithId | NftAsset;
-  }>(),
-  {
-    asset: undefined,
-    clearable: false,
-    disabled: false,
-    errorMessages: () => [],
-    excludes: () => [],
-    hideDetails: false,
-    hint: '',
-    includeNfts: false,
-    items: () => [],
-    label: 'Asset',
-    outlined: false,
-    required: false,
-    showIgnored: false,
-    successMessages: '',
-  },
-);
+const props = withDefaults(defineProps<{
+  items?: string[];
+  excludes?: string[];
+  hint?: string;
+  successMessages?: string;
+  errorMessages?: string[];
+  label?: string;
+  disabled?: boolean;
+  outlined?: boolean;
+  clearable?: boolean;
+  required?: boolean;
+  showIgnored?: boolean;
+  hideDetails?: boolean;
+  includeNfts?: boolean;
+  asset?: AssetInfoWithId | NftAsset;
+}>(), {
+  asset: undefined,
+  clearable: false,
+  disabled: false,
+  errorMessages: () => [],
+  excludes: () => [],
+  hideDetails: false,
+  hint: '',
+  includeNfts: false,
+  items: () => [],
+  label: 'Asset',
+  outlined: false,
+  required: false,
+  showIgnored: false,
+  successMessages: '',
+});
 
-const emit = defineEmits<{ (e: 'update:asset', value?: AssetInfoWithId | NftAsset): void }>();
+const emit = defineEmits<{
+  'update:asset': [value?: AssetInfoWithId | NftAsset];
+}>();
+
+defineSlots<{
+  prepend: () => any;
+}>();
 
 const { errorMessages, excludes, includeNfts, items, showIgnored } = toRefs(props);
 const { isAssetIgnored } = useIgnoredAssetsStore();

@@ -27,7 +27,11 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: 'pin'): void;
+  pin: [];
+}>();
+
+defineSlots<{
+  actions: () => any;
 }>();
 
 const { isPinned, items } = toRefs(props);
@@ -76,72 +80,61 @@ const tableContainer = computed(() => get(tableRef)?.$el);
 
 const { t } = useI18n();
 
-const headers = computed<DataTableColumn<MappedGroupedItems>[]>(() => [
-  {
-    cellClass: '!py-0 !pr-0 !pl-3',
-    class: '!py-0 !pr-0 !pl-3',
-    key: 'expand',
-    label: '',
-    sortable: false,
-  },
-  {
-    cellClass: 'py-0',
-    key: 'asset',
-    label: t('common.asset'),
-    sortable: true,
-  },
-  ...(get(isPinned)
-    ? []
-    : [
-      {
-        cellClass: 'py-2',
-        key: 'startDate',
-        label: t('common.datetime'),
-        sortable: true,
-      },
-      {
-        align: 'end',
-        key: 'total_missing_acquisition',
-        label: t('profit_loss_report.actionable.missing_acquisitions.headers.missing_acquisitions'),
-        sortable: true,
-      },
-    ] satisfies DataTableColumn<MappedGroupedItems>[]),
-  {
-    align: 'end',
-    key: 'total_amount_missing',
-    label: t('profit_loss_report.actionable.missing_acquisitions.headers.total_missing'),
-  },
-  {
-    cellClass: 'py-0',
-    key: 'action',
-    label: t('profit_loss_report.actionable.missing_acquisitions.headers.quick_action'),
-  },
-]);
+const headers = computed<DataTableColumn<MappedGroupedItems>[]>(() => [{
+  cellClass: '!py-0 !pr-0 !pl-3',
+  class: '!py-0 !pr-0 !pl-3',
+  key: 'expand',
+  label: '',
+  sortable: false,
+}, {
+  cellClass: 'py-0',
+  key: 'asset',
+  label: t('common.asset'),
+  sortable: true,
+}, ...(get(isPinned)
+  ? []
+  : [
+    {
+      cellClass: 'py-2',
+      key: 'startDate',
+      label: t('common.datetime'),
+      sortable: true,
+    },
+    {
+      align: 'end',
+      key: 'total_missing_acquisition',
+      label: t('profit_loss_report.actionable.missing_acquisitions.headers.missing_acquisitions'),
+      sortable: true,
+    },
+  ] satisfies DataTableColumn<MappedGroupedItems>[]), {
+  align: 'end',
+  key: 'total_amount_missing',
+  label: t('profit_loss_report.actionable.missing_acquisitions.headers.total_missing'),
+}, {
+  cellClass: 'py-0',
+  key: 'action',
+  label: t('profit_loss_report.actionable.missing_acquisitions.headers.quick_action'),
+}]);
 
-const childHeaders = computed<DataTableColumn<MissingAcquisition>[]>(() => [
-  {
-    key: 'time',
-    label: t('common.datetime'),
-    sortable: true,
-  },
-  {
-    align: 'end',
-    key: 'foundAmount',
-    label: t('profit_loss_report.actionable.missing_acquisitions.headers.found_amount'),
-    sortable: true,
-  },
-  {
-    align: 'end',
-    key: 'missingAmount',
-    label: t('profit_loss_report.actionable.missing_acquisitions.headers.missing_amount'),
-    sortable: true,
-  },
-  {
-    key: 'actions',
-    label: t('common.actions_text'),
-    sortable: true,
-  },
-]);
+const childHeaders = computed<DataTableColumn<MissingAcquisition>[]>(() => [{
+  key: 'time',
+  label: t('common.datetime'),
+  sortable: true,
+}, {
+  align: 'end',
+  key: 'foundAmount',
+  label: t('profit_loss_report.actionable.missing_acquisitions.headers.found_amount'),
+  sortable: true,
+}, {
+  align: 'end',
+  key: 'missingAmount',
+  label: t('profit_loss_report.actionable.missing_acquisitions.headers.missing_amount'),
+  sortable: true,
+}, {
+  key: 'actions',
+  label: t('common.actions_text'),
+  sortable: true,
+}]);
 
 const isIgnored = (asset: string) => get(isAssetIgnored(asset));
 

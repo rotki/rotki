@@ -32,9 +32,18 @@ const props = withDefaults(defineProps<{
   secondaryAction: undefined,
   subtitle: '',
 });
+
 const emit = defineEmits<{
   (event: 'confirm'): void;
   (event: 'cancel'): void;
+}>();
+
+defineSlots<{
+  'default': (props: { wrapper: HTMLDivElement | null }) => any;
+  'footer': () => any;
+  'header': () => any;
+  'subtitle': () => any;
+  'left-buttons': () => any;
 }>();
 
 const { display, primaryAction, promptOnClose, secondaryAction, subtitle } = toRefs(props);

@@ -4,6 +4,11 @@ defineProps<{
   tooltip?: string | null;
   disabled?: boolean;
 }>();
+
+defineSlots<{
+  default: () => any;
+}>();
+
 const { t } = useI18n();
 </script>
 

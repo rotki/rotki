@@ -17,6 +17,12 @@ import type { ImportSourceType } from '@/types/upload-types';
 
 const props = withDefaults(defineProps<{ source: ImportSourceType; icon?: string }>(), { icon: '' });
 
+defineSlots<{
+  'default': () => any;
+  'hint': () => any;
+  'upload-title': () => any;
+}>();
+
 const { source } = toRefs(props);
 const dateInputFormat = ref<string>();
 const uploaded = ref(false);

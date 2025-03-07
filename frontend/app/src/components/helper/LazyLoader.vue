@@ -10,6 +10,10 @@ const props = withDefaults(
   },
 );
 
+defineSlots<{
+  default: () => any;
+}>();
+
 const { initialAppear, minHeight } = toRefs(props);
 
 const wrapper = ref();

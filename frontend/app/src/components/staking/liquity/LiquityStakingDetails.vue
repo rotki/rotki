@@ -31,6 +31,10 @@ const emit = defineEmits<{
   (e: 'refresh', refresh: boolean): void;
 }>();
 
+defineSlots<{
+  modules: () => any;
+}>();
+
 const selectedAccounts = ref<BlockchainAccount<AddressData>[]>([]);
 const liquityStore = useLiquityStore();
 const { staking, stakingPools, stakingQueryStatus, statistics } = storeToRefs(liquityStore);

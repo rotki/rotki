@@ -15,6 +15,10 @@ const props = defineProps<{
   isPinned: boolean;
 }>();
 
+defineSlots<{
+  actions: (props: { items: EditableMissingPrice[] }) => any;
+}>();
+
 const { t } = useI18n();
 const { isPinned, items } = toRefs(props);
 const prices = ref<HistoricalPrice[]>([]);

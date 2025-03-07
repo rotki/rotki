@@ -17,6 +17,10 @@ const props = withDefaults(
   },
 );
 
+defineSlots<{
+  default: () => any;
+}>();
+
 const style = computed<StyleValue | undefined>(() => {
   if (!props.height)
     return undefined;

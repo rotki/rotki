@@ -1,7 +1,11 @@
 <script setup lang="ts">
+defineSlots<{
+  default: (props: { copyright: string }) => any;
+}>();
+
 const { t } = useI18n();
 
-const copyright = computed(() => t('app.copyright', { year: new Date().getFullYear() }));
+const copyright = computed<string>(() => t('app.copyright', { year: new Date().getFullYear() }));
 </script>
 
 <template>

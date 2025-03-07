@@ -5,6 +5,11 @@ defineProps<{
   isXpub: boolean;
 }>();
 
+defineSlots<{
+  'per-chain': () => any;
+  'aggregated': () => any;
+}>();
+
 const { t } = useI18n();
 </script>
 

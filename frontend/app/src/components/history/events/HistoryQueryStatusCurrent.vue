@@ -1,12 +1,14 @@
 <script setup lang="ts">
-withDefaults(
-  defineProps<{
-    finished?: boolean;
-  }>(),
-  {
-    finished: false,
-  },
-);
+withDefaults(defineProps<{
+  finished?: boolean;
+}>(), {
+  finished: false,
+});
+
+defineSlots<{
+  finished: () => any;
+  running: () => any;
+}>();
 const { t } = useI18n();
 </script>
 

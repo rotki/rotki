@@ -27,6 +27,10 @@ const emit = defineEmits<{
   (e: 'save', value: { name: string; apiKey: string }): void;
 }>();
 
+defineSlots<{
+  default: () => any;
+}>();
+
 const { t } = useI18n();
 const { apiKey, hideActions, status } = toRefs(props);
 

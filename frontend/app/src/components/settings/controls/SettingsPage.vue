@@ -8,14 +8,15 @@ defineOptions({
   inheritAttrs: false,
 });
 
-const props = withDefaults(
-  defineProps<{
-    navigation?: Nav[];
-  }>(),
-  {
-    navigation: () => [],
-  },
-);
+const props = withDefaults(defineProps<{
+  navigation?: Nav[];
+}>(), {
+  navigation: () => [],
+});
+
+defineSlots<{
+  default: () => any;
+}>();
 
 const { t } = useI18n();
 
